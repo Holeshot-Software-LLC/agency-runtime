@@ -7,6 +7,7 @@ roster — lives here. No loose JSON files.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import uuid
 from datetime import datetime, timezone
@@ -219,7 +220,10 @@ class Store:
     """SQLite-backed canonical store for Agency Runtime."""
 
     def __init__(self, db_path: str | Path | None = None):
-        self.db_path = Path(db_path) if db_path else _default_db_path()
+        if db_path:
+            self.db_path = Path(os.path.expanduser(str(db_path)))
+        else:
+            self.db_path = _default_db_path()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
 

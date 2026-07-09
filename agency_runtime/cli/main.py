@@ -58,7 +58,9 @@ from agency_runtime.core.store.sqlite import Store
 
 
 def _store(config: AgencyConfig | None = None) -> Store:
-    return Store(config.store.db_path if config else None)
+    if config:
+        return Store(config.store.resolved_path())
+    return Store()
 
 
 def _print_json(data: Any) -> None:

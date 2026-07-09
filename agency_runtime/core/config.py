@@ -1,11 +1,14 @@
 """Centralized configuration for Agency Runtime.
 
 Layered precedence (highest wins):
-    1. Environment variables (AGENCY_JUDGE_MODEL, etc.)
-    2. User config file (~/.agency-runtime/agency.yaml)
-    3. Bundled defaults (config_defaults.yaml)
+    1. Environment variables (AGENCY_JUDGE_MODEL, etc.) — override/CI only
+    2. User config file (~/.agency-runtime/agency.yaml) — primary source
+    3. Bundled defaults (config_defaults.yaml) — safe Ollama-only baseline
 
-No hardcoded user-specific identifiers anywhere in the package.
+The config file is the single source of truth for runtime behavior.
+Secrets (API keys) can be stored directly in agency.yaml (file permissions
+should be 0600) or referenced via api_key_env for CI/container environments.
+Env vars are override-only, never the primary mechanism.
 """
 
 from __future__ import annotations
@@ -87,8 +90,17 @@ class ServerConfig:
 class AdapterEntryConfig:
     enabled: str = "auto"  # "auto", "true", "false"
     base_url: str = ""
+    api_key: str = ""
     api_key_env: str = ""
     skip_models: tuple[str, ...] = field(default_factory=tuple)
+
+    def resolve_api_key(self) -> str:
+        """Return the API key: direct value first, then env var."""
+        if self.api_key:
+            return self.api_key
+        if self.api_key_env:
+            return os.environ.get(self.api_key_env, "")
+        return ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,11 +145,24 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 
 def _build_adapter_entry(raw: dict[str, Any]) -> AdapterEntryConfig:
     return AdapterEntryConfig(
-        enabled=str(raw.get("enabled", "auto")),
+        enabled=_normalize_enabled(raw.get("enabled", "auto")),
         base_url=str(raw.get("base_url", "")),
+        api_key=str(raw.get("api_key", "")),
         api_key_env=str(raw.get("api_key_env", "")),
         skip_models=tuple(raw.get("skip_models", [])),
     )
+
+
+def _normalize_enabled(value: Any) -> str:
+    """Normalize enabled flag to 'auto', 'true', or 'false'."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    s = str(value).strip().lower()
+    if s in ("true", "yes", "1", "on"):
+        return "true"
+    if s in ("false", "no", "0", "off"):
+        return "false"
+    return "auto"
 
 
 def _build_adapters(raw: dict[str, Any]) -> AdaptersConfig:
@@ -366,6 +391,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "litellm": {
                 "enabled": cfg.adapters.litellm.enabled,
                 "base_url": cfg.adapters.litellm.base_url,
+                "api_key": "***REDACTED***" if redact and cfg.adapters.litellm.api_key else cfg.adapters.litellm.api_key,
                 "api_key_env": cfg.adapters.litellm.api_key_env,
                 "skip_models": list(cfg.adapters.litellm.skip_models),
             },

@@ -68,6 +68,16 @@ def _http_check(url: str, timeout: float = 2.0) -> tuple[bool, str]:
         return False, str(exc)[:100]
 
 
+def _http_check_authed(url: str, api_key: str, timeout: float = 2.0) -> tuple[bool, str]:
+    """HTTP check with Authorization header for authenticated endpoints."""
+    try:
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status == 200, f"HTTP {resp.status}"
+    except Exception as exc:
+        return False, str(exc)[:100]
+
+
 def _http_get_json(url: str, timeout: float = 2.0) -> dict[str, Any] | None:
     try:
         req = urllib.request.Request(url)
@@ -127,13 +137,44 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
 
     # ── Judge / selector checks ───────────────────────────────
     api_key = cfg.judge.resolve_api_key()
-    if cfg.judge.ollama_mode or not cfg.judge.api_key_env:
+
+    # Determine provider path:
+    #   - ollama_mode=True → always Ollama path
+    #   - ollama_mode=False + api_key present (direct or env) → API-key provider path
+    #   - ollama_mode=False + no api_key → Ollama fallback path
+    is_api_key_provider = (not cfg.judge.ollama_mode) and bool(api_key)
+
+    if is_api_key_provider:
+        # API-key based provider (LiteLLM, OpenAI, Anthropic, custom endpoint)
+        if cfg.judge.api_key:
+            source = "stored in config"
+        elif cfg.judge.api_key_env:
+            source = f"from ${cfg.judge.api_key_env}"
+        else:
+            source = "(unknown)"
+
+        report.checks.append(CheckResult("judge_api_key", "pass",
+            f"API key present ({source})"))
+
+        ok, msg = _http_check_authed(f"{cfg.judge.base_url}/models", api_key, timeout=5)
+        if ok:
+            report.checks.append(CheckResult("judge_provider", "pass",
+                f"Judge endpoint reachable: {cfg.judge.base_url}"))
+        else:
+            # Try /v1/models as fallback (some providers use /v1 prefix)
+            ok2, msg2 = _http_check_authed(f"{cfg.judge.base_url}/v1/models", api_key, timeout=5)
+            if ok2:
+                report.checks.append(CheckResult("judge_provider", "pass",
+                    f"Judge endpoint reachable: {cfg.judge.base_url}/v1"))
+            else:
+                report.checks.append(CheckResult("judge_provider", "fail",
+                    f"Judge endpoint unreachable: {cfg.judge.base_url}: {msg}"))
+    elif cfg.judge.ollama_mode or (not api_key and cfg.ollama.enabled):
         if cfg.ollama.enabled:
             ok, msg = _http_check(f"{cfg.ollama.base_url}/api/tags", timeout=5)
             if ok:
                 report.checks.append(CheckResult("judge_provider", "pass",
                     f"Ollama reachable at {cfg.ollama.base_url}"))
-                # Check model availability
                 tags = _http_get_json(f"{cfg.ollama.base_url}/api/tags")
                 if tags:
                     models = [m.get("name", "") for m in tags.get("models", [])]
@@ -150,21 +191,8 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
         else:
             report.checks.append(CheckResult("judge_provider", "warn", "Ollama disabled, no provider configured"))
     else:
-        # API-key based provider
-        if api_key:
-            report.checks.append(CheckResult("judge_api_key", "pass",
-                f"API key present (env: {cfg.judge.api_key_env})"))
-        else:
-            report.checks.append(CheckResult("judge_api_key", "fail",
-                f"API key not set: {cfg.judge.api_key_env}"))
-
-        ok, msg = _http_check(f"{cfg.judge.base_url}/models", timeout=5)
-        if ok:
-            report.checks.append(CheckResult("judge_provider", "pass",
-                f"Judge endpoint reachable: {cfg.judge.base_url}"))
-        else:
-            report.checks.append(CheckResult("judge_provider", "fail",
-                f"Judge endpoint unreachable: {cfg.judge.base_url}: {msg}"))
+        report.checks.append(CheckResult("judge_provider", "warn",
+            "No judge provider configured — run `agency configure`"))
 
     report.checks.append(CheckResult("judge_threshold", "pass",
         f"Confidence bypass threshold: {cfg.judge.confidence_bypass_threshold}"))
@@ -178,10 +206,26 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
 
         if name == "litellm":
             if enabled == "true" or (enabled == "auto" and detected):
+                # Health check (unauthenticated)
                 ok, msg = _http_check(f"{cfg.adapters.litellm.base_url}/health/liveness", timeout=3)
                 if ok:
-                    report.checks.append(CheckResult("adapter_litellm", "pass",
-                        f"LiteLLM reachable: {cfg.adapters.litellm.base_url}"))
+                    # Verify auth works with configured key
+                    adapter_key = cfg.adapters.litellm.resolve_api_key()
+                    if adapter_key:
+                        auth_ok, auth_msg = _http_check_authed(
+                            f"{cfg.adapters.litellm.base_url}/v1/models",
+                            adapter_key,
+                            timeout=3,
+                        )
+                        if auth_ok:
+                            report.checks.append(CheckResult("adapter_litellm", "pass",
+                                f"LiteLLM reachable + authenticated: {cfg.adapters.litellm.base_url}"))
+                        else:
+                            report.checks.append(CheckResult("adapter_litellm", "warn",
+                                f"LiteLLM reachable but models endpoint failed (auth?): {auth_msg}"))
+                    else:
+                        report.checks.append(CheckResult("adapter_litellm", "pass",
+                            f"LiteLLM reachable (no key configured): {cfg.adapters.litellm.base_url}"))
                 else:
                     status = "warn" if enabled == "auto" else "fail"
                     report.checks.append(CheckResult("adapter_litellm", status,

@@ -131,3 +131,70 @@ def test_profile_has_no_lucas():
     """LUCAS profile must not exist in the public API."""
     from agency_runtime.core.policy.profiles import PROFILES
     assert "lucas" not in PROFILES
+
+
+def test_adapter_entry_stores_api_key_directly():
+    """AdapterEntryConfig can store api_key directly (config-first pattern)."""
+    from agency_runtime.core.config import AdapterEntryConfig
+    adapter = AdapterEntryConfig(
+        enabled="true",
+        base_url="http://localhost:4000",
+        api_key="sk-direct-key",
+    )
+    assert adapter.resolve_api_key() == "sk-direct-key"
+
+
+def test_adapter_entry_resolve_env_fallback():
+    """AdapterEntryConfig falls back to env var when no direct key."""
+    from agency_runtime.core.config import AdapterEntryConfig
+    os.environ["TEST_ADAPTER_KEY"] = "sk-from-env"
+    adapter = AdapterEntryConfig(api_key_env="TEST_ADAPTER_KEY")
+    assert adapter.resolve_api_key() == "sk-from-env"
+    del os.environ["TEST_ADAPTER_KEY"]
+
+
+def test_normalize_enabled_boolean():
+    """_normalize_enabled handles YAML booleans correctly."""
+    from agency_runtime.core.config import _normalize_enabled
+    assert _normalize_enabled(True) == "true"
+    assert _normalize_enabled(False) == "false"
+    assert _normalize_enabled("true") == "true"
+    assert _normalize_enabled("True") == "true"
+    assert _normalize_enabled("false") == "false"
+    assert _normalize_enabled("auto") == "auto"
+    assert _normalize_enabled("yes") == "true"
+    assert _normalize_enabled("no") == "false"
+
+
+def test_config_to_yaml_redacts_adapter_api_key():
+    """config_to_yaml redacts adapter api_key values."""
+    from agency_runtime.core.config import AdaptersConfig, AdapterEntryConfig
+    cfg = AgencyConfig(
+        adapters=AdaptersConfig(
+            litellm=AdapterEntryConfig(
+                enabled="true",
+                base_url="http://localhost:4000",
+                api_key="adapter-secret",
+            ),
+        ),
+    )
+    yaml_str = config_to_yaml(cfg, redact=True)
+    assert "adapter-secret" not in yaml_str
+    assert "***REDACTED***" in yaml_str
+
+
+def test_store_expanduser_db_path():
+    """Store constructor expands ~ in db_path."""
+    import tempfile
+    from agency_runtime.core.store.sqlite import Store
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = os.path.join(tmpdir, "test.db")
+        store = Store(db_path)
+        assert "~" not in str(store.db_path)
+        assert store.db_path.exists()
+
+
+def test_wheel_includes_defaults_yaml():
+    """Bundled config_defaults.yaml exists in installed package."""
+    from agency_runtime.core.config import _BUNDLED_DEFAULTS
+    assert _BUNDLED_DEFAULTS.exists(), f"Defaults file not found: {_BUNDLED_DEFAULTS}"
