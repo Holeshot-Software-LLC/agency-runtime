@@ -242,22 +242,29 @@ def _delegation_line(delegations: list[dict[str, Any]]) -> str:
         return ", ".join(_dedupe(completed))
     if reasons:
         return f"none - {_dedupe(reasons)[0]}"
-    return "none - no delegation executed"
+    return "none - delegation suggested but not executed"
 
 
 def fill_header_fields(fields: Mapping[str, Any] | None, session_id: str, store: Any, model: str = "") -> dict[str, str]:
     """Fill missing header fields from store/session data and safe defaults."""
     filled = {key: _clean((fields or {}).get(key, "")) for key in _REQUIRED_KEYS}
 
+    agents = _get_loaded_specialists(store, session_id)
+    if agents and filled["agencies_loaded"].lower() == "none":
+        filled["agencies_loaded"] = ""
     if not _is_present(filled["agencies_loaded"]):
-        agents = _get_loaded_specialists(store, session_id)
         filled["agencies_loaded"] = ", ".join(agents) if agents else "none"
 
+    delegations = _get_delegations(store, session_id)
+    if delegations and filled["agencies_delegated"].lower() == "none":
+        filled["agencies_delegated"] = ""
     if not _is_present(filled["agencies_delegated"]):
-        filled["agencies_delegated"] = _delegation_line(_get_delegations(store, session_id))
+        filled["agencies_delegated"] = _delegation_line(delegations)
 
+    skills = _get_skills(store, session_id)
+    if skills and filled["skills_loaded"].lower() == "none":
+        filled["skills_loaded"] = ""
     if not _is_present(filled["skills_loaded"]):
-        skills = _get_skills(store, session_id)
         filled["skills_loaded"] = ", ".join(skills) if skills else "none"
 
     if not _is_present(filled["actual_model_selected"]):

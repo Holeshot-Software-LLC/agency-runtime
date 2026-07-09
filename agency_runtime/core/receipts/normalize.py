@@ -202,7 +202,7 @@ def normalize_host_receipt(host_metadata: Mapping[str, Any] | None) -> dict[str,
         provider = inferred_provider or _provider_from_api_base(_clean(api_base))
 
     source = _clean(_first(metadata, "source", default="host")).lower() or "host"
-    if source not in {"host", "wrapper"}:
+    if source not in {"host", "wrapper", "unknown"}:
         source = "host" if metadata else "unknown"
 
     return _canonical_receipt(

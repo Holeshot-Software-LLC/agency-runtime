@@ -12,6 +12,10 @@ Commands:
     agency search <query>   — Search roster
     agency route <task>     — Route a task to agents
     agency delegate         — Delegate to a backend
+    agency eval delegation  — Run deterministic delegation evals
+    agency smoke --all      — Run deterministic local smoke checks
+    agency db stats         — Show SQLite runtime table sizes
+    agency db trim          — Trim append-only SQLite runtime tables
     agency sync             — Download/activate agents from sources
     agency source add       — Add a roster source
     agency serve            — Start HTTP server
@@ -23,7 +27,6 @@ import argparse
 import json
 import os
 import shutil
-import sqlite3
 import sys
 import urllib.request
 from pathlib import Path
@@ -927,9 +930,9 @@ def cmd_delegate(args: argparse.Namespace) -> int:
     if backend == "codex":
         command = ["codex", "exec", task]
     elif backend == "claude":
-        command = ["claude", task]
+        command = ["claude", "-p", "--output-format", "json", task]
     elif backend == "hermes":
-        command = ["hermes", task]
+        command = ["hermes", "-z", task]
     else:
         print(f"Delegation recorded for backend={backend} agent={agent}: {task}")
         store.update_delegation(event_id, status="suggested", backend=backend)
@@ -937,13 +940,79 @@ def cmd_delegate(args: argparse.Namespace) -> int:
     executable = shutil.which(command[0])
     if not executable:
         error = f"backend executable not found: {command[0]}"
-        store.update_delegation(event_id, status="skipped", backend=backend, error=error)
+        store.update_delegation(event_id, status="skipped", backend=backend, error=error, skip_reason=error)
         print(error, file=sys.stderr)
         return 127
     command[0] = executable
     code = _run_command(command)
     store.update_delegation(event_id, status="completed" if code == 0 else "failed", backend=backend, error="" if code == 0 else f"exit={code}")
     return code
+
+
+def cmd_eval_delegation(args: argparse.Namespace) -> int:
+    from agency_runtime.core.evals.delegation import run_delegation_eval
+
+    report = run_delegation_eval()
+    if args.json:
+        _print_json(report)
+    else:
+        status = "passed" if report["passed"] else "failed"
+        print(f"delegation eval {status}: {report['passed_count']} passed, {report['failed_count']} failed")
+        for case in report["cases"]:
+            marker = "ok" if case["passed"] else "FAIL"
+            detail = case.get("error") or case.get("detail") or ""
+            print(f"{marker}\t{case['name']}\t{detail}")
+    return 0 if report["passed"] else 1
+
+
+def cmd_smoke(args: argparse.Namespace) -> int:
+    from agency_runtime.core.smoke import run_smoke
+
+    report = run_smoke(all_hosts=args.all)
+    if args.json:
+        _print_json(report)
+    else:
+        status = "passed" if report["passed"] else "failed"
+        print(f"smoke {status}: {report['passed_count']} passed, {report['failed_count']} failed, {report['skipped_count']} skipped")
+        for check in report["checks"]:
+            marker = {"pass": "ok", "skip": "skip", "fail": "FAIL"}.get(check["status"], check["status"])
+            detail = check.get("error") or check.get("detail") or ""
+            print(f"{marker}\t{check['name']}\t{detail}")
+    return 0 if report["passed"] else 1
+
+
+def cmd_db_stats(args: argparse.Namespace) -> int:
+    stats = _store().database_stats()
+    if args.json:
+        _print_json(stats)
+    else:
+        print(f"DB: {stats['db_path']}")
+        print(f"Size: {stats['db_size_bytes']} bytes (wal={stats['wal_size_bytes']}, shm={stats['shm_size_bytes']})")
+        for table, count in stats["tables"].items():
+            print(f"{table}\t{count}")
+    return 0
+
+
+def cmd_db_trim(args: argparse.Namespace) -> int:
+    report = _store().trim_runtime_tables(
+        older_than_days=args.older_than_days,
+        keep_last=args.keep_last,
+        dry_run=args.dry_run,
+        vacuum=not args.no_vacuum,
+    )
+    if args.json:
+        _print_json(report)
+    else:
+        mode = "DRY RUN " if report["dry_run"] else ""
+        print(f"{mode}Trimmed Agency Runtime DB: {report['db_path']}")
+        print(f"Size: {report['db_size_before_bytes']} -> {report['db_size_after_bytes']} bytes")
+        for table, detail in report["tables"].items():
+            deleted = int(detail.get("deleted", 0))
+            if deleted:
+                print(f"{table}\tdeleted={deleted}")
+        if not any(int(detail.get("deleted", 0)) for detail in report["tables"].values()):
+            print("No rows matched the retention policy.")
+    return 0
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
@@ -1075,6 +1144,33 @@ def build_parser() -> argparse.ArgumentParser:
     delegate.add_argument("--agent", default="")
     delegate.add_argument("--task", required=True)
     delegate.set_defaults(func=cmd_delegate)
+
+    # eval
+    eval_p = sub.add_parser("eval", help="Run deterministic eval suites")
+    eval_sub = eval_p.add_subparsers(dest="eval_command", required=True)
+    eval_delegation = eval_sub.add_parser("delegation", help="Run delegation lifecycle/evidence evals")
+    eval_delegation.add_argument("--json", action="store_true")
+    eval_delegation.set_defaults(func=cmd_eval_delegation)
+
+    # smoke
+    smoke = sub.add_parser("smoke", help="Run deterministic local smoke checks")
+    smoke.add_argument("--all", action="store_true", help="Smoke-test every supported generated host plugin")
+    smoke.add_argument("--json", action="store_true")
+    smoke.set_defaults(func=cmd_smoke)
+
+    # db
+    db_p = sub.add_parser("db", help="Inspect and trim the SQLite store")
+    db_sub = db_p.add_subparsers(dest="db_command", required=True)
+    db_stats = db_sub.add_parser("stats", help="Show row counts and file sizes")
+    db_stats.add_argument("--json", action="store_true")
+    db_stats.set_defaults(func=cmd_db_stats)
+    db_trim = db_sub.add_parser("trim", help="Trim append-only runtime/audit tables")
+    db_trim.add_argument("--older-than-days", type=int, default=None, help="Delete runtime rows older than N days")
+    db_trim.add_argument("--keep-last", type=int, default=None, help="Keep only the newest N rows per runtime table")
+    db_trim.add_argument("--dry-run", action="store_true", help="Report rows that would be deleted without changing the DB")
+    db_trim.add_argument("--no-vacuum", action="store_true", help="Skip VACUUM after deleting rows")
+    db_trim.add_argument("--json", action="store_true")
+    db_trim.set_defaults(func=cmd_db_trim)
 
     # serve
     serve_p = sub.add_parser("serve", help="Start HTTP server")

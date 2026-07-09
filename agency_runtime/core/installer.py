@@ -59,8 +59,7 @@ To remove: delete this directory.
 
 import logging
 
-from agency_runtime.adapters.{host_module}.plugin import {adapter_class}
-from agency_runtime.core.config import load_config
+from agency_runtime.adapters.{adapter_module} import {adapter_class}
 
 logger = logging.getLogger("plugins.agency_preflight")
 
@@ -84,7 +83,6 @@ def register(ctx):
 
     adapter = _get_adapter()
     catalog = adapter.store.get_active_roster_as_catalog()
-    config = load_config()
     logger.info(
         "agency-runtime: {adapter_class} wired — %d agents in roster",
         len(catalog),
@@ -126,10 +124,10 @@ def _on_transform_llm_output(**kwargs):
 
 # Host module/class mappings
 _HOST_ADAPTER_MAP = {
-    "hermes": {"host_module": "hermes", "adapter_class": "HermesAdapter"},
-    "openclaw": {"host_module": "openclaw", "adapter_class": "OpenClawAdapter"},
-    "codex": {"host_module": "generic", "adapter_class": "GenericAdapter"},
-    "claude": {"host_module": "generic", "adapter_class": "GenericAdapter"},
+    "hermes": {"host_module": "hermes.plugin", "adapter_class": "HermesAdapter"},
+    "openclaw": {"host_module": "openclaw.plugin", "adapter_class": "OpenClawAdapter"},
+    "codex": {"host_module": "codex.wrapper", "adapter_class": "CodexAdapter"},
+    "claude": {"host_module": "claude.wrapper", "adapter_class": "ClaudeAdapter"},
 }
 
 
@@ -184,7 +182,7 @@ def install_agent_adapter(host: str, cfg: AgencyConfig | None = None) -> dict[st
     adapter_map = _HOST_ADAPTER_MAP.get(host, _HOST_ADAPTER_MAP["codex"])
     plugin_content = _PLUGIN_TEMPLATE.format(
         host=host,
-        host_module=adapter_map["host_module"],
+        adapter_module=adapter_map["host_module"],
         adapter_class=adapter_map["adapter_class"],
     )
 

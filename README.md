@@ -2,465 +2,388 @@
 
 # Agency Runtime
 
-**A portable control plane that routes AI agent tasks to the right specialist, tracks which model actually ran, and makes every decision auditable.**
+**A portable control plane for AI-agent specialist routing, delegation evidence, roster governance, and model/run observability.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests: 104](https://img.shields.io/badge/tests-104%20passed-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#testing)
 
 </div>
 
 ---
 
+## Thank You: agency-agents
+
+Agency Runtime exists because [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) made a high-quality open specialist-agent roster available to the community.
+
+That project is the inspiration and the default upstream roster source. Agency Runtime is intentionally complementary: it does **not** replace `agency-agents`; it gives AI-agent hosts a portable runtime that can import, quarantine, diff, activate, route, delegate, and audit specialist rosters such as `agency-agents`.
+
 ## Why This Exists
 
-Every AI agent framework has the same problem: **you build an agent, it works great in the demo, then you realize it has no idea which specialist to call for a given task, it can't tell you which model actually ran, and there's no audit trail for what happened.**
+Every AI-agent framework eventually hits the same operational wall: the agent can call tools, but it cannot reliably prove which specialist it consulted, which work it delegated, which model actually ran, or why a routing decision happened.
 
-Agency Runtime solves this with three core capabilities:
+Agency Runtime makes those decisions visible and durable:
 
-1. **Specialist Routing** — An 8-layer pipeline (token pre-narrowing → LLM judge → session stickiness → cache) matches tasks to the right specialist from your roster. Works with any LLM provider.
+1. **Specialist Routing** - an 8-layer pipeline matches tasks to the right specialist from your active roster.
+2. **Delegation Accountability** - independent work units are persisted as `suggested`, then promoted to `delegated` only when a host actually calls a delegation tool.
+3. **Model Receipts** - every host adapter can record the resolved model from runtime telemetry, including honest `unavailable` receipts when a host emits no model truth.
+4. **Observability Headers** - responses start with a six-line header showing loaded specialists, delegated specialists, loaded skills, actual model, and outcome rationale.
+5. **Roster Governance** - upstream agent rosters flow through quarantine, diff, approval, and activation before they affect routing.
 
-2. **Model Receipts** — After every LLM call, captures the *actual model that ran* (not the alias you requested), the provider, latency, and status. Stored in SQLite for audit.
+## Agency Runtime vs agency-agents
 
-3. **Observability Headers** — Every response starts with a six-line header showing which specialists were loaded, which were delegated, which skills were used, and which model resolved — making agent behavior transparent and debuggable.
+| Project | What it is | What it owns |
+|---|---|---|
+| [`agency-agents`](https://github.com/msitarzewski/agency-agents) | Open specialist-agent roster and prompt ecosystem | Agent definitions, names, roles, specialist prompts, upstream community roster |
+| `agency-runtime` | Portable runtime/control plane | Host adapters, SQLite state, routing, delegation evidence, model receipts, roster import/governance, CLI/server surfaces |
 
-## What It Does
-
-```
-User asks: "Review this PR for security issues"
-
-Agency Runtime:
-  1. Routes → security-architect (confidence: 0.92, source: llm)
-  2. Agent loads security-architect specialist context
-  3. LLM call runs → response["model"] = "claude-3-5-sonnet" (not the alias)
-  4. Response header records everything:
-
-     Agency/Agencies loaded: security-architect
-     Agency/Agencies delegated: none
-     Skills loaded: github-code-review
-     Actual Model selected: [implementation] task-implementation -> anthropic/claude-3-5-sonnet
-     Why: Security review requires architectural threat modeling
-     How it shaped outcome: Specialist context identified injection risks in auth middleware
-```
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.10+
-- At least one LLM provider: [Ollama](https://ollama.ai) (free/local), OpenAI API key, Anthropic API key, or a LiteLLM proxy
-
-### Install
+Use them together:
 
 ```bash
-pip install agency-runtime
+agency source add https://github.com/msitarzewski/agency-agents --name agency-agents
+agency sync --review
+agency roster approve <snapshot-id>
+agency roster activate <snapshot-id>
 ```
 
-### One-Command Setup
+## Install
+
+### From GitHub
 
 ```bash
-# Configure + seed roster + wire into every AI agent on your machine
-agency configure
+python -m pip install "agency-runtime @ git+https://github.com/Holeshot-Software-LLC/agency-runtime.git"
+agency configure --non-interactive --profile standard
+agency install --all
+agency doctor
+agency smoke --all
+```
+
+### From a Local Clone
+
+```bash
+git clone https://github.com/Holeshot-Software-LLC/agency-runtime.git
+cd agency-runtime
+python -m pip install -e ".[dev]"
+python -m pytest tests/ -q
+agency configure --non-interactive --profile standard
+agency install --all
+agency doctor
+agency smoke --all
+```
+
+### Paste-Into-An-Agent Prompt
+
+Use this prompt in Codex, Claude Code, Hermes, OpenClaw/Nexus, or another coding agent:
+
+```text
+Install Agency Runtime from https://github.com/Holeshot-Software-LLC/agency-runtime.
+Use the repo README as source of truth. Install it in editable mode if working from a clone, run `agency configure --non-interactive --profile standard`, then run `agency install --all`, `agency doctor`, `agency smoke --all`, `agency eval delegation --json`, and `agency route "review this PR for security issues"`.
+If the package is already cloned locally, do not reclone it; update/install from that working tree. Preserve existing config and do not delete roster data. Report the exact plugin paths wired, test results, and any host that was not detected.
+```
+
+## Setup Modes
+
+### Auto-Detect Every Host
+
+```bash
 agency install --all
 ```
 
-That's it. Agency Runtime auto-detects your LLM providers, writes `~/.agency-runtime/agency.yaml`, and wires plugin files into every supported agent host it finds.
+Scans for supported hosts and writes thin plugin files that import from the installed `agency_runtime` package. No host gets vendored code.
 
-## Installation Modes
-
-### Mode 1: Auto-Detect (Recommended)
-
-```bash
-agency install --all
-```
-
-Scans your machine for installed agent hosts (Hermes, OpenClaw, Codex, Claude Code) and wires Agency Runtime into each one:
-
-```
-🔍 Detected 3 agent host(s): hermes, openclaw, codex
-✅ hermes: wired → ~/.hermes-nexus/plugins/agency-preflight/__init__.py
-✅ openclaw: wired → ~/.openclaw/agency-preflight/__init__.py
-✅ codex: wired → ~/.codex/agency-preflight/__init__.py
-```
-
-### Mode 2: Specific Agent
+### Single Host
 
 ```bash
 agency install --agent hermes
+agency install --agent openclaw
+agency install --agent codex
+agency install --agent claude
 ```
 
-Wires into a single host. Useful if you only want routing for one agent.
-
-### Mode 3: Standalone (No Host Integration)
+### Standalone CLI/Library
 
 ```bash
 agency install
+agency route "review this PR for security issues"
+agency search "SRE incident"
 ```
 
-Seeds the starter roster and configures the judge model, but doesn't wire into any host. Use Agency Runtime as a library or via the CLI (`agency route`, `agency search`).
+This seeds the starter roster and leaves host plugin wiring untouched.
 
-## Enable / Disable
-
-Toggle Agency Runtime on or off for any host without uninstalling:
+### Enable / Disable Host Wiring
 
 ```bash
-# Disable for a specific host
 agency off --agent hermes
-
-# Re-enable
 agency on --agent hermes
-
-# If only one host is detected, agent is auto-selected
-agency off
-agency on
 ```
 
-When disabled, the plugin file is renamed to `__init__.py.disabled` — the host simply doesn't load it. No data is lost.
+Disable renames the generated plugin to `__init__.py.disabled`; it does not delete SQLite state.
+
+## Supported Hosts
+
+| Host | Runtime surface | Evidence support |
+|---|---|---|
+| Hermes Agent | `~/.hermes-nexus/plugins/agency-preflight/` | Preflight, pre-verify, post-tool evidence, model receipts, response finalization |
+| OpenClaw / Nexus | `~/.openclaw/agency-preflight/` | Typed hook parity, post-tool evidence, model receipts, response finalization |
+| Codex | `~/.codex/agency-preflight/` plus `codex exec` backend | Generated hook plugin, CLI delegation backend, tool evidence, model receipts |
+| Claude Code | `~/.claude/agency-preflight/` plus `claude` backend | Generated hook plugin, CLI delegation backend, tool evidence, model receipts |
+| Generic CLI | `agency_runtime.adapters.generic.wrapper.GenericAdapter` | Generic command backend, tool evidence, model receipts |
+
+Generated plugins are smoke-tested by importing the written plugin, registering hooks, and exercising `pre_llm_call`, `pre_verify`, `post_tool_call`, `post_api_request`, and `transform_llm_output`.
 
 ## Configuration
 
-### Guided Wizard
+`agency configure` writes `~/.agency-runtime/agency.yaml` and stores runtime state in `~/.agency-runtime/agency.db` by default.
 
 ```bash
-agency configure
+agency configure                    # guided setup
+agency configure --non-interactive  # detected defaults
+agency config show                  # redacted effective config
+agency config validate              # config + provider reachability checks
+agency config path                  # config location
 ```
 
-Auto-detects your providers and walks you through setup. For non-interactive use:
+Environment overrides:
 
-```bash
-agency configure --non-interactive --profile local-only --force
-```
-
-### Config File: `~/.agency-runtime/agency.yaml`
-
-```yaml
-# ── Provider Fallback Chain ──────────────────────────────
-# The judge tries each provider in order until one succeeds.
-# Types: litellm, openai-compatible, anthropic, ollama, cli
-# Auth: api_key (stored directly, file is 0600), api_key_env, or none
-
-providers:
-  # Option A: LiteLLM proxy (handles multiple backends)
-  - name: litellm
-    type: litellm
-    model: task-general          # Your LiteLLM model group
-    base_url: http://127.0.0.1:4000
-    api_key: sk-litellm-...      # Stored directly (file is 0600)
-
-  # Option B: Direct OpenAI API
-  - name: openai
-    type: openai-compatible
-    model: gpt-4o-mini
-    base_url: https://api.openai.com/v1
-    api_key_env: OPENAI_API_KEY  # Read from environment
-
-  # Option C: Anthropic API
-  - name: anthropic
-    type: anthropic
-    model: claude-3-5-sonnet-20241022
-    base_url: https://api.anthropic.com/v1
-    api_key_env: ANTHROPIC_API_KEY
-
-  # Option D: Local Ollama (free, no API key)
-  - name: ollama
-    type: ollama
-    model: qwen3.5:2b
-    base_url: http://127.0.0.1:11434
-    ollama_mode: true
-
-# ── Judge Settings ───────────────────────────────────────
-judge:
-  model: task-agency-router      # Model for specialist routing
-  base_url: http://127.0.0.1:4000
-  api_key: sk-...
-  timeout: 15
-  max_selected: 3                # Max specialists per task
-  confidence_bypass_threshold: 15.0  # Skip LLM if token score is high enough
-
-# ── Ollama Fallback ──────────────────────────────────────
-# Used when no providers in the chain succeed
-ollama:
-  enabled: true
-  base_url: http://127.0.0.1:11434
-  model: qwen3.5:2b
-
-# ── Selector Tuning ──────────────────────────────────────
-selector:
-  min_confidence: 0.4           # Minimum confidence to suggest a specialist
-  max_user_msg_len: 4000        # Truncate long messages before routing
-  trivial_msg_threshold: 12     # Messages shorter than this skip routing
-
-# ── Storage ──────────────────────────────────────────────
-store:
-  db_path: ~/.agency-runtime/agency.db  # SQLite: roster, receipts, events
-```
-
-### Environment Variable Overrides
-
-All config values can be overridden via environment variables (highest precedence):
-
-| Variable | Overrides |
-|----------|-----------|
+| Variable | Purpose |
+|---|---|
 | `AGENCY_CONFIG_PATH` | Config file location |
 | `AGENCY_DB_PATH` | SQLite database path |
-| `AGENCY_JUDGE_MODEL` | Judge model name |
+| `AGENCY_JUDGE_MODEL` | Specialist-routing judge model |
 | `AGENCY_JUDGE_BASE_URL` | Judge endpoint URL |
 | `AGENCY_JUDGE_API_KEY` | Judge API key |
-| `AGENCY_JUDGE_TIMEOUT` | Judge timeout (seconds) |
+| `AGENCY_JUDGE_TIMEOUT` | Judge timeout in seconds |
 | `AGENCY_MAX_SELECTED` | Max specialists per task |
-| `AGENCY_BYPASS_THRESHOLD` | Confidence bypass threshold |
-| `OLLAMA_BASE_URL` | Ollama endpoint |
+| `AGENCY_BYPASS_THRESHOLD` | Token-score threshold before skipping the LLM judge |
 | `LITELLM_API_KEY` | LiteLLM proxy key |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `OPENAI_API_KEY` | OpenAI-compatible provider key |
+| `ANTHROPIC_API_KEY` | Anthropic provider key |
+| `OLLAMA_BASE_URL` | Ollama endpoint |
 
-### Profiles
+Profiles:
 
 ```bash
-agency configure --profile local-only   # Ollama only, no network, no auto-sync
-agency configure --profile standard     # Default: uses detected providers
-agency configure --profile power        # All features, auto-sync, network
+agency configure --profile local-only   # local/free-first, no network sync
+agency configure --profile standard     # default detected providers, manual roster activation
+agency configure --profile power        # power-user defaults, still approval-gated
 ```
 
-## Supported Agent Hosts
+## Roster Sync Job
 
-| Host | Status | Plugin Path |
-|------|--------|-------------|
-| **Hermes Agent** | ✅ Full support | `~/.hermes-nexus/plugins/agency-preflight/` |
-| **OpenClaw / Nexus** | ✅ Full support | `~/.openclaw/agency-preflight/` |
-| **Codex** | ✅ Plugin generated | `~/.codex/agency-preflight/` |
-| **Claude Code** | ✅ Plugin generated | `~/.claude/agency-preflight/` |
+Agency Runtime's built-in roster sync job is `agency sync`. It is intentionally approval-gated:
 
-Each host gets a thin plugin file that imports from the installed `agency_runtime` package. No vendoring, no duplication — one package, many hosts.
+```bash
+agency source add https://github.com/msitarzewski/agency-agents --name agency-agents
+agency sync --dry-run                  # fetch + validate without writing candidates
+agency sync --review                   # quarantine candidates and show snapshot diff
+agency roster approve <snapshot-id>    # approve the generated snapshot
+agency roster activate <snapshot-id>   # activate approved agents for routing
+agency roster list
+```
+
+For trusted automation, use:
+
+```bash
+agency sync --auto-approve
+```
+
+The sync pipeline is:
+
+1. **Source** - registered with `agency source add`.
+2. **Download** - agent files are fetched and hashed.
+3. **Quarantine** - candidates are normalized and validated before activation.
+4. **Diff** - `added`, `changed`, `removed`, and `unchanged` are captured in a snapshot.
+5. **Approve** - an operator or trusted job approves the snapshot.
+6. **Activate** - active roster rows are replaced from the approved snapshot.
+7. **Audit** - import events, snapshots, active agents, and versions remain in SQLite.
+
+No sync path silently enables arbitrary upstream agents unless you explicitly run `--auto-approve` or approve/activate the snapshot.
 
 ## How Routing Works
 
-The routing pipeline runs 8 layers, fastest-exit-first:
-
-```
+```text
 User Message
-     │
-     ▼
-Layer 0: Companion Policy ──── Deterministic action→agent mapping (<1ms)
-     │                        e.g. "code review" → code-reviewer
-     ▼
-Layer 1: Domain Expansion ──── "conveyor" → ci cd pipeline, gitops
-     │
-     ▼
-Layer 2: LRU Cache ─────────── Content-hash + TTL (skip everything if hit)
-     │
-     ▼
-Layer 3: Session Stickiness ── Reuse last routing for similar messages
-     │
-     ▼
-Layer 4: Confidence Bypass ─── Skip LLM if token score ≥ threshold
-     │
-     ▼
-Layer 5: Token Pre-Narrow ──── Narrow 238 agents → top 20 by token score
-     │
-     ▼
-Layer 6: LLM Judge ─────────── Ask judge model to pick best specialists
-     │                        Falls back through provider chain on failure
-     ▼
-Layer 7: Union ─────────────── Merge companion + semantic results
-     │
-     ▼
-Routing Result: { selected_ids, confidence, latency_ms, status }
+  -> Layer 0: companion policy for deterministic action-to-agent matches
+  -> Layer 1: domain expansion
+  -> Layer 2: content-hash cache
+  -> Layer 3: session stickiness
+  -> Layer 4: confidence bypass for strong token matches
+  -> Layer 5: token pre-narrowing
+  -> Layer 6: LLM judge with provider fallback
+  -> Layer 7: union companion + semantic results
+  -> Routing Result: selected_ids, confidence, status, work_units
 ```
 
-### Provider Fallback Chain
+Even without a working LLM provider, routing falls back to token scoring so the agent gets a deterministic result instead of a silent failure.
 
-When the LLM judge is called, it tries providers in order:
+## Delegation Evidence
 
-```
-1. providers[0] (e.g. LiteLLM)  ── fails ──▶
-2. providers[1] (e.g. OpenAI)   ── fails ──▶
-3. providers[2] (e.g. Anthropic) ── fails ──▶
-4. providers[3] (e.g. Ollama)   ── fails ──▶
-5. Legacy judge config           ── fails ──▶
-6. Ollama fallback               ── fails ──▶
-7. Token-only (no LLM needed)    ──────────▶  Always succeeds
-```
+When the selector detects multiple independent work units, Agency Runtime writes `delegation_events` rows with `status='suggested'`. Host tool calls then promote those rows:
 
-**Agency Runtime always produces a result.** Even with no LLM providers configured, it falls back to token-based scoring.
+| Host tool | Event transition | Header effect |
+|---|---|---|
+| `delegate_task` / `delegate_async` | `suggested -> delegated` | `Agency/Agencies delegated: <agent> via delegate_task` |
+| `agency_agents_delegate` | `suggested -> delegated` | `Agency/Agencies delegated: <agent> via agency_agents_delegate` |
+| no delegation tool call | remains `suggested` | pre-verify rejects bare `Agency/Agencies delegated: none` |
+| explicit blocker | remains `suggested` with a non-bare reason in the header | accepted as surfaced evidence |
 
-## CLI Reference
-
-```bash
-# Setup
-agency configure                    # Guided setup wizard
-agency install [--all|--agent NAME] # Install + wire into host(s)
-agency on [--agent NAME]            # Enable for a host
-agency off [--agent NAME]           # Disable for a host
-agency doctor                       # Health check
-
-# Config
-agency config show                  # Display effective config (redacted)
-agency config show --raw            # Show secrets (use with caution)
-agency config set judge.model X     # Set a config value
-agency config validate              # Validate config + reachability
-agency config path                  # Print config file location
-
-# Roster
-agency roster list                  # List active roster
-agency search "security"            # Search roster by keyword
-agency route "review this PR"       # Route a task to agents
-agency sync                         # Download agents from sources
-agency source add <url>             # Add a roster source
-
-# Server
-agency serve                        # Start HTTP API server
-```
+This is the contract: detection alone is not delegation. A passing run must align preflight context, SQLite delegation events, the final header, and pre-verify behavior.
 
 ## Observability Header
 
-Every response from an agent with Agency Runtime enabled begins with:
+Every enabled host can finalize responses into this shape:
 
-```
+```text
 Agency/Agencies loaded: security-architect, code-reviewer
 Agency/Agencies delegated: security-architect via delegate_task
 Skills loaded: github-code-review
-Actual Model selected: [implementation] task-implementation -> anthropic/claude-3-5-sonnet
+Actual Model selected: task-implementation -> anthropic/claude-3-5-sonnet
 Why: Security review requires threat modeling expertise
 How it shaped outcome: Identified injection vectors in auth middleware
 ```
 
-This makes agent behavior transparent: you can always see which specialists were consulted, which model actually ran, and why the routing decision was made.
+Important distinction: skills are not Agency roster agents. For example, `agent-reach` is reported under `Skills loaded`, never under `Agency/Agencies loaded`.
 
-### Model Receipts
+## Model Receipts
 
-The `Actual Model selected` line is populated from the **actual API response body**, not the requested alias. LiteLLM's complexity router and fallback chains can resolve a request for `task-implementation` to `gpt-4o`, `claude-3-5-sonnet`, or `qwen3-coder` depending on availability — Agency Runtime captures what *actually* happened.
-
-Receipts are stored in SQLite:
+The `Actual Model selected` line is populated from runtime receipts, not from a requested alias. If a LiteLLM group or host fallback resolves `task-implementation` to another model, Agency Runtime stores the resolved provider/model. If a host emits no model telemetry, the receipt records `resolved_model='unavailable'` instead of inventing a value.
 
 ```sql
-SELECT requested_model, resolved_model, resolved_provider, latency_ms, status
+SELECT requested_model, resolved_provider, resolved_model, status
 FROM model_receipts
 WHERE session_id = '...'
-ORDER BY started_at DESC;
+ORDER BY ended_at DESC;
 ```
 
-## Architecture
+## SQLite Maintenance
 
-```
-agency_runtime/
-├── core/
-│   ├── config.py              # agency.yaml loader, ProviderEntry, env overrides
-│   ├── config_defaults.yaml   # Bundled defaults
-│   ├── detect.py              # Auto-detect LiteLLM, OpenAI, Anthropic, Ollama
-│   ├── doctor.py              # 15+ health checks
-│   ├── installer.py           # Host detection, plugin wiring, on/off toggle
-│   ├── store/
-│   │   └── sqlite.py          # Canonical store: roster, receipts, events, skills
-│   ├── selector/
-│   │   ├── pipeline.py        # 8-layer routing pipeline
-│   │   ├── judge.py           # Multi-provider LLM judge with fallback chain
-│   │   ├── candidate_narrow.py # Token pre-narrowing (238 → 20)
-│   │   ├── cache.py           # Content-hash LRU cache
-│   │   ├── stickiness.py      # Session reuse
-│   │   └── policy.py          # Companion policy (deterministic action→agent)
-│   ├── header/
-│   │   ├── contract.py        # Six-line header validation + auto-fill
-│   │   └── finalize.py        # Response finalization gate
-│   ├── receipts/
-│   │   ├── normalize.py       # Receipt normalization (host + LiteLLM)
-│   │   ├── host.py            # Host-side receipt capture
-│   │   └── litellm.py         # LiteLLM response extraction
-│   └── delegation/
-│       ├── lifecycle.py       # Worktree-isolated delegation engine
-│       ├── backends.py        # delegate_task, delegate_async backends
-│       └── ledger.py          # Delegation event ledger
-├── adapters/
-│   ├── base.py                # BaseAdapter (thin I/O shim contract)
-│   ├── hermes/plugin.py       # Hermes Agent adapter
-│   ├── openclaw/plugin.py     # OpenClaw/Nexus adapter
-│   ├── litellm/callback.py    # LiteLLM callback adapter
-│   ├── codex/wrapper.py       # Codex adapter
-│   └── generic/wrapper.py     # Generic OpenAI-compatible adapter
-├── cli/
-│   └── main.py                # `agency` CLI
-└── server/
-    ├── http.py                # REST API
-    └── mcp.py                 # MCP server
-```
-
-## Adding Agents to Your Roster
-
-### From Agency-Agents (open source)
+Runtime tables are append-only by design. Keep the DB bounded with:
 
 ```bash
-agency source add https://github.com/msitarzewski/agency-agents
-agency sync
-agency roster approve
-agency roster activate
+agency db stats
+agency db trim --older-than-days 30 --dry-run
+agency db trim --older-than-days 30
+agency db trim --keep-last 1000 --no-vacuum
 ```
 
-### Custom Agents
+Trim only touches runtime/audit tables (`runs`, `model_receipts`, `skills_loaded`, `specialists_loaded`, `delegation_events`, `worker_runs`, `finalization_events`). Roster sources, candidates, snapshots, versions, and active agents are preserved.
 
-Add agents directly to the SQLite store via the CLI or Python API:
-
-```python
-from agency_runtime.core.store.sqlite import Store
-
-store = Store()
-store.activate_agent({
-    "slug": "my-specialist",
-    "name": "My Specialist",
-    "description": "Expert at X, Y, Z",
-    "division": "engineering",
-    "source": "custom",
-    "categories": "code,review,testing",
-})
-```
-
-## Testing
+## CLI Reference
 
 ```bash
-# Run all tests
-python -m pytest tests/ -v
+# Setup / health
+agency configure
+agency install [--all|--agent NAME]
+agency on [--agent NAME]
+agency off [--agent NAME]
+agency doctor [--json]
+agency smoke [--all] [--json]
 
-# Run specific test file
-python -m pytest tests/test_config.py -v
+# Config
+agency config show
+agency config set judge.model <model>
+agency config validate
+agency config path
+
+# Roster
+agency source add <url> [--name NAME]
+agency source list
+agency sync [--dry-run|--review|--auto-approve]
+agency roster list
+agency roster diff --json
+agency roster approve <snapshot-id>
+agency roster activate <snapshot-id>
+agency search "security"
+agency route "review this PR"
+
+# Evidence / maintenance
+agency eval delegation --json
+agency smoke --all --json
+agency db stats --json
+agency db trim --older-than-days 30 --json
+
+# Servers / adapters
+agency serve
+agency delegate --backend codex --agent code-reviewer --task "review this diff"
+agency codex exec --help
 ```
-
-104 tests covering: config parsing, provider fallback, header validation, roster operations, routing pipeline, delegation lifecycle, doctor checks, and HTTP server.
 
 ## Python API
 
 ```python
 from agency_runtime.core.selector.pipeline import route
+from agency_runtime.core.store.sqlite import Store
 
-# Route a task to specialists
+store = Store()
 result = route(
-    session_id="my-session",
+    session_id="session-1",
     user_message="Review this PR for security issues",
+    catalog=store.get_active_roster_as_catalog(),
 )
-print(result["selected_ids"])    # ["security-architect", "code-reviewer"]
-print(result["confidence"])     # 0.92
-print(result["status"])         # "applied"
+print(result["selected_ids"])
+print(result["work_units"])
 ```
+
+## Architecture
+
+```text
+agency_runtime/
+  core/
+    config.py              # agency.yaml loader, provider entries, env overrides
+    doctor.py              # health checks
+    installer.py           # host detection, plugin writing, on/off toggle
+    store/sqlite.py        # canonical SQLite store
+    selector/              # routing pipeline, cache, stickiness, judge, policy
+    header/                # six-line header parsing/fill/finalization
+    receipts/              # host + LiteLLM receipt normalization
+    delegation/            # lifecycle, backends, events, ledger
+    evals/                 # deterministic runtime evals
+  adapters/
+    base.py                # shared host adapter contract
+    hermes/plugin.py       # Hermes adapter
+    openclaw/plugin.py     # OpenClaw/Nexus adapter
+    codex/wrapper.py       # Codex wrapper/backend
+    claude/wrapper.py      # Claude wrapper/backend
+    generic/wrapper.py     # generic CLI adapter
+    litellm/callback.py    # LiteLLM callback adapter
+  cli/main.py              # agency CLI
+  server/http.py           # REST API
+  server/mcp.py            # MCP server
+```
+
+## Testing
+
+```bash
+python -m pytest tests/ -q
+python -m pytest tests/test_delegation_enforcement.py tests/test_adapter_parity.py -q
+agency eval delegation --json
+agency smoke --all --json
+```
+
+Coverage includes config parsing, provider fallback, roster sync, routing, header validation/finalization, model receipts, delegation lifecycle, all-host adapter evidence parity, generated plugin imports, deterministic smoke checks, SQLite trimming, doctor checks, and HTTP server endpoints.
+
+## Contributing
+
+1. Keep host adapters thin; shared behavior belongs in `BaseAdapter` or `core/`.
+2. Add tests for every behavior change.
+3. Run `python -m pytest tests/ -q` before opening a PR.
+4. Do not commit credentials, provider keys, or private host paths.
+5. Preserve attribution for upstream roster sources such as `agency-agents`.
 
 ## Requirements
 
 - Python 3.10+
-- `pyyaml`, `requests` (or `urllib` from stdlib)
-- SQLite3 (stdlib)
-- Optional: [Ollama](https://ollama.ai) for free local inference
+- SQLite3 from the Python standard library
+- `pyyaml`
+- Optional: Ollama for local routing fallback
+- Optional: host CLIs such as `codex`, `claude`, `hermes`, or OpenClaw/Nexus
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Compatible with [agency-agents](https://github.com/msitarzewski/agency-agents) (also MIT).
-
-## Contributing
-
-1. Fork the repo
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure `python -m pytest tests/ -v` passes
-5. Submit a pull request
+MIT - see [LICENSE](LICENSE). Compatible with [agency-agents](https://github.com/msitarzewski/agency-agents), also MIT.
 
 ## Related Projects
 
-- [agency-agents](https://github.com/msitarzewski/agency-agents) — Open-source specialist agent roster (MIT)
-- [LiteLLM](https://github.com/BerriAI/litellm) — Multi-provider LLM proxy
-- [Ollama](https://ollama.ai) — Local LLM inference
+- [agency-agents](https://github.com/msitarzewski/agency-agents) - open-source specialist agent roster and prompt ecosystem
+- [LiteLLM](https://github.com/BerriAI/litellm) - multi-provider LLM proxy
+- [Ollama](https://ollama.ai) - local LLM inference

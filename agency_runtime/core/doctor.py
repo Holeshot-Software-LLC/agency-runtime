@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, load_config
+from agency_runtime.core.installer import detect_installed_agents
 
 
 @dataclass
@@ -237,10 +238,11 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
 
         exe = shutil.which(name)
         mod = importlib.util.find_spec(name) is not None
-        installed = bool(exe or mod)
+        installed = bool(exe or mod or detected)
         if installed:
+            location = exe or ("detected host path" if detected else "module")
             report.checks.append(CheckResult(f"adapter_{name}", "pass",
-                f"{name}: installed ({exe or 'module'})"))
+                f"{name}: installed ({location})"))
         elif enabled == "true":
             report.checks.append(CheckResult(f"adapter_{name}", "fail",
                 f"{name}: enabled in config but not found"))
@@ -250,11 +252,12 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
 
     # Detect adapters
     litellm_ok, _ = _http_check(f"{cfg.adapters.litellm.base_url}/health/liveness", timeout=2)
+    detected_hosts = set(detect_installed_agents())
     check_adapter("litellm", cfg.adapters.litellm.enabled, litellm_ok)
-    check_adapter("hermes", cfg.adapters.hermes.enabled, False)
-    check_adapter("openclaw", cfg.adapters.openclaw.enabled, False)
-    check_adapter("codex", cfg.adapters.codex.enabled, False)
-    check_adapter("claude", cfg.adapters.claude.enabled, False)
+    check_adapter("hermes", cfg.adapters.hermes.enabled, "hermes" in detected_hosts)
+    check_adapter("openclaw", cfg.adapters.openclaw.enabled, "openclaw" in detected_hosts)
+    check_adapter("codex", cfg.adapters.codex.enabled, "codex" in detected_hosts)
+    check_adapter("claude", cfg.adapters.claude.enabled, "claude" in detected_hosts)
 
     # ── Provider fallback chain checks ─────────────────────────
     if cfg.providers:

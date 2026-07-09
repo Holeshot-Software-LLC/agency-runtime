@@ -41,7 +41,7 @@ class GenericAdapter(BaseAdapter):
         return self.store.get_skills_for_session(session_id)
 
     def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return []
+        return self.store.get_specialists_for_session(session_id)
 
     def get_delegate_backend(self) -> str | None:
         return "generic_command" if self.is_available() else None

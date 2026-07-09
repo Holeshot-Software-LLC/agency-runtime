@@ -117,7 +117,14 @@ class DelegationLedger:
             # Store.update_delegation currently updates status/backend/error.  Preserve
             # skip_reason in the in-memory contract; the initial insert already holds
             # explicit skipped suggestions when callers use record() directly.
-            self.store.update_delegation(entry.event_id, status=status, backend=entry.backend, error=error)
+            self.store.update_delegation(
+                entry.event_id,
+                status=status,
+                backend=entry.backend,
+                error=error,
+                recommended_agent=entry.recommended_agent,
+                skip_reason=skip_reason,
+            )
         return entry
 
     def record(self, record: Mapping[str, Any]) -> DelegationLedgerEntry:

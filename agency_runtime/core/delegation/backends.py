@@ -92,15 +92,14 @@ class CommandBackend:
 class HermesDelegateBackend(CommandBackend):
     """Hermes CLI backend using delegate-task style dispatch when installed."""
 
-    command: Sequence[str] = ("hermes", "delegate_task")
+    command: Sequence[str] = ("hermes", "-z")
     name: str = "hermes"
 
     def build_command(self, task: str, recommended_agent: str | None = None) -> list[str]:
-        argv = list(self.command)
+        prompt = task
         if recommended_agent:
-            argv.extend(["--agent", recommended_agent])
-        argv.append(task)
-        return argv
+            prompt = f"Use Agency specialist {recommended_agent} when relevant.\n\n{task}"
+        return [*self.command, prompt]
 
 
 @dataclass(slots=True)
@@ -127,6 +126,20 @@ class CodexExecBackend(CommandBackend):
 
     def build_command(self, task: str, recommended_agent: str | None = None) -> list[str]:
         return [*self.command, task]
+
+
+@dataclass(slots=True)
+class ClaudeExecBackend(CommandBackend):
+    """Claude Code CLI backend using non-interactive print mode."""
+
+    command: Sequence[str] = ("claude", "-p", "--output-format", "json")
+    name: str = "claude"
+
+    def build_command(self, task: str, recommended_agent: str | None = None) -> list[str]:
+        prompt = task
+        if recommended_agent:
+            prompt = f"Use Agency specialist {recommended_agent} when relevant.\n\n{task}"
+        return [*self.command, prompt]
 
 
 class BackendRegistry:
@@ -175,6 +188,7 @@ DEFAULT_REGISTRY = BackendRegistry(
         HermesDelegateBackend(),
         OpenClawSessionsBackend(),
         CodexExecBackend(),
+        ClaudeExecBackend(),
     ]
 )
 
@@ -191,6 +205,7 @@ def get_delegate_func(*, preferred: str | None = None, registry: BackendRegistry
 
 __all__ = [
     "BackendRegistry",
+    "ClaudeExecBackend",
     "CodexExecBackend",
     "CommandBackend",
     "DEFAULT_REGISTRY",

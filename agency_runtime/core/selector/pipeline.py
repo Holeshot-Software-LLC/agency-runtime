@@ -169,14 +169,12 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
             "agency_agents_search before any non-trivial work and include "
             "the Agency header in your response."
         )
-        parts.append(HEADER_INSTRUCTION)
-        return "\n".join(parts)
-
-    agents_list = ", ".join(selected)
-    parts.append(
-        f"[AGENCY PREFLIGHT] Specialist routing suggestion "
-        f"(confidence={confidence:.1f}, source={source}): {agents_list}"
-    )
+    else:
+        agents_list = ", ".join(selected)
+        parts.append(
+            f"[AGENCY PREFLIGHT] Specialist routing suggestion "
+            f"(confidence={confidence:.1f}, source={source}): {agents_list}"
+        )
 
     work_units = routing.get("work_units", {})
     if work_units.get("delegate", False) and work_units.get("count", 1) >= 2:

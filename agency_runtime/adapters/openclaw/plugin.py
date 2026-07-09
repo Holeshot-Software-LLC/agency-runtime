@@ -29,15 +29,7 @@ class OpenClawAdapter(BaseAdapter):
         return self.store.get_skills_for_session(session_id)
 
     def report_specialists_loaded(self, session_id: str) -> list[str]:
-        conn = self.store._connect()
-        try:
-            cur = conn.execute(
-                "SELECT agent_slug FROM specialists_loaded WHERE session_id = ? ORDER BY loaded_at",
-                (session_id,),
-            )
-            return [row["agent_slug"] for row in cur.fetchall()]
-        finally:
-            conn.close()
+        return self.store.get_specialists_for_session(session_id)
 
     def get_delegate_backend(self) -> str | None:
         return "sessions_spawn"
@@ -47,14 +39,7 @@ class OpenClawAdapter(BaseAdapter):
 
     def on_message_received(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
         """Typed plugin hook: message received, run preflight."""
-        from agency_runtime.core.selector.pipeline import is_trivial, route_and_build_context
-
-        if is_trivial(user_message):
-            return None
-
-        catalog = self.store.get_active_roster_as_catalog()
-        context = route_and_build_context(session_id, user_message, catalog)
-        return {"context": context} if context else None
+        return self.build_preflight_context(session_id, user_message, model)
 
     def on_response_finalizing(self, draft_text: str, session_id: str = "", model: str = "") -> str:
         """Typed plugin hook: apply header finalization before response sent."""

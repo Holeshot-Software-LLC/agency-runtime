@@ -159,20 +159,22 @@ def test_hermes_adapter_post_api_request_captures_dynamic_model():
 
 
 def test_hermes_adapter_post_api_request_no_response_model():
-    """When response has no model field, adapter should not crash or record garbage."""
+    """When host telemetry lacks model truth, record an honest unavailable receipt."""
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
         from agency_runtime.adapters.hermes.plugin import HermesAdapter
         adapter = HermesAdapter(store=store)
 
-        # No model in response — should silently skip
         adapter.post_api_request_handler(
             response={"choices": []},
             model="task-general",
             session_id="test-session",
         )
         receipt = store.get_model_receipt_for_session("test-session")
-        assert receipt is None
+        assert receipt is not None
+        assert receipt["resolved_model"] == "unavailable"
+        assert receipt["status"] == "unavailable"
+        assert receipt["source"] == "unknown"
 
 
 def test_hermes_adapter_post_tool_call_records_specialist_load():
@@ -241,45 +243,28 @@ def test_header_reflects_loaded_specialist():
         assert filled["agencies_loaded"] == "code-reviewer, codebase-onboarding-engineer"
 
 
-# ─── Compat layer tests ──────────────────────────────────────────────
-
-
-def test_compat_on_post_tool_call_records_specialist():
-    """Compat layer records specialist loads from agency_agents_load."""
-    from agency_runtime.adapters.hermes.compat import (
-        on_post_tool_call, _get_store, _store as _orig_store,
-    )
-    import agency_runtime.adapters.hermes.compat as compat_mod
-
+def test_header_replaces_bare_none_when_store_has_agency_evidence():
+    """Bare 'none' is only valid when the store has no loaded/delegated evidence."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        compat_mod._store = Store(Path(tmpdir) / "test.db")
-        on_post_tool_call(
-            tool_name="agency_agents_load",
-            args={"agent": "reality-checker"},
-            session_id="compat-test",
+        store = Store(Path(tmpdir) / "test.db")
+        store.record_specialist_loaded("s1", "code-reviewer")
+        store.record_delegation(
+            trace_id="trace-1",
+            session_id="s1",
+            recommended_agent="code-reviewer",
+            status="delegated",
+            backend="delegate_task",
         )
-        specialists = compat_mod._store.get_specialists_for_session("compat-test")
-        assert "reality-checker" in specialists
-        compat_mod._store = None  # Reset singleton
 
-
-def test_compat_on_post_api_request_captures_model():
-    """Compat layer captures actual model from response, not SpendLogs."""
-    from agency_runtime.adapters.hermes.compat import on_post_api_request
-    import agency_runtime.adapters.hermes.compat as compat_mod
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        compat_mod._store = Store(Path(tmpdir) / "test.db")
-        on_post_api_request(
-            response={"model": "chatgpt/gpt-5.5-pro-extended"},
-            model="task-chunk-planner",
-            session_id="compat-test",
+        from agency_runtime.core.header.contract import fill_header_fields
+        filled = fill_header_fields(
+            {"agencies_loaded": "none", "agencies_delegated": "none"},
+            "s1",
+            store,
+            "task-chunk-planner",
         )
-        receipt = compat_mod._store.get_model_receipt_for_session("compat-test")
-        assert receipt is not None
-        assert receipt["resolved_model"] == "gpt-5.5-pro-extended"
-        assert receipt["resolved_provider"] == "chatgpt"
-        compat_mod._store = None
+        assert filled["agencies_loaded"] == "code-reviewer"
+        assert filled["agencies_delegated"] == "code-reviewer via delegate_task"
 
 
 def test_store_delegation():

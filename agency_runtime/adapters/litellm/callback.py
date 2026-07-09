@@ -1,7 +1,7 @@
 """LiteLLM adapter — callback for LiteLLM proxy.
 
 When LiteLLM is present, this adapter provides the highest-fidelity
-model receipt data via response headers and SpendLogs.
+model receipt data via response headers and response metadata.
 
 All model names, URLs, and skip patterns come from the centralized config.
 """

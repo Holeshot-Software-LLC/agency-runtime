@@ -2,6 +2,7 @@
 
 from agency_runtime.core.delegation.backends import (
     BackendRegistry,
+    ClaudeExecBackend,
     CodexExecBackend,
     CommandBackend,
     DEFAULT_REGISTRY,
@@ -29,6 +30,7 @@ from agency_runtime.core.delegation.lifecycle import (
 
 __all__ = [
     "BackendRegistry",
+    "ClaudeExecBackend",
     "CodexExecBackend",
     "CommandBackend",
     "DEFAULT_REGISTRY",
