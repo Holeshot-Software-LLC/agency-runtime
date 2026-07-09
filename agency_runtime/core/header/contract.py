@@ -38,6 +38,11 @@ def _is_present(value: Any) -> bool:
     return bool(text) and text.lower() not in _EMPTY_VALUES
 
 
+def _is_noneish(value: Any) -> bool:
+    text = _clean(value).lower().rstrip(".!")
+    return text == "none" or text.startswith(("none ", "none-", "none--"))
+
+
 def _starts_with_header(response_text: str) -> bool:
     lines = response_text.splitlines()
     return bool(lines) and lines[0].startswith(f"{HEADER_FIELDS[0][1]}:")
@@ -250,7 +255,7 @@ def fill_header_fields(fields: Mapping[str, Any] | None, session_id: str, store:
     filled = {key: _clean((fields or {}).get(key, "")) for key in _REQUIRED_KEYS}
 
     agents = _get_loaded_specialists(store, session_id)
-    if agents and filled["agencies_loaded"].lower() == "none":
+    if agents and _is_noneish(filled["agencies_loaded"]):
         filled["agencies_loaded"] = ""
     if not _is_present(filled["agencies_loaded"]):
         filled["agencies_loaded"] = ", ".join(agents) if agents else "none"

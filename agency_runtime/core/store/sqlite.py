@@ -121,7 +121,8 @@ CREATE TABLE IF NOT EXISTS agent_sources (
     url TEXT NOT NULL UNIQUE,
     name TEXT,
     added_at TEXT NOT NULL,
-    enabled INTEGER DEFAULT 1
+    enabled INTEGER DEFAULT 1,
+    trusted_for_auto_approve INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS agent_downloads (
@@ -280,12 +281,25 @@ class Store:
         conn = self._connect()
         try:
             conn.executescript(_SCHEMA_V1)
+            self._ensure_column(
+                conn,
+                "agent_sources",
+                "trusted_for_auto_approve",
+                "INTEGER DEFAULT 0",
+            )
             cur = conn.execute("SELECT version FROM schema_version WHERE version = 1")
             if cur.fetchone() is None:
                 conn.execute("INSERT INTO schema_version (version) VALUES (1)")
             conn.commit()
         finally:
             conn.close()
+
+    @staticmethod
+    def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+        """Add a SQLite column when opening a database created by an older build."""
+        columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in columns:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     @staticmethod
     def _now() -> str:
@@ -405,8 +419,16 @@ class Store:
     # ── Specialists ────────────────────────────────────────────────
 
     def record_specialist_loaded(self, session_id: str, agent_slug: str) -> None:
+        if not session_id or not agent_slug:
+            return
         conn = self._connect()
         try:
+            existing = conn.execute(
+                "SELECT 1 FROM specialists_loaded WHERE session_id = ? AND agent_slug = ? LIMIT 1",
+                (session_id, agent_slug),
+            ).fetchone()
+            if existing:
+                return
             conn.execute(
                 "INSERT INTO specialists_loaded (id, session_id, agent_slug, loaded_at) "
                 "VALUES (?, ?, ?, ?)",
@@ -610,14 +632,25 @@ class Store:
 
     # ── Roster ─────────────────────────────────────────────────────
 
-    def add_agent_source(self, url: str, name: str = "") -> str:
+    def add_agent_source(self, url: str, name: str = "", *, trusted_for_auto_approve: bool = False) -> str:
         source_id = self._uuid()
         conn = self._connect()
         try:
-            conn.execute(
-                "INSERT OR IGNORE INTO agent_sources (id, url, name, added_at) VALUES (?, ?, ?, ?)",
-                (source_id, url, name or url, self._now()),
-            )
+            existing = conn.execute("SELECT id FROM agent_sources WHERE url = ?", (url,)).fetchone()
+            if existing:
+                conn.execute(
+                    "UPDATE agent_sources "
+                    "SET name = COALESCE(NULLIF(?, ''), name), enabled = 1, "
+                    "trusted_for_auto_approve = CASE WHEN ? THEN 1 ELSE trusted_for_auto_approve END "
+                    "WHERE url = ?",
+                    (name, 1 if trusted_for_auto_approve else 0, url),
+                )
+                source_id = existing["id"]
+            else:
+                conn.execute(
+                    "INSERT INTO agent_sources (id, url, name, added_at, trusted_for_auto_approve) VALUES (?, ?, ?, ?, ?)",
+                    (source_id, url, name or url, self._now(), 1 if trusted_for_auto_approve else 0),
+                )
             conn.commit()
             return source_id
         finally:
@@ -691,13 +724,13 @@ class Store:
             conn.close()
 
     def create_snapshot(self, snapshot_id: str, manifest: dict[str, Any]) -> None:
-        agents = self.get_active_roster()
+        snapshot_agent_count = len(manifest.get("candidates", []))
         conn = self._connect()
         try:
             conn.execute(
                 "INSERT INTO agent_snapshots (id, snapshot_id, created_at, agent_count, manifest, activated) "
                 "VALUES (?, ?, ?, ?, ?, 0)",
-                (self._uuid(), snapshot_id, self._now(), len(agents),
+                (self._uuid(), snapshot_id, self._now(), snapshot_agent_count,
                  json.dumps(manifest)),
             )
             conn.commit()

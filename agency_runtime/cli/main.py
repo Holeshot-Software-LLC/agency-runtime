@@ -74,8 +74,11 @@ def _print_json(data: Any) -> None:
 
 
 def _seed_starter_roster(store: Store) -> int:
+    existing_slugs = {agent.get("agent_slug") for agent in store.get_active_roster()}
     count = 0
     for agent in STARTER_ROSTER:
+        if agent["slug"] in existing_slugs:
+            continue
         store.activate_agent(dict(agent))
         count += 1
     store.record_import_event("starter_roster_installed", "", f"count={count}")
@@ -322,8 +325,9 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     print("  [1] local-only — No network, no auto-sync, bundled roster only (safest)")
     print("  [2] standard   — Network enabled, no auto-sync (recommended)")
     print("  [3] power      — Network enabled, manual sync")
-    profile_choice = _prompt_choice(3, default=2)
-    profile = ["local-only", "standard", "power"][profile_choice - 1]
+    print("  [4] yolo       — Network enabled, trusted-source nightly auto-sync")
+    profile_choice = _prompt_choice(4, default=2)
+    profile = ["local-only", "standard", "power", "yolo"][profile_choice - 1]
 
     # Step 3: Adapters
     print("\nStep 3: Host Adapters")
@@ -805,6 +809,16 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if not sources:
         print("No enabled sources configured. Add one with: agency source add <url>", file=sys.stderr)
         return 1
+    if args.auto_approve:
+        untrusted = [source for source in sources if not int(source.get("trusted_for_auto_approve") or 0)]
+        if untrusted:
+            names = ", ".join(str(source.get("name") or source.get("url")) for source in untrusted)
+            print(
+                "Refusing --auto-approve because these sources are not trusted: " + names,
+                file=sys.stderr,
+            )
+            print("Mark an intended source with: agency source add <url> --trusted-for-auto-approve", file=sys.stderr)
+            return 1
     quarantined: list[str] = []
     errors: list[dict[str, str]] = []
     for source in sources:
@@ -812,6 +826,9 @@ def cmd_sync(args: argparse.Namespace) -> int:
             candidates = download_from_source(source["url"])
         except Exception as exc:
             errors.append({"source": source["url"], "error": str(exc)})
+            continue
+        if not candidates:
+            errors.append({"source": source["url"], "error": "source returned zero candidates"})
             continue
         for agent in candidates:
             ok, reason = validate_agent(agent)
@@ -826,13 +843,24 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if args.dry_run:
         _print_json({"dry_run": True, "valid_candidates": quarantined, "errors": errors})
         return 0 if not errors else 2
-    diff = create_roster_diff(store)
-    if args.review or args.auto_approve:
+    if args.auto_approve and errors:
+        _print_json({"errors": errors})
+        return 2
+    if args.auto_approve and not quarantined:
+        print("Refusing --auto-approve because no candidates were quarantined", file=sys.stderr)
+        return 1
+    diff = create_roster_diff(store, candidate_ids=quarantined)
+    if args.review:
         _print_json(diff["diff"])
     if args.auto_approve:
         approve_snapshot(store, diff["snapshot_id"])
         activate_snapshot(store, diff["snapshot_id"])
-        print(f"Activated snapshot {diff['snapshot_id']}")
+        _print_json({
+            "snapshot_id": diff["snapshot_id"],
+            "activated": True,
+            "candidate_count": len(quarantined),
+            "diff": diff["diff"],
+        })
     else:
         print(f"Created snapshot {diff['snapshot_id']} from {len(quarantined)} candidates")
         print("Approve with: agency roster approve " + diff["snapshot_id"])
@@ -843,7 +871,11 @@ def cmd_sync(args: argparse.Namespace) -> int:
 
 
 def cmd_source_add(args: argparse.Namespace) -> int:
-    source_id = _store().add_agent_source(args.url, args.name or args.url)
+    source_id = _store().add_agent_source(
+        args.url,
+        args.name or args.url,
+        trusted_for_auto_approve=args.trusted_for_auto_approve,
+    )
     print(source_id)
     return 0
 
@@ -1056,7 +1088,7 @@ def build_parser() -> argparse.ArgumentParser:
     # configure
     configure = sub.add_parser("configure", help="Guided setup wizard — writes agency.yaml")
     configure.add_argument("--non-interactive", action="store_true", help="Write detected config without prompts")
-    configure.add_argument("--profile", choices=["local-only", "standard", "power"], default=None)
+    configure.add_argument("--profile", choices=sorted(PROFILES), default=None)
     configure.add_argument("--force", action="store_true", help="Overwrite existing config")
     configure.set_defaults(func=cmd_configure)
 
@@ -1105,6 +1137,11 @@ def build_parser() -> argparse.ArgumentParser:
     source_add = source_sub.add_parser("add", help="Add a roster source")
     source_add.add_argument("url")
     source_add.add_argument("--name", default="")
+    source_add.add_argument(
+        "--trusted-for-auto-approve",
+        action="store_true",
+        help="Allow this source to be used with sync --auto-approve automation",
+    )
     source_add.set_defaults(func=cmd_source_add)
     source_list = source_sub.add_parser("list", help="List roster sources")
     source_list.set_defaults(func=cmd_source_list)

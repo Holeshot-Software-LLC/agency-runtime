@@ -70,9 +70,9 @@ def test_pre_verify_rejects_nontrivial_turn_with_no_loaded_specialist(monkeypatc
 
     def fake_route(session_id: str, user_message: str, catalog, **kwargs):
         return {
-            "selected_ids": ["code-reviewer"],
-            "confidence": 0.95,
-            "status": "applied",
+            "selected_ids": [],
+            "confidence": 0.0,
+            "status": "no_match",
             "work_units": {"delegate": False, "count": 1},
         }
 
@@ -93,6 +93,25 @@ def test_pre_verify_rejects_nontrivial_turn_with_no_loaded_specialist(monkeypatc
     assert result is not None
     assert result["action"] == "continue"
     assert "Agency/Agencies loaded" in result["message"]
+
+
+def test_pre_llm_call_seeds_starter_roster_and_records_default_specialists(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    adapter = HermesAdapter(store=store)
+
+    result = adapter.pre_llm_call_handler(
+        "coding-session",
+        "fix the routing bug and add tests",
+        "task-chunk-planner",
+    )
+
+    assert result is not None
+    assert "senior-developer" in result["context"]
+    assert "code-reviewer" in result["context"]
+    assert len(store.get_active_roster_as_catalog()) >= 4
+    loaded = store.get_specialists_for_session("coding-session")
+    assert "senior-developer" in loaded
+    assert "code-reviewer" in loaded
 
 
 def test_pre_llm_call_records_suggested_delegations(monkeypatch, tmp_path: Path) -> None:

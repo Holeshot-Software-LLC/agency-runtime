@@ -14,8 +14,9 @@ def _clean(value: Any, default: str = "") -> str:
     return str(value).strip()
 
 
-def _is_bare_none(value: str) -> bool:
-    return value.strip().lower().rstrip(".!") == "none"
+def _is_noneish_agency_line(value: str) -> bool:
+    text = value.strip().lower().rstrip(".!")
+    return text == "none" or text.startswith(("none ", "none-", "none--"))
 
 
 def _is_non_actionable_delegation_none(value: str) -> bool:
@@ -201,6 +202,37 @@ class BaseAdapter(ABC):
             status=receipt.get("status", "success"),
         )
 
+    def _selected_catalog_agents(self, catalog: list[dict[str, Any]], routing: dict[str, Any]) -> list[dict[str, Any]]:
+        """Return routed agents that exist in the active catalog, capped for context size."""
+        selected_ids = [str(agent_id) for agent_id in routing.get("selected_ids", []) if agent_id]
+        if not selected_ids:
+            return []
+        max_selected = 5
+        by_slug = {str(agent.get("slug") or ""): agent for agent in catalog}
+        selected: list[dict[str, Any]] = []
+        for agent_id in selected_ids:
+            agent = by_slug.get(agent_id)
+            if agent and agent not in selected:
+                selected.append(agent)
+            if len(selected) >= max_selected:
+                break
+        return selected
+
+    def _format_loaded_specialists(self, agents: list[dict[str, Any]]) -> str:
+        """Render selected roster entries as injected specialist context."""
+        lines = ["[AGENCY LOADED] Active roster specialist context loaded for this turn:"]
+        for agent in agents:
+            capabilities = agent.get("capabilities") if isinstance(agent.get("capabilities"), list) else []
+            capability_text = f" Capabilities: {', '.join(str(item) for item in capabilities[:4])}." if capabilities else ""
+            lines.append(
+                "- "
+                + str(agent.get("slug") or "")
+                + ": "
+                + str(agent.get("description") or agent.get("name") or "")
+                + capability_text
+            )
+        return "\n".join(lines)
+
     def build_preflight_context(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
         """Run selector preflight and persist suggested delegations."""
         del model
@@ -213,9 +245,19 @@ class BaseAdapter(ABC):
         if session_id:
             self._nontrivial_sessions.add(session_id)
         catalog = self.store.get_active_roster_as_catalog()
+        if not catalog:
+            from agency_runtime.core.installer import seed_starter_roster
+
+            seed_starter_roster(self.store)
+            catalog = self.store.get_active_roster_as_catalog()
         routing = route(session_id, user_message, catalog)
         record_suggested_delegations(self.store, session_id=session_id, host=self.host_name, routing=routing)
         context = build_routing_context(routing)
+        selected = self._selected_catalog_agents(catalog, routing)
+        if selected:
+            for agent in selected:
+                self.store.record_specialist_loaded(session_id, str(agent.get("slug") or ""))
+            context = context + "\n\n" + self._format_loaded_specialists(selected)
         return {"context": context} if context else None
 
     def pre_llm_call_handler(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
@@ -247,13 +289,15 @@ class BaseAdapter(ABC):
         specialists = self.report_specialists_loaded(session_id)
         open_delegations = self._suggested_delegations(session_id)
         requires_agency_evidence = bool(session_id and session_id in self._nontrivial_sessions) or bool(open_delegations)
-        if requires_agency_evidence and _is_bare_none(loaded) and not specialists and attempt < 2:
+        if requires_agency_evidence and _is_noneish_agency_line(loaded) and attempt < 2:
+            actual = ", ".join(specialists) if specialists else "the actual loaded specialist"
             return {
                 "action": "continue",
                 "message": (
                     "AGENCY HEADER INVALID: This was a non-trivial turn but "
-                    "Agency/Agencies loaded is 'none' and no specialist load was recorded. "
-                    "Call agency_agents_search and agency_agents_load, then rewrite with the actual loaded specialist."
+                    "Agency/Agencies loaded starts with 'none'. "
+                    f"Rewrite the header with {actual}. If no specialist context is loaded, "
+                    "call agency_agents_search and agency_agents_load first."
                 ),
             }
 

@@ -163,12 +163,19 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
     parts: list[str] = []
 
     if not selected or confidence < cfg.selector.min_confidence:
-        parts.append(
-            f"[AGENCY PREFLIGHT] No high-confidence specialist match found "
-            f"(status={status}). You must still query "
-            "agency_agents_search before any non-trivial work and include "
-            "the Agency header in your response."
-        )
+        if selected:
+            agents_list = ", ".join(selected)
+            parts.append(
+                f"[AGENCY PREFLIGHT] Default specialist routing suggestion "
+                f"(confidence={confidence:.1f}, source={source}, status={status}): {agents_list}"
+            )
+        else:
+            parts.append(
+                f"[AGENCY PREFLIGHT] No high-confidence specialist match found "
+                f"(status={status}). You must still query "
+                "agency_agents_search before any non-trivial work and include "
+                "the Agency header in your response."
+            )
     else:
         agents_list = ", ".join(selected)
         parts.append(

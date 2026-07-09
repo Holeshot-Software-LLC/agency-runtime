@@ -162,18 +162,7 @@ def _try_provider(
 
     parsed = parse_json_response(content)
     if parsed is None:
-        # Parse failed — return token fallback with this provider's name
-        fallback_ids = [a.get("slug", "") for a in candidates[:max_sel]]
-        if fallback_ids:
-            return {
-                "selected_ids": fallback_ids,
-                "confidence": 0.3,
-                "latency_ms": int(elapsed * 1000),
-                "status": "token_fallback",
-                "provider": f"{provider.name} (parse failed)",
-                "candidate_count": candidate_count,
-                "top_score": top_score,
-            }
+        # Parse failed; fall through to the deterministic token-only fallback.
         return None
 
     selected = parsed.get("selected_ids") or parsed.get("selected") or []

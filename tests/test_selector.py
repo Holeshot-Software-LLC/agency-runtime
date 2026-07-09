@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from agency_runtime.core.selector.candidate_narrow import tokenize, score_agent, pre_narrow
 from agency_runtime.core.selector.domain_expansion import expand_query
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-from agency_runtime.core.selector.pipeline import is_trivial, refine_query
+from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, refine_query
+from agency_runtime.core.selector.policy import detect_actions
 from agency_runtime.core.selector.cache import cache_key, cache_put, cache_get, clear_cache
 
 
@@ -145,6 +146,27 @@ def test_is_trivial_short():
 def test_is_trivial_meaningful():
     assert is_trivial("Please review the pull request") is False
     assert is_trivial("Fix the authentication bug in the login flow") is False
+
+
+def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
+    monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing-policy.yaml"))
+    matched_actions, companion_ids = detect_actions("fix the routing bug and add tests")
+
+    assert "CODING" in matched_actions
+    assert "senior-developer" in companion_ids
+    assert "code-reviewer" in companion_ids
+
+
+def test_routing_context_surfaces_low_confidence_default_agents():
+    context = build_routing_context({
+        "selected_ids": ["senior-developer", "code-reviewer"],
+        "confidence": 0.3,
+        "status": "token_fallback",
+        "work_units": {"delegate": False, "count": 1},
+    })
+
+    assert "Default specialist routing suggestion" in context
+    assert "senior-developer, code-reviewer" in context
 
 
 # ─── Query refinement ───────────────────────────────────────────────

@@ -85,7 +85,13 @@ def _normalize_agent(agent: dict[str, Any]) -> dict[str, Any]:
         normalized[field] = _json_list(normalized.get(field))
     if not normalized.get("categories"):
         normalized["categories"] = categorize_agent(normalized)
-    body = str(normalized.get("prompt_body") or normalized.get("prompt") or normalized.get("content") or "")
+    body = str(
+        normalized.get("prompt_body")
+        or normalized.get("prompt")
+        or normalized.get("body")
+        or normalized.get("content")
+        or ""
+    )
     normalized["prompt_body"] = body
     normalized["content"] = str(normalized.get("content") or body or json.dumps(normalized, sort_keys=True))
     normalized["hash"] = str(normalized.get("hash") or _hash_text(normalized["content"]))
@@ -139,6 +145,8 @@ def _read_url(url: str) -> list[tuple[str, str]]:
     if parsed.scheme in ("http", "https"):
         with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310 - user-controlled roster source by design.
             data = response.read().decode("utf-8")
+        if data.lstrip().lower().startswith(("<!doctype html", "<html")):
+            raise RosterSyncError("roster source returned HTML; use a raw file, local directory, or generated agents.json")
         return [(url, data)]
 
     path = Path(parsed.path if parsed.scheme == "file" else url).expanduser()
@@ -259,29 +267,48 @@ def quarantine_candidate(agent: dict[str, Any], source_id: str, store: Store) ->
     return candidate_id
 
 
-def _load_candidate_agents(store: Store, statuses: tuple[str, ...] = ("approved", "pending")) -> list[dict[str, Any]]:
-    placeholders = ",".join("?" for _ in statuses)
+def _load_candidate_agents(
+    store: Store,
+    statuses: tuple[str, ...] = ("approved", "pending"),
+    candidate_ids: list[str] | tuple[str, ...] | None = None,
+) -> list[dict[str, Any]]:
     conn = _connect(store)
     try:
+        if candidate_ids is None:
+            placeholders = ",".join("?" for _ in statuses)
+            where = f"c.status IN ({placeholders})"
+            params: tuple[Any, ...] = statuses
+        else:
+            if not candidate_ids:
+                return []
+            placeholders = ",".join("?" for _ in candidate_ids)
+            where = f"c.id IN ({placeholders})"
+            params = tuple(candidate_ids)
         cur = conn.execute(
             f"""
             SELECT c.*, d.content
             FROM agent_candidates c
             LEFT JOIN agent_downloads d ON d.id = c.download_id
-            WHERE c.status IN ({placeholders})
+            WHERE {where}
             ORDER BY CASE c.status WHEN 'approved' THEN 0 ELSE 1 END, c.quarantined_at DESC
             """,
-            statuses,
+            params,
         )
         latest: dict[str, dict[str, Any]] = {}
         for row in cur.fetchall():
             item = dict(row)
-            item["categories"] = _json_list(item.get("categories"))
-            item["capabilities"] = _json_list(item.get("capabilities"))
-            item["tool_affinity"] = _json_list(item.get("tool_affinity"))
-            item["prompt_body"] = item.get("content") or ""
-            item["content"] = item.get("content") or ""
-            item["slug"] = item["slug"]
+            content = str(item.get("content") or "")
+            try:
+                parsed = parse_agent_file(content) if content else {}
+            except Exception:
+                parsed = {}
+            item = {**parsed, **item}
+            item["description"] = str(item.get("description") or parsed.get("description") or "")
+            item["categories"] = _json_list(item.get("categories") or parsed.get("categories"))
+            item["capabilities"] = _json_list(item.get("capabilities") or parsed.get("capabilities"))
+            item["tool_affinity"] = _json_list(item.get("tool_affinity") or parsed.get("tool_affinity"))
+            item["prompt_body"] = str(parsed.get("prompt_body") or content)
+            item["content"] = content
             latest.setdefault(item["slug"], item)
         return list(latest.values())
     finally:
@@ -292,10 +319,10 @@ def _active_by_slug(store: Store) -> dict[str, dict[str, Any]]:
     return {agent["agent_slug"]: agent for agent in store.get_active_roster()}
 
 
-def create_roster_diff(store: Store) -> dict[str, Any]:
+def create_roster_diff(store: Store, candidate_ids: list[str] | tuple[str, ...] | None = None) -> dict[str, Any]:
     """Create a snapshot diff of quarantined/approved candidates vs active roster."""
 
-    candidates = _load_candidate_agents(store)
+    candidates = _load_candidate_agents(store, candidate_ids=candidate_ids)
     active = _active_by_slug(store)
     candidate_by_slug = {agent["slug"]: agent for agent in candidates}
     added: list[str] = []
@@ -336,6 +363,7 @@ def create_roster_diff(store: Store) -> dict[str, Any]:
         "snapshot_id": snapshot_id,
         "created_at": _now(),
         "approved": False,
+        "candidate_ids": [str(agent.get("id")) for agent in candidates if agent.get("id")],
         "candidates": candidates,
         "diff": {
             "added": sorted(added),
@@ -369,14 +397,25 @@ def _get_snapshot(store: Store, snapshot_id: str) -> dict[str, Any]:
 
 
 def approve_snapshot(store: Store, snapshot_id: str) -> None:
-    """Mark a roster snapshot approved for activation."""
+    """Mark only the candidates captured by a roster snapshot as approved."""
 
     manifest = _get_snapshot(store, snapshot_id)
     manifest["approved"] = True
+    candidate_ids = [str(item) for item in manifest.get("candidate_ids", []) if item]
     conn = _connect(store)
     try:
         conn.execute("UPDATE agent_snapshots SET manifest = ? WHERE snapshot_id = ?", (json.dumps(manifest, sort_keys=True), snapshot_id))
-        conn.execute("UPDATE agent_candidates SET status = 'approved' WHERE status = 'pending'")
+        if candidate_ids:
+            placeholders = ",".join("?" for _ in candidate_ids)
+            conn.execute(f"UPDATE agent_candidates SET status = 'approved' WHERE id IN ({placeholders})", candidate_ids)
+        else:
+            slugs = [str(agent.get("slug")) for agent in manifest.get("candidates", []) if agent.get("slug")]
+            if slugs:
+                placeholders = ",".join("?" for _ in slugs)
+                conn.execute(
+                    f"UPDATE agent_candidates SET status = 'approved' WHERE slug IN ({placeholders}) AND status = 'pending'",
+                    slugs,
+                )
         conn.commit()
     finally:
         conn.close()
@@ -390,8 +429,16 @@ def activate_snapshot(store: Store, snapshot_id: str) -> None:
     if not manifest.get("approved"):
         raise RosterSyncError(f"snapshot {snapshot_id} must be approved before activation")
     candidates = [_normalize_agent(agent) for agent in manifest.get("candidates", [])]
+    if not candidates:
+        raise RosterSyncError(f"snapshot {snapshot_id} contains no agents to activate")
+    candidate_ids = [str(item) for item in manifest.get("candidate_ids", []) if item]
+    active_slugs = [agent["slug"] for agent in candidates]
+    placeholders = ",".join("?" for _ in active_slugs)
+    id_placeholders = ",".join("?" for _ in candidate_ids)
     conn = _connect(store)
     try:
+        conn.execute(f"DELETE FROM agent_active WHERE agent_slug NOT IN ({placeholders})", active_slugs)
+        conn.execute(f"DELETE FROM agent_categories WHERE agent_slug NOT IN ({placeholders})", active_slugs)
         for agent in candidates:
             conn.execute(
                 "INSERT OR REPLACE INTO agent_active "
@@ -422,8 +469,11 @@ def activate_snapshot(store: Store, snapshot_id: str) -> None:
                     "INSERT OR IGNORE INTO agent_categories (id, agent_slug, category) VALUES (?, ?, ?)",
                     (_uuid(store), agent["slug"], category),
                 )
-            conn.execute("UPDATE agent_candidates SET status = 'activated' WHERE slug = ?", (agent["slug"],))
+            if not candidate_ids:
+                conn.execute("UPDATE agent_candidates SET status = 'activated' WHERE slug = ?", (agent["slug"],))
             conn.execute("UPDATE agent_downloads SET status = 'activated' WHERE slug = ?", (agent["slug"],))
+        if candidate_ids:
+            conn.execute(f"UPDATE agent_candidates SET status = 'activated' WHERE id IN ({id_placeholders})", candidate_ids)
         conn.execute("UPDATE agent_snapshots SET activated = 1 WHERE snapshot_id = ?", (snapshot_id,))
         conn.commit()
     finally:

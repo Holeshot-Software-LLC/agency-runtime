@@ -244,9 +244,12 @@ def toggle_agency(host: str, enabled: bool) -> dict[str, Any]:
 
 
 def seed_starter_roster(store: Store) -> int:
-    """Seed the starter roster into the store."""
+    """Seed bundled starter agents without overwriting a synced active roster."""
+    existing_slugs = {agent.get("agent_slug") for agent in store.get_active_roster()}
     count = 0
     for agent in STARTER_ROSTER:
+        if agent["slug"] in existing_slugs:
+            continue
         store.activate_agent(dict(agent))
         count += 1
     store.record_import_event("starter_roster_installed", "", f"count={count}")

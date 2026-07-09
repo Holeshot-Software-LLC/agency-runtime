@@ -20,7 +20,7 @@ from agency_runtime.core.receipts.normalize import (
     build_unavailable_receipt,
 )
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.core.policy.profiles import LOCAL_ONLY, STANDARD, POWER
+from agency_runtime.core.policy.profiles import LOCAL_ONLY, STANDARD, POWER, YOLO
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 
 
@@ -267,6 +267,21 @@ def test_header_replaces_bare_none_when_store_has_agency_evidence():
         assert filled["agencies_delegated"] == "code-reviewer via delegate_task"
 
 
+def test_header_replaces_noneish_loaded_reason_when_store_has_agency_evidence():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        store.record_specialist_loaded("s1", "senior-developer")
+
+        from agency_runtime.core.header.contract import fill_header_fields
+        filled = fill_header_fields(
+            {"agencies_loaded": "none -- direct implementation"},
+            "s1",
+            store,
+            "task-chunk-planner",
+        )
+        assert filled["agencies_loaded"] == "senior-developer"
+
+
 def test_store_delegation():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
@@ -317,6 +332,13 @@ def test_standard_profile():
 
 def test_power_profile():
     assert POWER.network_enabled is True
+
+
+def test_yolo_profile_enables_nightly_auto_sync():
+    assert YOLO.network_enabled is True
+    assert YOLO.auto_sync is True
+    assert YOLO.auto_enable_new_agents is True
+    assert YOLO.sync_schedule == "nightly"
 
 
 def test_starter_roster():

@@ -40,7 +40,7 @@ Agency Runtime makes those decisions visible and durable:
 Use them together:
 
 ```bash
-agency source add https://github.com/msitarzewski/agency-agents --name agency-agents
+agency source add /path/to/agency-agents/integrations/hermes/agency-agents-router/data/agents.json --name agency-agents
 agency sync --review
 agency roster approve <snapshot-id>
 agency roster activate <snapshot-id>
@@ -51,7 +51,7 @@ agency roster activate <snapshot-id>
 ### From GitHub
 
 ```bash
-python -m pip install "agency-runtime @ git+https://github.com/Holeshot-Software-LLC/agency-runtime.git"
+python -m pip install "agency-runtime @ git+https://github.com/<owner>/agency-runtime.git"
 agency configure --non-interactive --profile standard
 agency install --all
 agency doctor
@@ -61,7 +61,7 @@ agency smoke --all
 ### From a Local Clone
 
 ```bash
-git clone https://github.com/Holeshot-Software-LLC/agency-runtime.git
+git clone https://github.com/<owner>/agency-runtime.git
 cd agency-runtime
 python -m pip install -e ".[dev]"
 python -m pytest tests/ -q
@@ -76,7 +76,7 @@ agency smoke --all
 Use this prompt in Codex, Claude Code, Hermes, OpenClaw/Nexus, or another coding agent:
 
 ```text
-Install Agency Runtime from https://github.com/Holeshot-Software-LLC/agency-runtime.
+Install Agency Runtime from https://github.com/<owner>/agency-runtime.
 Use the repo README as source of truth. Install it in editable mode if working from a clone, run `agency configure --non-interactive --profile standard`, then run `agency install --all`, `agency doctor`, `agency smoke --all`, `agency eval delegation --json`, and `agency route "review this PR for security issues"`.
 If the package is already cloned locally, do not reclone it; update/install from that working tree. Preserve existing config and do not delete roster data. Report the exact plugin paths wired, test results, and any host that was not detected.
 ```
@@ -166,6 +166,7 @@ Profiles:
 agency configure --profile local-only   # local/free-first, no network sync
 agency configure --profile standard     # default detected providers, manual roster activation
 agency configure --profile power        # power-user defaults, still approval-gated
+agency configure --profile yolo         # trusted-source nightly automation mode
 ```
 
 ## Roster Sync Job
@@ -173,7 +174,7 @@ agency configure --profile power        # power-user defaults, still approval-ga
 Agency Runtime's built-in roster sync job is `agency sync`. It is intentionally approval-gated:
 
 ```bash
-agency source add https://github.com/msitarzewski/agency-agents --name agency-agents
+agency source add /path/to/agency-agents/integrations/hermes/agency-agents-router/data/agents.json --name agency-agents
 agency sync --dry-run                  # fetch + validate without writing candidates
 agency sync --review                   # quarantine candidates and show snapshot diff
 agency roster approve <snapshot-id>    # approve the generated snapshot
@@ -184,8 +185,11 @@ agency roster list
 For trusted automation, use:
 
 ```bash
+agency source add /path/to/agents.json --name agency-agents --trusted-for-auto-approve
 agency sync --auto-approve
 ```
+
+`--auto-approve` fails closed unless every enabled source is explicitly marked `--trusted-for-auto-approve`, every source fetches and validates successfully, and at least one candidate is quarantined. Use a raw JSON/YAML/Markdown file, a local directory, or a generated `agents.json`; regular GitHub repository pages are HTML and are rejected.
 
 The sync pipeline is:
 
@@ -197,7 +201,7 @@ The sync pipeline is:
 6. **Activate** - active roster rows are replaced from the approved snapshot.
 7. **Audit** - import events, snapshots, active agents, and versions remain in SQLite.
 
-No sync path silently enables arbitrary upstream agents unless you explicitly run `--auto-approve` or approve/activate the snapshot.
+No sync path silently enables arbitrary upstream agents unless you explicitly run `--auto-approve` or approve/activate the snapshot. `agency install` seeds bundled starter agents only when those slugs are missing, so reinstalling host plugins does not downgrade agents that were already activated from a trusted synced roster.
 
 ## How Routing Works
 
@@ -286,7 +290,7 @@ agency config validate
 agency config path
 
 # Roster
-agency source add <url> [--name NAME]
+agency source add <url> [--name NAME] [--trusted-for-auto-approve]
 agency source list
 agency sync [--dry-run|--review|--auto-approve]
 agency roster list

@@ -120,17 +120,17 @@ def test_resolve_api_key_priority():
     assert jc.resolve_api_key() == "direct-key"
 
 
-def test_no_user_specific_defaults():
-    """Ensure no Lucas-specific identifiers are in the defaults."""
+def test_no_private_operator_defaults():
+    """Ensure no private operator-specific identifiers are in defaults."""
     cfg = load_config(path="/nonexistent", reload=True)
     assert cfg.judge.model != "task-agency-router"
     assert "task-agency-router" not in cfg.adapters.litellm.skip_models
 
 
-def test_profile_has_no_lucas():
-    """LUCAS profile must not exist in the public API."""
+def test_profile_has_no_private_operator_name():
+    """Private operator profiles must not exist in the public API."""
     from agency_runtime.core.policy.profiles import PROFILES
-    assert "lucas" not in PROFILES
+    assert "private-operator" not in PROFILES
 
 
 def test_adapter_entry_stores_api_key_directly():

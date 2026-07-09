@@ -48,12 +48,21 @@ POWER = InstallProfile(
     sync_schedule="manual",
 )
 
+YOLO = InstallProfile(
+    name="yolo",
+    network_enabled=True,
+    auto_sync=True,
+    auto_enable_new_agents=True,
+    sync_schedule="nightly",
+)
+
 DEFAULT_PROFILE = STANDARD
 
 PROFILES: dict[str, InstallProfile] = {
     LOCAL_ONLY.name: LOCAL_ONLY,
     STANDARD.name: STANDARD,
     POWER.name: POWER,
+    YOLO.name: YOLO,
 }
 
 

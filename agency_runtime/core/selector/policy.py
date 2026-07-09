@@ -14,6 +14,58 @@ logger = logging.getLogger("agency_runtime.selector.policy")
 
 _DEFAULT_POLICY_PATH = Path.home() / ".agency-runtime" / "companion_policy.yaml"  # fallback
 
+_BUNDLED_COMPANION_POLICY: dict[str, Any] = {
+    "actions": {
+        "DEFAULT": {
+            "triggers": ["_fallback_"],
+            "always_include": [
+                {"slug": "workflow-architect"},
+            ],
+        },
+        "CODING": {
+            "triggers": [
+                "bug",
+                "build",
+                "code",
+                "coding",
+                "debug",
+                "fix",
+                "implement",
+                "refactor",
+                "test",
+            ],
+            "always_include": [
+                {"slug": "senior-developer"},
+                {"slug": "code-reviewer"},
+            ],
+        },
+        "DOCUMENTATION": {
+            "triggers": ["doc", "docs", "documentation", "handoff", "readme", "runbook", "write"],
+            "always_include": [
+                {"slug": "technical-writer"},
+            ],
+        },
+        "PLANNING": {
+            "triggers": ["architect", "architecture", "plan", "workflow"],
+            "always_include": [
+                {"slug": "workflow-architect"},
+            ],
+        },
+    },
+    "division_anchors": {
+        "engineering": {
+            "keywords": ["code", "bug", "debug", "implement", "test"],
+            "anchor": "senior-developer",
+            "conditional": [["code-reviewer", "review"]],
+        },
+        "documentation": {
+            "keywords": ["doc", "docs", "handoff", "readme"],
+            "anchor": "technical-writer",
+            "conditional": [],
+        },
+    },
+}
+
 
 def _resolve_policy_path() -> Path:
     """Resolve policy path from centralized config, env, or default."""
@@ -42,7 +94,7 @@ def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
         mtime = path.stat().st_mtime
     except OSError:
         logger.debug("companion policy not found at %s", path)
-        return _COMPANION_POLICY or {}
+        return _COMPANION_POLICY or _BUNDLED_COMPANION_POLICY
 
     if _COMPANION_POLICY is None or mtime != _POLICY_MTIME:
         try:

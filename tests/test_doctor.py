@@ -121,6 +121,22 @@ def test_doctor_uses_host_detection_for_path_only_hosts(monkeypatch):
         assert "not installed" not in openclaw_check.message
 
 
+def test_doctor_accepts_yolo_profile():
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = AgencyConfig(
+            store=StoreConfig(db_path=f"{tmp}/test.db"),
+            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
+            profile="yolo",
+        )
+        store = Store(cfg.store.resolved_path())
+        for agent in STARTER_ROSTER:
+            store.activate_agent(dict(agent))
+
+        report = run_doctor(cfg)
+        profile_check = [c for c in report.checks if c.name == "config_profile"][0]
+        assert profile_check.status == "pass"
+
+
 def test_smoke_all_exercises_generated_host_plugins(monkeypatch):
     """Smoke --all validates every generated host plugin without touching real HOME."""
     with tempfile.TemporaryDirectory() as tmp:

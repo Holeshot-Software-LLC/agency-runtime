@@ -17,6 +17,7 @@ from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, load_config
 from agency_runtime.core.installer import detect_installed_agents
+from agency_runtime.core.policy.profiles import PROFILES
 
 
 @dataclass
@@ -100,8 +101,7 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
     else:
         report.checks.append(CheckResult("config_file", "warn", "No config file found — using bundled defaults"))
 
-    valid_profiles = {"local-only", "standard", "power"}
-    if cfg.profile in valid_profiles:
+    if cfg.profile in PROFILES:
         report.checks.append(CheckResult("config_profile", "pass", f"Profile: {cfg.profile}"))
     else:
         report.checks.append(CheckResult("config_profile", "fail", f"Unknown profile: {cfg.profile}"))

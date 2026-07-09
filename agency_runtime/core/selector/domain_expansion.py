@@ -23,8 +23,7 @@ _DOMAIN_EXPANSIONS: dict[str, list[str]] = {
     "slack": ["messaging platform", "real-time communication", "bot development"],
     "warden": ["ai assistant", "system monitoring", "automation"],
     "scout": ["ai agent", "workbench", "code assistance"],
-    "stonks": ["financial analysis", "trading", "data visualization"],
-    "holeshot": ["software product", "application architecture", "startup"],
+    "finance automation": ["financial analysis", "trading", "data visualization"],
 }
 
 
