@@ -175,6 +175,72 @@ def test_hermes_adapter_post_api_request_no_response_model():
         assert receipt is None
 
 
+def test_hermes_adapter_post_tool_call_records_specialist_load():
+    """Loading a specialist via agency_agents_load should record it in specialists_loaded."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        from agency_runtime.adapters.hermes.plugin import HermesAdapter
+        adapter = HermesAdapter(store=store)
+
+        adapter.post_tool_call_handler(
+            tool_name="agency_agents_load",
+            args={"agent": "codebase-onboarding-engineer"},
+            session_id="test-session",
+        )
+
+        specialists = store.get_specialists_for_session("test-session")
+        assert len(specialists) == 1
+        assert specialists[0] == "codebase-onboarding-engineer"
+
+
+def test_hermes_adapter_post_tool_call_records_skill_load():
+    """Loading a skill via skill_view should record it in skills_loaded."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        from agency_runtime.adapters.hermes.plugin import HermesAdapter
+        adapter = HermesAdapter(store=store)
+
+        adapter.post_tool_call_handler(
+            tool_name="skill_view",
+            args={"name": "graphify"},
+            session_id="test-session",
+        )
+
+        skills = store.get_skills_for_session("test-session")
+        assert "graphify" in skills
+
+
+def test_hermes_adapter_post_tool_call_ignores_unknown_tools():
+    """Irrelevant tool calls should not crash or pollute the store."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        from agency_runtime.adapters.hermes.plugin import HermesAdapter
+        adapter = HermesAdapter(store=store)
+
+        adapter.post_tool_call_handler(
+            tool_name="terminal",
+            args={"command": "ls"},
+            session_id="test-session",
+        )
+
+        specialists = store.get_specialists_for_session("test-session")
+        skills = store.get_skills_for_session("test-session")
+        assert len(specialists) == 0
+        assert len(skills) == 0
+
+
+def test_header_reflects_loaded_specialist():
+    """The header fill pipeline should report specialists from specialists_loaded, not default to 'none'."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        store.record_specialist_loaded("s1", "code-reviewer")
+        store.record_specialist_loaded("s1", "codebase-onboarding-engineer")
+
+        from agency_runtime.core.header.contract import fill_header_fields
+        filled = fill_header_fields({}, "s1", store, "task-chunk-planner")
+        assert filled["agencies_loaded"] == "code-reviewer, codebase-onboarding-engineer"
+
+
 def test_store_delegation():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")

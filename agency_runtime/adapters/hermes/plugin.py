@@ -133,6 +133,42 @@ class HermesAdapter(BaseAdapter):
             status="success",
         )
 
+    def post_tool_call_handler(self, **kwargs: Any) -> None:
+        """Record skills and specialists loaded via tool calls.
+
+        Hermes exposes these tool names:
+        - skill_view → skill loaded
+        - agency_agents_load → specialist loaded into context
+        - agency_agents_delegate → specialist delegated (worker spawned)
+        - agency_agents_inspect → specialist loaded into context
+        """
+        tool_name = kwargs.get("tool_name") or ""
+        args = kwargs.get("args") if isinstance(kwargs.get("args"), dict) else {}
+        session_id = _clean(kwargs.get("session_id"))
+
+        if tool_name == "skill_view":
+            skill_name = args.get("name") or ""
+            if skill_name:
+                self.store.record_skill_loaded(session_id, skill_name)
+
+        elif tool_name in ("agency_agents_load", "agency_agents_inspect"):
+            agent = args.get("agent") or args.get("slug") or ""
+            if agent:
+                self.store.record_specialist_loaded(session_id, agent)
+
+        elif tool_name == "agency_agents_delegate":
+            agent = args.get("agent") or args.get("slug") or ""
+            if agent:
+                self.store.record_specialist_loaded(session_id, agent)
+
+        elif tool_name == "delegate_task":
+            # delegate_task has different arg structure
+            goal = args.get("goal") or ""
+            # Extract agent from the goal context if available
+            agent = args.get("agent") or ""
+            if agent:
+                self.store.record_specialist_loaded(session_id, agent)
+
     def pre_llm_call_handler(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
         """Pre-LLM call handler for Hermes plugin system."""
         from agency_runtime.adapters.litellm.callback import litellm_health_check

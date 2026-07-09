@@ -370,6 +370,17 @@ class Store:
         finally:
             conn.close()
 
+    def get_specialists_for_session(self, session_id: str) -> list[str]:
+        conn = self._connect()
+        try:
+            cur = conn.execute(
+                "SELECT agent_slug FROM specialists_loaded WHERE session_id = ? ORDER BY loaded_at",
+                (session_id,),
+            )
+            return [row["agent_slug"] for row in cur.fetchall()]
+        finally:
+            conn.close()
+
     # ── Delegation events ──────────────────────────────────────────
 
     def record_delegation(self, *, trace_id: str, session_id: str = "",
