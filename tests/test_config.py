@@ -198,3 +198,96 @@ def test_wheel_includes_defaults_yaml():
     """Bundled config_defaults.yaml exists in installed package."""
     from agency_runtime.core.config import _BUNDLED_DEFAULTS
     assert _BUNDLED_DEFAULTS.exists(), f"Defaults file not found: {_BUNDLED_DEFAULTS}"
+
+
+def test_provider_entry_basic():
+    """ProviderEntry stores all fields and resolves API keys."""
+    from agency_runtime.core.config import ProviderEntry
+    p = ProviderEntry(
+        name="openai",
+        type="openai-compatible",
+        model="gpt-4o-mini",
+        base_url="https://api.openai.com/v1",
+        api_key="sk-test",
+    )
+    assert p.resolve_api_key() == "sk-test"
+    assert p.auth_method() == "api_key"
+    assert p.is_available()
+
+
+def test_provider_entry_env_key():
+    """ProviderEntry resolves env var keys."""
+    from agency_runtime.core.config import ProviderEntry
+    os.environ["TEST_PROVIDER_KEY"] = "sk-env"
+    p = ProviderEntry(
+        name="openai",
+        type="openai-compatible",
+        model="gpt-4o-mini",
+        base_url="https://api.openai.com/v1",
+        api_key_env="TEST_PROVIDER_KEY",
+    )
+    assert p.resolve_api_key() == "sk-env"
+    assert p.auth_method() == "env_key"
+    assert p.is_available()
+    del os.environ["TEST_PROVIDER_KEY"]
+
+
+def test_provider_entry_ollama_no_key():
+    """Ollama providers don't need API keys."""
+    from agency_runtime.core.config import ProviderEntry
+    p = ProviderEntry(
+        name="ollama",
+        type="ollama",
+        model="qwen3.5:2b",
+        base_url="http://127.0.0.1:11434",
+        ollama_mode=True,
+    )
+    assert p.resolve_api_key() == ""
+    assert p.auth_method() == "none"
+    assert p.is_available()  # model + base_url present
+
+
+def test_provider_entry_unavailable():
+    """Provider without model or key is not available."""
+    from agency_runtime.core.config import ProviderEntry
+    p = ProviderEntry(name="empty", type="openai-compatible")
+    assert not p.is_available()
+
+
+def test_config_parses_providers_list():
+    """Config YAML with providers list is parsed correctly."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump({
+            "providers": [
+                {"name": "litellm", "type": "litellm", "model": "task-general",
+                 "base_url": "http://localhost:4000", "api_key": "sk-test"},
+                {"name": "ollama", "type": "ollama", "model": "qwen3.5:2b",
+                 "base_url": "http://localhost:11434", "ollama_mode": True},
+            ],
+            "judge": {"model": "task-general", "base_url": "http://localhost:4000"},
+        }, f)
+        f.flush()
+
+    cfg = load_config(path=f.name, reload=True)
+    assert len(cfg.providers) == 2
+    assert cfg.providers[0].name == "litellm"
+    assert cfg.providers[0].type == "litellm"
+    assert cfg.providers[1].name == "ollama"
+    assert cfg.providers[1].ollama_mode is True
+    Path(f.name).unlink()
+
+
+def test_config_to_yaml_includes_providers():
+    """config_to_yaml serializes providers list with redaction."""
+    from agency_runtime.core.config import AgencyConfig, ProviderEntry
+    cfg = AgencyConfig(
+        providers=(
+            ProviderEntry(name="openai", model="gpt-4o", api_key="secret"),
+            ProviderEntry(name="ollama", type="ollama", model="qwen3.5:2b"),
+        ),
+    )
+    yaml_str = config_to_yaml(cfg, redact=True)
+    assert "secret" not in yaml_str
+    assert "***REDACTED***" in yaml_str
+    assert "openai" in yaml_str
+    assert "ollama" in yaml_str

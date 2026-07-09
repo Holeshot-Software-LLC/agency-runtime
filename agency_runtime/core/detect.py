@@ -298,6 +298,57 @@ def generate_config_from_detection(
         if skip_model not in litellm_skip:
             litellm_skip.append(skip_model)
 
+    # Build providers fallback chain — ordered list of all detected providers
+    providers_list: list[dict[str, Any]] = []
+
+    # LiteLLM proxy (highest priority if detected)
+    if p.litellm_available:
+        litellm_model = p.litellm_models[0] if p.litellm_models else judge_cfg.get("model", "")
+        if litellm_model:
+            providers_list.append({
+                "name": "litellm",
+                "type": "litellm",
+                "model": litellm_model,
+                "base_url": p.litellm_base_url,
+                "api_key_env": "LITELLM_API_KEY",
+                "ollama_mode": False,
+            })
+
+    # OpenAI API
+    if p.openai_key_present:
+        openai_model = p.openai_models[0] if p.openai_models else _PROVIDER_DEFAULTS["openai"]["model"]
+        providers_list.append({
+            "name": "openai",
+            "type": "openai-compatible",
+            "model": openai_model,
+            "base_url": _PROVIDER_DEFAULTS["openai"]["base_url"],
+            "api_key_env": "OPENAI_API_KEY",
+            "ollama_mode": False,
+        })
+
+    # Anthropic API
+    if p.anthropic_key_present:
+        providers_list.append({
+            "name": "anthropic",
+            "type": "anthropic",
+            "model": _ANTHROPIC_SUGGESTIONS[0],
+            "base_url": _PROVIDER_DEFAULTS["anthropic"]["base_url"],
+            "api_key_env": "ANTHROPIC_API_KEY",
+            "ollama_mode": False,
+        })
+
+    # Ollama (local, free — always last in the chain if available)
+    if p.ollama_available:
+        ollama_model = p.ollama_models[0] if p.ollama_models else "qwen3.5:2b"
+        providers_list.append({
+            "name": "ollama",
+            "type": "ollama",
+            "model": ollama_model,
+            "base_url": p.ollama_base_url,
+            "api_key": "",
+            "ollama_mode": True,
+        })
+
     adapters_cfg: dict[str, Any] = {
         "litellm": {
             "enabled": "true" if p.litellm_available else ("false" if profile == "local-only" else "auto"),
@@ -312,6 +363,7 @@ def generate_config_from_detection(
     }
 
     return {
+        "providers": providers_list,
         "judge": judge_cfg,
         "ollama": ollama_cfg,
         "selector": {

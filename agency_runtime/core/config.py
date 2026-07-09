@@ -38,6 +38,52 @@ def _default_config_path() -> Path:
 
 
 @dataclass(frozen=True, slots=True)
+class ProviderEntry:
+    """A single LLM provider in the fallback chain.
+
+    Auth methods (in priority order at runtime):
+    1. api_key (stored directly in config)
+    2. api_key_env (environment variable name)
+    3. oauth (CLI-based auth like Claude Code / Codex)
+    4. none (local/free providers like Ollama)
+    """
+    name: str = ""
+    type: str = "openai-compatible"  # openai-compatible, anthropic, ollama, litellm, cli
+    model: str = ""
+    base_url: str = ""
+    api_key: str = ""
+    api_key_env: str = ""
+    ollama_mode: bool = False
+    timeout: float = 15.0
+
+    def resolve_api_key(self) -> str:
+        """Return the API key: direct value first, then env var."""
+        if self.api_key:
+            return self.api_key
+        if self.api_key_env:
+            return os.environ.get(self.api_key_env, "")
+        return ""
+
+    def auth_method(self) -> str:
+        """Return how this provider authenticates."""
+        if self.type == "ollama":
+            return "none"
+        if self.api_key:
+            return "api_key"
+        if self.api_key_env and os.environ.get(self.api_key_env):
+            return "env_key"
+        if self.type == "cli":
+            return "oauth"
+        return "none"
+
+    def is_available(self) -> bool:
+        """Quick check: does this provider have auth and a model?"""
+        if self.type == "ollama":
+            return bool(self.model and self.base_url)
+        return bool(self.model and self.resolve_api_key())
+
+
+@dataclass(frozen=True, slots=True)
 class JudgeConfig:
     model: str = ""
     base_url: str = ""
@@ -123,6 +169,7 @@ class AdaptersConfig:
 class AgencyConfig:
     judge: JudgeConfig = field(default_factory=JudgeConfig)
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
+    providers: tuple[ProviderEntry, ...] = field(default_factory=tuple)
     selector: SelectorConfig = field(default_factory=SelectorConfig)
     store: StoreConfig = field(default_factory=StoreConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
@@ -165,6 +212,25 @@ def _normalize_enabled(value: Any) -> str:
     return "auto"
 
 
+def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
+    return ProviderEntry(
+        name=str(raw.get("name", "")),
+        type=str(raw.get("type", "openai-compatible")),
+        model=str(raw.get("model", "")),
+        base_url=str(raw.get("base_url", "")),
+        api_key=str(raw.get("api_key", "")),
+        api_key_env=str(raw.get("api_key_env", "")),
+        ollama_mode=bool(raw.get("ollama_mode", raw.get("type") == "ollama")),
+        timeout=float(raw.get("timeout", 15.0)),
+    )
+
+
+def _build_providers(raw: list[Any] | None) -> tuple[ProviderEntry, ...]:
+    if not raw or not isinstance(raw, list):
+        return ()
+    return tuple(_build_provider_entry(p) for p in raw if isinstance(p, dict))
+
+
 def _build_adapters(raw: dict[str, Any]) -> AdaptersConfig:
     litellm_raw = raw.get("litellm", {})
     if isinstance(litellm_raw, dict):
@@ -192,6 +258,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
     """Build AgencyConfig from a merged dict."""
     judge_raw = raw.get("judge", {})
     ollama_raw = raw.get("ollama", {})
+    providers_raw = raw.get("providers", [])
     selector_raw = raw.get("selector", {})
     store_raw = raw.get("store", {})
     server_raw = raw.get("server", {})
@@ -215,6 +282,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             base_url=str(ollama_raw.get("base_url", "http://127.0.0.1:11434")),
             model=str(ollama_raw.get("model", "qwen3.5:2b")),
         ),
+        providers=_build_providers(providers_raw),
         selector=SelectorConfig(
             min_confidence=float(selector_raw.get("min_confidence", 0.4)),
             max_user_msg_len=int(selector_raw.get("max_user_msg_len", 4000)),
@@ -299,6 +367,7 @@ def _apply_env_overrides(cfg: AgencyConfig) -> AgencyConfig:
     return AgencyConfig(
         judge=new_judge,
         ollama=new_ollama,
+        providers=cfg.providers,
         selector=cfg.selector,
         store=new_store,
         server=cfg.server,
@@ -376,6 +445,19 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "base_url": cfg.ollama.base_url,
             "model": cfg.ollama.model,
         },
+        "providers": [
+            {
+                "name": p.name,
+                "type": p.type,
+                "model": p.model,
+                "base_url": p.base_url,
+                "api_key": "***REDACTED***" if redact and p.api_key else p.api_key,
+                "api_key_env": p.api_key_env,
+                "ollama_mode": p.ollama_mode,
+                "timeout": p.timeout,
+            }
+            for p in cfg.providers
+        ],
         "selector": {
             "min_confidence": cfg.selector.min_confidence,
             "max_user_msg_len": cfg.selector.max_user_msg_len,

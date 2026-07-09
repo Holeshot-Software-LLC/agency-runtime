@@ -256,6 +256,39 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
     check_adapter("codex", cfg.adapters.codex.enabled, False)
     check_adapter("claude", cfg.adapters.claude.enabled, False)
 
+    # ── Provider fallback chain checks ─────────────────────────
+    if cfg.providers:
+        available_count = 0
+        for provider in cfg.providers:
+            auth = provider.auth_method()
+            if provider.is_available():
+                available_count += 1
+                report.checks.append(CheckResult(
+                    f"provider_{provider.name}", "pass",
+                    f"{provider.name}: {provider.type} model={provider.model} auth={auth}",
+                ))
+            elif auth == "none" and provider.type != "ollama":
+                report.checks.append(CheckResult(
+                    f"provider_{provider.name}", "warn",
+                    f"{provider.name}: configured but no API key (need {provider.api_key_env or 'api_key'})",
+                ))
+            else:
+                report.checks.append(CheckResult(
+                    f"provider_{provider.name}", "pass",
+                    f"{provider.name}: available (type={provider.type})",
+                ))
+
+        if available_count == 0:
+            report.checks.append(CheckResult("provider_chain", "fail",
+                "No providers in fallback chain are available — judge will use token-only"))
+        else:
+            chain_names = " → ".join(p.name for p in cfg.providers)
+            report.checks.append(CheckResult("provider_chain", "pass",
+                f"Fallback chain ({available_count} available): {chain_names}"))
+    else:
+        report.checks.append(CheckResult("provider_chain", "warn",
+            "No providers list configured — using legacy judge/ollama fallback. Run `agency configure`."))
+
     return report
 
 
