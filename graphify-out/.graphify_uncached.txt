@@ -1,2 +1,0 @@
-/home/holeshot/agency-runtime/README.md
-/home/holeshot/agency-runtime/agency_runtime/core/config_defaults.yaml

@@ -368,7 +368,8 @@ Coverage includes config parsing, provider fallback, roster sync, routing, heade
 2. Add tests for every behavior change.
 3. Run `python -m pytest tests/ -q` before opening a PR.
 4. Do not commit credentials, provider keys, or private host paths.
-5. Preserve attribution for upstream roster sources such as `agency-agents`.
+5. Keep generated code indexes local: `.codegraph/`, `.chunkhound/`, `.graphify/`, and `graphify-out/` should be regenerated on demand, not committed.
+6. Preserve attribution for upstream roster sources such as `agency-agents`.
 
 ## Requirements
 

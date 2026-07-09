@@ -16,3 +16,7 @@ htmlcov/
 venv/
 .env
 *.db
+.codegraph/
+.chunkhound/
+graphify-out/
+.graphify/
