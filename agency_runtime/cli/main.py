@@ -80,20 +80,113 @@ def _seed_starter_roster(store: Store) -> int:
 
 
 def cmd_install(args: argparse.Namespace) -> int:
+    """Install Agency Runtime — seeds roster AND wires into agent host(s).
+
+    Usage:
+        agency install                  — seed roster only (standalone)
+        agency install --agent hermes   — wire into Hermes
+        agency install --agent openclaw — wire into OpenClaw
+        agency install --agent codex    — wire into Codex
+        agency install --all            — auto-detect + wire into every agent found
+    """
+    from agency_runtime.core.installer import (
+        detect_installed_agents,
+        install_agent_adapter,
+        seed_starter_roster,
+    )
+
     cfg = load_config()
     profile = get_profile(args.profile)
     store = _store(cfg)
-    count = _seed_starter_roster(store)
-    print(f"Installed Agency Runtime profile: {profile.name}")
-    print(f"Starter roster activated: {count} agents")
-    print(f"Network enabled: {profile.network_enabled}")
-    print(f"Auto-sync: {profile.auto_sync}")
-    print(f"Auto-enable new agents: {profile.auto_enable_new_agents}")
-    if profile.sync_schedule:
-        print(f"Sync schedule: {profile.sync_schedule}")
-    print(f"\nConfig: {cfg.config_path or '(defaults only)'}")
-    print(f"Judge model: {cfg.judge.model} ({cfg.judge.base_url})")
+
+    # Always seed the roster
+    count = seed_starter_roster(store)
+    print(f"✅ Agency Runtime profile: {profile.name}")
+    print(f"✅ Starter roster activated: {count} agents")
+    print(f"   Config: {cfg.config_path or '(defaults only)'}")
+    print(f"   Judge model: {cfg.judge.model} ({cfg.judge.base_url})")
+
+    # Handle agent adapter installation
+    if args.all:
+        detected = detect_installed_agents()
+        if not detected:
+            print("\n⚠️  No supported AI agent hosts detected.")
+            print("   Install Hermes, OpenClaw, Codex, or Claude Code first.")
+            return 0
+        print(f"\n🔍 Detected {len(detected)} agent host(s): {', '.join(detected)}")
+        for agent in detected:
+            result = install_agent_adapter(agent, cfg)
+            if result["ok"]:
+                print(f"✅ {agent}: wired → {result['plugin_path']}")
+            else:
+                print(f"❌ {agent}: {result['error']}")
+    elif args.agent:
+        result = install_agent_adapter(args.agent, cfg)
+        if result["ok"]:
+            print(f"\n✅ {args.agent}: wired → {result['plugin_path']}")
+            print(f"   Restart {args.agent} to activate.")
+        else:
+            print(f"\n❌ {args.agent}: {result['error']}")
+            return 1
+    else:
+        print(f"\n💡 To wire into an AI agent host, run:")
+        print(f"   agency install --all          (auto-detect)")
+        print(f"   agency install --agent hermes  (specific)")
+
     return 0
+
+
+def cmd_on(args: argparse.Namespace) -> int:
+    """Enable Agency Runtime for a specific agent host."""
+    from agency_runtime.core.installer import toggle_agency, detect_installed_agents
+
+    agent = args.agent
+    if not agent:
+        detected = detect_installed_agents()
+        if len(detected) == 1:
+            agent = detected[0]
+        elif len(detected) == 0:
+            print("No agent hosts detected. Use: agency on --agent hermes")
+            return 1
+        else:
+            print(f"Multiple hosts detected: {', '.join(detected)}")
+            print("Specify: agency on --agent <name>")
+            return 1
+
+    result = toggle_agency(agent, enabled=True)
+    if result["ok"]:
+        print(f"✅ Agency Runtime ENABLED for {agent}")
+        print(f"   Restart {agent} to take effect.")
+    else:
+        print(f"❌ {result['error']}")
+    return 0 if result["ok"] else 1
+
+
+def cmd_off(args: argparse.Namespace) -> int:
+    """Disable Agency Runtime for a specific agent host."""
+    from agency_runtime.core.installer import toggle_agency, detect_installed_agents
+
+    agent = args.agent
+    if not agent:
+        detected = detect_installed_agents()
+        if len(detected) == 1:
+            agent = detected[0]
+        elif len(detected) == 0:
+            print("No agent hosts detected. Use: agency off --agent hermes")
+            return 1
+        else:
+            print(f"Multiple hosts detected: {', '.join(detected)}")
+            print("Specify: agency off --agent <name>")
+            return 1
+
+    result = toggle_agency(agent, enabled=False)
+    if result["ok"]:
+        print(f"⏸️  Agency Runtime DISABLED for {agent}")
+        print(f"   Plugin file moved to: {result.get('backup_path', 'disabled')}")
+        print(f"   Restart {agent} to take effect.")
+    else:
+        print(f"❌ {result['error']}")
+    return 0 if result["ok"] else 1
 
 
 # ── Configure wizard ─────────────────────────────────────────
@@ -875,9 +968,21 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     # install
-    install = sub.add_parser("install", help="Install starter roster and policy profile")
+    install = sub.add_parser("install", help="Install Agency Runtime — seed roster + wire into agent hosts")
     install.add_argument("--profile", choices=sorted(PROFILES), default="standard")
+    install.add_argument("--all", action="store_true", help="Auto-detect and wire into every AI agent host found")
+    install.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None,
+                         help="Wire into a specific agent host")
     install.set_defaults(func=cmd_install)
+
+    # on/off toggle
+    on_p = sub.add_parser("on", help="Enable Agency Runtime for a host")
+    on_p.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None)
+    on_p.set_defaults(func=cmd_on)
+
+    off_p = sub.add_parser("off", help="Disable Agency Runtime for a host")
+    off_p.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None)
+    off_p.set_defaults(func=cmd_off)
 
     # configure
     configure = sub.add_parser("configure", help="Guided setup wizard — writes agency.yaml")
