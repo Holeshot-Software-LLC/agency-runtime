@@ -132,6 +132,49 @@ def test_store_model_receipt():
         assert receipt["resolved_model"] == "gpt-5.5"
 
 
+def test_hermes_adapter_post_api_request_captures_dynamic_model():
+    """The adapter must capture the resolved model from the response body,
+    not from SpendLogs or static fallback chains."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        from agency_runtime.adapters.hermes.plugin import HermesAdapter
+        adapter = HermesAdapter(store=store)
+
+        # Simulate a response where LiteLLM complexity-routed to gpt-5.5-pro-extended
+        adapter.post_api_request_handler(
+            response={"model": "chatgpt/gpt-5.5-pro-extended", "usage": {}},
+            model="task-chunk-planner",
+            session_id="test-session",
+            started_at="2026-07-08T20:00:00Z",
+            ended_at="2026-07-08T20:00:05Z",
+        )
+
+        # Verify receipt was recorded with the ACTUAL model, not the alias
+        receipt = store.get_model_receipt_for_session("test-session")
+        assert receipt is not None
+        assert receipt["resolved_model"] == "gpt-5.5-pro-extended"
+        assert receipt["resolved_provider"] == "chatgpt"
+        assert receipt["requested_model"] == "task-chunk-planner"
+        assert receipt["source"] == "host"
+
+
+def test_hermes_adapter_post_api_request_no_response_model():
+    """When response has no model field, adapter should not crash or record garbage."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        from agency_runtime.adapters.hermes.plugin import HermesAdapter
+        adapter = HermesAdapter(store=store)
+
+        # No model in response — should silently skip
+        adapter.post_api_request_handler(
+            response={"choices": []},
+            model="task-general",
+            session_id="test-session",
+        )
+        receipt = store.get_model_receipt_for_session("test-session")
+        assert receipt is None
+
+
 def test_store_delegation():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")

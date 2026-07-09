@@ -6,7 +6,8 @@ When Hermes is the host, this adapter:
 - reports actual skills loaded via Hermes skill loader events;
 - uses delegate_task, delegate_async, and Agency tools where available;
 - integrates with pre_verify or equivalent final response gate;
-- records delegation events and exact failures.
+- records delegation events and exact failures;
+- captures model receipts from response data (not SpendLogs).
 """
 
 from __future__ import annotations
@@ -18,6 +19,12 @@ from agency_runtime.adapters.base import BaseAdapter
 from agency_runtime.core.store.sqlite import Store
 
 logger = logging.getLogger("agency_runtime.adapters.hermes")
+
+
+def _clean(value: Any, default: str = "") -> str:
+    if value is None:
+        return default
+    return str(value).strip()
 
 
 class HermesAdapter(BaseAdapter):
@@ -49,6 +56,82 @@ class HermesAdapter(BaseAdapter):
 
     def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
         return {}
+
+    def post_api_request_handler(self, **kwargs: Any) -> None:
+        """Capture model receipt from the actual API response.
+
+        Hermes provides kwargs:
+        - response: dict with 'model', 'usage', etc.
+        - model: the requested model alias (e.g. task-chunk-planner)
+        - session_id: session identifier
+        - started_at / ended_at: timestamps
+        - response_model: the model field from the response (sometimes separate)
+
+        The response itself carries the truth — the 'model' field in the
+        response body is the resolved deployment (e.g.
+        'chatgpt/gpt-5.5-pro-extended'), not the requested alias.
+        LiteLLM response headers (x-litellm-model-id, x-litellm-model-group,
+        x-litellm-model-api-base, x-litellm-attempted-fallbacks) provide
+        additional routing truth when available.
+
+        We never query SpendLogs — the response is the source of truth.
+        """
+        import uuid
+
+        from agency_runtime.core.receipts.normalize import normalize_host_receipt
+
+        response = kwargs.get("response") if isinstance(kwargs.get("response"), dict) else {}
+        requested_model = _clean(kwargs.get("model") or "")
+        session_id = _clean(kwargs.get("session_id")) or ""
+
+        # The resolved model is in the response body — this is the dynamic
+        # model that LiteLLM's complexity router or fallback chain selected.
+        resolved_model = _clean(
+            kwargs.get("response_model")
+            or response.get("model")
+            or ""
+        )
+
+        if not resolved_model:
+            return
+
+        # Split provider/model from resolved (e.g. "openai/glm-5.2")
+        resolved_provider = ""
+        actual_model = resolved_model
+        if "/" in resolved_model:
+            parts = resolved_model.split("/", 1)
+            resolved_provider = parts[0]
+            actual_model = parts[1]
+
+        receipt = normalize_host_receipt({
+            "host": self.host_name,
+            "session_id": session_id,
+            "requested_model": requested_model,
+            "model_group": requested_model,  # The alias is the group
+            "resolved_model": actual_model,
+            "resolved_provider": resolved_provider,
+            "source": "host",
+            "started_at": _clean(kwargs.get("started_at")),
+            "ended_at": _clean(kwargs.get("ended_at")),
+            "status": "success",
+        })
+
+        self.store.record_model_receipt(
+            trace_id=str(uuid.uuid4()),
+            session_id=session_id,
+            host=self.host_name,
+            requested_model=requested_model,
+            model_group=receipt.get("model_group", ""),
+            resolved_provider=receipt.get("resolved_provider", ""),
+            resolved_model=receipt.get("resolved_model", ""),
+            api_base=receipt.get("api_base", ""),
+            attempted_fallbacks=int(receipt.get("attempted_fallbacks", 0)),
+            model_id=receipt.get("model_id", ""),
+            source="host",
+            started_at=receipt.get("started_at", ""),
+            ended_at=receipt.get("ended_at", ""),
+            status="success",
+        )
 
     def pre_llm_call_handler(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
         """Pre-LLM call handler for Hermes plugin system."""

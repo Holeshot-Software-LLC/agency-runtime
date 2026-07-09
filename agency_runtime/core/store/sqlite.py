@@ -317,6 +317,20 @@ class Store:
         finally:
             conn.close()
 
+    def get_model_receipt_for_session(self, session_id: str) -> dict[str, Any] | None:
+        """Get the most recent model receipt for a session."""
+        conn = self._connect()
+        try:
+            cur = conn.execute(
+                "SELECT * FROM model_receipts WHERE session_id = ? "
+                "ORDER BY ended_at DESC, started_at DESC, id DESC LIMIT 1",
+                (session_id,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+
     # ── Skills ─────────────────────────────────────────────────────
 
     def record_skill_loaded(self, session_id: str, skill_name: str) -> None:
