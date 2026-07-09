@@ -241,6 +241,47 @@ def test_header_reflects_loaded_specialist():
         assert filled["agencies_loaded"] == "code-reviewer, codebase-onboarding-engineer"
 
 
+# ─── Compat layer tests ──────────────────────────────────────────────
+
+
+def test_compat_on_post_tool_call_records_specialist():
+    """Compat layer records specialist loads from agency_agents_load."""
+    from agency_runtime.adapters.hermes.compat import (
+        on_post_tool_call, _get_store, _store as _orig_store,
+    )
+    import agency_runtime.adapters.hermes.compat as compat_mod
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        compat_mod._store = Store(Path(tmpdir) / "test.db")
+        on_post_tool_call(
+            tool_name="agency_agents_load",
+            args={"agent": "reality-checker"},
+            session_id="compat-test",
+        )
+        specialists = compat_mod._store.get_specialists_for_session("compat-test")
+        assert "reality-checker" in specialists
+        compat_mod._store = None  # Reset singleton
+
+
+def test_compat_on_post_api_request_captures_model():
+    """Compat layer captures actual model from response, not SpendLogs."""
+    from agency_runtime.adapters.hermes.compat import on_post_api_request
+    import agency_runtime.adapters.hermes.compat as compat_mod
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        compat_mod._store = Store(Path(tmpdir) / "test.db")
+        on_post_api_request(
+            response={"model": "chatgpt/gpt-5.5-pro-extended"},
+            model="task-chunk-planner",
+            session_id="compat-test",
+        )
+        receipt = compat_mod._store.get_model_receipt_for_session("compat-test")
+        assert receipt is not None
+        assert receipt["resolved_model"] == "gpt-5.5-pro-extended"
+        assert receipt["resolved_provider"] == "chatgpt"
+        compat_mod._store = None
+
+
 def test_store_delegation():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
