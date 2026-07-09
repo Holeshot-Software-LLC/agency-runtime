@@ -170,12 +170,18 @@ class HermesAdapter(BaseAdapter):
                 self.store.record_specialist_loaded(session_id, agent)
 
     def pre_llm_call_handler(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
-        """Pre-LLM call handler for Hermes plugin system."""
-        from agency_runtime.adapters.litellm.callback import litellm_health_check
-        from agency_runtime.core.selector.pipeline import is_trivial, route_and_build_context
+        """Pre-LLM call handler for Hermes plugin system.
 
-        if litellm_health_check():
-            return None  # LiteLLM callback handles it
+        ALWAYS runs routing and injects specialist suggestions, even when
+        LiteLLM is healthy. The LiteLLM callback handles request-level
+        routing (model selection), but the agent still needs specialist-
+        loading context to know which agents to call.
+
+        This is the critical path: without this injection, the agent never
+        sees [AGENCY PREFLIGHT] suggestions and writes 'loaded: none' on
+        every turn — making the entire plugin broken from the start.
+        """
+        from agency_runtime.core.selector.pipeline import is_trivial, route_and_build_context
 
         if is_trivial(user_message):
             return None
@@ -185,28 +191,52 @@ class HermesAdapter(BaseAdapter):
         return {"context": context} if context else None
 
     def pre_verify_handler(self, final_response: str, session_id: str = "", model: str = "", attempt: int = 0) -> dict[str, Any] | None:
-        """Pre-verify handler — gate response completion on agency header."""
-        import re
+        """Pre-verify handler — gate response completion on agency header.
 
+        Two checks:
+        1. Header exists and is complete (all six fields present)
+        2. On non-trivial turns, at least one specialist was consulted
+           (agencies_loaded must not be 'none' unless the turn was trivial)
+        """
         if attempt >= 2:
             return None
 
-        from agency_runtime.core.header.contract import validate_header
+        from agency_runtime.core.header.contract import parse_header, validate_header
         valid, missing = validate_header(final_response)
-        if valid:
-            return None
+        if not valid:
+            skills = ", ".join(self.report_skills_loaded(session_id)) or "none"
+            return {
+                "action": "continue",
+                "message": (
+                    "AGENCY HEADER REQUIRED: Your response must begin with this complete "
+                    "Agency observability header before any other content. Use this format:\n\n"
+                    "Agency/Agencies loaded: <agent-id> (or 'none')\n"
+                    "Agency/Agencies delegated: <agent-id> (or 'none')\n"
+                    f"Skills loaded: {skills}\n"
+                    "Actual Model selected: <model>\n"
+                    "Why: <one line>\n"
+                    "How it shaped outcome: <one line>\n"
+                    "\nPreserve the shown Skills loaded and Actual Model selected values unless you have newer concrete runtime metadata. Every response requires all six header lines. Query agency_agents_search first if you haven't already."
+                ),
+            }
 
-        skills = ", ".join(self.report_skills_loaded(session_id)) or "none"
-        return {
-            "action": "continue",
-            "message": (
-                "AGENCY HEADER REQUIRED: Your response must begin with this complete "
-                "Agency observability header before any other content:\n\n"
-                "Agency/Agencies loaded: <agent-id> (or 'none')\n"
-                "Agency/Agencies delegated: <agent-id> (or 'none')\n"
-                f"Skills loaded: {skills}\n"
-                "Actual Model selected: <model>\n"
-                "Why: <one line>\n"
-                "How it shaped outcome: <one line>\n"
-            ),
-        }
+        # Header is valid — now enforce specialist loading on non-trivial turns
+        parsed = parse_header(final_response)
+        loaded = parsed.get("agencies_loaded", "").strip().lower()
+
+        # Check if any specialists were actually loaded this session
+        specialists = self.report_specialists_loaded(session_id)
+        if loaded == "none" and not specialists and attempt < 1:
+            # The agent wrote 'none' but may not have searched the roster
+            return {
+                "action": "continue",
+                "message": (
+                    "AGENCY HEADER ACCEPTABLE but agencies_loaded is 'none'. "
+                    "For non-trivial work orders, you MUST load at least one specialist "
+                    "via agency_agents_search → agency_agents_load BEFORE writing the header. "
+                    "The pre_llm_call hook injected [AGENCY PREFLIGHT] routing suggestions — "
+                    "act on them. Only use 'none' for genuinely trivial turns (status, ping, file read)."
+                ),
+            }
+
+        return None
