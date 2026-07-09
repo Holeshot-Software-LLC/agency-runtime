@@ -1,0 +1,191 @@
+"""Tests for header contract, model receipts, and store."""
+
+from __future__ import annotations
+
+import json
+import sys
+import tempfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from agency_runtime.core.header.contract import (
+    parse_header,
+    format_header,
+    validate_header,
+    finalize_header,
+)
+from agency_runtime.core.receipts.normalize import (
+    normalize_litellm_receipt,
+    build_unavailable_receipt,
+)
+from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.policy.profiles import LOCAL_ONLY, STANDARD, POWER
+from agency_runtime.core.policy.defaults import STARTER_ROSTER
+
+
+# ─── Header contract ────────────────────────────────────────────────
+
+
+SAMPLE_HEADER = """Agency/Agencies loaded: code-reviewer
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: task-general -> openai/gpt-5.5
+Why: Code review requested
+How it shaped outcome: Loaded code review specialist
+
+This is the body of the response.
+"""
+
+
+def test_parse_header():
+    fields = parse_header(SAMPLE_HEADER)
+    assert fields["agencies_loaded"] == "code-reviewer"
+    assert fields["skills_loaded"] == "none"
+    assert "gpt-5.5" in fields["actual_model_selected"]
+
+
+def test_validate_header_valid():
+    valid, missing = validate_header(SAMPLE_HEADER)
+    assert valid is True
+    assert missing == []
+
+
+def test_validate_header_missing_fields():
+    bad = "Agency/Agencies loaded: code-reviewer\n\nBody text."
+    valid, missing = validate_header(bad)
+    assert valid is False
+    assert len(missing) > 0
+
+
+def test_format_header():
+    fields = {
+        "agencies_loaded": "code-reviewer",
+        "agencies_delegated": "none",
+        "skills_loaded": "none",
+        "actual_model_selected": "task-general -> openai/gpt-5.5",
+        "why": "test",
+        "how_it_shaped_outcome": "test",
+    }
+    text = format_header(fields)
+    assert "code-reviewer" in text
+    assert "Actual Model selected:" in text
+
+
+# ─── Model receipts ─────────────────────────────────────────────────
+
+
+def test_normalize_litellm_receipt():
+    headers = {
+        "x-litellm-model-group": "task-general",
+        "x-litellm-model-api-base": "https://api.openai.com/v1",
+        "x-litellm-model-id": "gpt-5.5",
+        "x-litellm-attempted-fallbacks": "0",
+    }
+    receipt = normalize_litellm_receipt(headers, "task-general")
+    assert receipt["model_group"] == "task-general"
+    assert receipt["resolved_model"] == "gpt-5.5"
+    assert receipt["source"] == "litellm"
+
+
+def test_build_unavailable_receipt():
+    receipt = build_unavailable_receipt("task-general", "no gateway")
+    assert receipt["resolved_model"] == "unavailable"
+    assert receipt["source"] == "unknown"
+    assert receipt["status"] in ("unavailable", "error")
+
+
+# ─── Store ──────────────────────────────────────────────────────────
+
+
+def test_store_create():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        assert store.db_path.exists()
+
+
+def test_store_skill_recording():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        store.record_skill_loaded("session-1", "code-review")
+        store.record_skill_loaded("session-1", "testing")
+        skills = store.get_skills_for_session("session-1")
+        assert "code-review" in skills
+        assert "testing" in skills
+
+
+def test_store_model_receipt():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        receipt_id = store.record_model_receipt(
+            trace_id="trace-1",
+            session_id="session-1",
+            host="hermes",
+            requested_model="task-general",
+            resolved_provider="openai",
+            resolved_model="gpt-5.5",
+            source="litellm",
+            status="success",
+        )
+        receipt = store.get_model_receipt("trace-1")
+        assert receipt is not None
+        assert receipt["resolved_model"] == "gpt-5.5"
+
+
+def test_store_delegation():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        event_id = store.record_delegation(
+            trace_id="trace-1",
+            recommended_agent="code-reviewer",
+            status="suggested",
+            backend="codex_exec",
+        )
+        delegations = store.get_delegations("trace-1")
+        assert len(delegations) == 1
+        assert delegations[0]["recommended_agent"] == "code-reviewer"
+
+
+def test_store_roster_activation():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / "test.db")
+        agent = {
+            "slug": "code-reviewer",
+            "name": "Code Reviewer",
+            "description": "Reviews code for bugs and quality",
+            "division": "engineering",
+            "categories": ["software-development", "review"],
+        }
+        store.activate_agent(agent)
+        roster = store.get_active_roster()
+        assert len(roster) == 1
+        assert roster[0]["agent_slug"] == "code-reviewer"
+
+        catalog = store.get_active_roster_as_catalog()
+        assert len(catalog) == 1
+        assert catalog[0]["slug"] == "code-reviewer"
+
+
+# ─── Policy profiles ────────────────────────────────────────────────
+
+
+def test_local_only_profile():
+    assert LOCAL_ONLY.network_enabled is False
+    assert LOCAL_ONLY.auto_sync is False
+    assert LOCAL_ONLY.auto_enable_new_agents is False
+
+
+def test_standard_profile():
+    assert STANDARD.auto_sync is False
+    assert STANDARD.auto_enable_new_agents is False
+
+
+def test_power_profile():
+    assert POWER.network_enabled is True
+
+
+def test_starter_roster():
+    assert len(STARTER_ROSTER) >= 4
+    slugs = [a["slug"] for a in STARTER_ROSTER]
+    assert "code-reviewer" in slugs
+    assert "senior-developer" in slugs

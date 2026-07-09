@@ -1,0 +1,58 @@
+# ── Agency Runtime default configuration ──────────────────────────
+# These defaults work for a fresh install with Ollama but no API keys.
+# Override by creating ~/.agency-runtime/agency.yaml or setting env vars.
+#
+# Env var overrides (highest precedence):
+#   AGENCY_JUDGE_MODEL, AGENCY_JUDGE_BASE_URL, AGENCY_JUDGE_API_KEY,
+#   AGENCY_JUDGE_TIMEOUT, AGENCY_MAX_SELECTED, AGENCY_BYPASS_THRESHOLD,
+#   OLLAMA_BASE_URL, AGENCY_OLLAMA_FALLBACK_MODEL,
+#   LITELLM_BASE_URL, LITELLM_API_KEY,
+#   AGENCY_CONFIG_PATH, AGENCY_DB_PATH
+
+judge:
+  model: qwen3.5:2b
+  base_url: http://127.0.0.1:11434
+  api_key_env: ""             # blank = no API key needed (Ollama)
+  api_key: ""                 # direct key value (takes precedence over api_key_env)
+  ollama_mode: true           # use /api/chat endpoint instead of /v1/chat/completions
+  timeout: 15
+  max_selected: 3
+  confidence_bypass_threshold: 15.0
+
+ollama:
+  enabled: true
+  base_url: http://127.0.0.1:11434
+  model: qwen3.5:2b
+
+selector:
+  min_confidence: 0.4
+  max_user_msg_len: 4000
+  trivial_msg_threshold: 12
+
+store:
+  db_path: ~/.agency-runtime/agency.db
+
+server:
+  host: 127.0.0.1
+  port: 7800
+  max_body_size: 16777216
+
+adapters:
+  litellm:
+    enabled: auto
+    base_url: http://127.0.0.1:4000
+    api_key_env: LITELLM_API_KEY
+    skip_models:
+      - complexity_router
+      - auto_router/
+  hermes:
+    enabled: auto
+  openclaw:
+    enabled: auto
+  codex:
+    enabled: auto
+  claude:
+    enabled: auto
+
+profile: standard
+companion_policy_path: null

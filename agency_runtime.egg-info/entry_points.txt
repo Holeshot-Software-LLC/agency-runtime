@@ -1,0 +1,2 @@
+[console_scripts]
+agency = agency_runtime.cli.main:main
