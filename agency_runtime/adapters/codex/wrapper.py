@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -30,14 +31,7 @@ class CodexAdapter(BaseAdapter):
 
     def is_available(self) -> bool:
         """Check if codex CLI is installed."""
-        try:
-            result = subprocess.run(
-                ["which", self.codex_cmd],
-                capture_output=True, text=True, timeout=2,
-            )
-            return result.returncode == 0
-        except Exception:
-            return False
+        return bool(shutil.which(self.codex_cmd))
 
     def report_skills_loaded(self, session_id: str) -> list[str]:
         return self.store.get_skills_for_session(session_id)

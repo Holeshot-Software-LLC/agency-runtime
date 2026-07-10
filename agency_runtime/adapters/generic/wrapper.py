@@ -7,6 +7,7 @@ provides best-effort routing and delegation via subprocess.
 from __future__ import annotations
 
 import logging
+import shutil
 import subprocess
 from typing import Any
 
@@ -28,14 +29,7 @@ class GenericAdapter(BaseAdapter):
     def is_available(self) -> bool:
         if not self.cli_cmd:
             return False
-        try:
-            result = subprocess.run(
-                ["which", self.cli_cmd],
-                capture_output=True, text=True, timeout=2,
-            )
-            return result.returncode == 0
-        except Exception:
-            return False
+        return bool(shutil.which(self.cli_cmd))
 
     def report_skills_loaded(self, session_id: str) -> list[str]:
         return self.store.get_skills_for_session(session_id)

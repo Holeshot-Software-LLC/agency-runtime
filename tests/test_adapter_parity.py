@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +34,27 @@ def _adapter(adapter_cls: type, store: Store):
     if adapter_cls is GenericAdapter:
         return adapter_cls(store=store, cli_cmd="definitely-not-installed")
     return adapter_cls(store=store)
+
+
+def test_cli_adapter_availability_uses_path_lookup_without_shelling_out(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    requested: list[str] = []
+
+    def fake_which(name: str) -> str | None:
+        requested.append(name)
+        return f"/bin/{name}" if name in {"codex", "claude", "custom-agent"} else None
+
+    def fail_run(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("is_available must not spawn subprocess.run")
+
+    monkeypatch.setattr(shutil, "which", fake_which)
+    monkeypatch.setattr(subprocess, "run", fail_run)
+
+    assert CodexAdapter(store=store).is_available() is True
+    assert ClaudeAdapter(store=store).is_available() is True
+    assert GenericAdapter(store=store, cli_cmd="custom-agent").is_available() is True
+    assert GenericAdapter(store=store, cli_cmd="missing-agent").is_available() is False
+    assert requested == ["codex", "claude", "custom-agent", "missing-agent"]
 
 
 @pytest.mark.parametrize("adapter_cls", ADAPTERS)

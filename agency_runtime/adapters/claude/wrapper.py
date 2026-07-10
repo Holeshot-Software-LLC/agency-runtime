@@ -8,6 +8,7 @@ Two modes when available:
 from __future__ import annotations
 
 import logging
+import shutil
 import subprocess
 from typing import Any
 
@@ -28,14 +29,7 @@ class ClaudeAdapter(BaseAdapter):
 
     def is_available(self) -> bool:
         """Check if Claude Code CLI is installed."""
-        try:
-            result = subprocess.run(
-                ["which", self.claude_cmd],
-                capture_output=True, text=True, timeout=2,
-            )
-            return result.returncode == 0
-        except Exception:
-            return False
+        return bool(shutil.which(self.claude_cmd))
 
     def report_skills_loaded(self, session_id: str) -> list[str]:
         return self.store.get_skills_for_session(session_id)
