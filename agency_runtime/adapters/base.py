@@ -329,7 +329,7 @@ class BaseAdapter(ABC):
 
         specialists = self.report_specialists_loaded(session_id)
         open_delegations = self._suggested_delegations(session_id)
-        requires_agency_evidence = bool(session_id and session_id in self._nontrivial_sessions) or bool(open_delegations)
+        requires_agency_evidence = bool(session_id and (session_id in self._nontrivial_sessions or specialists)) or bool(open_delegations)
         if requires_agency_evidence and _is_noneish_agency_line(loaded) and attempt < 2:
             actual = ", ".join(specialists) if specialists else "the actual loaded specialist"
             return {
