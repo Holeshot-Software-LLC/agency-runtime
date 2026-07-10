@@ -91,6 +91,54 @@ def test_delegate_with_lifecycle_dispatches_and_records_ledger(tmp_path: Path) -
     ]
 
 
+def test_delegate_with_lifecycle_preserves_delegate_type_errors(tmp_path: Path) -> None:
+    def delegate_func(**kwargs):
+        raise TypeError("inner delegate bug")
+
+    result = delegate_with_lifecycle(
+        [{"id": "unit-1", "description": "Do the work", "recommended_agent": "builder"}],
+        repo_path=tmp_path,
+        delegate_func=delegate_func,
+        merge_back=False,
+    )
+
+    assert result.dispatch_results["unit-1"] == {"error": "inner delegate bug"}
+    assert "inner delegate bug" in result.warnings[0]
+
+
+def test_delegate_with_lifecycle_supports_task_only_delegate(tmp_path: Path) -> None:
+    def delegate_func(*, task: str):
+        return {"backend": "task-only", "task": task}
+
+    result = delegate_with_lifecycle(
+        [{"id": "unit-1", "description": "Do the task"}],
+        repo_path=tmp_path,
+        delegate_func=delegate_func,
+        merge_back=False,
+    )
+
+    assert result.dispatch_results["unit-1"]["backend"] == "task-only"
+    assert "Do the task" in result.dispatch_results["unit-1"]["task"]
+
+
+def test_delegate_with_lifecycle_supports_legacy_goal_context_delegate(tmp_path: Path) -> None:
+    def delegate_func(*, goal: str, context: str, recommended_agent: str):
+        return {"backend": "legacy", "goal": goal, "context": context, "agent": recommended_agent}
+
+    result = delegate_with_lifecycle(
+        [{"id": "unit-1", "description": "Do the legacy task", "recommended_agent": "builder"}],
+        repo_path=tmp_path,
+        delegate_func=delegate_func,
+        merge_back=False,
+    )
+
+    dispatched = result.dispatch_results["unit-1"]
+    assert dispatched["backend"] == "legacy"
+    assert dispatched["goal"] == "Do the legacy task"
+    assert dispatched["context"] == f"workdir={tmp_path.resolve()}"
+    assert dispatched["agent"] == "builder"
+
+
 def test_lifecycle_provisions_worktrees_merges_back_and_removes_paths(tmp_path: Path) -> None:
     import subprocess
 

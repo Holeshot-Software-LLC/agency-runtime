@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import hashlib
+import inspect
 import re
 import shutil
 import subprocess
@@ -271,13 +272,26 @@ def _resolve_delegate_func(delegate_func: DelegateFunc | None) -> DelegateFunc:
 def _call_delegate(func: DelegateFunc, unit: WorkUnit, workdir: Path | None) -> Any:
     task = f"Work unit {unit.id}:\n{unit.description}\n\nWorkdir: {workdir or unit.repo_path or Path.cwd()}"
     kwargs = {"task": task, "workdir": str(workdir or unit.repo_path or Path.cwd()), "recommended_agent": unit.recommended_agent}
+    legacy_kwargs = {"goal": unit.description, "context": f"workdir={kwargs['workdir']}", "recommended_agent": unit.recommended_agent}
     try:
+        signature = inspect.signature(func)
+    except (TypeError, ValueError):
         return func(**kwargs)
+    if _signature_accepts(signature, **kwargs):
+        return func(**kwargs)
+    if _signature_accepts(signature, **legacy_kwargs):
+        return func(**legacy_kwargs)
+    if _signature_accepts(signature, task=task):
+        return func(task=task)
+    return func(task)
+
+
+def _signature_accepts(signature: inspect.Signature, *args: Any, **kwargs: Any) -> bool:
+    try:
+        signature.bind(*args, **kwargs)
     except TypeError:
-        try:
-            return func(goal=unit.description, context=f"workdir={kwargs['workdir']}", recommended_agent=unit.recommended_agent)
-        except TypeError:
-            return func(task)
+        return False
+    return True
 
 
 def _backend(result: Any, func: DelegateFunc) -> str:
