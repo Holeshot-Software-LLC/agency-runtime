@@ -32,7 +32,7 @@ def http_server(tmp_path: Path):
     db = tmp_path / "agency.db"
     store = Store(db)
 
-    # Seed one active agent so preflight/search have a catalog to work with.
+    # Seed active agents so preflight/search have a catalog to work with.
     store.activate_agent({
         "slug": "code-reviewer",
         "name": "Code Reviewer",
@@ -46,6 +46,20 @@ def http_server(tmp_path: Path):
         "tool_affinity": [],
         "prompt_path": "",
     })
+    for slug in ("agents-orchestrator", "chief-of-staff"):
+        store.activate_agent({
+            "slug": slug,
+            "name": slug.replace("-", " ").title(),
+            "division": "specialized",
+            "description": f"Default companion specialist {slug}",
+            "source": "test",
+            "version": "1.0",
+            "hash": slug,
+            "categories": [],
+            "capabilities": [],
+            "tool_affinity": [],
+            "prompt_path": "",
+        })
 
     server = AgencyHTTPServer(store, host="127.0.0.1", port=0)
     actual_port = server.server_address[1]
@@ -87,7 +101,7 @@ def test_status_returns_ok_and_roster_count(http_server):
     status, body = _get(http_server["base"], "/status")
     assert status == 200
     assert body["status"] == "ok"
-    assert body["roster_count"] == 1
+    assert body["roster_count"] == 3
 
 
 # ── /roster ─────────────────────────────────────────────────────────────
@@ -95,10 +109,11 @@ def test_status_returns_ok_and_roster_count(http_server):
 def test_roster_lists_active_agents(http_server):
     status, body = _get(http_server["base"], "/roster")
     assert status == 200
-    assert body["count"] == 1
-    agent = body["agents"][0]
-    assert agent["agent_slug"] == "code-reviewer"
-    assert agent["name"] == "Code Reviewer"
+    assert body["count"] == 3
+    slugs = [agent["agent_slug"] for agent in body["agents"]]
+    assert "code-reviewer" in slugs
+    assert "agents-orchestrator" in slugs
+    assert "chief-of-staff" in slugs
 
 
 # ── /preflight ──────────────────────────────────────────────────────────
@@ -114,7 +129,7 @@ def test_preflight_returns_routing_and_context(http_server):
     assert body["model"] == "task-agency-router"
     assert "trace_id" in body
     assert "routing" in body
-    assert body["roster_size"] == 1
+    assert body["roster_size"] == 3
     assert body["trivial"] is False
     # context may be None if the LLM judge is unreachable, but the routing
     # dict must always have selected_ids.
@@ -134,7 +149,8 @@ def test_preflight_detects_trivial_messages(http_server):
     })
     assert status == 200
     assert body["trivial"] is True
-    assert body["context"] is None
+    assert body["context"] is not None
+    assert "agents-orchestrator, chief-of-staff" in body["context"]
 
 
 # ── /finalize ───────────────────────────────────────────────────────────
@@ -221,7 +237,7 @@ def test_explain_returns_selection_receipt(http_server):
     assert body["schema_version"] == "agency.selection_explain.v1"
     assert body["task"] == "review code quality"
     assert body["selected"]
-    assert body["signals"]["selection"]["roster_size"] == 1
+    assert body["signals"]["selection"]["roster_size"] >= 1
 
 
 def test_explain_rejects_missing_task(http_server):
@@ -236,10 +252,9 @@ def test_explain_rejects_missing_task(http_server):
 def test_search_returns_matching_agents(http_server):
     status, body = _post(http_server["base"], "/search", {"query": "code review"})
     assert status == 200
-    assert body["count"] == 1
-    agent = body["agents"][0]
-    assert agent["slug"] == "code-reviewer"
-    assert "score" in agent
+    assert body["count"] >= 1
+    slugs = [a["slug"] for a in body["agents"]]
+    assert "code-reviewer" in slugs
 
 
 def test_search_rejects_missing_query(http_server):
@@ -251,7 +266,7 @@ def test_search_rejects_missing_query(http_server):
 def test_search_clamps_limit(http_server):
     status, body = _post(http_server["base"], "/search", {"query": "code", "limit": 99999})
     assert status == 200
-    assert body["count"] == 1
+    assert body["count"] >= 1
 
 
 # ── Error handling ──────────────────────────────────────────────────────

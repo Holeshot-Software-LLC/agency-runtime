@@ -282,6 +282,39 @@ def test_header_replaces_noneish_loaded_reason_when_store_has_agency_evidence():
         assert filled["agencies_loaded"] == "senior-developer"
 
 
+def _activate_default_companions(store: Store) -> None:
+    for slug in ("agents-orchestrator", "chief-of-staff"):
+        store.activate_agent({
+            "slug": slug,
+            "name": slug.replace("-", " ").title(),
+            "description": f"Default companion specialist {slug}",
+            "division": "specialized",
+            "source": "test",
+        })
+
+
+def test_trivial_preflight_loads_defaults_equally_for_hermes_and_openclaw():
+    """Even ping should load DEFAULT companions consistently across hosts."""
+    from agency_runtime.adapters.hermes.plugin import HermesAdapter
+    from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        hermes_store = Store(Path(tmpdir) / "hermes.db")
+        openclaw_store = Store(Path(tmpdir) / "openclaw.db")
+        _activate_default_companions(hermes_store)
+        _activate_default_companions(openclaw_store)
+
+        hermes_result = HermesAdapter(store=hermes_store).build_preflight_context("s1", "ping")
+        openclaw_result = OpenClawAdapter(store=openclaw_store).build_preflight_context("s1", "ping")
+
+        assert hermes_result is not None
+        assert openclaw_result is not None
+        assert hermes_result["context"] == openclaw_result["context"]
+        assert "agents-orchestrator, chief-of-staff" in hermes_result["context"]
+        assert hermes_store.get_specialists_for_session("s1") == ["agents-orchestrator", "chief-of-staff"]
+        assert openclaw_store.get_specialists_for_session("s1") == ["agents-orchestrator", "chief-of-staff"]
+
+
 def test_store_delegation():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")

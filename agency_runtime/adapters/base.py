@@ -279,27 +279,48 @@ class BaseAdapter(ABC):
         del model
         from agency_runtime.core.delegation.events import record_suggested_delegations
         from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, route
+        from agency_runtime.core.selector.policy import detect_actions
 
-        if is_trivial(user_message):
-            return None
+        trivial = is_trivial(user_message)
 
-        if session_id:
-            self._nontrivial_sessions.add(session_id)
-        catalog = self.store.get_active_roster_as_catalog()
-        if not catalog:
-            from agency_runtime.core.installer import seed_starter_roster
-
-            seed_starter_roster(self.store)
+        if not trivial:
+            if session_id:
+                self._nontrivial_sessions.add(session_id)
             catalog = self.store.get_active_roster_as_catalog()
-        routing = route(session_id, user_message, catalog)
-        record_suggested_delegations(self.store, session_id=session_id, host=self.host_name, routing=routing)
-        context = build_routing_context(routing)
-        selected = self._selected_catalog_agents(catalog, routing)
-        if selected:
-            for agent in selected:
-                self.store.record_specialist_loaded(session_id, str(agent.get("slug") or ""))
-            context = context + "\n\n" + self._format_loaded_specialists(selected)
-        return {"context": context} if context else None
+            if not catalog:
+                from agency_runtime.core.installer import seed_starter_roster
+
+                seed_starter_roster(self.store)
+                catalog = self.store.get_active_roster_as_catalog()
+            routing = route(session_id, user_message, catalog)
+            record_suggested_delegations(self.store, session_id=session_id, host=self.host_name, routing=routing)
+            context = build_routing_context(routing)
+            selected = self._selected_catalog_agents(catalog, routing)
+            if selected:
+                for agent in selected:
+                    self.store.record_specialist_loaded(session_id, str(agent.get("slug") or ""))
+                context = context + "\n\n" + self._format_loaded_specialists(selected)
+            return {"context": context} if context else None
+
+        # Trivial message: still inject DEFAULT companions so the header
+        # never shows "loaded: none" when DEFAULT policy says otherwise.
+        _matched, companion_ids = detect_actions(user_message)
+        default_companions = [c for c in companion_ids if c]
+        if default_companions:
+            catalog = self.store.get_active_roster_as_catalog()
+            active_slugs = {str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog}
+            available = [slug for slug in default_companions if slug in active_slugs]
+            if available:
+                for slug in available:
+                    self.store.record_specialist_loaded(session_id, slug)
+                agents_text = ", ".join(available)
+                context = (
+                    f"[AGENCY PREFLIGHT] Default companion specialist routing "
+                    f"(deterministic, trivial message): {agents_text}"
+                )
+                return {"context": context}
+
+        return None
 
     def pre_llm_call_handler(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
         """Host hook alias for pre-LLM routing context."""

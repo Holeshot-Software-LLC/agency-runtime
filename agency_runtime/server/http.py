@@ -29,6 +29,7 @@ from agency_runtime.core.header.finalize import finalize_response
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, route
+from agency_runtime.core.selector.policy import detect_actions
 from agency_runtime.core.store.sqlite import Store
 
 logger = logging.getLogger("agency_runtime.server.http")
@@ -144,7 +145,17 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         catalog = self.store.get_active_roster_as_catalog()
         trivial = is_trivial(user_message)
         routing = route(session_id, user_message, catalog)
-        context = None if trivial else build_routing_context(routing)
+        context = build_routing_context(routing)
+        if trivial:
+            _matched, companion_ids = detect_actions(user_message)
+            active_slugs = {str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog}
+            available = [slug for slug in companion_ids if slug in active_slugs]
+            context = None
+            if available:
+                context = (
+                    "[AGENCY PREFLIGHT] Default companion specialist routing "
+                    f"(deterministic, trivial message): {', '.join(available)}"
+                )
 
         trace_id = str(uuid.uuid4())
         self._json_ok({
