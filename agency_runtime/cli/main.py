@@ -966,16 +966,44 @@ def _run_command(command: list[str], *, timeout: float | None = None) -> int:
     return int(proc.returncode)
 
 
+def _run_delegate_command(command: list[str], *, timeout: float | None = None, quiet: bool = False) -> int:
+    if quiet:
+        proc = subprocess.run(
+            command,
+            text=True,
+            timeout=timeout,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )  # noqa: S603
+        return int(proc.returncode)
+    return _run_command(command, timeout=timeout)
+
+
+def _emit_delegate_result(args: argparse.Namespace, payload: dict[str, Any], *, stderr: str = "") -> int:
+    if args.json:
+        _print_json(payload)
+    elif stderr:
+        print(stderr, file=sys.stderr)
+    return int(payload.get("exit_code", 1))
+
+
 def cmd_delegate(args: argparse.Namespace) -> int:
     backend = args.backend
     task = args.task
     agent = args.agent
     if args.timeout is not None and (not math.isfinite(args.timeout) or args.timeout <= 0):
-        print("--timeout must be a finite value greater than 0", file=sys.stderr)
-        return 2
+        error = "--timeout must be a finite value greater than 0"
+        return _emit_delegate_result(args, {"status": "error", "error": error, "exit_code": 2}, stderr=error)
     store = _store()
     trace_id = f"cli-delegate-{agent or 'auto'}"
     event_id = store.record_delegation(trace_id=trace_id, recommended_agent=agent or "", status="started", backend=backend)
+    payload = {
+        "trace_id": trace_id,
+        "event_id": event_id,
+        "backend": backend,
+        "agent": agent,
+        "timeout_seconds": args.timeout,
+    }
     if backend == "codex":
         command = ["codex", "exec", task]
     elif backend == "claude":
@@ -983,26 +1011,38 @@ def cmd_delegate(args: argparse.Namespace) -> int:
     elif backend == "hermes":
         command = ["hermes", "-z", task]
     else:
-        print(f"Delegation recorded for backend={backend} agent={agent}: {task}")
         store.update_delegation(event_id, status="suggested", backend=backend)
-        return 0
+        if not args.json:
+            print(f"Delegation recorded for backend={backend} agent={agent}: {task}")
+        return _emit_delegate_result(args, {**payload, "status": "suggested", "exit_code": 0})
     executable = shutil.which(command[0])
     if not executable:
         error = f"backend executable not found: {command[0]}"
         store.update_delegation(event_id, status="skipped", backend=backend, error=error, skip_reason=error)
-        print(error, file=sys.stderr)
-        return 127
+        return _emit_delegate_result(
+            args,
+            {**payload, "status": "skipped", "exit_code": 127, "error": error, "skip_reason": error},
+            stderr=error,
+        )
     command[0] = executable
     try:
-        code = _run_command(command, timeout=args.timeout)
+        code = _run_delegate_command(command, timeout=args.timeout, quiet=args.json)
     except subprocess.TimeoutExpired:
         timeout_text = "unknown" if args.timeout is None else f"{args.timeout:g}s"
         error = f"backend command timed out after {timeout_text}"
         store.update_delegation(event_id, status="skipped", backend=backend, error=error, skip_reason=error)
-        print(error, file=sys.stderr)
-        return 124
-    store.update_delegation(event_id, status="completed" if code == 0 else "failed", backend=backend, error="" if code == 0 else f"exit={code}")
-    return code
+        return _emit_delegate_result(
+            args,
+            {**payload, "status": "skipped", "exit_code": 124, "error": error, "skip_reason": error},
+            stderr=error,
+        )
+    status = "completed" if code == 0 else "failed"
+    error = "" if code == 0 else f"exit={code}"
+    store.update_delegation(event_id, status=status, backend=backend, error=error)
+    result = {**payload, "status": status, "exit_code": code}
+    if error:
+        result["error"] = error
+    return _emit_delegate_result(args, result)
 
 
 def cmd_eval_delegation(args: argparse.Namespace) -> int:
@@ -1217,6 +1257,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Stop waiting after N seconds and mark the delegation skipped",
     )
+    delegate.add_argument("--json", action="store_true", help="Print machine-readable delegation result")
     delegate.set_defaults(func=cmd_delegate)
 
     # eval

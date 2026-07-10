@@ -322,7 +322,7 @@ agency db trim --older-than-days 30 --json
 
 # Servers / adapters
 agency serve
-agency delegate --backend codex --agent code-reviewer --task "review this diff"
+agency delegate --backend codex --agent code-reviewer --task "review this diff" --timeout 30 --json
 agency codex exec --help
 ```
 
