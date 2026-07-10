@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -20,7 +21,6 @@ from agency_runtime.core.store.sqlite import Store
 
 
 ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter]
-
 
 class FakeHookContext:
     def __init__(self) -> None:
@@ -123,12 +123,11 @@ def test_all_adapters_post_api_request_is_safe_and_records_when_model_present(ad
     ("host", "expected_class", "expected_host"),
     [
         ("hermes", "HermesAdapter", "hermes"),
-        ("openclaw", "OpenClawAdapter", "openclaw"),
         ("codex", "CodexAdapter", "codex"),
         ("claude", "ClaudeAdapter", "claude"),
     ],
 )
-def test_generated_plugins_import_and_register_host_specific_adapters(
+def test_generated_python_plugins_import_and_register_host_specific_adapters(
     host: str,
     expected_class: str,
     expected_host: str,
@@ -139,8 +138,6 @@ def test_generated_plugins_import_and_register_host_specific_adapters(
     # Satisfy installer host detection without touching the real machine.
     if host == "hermes":
         (tmp_path / ".hermes-nexus" / "plugins").mkdir(parents=True)
-    elif host == "openclaw":
-        (tmp_path / ".openclaw").mkdir()
     elif host == "codex":
         (tmp_path / ".codex").mkdir()
     elif host == "claude":
@@ -149,6 +146,7 @@ def test_generated_plugins_import_and_register_host_specific_adapters(
     result = install_agent_adapter(host)
     assert result["ok"] is True
     plugin_path = Path(result["plugin_path"])
+    assert (plugin_path.parent / "plugin.yaml").exists()
 
     spec = importlib.util.spec_from_file_location(f"agency_runtime_generated_{host}", plugin_path)
     assert spec is not None and spec.loader is not None
@@ -161,9 +159,52 @@ def test_generated_plugins_import_and_register_host_specific_adapters(
     adapter = module._get_adapter()
     assert adapter.__class__.__name__ == expected_class
     assert adapter.host_name == expected_host
-    # OpenClaw/Codex/Claude generated plugins must not crash if their host emits
-    # a post-API hook with no model telemetry.
+    # Generated plugins must not crash if their host emits a post-API hook with no model telemetry.
     assert ctx.hooks["post_api_request"](response={}, model="task-general", session_id="s1") is None
     receipt = adapter.store.get_model_receipt_for_session("s1")
     assert receipt is not None
     assert receipt["resolved_model"] == "unavailable"
+
+
+def test_openclaw_bridge_routes_user_prompts_but_ignores_revision_instructions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "bridge.db"))
+    from agency_runtime.adapters.openclaw.node_bridge import handle
+    from agency_runtime.core.store.sqlite import Store
+    from agency_runtime.core.policy.defaults import STARTER_ROSTER
+
+    store = Store(tmp_path / "bridge.db")
+    for agent in STARTER_ROSTER:
+        store.activate_agent(dict(agent))
+    store.activate_agent({"slug": "agents-orchestrator", "name": "Agents Orchestrator"})
+    store.activate_agent({"slug": "chief-of-staff", "name": "Chief of Staff"})
+
+    routed = handle({"action": "preflight", "sessionId": "bridge", "userMessage": "ping", "model": "task-general"})
+    skipped = handle({"action": "preflight", "sessionId": "bridge", "userMessage": "Please revise. AGENCY HEADER INVALID: loaded none", "model": "task-general"})
+
+    assert "agents-orchestrator, chief-of-staff" in routed["context"]
+    assert skipped == {}
+
+
+def test_generated_openclaw_plugin_is_native_openclaw_package(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".openclaw").mkdir()
+
+    result = install_agent_adapter("openclaw")
+    assert result["ok"] is True
+    plugin_path = Path(result["plugin_path"])
+    assert plugin_path.name == "index.js"
+    assert plugin_path.parent == tmp_path / ".openclaw" / "plugins" / "agency-preflight"
+
+    manifest = json.loads((plugin_path.parent / "openclaw.plugin.json").read_text())
+    package = json.loads((plugin_path.parent / "package.json").read_text())
+    code = plugin_path.read_text()
+
+    assert manifest["id"] == "agency-preflight"
+    assert manifest["activation"]["onStartup"] is True
+    assert package["openclaw"]["extensions"] == ["./index.js"]
+    assert "before_prompt_build" in code
+    assert "before_agent_finalize" in code
+    assert "function userPrompt" in code
+    assert "event?.lastAssistantMessage" in code
+    assert 'join("\\n")' in code
+    assert "agency_runtime.adapters.openclaw.node_bridge" in code

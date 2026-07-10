@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -61,6 +62,23 @@ def _prepare_fake_host_home(home: Path, host: str) -> None:
         (home / ".claude").mkdir(parents=True, exist_ok=True)
 
 
+def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
+    """Validate OpenClaw's native JS plugin package without importing it in Python."""
+    manifest_path = plugin_path.parent / "openclaw.plugin.json"
+    package_path = plugin_path.parent / "package.json"
+    if not manifest_path.exists() or not package_path.exists():
+        raise RuntimeError("missing OpenClaw plugin manifest or package.json")
+    check = subprocess.run(
+        ["node", "--check", str(plugin_path)],
+        text=True,
+        capture_output=True,
+        timeout=15,
+    )
+    if check.returncode != 0:
+        raise RuntimeError((check.stderr or check.stdout or "node --check failed").strip())
+    return {"host": host, "plugin_path": str(plugin_path), "format": "openclaw-js"}
+
+
 def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     _prepare_fake_host_home(tmp_home, host)
     result = install_agent_adapter(host)
@@ -68,6 +86,9 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
         raise RuntimeError(str(result.get("error") or result))
 
     plugin_path = Path(str(result["plugin_path"]))
+    if host == "openclaw":
+        return _smoke_openclaw_plugin(host, plugin_path)
+
     spec = importlib.util.spec_from_file_location(f"agency_runtime_smoke_{host}", plugin_path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"could not import generated plugin: {plugin_path}")
