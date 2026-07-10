@@ -57,6 +57,7 @@ from agency_runtime.core.roster.sync import (
     validate_agent,
 )
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
+from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -943,6 +944,18 @@ def cmd_route(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_explain(args: argparse.Namespace) -> int:
+    store = _store()
+    payload = explain_route(
+        args.session_id,
+        args.task,
+        store.get_active_roster_as_catalog(),
+        limit=args.limit,
+    )
+    _print_json(payload)
+    return 0
+
+
 def _run_command(command: list[str]) -> int:
     if not command:
         print("No command supplied", file=sys.stderr)
@@ -1174,6 +1187,13 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument("--limit", type=int, default=5)
     route.add_argument("--json", action="store_true")
     route.set_defaults(func=cmd_route)
+
+    # explain
+    explain = sub.add_parser("explain", help="Explain why specialists were selected for a task")
+    explain.add_argument("task")
+    explain.add_argument("--session-id", default="", help="Session id for cache/stickiness context")
+    explain.add_argument("--limit", type=int, default=10, help="Number of candidates to include")
+    explain.set_defaults(func=cmd_explain)
 
     # delegate
     delegate = sub.add_parser("delegate", help="Delegate a task to a backend")

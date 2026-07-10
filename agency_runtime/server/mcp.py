@@ -39,6 +39,19 @@ MCP_TOOLS = [
         },
     },
     {
+        "name": "agency.explain_selection",
+        "description": "Explain why specialists were selected for a task.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {"type": "string"},
+                "task": {"type": "string"},
+                "limit": {"type": "integer"},
+            },
+            "required": ["task"],
+        },
+    },
+    {
         "name": "agency.load_specialist",
         "description": "Load a specialist agent prompt.",
         "inputSchema": {
@@ -121,6 +134,15 @@ def handle_tool_call(tool_name: str, arguments: dict[str, Any], store=None) -> d
         catalog = s.get_active_roster_as_catalog()
         candidates, scores = pre_narrow(arguments["query"], catalog, limit=10)
         return {"agents": candidates}
+
+    elif tool_name == "agency.explain_selection":
+        from agency_runtime.core.selector.explain import explain_route
+        return explain_route(
+            arguments.get("session_id", ""),
+            arguments["task"],
+            s.get_active_roster_as_catalog(),
+            limit=arguments.get("limit"),
+        )
 
     elif tool_name == "agency.load_specialist":
         conn = s._connect()

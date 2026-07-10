@@ -194,6 +194,68 @@ def test_agency_agents_delegate_records_visible_delegation(tmp_path: Path) -> No
     assert delegations[0]["backend"] == "agency_agents_delegate"
 
 
+def test_agency_agents_delegate_nested_failure_records_skipped_blocker(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    adapter = HermesAdapter(store=store)
+    store.record_delegation(
+        trace_id="trace-1",
+        session_id="session-1",
+        work_unit_id="unit-1",
+        recommended_agent="software-architect",
+        status="suggested",
+    )
+
+    adapter.post_tool_call_handler(
+        tool_name="agency_agents_delegate",
+        args={"agent": "software-architect", "task": "review the delegation design"},
+        result=(
+            '{"success": true, "delegated": true, '
+            '"result": "{\\"error\\": \\"delegate_task requires a parent agent context.\\"}"}'
+        ),
+        session_id="session-1",
+    )
+
+    delegations = store.get_delegations_for_session("session-1")
+    assert len(delegations) == 1
+    assert delegations[0]["recommended_agent"] == "software-architect"
+    assert delegations[0]["status"] == "skipped"
+    assert delegations[0]["backend"] == "agency_agents_delegate"
+    assert delegations[0]["skip_reason"] == "delegate_task requires a parent agent context."
+    fields = fill_header_fields({}, "session-1", store, "task-chunk-planner")
+    assert fields["agencies_delegated"] == "none - delegate_task requires a parent agent context."
+
+
+def test_agency_agents_delegate_nested_success_false_records_skipped_blocker(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    adapter = HermesAdapter(store=store)
+    store.record_delegation(
+        trace_id="trace-1",
+        session_id="session-1",
+        work_unit_id="unit-1",
+        recommended_agent="software-architect",
+        status="suggested",
+    )
+
+    adapter.post_tool_call_handler(
+        tool_name="agency_agents_delegate",
+        args={"agent": "software-architect", "task": "review the delegation design"},
+        result=(
+            '{"success": true, "delegated": true, '
+            '"result": "{\\"success\\": false, \\"delegated\\": false, '
+            '\\"message\\": \\"delegate depth limit reached\\"}"}'
+        ),
+        session_id="session-1",
+    )
+
+    delegations = store.get_delegations_for_session("session-1")
+    assert len(delegations) == 1
+    assert delegations[0]["status"] == "skipped"
+    assert delegations[0]["backend"] == "agency_agents_delegate"
+    assert delegations[0]["skip_reason"] == "delegate depth limit reached"
+    fields = fill_header_fields({}, "session-1", store, "task-chunk-planner")
+    assert fields["agencies_delegated"] == "none - delegate depth limit reached"
+
+
 @pytest.mark.parametrize(
     "delegated_header",
     [

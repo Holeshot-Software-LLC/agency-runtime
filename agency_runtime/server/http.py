@@ -2,6 +2,7 @@
 
 Endpoints:
     POST /preflight  — run routing preflight         {session_id, user_message, model?}
+    POST /explain    — explain specialist routing    {session_id?, task|user_message, limit?}
     POST /finalize   — finalize agency header        {draft_text, trace_id, host?, skills_loaded?, delegations?}
     GET  /status     — agency runtime status
     GET  /roster     — list active roster
@@ -25,6 +26,7 @@ from urllib.parse import urlparse
 from agency_runtime.core.config import load_config
 from agency_runtime.core.header.finalize import finalize_response
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
+from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, route
 from agency_runtime.core.store.sqlite import Store
 
@@ -74,6 +76,8 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         try:
             if path == "/preflight":
                 self._handle_preflight(body)
+            elif path == "/explain":
+                self._handle_explain(body)
             elif path == "/finalize":
                 self._handle_finalize(body)
             elif path == "/search":
@@ -151,6 +155,25 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             "trivial": trivial,
             "roster_size": len(catalog),
         })
+
+    def _handle_explain(self, body: dict[str, Any]) -> None:
+        task = str(body.get("task") or body.get("user_message") or "")
+        if not task:
+            self._json_error(HTTPStatus.BAD_REQUEST, "task or user_message is required")
+            return
+
+        try:
+            limit = int(body.get("limit", 10))
+        except (TypeError, ValueError):
+            limit = 10
+
+        payload = explain_route(
+            str(body.get("session_id", "")),
+            task,
+            self.store.get_active_roster_as_catalog(),
+            limit=limit,
+        )
+        self._json_ok(payload)
 
     def _handle_finalize(self, body: dict[str, Any]) -> None:
         draft_text = str(body.get("draft_text", ""))

@@ -220,6 +220,19 @@ User Message
 
 Even without a working LLM provider, routing falls back to token scoring so the agent gets a deterministic result instead of a silent failure.
 
+### Explain Routing Decisions
+
+Use `agency explain` or `POST /explain` when an operator needs to debug why a specialist was selected:
+
+```bash
+agency explain "review this PR for security issues" --session-id session-1 --limit 10
+curl -s http://127.0.0.1:7800/explain \
+  -H 'Content-Type: application/json' \
+  -d '{"session_id":"session-1","task":"review this PR for security issues","limit":10}'
+```
+
+The JSON receipt is stable under `schema_version="agency.selection_explain.v1"` and includes selected specialists, considered candidates, rejected-candidate reasons, policy hits, domain expansion, cache/stickiness state, selection status, and work-unit evidence. The MCP surface exposes the same receipt as `agency.explain_selection`.
+
 ## Delegation Evidence
 
 When the selector detects multiple independent work units, Agency Runtime writes `delegation_events` rows with `status='suggested'`. Host tool calls then promote those rows:
@@ -227,7 +240,7 @@ When the selector detects multiple independent work units, Agency Runtime writes
 | Host tool | Event transition | Header effect |
 |---|---|---|
 | `delegate_task` / `delegate_async` | `suggested -> delegated` | `Agency/Agencies delegated: <agent> via delegate_task` |
-| `agency_agents_delegate` | `suggested -> delegated` | `Agency/Agencies delegated: <agent> via agency_agents_delegate` |
+| `agency_agents_delegate` | `suggested -> delegated` when nested `delegate_task` succeeds; `suggested -> skipped` with `skip_reason` when the host delegate backend fails | delegated specialist or explicit blocker |
 | no delegation tool call | remains `suggested` | pre-verify rejects bare `Agency/Agencies delegated: none` |
 | explicit blocker | remains `suggested` with a non-bare reason in the header | accepted as surfaced evidence |
 
@@ -299,6 +312,7 @@ agency roster approve <snapshot-id>
 agency roster activate <snapshot-id>
 agency search "security"
 agency route "review this PR"
+agency explain "review this PR" --session-id session-1 --limit 10
 
 # Evidence / maintenance
 agency eval delegation --json

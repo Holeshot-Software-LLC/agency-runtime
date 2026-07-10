@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -30,7 +31,32 @@ def _is_non_actionable_delegation_none(value: str) -> bool:
     }
 
 
+def _json_dict(value: Any) -> dict[str, Any] | None:
+    if isinstance(value, dict):
+        return value
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = json.loads(value)
+    except Exception:
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _delegation_failure_reason(result: Any) -> str:
+    payload = _json_dict(result)
+    if not payload:
+        return ""
+    nested = _json_dict(payload.get("result"))
+    if nested and (nested.get("error") or nested.get("success") is False or nested.get("delegated") is False):
+        return _clean(nested.get("message") or nested.get("error") or "delegate_task failed")
+    if payload.get("error") or payload.get("success") is False or payload.get("delegated") is False:
+        return _clean(payload.get("message") or payload.get("error") or "delegate_task failed")
+    return ""
+
+
 class BaseAdapter(ABC):
+
     """Base class for host/runtime adapters.
 
     Adapters are thin I/O shims. They translate between host events and
@@ -85,7 +111,10 @@ class BaseAdapter(ABC):
 
     def record_tool_call(self, **kwargs: Any) -> None:
         """Record skills, specialist loads, and actual delegation tool use."""
-        from agency_runtime.core.delegation.events import mark_delegation_executed
+        from agency_runtime.core.delegation.events import (
+            mark_delegation_executed,
+            mark_delegation_skipped,
+        )
 
         tool_name = kwargs.get("tool_name") or ""
         args = kwargs.get("args") if isinstance(kwargs.get("args"), dict) else {}
@@ -105,14 +134,26 @@ class BaseAdapter(ABC):
             agent = args.get("agent") or args.get("slug") or ""
             if agent:
                 self.store.record_specialist_loaded(session_id, agent)
-            mark_delegation_executed(
-                self.store,
-                session_id=session_id,
-                host=self.host_name,
-                agent=agent,
-                backend="agency_agents_delegate",
-                goal=_clean(args.get("task") or args.get("goal")),
-            )
+            failure_reason = _delegation_failure_reason(kwargs.get("result"))
+            if failure_reason:
+                mark_delegation_skipped(
+                    self.store,
+                    session_id=session_id,
+                    host=self.host_name,
+                    agent=agent,
+                    backend="agency_agents_delegate",
+                    goal=_clean(args.get("task") or args.get("goal")),
+                    reason=failure_reason,
+                )
+            else:
+                mark_delegation_executed(
+                    self.store,
+                    session_id=session_id,
+                    host=self.host_name,
+                    agent=agent,
+                    backend="agency_agents_delegate",
+                    goal=_clean(args.get("task") or args.get("goal")),
+                )
 
         elif tool_name in ("delegate_task", "delegate_async"):
             agent = args.get("agent") or args.get("slug") or args.get("recommended_agent") or ""

@@ -120,8 +120,53 @@ def mark_delegation_executed(
     return 1
 
 
+def mark_delegation_skipped(
+    store: Store,
+    *,
+    session_id: str,
+    host: str,
+    backend: str,
+    reason: str,
+    agent: str = "",
+    goal: str = "",
+    count: int = 1,
+) -> int:
+    """Mark suggested work units as skipped, or record an explicit blocker."""
+    open_rows = suggested_delegations(store, session_id)
+    chosen_agent = _clean(agent) or (_clean(open_rows[0].get("recommended_agent")) if open_rows else "")
+    skip_reason = _clean(reason) or "delegation failed"
+    updated = 0
+
+    for row in open_rows[: max(1, count)]:
+        store.update_delegation(
+            row["id"],
+            status="skipped",
+            backend=backend,
+            recommended_agent=chosen_agent or _clean(row.get("recommended_agent")),
+            host=host,
+            skip_reason=skip_reason,
+        )
+        updated += 1
+
+    if updated:
+        return updated
+
+    store.record_delegation(
+        trace_id=f"tool-{session_id or uuid.uuid4()}",
+        session_id=session_id,
+        host=host,
+        work_unit_id=work_unit_id_from_text(goal or chosen_agent or backend or skip_reason),
+        recommended_agent=chosen_agent,
+        status="skipped",
+        backend=backend,
+        skip_reason=skip_reason,
+    )
+    return 1
+
+
 __all__ = [
     "mark_delegation_executed",
+    "mark_delegation_skipped",
     "record_suggested_delegations",
     "suggested_delegations",
     "work_unit_id_from_text",

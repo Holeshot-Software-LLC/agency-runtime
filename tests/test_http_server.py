@@ -191,6 +191,34 @@ def test_finalize_records_skills_and_delegations(http_server):
     assert body["action"] == "accept"
 
 
+# ── /explain ────────────────────────────────────────────────────────────
+
+def test_explain_returns_selection_receipt(http_server):
+    from agency_runtime.core.selector.cache import clear_cache
+    from agency_runtime.core.selector.stickiness import clear_session_routing
+
+    clear_cache()
+    clear_session_routing()
+    status, body = _post(http_server["base"], "/explain", {
+        "session_id": "s-explain",
+        "task": "review code quality",
+        "limit": 5,
+    })
+
+    assert status == 200
+    assert body["schema_version"] == "agency.selection_explain.v1"
+    assert body["task"] == "review code quality"
+    assert body["selected"]
+    assert body["signals"]["selection"]["roster_size"] == 1
+
+
+def test_explain_rejects_missing_task(http_server):
+    status, body = _post(http_server["base"], "/explain", {"session_id": "s-explain"})
+
+    assert status == 400
+    assert "task" in body["error"]
+
+
 # ── /search ─────────────────────────────────────────────────────────────
 
 def test_search_returns_matching_agents(http_server):
