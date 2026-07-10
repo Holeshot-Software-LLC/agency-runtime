@@ -37,7 +37,7 @@ ollama:
 selector:
   min_confidence: 0.4
   max_user_msg_len: 4000
-  trivial_msg_threshold: 12
+  trivial_msg_threshold: 5
 
 store:
   db_path: ~/.agency-runtime/agency.db

@@ -60,9 +60,9 @@ def is_trivial(message: str, config: AgencyConfig | None = None) -> bool:
 _TRIVIAL_PATTERNS = re.compile(
     r"^(?:yes|no|ok|okay|sure|thanks|done|got ?it|cool|nice|great|"
     r"perfect|exactly|right|correct|yep|nope|true|false|"
-    r"continue|proceed|go|stop|wait|hold|skip|next|retry|"
-    r"hello|hi|hey|sup|yo|test|ping|status|heartbeat"
-    r"|/\w+|ack|k|thx|ty|np|lol|haha|👍|❤️|🙌|✅|💀|😂)\s*[!.?]*$",
+    r"continue|proceed|go|stop|wait|hold|skip|retry|"
+    r"hello|hi|hey|sup|yo|test|ping|heartbeat"
+    r"|/\\w+|ack|k|thx|ty|np|lol|haha|👍|❤️|🙌|✅|💀|😂)\s*[!.?]*$",
     re.IGNORECASE,
 )
 

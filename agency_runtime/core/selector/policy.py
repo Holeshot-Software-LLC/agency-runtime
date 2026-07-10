@@ -20,6 +20,8 @@ _BUNDLED_COMPANION_POLICY: dict[str, Any] = {
             "triggers": ["_fallback_"],
             "always_include": [
                 {"slug": "workflow-architect"},
+                {"slug": "agents-orchestrator"},
+                {"slug": "chief-of-staff"},
             ],
         },
         "CODING": {

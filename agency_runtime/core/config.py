@@ -114,7 +114,7 @@ class OllamaConfig:
 class SelectorConfig:
     min_confidence: float = 0.4
     max_user_msg_len: int = 4000
-    trivial_msg_threshold: int = 8
+    trivial_msg_threshold: int = 5
 
 
 @dataclass(frozen=True, slots=True)

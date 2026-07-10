@@ -148,6 +148,16 @@ def test_is_trivial_meaningful():
     assert is_trivial("Fix the authentication bug in the login flow") is False
 
 
+def test_is_trivial_short_meaningful_not_trivial(monkeypatch):
+    """Short messages that carry real intent must not be trivial."""
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", "/nonexistent")
+    from agency_runtime.core.config import load_config
+    load_config(reload=True)
+    assert is_trivial("whats next") is False
+    assert is_trivial("status") is False
+    assert is_trivial("how's it going") is False
+
+
 def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
     monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing-policy.yaml"))
     matched_actions, companion_ids = detect_actions("fix the routing bug and add tests")
@@ -155,6 +165,20 @@ def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
     assert "CODING" in matched_actions
     assert "senior-developer" in companion_ids
     assert "code-reviewer" in companion_ids
+
+
+def test_bundled_companion_policy_default_includes_orchestrators(monkeypatch, tmp_path):
+    """DEFAULT action must always include agents-orchestrator and chief-of-staff."""
+    monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing.yaml"))
+    # Force reload of cached policy
+    from agency_runtime.core.selector import policy as policy_mod
+    policy_mod._COMPANION_POLICY = None
+    policy_mod._POLICY_MTIME = 0.0
+    _, companion_ids = detect_actions("anything at all")
+
+    assert "workflow-architect" in companion_ids
+    assert "agents-orchestrator" in companion_ids
+    assert "chief-of-staff" in companion_ids
 
 
 def test_routing_context_surfaces_low_confidence_default_agents():
