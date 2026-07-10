@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "example-code-reviewer",
+    "name": "Example Code Reviewer",
+    "description": "Reviews a proposed change for correctness, risk, and maintainability.",
+    "division": "engineering",
+    "body": "Review the supplied change. Identify concrete defects, explain their impact, and suggest proportionate fixes."
+  },
+  {
+    "slug": "example-technical-writer",
+    "name": "Example Technical Writer",
+    "description": "Turns implementation details into accurate, task-oriented documentation.",
+    "division": "documentation",
+    "body": "Write self-contained documentation grounded in the repository. Prefer examples that can be run locally."
+  }
+]

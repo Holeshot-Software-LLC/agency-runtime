@@ -1,3 +1,14 @@
+---
+title: "Agency Runtime"
+status: active
+category: overview
+created: 2026-07-08
+updated: 2026-07-10
+tags: []
+related: []
+supersedes: []
+superseded_by: null
+---
 <div align="center">
 
 # Agency Runtime
@@ -17,7 +28,7 @@
 ```mermaid
 graph TB
     subgraph "Roster Governance"
-        SRC[Upstream Source] --> QUAR[Quarantine]
+        SRC[Registered Source] --> QUAR[Quarantine]
         QUAR --> DIFF[Diff Snapshot]
         DIFF --> APPROVE{Approve}
         APPROVE -->|yes| ACT[Activate Roster]
@@ -63,11 +74,23 @@ graph LR
     end
 ```
 
-## Thank You: agency-agents
+## Roster Sources
 
-Agency Runtime exists because [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) made a high-quality open specialist-agent roster available to the community.
+Agency Runtime includes a small starter roster and can import operator-managed
+JSON, YAML, or Markdown sources. Imported agents pass through quarantine, diff,
+approval, and activation before they affect routing. Documentation and examples
+in this repository do not depend on a sibling checkout.
 
-That project is the inspiration and the default upstream roster source. Agency Runtime is intentionally complementary: it does **not** replace `agency-agents`; it gives AI-agent hosts a portable runtime that can import, quarantine, diff, activate, route, delegate, and audit specialist rosters such as `agency-agents`.
+The self-contained example at
+[`examples/rosters/agents.json`](examples/rosters/agents.json) is safe to use
+when evaluating the sync workflow:
+
+```bash
+agency source add examples/rosters/agents.json --name local-example
+agency sync --review
+agency roster approve <snapshot-id>
+agency roster activate <snapshot-id>
+```
 
 ## Why This Exists
 
@@ -79,30 +102,14 @@ Agency Runtime makes those decisions visible and durable:
 2. **Delegation Accountability** - independent work units are persisted as `suggested`, then promoted to `delegated` only when a host actually calls a delegation tool.
 3. **Model Receipts** - every host adapter can record the resolved model from runtime telemetry, including honest `unavailable` receipts when a host emits no model truth.
 4. **Observability Headers** - responses start with a six-line header showing loaded specialists, delegated specialists, loaded skills, actual model, and outcome rationale.
-5. **Roster Governance** - upstream agent rosters flow through quarantine, diff, approval, and activation before they affect routing.
-
-## Agency Runtime vs agency-agents
-
-| Project | What it is | What it owns |
-|---|---|---|
-| [`agency-agents`](https://github.com/msitarzewski/agency-agents) | Open specialist-agent roster and prompt ecosystem | Agent definitions, names, roles, specialist prompts, upstream community roster |
-| `agency-runtime` | Portable runtime/control plane | Host adapters, SQLite state, routing, delegation evidence, model receipts, roster import/governance, CLI/server surfaces |
-
-Use them together:
-
-```bash
-agency source add /path/to/agency-agents/integrations/hermes/agency-agents-router/data/agents.json --name agency-agents
-agency sync --review
-agency roster approve <snapshot-id>
-agency roster activate <snapshot-id>
-```
+5. **Roster Governance** - registered agent rosters flow through quarantine, diff, approval, and activation before they affect routing.
 
 ## Install
 
 ### From GitHub
 
 ```bash
-python -m pip install "agency-runtime @ git+https://github.com/<owner>/agency-runtime.git"
+python -m pip install "agency-runtime @ git+https://github.com/Holeshot-Software-LLC/agency-runtime.git"
 agency configure --non-interactive --profile standard
 agency install --all
 agency doctor
@@ -112,7 +119,7 @@ agency smoke --all
 ### From a Local Clone
 
 ```bash
-git clone https://github.com/<owner>/agency-runtime.git
+git clone https://github.com/Holeshot-Software-LLC/agency-runtime.git
 cd agency-runtime
 python -m pip install -e ".[dev]"
 python -m pytest tests/ -q
@@ -127,7 +134,7 @@ agency smoke --all
 Use this prompt in Codex, Claude Code, Hermes, OpenClaw/Nexus, or another coding agent:
 
 ```text
-Install Agency Runtime from https://github.com/<owner>/agency-runtime.
+Install Agency Runtime from https://github.com/Holeshot-Software-LLC/agency-runtime.
 Use the repo README as source of truth. Install it in editable mode if working from a clone, run `agency configure --non-interactive --profile standard`, then run `agency install --all`, `agency doctor`, `agency smoke --all`, `agency eval delegation --json`, and `agency route "review this PR for security issues"`.
 If the package is already cloned locally, do not reclone it; update/install from that working tree. Preserve existing config and do not delete roster data. Report the exact plugin paths wired, test results, and any host that was not detected.
 ```
@@ -228,7 +235,7 @@ agency configure --profile yolo         # trusted-source nightly automation mode
 Agency Runtime's built-in roster sync job is `agency sync`. It is intentionally approval-gated:
 
 ```bash
-agency source add /path/to/agency-agents/integrations/hermes/agency-agents-router/data/agents.json --name agency-agents
+agency source add examples/rosters/agents.json --name local-example
 agency sync --dry-run                  # fetch + validate without writing candidates
 agency sync --review                   # quarantine candidates and show snapshot diff
 agency roster approve <snapshot-id>    # approve the generated snapshot
@@ -239,11 +246,11 @@ agency roster list
 For trusted automation, use:
 
 ```bash
-agency source add /path/to/agents.json --name agency-agents --trusted-for-auto-approve
+agency source add examples/rosters/agents.json --name local-example --trusted-for-auto-approve
 agency sync --auto-approve
 ```
 
-`--auto-approve` fails closed unless every enabled source is explicitly marked `--trusted-for-auto-approve`, every source fetches and validates successfully, and at least one candidate is quarantined. Use a raw JSON/YAML/Markdown file, a local directory, or a generated `agents.json`; regular GitHub repository pages are HTML and are rejected.
+`--auto-approve` fails closed unless every enabled source is explicitly marked `--trusted-for-auto-approve`, every source fetches and validates successfully, and at least one candidate is quarantined. Use a raw JSON/YAML/Markdown file, a local directory, or a generated `agents.json`; repository web pages are HTML and are rejected.
 
 The sync pipeline is:
 
@@ -255,7 +262,7 @@ The sync pipeline is:
 6. **Activate** - active roster rows are replaced from the approved snapshot.
 7. **Audit** - import events, snapshots, active agents, and versions remain in SQLite.
 
-No sync path silently enables arbitrary upstream agents unless you explicitly run `--auto-approve` or approve/activate the snapshot. `agency install` seeds bundled starter agents only when those slugs are missing, so reinstalling host plugins does not downgrade agents that were already activated from a trusted synced roster.
+No sync path silently enables arbitrary imported agents unless you explicitly run `--auto-approve` or approve/activate the snapshot. `agency install` seeds bundled starter agents only when those slugs are missing, so reinstalling host plugins does not downgrade agents that were already activated from a trusted synced roster.
 
 ## How Routing Works
 
@@ -474,6 +481,18 @@ agency smoke --all --json
 
 Coverage includes config parsing, provider fallback, roster sync, routing, header validation/finalization, model receipts, delegation lifecycle, all-host adapter evidence parity, generated plugin imports, deterministic smoke checks, SQLite trimming, doctor checks, and HTTP server endpoints.
 
+## Documentation System
+
+Durable project context is maintained alongside the code:
+
+- [Roadmap](docs/roadmap/README.md) - internal issue IDs, epics, and tracker mapping.
+- [Worklog](docs/worklog/README.md) - exact commit index and reasoning-rich detail records.
+- [Decision registry](docs/decisions/README.md) - ADRs and superseding chains.
+- [Agent instructions](AGENTS.md) - mandatory upkeep rules for all four records.
+
+Run `python scripts/verify_docs.py` to validate front matter, links, indexes,
+superseding relationships, and repository boundaries.
+
 ## Contributing
 
 1. Keep host adapters thin; shared behavior belongs in `BaseAdapter` or `core/`.
@@ -481,7 +500,7 @@ Coverage includes config parsing, provider fallback, roster sync, routing, heade
 3. Run `python -m pytest tests/ -q` before opening a PR.
 4. Do not commit credentials, provider keys, or private host paths.
 5. Keep generated code indexes local: `.codegraph/`, `.chunkhound/`, `.graphify/`, and `graphify-out/` should be regenerated on demand, not committed.
-6. Preserve attribution for upstream roster sources such as `agency-agents`.
+6. Keep documentation examples self-contained within this repository.
 
 ## Requirements
 
@@ -493,10 +512,9 @@ Coverage includes config parsing, provider fallback, roster sync, routing, heade
 
 ## License
 
-MIT - see [LICENSE](LICENSE). Compatible with [agency-agents](https://github.com/msitarzewski/agency-agents), also MIT.
+MIT - see [LICENSE](LICENSE).
 
-## Related Projects
+## Optional Integrations
 
-- [agency-agents](https://github.com/msitarzewski/agency-agents) - open-source specialist agent roster and prompt ecosystem
-- [LiteLLM](https://github.com/BerriAI/litellm) - multi-provider LLM proxy
-- [Ollama](https://ollama.ai) - local LLM inference
+- [LiteLLM documentation](https://docs.litellm.ai/) - multi-provider LLM proxy.
+- [Ollama](https://ollama.ai/) - local LLM inference.
