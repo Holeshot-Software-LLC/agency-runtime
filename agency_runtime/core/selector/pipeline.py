@@ -67,6 +67,24 @@ _TRIVIAL_PATTERNS = re.compile(
 )
 
 
+def _available_companions(
+    companion_ids: list[str], catalog: list[dict[str, Any]]
+) -> tuple[list[str], list[str]]:
+    """Split policy companion slugs into active-roster and unavailable lists."""
+    active_slugs = {
+        str(agent.get("slug") or agent.get("agent_slug") or "")
+        for agent in catalog
+    }
+    available: list[str] = []
+    unavailable: list[str] = []
+    for companion_id in companion_ids:
+        if companion_id in active_slugs:
+            available.append(companion_id)
+        else:
+            unavailable.append(companion_id)
+    return available, unavailable
+
+
 def route(
     session_id: str,
     user_message: str,
@@ -93,6 +111,7 @@ def route(
 
     # Layer 0: Companion policy + work unit decomposition
     matched_actions, companion_ids = detect_actions(user_message)
+    available_companion_ids, unavailable_companion_ids = _available_companions(companion_ids, catalog)
     work_units = detect_work_units(user_message)
 
     refined = expand_query(refine_query(user_message, cfg))
@@ -103,12 +122,14 @@ def route(
     if cached is not None:
         cached_ids = cached.get("selected_ids", [])
         merged = list(cached_ids)
-        for cid in companion_ids:
+        for cid in available_companion_ids:
             if cid not in merged:
                 merged.append(cid)
-        if len(merged) > len(cached_ids):
-            cached["selected_ids"] = merged
-            cached["companion_actions"] = matched_actions
+        cached["selected_ids"] = merged
+        cached["companion_actions"] = matched_actions
+        cached["companion_ids"] = companion_ids
+        cached["available_companion_ids"] = available_companion_ids
+        cached["unavailable_companion_ids"] = unavailable_companion_ids
         return cached
 
     # Layer 3: Session stickiness
@@ -116,12 +137,14 @@ def route(
     if session_result is not None:
         session_ids = session_result.get("selected_ids", [])
         merged = list(session_ids)
-        for cid in companion_ids:
+        for cid in available_companion_ids:
             if cid not in merged:
                 merged.append(cid)
-        if len(merged) > len(session_ids):
-            session_result["selected_ids"] = merged
-            session_result["companion_actions"] = matched_actions
+        session_result["selected_ids"] = merged
+        session_result["companion_actions"] = matched_actions
+        session_result["companion_ids"] = companion_ids
+        session_result["available_companion_ids"] = available_companion_ids
+        session_result["unavailable_companion_ids"] = unavailable_companion_ids
         return session_result
 
     # Layer 4-6: Pre-narrow + LLM judge + fallback
@@ -130,12 +153,14 @@ def route(
     # Layer 7: Union companion policy with semantic results
     semantic_ids = routing.get("selected_ids", [])
     merged_ids = list(semantic_ids)
-    for cid in companion_ids:
+    for cid in available_companion_ids:
         if cid not in merged_ids:
             merged_ids.append(cid)
     routing["selected_ids"] = merged_ids
     routing["companion_actions"] = matched_actions
     routing["companion_ids"] = companion_ids
+    routing["available_companion_ids"] = available_companion_ids
+    routing["unavailable_companion_ids"] = unavailable_companion_ids
     routing["work_units"] = work_units
 
     if routing.get("selected_ids"):

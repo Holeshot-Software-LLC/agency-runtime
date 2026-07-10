@@ -1,7 +1,4 @@
-"""Session stickiness — reuse recent routing when token overlap is high.
-
-Ported from ~/.litellm/agency_preflight.py.
-"""
+"""Session-based routing stickiness — reuse recent selections within a session."""
 
 from __future__ import annotations
 

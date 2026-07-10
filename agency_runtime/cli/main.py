@@ -60,6 +60,7 @@ from agency_runtime.core.roster.sync import (
 )
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
+from agency_runtime.core.selector.policy import detect_actions, load_policy
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -937,12 +938,24 @@ def cmd_route(args: argparse.Namespace) -> int:
         print("No active agents available", file=sys.stderr)
         return 1
     top = results[0]
+    # Layer 0 companions
+    matched_actions, companion_ids = detect_actions(args.task)
     if args.json:
-        _print_json({"task": args.task, "selected": top, "candidates": results})
+        _print_json({
+            "task": args.task,
+            "selected": top,
+            "candidates": results,
+            "companion_actions": matched_actions,
+            "companion_ids": companion_ids,
+        })
     else:
         print(f"selected: {top['slug']} ({top.get('name', '')}) score={top['score']:.1f}")
         for agent in results[1:]:
             print(f"candidate: {agent['slug']} score={agent['score']:.1f}")
+        if matched_actions:
+            print(f"companion actions: {', '.join(matched_actions)}")
+        if companion_ids:
+            print(f"companion ids: {', '.join(companion_ids)}")
     return 0
 
 
@@ -1043,6 +1056,53 @@ def cmd_delegate(args: argparse.Namespace) -> int:
     if error:
         result["error"] = error
     return _emit_delegate_result(args, result)
+
+
+def cmd_policy(args: argparse.Namespace) -> int:
+    """Show the active companion policy and validate coverage against the roster."""
+    policy = load_policy()
+    actions = policy.get("actions", {})
+    catalog = _store().get_active_roster_as_catalog()
+    active_slugs = {a.get("slug") or a.get("agent_slug") or "" for a in catalog}
+
+    if args.json:
+        summary: dict[str, Any] = {
+            "action_count": len(actions),
+            "roster_count": len(active_slugs),
+            "actions": {},
+        }
+        all_policy_slugs: list[str] = []
+        for action, data in actions.items():
+            always: list[str] = [str(i.get("slug", "")) for i in (data.get("always_include") or []) if isinstance(i, dict) and i.get("slug")]
+            conditional: list[str] = [str(i.get("slug", "")) for i in (data.get("conditional") or []) if isinstance(i, dict) and i.get("slug")]
+            all_policy_slugs += always + conditional
+            summary["actions"][action] = {
+                "always_include": always,
+                "always_missing": [s for s in always if s not in active_slugs],
+                "conditional": conditional,
+                "conditional_missing": [s for s in conditional if s not in active_slugs],
+            }
+        unique = list(dict.fromkeys(all_policy_slugs))
+        summary["unique_policy_slugs"] = len(unique)
+        summary["all_missing"] = [s for s in unique if s not in active_slugs]
+        _print_json(summary)
+        return 0
+
+    print(f"Companion policy: {len(actions)} broad actions, {len(active_slugs)} active roster agents\n")
+    for action, data in sorted(actions.items()):
+        always_list: list[str] = [str(i.get("slug", "")) for i in (data.get("always_include") or []) if isinstance(i, dict) and i.get("slug")]
+        cond_list: list[str] = [str(i.get("slug", "")) for i in (data.get("conditional") or []) if isinstance(i, dict) and i.get("slug")]
+        always_missing: list[str] = [s for s in always_list if s not in active_slugs]
+        cond_missing: list[str] = [s for s in cond_list if s not in active_slugs]
+        status = "✅" if not always_missing else "❌"
+        print(f"{status} {action}")
+        print(f"   always_include ({len(always_list)}): {', '.join(always_list)}")
+        if always_missing:
+            print(f"   ⚠️  always_include MISSING: {', '.join(always_missing)}")
+        print(f"   conditional ({len(cond_list)}): {', '.join(cond_list[:8])}{'…' if len(cond_list) > 8 else ''}")
+        if cond_missing:
+            print(f"   ⚠️  conditional missing {len(cond_missing)}: {', '.join(cond_missing[:8])}{'…' if len(cond_missing) > 8 else ''}")
+    return 0
 
 
 def cmd_eval_delegation(args: argparse.Namespace) -> int:
@@ -1238,6 +1298,11 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument("--limit", type=int, default=5)
     route.add_argument("--json", action="store_true")
     route.set_defaults(func=cmd_route)
+
+    # policy
+    policy_p = sub.add_parser("policy", help="Show companion policy and validate coverage against active roster")
+    policy_p.add_argument("--json", action="store_true")
+    policy_p.set_defaults(func=cmd_policy)
 
     # explain
     explain = sub.add_parser("explain", help="Explain why specialists were selected for a task")

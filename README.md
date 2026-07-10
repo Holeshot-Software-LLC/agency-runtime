@@ -12,6 +12,57 @@
 
 ---
 
+## Architecture at a Glance
+
+```mermaid
+graph TB
+    subgraph "Roster Governance"
+        SRC[Upstream Source] --> QUAR[Quarantine]
+        QUAR --> DIFF[Diff Snapshot]
+        DIFF --> APPROVE{Approve}
+        APPROVE -->|yes| ACT[Activate Roster]
+        APPROVE -->|no| QUAR
+    end
+
+    subgraph "8-Layer Routing Pipeline"
+        MSG[User Message] --> L0
+        L0[Layer 0: Companion Policy] --> L1[Layer 1: Domain Expansion]
+        L1 --> L2[Layer 2: Content-Hash Cache]
+        L2 -->|miss| L3[Layer 3: Session Stickiness]
+        L3 -->|miss| L4[Layer 4: Confidence Bypass]
+        L4 -->|below threshold| L5[Layer 5: Token Pre-Narrow]
+        L5 --> L6[Layer 6: LLM Judge]
+        L6 --> L7[Layer 7: Union Companion + Semantic]
+        L7 --> RESULT[Routing Result]
+        ACT --> L0
+        ACT --> L5
+    end
+
+    subgraph "Delegation Evidence"
+        RESULT -->|2+ work units| SUGG[suggested]
+        SUGG -->|delegate_task call| DELEG[delegated]
+        SUGG -->|no call| SUGG
+    end
+
+    subgraph "Observability"
+        RESULT --> HDR[6-Line Header]
+        DELEG --> HDR
+    end
+```
+
+```mermaid
+graph LR
+    subgraph "Policy Resolution Order"
+        A[AGENCY_POLICY_PATH env] -->|fallback| B[companion_policy_path in agency.yaml]
+        B -->|fallback| C[Bundled companion_policy.yaml]
+    end
+
+    subgraph "Config Resolution Order"
+        D[Env Vars] -->|fallback| E[~/.agency-runtime/agency.yaml]
+        E -->|fallback| F[Bundled config_defaults.yaml]
+    end
+```
+
 ## Thank You: agency-agents
 
 Agency Runtime exists because [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) made a high-quality open specialist-agent roster available to the community.
@@ -106,6 +157,9 @@ agency install --agent claude
 agency install
 agency route "review this PR for security issues"
 agency search "SRE incident"
+agency route "review this PR"     # now shows companion actions + ids
+agency policy                      # validate all 16 broad actions against roster
+agency policy --json               # machine-readable coverage report
 ```
 
 This seeds the starter roster and leaves host plugin wiring untouched.
@@ -220,6 +274,36 @@ User Message
 
 Even without a working LLM provider, routing falls back to token scoring so the agent gets a deterministic result instead of a silent failure.
 
+### Current Companion Policy Coverage
+
+Layer 0 loads deterministic companions from `AGENCY_POLICY_PATH`, then `companion_policy_path` in `agency.yaml`, then the bundled fallback. The full policy used by the current runtime configuration is the broad-action matrix below.
+
+Current verification against the active roster shows:
+
+- All `always_include` specialists in the matrix are present in the active roster.
+- The full policy references 16 broad actions and 238 unique specialist slugs.
+- Three conditional entries are configured but not currently active in the roster: `internationalization-engineer`, `payments-billing-engineer`, and `test-automation-engineer`.
+- `agency route` is a token-ranked CLI helper that now also displays Layer 0 companion actions and ids; use `agency explain` or `agency policy` for full selector/policy inspection.
+
+| Broad action | Always include | Conditional coverage |
+|---|---|---|
+| `CODING` | `code-reviewer`, `reality-checker`, `senior-developer` | AppSec, codebase onboarding, minimal-change, prompt/API/LSP/git specialists, CMS/e-commerce, embedded/mobile, Solidity, voice AI, Feishu/WeChat, and other engineering niches. Roster gaps: `internationalization-engineer`, `payments-billing-engineer`. |
+| `PERFORMANCE` | `performance-benchmarker`, `autonomous-optimization-architect` | Database optimization, codebase onboarding, architecture, senior implementation, and test automation. Roster gap: `test-automation-engineer`. |
+| `GITHUB_WRITE` | `technical-writer`, `git-workflow-master`, `code-reviewer` | Jira-linked Git workflow stewardship. |
+| `ARCHITECTURE` | `software-architect`, `workflow-architect` | Multi-agent systems, backend/API architecture, rapid prototyping, i18n, and payments architecture. Roster gaps: `internationalization-engineer`, `payments-billing-engineer`. |
+| `ORCHESTRATION` | `agents-orchestrator`, `workflow-architect`, `chief-of-staff` | Product/project management, project shepherding, infrastructure maintenance, automation governance, and multi-agent systems. |
+| `DEBUGGING` | `codebase-onboarding-engineer`, `code-reviewer` | Incident command, SRE, SecOps, and reality-check verification. |
+| `DEVOPS_INFRA` | `devops-automator`, `infrastructure-maintainer` | SRE, network engineering, IT service management, support response, i18n, and payments. Roster gaps: `internationalization-engineer`, `payments-billing-engineer`. |
+| `IDEATION` | `trend-researcher`, `developer-advocate`, `product-manager` | Sprint prioritization, business strategy, growth, feedback synthesis, and behavioral nudging. |
+| `DOCUMENTATION` | `technical-writer` | Document generation, Zettelkasten/knowledge-base stewardship, and grant writing. |
+| `SECURITY` | `application-security-engineer`, `security-architect` | Pen testing, compliance, SecOps, cloud security, threat intel, incident response, blockchain security, privacy, and detection engineering. |
+| `TESTING_QA` | `reality-checker`, `evidence-collector` | Performance/API/accessibility testing, result analysis, tool evaluation, workflow optimization, model QA, and test automation. Roster gap: `test-automation-engineer`. |
+| `UI_UX` | `ui-designer`, `ux-architect` | UX research, frontend implementation, visual storytelling, brand, whimsy, persona walkthroughs, inclusive visuals, accessibility, and image prompting. |
+| `DATA_ML` | `ai-engineer`, `data-engineer` | Autonomous optimization, model QA, analytics reporting, prompt engineering, and AI data remediation. |
+| `BUSINESS` | `business-strategist`, `financial-analyst` | Finance, sales, marketing, legal, compliance, content, social, paid media, China market, and growth specialists. |
+| `PROJECT_MGMT` | `senior-project-manager`, `project-shepherd` | Product management, studio production/operations, experiment tracking, meeting notes, and operations management. |
+| `DEFAULT` | `agents-orchestrator`, `chief-of-staff` | Executive summaries, strategy duel, business strategy, game-development, GIS, spatial, and other specialized fallback coverage. |
+
 ### Explain Routing Decisions
 
 Use `agency explain` or `POST /explain` when an operator needs to debug why a specialist was selected:
@@ -245,6 +329,16 @@ When the selector detects multiple independent work units, Agency Runtime writes
 | explicit blocker | remains `suggested` with a non-bare reason in the header | accepted as surfaced evidence |
 
 This is the contract: detection alone is not delegation. A passing run must align preflight context, SQLite delegation events, the final header, and pre-verify behavior.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Suggested: Route detects 2+ work units
+    Suggested --> Delegated: Host calls delegate_task
+    Suggested --> Skipped: Backend fails / timeout
+    Suggested --> Suggested: No delegation call
+    Delegated --> [*]
+    Skipped --> [*]
+```
 
 ## Observability Header
 

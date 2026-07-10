@@ -28,7 +28,7 @@ agency = "agency_runtime.cli.main:main"
 include = ["agency_runtime*"]
 
 [tool.setuptools.package-data]
-agency_runtime = ["core/config_defaults.yaml"]
+agency_runtime = ["core/config_defaults.yaml", "core/companion_policy.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

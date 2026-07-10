@@ -1,7 +1,4 @@
-"""LRU cache with TTL for routing decisions.
-
-Ported from ~/.litellm/agency_preflight.py.
-"""
+"""Content-hash cache for routing results."""
 
 from __future__ import annotations
 

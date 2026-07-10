@@ -1,7 +1,4 @@
-"""Domain context expansion — enriches queries with discipline vocabulary.
-
-Ported from ~/.litellm/agency_preflight.py.
-"""
+"""Query expansion — adds domain context to improve specialist matching."""
 
 from __future__ import annotations
 

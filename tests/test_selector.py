@@ -159,12 +159,17 @@ def test_is_trivial_short_meaningful_not_trivial(monkeypatch):
 
 
 def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
+    """Force bundled policy by pointing env to a missing file, then reset cache."""
     monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing-policy.yaml"))
+    from agency_runtime.core.selector import policy as policy_mod
+    policy_mod._COMPANION_POLICY = None
+    policy_mod._POLICY_MTIME = 0.0
     matched_actions, companion_ids = detect_actions("fix the routing bug and add tests")
 
     assert "CODING" in matched_actions
     assert "senior-developer" in companion_ids
     assert "code-reviewer" in companion_ids
+    assert "reality-checker" in companion_ids
 
 
 def test_bundled_companion_policy_default_includes_orchestrators(monkeypatch, tmp_path):
@@ -176,9 +181,25 @@ def test_bundled_companion_policy_default_includes_orchestrators(monkeypatch, tm
     policy_mod._POLICY_MTIME = 0.0
     _, companion_ids = detect_actions("anything at all")
 
-    assert "workflow-architect" in companion_ids
     assert "agents-orchestrator" in companion_ids
     assert "chief-of-staff" in companion_ids
+
+
+def test_bundled_policy_has_all_broad_actions(monkeypatch, tmp_path):
+    """Bundled policy must include all 16 broad actions."""
+    monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing.yaml"))
+    from agency_runtime.core.selector import policy as policy_mod
+    policy_mod._COMPANION_POLICY = None
+    policy_mod._POLICY_MTIME = 0.0
+    policy = policy_mod.load_policy()
+    expected = {
+        "CODING", "PERFORMANCE", "GITHUB_WRITE", "ARCHITECTURE", "ORCHESTRATION",
+        "DEBUGGING", "DEVOPS_INFRA", "IDEATION", "DOCUMENTATION", "SECURITY",
+        "TESTING_QA", "UI_UX", "DATA_ML", "BUSINESS", "PROJECT_MGMT", "DEFAULT",
+    }
+    found = set(policy.get("actions", {}).keys())
+    missing = expected - found
+    assert not missing, f"Bundled policy missing actions: {missing}"
 
 
 def test_routing_context_surfaces_low_confidence_default_agents():

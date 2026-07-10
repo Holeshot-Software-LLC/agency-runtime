@@ -1,7 +1,4 @@
-"""Work unit decomposition — detect independent tasks for delegation.
-
-Ported from ~/.litellm/agency_preflight.py.
-"""
+"""Work-unit detection — identifies independent delegatable tasks in a message."""
 
 from __future__ import annotations
 

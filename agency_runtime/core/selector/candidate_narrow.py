@@ -1,7 +1,4 @@
-"""Token scoring utilities for candidate pre-narrowing.
-
-Ported from ~/.litellm/agency_preflight.py.
-"""
+"""Token-based candidate narrowing before LLM judge."""
 
 from __future__ import annotations
 

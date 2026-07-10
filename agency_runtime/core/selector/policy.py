@@ -1,7 +1,4 @@
-"""Companion policy — deterministic action→agent mapping.
-
-Ported from ~/.litellm/agency_preflight.py.
-"""
+"""Companion policy — deterministic action→agent mapping."""
 
 from __future__ import annotations
 
@@ -10,63 +7,13 @@ import os
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 logger = logging.getLogger("agency_runtime.selector.policy")
 
-_DEFAULT_POLICY_PATH = Path.home() / ".agency-runtime" / "companion_policy.yaml"  # fallback
-
-_BUNDLED_COMPANION_POLICY: dict[str, Any] = {
-    "actions": {
-        "DEFAULT": {
-            "triggers": ["_fallback_"],
-            "always_include": [
-                {"slug": "workflow-architect"},
-                {"slug": "agents-orchestrator"},
-                {"slug": "chief-of-staff"},
-            ],
-        },
-        "CODING": {
-            "triggers": [
-                "bug",
-                "build",
-                "code",
-                "coding",
-                "debug",
-                "fix",
-                "implement",
-                "refactor",
-                "test",
-            ],
-            "always_include": [
-                {"slug": "senior-developer"},
-                {"slug": "code-reviewer"},
-            ],
-        },
-        "DOCUMENTATION": {
-            "triggers": ["doc", "docs", "documentation", "handoff", "readme", "runbook", "write"],
-            "always_include": [
-                {"slug": "technical-writer"},
-            ],
-        },
-        "PLANNING": {
-            "triggers": ["architect", "architecture", "plan", "workflow"],
-            "always_include": [
-                {"slug": "workflow-architect"},
-            ],
-        },
-    },
-    "division_anchors": {
-        "engineering": {
-            "keywords": ["code", "bug", "debug", "implement", "test"],
-            "anchor": "senior-developer",
-            "conditional": [["code-reviewer", "review"]],
-        },
-        "documentation": {
-            "keywords": ["doc", "docs", "handoff", "readme"],
-            "anchor": "technical-writer",
-            "conditional": [],
-        },
-    },
-}
+_DEFAULT_POLICY_PATH = Path.home() / ".agency-runtime" / "companion_policy.yaml"
+_BUNDLED_POLICY_PATH = Path(__file__).resolve().parents[1] / "companion_policy.yaml"
+_BUNDLED_COMPANION_POLICY: dict[str, Any] | None = None
 
 
 def _resolve_policy_path() -> Path:
@@ -83,6 +30,19 @@ def _resolve_policy_path() -> Path:
         pass
     return _DEFAULT_POLICY_PATH
 
+def _load_bundled_policy() -> dict[str, Any]:
+    """Load the packaged broad-action companion policy."""
+    global _BUNDLED_COMPANION_POLICY
+    if _BUNDLED_COMPANION_POLICY is None:
+        try:
+            loaded = yaml.safe_load(_BUNDLED_POLICY_PATH.read_text(encoding="utf-8")) or {}
+            _BUNDLED_COMPANION_POLICY = loaded if isinstance(loaded, dict) else {}
+        except Exception as exc:
+            logger.warning("could not load bundled companion policy: %s", exc)
+            _BUNDLED_COMPANION_POLICY = {}
+    return _BUNDLED_COMPANION_POLICY
+
+
 _COMPANION_POLICY: dict[str, Any] | None = None
 _POLICY_MTIME: float = 0.0
 
@@ -96,12 +56,12 @@ def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
         mtime = path.stat().st_mtime
     except OSError:
         logger.debug("companion policy not found at %s", path)
-        return _COMPANION_POLICY or _BUNDLED_COMPANION_POLICY
+        return _COMPANION_POLICY or _load_bundled_policy()
 
     if _COMPANION_POLICY is None or mtime != _POLICY_MTIME:
         try:
-            import yaml
-            _COMPANION_POLICY = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            _COMPANION_POLICY = loaded if isinstance(loaded, dict) else {}
             _POLICY_MTIME = mtime
             actions = _COMPANION_POLICY.get("actions", {})
             logger.info("companion policy loaded (%d actions)", len(actions))
@@ -109,7 +69,7 @@ def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
             logger.warning("could not load companion policy: %s", exc)
             if _COMPANION_POLICY is None:
                 _COMPANION_POLICY = {}
-    return _COMPANION_POLICY
+    return _COMPANION_POLICY or _load_bundled_policy()
 
 
 def detect_actions(message: str) -> tuple[list[str], list[str]]:
