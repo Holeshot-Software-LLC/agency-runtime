@@ -181,6 +181,7 @@ def test_finalize_records_skills_and_delegations(http_server):
     status, body = _post(http_server["base"], "/finalize", {
         "draft_text": draft,
         "trace_id": "trace-2",
+        "session_id": "session-2",
         "host": "test",
         "skills_loaded": ["finalization"],
         "delegations": [
@@ -189,6 +190,17 @@ def test_finalize_records_skills_and_delegations(http_server):
     })
     assert status == 200
     assert body["action"] == "accept"
+    assert body["session_id"] == "session-2"
+    assert "Skills loaded: finalization" in body["text"]
+    assert "Agency/Agencies delegated: code-reviewer via test-backend" in body["text"]
+
+    store = http_server["store"]
+    assert store.get_skills_for_session("session-2") == ["finalization"]
+    delegations = store.get_delegations_for_session("session-2")
+    assert len(delegations) == 1
+    assert delegations[0]["recommended_agent"] == "code-reviewer"
+    assert delegations[0]["backend"] == "test-backend"
+    assert store.get_delegations_for_session("trace-2") == []
 
 
 # ── /explain ────────────────────────────────────────────────────────────

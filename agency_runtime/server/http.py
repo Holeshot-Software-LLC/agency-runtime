@@ -3,7 +3,7 @@
 Endpoints:
     POST /preflight  — run routing preflight         {session_id, user_message, model?}
     POST /explain    — explain specialist routing    {session_id?, task|user_message, limit?}
-    POST /finalize   — finalize agency header        {draft_text, trace_id, host?, skills_loaded?, delegations?}
+    POST /finalize   — finalize agency header        {draft_text, trace_id?, session_id?, host?, skills_loaded?, delegations?}
     GET  /status     — agency runtime status
     GET  /roster     — list active roster
     POST /search     — search agents                 {query, limit?}
@@ -177,7 +177,8 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
     def _handle_finalize(self, body: dict[str, Any]) -> None:
         draft_text = str(body.get("draft_text", ""))
-        trace_id = str(body.get("trace_id", ""))
+        trace_id = str(body.get("trace_id") or body.get("session_id") or "")
+        session_id = str(body.get("session_id") or trace_id)
         host = str(body.get("host", "unknown")) or "unknown"
         skills_loaded = body.get("skills_loaded") or []
         delegations = body.get("delegations") or []
@@ -188,7 +189,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
         # Record caller-provided context into the store so the finalization
         # gate picks it up when filling header fields from canonical storage.
-        session_key = trace_id
+        session_key = session_id
         for skill in skills_loaded:
             self.store.record_skill_loaded(session_key, str(skill))
         for delegation in delegations:
@@ -220,6 +221,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             "text": result["text"],
             "missing": result["missing"],
             "trace_id": trace_id,
+            "session_id": session_id,
         })
 
     def _handle_search(self, body: dict[str, Any]) -> None:
