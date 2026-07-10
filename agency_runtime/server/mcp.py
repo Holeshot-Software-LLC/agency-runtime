@@ -95,7 +95,9 @@ MCP_TOOLS = [
             "properties": {
                 "draft_text": {"type": "string"},
                 "trace_id": {"type": "string"},
+                "session_id": {"type": "string"},
                 "host": {"type": "string"},
+                "model": {"type": "string"},
             },
             "required": ["draft_text"],
         },
@@ -170,13 +172,20 @@ def handle_tool_call(tool_name: str, arguments: dict[str, Any], store=None) -> d
         return {"status": "delegation suggested", "agent": arguments["agent"]}
 
     elif tool_name == "agency.finalize":
-        from agency_runtime.core.header.contract import finalize_header
-        text = finalize_header(
+        from agency_runtime.core.header.finalize import finalize_response
+        trace_id = arguments.get("trace_id") or arguments.get("session_id", "")
+        session_id = arguments.get("session_id") or trace_id
+        result = finalize_response(
             arguments["draft_text"],
-            session_id=arguments.get("trace_id", ""),
+            trace_metadata={
+                "trace_id": trace_id,
+                "session_id": session_id,
+                "host": arguments.get("host") or "mcp",
+            },
             store=s,
+            model=arguments.get("model", ""),
         )
-        return {"text": text}
+        return dict(result)
 
     elif tool_name == "agency.status":
         roster = s.get_active_roster()

@@ -49,3 +49,30 @@ def test_mcp_explain_selection_returns_receipt(tmp_path: Path) -> None:
     assert receipt["schema_version"] == "agency.selection_explain.v1"
     assert receipt["selected"][0]["slug"] == "code-reviewer"
     assert receipt["signals"]["selection"]["roster_size"] == 1
+
+
+def test_mcp_finalize_returns_header_text(tmp_path: Path) -> None:
+    store = _seed_store(tmp_path)
+    store.record_specialist_loaded("s1", "code-reviewer")
+
+    result = handle_tool_call(
+        "agency.finalize",
+        {"session_id": "s1", "draft_text": "Done.", "model": "task-general"},
+        store=store,
+    )
+
+    assert result["action"] == "accept"
+    assert result["missing"] == []
+    assert "Agency/Agencies loaded: code-reviewer" in result["text"]
+    assert "task-general -> unavailable" in result["text"]
+    assert result["text"].endswith("Done.")
+    conn = store._connect()
+    try:
+        event = conn.execute(
+            "SELECT host, action FROM finalization_events WHERE trace_id = ?",
+            ("s1",),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert event is not None
+    assert dict(event) == {"host": "mcp", "action": "accept"}
