@@ -273,6 +273,17 @@ def test_invalid_json_returns_400(http_server):
     assert exc_info.value.code == 400
 
 
+def test_invalid_utf8_json_returns_400(http_server):
+    base = http_server["base"]
+    req = urllib.request.Request(
+        f"{base}/search", data=b"\xff",
+        headers={"Content-Type": "application/json"}, method="POST",
+    )
+    with pytest.raises(urllib.error.HTTPError) as exc_info:
+        urllib.request.urlopen(req, timeout=5)
+    assert exc_info.value.code == 400
+
+
 def test_empty_body_returns_400(http_server):
     base = http_server["base"]
     req = urllib.request.Request(
@@ -282,3 +293,31 @@ def test_empty_body_returns_400(http_server):
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
     assert exc_info.value.code == 400
+
+
+def test_unhandled_post_errors_do_not_leak_exception_details(http_server, monkeypatch, caplog):
+    def boom(self, body):
+        raise RuntimeError("secret-token")
+
+    monkeypatch.setattr("agency_runtime.server.http.AgencyHTTPHandler._handle_search", boom)
+
+    status, body = _post(http_server["base"], "/search", {"query": "code"})
+
+    assert status == 500
+    assert body == {"error": "internal server error"}
+    assert "RuntimeError" in caplog.text
+    assert "secret-token" not in caplog.text
+
+
+def test_unhandled_get_errors_do_not_leak_exception_details(http_server, monkeypatch, caplog):
+    def boom(self):
+        raise RuntimeError("secret-token")
+
+    monkeypatch.setattr("agency_runtime.server.http.AgencyHTTPHandler._handle_status", boom)
+
+    status, body = _get(http_server["base"], "/status")
+
+    assert status == 500
+    assert body == {"error": "internal server error"}
+    assert "RuntimeError" in caplog.text
+    assert "secret-token" not in caplog.text

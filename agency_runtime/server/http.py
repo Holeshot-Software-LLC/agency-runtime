@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import traceback
 import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -65,8 +66,8 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             else:
                 self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
         except Exception as exc:
-            logger.exception("unhandled error on GET %s", path)
-            self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+            _log_unhandled_request_error("GET", path, exc)
+            self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     def do_POST(self) -> None:  # noqa: N802 — http.server contract
         path = _normalise_path(self.path)
@@ -85,8 +86,8 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             else:
                 self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
         except Exception as exc:
-            logger.exception("unhandled error on POST %s", path)
-            self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+            _log_unhandled_request_error("POST", path, exc)
+            self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     # ── Body parsing ─────────────────────────────────────────────────
 
@@ -105,7 +106,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         raw = self.rfile.read(length)
         try:
             body = json.loads(raw)
-        except json.JSONDecodeError as exc:
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, f"invalid JSON: {exc}")
             return None
         if not isinstance(body, dict):
@@ -299,6 +300,19 @@ def _normalise_path(raw_path: str) -> str:
     """Strip query string and trailing slash, return bare path."""
     path = urlparse(raw_path).path
     return path.rstrip("/") or "/"
+
+
+def _log_unhandled_request_error(method: str, path: str, exc: Exception) -> None:
+    """Log traceback shape without leaking exception messages or payload values."""
+    frames = traceback.extract_tb(exc.__traceback__)
+    frame_refs = ", ".join(f"{Path(frame.filename).name}:{frame.lineno}" for frame in frames[-5:])
+    logger.error(
+        "unhandled error on %s %s: %s at %s",
+        method,
+        path,
+        type(exc).__name__,
+        frame_refs or "unknown",
+    )
 
 
 # ---------------------------------------------------------------------------
