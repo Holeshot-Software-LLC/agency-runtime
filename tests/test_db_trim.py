@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import subprocess
 from pathlib import Path
 
 from agency_runtime.cli.main import main
@@ -118,7 +119,7 @@ def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_pa
     def fake_which(name: str) -> str:
         return f"/bin/{name}"
 
-    def fake_run(command: list[str]) -> int:
+    def fake_run(command: list[str], *, timeout: float | None = None) -> int:
         commands.append(command)
         return 0
 
@@ -134,3 +135,94 @@ def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_pa
         ["/bin/claude", "-p", "--output-format", "json", "review diff"],
         ["/bin/hermes", "-z", "review diff"],
     ]
+
+
+def test_cli_delegate_timeout_marks_delegation_skipped(monkeypatch, tmp_path: Path, capsys) -> None:
+    db = tmp_path / "agency.db"
+    monkeypatch.setenv("AGENCY_DB_PATH", str(db))
+
+    def fake_which(name: str) -> str:
+        return f"/bin/{name}"
+
+    def fake_run(command: list[str], *, timeout: float | None = None) -> int:
+        assert command == ["/bin/hermes", "-z", "review diff"]
+        assert timeout == 0.01
+        raise subprocess.TimeoutExpired(command, timeout or 0)
+
+    monkeypatch.setattr("agency_runtime.cli.main.shutil.which", fake_which)
+    monkeypatch.setattr("agency_runtime.cli.main._run_command", fake_run)
+
+    code = main([
+        "delegate",
+        "--backend",
+        "hermes",
+        "--agent",
+        "code-reviewer",
+        "--task",
+        "review diff",
+        "--timeout",
+        "0.01",
+    ])
+
+    assert code == 124
+    assert "timed out after 0.01s" in capsys.readouterr().err
+    [event] = Store(db).get_delegations("cli-delegate-code-reviewer")
+    assert event["status"] == "skipped"
+    assert event["backend"] == "hermes"
+    assert event["skip_reason"] == "backend command timed out after 0.01s"
+    assert event["error"] == "backend command timed out after 0.01s"
+
+
+def test_cli_delegate_exit_124_remains_failed(monkeypatch, tmp_path: Path) -> None:
+    db = tmp_path / "agency.db"
+    monkeypatch.setenv("AGENCY_DB_PATH", str(db))
+
+    def fake_which(name: str) -> str:
+        return f"/bin/{name}"
+
+    def fake_run(command: list[str], *, timeout: float | None = None) -> int:
+        assert timeout == 0.01
+        return 124
+
+    monkeypatch.setattr("agency_runtime.cli.main.shutil.which", fake_which)
+    monkeypatch.setattr("agency_runtime.cli.main._run_command", fake_run)
+
+    code = main([
+        "delegate",
+        "--backend",
+        "hermes",
+        "--agent",
+        "code-reviewer",
+        "--task",
+        "review diff",
+        "--timeout",
+        "0.01",
+    ])
+
+    assert code == 124
+    [event] = Store(db).get_delegations("cli-delegate-code-reviewer")
+    assert event["status"] == "failed"
+    assert event["error"] == "exit=124"
+    assert event["skip_reason"] == ""
+
+
+def test_cli_delegate_rejects_nonpositive_timeout(monkeypatch, tmp_path: Path, capsys) -> None:
+    db = tmp_path / "agency.db"
+    monkeypatch.setenv("AGENCY_DB_PATH", str(db))
+
+    code = main(["delegate", "--backend", "hermes", "--task", "review diff", "--timeout", "0"])
+
+    assert code == 2
+    assert "--timeout must be a finite value greater than 0" in capsys.readouterr().err
+    assert Store(db).get_delegations("cli-delegate-auto") == []
+
+
+def test_cli_delegate_rejects_nonfinite_timeout(monkeypatch, tmp_path: Path, capsys) -> None:
+    db = tmp_path / "agency.db"
+    monkeypatch.setenv("AGENCY_DB_PATH", str(db))
+
+    code = main(["delegate", "--backend", "hermes", "--task", "review diff", "--timeout", "nan"])
+
+    assert code == 2
+    assert "--timeout must be a finite value greater than 0" in capsys.readouterr().err
+    assert Store(db).get_delegations("cli-delegate-auto") == []

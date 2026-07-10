@@ -25,8 +25,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import shutil
+import subprocess
 import sys
 import urllib.request
 from pathlib import Path
@@ -956,12 +958,11 @@ def cmd_explain(args: argparse.Namespace) -> int:
     return 0
 
 
-def _run_command(command: list[str]) -> int:
+def _run_command(command: list[str], *, timeout: float | None = None) -> int:
     if not command:
         print("No command supplied", file=sys.stderr)
         return 2
-    import subprocess
-    proc = subprocess.run(command, text=True)  # noqa: S603
+    proc = subprocess.run(command, text=True, timeout=timeout)  # noqa: S603
     return int(proc.returncode)
 
 
@@ -969,6 +970,9 @@ def cmd_delegate(args: argparse.Namespace) -> int:
     backend = args.backend
     task = args.task
     agent = args.agent
+    if args.timeout is not None and (not math.isfinite(args.timeout) or args.timeout <= 0):
+        print("--timeout must be a finite value greater than 0", file=sys.stderr)
+        return 2
     store = _store()
     trace_id = f"cli-delegate-{agent or 'auto'}"
     event_id = store.record_delegation(trace_id=trace_id, recommended_agent=agent or "", status="started", backend=backend)
@@ -989,7 +993,14 @@ def cmd_delegate(args: argparse.Namespace) -> int:
         print(error, file=sys.stderr)
         return 127
     command[0] = executable
-    code = _run_command(command)
+    try:
+        code = _run_command(command, timeout=args.timeout)
+    except subprocess.TimeoutExpired:
+        timeout_text = "unknown" if args.timeout is None else f"{args.timeout:g}s"
+        error = f"backend command timed out after {timeout_text}"
+        store.update_delegation(event_id, status="skipped", backend=backend, error=error, skip_reason=error)
+        print(error, file=sys.stderr)
+        return 124
     store.update_delegation(event_id, status="completed" if code == 0 else "failed", backend=backend, error="" if code == 0 else f"exit={code}")
     return code
 
@@ -1200,6 +1211,12 @@ def build_parser() -> argparse.ArgumentParser:
     delegate.add_argument("--backend", default="generic")
     delegate.add_argument("--agent", default="")
     delegate.add_argument("--task", required=True)
+    delegate.add_argument(
+        "--timeout",
+        type=float,
+        default=None,
+        help="Stop waiting after N seconds and mark the delegation skipped",
+    )
     delegate.set_defaults(func=cmd_delegate)
 
     # eval
