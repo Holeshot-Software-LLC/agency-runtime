@@ -39,6 +39,9 @@ changes rather than duplicating every commit.
 - Structured dashboard configuration backed by the same typed, locked, atomic
   writer as CLI configuration, including ordered providers and write-only
   secrets.
+- A responsive Signal Observatory with live bounded activity, accessible
+  source-owned charts, animated event transitions, and reduced-motion and
+  forced-colors support.
 - Versioned routing, policy, delegation, and 1,000-agent performance evaluation.
 - Windows and Ubuntu CI matrices plus isolated wheel smoke checks.
 
@@ -52,6 +55,9 @@ changes rather than duplicating every commit.
   only successful predecessor work.
 - Runtime storage defaults to metadata-only capture and a 30-day retention
   policy when the dashboard applies maintenance.
+- Dashboard activity now uses a consolidated metadata-only live endpoint,
+  visibility-aware single-flight polling, stable revisions, and capped retry
+  backoff while keeping host discovery and configuration off the fast path.
 - CLI secret updates now use standard input or a hidden prompt instead of
   process arguments, and configuration writes reject stale revisions and
   invalid schema before replacement.
@@ -76,6 +82,9 @@ changes rather than duplicating every commit.
 - Destructive retention input is rejected instead of clamped, and stale host
   inspections cannot offer enable/disable actions or survive a successful
   native state change.
+- Full dashboard refreshes are abortable and generation-checked so startup,
+  background restoration, and configuration mutations cannot apply stale
+  snapshots.
 
 ### Security
 

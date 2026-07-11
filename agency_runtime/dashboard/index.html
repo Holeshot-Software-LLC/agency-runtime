@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>Agency Runtime Control Deck</title>
+  <title>Agency Runtime — Signal Observatory</title>
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to dashboard</a>
   <div class="shell">
     <aside class="rail">
       <div class="brand" aria-label="Agency Runtime">
@@ -28,39 +29,80 @@
       </div>
     </aside>
 
-    <main>
+    <main id="main-content" tabindex="-1">
       <header class="topbar">
-        <div>
+        <div class="topbar-heading">
           <p class="eyebrow">LOCAL CONTROL PLANE</p>
           <h1 id="view-title">Runtime overview</h1>
         </div>
         <div class="top-actions">
+          <div class="live-console" aria-label="Live dashboard controls">
+            <time id="local-clock" class="local-clock">--:--:--</time>
+            <button id="live-toggle" class="live-toggle" type="button" aria-pressed="true">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span id="live-status">Live</span>
+            </button>
+            <span id="last-sync" class="last-sync">Awaiting first sync</span>
+          </div>
           <span id="privacy-chip" class="privacy-chip">Metadata only</span>
           <button id="refresh-button" class="button ghost">Refresh</button>
         </div>
       </header>
 
       <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <span id="live-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></span>
 
       <section class="view active" data-view-panel="overview">
-        <div class="metric-grid">
-          <article class="metric primary"><span>Runtime</span><strong id="metric-runtime">—</strong><small>loopback control plane</small></article>
-          <article class="metric"><span>Active roster</span><strong id="metric-roster">—</strong><small>governed specialists</small></article>
-          <article class="metric"><span>Routing decisions</span><strong id="metric-routing">—</strong><small>recent decision traces</small></article>
-          <article class="metric"><span>Delegations</span><strong id="metric-delegations">—</strong><small>recent evidence rows</small></article>
-          <article class="metric"><span>Store</span><strong id="metric-store">—</strong><small>SQLite + WAL</small></article>
+        <div class="observatory-intro">
+          <div>
+            <p class="eyebrow">SIGNAL OBSERVATORY</p>
+            <p class="observatory-lede">A live, metadata-only view of how work moves through the local runtime.</p>
+          </div>
+          <span class="window-label">Observed evidence window</span>
         </div>
-        <div class="split wide-left">
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">SIGNAL</p><h2>Recent delegation activity</h2></div><span class="panel-tag">LIVE</span></div>
-            <div class="table-wrap"><table><thead><tr><th>Agent</th><th>Host</th><th>Status</th><th>Backend</th><th>Started</th></tr></thead><tbody id="overview-delegations"></tbody></table></div>
+        <div class="metric-grid observatory-metrics">
+          <article class="metric primary"><span>Control plane</span><strong id="metric-runtime">—</strong><small>authenticated loopback runtime</small></article>
+          <article class="metric"><span>Active roster</span><strong id="metric-roster">—</strong><small>governed specialists now</small></article>
+          <article class="metric"><span>Observed routes</span><strong id="metric-routing">—</strong><small>bounded evidence window</small></article>
+          <article class="metric"><span>Observed delegations</span><strong id="metric-delegations">—</strong><small>bounded evidence window</small></article>
+          <article class="metric"><span>Evidence footprint</span><strong id="metric-store">—</strong><small>SQLite database + WAL</small></article>
+        </div>
+
+        <div class="observatory-grid">
+          <figure class="panel chart-panel activity-figure">
+            <div class="panel-head">
+              <div><p class="eyebrow">RUNTIME PULSE</p><h2>Routing and delegation flow</h2></div>
+              <span class="panel-tag observed-tag">OBSERVED</span>
+            </div>
+            <div class="chart-legend" aria-label="Chart series">
+              <span class="legend-item legend-routing">Routes</span>
+              <span class="legend-item legend-delegations">Delegations</span>
+            </div>
+            <div id="activity-chart" class="chart-surface activity-chart"></div>
+            <figcaption id="activity-chart-summary" class="chart-summary">Waiting for enough runtime evidence to draw the activity signal.</figcaption>
+          </figure>
+
+          <figure class="panel chart-panel outcome-figure">
+            <div class="panel-head">
+              <div><p class="eyebrow">OUTCOMES</p><h2>Delegation state</h2></div>
+              <span class="panel-tag">WINDOW</span>
+            </div>
+            <div id="outcome-chart" class="chart-surface outcome-chart"></div>
+            <figcaption id="outcome-chart-summary" class="chart-summary">No delegation outcomes have been observed yet.</figcaption>
+          </figure>
+
+          <article class="panel event-panel">
+            <div class="panel-head"><div><p class="eyebrow">EVENT STREAM</p><h2>Recent delegation activity</h2></div><span class="panel-tag live-tag"><span aria-hidden="true"></span>LIVE</span></div>
+            <div class="table-wrap"><table><caption class="sr-only">Recent observed delegation activity</caption><thead><tr><th scope="col">Agent</th><th scope="col">Host</th><th scope="col">Status</th><th scope="col">Backend</th><th scope="col">Started</th></tr></thead><tbody id="overview-delegations"></tbody></table></div>
           </article>
-          <article class="panel host-summary">
+
+          <article class="panel host-summary observatory-hosts">
             <div class="panel-head"><div><p class="eyebrow">DISCOVERY</p><h2>Host posture</h2></div></div>
             <div id="overview-hosts" class="host-stack"></div>
           </article>
         </div>
-        <article class="panel config-panel">
+
+        <article class="panel config-panel provider-observatory">
           <div class="panel-head"><div><p class="eyebrow">RECEIPT EVIDENCE</p><h2>Provider health</h2></div><span class="panel-tag">OBSERVED</span></div>
           <p class="panel-copy">Health is derived from recent model receipts. It is not a live provider probe, so providers without receipts remain unknown.</p>
           <div id="provider-health" class="provider-grid"></div>
@@ -86,12 +128,12 @@
       <section class="view" data-view-panel="evidence">
         <article class="panel">
           <div class="panel-head"><div><p class="eyebrow">AUTHORITATIVE EVENTS</p><h2>Runtime evidence</h2></div><span class="panel-tag">CONTENT REDACTED</span></div>
-          <div class="subnav" role="tablist">
-            <button class="subnav-item active" data-evidence="delegations">Delegations</button>
-            <button class="subnav-item" data-evidence="routing">Routing decisions</button>
-            <button class="subnav-item" data-evidence="receipts">Model receipts</button>
-            <button class="subnav-item" data-evidence="runs">Runs</button>
-            <button class="subnav-item" data-evidence="finalizations">Finalization</button>
+          <div class="subnav" role="tablist" aria-label="Evidence types">
+            <button class="subnav-item active" role="tab" aria-selected="true" data-evidence="delegations">Delegations</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="routing">Routing decisions</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="receipts">Model receipts</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="runs">Runs</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="finalizations">Finalization</button>
           </div>
           <div class="table-wrap"><table><thead id="evidence-head"></thead><tbody id="evidence-body"></tbody></table></div>
         </article>
@@ -255,7 +297,7 @@
       </section>
     </main>
   </div>
-  <div id="confirmation-modal" class="confirmation-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmation-title" hidden>
+  <div id="confirmation-modal" class="confirmation-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmation-title" aria-describedby="confirmation-message" hidden>
     <div class="confirmation-card">
       <p class="eyebrow">CONFIRM MUTATION</p>
       <h2 id="confirmation-title">Confirm this operation</h2>
@@ -269,6 +311,7 @@
       </div>
     </div>
   </div>
+  <script src="/charts.js" defer></script>
   <script src="/app.js" defer></script>
 </body>
 </html>

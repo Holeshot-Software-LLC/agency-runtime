@@ -18,7 +18,7 @@ issue_id: AR-13
 priority: p1
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/13"
 depends_on: [AR-12]
-blocks: [AR-07]
+blocks: [AR-07, AR-14]
 ---
 
 # AR-13: Add an optional cross-platform dashboard service and configuration parity

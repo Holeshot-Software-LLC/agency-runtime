@@ -11,6 +11,7 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from http.client import HTTPConnection
 from pathlib import Path
 
@@ -119,14 +120,31 @@ def _json_response(*args, **kwargs) -> tuple[int, dict, dict[str, str]]:
     return status, json.loads(raw), headers
 
 
+def _nested_keys(value: object) -> set[str]:
+    if isinstance(value, dict):
+        return set(value) | {
+            key for nested in value.values() for key in _nested_keys(nested)
+        }
+    if isinstance(value, list):
+        return {key for nested in value for key in _nested_keys(nested)}
+    return set()
+
+
 def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     status, raw, headers = _request(dashboard_server, "/")
 
     assert status == 200
-    assert b"Agency Runtime Control Deck" in raw
+    assert b"Signal Observatory" in raw
     assert headers["X-Frame-Options"] == "DENY"
     assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]
     assert headers["Cache-Control"] == "no-store"
+
+    status, charts, _headers = _request(dashboard_server, "/charts.js")
+    assert status == 200
+    assert b"AgencyCharts" in charts
+    assert b"bucketActivity" in charts
+    assert b"outcomeCounts" in charts
+    assert b"retryDelay" in charts
 
     status, script, _headers = _request(dashboard_server, "/app.js")
     assert status == 200
@@ -146,13 +164,41 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"APPLY LOCAL-ONLY PROFILE" in script
     assert b"requestConfirmation" in script
     assert b"window.prompt" not in script
+    assert b"visibilitychange" in script
+    assert b"AbortController" in script
+    assert b"cancelFullRefresh" in script
+    assert b"event.persisted" in script
+    assert b'panel.setAttribute("aria-labelledby", active.id)' in script
+    assert b"panel.tabIndex = 0" in script
+    assert b"APIError" in script
+    assert b"updateLocalClock" in script
+    assert b"aria-current" in script
+    assert b".inert" in script
+    assert b"setInterval" not in script
+    assert b"navigator.onLine" not in script
+    assert b'addEventListener("offline"' not in script
 
     status, stylesheet, _headers = _request(dashboard_server, "/app.css")
     assert status == 200
     assert b"overflow-wrap: anywhere" in stylesheet
     assert b".host-row > div" in stylesheet
     assert b".rail::-webkit-scrollbar" in stylesheet
+    assert b"prefers-reduced-motion: reduce" in stylesheet
+    assert b"forced-colors: active" in stylesheet
+    assert b":focus-visible" in stylesheet
 
+    assert b'class="skip-link"' in raw
+    assert b'href="#main-content"' in raw
+    assert b'id="main-content"' in raw
+    assert b'id="live-toggle"' in raw
+    assert b'id="live-status"' in raw
+    assert b'id="last-sync"' in raw
+    assert b'id="live-announcer"' in raw
+    assert b'id="activity-chart"' in raw
+    assert b'id="activity-chart-summary"' in raw
+    assert b'id="outcome-chart"' in raw
+    assert b'id="outcome-chart-summary"' in raw
+    assert raw.index(b'<script src="/charts.js"') < raw.index(b'<script src="/app.js"')
     assert b'id="provider-health"' in raw
     assert b'id="config-form"' in raw
     assert b'data-config-path="dashboard.port"' in raw
@@ -163,22 +209,48 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b'id="confirmation-modal"' in raw
     assert b"not a live provider probe" in raw
 
+    assets = raw + stylesheet + charts + script
+    lowered_assets = assets.lower()
+    assert b'src="http://' not in lowered_assets
+    assert b'src="https://' not in lowered_assets
+    assert b'href="http://' not in lowered_assets
+    assert b'href="https://' not in lowered_assets
+    for forbidden in (
+        b"innerHTML",
+        b"outerHTML",
+        b"insertAdjacentHTML",
+        b"eval(",
+        b"new Function",
+        b"document.write",
+    ):
+        assert forbidden not in assets
+
 
 def test_dashboard_javascript_parses_when_node_is_available() -> None:
     node = shutil.which("node")
     if node is None:
         pytest.skip("Node.js is unavailable")
 
-    script = Path(__file__).parents[1] / "agency_runtime" / "dashboard" / "app.js"
+    root = Path(__file__).parents[1]
+    for name in ("app.js", "charts.js"):
+        script = root / "agency_runtime" / "dashboard" / name
+        completed = subprocess.run(
+            [node, "--check", str(script)],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert completed.returncode == 0, completed.stderr
+
     completed = subprocess.run(
-        [node, "--check", str(script)],
+        [node, "--test", str(root / "tests" / "dashboard_ui.test.mjs")],
         check=False,
         capture_output=True,
         text=True,
         timeout=10,
     )
-
-    assert completed.returncode == 0, completed.stderr
+    assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
 def test_dashboard_api_requires_per_launch_token(dashboard_server):
@@ -186,6 +258,168 @@ def test_dashboard_api_requires_per_launch_token(dashboard_server):
 
     assert status == 401
     assert payload == {"error": "authentication required"}
+
+    status, payload, _headers = _json_response(dashboard_server, "/api/live")
+    assert status == 401
+    assert payload == {"error": "authentication required"}
+
+
+def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activity(
+    dashboard_server,
+):
+    status, first, headers = _json_response(
+        dashboard_server,
+        "/api/live",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert set(first) == {
+        "schema_version",
+        "sampled_at",
+        "revision",
+        "overview",
+        "activity",
+    }
+    assert first["schema_version"] == 1
+    assert isinstance(first["sampled_at"], str)
+    sampled_at = datetime.fromisoformat(first["sampled_at"].replace("Z", "+00:00"))
+    assert sampled_at.tzinfo is not None
+    assert len(first["revision"]) == 64
+    assert all(character in "0123456789abcdef" for character in first["revision"])
+    assert set(first["overview"]) == {
+        "status",
+        "db_size_bytes",
+        "wal_size_bytes",
+        "provider_health",
+        "recent",
+    }
+    assert set(first["activity"]) == {
+        "runs",
+        "routing",
+        "delegations",
+        "receipts",
+        "finalizations",
+    }
+    assert headers["Cache-Control"] == "no-store"
+    assert headers["X-Frame-Options"] == "DENY"
+    assert headers["X-Content-Type-Options"] == "nosniff"
+    assert headers["Referrer-Policy"] == "no-referrer"
+    assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]
+    assert headers["Permissions-Policy"] == "camera=(), microphone=(), geolocation=()"
+
+    status, unchanged, _headers = _json_response(
+        dashboard_server,
+        "/api/live",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert unchanged["revision"] == first["revision"]
+
+    dashboard_server["store"].record_delegation(
+        trace_id="trace-dashboard-live",
+        session_id="session-dashboard-live",
+        host="test",
+        work_unit_id="unit-live",
+        recommended_agent="security-reviewer",
+        status="completed",
+        backend="test",
+    )
+    status, changed, _headers = _json_response(
+        dashboard_server,
+        "/api/live",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert changed["revision"] != first["revision"]
+
+
+def test_dashboard_live_snapshot_is_metadata_only_and_never_leaks_credentials(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from agency_runtime.core.config import reset_config_cache
+
+    secret = "live-secret-sentinel-never-return"
+    monkeypatch.setenv("AGENCY_JUDGE_API_KEY", secret)
+    reset_config_cache()
+    dashboard_server["store"].record_delegation(
+        trace_id="trace-dashboard-secret",
+        session_id="session-dashboard-secret",
+        host="test",
+        work_unit_id="unit-secret",
+        recommended_agent="security-reviewer",
+        status="failed",
+        backend="test",
+        error=secret,
+    )
+    original = Store.recent_runtime_activity
+
+    def captured_detail(self: Store, *, limit: int = 50):
+        activity = original(self, limit=limit)
+        activity["delegations"][0]["skip_reason"] = secret
+        activity["routing"].append(
+            {
+                "id": "captured-routing",
+                "created_at": "2026-07-11T12:00:00Z",
+                "work_units": {"task": secret},
+            }
+        )
+        return activity
+
+    monkeypatch.setattr(Store, "recent_runtime_activity", captured_detail)
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/live",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    encoded = json.dumps(payload, sort_keys=True)
+    assert secret not in encoded
+    assert dashboard_server["token"] not in encoded
+    assert all("skip_reason" not in row for row in payload["activity"]["delegations"])
+    assert all("work_units" not in row for row in payload["activity"]["routing"])
+    assert _nested_keys(payload).isdisjoint(
+        {
+            "api_key",
+            "completion",
+            "content",
+            "draft_text",
+            "prompt",
+            "request_body",
+            "response_body",
+            "stderr",
+            "stdout",
+            "task",
+            "user_message",
+        }
+    )
+
+
+def test_dashboard_live_snapshot_reads_activity_once(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    original = Store.recent_runtime_activity
+    calls: list[int] = []
+
+    def counted(self: Store, *, limit: int = 50):
+        calls.append(limit)
+        return original(self, limit=limit)
+
+    monkeypatch.setattr(Store, "recent_runtime_activity", counted)
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/live",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["schema_version"] == 1
+    assert len(calls) == 1
+    assert 1 <= calls[0] <= 200
 
 
 def test_dashboard_rejects_cross_origin_request(dashboard_server):

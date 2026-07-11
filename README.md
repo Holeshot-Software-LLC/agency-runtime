@@ -216,10 +216,18 @@ requests, accepts mutation bodies only as JSON, sends restrictive browser
 security headers, and requires exact confirmation phrases for roster, host,
 retention, and configuration mutations.
 
-The UI shows recent routing decisions, evidence tables, roster snapshots, host
-maturity, an authoritative detected dependency graph, editable redacted
-configuration, and a route/explain lab. It is not a remote multi-user control
-plane and does not turn cold host inventory into a live verification claim.
+The Signal Observatory overview streams bounded routing and delegation
+metadata while the tab is visible, with source-owned accessible charts,
+animated event transitions, provider evidence, and host posture. Polling is
+single-flight, pauses with the tab or the Live control, backs off transient
+failures, and stops on expired authentication instead of retrying forever.
+Configuration, roster governance, and native host inspection stay outside the
+fast loop.
+
+The other views provide evidence tables, roster snapshots, an authoritative
+detected dependency graph, editable redacted configuration, and a route/explain
+lab. The dashboard is not a remote multi-user control plane and does not turn
+cold host inventory into a live verification claim.
 
 Dashboard and CLI configuration changes use the same typed, locked, atomic
 writer. Unknown fields, invalid types/ranges, embedded URL credentials, stale

@@ -133,6 +133,14 @@ python scripts/verify_distribution.py dist
 - [ ] Dashboard configuration tests cover typed writes, redaction, write-only
       secrets, optimistic-concurrency conflicts, local-only enforcement, and
       sensitive confirmation phrases through both CLI and API.
+- [ ] Dashboard live tests cover authenticated schema and metadata boundaries,
+      stable revisions, one bounded activity read, stale-response cancellation,
+      visibility lifecycle, terminal authentication, and capped retry behavior.
+- [ ] Dashboard browser QA covers desktop and mobile layout, live controls,
+      chart summaries, keyboard naming, reduced motion, forced colors, no
+      horizontal page overflow, and a clean console.
+- [ ] Every dashboard asset is present in wheel and source artifacts, passes the
+      static CSP/security scan, and stays within the documented asset budget.
 - [ ] A fresh Python 3.10 environment on Windows installs only the built wheel,
       runs `agency --help`, imports package data, and passes the packaged smoke
       procedure.

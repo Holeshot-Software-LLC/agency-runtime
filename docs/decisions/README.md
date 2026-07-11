@@ -86,6 +86,7 @@ Status meanings:
 | [ADR-0026](0026-explicit-test-home-boundaries.md) | Require explicit home boundaries for generated-plugin tests | Accepted |
 | [ADR-0029](0029-secure-local-dashboard-and-bounded-observability.md) | Keep the operations dashboard local and observability bounded | Accepted |
 | [ADR-0031](0031-optional-user-dashboard-service-and-shared-configuration.md) | Use an optional user-scoped dashboard service with one typed configuration boundary | Accepted |
+| [ADR-0032](0032-adaptive-authenticated-dashboard-polling.md) | Use adaptive authenticated polling and source-owned signal visualizations | Accepted |
 
 ## Documentation governance
 

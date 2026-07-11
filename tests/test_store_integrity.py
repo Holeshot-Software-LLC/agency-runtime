@@ -24,7 +24,45 @@ def _row(store: Store, sql: str, parameters: tuple = ()) -> sqlite3.Row:
         connection.close()
 
 
-def test_create_run_default_is_a_fixed_metadata_only_projection(tmp_path: Path, monkeypatch):
+def test_dashboard_activity_orders_use_global_timestamp_indexes(tmp_path: Path):
+    store = Store(tmp_path / "indexed" / "agency.db")
+    connection = store._connect()
+    try:
+        plans = {
+            "idx_runs_recent": (
+                "SELECT id FROM runs ORDER BY started_at DESC, id DESC LIMIT 100"
+            ),
+            "idx_receipts_recent": (
+                "SELECT id FROM model_receipts "
+                "ORDER BY COALESCE(ended_at, started_at) DESC, id DESC LIMIT 100"
+            ),
+            "idx_delegations_recent": (
+                "SELECT id FROM delegation_events "
+                "ORDER BY COALESCE(completed_at, started_at) DESC, id DESC LIMIT 100"
+            ),
+            "idx_finalization_recent": (
+                "SELECT id FROM finalization_events "
+                "ORDER BY created_at DESC, id DESC LIMIT 100"
+            ),
+            "idx_routing_recent": (
+                "SELECT id FROM routing_decisions "
+                "ORDER BY created_at DESC, id DESC LIMIT 100"
+            ),
+        }
+        for index_name, sql in plans.items():
+            details = " ".join(
+                str(row["detail"])
+                for row in connection.execute(f"EXPLAIN QUERY PLAN {sql}")
+            )
+            assert index_name in details, (index_name, details)
+            assert "USE TEMP B-TREE" not in details, (index_name, details)
+    finally:
+        connection.close()
+
+
+def test_create_run_default_is_a_fixed_metadata_only_projection(
+    tmp_path: Path, monkeypatch
+):
     monkeypatch.setattr(
         "agency_runtime.core.store.sqlite._capture_content_enabled",
         lambda: False,
@@ -67,8 +105,7 @@ def test_opt_in_run_content_is_bounded_and_redacted(tmp_path: Path, monkeypatch)
         trace_id="trace-captured",
         user_message=(
             f"Authorization: Bearer {secret} "
-            f"https://alice:password@example.test/v1?api_key={secret} "
-            + ("x" * 4_000)
+            f"https://alice:password@example.test/v1?api_key={secret} " + ("x" * 4_000)
         ),
         metadata={"source": "hook", "arbitrary": secret},
     )
@@ -130,8 +167,14 @@ def test_schema_upgrade_scrubs_legacy_private_fields(tmp_path: Path, monkeypatch
         connection.close()
 
     migrated = Store(path)
-    run = _row(migrated, "SELECT user_message, metadata FROM runs WHERE trace_id = ?", ("legacy-trace",))
-    receipt = _row(migrated, "SELECT api_base FROM model_receipts WHERE id = ?", (receipt_id,))
+    run = _row(
+        migrated,
+        "SELECT user_message, metadata FROM runs WHERE trace_id = ?",
+        ("legacy-trace",),
+    )
+    receipt = _row(
+        migrated, "SELECT api_base FROM model_receipts WHERE id = ?", (receipt_id,)
+    )
     event = _row(
         migrated,
         "SELECT skip_reason, error FROM delegation_events WHERE id = ?",
@@ -140,7 +183,10 @@ def test_schema_upgrade_scrubs_legacy_private_fields(tmp_path: Path, monkeypatch
     assert run["user_message"] == ""
     assert json.loads(run["metadata"]) == {"source": "hook"}
     assert receipt["api_base"] == "https://example.test/v1"
-    assert dict(event) == {"skip_reason": "unspecified_skip", "error": "execution_failed"}
+    assert dict(event) == {
+        "skip_reason": "unspecified_skip",
+        "error": "execution_failed",
+    }
 
 
 def test_delegation_details_are_projected_by_default_and_redacted_when_opted_in(
@@ -172,8 +218,7 @@ def test_delegation_details_are_projected_by_default_and_redacted_when_opted_in(
         skip_reason="backend command timed out after 1s",
         error=(
             "password=hunter2 "
-            "https://alice:hunter2@example.test/v1?token=hunter2 "
-            + ("z" * 4_000)
+            "https://alice:hunter2@example.test/v1?token=hunter2 " + ("z" * 4_000)
         ),
     )
     captured = _row(
@@ -348,12 +393,17 @@ def test_create_run_promotes_implicit_evidence_parent(tmp_path: Path, monkeypatc
 
     connection = store._connect()
     try:
-        row = connection.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+        row = connection.execute(
+            "SELECT * FROM runs WHERE id = ?", (run_id,)
+        ).fetchone()
         assert row["status"] == "active"
         assert row["user_message"] == ""
-        assert connection.execute(
-            "SELECT COUNT(*) FROM runs WHERE trace_id = 'trace-1'"
-        ).fetchone()[0] == 1
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM runs WHERE trace_id = 'trace-1'"
+            ).fetchone()[0]
+            == 1
+        )
     finally:
         connection.close()
         reset_config_cache()
@@ -408,9 +458,12 @@ def test_legacy_orphans_and_duplicate_runs_are_migrated(tmp_path: Path):
 
     migrated = store._connect()
     try:
-        assert migrated.execute(
-            "SELECT COUNT(*) FROM runs WHERE trace_id = 'duplicate'"
-        ).fetchone()[0] == 1
+        assert (
+            migrated.execute(
+                "SELECT COUNT(*) FROM runs WHERE trace_id = 'duplicate'"
+            ).fetchone()[0]
+            == 1
+        )
         orphan_parent = migrated.execute(
             "SELECT session_id, host, status FROM runs WHERE trace_id = 'orphan-trace'"
         ).fetchone()
@@ -419,7 +472,10 @@ def test_legacy_orphans_and_duplicate_runs_are_migrated(tmp_path: Path):
             "host": "codex",
             "status": "evidence_only",
         }
-        assert migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 4
+        assert (
+            migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+            == 4
+        )
         assert migrated.execute("PRAGMA foreign_keys").fetchone()[0] == 1
     finally:
         migrated.close()
@@ -436,9 +492,7 @@ def test_retention_preserves_parents_of_retained_child_evidence(tmp_path: Path):
     )
     connection = store._connect()
     try:
-        connection.execute(
-            "UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00'"
-        )
+        connection.execute("UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00'")
         connection.commit()
     finally:
         connection.close()
@@ -487,7 +541,9 @@ def test_keep_last_never_orphans_newer_child_from_older_parent(tmp_path: Path):
     assert store.runtime_table_counts()["model_receipts"] == 1
 
 
-def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(tmp_path: Path):
+def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(
+    tmp_path: Path,
+):
     store = Store(tmp_path / "agency.db")
     traces = {
         "receipt": "trace-receipt",
@@ -520,9 +576,7 @@ def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(tmp_pat
     )
     connection = store._connect()
     try:
-        connection.execute(
-            "UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00'"
-        )
+        connection.execute("UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00'")
         connection.execute(
             "UPDATE delegation_events SET started_at = '2100-01-01T00:00:00+00:00' "
             "WHERE id = ?",

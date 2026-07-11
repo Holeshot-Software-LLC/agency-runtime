@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -9,6 +10,7 @@ import secrets
 import signal
 import webbrowser
 from concurrent.futures import Future, ThreadPoolExecutor, wait
+from datetime import datetime, timezone
 from http import HTTPStatus
 from importlib.resources import files
 from pathlib import Path
@@ -41,6 +43,7 @@ _ASSETS: dict[str, tuple[str, str]] = {
     "/index.html": ("index.html", "text/html; charset=utf-8"),
     "/app.css": ("app.css", "text/css; charset=utf-8"),
     "/app.js": ("app.js", "text/javascript; charset=utf-8"),
+    "/charts.js": ("charts.js", "text/javascript; charset=utf-8"),
 }
 
 _HOST_INSPECTION_CACHE_SECONDS = 3.0
@@ -268,6 +271,75 @@ def _provider_health(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return list(observed.values())
 
 
+def _recent_counts(activity: dict[str, list[dict[str, Any]]]) -> dict[str, int]:
+    """Return honest bounded counts for the activity included in a response."""
+
+    return {
+        name: len(activity.get(name, []))
+        for name in ("runs", "routing", "delegations", "receipts", "finalizations")
+    }
+
+
+def _dashboard_activity(
+    activity: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Strip optional captured detail from dashboard activity responses."""
+
+    rendered: dict[str, list[dict[str, Any]]] = {}
+    for name in ("runs", "routing", "delegations", "receipts", "finalizations"):
+        rows = activity.get(name, [])
+        rendered[name] = []
+        for row in rows:
+            item = dict(row)
+            if name == "delegations":
+                item.pop("skip_reason", None)
+            elif name == "routing":
+                item.pop("work_units", None)
+            rendered[name].append(item)
+    return rendered
+
+
+def _live_overview(
+    activity: dict[str, list[dict[str, Any]]],
+    sizes: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the fast-path summary from one metadata-only activity read."""
+
+    return {
+        "status": "ok",
+        "db_size_bytes": sizes["db_size_bytes"],
+        "wal_size_bytes": sizes["wal_size_bytes"],
+        "provider_health": _provider_health(activity.get("receipts", [])),
+        "recent": _recent_counts(activity),
+    }
+
+
+def _dashboard_revision(payload: dict[str, Any]) -> str:
+    """Hash observable content so sampling time alone never causes a redraw."""
+
+    canonical = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        default=str,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _bounded_query_limit(raw_path: str, *, default: int) -> int:
+    raw_limit = parse_qs(urlparse(raw_path).query).get("limit", [str(default)])[0]
+    try:
+        value = int(raw_limit)
+    except (TypeError, ValueError):
+        value = default
+    return max(1, min(value, 200))
+
+
 def _delegation_graph(receipt: dict[str, Any]) -> dict[str, Any]:
     """Build the same dependency graph used by delegation lifecycle dispatch."""
     from agency_runtime.core.delegation.lifecycle import (
@@ -317,7 +389,9 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         if not self._authorise_api_request():
             return
         try:
-            if path == "/api/overview":
+            if path == "/api/live":
+                self._handle_live()
+            elif path == "/api/overview":
                 self._handle_overview()
             elif path == "/api/roster":
                 self._handle_roster()
@@ -450,36 +524,42 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
 
     def _handle_overview(self) -> None:
         stats = self.store.database_stats()
-        activity = self.store.recent_runtime_activity(limit=200)
+        activity = _dashboard_activity(self.store.recent_runtime_activity(limit=200))
         cfg = load_config()
         active = self.store.get_active_roster()
         self._json_ok(
             {
-                "status": "ok",
+                **_live_overview(activity, stats),
                 "roster_count": len(active),
-                "db_size_bytes": stats["db_size_bytes"],
-                "wal_size_bytes": stats["wal_size_bytes"],
                 "retention_days": cfg.observability.retention_days,
                 "capture_content": cfg.observability.capture_content,
                 "counts": stats["tables"],
-                "provider_health": _provider_health(activity["receipts"]),
-                "recent": {
-                    "runs": len(activity["runs"]),
-                    "routing": len(activity["routing"]),
-                    "delegations": len(activity["delegations"]),
-                    "receipts": len(activity["receipts"]),
-                    "finalizations": len(activity["finalizations"]),
-                },
+            }
+        )
+
+    def _handle_live(self) -> None:
+        limit = _bounded_query_limit(self.path, default=100)
+        activity = _dashboard_activity(self.store.recent_runtime_activity(limit=limit))
+        core = {
+            "schema_version": 1,
+            "overview": _live_overview(activity, self.store.database_sizes()),
+            "activity": activity,
+        }
+        self._json_ok(
+            {
+                "schema_version": core["schema_version"],
+                "sampled_at": _utc_now(),
+                "revision": _dashboard_revision(core),
+                "overview": core["overview"],
+                "activity": core["activity"],
             }
         )
 
     def _handle_activity(self) -> None:
-        raw_limit = parse_qs(urlparse(self.path).query).get("limit", ["50"])[0]
-        try:
-            limit = int(raw_limit)
-        except ValueError:
-            limit = 50
-        self._json_ok(self.store.recent_runtime_activity(limit=limit))
+        limit = _bounded_query_limit(self.path, default=50)
+        self._json_ok(
+            _dashboard_activity(self.store.recent_runtime_activity(limit=limit))
+        )
 
     def _handle_hosts(self) -> None:
         inspector = self.server.host_inspector  # type: ignore[attr-defined]

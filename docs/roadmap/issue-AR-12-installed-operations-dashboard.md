@@ -19,7 +19,7 @@ issue_id: AR-12
 priority: p1
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/12"
 depends_on: [AR-10]
-blocks: [AR-07, AR-13]
+blocks: [AR-07, AR-13, AR-14]
 ---
 
 # AR-12: Ship a secure installed operations dashboard

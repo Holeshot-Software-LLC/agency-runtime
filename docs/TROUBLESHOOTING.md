@@ -121,6 +121,20 @@ loopback port. The service uses `dashboard.port` (7810 by default); change it
 through Settings or `agency config set dashboard.port <port>`, then restart the
 service.
 
+## Dashboard live updates pause or reconnect
+
+The Signal Observatory polls only while its tab is visible and the Live control
+is enabled. A hidden tab intentionally shows a paused state and refreshes as
+soon as it becomes visible. If the control says `Live updates paused`, enable
+it directly in the dashboard.
+
+Transient local-server or database errors use capped retry backoff. An expired
+or rejected token is terminal: the dashboard will not retry it indefinitely.
+Run `agency dashboard service open` (or start a new foreground process) to
+obtain a fresh authenticated session. Live polling reads bounded metadata only;
+it does not repeatedly inspect native hosts or overwrite an edited Settings
+form.
+
 ## Dashboard service does not install or start
 
 Preview the exact current-user plan:

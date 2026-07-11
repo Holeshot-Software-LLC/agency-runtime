@@ -146,9 +146,13 @@ def _project_delegation_detail(
     if _REASON_CODE.fullmatch(normalized):
         return normalized
 
-    timeout = re.fullmatch(r"backend command timed out after ([0-9]+(?:\.[0-9]+)?)s", normalized)
+    timeout = re.fullmatch(
+        r"backend command timed out after ([0-9]+(?:\.[0-9]+)?)s", normalized
+    )
     if timeout:
-        return f"backend command timed out after {timeout.group(1)}s"[:_DIAGNOSTIC_REASON_LIMIT]
+        return f"backend command timed out after {timeout.group(1)}s"[
+            :_DIAGNOSTIC_REASON_LIMIT
+        ]
     exit_code = re.search(r"\bexited with (-?[0-9]+)\b", normalized)
     if exit_code:
         return f"backend exited with {exit_code.group(1)}"[:_DIAGNOSTIC_REASON_LIMIT]
@@ -193,7 +197,11 @@ def _project_run_metadata(metadata: dict[str, Any] | None) -> str | None:
             projected[key] = value
         elif isinstance(value, str) and _SAFE_METADATA_LABEL.fullmatch(value):
             projected[key] = value
-    return json.dumps(projected, sort_keys=True, separators=(",", ":")) if projected else None
+    return (
+        json.dumps(projected, sort_keys=True, separators=(",", ":"))
+        if projected
+        else None
+    )
 
 
 def _restrict_windows_acl(path: Path, *, directory: bool) -> bool:
@@ -330,9 +338,11 @@ def _default_db_path() -> Path:
         return Path(os.path.expanduser(env_path))
     try:
         from agency_runtime.core.config import load_config
+
         return load_config().store.resolved_path()
     except Exception:
         return Path.home() / ".agency-runtime" / "agency.db"
+
 
 _SCHEMA_V1 = """
 -- Run tracking
@@ -551,16 +561,21 @@ CREATE TABLE IF NOT EXISTS routing_decisions (
 -- Read-path indexes used by hooks, the dashboard, and retention jobs.
 CREATE INDEX IF NOT EXISTS idx_runs_trace_id ON runs(trace_id);
 CREATE INDEX IF NOT EXISTS idx_runs_session_started ON runs(session_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_runs_recent ON runs(started_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_receipts_trace_id ON model_receipts(trace_id);
 CREATE INDEX IF NOT EXISTS idx_receipts_session_ended ON model_receipts(session_id, ended_at DESC);
+CREATE INDEX IF NOT EXISTS idx_receipts_recent ON model_receipts(COALESCE(ended_at, started_at) DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_skills_session_loaded ON skills_loaded(session_id, loaded_at);
 CREATE INDEX IF NOT EXISTS idx_specialists_session_loaded ON specialists_loaded(session_id, loaded_at);
 CREATE INDEX IF NOT EXISTS idx_delegations_trace_id ON delegation_events(trace_id);
 CREATE INDEX IF NOT EXISTS idx_delegations_session_started ON delegation_events(session_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_delegations_recent ON delegation_events(COALESCE(completed_at, started_at) DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_worker_runs_event ON worker_runs(delegation_event_id);
 CREATE INDEX IF NOT EXISTS idx_finalization_trace_created ON finalization_events(trace_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_finalization_recent ON finalization_events(created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_routing_trace_created ON routing_decisions(trace_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_routing_session_created ON routing_decisions(session_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_routing_recent ON routing_decisions(created_at DESC, id DESC);
 """
 
 _ALL_TABLES: tuple[str, ...] = (
@@ -655,7 +670,10 @@ class Store:
             expected_mode = stat.S_IRWXU if directory else stat.S_IRUSR | stat.S_IWUSR
             if os.name != "nt" and stat.S_IMODE(current.st_mode) == expected_mode:
                 continue
-            if os.name == "nt" and self._permission_fingerprints.get(path) == fingerprint:
+            if (
+                os.name == "nt"
+                and self._permission_fingerprints.get(path) == fingerprint
+            ):
                 continue
             try:
                 _restrict_path_permissions(path, directory=directory)
@@ -686,7 +704,9 @@ class Store:
                 "INTEGER DEFAULT 0",
             )
             self._migrate_trace_integrity(conn)
-            version_row = conn.execute("SELECT MAX(version) AS version FROM schema_version").fetchone()
+            version_row = conn.execute(
+                "SELECT MAX(version) AS version FROM schema_version"
+            ).fetchone()
             current_version = int(version_row["version"] or 0)
             if current_version < 4:
                 self._migrate_private_projections(conn)
@@ -697,7 +717,9 @@ class Store:
             conn.close()
 
     @staticmethod
-    def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    def _ensure_column(
+        conn: sqlite3.Connection, table: str, column: str, definition: str
+    ) -> None:
         """Add a SQLite column when opening a database created by an older build."""
         columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
         if column not in columns:
@@ -710,7 +732,9 @@ class Store:
                 continue
             columns = [
                 row["name"]
-                for row in conn.execute(f"PRAGMA index_info({index['name']})").fetchall()
+                for row in conn.execute(
+                    f"PRAGMA index_info({index['name']})"
+                ).fetchall()
             ]
             if columns == ["trace_id"]:
                 return True
@@ -758,7 +782,9 @@ class Store:
     def _migrate_private_projections(self, conn: sqlite3.Connection) -> None:
         """Sanitize legacy content once when upgrading to the private schema."""
         capture_content = _capture_content_enabled()
-        for row in conn.execute("SELECT id, user_message, metadata FROM runs").fetchall():
+        for row in conn.execute(
+            "SELECT id, user_message, metadata FROM runs"
+        ).fetchall():
             try:
                 metadata = json.loads(row["metadata"]) if row["metadata"] else None
             except (json.JSONDecodeError, TypeError):
@@ -831,8 +857,15 @@ class Store:
 
     # ── Runs ───────────────────────────────────────────────────────
 
-    def create_run(self, *, trace_id: str, session_id: str = "", host: str = "unknown",
-                   user_message: str = "", metadata: dict | None = None) -> str:
+    def create_run(
+        self,
+        *,
+        trace_id: str,
+        session_id: str = "",
+        host: str = "unknown",
+        user_message: str = "",
+        metadata: dict | None = None,
+    ) -> str:
         capture_content = _capture_content_enabled()
         trace_id = trace_id or self._uuid()
         run_id = self._uuid()
@@ -851,10 +884,19 @@ class Store:
                 "session_id = excluded.session_id, host = excluded.host, "
                 "started_at = excluded.started_at, ended_at = NULL, status = 'active', "
                 "user_message = excluded.user_message, metadata = excluded.metadata",
-                (run_id, trace_id, session_id, host, self._now(),
-                 captured_message, safe_metadata),
+                (
+                    run_id,
+                    trace_id,
+                    session_id,
+                    host,
+                    self._now(),
+                    captured_message,
+                    safe_metadata,
+                ),
             )
-            row = conn.execute("SELECT id FROM runs WHERE trace_id = ?", (trace_id,)).fetchone()
+            row = conn.execute(
+                "SELECT id FROM runs WHERE trace_id = ?", (trace_id,)
+            ).fetchone()
             conn.commit()
             return str(row["id"])
         finally:
@@ -873,13 +915,24 @@ class Store:
 
     # ── Model receipts ─────────────────────────────────────────────
 
-    def record_model_receipt(self, *, trace_id: str, session_id: str = "",
-                             host: str = "unknown", requested_model: str = "",
-                             model_group: str = "", resolved_provider: str = "",
-                             resolved_model: str = "", api_base: str = "",
-                             attempted_fallbacks: int = 0, model_id: str = "",
-                             source: str = "unknown", started_at: str = "",
-                             ended_at: str = "", status: str = "success") -> str:
+    def record_model_receipt(
+        self,
+        *,
+        trace_id: str,
+        session_id: str = "",
+        host: str = "unknown",
+        requested_model: str = "",
+        model_group: str = "",
+        resolved_provider: str = "",
+        resolved_model: str = "",
+        api_base: str = "",
+        attempted_fallbacks: int = 0,
+        model_id: str = "",
+        source: str = "unknown",
+        started_at: str = "",
+        ended_at: str = "",
+        status: str = "success",
+    ) -> str:
         receipt_id = self._uuid()
         trace_id = trace_id or receipt_id
         safe_api_base = _sanitize_api_base(api_base)
@@ -892,9 +945,23 @@ class Store:
                 "resolved_provider, resolved_model, api_base, attempted_fallbacks, "
                 "model_id, source, started_at, ended_at, status) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (receipt_id, trace_id, session_id, host, requested_model, model_group,
-                 resolved_provider, resolved_model, safe_api_base, attempted_fallbacks,
-                 model_id, source, started_at or self._now(), ended_at or self._now(), status),
+                (
+                    receipt_id,
+                    trace_id,
+                    session_id,
+                    host,
+                    requested_model,
+                    model_group,
+                    resolved_provider,
+                    resolved_model,
+                    safe_api_base,
+                    attempted_fallbacks,
+                    model_id,
+                    source,
+                    started_at or self._now(),
+                    ended_at or self._now(),
+                    status,
+                ),
             )
             conn.commit()
             return receipt_id
@@ -987,11 +1054,19 @@ class Store:
 
     # ── Delegation events ──────────────────────────────────────────
 
-    def record_delegation(self, *, trace_id: str, session_id: str = "",
-                          host: str = "unknown", work_unit_id: str = "",
-                          recommended_agent: str = "", status: str = "suggested",
-                          backend: str = "", skip_reason: str = "",
-                          error: str = "") -> str:
+    def record_delegation(
+        self,
+        *,
+        trace_id: str,
+        session_id: str = "",
+        host: str = "unknown",
+        work_unit_id: str = "",
+        recommended_agent: str = "",
+        status: str = "suggested",
+        backend: str = "",
+        skip_reason: str = "",
+        error: str = "",
+    ) -> str:
         event_id = self._uuid()
         trace_id = trace_id or event_id
         safe_skip_reason = _project_delegation_detail(skip_reason, field="skip_reason")
@@ -1004,24 +1079,43 @@ class Store:
                 "(id, trace_id, session_id, host, work_unit_id, recommended_agent, "
                 "status, backend, skip_reason, error, started_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (event_id, trace_id, session_id, host, work_unit_id,
-                 recommended_agent, status, backend, safe_skip_reason, safe_error, self._now()),
+                (
+                    event_id,
+                    trace_id,
+                    session_id,
+                    host,
+                    work_unit_id,
+                    recommended_agent,
+                    status,
+                    backend,
+                    safe_skip_reason,
+                    safe_error,
+                    self._now(),
+                ),
             )
             conn.commit()
             return event_id
         finally:
             conn.close()
 
-    def update_delegation(self, event_id: str, *, status: str,
-                          backend: str = "", error: str = "",
-                          recommended_agent: str = "",
-                          skip_reason: str = "",
-                          host: str = "") -> None:
+    def update_delegation(
+        self,
+        event_id: str,
+        *,
+        status: str,
+        backend: str = "",
+        error: str = "",
+        recommended_agent: str = "",
+        skip_reason: str = "",
+        host: str = "",
+    ) -> None:
         safe_skip_reason = _project_delegation_detail(skip_reason, field="skip_reason")
         safe_error = _project_delegation_detail(error, field="error")
         conn = self._connect()
         try:
-            ended = self._now() if status in ("completed", "failed", "skipped") else None
+            ended = (
+                self._now() if status in ("completed", "failed", "skipped") else None
+            )
             conn.execute(
                 "UPDATE delegation_events "
                 "SET status = ?, "
@@ -1058,7 +1152,9 @@ class Store:
         finally:
             conn.close()
 
-    def get_delegations_for_session(self, session_id: str, statuses: list[str] | tuple[str, ...] | None = None) -> list[dict[str, Any]]:
+    def get_delegations_for_session(
+        self, session_id: str, statuses: list[str] | tuple[str, ...] | None = None
+    ) -> list[dict[str, Any]]:
         """Return delegation events for a session, optionally filtered by status."""
         conn = self._connect()
         try:
@@ -1093,17 +1189,29 @@ class Store:
 
     def database_stats(self) -> dict[str, Any]:
         """Return database size and row-count stats for CLI maintenance."""
+
+        return {
+            **self.database_sizes(),
+            "tables": self.runtime_table_counts(),
+        }
+
+    def database_sizes(self) -> dict[str, Any]:
+        """Return cheap database and sidecar sizes without scanning tables."""
+
         wal_path = Path(f"{self.db_path}-wal")
         shm_path = Path(f"{self.db_path}-shm")
         return {
             "db_path": str(self.db_path),
-            "db_size_bytes": self.db_path.stat().st_size if self.db_path.exists() else 0,
+            "db_size_bytes": self.db_path.stat().st_size
+            if self.db_path.exists()
+            else 0,
             "wal_size_bytes": wal_path.stat().st_size if wal_path.exists() else 0,
             "shm_size_bytes": shm_path.stat().st_size if shm_path.exists() else 0,
-            "tables": self.runtime_table_counts(),
         }
 
-    def recent_runtime_activity(self, *, limit: int = 50) -> dict[str, list[dict[str, Any]]]:
+    def recent_runtime_activity(
+        self, *, limit: int = 50
+    ) -> dict[str, list[dict[str, Any]]]:
         """Return bounded metadata-only activity for operator surfaces.
 
         Raw prompts, worker stdout/stderr, API bases, and other potentially
@@ -1116,28 +1224,28 @@ class Store:
             queries = {
                 "runs": (
                     "SELECT id, trace_id, session_id, host, started_at, ended_at, status "
-                    "FROM runs ORDER BY started_at DESC, rowid DESC LIMIT ?"
+                    "FROM runs ORDER BY started_at DESC, id DESC LIMIT ?"
                 ),
                 "receipts": (
                     "SELECT id, trace_id, session_id, host, requested_model, model_group, "
                     "resolved_provider, resolved_model, attempted_fallbacks, model_id, "
                     "source, started_at, ended_at, status "
-                    "FROM model_receipts ORDER BY COALESCE(ended_at, started_at) DESC, rowid DESC LIMIT ?"
+                    "FROM model_receipts ORDER BY COALESCE(ended_at, started_at) DESC, id DESC LIMIT ?"
                 ),
                 "delegations": (
                     "SELECT id, trace_id, session_id, host, work_unit_id, recommended_agent, "
                     "status, backend, skip_reason, started_at, completed_at "
-                    "FROM delegation_events ORDER BY COALESCE(completed_at, started_at) DESC, rowid DESC LIMIT ?"
+                    "FROM delegation_events ORDER BY COALESCE(completed_at, started_at) DESC, id DESC LIMIT ?"
                 ),
                 "finalizations": (
                     "SELECT id, trace_id, host, action, missing, created_at "
-                    "FROM finalization_events ORDER BY created_at DESC, rowid DESC LIMIT ?"
+                    "FROM finalization_events ORDER BY created_at DESC, id DESC LIMIT ?"
                 ),
                 "routing": (
                     "SELECT id, trace_id, session_id, query_hash, context_fingerprint, status, "
                     "source, selected_ids, semantic_ids, companion_ids, confidence, latency_ms, "
                     "provider, work_units, created_at FROM routing_decisions "
-                    "ORDER BY created_at DESC, rowid DESC LIMIT ?"
+                    "ORDER BY created_at DESC, id DESC LIMIT ?"
                 ),
             }
             activity: dict[str, list[dict[str, Any]]] = {}
@@ -1155,7 +1263,12 @@ class Store:
                             row["missing"] = []
                 elif name == "routing":
                     for row in rows:
-                        for field in ("selected_ids", "semantic_ids", "companion_ids", "work_units"):
+                        for field in (
+                            "selected_ids",
+                            "semantic_ids",
+                            "companion_ids",
+                            "work_units",
+                        ):
                             raw_value = row.get(field)
                             if not isinstance(raw_value, str) or not raw_value:
                                 row[field] = [] if field != "work_units" else {}
@@ -1228,9 +1341,7 @@ class Store:
             "query_hash",
         }
         safe_decision = {
-            key: value
-            for key, value in decision.items()
-            if key in allowed_fields
+            key: value for key, value in decision.items() if key in allowed_fields
         }
         raw_work_units = decision.get("work_units")
         safe_work_units: dict[str, Any] = {}
@@ -1243,8 +1354,10 @@ class Store:
         safe_decision["work_units"] = safe_work_units
 
         event_id = self._uuid()
-        source = "cache" if safe_decision.get("cache_hit") else (
-            "session" if safe_decision.get("session_reused") else "computed"
+        source = (
+            "cache"
+            if safe_decision.get("cache_hit")
+            else ("session" if safe_decision.get("session_reused") else "computed")
         )
         conn = self._connect()
         try:
@@ -1300,7 +1413,9 @@ class Store:
 
         cutoff = None
         if older_than_days is not None:
-            cutoff = (datetime.now(timezone.utc) - timedelta(days=older_than_days)).isoformat()
+            cutoff = (
+                datetime.now(timezone.utc) - timedelta(days=older_than_days)
+            ).isoformat()
 
         before = self.database_stats()
         deleted: dict[str, dict[str, int]] = {}
@@ -1376,11 +1491,15 @@ class Store:
 
     # ── Roster ─────────────────────────────────────────────────────
 
-    def add_agent_source(self, url: str, name: str = "", *, trusted_for_auto_approve: bool = False) -> str:
+    def add_agent_source(
+        self, url: str, name: str = "", *, trusted_for_auto_approve: bool = False
+    ) -> str:
         source_id = self._uuid()
         conn = self._connect()
         try:
-            existing = conn.execute("SELECT id FROM agent_sources WHERE url = ?", (url,)).fetchone()
+            existing = conn.execute(
+                "SELECT id FROM agent_sources WHERE url = ?", (url,)
+            ).fetchone()
             if existing:
                 conn.execute(
                     "UPDATE agent_sources "
@@ -1393,7 +1512,13 @@ class Store:
             else:
                 conn.execute(
                     "INSERT INTO agent_sources (id, url, name, added_at, trusted_for_auto_approve) VALUES (?, ?, ?, ?, ?)",
-                    (source_id, url, name or url, self._now(), 1 if trusted_for_auto_approve else 0),
+                    (
+                        source_id,
+                        url,
+                        name or url,
+                        self._now(),
+                        1 if trusted_for_auto_approve else 0,
+                    ),
                 )
             conn.commit()
             return source_id
@@ -1403,26 +1528,26 @@ class Store:
     def list_agent_sources(self) -> list[dict[str, Any]]:
         conn = self._connect()
         try:
-            cur = conn.execute("SELECT * FROM agent_sources WHERE enabled = 1 ORDER BY added_at DESC")
+            cur = conn.execute(
+                "SELECT * FROM agent_sources WHERE enabled = 1 ORDER BY added_at DESC"
+            )
             return [dict(row) for row in cur.fetchall()]
         finally:
             conn.close()
 
     def activate_agent(self, agent: dict[str, Any]) -> None:
         content = str(
-            agent.get("prompt_body")
-            or agent.get("content")
-            or agent.get("body")
-            or ""
+            agent.get("prompt_body") or agent.get("content") or agent.get("body") or ""
         )
         if not content.strip():
             identity = str(agent.get("name") or agent.get("slug") or "specialist")
-            description = str(agent.get("description") or "Apply your named specialty to the task.")
+            description = str(
+                agent.get("description") or "Apply your named specialty to the task."
+            )
             content = f"You are the {identity} specialist. {description}".strip()
         version = str(agent.get("version") or "1.0.0")
         content_hash = str(
-            agent.get("hash")
-            or hashlib.sha256(content.encode("utf-8")).hexdigest()
+            agent.get("hash") or hashlib.sha256(content.encode("utf-8")).hexdigest()
         )
         conn = self._connect()
         try:
@@ -1458,14 +1583,21 @@ class Store:
                 "(id, agent_slug, name, division, description, source, version, hash, "
                 "categories, capabilities, tool_affinity, prompt_path, activated_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (self._uuid(), agent["slug"], agent.get("name", ""),
-                 agent.get("division", ""), agent.get("description", ""),
-                 agent.get("source", ""), version,
-                 content_hash,
-                 json.dumps(agent.get("categories", [])),
-                 json.dumps(agent.get("capabilities", [])),
-                 json.dumps(agent.get("tool_affinity", [])),
-                 agent.get("prompt_path", ""), self._now()),
+                (
+                    self._uuid(),
+                    agent["slug"],
+                    agent.get("name", ""),
+                    agent.get("division", ""),
+                    agent.get("description", ""),
+                    agent.get("source", ""),
+                    version,
+                    content_hash,
+                    json.dumps(agent.get("categories", [])),
+                    json.dumps(agent.get("capabilities", [])),
+                    json.dumps(agent.get("tool_affinity", [])),
+                    agent.get("prompt_path", ""),
+                    self._now(),
+                ),
             )
             conn.commit()
         except Exception:
@@ -1494,14 +1626,16 @@ class Store:
         agents = self.get_active_roster()
         catalog = []
         for a in agents:
-            catalog.append({
-                "slug": a["agent_slug"],
-                "name": a.get("name", ""),
-                "description": a.get("description", ""),
-                "division": a.get("division", ""),
-                "categories": a.get("categories", []),
-                "capabilities": a.get("capabilities", []),
-            })
+            catalog.append(
+                {
+                    "slug": a["agent_slug"],
+                    "name": a.get("name", ""),
+                    "description": a.get("description", ""),
+                    "division": a.get("division", ""),
+                    "categories": a.get("categories", []),
+                    "capabilities": a.get("capabilities", []),
+                }
+            )
         return catalog
 
     def get_specialist_prompt(
@@ -1552,14 +1686,21 @@ class Store:
             conn.execute(
                 "INSERT INTO agent_snapshots (id, snapshot_id, created_at, agent_count, manifest, activated) "
                 "VALUES (?, ?, ?, ?, ?, 0)",
-                (self._uuid(), snapshot_id, self._now(), snapshot_agent_count,
-                 json.dumps(manifest)),
+                (
+                    self._uuid(),
+                    snapshot_id,
+                    self._now(),
+                    snapshot_agent_count,
+                    json.dumps(manifest),
+                ),
             )
             conn.commit()
         finally:
             conn.close()
 
-    def record_import_event(self, event_type: str, agent_slug: str = "", detail: str = "") -> None:
+    def record_import_event(
+        self, event_type: str, agent_slug: str = "", detail: str = ""
+    ) -> None:
         conn = self._connect()
         try:
             conn.execute(
@@ -1573,15 +1714,22 @@ class Store:
 
     # ── Finalization ───────────────────────────────────────────────
 
-    def record_finalization(self, *, trace_id: str, host: str,
-                            action: str, missing: list[str] | None = None) -> None:
+    def record_finalization(
+        self, *, trace_id: str, host: str, action: str, missing: list[str] | None = None
+    ) -> None:
         conn = self._connect()
         try:
             conn.execute(
                 "INSERT INTO finalization_events (id, trace_id, host, action, missing, created_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
-                (self._uuid(), trace_id, host, action,
-                 json.dumps(missing) if missing else None, self._now()),
+                (
+                    self._uuid(),
+                    trace_id,
+                    host,
+                    action,
+                    json.dumps(missing) if missing else None,
+                    self._now(),
+                ),
             )
             conn.commit()
         finally:

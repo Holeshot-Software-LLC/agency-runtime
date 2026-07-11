@@ -21,10 +21,17 @@ def test_release_resources_are_addressable() -> None:
         "core/evals/data/routing_v1.py",
         "dashboard/app.css",
         "dashboard/app.js",
+        "dashboard/charts.js",
         "dashboard/index.html",
     )
     for relative in required:
         assert package.joinpath(*relative.split("/")).is_file(), relative
+
+    dashboard_bytes = sum(
+        len(package.joinpath("dashboard", name).read_bytes())
+        for name in ("index.html", "app.css", "charts.js", "app.js")
+    )
+    assert dashboard_bytes < 256 * 1024, "dashboard assets exceeded the 256 KiB budget"
 
 
 def test_release_metadata_is_single_source_and_cross_platform() -> None:

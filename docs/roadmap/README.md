@@ -31,6 +31,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-11` | [Establish routing accuracy and performance gates](issue-AR-11-routing-evaluation-and-performance.md) | done | p0 | testing | [#11](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/11) (open; closure not performed) |
 | `AR-12` | [Ship a secure installed operations dashboard](issue-AR-12-installed-operations-dashboard.md) | done | p1 | operations | [#12](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/12) (open; closure not performed) |
 | `AR-13` | [Add an optional cross-platform dashboard service and configuration parity](issue-AR-13-optional-dashboard-service-configuration.md) | done | p1 | operations | [#13](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/13) (open; closure not performed) |
+| `AR-14` | [Transform the dashboard into a live signal observatory](issue-AR-14-live-signal-observatory.md) | done | p1 | operations | Pending authorization |
 
 ## Traceability
 
@@ -53,12 +54,13 @@ not stable internal identifiers.
 | [AR-11](issue-AR-11-routing-evaluation-and-performance.md) | [`17a62dd`](../worklog/README.md), [`d1275c3`](../worklog/README.md) | [ADR-0001](../decisions/0001-layered-specialist-routing.md), [ADR-0015](../decisions/0015-versioned-selection-explain-receipts.md), [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-12](issue-AR-12-installed-operations-dashboard.md) | [`17a62dd`](../worklog/README.md) | [ADR-0010](../decisions/0010-one-command-install-and-reversible-toggle.md), [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0017](../decisions/0017-sanitized-server-error-boundary.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-13](issue-AR-13-optional-dashboard-service-configuration.md) | [`d1275c3`](../worklog/README.md) | [ADR-0006](../decisions/0006-config-first-redacted-configuration.md), [ADR-0010](../decisions/0010-one-command-install-and-reversible-toggle.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md) |
+| [AR-14](issue-AR-14-live-signal-observatory.md) | Pending | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
 
 ## Dependency summary
 
 - `AR-03` blocks host-facing controls in `AR-04` and truthful support claims in `AR-07`.
 - `AR-05` establishes the configuration path needed to expose `AR-06` cleanly.
-- `AR-03`, `AR-04`, `AR-05`, and `AR-06` still block the release-readiness gate in `AR-07`; the `AR-08`, `AR-09`, `AR-10`, `AR-11`, `AR-12`, and `AR-13` dependencies are complete locally.
+- `AR-03`, `AR-04`, `AR-05`, and `AR-06` still block the release-readiness gate in `AR-07`; the `AR-08`, `AR-09`, `AR-10`, `AR-11`, `AR-12`, `AR-13`, and `AR-14` dependencies are complete locally.
 - `AR-01` is implemented and its tracker issue is closed.
 - `AR-08` is implemented and its tracker issue is closed.
 - `AR-09` is implemented locally. Its tracker issue remains open until closure is approved.
@@ -71,6 +73,10 @@ not stable internal identifiers.
   user-scoped Windows/Linux service lifecycle, installation opt-out, and shared
   dashboard/CLI configuration boundary. Tracker #13 remains open because
   closure was not part of the tracker-creation authorization.
+- `AR-14` is complete locally: the installed surface is a genuinely live
+  signal observatory with source-owned visualizations, accessible motion,
+  adaptive polling, and Windows/WSL artifact evidence. Its tracker record is
+  pending explicit authorization.
 
 ## Status conventions
 

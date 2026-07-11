@@ -24,6 +24,7 @@ REQUIRED_PACKAGE_FILES = {
     "agency_runtime/dashboard/__init__.py",
     "agency_runtime/dashboard/app.css",
     "agency_runtime/dashboard/app.js",
+    "agency_runtime/dashboard/charts.js",
     "agency_runtime/dashboard/index.html",
 }
 REQUIRED_SDIST_FILES = {

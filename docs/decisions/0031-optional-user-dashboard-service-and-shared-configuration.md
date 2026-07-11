@@ -7,6 +7,7 @@ updated: 2026-07-11
 tags: [dashboard, operations, configuration, installer, security]
 related:
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
+  - docs/roadmap/issue-AR-14-live-signal-observatory.md
   - SECURITY.md
   - docs/worklog/README.md
 supersedes: []
