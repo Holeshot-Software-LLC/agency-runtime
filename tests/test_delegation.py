@@ -133,11 +133,11 @@ def test_delegate_with_lifecycle_empty():
 
 def test_backend_registry():
     registry = BackendRegistry()
-    backend = CommandBackend(command=["echo"], name="test-echo")
+    backend = CommandBackend(command=[sys.executable], name="test-python")
     registry.register(backend)
     available = registry.available_backends()
     assert len(available) == 1
-    assert available[0].name == "test-echo"
+    assert available[0].name == "test-python"
 
 
 def test_backend_registry_no_available():

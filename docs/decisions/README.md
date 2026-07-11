@@ -78,6 +78,7 @@ Status meanings:
 | [ADR-0017](0017-sanitized-server-error-boundary.md) | Sanitize errors at the server boundary | Accepted |
 | [ADR-0018](0018-signature-aware-delegation-compatibility.md) | Adapt delegate signatures without masking execution errors | Accepted |
 | [ADR-0019](0019-bounded-machine-readable-cli-delegation.md) | Make CLI delegation bounded and machine-readable | Accepted |
+| [ADR-0026](0026-explicit-test-home-boundaries.md) | Require explicit home boundaries for generated-plugin tests | Accepted |
 
 ## Documentation governance
 

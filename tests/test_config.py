@@ -83,7 +83,7 @@ def test_env_db_path_override():
     os.environ["AGENCY_DB_PATH"] = "/tmp/test-agency.db"
     cfg = load_config(path="/nonexistent", reload=True)
     assert cfg.store.db_path == "/tmp/test-agency.db"
-    assert str(cfg.store.resolved_path()) == "/tmp/test-agency.db"
+    assert cfg.store.resolved_path() == Path("/tmp/test-agency.db")
 
 
 def test_env_auto_disables_ollama_mode():

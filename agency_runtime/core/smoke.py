@@ -8,7 +8,9 @@ plugin templates in a temporary HOME.
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
+import shutil
 import subprocess
 import tempfile
 from contextlib import contextmanager
@@ -68,20 +70,50 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     package_path = plugin_path.parent / "package.json"
     if not manifest_path.exists() or not package_path.exists():
         raise RuntimeError("missing OpenClaw plugin manifest or package.json")
-    check = subprocess.run(
-        ["node", "--check", str(plugin_path)],
-        text=True,
-        capture_output=True,
-        timeout=15,
-    )
-    if check.returncode != 0:
-        raise RuntimeError((check.stderr or check.stdout or "node --check failed").strip())
-    return {"host": host, "plugin_path": str(plugin_path), "format": "openclaw-js"}
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    package = json.loads(package_path.read_text(encoding="utf-8"))
+    code = plugin_path.read_text(encoding="utf-8")
+    if manifest.get("id") != "agency-preflight":
+        raise RuntimeError("invalid OpenClaw plugin manifest id")
+    if package.get("openclaw", {}).get("extensions") != ["./index.js"]:
+        raise RuntimeError("invalid OpenClaw package extension entry")
+    required_tokens = {
+        "before_prompt_build",
+        "before_agent_finalize",
+        "agency_runtime.adapters.openclaw.node_bridge",
+    }
+    missing_tokens = sorted(token for token in required_tokens if token not in code)
+    if missing_tokens:
+        raise RuntimeError(f"OpenClaw plugin missing tokens: {', '.join(missing_tokens)}")
+
+    syntax_check = "skipped: node unavailable"
+    node = shutil.which("node")
+    if node:
+        try:
+            check = subprocess.run(
+                [node, "--check", str(plugin_path)],
+                text=True,
+                capture_output=True,
+                timeout=15,
+            )
+        except OSError as exc:
+            syntax_check = f"skipped: node not runnable ({type(exc).__name__})"
+        else:
+            if check.returncode != 0:
+                raise RuntimeError((check.stderr or check.stdout or "node --check failed").strip())
+            syntax_check = "passed"
+    return {
+        "host": host,
+        "plugin_path": str(plugin_path),
+        "format": "openclaw-js",
+        "syntax_check": syntax_check,
+    }
 
 
 def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     _prepare_fake_host_home(tmp_home, host)
-    result = install_agent_adapter(host)
+    result = install_agent_adapter(host, home_dir=tmp_home)
     if not result.get("ok"):
         raise RuntimeError(str(result.get("error") or result))
 
@@ -136,7 +168,7 @@ def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_home = Path(tmpdir)
             smoke_db = tmp_home / "agency.db"
-            with _temporary_env(HOME=str(tmp_home), AGENCY_DB_PATH=str(smoke_db)):
+            with _temporary_env(AGENCY_DB_PATH=str(smoke_db)):
                 Store(smoke_db)
                 for host in hosts:
                     checks.append(_check(f"plugin_{host}", lambda host=host: _smoke_generated_plugin(host, tmp_home)))

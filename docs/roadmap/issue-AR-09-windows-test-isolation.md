@@ -1,11 +1,12 @@
 ---
 title: "AR-09: Isolate Windows tests from the real user profile"
-status: open
+status: done
 category: roadmap
 created: 2026-07-10
 updated: 2026-07-10
 tags: [testing, windows, safety]
-related: []
+related:
+  - docs/decisions/0026-explicit-test-home-boundaries.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -28,12 +29,15 @@ suite from providing a trustworthy release signal.
 
 ## Current state
 
-The full suite passes 175 tests and fails eight on Windows. Host-install tests
-set `HOME`, but the installer resolves the actual Windows profile and one test
-run wrote generated Codex plugin files there. Related failures include a POSIX
-separator assertion and treating the shell built-in `echo` as a discoverable
-executable. Sandbox temp-directory ACL behavior can add noise unless tests use
-an explicitly controlled writable root.
+This item is implemented locally. Host-generation APIs now accept an explicit
+home boundary, tests and smoke checks pass it directly, and generated artifacts
+use UTF-8. Platform-neutral path and executable fixtures replace POSIX and
+shell-built-in assumptions. OpenClaw smoke checks validate package structure on
+every platform and run a Node syntax check when Node is executable.
+
+The complete suite passes 185 tests on Windows and 185 tests under Ubuntu/WSL.
+Hashes and timestamps for the previously affected real-profile Codex plugin
+files remained unchanged across the final Windows test run.
 
 ## Approach
 
@@ -51,9 +55,9 @@ machine running it.
 
 ## Acceptance
 
-- [ ] Host-install tests cannot write outside their allocated temporary root.
-- [ ] Windows tests do not depend on POSIX path separators.
-- [ ] Backend availability tests use a real portable fixture executable rather than a shell built-in.
-- [ ] The full suite passes on Windows and the primary supported non-Windows environment.
-- [ ] A regression test detects and rejects attempted writes to a real user-profile host directory.
-- [ ] Test instructions document any required writable temp-root configuration.
+- [x] Host-install tests cannot write outside their allocated temporary root.
+- [x] Windows tests do not depend on POSIX path separators.
+- [x] Backend availability tests use a real portable fixture executable rather than a shell built-in.
+- [x] The full suite passes on Windows and the primary supported non-Windows environment.
+- [x] A regression test detects and rejects attempted writes to a real user-profile host directory.
+- [x] Test instructions document any required writable temp-root configuration.

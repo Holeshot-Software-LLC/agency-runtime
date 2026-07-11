@@ -479,6 +479,11 @@ agency eval delegation --json
 agency smoke --all --json
 ```
 
+Tests and smoke checks that generate host plugins pass an explicit temporary
+home to the installer and must never write to the operator's real profile. On
+restricted runners, configure `TEMP`/`TMP` and pytest's `--basetemp` to point to
+a runner-owned writable directory.
+
 Coverage includes config parsing, provider fallback, roster sync, routing, header validation/finalization, model receipts, delegation lifecycle, all-host adapter evidence parity, generated plugin imports, deterministic smoke checks, SQLite trimming, doctor checks, and HTTP server endpoints.
 
 ## Documentation System

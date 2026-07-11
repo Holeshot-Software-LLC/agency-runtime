@@ -167,3 +167,18 @@ def test_smoke_all_passes_with_empty_active_roster(monkeypatch, tmp_path):
     assert report["passed"] is True
     roster_check = [check for check in report["checks"] if check["name"] == "routing_roster_available"][0]
     assert roster_check["detail"]["source"] == "starter_roster"
+
+
+def test_openclaw_smoke_uses_static_validation_when_node_is_unavailable(monkeypatch, tmp_path):
+    from agency_runtime.core import smoke
+    from agency_runtime.core.installer import install_agent_adapter
+
+    (tmp_path / ".openclaw").mkdir()
+    installed = install_agent_adapter("openclaw", home_dir=tmp_path)
+    assert installed["ok"] is True
+
+    monkeypatch.setattr(smoke.shutil, "which", lambda _name: None)
+    detail = smoke._smoke_openclaw_plugin("openclaw", Path(installed["plugin_path"]))
+
+    assert detail["format"] == "openclaw-js"
+    assert detail["syntax_check"] == "skipped: node unavailable"

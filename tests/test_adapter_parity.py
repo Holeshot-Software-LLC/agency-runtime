@@ -30,6 +30,13 @@ class FakeHookContext:
         self.hooks[name] = fn
 
 
+def test_explicit_host_home_rejects_path_escape(tmp_path: Path) -> None:
+    from agency_runtime.core.installer import _host_path
+
+    with pytest.raises(ValueError, match="escapes explicit home boundary"):
+        _host_path("~/../outside", home_dir=tmp_path)
+
+
 def _adapter(adapter_cls: type, store: Store):
     if adapter_cls is GenericAdapter:
         return adapter_cls(store=store, cli_cmd="definitely-not-installed")
@@ -134,7 +141,6 @@ def test_generated_python_plugins_import_and_register_host_specific_adapters(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("HOME", str(tmp_path))
     # Satisfy installer host detection without touching the real machine.
     if host == "hermes":
         (tmp_path / ".hermes-nexus" / "plugins").mkdir(parents=True)
@@ -143,9 +149,10 @@ def test_generated_python_plugins_import_and_register_host_specific_adapters(
     elif host == "claude":
         (tmp_path / ".claude").mkdir()
 
-    result = install_agent_adapter(host)
+    result = install_agent_adapter(host, home_dir=tmp_path)
     assert result["ok"] is True
     plugin_path = Path(result["plugin_path"])
+    assert plugin_path.is_relative_to(tmp_path)
     assert (plugin_path.parent / "plugin.yaml").exists()
 
     spec = importlib.util.spec_from_file_location(f"agency_runtime_generated_{host}", plugin_path)
@@ -186,18 +193,17 @@ def test_openclaw_bridge_routes_user_prompts_but_ignores_revision_instructions(t
 
 
 def test_generated_openclaw_plugin_is_native_openclaw_package(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("HOME", str(tmp_path))
     (tmp_path / ".openclaw").mkdir()
 
-    result = install_agent_adapter("openclaw")
+    result = install_agent_adapter("openclaw", home_dir=tmp_path)
     assert result["ok"] is True
     plugin_path = Path(result["plugin_path"])
     assert plugin_path.name == "index.js"
     assert plugin_path.parent == tmp_path / ".openclaw" / "plugins" / "agency-preflight"
 
-    manifest = json.loads((plugin_path.parent / "openclaw.plugin.json").read_text())
-    package = json.loads((plugin_path.parent / "package.json").read_text())
-    code = plugin_path.read_text()
+    manifest = json.loads((plugin_path.parent / "openclaw.plugin.json").read_text(encoding="utf-8"))
+    package = json.loads((plugin_path.parent / "package.json").read_text(encoding="utf-8"))
+    code = plugin_path.read_text(encoding="utf-8")
 
     assert manifest["id"] == "agency-preflight"
     assert manifest["activation"]["onStartup"] is True

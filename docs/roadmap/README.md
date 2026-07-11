@@ -26,7 +26,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-06` | [Implement CLI-authenticated judge providers](issue-AR-06-cli-authenticated-judge-providers.md) | open | p2 | provider-runtime | [#6](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/6) |
 | `AR-07` | [Complete public release readiness](issue-AR-07-public-release-readiness.md) | open | p1 | release | [#7](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/7) |
 | `AR-08` | [Make documentation self-contained](issue-AR-08-self-contained-documentation.md) | done | p1 | documentation | [#8](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/8) |
-| `AR-09` | [Isolate Windows tests from the real user profile](issue-AR-09-windows-test-isolation.md) | open | p0 | testing | [#9](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/9) |
+| `AR-09` | [Isolate Windows tests from the real user profile](issue-AR-09-windows-test-isolation.md) | done | p0 | testing | [#9](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/9) (open; closure requires approval) |
 
 ## Traceability
 
@@ -44,16 +44,16 @@ not stable internal identifiers.
 | [AR-06](issue-AR-06-cli-authenticated-judge-providers.md) | Pending | [ADR-0008](../decisions/0008-ordered-provider-fallback.md) |
 | [AR-07](issue-AR-07-public-release-readiness.md) | Pending | [ADR-0010](../decisions/0010-one-command-install-and-reversible-toggle.md), [ADR-0025](../decisions/0025-self-contained-linked-documentation.md) |
 | [AR-08](issue-AR-08-self-contained-documentation.md) | [`4d17668`](../worklog/README.md) | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md) |
-| [AR-09](issue-AR-09-windows-test-isolation.md) | Pending | Pending |
+| [AR-09](issue-AR-09-windows-test-isolation.md) | Pending local commit | [ADR-0026](../decisions/0026-explicit-test-home-boundaries.md) |
 
 ## Dependency summary
 
 - `AR-03` blocks host-facing controls in `AR-04` and truthful support claims in `AR-07`.
 - `AR-05` establishes the configuration path needed to expose `AR-06` cleanly.
-- `AR-03`, `AR-04`, `AR-05`, `AR-06`, and `AR-09` still block the release-readiness gate in `AR-07`; the `AR-08` documentation dependency is complete locally.
+- `AR-03`, `AR-04`, `AR-05`, and `AR-06` still block the release-readiness gate in `AR-07`; the `AR-08` and `AR-09` dependencies are complete locally.
 - `AR-01` is implemented and its tracker issue is closed.
 - `AR-08` is implemented and its tracker issue is closed.
-- `AR-09` was surfaced by the repository-wide verification run: Windows host-install tests wrote into the real user profile and the suite exposed additional platform assumptions.
+- `AR-09` is implemented locally. Its tracker issue remains open until closure is approved.
 
 ## Status conventions
 

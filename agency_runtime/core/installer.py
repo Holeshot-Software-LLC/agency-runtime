@@ -265,20 +265,43 @@ _HOST_ADAPTER_MAP = {
 # ── Detection ─────────────────────────────────────────────────
 
 
-def detect_installed_agents() -> list[str]:
+def _host_path(path_template: str, *, home_dir: str | Path | None = None) -> Path:
+    """Resolve a host path, optionally pinning ``~`` to an explicit home.
+
+    Tests and smoke checks must pass ``home_dir`` so platform-specific home
+    discovery can never redirect writes into the operator's real profile.
+    """
+    if home_dir is not None:
+        home = Path(home_dir).resolve()
+        if path_template == "~":
+            return home
+        if path_template.startswith(("~/", "~\\")):
+            candidate = (home / path_template[2:]).resolve()
+            if not candidate.is_relative_to(home):
+                raise ValueError(f"host path escapes explicit home boundary: {path_template}")
+            return candidate
+    return Path(os.path.expanduser(path_template))
+
+
+def detect_installed_agents(*, home_dir: str | Path | None = None) -> list[str]:
     """Detect which AI agent hosts are installed on this machine."""
     detected: list[str] = []
     for host_name, host_info in HOSTS.items():
-        if _is_host_installed(host_name, host_info):
+        if _is_host_installed(host_name, host_info, home_dir=home_dir):
             detected.append(host_name)
     return detected
 
 
-def _is_host_installed(host_name: str, host_info: dict[str, Any]) -> bool:
+def _is_host_installed(
+    host_name: str,
+    host_info: dict[str, Any],
+    *,
+    home_dir: str | Path | None = None,
+) -> bool:
     """Check if a specific host is installed."""
     # Check paths
     for path_template in host_info.get("detect_paths", []):
-        path = Path(os.path.expanduser(path_template))
+        path = _host_path(path_template, home_dir=home_dir)
         if path.exists():
             return True
     # Check binary
@@ -291,7 +314,12 @@ def _is_host_installed(host_name: str, host_info: dict[str, Any]) -> bool:
 # ── Install ───────────────────────────────────────────────────
 
 
-def install_agent_adapter(host: str, cfg: AgencyConfig | None = None) -> dict[str, Any]:
+def install_agent_adapter(
+    host: str,
+    cfg: AgencyConfig | None = None,
+    *,
+    home_dir: str | Path | None = None,
+) -> dict[str, Any]:
     """Write the plugin file for a specific agent host.
 
     Returns {"ok": True, "plugin_path": str} or {"ok": False, "error": str}.
@@ -300,10 +328,10 @@ def install_agent_adapter(host: str, cfg: AgencyConfig | None = None) -> dict[st
         return {"ok": False, "error": f"Unknown host: {host}. Supported: {', '.join(HOSTS)}"}
 
     host_info = HOSTS[host]
-    plugin_dir = Path(os.path.expanduser(host_info["plugin_dir"]))
+    plugin_dir = _host_path(host_info["plugin_dir"], home_dir=home_dir)
 
     # Verify host is actually installed
-    if not _is_host_installed(host, host_info):
+    if not _is_host_installed(host, host_info, home_dir=home_dir):
         return {"ok": False, "error": f"{host} is not installed on this machine"}
 
     # Create plugin directory
@@ -314,9 +342,18 @@ def install_agent_adapter(host: str, cfg: AgencyConfig | None = None) -> dict[st
     if host == "openclaw":
         package_root = Path(__file__).resolve().parents[2]
         plugin_path = plugin_dir / "index.js"
-        plugin_path.write_text(_OPENCLAW_INDEX_JS.format(package_root=package_root.as_posix()))
-        (plugin_dir / "openclaw.plugin.json").write_text(_OPENCLAW_MANIFEST_JSON)
-        (plugin_dir / "package.json").write_text(_OPENCLAW_PACKAGE_JSON)
+        plugin_path.write_text(
+            _OPENCLAW_INDEX_JS.format(package_root=package_root.as_posix()),
+            encoding="utf-8",
+        )
+        (plugin_dir / "openclaw.plugin.json").write_text(
+            _OPENCLAW_MANIFEST_JSON,
+            encoding="utf-8",
+        )
+        (plugin_dir / "package.json").write_text(
+            _OPENCLAW_PACKAGE_JSON,
+            encoding="utf-8",
+        )
         return {
             "ok": True,
             "plugin_path": str(plugin_path),
@@ -331,7 +368,7 @@ def install_agent_adapter(host: str, cfg: AgencyConfig | None = None) -> dict[st
     )
 
     init_path = plugin_dir / "__init__.py"
-    init_path.write_text(plugin_content)
+    init_path.write_text(plugin_content, encoding="utf-8")
 
     # Write plugin.yaml manifest so the host plugin loader discovers us.
     # Without this Hermes logs "Skipping 'agency-preflight' (no manifest)".
@@ -345,7 +382,8 @@ def install_agent_adapter(host: str, cfg: AgencyConfig | None = None) -> dict[st
         "  - pre_verify\n"
         "  - post_tool_call\n"
         "  - post_api_request\n"
-        "  - transform_llm_output\n"
+        "  - transform_llm_output\n",
+        encoding="utf-8",
     )
 
     # Remove any .disabled marker
@@ -363,7 +401,12 @@ def install_agent_adapter(host: str, cfg: AgencyConfig | None = None) -> dict[st
 # ── Toggle (on/off) ───────────────────────────────────────────
 
 
-def toggle_agency(host: str, enabled: bool) -> dict[str, Any]:
+def toggle_agency(
+    host: str,
+    enabled: bool,
+    *,
+    home_dir: str | Path | None = None,
+) -> dict[str, Any]:
     """Enable or disable Agency Runtime for a host.
 
     On disable: renames __init__.py → __init__.py.disabled
@@ -373,7 +416,7 @@ def toggle_agency(host: str, enabled: bool) -> dict[str, Any]:
         return {"ok": False, "error": f"Unknown host: {host}"}
 
     host_info = HOSTS[host]
-    plugin_dir = Path(os.path.expanduser(host_info["plugin_dir"]))
+    plugin_dir = _host_path(host_info["plugin_dir"], home_dir=home_dir)
     active_path = plugin_dir / "__init__.py"
     disabled_path = plugin_dir / "__init__.py.disabled"
 
@@ -387,7 +430,7 @@ def toggle_agency(host: str, enabled: bool) -> dict[str, Any]:
             return {"ok": True, "action": "already_enabled"}
         else:
             # Need to install fresh
-            return install_agent_adapter(host)
+            return install_agent_adapter(host, home_dir=home_dir)
     else:
         # Disable: rename active to disabled
         if active_path.exists():
