@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-11
 tags: []
 related: []
 supersedes: []
@@ -54,6 +54,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `63b75ee` | 2026-07-10 | Fix agency preflight host plugin wiring | null | null |
 | `4d17668` | 2026-07-10 | docs: establish linked roadmap worklog and decision system | [AR-08](../roadmap/issue-AR-08-self-contained-documentation.md) | [detail](2026-07-10-4d17668-documentation-system.md) |
 | `a896c81` | 2026-07-10 | fix: isolate generated plugin tests from user home | [AR-09](../roadmap/issue-AR-09-windows-test-isolation.md) | [detail](2026-07-10-a896c81-windows-test-isolation.md) |
+| `17a62dd` | 2026-07-11 | feat: harden runtime and ship local operations dashboard | [AR-03](../roadmap/issue-AR-03-supported-host-integrations.md), [AR-04](../roadmap/issue-AR-04-runtime-controls.md), [AR-07](../roadmap/issue-AR-07-public-release-readiness.md), [AR-10](../roadmap/issue-AR-10-authoritative-runtime-evidence.md), [AR-11](../roadmap/issue-AR-11-routing-evaluation-and-performance.md), [AR-12](../roadmap/issue-AR-12-installed-operations-dashboard.md) | [detail](2026-07-11-17a62dd-production-readiness-refactor.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
