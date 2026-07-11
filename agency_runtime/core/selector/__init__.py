@@ -21,7 +21,13 @@ from agency_runtime.core.selector.policy import detect_actions, load_policy
 from agency_runtime.core.selector.domain_expansion import expand_query
 from agency_runtime.core.selector.candidate_narrow import tokenize, score_agent, pre_narrow
 from agency_runtime.core.selector.judge import query_judge
-from agency_runtime.core.selector.cache import cache_get, cache_put, cache_key, clear_cache
+from agency_runtime.core.selector.cache import (
+    cache_get,
+    cache_put,
+    cache_key,
+    clear_cache,
+    routing_fingerprint,
+)
 from agency_runtime.core.selector.stickiness import session_check, session_put
 
 __all__ = [
@@ -42,6 +48,7 @@ __all__ = [
     "cache_put",
     "cache_key",
     "clear_cache",
+    "routing_fingerprint",
     "session_check",
     "session_put",
 ]

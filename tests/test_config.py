@@ -53,8 +53,10 @@ def test_load_from_yaml_file():
         f.flush()
 
     cfg = load_config(path=f.name, reload=True)
-    assert cfg.judge.model == "gpt-4o-mini"
-    assert cfg.judge.ollama_mode is False
+    assert cfg.judge.model == "qwen3.5:2b"
+    assert cfg.judge.base_url == "http://127.0.0.1:11434"
+    assert cfg.judge.api_key_env == ""
+    assert cfg.judge.ollama_mode is True
     assert cfg.profile == "local-only"
     Path(f.name).unlink()
 
@@ -291,3 +293,28 @@ def test_config_to_yaml_includes_providers():
     assert "***REDACTED***" in yaml_str
     assert "openai" in yaml_str
     assert "ollama" in yaml_str
+
+
+def test_observability_defaults_are_privacy_preserving():
+    cfg = AgencyConfig()
+
+    assert cfg.observability.capture_content is False
+    assert cfg.observability.retention_days == 30
+    serialized = yaml.safe_load(config_to_yaml(cfg))
+    assert serialized["observability"] == {
+        "capture_content": False,
+        "retention_days": 30,
+    }
+
+
+def test_observability_config_parses_string_false_and_retention(tmp_path):
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        "observability:\n  capture_content: 'false'\n  retention_days: 45\n",
+        encoding="utf-8",
+    )
+
+    cfg = load_config(path=path, reload=True)
+
+    assert cfg.observability.capture_content is False
+    assert cfg.observability.retention_days == 45

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import socket
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Any, Mapping
 
 from agency_runtime.core.store.sqlite import Store

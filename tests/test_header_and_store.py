@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import sys
 import tempfile
 from pathlib import Path
@@ -13,8 +12,8 @@ from agency_runtime.core.header.contract import (
     parse_header,
     format_header,
     validate_header,
-    finalize_header,
 )
+from agency_runtime.core.header.finalize import finalize_response
 from agency_runtime.core.receipts.normalize import (
     normalize_litellm_receipt,
     build_unavailable_receipt,
@@ -56,6 +55,44 @@ def test_validate_header_missing_fields():
     valid, missing = validate_header(bad)
     assert valid is False
     assert len(missing) > 0
+
+
+def test_partial_header_never_discards_answer_lines(tmp_path: Path):
+    store = Store(tmp_path / "agency.db")
+    draft = "\n".join(
+        [
+            "Agency/Agencies loaded: code-reviewer",
+            "First answer line",
+            "Second answer line",
+            "Third answer line",
+            "Fourth answer line",
+            "Fifth answer line",
+            "Sixth answer line",
+        ]
+    )
+
+    result = finalize_response(
+        draft,
+        trace_metadata={"session_id": "partial", "trace_id": "partial"},
+        store=store,
+    )
+
+    assert result["action"] == "accept"
+    for line in draft.splitlines():
+        assert line in result["text"]
+
+
+def test_out_of_order_header_is_preserved_as_body(tmp_path: Path):
+    store = Store(tmp_path / "agency.db")
+    draft = SAMPLE_HEADER.replace(
+        "Agency/Agencies delegated: none\nSkills loaded: none",
+        "Skills loaded: none\nAgency/Agencies delegated: none",
+    )
+
+    result = finalize_response(draft, store=store)
+
+    assert result["action"] == "accept"
+    assert draft.strip() in result["text"]
 
 
 def test_format_header():
@@ -117,7 +154,7 @@ def test_store_skill_recording():
 def test_store_model_receipt():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
-        receipt_id = store.record_model_receipt(
+        store.record_model_receipt(
             trace_id="trace-1",
             session_id="session-1",
             host="hermes",
@@ -318,7 +355,7 @@ def test_trivial_preflight_loads_defaults_equally_for_hermes_and_openclaw():
 def test_store_delegation():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
-        event_id = store.record_delegation(
+        store.record_delegation(
             trace_id="trace-1",
             recommended_agent="code-reviewer",
             status="suggested",
@@ -367,11 +404,11 @@ def test_power_profile():
     assert POWER.network_enabled is True
 
 
-def test_yolo_profile_enables_nightly_auto_sync():
+def test_yolo_profile_does_not_claim_an_uninstalled_scheduler():
     assert YOLO.network_enabled is True
-    assert YOLO.auto_sync is True
+    assert YOLO.auto_sync is False
     assert YOLO.auto_enable_new_agents is True
-    assert YOLO.sync_schedule == "nightly"
+    assert YOLO.sync_schedule is None
 
 
 def test_starter_roster():

@@ -8,11 +8,12 @@ Two modes when available:
 from __future__ import annotations
 
 import logging
+import os
 import shutil
-import subprocess
 from typing import Any
 
 from agency_runtime.adapters.base import BaseAdapter
+from agency_runtime.core.delegation.backends import ClaudeExecBackend
 from agency_runtime.core.store.sqlite import Store
 
 logger = logging.getLogger("agency_runtime.adapters.claude")
@@ -48,40 +49,18 @@ class ClaudeAdapter(BaseAdapter):
 
         Collects modelUsage/cost/session id for receipt tracking.
         """
-        import os
         workdir = workdir or os.getcwd()
 
         full_prompt = task
         if specialist_prompt:
             full_prompt = f"{specialist_prompt}\n\nTask: {task}"
 
-        try:
-            result = subprocess.run(
-                [self.claude_cmd, "-p", "--output-format", "json", full_prompt],
-                capture_output=True, text=True, timeout=300,
-                cwd=workdir,
-            )
-            return {
-                "exit_code": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "backend": "claude_exec",
-                "workdir": workdir,
-            }
-        except FileNotFoundError:
+        backend = ClaudeExecBackend(
+            command=(self.claude_cmd, "-p", "--output-format", "json"),
+            name="claude_exec",
+            timeout=300,
+        )
+        result = backend.execute(task=full_prompt, workdir=workdir, check=False)
+        if result["status"] == "unavailable":
             logger.info("Claude Code: not installed, adapter skipped")
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": f"claude not found: {self.claude_cmd}",
-                "backend": "claude_exec",
-                "workdir": workdir,
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": "claude exec timed out after 300s",
-                "backend": "claude_exec",
-                "workdir": workdir,
-            }
+        return result

@@ -23,6 +23,11 @@ from pathlib import Path
 from typing import Any
 
 
+_MAX_HTTP_JSON_BYTES = 1024 * 1024
+_MAX_DISCOVERED_MODELS = 1000
+_MAX_MODEL_ID_CHARS = 512
+
+
 @dataclass
 class ProviderDetection:
     ollama_available: bool = False
@@ -95,7 +100,11 @@ def _http_get_json(
     try:
         req = urllib.request.Request(url, headers=headers or {})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            raw = resp.read(_MAX_HTTP_JSON_BYTES + 1)
+        if len(raw) > _MAX_HTTP_JSON_BYTES:
+            return None
+        parsed = json.loads(raw.decode("utf-8"))
+        return parsed if isinstance(parsed, dict) else None
     except Exception:
         return None
 
@@ -114,16 +123,25 @@ def _fetch_model_list(base_url: str, api_key: str | None = None) -> list[str]:
     headers: dict[str, str] = {}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    data = _http_get_json(f"{base_url.rstrip('/')}/v1/models", timeout=5, headers=headers)
+    normalized = base_url.rstrip("/")
+    models_url = f"{normalized}/models" if normalized.lower().endswith("/v1") else f"{normalized}/v1/models"
+    data = _http_get_json(models_url, timeout=5, headers=headers)
     if data is None:
         return []
-    models = []
-    for m in data.get("data", []):
-        mid = m.get("id", m.get("model", ""))
-        if mid:
-            models.append(mid)
-    models.sort()
-    return models
+    entries = data.get("data", [])
+    if not isinstance(entries, list):
+        return []
+    models: set[str] = set()
+    for entry in entries[:_MAX_DISCOVERED_MODELS]:
+        if not isinstance(entry, dict):
+            continue
+        model_id = entry.get("id", entry.get("model", ""))
+        if not isinstance(model_id, str):
+            continue
+        model_id = model_id.strip()
+        if model_id and len(model_id) <= _MAX_MODEL_ID_CHARS:
+            models.add(model_id)
+    return sorted(models)
 
 
 # ── Provider detection ────────────────────────────────────────
@@ -144,11 +162,19 @@ def detect_providers(
     tags = _http_get_json(f"{ollama_base_url}/api/tags", timeout=2)
     if tags is not None:
         result.ollama_available = True
-        for m in tags.get("models", []):
-            name = m.get("name", m.get("model", ""))
-            if name:
-                result.ollama_models.append(name)
-        result.ollama_models.sort()
+        entries = tags.get("models", [])
+        models: set[str] = set()
+        if isinstance(entries, list):
+            for entry in entries[:_MAX_DISCOVERED_MODELS]:
+                if not isinstance(entry, dict):
+                    continue
+                name = entry.get("name", entry.get("model", ""))
+                if not isinstance(name, str):
+                    continue
+                name = name.strip()
+                if name and len(name) <= _MAX_MODEL_ID_CHARS:
+                    models.add(name)
+        result.ollama_models = sorted(models)
 
     # OpenAI — check key, then try to list models
     openai_key = os.environ.get("OPENAI_API_KEY", "")
@@ -200,12 +226,12 @@ def detect_all() -> DetectionResult:
 # Known good defaults per provider — used when model discovery fails
 _PROVIDER_DEFAULTS: dict[str, dict[str, Any]] = {
     "openai": {
-        "model": "gpt-4o-mini",
+        "model": "gpt-5.4-mini",
         "base_url": "https://api.openai.com/v1",
         "api_key_env": "OPENAI_API_KEY",
     },
     "anthropic": {
-        "model": "claude-3-5-sonnet-20241022",
+        "model": "claude-sonnet-5",
         "base_url": "https://api.anthropic.com/v1",
         "api_key_env": "ANTHROPIC_API_KEY",
     },
@@ -218,17 +244,26 @@ _PROVIDER_DEFAULTS: dict[str, dict[str, Any]] = {
 
 # Common OpenAI models shown as suggestions if discovery fails
 _OPENAI_SUGGESTIONS = [
-    "gpt-4o-mini",
-    "gpt-4o",
-    "gpt-4-turbo",
-    "gpt-3.5-turbo",
+    "gpt-5.4-mini",
+    "gpt-5.4-nano",
+    "gpt-5.4",
+    "gpt-5.5",
 ]
 
 _ANTHROPIC_SUGGESTIONS = [
-    "claude-3-5-sonnet-20241022",
-    "claude-3-5-haiku-20241022",
-    "claude-3-opus-20240229",
+    "claude-sonnet-5",
+    "claude-haiku-4-5",
+    "claude-opus-4-8",
 ]
+
+
+def _preferred_model(discovered: list[str], preferred: list[str], fallback: str) -> str:
+    """Choose a known preferred model before falling back to provider ordering."""
+    available = {model.lower(): model for model in discovered}
+    for model in preferred:
+        if model.lower() in available:
+            return available[model.lower()]
+    return discovered[0] if discovered else fallback
 
 
 def generate_config_from_detection(
@@ -243,7 +278,15 @@ def generate_config_from_detection(
     a = detection.adapters
 
     # Determine judge config based on best-available provider
-    if p.litellm_available and p.litellm_models:
+    if profile == "local-only":
+        model = p.ollama_models[0] if p.ollama_models else "qwen3.5:2b"
+        judge_cfg = {
+            "model": model,
+            "base_url": p.ollama_base_url,
+            "api_key": "",
+            "ollama_mode": True,
+        }
+    elif p.litellm_available and p.litellm_models:
         # Pick the first model — user can change via config
         judge_cfg: dict[str, Any] = {
             "model": p.litellm_models[0],
@@ -252,7 +295,11 @@ def generate_config_from_detection(
             "ollama_mode": False,
         }
     elif p.openai_key_present:
-        model = p.openai_models[0] if p.openai_models else _PROVIDER_DEFAULTS["openai"]["model"]
+        model = _preferred_model(
+            p.openai_models,
+            _OPENAI_SUGGESTIONS,
+            _PROVIDER_DEFAULTS["openai"]["model"],
+        )
         judge_cfg = {
             "model": model,
             "base_url": _PROVIDER_DEFAULTS["openai"]["base_url"],
@@ -302,7 +349,7 @@ def generate_config_from_detection(
     providers_list: list[dict[str, Any]] = []
 
     # LiteLLM proxy (highest priority if detected)
-    if p.litellm_available:
+    if profile != "local-only" and p.litellm_available:
         litellm_model = p.litellm_models[0] if p.litellm_models else judge_cfg.get("model", "")
         if litellm_model:
             providers_list.append({
@@ -315,8 +362,12 @@ def generate_config_from_detection(
             })
 
     # OpenAI API
-    if p.openai_key_present:
-        openai_model = p.openai_models[0] if p.openai_models else _PROVIDER_DEFAULTS["openai"]["model"]
+    if profile != "local-only" and p.openai_key_present:
+        openai_model = _preferred_model(
+            p.openai_models,
+            _OPENAI_SUGGESTIONS,
+            _PROVIDER_DEFAULTS["openai"]["model"],
+        )
         providers_list.append({
             "name": "openai",
             "type": "openai-compatible",
@@ -327,7 +378,7 @@ def generate_config_from_detection(
         })
 
     # Anthropic API
-    if p.anthropic_key_present:
+    if profile != "local-only" and p.anthropic_key_present:
         providers_list.append({
             "name": "anthropic",
             "type": "anthropic",
@@ -351,7 +402,11 @@ def generate_config_from_detection(
 
     adapters_cfg: dict[str, Any] = {
         "litellm": {
-            "enabled": "true" if p.litellm_available else ("false" if profile == "local-only" else "auto"),
+            "enabled": (
+                "false"
+                if profile == "local-only"
+                else ("true" if p.litellm_available else "auto")
+            ),
             "base_url": p.litellm_base_url,
             "api_key_env": "LITELLM_API_KEY",
             "skip_models": litellm_skip,
@@ -373,6 +428,7 @@ def generate_config_from_detection(
         },
         "store": {"db_path": "~/.agency-runtime/agency.db"},
         "server": {"host": "127.0.0.1", "port": 7800},
+        "observability": {"capture_content": False, "retention_days": 30},
         "adapters": adapters_cfg,
         "profile": profile,
         "companion_policy_path": None,

@@ -7,14 +7,17 @@ CLI, HTTP, and MCP callers.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from agency_runtime.core.config import AgencyConfig, load_config
-from agency_runtime.core.selector.cache import cache_key
+from agency_runtime.core.selector.cache import cache_key, routing_fingerprint
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.domain_expansion import expand_query
 from agency_runtime.core.selector.pipeline import refine_query, route
-from agency_runtime.core.selector.policy import detect_actions
+from agency_runtime.core.selector.policy import detect_actions, load_policy
+
+if TYPE_CHECKING:
+    from agency_runtime.core.store.sqlite import Store
 
 _SCHEMA_VERSION = "agency.selection_explain.v1"
 _DEFAULT_LIMIT = 10
@@ -85,6 +88,8 @@ def explain_route(
     *,
     config: AgencyConfig | None = None,
     limit: int | None = None,
+    store: "Store | None" = None,
+    trace_id: str | None = None,
 ) -> dict[str, Any]:
     """Return a machine-readable explanation for one routing decision.
 
@@ -97,11 +102,19 @@ def explain_route(
 
     refined_query = refine_query(user_message, cfg)
     expanded_query = expand_query(refined_query)
-    matched_actions, companion_ids = detect_actions(user_message)
+    policy = load_policy()
+    matched_actions, companion_ids = detect_actions(user_message, policy)
     candidates, scores = pre_narrow(expanded_query, catalog, limit=candidate_limit)
     candidate_rows = list(zip(candidates, scores))
 
-    routing = route(session_id, user_message, catalog, config=cfg)
+    routing = route(
+        session_id,
+        user_message,
+        catalog,
+        config=cfg,
+        store=store,
+        trace_id=trace_id,
+    )
     selected_ids = [str(slug) for slug in routing.get("selected_ids", []) if str(slug)]
     selected_set = set(selected_ids)
     status = str(routing.get("status", ""))
@@ -162,7 +175,10 @@ def explain_route(
                 "terms": domain_terms,
             },
             "cache": {
-                "key": cache_key(expanded_query),
+                "key": cache_key(
+                    expanded_query,
+                    context_fingerprint=routing_fingerprint(catalog, cfg, policy),
+                ),
                 "hit": cache_hit,
             },
             "stickiness": {

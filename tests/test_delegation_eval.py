@@ -24,7 +24,7 @@ def test_delegation_eval_harness_passes_core_contracts() -> None:
         "pre_verify_blocks_open_suggestions",
         "delegate_task_promotes_suggestion",
         "agency_agents_delegate_records_event",
-        "explicit_delegation_blocker_is_accepted",
+        "recorded_delegation_blocker_is_accepted",
         "skipped_blocker_renders_in_header",
         "generated_no_delegation_explanation_is_rejected",
     } <= names

@@ -29,7 +29,10 @@ def _metadata_value(metadata: Mapping[str, Any], *keys: str, default: str = "") 
 
 def _starts_with_header(text: str) -> bool:
     lines = text.splitlines()
-    return bool(lines) and lines[0].startswith(f"{HEADER_FIELDS[0][1]}:")
+    return len(lines) >= len(HEADER_FIELDS) and all(
+        lines[index].startswith(f"{label}:")
+        for index, (_key, label) in enumerate(HEADER_FIELDS)
+    )
 
 
 def _body_after_possible_header(text: str) -> str:

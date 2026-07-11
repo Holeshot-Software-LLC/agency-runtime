@@ -232,7 +232,7 @@ actions:
     - slug: automation-governance-architect
       when: automation audit needed
     - slug: multi-agent-systems-architect
-      when: multi-agent system design
+      when: multi-agent
   DEBUGGING:
     description: Debugging, troubleshooting, incident response
     triggers:
@@ -269,6 +269,7 @@ actions:
     description: DevOps, infrastructure, deployment, CI/CD
     triggers:
     - deploy
+    - deployment
     - ci/cd
     - cicd
     - systemd
@@ -362,6 +363,8 @@ actions:
     description: Security audit, vulnerability check, compliance
     triggers:
     - security
+    - authentication
+    - authorization
     - vulnerab
     - cve
     - exploit
@@ -439,7 +442,12 @@ actions:
     triggers:
     - ui
     - ux
-    - design
+    - visual design
+    - interface design
+    - interaction design
+    - product design
+    - web design
+    - dashboard design
     - frontend
     - react
     - vue

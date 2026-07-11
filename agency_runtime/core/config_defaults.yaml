@@ -47,6 +47,10 @@ server:
   port: 7800
   max_body_size: 16777216
 
+observability:
+  capture_content: false
+  retention_days: 30
+
 adapters:
   litellm:
     enabled: auto

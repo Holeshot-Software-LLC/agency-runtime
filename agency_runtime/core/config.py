@@ -14,9 +14,11 @@ Env vars are override-only, never the primary mechanism.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+import ipaddress
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -133,6 +135,14 @@ class ServerConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class ObservabilityConfig:
+    """Privacy and local retention defaults for runtime evidence."""
+
+    capture_content: bool = False
+    retention_days: int = 30
+
+
+@dataclass(frozen=True, slots=True)
 class AdapterEntryConfig:
     enabled: str = "auto"  # "auto", "true", "false"
     base_url: str = ""
@@ -173,6 +183,7 @@ class AgencyConfig:
     selector: SelectorConfig = field(default_factory=SelectorConfig)
     store: StoreConfig = field(default_factory=StoreConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
+    observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
     adapters: AdaptersConfig = field(default_factory=AdaptersConfig)
     profile: str = "standard"
     companion_policy_path: str | None = None
@@ -262,7 +273,10 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
     selector_raw = raw.get("selector", {})
     store_raw = raw.get("store", {})
     server_raw = raw.get("server", {})
+    observability_raw = raw.get("observability", {})
     adapters_raw = raw.get("adapters", {})
+    if not isinstance(observability_raw, dict):
+        observability_raw = {}
 
     return AgencyConfig(
         judge=JudgeConfig(
@@ -295,6 +309,12 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             host=str(server_raw.get("host", "127.0.0.1")),
             port=int(server_raw.get("port", 7800)),
             max_body_size=int(server_raw.get("max_body_size", 16 * 1024 * 1024)),
+        ),
+        observability=ObservabilityConfig(
+            capture_content=(
+                _normalize_enabled(observability_raw.get("capture_content", False)) == "true"
+            ),
+            retention_days=max(1, int(observability_raw.get("retention_days", 30))),
         ),
         adapters=_build_adapters(adapters_raw),
         profile=str(raw.get("profile", "standard")),
@@ -364,6 +384,25 @@ def _apply_env_overrides(cfg: AgencyConfig) -> AgencyConfig:
     else:
         new_store = cfg.store
 
+    observability_replacements: dict[str, Any] = {}
+    if v := os.environ.get("AGENCY_CAPTURE_CONTENT"):
+        observability_replacements["capture_content"] = v.strip().lower() in (
+            "1", "true", "yes", "on"
+        )
+    if v := os.environ.get("AGENCY_RETENTION_DAYS"):
+        try:
+            observability_replacements["retention_days"] = max(1, int(v))
+        except ValueError:
+            pass
+    if observability_replacements:
+        new_observability = ObservabilityConfig(
+            **{**asdict(cfg.observability), **observability_replacements}
+        )
+    else:
+        new_observability = cfg.observability
+
+    profile = os.environ.get("AGENCY_PROFILE", cfg.profile).strip() or cfg.profile
+
     return AgencyConfig(
         judge=new_judge,
         ollama=new_ollama,
@@ -371,10 +410,73 @@ def _apply_env_overrides(cfg: AgencyConfig) -> AgencyConfig:
         selector=cfg.selector,
         store=new_store,
         server=cfg.server,
+        observability=new_observability,
         adapters=cfg.adapters,
-        profile=cfg.profile,
+        profile=profile,
         companion_policy_path=cfg.companion_policy_path,
         config_path=cfg.config_path,
+    )
+
+
+def _is_loopback_http_url(value: str) -> bool:
+    """Return whether *value* is an uncredentialed loopback HTTP endpoint."""
+    try:
+        parsed = urlsplit(value)
+        host = (parsed.hostname or "").rstrip(".").lower()
+        if parsed.scheme not in {"http", "https"} or not host:
+            return False
+        if parsed.username is not None or parsed.password is not None:
+            return False
+        if host == "localhost":
+            return True
+        return ipaddress.ip_address(host).is_loopback
+    except (ValueError, TypeError):
+        return False
+
+
+def _enforce_profile_constraints(cfg: AgencyConfig) -> AgencyConfig:
+    """Apply security invariants that configuration overlays cannot relax."""
+    if cfg.profile.strip().lower() != "local-only":
+        return cfg
+
+    local_base_url = (
+        cfg.ollama.base_url
+        if _is_loopback_http_url(cfg.ollama.base_url)
+        else "http://127.0.0.1:11434"
+    )
+    local_ollama = replace(cfg.ollama, base_url=local_base_url)
+    local_judge = replace(
+        cfg.judge,
+        model=local_ollama.model,
+        base_url=local_base_url,
+        api_key="",
+        api_key_env="",
+        ollama_mode=True,
+    )
+    local_providers = tuple(
+        replace(provider, api_key="", api_key_env="", ollama_mode=True)
+        for provider in cfg.providers
+        if provider.type.strip().lower() == "ollama"
+        and _is_loopback_http_url(provider.base_url)
+    )
+
+    def disabled(entry: AdapterEntryConfig) -> AdapterEntryConfig:
+        return replace(entry, enabled="false")
+
+    local_adapters = AdaptersConfig(
+        litellm=disabled(cfg.adapters.litellm),
+        hermes=disabled(cfg.adapters.hermes),
+        openclaw=disabled(cfg.adapters.openclaw),
+        codex=disabled(cfg.adapters.codex),
+        claude=disabled(cfg.adapters.claude),
+    )
+    return replace(
+        cfg,
+        judge=local_judge,
+        ollama=local_ollama,
+        providers=local_providers,
+        adapters=local_adapters,
+        profile="local-only",
     )
 
 
@@ -404,13 +506,16 @@ def load_config(path: str | Path | None = None, *, reload: bool = False) -> Agen
         file_raw = _load_yaml(config_path)
         merged = {**defaults_raw, **file_raw}
         # Deep-merge nested dicts (judge, ollama, selector, etc.)
-        for key in ("judge", "ollama", "selector", "store", "server", "adapters"):
+        for key in (
+            "judge", "ollama", "selector", "store", "server", "observability", "adapters"
+        ):
             if key in defaults_raw and key in file_raw:
                 merged[key] = {**defaults_raw[key], **file_raw[key]}
         cfg = _dict_to_config(merged, config_path=str(config_path))
 
     # 3. Environment variable overrides
     cfg = _apply_env_overrides(cfg)
+    cfg = _enforce_profile_constraints(cfg)
 
     if path is None:
         _cached_config = cfg
@@ -468,6 +573,10 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "host": cfg.server.host,
             "port": cfg.server.port,
             "max_body_size": cfg.server.max_body_size,
+        },
+        "observability": {
+            "capture_content": cfg.observability.capture_content,
+            "retention_days": cfg.observability.retention_days,
         },
         "adapters": {
             "litellm": {

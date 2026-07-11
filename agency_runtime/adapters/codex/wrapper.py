@@ -10,11 +10,10 @@ from __future__ import annotations
 import logging
 import os
 import shutil
-import subprocess
-from pathlib import Path
 from typing import Any
 
 from agency_runtime.adapters.base import BaseAdapter
+from agency_runtime.core.delegation.backends import CodexExecBackend
 from agency_runtime.core.store.sqlite import Store
 
 logger = logging.getLogger("agency_runtime.adapters.codex")
@@ -46,7 +45,7 @@ class CodexAdapter(BaseAdapter):
         return {}
 
     def exec(self, task: str, workdir: str | None = None, specialist_prompt: str = "") -> dict[str, Any]:
-        """Execute a task via codex exec.
+        """Execute a task via Codex's non-interactive JSONL contract.
 
         Returns:
             {
@@ -64,35 +63,12 @@ class CodexAdapter(BaseAdapter):
         if specialist_prompt:
             full_prompt = f"{specialist_prompt}\n\nTask: {task}"
 
-        try:
-            result = subprocess.run(
-                [self.codex_cmd, "exec", full_prompt],
-                capture_output=True, text=True, timeout=300,
-                cwd=workdir,
-            )
-            return {
-                "exit_code": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "backend": "codex_exec",
-                "workdir": workdir,
-            }
-        except FileNotFoundError:
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": f"codex not found: {self.codex_cmd}",
-                "backend": "codex_exec",
-                "workdir": workdir,
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": "codex exec timed out after 300s",
-                "backend": "codex_exec",
-                "workdir": workdir,
-            }
+        backend = CodexExecBackend(
+            command=(self.codex_cmd, "exec"),
+            name="codex_exec",
+            timeout=300,
+        )
+        return backend.execute(task=full_prompt, workdir=workdir, check=False)
 
     def run_preflight(self, session_id: str, user_message: str) -> dict[str, Any] | None:
         """Run agency selector before launching codex."""
@@ -102,5 +78,10 @@ class CodexAdapter(BaseAdapter):
             return None
 
         catalog = self.store.get_active_roster_as_catalog()
-        context = route_and_build_context(session_id, user_message, catalog)
+        context = route_and_build_context(
+            session_id,
+            user_message,
+            catalog,
+            store=self.store,
+        )
         return {"context": context} if context else None

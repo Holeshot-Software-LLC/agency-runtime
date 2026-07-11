@@ -3,9 +3,11 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-11
 tags: [architecture, adr, governance]
-related: []
+related:
+  - docs/roadmap/README.md
+  - docs/RELEASE_CHECKLIST.md
 supersedes: []
 superseded_by: null
 ---
@@ -39,6 +41,7 @@ Status meanings:
 | [ADR-0009](0009-uniform-generated-python-hooks.md) | Generate one Python hook scaffold for every host | Superseded |
 | [ADR-0010](0010-one-command-install-and-reversible-toggle.md) | Provide one-command install and a reversible host toggle | Accepted |
 | [ADR-0024](0024-native-host-packages-and-minimal-bridges.md) | Package each host integration in its native format | Accepted |
+| [ADR-0028](0028-host-support-maturity-and-reversible-install.md) | Separate host contract coverage from live support maturity | Accepted |
 
 ## Routing, policy, and providers
 
@@ -51,6 +54,7 @@ Status meanings:
 | [ADR-0021](0021-full-companion-policy-with-precedence.md) | Load a full companion policy with explicit precedence | Accepted |
 | [ADR-0022](0022-omit-preflight-for-trivial-messages.md) | Omit preflight context for trivial messages | Superseded |
 | [ADR-0023](0023-default-companions-for-trivial-messages.md) | Load default companions even for trivial messages | Accepted |
+| [ADR-0030](0030-versioned-quantitative-evaluation-gates.md) | Gate routing changes with versioned quantitative evaluation | Accepted |
 
 ## Evidence and observability
 
@@ -62,6 +66,7 @@ Status meanings:
 | [ADR-0011](0011-explicit-delegation-evidence-lifecycle.md) | Model delegation as an explicit evidence lifecycle | Accepted |
 | [ADR-0015](0015-versioned-selection-explain-receipts.md) | Publish versioned selection-explain receipts | Accepted |
 | [ADR-0016](0016-central-finalization-and-session-correlation.md) | Centralize finalization and correlate evidence by session | Accepted |
+| [ADR-0027](0027-authoritative-runtime-evidence-traces.md) | Derive runtime claims from authoritative correlated evidence | Accepted |
 
 ## State and roster governance
 
@@ -79,6 +84,7 @@ Status meanings:
 | [ADR-0018](0018-signature-aware-delegation-compatibility.md) | Adapt delegate signatures without masking execution errors | Accepted |
 | [ADR-0019](0019-bounded-machine-readable-cli-delegation.md) | Make CLI delegation bounded and machine-readable | Accepted |
 | [ADR-0026](0026-explicit-test-home-boundaries.md) | Require explicit home boundaries for generated-plugin tests | Accepted |
+| [ADR-0029](0029-secure-local-dashboard-and-bounded-observability.md) | Keep the operations dashboard local and observability bounded | Accepted |
 
 ## Documentation governance
 

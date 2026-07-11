@@ -1,0 +1,14 @@
+include LICENSE
+include README.md
+include pyproject.toml
+recursive-include agency_runtime *.css *.html *.js *.json *.py *.yaml *.yml
+recursive-include tests *.py
+
+global-exclude *.db
+global-exclude *.py[cod]
+global-exclude .coverage
+global-exclude .DS_Store
+prune .mypy_cache
+prune .pytest_cache
+prune build
+prune dist

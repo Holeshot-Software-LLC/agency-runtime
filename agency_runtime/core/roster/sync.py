@@ -13,7 +13,7 @@ import re
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 from urllib.parse import urlparse
 
 import yaml
@@ -34,6 +34,23 @@ _METADATA_FIELDS = (
     "tool_affinity",
 )
 
+# Roster definitions are executable instructions. Keep every ingress and
+# persistence boundary explicitly bounded so a trusted source cannot exhaust a
+# host before quarantine/review has a chance to run.
+MAX_HTTP_SOURCE_BYTES = 8 * 1024 * 1024
+MAX_LOCAL_FILE_BYTES = 8 * 1024 * 1024
+MAX_TOTAL_SOURCE_BYTES = 16 * 1024 * 1024
+MAX_AGENT_CONTENT_BYTES = 512 * 1024
+MAX_AGENT_PROMPT_BYTES = 256 * 1024
+MAX_SOURCE_FILES = 512
+MAX_SOURCE_CANDIDATES = 1_000
+MAX_DIRECTORY_DEPTH = 16
+MAX_DIRECTORY_ENTRIES = 4_096
+MAX_SNAPSHOT_MANIFEST_BYTES = 32 * 1024 * 1024
+HTTP_READ_CHUNK_BYTES = 64 * 1024
+HTTP_TIMEOUT_SECONDS = 30
+_AGENT_FILE_SUFFIXES = frozenset({".md", ".json", ".yaml", ".yml"})
+
 
 class RosterSyncError(RuntimeError):
     """Raised when roster sync cannot safely continue."""
@@ -53,6 +70,18 @@ def _connect(store: Store):
 
 def _hash_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _utf8_size(text: str) -> int:
+    return len(text.encode("utf-8"))
+
+
+def _require_bounded_text(value: Any, limit: int, label: str) -> str:
+    text = str(value or "")
+    size = _utf8_size(text)
+    if size > limit:
+        raise RosterSyncError(f"{label} is {size} bytes; limit is {limit} bytes")
+    return text
 
 
 def _json_list(value: Any) -> list[str]:
@@ -85,15 +114,27 @@ def _normalize_agent(agent: dict[str, Any]) -> dict[str, Any]:
         normalized[field] = _json_list(normalized.get(field))
     if not normalized.get("categories"):
         normalized["categories"] = categorize_agent(normalized)
-    body = str(
+    body = _require_bounded_text(
         normalized.get("prompt_body")
         or normalized.get("prompt")
         or normalized.get("body")
         or normalized.get("content")
-        or ""
+        or "",
+        MAX_AGENT_PROMPT_BYTES,
+        f"agent {slug or '<missing>'} prompt",
     )
     normalized["prompt_body"] = body
-    normalized["content"] = str(normalized.get("content") or body or json.dumps(normalized, sort_keys=True))
+    content = normalized.get("content") or body
+    if not content:
+        try:
+            content = json.dumps(normalized, sort_keys=True)
+        except (TypeError, ValueError) as exc:
+            raise RosterSyncError(f"agent {slug or '<missing>'} is not JSON serializable") from exc
+    normalized["content"] = _require_bounded_text(
+        content,
+        MAX_AGENT_CONTENT_BYTES,
+        f"agent {slug or '<missing>'} content",
+    )
     normalized["hash"] = str(normalized.get("hash") or _hash_text(normalized["content"]))
     return normalized
 
@@ -101,6 +142,7 @@ def _normalize_agent(agent: dict[str, Any]) -> dict[str, Any]:
 def parse_agent_file(content: str) -> dict[str, Any]:
     """Parse a JSON/YAML/Markdown agent file into a normalized dict."""
 
+    _require_bounded_text(content, MAX_AGENT_CONTENT_BYTES, "agent file")
     text = content.strip()
     if not text:
         raise ValueError("empty agent file")
@@ -140,24 +182,127 @@ def parse_agent_file(content: str) -> dict[str, Any]:
     return _normalize_agent(data)
 
 
-def _read_url(url: str) -> list[tuple[str, str]]:
+def _decode_source(data: bytes, origin: str) -> str:
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RosterSyncError(f"roster source is not valid UTF-8: {origin}") from exc
+
+
+def _read_http_source(url: str) -> str:
+    with urllib.request.urlopen(  # noqa: S310 - user-controlled roster source by design.
+        url,
+        timeout=HTTP_TIMEOUT_SECONDS,
+    ) as response:
+        raw_length = response.headers.get("Content-Length")
+        if raw_length:
+            try:
+                content_length = int(raw_length)
+            except (TypeError, ValueError) as exc:
+                raise RosterSyncError(f"invalid Content-Length from roster source: {raw_length!r}") from exc
+            if content_length < 0:
+                raise RosterSyncError(f"invalid Content-Length from roster source: {raw_length!r}")
+            if content_length > MAX_HTTP_SOURCE_BYTES:
+                raise RosterSyncError(
+                    f"HTTP roster source declares {content_length} bytes; "
+                    f"limit is {MAX_HTTP_SOURCE_BYTES} bytes"
+                )
+
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            chunk = response.read(min(HTTP_READ_CHUNK_BYTES, MAX_HTTP_SOURCE_BYTES - total + 1))
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > MAX_HTTP_SOURCE_BYTES:
+                raise RosterSyncError(
+                    f"HTTP roster source exceeds {MAX_HTTP_SOURCE_BYTES} bytes"
+                )
+            chunks.append(chunk)
+    return _decode_source(b"".join(chunks), url)
+
+
+def _read_local_file(path: Path) -> tuple[str, int]:
+    if path.is_symlink():
+        raise RosterSyncError(f"roster sources may not use symbolic links: {path}")
+    size = path.stat().st_size
+    if size > MAX_LOCAL_FILE_BYTES:
+        raise RosterSyncError(
+            f"local roster file is {size} bytes; limit is {MAX_LOCAL_FILE_BYTES} bytes: {path}"
+        )
+    with path.open("rb") as handle:
+        data = handle.read(MAX_LOCAL_FILE_BYTES + 1)
+    if len(data) > MAX_LOCAL_FILE_BYTES:
+        raise RosterSyncError(
+            f"local roster file exceeds {MAX_LOCAL_FILE_BYTES} bytes: {path}"
+        )
+    return _decode_source(data, str(path)), len(data)
+
+
+def _directory_files(root: Path) -> list[Path]:
+    if root.is_symlink():
+        raise RosterSyncError(f"roster sources may not use symbolic links: {root}")
+    files: list[Path] = []
+    entries_seen = 0
+    pending: list[tuple[Path, int]] = [(root, 0)]
+    while pending:
+        directory, depth = pending.pop()
+        entries: list[Path] = []
+        for child in directory.iterdir():
+            entries_seen += 1
+            if entries_seen > MAX_DIRECTORY_ENTRIES:
+                raise RosterSyncError(
+                    f"roster directory exceeds {MAX_DIRECTORY_ENTRIES} entries: {root}"
+                )
+            entries.append(child)
+        entries.sort(key=lambda item: item.name.casefold())
+        child_directories: list[tuple[Path, int]] = []
+        for child in entries:
+            if child.is_symlink():
+                raise RosterSyncError(f"roster sources may not use symbolic links: {child}")
+            if child.is_dir():
+                if depth >= MAX_DIRECTORY_DEPTH:
+                    raise RosterSyncError(
+                        f"roster directory exceeds recursion depth {MAX_DIRECTORY_DEPTH}: {child}"
+                    )
+                child_directories.append((child, depth + 1))
+            elif child.is_file() and child.suffix.lower() in _AGENT_FILE_SUFFIXES:
+                files.append(child)
+                if len(files) > MAX_SOURCE_FILES:
+                    raise RosterSyncError(
+                        f"roster source contains more than {MAX_SOURCE_FILES} agent files: {root}"
+                    )
+        # Reverse push preserves the case-insensitive sorted walk with a LIFO stack.
+        pending.extend(reversed(child_directories))
+    return files
+
+
+def _read_url(url: str) -> Iterator[tuple[str, str]]:
     parsed = urlparse(url)
     if parsed.scheme in ("http", "https"):
-        with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310 - user-controlled roster source by design.
-            data = response.read().decode("utf-8")
+        data = _read_http_source(url)
         if data.lstrip().lower().startswith(("<!doctype html", "<html")):
             raise RosterSyncError("roster source returned HTML; use a raw file, local directory, or generated agents.json")
-        return [(url, data)]
+        yield url, data
+        return
 
     path = Path(parsed.path if parsed.scheme == "file" else url).expanduser()
     if path.is_dir():
-        items: list[tuple[str, str]] = []
-        for child in sorted(path.rglob("*")):
-            if child.suffix.lower() in {".md", ".json", ".yaml", ".yml"} and child.is_file():
-                items.append((str(child), child.read_text(encoding="utf-8")))
-        return items
+        total = 0
+        for child in _directory_files(path):
+            content, size = _read_local_file(child)
+            total += size
+            if total > MAX_TOTAL_SOURCE_BYTES:
+                raise RosterSyncError(
+                    f"roster source exceeds total limit of {MAX_TOTAL_SOURCE_BYTES} bytes: {path}"
+                )
+            yield str(child), content
+        return
     if path.is_file():
-        return [(str(path), path.read_text(encoding="utf-8"))]
+        content, _ = _read_local_file(path)
+        yield str(path), content
+        return
     raise FileNotFoundError(f"roster source not found: {url}")
 
 
@@ -171,15 +316,30 @@ def download_from_source(url: str) -> list[dict[str, Any]]:
             loaded = json.loads(stripped)
             if not isinstance(loaded, list):
                 raise ValueError(f"JSON roster at {origin} must be a list")
+            if len(candidates) + len(loaded) > MAX_SOURCE_CANDIDATES:
+                raise RosterSyncError(
+                    f"roster source contains more than {MAX_SOURCE_CANDIDATES} candidates: {url}"
+                )
             for item in loaded:
                 if not isinstance(item, dict):
                     raise ValueError(f"JSON roster item at {origin} is not an object")
                 item = dict(item)
-                item.setdefault("content", json.dumps(item, sort_keys=True))
+                item.setdefault(
+                    "content",
+                    _require_bounded_text(
+                        json.dumps(item, sort_keys=True),
+                        MAX_AGENT_CONTENT_BYTES,
+                        f"agent content at {origin}",
+                    ),
+                )
                 item.setdefault("source", url)
                 item.setdefault("prompt_path", origin)
                 candidates.append(_normalize_agent(item))
         else:
+            if len(candidates) >= MAX_SOURCE_CANDIDATES:
+                raise RosterSyncError(
+                    f"roster source contains more than {MAX_SOURCE_CANDIDATES} candidates: {url}"
+                )
             agent = parse_agent_file(content)
             agent.setdefault("source", url)
             agent.setdefault("prompt_path", origin)
@@ -297,9 +457,15 @@ def _load_candidate_agents(
         latest: dict[str, dict[str, Any]] = {}
         for row in cur.fetchall():
             item = dict(row)
-            content = str(item.get("content") or "")
+            content = _require_bounded_text(
+                item.get("content"),
+                MAX_AGENT_CONTENT_BYTES,
+                f"quarantined agent {item.get('slug') or '<missing>'} content",
+            )
             try:
                 parsed = parse_agent_file(content) if content else {}
+            except RosterSyncError:
+                raise
             except Exception:
                 parsed = {}
             item = {**parsed, **item}
@@ -323,6 +489,20 @@ def create_roster_diff(store: Store, candidate_ids: list[str] | tuple[str, ...] 
     """Create a snapshot diff of quarantined/approved candidates vs active roster."""
 
     candidates = _load_candidate_agents(store, candidate_ids=candidate_ids)
+    if len(candidates) > MAX_SOURCE_CANDIDATES:
+        raise RosterSyncError(
+            f"snapshot contains {len(candidates)} candidates; limit is {MAX_SOURCE_CANDIDATES}"
+        )
+    candidate_content_bytes = sum(
+        _utf8_size(str(agent.get("content") or ""))
+        + _utf8_size(str(agent.get("prompt_body") or ""))
+        for agent in candidates
+    )
+    if candidate_content_bytes > MAX_TOTAL_SOURCE_BYTES:
+        raise RosterSyncError(
+            f"snapshot candidate content is {candidate_content_bytes} bytes; "
+            f"limit is {MAX_TOTAL_SOURCE_BYTES} bytes"
+        )
     active = _active_by_slug(store)
     candidate_by_slug = {agent["slug"]: agent for agent in candidates}
     added: list[str] = []
@@ -372,11 +552,21 @@ def create_roster_diff(store: Store, candidate_ids: list[str] | tuple[str, ...] 
             "unchanged": sorted(unchanged),
         },
     }
+    try:
+        manifest_json = json.dumps(manifest, sort_keys=True)
+    except (TypeError, ValueError) as exc:
+        raise RosterSyncError("snapshot manifest is not JSON serializable") from exc
+    manifest_size = _utf8_size(manifest_json)
+    if manifest_size > MAX_SNAPSHOT_MANIFEST_BYTES:
+        raise RosterSyncError(
+            f"snapshot manifest is {manifest_size} bytes; limit is {MAX_SNAPSHOT_MANIFEST_BYTES} bytes"
+        )
+
     conn = _connect(store)
     try:
         conn.execute(
             "INSERT INTO agent_snapshots (id, snapshot_id, created_at, agent_count, manifest, activated) VALUES (?, ?, ?, ?, ?, 0)",
-            (_uuid(store), snapshot_id, _now(), len(candidates), json.dumps(manifest, sort_keys=True)),
+            (_uuid(store), snapshot_id, _now(), len(candidates), manifest_json),
         )
         conn.commit()
     finally:
@@ -431,15 +621,45 @@ def activate_snapshot(store: Store, snapshot_id: str) -> None:
     candidates = [_normalize_agent(agent) for agent in manifest.get("candidates", [])]
     if not candidates:
         raise RosterSyncError(f"snapshot {snapshot_id} contains no agents to activate")
+    snapshot_slugs = [agent["slug"] for agent in candidates]
+    if len(set(snapshot_slugs)) != len(snapshot_slugs):
+        raise RosterSyncError(f"snapshot {snapshot_id} contains duplicate agents")
+    if len(candidates) > MAX_SOURCE_CANDIDATES:
+        raise RosterSyncError(
+            f"snapshot contains {len(candidates)} candidates; limit is {MAX_SOURCE_CANDIDATES}"
+        )
     candidate_ids = [str(item) for item in manifest.get("candidate_ids", []) if item]
     active_slugs = [agent["slug"] for agent in candidates]
     placeholders = ",".join("?" for _ in active_slugs)
     id_placeholders = ",".join("?" for _ in candidate_ids)
     conn = _connect(store)
     try:
+        # Lock before the immutable-version preflight. No active roster or
+        # snapshot state is changed unless every candidate can be installed.
+        conn.execute("BEGIN IMMEDIATE")
+        existing_versions: set[tuple[str, str]] = set()
+        for agent in candidates:
+            version = str(agent.get("version") or "1.0.0")
+            row = conn.execute(
+                "SELECT hash FROM agent_versions WHERE agent_slug = ? AND version = ?",
+                (agent["slug"], version),
+            ).fetchone()
+            if row is None:
+                continue
+            existing_versions.add((agent["slug"], version))
+            existing_hash = str(row["hash"] or "")
+            candidate_hash = str(agent.get("hash") or "")
+            if existing_hash != candidate_hash:
+                raise RosterSyncError(
+                    f"refusing to replace immutable agent version "
+                    f"{agent['slug']}@{version}: existing hash {existing_hash}, "
+                    f"candidate hash {candidate_hash}"
+                )
+
         conn.execute(f"DELETE FROM agent_active WHERE agent_slug NOT IN ({placeholders})", active_slugs)
         conn.execute(f"DELETE FROM agent_categories WHERE agent_slug NOT IN ({placeholders})", active_slugs)
         for agent in candidates:
+            version = str(agent.get("version") or "1.0.0")
             conn.execute(
                 "INSERT OR REPLACE INTO agent_active "
                 "(id, agent_slug, name, division, description, source, version, hash, categories, capabilities, tool_affinity, prompt_path, activated_at) "
@@ -451,7 +671,7 @@ def activate_snapshot(store: Store, snapshot_id: str) -> None:
                     agent.get("division", ""),
                     agent.get("description", ""),
                     agent.get("source", ""),
-                    agent.get("version", "1.0.0"),
+                    version,
                     agent.get("hash", ""),
                     json.dumps(agent.get("categories", [])),
                     json.dumps(agent.get("capabilities", [])),
@@ -460,10 +680,19 @@ def activate_snapshot(store: Store, snapshot_id: str) -> None:
                     _now(),
                 ),
             )
-            conn.execute(
-                "INSERT OR REPLACE INTO agent_versions (id, agent_slug, version, hash, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (_uuid(store), agent["slug"], agent.get("version", "1.0.0"), agent.get("hash", ""), agent.get("content", ""), _now()),
-            )
+            if (agent["slug"], version) not in existing_versions:
+                conn.execute(
+                    "INSERT INTO agent_versions (id, agent_slug, version, hash, content, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        _uuid(store),
+                        agent["slug"],
+                        version,
+                        agent.get("hash", ""),
+                        agent.get("content", ""),
+                        _now(),
+                    ),
+                )
             for category in _json_list(agent.get("categories")):
                 conn.execute(
                     "INSERT OR IGNORE INTO agent_categories (id, agent_slug, category) VALUES (?, ?, ?)",
@@ -476,6 +705,9 @@ def activate_snapshot(store: Store, snapshot_id: str) -> None:
             conn.execute(f"UPDATE agent_candidates SET status = 'activated' WHERE id IN ({id_placeholders})", candidate_ids)
         conn.execute("UPDATE agent_snapshots SET activated = 1 WHERE snapshot_id = ?", (snapshot_id,))
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
     store.record_import_event("snapshot_activated", "", snapshot_id)

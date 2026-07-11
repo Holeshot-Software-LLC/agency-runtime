@@ -31,27 +31,158 @@ def _is_non_actionable_delegation_none(value: str) -> bool:
     }
 
 
-def _json_dict(value: Any) -> dict[str, Any] | None:
-    if isinstance(value, dict):
-        return value
-    if not isinstance(value, str):
-        return None
-    try:
-        parsed = json.loads(value)
-    except Exception:
-        return None
-    return parsed if isinstance(parsed, dict) else None
+_FAILURE_STATUSES = {
+    "cancelled",
+    "canceled",
+    "error",
+    "failed",
+    "failure",
+    "rejected",
+    "skipped",
+    "timed_out",
+    "timeout",
+}
 
 
-def _delegation_failure_reason(result: Any) -> str:
-    payload = _json_dict(result)
-    if not payload:
+def _failure_message(payload: dict[str, Any], default: str = "tool call failed") -> str:
+    for key in ("message", "error", "reason", "detail", "stderr"):
+        value = payload.get(key)
+        if value not in (None, "", False):
+            if isinstance(value, dict):
+                return _failure_message(value, default)
+            return _clean(value, default)
+    content = payload.get("content")
+    if isinstance(content, (list, tuple)):
+        for item in content:
+            if isinstance(item, dict) and item.get("text"):
+                return _clean(item["text"], default)
+    return default
+
+
+def _tool_failure_reason(result: Any, *, _depth: int = 0) -> str:
+    """Return an explicit tool failure reason without guessing from prose.
+
+    Host hooks expose several result envelopes.  Failure flags are checked at
+    every structured nesting level, including JSON strings and MCP-style
+    ``content`` lists.  Missing results remain backward-compatible: absence of
+    telemetry is not treated as proof of failure.
+    """
+    if _depth > 6 or result is None or result is True:
         return ""
-    nested = _json_dict(payload.get("result"))
-    if nested and (nested.get("error") or nested.get("success") is False or nested.get("delegated") is False):
-        return _clean(nested.get("message") or nested.get("error") or "delegate_task failed")
-    if payload.get("error") or payload.get("success") is False or payload.get("delegated") is False:
-        return _clean(payload.get("message") or payload.get("error") or "delegate_task failed")
+    if result is False:
+        return "tool call returned false"
+    if isinstance(result, (list, tuple)):
+        for item in result:
+            reason = _tool_failure_reason(item, _depth=_depth + 1)
+            if reason:
+                return reason
+        return ""
+    if isinstance(result, str):
+        text = result.strip()
+        if not text:
+            return ""
+        try:
+            parsed = json.loads(text)
+        except Exception:
+            parsed = None
+        if parsed is not None and parsed != result:
+            return _tool_failure_reason(parsed, _depth=_depth + 1)
+        lowered = text.lower()
+        if lowered.startswith(("error:", "failed:", "failure:", "exception:", "tool error:")):
+            return text
+        return ""
+    if not isinstance(result, dict):
+        return ""
+
+    payload = result
+    error = payload.get("error")
+    if error not in (None, "", False):
+        return _failure_message(payload)
+    if payload.get("success") is False or payload.get("ok") is False:
+        return _failure_message(payload)
+    if payload.get("delegated") is False or payload.get("loaded") is False:
+        return _failure_message(payload)
+    if payload.get("isError") is True or payload.get("is_error") is True:
+        return _failure_message(payload)
+    if payload.get("cancelled") is True or payload.get("canceled") is True or payload.get("timed_out") is True:
+        return _failure_message(payload)
+    if _clean(payload.get("status")).lower() in _FAILURE_STATUSES:
+        return _failure_message(payload)
+    for key in ("returncode", "return_code", "exit_code", "exitCode"):
+        value = payload.get(key)
+        if value not in (None, "", 0, "0"):
+            return _failure_message(payload, f"tool call exited with {value}")
+
+    for key in ("result", "output", "data", "content", "text"):
+        if key not in payload:
+            continue
+        reason = _tool_failure_reason(payload.get(key), _depth=_depth + 1)
+        if reason:
+            return reason
+    return ""
+
+
+def _tool_result(kwargs: dict[str, Any]) -> Any:
+    for key in ("result", "tool_result", "output", "response"):
+        if key in kwargs and kwargs.get(key) is not None:
+            return kwargs.get(key)
+    return None
+
+
+def _tool_call_failure_reason(kwargs: dict[str, Any]) -> str:
+    for key in ("result", "tool_result", "output", "response"):
+        if key in kwargs:
+            reason = _tool_failure_reason(kwargs.get(key))
+            if reason:
+                return reason
+    envelope = {
+        key: kwargs[key]
+        for key in (
+            "error",
+            "success",
+            "ok",
+            "delegated",
+            "loaded",
+            "isError",
+            "is_error",
+            "status",
+            "returncode",
+            "return_code",
+            "exit_code",
+            "exitCode",
+            "message",
+            "reason",
+            "detail",
+            "stderr",
+        )
+        if key in kwargs
+    }
+    return _tool_failure_reason(envelope) if envelope else ""
+
+
+def _nested_value(value: Any, keys: tuple[str, ...], *, _depth: int = 0) -> Any:
+    if _depth > 5:
+        return None
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except Exception:
+            return None
+    if isinstance(value, dict):
+        for key in keys:
+            if value.get(key) not in (None, ""):
+                return value[key]
+        for key in ("result", "output", "data"):
+            found = _nested_value(value.get(key), keys, _depth=_depth + 1)
+            if found not in (None, ""):
+                return found
+    return None
+
+
+def _first_value(*values: Any) -> Any:
+    for value in values:
+        if value not in (None, ""):
+            return value
     return ""
 
 
@@ -119,54 +250,73 @@ class BaseAdapter(ABC):
         tool_name = kwargs.get("tool_name") or ""
         args = kwargs.get("args") if isinstance(kwargs.get("args"), dict) else {}
         session_id = _clean(kwargs.get("session_id"))
+        trace_id = _clean(kwargs.get("trace_id"))
+        result = _tool_result(kwargs)
+        failure_reason = _tool_call_failure_reason(kwargs)
 
         if tool_name == "skill_view":
             skill_name = args.get("name") or ""
-            if skill_name:
+            if skill_name and not failure_reason:
                 self.store.record_skill_loaded(session_id, skill_name)
 
         elif tool_name in ("agency_agents_load", "agency_agents_inspect"):
             agent = args.get("agent") or args.get("slug") or ""
-            if agent:
+            if agent and not failure_reason:
                 self.store.record_specialist_loaded(session_id, agent)
 
-        elif tool_name == "agency_agents_delegate":
-            agent = args.get("agent") or args.get("slug") or ""
-            if agent:
-                self.store.record_specialist_loaded(session_id, agent)
-            failure_reason = _delegation_failure_reason(kwargs.get("result"))
+        elif tool_name in ("agency_agents_delegate", "delegate_task", "delegate_async"):
+            agent = _clean(_first_value(
+                args.get("agent"),
+                args.get("slug"),
+                args.get("recommended_agent"),
+                kwargs.get("agent"),
+                kwargs.get("recommended_agent"),
+                _nested_value(result, ("agent", "slug", "recommended_agent")),
+            ))
+            goal = _clean(_first_value(
+                args.get("goal"),
+                args.get("task"),
+                args.get("prompt"),
+                args.get("description"),
+                kwargs.get("goal"),
+                kwargs.get("task"),
+                _nested_value(result, ("goal", "task", "prompt", "description")),
+            ))
+            work_unit_id = _clean(_first_value(
+                args.get("work_unit_id"),
+                args.get("workUnitId"),
+                args.get("unit_id"),
+                args.get("task_id"),
+                kwargs.get("work_unit_id"),
+                kwargs.get("workUnitId"),
+                _nested_value(result, ("work_unit_id", "workUnitId", "unit_id", "task_id")),
+            ))
+            backend = "agency_agents_delegate" if tool_name == "agency_agents_delegate" else tool_name
             if failure_reason:
                 mark_delegation_skipped(
                     self.store,
                     session_id=session_id,
                     host=self.host_name,
                     agent=agent,
-                    backend="agency_agents_delegate",
-                    goal=_clean(args.get("task") or args.get("goal")),
+                    backend=backend,
+                    goal=goal,
+                    work_unit_id=work_unit_id,
+                    trace_id=trace_id,
                     reason=failure_reason,
                 )
             else:
+                if agent:
+                    self.store.record_specialist_loaded(session_id, agent)
                 mark_delegation_executed(
                     self.store,
                     session_id=session_id,
                     host=self.host_name,
                     agent=agent,
-                    backend="agency_agents_delegate",
-                    goal=_clean(args.get("task") or args.get("goal")),
+                    backend=backend,
+                    goal=goal,
+                    work_unit_id=work_unit_id,
+                    trace_id=trace_id,
                 )
-
-        elif tool_name in ("delegate_task", "delegate_async"):
-            agent = args.get("agent") or args.get("slug") or args.get("recommended_agent") or ""
-            if agent:
-                self.store.record_specialist_loaded(session_id, agent)
-            mark_delegation_executed(
-                self.store,
-                session_id=session_id,
-                host=self.host_name,
-                agent=agent,
-                backend=tool_name,
-                goal=_clean(args.get("goal") or args.get("task")),
-            )
 
     def post_tool_call_handler(self, **kwargs: Any) -> None:
         """Host hook alias for tool-call evidence capture."""
@@ -244,34 +394,37 @@ class BaseAdapter(ABC):
         )
 
     def _selected_catalog_agents(self, catalog: list[dict[str, Any]], routing: dict[str, Any]) -> list[dict[str, Any]]:
-        """Return routed agents that exist in the active catalog, capped for context size."""
+        """Return routed active specialists with versioned, bounded prompts."""
         selected_ids = [str(agent_id) for agent_id in routing.get("selected_ids", []) if agent_id]
         if not selected_ids:
             return []
         max_selected = 5
-        by_slug = {str(agent.get("slug") or ""): agent for agent in catalog}
+        active_slugs = {str(agent.get("slug") or "") for agent in catalog}
         selected: list[dict[str, Any]] = []
         for agent_id in selected_ids:
-            agent = by_slug.get(agent_id)
-            if agent and agent not in selected:
+            if agent_id not in active_slugs:
+                continue
+            agent = self.store.get_specialist_prompt(agent_id, max_chars=12_000)
+            if agent and agent.get("prompt_body") and agent not in selected:
                 selected.append(agent)
             if len(selected) >= max_selected:
                 break
         return selected
 
     def _format_loaded_specialists(self, agents: list[dict[str, Any]]) -> str:
-        """Render selected roster entries as injected specialist context."""
-        lines = ["[AGENCY LOADED] Active roster specialist context loaded for this turn:"]
+        """Render approved versioned specialist prompts as injected context."""
+        lines = ["[AGENCY LOADED] Approved specialist instructions loaded for this turn:"]
         for agent in agents:
             capabilities = agent.get("capabilities") if isinstance(agent.get("capabilities"), list) else []
             capability_text = f" Capabilities: {', '.join(str(item) for item in capabilities[:4])}." if capabilities else ""
             lines.append(
                 "- "
-                + str(agent.get("slug") or "")
+                + str(agent.get("agent_slug") or agent.get("slug") or "")
                 + ": "
                 + str(agent.get("description") or agent.get("name") or "")
                 + capability_text
             )
+            lines.append("  Instructions: " + str(agent.get("prompt_body") or ""))
         return "\n".join(lines)
 
     def build_preflight_context(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
@@ -292,13 +445,16 @@ class BaseAdapter(ABC):
 
                 seed_starter_roster(self.store)
                 catalog = self.store.get_active_roster_as_catalog()
-            routing = route(session_id, user_message, catalog)
+            routing = route(session_id, user_message, catalog, store=self.store)
             record_suggested_delegations(self.store, session_id=session_id, host=self.host_name, routing=routing)
             context = build_routing_context(routing)
             selected = self._selected_catalog_agents(catalog, routing)
             if selected:
                 for agent in selected:
-                    self.store.record_specialist_loaded(session_id, str(agent.get("slug") or ""))
+                    self.store.record_specialist_loaded(
+                        session_id,
+                        str(agent.get("agent_slug") or agent.get("slug") or ""),
+                    )
                 context = context + "\n\n" + self._format_loaded_specialists(selected)
             return {"context": context} if context else None
 
@@ -311,12 +467,22 @@ class BaseAdapter(ABC):
             active_slugs = {str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog}
             available = [slug for slug in default_companions if slug in active_slugs]
             if available:
-                for slug in available:
+                loaded_agents = [
+                    prompt
+                    for slug in available
+                    if (prompt := self.store.get_specialist_prompt(slug, max_chars=12_000))
+                    and prompt.get("prompt_body")
+                ]
+                loaded_slugs = [str(agent.get("agent_slug") or "") for agent in loaded_agents]
+                for slug in loaded_slugs:
                     self.store.record_specialist_loaded(session_id, slug)
-                agents_text = ", ".join(available)
+                if not loaded_agents:
+                    return None
+                agents_text = ", ".join(loaded_slugs)
                 context = (
                     f"[AGENCY PREFLIGHT] Default companion specialist routing "
-                    f"(deterministic, trivial message): {agents_text}"
+                    f"(deterministic, trivial message): {agents_text}\n\n"
+                    + self._format_loaded_specialists(loaded_agents)
                 )
                 return {"context": context}
 
@@ -328,11 +494,9 @@ class BaseAdapter(ABC):
 
     def enforce_pre_verify(self, final_response: str, session_id: str = "", model: str = "", attempt: int = 0) -> dict[str, Any] | None:
         """Gate response completion on header, specialist, and delegation evidence."""
-        del model
-        if attempt >= 2:
-            return None
+        del attempt
 
-        from agency_runtime.core.header.contract import parse_header, validate_header
+        from agency_runtime.core.header.contract import fill_header_fields, parse_header, validate_header
         valid, missing = validate_header(final_response)
         if not valid:
             return {
@@ -351,7 +515,7 @@ class BaseAdapter(ABC):
         specialists = self.report_specialists_loaded(session_id)
         open_delegations = self._suggested_delegations(session_id)
         requires_agency_evidence = bool(session_id and (session_id in self._nontrivial_sessions or specialists)) or bool(open_delegations)
-        if requires_agency_evidence and _is_noneish_agency_line(loaded) and attempt < 2:
+        if requires_agency_evidence and _is_noneish_agency_line(loaded):
             actual = ", ".join(specialists) if specialists else "the actual loaded specialist"
             return {
                 "action": "continue",
@@ -365,7 +529,7 @@ class BaseAdapter(ABC):
 
         # `none - <concrete blocker>` is acceptable; generated/no-evidence
         # explanations still need a real delegation or a concrete blocker.
-        if open_delegations and _is_non_actionable_delegation_none(delegated) and attempt < 2:
+        if open_delegations and _is_non_actionable_delegation_none(delegated):
             return {
                 "action": "continue",
                 "message": (
@@ -373,6 +537,29 @@ class BaseAdapter(ABC):
                     "Dispatch at least one independent work unit via delegate_task, delegate_async, "
                     "or agency_agents_delegate, then report the executed delegation in the Agency header. "
                     "If delegation is impossible, state the concrete blocker instead of writing bare 'none'."
+                ),
+            }
+
+        authoritative = fill_header_fields(parsed, session_id, self.store, model)
+        evidence_fields = (
+            ("agencies_loaded", "Agency/Agencies loaded"),
+            ("agencies_delegated", "Agency/Agencies delegated"),
+            ("skills_loaded", "Skills loaded"),
+            ("actual_model_selected", "Actual Model selected"),
+        )
+        mismatches = [
+            (label, authoritative[key])
+            for key, label in evidence_fields
+            if _clean(parsed.get(key)) != _clean(authoritative[key])
+        ]
+        if mismatches:
+            corrections = "; ".join(f"{label}: {value}" for label, value in mismatches)
+            return {
+                "action": "continue",
+                "message": (
+                    "AGENCY HEADER DOES NOT MATCH RECORDED EVIDENCE. "
+                    "Do not claim unrecorded specialist, delegation, or model activity. "
+                    f"Rewrite these fields exactly: {corrections}"
                 ),
             }
 

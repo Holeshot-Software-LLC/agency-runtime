@@ -13,9 +13,18 @@ from typing import Any
 from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 
 
+MAX_INPUT_BYTES = 1_048_576
+
+
 def _read_payload() -> dict[str, Any]:
     try:
-        payload = json.load(sys.stdin)
+        stream = getattr(sys.stdin, "buffer", sys.stdin)
+        raw = stream.read(MAX_INPUT_BYTES + 1)
+        if len(raw) > MAX_INPUT_BYTES:
+            return {"action": "", "error": "hook payload exceeds 1 MiB"}
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        payload = json.loads(raw)
     except Exception as exc:  # pragma: no cover - defensive CLI boundary
         return {"action": "", "error": f"invalid json: {exc}"}
     return payload if isinstance(payload, dict) else {"action": "", "error": "payload must be an object"}
@@ -55,6 +64,17 @@ def handle(payload: dict[str, Any]) -> dict[str, Any]:
             model=model,
             attempt=int(payload.get("attempt") or 0),
         ) or {}
+
+    if action == "post_tool_call":
+        tool_input = payload.get("toolInput")
+        adapter.post_tool_call_handler(
+            tool_name=str(payload.get("toolName") or ""),
+            args=tool_input if isinstance(tool_input, dict) else {},
+            result=payload.get("toolResult"),
+            error=payload.get("error"),
+            session_id=session_id,
+        )
+        return {}
 
     return {"error": f"unknown action: {action}"}
 

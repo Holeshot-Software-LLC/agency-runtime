@@ -27,8 +27,8 @@ def _header(*, delegated: str = "none") -> str:
         [
             "Agency/Agencies loaded: multi-agent-systems-architect",
             f"Agency/Agencies delegated: {delegated}",
-            "Skills loaded: agency-specialist-routing",
-            "Actual Model selected: task-chunk-planner -> eval/model",
+            "Skills loaded: none",
+            "Actual Model selected: unknown -> unavailable - no model receipt recorded",
             "Why: eval",
             "How it shaped outcome: eval",
         ]
@@ -238,7 +238,7 @@ def _case_skipped_blocker_renders_in_header() -> dict[str, Any] | None:
     return _with_store(run)
 
 
-def _case_explicit_delegation_blocker_is_accepted() -> dict[str, Any] | None:
+def _case_recorded_delegation_blocker_is_accepted() -> dict[str, Any] | None:
     def run(store: Store, adapter: HermesAdapter) -> dict[str, Any]:
         store.record_specialist_loaded("eval-session", "multi-agent-systems-architect")
         store.record_delegation(
@@ -247,7 +247,9 @@ def _case_explicit_delegation_blocker_is_accepted() -> dict[str, Any] | None:
             host="hermes",
             work_unit_id="unit-1",
             recommended_agent="multi-agent-systems-architect",
-            status="suggested",
+            status="skipped",
+            backend="agency_agents_delegate",
+            skip_reason="agency_agents_delegate unavailable",
         )
         result = adapter.pre_verify_handler(
             _header(delegated="none - agency_agents_delegate unavailable"),
@@ -293,7 +295,7 @@ def run_delegation_eval() -> dict[str, Any]:
         ("pre_verify_blocks_open_suggestions", _case_pre_verify_blocks_open_suggestions),
         ("delegate_task_promotes_suggestion", _case_delegate_task_promotes_suggestion),
         ("agency_agents_delegate_records_event", _case_agency_agents_delegate_records_event),
-        ("explicit_delegation_blocker_is_accepted", _case_explicit_delegation_blocker_is_accepted),
+        ("recorded_delegation_blocker_is_accepted", _case_recorded_delegation_blocker_is_accepted),
         ("skipped_blocker_renders_in_header", _case_skipped_blocker_renders_in_header),
         ("generated_no_delegation_explanation_is_rejected", _case_generated_no_delegation_explanation_is_rejected),
     ]

@@ -14,14 +14,17 @@ Stdlib only (http.server).  All responses are JSON.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import logging
+import secrets
+import socket
 import traceback
 import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, Type
 from urllib.parse import urlparse
 
 from agency_runtime.core.config import load_config
@@ -37,8 +40,9 @@ logger = logging.getLogger("agency_runtime.server.http")
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 7800
 
-# Body size cap to prevent unbounded reads (16 MB).
-_MAX_BODY = 16 * 1024 * 1024
+# Body size cap to prevent unbounded reads. Routing and finalization payloads do
+# not need multi-megabyte request bodies.
+_MAX_BODY = 1024 * 1024
 
 
 # ---------------------------------------------------------------------------
@@ -57,7 +61,12 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
     # ── Method dispatch ──────────────────────────────────────────────
 
+    def do_OPTIONS(self) -> None:  # noqa: N802 — http.server contract
+        self._json_error(HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed")
+
     def do_GET(self) -> None:  # noqa: N802 — http.server contract
+        if not self._validate_request_boundary():
+            return
         path = _normalise_path(self.path)
         try:
             if path == "/status":
@@ -71,6 +80,8 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     def do_POST(self) -> None:  # noqa: N802 — http.server contract
+        if not self._validate_request_boundary(require_json=True):
+            return
         path = _normalise_path(self.path)
         body = self._read_json_body()
         if body is None:
@@ -120,7 +131,12 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
         data = json.dumps(payload).encode("utf-8")
         self.send_response(status)
-        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -130,6 +146,34 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
     def _json_error(self, status: int, message: str) -> None:
         self._send_json(status, {"error": message})
+
+    def _validate_request_boundary(self, *, require_json: bool = False) -> bool:
+        """Reject DNS-rebinding, cross-origin, and browser-simple POSTs."""
+        host = self.headers.get("Host", "").strip().lower()
+        allowed_hosts = self.server.allowed_hosts  # type: ignore[attr-defined]
+        if host not in allowed_hosts:
+            self._json_error(HTTPStatus.BAD_REQUEST, "invalid Host header")
+            return False
+
+        origin = self.headers.get("Origin")
+        if origin:
+            expected = f"http://{host}"
+            if origin.rstrip("/").lower() != expected.rstrip("/"):
+                self._json_error(HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed")
+                return False
+
+        supplied = self.headers.get("Authorization", "")
+        expected = f"Bearer {self.server.auth_token}"  # type: ignore[attr-defined]
+        if not secrets.compare_digest(supplied, expected):
+            self._json_error(HTTPStatus.UNAUTHORIZED, "authentication required")
+            return False
+
+        if require_json:
+            content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            if content_type != "application/json":
+                self._json_error(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required")
+                return False
+        return True
 
     # ── Endpoint handlers ────────────────────────────────────────────
 
@@ -144,7 +188,14 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
         catalog = self.store.get_active_roster_as_catalog()
         trivial = is_trivial(user_message)
-        routing = route(session_id, user_message, catalog)
+        trace_id = str(uuid.uuid4())
+        routing = route(
+            session_id,
+            user_message,
+            catalog,
+            store=self.store,
+            trace_id=trace_id,
+        )
         context = build_routing_context(routing)
         if trivial:
             _matched, companion_ids = detect_actions(user_message)
@@ -157,7 +208,6 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
                     f"(deterministic, trivial message): {', '.join(available)}"
                 )
 
-        trace_id = str(uuid.uuid4())
         self._json_ok({
             "trace_id": trace_id,
             "session_id": session_id,
@@ -184,6 +234,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             task,
             self.store.get_active_roster_as_catalog(),
             limit=limit,
+            store=self.store,
         )
         self._json_ok(payload)
 
@@ -199,8 +250,15 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             self._json_error(HTTPStatus.BAD_REQUEST, "draft_text is required")
             return
 
-        # Record caller-provided context into the store so the finalization
-        # gate picks it up when filling header fields from canonical storage.
+        if (skills_loaded or delegations) and not self.server.allow_context_writes:  # type: ignore[attr-defined]
+            self._json_error(
+                HTTPStatus.FORBIDDEN,
+                "caller-provided evidence is disabled on this server",
+            )
+            return
+
+        # Only explicitly trusted internal servers may promote caller-provided
+        # context into canonical storage.
         session_key = session_id
         for skill in skills_loaded:
             self.store.record_skill_loaded(session_key, str(skill))
@@ -298,9 +356,39 @@ class AgencyHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, store: Store, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT):
+    def __init__(
+        self,
+        store: Store,
+        host: str = DEFAULT_HOST,
+        port: int = DEFAULT_PORT,
+        handler_class: Type[AgencyHTTPHandler] = AgencyHTTPHandler,
+        *,
+        allow_remote: bool = False,
+        allow_context_writes: bool = False,
+        auth_token: str | None = None,
+    ):
+        if not allow_remote and not _is_loopback_host(host):
+            raise ValueError("Agency HTTP server is loopback-only unless allow_remote is explicit")
         self.store = store
-        super().__init__((host, port), AgencyHTTPHandler)
+        self.allow_context_writes = allow_context_writes
+        self.auth_token = auth_token or getattr(self, "auth_token", "") or secrets.token_urlsafe(32)
+        # ``TCPServer`` creates its listening socket during ``__init__`` using
+        # this attribute.  Set it on the instance before delegating so an
+        # explicit ``::1`` binding is genuinely IPv6 rather than merely
+        # accepted by the loopback validation above.
+        try:
+            if ipaddress.ip_address(host).version == 6:
+                self.address_family = socket.AF_INET6
+        except ValueError:
+            # Names such as ``localhost`` retain the stdlib's IPv4 default.
+            pass
+        super().__init__((host, port), handler_class)
+        actual_port = int(self.server_address[1])
+        self.allowed_hosts = {
+            f"127.0.0.1:{actual_port}",
+            f"localhost:{actual_port}",
+            f"[::1]:{actual_port}",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -311,6 +399,16 @@ def _normalise_path(raw_path: str) -> str:
     """Strip query string and trailing slash, return bare path."""
     path = urlparse(raw_path).path
     return path.rstrip("/") or "/"
+
+
+def _is_loopback_host(host: str) -> bool:
+    normalized = str(host or "").strip().lower()
+    if normalized == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(normalized).is_loopback
+    except ValueError:
+        return False
 
 
 def _log_unhandled_request_error(method: str, path: str, exc: Exception) -> None:
@@ -345,6 +443,7 @@ def serve(
     )
     store = Store(db_path) if db_path else Store()
     server = AgencyHTTPServer(store, host, port)
+    print(f"Agency Runtime HTTP bearer token: {server.auth_token}")
     logger.info("Agency Runtime HTTP server listening on %s:%d", host, port)
     try:
         server.serve_forever()

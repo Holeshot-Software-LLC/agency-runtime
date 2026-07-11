@@ -19,9 +19,7 @@ from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.selector.pipeline import (
     route,
     detect_work_units,
-    build_routing_context,
     route_and_build_context,
-    is_trivial,
 )
 
 
@@ -39,12 +37,12 @@ class AgencyRuntime:
     def route(self, session_id: str, user_message: str) -> dict[str, Any]:
         """Route a user message to specialist agents."""
         catalog = self.store.get_active_roster_as_catalog()
-        return route(session_id, user_message, catalog)
+        return route(session_id, user_message, catalog, store=self.store)
 
     def route_with_context(self, session_id: str, user_message: str) -> str | None:
         """Route and return the preflight context string."""
         catalog = self.store.get_active_roster_as_catalog()
-        return route_and_build_context(session_id, user_message, catalog)
+        return route_and_build_context(session_id, user_message, catalog, store=self.store)
 
     def detect_work_units(self, message: str) -> dict[str, Any]:
         """Detect independent work units in a message."""
@@ -84,3 +82,5 @@ class AgencyRuntime:
 
 
 __version__ = "0.1.0"
+
+__all__ = ["AgencyRuntime", "__version__"]

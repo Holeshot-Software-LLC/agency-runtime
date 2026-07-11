@@ -102,8 +102,8 @@ def test_doctor_json_serializable():
         assert isinstance(data["checks"], list)
 
 
-def test_doctor_uses_host_detection_for_path_only_hosts(monkeypatch):
-    """Doctor treats OpenClaw's config directory as install evidence."""
+def test_doctor_distinguishes_host_discovery_from_native_registration(monkeypatch):
+    """A discovered host is not reported as a working Agency integration."""
     with tempfile.TemporaryDirectory() as tmp:
         cfg = AgencyConfig(
             store=StoreConfig(db_path=f"{tmp}/test.db"),
@@ -113,12 +113,24 @@ def test_doctor_uses_host_detection_for_path_only_hosts(monkeypatch):
         for agent in STARTER_ROSTER:
             store.activate_agent(dict(agent))
 
-        monkeypatch.setattr("agency_runtime.core.doctor.detect_installed_agents", lambda: ["openclaw"])
+        monkeypatch.setattr(
+            "agency_runtime.core.doctor.inspect_host_installations",
+            lambda **_kwargs: [
+                {
+                    "host": "openclaw",
+                    "discovered": True,
+                    "registered": False,
+                    "enabled": None,
+                    "loaded": None,
+                    "stale_config": False,
+                    "maturity": "host-discovered",
+                }
+            ],
+        )
         report = run_doctor(cfg)
         openclaw_check = [c for c in report.checks if c.name == "adapter_openclaw"][0]
-        assert openclaw_check.status == "pass"
-        assert "installed" in openclaw_check.message
-        assert "not installed" not in openclaw_check.message
+        assert openclaw_check.status == "warn"
+        assert "not natively registered" in openclaw_check.message
 
 
 def test_doctor_accepts_yolo_profile():

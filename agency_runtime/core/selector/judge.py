@@ -14,10 +14,9 @@ from __future__ import annotations
 
 import json
 import logging
-import os
+import math
 import re
 import time
-import urllib.error
 import urllib.request
 from typing import Any
 
@@ -25,6 +24,79 @@ from agency_runtime.core.config import AgencyConfig, JudgeConfig, ProviderEntry,
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 
 logger = logging.getLogger("agency_runtime.selector.judge")
+
+_MAX_JUDGE_RESPONSE_BYTES = 256 * 1024
+_MAX_PROVIDER_ATTEMPTS = 4
+_MAX_JUDGE_DEADLINE_SECONDS = 60.0
+
+
+def _bounded_confidence(value: Any) -> float | None:
+    """Parse model confidence and constrain it to the public 0..1 contract."""
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(confidence):
+        return None
+    return max(0.0, min(1.0, confidence))
+
+
+def _attempt_signature(
+    base_url: str,
+    model: str,
+    ollama_mode: bool,
+    provider_type: str = "openai-compatible",
+) -> tuple[str, str, str]:
+    """Identify equivalent network attempts across new and legacy config."""
+    protocol = "ollama" if ollama_mode else provider_type.strip().lower()
+    return protocol, base_url.rstrip("/").lower(), model.strip().lower()
+
+
+def _provider_is_attemptable(provider: ProviderEntry) -> bool:
+    if not provider.model or not provider.base_url:
+        return False
+    return (
+        provider.type.strip().lower() == "ollama"
+        or provider.ollama_mode
+        or bool(provider.resolve_api_key())
+    )
+
+
+def _network_target_signature(base_url: str, model: str) -> tuple[str, str]:
+    """Identify a concrete endpoint/model independent of protocol metadata."""
+    return base_url.rstrip("/").lower(), model.strip().lower()
+
+
+def _bounded_duration(value: Any, *, maximum: float) -> float:
+    """Return a finite positive duration constrained to *maximum*."""
+    try:
+        duration = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(duration) or duration <= 0:
+        return 0.0
+    return min(duration, maximum)
+
+
+def _read_json_object(response: Any) -> dict[str, Any] | None:
+    """Read one bounded JSON object from an HTTP response."""
+    try:
+        raw = response.read(_MAX_JUDGE_RESPONSE_BYTES + 1)
+        if len(raw) > _MAX_JUDGE_RESPONSE_BYTES:
+            return None
+        parsed = json.loads(raw.decode("utf-8"))
+    except (OSError, UnicodeError, ValueError, TypeError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _with_cumulative_latency(
+    result: dict[str, Any],
+    attempts_started: float,
+) -> dict[str, Any]:
+    elapsed_ms = int((time.monotonic() - attempts_started) * 1000)
+    result["latency_ms"] = max(int(result.get("latency_ms", 0) or 0), elapsed_ms)
+    return result
 
 
 def parse_json_response(text: str) -> dict[str, Any] | None:
@@ -56,6 +128,7 @@ def _build_judge_payload(
     candidates: list[dict[str, Any]],
     max_sel: int,
     ollama_mode: bool,
+    provider_type: str = "openai-compatible",
 ) -> tuple[bytes, str, str]:
     """Build the HTTP request payload and return (body, url_path, content_type)."""
     judge_candidates = candidates[:20]
@@ -95,6 +168,16 @@ def _build_judge_payload(
         }).encode("utf-8")
         return payload, "/api/chat", "application/json"
 
+    if provider_type == "anthropic":
+        payload = json.dumps({
+            "model": "",  # filled by caller
+            "system": "You are a semantic selector. Return strict JSON only.",
+            "messages": [{"role": "user", "content": user_content}],
+            "max_tokens": 256,
+            "temperature": 0.0,
+        }).encode("utf-8")
+        return payload, "/v1/messages", "application/json"
+
     payload = json.dumps({
         "model": "",  # filled by caller
         "messages": [
@@ -114,6 +197,15 @@ def _build_judge_payload(
     return payload, "/v1/chat/completions", "application/json"
 
 
+def _join_api_path(base_url: str, path: str) -> str:
+    """Join API paths without producing duplicate `/v1/v1/...` segments."""
+    base = base_url.rstrip("/")
+    normalized_path = "/" + path.lstrip("/")
+    if base.lower().endswith("/v1") and normalized_path.lower().startswith("/v1/"):
+        normalized_path = normalized_path[3:]
+    return f"{base}{normalized_path}"
+
+
 def _try_provider(
     provider: ProviderEntry,
     task_description: str,
@@ -121,44 +213,83 @@ def _try_provider(
     max_sel: int,
     candidate_count: int,
     top_score: float,
+    request_timeout: float | None = None,
 ) -> dict[str, Any] | None:
     """Try a single provider. Returns result dict on success, None on failure."""
 
     api_key = provider.resolve_api_key()
+    provider_type = provider.type.strip().lower()
+    ollama_mode = provider.ollama_mode or provider_type == "ollama"
 
     # Auth check
-    if provider.type != "ollama" and not api_key:
+    if not provider.model or not provider.base_url:
+        logger.debug("provider %s: model or base URL missing, skipping", provider.name)
+        return None
+    if not ollama_mode and not api_key:
         logger.debug("provider %s: no api key, skipping", provider.name)
         return None
 
     body, path, content_type = _build_judge_payload(
-        task_description, candidates, max_sel, provider.ollama_mode,
+        task_description,
+        candidates,
+        max_sel,
+        ollama_mode,
+        provider_type,
     )
     body_json = json.loads(body)
     body_json["model"] = provider.model
+    if (
+        provider_type in {"openai", "openai-compatible"}
+        and provider.model.lower().startswith("gpt-5")
+    ):
+        body_json["max_completion_tokens"] = body_json.pop("max_tokens", 256)
+        body_json.pop("temperature", None)
     body = json.dumps(body_json).encode("utf-8")
 
-    request_url = f"{provider.base_url.rstrip('/')}{path}"
+    request_url = _join_api_path(provider.base_url, path)
     headers = {"Content-Type": content_type}
     if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+        if provider_type == "anthropic":
+            headers["x-api-key"] = api_key
+            headers["anthropic-version"] = "2023-06-01"
+        else:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+    timeout = _bounded_duration(
+        provider.timeout if request_timeout is None else request_timeout,
+        maximum=_MAX_JUDGE_DEADLINE_SECONDS,
+    )
+    if timeout <= 0:
+        return None
 
     req = urllib.request.Request(request_url, data=body, headers=headers, method="POST")
     t0 = time.monotonic()
     try:
-        with urllib.request.urlopen(req, timeout=provider.timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = _read_json_object(resp)
     except Exception as exc:
-        logger.debug("provider %s failed: %s", provider.name, exc)
+        logger.debug("provider %s failed (%s)", provider.name[:80], type(exc).__name__)
+        return None
+    if data is None:
+        logger.debug("provider %s returned an invalid or oversized response", provider.name[:80])
         return None
 
     elapsed = time.monotonic() - t0
 
     content = ""
-    try:
-        content = data["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError):
-        content = data.get("message", {}).get("content", "") if provider.ollama_mode else str(data)
+    if provider_type == "anthropic":
+        blocks = data.get("content", []) if isinstance(data, dict) else []
+        if isinstance(blocks, list):
+            content = "".join(
+                str(block.get("text", ""))
+                for block in blocks
+                if isinstance(block, dict) and block.get("type") == "text"
+            )
+    else:
+        try:
+            content = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError):
+            content = data.get("message", {}).get("content", "") if ollama_mode else str(data)
 
     parsed = parse_json_response(content)
     if parsed is None:
@@ -170,25 +301,25 @@ def _try_provider(
         return None
 
     known_ids = {a.get("slug", "") for a in candidates}
-    valid_selected = [sid for sid in selected if str(sid) in known_ids]
+    valid_selected = list(dict.fromkeys(
+        str(sid) for sid in selected if str(sid) in known_ids
+    ))
 
     if not valid_selected:
-        valid_selected = [a.get("slug", "") for a in candidates[:max_sel]]
-        status = "token_fallback"
-    else:
-        status = "applied"
+        # A syntactically valid response that selects no catalog member is not
+        # a successful attempt. Let the next provider evaluate the task.
+        return None
 
-    try:
-        confidence = float(parsed.get("confidence", 0))
-    except (TypeError, ValueError):
-        confidence = 0.0
+    confidence = _bounded_confidence(parsed.get("confidence"))
+    if confidence is None:
+        return None
 
     return {
         "selected_ids": valid_selected[:max_sel],
         "confidence": confidence,
         "latency_ms": int(elapsed * 1000),
-        "status": status,
-        "provider": f"{provider.name} ({provider.type})",
+        "status": "applied",
+        "provider": f"{provider.name} ({provider_type})",
         "candidate_count": candidate_count,
         "top_score": top_score,
     }
@@ -201,11 +332,12 @@ def _try_legacy_judge(
     max_sel: int,
     candidate_count: int,
     top_score: float,
+    request_timeout: float | None = None,
 ) -> dict[str, Any] | None:
     """Try the legacy judge config (backward compat). Returns result or None."""
 
     api_key = jc.resolve_api_key()
-    if not jc.model:
+    if not jc.model or not jc.base_url:
         return None
 
     ollama_mode = jc.ollama_mode
@@ -214,20 +346,33 @@ def _try_legacy_judge(
     )
     body_json = json.loads(body)
     body_json["model"] = jc.model
+    if not ollama_mode and jc.model.lower().startswith("gpt-5"):
+        body_json["max_completion_tokens"] = body_json.pop("max_tokens", 256)
+        body_json.pop("temperature", None)
     body = json.dumps(body_json).encode("utf-8")
 
-    request_url = f"{jc.base_url.rstrip('/')}{path}"
+    request_url = _join_api_path(jc.base_url, path)
     headers = {"Content-Type": content_type}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
+    timeout = _bounded_duration(
+        jc.timeout if request_timeout is None else request_timeout,
+        maximum=_MAX_JUDGE_DEADLINE_SECONDS,
+    )
+    if timeout <= 0:
+        return None
+
     req = urllib.request.Request(request_url, data=body, headers=headers, method="POST")
     t0 = time.monotonic()
     try:
-        with urllib.request.urlopen(req, timeout=jc.timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = _read_json_object(resp)
     except Exception as exc:
-        logger.debug("legacy judge failed: %s", exc)
+        logger.debug("legacy judge failed (%s)", type(exc).__name__)
+        return None
+    if data is None:
+        logger.debug("legacy judge returned an invalid or oversized response")
         return None
 
     elapsed = time.monotonic() - t0
@@ -248,46 +393,29 @@ def _try_legacy_judge(
 
     parsed = parse_json_response(content)
     if parsed is None:
-        fallback_ids = [a.get("slug", "") for a in candidates[:max_sel]]
-        if fallback_ids:
-            result["selected_ids"] = fallback_ids
-            result["confidence"] = 0.3
-            result["status"] = "token_fallback"
-            result["candidate_count"] = candidate_count
-            result["top_score"] = top_score
-            return result
-        result["status"] = "parse_failed"
-        result["error"] = f"could not parse JSON from response: {content[:200]}"
-        return result
+        return None
 
     selected = parsed.get("selected_ids") or parsed.get("selected") or []
     if not isinstance(selected, list):
-        result["status"] = "invalid_format"
-        result["error"] = "selected_ids is not a list"
-        return result
+        return None
 
     known_ids = {a.get("slug", "") for a in candidates}
-    valid_selected = [sid for sid in selected if str(sid) in known_ids]
+    valid_selected = list(dict.fromkeys(
+        str(sid) for sid in selected if str(sid) in known_ids
+    ))
 
     if not valid_selected:
-        valid_selected = [a.get("slug", "") for a in candidates[:max_sel]]
-        if not valid_selected:
-            result["status"] = "no_valid_matches"
-            result["error"] = f"selected_ids {selected} not in catalog"
-            return result
-        result["status"] = "token_fallback"
+        return None
 
-    try:
-        confidence = float(parsed.get("confidence", 0))
-    except (TypeError, ValueError):
-        confidence = 0.0
+    confidence = _bounded_confidence(parsed.get("confidence"))
+    if confidence is None:
+        return None
 
     result["selected_ids"] = valid_selected[:max_sel]
     result["confidence"] = confidence
     result["candidate_count"] = candidate_count
     result["top_score"] = top_score
-    if result["status"] not in ("token_fallback",):
-        result["status"] = "applied"
+    result["status"] = "applied"
     return result
 
 
@@ -310,6 +438,11 @@ def query_judge(
     cfg = config or load_config()
     jc = judge_config or cfg.judge
     max_sel = max_selected or jc.max_selected
+    attempts_started = time.monotonic()
+    deadline = attempts_started + _bounded_duration(
+        jc.timeout,
+        maximum=_MAX_JUDGE_DEADLINE_SECONDS,
+    )
 
     result: dict[str, Any] = {
         "selected_ids": [],
@@ -345,22 +478,77 @@ def query_judge(
             return result
 
     # Layer 1: Iterate providers list (user-configured fallback chain)
+    attempted: set[tuple[str, str, str]] = set()
+    attempted_targets: set[tuple[str, str]] = set()
+    attempt_count = 0
+
+    def reserve_attempt(configured_timeout: float) -> float:
+        """Reserve one bounded network attempt and return its remaining timeout."""
+        nonlocal attempt_count
+        if attempt_count >= _MAX_PROVIDER_ATTEMPTS:
+            return 0.0
+        remaining = deadline - time.monotonic()
+        per_attempt = _bounded_duration(
+            configured_timeout,
+            maximum=_MAX_JUDGE_DEADLINE_SECONDS,
+        )
+        timeout = min(remaining, per_attempt)
+        if timeout <= 0:
+            return 0.0
+        attempt_count += 1
+        return timeout
+
     for provider in cfg.providers:
+        signature = _attempt_signature(
+            provider.base_url,
+            provider.model,
+            provider.ollama_mode,
+            provider.type,
+        )
+        if signature in attempted or not _provider_is_attemptable(provider):
+            continue
+        configured_timeout = _bounded_duration(
+            provider.timeout,
+            maximum=_MAX_JUDGE_DEADLINE_SECONDS,
+        )
+        if configured_timeout <= 0:
+            continue
+        timeout = reserve_attempt(configured_timeout)
+        if timeout <= 0:
+            break
+        attempted.add(signature)
+        attempted_targets.add(
+            _network_target_signature(provider.base_url, provider.model)
+        )
         res = _try_provider(
             provider, task_description, candidates, max_sel,
             candidate_count, top_score,
+            request_timeout=timeout,
         )
         if res is not None:
-            return res
+            return _with_cumulative_latency(res, attempts_started)
         logger.debug("provider %s failed, trying next", provider.name)
 
     # Layer 2: Legacy judge config (backward compat for existing configs)
-    legacy_result = _try_legacy_judge(
-        jc, task_description, candidates, max_sel,
-        candidate_count, top_score,
-    )
-    if legacy_result is not None:
-        return legacy_result
+    legacy_signature = _attempt_signature(jc.base_url, jc.model, jc.ollama_mode)
+    legacy_target = _network_target_signature(jc.base_url, jc.model)
+    if (
+        jc.model
+        and jc.base_url
+        and legacy_signature not in attempted
+        and legacy_target not in attempted_targets
+    ):
+        legacy_timeout = reserve_attempt(jc.timeout)
+        if legacy_timeout > 0:
+            attempted.add(legacy_signature)
+            attempted_targets.add(legacy_target)
+            legacy_result = _try_legacy_judge(
+                jc, task_description, candidates, max_sel,
+                candidate_count, top_score,
+                request_timeout=legacy_timeout,
+            )
+            if legacy_result is not None:
+                return _with_cumulative_latency(legacy_result, attempts_started)
 
     # Layer 3: Ollama fallback (if enabled and configured)
     if cfg.ollama.enabled and cfg.ollama.model:
@@ -372,30 +560,57 @@ def query_judge(
             ollama_mode=True,
             timeout=cfg.judge.timeout,
         )
-        ollama_result = _try_provider(
-            ollama_provider, task_description, candidates, max_sel,
-            candidate_count, top_score,
+        ollama_signature = _attempt_signature(
+            ollama_provider.base_url,
+            ollama_provider.model,
+            ollama_provider.ollama_mode,
         )
-        if ollama_result is not None:
-            return ollama_result
+        if ollama_signature not in attempted:
+            ollama_timeout = reserve_attempt(ollama_provider.timeout)
+            if ollama_timeout > 0:
+                attempted.add(ollama_signature)
+                ollama_result = _try_provider(
+                    ollama_provider, task_description, candidates, max_sel,
+                    candidate_count, top_score,
+                    request_timeout=ollama_timeout,
+                )
+                if ollama_result is not None:
+                    return _with_cumulative_latency(ollama_result, attempts_started)
 
     # Layer 4: Token-only (no LLM)
-    return _token_only_fallback(candidates, candidate_count, top_score, max_sel)
+    fallback = _token_only_fallback(
+        candidates,
+        scores,
+        candidate_count,
+        top_score,
+        max_sel,
+    )
+    return _with_cumulative_latency(fallback, attempts_started)
 
 
 def _token_only_fallback(
     candidates: list[dict[str, Any]],
+    scores: list[float],
     candidate_count: int,
     top_score: float,
     max_sel: int,
 ) -> dict[str, Any]:
     """Last resort: return top token-scored candidates without an LLM call."""
+    has_signal = top_score > 0
     result: dict[str, Any] = {
-        "selected_ids": [a.get("slug", "") for a in candidates[:max_sel]],
-        "confidence": 0.3,
+        "selected_ids": (
+            [
+                agent.get("slug", "")
+                for agent, score in zip(candidates, scores)
+                if score > 0
+            ][:max_sel]
+            if has_signal
+            else []
+        ),
+        "confidence": 0.3 if has_signal else 0.0,
         "latency_ms": 0,
-        "status": "token_fallback",
-        "error": "",
+        "status": "token_fallback" if has_signal else "abstained",
+        "error": "" if has_signal else "no positive routing signal",
         "candidate_count": candidate_count,
         "top_score": top_score,
     }

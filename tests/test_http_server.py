@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import threading
-import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -17,6 +16,8 @@ import pytest
 
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.http import AgencyHTTPServer
+
+AUTH_HEADERS = {"Authorization": "Bearer test-token"}
 
 
 @pytest.fixture()
@@ -61,7 +62,13 @@ def http_server(tmp_path: Path):
             "prompt_path": "",
         })
 
-    server = AgencyHTTPServer(store, host="127.0.0.1", port=0)
+    server = AgencyHTTPServer(
+        store,
+        host="127.0.0.1",
+        port=0,
+        allow_context_writes=True,
+        auth_token="test-token",
+    )
     actual_port = server.server_address[1]
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -77,7 +84,7 @@ def _post(base: str, path: str, payload: dict) -> tuple[int, dict]:
     data = json.dumps(payload).encode()
     req = urllib.request.Request(
         f"{base}{path}", data=data,
-        headers={"Content-Type": "application/json"}, method="POST",
+        headers={"Content-Type": "application/json", **AUTH_HEADERS}, method="POST",
     )
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -87,7 +94,7 @@ def _post(base: str, path: str, payload: dict) -> tuple[int, dict]:
 
 
 def _get(base: str, path: str) -> tuple[int, dict]:
-    req = urllib.request.Request(f"{base}{path}", method="GET")
+    req = urllib.request.Request(f"{base}{path}", headers=AUTH_HEADERS, method="GET")
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status, json.loads(resp.read())
@@ -102,6 +109,53 @@ def test_status_returns_ok_and_roster_count(http_server):
     assert status == 200
     assert body["status"] == "ok"
     assert body["roster_count"] == 3
+
+
+def test_responses_include_local_security_headers(http_server):
+    request = urllib.request.Request(
+        f"{http_server['base']}/status",
+        headers=AUTH_HEADERS,
+        method="GET",
+    )
+    with urllib.request.urlopen(request, timeout=5) as response:
+        assert response.headers["X-Frame-Options"] == "DENY"
+        assert response.headers["X-Content-Type-Options"] == "nosniff"
+        assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_cross_origin_requests_are_rejected(http_server):
+    request = urllib.request.Request(
+        f"{http_server['base']}/status",
+        headers={"Origin": "https://attacker.example", **AUTH_HEADERS},
+        method="GET",
+    )
+    with pytest.raises(urllib.error.HTTPError) as exc_info:
+        urllib.request.urlopen(request, timeout=5)
+    assert exc_info.value.code == 403
+
+
+def test_non_json_post_is_rejected(http_server):
+    request = urllib.request.Request(
+        f"{http_server['base']}/search",
+        data=b'{"query":"code"}',
+        headers={"Content-Type": "text/plain", **AUTH_HEADERS},
+        method="POST",
+    )
+    with pytest.raises(urllib.error.HTTPError) as exc_info:
+        urllib.request.urlopen(request, timeout=5)
+    assert exc_info.value.code == 415
+
+
+def test_unauthenticated_local_request_is_rejected(http_server):
+    request = urllib.request.Request(f"{http_server['base']}/status", method="GET")
+    with pytest.raises(urllib.error.HTTPError) as exc_info:
+        urllib.request.urlopen(request, timeout=5)
+    assert exc_info.value.code == 401
+
+
+def test_http_server_refuses_non_loopback_binding(tmp_path):
+    with pytest.raises(ValueError, match="loopback-only"):
+        AgencyHTTPServer(Store(tmp_path / "remote.db"), host="0.0.0.0", port=0)
 
 
 # ── /roster ─────────────────────────────────────────────────────────────
@@ -281,7 +335,7 @@ def test_invalid_json_returns_400(http_server):
     base = http_server["base"]
     req = urllib.request.Request(
         f"{base}/search", data=b"{bad json",
-        headers={"Content-Type": "application/json"}, method="POST",
+        headers={"Content-Type": "application/json", **AUTH_HEADERS}, method="POST",
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
@@ -292,7 +346,7 @@ def test_invalid_utf8_json_returns_400(http_server):
     base = http_server["base"]
     req = urllib.request.Request(
         f"{base}/search", data=b"\xff",
-        headers={"Content-Type": "application/json"}, method="POST",
+        headers={"Content-Type": "application/json", **AUTH_HEADERS}, method="POST",
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
@@ -303,7 +357,7 @@ def test_empty_body_returns_400(http_server):
     base = http_server["base"]
     req = urllib.request.Request(
         f"{base}/search", data=b"",
-        headers={"Content-Type": "application/json"}, method="POST",
+        headers={"Content-Type": "application/json", **AUTH_HEADERS}, method="POST",
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)

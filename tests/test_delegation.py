@@ -8,7 +8,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agency_runtime.core.delegation.lifecycle import (
-    WorkUnit,
     normalize_work_units,
     build_dependency_graph,
     delegate_with_lifecycle,

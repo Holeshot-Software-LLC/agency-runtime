@@ -1,0 +1,155 @@
+---
+title: "Release Checklist"
+status: active
+category: release
+created: 2026-07-10
+updated: 2026-07-11
+tags: [release, verification]
+related:
+  - CHANGELOG.md
+  - CONTRIBUTING.md
+  - SECURITY.md
+  - docs/roadmap/issue-AR-07-public-release-readiness.md
+supersedes: []
+superseded_by: null
+---
+
+# Release Checklist
+
+This checklist gates a release; it is not evidence that a release has occurred.
+Agency Runtime currently uses installation from this repository as its canonical
+prerelease path. Choose and document any public package channel before publishing
+or adding an index-install claim.
+
+## 1. Scope and records
+
+- [ ] The release scope maps to roadmap items and same-repository tracker issues.
+- [ ] Every durable decision has an accepted ADR and registry row.
+- [ ] Every substantive commit has its exact worklog row and reciprocal roadmap
+      traceability.
+- [ ] Tracker status matches local status, or an authorization-related mismatch
+      is stated explicitly.
+- [ ] `CHANGELOG.md` describes user-visible additions, changes, fixes, security
+      changes, deprecations, and known limitations.
+- [ ] The package version, release title, and proposed tag agree.
+
+## 2. Truthful support matrix
+
+- [ ] README host claims separate deterministic contract coverage from live
+      discovery, registration, enablement, loading, and canary evidence.
+- [ ] Every host called `runtime-verified` has a dated reproducible native
+      canary on each operating system claimed by the release.
+- [ ] Codex, Claude Code, Hermes, and OpenClaw install, disable, enable, rollback,
+      preflight, evidence, and finalization paths have been exercised for the v1
+      matrix or clearly marked below that maturity.
+- [ ] Windows npm command shims and POSIX executable launch are both verified.
+- [ ] Ubuntu/WSL live evidence comes from a Linux environment with the project
+      and test tooling installed; Windows-only evidence is not relabeled Linux.
+- [ ] MCP initialization, tool discovery, bounded framing, errors, and at least
+      one real stdio call pass from a packaged install.
+- [ ] LiteLLM SDK registration and Proxy callback import are tested in supported
+      LiteLLM versions, or the integration remains explicitly optional and
+      contract-tested only.
+- [ ] Generic CLI behavior is tested with an explicit argv command; an
+      unconfigured backend remains unavailable.
+
+Record dated live evidence in the release notes without committing secrets or
+machine-specific credential paths.
+
+## 3. Correctness and performance
+
+```bash
+python -m pytest tests -q
+agency eval delegation --json
+agency eval routing --json --no-details
+```
+
+- [ ] The complete suite passes on Ubuntu CI for Python 3.10 through 3.14 and on
+      Windows CI at the 3.10 and 3.14 support endpoints.
+- [ ] The versioned routing report passes every checked-in threshold.
+- [ ] Cache/stickiness tests prove roster, configuration, and policy isolation.
+- [ ] Concurrent routing and evidence tests show no cross-request contamination.
+- [ ] Delegation DAG tests cover failed prerequisites, missing results, duplicate
+      work units, independent concurrency, and successful worktree merging.
+- [ ] Evidence tests reject failed, stale, ambiguous, and spoofed claims.
+
+## 4. Security and privacy
+
+```bash
+python scripts/verify_release_hygiene.py
+python -m bandit -q -r agency_runtime -lll
+python -m pip_audit --strict
+```
+
+- [ ] No tracked secret, credential file, database, build output, generated host
+      state, sibling path, or machine-specific absolute path is present.
+- [ ] Dashboard tests enforce loopback binding, per-launch authentication,
+      `Host`/origin checks, JSON mutations, exact confirmations, and restrictive
+      response headers.
+- [ ] Metadata-only capture and 30-day runtime retention remain the defaults.
+- [ ] Opt-in content paths are bounded and redacted; limitations are documented.
+- [ ] Native commands use argv execution, timeouts, bounded output, and validated
+      success protocols.
+- [ ] Security reporting instructions and the current supported-version statement
+      are accurate.
+
+## 5. Documentation integrity
+
+```bash
+python scripts/docs_metadata.py --check
+python scripts/update_worklog.py --check
+python scripts/verify_docs.py --require-tracker
+python scripts/verify_tracker.py
+git diff --check
+```
+
+- [ ] Every maintained Markdown file has valid front matter.
+- [ ] No intra-repository link dangles and no doc depends on a sibling repo.
+- [ ] README CLI examples match `agency --help` and actual exit behavior.
+- [ ] Host paths and maturity labels match the installer source and doctor output.
+- [ ] Contribution, security, changelog, troubleshooting, and release-checklist
+      documents are linked from README and `AGENTS.md`.
+
+## 6. Build and isolated install
+
+From a clean checkout:
+
+```bash
+python -m pip install ".[dev]"
+python -m build --sdist --wheel
+python -m twine check --strict dist/*
+python scripts/verify_distribution.py dist
+```
+
+- [ ] Wheel and source distribution contain config defaults, companion policy,
+      dashboard assets, eval corpora, license, and required package modules.
+- [ ] A fresh Python 3.10 environment on Windows installs only the built wheel,
+      runs `agency --help`, imports package data, and passes the packaged smoke
+      procedure.
+- [ ] The same isolated wheel procedure passes on Ubuntu.
+- [ ] `python -m pip check` passes in both environments.
+- [ ] Rebuilding from the same source does not depend on untracked local files.
+
+## 7. Publish and post-publish
+
+Publishing, pushing, tagging, issue closure, and release creation are
+outward-facing actions and require explicit authorization.
+
+- [ ] Obtain approval for the exact tag, artifacts, destination, and release
+      notes.
+- [ ] Tag the reviewed commit; do not move an existing public tag.
+- [ ] Publish the wheel and source artifact produced by the verified workflow,
+      not a local rebuild.
+- [ ] Verify hashes, metadata, install command, and CLI version from the public
+      destination.
+- [ ] Create release notes from `CHANGELOG.md` and include known support limits.
+- [ ] Update tracker states only after the release outcome is confirmed.
+- [ ] Start the next `Unreleased` changelog section.
+
+## Current blockers
+
+Before a public release claim, the open acceptance items in `AR-03`, `AR-04`,
+`AR-05`, `AR-06`, and `AR-07` must be completed or explicitly deferred with
+narrower claims and a recorded decision. Current local Windows/WSL contract and
+installed-dashboard evidence does not establish a clean hosted CI matrix,
+Linux live-host execution, or a live canary for every v1 target.

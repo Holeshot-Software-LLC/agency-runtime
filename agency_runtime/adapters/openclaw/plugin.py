@@ -10,7 +10,6 @@ import logging
 from typing import Any
 
 from agency_runtime.adapters.base import BaseAdapter
-from agency_runtime.core.store.sqlite import Store
 
 logger = logging.getLogger("agency_runtime.adapters.openclaw")
 

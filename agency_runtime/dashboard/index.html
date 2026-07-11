@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Agency Runtime Control Deck</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand" aria-label="Agency Runtime">
+        <span class="brand-mark">AR</span>
+        <span><strong>Agency</strong><small>Runtime</small></span>
+      </div>
+      <nav aria-label="Dashboard sections">
+        <button class="nav-item active" data-view="overview"><span>01</span>Overview</button>
+        <button class="nav-item" data-view="routing"><span>02</span>Routing lab</button>
+        <button class="nav-item" data-view="evidence"><span>03</span>Evidence</button>
+        <button class="nav-item" data-view="roster"><span>04</span>Roster</button>
+        <button class="nav-item" data-view="hosts"><span>05</span>Hosts</button>
+        <button class="nav-item" data-view="settings"><span>06</span>Settings</button>
+      </nav>
+      <div class="rail-foot">
+        <span class="pulse" aria-hidden="true"></span>
+        <span id="connection-label">Connecting</span>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">LOCAL CONTROL PLANE</p>
+          <h1 id="view-title">Runtime overview</h1>
+        </div>
+        <div class="top-actions">
+          <span class="privacy-chip">Metadata only</span>
+          <button id="refresh-button" class="button ghost">Refresh</button>
+        </div>
+      </header>
+
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+      <section class="view active" data-view-panel="overview">
+        <div class="metric-grid">
+          <article class="metric primary"><span>Runtime</span><strong id="metric-runtime">—</strong><small>loopback control plane</small></article>
+          <article class="metric"><span>Active roster</span><strong id="metric-roster">—</strong><small>governed specialists</small></article>
+          <article class="metric"><span>Routing decisions</span><strong id="metric-routing">—</strong><small>recent decision traces</small></article>
+          <article class="metric"><span>Delegations</span><strong id="metric-delegations">—</strong><small>recent evidence rows</small></article>
+          <article class="metric"><span>Store</span><strong id="metric-store">—</strong><small>SQLite + WAL</small></article>
+        </div>
+        <div class="split wide-left">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">SIGNAL</p><h2>Recent delegation activity</h2></div><span class="panel-tag">LIVE</span></div>
+            <div class="table-wrap"><table><thead><tr><th>Agent</th><th>Host</th><th>Status</th><th>Backend</th><th>Started</th></tr></thead><tbody id="overview-delegations"></tbody></table></div>
+          </article>
+          <article class="panel host-summary">
+            <div class="panel-head"><div><p class="eyebrow">DISCOVERY</p><h2>Host posture</h2></div></div>
+            <div id="overview-hosts" class="host-stack"></div>
+          </article>
+        </div>
+        <article class="panel config-panel">
+          <div class="panel-head"><div><p class="eyebrow">RECEIPT EVIDENCE</p><h2>Provider health</h2></div><span class="panel-tag">OBSERVED</span></div>
+          <p class="panel-copy">Health is derived from recent model receipts. It is not a live provider probe, so providers without receipts remain unknown.</p>
+          <div id="provider-health" class="provider-grid"></div>
+        </article>
+      </section>
+
+      <section class="view" data-view-panel="routing">
+        <div class="split routing-layout">
+          <article class="panel route-form">
+            <div class="panel-head"><div><p class="eyebrow">DETERMINISTIC + JUDGE</p><h2>Test a routing decision</h2></div></div>
+            <label for="route-task">Task</label>
+            <textarea id="route-task" rows="8" placeholder="Describe a real task, including independent work units when relevant."></textarea>
+            <div class="form-row"><label for="route-session">Session</label><input id="route-session" value="dashboard-lab"></div>
+            <button id="route-button" class="button solid">Run explain receipt</button>
+          </article>
+          <article class="panel receipt-panel">
+            <div class="panel-head"><div><p class="eyebrow">DECISION TRACE</p><h2>Selection receipt</h2></div><span id="route-status" class="panel-tag">IDLE</span></div>
+            <div id="route-result" class="empty-state">Run a task to inspect selected specialists, policy signals, work units, and rejected candidates.</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="evidence">
+        <article class="panel">
+          <div class="panel-head"><div><p class="eyebrow">AUTHORITATIVE EVENTS</p><h2>Runtime evidence</h2></div><span class="panel-tag">CONTENT REDACTED</span></div>
+          <div class="subnav" role="tablist">
+            <button class="subnav-item active" data-evidence="delegations">Delegations</button>
+            <button class="subnav-item" data-evidence="routing">Routing decisions</button>
+            <button class="subnav-item" data-evidence="receipts">Model receipts</button>
+            <button class="subnav-item" data-evidence="runs">Runs</button>
+            <button class="subnav-item" data-evidence="finalizations">Finalization</button>
+          </div>
+          <div class="table-wrap"><table><thead id="evidence-head"></thead><tbody id="evidence-body"></tbody></table></div>
+        </article>
+      </section>
+
+      <section class="view" data-view-panel="roster">
+        <div class="split wide-left">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">ACTIVE</p><h2>Specialist roster</h2></div><span id="roster-count" class="panel-tag">0</span></div>
+            <div id="roster-grid" class="roster-grid"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">GOVERNANCE</p><h2>Snapshots</h2></div></div>
+            <div id="snapshot-list" class="stack-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="hosts">
+        <article class="panel">
+          <div class="panel-head"><div><p class="eyebrow">NATIVE DISCOVERY</p><h2>Installed agent hosts</h2></div><span class="panel-tag">WINDOWS + LINUX</span></div>
+          <p class="panel-copy">Detection distinguishes an executable host from stale configuration and reports registration maturity separately.</p>
+          <div id="host-grid" class="host-grid"></div>
+        </article>
+      </section>
+
+      <section class="view" data-view-panel="settings">
+        <div class="split">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">PRIVACY</p><h2>Telemetry policy</h2></div></div>
+            <dl class="settings-list"><div><dt>Content capture</dt><dd id="setting-capture">—</dd></div><div><dt>Retention</dt><dd id="setting-retention">—</dd></div><div><dt>Binding</dt><dd>Loopback only</dd></div><div><dt>Authentication</dt><dd>Per launch token</dd></div></dl>
+          </article>
+          <article class="panel danger-panel">
+            <div class="panel-head"><div><p class="eyebrow">MAINTENANCE</p><h2>Trim runtime data</h2></div></div>
+            <p class="panel-copy">Delete evidence older than the selected retention window. Roster and configuration data are never included.</p>
+            <label for="trim-days">Older than days</label><input id="trim-days" type="number" min="1" max="3650" value="30">
+            <label for="trim-confirm">Type <code>TRIM RUNTIME DATA</code></label><input id="trim-confirm" autocomplete="off">
+            <button id="trim-button" class="button danger">Trim evidence</button>
+          </article>
+        </div>
+        <article class="panel config-panel"><div class="panel-head"><div><p class="eyebrow">REDACTED</p><h2>Effective configuration</h2></div></div><pre id="config-output">Loading…</pre></article>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

@@ -3,7 +3,7 @@ title: "Repository Agent Instructions"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-11
 tags:
   - governance
   - documentation
@@ -11,6 +11,9 @@ related:
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - docs/decisions/README.md
+  - CONTRIBUTING.md
+  - SECURITY.md
+  - docs/RELEASE_CHECKLIST.md
 supersedes: []
 superseded_by: null
 ---
@@ -29,6 +32,11 @@ below.
 | Planning | [docs/roadmap/README.md](docs/roadmap/README.md) | Internal issue registry and tracker mapping |
 | Change reasoning | [docs/worklog/README.md](docs/worklog/README.md) | Exact Git history index and reasoning-rich commit notes |
 | Durable decisions | [docs/decisions/README.md](docs/decisions/README.md) | Canonical ADR registry and superseding chains |
+| Contributor workflow | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, implementation boundaries, and validation |
+| Security | [SECURITY.md](SECURITY.md) | Vulnerability reporting, threat boundaries, and hardening |
+| Release history | [CHANGELOG.md](CHANGELOG.md) | User-visible unreleased and versioned changes |
+| Operations help | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Host maturity, MCP, LiteLLM, dashboard, and platform diagnostics |
+| Release gate | [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) | Support evidence, security, artifact, and publication checklist |
 
 Each category owns its own `archive/` when retirement becomes necessary. Do not
 create a global archive.
@@ -111,12 +119,25 @@ python scripts/docs_metadata.py --check
 python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 python -m pytest tests/ -q
+agency eval routing --json --no-details
 git diff --check
 ```
 
 After approved tracker creation, also run
 `python scripts/verify_docs.py --require-tracker` and
 `python scripts/verify_tracker.py`.
+
+The strict tracker check fails when a locally complete item remains open. If
+closure authorization is the only missing action, use
+`python scripts/verify_tracker.py --allow-open-complete` for a read-only parity
+audit; it still fails count, ID, URL, label, and all other state mismatches and
+prints every authorization-pending closure as a warning. Release validation
+remains strict.
+
+For packaging or release-facing changes, also follow
+[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md). A deterministic host
+contract is not a live runtime canary: keep discovery, registration, enablement,
+loading, and canary claims separate in documentation and release evidence.
 
 ## Repository boundary
 

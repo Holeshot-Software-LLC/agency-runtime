@@ -12,27 +12,35 @@ Commands:
     agency search <query>   — Search roster
     agency route <task>     — Route a task to agents
     agency delegate         — Delegate to a backend
-    agency eval delegation  — Run deterministic delegation evals
+    agency eval routing     — Run quantitative routing/policy/delegation gates
+    agency eval delegation  — Run deterministic delegation lifecycle evals
     agency smoke --all      — Run deterministic local smoke checks
     agency db stats         — Show SQLite runtime table sizes
     agency db trim          — Trim append-only SQLite runtime tables
     agency sync             — Download/activate agents from sources
     agency source add       — Add a roster source
+    agency mcp              — Serve MCP over stdio
+    agency hook HOST        — Handle one native host hook event
     agency serve            — Start HTTP server
 """
 
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import math
 import os
-import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 import urllib.request
+import uuid
+from dataclasses import fields, is_dataclass
 from pathlib import Path
 from typing import Any, Sequence
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -60,7 +68,7 @@ from agency_runtime.core.roster.sync import (
 )
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
-from agency_runtime.core.selector.policy import detect_actions, load_policy
+from agency_runtime.core.selector.policy import load_policy
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -72,6 +80,354 @@ def _store(config: AgencyConfig | None = None) -> Store:
 
 def _print_json(data: Any) -> None:
     print(json.dumps(data, indent=2, sort_keys=True))
+
+
+_REDACTED = "***REDACTED***"
+_SECRET_KEY_PARTS = {
+    "api_key",
+    "access_token",
+    "auth_token",
+    "client_secret",
+    "password",
+    "refresh_token",
+    "secret",
+    "token",
+}
+
+
+def _configure_console_output() -> None:
+    """Keep human CLI output usable on legacy Windows console encodings.
+
+    Python can otherwise raise ``UnicodeEncodeError`` while printing the setup
+    wizard's status and rule glyphs to a CP1252 console.  Reconfiguring only the
+    error strategy preserves UTF-8 output where available and emits escaped
+    Unicode on narrower consoles.  Protocol commands remain byte-for-byte
+    unchanged when their streams already support UTF-8.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(errors="backslashreplace")
+        except (AttributeError, OSError, ValueError):
+            # Captured, detached, and application-owned streams may reject
+            # reconfiguration.  Those streams retain their existing behavior.
+            continue
+
+
+def _restrict_windows_acl(path: Path) -> bool:
+    """Best-effort owner-only Windows DACL using Win32 APIs, never a shell.
+
+    The temporary and final config files already inherit the user's directory
+    ACL.  This narrows that ACL to the file owner when the native calls are
+    available.  Failure is intentionally non-fatal because some managed
+    filesystems do not expose Windows security descriptors.
+    """
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class TrusteeW(ctypes.Structure):
+            _fields_ = [
+                ("pMultipleTrustee", ctypes.c_void_p),
+                ("MultipleTrusteeOperation", wintypes.DWORD),
+                ("TrusteeForm", wintypes.DWORD),
+                ("TrusteeType", wintypes.DWORD),
+                ("ptstrName", wintypes.LPWSTR),
+            ]
+
+        class ExplicitAccessW(ctypes.Structure):
+            _fields_ = [
+                ("grfAccessPermissions", wintypes.DWORD),
+                ("grfAccessMode", wintypes.DWORD),
+                ("grfInheritance", wintypes.DWORD),
+                ("Trustee", TrusteeW),
+            ]
+
+        advapi32 = ctypes.WinDLL("Advapi32.dll", use_last_error=True)
+        kernel32 = ctypes.WinDLL("Kernel32.dll", use_last_error=True)
+        get_security = advapi32.GetNamedSecurityInfoW
+        get_security.argtypes = [
+            wintypes.LPWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            ctypes.POINTER(ctypes.c_void_p),
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_void_p),
+        ]
+        get_security.restype = wintypes.DWORD
+        set_entries = advapi32.SetEntriesInAclW
+        set_entries.argtypes = [
+            wintypes.ULONG,
+            ctypes.POINTER(ExplicitAccessW),
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_void_p),
+        ]
+        set_entries.restype = wintypes.DWORD
+        set_security = advapi32.SetNamedSecurityInfoW
+        set_security.argtypes = [
+            wintypes.LPWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        set_security.restype = wintypes.DWORD
+        kernel32.LocalFree.argtypes = [ctypes.c_void_p]
+        kernel32.LocalFree.restype = ctypes.c_void_p
+
+        # Win32 security constants.
+        se_file_object = 1
+        owner_security_information = 0x00000001
+        dacl_security_information = 0x00000004
+        protected_dacl_security_information = 0x80000000
+        file_all_access = 0x001F01FF
+        set_access = 2
+        trustee_is_sid = 0
+        trustee_is_user = 1
+
+        owner_sid = ctypes.c_void_p()
+        security_descriptor = ctypes.c_void_p()
+        acl = ctypes.c_void_p()
+        try:
+            code = get_security(
+                str(path),
+                se_file_object,
+                owner_security_information,
+                ctypes.byref(owner_sid),
+                None,
+                None,
+                None,
+                ctypes.byref(security_descriptor),
+            )
+            if code:
+                return False
+            trustee = TrusteeW(
+                None,
+                0,
+                trustee_is_sid,
+                trustee_is_user,
+                ctypes.cast(owner_sid, wintypes.LPWSTR),
+            )
+            access = ExplicitAccessW(file_all_access, set_access, 0, trustee)
+            code = set_entries(1, ctypes.byref(access), None, ctypes.byref(acl))
+            if code:
+                return False
+            code = set_security(
+                str(path),
+                se_file_object,
+                dacl_security_information | protected_dacl_security_information,
+                None,
+                None,
+                acl,
+                None,
+            )
+            return code == 0
+        finally:
+            if acl:
+                kernel32.LocalFree(acl)
+            if security_descriptor:
+                kernel32.LocalFree(security_descriptor)
+    except (AttributeError, ImportError, OSError, TypeError, ValueError):
+        return False
+
+
+def _restrict_config_permissions(path: Path) -> bool:
+    """Restrict a config file to its owner where the platform permits it."""
+    if os.name == "nt":
+        try:
+            # Python's Windows chmod only controls the read-only attribute, but
+            # it is still a useful fallback when ACL APIs are unavailable.
+            os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
+        except OSError:
+            pass
+        return _restrict_windows_acl(path)
+    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+    return True
+
+
+def _atomic_write_yaml(path: Path, data: dict[str, Any]) -> None:
+    """Atomically write UTF-8 YAML with restrictive config permissions."""
+    path = path.expanduser()
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    payload = yaml.safe_dump(
+        data,
+        default_flow_style=False,
+        sort_keys=False,
+        allow_unicode=True,
+    )
+    fd, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        dir=path.parent,
+    )
+    temporary_path = Path(temporary_name)
+    try:
+        if hasattr(os, "fchmod"):
+            os.fchmod(fd, stat.S_IRUSR | stat.S_IWUSR)
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+            fd = -1
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        _restrict_config_permissions(temporary_path)
+        os.replace(temporary_path, path)
+        _restrict_config_permissions(path)
+        if os.name != "nt":
+            try:
+                directory_fd = os.open(path.parent, os.O_RDONLY)
+                try:
+                    os.fsync(directory_fd)
+                finally:
+                    os.close(directory_fd)
+            except OSError:
+                pass
+    finally:
+        if fd >= 0:
+            os.close(fd)
+        try:
+            temporary_path.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def _is_secret_config_part(part: str) -> bool:
+    normalized = part.strip().lower().replace("-", "_")
+    if normalized.endswith("_env"):
+        return False
+    return normalized in _SECRET_KEY_PARTS or any(
+        normalized.endswith(f"_{secret}") for secret in _SECRET_KEY_PARTS
+    )
+
+
+def _config_display_value(
+    value: Any,
+    *,
+    path: tuple[str, ...] = (),
+    raw: bool = False,
+) -> Any:
+    """Convert config objects to JSON-safe values and recursively redact."""
+    if not raw and path and _is_secret_config_part(path[-1]):
+        return _REDACTED if value not in (None, "") else value
+    if is_dataclass(value) and not isinstance(value, type):
+        return {
+            item.name: _config_display_value(
+                getattr(value, item.name),
+                path=(*path, item.name),
+                raw=raw,
+            )
+            for item in fields(value)
+        }
+    if isinstance(value, dict):
+        return {
+            str(key): _config_display_value(
+                nested,
+                path=(*path, str(key)),
+                raw=raw,
+            )
+            for key, nested in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [
+            _config_display_value(nested, path=(*path, str(index)), raw=raw)
+            for index, nested in enumerate(value)
+        ]
+    return value
+
+
+def _format_config_value(value: Any) -> str:
+    if isinstance(value, (dict, list, tuple)) or (
+        is_dataclass(value) and not isinstance(value, type)
+    ):
+        return json.dumps(value, sort_keys=True)
+    return str(value)
+
+
+def _nested_config_value(data: Any, parts: Sequence[str]) -> Any:
+    """Read a path from the raw YAML shape after policy enforcement."""
+    current = data
+    for part in parts:
+        if isinstance(current, dict) and part in current:
+            current = current[part]
+        elif isinstance(current, (list, tuple)):
+            current = current[int(part)]
+        else:
+            raise KeyError(".".join(parts))
+    return current
+
+
+def _is_loopback_url(value: Any) -> bool:
+    try:
+        hostname = urlsplit(str(value)).hostname
+        if not hostname:
+            return False
+        if hostname.lower() == "localhost":
+            return True
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
+
+
+def _enforce_local_only_config(data: dict[str, Any]) -> dict[str, Any]:
+    """Make the local-only profile a write-time, no-remote invariant."""
+    if str(data.get("profile", "standard")).strip().lower() != "local-only":
+        return data
+
+    ollama = data.get("ollama")
+    if not isinstance(ollama, dict):
+        ollama = {}
+        data["ollama"] = ollama
+    base_url = ollama.get("base_url", "http://127.0.0.1:11434")
+    if not _is_loopback_url(base_url):
+        base_url = "http://127.0.0.1:11434"
+
+    judge = data.get("judge")
+    if not isinstance(judge, dict):
+        judge = {}
+    judge_base = judge.get("base_url", "")
+    judge_model = judge.get("model", "") if _is_loopback_url(judge_base) else ""
+    model = str(ollama.get("model") or judge_model or "qwen3.5:2b")
+    judge.update(
+        {
+            "model": model,
+            "base_url": base_url,
+            "api_key": "",
+            "api_key_env": "",
+            "ollama_mode": True,
+        }
+    )
+    data["judge"] = judge
+    ollama.update({"enabled": True, "base_url": base_url, "model": model})
+    data["providers"] = [
+        {
+            "name": "ollama",
+            "type": "ollama",
+            "model": model,
+            "base_url": base_url,
+            "api_key": "",
+            "ollama_mode": True,
+            "timeout": float(judge.get("timeout", 15.0)),
+        }
+    ]
+
+    adapters = data.get("adapters")
+    if not isinstance(adapters, dict):
+        adapters = {}
+        data["adapters"] = adapters
+    for name in ("litellm", "hermes", "openclaw", "codex", "claude"):
+        entry = adapters.get(name)
+        if not isinstance(entry, dict):
+            entry = {}
+            adapters[name] = entry
+        entry["enabled"] = "false"
+    return data
 
 
 # ── Install ──────────────────────────────────────────────────
@@ -90,60 +446,171 @@ def _seed_starter_roster(store: Store) -> int:
 
 
 def cmd_install(args: argparse.Namespace) -> int:
-    """Install Agency Runtime — seeds roster AND wires into agent host(s).
-
-    Usage:
-        agency install                  — seed roster only (standalone)
-        agency install --agent hermes   — wire into Hermes
-        agency install --agent openclaw — wire into OpenClaw
-        agency install --agent codex    — wire into Codex
-        agency install --all            — auto-detect + wire into every agent found
-    """
+    """Install, preview, or roll back host-native Agency Runtime bundles."""
     from agency_runtime.core.installer import (
         detect_installed_agents,
         install_agent_adapter,
+        plan_agent_adapter,
+        rollback_agent_adapter,
         seed_starter_roster,
     )
 
+    rollback_mode = bool(getattr(args, "rollback", False))
+    dry_run = bool(getattr(args, "dry_run", False))
+    backup = getattr(args, "backup", None)
+    if rollback_mode and dry_run:
+        raise ValueError("install --rollback and --dry-run are mutually exclusive")
+    if backup and not rollback_mode:
+        raise ValueError("install --backup requires --rollback")
+
     cfg = load_config()
-    profile = get_profile(args.profile)
+    json_mode = bool(getattr(args, "json", False))
+
+    if rollback_mode:
+        if not args.agent or args.all:
+            raise ValueError("install --rollback requires exactly one --agent")
+        result = rollback_agent_adapter(args.agent, backup_path=backup)
+        if json_mode:
+            _print_json(result)
+        elif result.get("ok"):
+            print(f"✅ {args.agent}: rollback restored {result.get('restored_from')}")
+            print(f"   Maturity: {result.get('maturity', 'unknown')}")
+            if result.get("restart_required"):
+                print(f"   Restart {args.agent} to load the restored integration.")
+        else:
+            print(f"❌ {args.agent}: {result.get('error', 'rollback failed')}")
+        return int(result.get("exit_code", 0 if result.get("ok") else 1))
+
+    requested_profile = args.profile or cfg.profile
+    if args.profile and args.profile != cfg.profile:
+        raise ValueError(
+            f"install does not rewrite runtime policy: active profile is {cfg.profile!r}, "
+            f"requested {args.profile!r}; run `agency configure --profile {args.profile}` first"
+        )
+    profile = get_profile(requested_profile)
+    targets = detect_installed_agents() if args.all else ([args.agent] if args.agent else [])
+    if dry_run:
+        plans = [plan_agent_adapter(host) for host in targets]
+        plan_complete = bool(plans) and all(
+            plan.get("ok") and plan.get("executable")
+            for plan in plans
+        ) if args.all else all(plan.get("ok") for plan in plans)
+        report = {
+            "ok": plan_complete,
+            "complete": plan_complete,
+            "dry_run": True,
+            "profile": profile.name,
+            "starter_roster": {
+                "action": "seed_missing_idempotently",
+                "candidate_count": len(STARTER_ROSTER),
+            },
+            "detected_hosts": targets,
+            "host_plans": plans,
+        }
+        if json_mode:
+            _print_json(report)
+        else:
+            print(f"DRY RUN — profile={profile.name}; would idempotently seed up to {len(STARTER_ROSTER)} starter agents")
+            if not targets:
+                print("No host adapters selected or discovered; no files or native state would change.")
+            for plan in plans:
+                print(f"  {plan['host']}: {plan.get('plugin_path')} ({plan.get('native_lifecycle')})")
+                print(f"    discovered={plan.get('host_discovered')} commands={plan.get('commands_will_run')}")
+                for step in plan.get("native_command_plan", []):
+                    condition = f" [{step['condition']}]" if step.get("condition") else ""
+                    print(f"    argv={step.get('argv')}{condition}")
+                gate = plan.get("gateway_safety_gate")
+                if gate is not None:
+                    print(f"    gateway={gate.get('state')} safe_to_mutate={gate.get('safe_to_mutate')}")
+        return 0 if plan_complete else 1
+
     store = _store(cfg)
-
-    # Always seed the roster
     count = seed_starter_roster(store)
-    print(f"✅ Agency Runtime profile: {profile.name}")
-    print(f"✅ Starter roster activated: {count} agents")
-    print(f"   Config: {cfg.config_path or '(defaults only)'}")
-    print(f"   Judge model: {cfg.judge.model} ({cfg.judge.base_url})")
+    host_results: list[dict[str, Any]] = []
 
-    # Handle agent adapter installation
-    if args.all:
-        detected = detect_installed_agents()
-        if not detected:
+    if not json_mode:
+        print(f"✅ Agency Runtime profile: {profile.name}")
+        print(f"✅ Starter roster activated: {count} agents")
+        print(f"   Config: {cfg.config_path or '(defaults only)'}")
+        print(f"   Judge model: {cfg.judge.model} ({cfg.judge.base_url})")
+
+    if args.all and not targets:
+        if json_mode:
+            _print_json(
+                {
+                    "ok": False,
+                    "complete": False,
+                    "profile": profile.name,
+                    "roster_added": count,
+                    "hosts": [],
+                    "error": "No supported AI agent hosts detected",
+                }
+            )
+        else:
             print("\n⚠️  No supported AI agent hosts detected.")
             print("   Install Hermes, OpenClaw, Codex, or Claude Code first.")
-            return 0
-        print(f"\n🔍 Detected {len(detected)} agent host(s): {', '.join(detected)}")
-        for agent in detected:
-            result = install_agent_adapter(agent, cfg)
-            if result["ok"]:
-                print(f"✅ {agent}: wired → {result['plugin_path']}")
-            else:
-                print(f"❌ {agent}: {result['error']}")
-    elif args.agent:
-        result = install_agent_adapter(args.agent, cfg)
-        if result["ok"]:
-            print(f"\n✅ {args.agent}: wired → {result['plugin_path']}")
-            print(f"   Restart {args.agent} to activate.")
-        else:
-            print(f"\n❌ {args.agent}: {result['error']}")
-            return 1
-    else:
-        print(f"\n💡 To wire into an AI agent host, run:")
-        print(f"   agency install --all          (auto-detect)")
-        print(f"   agency install --agent hermes  (specific)")
+        return 1
 
-    return 0
+    if not json_mode and args.all:
+        print(f"\n🔍 Detected {len(targets)} agent host(s): {', '.join(targets)}")
+    for host in targets:
+        result = install_agent_adapter(host, cfg)
+        if args.all:
+            result["complete"] = bool(
+                result.get("ok")
+                and result.get("status") == "registered"
+                and result.get("registered") is True
+            )
+            if not result["complete"]:
+                result.setdefault(
+                    "warning",
+                    "Detected host did not reach native registration; install --all is incomplete.",
+                )
+        host_results.append(result)
+        if not json_mode:
+            _print_install_result(host, result)
+
+    if not targets and not json_mode:
+        print("\n💡 Run `agency install --all --dry-run` to preview discovered host integrations.")
+        print("   Run `agency dashboard` to open the local operations dashboard.")
+    if json_mode:
+        complete = all(result.get("complete", result.get("ok")) for result in host_results)
+        _print_json(
+            {
+                "ok": complete,
+                "complete": complete,
+                "profile": profile.name,
+                "roster_added": count,
+                "hosts": host_results,
+            }
+        )
+    successful = all(result.get("ok") for result in host_results)
+    if args.all:
+        successful = bool(host_results) and successful and all(
+            result.get("complete") for result in host_results
+        )
+    return 0 if successful else 1
+
+
+def _print_install_result(host: str, result: dict[str, Any]) -> None:
+    """Print native installation maturity without overstating runtime load."""
+    if result.get("ok"):
+        marker = "✅" if result.get("complete", result.get("status") == "registered") else "⚠️ "
+        print(f"{marker} {host}: {result.get('status', 'staged')} → {result.get('plugin_path', 'unknown path')}")
+        print(f"   Maturity: {result.get('maturity', 'unknown')}")
+        if result.get("backup_path"):
+            print(f"   Backup: {result['backup_path']}")
+        if result.get("warning"):
+            print(f"   Warning: {result['warning']}")
+        if result.get("restart_required"):
+            print(f"   Restart {host} to activate the native state.")
+        return
+    partial = " (filesystem staged; native registration incomplete)" if result.get("partial") else ""
+    print(f"❌ {host}: {result.get('error', 'installation failed')}{partial}")
+    if result.get("failed_step"):
+        print(f"   Failed step: {result['failed_step']}")
+    if result.get("backup_path"):
+        print(f"   Backup retained: {result['backup_path']}")
 
 
 def cmd_on(args: argparse.Namespace) -> int:
@@ -163,10 +630,19 @@ def cmd_on(args: argparse.Namespace) -> int:
             print("Specify: agency on --agent <name>")
             return 1
 
-    result = toggle_agency(agent, enabled=True)
+    result = toggle_agency(
+        agent,
+        enabled=True,
+        dry_run=bool(getattr(args, "dry_run", False)),
+    )
+    if getattr(args, "json", False):
+        _print_json(result)
+        return int(result.get("exit_code", 0 if result.get("ok") else 1))
     if result["ok"]:
-        print(f"✅ Agency Runtime ENABLED for {agent}")
-        print(f"   Restart {agent} to take effect.")
+        prefix = "DRY RUN — would enable" if result.get("dry_run") else "✅ Agency Runtime enabled"
+        print(f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}")
+        if result.get("restart_required"):
+            print(f"   Restart {agent} to take effect.")
     else:
         print(f"❌ {result['error']}")
     return 0 if result["ok"] else 1
@@ -189,11 +665,19 @@ def cmd_off(args: argparse.Namespace) -> int:
             print("Specify: agency off --agent <name>")
             return 1
 
-    result = toggle_agency(agent, enabled=False)
+    result = toggle_agency(
+        agent,
+        enabled=False,
+        dry_run=bool(getattr(args, "dry_run", False)),
+    )
+    if getattr(args, "json", False):
+        _print_json(result)
+        return int(result.get("exit_code", 0 if result.get("ok") else 1))
     if result["ok"]:
-        print(f"⏸️  Agency Runtime DISABLED for {agent}")
-        print(f"   Plugin file moved to: {result.get('backup_path', 'disabled')}")
-        print(f"   Restart {agent} to take effect.")
+        prefix = "DRY RUN — would disable" if result.get("dry_run") else "⏸️  Agency Runtime disabled"
+        print(f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}")
+        if result.get("restart_required"):
+            print(f"   Restart {agent} to take effect.")
     else:
         print(f"❌ {result['error']}")
     return 0 if result["ok"] else 1
@@ -204,7 +688,7 @@ def cmd_off(args: argparse.Namespace) -> int:
 
 def cmd_configure(args: argparse.Namespace) -> int:
     """Guided setup wizard or non-interactive config generation."""
-    import os
+    _configure_console_output()
 
     config_path = Path(os.environ.get("AGENCY_CONFIG_PATH", str(Path.home() / ".agency-runtime" / "agency.yaml")))
 
@@ -219,8 +703,12 @@ def cmd_configure(args: argparse.Namespace) -> int:
             print("Use --force to overwrite in non-interactive mode.")
             return 1
 
+    profile = args.profile or "standard"
+    if not args.non_interactive and args.profile is None:
+        profile = _prompt_install_profile()
+
     print("\nDetecting available providers...")
-    detection = detect_all()
+    detection = _detect_for_profile(profile)
     p = detection.providers
     a = detection.adapters
 
@@ -236,25 +724,14 @@ def cmd_configure(args: argparse.Namespace) -> int:
     print(f"  {'✅' if a.claude else '❌'} Claude Code CLI")
     print()
 
-    # Determine profile
-    profile = args.profile or "standard"
-    if args.profile == "local-only":
-        pass  # user explicitly chose it
-    elif not detection.has_any_provider and not args.non_interactive:
-        print("No LLM providers detected. Recommend local-only profile.")
-        resp = input("Use local-only profile? [Y/n] ").strip().lower()
-        if resp != "n":
-            profile = "local-only"
-
     if args.non_interactive:
         config_data = generate_config_from_detection(detection, profile=profile)
     else:
         config_data = _interactive_wizard(detection, profile)
+    config_data = _enforce_local_only_config(config_data)
 
     # Write config
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(config_path, "w") as f:
-        yaml.dump(config_data, f, default_flow_style=False, sort_keys=False)
+    _atomic_write_yaml(config_path, config_data)
 
     print(f"\n✅ Config written to {config_path}")
 
@@ -265,18 +742,55 @@ def cmd_configure(args: argparse.Namespace) -> int:
     count = _seed_starter_roster(store)
     print(f"✅ Starter roster installed: {count} agents")
     print(f"✅ SQLite database initialized: {cfg.store.resolved_path()}")
-    print(f"\nNext steps:")
-    print(f"  agency doctor              — verify everything is working")
-    print(f"  agency search \"code review\" — test the selector")
-    print(f"  agency route \"review this PR\" — see routing in action")
+    print("\nNext steps:")
+    print("  agency doctor              — verify everything is working")
+    print("  agency search \"code review\" — test the selector")
+    print("  agency route \"review this PR\" — see routing in action")
     return 0
+
+
+def _prompt_install_profile() -> str:
+    """Choose the network posture before any provider discovery occurs."""
+    print("Step 1: Install Profile")
+    print("━" * 40)
+    print("  [1] local-only — No remote network, no auto-sync, bundled roster only (safest)")
+    print("  [2] standard   — Network enabled, no auto-sync (recommended)")
+    print("  [3] power      — Network enabled, manual sync")
+    print("  [4] yolo       — Network enabled, trusted-source nightly auto-sync")
+    profile_choice = _prompt_choice(4, default=2)
+    return ["local-only", "standard", "power", "yolo"][profile_choice - 1]
+
+
+def _detect_for_profile(profile: str):
+    """Detect providers without contacting remote APIs for local-only setup."""
+    if profile != "local-only":
+        return detect_all()
+
+    sentinel = object()
+    remote_key_names = ("OPENAI_API_KEY", "ANTHROPIC_API_KEY")
+    saved_keys = {
+        name: os.environ.pop(name, sentinel)
+        for name in remote_key_names
+    }
+    try:
+        detection = detect_all()
+    finally:
+        for name, value in saved_keys.items():
+            if value is not sentinel:
+                os.environ[name] = str(value)
+    # A mocked detector or future detector must not accidentally reintroduce
+    # remote providers into the local-only wizard.
+    detection.providers.openai_key_present = False
+    detection.providers.openai_models.clear()
+    detection.providers.anthropic_key_present = False
+    return detection
 
 
 def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     """Interactive wizard — prompts for each decision with full model discovery."""
     p = detection.providers
 
-    print("Step 1: Judge Model")
+    print("Step 2: Judge Model")
     print("━" * 40)
 
     # ── Build provider menu ────────────────────────────────────
@@ -284,54 +798,47 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     # The handler returns a judge_cfg dict
     providers: list[tuple[str, str]] = []
 
-    if p.ollama_available:
-        n = len(p.ollama_models)
-        providers.append(("ollama", f"Ollama (free, local) — {n} model(s) available"))
-
-    if p.openai_key_present:
-        n = len(p.openai_models)
-        suffix = f" — {n} model(s) discovered" if n else " (model list unavailable)"
-        providers.append(("openai", f"OpenAI API (key detected){suffix}"))
-
-    if p.anthropic_key_present:
-        providers.append(("anthropic", "Anthropic API (key detected)"))
-
-    if p.litellm_available:
-        n = len(p.litellm_models)
-        suffix = f" — {n} model group(s) discovered" if n else " (model list unavailable)"
-        providers.append(("litellm", f"LiteLLM proxy{suffix}"))
-
-    providers.append(("custom", "Custom OpenAI-compatible endpoint (OpenRouter, Together, Groq, LM Studio, etc.)"))
-
-    print("\nWhich provider should the Agency selector use for routing?\n")
-    for i, (_, label) in enumerate(providers, 1):
-        print(f"  [{i}] {label}")
-
-    choice_idx = _prompt_choice(len(providers), default=1) - 1
-    provider_key = providers[choice_idx][0]
-
-    # ── Per-provider model selection ──────────────────────────
-
-    if provider_key == "ollama":
+    if profile == "local-only":
+        provider_key = "ollama"
         judge_cfg = _pick_ollama_model(p)
-    elif provider_key == "openai":
-        judge_cfg = _pick_openai_model(p)
-    elif provider_key == "anthropic":
-        judge_cfg = _pick_anthropic_model()
-    elif provider_key == "litellm":
-        judge_cfg = _pick_litellm_model(p)
     else:
-        judge_cfg = _pick_custom_endpoint()
+        if p.ollama_available:
+            n = len(p.ollama_models)
+            providers.append(("ollama", f"Ollama (free, local) — {n} model(s) available"))
 
-    # Step 2: Profile
-    print("\nStep 2: Install Profile")
-    print("━" * 40)
-    print("  [1] local-only — No network, no auto-sync, bundled roster only (safest)")
-    print("  [2] standard   — Network enabled, no auto-sync (recommended)")
-    print("  [3] power      — Network enabled, manual sync")
-    print("  [4] yolo       — Network enabled, trusted-source nightly auto-sync")
-    profile_choice = _prompt_choice(4, default=2)
-    profile = ["local-only", "standard", "power", "yolo"][profile_choice - 1]
+        if p.openai_key_present:
+            n = len(p.openai_models)
+            suffix = f" — {n} model(s) discovered" if n else " (model list unavailable)"
+            providers.append(("openai", f"OpenAI API (key detected){suffix}"))
+
+        if p.anthropic_key_present:
+            providers.append(("anthropic", "Anthropic API (key detected)"))
+
+        if p.litellm_available:
+            n = len(p.litellm_models)
+            suffix = f" — {n} model group(s) discovered" if n else " (model list unavailable)"
+            providers.append(("litellm", f"LiteLLM proxy{suffix}"))
+
+        providers.append(("custom", "Custom OpenAI-compatible endpoint (OpenRouter, Together, Groq, LM Studio, etc.)"))
+
+        print("\nWhich provider should the Agency selector use for routing?\n")
+        for i, (_, label) in enumerate(providers, 1):
+            print(f"  [{i}] {label}")
+
+        choice_idx = _prompt_choice(len(providers), default=1) - 1
+        provider_key = providers[choice_idx][0]
+
+        # ── Per-provider model selection ──────────────────────
+        if provider_key == "ollama":
+            judge_cfg = _pick_ollama_model(p)
+        elif provider_key == "openai":
+            judge_cfg = _pick_openai_model(p)
+        elif provider_key == "anthropic":
+            judge_cfg = _pick_anthropic_model()
+        elif provider_key == "litellm":
+            judge_cfg = _pick_litellm_model(p)
+        else:
+            judge_cfg = _pick_custom_endpoint()
 
     # Step 3: Adapters
     print("\nStep 3: Host Adapters")
@@ -349,7 +856,11 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
         if judge_cfg["model"] not in litellm_skip:
             litellm_skip.append(judge_cfg["model"])
     adapters_cfg["litellm"] = {
-        "enabled": "true" if litellm_detected else ("false" if profile == "local-only" else "auto"),
+        "enabled": (
+            "false"
+            if profile == "local-only"
+            else ("true" if litellm_detected else "auto")
+        ),
         "base_url": p.litellm_base_url,
         "api_key_env": "LITELLM_API_KEY",
         "skip_models": litellm_skip,
@@ -364,7 +875,11 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
         icon = "✅" if detected else "❌"
         print(f"  {icon} {name}: {'detected' if detected else 'not detected'}")
         adapters_cfg[name] = {
-            "enabled": "true" if detected and profile != "local-only" else "auto"
+            "enabled": (
+                "false"
+                if profile == "local-only"
+                else ("true" if detected else "auto")
+            )
         }
 
     # Step 4: Tuning
@@ -387,7 +902,24 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     print("\nStep 5: Review")
     print("━" * 40)
 
+    provider_type = {
+        "ollama": "ollama",
+        "anthropic": "anthropic",
+        "litellm": "litellm",
+    }.get(provider_key, "openai-compatible")
+    provider_entry = {
+        "name": provider_key,
+        "type": provider_type,
+        "model": judge_cfg.get("model", ""),
+        "base_url": judge_cfg.get("base_url", ""),
+        "api_key": judge_cfg.get("api_key", ""),
+        "api_key_env": judge_cfg.get("api_key_env", ""),
+        "ollama_mode": bool(judge_cfg.get("ollama_mode", False)),
+        "timeout": float(judge_cfg.get("timeout", 15.0)),
+    }
+
     config_data = {
+        "providers": [provider_entry],
         "judge": judge_cfg,
         "ollama": {
             "enabled": p.ollama_available,
@@ -400,6 +932,7 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
         "profile": profile,
         "companion_policy_path": None,
     }
+    config_data = _enforce_local_only_config(config_data)
 
     # Show summary
     _print_config_summary(config_data)
@@ -456,7 +989,7 @@ def _pick_openai_model(p: ProviderDetection) -> dict[str, Any]:
             all_models.append(m)
             seen.add(m)
 
-    print(f"\nOpenAI models available:")
+    print("\nOpenAI models available:")
     for i, model in enumerate(all_models[:15], 1):
         discovered = "✅" if model in p.openai_models else "  "
         print(f"  [{i}] {discovered} {model}")
@@ -484,7 +1017,7 @@ def _pick_anthropic_model() -> dict[str, Any]:
     """Let user pick an Anthropic model."""
     from agency_runtime.core.detect import _ANTHROPIC_SUGGESTIONS
 
-    print(f"\nAnthropic models:")
+    print("\nAnthropic models:")
     for i, model in enumerate(_ANTHROPIC_SUGGESTIONS, 1):
         print(f"  [{i}] {model}")
     print(f"  [{len(_ANTHROPIC_SUGGESTIONS) + 1}] Enter custom model name")
@@ -668,16 +1201,16 @@ def _print_config_summary(config_data: dict[str, Any]) -> None:
     if j.get("api_key_env"):
         print(f"  API key:      from ${j['api_key_env']}")
     elif j.get("api_key"):
-        print(f"  API key:      (stored in config)")
+        print("  API key:      (stored in config)")
     else:
-        print(f"  API key:      none (free/local)")
+        print("  API key:      none (free/local)")
     print(f"  Ollama mode:  {j.get('ollama_mode', False)}")
     print(f"  Profile:      {config_data.get('profile', 'standard')}")
 
 
 def _prompt_choice(max_val: int, default: int = 1) -> int:
     while True:
-        raw = input(f"> ").strip()
+        raw = input("> ").strip()
         if not raw:
             return default
         try:
@@ -725,6 +1258,12 @@ def cmd_config_get(args: argparse.Namespace) -> int:
     for part in parts:
         if hasattr(val, part):
             val = getattr(val, part)
+        elif isinstance(val, (list, tuple)):
+            try:
+                val = val[int(part)]
+            except (IndexError, TypeError, ValueError):
+                print(f"Key not found: {args.key}", file=sys.stderr)
+                return 1
         elif hasattr(val, "__getitem__"):
             try:
                 val = val[part]
@@ -734,7 +1273,12 @@ def cmd_config_get(args: argparse.Namespace) -> int:
         else:
             print(f"Key not found: {args.key}", file=sys.stderr)
             return 1
-    print(json.dumps(val) if isinstance(val, (list, tuple)) else val)
+    display = _config_display_value(
+        val,
+        path=tuple(parts),
+        raw=bool(getattr(args, "raw", False)),
+    )
+    print(_format_config_value(display))
     return 0
 
 
@@ -744,7 +1288,7 @@ def cmd_config_set(args: argparse.Namespace) -> int:
 
     # Load existing YAML or defaults
     if config_path.exists():
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
     else:
         data = {}
@@ -765,10 +1309,17 @@ def cmd_config_set(args: argparse.Namespace) -> int:
 
     target[parts[-1]] = value
 
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(config_path, "w") as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-    print(f"Set {args.key} = {value}")
+    data = _enforce_local_only_config(data)
+    _atomic_write_yaml(config_path, data)
+    reset_config_cache()
+    effective_value = _nested_config_value(data, parts)
+    display = _config_display_value(effective_value, path=tuple(parts), raw=False)
+    policy_note = (
+        " (local-only policy enforced)"
+        if effective_value != value and data.get("profile") == "local-only"
+        else ""
+    )
+    print(f"Set {args.key} = {_format_config_value(display)}{policy_note}")
     return 0
 
 
@@ -800,7 +1351,7 @@ def cmd_config_reset(args: argparse.Namespace) -> int:
             print("Aborted.")
             return 0
         config_path.unlink()
-    print(f"Config reset. Run `agency configure` to set up again.")
+    print("Config reset. Run `agency configure` to set up again.")
     return 0
 
 
@@ -933,29 +1484,41 @@ def cmd_search(args: argparse.Namespace) -> int:
 
 
 def cmd_route(args: argparse.Namespace) -> int:
-    results = _search(args.task, args.limit)
-    if not results:
+    from agency_runtime.core.selector.candidate_narrow import pre_narrow
+    from agency_runtime.core.selector.pipeline import route
+
+    store = _store()
+    catalog = store.get_active_roster_as_catalog()
+    if not catalog:
         print("No active agents available", file=sys.stderr)
         return 1
-    top = results[0]
-    # Layer 0 companions
-    matched_actions, companion_ids = detect_actions(args.task)
+    routing = route("cli", args.task, catalog, store=store)
+    candidates, scores = pre_narrow(args.task, catalog, limit=args.limit)
+    candidate_rows = [
+        {**candidate, "score": round(float(score), 4)}
+        for candidate, score in zip(candidates, scores)
+    ]
     if args.json:
         _print_json({
             "task": args.task,
-            "selected": top,
-            "candidates": results,
-            "companion_actions": matched_actions,
-            "companion_ids": companion_ids,
+            "routing": routing,
+            "candidates": candidate_rows,
         })
     else:
-        print(f"selected: {top['slug']} ({top.get('name', '')}) score={top['score']:.1f}")
-        for agent in results[1:]:
-            print(f"candidate: {agent['slug']} score={agent['score']:.1f}")
-        if matched_actions:
-            print(f"companion actions: {', '.join(matched_actions)}")
-        if companion_ids:
-            print(f"companion ids: {', '.join(companion_ids)}")
+        selected = routing.get("selected_ids") or []
+        if selected:
+            print(f"selected: {', '.join(selected)}")
+        else:
+            print(f"selected: none (status={routing.get('status', 'unknown')})")
+        print(
+            f"confidence={float(routing.get('confidence', 0.0)):.3f} "
+            f"source={routing.get('provider', 'deterministic')} "
+            f"trace={routing.get('trace_id', '')}"
+        )
+        for agent in candidate_rows:
+            print(f"candidate: {agent['slug']} score={agent['score']:.3f}")
+        if routing.get("companion_actions"):
+            print(f"companion actions: {', '.join(routing['companion_actions'])}")
     return 0
 
 
@@ -966,6 +1529,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
         args.task,
         store.get_active_roster_as_catalog(),
         limit=args.limit,
+        store=store,
     )
     _print_json(payload)
     return 0
@@ -979,83 +1543,127 @@ def _run_command(command: list[str], *, timeout: float | None = None) -> int:
     return int(proc.returncode)
 
 
-def _run_delegate_command(command: list[str], *, timeout: float | None = None, quiet: bool = False) -> int:
-    if quiet:
-        proc = subprocess.run(
-            command,
-            text=True,
-            timeout=timeout,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )  # noqa: S603
-        return int(proc.returncode)
-    return _run_command(command, timeout=timeout)
-
-
 def _emit_delegate_result(args: argparse.Namespace, payload: dict[str, Any], *, stderr: str = "") -> int:
     if args.json:
         _print_json(payload)
     elif stderr:
         print(stderr, file=sys.stderr)
+    elif payload.get("status") == "completed":
+        output = payload.get("output")
+        if isinstance(output, str) and output:
+            print(output)
+        elif output is not None:
+            _print_json(output)
+        print(f"Delegation completed via {payload.get('backend', 'unknown')}.")
     return int(payload.get("exit_code", 1))
 
 
 def cmd_delegate(args: argparse.Namespace) -> int:
-    backend = args.backend
+    from agency_runtime.core.delegation.backends import (
+        BackendError,
+        BackendRegistry,
+        ClaudeExecBackend,
+        CodexExecBackend,
+        GenericCLIBackend,
+        HermesDelegateBackend,
+        OpenClawAgentBackend,
+    )
+
+    backend_name = args.backend
     task = args.task
     agent = args.agent
-    if args.timeout is not None and (not math.isfinite(args.timeout) or args.timeout <= 0):
+    if args.timeout is not None and (
+        not math.isfinite(args.timeout) or args.timeout <= 0
+    ):
         error = "--timeout must be a finite value greater than 0"
-        return _emit_delegate_result(args, {"status": "error", "error": error, "exit_code": 2}, stderr=error)
+        return _emit_delegate_result(
+            args,
+            {"status": "error", "error": error, "exit_code": 2},
+            stderr=error,
+        )
+    timeout = args.timeout if args.timeout is not None else 3600.0
+    factories = {
+        "codex": lambda: CodexExecBackend(timeout=timeout),
+        "claude": lambda: ClaudeExecBackend(timeout=timeout),
+        "hermes": lambda: HermesDelegateBackend(timeout=timeout),
+        "openclaw": lambda: OpenClawAgentBackend(timeout=timeout),
+        "generic": lambda: GenericCLIBackend(
+            command=tuple(args.command or ()),
+            timeout=timeout,
+        ),
+    }
+    try:
+        candidate = factories[backend_name]()
+    except (KeyError, TypeError, ValueError) as exc:
+        error = str(exc) or f"invalid backend configuration: {backend_name}"
+        return _emit_delegate_result(
+            args,
+            {"status": "error", "error": error, "exit_code": 2},
+            stderr=error,
+        )
+
     store = _store()
-    trace_id = f"cli-delegate-{agent or 'auto'}"
-    event_id = store.record_delegation(trace_id=trace_id, recommended_agent=agent or "", status="started", backend=backend)
+    trace_id = f"cli-delegate-{uuid.uuid4()}"
+    event_id = store.record_delegation(
+        trace_id=trace_id,
+        recommended_agent=agent or "",
+        status="started",
+        backend=backend_name,
+    )
     payload = {
         "trace_id": trace_id,
         "event_id": event_id,
-        "backend": backend,
+        "backend": backend_name,
         "agent": agent,
-        "timeout_seconds": args.timeout,
+        "timeout_seconds": timeout,
     }
-    if backend == "codex":
-        command = ["codex", "exec", task]
-    elif backend == "claude":
-        command = ["claude", "-p", "--output-format", "json", task]
-    elif backend == "hermes":
-        command = ["hermes", "-z", task]
-    else:
-        store.update_delegation(event_id, status="suggested", backend=backend)
-        if not args.json:
-            print(f"Delegation recorded for backend={backend} agent={agent}: {task}")
-        return _emit_delegate_result(args, {**payload, "status": "suggested", "exit_code": 0})
-    executable = shutil.which(command[0])
-    if not executable:
-        error = f"backend executable not found: {command[0]}"
-        store.update_delegation(event_id, status="skipped", backend=backend, error=error, skip_reason=error)
-        return _emit_delegate_result(
-            args,
-            {**payload, "status": "skipped", "exit_code": 127, "error": error, "skip_reason": error},
-            stderr=error,
-        )
-    command[0] = executable
+
     try:
-        code = _run_delegate_command(command, timeout=args.timeout, quiet=args.json)
-    except subprocess.TimeoutExpired:
-        timeout_text = "unknown" if args.timeout is None else f"{args.timeout:g}s"
-        error = f"backend command timed out after {timeout_text}"
-        store.update_delegation(event_id, status="skipped", backend=backend, error=error, skip_reason=error)
-        return _emit_delegate_result(
-            args,
-            {**payload, "status": "skipped", "exit_code": 124, "error": error, "skip_reason": error},
-            stderr=error,
+        selected = BackendRegistry([candidate]).select_backend(preferred=backend_name)
+        result = selected.delegate(
+            task=task,
+            workdir=args.workdir,
+            recommended_agent=agent or None,
         )
-    status = "completed" if code == 0 else "failed"
-    error = "" if code == 0 else f"exit={code}"
-    store.update_delegation(event_id, status=status, backend=backend, error=error)
-    result = {**payload, "status": status, "exit_code": code}
-    if error:
-        result["error"] = error
-    return _emit_delegate_result(args, result)
+    except BackendError as exc:
+        result = dict(exc.result)
+        if not result:
+            result = {
+                "backend": backend_name,
+                "status": "unavailable",
+                "exit_code": 127,
+                "error": str(exc),
+            }
+    except (TypeError, ValueError) as exc:
+        result = {
+            "backend": backend_name,
+            "status": "error",
+            "exit_code": 2,
+            "error": str(exc),
+        }
+
+    status = str(result.get("status") or "failed")
+    error = str(result.get("error") or "")
+    if status == "completed":
+        evidence_status = "completed"
+        skip_reason = ""
+    elif status in {"unavailable", "timed_out"}:
+        evidence_status = "skipped"
+        skip_reason = error or status
+    else:
+        evidence_status = "failed"
+        skip_reason = ""
+    store.update_delegation(
+        event_id,
+        status=evidence_status,
+        backend=backend_name,
+        error=error,
+        skip_reason=skip_reason,
+    )
+    normalized = {**result, **payload, "status": evidence_status}
+    if skip_reason:
+        normalized["skip_reason"] = skip_reason
+    return _emit_delegate_result(args, normalized, stderr=error if evidence_status != "completed" else "")
 
 
 def cmd_policy(args: argparse.Namespace) -> int:
@@ -1121,6 +1729,30 @@ def cmd_eval_delegation(args: argparse.Namespace) -> int:
     return 0 if report["passed"] else 1
 
 
+def cmd_eval_routing(args: argparse.Namespace) -> int:
+    """Run the versioned routing, policy, delegation, and latency gates."""
+    from agency_runtime.core.evals.routing import run_routing_eval
+
+    report = run_routing_eval(include_details=not args.no_details)
+    if args.json:
+        _print_json(report)
+    else:
+        status = "passed" if report["passed"] else "failed"
+        corpus = report["corpus"]
+        print(
+            f"routing eval {status}: corpus={corpus['version']} "
+            f"routing={corpus['routing_cases']} policy={corpus['policy_cases']} "
+            f"delegation={corpus['delegation_cases']}"
+        )
+        for gate in report["gates"]:
+            marker = "ok" if gate["passed"] else "FAIL"
+            print(
+                f"{marker}\t{gate['area']}.{gate['metric']}="
+                f"{gate['value']} {gate['operator']} {gate['threshold']}"
+            )
+    return 0 if report["passed"] else 1
+
+
 def cmd_smoke(args: argparse.Namespace) -> int:
     from agency_runtime.core.smoke import run_smoke
 
@@ -1177,6 +1809,31 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mcp(args: argparse.Namespace) -> int:
+    from agency_runtime.server.mcp import run_stdio
+
+    store = Store(args.db) if args.db else None
+    return run_stdio(store=store)
+
+
+def cmd_hook(args: argparse.Namespace) -> int:
+    from agency_runtime.adapters.hooks import run_hook_stdio
+
+    store = Store(args.db) if args.db else None
+    return run_hook_stdio(args.host, store=store)
+
+
+def cmd_dashboard(args: argparse.Namespace) -> int:
+    from agency_runtime.server.dashboard import run_dashboard
+
+    run_dashboard(
+        port=args.port,
+        db_path=args.db,
+        open_browser=not args.no_open,
+    )
+    return 0
+
+
 def cmd_codex_exec(args: argparse.Namespace) -> int:
     return _run_command(["codex", "exec", *args.args])
 
@@ -1194,19 +1851,34 @@ def build_parser() -> argparse.ArgumentParser:
 
     # install
     install = sub.add_parser("install", help="Install Agency Runtime — seed roster + wire into agent hosts")
-    install.add_argument("--profile", choices=sorted(PROFILES), default="standard")
-    install.add_argument("--all", action="store_true", help="Auto-detect and wire into every AI agent host found")
-    install.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None,
-                         help="Wire into a specific agent host")
+    install.add_argument(
+        "--profile",
+        choices=sorted(PROFILES),
+        default=None,
+        help="Verify the already-configured profile; use `agency configure` to change it",
+    )
+    install_target = install.add_mutually_exclusive_group()
+    install_target.add_argument("--all", action="store_true", help="Auto-detect and wire into every AI agent host found")
+    install_target.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None,
+                                help="Wire into a specific agent host")
+    install_action = install.add_mutually_exclusive_group()
+    install_action.add_argument("--dry-run", action="store_true", help="Print a write-free roster and native host plan")
+    install_action.add_argument("--rollback", action="store_true", help="Restore the latest retained backup for --agent")
+    install.add_argument("--backup", default=None, help="Specific retained backup to restore with --rollback")
+    install.add_argument("--json", action="store_true", help="Print machine-readable results")
     install.set_defaults(func=cmd_install)
 
     # on/off toggle
     on_p = sub.add_parser("on", help="Enable Agency Runtime for a host")
     on_p.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None)
+    on_p.add_argument("--dry-run", action="store_true")
+    on_p.add_argument("--json", action="store_true")
     on_p.set_defaults(func=cmd_on)
 
     off_p = sub.add_parser("off", help="Disable Agency Runtime for a host")
     off_p.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None)
+    off_p.add_argument("--dry-run", action="store_true")
+    off_p.add_argument("--json", action="store_true")
     off_p.set_defaults(func=cmd_off)
 
     # configure
@@ -1235,6 +1907,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     config_get = config_sub.add_parser("get", help="Get a config value")
     config_get.add_argument("key", help="Dotted key (e.g. judge.model)")
+    config_get.add_argument("--raw", action="store_true", help="Show secret values")
     config_get.set_defaults(func=cmd_config_get)
 
     config_set = config_sub.add_parser("set", help="Set a config value")
@@ -1313,9 +1986,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     # delegate
     delegate = sub.add_parser("delegate", help="Delegate a task to a backend")
-    delegate.add_argument("--backend", default="generic")
+    delegate.add_argument(
+        "--backend",
+        choices=["codex", "claude", "hermes", "openclaw", "generic"],
+        default="generic",
+    )
     delegate.add_argument("--agent", default="")
     delegate.add_argument("--task", required=True)
+    delegate.add_argument("--workdir", default=None, help="Existing working directory for the delegated host")
     delegate.add_argument(
         "--timeout",
         type=float,
@@ -1323,6 +2001,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Stop waiting after N seconds and mark the delegation skipped",
     )
     delegate.add_argument("--json", action="store_true", help="Print machine-readable delegation result")
+    delegate.add_argument(
+        "--command",
+        nargs=argparse.REMAINDER,
+        default=[],
+        help="Explicit argv for the generic backend; place this option last",
+    )
     delegate.set_defaults(func=cmd_delegate)
 
     # eval
@@ -1331,6 +2015,17 @@ def build_parser() -> argparse.ArgumentParser:
     eval_delegation = eval_sub.add_parser("delegation", help="Run delegation lifecycle/evidence evals")
     eval_delegation.add_argument("--json", action="store_true")
     eval_delegation.set_defaults(func=cmd_eval_delegation)
+    eval_routing = eval_sub.add_parser(
+        "routing",
+        help="Run versioned routing, policy, delegation, and latency gates",
+    )
+    eval_routing.add_argument("--json", action="store_true")
+    eval_routing.add_argument(
+        "--no-details",
+        action="store_true",
+        help="Omit per-case details from the report",
+    )
+    eval_routing.set_defaults(func=cmd_eval_routing)
 
     # smoke
     smoke = sub.add_parser("smoke", help="Run deterministic local smoke checks")
@@ -1352,9 +2047,26 @@ def build_parser() -> argparse.ArgumentParser:
     db_trim.add_argument("--json", action="store_true")
     db_trim.set_defaults(func=cmd_db_trim)
 
+    # Native machine protocols.  Both use stdin/stdout and therefore never
+    # print human-oriented status text from the command wrapper.
+    mcp = sub.add_parser("mcp", help="Serve MCP over stdin/stdout")
+    mcp.add_argument("--db", default=None, help="SQLite database path")
+    mcp.set_defaults(func=cmd_mcp)
+
+    hook = sub.add_parser("hook", help="Handle one native host hook event")
+    hook.add_argument("host", choices=["codex", "claude"])
+    hook.add_argument("--db", default=None, help="SQLite database path")
+    hook.set_defaults(func=cmd_hook)
+
     # serve
     serve_p = sub.add_parser("serve", help="Start HTTP server")
     serve_p.set_defaults(func=cmd_serve)
+
+    dashboard = sub.add_parser("dashboard", help="Open the secure local operations dashboard")
+    dashboard.add_argument("--port", type=int, default=0, help="Loopback port (default: choose a free port)")
+    dashboard.add_argument("--db", default=None, help="SQLite database path")
+    dashboard.add_argument("--no-open", action="store_true", help="Do not open a web browser")
+    dashboard.set_defaults(func=cmd_dashboard)
 
     # codex
     codex = sub.add_parser("codex", help="Codex adapter commands")
@@ -1372,6 +2084,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    _configure_console_output()
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

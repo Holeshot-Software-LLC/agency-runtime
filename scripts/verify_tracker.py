@@ -7,6 +7,7 @@ never creates, edits, closes, or labels an issue.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import subprocess
@@ -43,8 +44,25 @@ def front_matter(path: Path) -> dict[str, object]:
     return value
 
 
-def main() -> int:
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Compare roadmap front matter with same-repository GitHub issues."
+    )
+    parser.add_argument(
+        "--allow-open-complete",
+        action="store_true",
+        help=(
+            "Warn instead of failing when a locally done/wont_do item remains "
+            "open; all identity, URL, label, count, and other state checks stay strict."
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
     errors: list[str] = []
+    warnings: list[str] = []
     local: dict[str, dict[str, object]] = {}
     for path in sorted(ROADMAP.glob("issue-*.md")):
         meta = front_matter(path)
@@ -99,15 +117,31 @@ def main() -> int:
             "CLOSED" if meta.get("status") in {"done", "wont_do"} else "OPEN"
         )
         if item.get("state") != expected_state:
-            errors.append(
+            allow_open_complete = (
+                args.allow_open_complete
+                and expected_state == "CLOSED"
+                and item.get("state") == "OPEN"
+            )
+            message = (
                 f"{issue_id}: tracker state {item.get('state')} != {expected_state}"
             )
+            if allow_open_complete:
+                warnings.append(f"{message} (closure pending authorization)")
+            else:
+                errors.append(message)
 
+    for warning in warnings:
+        print(f"WARNING: {warning}", file=sys.stderr)
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
-    print(f"tracker validation passed for {len(local)} roadmap items")
+    suffix = (
+        f" ({len(warnings)} open complete item(s) allowed)"
+        if warnings
+        else ""
+    )
+    print(f"tracker validation passed for {len(local)} roadmap items{suffix}")
     return 0
 
 
