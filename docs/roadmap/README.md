@@ -44,7 +44,7 @@ not stable internal identifiers.
 | [AR-06](issue-AR-06-cli-authenticated-judge-providers.md) | Pending | [ADR-0008](../decisions/0008-ordered-provider-fallback.md) |
 | [AR-07](issue-AR-07-public-release-readiness.md) | Pending | [ADR-0010](../decisions/0010-one-command-install-and-reversible-toggle.md), [ADR-0025](../decisions/0025-self-contained-linked-documentation.md) |
 | [AR-08](issue-AR-08-self-contained-documentation.md) | [`4d17668`](../worklog/README.md) | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md) |
-| [AR-09](issue-AR-09-windows-test-isolation.md) | Pending local commit | [ADR-0026](../decisions/0026-explicit-test-home-boundaries.md) |
+| [AR-09](issue-AR-09-windows-test-isolation.md) | [`a896c81`](../worklog/README.md) | [ADR-0026](../decisions/0026-explicit-test-home-boundaries.md) |
 
 ## Dependency summary
 

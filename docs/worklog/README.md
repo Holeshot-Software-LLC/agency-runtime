@@ -53,6 +53,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `badb180` | 2026-07-10 | fix: DEFAULT companions load even for trivial messages (ping/ok/yes) | null | null |
 | `63b75ee` | 2026-07-10 | Fix agency preflight host plugin wiring | null | null |
 | `4d17668` | 2026-07-10 | docs: establish linked roadmap worklog and decision system | [AR-08](../roadmap/issue-AR-08-self-contained-documentation.md) | [detail](2026-07-10-4d17668-documentation-system.md) |
+| `a896c81` | 2026-07-10 | fix: isolate generated plugin tests from user home | [AR-09](../roadmap/issue-AR-09-windows-test-isolation.md) | [detail](2026-07-10-a896c81-windows-test-isolation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
