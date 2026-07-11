@@ -56,6 +56,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a896c81` | 2026-07-10 | fix: isolate generated plugin tests from user home | [AR-09](../roadmap/issue-AR-09-windows-test-isolation.md) | [detail](2026-07-10-a896c81-windows-test-isolation.md) |
 | `17a62dd` | 2026-07-11 | feat: harden runtime and ship local operations dashboard | [AR-03](../roadmap/issue-AR-03-supported-host-integrations.md), [AR-04](../roadmap/issue-AR-04-runtime-controls.md), [AR-07](../roadmap/issue-AR-07-public-release-readiness.md), [AR-10](../roadmap/issue-AR-10-authoritative-runtime-evidence.md), [AR-11](../roadmap/issue-AR-11-routing-evaluation-and-performance.md), [AR-12](../roadmap/issue-AR-12-installed-operations-dashboard.md) | [detail](2026-07-11-17a62dd-production-readiness-refactor.md) |
 | `d1275c3` | 2026-07-11 | feat: add optional dashboard service and config parity | [AR-11](../roadmap/issue-AR-11-routing-evaluation-and-performance.md), [AR-13](../roadmap/issue-AR-13-optional-dashboard-service-configuration.md) | [detail](2026-07-11-d1275c3-optional-dashboard-service-configuration.md) |
+| `afdf8d1` | 2026-07-11 | docs: sync AR-13 tracker mapping | [AR-13](../roadmap/issue-AR-13-optional-dashboard-service-configuration.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
