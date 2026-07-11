@@ -30,7 +30,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-10` | [Make runtime evidence authoritative](issue-AR-10-authoritative-runtime-evidence.md) | done | p0 | observability | [#10](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/10) (open; closure not performed) |
 | `AR-11` | [Establish routing accuracy and performance gates](issue-AR-11-routing-evaluation-and-performance.md) | done | p0 | testing | [#11](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/11) (open; closure not performed) |
 | `AR-12` | [Ship a secure installed operations dashboard](issue-AR-12-installed-operations-dashboard.md) | done | p1 | operations | [#12](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/12) (open; closure not performed) |
-| `AR-13` | [Add an optional cross-platform dashboard service and configuration parity](issue-AR-13-optional-dashboard-service-configuration.md) | done | p1 | operations | Pending authorization |
+| `AR-13` | [Add an optional cross-platform dashboard service and configuration parity](issue-AR-13-optional-dashboard-service-configuration.md) | done | p1 | operations | [#13](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/13) (open; closure not performed) |
 
 ## Traceability
 
@@ -69,8 +69,8 @@ not stable internal identifiers.
   closure was not authorized.
 - `AR-13` depends on the packaged dashboard from `AR-12` and adds the
   user-scoped Windows/Linux service lifecycle, installation opt-out, and shared
-  dashboard/CLI configuration boundary. Its tracker record is pending explicit
-  authorization; the implementation and local verification are complete.
+  dashboard/CLI configuration boundary. Tracker #13 remains open because
+  closure was not part of the tracker-creation authorization.
 
 ## Status conventions
 

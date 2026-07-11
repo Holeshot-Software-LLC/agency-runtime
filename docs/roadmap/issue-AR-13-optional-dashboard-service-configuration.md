@@ -16,7 +16,7 @@ type: issue
 epic: operations
 issue_id: AR-13
 priority: p1
-tracker_url: null
+tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/13"
 depends_on: [AR-12]
 blocks: [AR-07]
 ---
@@ -97,6 +97,7 @@ without console errors. Ruff, high-severity Bandit, routing/delegation gates,
 documentation validation, release hygiene, and wheel/sdist verification also
 passed.
 
-The local implementation is complete. Creation of the same-repository tracker
-issue remains pending explicit authorization, so `tracker_url` intentionally
-remains null until that outward-facing action is approved.
+The local implementation is complete and is mapped to tracker issue
+[#13](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/13). The
+issue remains open because closure was not part of the tracker-creation
+authorization.
