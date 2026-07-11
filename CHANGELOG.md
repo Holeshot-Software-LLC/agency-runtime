@@ -33,6 +33,12 @@ changes rather than duplicating every commit.
 - An optional, idempotent LiteLLM SDK callback and proxy callback object.
 - A loopback-only authenticated operations dashboard with route inspection,
   evidence views, roster controls, host controls, and retention maintenance.
+- Optional current-user dashboard services for Windows Task Scheduler and Linux
+  `systemd --user`, installed by default with a mutation-free
+  `agency install --no-dashboard` opt-out and explicit lifecycle commands.
+- Structured dashboard configuration backed by the same typed, locked, atomic
+  writer as CLI configuration, including ordered providers and write-only
+  secrets.
 - Versioned routing, policy, delegation, and 1,000-agent performance evaluation.
 - Windows and Ubuntu CI matrices plus isolated wheel smoke checks.
 
@@ -46,6 +52,9 @@ changes rather than duplicating every commit.
   only successful predecessor work.
 - Runtime storage defaults to metadata-only capture and a 30-day retention
   policy when the dashboard applies maintenance.
+- CLI secret updates now use standard input or a hidden prompt instead of
+  process arguments, and configuration writes reject stale revisions and
+  invalid schema before replacement.
 
 ### Fixed
 
@@ -72,5 +81,8 @@ changes rather than duplicating every commit.
 
 - Dashboard requests require a per-launch bearer token, valid loopback host,
   same origin, JSON mutation bodies, and exact confirmation phrases.
+- Background dashboard tokens rotate per start and live only in an owner-only
+  runtime descriptor; service definitions, argv, logs, and status output remain
+  credential-free.
 - HTTP request bodies and subprocess output are bounded; server errors are
   sanitized; optional content capture applies defensive redaction.

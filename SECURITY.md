@@ -50,11 +50,18 @@ product contract:
   remote exposure, reverse proxying, shared workstations, or multi-user access.
 - The dashboard token is temporary bearer authority. Anyone who obtains the
   active URL or token can invoke the dashboard API as that local user.
+- Service mode rotates that token on every worker start and keeps it in an
+  owner-restricted runtime descriptor. Service definitions, process arguments,
+  logs, and status results must never contain it. A stale descriptor is not
+  proof that the service is reachable.
 - `agency serve` is a separate local integration surface and is not the
   authenticated operations dashboard. Do not expose it to an untrusted network.
 - Configuration and SQLite state belong to the local operating-system account.
   Protect the home directory and never commit `agency.yaml`, database files,
   host credentials, or generated host state.
+- Dashboard and CLI configuration mutations share one allowlisted, typed,
+  revision-checked, owner-only atomic writer. Direct credentials are write-only;
+  prefer environment-variable references and hidden CLI input.
 - Metadata-only observability is the default. Opt-in content capture uses
   bounded defensive redaction, but no automatic redactor can guarantee removal
   of every secret or personal identifier.
@@ -73,7 +80,7 @@ configuration with `agency config show`. Run:
 ```bash
 python scripts/verify_release_hygiene.py
 python -m bandit -q -r agency_runtime -lll
-python -m pip_audit --strict
+python -m pip_audit . --strict
 ```
 
 The release workflow performs deterministic tracked-file checks, high-severity

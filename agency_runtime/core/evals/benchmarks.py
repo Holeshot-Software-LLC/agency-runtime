@@ -16,6 +16,11 @@ from agency_runtime.core.selector.pipeline import route
 from agency_runtime.core.selector.stickiness import clear_session_routing
 
 
+_BENCHMARK_BATCHES = 5
+_WARMUP_CALLS = 4
+_MIN_CACHE_SAMPLES = 128
+
+
 def generated_catalog(size: int) -> list[dict[str, Any]]:
     """Build a varied synthetic roster without copying one trivial row."""
     if size < 0:
@@ -33,15 +38,17 @@ def generated_catalog(size: int) -> list[dict[str, Any]]:
     catalog: list[dict[str, Any]] = []
     for index in range(size):
         domain, capability, tool = domains[index % len(domains)]
-        catalog.append({
-            "slug": f"{domain}-specialist-{index:04d}",
-            "name": f"{domain.title()} Specialist {index}",
-            "division": domain,
-            "description": f"Handles {capability} for production systems cohort {index % 17}.",
-            "categories": [domain, f"cohort-{index % 17}"],
-            "capabilities": [capability, f"analysis tier {index % 5}"],
-            "tool_affinity": [tool, "terminal"],
-        })
+        catalog.append(
+            {
+                "slug": f"{domain}-specialist-{index:04d}",
+                "name": f"{domain.title()} Specialist {index}",
+                "division": domain,
+                "description": f"Handles {capability} for production systems cohort {index % 17}.",
+                "categories": [domain, f"cohort-{index % 17}"],
+                "capabilities": [capability, f"analysis tier {index % 5}"],
+                "tool_affinity": [tool, "terminal"],
+            }
+        )
     return catalog
 
 
@@ -59,7 +66,14 @@ def run_candidate_microbenchmark(
     iterations: int = 32,
     workers: int = 8,
 ) -> dict[str, Any]:
-    """Measure narrowing latency and concurrent determinism at realistic size."""
+    """Measure narrowing latency and concurrent determinism at realistic size.
+
+    Timing uses the median p95 from independent batches. A 32-call nearest-rank
+    p95 is otherwise determined by its second-slowest sample, so one brief OS
+    scheduler interruption can turn a healthy hot path into a false failure.
+    Aggregate p95 and observed maxima remain in the report for visibility, and
+    sustained regressions still affect a majority of batches and fail the gate.
+    """
     if iterations < 1:
         raise ValueError("iterations must be at least one")
     if workers < 1:
@@ -67,18 +81,25 @@ def run_candidate_microbenchmark(
 
     catalog = generated_catalog(roster_size)
     query = "profile production API latency with benchmarks"
-    pre_narrow(query, catalog, limit=20)  # warm caches and the interpreter
+    for _ in range(_WARMUP_CALLS):
+        pre_narrow(query, catalog, limit=20)  # warm caches and the interpreter
 
     latencies_ms: list[float] = []
+    latency_batch_p95_ms: list[float] = []
     expected: tuple[str, ...] | None = None
     consistent = True
-    for _ in range(iterations):
-        started = time.perf_counter()
-        candidates, _scores = pre_narrow(query, catalog, limit=20)
-        latencies_ms.append((time.perf_counter() - started) * 1000)
-        slugs = tuple(str(candidate.get("slug", "")) for candidate in candidates)
-        expected = expected or slugs
-        consistent = consistent and slugs == expected
+    for _batch in range(_BENCHMARK_BATCHES):
+        batch_latencies_ms: list[float] = []
+        for _ in range(iterations):
+            started = time.perf_counter()
+            candidates, _scores = pre_narrow(query, catalog, limit=20)
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            batch_latencies_ms.append(elapsed_ms)
+            slugs = tuple(str(candidate.get("slug", "")) for candidate in candidates)
+            expected = expected or slugs
+            consistent = consistent and slugs == expected
+        latencies_ms.extend(batch_latencies_ms)
+        latency_batch_p95_ms.append(_percentile(batch_latencies_ms, 0.95))
 
     concurrent_calls = max(workers * 2, iterations)
     active_calls = 0
@@ -115,13 +136,24 @@ def run_candidate_microbenchmark(
     clear_session_routing()
     warm = route("benchmark-warm", query, catalog, config=offline)
     route("benchmark-cache-warm", query, catalog, config=offline)
+    cache_iterations = max(iterations, _MIN_CACHE_SAMPLES)
     cache_latencies_ms: list[float] = []
+    cache_latency_batch_p95_ms: list[float] = []
     cached_results: list[dict[str, Any]] = []
-    for index in range(max(iterations, 128)):
-        started = time.perf_counter()
-        cached = route(f"benchmark-cache-{index}", query, catalog, config=offline)
-        cache_latencies_ms.append((time.perf_counter() - started) * 1000)
-        cached_results.append(cached)
+    for batch in range(_BENCHMARK_BATCHES):
+        batch_latencies_ms = []
+        for index in range(cache_iterations):
+            started = time.perf_counter()
+            cached = route(
+                f"benchmark-cache-{batch}-{index}",
+                query,
+                catalog,
+                config=offline,
+            )
+            batch_latencies_ms.append((time.perf_counter() - started) * 1000)
+            cached_results.append(cached)
+        cache_latencies_ms.extend(batch_latencies_ms)
+        cache_latency_batch_p95_ms.append(_percentile(batch_latencies_ms, 0.95))
     expected_ids = tuple(warm.get("selected_ids", []))
     cache_consistent = all(
         result.get("cache_hit") is True
@@ -134,9 +166,13 @@ def run_candidate_microbenchmark(
     return {
         "roster_size": roster_size,
         "iterations": iterations,
+        "benchmark_batches": _BENCHMARK_BATCHES,
+        "latency_samples": len(latencies_ms),
         "workers": workers,
         "p50_ms": round(statistics.median(latencies_ms), 3),
-        "p95_ms": round(_percentile(latencies_ms, 0.95), 3),
+        "p95_ms": round(statistics.median(latency_batch_p95_ms), 3),
+        "aggregate_p95_ms": round(_percentile(latencies_ms, 0.95), 3),
+        "p95_batches_ms": [round(value, 3) for value in latency_batch_p95_ms],
         "max_ms": round(max(latencies_ms), 3),
         "concurrent_calls": concurrent_calls,
         "concurrent_overlap": max_active_calls,
@@ -145,8 +181,19 @@ def run_candidate_microbenchmark(
             concurrent_calls / max(concurrent_ms / 1000, 1e-9), 2
         ),
         "deterministic": consistent,
+        "cache_hit_samples": len(cache_latencies_ms),
         "cache_hit_p50_ms": round(statistics.median(cache_latencies_ms), 3),
-        "cache_hit_p95_ms": round(_percentile(cache_latencies_ms, 0.95), 3),
+        "cache_hit_p95_ms": round(
+            statistics.median(cache_latency_batch_p95_ms),
+            3,
+        ),
+        "cache_hit_aggregate_p95_ms": round(
+            _percentile(cache_latencies_ms, 0.95),
+            3,
+        ),
+        "cache_hit_p95_batches_ms": [
+            round(value, 3) for value in cache_latency_batch_p95_ms
+        ],
         "cache_hit_max_ms": round(max(cache_latencies_ms), 3),
         "cache_hit_deterministic": cache_consistent and unique_traces,
     }

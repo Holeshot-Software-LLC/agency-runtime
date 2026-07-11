@@ -4,20 +4,31 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import secrets
+import signal
 import webbrowser
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from http import HTTPStatus
 from importlib.resources import files
 from pathlib import Path
-from threading import RLock
+from threading import RLock, Thread, current_thread, main_thread
 from time import monotonic
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
 
-import yaml
-
-from agency_runtime.core.config import config_to_yaml, load_config
+from agency_runtime.core.config import load_config, reset_config_cache
+from agency_runtime.core.dashboard_runtime import (
+    remove_dashboard_runtime,
+    write_dashboard_runtime,
+)
+from agency_runtime.core.configuration import (
+    ConfigConflictError,
+    ConfigState,
+    ConfigurationError,
+    apply_config_operations,
+    read_config_state,
+)
 from agency_runtime.core.roster.sync import activate_snapshot, approve_snapshot
 from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.store.sqlite import Store
@@ -36,7 +47,51 @@ _HOST_INSPECTION_CACHE_SECONDS = 3.0
 _HOST_INSPECTION_DEADLINE_SECONDS = 2.0
 
 
-def _unknown_host(host: str, *, status: str, error: str | None = None) -> dict[str, Any]:
+def _config_payload(
+    state: ConfigState,
+    *,
+    changed_paths: tuple[str, ...] = (),
+    restart_required_paths: tuple[str, ...] = (),
+    policy_enforced: bool = False,
+) -> dict[str, Any]:
+    """Return a JSON-safe, credential-free configuration response."""
+
+    return {
+        "path": state.path,
+        "persisted": state.persisted,
+        "effective": state.effective,
+        "revision": state.revision,
+        "secret_presence": state.secret_presence,
+        "environment_overrides": state.environment_overrides,
+        "changed_paths": list(changed_paths),
+        "restart_required_paths": list(restart_required_paths),
+        "policy_enforced": policy_enforced,
+    }
+
+
+def _required_config_confirmations(operations: list[Any]) -> set[str]:
+    required = {"SAVE CONFIG"}
+    for operation in operations:
+        if not isinstance(operation, dict):
+            continue
+        if operation.get("op") == "secret":
+            required.add("SAVE SENSITIVE CONFIG")
+        if operation.get("op") == "set" and operation.get("path") == "profile":
+            value = operation.get("value")
+            if isinstance(value, str) and value.strip().lower() == "local-only":
+                required.add("APPLY LOCAL-ONLY PROFILE")
+        if (
+            operation.get("op") == "set"
+            and operation.get("path") == "observability.capture_content"
+            and operation.get("value") is True
+        ):
+            required.add("ENABLE CONTENT CAPTURE")
+    return required
+
+
+def _unknown_host(
+    host: str, *, status: str, error: str | None = None
+) -> dict[str, Any]:
     """Return a truth-preserving placeholder when inspection is incomplete."""
     return {
         "host": host,
@@ -53,7 +108,9 @@ def _unknown_host(host: str, *, status: str, error: str | None = None) -> dict[s
         "loaded": None,
         "canary": None,
         "marketplace_registered": None,
-        "maturity": "inspection-pending" if status == "timed_out" else "inspection-error",
+        "maturity": "inspection-pending"
+        if status == "timed_out"
+        else "inspection-error",
         "evidence": [],
         "inspection_status": status,
         "inspection_error": error,
@@ -110,7 +167,9 @@ class _HostInspectionCoordinator:
             value["inspection_status"] = "complete"
             value["inspection_error"] = None
         except Exception as exc:  # native details remain in server logs
-            logger.warning("host inspection failed for %s (%s)", host, type(exc).__name__)
+            logger.warning(
+                "host inspection failed for %s (%s)", host, type(exc).__name__
+            )
             value = _unknown_host(
                 host,
                 status="error",
@@ -144,7 +203,9 @@ class _HostInspectionCoordinator:
                 if future is None:
                     future = self.executor.submit(self.inspect_one, host)
                     self._in_flight[host] = future
-                    future.add_done_callback(lambda item, name=host: self._finished(name, item))
+                    future.add_done_callback(
+                        lambda item, name=host: self._finished(name, item)
+                    )
                 pending.append(future)
 
         # ``wait`` returns at the shared deadline and never waits for slow
@@ -179,7 +240,10 @@ def _provider_health(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     successful = {"success", "completed", "ok"}
     failed = {"failed", "failure", "error", "cancelled", "timed_out", "timeout"}
     for receipt in receipts:
-        provider = str(receipt.get("resolved_provider") or "unresolved").strip() or "unresolved"
+        provider = (
+            str(receipt.get("resolved_provider") or "unresolved").strip()
+            or "unresolved"
+        )
         status = str(receipt.get("status") or "unknown").strip().lower() or "unknown"
         item = observed.setdefault(
             provider,
@@ -206,7 +270,10 @@ def _provider_health(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _delegation_graph(receipt: dict[str, Any]) -> dict[str, Any]:
     """Build the same dependency graph used by delegation lifecycle dispatch."""
-    from agency_runtime.core.delegation.lifecycle import build_dependency_graph, normalize_work_units
+    from agency_runtime.core.delegation.lifecycle import (
+        build_dependency_graph,
+        normalize_work_units,
+    )
 
     work_units = receipt.get("signals", {}).get("work_units", {}).get("units", [])
     units = normalize_work_units(work_units)
@@ -214,7 +281,11 @@ def _delegation_graph(receipt: dict[str, Any]) -> dict[str, Any]:
     return {
         "nodes": [{"id": unit.id, "description": unit.description} for unit in units],
         "edges": [
-            {"from": source, "to": target, "reason": graph.reasons.get((source, target), "dependency")}
+            {
+                "from": source,
+                "to": target,
+                "reason": graph.reasons.get((source, target), "dependency"),
+            }
             for source in sorted(graph.edges)
             for target in sorted(graph.edges[source])
         ],
@@ -231,7 +302,9 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         return self.server.auth_token  # type: ignore[attr-defined]
 
     def do_OPTIONS(self) -> None:  # noqa: N802 - http.server contract
-        self._json_error(HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed")
+        self._json_error(
+            HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed"
+        )
 
     def do_GET(self) -> None:  # noqa: N802 - http.server contract
         path = urlparse(self.path).path.rstrip("/") or "/"
@@ -254,12 +327,16 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 self._handle_hosts()
             elif path == "/api/config":
                 self._handle_config()
+            elif path == "/api/health":
+                self._json_ok({"status": "ok"})
             elif path == "/api/snapshots":
                 self._json_ok({"snapshots": self.store.list_roster_snapshots()})
             else:
                 self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
         except Exception as exc:  # defensive boundary; details stay in logs
-            logger.exception("dashboard GET failed for %s (%s)", path, type(exc).__name__)
+            logger.exception(
+                "dashboard GET failed for %s (%s)", path, type(exc).__name__
+            )
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     def do_POST(self) -> None:  # noqa: N802 - http.server contract
@@ -281,12 +358,20 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 self._handle_roster_action(body)
             elif path == "/api/hosts/toggle":
                 self._handle_host_toggle(body)
+            elif path == "/api/config":
+                self._handle_config_update(body)
             else:
                 self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+        except ConfigConflictError as exc:
+            self._json_error(HTTPStatus.CONFLICT, str(exc))
+        except ConfigurationError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except (KeyError, ValueError, RuntimeError) as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
-            logger.exception("dashboard POST failed for %s (%s)", path, type(exc).__name__)
+            logger.exception(
+                "dashboard POST failed for %s (%s)", path, type(exc).__name__
+            )
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     def _authorise_api_request(self, *, require_json: bool = False) -> bool:
@@ -298,7 +383,9 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         if origin:
             expected_origin = f"http://{self.headers.get('Host', '')}"
             if origin.rstrip("/").lower() != expected_origin.rstrip("/").lower():
-                self._json_error(HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed")
+                self._json_error(
+                    HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed"
+                )
                 return False
 
         supplied = self.headers.get("Authorization", "")
@@ -308,9 +395,13 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             return False
 
         if require_json:
-            content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            content_type = (
+                self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            )
             if content_type != "application/json":
-                self._json_error(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required")
+                self._json_error(
+                    HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required"
+                )
                 return False
         return True
 
@@ -336,16 +427,23 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
     def _send_security_headers(self, *, content_type: str, cache_control: str) -> None:
         self.send_header("Content-Type", content_type)
         self.send_header("Cache-Control", cache_control)
-        self.send_header("Content-Security-Policy", "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+        )
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        self.send_header(
+            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+        )
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
         data = json.dumps(payload, separators=(",", ":"), default=str).encode("utf-8")
         self.send_response(status)
-        self._send_security_headers(content_type="application/json; charset=utf-8", cache_control="no-store")
+        self._send_security_headers(
+            content_type="application/json; charset=utf-8", cache_control="no-store"
+        )
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -355,23 +453,25 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         activity = self.store.recent_runtime_activity(limit=200)
         cfg = load_config()
         active = self.store.get_active_roster()
-        self._json_ok({
-            "status": "ok",
-            "roster_count": len(active),
-            "db_size_bytes": stats["db_size_bytes"],
-            "wal_size_bytes": stats["wal_size_bytes"],
-            "retention_days": cfg.observability.retention_days,
-            "capture_content": cfg.observability.capture_content,
-            "counts": stats["tables"],
-            "provider_health": _provider_health(activity["receipts"]),
-            "recent": {
-                "runs": len(activity["runs"]),
-                "routing": len(activity["routing"]),
-                "delegations": len(activity["delegations"]),
-                "receipts": len(activity["receipts"]),
-                "finalizations": len(activity["finalizations"]),
-            },
-        })
+        self._json_ok(
+            {
+                "status": "ok",
+                "roster_count": len(active),
+                "db_size_bytes": stats["db_size_bytes"],
+                "wal_size_bytes": stats["wal_size_bytes"],
+                "retention_days": cfg.observability.retention_days,
+                "capture_content": cfg.observability.capture_content,
+                "counts": stats["tables"],
+                "provider_health": _provider_health(activity["receipts"]),
+                "recent": {
+                    "runs": len(activity["runs"]),
+                    "routing": len(activity["routing"]),
+                    "delegations": len(activity["delegations"]),
+                    "receipts": len(activity["receipts"]),
+                    "finalizations": len(activity["finalizations"]),
+                },
+            }
+        )
 
     def _handle_activity(self) -> None:
         raw_limit = parse_qs(urlparse(self.path).query).get("limit", ["50"])[0]
@@ -386,8 +486,34 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         self._json_ok({"hosts": inspector()})
 
     def _handle_config(self) -> None:
-        redacted = yaml.safe_load(config_to_yaml(load_config(), redact=True)) or {}
-        self._json_ok({"config": redacted})
+        self._json_ok(_config_payload(read_config_state()))
+
+    def _handle_config_update(self, body: dict[str, Any]) -> None:
+        operations = body.get("operations")
+        if not isinstance(operations, list):
+            raise ValueError("operations must be a JSON array")
+        confirmations = body.get("confirmations")
+        if not isinstance(confirmations, list) or any(
+            not isinstance(item, str) for item in confirmations
+        ):
+            raise ValueError("confirmations must be a JSON string array")
+        missing = sorted(
+            _required_config_confirmations(operations) - set(confirmations)
+        )
+        if missing:
+            raise ValueError(f"missing confirmation phrase: {missing[0]}")
+        result = apply_config_operations(
+            operations,
+            expected_revision=body.get("expected_revision"),
+        )
+        self._json_ok(
+            _config_payload(
+                result.state,
+                changed_paths=result.changed_paths,
+                restart_required_paths=result.restart_required,
+                policy_enforced=result.policy_enforced,
+            )
+        )
 
     def _handle_route_lab(self, body: dict[str, Any]) -> None:
         task = str(body.get("task") or "").strip()
@@ -478,7 +604,13 @@ class DashboardHTTPServer(AgencyHTTPServer):
             raise ValueError("the dashboard is loopback-only")
         self.auth_token = auth_token
         self.host_inspector = host_inspector or _HOST_INSPECTIONS.inspect
-        super().__init__(store, host, port, handler_class=DashboardHTTPHandler)
+        super().__init__(
+            store,
+            host,
+            port,
+            handler_class=DashboardHTTPHandler,
+            max_body_size=load_config().server.max_body_size,
+        )
 
 
 def run_dashboard(
@@ -486,9 +618,17 @@ def run_dashboard(
     port: int = 0,
     db_path: str | Path | None = None,
     open_browser: bool = True,
+    service_mode: bool = False,
+    config_path: str | Path | None = None,
+    home_dir: str | Path | None = None,
 ) -> None:
     """Start the local dashboard until interrupted."""
+    if config_path is not None:
+        os.environ["AGENCY_CONFIG_PATH"] = str(Path(config_path).expanduser())
+        reset_config_cache()
     cfg = load_config()
+    if service_mode and port == 0:
+        port = cfg.dashboard.port
     store = Store(db_path) if db_path else Store()
     store.trim_runtime_tables(
         older_than_days=cfg.observability.retention_days,
@@ -498,16 +638,50 @@ def run_dashboard(
     server = DashboardHTTPServer(store, auth_token=token, port=port)
     actual_port = int(server.server_address[1])
     url = f"http://127.0.0.1:{actual_port}/#token={token}"
-    print(f"Agency Runtime dashboard: {url}")
-    print("The access token is temporary and expires when this process stops.")
-    if open_browser:
-        webbrowser.open(url, new=2)
+    descriptor_written = False
+    if service_mode:
+        write_dashboard_runtime(
+            token=token,
+            port=actual_port,
+            home_dir=home_dir,
+        )
+        descriptor_written = True
+        logger.info("dashboard service listening on loopback port %d", actual_port)
+    else:
+        print(f"Agency Runtime dashboard: {url}")
+        print("The access token is temporary and expires when this process stops.")
+        if open_browser:
+            webbrowser.open(url, new=2)
+
+    previous_handlers: dict[int, Any] = {}
+    if current_thread() is main_thread():
+
+        def request_shutdown(_signum: int, _frame: Any) -> None:
+            Thread(target=server.shutdown, daemon=True).start()
+
+        for signum in (signal.SIGINT, signal.SIGTERM):
+            try:
+                previous_handlers[signum] = signal.getsignal(signum)
+                signal.signal(signum, request_shutdown)
+            except (AttributeError, OSError, ValueError):
+                continue
     try:
         server.serve_forever(poll_interval=0.1)
     except KeyboardInterrupt:
         logger.info("dashboard shutdown requested")
     finally:
         server.server_close()
+        for signum, previous in previous_handlers.items():
+            try:
+                signal.signal(signum, previous)
+            except (OSError, ValueError):
+                continue
+        if descriptor_written:
+            remove_dashboard_runtime(
+                token=token,
+                pid=os.getpid(),
+                home_dir=home_dir,
+            )
 
 
 __all__ = ["DashboardHTTPHandler", "DashboardHTTPServer", "run_dashboard"]

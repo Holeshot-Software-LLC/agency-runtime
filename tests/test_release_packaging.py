@@ -15,6 +15,9 @@ def test_release_resources_are_addressable() -> None:
     required = (
         "core/companion_policy.yaml",
         "core/config_defaults.yaml",
+        "core/configuration.py",
+        "core/dashboard_runtime.py",
+        "core/dashboard_service.py",
         "core/evals/data/routing_v1.py",
         "dashboard/app.css",
         "dashboard/app.js",
@@ -30,7 +33,9 @@ def test_release_metadata_is_single_source_and_cross_platform() -> None:
 
     assert 'dynamic = ["version"]' in pyproject
     assert 'version = {attr = "agency_runtime.__version__"}' in pyproject
-    version_match = re.search(r'^__version__ = "(\d+\.\d+\.\d+(?:[a-z]+\d+)?)"$', package_init, re.MULTILINE)
+    version_match = re.search(
+        r'^__version__ = "(\d+\.\d+\.\d+(?:[a-z]+\d+)?)"$', package_init, re.MULTILINE
+    )
     assert version_match, "package must expose one normalized __version__ value"
     for classifier in (
         "Operating System :: Microsoft :: Windows",

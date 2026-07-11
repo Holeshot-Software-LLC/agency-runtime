@@ -14,7 +14,11 @@ from agency_runtime.core.evals.data.routing_v1 import (
 )
 from agency_runtime.core.evals.routing import run_routing_eval
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
-from agency_runtime.core.selector.candidate_narrow import pre_narrow, score_agent, tokenize
+from agency_runtime.core.selector.candidate_narrow import (
+    pre_narrow,
+    score_agent,
+    tokenize,
+)
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
 
@@ -204,6 +208,13 @@ def test_microbenchmark_is_concurrent_deterministic_and_production_bounded() -> 
     )
 
     assert result["roster_size"] == 1000
+    assert result["benchmark_batches"] >= 3
+    assert result["latency_samples"] == (
+        result["iterations"] * result["benchmark_batches"]
+    )
+    assert result["cache_hit_samples"] >= (128 * result["benchmark_batches"])
+    assert len(result["p95_batches_ms"]) == result["benchmark_batches"]
+    assert len(result["cache_hit_p95_batches_ms"]) == result["benchmark_batches"]
     assert result["concurrent_calls"] >= 32
     assert result["concurrent_overlap"] >= 2
     assert result["deterministic"] is True

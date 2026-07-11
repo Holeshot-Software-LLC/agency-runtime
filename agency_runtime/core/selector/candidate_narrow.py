@@ -14,12 +14,42 @@ from functools import lru_cache
 from typing import Any
 
 _WORD_RE = re.compile(r"[a-z0-9]+(?:\+\+|#)?", re.IGNORECASE)
-_STOPWORDS = frozenset({
-    "a", "an", "and", "are", "as", "be", "for", "from", "in", "into",
-    "is", "it", "of", "on", "or", "that", "the", "this", "to", "with",
-    "work", "specialist", "specialists",
-    "help", "need", "want", "can", "you", "me", "my", "our", "we",
-})
+_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "be",
+        "for",
+        "from",
+        "in",
+        "into",
+        "is",
+        "it",
+        "of",
+        "on",
+        "or",
+        "that",
+        "the",
+        "this",
+        "to",
+        "with",
+        "work",
+        "specialist",
+        "specialists",
+        "help",
+        "need",
+        "want",
+        "can",
+        "you",
+        "me",
+        "my",
+        "our",
+        "we",
+    }
+)
 _TOKEN_ALIASES = {
     "benchmarking": "benchmark",
     "benchmarks": "benchmark",
@@ -97,6 +127,11 @@ def _field_values(value: Any) -> tuple[str, ...]:
         return ()
     if isinstance(value, str):
         return (value,)
+    # Roster metadata overwhelmingly uses lists and tuples. Keep that hot path
+    # ahead of the comparatively expensive generic ``Iterable`` ABC check;
+    # callers with other iterable types retain the existing behavior below.
+    if isinstance(value, (list, tuple)):
+        return tuple(str(item) for item in value if item is not None)
     if isinstance(value, dict):
         return ()
     if isinstance(value, Iterable) and not isinstance(value, bytes):
@@ -109,8 +144,7 @@ def _agent_signature(
 ) -> tuple[tuple[str, tuple[str, ...]], ...]:
     """Build a stable, mutation-aware key for routing-relevant metadata."""
     return tuple(
-        (field, _field_values(agent.get(field)))
-        for field, _weight in _FIELD_WEIGHTS
+        (field, _field_values(agent.get(field))) for field, _weight in _FIELD_WEIGHTS
     )
 
 
@@ -161,7 +195,7 @@ def _contains_phrase(query: tuple[str, ...], phrase: tuple[str, ...]) -> bool:
         return False
     width = len(phrase)
     return any(
-        query[index:index + width] == phrase
+        query[index : index + width] == phrase
         for index in range(len(query) - width + 1)
     )
 
@@ -175,7 +209,8 @@ def score_agent(
         tuple[tuple[str, float], ...],
         frozenset[str],
         tuple[tuple[tuple[str, ...], float], ...],
-    ] | None = None,
+    ]
+    | None = None,
     _query_phrases: frozenset[tuple[str, ...]] | None = None,
 ) -> float:
     """Score an agent using exact metadata tokens and contiguous phrases.
@@ -237,8 +272,7 @@ def pre_narrow(
 
     query_order = _ordered_tokens(query)
     compiled = [
-        _compiled_agent_score_inputs(_agent_signature(agent))
-        for agent in catalog
+        _compiled_agent_score_inputs(_agent_signature(agent)) for agent in catalog
     ]
     phrase_lengths = {
         len(phrase)
@@ -247,36 +281,31 @@ def pre_narrow(
         if len(phrase) <= len(query_order)
     }
     query_phrases = frozenset(
-        query_order[index:index + width]
+        query_order[index : index + width]
         for width in phrase_lengths
         for index in range(len(query_order) - width + 1)
     )
-    scored = [
-        (
-            score_agent(
-                agent,
-                query_tokens,
-                query_text=query,
-                _compiled_inputs=score_inputs,
-                _query_phrases=query_phrases,
-            ),
+    positive: list[tuple[float, str, dict[str, Any]]] = []
+    unmatched: list[tuple[str, dict[str, Any]]] = []
+    for agent, score_inputs in zip(catalog, compiled):
+        score = score_agent(
             agent,
+            query_tokens,
+            query_text=query,
+            _compiled_inputs=score_inputs,
+            _query_phrases=query_phrases,
         )
-        for agent, score_inputs in zip(catalog, compiled)
-    ]
-    scored.sort(
-        key=lambda item: (
-            -item[0],
-            str(item[1].get("slug") or item[1].get("agent_slug") or ""),
-        )
-    )
+        slug = str(agent.get("slug") or agent.get("agent_slug") or "")
+        if score > 0:
+            positive.append((score, slug, agent))
+        else:
+            unmatched.append((slug, agent))
 
-    positive = [(score, agent) for score, agent in scored if score > 0]
-    if len(positive) < limit:
-        selected_ids = {id(agent) for _, agent in positive}
-        positive.extend(
-            (0.0, agent) for _, agent in scored if id(agent) not in selected_ids
-        )
-
-    result = positive[:limit]
+    # Most large rosters contain many zero-score agents. Sorting those rows is
+    # unnecessary unless they are needed to pad a short positive result.
+    positive.sort(key=lambda item: (-item[0], item[1]))
+    result = [(score, agent) for score, _slug, agent in positive[:limit]]
+    if len(result) < limit:
+        unmatched.sort(key=lambda item: item[0])
+        result.extend((0.0, agent) for _slug, agent in unmatched[: limit - len(result)])
     return [agent for _, agent in result], [score for score, _ in result]

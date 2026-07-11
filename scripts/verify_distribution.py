@@ -16,6 +16,9 @@ from pathlib import Path, PurePosixPath
 REQUIRED_PACKAGE_FILES = {
     "agency_runtime/core/companion_policy.yaml",
     "agency_runtime/core/config_defaults.yaml",
+    "agency_runtime/core/configuration.py",
+    "agency_runtime/core/dashboard_runtime.py",
+    "agency_runtime/core/dashboard_service.py",
     "agency_runtime/core/evals/data/__init__.py",
     "agency_runtime/core/evals/data/routing_v1.py",
     "agency_runtime/dashboard/__init__.py",
@@ -23,7 +26,13 @@ REQUIRED_PACKAGE_FILES = {
     "agency_runtime/dashboard/app.js",
     "agency_runtime/dashboard/index.html",
 }
-REQUIRED_SDIST_FILES = {"LICENSE", "MANIFEST.in", "README.md", "pyproject.toml", *REQUIRED_PACKAGE_FILES}
+REQUIRED_SDIST_FILES = {
+    "LICENSE",
+    "MANIFEST.in",
+    "README.md",
+    "pyproject.toml",
+    *REQUIRED_PACKAGE_FILES,
+}
 REQUIRED_CLASSIFIERS = {
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
@@ -77,9 +86,15 @@ def _wheel_payload(path: Path) -> tuple[set[str], dict[str, bytes]]:
 def _sdist_payload(path: Path) -> tuple[set[str], dict[str, bytes]]:
     with tarfile.open(path, mode="r:gz") as archive:
         members = archive.getmembers()
-        roots = {_safe_name(item.name).parts[0] for item in members if _safe_name(item.name).parts}
+        roots = {
+            _safe_name(item.name).parts[0]
+            for item in members
+            if _safe_name(item.name).parts
+        }
         if len(roots) != 1:
-            raise ValueError(f"sdist must have one top-level directory, found {sorted(roots)}")
+            raise ValueError(
+                f"sdist must have one top-level directory, found {sorted(roots)}"
+            )
         names = set()
         payloads: dict[str, bytes] = {}
         for item in members:
@@ -99,7 +114,11 @@ def _sdist_payload(path: Path) -> tuple[set[str], dict[str, bytes]]:
 
 
 def _metadata(payloads: dict[str, bytes]) -> tuple[str, bytes]:
-    matches = [(name, data) for name, data in payloads.items() if name.endswith(".dist-info/METADATA")]
+    matches = [
+        (name, data)
+        for name, data in payloads.items()
+        if name.endswith(".dist-info/METADATA")
+    ]
     if len(matches) != 1:
         raise ValueError(f"wheel must contain one METADATA file, found {len(matches)}")
     return matches[0]
@@ -114,7 +133,9 @@ def verify(dist_dir: Path) -> list[str]:
     wheels = sorted(dist_dir.glob("*.whl"))
     sdists = sorted(dist_dir.glob("*.tar.gz"))
     if len(wheels) != 1 or len(sdists) != 1:
-        return [f"expected one wheel and one sdist, found {len(wheels)} wheel(s) and {len(sdists)} sdist(s)"]
+        return [
+            f"expected one wheel and one sdist, found {len(wheels)} wheel(s) and {len(sdists)} sdist(s)"
+        ]
 
     try:
         wheel_names, wheel_payloads = _wheel_payload(wheels[0])
@@ -130,7 +151,9 @@ def verify(dist_dir: Path) -> list[str]:
         failures.append(f"sdist missing required files: {', '.join(missing_sdist)}")
 
     for artifact, names in (("wheel", wheel_names), ("sdist", sdist_names)):
-        junk = sorted(f"{name} ({_junk_reason(name)})" for name in names if _junk_reason(name))
+        junk = sorted(
+            f"{name} ({_junk_reason(name)})" for name in names if _junk_reason(name)
+        )
         if junk:
             failures.append(f"{artifact} contains generated junk: {', '.join(junk)}")
 
@@ -151,23 +174,34 @@ def verify(dist_dir: Path) -> list[str]:
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:[a-z]+\d+)?", version):
         failures.append(f"version is not a normalized release version: {version!r}")
     if metadata.get("Requires-Python") != ">=3.10":
-        failures.append(f"unexpected Requires-Python: {metadata.get('Requires-Python')!r}")
+        failures.append(
+            f"unexpected Requires-Python: {metadata.get('Requires-Python')!r}"
+        )
     if metadata.get("License-Expression") != "MIT":
-        failures.append(f"unexpected license expression: {metadata.get('License-Expression')!r}")
+        failures.append(
+            f"unexpected license expression: {metadata.get('License-Expression')!r}"
+        )
     classifiers = set(metadata.get_all("Classifier", []))
     missing_classifiers = sorted(REQUIRED_CLASSIFIERS - classifiers)
     if missing_classifiers:
         failures.append(f"missing classifiers: {', '.join(missing_classifiers)}")
     requirements = metadata.get_all("Requires-Dist", [])
-    if not any(re.match(r"pyyaml<7,>=6\.0(?:;|$)", requirement.lower()) for requirement in requirements):
-        failures.append("runtime dependency metadata does not constrain PyYAML to >=6.0,<7")
+    if not any(
+        re.match(r"pyyaml<7,>=6\.0(?:;|$)", requirement.lower())
+        for requirement in requirements
+    ):
+        failures.append(
+            "runtime dependency metadata does not constrain PyYAML to >=6.0,<7"
+        )
 
     dist_info = metadata_name.rsplit("/", 1)[0]
     for required in ("WHEEL", "RECORD", "entry_points.txt", "licenses/LICENSE"):
         name = f"{dist_info}/{required}"
         if name not in wheel_names:
             failures.append(f"wheel missing metadata file: {name}")
-    wheel_metadata = wheel_payloads.get(f"{dist_info}/WHEEL", b"").decode("utf-8", errors="replace")
+    wheel_metadata = wheel_payloads.get(f"{dist_info}/WHEEL", b"").decode(
+        "utf-8", errors="replace"
+    )
     if "Tag: py3-none-any" not in wheel_metadata:
         failures.append("wheel is not tagged py3-none-any")
     return failures
@@ -183,7 +217,9 @@ def main(argv: list[str] | None = None) -> int:
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
         return 1
-    print("Distribution verification passed (wheel and sdist contents match release policy).")
+    print(
+        "Distribution verification passed (wheel and sdist contents match release policy)."
+    )
     return 0
 
 

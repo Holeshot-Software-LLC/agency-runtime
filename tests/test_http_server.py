@@ -24,43 +24,49 @@ AUTH_HEADERS = {"Authorization": "Bearer test-token"}
 def http_server(tmp_path: Path):
     """Start a real HTTP server on an ephemeral port backed by a tmp DB."""
     import os
+
     # Use a fast judge timeout so the test doesn't hang when no LLM is available
     os.environ["AGENCY_JUDGE_TIMEOUT"] = "1"
     os.environ["AGENCY_CONFIG_PATH"] = "/dev/null"
     from agency_runtime.core.config import reset_config_cache
+
     reset_config_cache()
 
     db = tmp_path / "agency.db"
     store = Store(db)
 
     # Seed active agents so preflight/search have a catalog to work with.
-    store.activate_agent({
-        "slug": "code-reviewer",
-        "name": "Code Reviewer",
-        "division": "engineering",
-        "description": "Reviews pull requests and source code for quality and security.",
-        "source": "test",
-        "version": "1.0",
-        "hash": "abc123",
-        "categories": ["code-review"],
-        "capabilities": ["code-review"],
-        "tool_affinity": [],
-        "prompt_path": "",
-    })
-    for slug in ("agents-orchestrator", "chief-of-staff"):
-        store.activate_agent({
-            "slug": slug,
-            "name": slug.replace("-", " ").title(),
-            "division": "specialized",
-            "description": f"Default companion specialist {slug}",
+    store.activate_agent(
+        {
+            "slug": "code-reviewer",
+            "name": "Code Reviewer",
+            "division": "engineering",
+            "description": "Reviews pull requests and source code for quality and security.",
             "source": "test",
             "version": "1.0",
-            "hash": slug,
-            "categories": [],
-            "capabilities": [],
+            "hash": "abc123",
+            "categories": ["code-review"],
+            "capabilities": ["code-review"],
             "tool_affinity": [],
             "prompt_path": "",
-        })
+        }
+    )
+    for slug in ("agents-orchestrator", "chief-of-staff"):
+        store.activate_agent(
+            {
+                "slug": slug,
+                "name": slug.replace("-", " ").title(),
+                "division": "specialized",
+                "description": f"Default companion specialist {slug}",
+                "source": "test",
+                "version": "1.0",
+                "hash": slug,
+                "categories": [],
+                "capabilities": [],
+                "tool_affinity": [],
+                "prompt_path": "",
+            }
+        )
 
     server = AgencyHTTPServer(
         store,
@@ -73,7 +79,11 @@ def http_server(tmp_path: Path):
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        yield {"port": actual_port, "store": store, "base": f"http://127.0.0.1:{actual_port}"}
+        yield {
+            "port": actual_port,
+            "store": store,
+            "base": f"http://127.0.0.1:{actual_port}",
+        }
     finally:
         server.shutdown()
         server.server_close()
@@ -83,8 +93,10 @@ def http_server(tmp_path: Path):
 def _post(base: str, path: str, payload: dict) -> tuple[int, dict]:
     data = json.dumps(payload).encode()
     req = urllib.request.Request(
-        f"{base}{path}", data=data,
-        headers={"Content-Type": "application/json", **AUTH_HEADERS}, method="POST",
+        f"{base}{path}",
+        data=data,
+        headers={"Content-Type": "application/json", **AUTH_HEADERS},
+        method="POST",
     )
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -103,6 +115,7 @@ def _get(base: str, path: str) -> tuple[int, dict]:
 
 
 # ── /status ─────────────────────────────────────────────────────────────
+
 
 def test_status_returns_ok_and_roster_count(http_server):
     status, body = _get(http_server["base"], "/status")
@@ -160,6 +173,7 @@ def test_http_server_refuses_non_loopback_binding(tmp_path):
 
 # ── /roster ─────────────────────────────────────────────────────────────
 
+
 def test_roster_lists_active_agents(http_server):
     status, body = _get(http_server["base"], "/roster")
     assert status == 200
@@ -172,12 +186,17 @@ def test_roster_lists_active_agents(http_server):
 
 # ── /preflight ──────────────────────────────────────────────────────────
 
+
 def test_preflight_returns_routing_and_context(http_server):
-    status, body = _post(http_server["base"], "/preflight", {
-        "session_id": "s1",
-        "user_message": "Please review this pull request for quality and security",
-        "model": "task-agency-router",
-    })
+    status, body = _post(
+        http_server["base"],
+        "/preflight",
+        {
+            "session_id": "s1",
+            "user_message": "Please review this pull request for quality and security",
+            "model": "task-agency-router",
+        },
+    )
     assert status == 200
     assert body["session_id"] == "s1"
     assert body["model"] == "task-agency-router"
@@ -197,10 +216,14 @@ def test_preflight_rejects_missing_user_message(http_server):
 
 
 def test_preflight_detects_trivial_messages(http_server):
-    status, body = _post(http_server["base"], "/preflight", {
-        "session_id": "s1",
-        "user_message": "ok",
-    })
+    status, body = _post(
+        http_server["base"],
+        "/preflight",
+        {
+            "session_id": "s1",
+            "user_message": "ok",
+        },
+    )
     assert status == 200
     assert body["trivial"] is True
     assert body["context"] is not None
@@ -209,22 +232,29 @@ def test_preflight_detects_trivial_messages(http_server):
 
 # ── /finalize ───────────────────────────────────────────────────────────
 
+
 def test_finalize_returns_accept_with_complete_header(http_server):
-    draft = "\n".join([
-        "Agency/Agencies loaded: code-reviewer",
-        "Agency/Agencies delegated: none",
-        "Skills loaded: none",
-        "Actual Model selected: task-agency-router -> openai/gpt-4",
-        "Why: code review requested",
-        "How it shaped outcome: routed to specialist",
-        "",
-        "Here is my review.",
-    ])
-    status, body = _post(http_server["base"], "/finalize", {
-        "draft_text": draft,
-        "trace_id": "trace-1",
-        "host": "test",
-    })
+    draft = "\n".join(
+        [
+            "Agency/Agencies loaded: code-reviewer",
+            "Agency/Agencies delegated: none",
+            "Skills loaded: none",
+            "Actual Model selected: task-agency-router -> openai/gpt-4",
+            "Why: code review requested",
+            "How it shaped outcome: routed to specialist",
+            "",
+            "Here is my review.",
+        ]
+    )
+    status, body = _post(
+        http_server["base"],
+        "/finalize",
+        {
+            "draft_text": draft,
+            "trace_id": "trace-1",
+            "host": "test",
+        },
+    )
     assert status == 200
     assert body["action"] == "accept"
     assert body["trace_id"] == "trace-1"
@@ -238,26 +268,36 @@ def test_finalize_rejects_missing_draft(http_server):
 
 
 def test_finalize_records_skills_and_delegations(http_server):
-    draft = "\n".join([
-        "Agency/Agencies loaded: code-reviewer",
-        "Agency/Agencies delegated: code-reviewer via test-backend",
-        "Skills loaded: finalization",
-        "Actual Model selected: task-agency-router -> openai/gpt-4",
-        "Why: review work",
-        "How it shaped outcome: made delegation explicit",
-        "",
-        "Done.",
-    ])
-    status, body = _post(http_server["base"], "/finalize", {
-        "draft_text": draft,
-        "trace_id": "trace-2",
-        "session_id": "session-2",
-        "host": "test",
-        "skills_loaded": ["finalization"],
-        "delegations": [
-            {"agent": "code-reviewer", "status": "completed", "backend": "test-backend"},
-        ],
-    })
+    draft = "\n".join(
+        [
+            "Agency/Agencies loaded: code-reviewer",
+            "Agency/Agencies delegated: code-reviewer via test-backend",
+            "Skills loaded: finalization",
+            "Actual Model selected: task-agency-router -> openai/gpt-4",
+            "Why: review work",
+            "How it shaped outcome: made delegation explicit",
+            "",
+            "Done.",
+        ]
+    )
+    status, body = _post(
+        http_server["base"],
+        "/finalize",
+        {
+            "draft_text": draft,
+            "trace_id": "trace-2",
+            "session_id": "session-2",
+            "host": "test",
+            "skills_loaded": ["finalization"],
+            "delegations": [
+                {
+                    "agent": "code-reviewer",
+                    "status": "completed",
+                    "backend": "test-backend",
+                },
+            ],
+        },
+    )
     assert status == 200
     assert body["action"] == "accept"
     assert body["session_id"] == "session-2"
@@ -275,17 +315,22 @@ def test_finalize_records_skills_and_delegations(http_server):
 
 # ── /explain ────────────────────────────────────────────────────────────
 
+
 def test_explain_returns_selection_receipt(http_server):
     from agency_runtime.core.selector.cache import clear_cache
     from agency_runtime.core.selector.stickiness import clear_session_routing
 
     clear_cache()
     clear_session_routing()
-    status, body = _post(http_server["base"], "/explain", {
-        "session_id": "s-explain",
-        "task": "review code quality",
-        "limit": 5,
-    })
+    status, body = _post(
+        http_server["base"],
+        "/explain",
+        {
+            "session_id": "s-explain",
+            "task": "review code quality",
+            "limit": 5,
+        },
+    )
 
     assert status == 200
     assert body["schema_version"] == "agency.selection_explain.v1"
@@ -303,6 +348,7 @@ def test_explain_rejects_missing_task(http_server):
 
 # ── /search ─────────────────────────────────────────────────────────────
 
+
 def test_search_returns_matching_agents(http_server):
     status, body = _post(http_server["base"], "/search", {"query": "code review"})
     assert status == 200
@@ -318,12 +364,15 @@ def test_search_rejects_missing_query(http_server):
 
 
 def test_search_clamps_limit(http_server):
-    status, body = _post(http_server["base"], "/search", {"query": "code", "limit": 99999})
+    status, body = _post(
+        http_server["base"], "/search", {"query": "code", "limit": 99999}
+    )
     assert status == 200
     assert body["count"] >= 1
 
 
 # ── Error handling ──────────────────────────────────────────────────────
+
 
 def test_unknown_path_returns_404(http_server):
     status, body = _get(http_server["base"], "/nonexistent")
@@ -334,8 +383,10 @@ def test_unknown_path_returns_404(http_server):
 def test_invalid_json_returns_400(http_server):
     base = http_server["base"]
     req = urllib.request.Request(
-        f"{base}/search", data=b"{bad json",
-        headers={"Content-Type": "application/json", **AUTH_HEADERS}, method="POST",
+        f"{base}/search",
+        data=b"{bad json",
+        headers={"Content-Type": "application/json", **AUTH_HEADERS},
+        method="POST",
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
@@ -345,8 +396,10 @@ def test_invalid_json_returns_400(http_server):
 def test_invalid_utf8_json_returns_400(http_server):
     base = http_server["base"]
     req = urllib.request.Request(
-        f"{base}/search", data=b"\xff",
-        headers={"Content-Type": "application/json", **AUTH_HEADERS}, method="POST",
+        f"{base}/search",
+        data=b"\xff",
+        headers={"Content-Type": "application/json", **AUTH_HEADERS},
+        method="POST",
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
@@ -356,19 +409,63 @@ def test_invalid_utf8_json_returns_400(http_server):
 def test_empty_body_returns_400(http_server):
     base = http_server["base"]
     req = urllib.request.Request(
-        f"{base}/search", data=b"",
-        headers={"Content-Type": "application/json", **AUTH_HEADERS}, method="POST",
+        f"{base}/search",
+        data=b"",
+        headers={"Content-Type": "application/json", **AUTH_HEADERS},
+        method="POST",
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
     assert exc_info.value.code == 400
 
 
-def test_unhandled_post_errors_do_not_leak_exception_details(http_server, monkeypatch, caplog):
+def test_server_enforces_configured_body_limit(tmp_path: Path) -> None:
+    server = AgencyHTTPServer(
+        Store(tmp_path / "bounded.db"),
+        host="127.0.0.1",
+        port=0,
+        auth_token="test-token",
+        max_body_size=1024,
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    request = urllib.request.Request(
+        f"http://127.0.0.1:{server.server_address[1]}/search",
+        data=b"{" + (b" " * 1024) + b"}",
+        headers={"Content-Type": "application/json", **AUTH_HEADERS},
+        method="POST",
+    )
+    try:
+        with pytest.raises(urllib.error.HTTPError) as raised:
+            urllib.request.urlopen(request, timeout=5)
+        assert raised.value.code == 413
+        assert json.loads(raised.value.read()) == {"error": "request body too large"}
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+@pytest.mark.parametrize("size", [1023, 64 * 1024 * 1024 + 1, True])
+def test_server_rejects_invalid_body_limits(tmp_path: Path, size) -> None:
+    with pytest.raises(ValueError, match="max_body_size"):
+        AgencyHTTPServer(
+            Store(tmp_path / f"invalid-{size}.db"),
+            host="127.0.0.1",
+            port=0,
+            max_body_size=size,
+        )
+
+
+def test_unhandled_post_errors_do_not_leak_exception_details(
+    http_server, monkeypatch, caplog
+):
     def boom(self, body):
         raise RuntimeError("secret-token")
 
-    monkeypatch.setattr("agency_runtime.server.http.AgencyHTTPHandler._handle_search", boom)
+    monkeypatch.setattr(
+        "agency_runtime.server.http.AgencyHTTPHandler._handle_search", boom
+    )
 
     status, body = _post(http_server["base"], "/search", {"query": "code"})
 
@@ -378,11 +475,15 @@ def test_unhandled_post_errors_do_not_leak_exception_details(http_server, monkey
     assert "secret-token" not in caplog.text
 
 
-def test_unhandled_get_errors_do_not_leak_exception_details(http_server, monkeypatch, caplog):
+def test_unhandled_get_errors_do_not_leak_exception_details(
+    http_server, monkeypatch, caplog
+):
     def boom(self):
         raise RuntimeError("secret-token")
 
-    monkeypatch.setattr("agency_runtime.server.http.AgencyHTTPHandler._handle_status", boom)
+    monkeypatch.setattr(
+        "agency_runtime.server.http.AgencyHTTPHandler._handle_status", boom
+    )
 
     status, body = _get(http_server["base"], "/status")
 

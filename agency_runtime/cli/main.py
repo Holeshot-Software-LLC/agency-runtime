@@ -27,14 +27,14 @@ Commands:
 from __future__ import annotations
 
 import argparse
+import getpass
 import ipaddress
 import json
 import math
 import os
-import stat
 import subprocess
 import sys
-import tempfile
+import time
 import urllib.request
 import uuid
 from dataclasses import fields, is_dataclass
@@ -49,6 +49,13 @@ from agency_runtime.core.config import (
     config_to_yaml,
     load_config,
     reset_config_cache,
+)
+from agency_runtime.core.configuration import (
+    apply_config_operations,
+    read_config_revision,
+    read_config_state,
+    replace_config_document,
+    resolve_config_path,
 )
 from agency_runtime.core.detect import (
     ProviderDetection,
@@ -114,188 +121,6 @@ def _configure_console_output() -> None:
             # Captured, detached, and application-owned streams may reject
             # reconfiguration.  Those streams retain their existing behavior.
             continue
-
-
-def _restrict_windows_acl(path: Path) -> bool:
-    """Best-effort owner-only Windows DACL using Win32 APIs, never a shell.
-
-    The temporary and final config files already inherit the user's directory
-    ACL.  This narrows that ACL to the file owner when the native calls are
-    available.  Failure is intentionally non-fatal because some managed
-    filesystems do not expose Windows security descriptors.
-    """
-    if os.name != "nt":
-        return False
-    try:
-        import ctypes
-        from ctypes import wintypes
-
-        class TrusteeW(ctypes.Structure):
-            _fields_ = [
-                ("pMultipleTrustee", ctypes.c_void_p),
-                ("MultipleTrusteeOperation", wintypes.DWORD),
-                ("TrusteeForm", wintypes.DWORD),
-                ("TrusteeType", wintypes.DWORD),
-                ("ptstrName", wintypes.LPWSTR),
-            ]
-
-        class ExplicitAccessW(ctypes.Structure):
-            _fields_ = [
-                ("grfAccessPermissions", wintypes.DWORD),
-                ("grfAccessMode", wintypes.DWORD),
-                ("grfInheritance", wintypes.DWORD),
-                ("Trustee", TrusteeW),
-            ]
-
-        advapi32 = ctypes.WinDLL("Advapi32.dll", use_last_error=True)
-        kernel32 = ctypes.WinDLL("Kernel32.dll", use_last_error=True)
-        get_security = advapi32.GetNamedSecurityInfoW
-        get_security.argtypes = [
-            wintypes.LPWSTR,
-            wintypes.DWORD,
-            wintypes.DWORD,
-            ctypes.POINTER(ctypes.c_void_p),
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.POINTER(ctypes.c_void_p),
-        ]
-        get_security.restype = wintypes.DWORD
-        set_entries = advapi32.SetEntriesInAclW
-        set_entries.argtypes = [
-            wintypes.ULONG,
-            ctypes.POINTER(ExplicitAccessW),
-            ctypes.c_void_p,
-            ctypes.POINTER(ctypes.c_void_p),
-        ]
-        set_entries.restype = wintypes.DWORD
-        set_security = advapi32.SetNamedSecurityInfoW
-        set_security.argtypes = [
-            wintypes.LPWSTR,
-            wintypes.DWORD,
-            wintypes.DWORD,
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-        ]
-        set_security.restype = wintypes.DWORD
-        kernel32.LocalFree.argtypes = [ctypes.c_void_p]
-        kernel32.LocalFree.restype = ctypes.c_void_p
-
-        # Win32 security constants.
-        se_file_object = 1
-        owner_security_information = 0x00000001
-        dacl_security_information = 0x00000004
-        protected_dacl_security_information = 0x80000000
-        file_all_access = 0x001F01FF
-        set_access = 2
-        trustee_is_sid = 0
-        trustee_is_user = 1
-
-        owner_sid = ctypes.c_void_p()
-        security_descriptor = ctypes.c_void_p()
-        acl = ctypes.c_void_p()
-        try:
-            code = get_security(
-                str(path),
-                se_file_object,
-                owner_security_information,
-                ctypes.byref(owner_sid),
-                None,
-                None,
-                None,
-                ctypes.byref(security_descriptor),
-            )
-            if code:
-                return False
-            trustee = TrusteeW(
-                None,
-                0,
-                trustee_is_sid,
-                trustee_is_user,
-                ctypes.cast(owner_sid, wintypes.LPWSTR),
-            )
-            access = ExplicitAccessW(file_all_access, set_access, 0, trustee)
-            code = set_entries(1, ctypes.byref(access), None, ctypes.byref(acl))
-            if code:
-                return False
-            code = set_security(
-                str(path),
-                se_file_object,
-                dacl_security_information | protected_dacl_security_information,
-                None,
-                None,
-                acl,
-                None,
-            )
-            return code == 0
-        finally:
-            if acl:
-                kernel32.LocalFree(acl)
-            if security_descriptor:
-                kernel32.LocalFree(security_descriptor)
-    except (AttributeError, ImportError, OSError, TypeError, ValueError):
-        return False
-
-
-def _restrict_config_permissions(path: Path) -> bool:
-    """Restrict a config file to its owner where the platform permits it."""
-    if os.name == "nt":
-        try:
-            # Python's Windows chmod only controls the read-only attribute, but
-            # it is still a useful fallback when ACL APIs are unavailable.
-            os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
-        except OSError:
-            pass
-        return _restrict_windows_acl(path)
-    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
-    return True
-
-
-def _atomic_write_yaml(path: Path, data: dict[str, Any]) -> None:
-    """Atomically write UTF-8 YAML with restrictive config permissions."""
-    path = path.expanduser()
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    payload = yaml.safe_dump(
-        data,
-        default_flow_style=False,
-        sort_keys=False,
-        allow_unicode=True,
-    )
-    fd, temporary_name = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=path.parent,
-    )
-    temporary_path = Path(temporary_name)
-    try:
-        if hasattr(os, "fchmod"):
-            os.fchmod(fd, stat.S_IRUSR | stat.S_IWUSR)
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
-            fd = -1
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        _restrict_config_permissions(temporary_path)
-        os.replace(temporary_path, path)
-        _restrict_config_permissions(path)
-        if os.name != "nt":
-            try:
-                directory_fd = os.open(path.parent, os.O_RDONLY)
-                try:
-                    os.fsync(directory_fd)
-                finally:
-                    os.close(directory_fd)
-            except OSError:
-                pass
-    finally:
-        if fd >= 0:
-            os.close(fd)
-        try:
-            temporary_path.unlink()
-        except FileNotFoundError:
-            pass
 
 
 def _is_secret_config_part(part: str) -> bool:
@@ -454,6 +279,11 @@ def cmd_install(args: argparse.Namespace) -> int:
         rollback_agent_adapter,
         seed_starter_roster,
     )
+    from agency_runtime.core.dashboard_service import (
+        install_dashboard_service,
+        plan_dashboard_service,
+    )
+    from agency_runtime.core.dashboard_runtime import dashboard_service_reachable
 
     rollback_mode = bool(getattr(args, "rollback", False))
     dry_run = bool(getattr(args, "dry_run", False))
@@ -488,13 +318,30 @@ def cmd_install(args: argparse.Namespace) -> int:
             f"requested {args.profile!r}; run `agency configure --profile {args.profile}` first"
         )
     profile = get_profile(requested_profile)
-    targets = detect_installed_agents() if args.all else ([args.agent] if args.agent else [])
+    targets = (
+        detect_installed_agents() if args.all else ([args.agent] if args.agent else [])
+    )
+    dashboard_opted_out = bool(getattr(args, "no_dashboard", False))
     if dry_run:
         plans = [plan_agent_adapter(host) for host in targets]
-        plan_complete = bool(plans) and all(
-            plan.get("ok") and plan.get("executable")
-            for plan in plans
-        ) if args.all else all(plan.get("ok") for plan in plans)
+        host_plan_complete = (
+            bool(plans)
+            and all(plan.get("ok") and plan.get("executable") for plan in plans)
+            if args.all
+            else all(plan.get("ok") for plan in plans)
+        )
+        dashboard_plan = (
+            {
+                "ok": True,
+                "exit_code": 0,
+                "dry_run": True,
+                "status": "opted_out",
+                "changed": False,
+            }
+            if dashboard_opted_out
+            else plan_dashboard_service(config_path=resolve_config_path())
+        )
+        plan_complete = host_plan_complete and bool(dashboard_plan.get("ok"))
         report = {
             "ok": plan_complete,
             "complete": plan_complete,
@@ -506,50 +353,104 @@ def cmd_install(args: argparse.Namespace) -> int:
             },
             "detected_hosts": targets,
             "host_plans": plans,
+            "dashboard": dashboard_plan,
         }
         if json_mode:
             _print_json(report)
         else:
-            print(f"DRY RUN — profile={profile.name}; would idempotently seed up to {len(STARTER_ROSTER)} starter agents")
+            print(
+                f"DRY RUN — profile={profile.name}; would idempotently seed up to {len(STARTER_ROSTER)} starter agents"
+            )
             if not targets:
-                print("No host adapters selected or discovered; no files or native state would change.")
+                print(
+                    "No host adapters selected or discovered; no files or native state would change."
+                )
             for plan in plans:
-                print(f"  {plan['host']}: {plan.get('plugin_path')} ({plan.get('native_lifecycle')})")
-                print(f"    discovered={plan.get('host_discovered')} commands={plan.get('commands_will_run')}")
+                print(
+                    f"  {plan['host']}: {plan.get('plugin_path')} ({plan.get('native_lifecycle')})"
+                )
+                print(
+                    f"    discovered={plan.get('host_discovered')} commands={plan.get('commands_will_run')}"
+                )
                 for step in plan.get("native_command_plan", []):
-                    condition = f" [{step['condition']}]" if step.get("condition") else ""
+                    condition = (
+                        f" [{step['condition']}]" if step.get("condition") else ""
+                    )
                     print(f"    argv={step.get('argv')}{condition}")
                 gate = plan.get("gateway_safety_gate")
                 if gate is not None:
-                    print(f"    gateway={gate.get('state')} safe_to_mutate={gate.get('safe_to_mutate')}")
+                    print(
+                        f"    gateway={gate.get('state')} safe_to_mutate={gate.get('safe_to_mutate')}"
+                    )
+            if dashboard_opted_out:
+                print("  dashboard: opted out; no service-manager query or mutation")
+            else:
+                print(
+                    "  dashboard: "
+                    f"{dashboard_plan.get('manager')} at {dashboard_plan.get('registration_path')}"
+                )
+                if dashboard_plan.get("error"):
+                    print(f"    error={dashboard_plan['error']}")
         return 0 if plan_complete else 1
 
-    store = _store(cfg)
-    count = seed_starter_roster(store)
-    host_results: list[dict[str, Any]] = []
-
-    if not json_mode:
-        print(f"✅ Agency Runtime profile: {profile.name}")
-        print(f"✅ Starter roster activated: {count} agents")
-        print(f"   Config: {cfg.config_path or '(defaults only)'}")
-        print(f"   Judge model: {cfg.judge.model} ({cfg.judge.base_url})")
-
     if args.all and not targets:
+        dashboard_result = {
+            "ok": False,
+            "exit_code": 1,
+            "status": "not_attempted",
+            "changed": False,
+            "reason": "no supported hosts detected",
+        }
         if json_mode:
             _print_json(
                 {
                     "ok": False,
                     "complete": False,
                     "profile": profile.name,
-                    "roster_added": count,
+                    "roster_added": 0,
                     "hosts": [],
+                    "dashboard": dashboard_result,
                     "error": "No supported AI agent hosts detected",
                 }
             )
         else:
             print("\n⚠️  No supported AI agent hosts detected.")
             print("   Install Hermes, OpenClaw, Codex, or Claude Code first.")
+            print("   No roster or dashboard-service state was changed.")
         return 1
+
+    store = _store(cfg)
+    count = seed_starter_roster(store)
+    host_results: list[dict[str, Any]] = []
+    dashboard_result = (
+        {
+            "ok": True,
+            "exit_code": 0,
+            "status": "opted_out",
+            "changed": False,
+        }
+        if dashboard_opted_out
+        else install_dashboard_service(
+            config_path=resolve_config_path(),
+            reachability_probe=dashboard_service_reachable,
+            readiness_probe=_wait_dashboard_ready,
+        )
+    )
+
+    if not json_mode:
+        print(f"✅ Agency Runtime profile: {profile.name}")
+        print(f"✅ Starter roster activated: {count} agents")
+        print(f"   Config: {cfg.config_path or '(defaults only)'}")
+        print(f"   Judge model: {cfg.judge.model} ({cfg.judge.base_url})")
+        if dashboard_opted_out:
+            print("   Dashboard service: opted out (--no-dashboard)")
+        elif dashboard_result.get("ok"):
+            print("✅ Dashboard service: installed for the current user")
+            print("   Open it with: agency dashboard service open")
+        else:
+            print(
+                f"❌ Dashboard service: {dashboard_result.get('error', 'installation failed')}"
+            )
 
     if not json_mode and args.all:
         print(f"\n🔍 Detected {len(targets)} agent host(s): {', '.join(targets)}")
@@ -571,10 +472,14 @@ def cmd_install(args: argparse.Namespace) -> int:
             _print_install_result(host, result)
 
     if not targets and not json_mode:
-        print("\n💡 Run `agency install --all --dry-run` to preview discovered host integrations.")
+        print(
+            "\n💡 Run `agency install --all --dry-run` to preview discovered host integrations."
+        )
         print("   Run `agency dashboard` to open the local operations dashboard.")
     if json_mode:
-        complete = all(result.get("complete", result.get("ok")) for result in host_results)
+        complete = bool(dashboard_result.get("ok")) and all(
+            result.get("complete", result.get("ok")) for result in host_results
+        )
         _print_json(
             {
                 "ok": complete,
@@ -582,12 +487,17 @@ def cmd_install(args: argparse.Namespace) -> int:
                 "profile": profile.name,
                 "roster_added": count,
                 "hosts": host_results,
+                "dashboard": dashboard_result,
             }
         )
-    successful = all(result.get("ok") for result in host_results)
+    successful = bool(dashboard_result.get("ok")) and all(
+        result.get("ok") for result in host_results
+    )
     if args.all:
-        successful = bool(host_results) and successful and all(
-            result.get("complete") for result in host_results
+        successful = (
+            bool(host_results)
+            and successful
+            and all(result.get("complete") for result in host_results)
         )
     return 0 if successful else 1
 
@@ -595,8 +505,14 @@ def cmd_install(args: argparse.Namespace) -> int:
 def _print_install_result(host: str, result: dict[str, Any]) -> None:
     """Print native installation maturity without overstating runtime load."""
     if result.get("ok"):
-        marker = "✅" if result.get("complete", result.get("status") == "registered") else "⚠️ "
-        print(f"{marker} {host}: {result.get('status', 'staged')} → {result.get('plugin_path', 'unknown path')}")
+        marker = (
+            "✅"
+            if result.get("complete", result.get("status") == "registered")
+            else "⚠️ "
+        )
+        print(
+            f"{marker} {host}: {result.get('status', 'staged')} → {result.get('plugin_path', 'unknown path')}"
+        )
         print(f"   Maturity: {result.get('maturity', 'unknown')}")
         if result.get("backup_path"):
             print(f"   Backup: {result['backup_path']}")
@@ -605,7 +521,11 @@ def _print_install_result(host: str, result: dict[str, Any]) -> None:
         if result.get("restart_required"):
             print(f"   Restart {host} to activate the native state.")
         return
-    partial = " (filesystem staged; native registration incomplete)" if result.get("partial") else ""
+    partial = (
+        " (filesystem staged; native registration incomplete)"
+        if result.get("partial")
+        else ""
+    )
     print(f"❌ {host}: {result.get('error', 'installation failed')}{partial}")
     if result.get("failed_step"):
         print(f"   Failed step: {result['failed_step']}")
@@ -639,8 +559,14 @@ def cmd_on(args: argparse.Namespace) -> int:
         _print_json(result)
         return int(result.get("exit_code", 0 if result.get("ok") else 1))
     if result["ok"]:
-        prefix = "DRY RUN — would enable" if result.get("dry_run") else "✅ Agency Runtime enabled"
-        print(f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}")
+        prefix = (
+            "DRY RUN — would enable"
+            if result.get("dry_run")
+            else "✅ Agency Runtime enabled"
+        )
+        print(
+            f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}"
+        )
         if result.get("restart_required"):
             print(f"   Restart {agent} to take effect.")
     else:
@@ -674,8 +600,14 @@ def cmd_off(args: argparse.Namespace) -> int:
         _print_json(result)
         return int(result.get("exit_code", 0 if result.get("ok") else 1))
     if result["ok"]:
-        prefix = "DRY RUN — would disable" if result.get("dry_run") else "⏸️  Agency Runtime disabled"
-        print(f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}")
+        prefix = (
+            "DRY RUN — would disable"
+            if result.get("dry_run")
+            else "⏸️  Agency Runtime disabled"
+        )
+        print(
+            f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}"
+        )
         if result.get("restart_required"):
             print(f"   Restart {agent} to take effect.")
     else:
@@ -690,7 +622,8 @@ def cmd_configure(args: argparse.Namespace) -> int:
     """Guided setup wizard or non-interactive config generation."""
     _configure_console_output()
 
-    config_path = Path(os.environ.get("AGENCY_CONFIG_PATH", str(Path.home() / ".agency-runtime" / "agency.yaml")))
+    config_path = resolve_config_path()
+    trusted_replacement = bool(args.force)
 
     if config_path.exists() and not args.force:
         print(f"Config already exists at {config_path}")
@@ -699,6 +632,7 @@ def cmd_configure(args: argparse.Namespace) -> int:
             if resp != "y":
                 print("Aborted.")
                 return 0
+            trusted_replacement = True
         else:
             print("Use --force to overwrite in non-interactive mode.")
             return 1
@@ -712,11 +646,19 @@ def cmd_configure(args: argparse.Namespace) -> int:
     p = detection.providers
     a = detection.adapters
 
-    print(f"  {'✅' if p.ollama_available else '❌'} Ollama: {p.ollama_base_url}" +
-          (f" ({len(p.ollama_models)} models)" if p.ollama_models else ""))
-    print(f"  {'✅' if p.openai_key else '❌'} OpenAI API key: {'found' if p.openai_key else 'not set'}")
-    print(f"  {'✅' if p.anthropic_key else '❌'} Anthropic API key: {'found' if p.anthropic_key else 'not set'}")
-    print(f"  {'✅' if p.litellm_available else '❌'} LiteLLM proxy: {p.litellm_base_url}")
+    print(
+        f"  {'✅' if p.ollama_available else '❌'} Ollama: {p.ollama_base_url}"
+        + (f" ({len(p.ollama_models)} models)" if p.ollama_models else "")
+    )
+    print(
+        f"  {'✅' if p.openai_key else '❌'} OpenAI API key: {'found' if p.openai_key else 'not set'}"
+    )
+    print(
+        f"  {'✅' if p.anthropic_key else '❌'} Anthropic API key: {'found' if p.anthropic_key else 'not set'}"
+    )
+    print(
+        f"  {'✅' if p.litellm_available else '❌'} LiteLLM proxy: {p.litellm_base_url}"
+    )
     print()
     print(f"  {'✅' if a.hermes else '❌'} Hermes adapter")
     print(f"  {'✅' if a.openclaw else '❌'} OpenClaw adapter")
@@ -731,7 +673,16 @@ def cmd_configure(args: argparse.Namespace) -> int:
     config_data = _enforce_local_only_config(config_data)
 
     # Write config
-    _atomic_write_yaml(config_path, config_data)
+    replace_config_document(
+        config_data,
+        expected_revision=(
+            read_config_revision(config_path)
+            if trusted_replacement
+            else read_config_state(config_path).revision
+        ),
+        path=config_path,
+        recover_invalid_existing=trusted_replacement,
+    )
 
     print(f"\n✅ Config written to {config_path}")
 
@@ -744,8 +695,8 @@ def cmd_configure(args: argparse.Namespace) -> int:
     print(f"✅ SQLite database initialized: {cfg.store.resolved_path()}")
     print("\nNext steps:")
     print("  agency doctor              — verify everything is working")
-    print("  agency search \"code review\" — test the selector")
-    print("  agency route \"review this PR\" — see routing in action")
+    print('  agency search "code review" — test the selector')
+    print('  agency route "review this PR" — see routing in action')
     return 0
 
 
@@ -753,7 +704,9 @@ def _prompt_install_profile() -> str:
     """Choose the network posture before any provider discovery occurs."""
     print("Step 1: Install Profile")
     print("━" * 40)
-    print("  [1] local-only — No remote network, no auto-sync, bundled roster only (safest)")
+    print(
+        "  [1] local-only — No remote network, no auto-sync, bundled roster only (safest)"
+    )
     print("  [2] standard   — Network enabled, no auto-sync (recommended)")
     print("  [3] power      — Network enabled, manual sync")
     print("  [4] yolo       — Network enabled, trusted-source nightly auto-sync")
@@ -768,10 +721,7 @@ def _detect_for_profile(profile: str):
 
     sentinel = object()
     remote_key_names = ("OPENAI_API_KEY", "ANTHROPIC_API_KEY")
-    saved_keys = {
-        name: os.environ.pop(name, sentinel)
-        for name in remote_key_names
-    }
+    saved_keys = {name: os.environ.pop(name, sentinel) for name in remote_key_names}
     try:
         detection = detect_all()
     finally:
@@ -804,7 +754,9 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     else:
         if p.ollama_available:
             n = len(p.ollama_models)
-            providers.append(("ollama", f"Ollama (free, local) — {n} model(s) available"))
+            providers.append(
+                ("ollama", f"Ollama (free, local) — {n} model(s) available")
+            )
 
         if p.openai_key_present:
             n = len(p.openai_models)
@@ -816,10 +768,19 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
 
         if p.litellm_available:
             n = len(p.litellm_models)
-            suffix = f" — {n} model group(s) discovered" if n else " (model list unavailable)"
+            suffix = (
+                f" — {n} model group(s) discovered"
+                if n
+                else " (model list unavailable)"
+            )
             providers.append(("litellm", f"LiteLLM proxy{suffix}"))
 
-        providers.append(("custom", "Custom OpenAI-compatible endpoint (OpenRouter, Together, Groq, LM Studio, etc.)"))
+        providers.append(
+            (
+                "custom",
+                "Custom OpenAI-compatible endpoint (OpenRouter, Together, Groq, LM Studio, etc.)",
+            )
+        )
 
         print("\nWhich provider should the Agency selector use for routing?\n")
         for i, (_, label) in enumerate(providers, 1):
@@ -849,7 +810,9 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     # LiteLLM adapter config
     litellm_detected = p.litellm_available
     icon = "✅" if litellm_detected else "❌"
-    print(f"  {icon} LiteLLM proxy: {'detected' if litellm_detected else 'not detected'}")
+    print(
+        f"  {icon} LiteLLM proxy: {'detected' if litellm_detected else 'not detected'}"
+    )
     litellm_skip = ["complexity_router", "auto_router/"]
     # If we chose LiteLLM as judge, add the model to skip_models to prevent recursion
     if judge_cfg.get("base_url") == p.litellm_base_url and judge_cfg.get("model"):
@@ -876,9 +839,7 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
         print(f"  {icon} {name}: {'detected' if detected else 'not detected'}")
         adapters_cfg[name] = {
             "enabled": (
-                "false"
-                if profile == "local-only"
-                else ("true" if detected else "auto")
+                "false" if profile == "local-only" else ("true" if detected else "auto")
             )
         }
 
@@ -925,7 +886,11 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
             "enabled": p.ollama_available,
             "base_url": p.ollama_base_url,
         },
-        "selector": {"min_confidence": 0.4, "max_user_msg_len": 4000, "trivial_msg_threshold": 12},
+        "selector": {
+            "min_confidence": 0.4,
+            "max_user_msg_len": 4000,
+            "trivial_msg_threshold": 12,
+        },
         "store": {"db_path": "~/.agency-runtime/agency.db"},
         "server": {"host": "127.0.0.1", "port": 7800},
         "adapters": adapters_cfg,
@@ -1145,7 +1110,9 @@ def _pick_custom_endpoint() -> dict[str, Any]:
         print(f"\nUsing API key from ${key_env}")
     elif key_env:
         print(f"\n⚠️  ${key_env} not set in environment.")
-        key_choice = input(f"Press Enter to use ${key_env} env var, or type key directly: ").strip()
+        key_choice = input(
+            f"Press Enter to use ${key_env} env var, or type key directly: "
+        ).strip()
         if key_choice:
             return {
                 "model": model,
@@ -1183,12 +1150,15 @@ def _fetch_models_custom(base_url: str, api_key: str | None = None) -> list[str]
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
             import json
+
             data = json.loads(resp.read().decode("utf-8"))
-        return sorted([
-            m.get("id", m.get("model", ""))
-            for m in data.get("data", [])
-            if m.get("id") or m.get("model")
-        ])
+        return sorted(
+            [
+                m.get("id", m.get("model", ""))
+                for m in data.get("data", [])
+                if m.get("id") or m.get("model")
+            ]
+        )
     except Exception:
         return []
 
@@ -1245,8 +1215,9 @@ def cmd_config_show(args: argparse.Namespace) -> int:
 
 
 def cmd_config_path(args: argparse.Namespace) -> int:
-    cfg = load_config()
-    print(cfg.config_path or "(no config file — using bundled defaults)")
+    path = resolve_config_path()
+    suffix = "" if path.exists() else " (not created; using bundled defaults)"
+    print(f"{path}{suffix}")
     return 0
 
 
@@ -1283,43 +1254,80 @@ def cmd_config_get(args: argparse.Namespace) -> int:
 
 
 def cmd_config_set(args: argparse.Namespace) -> int:
-    cfg = load_config()
-    config_path = Path(cfg.config_path) if cfg.config_path else Path.home() / ".agency-runtime" / "agency.yaml"
-
-    # Load existing YAML or defaults
-    if config_path.exists():
-        with open(config_path, encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-    else:
-        data = {}
-
-    # Navigate dotted path and set value
     parts = args.key.split(".")
-    target = data
-    for part in parts[:-1]:
-        if part not in target or not isinstance(target[part], dict):
-            target[part] = {}
-        target = target[part]
-
-    # Try to parse as number/bool/yaml
-    try:
-        value = yaml.safe_load(args.value)
-    except yaml.YAMLError:
-        value = args.value
-
-    target[parts[-1]] = value
-
-    data = _enforce_local_only_config(data)
-    _atomic_write_yaml(config_path, data)
-    reset_config_cache()
-    effective_value = _nested_config_value(data, parts)
-    display = _config_display_value(effective_value, path=tuple(parts), raw=False)
-    policy_note = (
-        " (local-only policy enforced)"
-        if effective_value != value and data.get("profile") == "local-only"
-        else ""
+    if not all(parts):
+        raise ValueError("config key must be a non-empty dotted path")
+    is_secret = _is_secret_config_part(parts[-1])
+    input_modes = sum(
+        bool(value)
+        for value in (
+            getattr(args, "stdin", False),
+            getattr(args, "prompt", False),
+            getattr(args, "clear", False),
+        )
     )
-    print(f"Set {args.key} = {_format_config_value(display)}{policy_note}")
+    if input_modes > 1:
+        raise ValueError("--stdin, --prompt, and --clear are mutually exclusive")
+
+    if getattr(args, "clear", False):
+        if not is_secret or args.value is not None:
+            raise ValueError("--clear is valid only for a secret key without a value")
+        operation = {"op": "secret", "path": args.key, "action": "clear"}
+    elif is_secret:
+        if args.value is not None:
+            raise ValueError(
+                "secret values are not accepted as arguments; use --stdin or --prompt"
+            )
+        if getattr(args, "stdin", False):
+            secret_value = sys.stdin.readline().rstrip("\r\n")
+        elif getattr(args, "prompt", False):
+            secret_value = getpass.getpass(f"New value for {args.key}: ")
+        else:
+            raise ValueError("secret updates require --stdin, --prompt, or --clear")
+        operation = {
+            "op": "secret",
+            "path": args.key,
+            "action": "replace",
+            "value": secret_value,
+        }
+    else:
+        if getattr(args, "clear", False) or getattr(args, "prompt", False):
+            raise ValueError("--prompt and --clear are valid only for secret keys")
+        if getattr(args, "stdin", False) and args.value is not None:
+            raise ValueError("provide either a positional value or --stdin, not both")
+        raw_value = sys.stdin.read() if getattr(args, "stdin", False) else args.value
+        if raw_value is None:
+            raise ValueError("config set requires a value or --stdin")
+        try:
+            parsed_value = yaml.safe_load(raw_value)
+        except yaml.YAMLError as exc:
+            raise ValueError("config value is not valid YAML") from exc
+        if (
+            args.key.startswith("adapters.")
+            and args.key.endswith(".enabled")
+            and isinstance(parsed_value, bool)
+        ):
+            parsed_value = "true" if parsed_value else "false"
+        operation = {"op": "set", "path": args.key, "value": parsed_value}
+
+    state = read_config_state()
+    result = apply_config_operations(
+        [operation],
+        expected_revision=state.revision,
+    )
+    effective_value = _nested_config_value(result.state.effective, parts)
+    display = _config_display_value(effective_value, path=tuple(parts), raw=False)
+    notes: list[str] = []
+    if result.policy_enforced:
+        notes.append("local-only policy enforced")
+    if args.key in result.state.environment_overrides:
+        notes.append(
+            f"effective value is overridden by {result.state.environment_overrides[args.key]}"
+        )
+    if result.restart_required:
+        notes.append(f"restart required: {', '.join(result.restart_required)}")
+    suffix = f" ({'; '.join(notes)})" if notes else ""
+    print(f"Set {args.key} = {_format_config_value(display)}{suffix}")
     return 0
 
 
@@ -1344,9 +1352,15 @@ def cmd_config_validate(args: argparse.Namespace) -> int:
 def cmd_config_reset(args: argparse.Namespace) -> int:
     """Reset config to defaults."""
     cfg = load_config()
-    config_path = Path(cfg.config_path) if cfg.config_path else Path.home() / ".agency-runtime" / "agency.yaml"
+    config_path = (
+        Path(cfg.config_path)
+        if cfg.config_path
+        else Path.home() / ".agency-runtime" / "agency.yaml"
+    )
     if config_path.exists():
-        resp = input(f"Delete {config_path} and reset to defaults? [y/N] ").strip().lower()
+        resp = (
+            input(f"Delete {config_path} and reset to defaults? [y/N] ").strip().lower()
+        )
         if resp != "y":
             print("Aborted.")
             return 0
@@ -1362,17 +1376,30 @@ def cmd_sync(args: argparse.Namespace) -> int:
     store = _store()
     sources = store.list_agent_sources()
     if not sources:
-        print("No enabled sources configured. Add one with: agency source add <url>", file=sys.stderr)
+        print(
+            "No enabled sources configured. Add one with: agency source add <url>",
+            file=sys.stderr,
+        )
         return 1
     if args.auto_approve:
-        untrusted = [source for source in sources if not int(source.get("trusted_for_auto_approve") or 0)]
+        untrusted = [
+            source
+            for source in sources
+            if not int(source.get("trusted_for_auto_approve") or 0)
+        ]
         if untrusted:
-            names = ", ".join(str(source.get("name") or source.get("url")) for source in untrusted)
+            names = ", ".join(
+                str(source.get("name") or source.get("url")) for source in untrusted
+            )
             print(
-                "Refusing --auto-approve because these sources are not trusted: " + names,
+                "Refusing --auto-approve because these sources are not trusted: "
+                + names,
                 file=sys.stderr,
             )
-            print("Mark an intended source with: agency source add <url> --trusted-for-auto-approve", file=sys.stderr)
+            print(
+                "Mark an intended source with: agency source add <url> --trusted-for-auto-approve",
+                file=sys.stderr,
+            )
             return 1
     quarantined: list[str] = []
     errors: list[dict[str, str]] = []
@@ -1383,12 +1410,20 @@ def cmd_sync(args: argparse.Namespace) -> int:
             errors.append({"source": source["url"], "error": str(exc)})
             continue
         if not candidates:
-            errors.append({"source": source["url"], "error": "source returned zero candidates"})
+            errors.append(
+                {"source": source["url"], "error": "source returned zero candidates"}
+            )
             continue
         for agent in candidates:
             ok, reason = validate_agent(agent)
             if not ok:
-                errors.append({"source": source["url"], "agent": agent.get("slug", ""), "error": reason})
+                errors.append(
+                    {
+                        "source": source["url"],
+                        "agent": agent.get("slug", ""),
+                        "error": reason,
+                    }
+                )
                 continue
             if args.dry_run:
                 quarantined.append(agent["slug"])
@@ -1396,13 +1431,18 @@ def cmd_sync(args: argparse.Namespace) -> int:
                 candidate_id = quarantine_candidate(agent, source["id"], store)
                 quarantined.append(candidate_id)
     if args.dry_run:
-        _print_json({"dry_run": True, "valid_candidates": quarantined, "errors": errors})
+        _print_json(
+            {"dry_run": True, "valid_candidates": quarantined, "errors": errors}
+        )
         return 0 if not errors else 2
     if args.auto_approve and errors:
         _print_json({"errors": errors})
         return 2
     if args.auto_approve and not quarantined:
-        print("Refusing --auto-approve because no candidates were quarantined", file=sys.stderr)
+        print(
+            "Refusing --auto-approve because no candidates were quarantined",
+            file=sys.stderr,
+        )
         return 1
     diff = create_roster_diff(store, candidate_ids=quarantined)
     if args.review:
@@ -1410,14 +1450,18 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if args.auto_approve:
         approve_snapshot(store, diff["snapshot_id"])
         activate_snapshot(store, diff["snapshot_id"])
-        _print_json({
-            "snapshot_id": diff["snapshot_id"],
-            "activated": True,
-            "candidate_count": len(quarantined),
-            "diff": diff["diff"],
-        })
+        _print_json(
+            {
+                "snapshot_id": diff["snapshot_id"],
+                "activated": True,
+                "candidate_count": len(quarantined),
+                "diff": diff["diff"],
+            }
+        )
     else:
-        print(f"Created snapshot {diff['snapshot_id']} from {len(quarantined)} candidates")
+        print(
+            f"Created snapshot {diff['snapshot_id']} from {len(quarantined)} candidates"
+        )
         print("Approve with: agency roster approve " + diff["snapshot_id"])
     if errors:
         _print_json({"errors": errors})
@@ -1445,7 +1489,9 @@ def cmd_roster_list(args: argparse.Namespace) -> int:
     del args
     roster = _store().get_active_roster_as_catalog()
     for agent in roster:
-        print(f"{agent['slug']}\t{agent.get('name', '')}\t{agent.get('division', '')}\t{agent.get('description', '')}")
+        print(
+            f"{agent['slug']}\t{agent.get('name', '')}\t{agent.get('division', '')}\t{agent.get('description', '')}"
+        )
     return 0
 
 
@@ -1479,7 +1525,9 @@ def cmd_search(args: argparse.Namespace) -> int:
         _print_json(results)
     else:
         for agent in results:
-            print(f"{agent['score']:.1f}\t{agent['slug']}\t{agent.get('name', '')}\t{agent.get('description', '')}")
+            print(
+                f"{agent['score']:.1f}\t{agent['slug']}\t{agent.get('name', '')}\t{agent.get('description', '')}"
+            )
     return 0
 
 
@@ -1499,11 +1547,13 @@ def cmd_route(args: argparse.Namespace) -> int:
         for candidate, score in zip(candidates, scores)
     ]
     if args.json:
-        _print_json({
-            "task": args.task,
-            "routing": routing,
-            "candidates": candidate_rows,
-        })
+        _print_json(
+            {
+                "task": args.task,
+                "routing": routing,
+                "candidates": candidate_rows,
+            }
+        )
     else:
         selected = routing.get("selected_ids") or []
         if selected:
@@ -1543,7 +1593,9 @@ def _run_command(command: list[str], *, timeout: float | None = None) -> int:
     return int(proc.returncode)
 
 
-def _emit_delegate_result(args: argparse.Namespace, payload: dict[str, Any], *, stderr: str = "") -> int:
+def _emit_delegate_result(
+    args: argparse.Namespace, payload: dict[str, Any], *, stderr: str = ""
+) -> int:
     if args.json:
         _print_json(payload)
     elif stderr:
@@ -1663,7 +1715,9 @@ def cmd_delegate(args: argparse.Namespace) -> int:
     normalized = {**result, **payload, "status": evidence_status}
     if skip_reason:
         normalized["skip_reason"] = skip_reason
-    return _emit_delegate_result(args, normalized, stderr=error if evidence_status != "completed" else "")
+    return _emit_delegate_result(
+        args, normalized, stderr=error if evidence_status != "completed" else ""
+    )
 
 
 def cmd_policy(args: argparse.Namespace) -> int:
@@ -1681,14 +1735,24 @@ def cmd_policy(args: argparse.Namespace) -> int:
         }
         all_policy_slugs: list[str] = []
         for action, data in actions.items():
-            always: list[str] = [str(i.get("slug", "")) for i in (data.get("always_include") or []) if isinstance(i, dict) and i.get("slug")]
-            conditional: list[str] = [str(i.get("slug", "")) for i in (data.get("conditional") or []) if isinstance(i, dict) and i.get("slug")]
+            always: list[str] = [
+                str(i.get("slug", ""))
+                for i in (data.get("always_include") or [])
+                if isinstance(i, dict) and i.get("slug")
+            ]
+            conditional: list[str] = [
+                str(i.get("slug", ""))
+                for i in (data.get("conditional") or [])
+                if isinstance(i, dict) and i.get("slug")
+            ]
             all_policy_slugs += always + conditional
             summary["actions"][action] = {
                 "always_include": always,
                 "always_missing": [s for s in always if s not in active_slugs],
                 "conditional": conditional,
-                "conditional_missing": [s for s in conditional if s not in active_slugs],
+                "conditional_missing": [
+                    s for s in conditional if s not in active_slugs
+                ],
             }
         unique = list(dict.fromkeys(all_policy_slugs))
         summary["unique_policy_slugs"] = len(unique)
@@ -1696,10 +1760,20 @@ def cmd_policy(args: argparse.Namespace) -> int:
         _print_json(summary)
         return 0
 
-    print(f"Companion policy: {len(actions)} broad actions, {len(active_slugs)} active roster agents\n")
+    print(
+        f"Companion policy: {len(actions)} broad actions, {len(active_slugs)} active roster agents\n"
+    )
     for action, data in sorted(actions.items()):
-        always_list: list[str] = [str(i.get("slug", "")) for i in (data.get("always_include") or []) if isinstance(i, dict) and i.get("slug")]
-        cond_list: list[str] = [str(i.get("slug", "")) for i in (data.get("conditional") or []) if isinstance(i, dict) and i.get("slug")]
+        always_list: list[str] = [
+            str(i.get("slug", ""))
+            for i in (data.get("always_include") or [])
+            if isinstance(i, dict) and i.get("slug")
+        ]
+        cond_list: list[str] = [
+            str(i.get("slug", ""))
+            for i in (data.get("conditional") or [])
+            if isinstance(i, dict) and i.get("slug")
+        ]
         always_missing: list[str] = [s for s in always_list if s not in active_slugs]
         cond_missing: list[str] = [s for s in cond_list if s not in active_slugs]
         status = "✅" if not always_missing else "❌"
@@ -1707,9 +1781,13 @@ def cmd_policy(args: argparse.Namespace) -> int:
         print(f"   always_include ({len(always_list)}): {', '.join(always_list)}")
         if always_missing:
             print(f"   ⚠️  always_include MISSING: {', '.join(always_missing)}")
-        print(f"   conditional ({len(cond_list)}): {', '.join(cond_list[:8])}{'…' if len(cond_list) > 8 else ''}")
+        print(
+            f"   conditional ({len(cond_list)}): {', '.join(cond_list[:8])}{'…' if len(cond_list) > 8 else ''}"
+        )
         if cond_missing:
-            print(f"   ⚠️  conditional missing {len(cond_missing)}: {', '.join(cond_missing[:8])}{'…' if len(cond_missing) > 8 else ''}")
+            print(
+                f"   ⚠️  conditional missing {len(cond_missing)}: {', '.join(cond_missing[:8])}{'…' if len(cond_missing) > 8 else ''}"
+            )
     return 0
 
 
@@ -1721,7 +1799,9 @@ def cmd_eval_delegation(args: argparse.Namespace) -> int:
         _print_json(report)
     else:
         status = "passed" if report["passed"] else "failed"
-        print(f"delegation eval {status}: {report['passed_count']} passed, {report['failed_count']} failed")
+        print(
+            f"delegation eval {status}: {report['passed_count']} passed, {report['failed_count']} failed"
+        )
         for case in report["cases"]:
             marker = "ok" if case["passed"] else "FAIL"
             detail = case.get("error") or case.get("detail") or ""
@@ -1761,9 +1841,13 @@ def cmd_smoke(args: argparse.Namespace) -> int:
         _print_json(report)
     else:
         status = "passed" if report["passed"] else "failed"
-        print(f"smoke {status}: {report['passed_count']} passed, {report['failed_count']} failed, {report['skipped_count']} skipped")
+        print(
+            f"smoke {status}: {report['passed_count']} passed, {report['failed_count']} failed, {report['skipped_count']} skipped"
+        )
         for check in report["checks"]:
-            marker = {"pass": "ok", "skip": "skip", "fail": "FAIL"}.get(check["status"], check["status"])
+            marker = {"pass": "ok", "skip": "skip", "fail": "FAIL"}.get(
+                check["status"], check["status"]
+            )
             detail = check.get("error") or check.get("detail") or ""
             print(f"{marker}\t{check['name']}\t{detail}")
     return 0 if report["passed"] else 1
@@ -1775,7 +1859,9 @@ def cmd_db_stats(args: argparse.Namespace) -> int:
         _print_json(stats)
     else:
         print(f"DB: {stats['db_path']}")
-        print(f"Size: {stats['db_size_bytes']} bytes (wal={stats['wal_size_bytes']}, shm={stats['shm_size_bytes']})")
+        print(
+            f"Size: {stats['db_size_bytes']} bytes (wal={stats['wal_size_bytes']}, shm={stats['shm_size_bytes']})"
+        )
         for table, count in stats["tables"].items():
             print(f"{table}\t{count}")
     return 0
@@ -1793,18 +1879,23 @@ def cmd_db_trim(args: argparse.Namespace) -> int:
     else:
         mode = "DRY RUN " if report["dry_run"] else ""
         print(f"{mode}Trimmed Agency Runtime DB: {report['db_path']}")
-        print(f"Size: {report['db_size_before_bytes']} -> {report['db_size_after_bytes']} bytes")
+        print(
+            f"Size: {report['db_size_before_bytes']} -> {report['db_size_after_bytes']} bytes"
+        )
         for table, detail in report["tables"].items():
             deleted = int(detail.get("deleted", 0))
             if deleted:
                 print(f"{table}\tdeleted={deleted}")
-        if not any(int(detail.get("deleted", 0)) for detail in report["tables"].values()):
+        if not any(
+            int(detail.get("deleted", 0)) for detail in report["tables"].values()
+        ):
             print("No rows matched the retention policy.")
     return 0
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
     from agency_runtime.server.http import serve
+
     serve()
     return 0
 
@@ -1830,8 +1921,98 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
         port=args.port,
         db_path=args.db,
         open_browser=not args.no_open,
+        service_mode=bool(getattr(args, "service_mode", False)),
+        config_path=getattr(args, "config", None),
     )
     return 0
+
+
+def _wait_dashboard_ready(timeout_seconds: float = 8.0) -> bool:
+    from agency_runtime.core.dashboard_runtime import dashboard_service_reachable
+
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        if dashboard_service_reachable(timeout=0.5):
+            return True
+        time.sleep(0.1)
+    return False
+
+
+def cmd_dashboard_service(args: argparse.Namespace) -> int:
+    from agency_runtime.core.dashboard_runtime import (
+        dashboard_service_reachable,
+        open_dashboard_service,
+    )
+    from agency_runtime.core.dashboard_service import (
+        inspect_dashboard_service,
+        install_dashboard_service,
+        plan_dashboard_service,
+        restart_dashboard_service,
+        start_dashboard_service,
+        stop_dashboard_service,
+        uninstall_dashboard_service,
+    )
+
+    action = args.dashboard_service_action
+    common = {"config_path": resolve_config_path()}
+    if action == "open":
+        result = open_dashboard_service(open_browser=not args.no_open)
+    elif action == "status":
+        result = inspect_dashboard_service(
+            **common,
+            reachability_probe=dashboard_service_reachable,
+        )
+    elif action == "install" and args.dry_run:
+        result = plan_dashboard_service(**common)
+    elif action == "install":
+        result = install_dashboard_service(
+            **common,
+            reachability_probe=dashboard_service_reachable,
+            readiness_probe=_wait_dashboard_ready,
+        )
+    elif action == "start":
+        result = start_dashboard_service(
+            **common,
+            reachability_probe=dashboard_service_reachable,
+            readiness_probe=_wait_dashboard_ready,
+        )
+    elif action == "stop":
+        result = stop_dashboard_service(
+            **common,
+            reachability_probe=dashboard_service_reachable,
+        )
+    elif action == "restart":
+        result = restart_dashboard_service(
+            **common,
+            reachability_probe=dashboard_service_reachable,
+            readiness_probe=_wait_dashboard_ready,
+        )
+    elif action == "uninstall":
+        result = uninstall_dashboard_service(
+            **common,
+            reachability_probe=dashboard_service_reachable,
+        )
+    else:  # parser choices make this defensive only
+        raise ValueError(f"unknown dashboard service action: {action}")
+
+    if args.json:
+        _print_json(result)
+    elif result.get("ok"):
+        status = result.get("status") or result.get("action") or action
+        print(f"✅ Dashboard service {status}")
+        if action == "open":
+            print(f"   {result.get('url')}")
+        elif action in {"install", "start", "restart"}:
+            print("   Open it with: agency dashboard service open")
+        if result.get("reachable") is False:
+            print(
+                "   Warning: registration exists, but the dashboard is not reachable."
+            )
+    else:
+        print(
+            f"❌ Dashboard service {action}: {result.get('error', 'operation failed')}"
+        )
+    return int(result.get("exit_code", 0 if result.get("ok") else 1))
 
 
 def cmd_codex_exec(args: argparse.Namespace) -> int:
@@ -1846,11 +2027,15 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="agency", description="Agency Runtime Control Plane")
+    parser = argparse.ArgumentParser(
+        prog="agency", description="Agency Runtime Control Plane"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     # install
-    install = sub.add_parser("install", help="Install Agency Runtime — seed roster + wire into agent hosts")
+    install = sub.add_parser(
+        "install", help="Install Agency Runtime — seed roster + wire into agent hosts"
+    )
     install.add_argument(
         "--profile",
         choices=sorted(PROFILES),
@@ -1858,38 +2043,79 @@ def build_parser() -> argparse.ArgumentParser:
         help="Verify the already-configured profile; use `agency configure` to change it",
     )
     install_target = install.add_mutually_exclusive_group()
-    install_target.add_argument("--all", action="store_true", help="Auto-detect and wire into every AI agent host found")
-    install_target.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None,
-                                help="Wire into a specific agent host")
+    install_target.add_argument(
+        "--all",
+        action="store_true",
+        help="Auto-detect and wire into every AI agent host found",
+    )
+    install_target.add_argument(
+        "--agent",
+        choices=["hermes", "openclaw", "codex", "claude"],
+        default=None,
+        help="Wire into a specific agent host",
+    )
     install_action = install.add_mutually_exclusive_group()
-    install_action.add_argument("--dry-run", action="store_true", help="Print a write-free roster and native host plan")
-    install_action.add_argument("--rollback", action="store_true", help="Restore the latest retained backup for --agent")
-    install.add_argument("--backup", default=None, help="Specific retained backup to restore with --rollback")
-    install.add_argument("--json", action="store_true", help="Print machine-readable results")
+    install_action.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print a write-free roster and native host plan",
+    )
+    install_action.add_argument(
+        "--rollback",
+        action="store_true",
+        help="Restore the latest retained backup for --agent",
+    )
+    install.add_argument(
+        "--backup",
+        default=None,
+        help="Specific retained backup to restore with --rollback",
+    )
+    install.add_argument(
+        "--no-dashboard",
+        action="store_true",
+        help="Do not register or start the optional per-user dashboard service",
+    )
+    install.add_argument(
+        "--json", action="store_true", help="Print machine-readable results"
+    )
     install.set_defaults(func=cmd_install)
 
     # on/off toggle
     on_p = sub.add_parser("on", help="Enable Agency Runtime for a host")
-    on_p.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None)
+    on_p.add_argument(
+        "--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None
+    )
     on_p.add_argument("--dry-run", action="store_true")
     on_p.add_argument("--json", action="store_true")
     on_p.set_defaults(func=cmd_on)
 
     off_p = sub.add_parser("off", help="Disable Agency Runtime for a host")
-    off_p.add_argument("--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None)
+    off_p.add_argument(
+        "--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None
+    )
     off_p.add_argument("--dry-run", action="store_true")
     off_p.add_argument("--json", action="store_true")
     off_p.set_defaults(func=cmd_off)
 
     # configure
-    configure = sub.add_parser("configure", help="Guided setup wizard — writes agency.yaml")
-    configure.add_argument("--non-interactive", action="store_true", help="Write detected config without prompts")
+    configure = sub.add_parser(
+        "configure", help="Guided setup wizard — writes agency.yaml"
+    )
+    configure.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Write detected config without prompts",
+    )
     configure.add_argument("--profile", choices=sorted(PROFILES), default=None)
-    configure.add_argument("--force", action="store_true", help="Overwrite existing config")
+    configure.add_argument(
+        "--force", action="store_true", help="Overwrite existing config"
+    )
     configure.set_defaults(func=cmd_configure)
 
     # doctor
-    doctor = sub.add_parser("doctor", help="Check DB, config, providers, and adapter availability")
+    doctor = sub.add_parser(
+        "doctor", help="Check DB, config, providers, and adapter availability"
+    )
     doctor.add_argument("--json", action="store_true", help="JSON output")
     doctor.add_argument("--verbose", action="store_true")
     doctor.set_defaults(func=cmd_doctor)
@@ -1912,17 +2138,33 @@ def build_parser() -> argparse.ArgumentParser:
 
     config_set = config_sub.add_parser("set", help="Set a config value")
     config_set.add_argument("key", help="Dotted key (e.g. judge.model)")
-    config_set.add_argument("value", help="Value to set")
+    config_set.add_argument(
+        "value", nargs="?", help="YAML value to set (never use for secrets)"
+    )
+    config_input = config_set.add_mutually_exclusive_group()
+    config_input.add_argument(
+        "--stdin", action="store_true", help="Read the value from standard input"
+    )
+    config_input.add_argument(
+        "--prompt", action="store_true", help="Prompt without echo for a secret value"
+    )
+    config_input.add_argument(
+        "--clear", action="store_true", help="Clear a stored secret"
+    )
     config_set.set_defaults(func=cmd_config_set)
 
-    config_validate = config_sub.add_parser("validate", help="Validate config + reachability")
+    config_validate = config_sub.add_parser(
+        "validate", help="Validate config + reachability"
+    )
     config_validate.set_defaults(func=cmd_config_validate)
 
     config_reset = config_sub.add_parser("reset", help="Reset to defaults")
     config_reset.set_defaults(func=cmd_config_reset)
 
     # sync
-    sync = sub.add_parser("sync", help="Download sources into quarantine and create a roster snapshot")
+    sync = sub.add_parser(
+        "sync", help="Download sources into quarantine and create a roster snapshot"
+    )
     sync.add_argument("--dry-run", action="store_true")
     sync.add_argument("--review", action="store_true")
     sync.add_argument("--auto-approve", action="store_true")
@@ -1948,13 +2190,17 @@ def build_parser() -> argparse.ArgumentParser:
     roster_sub = roster.add_subparsers(dest="roster_command", required=True)
     roster_list = roster_sub.add_parser("list", help="List active roster")
     roster_list.set_defaults(func=cmd_roster_list)
-    roster_diff = roster_sub.add_parser("diff", help="Create/show diff for quarantined candidates")
+    roster_diff = roster_sub.add_parser(
+        "diff", help="Create/show diff for quarantined candidates"
+    )
     roster_diff.add_argument("--json", action="store_true")
     roster_diff.set_defaults(func=cmd_roster_diff)
     roster_approve = roster_sub.add_parser("approve", help="Approve snapshot")
     roster_approve.add_argument("snapshot_id")
     roster_approve.set_defaults(func=cmd_roster_approve)
-    roster_activate = roster_sub.add_parser("activate", help="Activate approved snapshot")
+    roster_activate = roster_sub.add_parser(
+        "activate", help="Activate approved snapshot"
+    )
     roster_activate.add_argument("snapshot_id")
     roster_activate.set_defaults(func=cmd_roster_activate)
 
@@ -1973,15 +2219,24 @@ def build_parser() -> argparse.ArgumentParser:
     route.set_defaults(func=cmd_route)
 
     # policy
-    policy_p = sub.add_parser("policy", help="Show companion policy and validate coverage against active roster")
+    policy_p = sub.add_parser(
+        "policy",
+        help="Show companion policy and validate coverage against active roster",
+    )
     policy_p.add_argument("--json", action="store_true")
     policy_p.set_defaults(func=cmd_policy)
 
     # explain
-    explain = sub.add_parser("explain", help="Explain why specialists were selected for a task")
+    explain = sub.add_parser(
+        "explain", help="Explain why specialists were selected for a task"
+    )
     explain.add_argument("task")
-    explain.add_argument("--session-id", default="", help="Session id for cache/stickiness context")
-    explain.add_argument("--limit", type=int, default=10, help="Number of candidates to include")
+    explain.add_argument(
+        "--session-id", default="", help="Session id for cache/stickiness context"
+    )
+    explain.add_argument(
+        "--limit", type=int, default=10, help="Number of candidates to include"
+    )
     explain.set_defaults(func=cmd_explain)
 
     # delegate
@@ -1993,14 +2248,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     delegate.add_argument("--agent", default="")
     delegate.add_argument("--task", required=True)
-    delegate.add_argument("--workdir", default=None, help="Existing working directory for the delegated host")
+    delegate.add_argument(
+        "--workdir",
+        default=None,
+        help="Existing working directory for the delegated host",
+    )
     delegate.add_argument(
         "--timeout",
         type=float,
         default=None,
         help="Stop waiting after N seconds and mark the delegation skipped",
     )
-    delegate.add_argument("--json", action="store_true", help="Print machine-readable delegation result")
+    delegate.add_argument(
+        "--json", action="store_true", help="Print machine-readable delegation result"
+    )
     delegate.add_argument(
         "--command",
         nargs=argparse.REMAINDER,
@@ -2012,7 +2273,9 @@ def build_parser() -> argparse.ArgumentParser:
     # eval
     eval_p = sub.add_parser("eval", help="Run deterministic eval suites")
     eval_sub = eval_p.add_subparsers(dest="eval_command", required=True)
-    eval_delegation = eval_sub.add_parser("delegation", help="Run delegation lifecycle/evidence evals")
+    eval_delegation = eval_sub.add_parser(
+        "delegation", help="Run delegation lifecycle/evidence evals"
+    )
     eval_delegation.add_argument("--json", action="store_true")
     eval_delegation.set_defaults(func=cmd_eval_delegation)
     eval_routing = eval_sub.add_parser(
@@ -2029,7 +2292,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     # smoke
     smoke = sub.add_parser("smoke", help="Run deterministic local smoke checks")
-    smoke.add_argument("--all", action="store_true", help="Smoke-test every supported generated host plugin")
+    smoke.add_argument(
+        "--all",
+        action="store_true",
+        help="Smoke-test every supported generated host plugin",
+    )
     smoke.add_argument("--json", action="store_true")
     smoke.set_defaults(func=cmd_smoke)
 
@@ -2040,10 +2307,26 @@ def build_parser() -> argparse.ArgumentParser:
     db_stats.add_argument("--json", action="store_true")
     db_stats.set_defaults(func=cmd_db_stats)
     db_trim = db_sub.add_parser("trim", help="Trim append-only runtime/audit tables")
-    db_trim.add_argument("--older-than-days", type=int, default=None, help="Delete runtime rows older than N days")
-    db_trim.add_argument("--keep-last", type=int, default=None, help="Keep only the newest N rows per runtime table")
-    db_trim.add_argument("--dry-run", action="store_true", help="Report rows that would be deleted without changing the DB")
-    db_trim.add_argument("--no-vacuum", action="store_true", help="Skip VACUUM after deleting rows")
+    db_trim.add_argument(
+        "--older-than-days",
+        type=int,
+        default=None,
+        help="Delete runtime rows older than N days",
+    )
+    db_trim.add_argument(
+        "--keep-last",
+        type=int,
+        default=None,
+        help="Keep only the newest N rows per runtime table",
+    )
+    db_trim.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report rows that would be deleted without changing the DB",
+    )
+    db_trim.add_argument(
+        "--no-vacuum", action="store_true", help="Skip VACUUM after deleting rows"
+    )
     db_trim.add_argument("--json", action="store_true")
     db_trim.set_defaults(func=cmd_db_trim)
 
@@ -2062,10 +2345,44 @@ def build_parser() -> argparse.ArgumentParser:
     serve_p = sub.add_parser("serve", help="Start HTTP server")
     serve_p.set_defaults(func=cmd_serve)
 
-    dashboard = sub.add_parser("dashboard", help="Open the secure local operations dashboard")
-    dashboard.add_argument("--port", type=int, default=0, help="Loopback port (default: choose a free port)")
+    dashboard = sub.add_parser(
+        "dashboard", help="Open the secure local operations dashboard"
+    )
+    dashboard.add_argument(
+        "--port",
+        type=int,
+        default=0,
+        help="Loopback port (default: choose a free port)",
+    )
     dashboard.add_argument("--db", default=None, help="SQLite database path")
-    dashboard.add_argument("--no-open", action="store_true", help="Do not open a web browser")
+    dashboard.add_argument(
+        "--no-open", action="store_true", help="Do not open a web browser"
+    )
+    dashboard.add_argument(
+        "--service-mode", action="store_true", help=argparse.SUPPRESS
+    )
+    dashboard.add_argument("--config", default=None, help=argparse.SUPPRESS)
+    dashboard_sub = dashboard.add_subparsers(dest="dashboard_command")
+    dashboard_service = dashboard_sub.add_parser(
+        "service",
+        help="Manage the optional per-user dashboard service",
+    )
+    dashboard_service_sub = dashboard_service.add_subparsers(
+        dest="dashboard_service_action",
+        required=True,
+    )
+    for action in ("status", "start", "stop", "restart", "uninstall"):
+        action_parser = dashboard_service_sub.add_parser(action)
+        action_parser.add_argument("--json", action="store_true")
+        action_parser.set_defaults(func=cmd_dashboard_service)
+    dashboard_service_install = dashboard_service_sub.add_parser("install")
+    dashboard_service_install.add_argument("--dry-run", action="store_true")
+    dashboard_service_install.add_argument("--json", action="store_true")
+    dashboard_service_install.set_defaults(func=cmd_dashboard_service)
+    dashboard_service_open = dashboard_service_sub.add_parser("open")
+    dashboard_service_open.add_argument("--no-open", action="store_true")
+    dashboard_service_open.add_argument("--json", action="store_true")
+    dashboard_service_open.set_defaults(func=cmd_dashboard_service)
     dashboard.set_defaults(func=cmd_dashboard)
 
     # codex

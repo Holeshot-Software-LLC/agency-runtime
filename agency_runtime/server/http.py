@@ -31,7 +31,11 @@ from agency_runtime.core.config import load_config
 from agency_runtime.core.header.finalize import finalize_response
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
-from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, route
+from agency_runtime.core.selector.pipeline import (
+    build_routing_context,
+    is_trivial,
+    route,
+)
 from agency_runtime.core.selector.policy import detect_actions
 from agency_runtime.core.store.sqlite import Store
 
@@ -49,6 +53,7 @@ _MAX_BODY = 1024 * 1024
 # Request handler
 # ---------------------------------------------------------------------------
 
+
 class AgencyHTTPHandler(BaseHTTPRequestHandler):
     """HTTP request handler for Agency Runtime endpoints."""
 
@@ -62,7 +67,9 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
     # ── Method dispatch ──────────────────────────────────────────────
 
     def do_OPTIONS(self) -> None:  # noqa: N802 — http.server contract
-        self._json_error(HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed")
+        self._json_error(
+            HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed"
+        )
 
     def do_GET(self) -> None:  # noqa: N802 — http.server contract
         if not self._validate_request_boundary():
@@ -107,13 +114,18 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", 0))
         except (TypeError, ValueError):
-            self._json_error(HTTPStatus.BAD_REQUEST, "invalid or missing Content-Length")
+            self._json_error(
+                HTTPStatus.BAD_REQUEST, "invalid or missing Content-Length"
+            )
             return None
         if length <= 0:
             self._json_error(HTTPStatus.BAD_REQUEST, "request body is empty")
             return None
-        if length > _MAX_BODY:
-            self._json_error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "request body too large")
+        max_body_size = int(getattr(self.server, "max_body_size", _MAX_BODY))
+        if length > max_body_size:
+            self._json_error(
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "request body too large"
+            )
             return None
         raw = self.rfile.read(length)
         try:
@@ -122,7 +134,9 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             self._json_error(HTTPStatus.BAD_REQUEST, f"invalid JSON: {exc}")
             return None
         if not isinstance(body, dict):
-            self._json_error(HTTPStatus.BAD_REQUEST, "request body must be a JSON object")
+            self._json_error(
+                HTTPStatus.BAD_REQUEST, "request body must be a JSON object"
+            )
             return None
         return body
 
@@ -133,7 +147,9 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+        self.send_header(
+            "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+        )
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
@@ -159,7 +175,9 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         if origin:
             expected = f"http://{host}"
             if origin.rstrip("/").lower() != expected.rstrip("/"):
-                self._json_error(HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed")
+                self._json_error(
+                    HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed"
+                )
                 return False
 
         supplied = self.headers.get("Authorization", "")
@@ -169,9 +187,13 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             return False
 
         if require_json:
-            content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            content_type = (
+                self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            )
             if content_type != "application/json":
-                self._json_error(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required")
+                self._json_error(
+                    HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required"
+                )
                 return False
         return True
 
@@ -199,7 +221,10 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         context = build_routing_context(routing)
         if trivial:
             _matched, companion_ids = detect_actions(user_message)
-            active_slugs = {str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog}
+            active_slugs = {
+                str(agent.get("slug") or agent.get("agent_slug") or "")
+                for agent in catalog
+            }
             available = [slug for slug in companion_ids if slug in active_slugs]
             context = None
             if available:
@@ -208,15 +233,17 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
                     f"(deterministic, trivial message): {', '.join(available)}"
                 )
 
-        self._json_ok({
-            "trace_id": trace_id,
-            "session_id": session_id,
-            "model": requested_model,
-            "routing": routing,
-            "context": context,
-            "trivial": trivial,
-            "roster_size": len(catalog),
-        })
+        self._json_ok(
+            {
+                "trace_id": trace_id,
+                "session_id": session_id,
+                "model": requested_model,
+                "routing": routing,
+                "context": context,
+                "trivial": trivial,
+                "roster_size": len(catalog),
+            }
+        )
 
     def _handle_explain(self, body: dict[str, Any]) -> None:
         task = str(body.get("task") or body.get("user_message") or "")
@@ -286,13 +313,15 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             },
             store=self.store,
         )
-        self._json_ok({
-            "action": result["action"],
-            "text": result["text"],
-            "missing": result["missing"],
-            "trace_id": trace_id,
-            "session_id": session_id,
-        })
+        self._json_ok(
+            {
+                "action": result["action"],
+                "text": result["text"],
+                "missing": result["missing"],
+                "trace_id": trace_id,
+                "session_id": session_id,
+            }
+        )
 
     def _handle_search(self, body: dict[str, Any]) -> None:
         query = str(body.get("query", ""))
@@ -314,26 +343,32 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             entry["score"] = round(float(score), 2)
             results.append(entry)
 
-        self._json_ok({
-            "query": query,
-            "agents": results,
-            "count": len(results),
-        })
+        self._json_ok(
+            {
+                "query": query,
+                "agents": results,
+                "count": len(results),
+            }
+        )
 
     def _handle_status(self) -> None:
         roster = self.store.get_active_roster()
-        self._json_ok({
-            "status": "ok",
-            "roster_count": len(roster),
-            "db_path": str(self.store.db_path),
-        })
+        self._json_ok(
+            {
+                "status": "ok",
+                "roster_count": len(roster),
+                "db_path": str(self.store.db_path),
+            }
+        )
 
     def _handle_roster(self) -> None:
         roster = self.store.get_active_roster()
-        self._json_ok({
-            "agents": roster,
-            "count": len(roster),
-        })
+        self._json_ok(
+            {
+                "agents": roster,
+                "count": len(roster),
+            }
+        )
 
     # ── Logging ──────────────────────────────────────────────────────
 
@@ -344,6 +379,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 # ---------------------------------------------------------------------------
 # Server
 # ---------------------------------------------------------------------------
+
 
 class AgencyHTTPServer(ThreadingHTTPServer):
     """Threaded HTTP server for Agency Runtime.
@@ -366,12 +402,23 @@ class AgencyHTTPServer(ThreadingHTTPServer):
         allow_remote: bool = False,
         allow_context_writes: bool = False,
         auth_token: str | None = None,
+        max_body_size: int = _MAX_BODY,
     ):
         if not allow_remote and not _is_loopback_host(host):
-            raise ValueError("Agency HTTP server is loopback-only unless allow_remote is explicit")
+            raise ValueError(
+                "Agency HTTP server is loopback-only unless allow_remote is explicit"
+            )
         self.store = store
         self.allow_context_writes = allow_context_writes
-        self.auth_token = auth_token or getattr(self, "auth_token", "") or secrets.token_urlsafe(32)
+        self.auth_token = (
+            auth_token or getattr(self, "auth_token", "") or secrets.token_urlsafe(32)
+        )
+        if (
+            isinstance(max_body_size, bool)
+            or not 1024 <= int(max_body_size) <= 64 * 1024 * 1024
+        ):
+            raise ValueError("max_body_size must be between 1024 bytes and 64 MiB")
+        self.max_body_size = int(max_body_size)
         # ``TCPServer`` creates its listening socket during ``__init__`` using
         # this attribute.  Set it on the instance before delegating so an
         # explicit ``::1`` binding is genuinely IPv6 rather than merely
@@ -395,6 +442,7 @@ class AgencyHTTPServer(ThreadingHTTPServer):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _normalise_path(raw_path: str) -> str:
     """Strip query string and trailing slash, return bare path."""
     path = urlparse(raw_path).path
@@ -414,7 +462,9 @@ def _is_loopback_host(host: str) -> bool:
 def _log_unhandled_request_error(method: str, path: str, exc: Exception) -> None:
     """Log traceback shape without leaking exception messages or payload values."""
     frames = traceback.extract_tb(exc.__traceback__)
-    frame_refs = ", ".join(f"{Path(frame.filename).name}:{frame.lineno}" for frame in frames[-5:])
+    frame_refs = ", ".join(
+        f"{Path(frame.filename).name}:{frame.lineno}" for frame in frames[-5:]
+    )
     logger.error(
         "unhandled error on %s %s: %s at %s",
         method,
@@ -427,6 +477,7 @@ def _log_unhandled_request_error(method: str, path: str, exc: Exception) -> None
 # ---------------------------------------------------------------------------
 # Entrypoint
 # ---------------------------------------------------------------------------
+
 
 def serve(
     host: str | None = None,
@@ -442,7 +493,12 @@ def serve(
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
     )
     store = Store(db_path) if db_path else Store()
-    server = AgencyHTTPServer(store, host, port)
+    server = AgencyHTTPServer(
+        store,
+        host,
+        port,
+        max_body_size=cfg.server.max_body_size,
+    )
     print(f"Agency Runtime HTTP bearer token: {server.auth_token}")
     logger.info("Agency Runtime HTTP server listening on %s:%d", host, port)
     try:
@@ -455,8 +511,12 @@ def serve(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Agency Runtime HTTP server")
-    parser.add_argument("--host", default=DEFAULT_HOST, help="bind address (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="listen port (default: 7800)")
+    parser.add_argument(
+        "--host", default=DEFAULT_HOST, help="bind address (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=DEFAULT_PORT, help="listen port (default: 7800)"
+    )
     parser.add_argument("--db", default=None, help="SQLite database path")
     args = parser.parse_args()
     serve(args.host, args.port, args.db)

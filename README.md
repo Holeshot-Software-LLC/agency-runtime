@@ -111,13 +111,28 @@ agency install --agent codex --rollback
 agency install --agent codex --rollback --backup <retained-backup-path>
 ```
 
-The dry run writes nothing. A real install stages a complete managed tree
+Installation also registers and starts the optional dashboard for the current
+operating-system user: Task Scheduler on Windows and `systemd --user` on Linux.
+It never requests an administrator/system service. Opt out without probing or
+changing the service manager:
+
+```bash
+agency install --all --no-dashboard
+```
+
+The dry run writes nothing and includes the exact dashboard-service plan. A
+real install stages a complete managed tree
 atomically, moves the previous managed tree to a timestamped backup, and then
 uses the host's native plugin lifecycle. Native registration failure returns a
 nonzero partial-failure result; staged files are never reported as registered.
 The installer never restarts a host automatically. In particular, OpenClaw
 installation stops when a live gateway is proven and requires the operator to
 schedule the restart.
+
+The dashboard service is also fail-honest: if Task Scheduler or the Linux user
+manager is unavailable, installation reports that component incomplete and
+returns nonzero. The foreground dashboard remains usable, or rerun with
+`--no-dashboard` after reviewing the limitation.
 
 ### Installed paths
 
@@ -170,7 +185,19 @@ proves that behavior.
 ## Secure operations dashboard
 
 The dashboard is installed as package data; Node.js and a separate web build
-are not required.
+are not required. A normal `agency install` runs it as an optional user-scoped
+service. Manage or open that service with:
+
+```bash
+agency dashboard service status
+agency dashboard service open
+agency dashboard service restart
+agency dashboard service uninstall
+agency dashboard service install --dry-run
+agency dashboard service install
+```
+
+The foreground mode remains available on both Windows and Linux:
 
 ```bash
 agency dashboard
@@ -179,16 +206,36 @@ agency dashboard --port 7801 --db ~/.agency-runtime/agency.db
 ```
 
 It binds only to loopback and creates a new high-entropy access token for each
-process. The token is delivered in the URL fragment, moved to session storage,
-and required as a bearer token for API calls. The server validates `Host` and
-same-origin requests, accepts mutation bodies only as JSON, sends restrictive
-browser security headers, and requires exact confirmation phrases for roster,
-host, and retention mutations.
+process. Foreground mode prints the one-time URL. Service mode writes the
+rotating token only to an owner-restricted runtime descriptor; the systemd unit,
+scheduled task, process arguments, status output, and logs never contain it.
+`agency dashboard service open` reads that descriptor and verifies the
+authenticated health endpoint before opening a token-fragment URL. The browser
+moves the token to session storage. The server validates `Host` and same-origin
+requests, accepts mutation bodies only as JSON, sends restrictive browser
+security headers, and requires exact confirmation phrases for roster, host,
+retention, and configuration mutations.
 
 The UI shows recent routing decisions, evidence tables, roster snapshots, host
-maturity, redacted configuration, and a route/explain lab. It is not a remote
-multi-user control plane, does not display a complete dependency graph yet, and
-does not turn cold host inventory into a live verification claim.
+maturity, an authoritative detected dependency graph, editable redacted
+configuration, and a route/explain lab. It is not a remote multi-user control
+plane and does not turn cold host inventory into a live verification claim.
+
+Dashboard and CLI configuration changes use the same typed, locked, atomic
+writer. Unknown fields, invalid types/ranges, embedded URL credentials, stale
+browser revisions, and redaction-marker round trips are rejected before the
+file is replaced. Direct secrets are write-only:
+
+```bash
+agency config set judge.model qwen3.5:2b
+agency config set judge.api_key --prompt
+agency config set judge.api_key --clear
+```
+
+The Settings view exposes runtime policy, provider order, judge/Ollama,
+selector, adapter, privacy, storage, HTTP, and dashboard-service port settings.
+Changing a restart-bound field is reported explicitly. Enabling content capture
+or switching to `local-only` requires an additional operation-specific phrase.
 
 Observability is metadata-only by default:
 
@@ -309,7 +356,9 @@ Defaults:
 - Configuration: `~/.agency-runtime/agency.yaml`
 - SQLite: `~/.agency-runtime/agency.db`
 - Profile: `standard`
-- Dashboard/content capture: disabled until launched/opted in
+- Dashboard service: installed for the current user by default; use
+  `agency install --no-dashboard` to opt out
+- Dashboard/content capture: disabled until explicitly opted in
 - Runtime retention: 30 days when the dashboard starts, or when explicitly
   trimmed
 
@@ -319,8 +368,11 @@ Useful commands:
 agency configure
 agency configure --non-interactive --profile local-only
 agency config show
+agency config set judge.model qwen3.5:2b
+agency config set judge.api_key --prompt
 agency config validate
 agency config path
+agency dashboard service status
 agency db stats
 agency db trim --older-than-days 30 --dry-run
 agency db trim --older-than-days 30
@@ -335,6 +387,7 @@ Environment overrides include `AGENCY_CONFIG_PATH`, `AGENCY_DB_PATH`,
 `AGENCY_CAPTURE_CONTENT`, `AGENCY_RETENTION_DAYS`, `AGENCY_JUDGE_MODEL`,
 `AGENCY_JUDGE_BASE_URL`, `AGENCY_JUDGE_API_KEY`, `LITELLM_API_KEY`,
 `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `OLLAMA_BASE_URL`.
+`AGENCY_DASHBOARD_PORT` overrides the fixed user-service port.
 
 ## Roster governance
 

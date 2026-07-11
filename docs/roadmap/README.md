@@ -30,6 +30,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-10` | [Make runtime evidence authoritative](issue-AR-10-authoritative-runtime-evidence.md) | done | p0 | observability | [#10](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/10) (open; closure not performed) |
 | `AR-11` | [Establish routing accuracy and performance gates](issue-AR-11-routing-evaluation-and-performance.md) | done | p0 | testing | [#11](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/11) (open; closure not performed) |
 | `AR-12` | [Ship a secure installed operations dashboard](issue-AR-12-installed-operations-dashboard.md) | done | p1 | operations | [#12](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/12) (open; closure not performed) |
+| `AR-13` | [Add an optional cross-platform dashboard service and configuration parity](issue-AR-13-optional-dashboard-service-configuration.md) | done | p1 | operations | Pending authorization |
 
 ## Traceability
 
@@ -51,12 +52,13 @@ not stable internal identifiers.
 | [AR-10](issue-AR-10-authoritative-runtime-evidence.md) | [`17a62dd`](../worklog/README.md) | [ADR-0007](../decisions/0007-six-line-evidence-header.md), [ADR-0011](../decisions/0011-explicit-delegation-evidence-lifecycle.md), [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-11](issue-AR-11-routing-evaluation-and-performance.md) | [`17a62dd`](../worklog/README.md) | [ADR-0001](../decisions/0001-layered-specialist-routing.md), [ADR-0015](../decisions/0015-versioned-selection-explain-receipts.md), [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-12](issue-AR-12-installed-operations-dashboard.md) | [`17a62dd`](../worklog/README.md) | [ADR-0010](../decisions/0010-one-command-install-and-reversible-toggle.md), [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0017](../decisions/0017-sanitized-server-error-boundary.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
+| [AR-13](issue-AR-13-optional-dashboard-service-configuration.md) | Pending | [ADR-0006](../decisions/0006-config-first-redacted-configuration.md), [ADR-0010](../decisions/0010-one-command-install-and-reversible-toggle.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md) |
 
 ## Dependency summary
 
 - `AR-03` blocks host-facing controls in `AR-04` and truthful support claims in `AR-07`.
 - `AR-05` establishes the configuration path needed to expose `AR-06` cleanly.
-- `AR-03`, `AR-04`, `AR-05`, and `AR-06` still block the release-readiness gate in `AR-07`; the `AR-08`, `AR-09`, `AR-10`, `AR-11`, and `AR-12` dependencies are complete locally.
+- `AR-03`, `AR-04`, `AR-05`, and `AR-06` still block the release-readiness gate in `AR-07`; the `AR-08`, `AR-09`, `AR-10`, `AR-11`, `AR-12`, and `AR-13` dependencies are complete locally.
 - `AR-01` is implemented and its tracker issue is closed.
 - `AR-08` is implemented and its tracker issue is closed.
 - `AR-09` is implemented locally. Its tracker issue remains open until closure is approved.
@@ -65,6 +67,10 @@ not stable internal identifiers.
 - `AR-12` is complete locally, including an isolated Ubuntu/WSL wheel and
   authenticated packaged-dashboard result. Tracker #12 remains open because
   closure was not authorized.
+- `AR-13` depends on the packaged dashboard from `AR-12` and adds the
+  user-scoped Windows/Linux service lifecycle, installation opt-out, and shared
+  dashboard/CLI configuration boundary. Its tracker record is pending explicit
+  authorization; the implementation and local verification are complete.
 
 ## Status conventions
 

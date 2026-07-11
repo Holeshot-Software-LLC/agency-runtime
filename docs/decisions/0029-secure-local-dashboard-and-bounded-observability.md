@@ -8,6 +8,7 @@ tags: [dashboard, security, privacy, retention]
 related:
   - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
+  - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
   - SECURITY.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md

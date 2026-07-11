@@ -89,7 +89,23 @@ native runtime surface can promote `loaded` or `canary`; file existence cannot.
 
 ## Dashboard does not authenticate
 
-Start a new process and use the exact URL it prints:
+For an installed user service, inspect it and ask the CLI to open the current
+authenticated URL:
+
+```bash
+agency dashboard service status --json
+agency dashboard service open
+agency dashboard service restart
+```
+
+The rotating token lives only in the owner-restricted
+`~/.agency-runtime/run/dashboard.json` descriptor. A forced process termination
+can leave a stale descriptor, but `status` and `open` verify authenticated
+reachability and never treat file existence as liveness. The token is not
+present in Task Scheduler, the systemd unit, command arguments, status JSON, or
+logs.
+
+For foreground fallback, start a new process and use the exact URL it prints:
 
 ```bash
 agency dashboard --no-open
@@ -101,7 +117,34 @@ process. The server rejects non-loopback `Host` values and cross-origin
 requests. Do not bind or proxy the dashboard to another interface.
 
 If the port is busy, omit `--port` to select a free one or choose another
-loopback port.
+loopback port. The service uses `dashboard.port` (7810 by default); change it
+through Settings or `agency config set dashboard.port <port>`, then restart the
+service.
+
+## Dashboard service does not install or start
+
+Preview the exact current-user plan:
+
+```bash
+agency dashboard service install --dry-run --json
+```
+
+On Windows, confirm Task Scheduler is available to the current account. On
+Linux, `systemctl --user show-environment` must succeed; Agency Runtime does not
+silently install cron jobs, shell-profile launchers, or enable lingering. WSL
+installations without a working systemd user manager should use foreground mode
+or rerun installation with `--no-dashboard`. Do not work around the error by
+installing a system-wide or administrator-owned service.
+
+Removal is explicit and idempotent:
+
+```bash
+agency dashboard service stop
+agency dashboard service uninstall
+```
+
+Uninstalling the service leaves configuration, SQLite data, roster state, host
+integrations, and packaged dashboard assets intact.
 
 ## MCP client cannot start Agency Runtime
 

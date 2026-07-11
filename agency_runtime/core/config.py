@@ -49,8 +49,11 @@ class ProviderEntry:
     3. oauth (CLI-based auth like Claude Code / Codex)
     4. none (local/free providers like Ollama)
     """
+
     name: str = ""
-    type: str = "openai-compatible"  # openai-compatible, anthropic, ollama, litellm, cli
+    type: str = (
+        "openai-compatible"  # openai-compatible, anthropic, ollama, litellm, cli
+    )
     model: str = ""
     base_url: str = ""
     api_key: str = ""
@@ -135,6 +138,13 @@ class ServerConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class DashboardConfig:
+    """Operational settings for the user-scoped dashboard service."""
+
+    port: int = 7810
+
+
+@dataclass(frozen=True, slots=True)
 class ObservabilityConfig:
     """Privacy and local retention defaults for runtime evidence."""
 
@@ -183,6 +193,7 @@ class AgencyConfig:
     selector: SelectorConfig = field(default_factory=SelectorConfig)
     store: StoreConfig = field(default_factory=StoreConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
+    dashboard: DashboardConfig = field(default_factory=DashboardConfig)
     observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
     adapters: AdaptersConfig = field(default_factory=AdaptersConfig)
     profile: str = "standard"
@@ -273,6 +284,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
     selector_raw = raw.get("selector", {})
     store_raw = raw.get("store", {})
     server_raw = raw.get("server", {})
+    dashboard_raw = raw.get("dashboard", {})
     observability_raw = raw.get("observability", {})
     adapters_raw = raw.get("adapters", {})
     if not isinstance(observability_raw, dict):
@@ -310,9 +322,13 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             port=int(server_raw.get("port", 7800)),
             max_body_size=int(server_raw.get("max_body_size", 16 * 1024 * 1024)),
         ),
+        dashboard=DashboardConfig(
+            port=int(dashboard_raw.get("port", 7810)),
+        ),
         observability=ObservabilityConfig(
             capture_content=(
-                _normalize_enabled(observability_raw.get("capture_content", False)) == "true"
+                _normalize_enabled(observability_raw.get("capture_content", False))
+                == "true"
             ),
             retention_days=max(1, int(observability_raw.get("retention_days", 30))),
         ),
@@ -387,7 +403,10 @@ def _apply_env_overrides(cfg: AgencyConfig) -> AgencyConfig:
     observability_replacements: dict[str, Any] = {}
     if v := os.environ.get("AGENCY_CAPTURE_CONTENT"):
         observability_replacements["capture_content"] = v.strip().lower() in (
-            "1", "true", "yes", "on"
+            "1",
+            "true",
+            "yes",
+            "on",
         )
     if v := os.environ.get("AGENCY_RETENTION_DAYS"):
         try:
@@ -401,6 +420,19 @@ def _apply_env_overrides(cfg: AgencyConfig) -> AgencyConfig:
     else:
         new_observability = cfg.observability
 
+    dashboard_replacements: dict[str, Any] = {}
+    if v := os.environ.get("AGENCY_DASHBOARD_PORT"):
+        try:
+            dashboard_replacements["port"] = int(v)
+        except ValueError:
+            pass
+    if dashboard_replacements:
+        new_dashboard = DashboardConfig(
+            **{**asdict(cfg.dashboard), **dashboard_replacements}
+        )
+    else:
+        new_dashboard = cfg.dashboard
+
     profile = os.environ.get("AGENCY_PROFILE", cfg.profile).strip() or cfg.profile
 
     return AgencyConfig(
@@ -410,6 +442,7 @@ def _apply_env_overrides(cfg: AgencyConfig) -> AgencyConfig:
         selector=cfg.selector,
         store=new_store,
         server=cfg.server,
+        dashboard=new_dashboard,
         observability=new_observability,
         adapters=cfg.adapters,
         profile=profile,
@@ -485,7 +518,9 @@ def _enforce_profile_constraints(cfg: AgencyConfig) -> AgencyConfig:
 _cached_config: AgencyConfig | None = None
 
 
-def load_config(path: str | Path | None = None, *, reload: bool = False) -> AgencyConfig:
+def load_config(
+    path: str | Path | None = None, *, reload: bool = False
+) -> AgencyConfig:
     """Load config with precedence: env > file > bundled defaults.
 
     Args:
@@ -507,7 +542,14 @@ def load_config(path: str | Path | None = None, *, reload: bool = False) -> Agen
         merged = {**defaults_raw, **file_raw}
         # Deep-merge nested dicts (judge, ollama, selector, etc.)
         for key in (
-            "judge", "ollama", "selector", "store", "server", "observability", "adapters"
+            "judge",
+            "ollama",
+            "selector",
+            "store",
+            "server",
+            "dashboard",
+            "observability",
+            "adapters",
         ):
             if key in defaults_raw and key in file_raw:
                 merged[key] = {**defaults_raw[key], **file_raw[key]}
@@ -539,7 +581,9 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "model": cfg.judge.model,
             "base_url": cfg.judge.base_url,
             "api_key_env": cfg.judge.api_key_env,
-            "api_key": "***REDACTED***" if redact and cfg.judge.api_key else cfg.judge.api_key,
+            "api_key": "***REDACTED***"
+            if redact and cfg.judge.api_key
+            else cfg.judge.api_key,
             "ollama_mode": cfg.judge.ollama_mode,
             "timeout": cfg.judge.timeout,
             "max_selected": cfg.judge.max_selected,
@@ -574,6 +618,9 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "port": cfg.server.port,
             "max_body_size": cfg.server.max_body_size,
         },
+        "dashboard": {
+            "port": cfg.dashboard.port,
+        },
         "observability": {
             "capture_content": cfg.observability.capture_content,
             "retention_days": cfg.observability.retention_days,
@@ -582,7 +629,9 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "litellm": {
                 "enabled": cfg.adapters.litellm.enabled,
                 "base_url": cfg.adapters.litellm.base_url,
-                "api_key": "***REDACTED***" if redact and cfg.adapters.litellm.api_key else cfg.adapters.litellm.api_key,
+                "api_key": "***REDACTED***"
+                if redact and cfg.adapters.litellm.api_key
+                else cfg.adapters.litellm.api_key,
                 "api_key_env": cfg.adapters.litellm.api_key_env,
                 "skip_models": list(cfg.adapters.litellm.skip_models),
             },

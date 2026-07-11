@@ -35,7 +35,7 @@
           <h1 id="view-title">Runtime overview</h1>
         </div>
         <div class="top-actions">
-          <span class="privacy-chip">Metadata only</span>
+          <span id="privacy-chip" class="privacy-chip">Metadata only</span>
           <button id="refresh-button" class="button ghost">Refresh</button>
         </div>
       </header>
@@ -132,9 +132,142 @@
             <button id="trim-button" class="button danger">Trim evidence</button>
           </article>
         </div>
-        <article class="panel config-panel"><div class="panel-head"><div><p class="eyebrow">REDACTED</p><h2>Effective configuration</h2></div></div><pre id="config-output">Loading…</pre></article>
+        <form id="config-form" class="config-editor" autocomplete="off">
+          <article class="panel config-panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">RUNTIME POLICY</p><h2>Configure Agency Runtime</h2></div>
+              <span id="config-revision" class="panel-tag">LOADING</span>
+            </div>
+            <p class="panel-copy">The dashboard and CLI use the same validated configuration writer. Changes are written atomically to the user configuration file; fields marked restart required take effect after the affected process restarts.</p>
+            <div class="config-grid">
+              <div>
+                <label for="config-profile">Profile</label>
+                <select id="config-profile" data-config-path="profile">
+                  <option value="standard">Standard</option>
+                  <option value="local-only">Local only</option>
+                  <option value="power">Power</option>
+                  <option value="yolo">YOLO</option>
+                </select>
+              </div>
+              <div>
+                <label for="config-dashboard-port">Dashboard service port <span class="restart-note">restart required</span></label>
+                <input id="config-dashboard-port" data-config-path="dashboard.port" data-value-type="integer" type="number" min="1" max="65535">
+              </div>
+              <div>
+                <label for="config-retention">Runtime retention days</label>
+                <input id="config-retention" data-config-path="observability.retention_days" data-value-type="integer" type="number" min="1" max="3650">
+              </div>
+              <div class="check-field">
+                <input id="config-capture" data-config-path="observability.capture_content" data-value-type="boolean" type="checkbox">
+                <label for="config-capture">Capture redacted prompt content</label>
+              </div>
+            </div>
+          </article>
+
+          <div class="split config-split">
+            <article class="panel">
+              <div class="panel-head"><div><p class="eyebrow">SELECTION</p><h2>Judge and selector</h2></div></div>
+              <div class="config-grid">
+                <div><label for="config-judge-model">Judge model</label><input id="config-judge-model" data-config-path="judge.model"></div>
+                <div><label for="config-judge-url">Judge base URL</label><input id="config-judge-url" data-config-path="judge.base_url" inputmode="url"></div>
+                <div><label for="config-judge-env">API key environment variable</label><input id="config-judge-env" data-config-path="judge.api_key_env" spellcheck="false"></div>
+                <div><label for="config-judge-timeout">Timeout seconds</label><input id="config-judge-timeout" data-config-path="judge.timeout" data-value-type="number" type="number" min="0.05" max="60" step="0.05"></div>
+                <div><label for="config-max-selected">Maximum selected agents</label><input id="config-max-selected" data-config-path="judge.max_selected" data-value-type="integer" type="number" min="1" max="50"></div>
+                <div><label for="config-bypass">Confidence bypass threshold</label><input id="config-bypass" data-config-path="judge.confidence_bypass_threshold" data-value-type="number" type="number" min="0" max="100" step="0.1"></div>
+                <div><label for="config-min-confidence">Minimum candidate confidence</label><input id="config-min-confidence" data-config-path="selector.min_confidence" data-value-type="number" type="number" min="0" max="1" step="0.01"></div>
+                <div><label for="config-max-message">Maximum task length</label><input id="config-max-message" data-config-path="selector.max_user_msg_len" data-value-type="integer" type="number" min="1" max="1000000"></div>
+                <div><label for="config-trivial">Trivial-message threshold</label><input id="config-trivial" data-config-path="selector.trivial_msg_threshold" data-value-type="integer" type="number" min="0" max="10000"></div>
+                <div class="check-field"><input id="config-judge-ollama" data-config-path="judge.ollama_mode" data-value-type="boolean" type="checkbox"><label for="config-judge-ollama">Use Ollama chat protocol</label></div>
+              </div>
+              <details class="secret-editor">
+                <summary>Direct judge key</summary>
+                <p class="field-help">Prefer an environment-variable name above. A direct key is write-only and is never returned by the API.</p>
+                <label for="config-judge-secret">New key (blank preserves the current key)</label>
+                <input id="config-judge-secret" type="password" data-secret-path="judge.api_key">
+                <div class="check-field"><input id="config-judge-secret-clear" type="checkbox"><label for="config-judge-secret-clear">Clear the stored direct key</label></div>
+              </details>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><div><p class="eyebrow">LOCAL FALLBACK</p><h2>Ollama</h2></div></div>
+              <div class="config-grid single-column">
+                <div class="check-field"><input id="config-ollama-enabled" data-config-path="ollama.enabled" data-value-type="boolean" type="checkbox"><label for="config-ollama-enabled">Enable Ollama fallback</label></div>
+                <div><label for="config-ollama-model">Model</label><input id="config-ollama-model" data-config-path="ollama.model"></div>
+                <div><label for="config-ollama-url">Base URL</label><input id="config-ollama-url" data-config-path="ollama.base_url" inputmode="url"></div>
+              </div>
+              <div class="panel-head subsection-head"><div><p class="eyebrow">HOSTS</p><h2>Adapter enablement</h2></div></div>
+              <div class="adapter-grid">
+                <label for="config-adapter-codex">Codex<select id="config-adapter-codex" data-config-path="adapters.codex.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label for="config-adapter-claude">Claude<select id="config-adapter-claude" data-config-path="adapters.claude.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label for="config-adapter-hermes">Hermes<select id="config-adapter-hermes" data-config-path="adapters.hermes.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label for="config-adapter-openclaw">OpenClaw<select id="config-adapter-openclaw" data-config-path="adapters.openclaw.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label for="config-adapter-litellm">LiteLLM<select id="config-adapter-litellm" data-config-path="adapters.litellm.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+              </div>
+              <div class="config-grid">
+                <div><label for="config-litellm-url">LiteLLM base URL</label><input id="config-litellm-url" data-config-path="adapters.litellm.base_url" inputmode="url"></div>
+                <div><label for="config-litellm-env">LiteLLM key environment variable</label><input id="config-litellm-env" data-config-path="adapters.litellm.api_key_env" spellcheck="false"></div>
+                <div><label for="config-litellm-skips">Skipped model prefixes (JSON)</label><textarea id="config-litellm-skips" data-config-path="adapters.litellm.skip_models" data-value-type="json" rows="4" spellcheck="false"></textarea></div>
+              </div>
+              <details class="secret-editor">
+                <summary>Direct LiteLLM key</summary>
+                <p class="field-help">Blank preserves the current key. The value is write-only.</p>
+                <label for="config-litellm-secret">New key</label>
+                <input id="config-litellm-secret" type="password" data-secret-path="adapters.litellm.api_key">
+                <div class="check-field"><input id="config-litellm-secret-clear" type="checkbox"><label for="config-litellm-secret-clear">Clear the stored LiteLLM key</label></div>
+              </details>
+            </article>
+          </div>
+
+          <article class="panel config-panel">
+            <div class="panel-head"><div><p class="eyebrow">ORDERED FALLBACK</p><h2>Providers</h2></div><span class="panel-tag">JSON</span></div>
+            <p class="panel-copy">Providers are tried in order. Use real HTTP-backed types only: <code>openai-compatible</code>, <code>anthropic</code>, <code>ollama</code>, or <code>litellm</code>. Prefer <code>api_key_env</code> over direct keys.</p>
+            <label for="config-providers">Provider array</label>
+            <textarea id="config-providers" data-config-path="providers" data-value-type="json" rows="12" spellcheck="false"></textarea>
+            <details class="secret-editor">
+              <summary>Direct provider key</summary>
+              <p class="field-help">Prefer `api_key_env`. Provider keys are selected by the current array index, are write-only, and never appear in API responses.</p>
+              <div class="config-grid">
+                <div><label for="config-provider-secret-index">Provider</label><select id="config-provider-secret-index"></select></div>
+                <div><label for="config-provider-secret">New key (blank preserves)</label><input id="config-provider-secret" type="password"></div>
+              </div>
+              <div class="check-field"><input id="config-provider-secret-clear" type="checkbox"><label for="config-provider-secret-clear">Clear the selected provider key</label></div>
+            </details>
+          </article>
+
+          <details class="panel config-panel advanced-config">
+            <summary>Advanced storage and server settings</summary>
+            <p class="panel-copy">These settings affect newly started processes; changing the store path does not move existing data.</p>
+            <div class="config-grid">
+              <div><label for="config-store-path">SQLite path <span class="restart-note">restart required</span></label><input id="config-store-path" data-config-path="store.db_path"></div>
+              <div><label for="config-server-host">HTTP API host <span class="restart-note">restart required</span></label><input id="config-server-host" data-config-path="server.host" list="config-loopback-hosts" maxlength="255" spellcheck="false" aria-describedby="config-server-host-help"><small id="config-server-host-help" class="field-help">Loopback only; for example <code>127.0.0.1</code>, <code>localhost</code>, or <code>::1</code>.</small><datalist id="config-loopback-hosts"><option value="127.0.0.1"></option><option value="localhost"></option><option value="::1"></option></datalist></div>
+              <div><label for="config-server-port">HTTP API port <span class="restart-note">restart required</span></label><input id="config-server-port" data-config-path="server.port" data-value-type="integer" type="number" min="1" max="65535"></div>
+              <div><label for="config-body-size">Maximum HTTP body bytes <span class="restart-note">restart required</span></label><input id="config-body-size" data-config-path="server.max_body_size" data-value-type="integer" type="number" min="1024" max="67108864"></div>
+              <div><label for="config-policy-path">Companion policy path <span class="restart-note">restart required</span></label><input id="config-policy-path" data-config-path="companion_policy_path" data-nullable="true"></div>
+            </div>
+          </details>
+
+          <div class="config-savebar">
+            <div><strong id="config-change-count">No unsaved changes</strong><small id="config-path">Configuration path unavailable</small></div>
+            <div class="card-actions"><button id="config-reset-button" class="button ghost" type="button">Reset fields</button><button id="config-save-button" class="button solid" type="submit" disabled>Review &amp; save</button></div>
+          </div>
+        </form>
+        <article class="panel config-panel"><div class="panel-head"><div><p class="eyebrow">REDACTED</p><h2>Effective configuration</h2></div><span id="config-override-count" class="panel-tag">NO OVERRIDES</span></div><pre id="config-output">Loading…</pre></article>
       </section>
     </main>
+  </div>
+  <div id="confirmation-modal" class="confirmation-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmation-title" hidden>
+    <div class="confirmation-card">
+      <p class="eyebrow">CONFIRM MUTATION</p>
+      <h2 id="confirmation-title">Confirm this operation</h2>
+      <p id="confirmation-message" class="panel-copy"></p>
+      <label for="confirmation-input">Type <code id="confirmation-phrase"></code></label>
+      <input id="confirmation-input" autocomplete="off" spellcheck="false">
+      <p id="confirmation-error" class="field-error" role="alert" hidden>The confirmation phrase does not match.</p>
+      <div class="card-actions">
+        <button id="confirmation-cancel" class="button ghost" type="button">Cancel</button>
+        <button id="confirmation-accept" class="button solid" type="button">Confirm</button>
+      </div>
+    </div>
   </div>
   <script src="/app.js" defer></script>
 </body>

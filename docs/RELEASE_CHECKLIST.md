@@ -78,7 +78,7 @@ agency eval routing --json --no-details
 ```bash
 python scripts/verify_release_hygiene.py
 python -m bandit -q -r agency_runtime -lll
-python -m pip_audit --strict
+python -m pip_audit . --strict
 ```
 
 - [ ] No tracked secret, credential file, database, build output, generated host
@@ -122,7 +122,17 @@ python scripts/verify_distribution.py dist
 ```
 
 - [ ] Wheel and source distribution contain config defaults, companion policy,
-      dashboard assets, eval corpora, license, and required package modules.
+      dashboard assets and service modules, eval corpora, license, and required
+      package modules.
+- [ ] Windows service contract tests prove current-user Task Scheduler
+      registration, owned updates, rollback-on-failure, start/stop/restart,
+      uninstall, readiness, and `--no-dashboard` without touching a real task.
+- [ ] Linux service contract tests prove `systemd --user` registration,
+      hardening, manager-unavailable truth, start/stop/restart, uninstall,
+      readiness, and `--no-dashboard` without touching a real user manager.
+- [ ] Dashboard configuration tests cover typed writes, redaction, write-only
+      secrets, optimistic-concurrency conflicts, local-only enforcement, and
+      sensitive confirmation phrases through both CLI and API.
 - [ ] A fresh Python 3.10 environment on Windows installs only the built wheel,
       runs `agency --help`, imports package data, and passes the packaged smoke
       procedure.

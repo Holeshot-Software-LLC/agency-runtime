@@ -15,6 +15,7 @@ from http.client import HTTPConnection
 from pathlib import Path
 
 import pytest
+import yaml
 
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import dashboard as dashboard_module
@@ -28,24 +29,26 @@ from agency_runtime.server.dashboard import (
 @pytest.fixture()
 def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
-    monkeypatch.setenv("AGENCY_JUDGE_TIMEOUT", "0.01")
+    monkeypatch.setenv("AGENCY_JUDGE_TIMEOUT", "0.05")
     from agency_runtime.core.config import reset_config_cache
 
     reset_config_cache()
     store = Store(tmp_path / "dashboard.db")
-    store.activate_agent({
-        "slug": "security-reviewer",
-        "name": "Security Reviewer",
-        "division": "engineering",
-        "description": "Reviews application security and threat boundaries.",
-        "source": "test",
-        "version": "1.0",
-        "hash": "security-reviewer-v1",
-        "categories": ["security"],
-        "capabilities": ["security-review", "threat-modeling"],
-        "tool_affinity": ["git"],
-        "prompt_path": "",
-    })
+    store.activate_agent(
+        {
+            "slug": "security-reviewer",
+            "name": "Security Reviewer",
+            "division": "engineering",
+            "description": "Reviews application security and threat boundaries.",
+            "source": "test",
+            "version": "1.0",
+            "hash": "security-reviewer-v1",
+            "categories": ["security"],
+            "capabilities": ["security-review", "threat-modeling"],
+            "tool_affinity": ["git"],
+            "prompt_path": "",
+        }
+    )
     store.record_delegation(
         trace_id="trace-dashboard",
         session_id="session-dashboard",
@@ -56,7 +59,9 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         backend="test",
     )
     token = "test-dashboard-token"
-    server = DashboardHTTPServer(store, auth_token=token, port=0, host_inspector=lambda: [])
+    server = DashboardHTTPServer(
+        store, auth_token=token, port=0, host_inspector=lambda: []
+    )
     thread = threading.Thread(
         target=server.serve_forever,
         kwargs={"poll_interval": 0.01},
@@ -135,6 +140,12 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"hostLocation(host)" in script
     assert b"Number.isInteger(days)" in script
     assert b"await refreshRuntimeEvidence()" in script
+    assert b"collectConfigChanges" in script
+    assert b"/api/config" in script
+    assert b"SAVE SENSITIVE CONFIG" in script
+    assert b"APPLY LOCAL-ONLY PROFILE" in script
+    assert b"requestConfirmation" in script
+    assert b"window.prompt" not in script
 
     status, stylesheet, _headers = _request(dashboard_server, "/app.css")
     assert status == 200
@@ -143,6 +154,13 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b".rail::-webkit-scrollbar" in stylesheet
 
     assert b'id="provider-health"' in raw
+    assert b'id="config-form"' in raw
+    assert b'data-config-path="dashboard.port"' in raw
+    assert b'id="config-server-host"' in raw
+    assert b'data-config-path="server.host"' in raw
+    assert b'id="config-loopback-hosts"' in raw
+    assert b'data-config-path="providers"' in raw
+    assert b'id="confirmation-modal"' in raw
     assert b"not a live provider probe" in raw
 
 
@@ -196,6 +214,260 @@ def test_dashboard_post_requires_json_content_type(dashboard_server):
     assert "application/json" in payload["error"]
 
 
+def test_dashboard_config_get_reports_redacted_revision_and_target(dashboard_server):
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["revision"].startswith("sha256:")
+    assert payload["path"].endswith("missing.yaml")
+    assert payload["effective"]["dashboard"]["port"] == 7810
+    assert payload["environment_overrides"]["judge.timeout"] == "AGENCY_JUDGE_TIMEOUT"
+    assert all(isinstance(value, bool) for value in payload["secret_presence"].values())
+
+
+def test_dashboard_config_write_requires_confirmation_and_is_atomic(dashboard_server):
+    status, initial, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    body = {
+        "expected_revision": initial["revision"],
+        "operations": [
+            {
+                "op": "set",
+                "path": "observability.retention_days",
+                "value": 45,
+            }
+        ],
+        "confirmations": [],
+    }
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        method="POST",
+        body=body,
+        token=dashboard_server["token"],
+    )
+    assert status == 400
+    assert payload == {"error": "missing confirmation phrase: SAVE CONFIG"}
+    assert not Path(initial["path"]).exists()
+
+    body["confirmations"] = ["SAVE CONFIG"]
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        method="POST",
+        body=body,
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert payload["effective"]["observability"]["retention_days"] == 45
+    assert payload["changed_paths"] == ["observability.retention_days"]
+    assert yaml.safe_load(Path(initial["path"]).read_text(encoding="utf-8")) == {
+        "observability": {"retention_days": 45}
+    }
+
+
+def test_dashboard_config_stale_revision_returns_conflict(dashboard_server):
+    status, initial, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    body = {
+        "expected_revision": initial["revision"],
+        "operations": [{"op": "set", "path": "dashboard.port", "value": 8123}],
+        "confirmations": ["SAVE CONFIG"],
+    }
+    assert (
+        _json_response(
+            dashboard_server,
+            "/api/config",
+            method="POST",
+            body=body,
+            token=dashboard_server["token"],
+        )[0]
+        == 200
+    )
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        method="POST",
+        body=body,
+        token=dashboard_server["token"],
+    )
+    assert status == 409
+    assert payload == {"error": "configuration changed; refresh before saving"}
+
+
+def test_dashboard_config_secret_is_write_only(dashboard_server):
+    status, initial, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    secret = "dashboard-secret-value"
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        method="POST",
+        body={
+            "expected_revision": initial["revision"],
+            "operations": [
+                {
+                    "op": "secret",
+                    "path": "judge.api_key",
+                    "action": "replace",
+                    "value": secret,
+                }
+            ],
+            "confirmations": ["SAVE CONFIG", "SAVE SENSITIVE CONFIG"],
+        },
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert secret not in json.dumps(payload)
+    assert payload["secret_presence"]["judge.api_key"] is True
+    assert payload["effective"]["judge"]["api_key"] == "***REDACTED***"
+
+
+def test_dashboard_server_host_loads_and_saves_through_shared_boundary(
+    dashboard_server,
+):
+    status, initial, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert initial["effective"]["server"]["host"] == "127.0.0.1"
+
+    secret = "server-host-redaction-sentinel"
+    status, seeded, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        method="POST",
+        body={
+            "expected_revision": initial["revision"],
+            "operations": [
+                {
+                    "op": "secret",
+                    "path": "judge.api_key",
+                    "action": "replace",
+                    "value": secret,
+                }
+            ],
+            "confirmations": ["SAVE CONFIG", "SAVE SENSITIVE CONFIG"],
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+
+    status, saved, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        method="POST",
+        body={
+            "expected_revision": seeded["revision"],
+            "operations": [{"op": "set", "path": "server.host", "value": "localhost"}],
+            # A loopback host uses the ordinary config confirmation; no broader
+            # network binding is available through the shared validator.
+            "confirmations": ["SAVE CONFIG"],
+        },
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert saved["effective"]["server"]["host"] == "localhost"
+    assert saved["persisted"]["server"]["host"] == "localhost"
+    assert saved["changed_paths"] == ["server.host"]
+    assert saved["restart_required_paths"] == ["server.host"]
+    assert saved["effective"]["judge"]["api_key"] == "***REDACTED***"
+    assert secret not in json.dumps(saved)
+
+    status, reloaded, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert reloaded["effective"]["server"]["host"] == "localhost"
+    assert reloaded["persisted"]["server"]["host"] == "localhost"
+    assert reloaded["effective"]["judge"]["api_key"] == "***REDACTED***"
+    assert secret not in json.dumps(reloaded)
+
+
+def test_dashboard_server_host_rejects_non_loopback_binding(dashboard_server):
+    status, initial, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        method="POST",
+        body={
+            "expected_revision": initial["revision"],
+            "operations": [{"op": "set", "path": "server.host", "value": "0.0.0.0"}],
+            "confirmations": ["SAVE CONFIG"],
+        },
+        token=dashboard_server["token"],
+    )
+
+    assert status == 400
+    assert payload == {"error": "server.host: must be a loopback host"}
+    assert not Path(initial["path"]).exists()
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "required"),
+    [
+        ("profile", "local-only", "APPLY LOCAL-ONLY PROFILE"),
+        ("profile", " LOCAL-ONLY ", "APPLY LOCAL-ONLY PROFILE"),
+        (
+            "observability.capture_content",
+            True,
+            "ENABLE CONTENT CAPTURE",
+        ),
+    ],
+)
+def test_dashboard_config_sensitive_policy_changes_require_specific_phrase(
+    dashboard_server,
+    path,
+    value,
+    required,
+):
+    status, initial, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        method="POST",
+        body={
+            "expected_revision": initial["revision"],
+            "operations": [{"op": "set", "path": path, "value": value}],
+            "confirmations": ["SAVE CONFIG"],
+        },
+        token=dashboard_server["token"],
+    )
+
+    assert status == 400
+    assert payload == {"error": f"missing confirmation phrase: {required}"}
+
+
 def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server):
     status, overview, _headers = _json_response(
         dashboard_server,
@@ -216,7 +488,10 @@ def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server):
     assert status == 200
     assert activity["delegations"][0]["recommended_agent"] == "security-reviewer"
     assert all("user_message" not in row for row in activity["runs"])
-    assert all("stdout" not in row and "stderr" not in row for row in activity.get("workers", []))
+    assert all(
+        "stdout" not in row and "stderr" not in row
+        for row in activity.get("workers", [])
+    )
 
 
 def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
@@ -224,7 +499,10 @@ def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
         dashboard_server,
         "/api/route",
         method="POST",
-        body={"task": "review this application security design", "session_id": "dashboard-test"},
+        body={
+            "task": "review this application security design",
+            "session_id": "dashboard-test",
+        },
         token=dashboard_server["token"],
     )
 
@@ -233,9 +511,9 @@ def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
     assert payload["task"] == "review this application security design"
     assert payload["selected"]
     assert payload["delegation_graph"]["nodes"]
-    assert [item["description"] for item in payload["delegation_graph"]["nodes"]] == payload[
-        "signals"
-    ]["work_units"]["units"]
+    assert [
+        item["description"] for item in payload["delegation_graph"]["nodes"]
+    ] == payload["signals"]["work_units"]["units"]
 
 
 def test_dashboard_route_lab_uses_authoritative_dependency_graph(dashboard_server):
@@ -377,7 +655,9 @@ def test_dashboard_server_refuses_non_loopback_binding(tmp_path: Path):
         DashboardHTTPServer(store, auth_token="token", host="0.0.0.0", port=0)
 
 
-def test_dashboard_host_api_preserves_unknown_boolean_states(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_dashboard_host_api_preserves_unknown_boolean_states(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
     store = Store(tmp_path / "dashboard.db")
     token = "token"
@@ -423,7 +703,9 @@ def test_dashboard_host_toggle_requires_json_boolean(dashboard_server, enabled):
     assert payload == {"error": "enabled must be a JSON boolean"}
 
 
-def test_dashboard_host_toggle_validates_host_before_confirmation(dashboard_server, monkeypatch: pytest.MonkeyPatch):
+def test_dashboard_host_toggle_validates_host_before_confirmation(
+    dashboard_server, monkeypatch: pytest.MonkeyPatch
+):
     called = False
 
     def unexpected_toggle(*args, **kwargs):
@@ -431,7 +713,9 @@ def test_dashboard_host_toggle_validates_host_before_confirmation(dashboard_serv
         called = True
         return {"ok": True}
 
-    monkeypatch.setattr("agency_runtime.core.installer.toggle_agency", unexpected_toggle)
+    monkeypatch.setattr(
+        "agency_runtime.core.installer.toggle_agency", unexpected_toggle
+    )
     status, payload, _headers = _json_response(
         dashboard_server,
         "/api/hosts/toggle",
@@ -483,7 +767,12 @@ def test_host_inspection_is_parallel_and_returns_partial_unknowns_at_deadline():
             started.add(host)
         if host == "slow":
             release.wait(timeout=1)
-        return {"host": host, "registered": True, "enabled": False, "maturity": "registered-disabled"}
+        return {
+            "host": host,
+            "registered": True,
+            "enabled": False,
+            "maturity": "registered-disabled",
+        }
 
     executor = ThreadPoolExecutor(max_workers=2)
     coordinator = _HostInspectionCoordinator(
@@ -553,8 +842,16 @@ def test_expired_host_evidence_is_not_actionable_while_refresh_is_pending():
 def test_provider_health_is_explicitly_receipt_based():
     health = _provider_health(
         [
-            {"resolved_provider": "openai", "status": "success", "ended_at": "2026-07-11T01:00:00Z"},
-            {"resolved_provider": "openai", "status": "failed", "ended_at": "2026-07-11T00:00:00Z"},
+            {
+                "resolved_provider": "openai",
+                "status": "success",
+                "ended_at": "2026-07-11T01:00:00Z",
+            },
+            {
+                "resolved_provider": "openai",
+                "status": "failed",
+                "ended_at": "2026-07-11T00:00:00Z",
+            },
             {"resolved_provider": "", "status": "unknown"},
         ]
     )

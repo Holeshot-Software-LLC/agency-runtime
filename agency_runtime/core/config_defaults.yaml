@@ -14,7 +14,7 @@
 #   AGENCY_JUDGE_TIMEOUT, AGENCY_MAX_SELECTED, AGENCY_BYPASS_THRESHOLD,
 #   OLLAMA_BASE_URL, AGENCY_OLLAMA_FALLBACK_MODEL,
 #   LITELLM_BASE_URL, LITELLM_API_KEY,
-#   AGENCY_CONFIG_PATH, AGENCY_DB_PATH
+#   AGENCY_CONFIG_PATH, AGENCY_DB_PATH, AGENCY_DASHBOARD_PORT
 
 # Provider fallback chain — empty by default, populated by `agency configure`
 providers: []
@@ -46,6 +46,9 @@ server:
   host: 127.0.0.1
   port: 7800
   max_body_size: 16777216
+
+dashboard:
+  port: 7810
 
 observability:
   capture_content: false

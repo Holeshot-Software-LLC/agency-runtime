@@ -3,10 +3,11 @@ title: Make configuration the primary source of runtime truth
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-11
 tags: [configuration, security, portability]
 related:
   - docs/roadmap/issue-AR-05-guided-provider-configuration.md
+  - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

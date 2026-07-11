@@ -1,6 +1,16 @@
 "use strict";
 
-const state = { token: "", overview: null, activity: {}, hosts: [], roster: [], snapshots: [] };
+const state = {
+  token: "",
+  overview: null,
+  activity: {},
+  hosts: [],
+  roster: [],
+  snapshots: [],
+  config: null,
+  configBaseline: new Map(),
+  confirmation: null,
+};
 
 function byId(id) { return document.getElementById(id); }
 function el(tag, className, text) {
@@ -27,6 +37,34 @@ function showNotice(message, error = false) {
   notice.hidden = false;
   window.clearTimeout(showNotice.timer);
   showNotice.timer = window.setTimeout(() => { notice.hidden = true; }, 6000);
+}
+
+function requestConfirmation(phrase, message) {
+  if (state.confirmation) state.confirmation.resolve(false);
+  return new Promise((resolve) => {
+    state.confirmation = { phrase, resolve };
+    byId("confirmation-title").textContent = "Confirm this operation";
+    byId("confirmation-message").textContent = message;
+    byId("confirmation-phrase").textContent = phrase;
+    byId("confirmation-input").value = "";
+    byId("confirmation-error").hidden = true;
+    byId("confirmation-modal").hidden = false;
+    byId("confirmation-input").focus();
+  });
+}
+
+function finishConfirmation(accepted) {
+  const pending = state.confirmation;
+  if (!pending) return;
+  if (accepted && byId("confirmation-input").value !== pending.phrase) {
+    byId("confirmation-error").hidden = false;
+    byId("confirmation-input").focus();
+    return;
+  }
+  state.confirmation = null;
+  byId("confirmation-modal").hidden = true;
+  byId("confirmation-input").value = "";
+  pending.resolve(accepted);
 }
 function hostState(host) {
   if (host.inspection_status && host.inspection_status !== "complete") {
@@ -62,7 +100,168 @@ function installToken() {
   if (incoming) sessionStorage.setItem("agency-dashboard-token", incoming);
   state.token = incoming || sessionStorage.getItem("agency-dashboard-token") || "";
   if (window.location.hash) history.replaceState(null, "", window.location.pathname);
-  if (!state.token) throw new Error("This dashboard URL has no active access token. Restart `agency dashboard`.");
+  if (!state.token) throw new Error("This dashboard URL has no active access token. Run `agency dashboard service open` or restart `agency dashboard`.");
+}
+
+function nestedValue(root, path) {
+  return path.split(".").reduce((value, part) => (
+    value !== null && value !== undefined && Object.hasOwn(value, part) ? value[part] : undefined
+  ), root);
+}
+
+function stableValue(value) {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stableValue(value[key])]));
+  }
+  return value;
+}
+
+function comparable(value) {
+  return JSON.stringify(stableValue(value));
+}
+
+function readConfigControl(node) {
+  const kind = node.dataset.valueType || "string";
+  if (kind === "boolean") return node.checked;
+  if (kind === "integer") {
+    const value = Number(node.value);
+    if (!Number.isInteger(value)) throw new Error(`${node.labels?.[0]?.textContent || node.id} must be an integer.`);
+    return value;
+  }
+  if (kind === "number") {
+    const value = Number(node.value);
+    if (!Number.isFinite(value)) throw new Error(`${node.labels?.[0]?.textContent || node.id} must be a finite number.`);
+    return value;
+  }
+  if (kind === "json") {
+    try { return JSON.parse(node.value); }
+    catch { throw new Error(`${node.labels?.[0]?.textContent || node.id} must contain valid JSON.`); }
+  }
+  if (node.dataset.nullable === "true" && !node.value.trim()) return null;
+  return node.value;
+}
+
+function writeConfigControl(node, value) {
+  const kind = node.dataset.valueType || "string";
+  if (kind === "boolean") node.checked = value === true;
+  else if (kind === "json") {
+    const safeValue = node.dataset.configPath === "providers" && Array.isArray(value)
+      ? value.map(({ api_key: _secret, ...provider }) => provider)
+      : value;
+    node.value = JSON.stringify(safeValue ?? [], null, 2);
+  }
+  else node.value = value ?? "";
+}
+
+function configControls() {
+  return [...document.querySelectorAll("[data-config-path]")];
+}
+
+function collectConfigChanges() {
+  const operations = [];
+  configControls().forEach((node) => {
+    const path = node.dataset.configPath;
+    const value = readConfigControl(node);
+    if (comparable(value) !== state.configBaseline.get(path)) operations.push({ op: "set", path, value });
+  });
+  appendSecretOperation(
+    operations,
+    "judge.api_key",
+    byId("config-judge-secret").value,
+    byId("config-judge-secret-clear").checked,
+  );
+  appendSecretOperation(
+    operations,
+    "adapters.litellm.api_key",
+    byId("config-litellm-secret").value,
+    byId("config-litellm-secret-clear").checked,
+  );
+  const providerIndex = byId("config-provider-secret-index").value;
+  const providerSecret = byId("config-provider-secret").value;
+  const clearProviderSecret = byId("config-provider-secret-clear").checked;
+  if ((providerSecret || clearProviderSecret) && providerIndex === "") {
+    throw new Error("Select a provider before changing its direct key.");
+  }
+  if (providerIndex !== "") {
+    appendSecretOperation(
+      operations,
+      `providers.${providerIndex}.api_key`,
+      providerSecret,
+      clearProviderSecret,
+    );
+  }
+  return operations;
+}
+
+function appendSecretOperation(operations, path, value, clear) {
+  if (value && clear) throw new Error(`Choose either a new value or clear for ${path}, not both.`);
+  if (value) operations.push({ op: "secret", path, action: "replace", value });
+  if (clear) operations.push({ op: "secret", path, action: "clear" });
+}
+
+function syncProviderSecretOptions() {
+  const select = byId("config-provider-secret-index");
+  const selected = select.value;
+  let providers = [];
+  try { providers = JSON.parse(byId("config-providers").value); }
+  catch { providers = []; }
+  select.replaceChildren();
+  if (!Array.isArray(providers) || !providers.length) {
+    const option = el("option", "", "No configured providers");
+    option.value = "";
+    select.append(option);
+    select.disabled = true;
+    return;
+  }
+  select.disabled = false;
+  providers.forEach((provider, index) => {
+    const option = el("option", "", provider?.name || `Provider ${index + 1}`);
+    option.value = String(index);
+    select.append(option);
+  });
+  select.value = [...select.options].some((option) => option.value === selected)
+    ? selected
+    : "0";
+}
+
+function updateConfigDirtyState() {
+  syncProviderSecretOptions();
+  let operations = [];
+  try { operations = collectConfigChanges(); }
+  catch (error) {
+    byId("config-change-count").textContent = error.message;
+    byId("config-save-button").disabled = true;
+    return;
+  }
+  const count = operations.length;
+  byId("config-change-count").textContent = count ? `${count} unsaved change${count === 1 ? "" : "s"}` : "No unsaved changes";
+  byId("config-save-button").disabled = count === 0;
+}
+
+function renderConfig(snapshot) {
+  const effective = snapshot.effective || snapshot.config || {};
+  state.config = snapshot;
+  configControls().forEach((node) => writeConfigControl(node, nestedValue(effective, node.dataset.configPath)));
+  byId("config-judge-secret").value = "";
+  byId("config-judge-secret-clear").checked = false;
+  byId("config-litellm-secret").value = "";
+  byId("config-litellm-secret-clear").checked = false;
+  byId("config-provider-secret").value = "";
+  byId("config-provider-secret-clear").checked = false;
+  syncProviderSecretOptions();
+  state.configBaseline = new Map(configControls().map((node) => [
+    node.dataset.configPath,
+    comparable(readConfigControl(node)),
+  ]));
+  byId("config-output").textContent = JSON.stringify(effective, null, 2);
+  byId("config-path").textContent = snapshot.path || "Bundled defaults; the next save creates the user config.";
+  const revision = String(snapshot.revision || "missing");
+  byId("config-revision").textContent = revision === "missing" ? "NEW FILE" : revision.slice(0, 10);
+  const rawOverrides = snapshot.environment_overrides || {};
+  const overrides = Array.isArray(rawOverrides) ? rawOverrides : Object.keys(rawOverrides);
+  byId("config-override-count").textContent = overrides.length ? `${overrides.length} ENV OVERRIDE${overrides.length === 1 ? "" : "S"}` : "NO OVERRIDES";
+  updateConfigDirtyState();
 }
 
 function switchView(name) {
@@ -81,6 +280,7 @@ function renderOverview() {
   byId("metric-store").textContent = formatBytes((data.db_size_bytes || 0) + (data.wal_size_bytes || 0));
   byId("setting-capture").textContent = data.capture_content ? "Opt-in enabled" : "Disabled";
   byId("setting-retention").textContent = `${data.retention_days || 30} days`;
+  byId("privacy-chip").textContent = data.capture_content ? "Redacted content" : "Metadata only";
   byId("trim-days").value = data.retention_days || 30;
 
   const tbody = byId("overview-delegations"); tbody.replaceChildren();
@@ -263,7 +463,7 @@ async function refreshAll() {
       api("/api/overview"), api("/api/activity?limit=100"), api("/api/hosts"), api("/api/roster"), api("/api/snapshots"), api("/api/config"),
     ]);
     state.overview = overview; state.activity = activity; state.hosts = hosts.hosts || []; state.roster = roster.agents || []; state.snapshots = snapshots.snapshots || [];
-    byId("config-output").textContent = JSON.stringify(config.config || {}, null, 2);
+    renderConfig(config);
     document.querySelector(".rail-foot").classList.add("connected"); byId("connection-label").textContent = "Authenticated";
     renderOverview(); renderHosts(); renderRoster(); renderEvidence(document.querySelector(".subnav-item.active").dataset.evidence);
   } catch (error) {
@@ -309,22 +509,77 @@ async function trimRuntime() {
   finally { byId("trim-button").disabled = false; }
 }
 
+function requiredConfigConfirmations(operations) {
+  const confirmations = ["SAVE CONFIG"];
+  if (operations.some((operation) => operation.op === "secret")) confirmations.push("SAVE SENSITIVE CONFIG");
+  const profile = operations.find((operation) => operation.path === "profile");
+  if (profile?.value === "local-only") confirmations.push("APPLY LOCAL-ONLY PROFILE");
+  const capture = operations.find((operation) => operation.path === "observability.capture_content");
+  if (capture?.value === true) confirmations.push("ENABLE CONTENT CAPTURE");
+  return confirmations;
+}
+
+async function saveConfig(event) {
+  event.preventDefault();
+  let operations;
+  try { operations = collectConfigChanges(); }
+  catch (error) { return showNotice(error.message, true); }
+  if (!operations.length) return;
+
+  const confirmations = [];
+  for (const phrase of requiredConfigConfirmations(operations)) {
+    const accepted = await requestConfirmation(
+      phrase,
+      "Configuration changes are validated and written to your user configuration file.",
+    );
+    if (!accepted) return showNotice("Configuration save cancelled.", true);
+    confirmations.push(phrase);
+  }
+
+  byId("config-save-button").disabled = true;
+  try {
+    const result = await api("/api/config", {
+      method: "POST",
+      body: JSON.stringify({
+        expected_revision: state.config?.revision || "missing",
+        operations,
+        confirmations,
+      }),
+    });
+    renderConfig(result);
+    const restarts = result.restart_required_paths || [];
+    showNotice(restarts.length
+      ? `Configuration saved. Restart required for: ${restarts.join(", ")}.`
+      : "Configuration saved and active.");
+    await refreshRuntimeEvidence();
+  } catch (error) {
+    showNotice(error.message, true);
+    updateConfigDirtyState();
+  }
+}
+
 async function rosterAction(action, snapshotId) {
   const expected = `${action.toUpperCase()} ${snapshotId}`;
-  const confirm = window.prompt(`Type ${expected} to continue.`);
-  if (confirm !== expected) return showNotice("Roster action cancelled; the confirmation did not match.", true);
+  const accepted = await requestConfirmation(
+    expected,
+    `This will ${action} roster snapshot ${snapshotId}.`,
+  );
+  if (!accepted) return showNotice("Roster action cancelled.", true);
   try {
-    await api("/api/roster/action", { method: "POST", body: JSON.stringify({ action, snapshot_id: snapshotId, confirm }) });
+    await api("/api/roster/action", { method: "POST", body: JSON.stringify({ action, snapshot_id: snapshotId, confirm: expected }) });
     showNotice(`Snapshot ${snapshotId} ${action}d.`); await refreshAll();
   } catch (error) { showNotice(error.message, true); }
 }
 
 async function toggleHost(host, enabled) {
   const expected = `${enabled ? "ENABLE" : "DISABLE"} ${host}`;
-  const confirm = window.prompt(`Type ${expected} to continue. The host may require a restart.`);
-  if (confirm !== expected) return showNotice("Host action cancelled; the confirmation did not match.", true);
+  const accepted = await requestConfirmation(
+    expected,
+    "This changes native host state. The host may require a restart.",
+  );
+  if (!accepted) return showNotice("Host action cancelled.", true);
   try {
-    await api("/api/hosts/toggle", { method: "POST", body: JSON.stringify({ host, enabled, confirm }) });
+    await api("/api/hosts/toggle", { method: "POST", body: JSON.stringify({ host, enabled, confirm: expected }) });
     showNotice(`${host} ${enabled ? "enabled" : "disabled"}. Restart the host to finish activation.`); await refreshAll();
   } catch (error) { showNotice(error.message, true); }
 }
@@ -337,6 +592,23 @@ function bindEvents() {
   byId("refresh-button").addEventListener("click", refreshAll);
   byId("route-button").addEventListener("click", runRoute);
   byId("trim-button").addEventListener("click", trimRuntime);
+  byId("config-form").addEventListener("submit", saveConfig);
+  byId("config-form").addEventListener("input", updateConfigDirtyState);
+  byId("config-form").addEventListener("change", updateConfigDirtyState);
+  byId("config-reset-button").addEventListener("click", () => {
+    if (state.config) renderConfig(state.config);
+  });
+  byId("confirmation-cancel").addEventListener("click", () => finishConfirmation(false));
+  byId("confirmation-accept").addEventListener("click", () => finishConfirmation(true));
+  byId("confirmation-input").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      finishConfirmation(true);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      finishConfirmation(false);
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

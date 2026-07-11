@@ -3,7 +3,6 @@ from __future__ import annotations
 import builtins
 import io
 import os
-import stat
 import sys
 from pathlib import Path
 
@@ -12,6 +11,10 @@ import yaml
 
 from agency_runtime.cli import main as cli
 from agency_runtime.core.config import load_config, reset_config_cache
+from agency_runtime.core.configuration import (
+    read_config_state,
+    replace_config_document,
+)
 from agency_runtime.core.detect import (
     AdapterDetection,
     DetectionResult,
@@ -26,35 +29,12 @@ def _fresh_config_cache() -> None:
     reset_config_cache()
 
 
-def test_atomic_yaml_write_is_restrictive_and_valid(tmp_path: Path) -> None:
-    path = tmp_path / "agency.yaml"
-
-    cli._atomic_write_yaml(path, {"judge": {"model": "qwen:local"}})
-
-    assert yaml.safe_load(path.read_text(encoding="utf-8")) == {
-        "judge": {"model": "qwen:local"}
-    }
-    if os.name != "nt":
-        assert stat.S_IMODE(path.stat().st_mode) == 0o600
-    assert list(tmp_path.glob(".agency.yaml.*.tmp")) == []
-
-
-def test_atomic_yaml_write_preserves_original_on_replace_failure(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    path = tmp_path / "agency.yaml"
-    path.write_text("profile: standard\n", encoding="utf-8")
-
-    def fail_replace(source: Path, destination: Path) -> None:
-        raise OSError("simulated replace failure")
-
-    monkeypatch.setattr(cli.os, "replace", fail_replace)
-    with pytest.raises(OSError, match="simulated replace failure"):
-        cli._atomic_write_yaml(path, {"profile": "local-only"})
-
-    assert path.read_text(encoding="utf-8") == "profile: standard\n"
-    assert list(tmp_path.glob(".agency.yaml.*.tmp")) == []
+def _write_config(path: Path, document: dict) -> None:
+    replace_config_document(
+        document,
+        expected_revision=read_config_state(path).revision,
+        path=path,
+    )
 
 
 def test_config_get_and_set_redact_secrets_unless_raw(
@@ -64,7 +44,7 @@ def test_config_get_and_set_redact_secrets_unless_raw(
 ) -> None:
     path = tmp_path / "agency.yaml"
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(path))
-    cli._atomic_write_yaml(
+    _write_config(
         path,
         {
             "profile": "standard",
@@ -92,7 +72,8 @@ def test_config_get_and_set_redact_secrets_unless_raw(
     assert "provider-secret" not in provider_output
     assert cli._REDACTED in provider_output
 
-    assert cli.main(["config", "set", "judge.api_key", "replacement-secret"]) == 0
+    monkeypatch.setattr(sys, "stdin", io.StringIO("replacement-secret\n"))
+    assert cli.main(["config", "set", "judge.api_key", "--stdin"]) == 0
     set_output = capsys.readouterr().out
     assert "replacement-secret" not in set_output
     assert cli._REDACTED in set_output
@@ -102,6 +83,36 @@ def test_config_get_and_set_redact_secrets_unless_raw(
 
     assert cli.main(["config", "get", "judge.api_key", "--raw"]) == 0
     assert capsys.readouterr().out.strip() == "replacement-secret"
+
+
+def test_config_set_rejects_ambiguous_positional_and_stdin_values(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path = tmp_path / "agency.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(path))
+    monkeypatch.setattr(sys, "stdin", io.StringIO("power\n"))
+
+    assert cli.main(["config", "set", "profile", "standard", "--stdin"]) == 1
+
+    assert "either a positional value or --stdin" in capsys.readouterr().err
+    assert not path.exists()
+
+
+def test_config_set_reports_restart_required_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path = tmp_path / "agency.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(path))
+
+    assert cli.main(["config", "set", "dashboard.port", "7915"]) == 0
+
+    output = capsys.readouterr().out
+    assert "restart required: dashboard.port" in output
+    assert yaml.safe_load(path.read_text(encoding="utf-8"))["dashboard"]["port"] == 7915
 
 
 def test_local_only_enforcement_removes_remote_providers_and_auto_adapters() -> None:
@@ -144,10 +155,7 @@ def test_local_only_enforcement_removes_remote_providers_and_auto_adapters() -> 
     assert len(result["providers"]) == 1
     assert result["providers"][0]["type"] == "ollama"
     assert cli._is_loopback_url(result["providers"][0]["base_url"])
-    assert all(
-        entry["enabled"] == "false"
-        for entry in result["adapters"].values()
-    )
+    assert all(entry["enabled"] == "false" for entry in result["adapters"].values())
 
 
 def test_config_set_cannot_reenable_remote_behavior_in_local_only_profile(
@@ -157,7 +165,7 @@ def test_config_set_cannot_reenable_remote_behavior_in_local_only_profile(
 ) -> None:
     path = tmp_path / "agency.yaml"
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(path))
-    cli._atomic_write_yaml(
+    _write_config(
         path,
         {
             "profile": "standard",
@@ -241,9 +249,7 @@ def test_explicit_local_only_configure_never_exposes_remote_keys_to_detection(
     monkeypatch.setattr(cli, "_store", lambda _config: object())
     monkeypatch.setattr(cli, "_seed_starter_roster", lambda _store: 0)
 
-    assert cli.main(
-        ["configure", "--non-interactive", "--profile", "local-only"]
-    ) == 0
+    assert cli.main(["configure", "--non-interactive", "--profile", "local-only"]) == 0
     capsys.readouterr()
 
     written = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -251,11 +257,34 @@ def test_explicit_local_only_configure_never_exposes_remote_keys_to_detection(
     assert written["profile"] == "local-only"
     assert [provider["type"] for provider in written["providers"]] == ["ollama"]
     assert all(
-        adapter["enabled"] == "false"
-        for adapter in written["adapters"].values()
+        adapter["enabled"] == "false" for adapter in written["adapters"].values()
     )
     assert os.environ["OPENAI_API_KEY"] == "openai-secret"
     assert os.environ["ANTHROPIC_API_KEY"] == "anthropic-secret"
+
+
+def test_configure_force_recovers_invalid_existing_yaml(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text("judge: [invalid\n", encoding="utf-8")
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(path))
+    monkeypatch.setattr(cli, "_detect_for_profile", lambda _profile: DetectionResult())
+    monkeypatch.setattr(cli, "_store", lambda _config: object())
+    monkeypatch.setattr(cli, "_seed_starter_roster", lambda _store: 0)
+
+    assert (
+        cli.main(["configure", "--non-interactive", "--profile", "standard", "--force"])
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    written = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert "Config written" in output
+    assert written["profile"] == "standard"
+    assert isinstance(written["providers"], list)
 
 
 def test_local_only_wizard_only_writes_local_provider_and_disabled_adapters(
@@ -285,10 +314,7 @@ def test_local_only_wizard_only_writes_local_provider_and_disabled_adapters(
 
     assert result["judge"]["base_url"].startswith("http://127.0.0.1")
     assert [provider["type"] for provider in result["providers"]] == ["ollama"]
-    assert all(
-        adapter["enabled"] == "false"
-        for adapter in result["adapters"].values()
-    )
+    assert all(adapter["enabled"] == "false" for adapter in result["adapters"].values())
 
 
 def test_anthropic_wizard_emits_typed_provider_for_messages_protocol(
@@ -309,7 +335,7 @@ def test_anthropic_wizard_emits_typed_provider_for_messages_protocol(
     assert result["providers"][0]["base_url"] == "https://api.anthropic.com/v1"
 
     path = tmp_path / "agency.yaml"
-    cli._atomic_write_yaml(path, result)
+    _write_config(path, result)
     config = load_config(path, reload=True)
     assert config.providers[0].type == "anthropic"
 

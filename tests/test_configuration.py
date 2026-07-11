@@ -1,0 +1,760 @@
+"""Tests for the shared transactional configuration service."""
+
+from __future__ import annotations
+
+import os
+import stat
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+import pytest
+import yaml
+
+from agency_runtime.core import configuration
+from agency_runtime.core.config import load_config, reset_config_cache
+from agency_runtime.core.configuration import (
+    ConfigConflictError,
+    ConfigValidationError,
+    ConfigurationError,
+    apply_config_operations,
+    read_config_revision,
+    read_config_state,
+    replace_config_document,
+    resolve_config_path,
+)
+
+
+@pytest.fixture(autouse=True)
+def _isolated_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in tuple(os.environ):
+        if name.startswith("AGENCY_") or name in {
+            "LITELLM_API_KEY",
+            "OLLAMA_BASE_URL",
+        }:
+            monkeypatch.delenv(name, raising=False)
+    reset_config_cache()
+    yield
+    reset_config_cache()
+
+
+def _write(path: Path, document: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+
+
+def test_resolve_config_path_honors_nonexistent_environment_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "new" / "agency.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(target))
+
+    assert not target.exists()
+    assert resolve_config_path() == target
+    assert read_config_state().path == str(target)
+    assert not target.exists()
+    assert not target.parent.exists()
+
+
+def test_state_separates_redacted_persisted_and_effective_values(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    _write(
+        path,
+        {
+            "judge": {
+                "model": "file-model",
+                "base_url": "https://api.example.test/v1",
+                "api_key": "top-secret",
+            },
+            "adapters": {
+                "litellm": {
+                    "enabled": "true",
+                    "base_url": "http://127.0.0.1:4000",
+                    "api_key": "adapter-secret",
+                }
+            },
+        },
+    )
+    monkeypatch.setenv("AGENCY_JUDGE_MODEL", "environment-model")
+
+    state = read_config_state(path)
+
+    assert state.persisted["judge"]["model"] == "file-model"
+    assert state.effective["judge"]["model"] == "environment-model"
+    assert state.persisted["judge"]["api_key"] == "***REDACTED***"
+    assert state.effective["judge"]["api_key"] == "***REDACTED***"
+    assert state.secret_presence == {
+        "judge.api_key": True,
+        "adapters.litellm.api_key": True,
+    }
+    assert state.environment_overrides["judge.model"] == "AGENCY_JUDGE_MODEL"
+    assert "server.port" in state.restart_required_paths
+    assert "top-secret" not in repr(state)
+    assert "adapter-secret" not in repr(state)
+
+
+def test_dashboard_port_environment_override_is_explicit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    _write(path, {"dashboard": {"port": 7811}})
+    monkeypatch.setenv("AGENCY_DASHBOARD_PORT", "7911")
+
+    state = read_config_state(path)
+
+    assert state.persisted["dashboard"]["port"] == 7811
+    assert state.effective["dashboard"]["port"] == 7911
+    assert state.environment_overrides["dashboard.port"] == "AGENCY_DASHBOARD_PORT"
+    assert "dashboard.port" in state.restart_required_paths
+
+
+@pytest.mark.parametrize("invalid", ["abc", "70000"])
+def test_invalid_environment_override_is_rejected_without_echoing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    invalid: str,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    monkeypatch.setenv("AGENCY_DASHBOARD_PORT", invalid)
+
+    with pytest.raises(ConfigValidationError, match="override is invalid") as captured:
+        read_config_state(path)
+
+    assert invalid not in str(captured.value)
+
+
+def test_typed_update_writes_atomically_and_reloads_effective_config(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    result = apply_config_operations(
+        [
+            {"op": "set", "path": "judge.model", "value": "updated-model"},
+            {
+                "op": "set",
+                "path": "judge.base_url",
+                "value": "http://127.0.0.1:11434",
+            },
+            {"op": "set", "path": "judge.ollama_mode", "value": True},
+            {"op": "set", "path": "selector.min_confidence", "value": 0.65},
+            {"op": "set", "path": "server.port", "value": 7811},
+            {"op": "set", "path": "dashboard.port", "value": 7911},
+            {
+                "op": "secret",
+                "path": "judge.api_key",
+                "action": "replace",
+                "value": "saved-secret",
+            },
+        ],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    written = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert written["judge"]["model"] == "updated-model"
+    assert written["judge"]["api_key"] == "saved-secret"
+    assert written["selector"]["min_confidence"] == 0.65
+    assert result.state.persisted["judge"]["api_key"] == "***REDACTED***"
+    assert result.state.secret_presence["judge.api_key"] is True
+    assert result.restart_required == ("server.port", "dashboard.port")
+    assert result.state.revision != state.revision
+    assert "saved-secret" not in repr(result)
+
+    loaded = load_config(path, reload=True)
+    assert loaded.judge.model == "updated-model"
+    assert loaded.selector.min_confidence == 0.65
+    assert loaded.server.port == 7811
+    assert loaded.dashboard.port == 7911
+
+    if os.name != "nt":
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert list(tmp_path.glob(".agency.yaml.*.tmp")) == []
+
+
+def test_replace_document_uses_same_validation_lock_and_redacted_result(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    result = replace_config_document(
+        {
+            "profile": "standard",
+            "dashboard": {"port": 7920},
+            "judge": {
+                "model": "configured-model",
+                "base_url": "https://api.example.test/v1",
+                "api_key": "replacement-document-secret",
+                "ollama_mode": False,
+            },
+            "providers": [
+                {
+                    "name": "primary",
+                    "type": "openai-compatible",
+                    "model": "configured-model",
+                    "base_url": "https://api.example.test/v1",
+                    "api_key": "provider-document-secret",
+                }
+            ],
+        },
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    written = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert written["dashboard"]["port"] == 7920
+    assert written["judge"]["api_key"] == "replacement-document-secret"
+    assert result.state.persisted["judge"]["api_key"] == "***REDACTED***"
+    assert result.restart_required == ("dashboard.port",)
+    assert "replacement-document-secret" not in repr(result)
+    assert "provider-document-secret" not in repr(result)
+
+
+def test_trusted_replacement_recovers_invalid_existing_yaml_with_revision_check(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text("judge: [invalid\n", encoding="utf-8")
+    revision = read_config_revision(path)
+
+    with pytest.raises(ConfigValidationError, match="not valid UTF-8 YAML"):
+        replace_config_document(
+            {"profile": "standard"},
+            expected_revision=revision,
+            path=path,
+        )
+
+    result = replace_config_document(
+        {"profile": "standard", "dashboard": {"port": 7810}},
+        expected_revision=revision,
+        path=path,
+        recover_invalid_existing=True,
+    )
+
+    assert yaml.safe_load(path.read_text(encoding="utf-8")) == {
+        "profile": "standard",
+        "dashboard": {"port": 7810},
+    }
+    assert result.state.revision != revision
+
+
+def test_trusted_replacement_invalid_environment_preserves_original_bytes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text("judge: [invalid\n", encoding="utf-8")
+    before = path.read_bytes()
+    revision = read_config_revision(path)
+    monkeypatch.setenv("AGENCY_DASHBOARD_PORT", "abc")
+
+    with pytest.raises(ConfigValidationError, match="override is invalid"):
+        replace_config_document(
+            {"profile": "standard", "dashboard": {"port": 7810}},
+            expected_revision=revision,
+            path=path,
+            recover_invalid_existing=True,
+        )
+
+    assert path.read_bytes() == before
+    assert list(tmp_path.glob(".agency.yaml.*.tmp")) == []
+
+
+def test_noop_replace_and_preserve_keep_the_existing_revision(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    document = {
+        "judge": {
+            "model": "model",
+            "base_url": "https://api.example.test/v1",
+            "api_key": "preserved-secret",
+        }
+    }
+    _write(path, document)
+    state = read_config_state(path)
+
+    replaced = replace_config_document(
+        document,
+        expected_revision=state.revision,
+        path=path,
+    )
+    preserved = apply_config_operations(
+        [{"op": "secret", "path": "judge.api_key", "action": "preserve"}],
+        expected_revision=replaced.state.revision,
+        path=path,
+    )
+
+    assert replaced.changed_paths == ()
+    assert replaced.state.revision == state.revision
+    assert preserved.changed_paths == ()
+    assert preserved.state.revision == state.revision
+    assert "preserved-secret" not in repr(replaced)
+    assert "preserved-secret" not in repr(preserved)
+
+
+def test_stale_revision_is_rejected_without_lost_update(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    initial = read_config_state(path)
+    first = apply_config_operations(
+        [{"op": "set", "path": "observability.retention_days", "value": 45}],
+        expected_revision=initial.revision,
+        path=path,
+    )
+
+    with pytest.raises(ConfigConflictError, match="refresh before saving"):
+        apply_config_operations(
+            [{"op": "set", "path": "observability.retention_days", "value": 90}],
+            expected_revision=initial.revision,
+            path=path,
+        )
+
+    assert read_config_state(path).revision == first.state.revision
+    assert (
+        yaml.safe_load(path.read_text(encoding="utf-8"))["observability"][
+            "retention_days"
+        ]
+        == 45
+    )
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        {"op": "set", "path": "unknown.field", "value": "x"},
+        {"op": "set", "path": "observability.capture_content", "value": "false"},
+        {"op": "set", "path": "observability.retention_days", "value": 0},
+        {"op": "set", "path": "server.port", "value": True},
+        {"op": "set", "path": "server.port", "value": 70000},
+        {"op": "set", "path": "server.host", "value": "0.0.0.0"},
+        {
+            "op": "set",
+            "path": "judge.base_url",
+            "value": "https://user:password@example.test/v1",
+        },
+        {"op": "set", "path": "judge.api_key_env", "value": "NOT VALID"},
+        {"op": "set", "path": "judge.timeout", "value": float("nan")},
+    ],
+)
+def test_invalid_typed_updates_never_change_the_file(
+    tmp_path: Path,
+    operation: dict,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    _write(path, {"profile": "standard"})
+    before = path.read_bytes()
+    revision = read_config_state(path).revision
+
+    with pytest.raises(ConfigValidationError):
+        apply_config_operations([operation], expected_revision=revision, path=path)
+
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("LOCALHOST", "localhost"),
+        ("127.0.0.42", "127.0.0.42"),
+        ("::1", "::1"),
+    ],
+)
+def test_server_host_accepts_loopback_values_used_by_cli_and_dashboard(
+    tmp_path: Path,
+    value: str,
+    expected: str,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    result = apply_config_operations(
+        [{"op": "set", "path": "server.host", "value": value}],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    assert result.changed_paths == ("server.host",)
+    assert result.restart_required == ("server.host",)
+    assert result.state.persisted["server"]["host"] == expected
+    assert load_config(path, reload=True).server.host == expected
+
+
+def test_secret_operations_preserve_replace_and_clear_without_echoing(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    _write(
+        path,
+        {
+            "judge": {
+                "model": "model",
+                "base_url": "https://api.example.test/v1",
+                "api_key": "original-secret",
+            }
+        },
+    )
+    state = read_config_state(path)
+    preserved = apply_config_operations(
+        [{"op": "secret", "path": "judge.api_key", "action": "preserve"}],
+        expected_revision=state.revision,
+        path=path,
+    )
+    assert yaml.safe_load(path.read_text(encoding="utf-8"))["judge"]["api_key"] == (
+        "original-secret"
+    )
+
+    replaced = apply_config_operations(
+        [
+            {
+                "op": "secret",
+                "path": "judge.api_key",
+                "action": "replace",
+                "value": "replacement-secret",
+            }
+        ],
+        expected_revision=preserved.state.revision,
+        path=path,
+    )
+    assert "replacement-secret" not in repr(replaced)
+    assert "original-secret" not in repr(replaced)
+    assert yaml.safe_load(path.read_text(encoding="utf-8"))["judge"]["api_key"] == (
+        "replacement-secret"
+    )
+
+    cleared = apply_config_operations(
+        [{"op": "secret", "path": "judge.api_key", "action": "clear"}],
+        expected_revision=replaced.state.revision,
+        path=path,
+    )
+    assert cleared.state.secret_presence["judge.api_key"] is False
+    assert yaml.safe_load(path.read_text(encoding="utf-8"))["judge"]["api_key"] == ""
+
+    with pytest.raises(ConfigValidationError) as captured:
+        apply_config_operations(
+            [
+                {
+                    "op": "secret",
+                    "path": "judge.api_key",
+                    "action": "replace",
+                    "value": "***REDACTED***",
+                }
+            ],
+            expected_revision=cleared.state.revision,
+            path=path,
+        )
+    assert "REDACTED" not in str(captured.value)
+
+
+def test_provider_update_preserves_secret_by_name_and_supports_ordering(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    _write(
+        path,
+        {
+            "providers": [
+                {
+                    "name": "primary",
+                    "type": "openai-compatible",
+                    "model": "old-model",
+                    "base_url": "https://api.example.test/v1",
+                    "api_key": "provider-secret",
+                }
+            ]
+        },
+    )
+    state = read_config_state(path)
+    result = apply_config_operations(
+        [
+            {
+                "op": "set",
+                "path": "providers",
+                "value": [
+                    {
+                        "name": "ollama",
+                        "type": "ollama",
+                        "model": "qwen3.5:2b",
+                        "base_url": "http://127.0.0.1:11434",
+                        "ollama_mode": True,
+                        "timeout": 10,
+                    },
+                    {
+                        "name": "primary",
+                        "type": "openai-compatible",
+                        "model": "new-model",
+                        "base_url": "https://api.example.test/v1",
+                        "timeout": 20,
+                    },
+                ],
+            }
+        ],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    providers = yaml.safe_load(path.read_text(encoding="utf-8"))["providers"]
+    assert [provider["name"] for provider in providers] == ["ollama", "primary"]
+    assert providers[1]["api_key"] == "provider-secret"
+    assert result.state.secret_presence["providers.1.api_key"] is True
+    assert "provider-secret" not in repr(result)
+
+
+@pytest.mark.parametrize(
+    "providers",
+    [
+        [
+            {
+                "name": "cli-provider",
+                "type": "cli",
+                "model": "model",
+                "base_url": "https://api.example.test/v1",
+                "api_key_env": "API_KEY",
+            }
+        ],
+        [
+            {
+                "name": "duplicate",
+                "type": "ollama",
+                "model": "one",
+                "base_url": "http://127.0.0.1:11434",
+            },
+            {
+                "name": "DUPLICATE",
+                "type": "ollama",
+                "model": "two",
+                "base_url": "http://127.0.0.1:11434",
+            },
+        ],
+        [
+            {
+                "name": "inline-secret",
+                "type": "openai-compatible",
+                "model": "model",
+                "base_url": "https://api.example.test/v1",
+                "api_key": "must-use-secret-operation",
+            }
+        ],
+    ],
+)
+def test_provider_editor_rejects_unsupported_ambiguous_or_inline_secret_entries(
+    tmp_path: Path,
+    providers: list[dict],
+) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    with pytest.raises(ConfigValidationError):
+        apply_config_operations(
+            [{"op": "set", "path": "providers", "value": providers}],
+            expected_revision=state.revision,
+            path=path,
+        )
+
+    assert not path.exists()
+
+
+def test_provider_secret_can_be_set_after_adding_provider(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+    result = apply_config_operations(
+        [
+            {
+                "op": "set",
+                "path": "providers",
+                "value": [
+                    {
+                        "name": "remote",
+                        "type": "anthropic",
+                        "model": "claude-model",
+                        "base_url": "https://api.anthropic.com/v1",
+                    }
+                ],
+            },
+            {
+                "op": "secret",
+                "path": "providers.0.api_key",
+                "action": "replace",
+                "value": "provider-secret",
+            },
+        ],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    assert result.state.secret_presence["providers.0.api_key"] is True
+    assert "provider-secret" not in repr(result)
+
+
+def test_local_only_profile_enforces_local_provider_and_disables_adapters(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    _write(
+        path,
+        {
+            "profile": "standard",
+            "judge": {
+                "model": "remote",
+                "base_url": "https://api.example.test/v1",
+                "api_key": "remote-secret",
+            },
+            "ollama": {
+                "enabled": False,
+                "base_url": "https://remote.example.test",
+                "model": "local-model",
+            },
+            "adapters": {
+                "litellm": {
+                    "enabled": "true",
+                    "base_url": "http://127.0.0.1:4000",
+                },
+                "codex": {"enabled": "true"},
+            },
+        },
+    )
+    state = read_config_state(path)
+    result = apply_config_operations(
+        [{"op": "set", "path": "profile", "value": "local-only"}],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert result.policy_enforced is True
+    assert document["profile"] == "local-only"
+    assert document["judge"]["api_key"] == ""
+    assert document["judge"]["base_url"] == "http://127.0.0.1:11434"
+    assert [provider["type"] for provider in document["providers"]] == ["ollama"]
+    assert all(entry["enabled"] == "false" for entry in document["adapters"].values())
+    assert result.state.secret_presence["judge.api_key"] is False
+    assert "remote-secret" not in repr(result)
+
+
+def test_atomic_replace_failure_preserves_original_and_removes_temporary_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    _write(path, {"profile": "standard"})
+    before = path.read_bytes()
+    state = read_config_state(path)
+
+    def fail_replace(_source: Path, _destination: Path) -> None:
+        raise OSError("simulated replace failure")
+
+    monkeypatch.setattr(configuration.os, "replace", fail_replace)
+    with pytest.raises(OSError, match="simulated replace failure"):
+        apply_config_operations(
+            [{"op": "set", "path": "profile", "value": "power"}],
+            expected_revision=state.revision,
+            path=path,
+        )
+
+    assert path.read_bytes() == before
+    assert list(tmp_path.glob(".agency.yaml.*.tmp")) == []
+
+
+def test_private_write_fails_before_replace_when_windows_acl_cannot_be_enforced(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text("profile: standard\n", encoding="utf-8")
+    before = path.read_bytes()
+    observed_temporary_bytes: list[bytes] = []
+    replace_calls: list[tuple[Path, Path]] = []
+    monkeypatch.setattr(configuration, "_IS_WINDOWS", True)
+
+    def deny_private_acl(candidate: Path) -> bool:
+        observed_temporary_bytes.append(candidate.read_bytes())
+        return False
+
+    monkeypatch.setattr(configuration, "_restrict_windows_acl", deny_private_acl)
+    monkeypatch.setattr(
+        configuration.os,
+        "replace",
+        lambda source, destination: replace_calls.append((source, destination)),
+    )
+
+    with pytest.raises(ConfigurationError, match="owner-only"):
+        configuration._atomic_write_yaml(
+            path,
+            {"judge": {"api_key": "never-written-config-secret"}},
+        )
+
+    assert observed_temporary_bytes == [b""]
+    assert replace_calls == []
+    assert path.read_bytes() == before
+    assert b"never-written-config-secret" not in path.read_bytes()
+    assert list(tmp_path.glob(".agency.yaml.*.tmp")) == []
+
+
+def test_cross_process_lock_and_revision_allow_only_one_concurrent_writer(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    revision = read_config_state(path).revision
+
+    def update(days: int):
+        return apply_config_operations(
+            [{"op": "set", "path": "observability.retention_days", "value": days}],
+            expected_revision=revision,
+            path=path,
+        )
+
+    successes = []
+    conflicts = []
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(update, days) for days in (30, 60)]
+        for future in futures:
+            try:
+                successes.append(future.result(timeout=5))
+            except ConfigConflictError as exc:
+                conflicts.append(exc)
+
+    assert len(successes) == 1
+    assert len(conflicts) == 1
+    stored_days = yaml.safe_load(path.read_text(encoding="utf-8"))["observability"][
+        "retention_days"
+    ]
+    assert stored_days in {30, 60}
+
+
+def test_document_validation_rejects_unknown_fields_and_string_booleans() -> None:
+    with pytest.raises(ConfigValidationError, match="unsupported top-level"):
+        configuration.validate_config_document({"unknown": {}})
+
+    with pytest.raises(ConfigValidationError, match="JSON boolean"):
+        configuration.validate_config_document(
+            {"observability": {"capture_content": "false"}}
+        )
+
+    assert configuration.validate_config_document(
+        {"adapters": {"codex": {"enabled": True}}}
+    ) == {"adapters": {"codex": {"enabled": "true"}}}
+
+
+def test_config_errors_do_not_include_submitted_secret_value(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+    secret = "do-not-echo-this-secret"
+
+    with pytest.raises(ConfigValidationError) as captured:
+        apply_config_operations(
+            [
+                {
+                    "op": "secret",
+                    "path": "unsupported.api_key",
+                    "action": "replace",
+                    "value": secret,
+                }
+            ],
+            expected_revision=state.revision,
+            path=path,
+        )
+
+    assert secret not in str(captured.value)
