@@ -140,6 +140,35 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             return None
         return body
 
+    def _drain_bounded_request_body(self) -> None:
+        """Consume a small rejected body so Windows can deliver the JSON error.
+
+        Closing a socket with unread request bytes can produce a TCP reset on
+        Windows, causing the client to lose the response that explains the
+        rejection. Only authenticated, bounded requests reach this helper.
+        Oversized or malformed lengths fail closed instead of triggering an
+        unbounded read.
+        """
+        raw_length = self.headers.get("Content-Length")
+        try:
+            length = int(raw_length) if raw_length is not None else 0
+        except (TypeError, ValueError):
+            self.close_connection = True
+            return
+        max_body_size = int(getattr(self.server, "max_body_size", _MAX_BODY))
+        if length <= 0:
+            return
+        if length > max_body_size:
+            self.close_connection = True
+            return
+        remaining = length
+        while remaining:
+            chunk = self.rfile.read(min(remaining, 64 * 1024))
+            if not chunk:
+                self.close_connection = True
+                return
+            remaining -= len(chunk)
+
     # ── Response helpers ─────────────────────────────────────────────
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
@@ -191,6 +220,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
                 self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             )
             if content_type != "application/json":
+                self._drain_bounded_request_body()
                 self._json_error(
                     HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required"
                 )
@@ -220,11 +250,14 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         )
         context = build_routing_context(routing)
         if trivial:
-            _matched, companion_ids = detect_actions(user_message)
             active_slugs = {
                 str(agent.get("slug") or agent.get("agent_slug") or "")
                 for agent in catalog
             }
+            _matched, companion_ids = detect_actions(
+                user_message,
+                active_slugs=active_slugs,
+            )
             available = [slug for slug in companion_ids if slug in active_slugs]
             context = None
             if available:

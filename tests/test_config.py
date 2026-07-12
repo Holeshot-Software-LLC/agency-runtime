@@ -262,7 +262,7 @@ def test_config_parses_providers_list():
         yaml.dump({
             "providers": [
                 {"name": "litellm", "type": "litellm", "model": "task-general",
-                 "base_url": "http://localhost:4000", "api_key": "sk-test"},
+                 "base_url": "http://127.0.0.1:4000", "api_key": "sk-test"},
                 {"name": "ollama", "type": "ollama", "model": "qwen3.5:2b",
                  "base_url": "http://localhost:11434", "ollama_mode": True},
             ],
@@ -277,6 +277,111 @@ def test_config_parses_providers_list():
     assert cfg.providers[1].name == "ollama"
     assert cfg.providers[1].ollama_mode is True
     Path(f.name).unlink()
+
+
+def test_load_rejects_credentialed_typed_provider_over_remote_http(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        yaml.safe_dump({
+            "providers": [{
+                "name": "remote",
+                "type": "openai-compatible",
+                "model": "model",
+                "base_url": "http://provider.invalid/v1",
+                "api_key": "secret",
+            }],
+        }),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="literal loopback HTTP"):
+        load_config(path, reload=True)
+
+
+def test_load_rejects_credentialed_legacy_judge_over_remote_http(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        yaml.safe_dump({
+            "judge": {
+                "model": "model",
+                "base_url": "http://judge.invalid/v1",
+                "api_key": "secret",
+                "ollama_mode": False,
+            },
+        }),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="judge credentials"):
+        load_config(path, reload=True)
+
+
+def test_environment_cannot_override_judge_credentials_to_remote_http() -> None:
+    os.environ["AGENCY_JUDGE_BASE_URL"] = "http://judge.invalid/v1"
+    os.environ["AGENCY_JUDGE_API_KEY"] = "secret"
+
+    with pytest.raises(ValueError, match="judge credentials"):
+        load_config("/nonexistent", reload=True)
+
+
+def test_load_rejects_credentialed_litellm_adapter_over_remote_http(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        yaml.safe_dump({
+            "adapters": {
+                "litellm": {
+                    "enabled": "true",
+                    "base_url": "http://adapter.invalid",
+                    "api_key_env": "LITELLM_API_KEY",
+                },
+            },
+        }),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="LiteLLM adapter credentials"):
+        load_config(path, reload=True)
+
+
+def test_load_accepts_credentialed_literal_loopback_http(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        yaml.safe_dump({
+            "judge": {
+                "model": "model",
+                "base_url": "http://127.0.0.1:4000/v1",
+                "api_key": "secret",
+                "ollama_mode": False,
+            },
+        }),
+        encoding="utf-8",
+    )
+
+    assert load_config(path, reload=True).judge.api_key == "secret"
+
+
+def test_runtime_rejects_query_bearing_credential_base_url(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        yaml.safe_dump({
+            "judge": {
+                "model": "model",
+                "base_url": "https://judge.invalid/v1?token=leaky",
+                "api_key": "secret",
+                "ollama_mode": False,
+            },
+        }),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="judge credentials"):
+        load_config(path, reload=True)
 
 
 def test_config_to_yaml_includes_providers():

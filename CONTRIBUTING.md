@@ -69,6 +69,7 @@ handoff:
 
 ```bash
 python scripts/docs_metadata.py --check
+python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 python -m pytest tests -q

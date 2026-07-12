@@ -26,6 +26,14 @@ _MAX_DESCRIPTOR_BYTES = 64 * 1024
 _LOCK_TIMEOUT_SECONDS = 5.0
 
 
+class _NoTokenRedirects(urllib.request.HTTPRedirectHandler):
+    """Never forward a dashboard bearer token to a redirect target."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        del req, fp, code, msg, headers, newurl
+        return None
+
+
 def dashboard_runtime_path(
     *,
     home_dir: str | Path | None = None,
@@ -254,7 +262,8 @@ def dashboard_service_reachable(
             f"http://127.0.0.1:{value['port']}/api/health",
             headers={"Authorization": f"Bearer {value['token']}"},
         )
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        opener = urllib.request.build_opener(_NoTokenRedirects())
+        with opener.open(request, timeout=timeout) as response:
             payload = json.loads(response.read())
         return response.status == 200 and payload == {"status": "ok"}
     except (OSError, ValueError, urllib.error.URLError, json.JSONDecodeError):

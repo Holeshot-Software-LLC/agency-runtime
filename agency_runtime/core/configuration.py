@@ -35,7 +35,15 @@ from urllib.parse import urlsplit
 
 import yaml
 
-from agency_runtime.core.config import config_to_yaml, load_config, reset_config_cache
+from agency_runtime.core.config import (
+    MAX_PROVIDER_CHAIN_ENTRIES,
+    config_to_yaml,
+    is_safe_cli_model_id,
+    is_safe_credential_url,
+    load_config,
+    reset_config_cache,
+)
+from agency_runtime.core.display import has_terminal_control
 
 
 _REDACTED = "***REDACTED***"
@@ -45,8 +53,9 @@ _MAX_OPERATIONS = 128
 _LOCK_TIMEOUT_SECONDS = 5.0
 _ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _PROVIDER_TYPES = frozenset(
-    {"openai", "openai-compatible", "anthropic", "ollama", "litellm"}
+    {"openai", "openai-compatible", "anthropic", "ollama", "litellm", "cli"}
 )
+_CLI_TRANSPORTS = frozenset({"codex", "claude"})
 _PROFILES = frozenset({"local-only", "standard", "power", "yolo"})
 _ENABLED_VALUES = frozenset({"auto", "true", "false"})
 _RESTART_REQUIRED_PATHS = (
@@ -398,6 +407,7 @@ def _url(value: Any, path: str, *, allow_empty: bool = False) -> str:
         or not parsed.hostname
         or parsed.username is not None
         or parsed.password is not None
+        or parsed.query
         or parsed.fragment
         or any(character.isspace() for character in result)
     ):
@@ -446,6 +456,7 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
     allowed = {
         "name",
         "type",
+        "transport",
         "model",
         "base_url",
         "api_key",
@@ -458,15 +469,21 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
     provider_type = _choice(
         entry.get("type", "openai-compatible"), f"{path}.type", _PROVIDER_TYPES
     )
+    is_cli = provider_type == "cli"
     result: dict[str, Any] = {
         "name": _string(
             entry.get("name", ""), f"{path}.name", allow_empty=False, maximum=80
         ),
         "type": provider_type,
         "model": _string(
-            entry.get("model", ""), f"{path}.model", allow_empty=False, maximum=512
+            entry.get("model", ""),
+            f"{path}.model",
+            allow_empty=is_cli,
+            maximum=512,
         ),
-        "base_url": _url(entry.get("base_url", ""), f"{path}.base_url"),
+        "base_url": _url(
+            entry.get("base_url", ""), f"{path}.base_url", allow_empty=is_cli
+        ),
         "api_key": _string(entry.get("api_key", ""), f"{path}.api_key", maximum=65536),
         "api_key_env": _env_name(entry.get("api_key_env", ""), f"{path}.api_key_env"),
         "ollama_mode": _boolean(
@@ -477,18 +494,58 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
             entry.get("timeout", 15.0), f"{path}.timeout", minimum=0.05, maximum=60.0
         ),
     }
+    for field in ("name", "model"):
+        if has_terminal_control(result[field]):
+            raise _error(f"{path}.{field}", "contains terminal control characters")
+    transport_value = entry.get("transport", "")
+    if is_cli:
+        result["transport"] = _choice(
+            transport_value, f"{path}.transport", _CLI_TRANSPORTS
+        )
+        if not is_safe_cli_model_id(result["model"]):
+            raise _error(
+                f"{path}.model",
+                "must be an empty default or a bounded model identifier",
+            )
+        if result["base_url"] or result["api_key"] or result["api_key_env"]:
+            raise _error(path, "CLI providers cannot configure URL or API-key fields")
+        result["ollama_mode"] = False
+    else:
+        result["transport"] = _string(
+            transport_value, f"{path}.transport", maximum=80
+        ).strip()
+        if result["transport"]:
+            raise _error(path, "transport is supported only for CLI providers")
     if provider_type == "ollama":
         result["ollama_mode"] = True
-    elif not result["api_key"] and not result["api_key_env"]:
+    elif (
+        not is_cli
+        and not result["api_key"]
+        and not result["api_key_env"]
+        and not (
+            provider_type in {"openai", "openai-compatible", "litellm"}
+            and _is_loopback_url(result["base_url"])
+        )
+    ):
         raise _error(path, "requires configured authentication")
+    if (
+        result["api_key"] or result["api_key_env"]
+    ) and not is_safe_credential_url(result["base_url"]):
+        raise _error(
+            f"{path}.base_url",
+            "credentials require HTTPS or literal loopback HTTP",
+        )
     return result
 
 
 def _validate_providers(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         raise _error("providers", "must be a list")
-    if len(value) > 32:
-        raise _error("providers", "contains too many entries")
+    if len(value) > MAX_PROVIDER_CHAIN_ENTRIES:
+        raise _error(
+            "providers",
+            f"supports at most {MAX_PROVIDER_CHAIN_ENTRIES} entries",
+        )
     providers = [_validate_provider(item, index) for index, item in enumerate(value)]
     names = [provider["name"].casefold() for provider in providers]
     if len(names) != len(set(names)):
@@ -530,7 +587,15 @@ def _validate_judge(value: Any) -> dict[str, Any]:
             maximum=100.0,
         ),
     }
-    return {name: validators[name](item) for name, item in section.items()}
+    result = {name: validators[name](item) for name, item in section.items()}
+    if (
+        result.get("api_key") or result.get("api_key_env")
+    ) and "base_url" in result and not is_safe_credential_url(result["base_url"]):
+        raise _error(
+            "judge.base_url",
+            "credentials require HTTPS or literal loopback HTTP",
+        )
+    return result
 
 
 def _validate_ollama(value: Any) -> dict[str, Any]:
@@ -637,6 +702,16 @@ def _validate_adapter_entry(value: Any, name: str) -> dict[str, Any]:
             result[field] = _env_name(item, item_path)
         elif field == "skip_models":
             result[field] = _string_list(item, item_path)
+    if (
+        name == "litellm"
+        and (result.get("api_key") or result.get("api_key_env"))
+        and "base_url" in result
+        and not is_safe_credential_url(result["base_url"])
+    ):
+        raise _error(
+            f"{path}.base_url",
+            "credentials require HTTPS or literal loopback HTTP",
+        )
     return result
 
 
@@ -787,8 +862,14 @@ def _providers_for_operation(value: Any) -> list[dict[str, Any]]:
     # returns, so use placeholder values solely for structural validation.
     candidates = copy.deepcopy(scrubbed)
     for item in candidates:
-        if item.get("type", "openai-compatible") != "ollama" and not item.get(
-            "api_key_env"
+        provider_type = item.get("type", "openai-compatible")
+        if (
+            provider_type not in {"ollama", "cli"}
+            and not item.get("api_key_env")
+            and not (
+                provider_type in {"openai", "openai-compatible", "litellm"}
+                and _is_loopback_url(item.get("base_url", ""))
+            )
         ):
             item["api_key"] = "validation-placeholder"
     _validate_providers(candidates)
@@ -928,6 +1009,29 @@ def _enforce_local_only(document: dict[str, Any]) -> bool:
     base_url = ollama.get("base_url", "http://127.0.0.1:11434")
     if not _is_loopback_url(base_url):
         base_url = "http://127.0.0.1:11434"
+    raw_providers = document.get("providers")
+    local_providers: list[dict[str, Any]] = []
+    if isinstance(raw_providers, list):
+        for raw_provider in raw_providers:
+            if not isinstance(raw_provider, dict):
+                continue
+            provider_type = str(
+                raw_provider.get("type", "openai-compatible")
+            ).strip().lower()
+            if (
+                provider_type
+                not in {"ollama", "openai", "openai-compatible", "litellm"}
+                or not _is_loopback_url(raw_provider.get("base_url", ""))
+            ):
+                continue
+            provider = copy.deepcopy(raw_provider)
+            provider.update({
+                "api_key": "",
+                "api_key_env": "",
+                "transport": "",
+                "ollama_mode": provider_type == "ollama",
+            })
+            local_providers.append(provider)
     judge = document.setdefault("judge", {})
     if not isinstance(judge, dict):
         judge = {}
@@ -936,28 +1040,30 @@ def _enforce_local_only(document: dict[str, Any]) -> bool:
         judge.get("model", "") if _is_loopback_url(judge.get("base_url", "")) else ""
     )
     model = str(ollama.get("model") or judge_model or "qwen3.5:2b")
-    judge.update(
-        {
-            "model": model,
-            "base_url": base_url,
-            "api_key": "",
-            "api_key_env": "",
-            "ollama_mode": True,
-        }
-    )
-    ollama.update({"enabled": True, "base_url": base_url, "model": model})
-    document["providers"] = [
-        {
+    if not local_providers:
+        local_providers = [{
             "name": "ollama",
             "type": "ollama",
+            "transport": "",
             "model": model,
             "base_url": base_url,
             "api_key": "",
             "api_key_env": "",
             "ollama_mode": True,
             "timeout": float(judge.get("timeout", 15.0)),
+        }]
+    primary = local_providers[0]
+    judge.update(
+        {
+            "model": str(primary.get("model") or model),
+            "base_url": str(primary.get("base_url") or base_url),
+            "api_key": "",
+            "api_key_env": "",
+            "ollama_mode": bool(primary.get("ollama_mode", False)),
         }
-    ]
+    )
+    ollama.update({"enabled": True, "base_url": base_url, "model": model})
+    document["providers"] = local_providers
     adapters = document.setdefault("adapters", {})
     if not isinstance(adapters, dict):
         adapters = {}
@@ -1139,7 +1245,7 @@ def replace_config_document(
         )
 
 
-def _restrict_windows_acl(path: Path) -> bool:
+def _restrict_windows_acl(path: Path, *, directory: bool = False) -> bool:
     """Apply an owner-only Windows DACL using native APIs when available."""
 
     if not _IS_WINDOWS:
@@ -1227,7 +1333,7 @@ def _restrict_windows_acl(path: Path) -> bool:
             access = ExplicitAccessW(
                 0x001F01FF,  # FILE_ALL_ACCESS
                 2,  # SET_ACCESS
-                0,
+                0x3 if directory else 0,  # inherit to children for owned dirs
                 trustee,
             )
             code = set_entries(1, ctypes.byref(access), None, ctypes.byref(acl))
@@ -1252,20 +1358,57 @@ def _restrict_windows_acl(path: Path) -> bool:
         return False
 
 
-def _restrict_permissions(path: Path, *, required: bool = False) -> bool:
+def _restrict_permissions(
+    path: Path,
+    *,
+    required: bool = False,
+    directory: bool = False,
+) -> bool:
     if _IS_WINDOWS:
         try:
             os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
         except OSError:
             pass
-        restricted = _restrict_windows_acl(path)
+        restricted = (
+            _restrict_windows_acl(path, directory=True)
+            if directory
+            else _restrict_windows_acl(path)
+        )
         if required and not restricted:
             raise ConfigurationError(
                 "owner-only file permissions could not be enforced"
             )
         return restricted
-    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+    expected_mode = stat.S_IRWXU if directory else stat.S_IRUSR | stat.S_IWUSR
+    os.chmod(path, expected_mode)
+    if stat.S_IMODE(path.stat().st_mode) != expected_mode:
+        if required:
+            raise ConfigurationError(
+                "owner-only file permissions could not be enforced"
+            )
+        return False
     return True
+
+
+def _ensure_config_parent(path: Path) -> None:
+    """Create a private target directory without taking over arbitrary parents."""
+    parent = path.parent
+    try:
+        parent.mkdir(parents=True, exist_ok=False, mode=0o700)
+    except FileExistsError:
+        created = False
+    else:
+        created = True
+    default_parent = Path.home() / ".agency-runtime"
+    owned = bool(
+        created
+        or (
+            not parent.is_symlink()
+            and os.path.abspath(parent) == os.path.abspath(default_parent)
+        )
+    )
+    if owned:
+        _restrict_permissions(parent, required=True, directory=True)
 
 
 def restrict_private_file(path: str | Path) -> None:
@@ -1289,12 +1432,7 @@ def _preflight_effective_candidate(path: Path) -> None:
 
 def _atomic_write_yaml(path: Path, document: Mapping[str, Any]) -> None:
     path = path.expanduser()
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if not _IS_WINDOWS:
-        try:
-            os.chmod(path.parent, stat.S_IRWXU)
-        except OSError:
-            pass
+    _ensure_config_parent(path)
     payload = yaml.safe_dump(
         dict(document),
         default_flow_style=False,
@@ -1352,7 +1490,7 @@ def _config_lock(
 ) -> Iterator[None]:
     """Acquire a cooperative one-byte lock adjacent to the config file."""
 
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    _ensure_config_parent(path)
     lock_path = path.with_name(f".{path.name}.lock")
     handle = open(lock_path, "a+b")
     try:

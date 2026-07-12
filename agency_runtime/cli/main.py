@@ -45,8 +45,11 @@ from urllib.parse import urlsplit
 import yaml
 
 from agency_runtime.core.config import (
+    MAX_PROVIDER_CHAIN_ENTRIES,
     AgencyConfig,
+    ProviderEntry,
     config_to_yaml,
+    is_safe_credential_url,
     load_config,
     reset_config_cache,
 )
@@ -65,6 +68,9 @@ from agency_runtime.core.detect import (
 from agency_runtime.core.doctor import format_report_human, run_doctor
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.policy.profiles import PROFILES, get_profile
+from agency_runtime.core.provider_validation import validate_provider
+from agency_runtime.core.http_safety import open_no_redirect
+from agency_runtime.core.display import safe_display_token
 from agency_runtime.core.roster.sync import (
     activate_snapshot,
     approve_snapshot,
@@ -75,7 +81,7 @@ from agency_runtime.core.roster.sync import (
 )
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
-from agency_runtime.core.selector.policy import load_policy
+from agency_runtime.core.selector.policy import load_policy, validate_policy
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -90,6 +96,9 @@ def _print_json(data: Any) -> None:
 
 
 _REDACTED = "***REDACTED***"
+_MAX_MODEL_DISCOVERY_BYTES = 1024 * 1024
+_MAX_DISCOVERED_MODELS = 1000
+_MAX_MODEL_ID_CHARS = 512
 _SECRET_KEY_PARTS = {
     "api_key",
     "access_token",
@@ -213,34 +222,60 @@ def _enforce_local_only_config(data: dict[str, Any]) -> dict[str, Any]:
     if not _is_loopback_url(base_url):
         base_url = "http://127.0.0.1:11434"
 
+    raw_providers = data.get("providers")
+    local_providers: list[dict[str, Any]] = []
+    if isinstance(raw_providers, list):
+        for raw_provider in raw_providers:
+            if not isinstance(raw_provider, dict):
+                continue
+            provider_type = str(
+                raw_provider.get("type", "openai-compatible")
+            ).strip().lower()
+            provider_base = raw_provider.get("base_url", "")
+            if (
+                provider_type
+                not in {"ollama", "openai", "openai-compatible", "litellm"}
+                or not _is_loopback_url(provider_base)
+            ):
+                continue
+            provider = dict(raw_provider)
+            provider["api_key"] = ""
+            provider["api_key_env"] = ""
+            provider["transport"] = ""
+            provider["ollama_mode"] = provider_type == "ollama"
+            local_providers.append(provider)
+
     judge = data.get("judge")
     if not isinstance(judge, dict):
         judge = {}
     judge_base = judge.get("base_url", "")
     judge_model = judge.get("model", "") if _is_loopback_url(judge_base) else ""
     model = str(ollama.get("model") or judge_model or "qwen3.5:2b")
-    judge.update(
-        {
+    if not local_providers:
+        local_providers = [{
+            "name": "ollama",
+            "type": "ollama",
+            "transport": "",
             "model": model,
             "base_url": base_url,
             "api_key": "",
             "api_key_env": "",
             "ollama_mode": True,
+            "timeout": float(judge.get("timeout", 15.0)),
+        }]
+    primary = local_providers[0]
+    judge.update(
+        {
+            "model": str(primary.get("model") or model),
+            "base_url": str(primary.get("base_url") or base_url),
+            "api_key": "",
+            "api_key_env": "",
+            "ollama_mode": bool(primary.get("ollama_mode", False)),
         }
     )
     data["judge"] = judge
     ollama.update({"enabled": True, "base_url": base_url, "model": model})
-    data["providers"] = [
-        {
-            "name": "ollama",
-            "type": "ollama",
-            "model": model,
-            "base_url": base_url,
-            "api_key": "",
-            "ollama_mode": True,
-            "timeout": float(judge.get("timeout", 15.0)),
-        }
-    ]
+    data["providers"] = local_providers
 
     adapters = data.get("adapters")
     if not isinstance(adapters, dict):
@@ -441,7 +476,10 @@ def cmd_install(args: argparse.Namespace) -> int:
         print(f"✅ Agency Runtime profile: {profile.name}")
         print(f"✅ Starter roster activated: {count} agents")
         print(f"   Config: {cfg.config_path or '(defaults only)'}")
-        print(f"   Judge model: {cfg.judge.model} ({cfg.judge.base_url})")
+        print(
+            f"   Judge model: {safe_display_token(cfg.judge.model)} "
+            f"({safe_display_token(cfg.judge.base_url)})"
+        )
         if dashboard_opted_out:
             print("   Dashboard service: opted out (--no-dashboard)")
         elif dashboard_result.get("ok"):
@@ -533,36 +571,75 @@ def _print_install_result(host: str, result: dict[str, Any]) -> None:
         print(f"   Backup retained: {result['backup_path']}")
 
 
-def cmd_on(args: argparse.Namespace) -> int:
-    """Enable Agency Runtime for a specific agent host."""
-    from agency_runtime.core.installer import toggle_agency, detect_installed_agents
+def _resolve_control_agent(args: argparse.Namespace, action: str) -> str | None:
+    """Resolve an explicit or unambiguous installed host for a control action."""
+    from agency_runtime.core.installer import detect_installed_agents
 
-    agent = args.agent
+    agent = getattr(args, "agent", None)
     if not agent:
         detected = detect_installed_agents()
         if len(detected) == 1:
             agent = detected[0]
         elif len(detected) == 0:
-            print("No agent hosts detected. Use: agency on --agent hermes")
-            return 1
+            print(f"No agent hosts detected. Use: agency {action} --agent hermes")
+            return None
         else:
             print(f"Multiple hosts detected: {', '.join(detected)}")
-            print("Specify: agency on --agent <name>")
-            return 1
+            print(f"Specify: agency {action} --agent <name>")
+            return None
+    return str(agent)
 
-    result = toggle_agency(
-        agent,
-        enabled=True,
-        dry_run=bool(getattr(args, "dry_run", False)),
-    )
+
+def _cmd_host_control(args: argparse.Namespace, *, enabled: bool) -> int:
+    """Apply persistent soft control, or explicitly request native lifecycle."""
+    action = "on" if enabled else "off"
+    agent = _resolve_control_agent(args, action)
+    if agent is None:
+        return 1
+    dry_run = bool(getattr(args, "dry_run", False))
+    if bool(getattr(args, "native", False)):
+        from agency_runtime.core.installer import toggle_agency
+
+        result = toggle_agency(agent, enabled=enabled, dry_run=dry_run)
+    else:
+        from agency_runtime.core.host_control import (
+            get_runtime_control,
+            set_runtime_control,
+        )
+
+        store = _store()
+        previous = get_runtime_control(store, agent)
+        control = (
+            previous
+            if dry_run
+            else set_runtime_control(
+                store,
+                agent,
+                enabled=enabled,
+                source="cli",
+            )
+        )
+        result = {
+            "ok": True,
+            "exit_code": 0,
+            "host": agent,
+            "enabled": enabled,
+            "runtime_enabled": enabled if dry_run else bool(control["enabled"]),
+            "previous_runtime_enabled": bool(previous["enabled"]),
+            "updated_at": control.get("updated_at"),
+            "source": control.get("source"),
+            "dry_run": dry_run,
+            "native_lifecycle": "persistent soft control",
+            "restart_required": False,
+        }
     if getattr(args, "json", False):
         _print_json(result)
         return int(result.get("exit_code", 0 if result.get("ok") else 1))
     if result["ok"]:
         prefix = (
-            "DRY RUN — would enable"
+            f"DRY RUN — would {'enable' if enabled else 'disable'}"
             if result.get("dry_run")
-            else "✅ Agency Runtime enabled"
+            else ("✅ Agency Runtime enabled" if enabled else "⏸️  Agency Runtime disabled")
         )
         print(
             f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}"
@@ -572,47 +649,74 @@ def cmd_on(args: argparse.Namespace) -> int:
     else:
         print(f"❌ {result['error']}")
     return 0 if result["ok"] else 1
+
+
+def cmd_on(args: argparse.Namespace) -> int:
+    """Enable Agency Runtime for a specific agent host."""
+    return _cmd_host_control(args, enabled=True)
 
 
 def cmd_off(args: argparse.Namespace) -> int:
     """Disable Agency Runtime for a specific agent host."""
-    from agency_runtime.core.installer import toggle_agency, detect_installed_agents
+    return _cmd_host_control(args, enabled=False)
 
-    agent = args.agent
-    if not agent:
-        detected = detect_installed_agents()
-        if len(detected) == 1:
-            agent = detected[0]
-        elif len(detected) == 0:
-            print("No agent hosts detected. Use: agency off --agent hermes")
-            return 1
-        else:
-            print(f"Multiple hosts detected: {', '.join(detected)}")
-            print("Specify: agency off --agent <name>")
-            return 1
 
-    result = toggle_agency(
-        agent,
-        enabled=False,
-        dry_run=bool(getattr(args, "dry_run", False)),
+def cmd_status(args: argparse.Namespace) -> int:
+    """Report native installation facts and persistent runtime control."""
+    from agency_runtime.core.host_control import (
+        inspect_all_host_statuses,
+        inspect_host_status,
     )
+
+    store = _store()
+    statuses = (
+        [inspect_host_status(store, args.agent)]
+        if args.agent
+        else inspect_all_host_statuses(store)
+    )
+    payload = {"hosts": statuses}
     if getattr(args, "json", False):
-        _print_json(result)
-        return int(result.get("exit_code", 0 if result.get("ok") else 1))
-    if result["ok"]:
-        prefix = (
-            "DRY RUN — would disable"
-            if result.get("dry_run")
-            else "⏸️  Agency Runtime disabled"
+        _print_json(payload)
+        return 0
+    for status in statuses:
+        runtime = "on" if status["runtime_enabled"] else "off"
+        native = (
+            "registered"
+            if status.get("registered") is True
+            else "not registered"
+            if status.get("registered") is False
+            else "unverified"
         )
-        print(
-            f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}"
+        effective_value = status.get("effective_enabled")
+        effective = (
+            "active"
+            if effective_value is True
+            else "inactive"
+            if effective_value is False
+            else "unverified"
         )
-        if result.get("restart_required"):
-            print(f"   Restart {agent} to take effect.")
-    else:
-        print(f"❌ {result['error']}")
-    return 0 if result["ok"] else 1
+        print(f"{status['host']}: runtime {runtime}; native {native}; {effective}")
+    return 0
+
+
+def cmd_host_canary(args: argparse.Namespace) -> int:
+    """Inspect readiness or run an explicitly confirmed live host canary."""
+    from agency_runtime.core.canary import run_canary
+
+    report = run_canary(
+        args.agent,
+        execute=bool(args.execute),
+        confirm=str(args.confirm or ""),
+        db_path=args.db,
+        timeout=float(args.timeout),
+    )
+    if args.output:
+        Path(args.output).expanduser().write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    _print_json(report)
+    return 0 if (report["canary_passed"] if args.execute else report["ready"]) else 1
 
 
 # ── Configure wizard ─────────────────────────────────────────
@@ -671,6 +775,12 @@ def cmd_configure(args: argparse.Namespace) -> int:
     else:
         config_data = _interactive_wizard(detection, profile)
     config_data = _enforce_local_only_config(config_data)
+
+    if not args.non_interactive and not _validate_interactive_provider_chain(
+        config_data.get("providers", [])
+    ):
+        print("\n❌ Provider validation failed; configuration was not written.")
+        return 1
 
     # Write config
     replace_config_document(
@@ -743,63 +853,12 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     print("Step 2: Judge Model")
     print("━" * 40)
 
-    # ── Build provider menu ────────────────────────────────────
-    # Each entry: (menu_label, handler_fn)
-    # The handler returns a judge_cfg dict
-    providers: list[tuple[str, str]] = []
-
-    if profile == "local-only":
-        provider_key = "ollama"
-        judge_cfg = _pick_ollama_model(p)
-    else:
-        if p.ollama_available:
-            n = len(p.ollama_models)
-            providers.append(
-                ("ollama", f"Ollama (free, local) — {n} model(s) available")
-            )
-
-        if p.openai_key_present:
-            n = len(p.openai_models)
-            suffix = f" — {n} model(s) discovered" if n else " (model list unavailable)"
-            providers.append(("openai", f"OpenAI API (key detected){suffix}"))
-
-        if p.anthropic_key_present:
-            providers.append(("anthropic", "Anthropic API (key detected)"))
-
-        if p.litellm_available:
-            n = len(p.litellm_models)
-            suffix = (
-                f" — {n} model group(s) discovered"
-                if n
-                else " (model list unavailable)"
-            )
-            providers.append(("litellm", f"LiteLLM proxy{suffix}"))
-
-        providers.append(
-            (
-                "custom",
-                "Custom OpenAI-compatible endpoint (OpenRouter, Together, Groq, LM Studio, etc.)",
-            )
-        )
-
-        print("\nWhich provider should the Agency selector use for routing?\n")
-        for i, (_, label) in enumerate(providers, 1):
-            print(f"  [{i}] {label}")
-
-        choice_idx = _prompt_choice(len(providers), default=1) - 1
-        provider_key = providers[choice_idx][0]
-
-        # ── Per-provider model selection ──────────────────────
-        if provider_key == "ollama":
-            judge_cfg = _pick_ollama_model(p)
-        elif provider_key == "openai":
-            judge_cfg = _pick_openai_model(p)
-        elif provider_key == "anthropic":
-            judge_cfg = _pick_anthropic_model()
-        elif provider_key == "litellm":
-            judge_cfg = _pick_litellm_model(p)
-        else:
-            judge_cfg = _pick_custom_endpoint()
+    generated = generate_config_from_detection(detection, profile=profile)
+    provider_entries = _guided_provider_chain(detection, profile)
+    judge_cfg = _legacy_judge_from_chain(
+        provider_entries,
+        dict(generated.get("judge", {})),
+    )
 
     # Step 3: Adapters
     print("\nStep 3: Host Adapters")
@@ -863,24 +922,11 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     print("\nStep 5: Review")
     print("━" * 40)
 
-    provider_type = {
-        "ollama": "ollama",
-        "anthropic": "anthropic",
-        "litellm": "litellm",
-    }.get(provider_key, "openai-compatible")
-    provider_entry = {
-        "name": provider_key,
-        "type": provider_type,
-        "model": judge_cfg.get("model", ""),
-        "base_url": judge_cfg.get("base_url", ""),
-        "api_key": judge_cfg.get("api_key", ""),
-        "api_key_env": judge_cfg.get("api_key_env", ""),
-        "ollama_mode": bool(judge_cfg.get("ollama_mode", False)),
-        "timeout": float(judge_cfg.get("timeout", 15.0)),
-    }
+    for provider in provider_entries:
+        provider["timeout"] = timeout
 
     config_data = {
-        "providers": [provider_entry],
+        "providers": provider_entries,
         "judge": judge_cfg,
         "ollama": {
             "enabled": p.ollama_available,
@@ -903,6 +949,195 @@ def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
     _print_config_summary(config_data)
 
     return config_data
+
+
+def _legacy_judge_from_chain(
+    providers: list[dict[str, Any]],
+    fallback: dict[str, Any],
+) -> dict[str, Any]:
+    """Mirror the first HTTP provider for backward-compatible judge settings."""
+
+    for provider in providers:
+        if provider.get("type") == "cli":
+            continue
+        return {
+            "model": provider.get("model", ""),
+            "base_url": provider.get("base_url", ""),
+            "api_key": provider.get("api_key", ""),
+            "api_key_env": provider.get("api_key_env", ""),
+            "ollama_mode": bool(provider.get("ollama_mode", False)),
+        }
+    if providers:
+        return {
+            "model": "",
+            "base_url": "",
+            "api_key": "",
+            "api_key_env": "",
+            "ollama_mode": False,
+        }
+    return fallback
+
+
+def _provider_entry(
+    name: str,
+    provider_type: str,
+    judge: dict[str, Any],
+    *,
+    transport: str = "",
+) -> dict[str, Any]:
+    return {
+        "name": name,
+        "type": provider_type,
+        "transport": transport,
+        "model": judge.get("model", ""),
+        "base_url": judge.get("base_url", ""),
+        "api_key": judge.get("api_key", ""),
+        "api_key_env": judge.get("api_key_env", ""),
+        "ollama_mode": bool(judge.get("ollama_mode", False)),
+        "timeout": float(judge.get("timeout", 15.0)),
+    }
+
+
+def _new_provider_entry(detection, profile: str) -> dict[str, Any] | None:
+    p = detection.providers
+    if profile == "local-only":
+        choices: list[tuple[str, str]] = [
+            ("ollama", "Ollama (local)"),
+            ("custom", "Custom literal-loopback OpenAI-compatible endpoint"),
+        ]
+    else:
+        choices = [
+            ("openai", "OpenAI API"),
+            ("anthropic", "Anthropic API"),
+        ]
+        if p.ollama_available:
+            choices.insert(0, ("ollama", "Ollama (local)"))
+        if p.litellm_available:
+            choices.append(("litellm", "LiteLLM proxy"))
+        for transport in ("codex", "claude"):
+            status = detection.cli_providers.get(transport)
+            if status is not None and status.installed:
+                state = "usable" if status.usable else "authentication required"
+                choices.append((f"cli:{transport}", f"{transport.title()} CLI ({state})"))
+        choices.append(("custom", "Custom OpenAI-compatible endpoint"))
+
+    print("\nAdd provider:")
+    for index, (_, label) in enumerate(choices, start=1):
+        print(f"  [{index}] {label}")
+    print(f"  [{len(choices) + 1}] Cancel")
+    selected = _prompt_choice(len(choices) + 1, default=len(choices) + 1)
+    if selected > len(choices):
+        return None
+    provider_key = choices[selected - 1][0]
+    if provider_key == "ollama":
+        return _provider_entry("ollama", "ollama", _pick_ollama_model(p))
+    if provider_key == "openai":
+        return _provider_entry("openai", "openai-compatible", _pick_openai_model(p))
+    if provider_key == "anthropic":
+        return _provider_entry("anthropic", "anthropic", _pick_anthropic_model())
+    if provider_key == "litellm":
+        return _provider_entry("litellm", "litellm", _pick_litellm_model(p))
+    if provider_key.startswith("cli:"):
+        transport = provider_key.split(":", 1)[1]
+        model = input(
+            f"Model override for {transport} (blank uses CLI default): "
+        ).strip()
+        return _provider_entry(
+            f"{transport}-cli",
+            "cli",
+            {"model": model},
+            transport=transport,
+        )
+    custom = _pick_custom_endpoint()
+    if profile == "local-only" and not _is_loopback_url(custom.get("base_url", "")):
+        print("  Local-only providers must use a literal loopback endpoint.")
+        return None
+    custom_name = input("Provider name [custom]: ").strip() or "custom"
+    return _provider_entry(custom_name, "openai-compatible", custom)
+
+
+def _guided_provider_chain(detection, profile: str) -> list[dict[str, Any]]:
+    """Edit an ordered provider chain with add, move, and remove actions."""
+
+    suggested = generate_config_from_detection(detection, profile=profile)
+    providers = [dict(item) for item in suggested.get("providers", [])]
+    while True:
+        print("\nOrdered provider fallback:")
+        if providers:
+            for index, provider in enumerate(providers, start=1):
+                transport = (
+                    f":{provider.get('transport')}" if provider.get("transport") else ""
+                )
+                print(
+                    f"  [{index}] {safe_display_token(provider.get('name'))} "
+                    f"({safe_display_token(provider.get('type'))}"
+                    f"{safe_display_token(transport)})"
+                )
+        else:
+            print("  (empty — add at least one provider)")
+        print("\n  [1] Add provider")
+        print("  [2] Move provider")
+        print("  [3] Remove provider")
+        print("  [4] Done")
+        action = _prompt_choice(4, default=4 if providers else 1)
+        if action == 1:
+            if len(providers) >= MAX_PROVIDER_CHAIN_ENTRIES:
+                print(
+                    f"  Provider chains support at most "
+                    f"{MAX_PROVIDER_CHAIN_ENTRIES} entries; remove one first."
+                )
+                continue
+            entry = _new_provider_entry(detection, profile)
+            if entry is None:
+                continue
+            names = {str(item.get("name", "")).casefold() for item in providers}
+            if str(entry.get("name", "")).casefold() in names:
+                print("  That provider name already exists; remove it or choose another name.")
+                continue
+            providers.append(entry)
+        elif action == 2:
+            if len(providers) < 2:
+                print("  Add at least two providers before reordering.")
+                continue
+            source = _prompt_choice(len(providers), default=1)
+            destination = _prompt_choice(len(providers), default=source)
+            item = providers.pop(source - 1)
+            providers.insert(destination - 1, item)
+        elif action == 3:
+            if not providers:
+                continue
+            providers.pop(_prompt_choice(len(providers), default=len(providers)) - 1)
+        elif providers:
+            return providers
+
+
+def _validate_interactive_provider_chain(
+    providers: list[dict[str, Any]],
+) -> bool:
+    """Validate every entry independently and identify its ordered position."""
+
+    all_valid = True
+    print("\nValidating provider fallback chain...")
+    for index, raw in enumerate(providers):
+        try:
+            provider = ProviderEntry(**raw)
+            result = validate_provider(provider, timeout=min(provider.timeout, 5.0))
+        except (TypeError, ValueError) as exc:
+            print(f"  ❌ providers.{index}: invalid configuration ({type(exc).__name__})")
+            all_valid = False
+            continue
+        if result.usable:
+            print(
+                f"  ✅ providers.{index} "
+                f"({safe_display_token(provider.name)}): usable"
+            )
+        else:
+            print(
+                f"  ❌ providers.{index} ({safe_display_token(provider.name)}): "
+                f"{safe_display_token(result.reason or 'unavailable')}"
+            )
+            all_valid = False
+    return all_valid
 
 
 def _pick_ollama_model(p: ProviderDetection) -> dict[str, Any]:
@@ -945,18 +1180,27 @@ def _pick_openai_model(p: ProviderDetection) -> dict[str, Any]:
     from agency_runtime.core.detect import _OPENAI_SUGGESTIONS
 
     base_url = "https://api.openai.com/v1"
+    auth, resolved_key = _prompt_provider_auth(
+        default_env="OPENAI_API_KEY",
+        base_url=base_url,
+    )
+    discovered_models = (
+        _fetch_models_custom(base_url, resolved_key)
+        if resolved_key
+        else p.openai_models
+    )
 
     # Merge discovered + suggestions, dedup, preserve order
     all_models: list[str] = []
     seen = set()
-    for m in p.openai_models + _OPENAI_SUGGESTIONS:
+    for m in discovered_models + _OPENAI_SUGGESTIONS:
         if m not in seen:
             all_models.append(m)
             seen.add(m)
 
     print("\nOpenAI models available:")
     for i, model in enumerate(all_models[:15], 1):
-        discovered = "✅" if model in p.openai_models else "  "
+        discovered = "✅" if model in discovered_models else "  "
         print(f"  [{i}] {discovered} {model}")
     if len(all_models) > 15:
         print(f"  ... and {len(all_models) - 15} more")
@@ -973,8 +1217,8 @@ def _pick_openai_model(p: ProviderDetection) -> dict[str, Any]:
     return {
         "model": model,
         "base_url": base_url,
-        "api_key_env": "OPENAI_API_KEY",
         "ollama_mode": False,
+        **auth,
     }
 
 
@@ -982,6 +1226,10 @@ def _pick_anthropic_model() -> dict[str, Any]:
     """Let user pick an Anthropic model."""
     from agency_runtime.core.detect import _ANTHROPIC_SUGGESTIONS
 
+    auth, _ = _prompt_provider_auth(
+        default_env="ANTHROPIC_API_KEY",
+        base_url="https://api.anthropic.com/v1",
+    )
     print("\nAnthropic models:")
     for i, model in enumerate(_ANTHROPIC_SUGGESTIONS, 1):
         print(f"  [{i}] {model}")
@@ -998,24 +1246,33 @@ def _pick_anthropic_model() -> dict[str, Any]:
     return {
         "model": model,
         "base_url": "https://api.anthropic.com/v1",
-        "api_key_env": "ANTHROPIC_API_KEY",
         "ollama_mode": False,
+        **auth,
     }
 
 
 def _pick_litellm_model(p: ProviderDetection) -> dict[str, Any]:
     """Let user pick from discovered LiteLLM model groups or enter one."""
-    if p.litellm_models:
-        print(f"\nLiteLLM model groups available ({len(p.litellm_models)}):")
-        for i, model in enumerate(p.litellm_models[:15], 1):
+    auth, resolved_key = _prompt_provider_auth(
+        default_env="LITELLM_API_KEY",
+        base_url=p.litellm_base_url,
+    )
+    models = (
+        _fetch_models_custom(p.litellm_base_url, resolved_key)
+        if resolved_key
+        else p.litellm_models
+    )
+    if models:
+        print(f"\nLiteLLM model groups available ({len(models)}):")
+        for i, model in enumerate(models[:15], 1):
             print(f"  [{i}] {model}")
-        if len(p.litellm_models) > 15:
-            print(f"  ... and {len(p.litellm_models) - 15} more")
-        print(f"  [{min(len(p.litellm_models) + 1, 16)}] Enter custom model group name")
+        if len(models) > 15:
+            print(f"  ... and {len(models) - 15} more")
+        print(f"  [{min(len(models) + 1, 16)}] Enter custom model group name")
 
-        choice = _prompt_choice(min(len(p.litellm_models) + 1, 16), default=1)
-        if choice <= len(p.litellm_models):
-            model = p.litellm_models[choice - 1]
+        choice = _prompt_choice(min(len(models) + 1, 16), default=1)
+        if choice <= len(models):
+            model = models[choice - 1]
         else:
             model = input("Model group name: ").strip()
     else:
@@ -1026,33 +1283,38 @@ def _pick_litellm_model(p: ProviderDetection) -> dict[str, Any]:
         if not model:
             model = "task-general"
 
-    # Verify API key situation
-    key_env = "LITELLM_API_KEY"
-    litellm_key = os.environ.get("LITELLM_API_KEY", "")
-    if not litellm_key:
-        print("\n⚠️  LITELLM_API_KEY not set in environment.")
-        print("LiteLLM proxy may require a key. You can:")
-        print("  [1] Use a different env var name")
-        print("  [2] Enter the key directly (stored in config)")
-        print("  [3] Skip — my LiteLLM doesn't need a key")
-        key_choice = _prompt_choice(3, default=3)
-        if key_choice == 1:
-            key_env = input("Env var name: ").strip() or "LITELLM_API_KEY"
-        elif key_choice == 2:
-            direct_key = input("API key: ").strip()
-            return {
-                "model": model,
-                "base_url": p.litellm_base_url,
-                "api_key": direct_key,
-                "ollama_mode": False,
-            }
-
     return {
         "model": model,
         "base_url": p.litellm_base_url,
-        "api_key_env": key_env,
         "ollama_mode": False,
+        **auth,
     }
+
+
+def _prompt_provider_auth(
+    *,
+    default_env: str,
+    base_url: str,
+) -> tuple[dict[str, str], str]:
+    """Choose env, hidden direct, or loopback-only unauthenticated access."""
+
+    loopback = _is_loopback_url(base_url)
+    print("\nAuthentication:")
+    print(f"  [1] Environment variable reference [{default_env}]")
+    print("  [2] Direct key (hidden; stored in owner-only config)")
+    if loopback:
+        print("  [3] No key (literal loopback endpoint only)")
+    choice = _prompt_choice(3 if loopback else 2, default=1)
+    if choice == 2:
+        direct = getpass.getpass("API key: ").strip()
+        if not direct:
+            raise ValueError("direct API key must not be empty")
+        return {"api_key": direct}, direct
+    if choice == 3 and loopback:
+        return {"api_key": ""}, ""
+    env_name = input(f"Environment variable name [{default_env}]: ").strip()
+    env_name = env_name or default_env
+    return {"api_key_env": env_name}, os.environ.get(env_name, "")
 
 
 def _pick_custom_endpoint() -> dict[str, Any]:
@@ -1081,12 +1343,16 @@ def _pick_custom_endpoint() -> dict[str, Any]:
         base_url = base_url or input("Base URL: ").strip()
     else:
         base_url = input("Base URL (e.g. https://api.example.com/v1): ").strip()
+        default_key_env = ""
 
-    # Try to discover models at this endpoint
+    auth, resolved_key = _prompt_provider_auth(
+        default_env=default_key_env or "PROVIDER_API_KEY",
+        base_url=base_url,
+    )
+
+    # Discover only after authentication is available to the request.
     print(f"\nDiscovering models at {base_url}...")
-    key_env = default_key_env or ""
-    api_key = os.environ.get(key_env, "") if key_env else ""
-    models = _fetch_models_custom(base_url, api_key)
+    models = _fetch_models_custom(base_url, resolved_key)
 
     if models:
         print(f"Found {len(models)} models:")
@@ -1105,41 +1371,19 @@ def _pick_custom_endpoint() -> dict[str, Any]:
         print("Could not discover models (endpoint may need an API key).")
         model = input("Enter model name: ").strip()
 
-    # API key
-    if key_env and api_key:
-        print(f"\nUsing API key from ${key_env}")
-    elif key_env:
-        print(f"\n⚠️  ${key_env} not set in environment.")
-        key_choice = input(
-            f"Press Enter to use ${key_env} env var, or type key directly: "
-        ).strip()
-        if key_choice:
-            return {
-                "model": model,
-                "base_url": base_url,
-                "api_key": key_choice,
-                "ollama_mode": False,
-            }
-    else:
-        key_input = input("API key env var name (blank for no key): ").strip()
-        if key_input:
-            key_env = key_input
-
     result: dict[str, Any] = {
         "model": model,
         "base_url": base_url,
         "ollama_mode": False,
+        **auth,
     }
-    if key_env:
-        result["api_key_env"] = key_env
-    else:
-        result["api_key"] = ""
-
     return result
 
 
 def _fetch_models_custom(base_url: str, api_key: str | None = None) -> list[str]:
     """Fetch models from a custom OpenAI-compatible endpoint."""
+    if api_key and not is_safe_credential_url(base_url):
+        return []
     headers: dict[str, str] = {}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -1148,17 +1392,28 @@ def _fetch_models_custom(base_url: str, api_key: str | None = None) -> list[str]
             f"{base_url.rstrip('/')}/models",
             headers=headers,
         )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            import json
-
-            data = json.loads(resp.read().decode("utf-8"))
-        return sorted(
-            [
-                m.get("id", m.get("model", ""))
-                for m in data.get("data", [])
-                if m.get("id") or m.get("model")
-            ]
-        )
+        with open_no_redirect(req, timeout=5) as resp:
+            raw = resp.read(_MAX_MODEL_DISCOVERY_BYTES + 1)
+        if len(raw) > _MAX_MODEL_DISCOVERY_BYTES:
+            return []
+        data = json.loads(raw.decode("utf-8"))
+        if not isinstance(data, dict) or not isinstance(data.get("data"), list):
+            return []
+        models: set[str] = set()
+        for item in data["data"]:
+            if not isinstance(item, dict):
+                continue
+            model = item.get("id") or item.get("model")
+            if not isinstance(model, str) or not model or len(model) > _MAX_MODEL_ID_CHARS:
+                continue
+            if model != model.strip() or any(
+                ord(char) < 32 or 127 <= ord(char) < 160 for char in model
+            ):
+                continue
+            models.add(model)
+            if len(models) >= _MAX_DISCOVERED_MODELS:
+                break
+        return sorted(models)
     except Exception:
         return []
 
@@ -1166,16 +1421,19 @@ def _fetch_models_custom(base_url: str, api_key: str | None = None) -> list[str]
 def _print_config_summary(config_data: dict[str, Any]) -> None:
     """Print a human-readable summary of the generated config."""
     j = config_data.get("judge", {})
-    print(f"\n  Judge model:  {j.get('model', '?')}")
-    print(f"  Base URL:     {j.get('base_url', '?')}")
+    print(f"\n  Judge model:  {safe_display_token(j.get('model', '?'))}")
+    print(f"  Base URL:     {safe_display_token(j.get('base_url', '?'))}")
     if j.get("api_key_env"):
-        print(f"  API key:      from ${j['api_key_env']}")
+        print(f"  API key:      from ${safe_display_token(j['api_key_env'])}")
     elif j.get("api_key"):
         print("  API key:      (stored in config)")
     else:
         print("  API key:      none (free/local)")
     print(f"  Ollama mode:  {j.get('ollama_mode', False)}")
-    print(f"  Profile:      {config_data.get('profile', 'standard')}")
+    print(
+        f"  Profile:      "
+        f"{safe_display_token(config_data.get('profile', 'standard'))}"
+    )
 
 
 def _prompt_choice(max_val: int, default: int = 1) -> int:
@@ -1723,72 +1981,141 @@ def cmd_delegate(args: argparse.Namespace) -> int:
 def cmd_policy(args: argparse.Namespace) -> int:
     """Show the active companion policy and validate coverage against the roster."""
     policy = load_policy()
-    actions = policy.get("actions", {})
+    raw_actions = policy.get("actions", {})
+    actions = raw_actions if isinstance(raw_actions, dict) else {}
+    raw_divisions = policy.get("division_anchors", {})
+    divisions = raw_divisions if isinstance(raw_divisions, dict) else {}
     catalog = _store().get_active_roster_as_catalog()
-    active_slugs = {a.get("slug") or a.get("agent_slug") or "" for a in catalog}
+    active_slugs = {
+        str(a.get("slug") or a.get("agent_slug"))
+        for a in catalog
+        if a.get("slug") or a.get("agent_slug")
+    }
+    validation = validate_policy(policy, active_slugs)
+    missing_enabled = set(validation["missing_enabled"])
+    disabled_slugs = {
+        str(item["slug"]) for item in validation["disabled_routes"]
+    }
+
+    action_summary: dict[str, Any] = {}
+    for action, data in actions.items():
+        if not isinstance(data, dict):
+            action_summary[str(action)] = {
+                "always_include": [],
+                "always_missing": [],
+                "always_disabled": [],
+                "conditional": [],
+                "conditional_missing": [],
+                "conditional_disabled": [],
+            }
+            continue
+        always = [
+            str(item.get("slug"))
+            for item in (data.get("always_include") or [])
+            if isinstance(item, dict) and item.get("slug")
+        ]
+        conditional = [
+            str(item.get("slug"))
+            for item in (data.get("conditional") or [])
+            if isinstance(item, dict) and item.get("slug")
+        ]
+        action_summary[str(action)] = {
+            "always_include": always,
+            "always_missing": [slug for slug in always if slug in missing_enabled],
+            "always_disabled": [slug for slug in always if slug in disabled_slugs],
+            "conditional": conditional,
+            "conditional_missing": [
+                slug for slug in conditional if slug in missing_enabled
+            ],
+            "conditional_disabled": [
+                slug for slug in conditional if slug in disabled_slugs
+            ],
+        }
+
+    division_summary: dict[str, Any] = {}
+    for route in validation["routes"]:
+        if route["source"] != "division":
+            continue
+        division = division_summary.setdefault(
+            route["group"],
+            {"routes": [], "missing": [], "disabled": []},
+        )
+        slug = route["slug"]
+        division["routes"].append(slug)
+        if slug in missing_enabled:
+            division["missing"].append(slug)
+        if slug in disabled_slugs:
+            division["disabled"].append(slug)
 
     if args.json:
         summary: dict[str, Any] = {
             "action_count": len(actions),
+            "division_count": len(divisions),
             "roster_count": len(active_slugs),
-            "actions": {},
+            "valid": validation["valid"],
+            "errors": validation["errors"],
+            "availability_mode": validation["mode"],
+            "route_count": validation["route_count"],
+            "unique_policy_slugs": validation["unique_policy_slugs"],
+            "enabled_slugs": validation["enabled_slugs"],
+            "missing_enabled": validation["missing_enabled"],
+            "disabled_count": validation["disabled_count"],
+            "disabled_routes": validation["disabled_routes"],
+            "actions": action_summary,
+            "division_anchors": division_summary,
         }
-        all_policy_slugs: list[str] = []
-        for action, data in actions.items():
-            always: list[str] = [
-                str(i.get("slug", ""))
-                for i in (data.get("always_include") or [])
-                if isinstance(i, dict) and i.get("slug")
-            ]
-            conditional: list[str] = [
-                str(i.get("slug", ""))
-                for i in (data.get("conditional") or [])
-                if isinstance(i, dict) and i.get("slug")
-            ]
-            all_policy_slugs += always + conditional
-            summary["actions"][action] = {
-                "always_include": always,
-                "always_missing": [s for s in always if s not in active_slugs],
-                "conditional": conditional,
-                "conditional_missing": [
-                    s for s in conditional if s not in active_slugs
-                ],
-            }
-        unique = list(dict.fromkeys(all_policy_slugs))
-        summary["unique_policy_slugs"] = len(unique)
-        summary["all_missing"] = [s for s in unique if s not in active_slugs]
+        # Compatibility alias: only required enabled specialists count as
+        # missing; intentionally roster-gated routes are reported separately.
+        summary["all_missing"] = validation["missing_enabled"]
         _print_json(summary)
-        return 0
+        return 0 if validation["valid"] else 1
 
     print(
-        f"Companion policy: {len(actions)} broad actions, {len(active_slugs)} active roster agents\n"
+        f"Companion policy: {len(actions)} broad actions, {len(divisions)} "
+        f"division anchors, {validation['route_count']} routes, "
+        f"{len(active_slugs)} active roster agents"
     )
-    for action, data in sorted(actions.items()):
-        always_list: list[str] = [
-            str(i.get("slug", ""))
-            for i in (data.get("always_include") or [])
-            if isinstance(i, dict) and i.get("slug")
-        ]
-        cond_list: list[str] = [
-            str(i.get("slug", ""))
-            for i in (data.get("conditional") or [])
-            if isinstance(i, dict) and i.get("slug")
-        ]
-        always_missing: list[str] = [s for s in always_list if s not in active_slugs]
-        cond_missing: list[str] = [s for s in cond_list if s not in active_slugs]
-        status = "✅" if not always_missing else "❌"
+    marker = "✅ VALID" if validation["valid"] else "❌ INVALID"
+    print(
+        f"{marker}: {len(validation['enabled_slugs'])} enabled, "
+        f"{validation['disabled_count']} roster-gated and currently disabled"
+    )
+    for error in validation["errors"]:
+        print(f"   ❌ {error}")
+    print()
+    for action, summary in sorted(action_summary.items()):
+        action_missing = summary["always_missing"] + summary["conditional_missing"]
+        status = "✅" if not action_missing else "❌"
         print(f"{status} {action}")
+        always_list = summary["always_include"]
+        cond_list = summary["conditional"]
         print(f"   always_include ({len(always_list)}): {', '.join(always_list)}")
-        if always_missing:
-            print(f"   ⚠️  always_include MISSING: {', '.join(always_missing)}")
+        if summary["always_missing"]:
+            print(
+                "   ❌ enabled but missing: "
+                + ", ".join(summary["always_missing"])
+            )
+        if summary["always_disabled"]:
+            print(
+                f"   roster-gated and disabled ({len(summary['always_disabled'])}): "
+                + ", ".join(summary["always_disabled"][:8])
+                + ("…" if len(summary["always_disabled"]) > 8 else "")
+            )
         print(
             f"   conditional ({len(cond_list)}): {', '.join(cond_list[:8])}{'…' if len(cond_list) > 8 else ''}"
         )
-        if cond_missing:
+        if summary["conditional_missing"]:
             print(
-                f"   ⚠️  conditional missing {len(cond_missing)}: {', '.join(cond_missing[:8])}{'…' if len(cond_missing) > 8 else ''}"
+                "   ❌ enabled conditional missing: "
+                + ", ".join(summary["conditional_missing"])
             )
-    return 0
+        if summary["conditional_disabled"]:
+            print(
+                f"   roster-gated conditionals ({len(summary['conditional_disabled'])}): "
+                + ", ".join(summary["conditional_disabled"][:8])
+                + ("…" if len(summary["conditional_disabled"]) > 8 else "")
+            )
+    return 0 if validation["valid"] else 1
 
 
 def cmd_eval_delegation(args: argparse.Namespace) -> int:
@@ -2086,6 +2413,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None
     )
     on_p.add_argument("--dry-run", action="store_true")
+    on_p.add_argument(
+        "--native",
+        action="store_true",
+        help="Use the host plugin lifecycle instead of immediate soft control",
+    )
     on_p.add_argument("--json", action="store_true")
     on_p.set_defaults(func=cmd_on)
 
@@ -2094,8 +2426,36 @@ def build_parser() -> argparse.ArgumentParser:
         "--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None
     )
     off_p.add_argument("--dry-run", action="store_true")
+    off_p.add_argument(
+        "--native",
+        action="store_true",
+        help="Use the host plugin lifecycle instead of immediate soft control",
+    )
     off_p.add_argument("--json", action="store_true")
     off_p.set_defaults(func=cmd_off)
+
+    status_p = sub.add_parser(
+        "status", help="Show native and runtime control state for agent hosts"
+    )
+    status_p.add_argument(
+        "--agent", choices=["hermes", "openclaw", "codex", "claude"], default=None
+    )
+    status_p.add_argument("--json", action="store_true")
+    status_p.set_defaults(func=cmd_status)
+
+    canary_p = sub.add_parser(
+        "host-canary",
+        help="Inspect host readiness or run an exact-confirmed live canary",
+    )
+    canary_p.add_argument(
+        "agent", choices=["hermes", "openclaw", "codex", "claude"]
+    )
+    canary_p.add_argument("--execute", action="store_true")
+    canary_p.add_argument("--confirm", default="")
+    canary_p.add_argument("--db", default=None)
+    canary_p.add_argument("--timeout", type=float, default=120)
+    canary_p.add_argument("--output", default=None)
+    canary_p.set_defaults(func=cmd_host_canary)
 
     # configure
     configure = sub.add_parser(

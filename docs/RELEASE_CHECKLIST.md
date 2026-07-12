@@ -166,8 +166,9 @@ outward-facing actions and require explicit authorization.
 
 ## Current blockers
 
-Before a public release claim, the open acceptance items in `AR-03`, `AR-04`,
-`AR-05`, `AR-06`, and `AR-07` must be completed or explicitly deferred with
-narrower claims and a recorded decision. Current local Windows/WSL contract and
-installed-dashboard evidence does not establish a clean hosted CI matrix,
-Linux live-host execution, or a live canary for every v1 target.
+Before a public release claim, the live acceptance items in `AR-03`, `AR-04`,
+and `AR-06` must be completed or explicitly deferred with narrower claims and a
+recorded decision. `AR-07` also requires a clean hosted CI matrix and confirmed
+publication evidence. `AR-16` has native Linux/Python 3.12 evidence but still
+awaits the hosted Python matrix. Local contract and artifact results do not
+establish Linux live-host execution or a live canary for every v1 target.

@@ -262,7 +262,7 @@
 
           <article class="panel config-panel">
             <div class="panel-head"><div><p class="eyebrow">ORDERED FALLBACK</p><h2>Providers</h2></div><span class="panel-tag">JSON</span></div>
-            <p class="panel-copy">Providers are tried in order. Use real HTTP-backed types only: <code>openai-compatible</code>, <code>anthropic</code>, <code>ollama</code>, or <code>litellm</code>. Prefer <code>api_key_env</code> over direct keys.</p>
+            <p class="panel-copy">Providers are tried in order. Supported types are <code>openai-compatible</code>, <code>anthropic</code>, <code>ollama</code>, <code>litellm</code>, and allowlisted <code>cli</code> entries with <code>transport: codex|claude</code>. Prefer <code>api_key_env</code> over direct keys.</p>
             <label for="config-providers">Provider array</label>
             <textarea id="config-providers" data-config-path="providers" data-value-type="json" rows="12" spellcheck="false"></textarea>
             <details class="secret-editor">

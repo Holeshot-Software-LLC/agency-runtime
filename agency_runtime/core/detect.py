@@ -22,6 +22,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.cli_transport import (
+    CLIProviderStatus,
+    SUPPORTED_CLI_TRANSPORTS,
+    inspect_cli_transport,
+)
+from agency_runtime.core.config import (
+    MAX_PROVIDER_CHAIN_ENTRIES,
+    is_safe_credential_url,
+)
+from agency_runtime.core.http_safety import open_no_redirect
+
 
 _MAX_HTTP_JSON_BYTES = 1024 * 1024
 _MAX_DISCOVERED_MODELS = 1000
@@ -67,6 +78,7 @@ class AdapterDetection:
 class DetectionResult:
     providers: ProviderDetection = field(default_factory=ProviderDetection)
     adapters: AdapterDetection = field(default_factory=AdapterDetection)
+    cli_providers: dict[str, CLIProviderStatus] = field(default_factory=dict)
 
     @property
     def has_any_provider(self) -> bool:
@@ -75,6 +87,7 @@ class DetectionResult:
             or self.providers.openai_key_present
             or self.providers.anthropic_key_present
             or self.providers.litellm_available
+            or any(item.usable for item in self.cli_providers.values())
         )
 
     @property
@@ -99,7 +112,7 @@ def _http_get_json(
 ) -> dict[str, Any] | None:
     try:
         req = urllib.request.Request(url, headers=headers or {})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with open_no_redirect(req, timeout=timeout) as resp:
             raw = resp.read(_MAX_HTTP_JSON_BYTES + 1)
         if len(raw) > _MAX_HTTP_JSON_BYTES:
             return None
@@ -112,7 +125,7 @@ def _http_get_json(
 def _http_check(url: str, timeout: float = 2.0) -> bool:
     try:
         req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with open_no_redirect(req, timeout=timeout) as resp:
             return resp.status == 200
     except Exception:
         return False
@@ -120,6 +133,8 @@ def _http_check(url: str, timeout: float = 2.0) -> bool:
 
 def _fetch_model_list(base_url: str, api_key: str | None = None) -> list[str]:
     """Fetch available models from an OpenAI-compatible /v1/models endpoint."""
+    if api_key and not is_safe_credential_url(base_url):
+        return []
     headers: dict[str, str] = {}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -138,8 +153,12 @@ def _fetch_model_list(base_url: str, api_key: str | None = None) -> list[str]:
         model_id = entry.get("id", entry.get("model", ""))
         if not isinstance(model_id, str):
             continue
-        model_id = model_id.strip()
-        if model_id and len(model_id) <= _MAX_MODEL_ID_CHARS:
+        if (
+            model_id
+            and model_id == model_id.strip()
+            and len(model_id) <= _MAX_MODEL_ID_CHARS
+            and not any(ord(char) < 32 or 127 <= ord(char) < 160 for char in model_id)
+        ):
             models.add(model_id)
     return sorted(models)
 
@@ -212,11 +231,21 @@ def detect_adapters() -> AdapterDetection:
     return result
 
 
+def detect_cli_providers() -> dict[str, CLIProviderStatus]:
+    """Inspect supported CLI judge transports without invoking a model."""
+
+    return {
+        name: inspect_cli_transport(name)
+        for name in sorted(SUPPORTED_CLI_TRANSPORTS)
+    }
+
+
 def detect_all() -> DetectionResult:
     """Run full detection."""
     return DetectionResult(
         providers=detect_providers(),
         adapters=detect_adapters(),
+        cli_providers=detect_cli_providers(),
     )
 
 
@@ -388,6 +417,23 @@ def generate_config_from_detection(
             "ollama_mode": False,
         })
 
+    # Authenticated local CLI sessions. These use the CLI's configured default
+    # model unless the user later supplies an explicit model override.
+    if profile != "local-only":
+        for transport in ("codex", "claude"):
+            status = detection.cli_providers.get(transport)
+            if status is not None and status.usable:
+                providers_list.append({
+                    "name": f"{transport}-cli",
+                    "type": "cli",
+                    "transport": transport,
+                    "model": "",
+                    "base_url": "",
+                    "api_key": "",
+                    "api_key_env": "",
+                    "ollama_mode": False,
+                })
+
     # Ollama (local, free — always last in the chain if available)
     if p.ollama_available:
         ollama_model = p.ollama_models[0] if p.ollama_models else "qwen3.5:2b"
@@ -399,6 +445,16 @@ def generate_config_from_detection(
             "api_key": "",
             "ollama_mode": True,
         })
+
+    providers_list = providers_list[:MAX_PROVIDER_CHAIN_ENTRIES]
+    if providers_list and all(item.get("type") == "cli" for item in providers_list):
+        judge_cfg = {
+            "model": "",
+            "base_url": "",
+            "api_key": "",
+            "api_key_env": "",
+            "ollama_mode": False,
+        }
 
     adapters_cfg: dict[str, Any] = {
         "litellm": {

@@ -32,7 +32,11 @@ from agency_runtime.core.selector.cache import (
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.delegation.events import work_unit_id_from_text
 from agency_runtime.core.selector.domain_expansion import expand_query
-from agency_runtime.core.selector.policy import detect_actions, load_policy
+from agency_runtime.core.selector.policy import (
+    detect_actions,
+    load_policy,
+    validate_policy,
+)
 from agency_runtime.core.selector.stickiness import session_check, session_put
 from agency_runtime.core.selector.judge import query_judge
 
@@ -221,7 +225,12 @@ def route(
     # Layer 0: Companion policy + work unit decomposition. A cache entry with
     # the same refined query but a different source message is refreshed here
     # so URLs, punctuation, or independent work units never go stale.
-    matched_actions, companion_ids = detect_actions(user_message, policy)
+    policy_validation = validate_policy(policy, active_ids)
+    matched_actions, companion_ids = detect_actions(
+        user_message,
+        policy,
+        active_slugs=active_ids,
+    )
     work_units = detect_work_units(user_message)
     available_companion_ids, unavailable_companion_ids = _available_companions(
         companion_ids,
@@ -295,6 +304,12 @@ def route(
     routing["companion_ids"] = companion_ids
     routing["available_companion_ids"] = available_companion_ids
     routing["unavailable_companion_ids"] = unavailable_companion_ids
+    routing["policy_validation"] = {
+        "valid": policy_validation["valid"],
+        "errors": policy_validation["errors"],
+        "enabled_count": len(policy_validation["enabled_slugs"]),
+        "disabled_count": policy_validation["disabled_count"],
+    }
     routing["work_units"] = work_units
     routing["source_message_hash"] = signal_hash
 

@@ -4,17 +4,27 @@ from __future__ import annotations
 
 import os
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
 
+from agency_runtime.core import doctor as doctor_module
 from agency_runtime.core.config import (
     AgencyConfig,
     JudgeConfig,
+    ProviderEntry,
     StoreConfig,
     reset_config_cache,
 )
-from agency_runtime.core.doctor import DoctorReport, run_doctor
+from agency_runtime.core.doctor import (
+    CheckResult,
+    DoctorReport,
+    _validate_provider_entries,
+    format_report_human,
+    run_doctor,
+)
+from agency_runtime.core.provider_validation import ProviderValidationResult
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.store.sqlite import Store
 
@@ -31,6 +41,63 @@ def _clean_env():
 
 def test_doctor_returns_report():
     """Doctor returns a DoctorReport with checks."""
+
+
+def test_doctor_escapes_terminal_controls_in_names_and_messages() -> None:
+    report = DoctorReport([
+        CheckResult("provider_\x1b[31m", "warn", "model=\x9bhostile"),
+    ])
+
+    rendered = format_report_human(report)
+    payload = report.to_dict()
+
+    assert "\x1b" not in rendered
+    assert "\x9b" not in rendered
+    assert "\\u001b" in rendered
+    assert "\x1b" not in payload["checks"][0]["name"]
+
+
+@pytest.mark.parametrize(
+    ("provider_type", "header"),
+    [("openai-compatible", "Authorization"), ("anthropic", "X-api-key")],
+)
+def test_doctor_legacy_authenticated_probe_uses_redirect_refusing_opener(
+    provider_type: str,
+    header: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+    def open_request(request, **kwargs):
+        captured["request"] = request
+        captured.update(kwargs)
+        return Response()
+
+    monkeypatch.setattr(doctor_module, "open_no_redirect", open_request)
+
+    ok, message = doctor_module._http_check_authed(
+        "https://provider.invalid/v1/models",
+        "secret",
+        timeout=1,
+        provider_type=provider_type,
+    )
+
+    assert ok is True
+    assert message == "HTTP 200"
+    assert captured["timeout"] == 1
+    assert captured["request"].headers[header] in {
+        "Bearer secret",
+        "secret",
+    }
     with tempfile.TemporaryDirectory() as tmp:
         cfg = AgencyConfig(
             store=StoreConfig(db_path=f"{tmp}/test.db"),
@@ -146,7 +213,37 @@ def test_doctor_accepts_yolo_profile():
 
         report = run_doctor(cfg)
         profile_check = [c for c in report.checks if c.name == "config_profile"][0]
-        assert profile_check.status == "pass"
+    assert profile_check.status == "pass"
+
+
+def test_provider_validation_is_parallel_and_preserves_order(monkeypatch):
+    providers = tuple(
+        ProviderEntry(
+            name=f"provider-{index}",
+            type="ollama",
+            model="model",
+            base_url="http://127.0.0.1:11434",
+        )
+        for index in range(8)
+    )
+
+    def validate(provider, **_kwargs):
+        time.sleep(0.04)
+        return ProviderValidationResult(
+            provider.name,
+            provider.type,
+            True,
+            True,
+        )
+
+    monkeypatch.setattr("agency_runtime.core.doctor.validate_provider", validate)
+    started = time.monotonic()
+    results = _validate_provider_entries(providers)
+
+    assert time.monotonic() - started < 0.2
+    assert [result.name for result in results] == [
+        f"provider-{index}" for index in range(8)
+    ]
 
 
 def test_smoke_all_exercises_generated_host_plugins(monkeypatch):

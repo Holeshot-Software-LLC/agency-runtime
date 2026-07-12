@@ -55,6 +55,8 @@ Status meanings:
 | [ADR-0022](0022-omit-preflight-for-trivial-messages.md) | Omit preflight context for trivial messages | Superseded |
 | [ADR-0023](0023-default-companions-for-trivial-messages.md) | Load default companions even for trivial messages | Accepted |
 | [ADR-0030](0030-versioned-quantitative-evaluation-gates.md) | Gate routing changes with versioned quantitative evaluation | Accepted |
+| [ADR-0033](0033-explicit-companion-route-availability.md) | Classify every companion route against explicit availability | Accepted |
+| [ADR-0035](0035-authoritative-bounded-provider-chain.md) | Use an authoritative bounded provider chain with allowlisted CLI transports | Accepted |
 
 ## Evidence and observability
 
@@ -87,6 +89,8 @@ Status meanings:
 | [ADR-0029](0029-secure-local-dashboard-and-bounded-observability.md) | Keep the operations dashboard local and observability bounded | Accepted |
 | [ADR-0031](0031-optional-user-dashboard-service-and-shared-configuration.md) | Use an optional user-scoped dashboard service with one typed configuration boundary | Accepted |
 | [ADR-0032](0032-adaptive-authenticated-dashboard-polling.md) | Use adaptive authenticated polling and source-owned signal visualizations | Accepted |
+| [ADR-0034](0034-persistent-soft-host-control.md) | Separate immediate host control from native plugin lifecycle | Accepted |
+| [ADR-0036](0036-capability-bound-host-canary-attestations.md) | Bind live host canary attestations to capability and installation identity | Accepted |
 
 ## Documentation governance
 

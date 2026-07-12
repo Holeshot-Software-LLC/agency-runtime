@@ -169,11 +169,11 @@ def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
     assert "CODING" in matched_actions
     assert "senior-developer" in companion_ids
     assert "code-reviewer" in companion_ids
-    assert "reality-checker" in companion_ids
+    assert "reality-checker" not in companion_ids
 
 
-def test_bundled_companion_policy_default_includes_orchestrators(monkeypatch, tmp_path):
-    """DEFAULT action must always include agents-orchestrator and chief-of-staff."""
+def test_bundled_companion_policy_skips_gated_default_agents(monkeypatch, tmp_path):
+    """DEFAULT agents remain disabled until they exist in an active roster."""
     monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing.yaml"))
     # Force reload of cached policy
     from agency_runtime.core.selector import policy as policy_mod
@@ -181,8 +181,8 @@ def test_bundled_companion_policy_default_includes_orchestrators(monkeypatch, tm
     policy_mod._POLICY_MTIME = 0.0
     _, companion_ids = detect_actions("anything at all")
 
-    assert "agents-orchestrator" in companion_ids
-    assert "chief-of-staff" in companion_ids
+    assert "agents-orchestrator" not in companion_ids
+    assert "chief-of-staff" not in companion_ids
 
 
 def test_bundled_policy_has_all_broad_actions(monkeypatch, tmp_path):

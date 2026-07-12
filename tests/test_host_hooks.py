@@ -65,8 +65,71 @@ def test_codex_user_prompt_maps_to_native_additional_context() -> None:
             "session_id": "session-1",
             "user_message": "Review the authentication flow",
             "model": "gpt-5.6-codex",
+            "trace_id": "turn-1",
         }
     ]
+
+
+def test_realistic_prompt_to_stop_sequence_uses_one_turn_trace(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    bridge = HookBridge("codex", store=store)
+    turn_id = "turn-correlated-1"
+
+    prompt = bridge.handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": "session-correlated",
+            "turn_id": turn_id,
+            "model": "gpt-5.6-codex",
+            "prompt": "Review the authentication architecture and deployment controls.",
+        }
+    )
+    stopped = bridge.handle(
+        {
+            "hook_event_name": "Stop",
+            "session_id": "session-correlated",
+            "turn_id": turn_id,
+            "model": "gpt-5.6-codex",
+            "stop_hook_active": False,
+            "last_assistant_message": "Draft without the required header.",
+        }
+    )
+
+    assert prompt["hookSpecificOutput"]["additionalContext"]
+    assert stopped["decision"] == "block"
+    activity = store.recent_runtime_activity(limit=20)
+    assert activity["routing"][0]["trace_id"] == turn_id
+    assert activity["finalizations"][0]["trace_id"] == turn_id
+
+
+def test_missing_turn_id_never_false_correlates_to_the_session(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    bridge = HookBridge("claude", store=store)
+
+    bridge.handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": "shared-session",
+            "prompt": "Review the authentication architecture.",
+        }
+    )
+    bridge.handle(
+        {
+            "hook_event_name": "Stop",
+            "session_id": "shared-session",
+            "stop_hook_active": False,
+            "last_assistant_message": "Draft.",
+        }
+    )
+
+    activity = store.recent_runtime_activity(limit=20)
+    assert activity["routing"]
+    assert activity["routing"][0]["trace_id"] != "shared-session"
+    assert activity["finalizations"] == []
 
 
 def test_stop_continuation_prompt_is_not_routed_as_a_new_user_request() -> None:

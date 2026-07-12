@@ -112,7 +112,8 @@ def _request(
         with urllib.request.urlopen(request, timeout=5) as response:
             return response.status, response.read(), dict(response.headers)
     except urllib.error.HTTPError as exc:
-        return exc.code, exc.read(), dict(exc.headers)
+        with exc:
+            return exc.code, exc.read(), dict(exc.headers)
 
 
 def _json_response(*args, **kwargs) -> tuple[int, dict, dict[str, str]]:
@@ -150,6 +151,7 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert status == 200
     assert b"registration unknown" in script
     assert b"enablement unknown" in script
+    assert b"runtime off" in script
     assert b"directionKnown" in script
     assert b'inspection_status === "complete"' in script
     assert b"Delegation dependency graph" in script
@@ -435,17 +437,18 @@ def test_dashboard_rejects_cross_origin_request(dashboard_server):
 
 
 def test_dashboard_post_requires_json_content_type(dashboard_server):
-    status, payload, _headers = _json_response(
-        dashboard_server,
-        "/api/route",
-        method="POST",
-        body={"task": "review security"},
-        token=dashboard_server["token"],
-        content_type="text/plain",
-    )
+    for _attempt in range(10):
+        status, payload, _headers = _json_response(
+            dashboard_server,
+            "/api/route",
+            method="POST",
+            body={"task": "review security"},
+            token=dashboard_server["token"],
+            content_type="text/plain",
+        )
 
-    assert status == 415
-    assert "application/json" in payload["error"]
+        assert status == 415
+        assert "application/json" in payload["error"]
 
 
 def test_dashboard_config_get_reports_redacted_revision_and_target(dashboard_server):
@@ -948,7 +951,7 @@ def test_dashboard_host_toggle_validates_host_before_confirmation(
         return {"ok": True}
 
     monkeypatch.setattr(
-        "agency_runtime.core.installer.toggle_agency", unexpected_toggle
+        "agency_runtime.core.host_control.set_runtime_control", unexpected_toggle
     )
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -963,15 +966,11 @@ def test_dashboard_host_toggle_validates_host_before_confirmation(
     assert called is False
 
 
-def test_dashboard_host_toggle_invalidates_cached_evidence(
+def test_dashboard_host_toggle_persists_soft_control_without_native_mutation(
     dashboard_server,
     monkeypatch: pytest.MonkeyPatch,
 ):
     invalidated: list[str] = []
-    monkeypatch.setattr(
-        "agency_runtime.core.installer.toggle_agency",
-        lambda host, *, enabled: {"ok": True, "host": host, "enabled": enabled},
-    )
     monkeypatch.setattr(
         dashboard_module._HOST_INSPECTIONS,
         "invalidate",
@@ -982,13 +981,15 @@ def test_dashboard_host_toggle_invalidates_cached_evidence(
         dashboard_server,
         "/api/hosts/toggle",
         method="POST",
-        body={"host": "codex", "enabled": True, "confirm": "ENABLE codex"},
+        body={"host": "codex", "enabled": False, "confirm": "DISABLE codex"},
         token=dashboard_server["token"],
     )
 
     assert status == 200
     assert payload["ok"] is True
-    assert invalidated == ["codex"]
+    assert payload["enabled"] is False
+    assert dashboard_server["store"].get_host_control("codex")["enabled"] is False
+    assert invalidated == []
 
 
 def test_host_inspection_is_parallel_and_returns_partial_unknowns_at_deadline():

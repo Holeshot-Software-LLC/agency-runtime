@@ -9,7 +9,7 @@ known harmful confusions.  An abstain case must produce no positive candidate.
 from __future__ import annotations
 
 SCHEMA = "agency-runtime.routing-corpus"
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 CATALOG: list[dict[str, object]] = [
     {
@@ -215,6 +215,9 @@ POLICY_CASES: list[dict[str, object]] = [
     {"id": "policy-scale-prefix", "message": "Plan a scalable system design", "required": ["ARCHITECTURE"], "forbidden": []},
     {"id": "policy-auth-design-deployment", "message": "Review the authentication design, then document the deployment workflow.", "required": ["ORCHESTRATION", "DEVOPS_INFRA", "DOCUMENTATION", "SECURITY"], "forbidden": ["UI_UX"]},
     {"id": "policy-schema-design-not-ui", "message": "Review the database schema design", "required": ["ARCHITECTURE"], "forbidden": ["UI_UX"]},
+    {"id": "policy-i18n-resolution", "message": "Implement ICU MessageFormat with CLDR plural rules and RTL support", "required": ["CODING"], "required_companions": ["internationalization-engineer"], "forbidden": []},
+    {"id": "policy-payments-resolution", "message": "Implement Stripe payments and billing for the API", "required": ["CODING"], "required_companions": ["payments-billing-engineer"], "forbidden": []},
+    {"id": "policy-test-automation-resolution", "message": "Benchmark Playwright end-to-end test automation performance", "required": ["PERFORMANCE", "TESTING_QA"], "required_companions": ["test-automation-engineer"], "forbidden": []},
 ]
 
 DELEGATION_CASES: list[dict[str, object]] = [

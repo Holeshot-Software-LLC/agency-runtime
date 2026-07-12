@@ -114,13 +114,17 @@ def test_cli_db_stats_json(tmp_path: Path, monkeypatch, capsys) -> None:
 def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_path: Path) -> None:
     db = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
-    commands: list[list[str]] = []
+    commands: list[tuple[list[str], str | None]] = []
 
     def fake_which(name: str, **_kwargs: object) -> str:
         return f"/bin/{name}"
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-        commands.append(command)
+        input_text = kwargs.get("input_text")
+        commands.append((
+            command,
+            input_text if isinstance(input_text, str) else None,
+        ))
         stdout = kwargs["stdout"]
         if command[0].endswith("codex"):
             stdout.write(json.dumps({"type": "turn.completed"}) + "\n")
@@ -138,9 +142,9 @@ def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_pa
     assert main(["delegate", "--backend", "hermes", "--task", "review diff"]) == 0
 
     assert commands == [
-        ["/bin/codex", "exec", "--json", "--color", "never", "review diff"],
-        ["/bin/claude", "-p", "--output-format", "json", "review diff"],
-        ["/bin/hermes", "-z", "review diff"],
+        (["/bin/codex", "exec", "--json", "--color", "never"], "review diff"),
+        (["/bin/claude", "-p", "--output-format", "json"], "review diff"),
+        (["/bin/hermes", "-z", "review diff"], None),
     ]
 
 

@@ -6,7 +6,9 @@ import math
 import statistics
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
@@ -19,6 +21,110 @@ from agency_runtime.core.selector.stickiness import clear_session_routing
 _BENCHMARK_BATCHES = 5
 _WARMUP_CALLS = 4
 _MIN_CACHE_SAMPLES = 128
+_CONCURRENCY_PROBE_TIMEOUT_SECONDS = 5.0
+
+
+@dataclass
+class _ConcurrencyProbe:
+    """Synchronize workers from inside candidate narrowing's scoring path."""
+
+    workers: int
+    timeout_seconds: float
+    barrier: threading.Barrier = field(init=False)
+    lock: threading.Lock = field(default_factory=threading.Lock)
+    slug_accesses: dict[int, int] = field(default_factory=dict)
+    arrived_threads: set[int] = field(default_factory=set)
+    active: int = 0
+    max_overlap: int = 0
+    broken: bool = False
+
+    def __post_init__(self) -> None:
+        self.barrier = threading.Barrier(self.workers)
+
+    def touch_slug(self) -> None:
+        """Wait when a worker reaches scoring after catalog compilation.
+
+        Candidate narrowing reads the first agent's slug once while compiling
+        its metadata and again after scoring it. Synchronizing on the second
+        read proves that each worker progressed inside the real narrowing
+        function; a lock serializing that function breaks the barrier instead
+        of yielding a false overlap success.
+        """
+        thread_id = threading.get_ident()
+        with self.lock:
+            access_count = self.slug_accesses.get(thread_id, 0) + 1
+            self.slug_accesses[thread_id] = access_count
+            if access_count != 2:
+                return
+            self.arrived_threads.add(thread_id)
+            self.active += 1
+            self.max_overlap = max(self.max_overlap, self.active)
+        try:
+            self.barrier.wait(timeout=self.timeout_seconds)
+        except threading.BrokenBarrierError:
+            with self.lock:
+                self.broken = True
+        finally:
+            with self.lock:
+                self.active -= 1
+
+    @property
+    def synchronized(self) -> bool:
+        return (
+            not self.broken
+            and len(self.arrived_threads) == self.workers
+            and self.max_overlap == self.workers
+        )
+
+
+class _ProbeAgent(dict[str, Any]):
+    """First catalog row instrumented without changing production narrowing."""
+
+    def __init__(self, source: dict[str, Any], probe: _ConcurrencyProbe) -> None:
+        super().__init__(source)
+        self._probe = probe
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if key == "slug":
+            self._probe.touch_slug()
+        return super().get(key, default)
+
+
+def _run_concurrency_probe(
+    *,
+    query: str,
+    catalog: list[dict[str, Any]],
+    concurrent_calls: int,
+    workers: int,
+    narrow: Callable[
+        [str, list[dict[str, Any]], int],
+        tuple[list[dict[str, Any]], list[float]],
+    ] = pre_narrow,
+    timeout_seconds: float = _CONCURRENCY_PROBE_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    if not catalog:
+        raise ValueError("concurrency probe requires a non-empty catalog")
+    probe = _ConcurrencyProbe(workers=workers, timeout_seconds=timeout_seconds)
+    probe_catalog: list[dict[str, Any]] = [
+        _ProbeAgent(catalog[0], probe),
+        *catalog[1:],
+    ]
+
+    def narrow_once(_index: int) -> tuple[str, ...]:
+        candidates, _scores = narrow(query, probe_catalog, 20)
+        return tuple(str(candidate.get("slug", "")) for candidate in candidates)
+
+    started = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        results = list(executor.map(narrow_once, range(concurrent_calls)))
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    return {
+        "results": results,
+        "elapsed_ms": elapsed_ms,
+        "overlap": probe.max_overlap,
+        "threads": len(probe.arrived_threads),
+        "synchronized": probe.synchronized,
+    }
 
 
 def generated_catalog(size: int) -> list[dict[str, Any]]:
@@ -78,6 +184,8 @@ def run_candidate_microbenchmark(
         raise ValueError("iterations must be at least one")
     if workers < 1:
         raise ValueError("workers must be at least one")
+    if roster_size < 1:
+        raise ValueError("roster_size must be at least one")
 
     catalog = generated_catalog(roster_size)
     query = "profile production API latency with benchmarks"
@@ -102,26 +210,14 @@ def run_candidate_microbenchmark(
         latency_batch_p95_ms.append(_percentile(batch_latencies_ms, 0.95))
 
     concurrent_calls = max(workers * 2, iterations)
-    active_calls = 0
-    max_active_calls = 0
-    active_lock = threading.Lock()
-
-    def narrow_once(_index: int) -> tuple[str, ...]:
-        nonlocal active_calls, max_active_calls
-        with active_lock:
-            active_calls += 1
-            max_active_calls = max(max_active_calls, active_calls)
-        try:
-            candidates, _scores = pre_narrow(query, catalog, limit=20)
-            return tuple(str(candidate.get("slug", "")) for candidate in candidates)
-        finally:
-            with active_lock:
-                active_calls -= 1
-
-    concurrent_started = time.perf_counter()
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        concurrent_results = list(executor.map(narrow_once, range(concurrent_calls)))
-    concurrent_ms = (time.perf_counter() - concurrent_started) * 1000
+    concurrency = _run_concurrency_probe(
+        query=query,
+        catalog=catalog,
+        concurrent_calls=concurrent_calls,
+        workers=workers,
+    )
+    concurrent_results = concurrency["results"]
+    concurrent_ms = float(concurrency["elapsed_ms"])
     consistent = consistent and all(result == expected for result in concurrent_results)
 
     # Measure the complete pipeline cache path, including context fingerprint
@@ -175,7 +271,9 @@ def run_candidate_microbenchmark(
         "p95_batches_ms": [round(value, 3) for value in latency_batch_p95_ms],
         "max_ms": round(max(latencies_ms), 3),
         "concurrent_calls": concurrent_calls,
-        "concurrent_overlap": max_active_calls,
+        "concurrent_overlap": concurrency["overlap"],
+        "concurrent_probe_threads": concurrency["threads"],
+        "concurrent_probe_synchronized": concurrency["synchronized"],
         "concurrent_total_ms": round(concurrent_ms, 3),
         "concurrent_calls_per_second": round(
             concurrent_calls / max(concurrent_ms / 1000, 1e-9), 2

@@ -56,6 +56,7 @@ jobs:
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.14'
         run: |
           python scripts/docs_metadata.py --check
+          python scripts/update_policy_availability.py --check
           python scripts/update_worklog.py --check
           python scripts/verify_docs.py
       - name: Check dependency consistency
@@ -131,8 +132,9 @@ jobs:
             AGENCY="./wheel-smoke/bin/agency"
           fi
           "${PYTHON}" -m pip install --only-binary=:all: agency-dist/*.whl
-          "${PYTHON}" -I -c "from importlib.metadata import version; from importlib.resources import files; import agency_runtime; assert version('agency-runtime') == agency_runtime.__version__; assert files('agency_runtime.dashboard').joinpath('index.html').is_file(); assert files('agency_runtime.core.evals.data').joinpath('routing_v1.py').is_file()"
+          "${PYTHON}" -I -c "from importlib.metadata import version; from importlib.resources import files; import agency_runtime; from agency_runtime.core.canary import run_canary; assert callable(run_canary); assert version('agency-runtime') == agency_runtime.__version__; assert files('agency_runtime.dashboard').joinpath('index.html').is_file(); assert files('agency_runtime.core').joinpath('canary.py').is_file(); assert files('agency_runtime.core.evals.data').joinpath('routing_v1.py').is_file()"
           "${AGENCY}" --help
+          "${AGENCY}" host-canary --help
           "${PYTHON}" -m pip check
 
   security:

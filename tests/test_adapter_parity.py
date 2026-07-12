@@ -26,9 +26,13 @@ ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, Generic
 class FakeHookContext:
     def __init__(self) -> None:
         self.hooks: dict[str, Any] = {}
+        self.commands: dict[str, Any] = {}
 
     def register_hook(self, name: str, fn: Any) -> None:
         self.hooks[name] = fn
+
+    def register_command(self, name: str, fn: Any, **_kwargs: Any) -> None:
+        self.commands[name] = fn
 
 
 def test_explicit_host_home_rejects_path_escape(tmp_path: Path) -> None:
@@ -131,6 +135,7 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "hermes.db"))
     (tmp_path / ".hermes" / "plugins").mkdir(parents=True)
 
     result = install_agent_adapter("hermes", home_dir=tmp_path)
@@ -147,6 +152,10 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
     ctx = FakeHookContext()
     module.register(ctx)
     assert {"pre_llm_call", "post_tool_call", "post_api_request", "transform_llm_output"} <= set(ctx.hooks)
+    assert set(ctx.commands) == {"agency"}
+    assert "disabled" in ctx.commands["agency"]("off")
+    assert "disabled" in ctx.commands["agency"]("status")
+    assert "enabled" in ctx.commands["agency"]("on")
     adapter = module._get_adapter()
     assert adapter.__class__.__name__ == "HermesAdapter"
     assert adapter.host_name == "hermes"
@@ -173,14 +182,22 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     hooks = json.loads((plugin_root / "hooks" / "hooks.json").read_text(encoding="utf-8"))
     mcp = json.loads((plugin_root / ".mcp.json").read_text(encoding="utf-8"))
+    skill = (plugin_root / "skills" / "agency" / "SKILL.md").read_text(encoding="utf-8")
 
     assert manifest["name"] == "agency-preflight"
+    if host == "codex":
+        assert "hooks" not in manifest
+        assert manifest["interface"]["defaultPrompt"]
     assert "UserPromptSubmit" in hooks["hooks"]
     assert mcp["mcpServers"]["agency-runtime"]["args"] == [
         "-m",
         "agency_runtime.server.mcp",
         "--stdio",
     ]
+    assert f"`ENABLE {host}`" in skill
+    assert f"`DISABLE {host}`" in skill
+    assert "`agency.host_status`" in skill
+    assert "`agency.host_control`" in skill
     assert result["maturity"] == "staged-not-registered"
 
 
@@ -196,7 +213,14 @@ def test_openclaw_bridge_routes_user_prompts_but_ignores_revision_instructions(t
     store.activate_agent({"slug": "agents-orchestrator", "name": "Agents Orchestrator"})
     store.activate_agent({"slug": "chief-of-staff", "name": "Chief of Staff"})
 
-    routed = handle({"action": "preflight", "sessionId": "bridge", "userMessage": "ping", "model": "task-general"})
+    routed = handle({"action": "preflight", "sessionId": "bridge", "traceId": "bridge-trivial", "userMessage": "ping", "model": "task-general"})
+    correlated = handle({
+        "action": "preflight",
+        "sessionId": "bridge",
+        "traceId": "bridge-turn",
+        "userMessage": "Review the authentication architecture and deployment controls.",
+        "model": "task-general",
+    })
     skipped = handle({"action": "preflight", "sessionId": "bridge", "userMessage": "Please revise. AGENCY HEADER INVALID: loaded none", "model": "task-general"})
     recorded = handle({
         "action": "post_tool_call",
@@ -205,10 +229,30 @@ def test_openclaw_bridge_routes_user_prompts_but_ignores_revision_instructions(t
         "toolInput": {"agent": "chief-of-staff"},
         "toolResult": {"ok": True},
     })
+    verified = handle({
+        "action": "pre_verify",
+        "sessionId": "bridge",
+        "traceId": "bridge-turn",
+        "finalResponse": "Draft without a header.",
+        "model": "task-general",
+    })
+    disabled = handle({"action": "control", "command": "off"})
+    status = handle({"action": "control", "command": "status"})
+    enabled = handle({"action": "control", "command": "on"})
+    enabled_status = handle({"action": "control", "command": "status"})
 
     assert "agents-orchestrator, chief-of-staff" in routed["context"]
+    assert correlated["context"]
     assert skipped == {}
     assert recorded == {}
+    assert verified["action"] == "continue"
+    activity = store.recent_runtime_activity(limit=20)
+    assert activity["routing"][0]["trace_id"] == "bridge-turn"
+    assert activity["finalizations"][0]["trace_id"] == "bridge-turn"
+    assert disabled["runtime_enabled"] is False
+    assert status["runtime_enabled"] is False
+    assert enabled["runtime_enabled"] is True
+    assert enabled_status["runtime_enabled"] is True
     assert "chief-of-staff" in store.get_specialists_for_session("bridge")
 
 
@@ -230,6 +274,9 @@ def test_generated_openclaw_plugin_is_native_openclaw_package(tmp_path: Path, mo
     assert package["openclaw"]["extensions"] == ["./index.js"]
     assert "before_prompt_build" in code
     assert "before_agent_finalize" in code
+    assert "api.registerCommand" in code
+    assert 'name: "agency"' in code
+    assert 'action: "control"' in code
     assert "event?.prompt" in code
     assert "event?.lastAssistantMessage" in code
     assert "agency_runtime.adapters.openclaw.node_bridge" in code

@@ -87,6 +87,49 @@ cold-inventory states, not failures hidden behind success language. Restart the
 host when required, exercise a harmless preflight, and inspect again. Only a
 native runtime surface can promote `loaded` or `canary`; file existence cannot.
 
+## `agency off` did not unregister the plugin
+
+That is expected unless `--native` was requested. The default command is an
+immediate persistent soft control:
+
+```bash
+agency status --agent <host>
+agency off --agent <host>
+agency on --agent <host>
+```
+
+It is checked at every adapter boundary and preserves native registration so
+the CLI, dashboard, or host control surface can turn the runtime back on.
+`status` reports native enablement, runtime soft control, and effective state
+separately; `unverified` is not the same as disabled.
+
+Use `agency off --agent <host> --native` only when you intend to change the
+host's plugin registry. Native control requires an inventory postcondition and
+may report `enablement_unverified` or a restart requirement instead of
+pretending success.
+
+## Host canary is not ready or remains stale
+
+Start with the nonmutating report:
+
+```bash
+agency host-canary <host>
+```
+
+It lists every unmet prerequisite. Hermes and OpenClaw currently reject live
+execution because a proven read-only, no-tools noninteractive mode is not
+available. Codex and Claude require the exact
+`RUN LIVE <host> CANARY` confirmation before invoking the host.
+
+A Codex or Claude result is scoped to the temporary profile in which the
+managed plugin was explicitly requested. It does not prove that the real host
+profile is registered or enabled. The inspector therefore reports an
+isolated-profile attestation as stale for real-profile maturity. Other stale
+reasons identify an OS, host
+version, plugin version, install ID, bundle digest, native state, or rollback
+change. Re-run a live canary only after reviewing those facts; do not edit the
+attestation manually.
+
 ## Dashboard does not authenticate
 
 For an installed user service, inspect it and ask the CLI to open the current
@@ -190,6 +233,41 @@ Also confirm `adapters.litellm.enabled` is not `false`, the proxy is reachable,
 and the configured key can access its model endpoint. Use `agency doctor`; do
 not treat a successful Python import as gateway activation.
 
+## CLI judge is installed but unavailable
+
+Run the host's read-only status commands, then compare them with `agency
+doctor --json`:
+
+```bash
+codex login status
+codex exec --help
+claude auth status
+claude --version
+agency doctor --json
+```
+
+Codex must expose the non-interactive JSON, output-schema, ephemeral,
+rule/config isolation, strict-config, and sandbox controls. Claude must be
+version 2.1.205 or newer for the required structured-output failure behavior.
+An executable can therefore be `installed: true` while `authenticated` or
+`usable` remains false. Reauthenticate with the host CLI or upgrade it; do not
+copy its session credential into Agency Runtime configuration.
+
+Provider order is exact and supports at most four entries. A nonempty
+`providers` list is authoritative, so include every desired HTTP, CLI, or local
+fallback explicitly. After the last configured entry fails, deterministic token
+routing is used; a removed legacy judge or Ollama endpoint is not retried.
+
+Credentialed remote provider URLs must use HTTPS. Plain HTTP is supported only
+for literal loopback addresses such as `127.0.0.1`, `::1`, or `localhost`.
+Remove embedded credentials, query strings, and fragments from `base_url`; use
+the typed key or environment-key fields instead.
+
+If delegation reports that owned descendants outlived the parent, the runtime
+terminated the entire Windows Job Object or POSIX process group and rejected
+the result. Fix the backend command so it waits for its children and closes
+inherited standard-output and standard-error handles before exiting.
+
 ## No specialist is selected
 
 Zero-signal input intentionally abstains. For a meaningful task, inspect the
@@ -204,6 +282,18 @@ agency explain "describe the concrete task" --session-id debug
 If the roster is empty, run `agency install` to seed missing starter agents or
 activate an approved roster snapshot. If a provider fails, the decision receipt
 shows fallback; deterministic routing remains available.
+
+`agency policy --json` exits nonzero when a required bundled specialist is not
+active or a route is not classified. `missing_enabled` identifies required
+specialists that `agency install` can restore. `disabled_routes` are different:
+they are intentionally roster-gated, include a reason, and become eligible only
+after the named specialist passes roster approval and activation. Validate that
+the checked-in availability registry matches every action and division route
+with:
+
+```bash
+python scripts/update_policy_availability.py --check
+```
 
 ## Delegation remains suggested or skipped
 

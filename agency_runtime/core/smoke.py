@@ -26,9 +26,13 @@ from agency_runtime.core.store.sqlite import Store
 class _FakeHookContext:
     def __init__(self) -> None:
         self.hooks: dict[str, Any] = {}
+        self.commands: dict[str, Any] = {}
 
     def register_hook(self, name: str, fn: Any) -> None:
         self.hooks[name] = fn
+
+    def register_command(self, name: str, fn: Any, **_kwargs: Any) -> None:
+        self.commands[name] = fn
 
 
 @contextmanager
@@ -81,6 +85,8 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     required_tokens = {
         "before_prompt_build",
         "before_agent_finalize",
+        "api.registerCommand",
+        'name: "agency"',
         "agency_runtime.adapters.openclaw.node_bridge",
         "execFile",
     }
@@ -126,14 +132,20 @@ def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
     plugin_root = plugin_path.parents[1]
     hooks_path = plugin_root / "hooks" / "hooks.json"
     mcp_path = plugin_root / ".mcp.json"
+    skill_path = plugin_root / "skills" / "agency" / "SKILL.md"
     if manifest.get("name") != "agency-preflight":
         raise RuntimeError(f"invalid {host} plugin manifest name")
-    if not hooks_path.exists() or not mcp_path.exists():
-        raise RuntimeError(f"{host} bundle missing hooks or MCP config")
+    if not hooks_path.exists() or not mcp_path.exists() or not skill_path.exists():
+        raise RuntimeError(f"{host} bundle missing hooks, MCP config, or control skill")
     hooks = json.loads(hooks_path.read_text(encoding="utf-8"))
     mcp = json.loads(mcp_path.read_text(encoding="utf-8"))
     if "UserPromptSubmit" not in hooks.get("hooks", {}):
         raise RuntimeError(f"{host} bundle missing UserPromptSubmit hook")
+    if host == "codex" and "hooks" in manifest:
+        raise RuntimeError("Codex manifest declares unsupported top-level hooks")
+    skill = skill_path.read_text(encoding="utf-8")
+    if "agency.host_status" not in skill or "agency.host_control" not in skill:
+        raise RuntimeError(f"{host} control skill is incomplete")
     server = mcp.get("mcpServers", {}).get("agency-runtime", {})
     if server.get("args") != ["-m", "agency_runtime.server.mcp", "--stdio"]:
         raise RuntimeError(f"{host} bundle has invalid Agency Runtime MCP command")
@@ -174,6 +186,11 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     missing = sorted(required - set(ctx.hooks))
     if missing:
         raise RuntimeError(f"missing hooks: {', '.join(missing)}")
+    if set(ctx.commands) != {"agency"}:
+        raise RuntimeError("missing Hermes agency control command")
+    status = ctx.commands["agency"]("status")
+    if "Agency Runtime is enabled for hermes." not in status:
+        raise RuntimeError("Hermes agency status command returned an invalid response")
     ctx.hooks["post_api_request"](response={}, model="task-general", session_id=f"smoke-{host}")
     adapter = module._get_adapter()
     return {"host": host, "plugin_path": str(plugin_path), "adapter": adapter.__class__.__name__}

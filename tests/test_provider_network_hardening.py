@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 import yaml
 
-from agency_runtime.core import detect, doctor
+from agency_runtime.core import detect, doctor, provider_validation
 from agency_runtime.core.config import (
     AgencyConfig,
     JudgeConfig,
@@ -117,7 +117,7 @@ def test_detection_bounds_response_bytes_and_model_count(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     oversized = _Response(b"x" * (detect._MAX_HTTP_JSON_BYTES + 10))
-    monkeypatch.setattr(detect.urllib.request, "urlopen", lambda *_a, **_kw: oversized)
+    monkeypatch.setattr(detect, "open_no_redirect", lambda *_a, **_kw: oversized)
 
     assert detect._http_get_json("https://models.invalid") is None
     assert oversized.read_sizes == [detect._MAX_HTTP_JSON_BYTES + 1]
@@ -134,6 +134,25 @@ def test_detection_bounds_response_bytes_and_model_count(
     assert models == sorted(models)
 
 
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "http://provider.invalid/v1",
+        "https://provider.invalid/v1?token=leaky",
+    ],
+)
+def test_shared_detection_never_sends_credentials_to_unsafe_base(
+    base_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unexpected_call(*_args: Any, **_kwargs: Any) -> _Response:
+        raise AssertionError("credentialed discovery attempted")
+
+    monkeypatch.setattr(detect, "open_no_redirect", unexpected_call)
+
+    assert detect._fetch_model_list(base_url, "secret") == []
+
+
 def test_judge_caps_provider_attempts_and_falls_back_deterministically(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -143,7 +162,7 @@ def test_judge_caps_provider_attempts_and_falls_back_deterministically(
         calls.append(request.full_url)
         raise TimeoutError("offline")
 
-    monkeypatch.setattr(judge.urllib.request, "urlopen", fail)
+    monkeypatch.setattr(judge, "open_no_redirect", fail)
     cfg = AgencyConfig(
         providers=tuple(_provider(index) for index in range(10)),
         judge=JudgeConfig(model="", timeout=60, confidence_bypass_threshold=999),
@@ -171,7 +190,7 @@ def test_judge_uses_only_remaining_end_to_end_deadline(
         now["value"] += min(6.0, timeout)
         raise TimeoutError("deadline")
 
-    monkeypatch.setattr(judge.urllib.request, "urlopen", fail)
+    monkeypatch.setattr(judge, "open_no_redirect", fail)
     cfg = AgencyConfig(
         providers=tuple(_provider(index) for index in range(3)),
         judge=JudgeConfig(model="", timeout=10, confidence_bypass_threshold=999),
@@ -194,7 +213,7 @@ def test_typed_provider_failure_does_not_retry_as_wrong_legacy_protocol(
         calls.append(request.full_url)
         raise TimeoutError("offline")
 
-    monkeypatch.setattr(judge.urllib.request, "urlopen", fail)
+    monkeypatch.setattr(judge, "open_no_redirect", fail)
     provider = ProviderEntry(
         name="anthropic",
         type="anthropic",
@@ -224,7 +243,7 @@ def test_judge_rejects_oversized_provider_response(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     response = _Response(b"x" * (judge._MAX_JUDGE_RESPONSE_BYTES + 10))
-    monkeypatch.setattr(judge.urllib.request, "urlopen", lambda *_a, **_kw: response)
+    monkeypatch.setattr(judge, "open_no_redirect", lambda *_a, **_kw: response)
 
     result = judge._try_provider(
         _provider(1),
@@ -237,6 +256,43 @@ def test_judge_rejects_oversized_provider_response(
 
     assert result is None
     assert response.read_sizes == [judge._MAX_JUDGE_RESPONSE_BYTES + 1]
+
+
+def test_programmatic_provider_and_legacy_judge_never_send_credentials_over_http(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unexpected_call(*_args: Any, **_kwargs: Any) -> _Response:
+        raise AssertionError("unsafe authenticated request attempted")
+
+    monkeypatch.setattr(judge, "open_no_redirect", unexpected_call)
+    provider = ProviderEntry(
+        name="remote",
+        model="model",
+        base_url="http://provider.invalid/v1",
+        api_key="secret",
+    )
+    legacy = JudgeConfig(
+        model="model",
+        base_url="http://judge.invalid/v1",
+        api_key="secret",
+        ollama_mode=False,
+    )
+
+    assert judge._try_provider(provider, "task", CATALOG, 1, 1, 1.0) is None
+    assert judge._try_legacy_judge(legacy, "task", CATALOG, 1, 1, 1.0) is None
+    validation = provider_validation.validate_provider(
+        provider,
+        opener=unexpected_call,
+    )
+    assert validation.usable is False
+    assert "HTTPS" in validation.reason
+    assert doctor._http_check_authed(
+        "http://adapter.invalid/v1/models",
+        "secret",
+    ) == (
+        False,
+        "credential transport requires HTTPS or literal loopback HTTP",
+    )
 
 
 def test_doctor_probes_anthropic_with_typed_headers_and_redacts_urls(
@@ -252,7 +308,7 @@ def test_doctor_probes_anthropic_with_typed_headers_and_redacts_urls(
         ))
         return _Response(status=200)
 
-    monkeypatch.setattr(doctor.urllib.request, "urlopen", respond)
+    monkeypatch.setattr(doctor, "open_no_redirect", respond)
     monkeypatch.setattr(doctor, "inspect_host_installations", lambda **_kw: [])
     provider = ProviderEntry(
         name="anthropic",

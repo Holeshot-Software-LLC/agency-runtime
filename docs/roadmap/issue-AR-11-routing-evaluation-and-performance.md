@@ -38,12 +38,18 @@ state is bounded and thread-safe, candidate scoring includes categories and
 capabilities, policy matching is boundary-aware, and zero-signal fallback
 abstains.
 
-`agency eval routing` now runs the v1.1 offline corpus with 31 routing, 22
+`agency eval routing` now runs the v1.2 offline corpus with 31 routing, 25
 policy, and 17 delegation cases plus deterministic 1,000-agent and concurrent
 benchmarks. The report gates policy macro F1, delegation precision, recall, and
 dependency-graph accuracy, required Recall@3, abstention, forbidden matches,
 cold and cache-hit latency, concurrent throughput and overlap, determinism, and
 unique per-request traces.
+
+The concurrency probe synchronizes workers only after each call has progressed
+inside real candidate narrowing through catalog compilation and first-agent
+scoring. This removes dependence on the CPython thread-switch interval while
+still failing when a lock serializes narrowing before that point. The release
+gate requires both overlap and a fully synchronized internal probe.
 
 The production-readiness run passed every gate: required Recall@3 and top-one
 accuracy were 1.0, policy macro F1 was 0.9921, delegation precision, recall,
@@ -73,3 +79,14 @@ release readiness depends on the resulting gates.
 - [x] Dependency-graph accuracy is 100 percent for versioned sequencing cases.
 - [x] Local routing p95 is below 20 ms at 1,000 agents and cache-hit p95 below 2 ms.
 - [x] Thirty-two concurrent requests show no contamination, exceptions, or stale selections.
+
+## Concurrency-flake verification
+
+- The former outer-call counter failed 2 of 20 runs at the default 5 ms Python
+  switch interval and 20 of 20 runs at 50 ms.
+- The internal probe passed 20 of 20 runs at 1 ms, 5 ms, and 50 ms, plus 20 of
+  20 runs with four CPU-load threads.
+- Ten repeated complete routing evaluations passed with eight of eight workers
+  reaching the internal probe on every run.
+- A serialized-wrapper regression test produces overlap 1 and fails probe
+  synchronization, proving the barrier does not hide real serialization.

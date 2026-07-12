@@ -16,6 +16,7 @@ def test_release_resources_are_addressable() -> None:
         "core/companion_policy.yaml",
         "core/config_defaults.yaml",
         "core/configuration.py",
+        "core/canary.py",
         "core/dashboard_runtime.py",
         "core/dashboard_service.py",
         "core/evals/data/routing_v1.py",

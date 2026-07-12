@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 REQUIRED_PACKAGE_FILES = {
     "agency_runtime/core/companion_policy.yaml",
     "agency_runtime/core/config_defaults.yaml",
+    "agency_runtime/core/canary.py",
     "agency_runtime/core/configuration.py",
     "agency_runtime/core/dashboard_runtime.py",
     "agency_runtime/core/dashboard_service.py",

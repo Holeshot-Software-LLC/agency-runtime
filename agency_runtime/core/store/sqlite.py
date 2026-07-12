@@ -12,6 +12,7 @@ import os
 import re
 import sqlite3
 import stat
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -42,6 +43,7 @@ _SECRET_ASSIGNMENT = re.compile(
     r"\b\s*[:=]\s*)(?:\"[^\"]*\"|'[^']*'|[^\s,;]+)"
 )
 _BEARER_TOKEN = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]+")
+_IS_WINDOWS = os.name == "nt"
 
 
 def _capture_content_enabled() -> bool:
@@ -206,7 +208,7 @@ def _project_run_metadata(metadata: dict[str, Any] | None) -> str | None:
 
 def _restrict_windows_acl(path: Path, *, directory: bool) -> bool:
     """Best-effort owner-only DACL through Win32 APIs, never a subprocess."""
-    if os.name != "nt":
+    if not _IS_WINDOWS:
         return False
     try:
         import ctypes
@@ -316,12 +318,16 @@ def _restrict_path_permissions(path: Path, *, directory: bool) -> None:
     """Repair storage permissions; unsupported filesystems fail closed enough."""
     if not path.exists():
         return
-    if os.name == "nt":
+    if _IS_WINDOWS:
         try:
             os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
         except OSError:
             pass
-        _restrict_windows_acl(path, directory=directory)
+        if not _restrict_windows_acl(path, directory=directory):
+            raise PermissionError(
+                "could not enforce private Windows ACL on Agency Runtime "
+                f"storage: {path}"
+            )
         return
     expected_mode = stat.S_IRWXU if directory else stat.S_IRUSR | stat.S_IWUSR
     os.chmod(path, expected_mode)
@@ -342,6 +348,27 @@ def _default_db_path() -> Path:
         return load_config().store.resolved_path()
     except Exception:
         return Path.home() / ".agency-runtime" / "agency.db"
+
+
+def _default_runtime_directory() -> Path:
+    """Return the one pre-existing directory Agency Runtime owns by convention."""
+    return Path.home() / ".agency-runtime"
+
+
+def _is_link_or_reparse_point(path: Path) -> bool:
+    """Reject links before permission repair or SQLite can follow their target."""
+    try:
+        metadata = os.lstat(path)
+    except FileNotFoundError:
+        return False
+    if stat.S_ISLNK(metadata.st_mode):
+        return True
+    attributes = int(getattr(metadata, "st_file_attributes", 0))
+    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+    return bool(attributes & reparse_flag)
+
+
+_SCHEMA_VERSION = 9
 
 
 _SCHEMA_V1 = """
@@ -558,6 +585,30 @@ CREATE TABLE IF NOT EXISTS routing_decisions (
     created_at TEXT NOT NULL
 );
 
+-- Persistent, host-scoped soft control. Native plugins remain registered so
+-- their control surface can turn the runtime back on without an installer.
+CREATE TABLE IF NOT EXISTS host_controls (
+    host TEXT PRIMARY KEY,
+    enabled INTEGER NOT NULL CHECK (enabled IN (0, 1)),
+    updated_at TEXT NOT NULL,
+    source TEXT NOT NULL
+);
+
+-- Last successful content-free live canary for each host contract.
+CREATE TABLE IF NOT EXISTS host_canary_attestations (
+    host TEXT PRIMARY KEY,
+    profile_scope TEXT NOT NULL,
+    platform_system TEXT NOT NULL,
+    platform_release TEXT NOT NULL,
+    platform_machine TEXT NOT NULL,
+    host_version TEXT NOT NULL,
+    plugin_version TEXT NOT NULL,
+    install_id TEXT NOT NULL,
+    bundle_digest TEXT NOT NULL,
+    passed_at TEXT NOT NULL,
+    trace_id TEXT NOT NULL
+);
+
 -- Read-path indexes used by hooks, the dashboard, and retention jobs.
 CREATE INDEX IF NOT EXISTS idx_runs_trace_id ON runs(trace_id);
 CREATE INDEX IF NOT EXISTS idx_runs_session_started ON runs(session_id, started_at DESC);
@@ -587,6 +638,8 @@ _ALL_TABLES: tuple[str, ...] = (
     "worker_runs",
     "finalization_events",
     "routing_decisions",
+    "host_controls",
+    "host_canary_attestations",
     "agent_sources",
     "agent_downloads",
     "agent_candidates",
@@ -631,16 +684,38 @@ class Store:
         else:
             self.db_path = _default_db_path()
         self._permission_fingerprints: dict[Path, tuple[int, int]] = {}
-        self.db_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        try:
+            self.db_path.parent.mkdir(parents=True, exist_ok=False, mode=0o700)
+        except FileExistsError:
+            created_parent = False
+        else:
+            created_parent = True
+        default_parent = _default_runtime_directory()
+        self._harden_storage_parent = bool(
+            created_parent
+            or (
+                not self.db_path.parent.is_symlink()
+                and os.path.abspath(self.db_path.parent)
+                == os.path.abspath(default_parent)
+            )
+        )
         self._ensure_private_storage_file()
         self._foreign_keys_ready = False
-        self._init_schema()
+        schema_current, journal_ready = self._current_schema_state()
+        self._journal_ready = journal_ready
+        if not schema_current:
+            self._init_schema()
         self._foreign_keys_ready = True
         self._repair_storage_permissions()
 
     def _ensure_private_storage_file(self) -> None:
-        """Securely create the DB and repair an existing parent/database."""
-        _restrict_path_permissions(self.db_path.parent, directory=True)
+        """Securely create the DB without taking ownership of arbitrary parents."""
+        if _is_link_or_reparse_point(self.db_path):
+            raise PermissionError(
+                "refusing Agency Runtime database symlink or reparse point"
+            )
+        if self._harden_storage_parent:
+            _restrict_path_permissions(self.db_path.parent, directory=True)
         if not self.db_path.exists():
             flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
             if hasattr(os, "O_BINARY"):
@@ -648,19 +723,27 @@ class Store:
             try:
                 fd = os.open(self.db_path, flags, stat.S_IRUSR | stat.S_IWUSR)
             except FileExistsError:
-                pass
+                if _is_link_or_reparse_point(self.db_path):
+                    raise PermissionError(
+                        "refusing Agency Runtime database symlink or reparse point"
+                    )
             else:
                 os.close(fd)
+        if _is_link_or_reparse_point(self.db_path):
+            raise PermissionError(
+                "refusing Agency Runtime database symlink or reparse point"
+            )
         _restrict_path_permissions(self.db_path, directory=False)
 
     def _repair_storage_permissions(self) -> None:
-        """Keep the database directory and SQLite sidecars owner-only."""
-        targets = (
-            (self.db_path.parent, True),
+        """Keep owned storage files and, when applicable, its directory private."""
+        targets = [
             (self.db_path, False),
             (Path(f"{self.db_path}-wal"), False),
             (Path(f"{self.db_path}-shm"), False),
-        )
+        ]
+        if self._harden_storage_parent:
+            targets.insert(0, (self.db_path.parent, True))
         for path, directory in targets:
             try:
                 current = path.stat()
@@ -684,8 +767,20 @@ class Store:
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(str(self.db_path), timeout=5.0)
-        conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA busy_timeout=5000")
+        if not self._journal_ready:
+            for attempt in range(20):
+                try:
+                    journal = conn.execute("PRAGMA journal_mode=WAL").fetchone()
+                    self._journal_ready = bool(
+                        journal and str(journal[0]).casefold() == "wal"
+                    )
+                    break
+                except sqlite3.OperationalError as exc:
+                    if "locked" not in str(exc).casefold() or attempt == 19:
+                        conn.close()
+                        raise
+                    time.sleep(min(0.02 * (attempt + 1), 0.25))
         conn.execute("PRAGMA synchronous=NORMAL")
         if self._foreign_keys_ready:
             conn.execute("PRAGMA foreign_keys=ON")
@@ -693,15 +788,80 @@ class Store:
         self._repair_storage_permissions()
         return conn
 
+    def _current_schema_state(self) -> tuple[bool, bool]:
+        """Inspect schema and journal state without taking a write lock."""
+        if not self.db_path.is_file() or self.db_path.stat().st_size == 0:
+            return False, False
+        try:
+            conn = sqlite3.connect(
+                self.db_path.resolve().as_uri() + "?mode=ro",
+                uri=True,
+                timeout=5.0,
+            )
+            conn.execute("PRAGMA busy_timeout=5000")
+            conn.row_factory = sqlite3.Row
+            try:
+                journal_row = conn.execute("PRAGMA journal_mode").fetchone()
+                journal_ready = bool(
+                    journal_row and str(journal_row[0]).casefold() == "wal"
+                )
+                table = conn.execute(
+                    "SELECT 1 FROM sqlite_master "
+                    "WHERE type = 'table' AND name = 'schema_version'"
+                ).fetchone()
+                if table is None:
+                    return False, journal_ready
+                version = conn.execute(
+                    "SELECT MAX(version) AS version FROM schema_version"
+                ).fetchone()
+                observed_version = int(version["version"] or 0)
+                if observed_version > _SCHEMA_VERSION:
+                    raise RuntimeError(
+                        "Agency Runtime database schema is newer than this "
+                        f"runtime ({observed_version} > {_SCHEMA_VERSION})"
+                    )
+                return observed_version == _SCHEMA_VERSION, journal_ready
+            finally:
+                conn.close()
+        except (OSError, sqlite3.Error):
+            return False, False
+
     def _init_schema(self) -> None:
         conn = self._connect()
         try:
-            conn.executescript(_SCHEMA_V1)
+            # executescript normally commits before running. Starting the
+            # script with BEGIN IMMEDIATE leaves one serialized migration
+            # transaction open through every check/ALTER/version update.
+            conn.executescript("BEGIN IMMEDIATE;\n" + _SCHEMA_V1)
             self._ensure_column(
                 conn,
                 "agent_sources",
                 "trusted_for_auto_approve",
                 "INTEGER DEFAULT 0",
+            )
+            self._ensure_column(
+                conn,
+                "host_canary_attestations",
+                "profile_scope",
+                "TEXT NOT NULL DEFAULT 'current-profile'",
+            )
+            self._ensure_column(
+                conn,
+                "host_canary_attestations",
+                "host_version",
+                "TEXT NOT NULL DEFAULT ''",
+            )
+            self._ensure_column(
+                conn,
+                "host_canary_attestations",
+                "install_id",
+                "TEXT NOT NULL DEFAULT ''",
+            )
+            self._ensure_column(
+                conn,
+                "host_canary_attestations",
+                "bundle_digest",
+                "TEXT NOT NULL DEFAULT ''",
             )
             self._migrate_trace_integrity(conn)
             version_row = conn.execute(
@@ -711,8 +871,14 @@ class Store:
             if current_version < 4:
                 self._migrate_private_projections(conn)
             conn.execute("DELETE FROM schema_version")
-            conn.execute("INSERT INTO schema_version (version) VALUES (4)")
+            conn.execute(
+                "INSERT INTO schema_version (version) VALUES (?)",
+                (_SCHEMA_VERSION,),
+            )
             conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
 
@@ -777,6 +943,10 @@ class Store:
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_runs_session_started "
             "ON runs(session_id, started_at DESC)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_runs_recent "
+            "ON runs(started_at DESC, id DESC)"
         )
 
     def _migrate_private_projections(self, conn: sqlite3.Connection) -> None:
@@ -854,6 +1024,158 @@ class Store:
     @staticmethod
     def _uuid() -> str:
         return str(uuid.uuid4())
+
+    # ── Host runtime controls ─────────────────────────────────────
+
+    def get_host_control(self, host: str) -> dict[str, Any]:
+        """Return persistent soft-control state without mutating the store."""
+        normalized = str(host or "").strip().lower()
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT host, enabled, updated_at, source FROM host_controls WHERE host = ?",
+                (normalized,),
+            ).fetchone()
+            if row is None:
+                return {
+                    "host": normalized,
+                    "enabled": True,
+                    "updated_at": None,
+                    "source": "default",
+                }
+            return {
+                "host": str(row["host"]),
+                "enabled": bool(row["enabled"]),
+                "updated_at": str(row["updated_at"]),
+                "source": str(row["source"]),
+            }
+        finally:
+            conn.close()
+
+    def set_host_control(
+        self, host: str, *, enabled: bool, source: str = "runtime"
+    ) -> dict[str, Any]:
+        """Persist a host soft-control setting and return its read-back value."""
+        normalized = str(host or "").strip().lower()
+        if not normalized:
+            raise ValueError("host is required")
+        normalized_source = str(source or "runtime").strip()[:96] or "runtime"
+        updated_at = self._now()
+        conn = self._connect()
+        try:
+            conn.execute(
+                "INSERT INTO host_controls (host, enabled, updated_at, source) "
+                "VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(host) DO UPDATE SET enabled = excluded.enabled, "
+                "updated_at = excluded.updated_at, source = excluded.source",
+                (normalized, int(bool(enabled)), updated_at, normalized_source),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        return self.get_host_control(normalized)
+
+    def get_host_canary_attestation(self, host: str) -> dict[str, Any] | None:
+        """Return the latest content-free canary attestation for a host."""
+        normalized = str(host or "").strip().lower()
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT host, profile_scope, platform_system, platform_release, platform_machine, "
+                "host_version, plugin_version, install_id, bundle_digest, "
+                "passed_at, trace_id "
+                "FROM host_canary_attestations WHERE host = ?",
+                (normalized,),
+            ).fetchone()
+            return dict(row) if row is not None else None
+        finally:
+            conn.close()
+
+    def record_host_canary_attestation(
+        self,
+        *,
+        host: str,
+        profile_scope: str,
+        platform_system: str,
+        platform_release: str,
+        platform_machine: str,
+        host_version: str,
+        plugin_version: str,
+        install_id: str,
+        bundle_digest: str,
+        trace_id: str,
+        passed_at: str | None = None,
+    ) -> dict[str, Any]:
+        """Persist one bounded successful canary without prompts or output."""
+        values = {
+            "host": str(host or "").strip().lower()[:64],
+            "profile_scope": str(profile_scope or "").strip().lower()[:64],
+            "platform_system": str(platform_system or "").strip()[:64],
+            "platform_release": str(platform_release or "").strip()[:128],
+            "platform_machine": str(platform_machine or "").strip()[:128],
+            "host_version": str(host_version or "").strip()[:256],
+            "plugin_version": str(plugin_version or "").strip()[:64],
+            "install_id": str(install_id or "").strip()[:128],
+            "bundle_digest": str(bundle_digest or "").strip()[:128],
+            "trace_id": str(trace_id or "").strip()[:512],
+            "passed_at": str(passed_at or self._now()).strip()[:64],
+        }
+        if any(not values[key] for key in values):
+            raise ValueError("complete host canary attestation fields are required")
+        if values["profile_scope"] not in {"current-profile", "isolated-profile"}:
+            raise ValueError("profile_scope must be current-profile or isolated-profile")
+        conn = self._connect()
+        try:
+            conn.execute(
+                "INSERT INTO host_canary_attestations "
+                "(host, profile_scope, platform_system, platform_release, platform_machine, "
+                "host_version, plugin_version, install_id, bundle_digest, "
+                "passed_at, trace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(host) DO UPDATE SET "
+                "profile_scope = excluded.profile_scope, "
+                "platform_system = excluded.platform_system, "
+                "platform_release = excluded.platform_release, "
+                "platform_machine = excluded.platform_machine, "
+                "host_version = excluded.host_version, "
+                "plugin_version = excluded.plugin_version, "
+                "install_id = excluded.install_id, "
+                "bundle_digest = excluded.bundle_digest, "
+                "passed_at = excluded.passed_at, trace_id = excluded.trace_id",
+                (
+                    values["host"],
+                    values["profile_scope"],
+                    values["platform_system"],
+                    values["platform_release"],
+                    values["platform_machine"],
+                    values["host_version"],
+                    values["plugin_version"],
+                    values["install_id"],
+                    values["bundle_digest"],
+                    values["passed_at"],
+                    values["trace_id"],
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        attestation = self.get_host_canary_attestation(values["host"])
+        if attestation is None:
+            raise RuntimeError("canary attestation postcondition failed")
+        return attestation
+
+    def clear_host_canary_attestation(self, host: str) -> bool:
+        """Invalidate a host attestation after rollback or lifecycle replacement."""
+        normalized = str(host or "").strip().lower()
+        conn = self._connect()
+        try:
+            cursor = conn.execute(
+                "DELETE FROM host_canary_attestations WHERE host = ?",
+                (normalized,),
+            )
+            conn.commit()
+            return bool(cursor.rowcount)
+        finally:
+            conn.close()
 
     # ── Runs ───────────────────────────────────────────────────────
 

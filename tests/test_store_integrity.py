@@ -7,10 +7,12 @@ import json
 import os
 import sqlite3
 import stat
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
 
+import agency_runtime.core.store.sqlite as sqlite_store
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -22,6 +24,109 @@ def _row(store: Store, sql: str, parameters: tuple = ()) -> sqlite3.Row:
         return result
     finally:
         connection.close()
+
+
+def test_concurrent_legacy_store_migration_is_serialized_and_idempotent(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "legacy-concurrent.db"
+    connection = sqlite3.connect(path)
+    connection.executescript(
+        """
+        CREATE TABLE schema_version (version INTEGER PRIMARY KEY);
+        INSERT INTO schema_version (version) VALUES (5);
+        CREATE TABLE host_canary_attestations (
+            host TEXT PRIMARY KEY,
+            platform_system TEXT NOT NULL,
+            platform_release TEXT NOT NULL,
+            platform_machine TEXT NOT NULL,
+            plugin_version TEXT NOT NULL,
+            passed_at TEXT NOT NULL,
+            trace_id TEXT NOT NULL
+        );
+        """
+    )
+    connection.close()
+
+    def open_store(_index: int) -> tuple[bool, int]:
+        store = Store(path)
+        return (
+            store.get_host_control("codex")["enabled"],
+            store.runtime_table_counts()["host_canary_attestations"],
+        )
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(open_store, range(24)))
+
+    assert results == [(True, 0)] * 24
+    migrated = sqlite3.connect(path)
+    try:
+        columns = {
+            row[1]
+            for row in migrated.execute(
+                "PRAGMA table_info(host_canary_attestations)"
+            )
+        }
+        version = migrated.execute(
+            "SELECT MAX(version) FROM schema_version"
+        ).fetchone()[0]
+    finally:
+        migrated.close()
+    assert {"profile_scope", "host_version", "install_id", "bundle_digest"} <= columns
+    assert version == 9
+
+
+def test_current_schema_store_opens_while_another_connection_holds_writer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "current.db"
+    store = Store(path)
+    writer = store._connect()
+    writer.execute("BEGIN IMMEDIATE")
+    monkeypatch.setattr(
+        Store,
+        "_init_schema",
+        lambda _self: pytest.fail("current schema must not enter migration"),
+    )
+    try:
+        reopened = Store(path)
+        reader = reopened._connect()
+        try:
+            assert (
+                reader.execute(
+                    "SELECT MAX(version) FROM schema_version"
+                ).fetchone()[0]
+                == 9
+            )
+        finally:
+            reader.close()
+    finally:
+        writer.rollback()
+        writer.close()
+
+
+def test_newer_schema_is_refused_without_rewriting_version(tmp_path: Path) -> None:
+    path = tmp_path / "future.db"
+    store = Store(path)
+    connection = store._connect()
+    try:
+        connection.execute("DELETE FROM schema_version")
+        connection.execute("INSERT INTO schema_version (version) VALUES (10)")
+        connection.commit()
+    finally:
+        connection.close()
+
+    with pytest.raises(RuntimeError, match="schema is newer"):
+        Store(path)
+
+    unchanged = sqlite3.connect(path)
+    try:
+        assert unchanged.execute(
+            "SELECT MAX(version) FROM schema_version"
+        ).fetchone()[0] == 10
+    finally:
+        unchanged.close()
 
 
 def test_dashboard_activity_orders_use_global_timestamp_indexes(tmp_path: Path):
@@ -234,7 +339,9 @@ def test_delegation_details_are_projected_by_default_and_redacted_when_opted_in(
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits are not Windows ACLs")
-def test_store_repairs_private_modes_under_permissive_umask(tmp_path: Path):
+def test_store_preserves_preexisting_parent_mode_but_hardens_owned_files(
+    tmp_path: Path,
+) -> None:
     parent = tmp_path / "runtime"
     parent.mkdir(mode=0o777)
     parent.chmod(0o755)
@@ -250,7 +357,7 @@ def test_store_repairs_private_modes_under_permissive_umask(tmp_path: Path):
             connection.commit()
             store._repair_storage_permissions()
 
-            assert stat.S_IMODE(parent.stat().st_mode) == 0o700
+            assert stat.S_IMODE(parent.stat().st_mode) == 0o755
             assert stat.S_IMODE(store.db_path.stat().st_mode) == 0o600
             for suffix in ("-wal", "-shm"):
                 sidecar = Path(f"{store.db_path}{suffix}")
@@ -260,6 +367,78 @@ def test_store_repairs_private_modes_under_permissive_umask(tmp_path: Path):
             connection.close()
     finally:
         os.umask(old_umask)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits are not Windows ACLs")
+def test_store_hardens_newly_created_dedicated_parent(tmp_path: Path) -> None:
+    parent = tmp_path / "owned" / "runtime"
+
+    store = Store(parent / "agency.db")
+
+    assert stat.S_IMODE(parent.stat().st_mode) == 0o700
+    assert stat.S_IMODE(store.db_path.stat().st_mode) == 0o600
+
+
+def test_store_never_sends_preexisting_arbitrary_parent_to_permission_repair(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent = tmp_path / "shared"
+    parent.mkdir()
+    calls: list[tuple[Path, bool]] = []
+
+    def observe(path: Path, *, directory: bool) -> None:
+        calls.append((path, directory))
+
+    monkeypatch.setattr(sqlite_store, "_restrict_path_permissions", observe)
+
+    Store(parent / "agency.db")
+
+    assert (parent, True) not in calls
+    assert (parent / "agency.db", False) in calls
+
+
+def test_windows_file_acl_hardening_fails_closed_when_dacl_restriction_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.db"
+    path.write_bytes(b"")
+    monkeypatch.setattr(sqlite_store, "_IS_WINDOWS", True)
+    monkeypatch.setattr(sqlite_store.os, "chmod", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_windows_acl",
+        lambda _path, *, directory: False,
+    )
+
+    with pytest.raises(PermissionError, match="private Windows ACL"):
+        sqlite_store._restrict_path_permissions(path, directory=False)
+
+
+def test_store_rejects_preexisting_database_symlink_before_permission_repair(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "target.db"
+    target.write_bytes(b"not-a-database")
+    link = tmp_path / "agency.db"
+    try:
+        link.symlink_to(target)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"symlink creation is unavailable: {exc}")
+    calls: list[Path] = []
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda path, *, directory: calls.append(path),
+    )
+
+    with pytest.raises(PermissionError, match="symlink or reparse"):
+        Store(link)
+
+    assert calls == []
+    assert target.read_bytes() == b"not-a-database"
 
 
 def test_agent_versions_are_immutable_and_idempotent(tmp_path: Path):
@@ -474,8 +653,18 @@ def test_legacy_orphans_and_duplicate_runs_are_migrated(tmp_path: Path):
         }
         assert (
             migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
-            == 4
+            == 9
         )
+        recent_plan = " ".join(
+            str(row["detail"])
+            for row in migrated.execute(
+                "EXPLAIN QUERY PLAN "
+                "SELECT id FROM runs "
+                "ORDER BY started_at DESC, id DESC LIMIT 100"
+            )
+        )
+        assert "idx_runs_recent" in recent_plan
+        assert "USE TEMP B-TREE" not in recent_plan
         assert migrated.execute("PRAGMA foreign_keys").fetchone()[0] == 1
     finally:
         migrated.close()

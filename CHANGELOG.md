@@ -43,7 +43,17 @@ changes rather than duplicating every commit.
   source-owned charts, animated event transitions, and reduced-motion and
   forced-colors support.
 - Versioned routing, policy, delegation, and 1,000-agent performance evaluation.
+- Governed bundled internationalization, payments and billing, and
+  test-automation specialists plus an explicit generated availability registry
+  for every companion-policy route.
 - Windows and Ubuntu CI matrices plus isolated wheel smoke checks.
+- Guided add/move/remove configuration for an authoritative four-entry provider
+  chain, including authenticated Codex and Claude CLI judge transports.
+- Persistent host-scoped soft controls shared by CLI, dashboard, MCP, and
+  generated host command/skill surfaces, plus explicit `--native` lifecycle
+  control.
+- A nonmutating host-canary readiness report and exact-confirmed, nonce-bound
+  live workflow with content-free fingerprinted attestations.
 
 ### Changed
 
@@ -61,6 +71,16 @@ changes rather than duplicating every commit.
 - CLI secret updates now use standard input or a hidden prompt instead of
   process arguments, and configuration writes reject stale revisions and
   invalid schema before replacement.
+- Companion-policy validation now covers action and division routes, skips
+  inactive roster-gated specialists with a recorded reason, and exits nonzero
+  for missing enabled or unclassified routes. Policy evaluation includes
+  resolved-companion regression gates.
+- Typed provider chains now go directly to deterministic token routing after
+  their final failure; legacy judge and Ollama settings apply only when no typed
+  chain exists.
+- Codex and Claude canaries use isolated temporary plugin profiles and preserve
+  real-profile native facts separately; only current-profile attestations can
+  promote native inspection maturity.
 
 ### Fixed
 
@@ -85,6 +105,13 @@ changes rather than duplicating every commit.
 - Full dashboard refreshes are abortable and generation-checked so startup,
   background restoration, and configuration mutations cannot apply stale
   snapshots.
+- Routing-evaluation concurrency no longer depends on whether one CPU-bound
+  narrowing call finishes inside a CPython thread-switch interval. Workers now
+  synchronize from inside real narrowing progress, while a serialized
+  narrowing regression still fails the overlap gate.
+- Host adapters re-read persistent control at every boundary, trace correlation
+  no longer falls back to a whole session, and native lifecycle success requires
+  a proven inventory postcondition.
 
 ### Security
 
@@ -95,3 +122,28 @@ changes rather than duplicating every commit.
   credential-free.
 - HTTP request bodies and subprocess output are bounded; server errors are
   sanitized; optional content capture applies defensive redaction.
+- Credentialed provider requests reject redirects, remote model catalogs are
+  byte/count/string/control bounded, subprocess overflow is discarded while
+  both pipes continue draining, and Windows batch shims never receive
+  user-controlled provider or delegation arguments.
+- Host canaries isolate home/temp state, disable mutating MCP tools, bound and
+  sanitize process output, omit prompt/output content from attestations, and
+  never forward dashboard bearer tokens across redirects.
+- Custom config/database paths no longer rewrite shared parent permissions;
+  database files and sidecars fail closed on Windows ACL errors, and database
+  symlink or reparse-point paths are rejected before open.
+- Credentialed remote providers now require HTTPS except on literal loopback,
+  reject ambiguous URL components, and validate the same rule across config,
+  discovery, doctor, and runtime request paths.
+- Delegation now minimizes inherited environment state, sends Codex/Claude
+  tasks through standard input, redacts task content from every result surface,
+  and contains descendants with Windows Job Objects or POSIX process groups.
+- Rejected JSON mutations drain bounded authenticated request bodies before
+  responding, preventing intermittent Windows TCP resets from hiding the API
+  error response.
+- HTTP server tests now isolate configuration through pytest-managed temporary
+  paths instead of leaking a POSIX-only global path across the Windows suite.
+- Slotted Codex, Claude, and OpenClaw backends now call the shared parser
+  explicitly, restoring structured delegation on Python 3.12 Linux; optional
+  host capability tests no longer confuse an unusable WSL interop shim with a
+  native executable.

@@ -103,7 +103,15 @@ def explain_route(
     refined_query = refine_query(user_message, cfg)
     expanded_query = expand_query(refined_query)
     policy = load_policy()
-    matched_actions, companion_ids = detect_actions(user_message, policy)
+    active_slugs = {
+        str(agent.get("slug") or agent.get("agent_slug") or "")
+        for agent in catalog
+    }
+    matched_actions, companion_ids = detect_actions(
+        user_message,
+        policy,
+        active_slugs=active_slugs,
+    )
     candidates, scores = pre_narrow(expanded_query, catalog, limit=candidate_limit)
     candidate_rows = list(zip(candidates, scores))
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import uuid
 from collections.abc import Sequence
@@ -28,6 +29,17 @@ SUPPORTED_PROTOCOL_VERSIONS = (
 MAX_INPUT_BYTES = 1_048_576
 MAX_OUTPUT_BYTES = 1_048_576
 MAX_BATCH_SIZE = 64
+_CANARY_MUTATING_TOOLS = frozenset(
+    {
+        "agency.preflight",
+        "agency.explain_selection",
+        "agency.load_specialist",
+        "agency.record_skill_loaded",
+        "agency.delegate",
+        "agency.finalize",
+        "agency.host_control",
+    }
+)
 
 
 def _schema(properties: dict[str, Any], required: list[str] | None = None) -> dict[str, Any]:
@@ -134,6 +146,36 @@ MCP_TOOLS = [
         "inputSchema": _schema({}),
         "annotations": {"readOnlyHint": True, "idempotentHint": True},
     },
+    {
+        "name": "agency.host_status",
+        "description": "Inspect native and soft-control state for one supported host.",
+        "inputSchema": _schema(
+            {
+                "host": {
+                    "type": "string",
+                    "enum": ["hermes", "openclaw", "codex", "claude"],
+                }
+            },
+            ["host"],
+        ),
+        "annotations": {"readOnlyHint": True, "idempotentHint": True},
+    },
+    {
+        "name": "agency.host_control",
+        "description": "Enable or disable Agency Runtime for one host after exact confirmation.",
+        "inputSchema": _schema(
+            {
+                "host": {
+                    "type": "string",
+                    "enum": ["hermes", "openclaw", "codex", "claude"],
+                },
+                "enabled": {"type": "boolean"},
+                "confirm": {"type": "string", "maxLength": 128},
+            },
+            ["host", "enabled", "confirm"],
+        ),
+        "annotations": {"idempotentHint": True},
+    },
 ]
 
 _TOOLS_BY_NAME = {tool["name"]: tool for tool in MCP_TOOLS}
@@ -141,6 +183,11 @@ _TOOLS_BY_NAME = {tool["name"]: tool for tool in MCP_TOOLS}
 
 def handle_tool_call(tool_name: str, arguments: dict[str, Any], store=None) -> dict[str, Any]:
     """Dispatch a tool call to the existing runtime core."""
+    if (
+        os.environ.get("AGENCY_CANARY_MODE") == "1"
+        and tool_name in _CANARY_MUTATING_TOOLS
+    ):
+        return {"error": "mutating Agency tools are disabled during a live canary"}
     from agency_runtime.core.store.sqlite import Store as _Store
 
     s = store if store is not None else _Store()
@@ -242,7 +289,36 @@ def handle_tool_call(tool_name: str, arguments: dict[str, Any], store=None) -> d
         return dict(result)
 
     if tool_name == "agency.status":
-        return {"roster_count": len(s.get_active_roster()), "db_path": str(s.db_path)}
+        from agency_runtime.core.host_control import SUPPORTED_HOSTS, get_runtime_control
+
+        return {
+            "roster_count": len(s.get_active_roster()),
+            "db_path": str(s.db_path),
+            "hosts": {
+                host: get_runtime_control(s, host) for host in SUPPORTED_HOSTS
+            },
+        }
+
+    if tool_name == "agency.host_status":
+        from agency_runtime.core.host_control import inspect_host_status
+
+        return inspect_host_status(s, str(arguments["host"]))
+
+    if tool_name == "agency.host_control":
+        from agency_runtime.core.host_control import set_runtime_control
+
+        host = str(arguments["host"])
+        enabled = bool(arguments["enabled"])
+        expected = f"{'ENABLE' if enabled else 'DISABLE'} {host}"
+        if arguments["confirm"] != expected:
+            return {"error": f"confirmation must exactly match: {expected}"}
+        control = set_runtime_control(
+            s,
+            host,
+            enabled=enabled,
+            source="mcp",
+        )
+        return {"ok": True, **control}
 
     return {"error": f"unknown tool: {tool_name}"}
 
@@ -276,6 +352,10 @@ def _validate_tool_arguments(tool: dict[str, Any], arguments: dict[str, Any]) ->
             return f"argument '{key}' must be a string"
         if expected == "integer" and (not isinstance(value, int) or isinstance(value, bool)):
             return f"argument '{key}' must be an integer"
+        if expected == "boolean" and not isinstance(value, bool):
+            return f"argument '{key}' must be a boolean"
+        if "enum" in spec and value not in spec["enum"]:
+            return f"argument '{key}' must be one of: {', '.join(spec['enum'])}"
         if isinstance(value, str) and len(value) > int(spec.get("maxLength", len(value))):
             return f"argument '{key}' exceeds its maximum length"
         if isinstance(value, int) and not isinstance(value, bool):

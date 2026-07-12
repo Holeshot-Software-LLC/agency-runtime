@@ -8,6 +8,7 @@ tags: [adapters, installation]
 related:
   - docs/decisions/0024-native-host-packages-and-minimal-bridges.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
+  - docs/decisions/0036-capability-bound-host-canary-attestations.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -43,6 +44,21 @@ routing, delegation, and generated-host smoke checks on Windows and WSL. Those
 checks prove portable contracts, not native host discovery, loading, or
 canaries; no v1 host and operating-system pair is promoted to
 `runtime-verified` by this run.
+
+The packaged `agency host-canary` command now separates a nonmutating readiness
+report from an exact-confirmed live attempt. Codex has a bounded isolated-profile
+backend and Claude has an auth-only isolated-profile backend that explicitly
+requests the managed plugin without using plugin-disabling `--safe-mode`;
+Hermes and OpenClaw fail closed until an equally safe noninteractive mode is proven.
+Successful evidence is nonce-bound, trace-correlated, content-free, and
+fingerprinted to the OS, host version, managed install, bundle, and profile
+scope. An isolated Codex attestation cannot promote real-profile maturity.
+
+The generated Codex marketplace and plugin were accepted by the current
+`codex-cli 0.144.1` validator and isolated plugin inventory. That is a
+manifest/lifecycle capability check, not a model invocation or a live hook
+canary. No real model-backed host canary was run, so the live acceptance
+criteria remain open.
 
 ## Approach
 

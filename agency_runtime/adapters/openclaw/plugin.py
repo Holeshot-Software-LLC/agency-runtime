@@ -36,9 +36,15 @@ class OpenClawAdapter(BaseAdapter):
     def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
         return {}
 
-    def on_message_received(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
+    def on_message_received(
+        self,
+        session_id: str,
+        user_message: str,
+        model: str = "",
+        trace_id: str = "",
+    ) -> dict[str, Any] | None:
         """Typed plugin hook: message received, run preflight."""
-        return self.build_preflight_context(session_id, user_message, model)
+        return self.build_preflight_context(session_id, user_message, model, trace_id)
 
     def on_response_finalizing(self, draft_text: str, session_id: str = "", model: str = "") -> str:
         """Typed plugin hook: apply header finalization before response sent."""

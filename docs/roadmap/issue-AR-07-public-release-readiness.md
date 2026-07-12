@@ -11,6 +11,9 @@ related:
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
+  - docs/decisions/0034-persistent-soft-host-control.md
+  - docs/decisions/0035-authoritative-bounded-provider-chain.md
+  - docs/decisions/0036-capability-bound-host-canary-attestations.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -18,7 +21,7 @@ epic: release
 issue_id: AR-07
 priority: p1
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/7"
-depends_on: [AR-03, AR-04, AR-05, AR-06, AR-08, AR-09, AR-10, AR-11, AR-12, AR-13, AR-14]
+depends_on: [AR-03, AR-04, AR-05, AR-06, AR-08, AR-09, AR-10, AR-11, AR-12, AR-13, AR-14, AR-15, AR-16]
 blocks: []
 ---
 
@@ -37,11 +40,15 @@ troubleshooting guidance, and a release checklist. CI is configured for Python
 builds wheel/source artifacts, verifies their contents, installs the wheel in
 isolated Windows/Ubuntu jobs, and runs source/dependency security checks.
 
-Local release validation passed 433 tests with one expected POSIX-only skip,
-Windows and isolated Ubuntu/WSL routing, delegation, generated-host smoke, and
-packaged-dashboard checks, strict wheel/source metadata and content checks,
-clean wheel and source-distribution installs, dependency validation, real
-browser verification, and source/dependency security scans.
+Current local release validation passes 684 tests with four expected skips on
+native Windows/Python 3.13 and 673 tests with 15 expected platform/host skips on
+native ext4 Ubuntu WSL/Python 3.12. The final wheel installs and smokes cleanly
+on Windows/Python 3.14 with structured Codex, Claude, and OpenClaw parsing,
+packaged dashboard/canary assets, and dependency validation. The 13 JavaScript
+dashboard lifecycle tests, routing/delegation quantitative gates, strict
+wheel/source metadata and content checks, Codex plugin validator, Bandit scan,
+dependency audit, documentation/hygiene checks, and warning-strict HTTP suites
+also pass.
 
 Those local results and the configured workflows are not a completed release:
 this branch does not contain a confirmed clean hosted cross-platform CI run,
@@ -56,7 +63,7 @@ Create a release checklist that gates claims on verified behavior. Build and ins
 ## Dependencies
 
 Depends on `AR-03`, `AR-04`, `AR-05`, `AR-06`, `AR-08`, `AR-09`,
-`AR-10`, `AR-11`, `AR-12`, and `AR-13`. A release candidate may explicitly
+`AR-10`, `AR-11`, `AR-12`, `AR-13`, `AR-14`, `AR-15`, and `AR-16`. A release candidate may explicitly
 defer a dependency only by updating its support claims and recording the scope
 decision.
 

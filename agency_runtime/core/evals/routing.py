@@ -14,6 +14,7 @@ from agency_runtime.core.evals.data.routing_v1 import (
     VERSION as CORPUS_VERSION,
 )
 from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
+from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.delegation.lifecycle import (
     build_dependency_graph,
     normalize_work_units,
@@ -25,7 +26,7 @@ from agency_runtime.core.selector.policy import detect_actions, load_bundled_pol
 from agency_runtime.core.selector.stickiness import clear_session_routing
 
 SCHEMA = "agency-runtime.routing-eval"
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 TOP_K = 3
 
 THRESHOLDS: dict[str, dict[str, float]] = {
@@ -42,6 +43,8 @@ THRESHOLDS: dict[str, dict[str, float]] = {
         "required_recall_min": 0.95,
         "case_accuracy_min": 0.95,
         "forbidden_case_rate_max": 0.0,
+        "companion_required_recall_min": 1.0,
+        "companion_case_accuracy_min": 1.0,
     },
     "delegation": {
         "precision_min": 0.95,
@@ -59,6 +62,7 @@ THRESHOLDS: dict[str, dict[str, float]] = {
         "cache_hit_p95_ms_max": 2.0,
         "concurrent_calls_per_second_min": 40.0,
         "concurrent_overlap_min": 2.0,
+        "concurrent_probe_synchronized_min": 1.0,
         "deterministic_min": 1.0,
         "cache_hit_deterministic_min": 1.0,
     },
@@ -157,12 +161,25 @@ def _policy_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
     required_total = 0
     passed_cases = 0
     forbidden_cases = 0
+    companion_required_hits = 0
+    companion_required_total = 0
+    companion_passed_cases = 0
+    companion_cases = 0
     details: list[dict[str, Any]] = []
     by_action: dict[str, dict[str, int]] = {}
+    active_slugs = {str(item["slug"]) for item in STARTER_ROSTER}
     for case in POLICY_CASES:
-        matched, _companions = detect_actions(str(case["message"]), bundled)
+        matched, companions = detect_actions(
+            str(case["message"]),
+            bundled,
+            active_slugs=active_slugs,
+        )
         predicted = set(matched)
+        predicted_companions = set(companions)
         required = set(str(item) for item in case.get("required", []))
+        required_companions = set(
+            str(item) for item in case.get("required_companions", [])
+        )
         forbidden = set(str(item) for item in case.get("forbidden", []))
         required_total += len(required)
         required_hits += len(required.intersection(predicted))
@@ -178,12 +195,27 @@ def _policy_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
             elif action in predicted:
                 counts["fp"] += 1
         forbidden_cases += int(bool(forbidden_hit))
-        passed = required.issubset(predicted) and not forbidden_hit
+        if required_companions:
+            companion_cases += 1
+            companion_required_total += len(required_companions)
+            companion_required_hits += len(
+                required_companions.intersection(predicted_companions)
+            )
+            companion_passed_cases += int(
+                required_companions.issubset(predicted_companions)
+            )
+        passed = (
+            required.issubset(predicted)
+            and required_companions.issubset(predicted_companions)
+            and not forbidden_hit
+        )
         passed_cases += int(passed)
         details.append({
             "id": case["id"],
             "predicted": matched,
+            "predicted_companions": companions,
             "required": sorted(required),
+            "required_companions": sorted(required_companions),
             "forbidden_hit": sorted(forbidden_hit),
             "passed": passed,
         })
@@ -200,6 +232,14 @@ def _policy_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
         "required_recall": _ratio(required_hits, required_total),
         "case_accuracy": _ratio(passed_cases, total),
         "forbidden_case_rate": _ratio(forbidden_cases, total),
+        "companion_required_recall": _ratio(
+            companion_required_hits,
+            companion_required_total,
+        ),
+        "companion_case_accuracy": _ratio(
+            companion_passed_cases,
+            companion_cases,
+        ),
     }, details
 
 

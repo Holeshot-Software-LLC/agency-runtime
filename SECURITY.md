@@ -59,9 +59,20 @@ product contract:
 - Configuration and SQLite state belong to the local operating-system account.
   Protect the home directory and never commit `agency.yaml`, database files,
   host credentials, or generated host state.
+- A custom `AGENCY_CONFIG_PATH` or `AGENCY_DB_PATH` never grants permission
+  to rewrite the mode or ACL of a pre-existing parent directory. Target files
+  and SQLite sidecars remain owner-only, Windows DACL failure is fatal, and
+  database symlink or reparse-point targets are rejected before open.
 - Dashboard and CLI configuration mutations share one allowlisted, typed,
   revision-checked, owner-only atomic writer. Direct credentials are write-only;
   prefer environment-variable references and hidden CLI input.
+- Credentialed remote providers require HTTPS. Literal loopback HTTP is the
+  only exception; URLs with embedded user information, queries, or fragments
+  are rejected, and authenticated requests never follow redirects.
+- Delegated commands receive a minimal allowlisted environment plus only the
+  chosen host's authentication root. Prompts use standard input where the host
+  contract permits it, are length-bounded and recursively redacted, and owned
+  descendants are terminated on timeout or after a parent exits.
 - Metadata-only observability is the default. Opt-in content capture uses
   bounded defensive redaction, but no automatic redactor can guarantee removal
   of every secret or personal identifier.

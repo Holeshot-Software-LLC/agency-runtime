@@ -201,6 +201,10 @@ class BaseAdapter(ABC):
         self.store = store or Store()
         self._nontrivial_sessions: set[str] = set()
 
+    def runtime_enabled(self) -> bool:
+        """Return the current persistent soft-control state for this host."""
+        return bool(self.store.get_host_control(self.host_name).get("enabled", True))
+
     @abstractmethod
     def is_available(self) -> bool:
         """Check if this adapter's runtime is installed and available."""
@@ -228,6 +232,8 @@ class BaseAdapter(ABC):
 
     def apply_finalization(self, draft_text: str, trace_id: str, model: str = "") -> str:
         """Apply header/finalization to the final visible reply."""
+        if not self.runtime_enabled():
+            return draft_text
         from agency_runtime.core.header.contract import finalize_header
         return finalize_header(
             draft_text,
@@ -242,6 +248,8 @@ class BaseAdapter(ABC):
 
     def record_tool_call(self, **kwargs: Any) -> None:
         """Record skills, specialist loads, and actual delegation tool use."""
+        if not self.runtime_enabled():
+            return
         from agency_runtime.core.delegation.events import (
             mark_delegation_executed,
             mark_delegation_skipped,
@@ -330,6 +338,9 @@ class BaseAdapter(ABC):
         absent model data records an honest unavailable receipt; present
         response["model"] is stored as the concrete model that actually ran.
         """
+        if not self.runtime_enabled():
+            return
+
         import uuid
 
         from agency_runtime.core.receipts.normalize import normalize_host_receipt
@@ -427,8 +438,16 @@ class BaseAdapter(ABC):
             lines.append("  Instructions: " + str(agent.get("prompt_body") or ""))
         return "\n".join(lines)
 
-    def build_preflight_context(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
+    def build_preflight_context(
+        self,
+        session_id: str,
+        user_message: str,
+        model: str = "",
+        trace_id: str = "",
+    ) -> dict[str, Any] | None:
         """Run selector preflight and persist suggested delegations."""
+        if not self.runtime_enabled():
+            return None
         del model
         from agency_runtime.core.delegation.events import record_suggested_delegations
         from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, route
@@ -445,7 +464,13 @@ class BaseAdapter(ABC):
 
                 seed_starter_roster(self.store)
                 catalog = self.store.get_active_roster_as_catalog()
-            routing = route(session_id, user_message, catalog, store=self.store)
+            routing = route(
+                session_id,
+                user_message,
+                catalog,
+                store=self.store,
+                trace_id=trace_id or None,
+            )
             record_suggested_delegations(self.store, session_id=session_id, host=self.host_name, routing=routing)
             context = build_routing_context(routing)
             selected = self._selected_catalog_agents(catalog, routing)
@@ -460,11 +485,17 @@ class BaseAdapter(ABC):
 
         # Trivial message: still inject DEFAULT companions so the header
         # never shows "loaded: none" when DEFAULT policy says otherwise.
-        _matched, companion_ids = detect_actions(user_message)
+        catalog = self.store.get_active_roster_as_catalog()
+        active_slugs = {
+            str(agent.get("slug") or agent.get("agent_slug") or "")
+            for agent in catalog
+        }
+        _matched, companion_ids = detect_actions(
+            user_message,
+            active_slugs=active_slugs,
+        )
         default_companions = [c for c in companion_ids if c]
         if default_companions:
-            catalog = self.store.get_active_roster_as_catalog()
-            active_slugs = {str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog}
             available = [slug for slug in default_companions if slug in active_slugs]
             if available:
                 loaded_agents = [
@@ -488,12 +519,25 @@ class BaseAdapter(ABC):
 
         return None
 
-    def pre_llm_call_handler(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
+    def pre_llm_call_handler(
+        self,
+        session_id: str,
+        user_message: str,
+        model: str = "",
+        trace_id: str = "",
+    ) -> dict[str, Any] | None:
         """Host hook alias for pre-LLM routing context."""
-        return self.build_preflight_context(session_id, user_message, model)
+        return self.build_preflight_context(
+            session_id,
+            user_message,
+            model,
+            trace_id,
+        )
 
     def enforce_pre_verify(self, final_response: str, session_id: str = "", model: str = "", attempt: int = 0) -> dict[str, Any] | None:
         """Gate response completion on header, specialist, and delegation evidence."""
+        if not self.runtime_enabled():
+            return None
         del attempt
 
         from agency_runtime.core.header.contract import fill_header_fields, parse_header, validate_header

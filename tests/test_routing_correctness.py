@@ -265,7 +265,7 @@ def test_semantically_invalid_provider_fails_over_and_bounds_confidence(monkeypa
         calls.append(str(getattr(request, "full_url", "")))
         return next(responses)
 
-    monkeypatch.setattr(judge_module.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(judge_module, "open_no_redirect", fake_urlopen)
     result = query_judge(
         "review authentication code",
         CATALOG_A,
@@ -308,7 +308,7 @@ def test_provider_latency_is_cumulative_and_duplicate_ollama_retry_is_skipped(mo
         raise urllib.error.URLError("offline")
 
     clock = iter([0.0, 0.0, 0.0, 0.25])
-    monkeypatch.setattr(judge_module.urllib.request, "urlopen", failing_urlopen)
+    monkeypatch.setattr(judge_module, "open_no_redirect", failing_urlopen)
     monkeypatch.setattr(judge_module.time, "monotonic", lambda: next(clock))
 
     result = query_judge(

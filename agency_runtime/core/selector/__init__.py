@@ -17,7 +17,11 @@ from agency_runtime.core.selector.pipeline import (
     is_trivial,
     refine_query,
 )
-from agency_runtime.core.selector.policy import detect_actions, load_policy
+from agency_runtime.core.selector.policy import (
+    detect_actions,
+    load_policy,
+    validate_policy,
+)
 from agency_runtime.core.selector.domain_expansion import expand_query
 from agency_runtime.core.selector.candidate_narrow import tokenize, score_agent, pre_narrow
 from agency_runtime.core.selector.judge import query_judge
@@ -39,6 +43,7 @@ __all__ = [
     "refine_query",
     "detect_actions",
     "load_policy",
+    "validate_policy",
     "expand_query",
     "tokenize",
     "score_agent",

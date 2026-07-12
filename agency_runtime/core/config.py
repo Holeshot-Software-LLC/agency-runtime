@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import ipaddress
+import re
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
@@ -26,6 +27,16 @@ import yaml
 # ── Config path resolution ────────────────────────────────────
 
 _BUNDLED_DEFAULTS = Path(__file__).parent / "config_defaults.yaml"
+MAX_PROVIDER_CHAIN_ENTRIES = 4
+_CLI_MODEL_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+\-]{0,255}\Z")
+
+
+def is_safe_cli_model_id(value: str) -> bool:
+    """Accept an empty CLI default or one shell-neutral bounded model token."""
+
+    return value == "" or (
+        isinstance(value, str) and _CLI_MODEL_ID_PATTERN.fullmatch(value) is not None
+    )
 
 
 def _default_config_path() -> Path:
@@ -54,6 +65,7 @@ class ProviderEntry:
     type: str = (
         "openai-compatible"  # openai-compatible, anthropic, ollama, litellm, cli
     )
+    transport: str = ""  # allowlisted CLI transport: codex or claude
     model: str = ""
     base_url: str = ""
     api_key: str = ""
@@ -71,20 +83,32 @@ class ProviderEntry:
 
     def auth_method(self) -> str:
         """Return how this provider authenticates."""
-        if self.type == "ollama":
+        provider_type = self.type.strip().lower()
+        if provider_type == "ollama":
             return "none"
         if self.api_key:
             return "api_key"
         if self.api_key_env and os.environ.get(self.api_key_env):
             return "env_key"
-        if self.type == "cli":
+        if provider_type == "cli":
             return "oauth"
         return "none"
 
     def is_available(self) -> bool:
         """Quick check: does this provider have auth and a model?"""
-        if self.type == "ollama":
+        provider_type = self.type.strip().lower()
+        if provider_type == "ollama":
             return bool(self.model and self.base_url)
+        if provider_type == "cli":
+            return (
+                self.transport.strip().lower() in {"codex", "claude"}
+                and is_safe_cli_model_id(self.model)
+            )
+        if (
+            provider_type in {"openai", "openai-compatible", "litellm"}
+            and _is_loopback_http_url(self.base_url)
+        ):
+            return bool(self.model)
         return bool(self.model and self.resolve_api_key())
 
 
@@ -238,6 +262,7 @@ def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
     return ProviderEntry(
         name=str(raw.get("name", "")),
         type=str(raw.get("type", "openai-compatible")),
+        transport=str(raw.get("transport", "")),
         model=str(raw.get("model", "")),
         base_url=str(raw.get("base_url", "")),
         api_key=str(raw.get("api_key", "")),
@@ -250,6 +275,10 @@ def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
 def _build_providers(raw: list[Any] | None) -> tuple[ProviderEntry, ...]:
     if not raw or not isinstance(raw, list):
         return ()
+    if len(raw) > MAX_PROVIDER_CHAIN_ENTRIES:
+        raise ValueError(
+            f"providers supports at most {MAX_PROVIDER_CHAIN_ENTRIES} entries"
+        )
     return tuple(_build_provider_entry(p) for p in raw if isinstance(p, dict))
 
 
@@ -467,6 +496,54 @@ def _is_loopback_http_url(value: str) -> bool:
         return False
 
 
+def is_safe_credential_url(value: str) -> bool:
+    """Require HTTPS except for HTTP URLs using a literal loopback address."""
+    try:
+        parsed = urlsplit(value)
+        host = parsed.hostname or ""
+        if (
+            parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+            or not host
+        ):
+            return False
+        if parsed.scheme.lower() == "https":
+            return True
+        if parsed.scheme.lower() != "http":
+            return False
+        return ipaddress.ip_address(host).is_loopback
+    except (ValueError, TypeError):
+        return False
+
+
+def _enforce_credential_transport_constraints(cfg: AgencyConfig) -> AgencyConfig:
+    """Fail closed before configured credentials can reach an unsafe endpoint."""
+    for provider in cfg.providers:
+        if (
+            provider.api_key or provider.api_key_env
+        ) and not is_safe_credential_url(provider.base_url):
+            raise ValueError(
+                f"provider {provider.name!r} credentials require HTTPS or "
+                "literal loopback HTTP"
+            )
+    if (
+        cfg.judge.api_key or cfg.judge.api_key_env
+    ) and not is_safe_credential_url(cfg.judge.base_url):
+        raise ValueError(
+            "judge credentials require HTTPS or literal loopback HTTP"
+        )
+    litellm = cfg.adapters.litellm
+    if (
+        litellm.api_key or litellm.api_key_env
+    ) and not is_safe_credential_url(litellm.base_url):
+        raise ValueError(
+            "LiteLLM adapter credentials require HTTPS or literal loopback HTTP"
+        )
+    return cfg
+
+
 def _enforce_profile_constraints(cfg: AgencyConfig) -> AgencyConfig:
     """Apply security invariants that configuration overlays cannot relax."""
     if cfg.profile.strip().lower() != "local-only":
@@ -478,19 +555,27 @@ def _enforce_profile_constraints(cfg: AgencyConfig) -> AgencyConfig:
         else "http://127.0.0.1:11434"
     )
     local_ollama = replace(cfg.ollama, base_url=local_base_url)
+    local_providers = tuple(
+        replace(
+            provider,
+            transport="",
+            api_key="",
+            api_key_env="",
+            ollama_mode=provider.type.strip().lower() == "ollama",
+        )
+        for provider in cfg.providers
+        if provider.type.strip().lower()
+        in {"ollama", "openai", "openai-compatible", "litellm"}
+        and _is_loopback_http_url(provider.base_url)
+    )
+    primary = local_providers[0] if local_providers else None
     local_judge = replace(
         cfg.judge,
-        model=local_ollama.model,
-        base_url=local_base_url,
+        model=primary.model if primary else local_ollama.model,
+        base_url=primary.base_url if primary else local_base_url,
         api_key="",
         api_key_env="",
-        ollama_mode=True,
-    )
-    local_providers = tuple(
-        replace(provider, api_key="", api_key_env="", ollama_mode=True)
-        for provider in cfg.providers
-        if provider.type.strip().lower() == "ollama"
-        and _is_loopback_http_url(provider.base_url)
+        ollama_mode=primary.ollama_mode if primary else True,
     )
 
     def disabled(entry: AdapterEntryConfig) -> AdapterEntryConfig:
@@ -558,6 +643,7 @@ def load_config(
     # 3. Environment variable overrides
     cfg = _apply_env_overrides(cfg)
     cfg = _enforce_profile_constraints(cfg)
+    cfg = _enforce_credential_transport_constraints(cfg)
 
     if path is None:
         _cached_config = cfg
@@ -598,6 +684,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             {
                 "name": p.name,
                 "type": p.type,
+                "transport": p.transport,
                 "model": p.model,
                 "base_url": p.base_url,
                 "api_key": "***REDACTED***" if redact and p.api_key else p.api_key,

@@ -13,15 +13,18 @@ test and smoke suites.
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
+import platform
 import re
 import shlex
 import shutil
-import signal
 import subprocess
+import sqlite3
 import sys
 import tempfile
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,7 +32,8 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from agency_runtime.core.config import AgencyConfig, load_config
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
-from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.process_argv import prepare_process_argv
+from agency_runtime.core.store.sqlite import Store, _default_db_path
 
 
 PLUGIN_ID = "agency-preflight"
@@ -37,6 +41,7 @@ MARKETPLACE_ID = "agency-runtime"
 INSTALL_MANIFEST = ".agency-runtime-install.json"
 PLUGIN_VERSION = "0.1.0"
 HOOK_TIMEOUT_BUFFER_SECONDS = 5.0
+MAX_NATIVE_OUTPUT_CHARS = 256 * 1024
 
 
 # ``HOSTS`` intentionally stays JSON-like because the dashboard and downstream
@@ -85,16 +90,24 @@ class NativeCommandResult:
     returncode: int
     stdout: str = ""
     stderr: str = ""
+    stdout_truncated: bool = False
+    stderr_truncated: bool = False
 
     @property
     def ok(self) -> bool:
-        return self.returncode == 0
+        return (
+            self.returncode == 0
+            and not self.stdout_truncated
+            and not self.stderr_truncated
+        )
 
     def to_dict(self, *, expose_output: bool = False) -> dict[str, Any]:
         result: dict[str, Any] = {
             "command": list(self.command),
             "returncode": self.returncode,
             "ok": self.ok,
+            "stdout_truncated": self.stdout_truncated,
+            "stderr_truncated": self.stderr_truncated,
         }
         if expose_output:
             result["stdout"] = self.stdout
@@ -246,54 +259,13 @@ def _prepare_process_argv(
     platform_name: str | None = None,
     resolver: BinaryResolver | None = None,
 ) -> list[str]:
-    """Resolve a native executable, including Windows command shims."""
-    process_argv = [str(part) for part in argv]
-    resolved = (resolver or shutil.which)(process_argv[0])
-    if resolved:
-        process_argv[0] = resolved
-    if (platform_name or os.name) != "nt":
-        return process_argv
+    """Compatibility wrapper around the shared fail-closed resolver."""
 
-    suffix = os.path.splitext(process_argv[0])[1].casefold()
-    if suffix in {".cmd", ".bat"}:
-        # Do not interpolate arguments into ``cmd /c``: cmd.exe performs its
-        # own metacharacter and percent expansion after Python's CRT quoting.
-        # npm installs a PowerShell shim beside its .cmd shim, which accepts
-        # the remaining values as discrete argv entries.  Prefer a sibling
-        # native executable when one exists and otherwise fail closed if no
-        # safe companion is available.
-        shim = Path(process_argv[0])
-        native = shim.with_suffix(".exe")
-        if native.is_file():
-            return [str(native), *process_argv[1:]]
-        powershell_shim = shim.with_suffix(".ps1")
-        if powershell_shim.is_file():
-            return [
-                "powershell.exe",
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                str(powershell_shim),
-                *process_argv[1:],
-            ]
-        raise OSError(
-            f"refusing unsafe cmd.exe shim invocation without .exe or .ps1 companion: {shim}"
-        )
-    if suffix == ".ps1":
-        return [
-            "powershell.exe",
-            "-NoLogo",
-            "-NoProfile",
-            "-NonInteractive",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            *process_argv,
-        ]
-    return process_argv
+    return prepare_process_argv(
+        argv,
+        platform_name=platform_name,
+        resolver=resolver,
+    )
 
 
 def _owned_process_kwargs(*, platform_name: str | None = None) -> dict[str, Any]:
@@ -308,67 +280,11 @@ def _owned_process_kwargs(*, platform_name: str | None = None) -> dict[str, Any]
     return {"start_new_session": True}
 
 
-def _terminate_owned_process_tree(
-    process: subprocess.Popen[str],
-    *,
-    platform_name: str | None = None,
-) -> None:
-    """Terminate an installer-owned process group and wait for its exit."""
-    platform = platform_name or os.name
-    if platform == "nt":
-        try:
-            killer = subprocess.Popen(
-                ["taskkill.exe", "/PID", str(process.pid), "/T", "/F"],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                **_owned_process_kwargs(platform_name="nt"),
-            )
-            killer.wait(timeout=5)
-        except (OSError, subprocess.TimeoutExpired):
-            # The direct kill is a last resort when taskkill itself is absent
-            # or unhealthy.  The process group above still prevents sharing
-            # lifecycle state with the caller.
-            try:
-                process.kill()
-            except OSError:
-                pass
-    else:
-        group_signalled = False
-        try:
-            os.killpg(process.pid, signal.SIGTERM)
-            group_signalled = True
-        except (OSError, ProcessLookupError):
-            try:
-                process.terminate()
-            except OSError:
-                pass
-        try:
-            process.wait(timeout=2)
-        except subprocess.TimeoutExpired:
-            pass
-        if group_signalled:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except (OSError, ProcessLookupError):
-                pass
-        elif process.poll() is None:
-            try:
-                process.kill()
-            except OSError:
-                pass
-
-    try:
-        process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        try:
-            process.kill()
-        except OSError:
-            pass
-        try:
-            process.wait(timeout=2)
-        except subprocess.TimeoutExpired:
-            pass
+def _bounded_native_text(value: Any) -> tuple[str, bool]:
+    text = str(value or "")
+    if len(text) <= MAX_NATIVE_OUTPUT_CHARS:
+        return text, False
+    return text[:MAX_NATIVE_OUTPUT_CHARS], True
 
 
 def _run_native(
@@ -383,32 +299,42 @@ def _run_native(
     env = _command_environment(host, home_dir=home_dir)
     try:
         if command_runner is None:
-            process_argv = _prepare_process_argv(argv)
-            process = subprocess.Popen(
-                process_argv,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
+            from agency_runtime.core.delegation.backends import run_bounded_process
+
+            bounded = run_bounded_process(
+                argv,
+                timeout=timeout,
                 env=env,
-                **_owned_process_kwargs(),
+                max_output_chars=MAX_NATIVE_OUTPUT_CHARS,
             )
-            try:
-                stdout, stderr = process.communicate(timeout=timeout)
-            except subprocess.TimeoutExpired:
-                _terminate_owned_process_tree(process)
-                try:
-                    stdout, stderr = process.communicate(timeout=2)
-                except subprocess.TimeoutExpired:
-                    stdout, stderr = "", ""
-                timeout_error = f"timed out after {timeout:g}s and terminated the owned process tree"
-                return NativeCommandResult(
-                    argv,
-                    124,
-                    stdout or "",
-                    "\n".join(part for part in ((stderr or "").strip(), timeout_error) if part),
+            stderr = bounded.stderr
+            if bounded.timed_out:
+                stderr = "\n".join(
+                    part
+                    for part in (
+                        stderr.strip(),
+                        f"timed out after {timeout:g}s and terminated "
+                        "the owned process tree",
+                    )
+                    if part
                 )
-            raw = NativeCommandResult(argv, int(process.returncode or 0), stdout or "", stderr or "")
+            elif bounded.stdout_truncated or bounded.stderr_truncated:
+                stderr = "\n".join(
+                    part
+                    for part in (
+                        stderr.strip(),
+                        "native command output exceeded the capture limit",
+                    )
+                    if part
+                )
+            raw = NativeCommandResult(
+                argv,
+                bounded.returncode,
+                bounded.stdout,
+                stderr,
+                bounded.stdout_truncated,
+                bounded.stderr_truncated,
+            )
         else:
             try:
                 raw = command_runner(list(argv), env=env, timeout=timeout)
@@ -418,19 +344,38 @@ def _run_native(
         return NativeCommandResult(argv, 127, "", f"{type(exc).__name__}: {exc}")
 
     if isinstance(raw, NativeCommandResult):
-        return NativeCommandResult(argv, raw.returncode, raw.stdout, raw.stderr)
+        stdout, stdout_truncated = _bounded_native_text(raw.stdout)
+        stderr, stderr_truncated = _bounded_native_text(raw.stderr)
+        return NativeCommandResult(
+            argv,
+            raw.returncode,
+            stdout,
+            stderr,
+            raw.stdout_truncated or stdout_truncated,
+            raw.stderr_truncated or stderr_truncated,
+        )
     if isinstance(raw, Mapping):
+        stdout, stdout_truncated = _bounded_native_text(raw.get("stdout", ""))
+        stderr, stderr_truncated = _bounded_native_text(
+            raw.get("stderr", raw.get("error", ""))
+        )
         return NativeCommandResult(
             argv,
             int(raw.get("returncode", raw.get("exit_code", 0))),
-            str(raw.get("stdout", "") or ""),
-            str(raw.get("stderr", raw.get("error", "")) or ""),
+            stdout,
+            stderr,
+            bool(raw.get("stdout_truncated")) or stdout_truncated,
+            bool(raw.get("stderr_truncated")) or stderr_truncated,
         )
+    stdout, stdout_truncated = _bounded_native_text(getattr(raw, "stdout", ""))
+    stderr, stderr_truncated = _bounded_native_text(getattr(raw, "stderr", ""))
     return NativeCommandResult(
         argv,
         int(getattr(raw, "returncode", 0)),
-        str(getattr(raw, "stdout", "") or ""),
-        str(getattr(raw, "stderr", "") or ""),
+        stdout,
+        stderr,
+        bool(getattr(raw, "stdout_truncated", False)) or stdout_truncated,
+        bool(getattr(raw, "stderr_truncated", False)) or stderr_truncated,
     )
 
 
@@ -458,7 +403,8 @@ def _walk_objects(value: Any) -> list[dict[str, Any]]:
 def _plugin_record(value: Any) -> dict[str, Any] | None:
     for item in _walk_objects(value):
         identity = str(
-            item.get("id")
+            item.get("pluginId")
+            or item.get("id")
             or item.get("name")
             or item.get("plugin")
             or item.get("pluginName")
@@ -534,6 +480,166 @@ def _inventory_command(host: str) -> list[str]:
     return [binary, "plugin", "list", "--json"]
 
 
+def _read_canary_attestation(host: str) -> dict[str, Any] | None:
+    """Read a canary attestation without creating or migrating the database."""
+    path = _default_db_path()
+    if not path.is_file():
+        return None
+    try:
+        conn = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=2)
+        conn.row_factory = sqlite3.Row
+        try:
+            table = conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+                "AND name = 'host_canary_attestations'"
+            ).fetchone()
+            if table is None:
+                return None
+            row = conn.execute(
+                "SELECT host, profile_scope, platform_system, platform_release, platform_machine, "
+                "host_version, plugin_version, install_id, bundle_digest, "
+                "passed_at, trace_id "
+                "FROM host_canary_attestations WHERE host = ?",
+                (host,),
+            ).fetchone()
+            return dict(row) if row is not None else None
+        finally:
+            conn.close()
+    except (OSError, sqlite3.Error):
+        return None
+
+
+def _invalidate_canary_attestation(
+    host: str,
+    *,
+    home_dir: str | Path | None,
+) -> bool:
+    """Invalidate durable proof after a rollback changes the install lineage."""
+    if home_dir is not None and "AGENCY_DB_PATH" not in os.environ:
+        return False
+    path = _default_db_path()
+    if not path.is_file():
+        return False
+    try:
+        return Store(path).clear_host_canary_attestation(host)
+    except Exception:
+        return False
+
+
+def _managed_bundle_identity(
+    target: Path,
+    host: str,
+) -> tuple[str | None, str | None, str | None]:
+    try:
+        manifest = json.loads((target / INSTALL_MANIFEST).read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None, None, None
+    if not isinstance(manifest, dict):
+        return None, None, None
+    if (
+        manifest.get("owner") != "agency-runtime"
+        or manifest.get("host") != host
+        or manifest.get("plugin_id") != PLUGIN_ID
+    ):
+        return None, None, None
+    version = manifest.get("plugin_version")
+    install_id = manifest.get("install_id")
+    owned_files = manifest.get("owned_files")
+    if not isinstance(owned_files, list) or not all(
+        isinstance(item, str) for item in owned_files
+    ):
+        return (
+            str(version) if isinstance(version, str) and version else None,
+            str(install_id) if isinstance(install_id, str) and install_id else None,
+            None,
+        )
+    digest = hashlib.sha256()
+    total_bytes = 0
+    try:
+        for relative in sorted(owned_files):
+            candidate = Path(relative)
+            if candidate.is_absolute() or ".." in candidate.parts:
+                return None, None, None
+            payload = (target / candidate).read_bytes()
+            total_bytes += len(payload)
+            if total_bytes > 8 * 1024 * 1024:
+                return None, None, None
+            digest.update(relative.replace("\\", "/").encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(payload)
+            digest.update(b"\0")
+    except OSError:
+        return None, None, None
+    return (
+        str(version) if isinstance(version, str) and version else None,
+        str(install_id) if isinstance(install_id, str) and install_id else None,
+        digest.hexdigest(),
+    )
+
+
+def _sanitize_host_version(result: NativeCommandResult) -> str | None:
+    """Return one bounded printable version line from an allowlisted probe."""
+    if not result.ok:
+        return None
+    raw = result.stdout.strip() or result.stderr.strip()
+    line = next((part.strip() for part in raw.splitlines() if part.strip()), "")
+    if not line or not re.search(r"\d", line):
+        return None
+    printable = re.sub(r"[^A-Za-z0-9 ._+:/()\[\]-]", "?", line)
+    return printable[:256] or None
+
+
+def _canary_attestation_state(
+    host: str,
+    *,
+    target: Path,
+    registered: bool | None,
+    enabled: bool | None,
+    native_record: dict[str, Any] | None,
+    host_version: str | None,
+    managed_version: str | None,
+    install_id: str | None,
+    bundle_digest: str | None,
+    allow_read: bool,
+) -> tuple[bool | None, str, list[str], dict[str, Any] | None]:
+    attestation = _read_canary_attestation(host) if allow_read else None
+    if attestation is None:
+        return None, "absent", [], None
+    expected_platform = {
+        "platform_system": platform.system(),
+        "platform_release": platform.release(),
+        "platform_machine": platform.machine(),
+    }
+    stale: list[str] = []
+    if attestation.get("profile_scope") != "current-profile":
+        stale.append("profile_scope")
+    for field, expected in expected_platform.items():
+        if attestation.get(field) != expected:
+            stale.append(field)
+    if not host_version or attestation.get("host_version") != host_version:
+        stale.append("host_version")
+    if attestation.get("plugin_version") != PLUGIN_VERSION:
+        stale.append("plugin_version")
+    if managed_version != PLUGIN_VERSION:
+        stale.append("managed_plugin_version")
+    if not install_id or attestation.get("install_id") != install_id:
+        stale.append("install_id")
+    if not bundle_digest or attestation.get("bundle_digest") != bundle_digest:
+        stale.append("bundle_digest")
+    native_version = (
+        str(native_record.get("version") or native_record.get("pluginVersion") or "")
+        if native_record
+        else ""
+    )
+    if native_version and native_version != PLUGIN_VERSION:
+        stale.append("native_plugin_version")
+    if registered is not True or enabled is not True:
+        stale.append("native_state")
+    if stale:
+        return None, "stale", sorted(set(stale)), attestation
+    return True, "verified", [], attestation
+
+
 def inspect_host_installations(
     *,
     home_dir: str | Path | None = None,
@@ -566,6 +672,10 @@ def inspect_host_installations(
         stale_config = bool(root_exists and not executable and not current_root)
         owned_manifest = target / INSTALL_MANIFEST
         staged = owned_manifest.exists()
+        managed_version, install_id, bundle_digest = _managed_bundle_identity(
+            target,
+            host,
+        )
         native_record: dict[str, Any] | None = None
         inventory_result: NativeCommandResult | None = None
         registered: bool | None = None
@@ -574,6 +684,7 @@ def inspect_host_installations(
         canary: bool | None = None
         marketplace_registered: bool | None = None
         evidence: list[str] = []
+        host_version: str | None = None
 
         if executable:
             evidence.append(f"executable:{executable}")
@@ -584,6 +695,17 @@ def inspect_host_installations(
             evidence.append(f"owned-stage:{owned_manifest}")
 
         if executable and can_execute:
+            version_result = _run_native(
+                [str(HOSTS[host]["binary"]), "--version"],
+                host=host,
+                home_dir=home_dir,
+                command_runner=command_runner,
+                timeout=8,
+            )
+            host_version = _sanitize_host_version(version_result)
+            evidence.append(
+                f"host-version:{'proven' if host_version else 'unproven'}"
+            )
             inventory_result = _run_native(
                 _inventory_command(host),
                 host=host,
@@ -643,6 +765,23 @@ def inspect_host_installations(
         if registered is None and not (executable and can_execute and inventory_result is not None):
             registered = False
 
+        canary, canary_attestation_status, canary_stale_reasons, canary_attestation = (
+            _canary_attestation_state(
+                host,
+                target=target,
+                registered=registered,
+                enabled=enabled,
+                native_record=native_record,
+                host_version=host_version,
+                managed_version=managed_version,
+                install_id=install_id,
+                bundle_digest=bundle_digest,
+                allow_read=home_dir is None or "AGENCY_DB_PATH" in os.environ,
+            )
+        )
+        if canary_attestation_status != "absent":
+            evidence.append(f"canary-attestation:{canary_attestation_status}")
+
         if registered is True and enabled is True and loaded is True:
             maturity = "runtime-verified"
         elif registered is True and enabled is True:
@@ -666,6 +805,7 @@ def inspect_host_installations(
                 "executable": executable,
                 "executable_discovered": bool(executable),
                 "native_root": str(root),
+                "managed_target": str(target),
                 "native_root_exists": root_exists,
                 "current_native_root": current_root,
                 "stale_config": stale_config,
@@ -675,6 +815,13 @@ def inspect_host_installations(
                 "enabled": enabled,
                 "loaded": loaded,
                 "canary": canary,
+                "canary_attestation_status": canary_attestation_status,
+                "canary_stale_reasons": canary_stale_reasons,
+                "canary_attestation": canary_attestation,
+                "host_version": host_version,
+                "managed_plugin_version": managed_version,
+                "install_id": install_id,
+                "bundle_digest": bundle_digest,
                 "marketplace_registered": marketplace_registered,
                 "maturity": maturity,
                 "native_lifecycle": HOSTS[host]["native_lifecycle"],
@@ -731,7 +878,14 @@ def _effective_judge_budget_seconds(cfg: AgencyConfig) -> float:
     budgets = [
         max(0.0, float(provider.timeout))
         for provider in cfg.providers
-        if provider.model and provider.base_url
+        if (
+            provider.model
+            and provider.base_url
+            or (
+                provider.type.strip().lower() == "cli"
+                and provider.transport.strip().lower() in {"codex", "claude"}
+            )
+        )
     ]
     if cfg.judge.model and cfg.judge.base_url:
         budgets.append(max(0.0, float(cfg.judge.timeout)))
@@ -792,6 +946,31 @@ def _claude_hooks(timeout_seconds: int) -> dict[str, Any]:
     }
 
 
+def _agency_control_skill(host: str) -> str:
+    """Build the host-aware conversation control skill for Codex and Claude."""
+    return f"""---
+name: agency
+description: Inspect, enable, or disable Agency Runtime for this host.
+---
+
+# Agency Runtime control
+
+Handle the conversation forms `agency status`, `agency on`, and `agency off`.
+Some clients may present the same text with a leading slash; treat it as the
+same request when the host routes it through this skill.
+
+- For status, call `agency.host_status` with `host` set to `{host}`.
+- For on, call `agency.host_control` with `host` set to `{host}`, `enabled`
+  set to `true`, and `confirm` set exactly to `ENABLE {host}`.
+- For off, call `agency.host_control` with `host` set to `{host}`, `enabled`
+  set to `false`, and `confirm` set exactly to `DISABLE {host}`.
+
+Report the returned soft-control state. Do not claim that native plugin
+registration changed, and do not claim a live canary unless the returned
+evidence explicitly proves one.
+"""
+
+
 _HERMES_PLUGIN = '''"""Agency Runtime native Hermes plugin (managed file)."""
 
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
@@ -807,10 +986,17 @@ def _get_adapter():
 
 
 def _pre_llm_call(**kwargs):
+    trace_id = str(
+        kwargs.get("turn_id")
+        or kwargs.get("trace_id")
+        or kwargs.get("task_id")
+        or ""
+    )
     return _get_adapter().pre_llm_call_handler(
         session_id=str(kwargs.get("session_id") or kwargs.get("task_id") or ""),
         user_message=str(kwargs.get("user_message") or ""),
         model=str(kwargs.get("model") or ""),
+        trace_id=trace_id,
     )
 
 
@@ -836,11 +1022,30 @@ def _transform_llm_output(response_text="", **kwargs):
     )
 
 
+def _agency_command(*args, **kwargs):
+    raw_args = kwargs.get("args") or kwargs.get("raw_args") or ""
+    if not raw_args:
+        raw_args = next(
+            (value for value in reversed(args) if isinstance(value, str)),
+            "",
+        )
+    from agency_runtime.core.host_control import handle_host_control_command
+
+    result = handle_host_control_command(
+        "hermes",
+        str(raw_args),
+        store=_get_adapter().store,
+        source="hermes-command",
+    )
+    return result["message"]
+
+
 def register(ctx):
     ctx.register_hook("pre_llm_call", _pre_llm_call)
     ctx.register_hook("post_tool_call", _post_tool_call)
     ctx.register_hook("post_api_request", _post_api_request)
     ctx.register_hook("transform_llm_output", _transform_llm_output)
+    ctx.register_command("agency", _agency_command, description="Agency Runtime status, on, or off")
 '''
 
 
@@ -872,6 +1077,10 @@ function sessionId(event, ctx) {{
   return String(ctx?.sessionKey || ctx?.sessionId || event?.sessionKey || event?.sessionId || "");
 }}
 
+function traceId(event, ctx) {{
+  return String(ctx?.turnId || event?.turnId || ctx?.runId || event?.runId || "");
+}}
+
 function modelId(ctx) {{
   return String(ctx?.modelId || ctx?.activeModel?.modelId || ctx?.model || "");
 }}
@@ -885,10 +1094,25 @@ export default definePluginEntry({{
   name: "Agency Preflight",
   description: "Agency Runtime routing, evidence, and final-response enforcement.",
   register(api) {{
+    api.registerCommand({{
+      name: "agency",
+      description: "Agency Runtime status, on, or off",
+      acceptsArgs: true,
+      requireAuth: true,
+      handler: async (ctx) => {{
+        const result = await invokeAgency({{
+          action: "control",
+          command: String(ctx?.args || "status"),
+        }});
+        return {{ text: String(result?.message || "Agency Runtime control completed.") }};
+      }},
+    }});
+
     api.on("before_prompt_build", async (event, ctx) => {{
       const result = await invokeAgency({{
         action: "preflight",
         sessionId: sessionId(event, ctx),
+        traceId: traceId(event, ctx),
         userMessage: String(event?.prompt || ""),
         model: modelId(ctx),
       }});
@@ -899,6 +1123,7 @@ export default definePluginEntry({{
       await invokeAgency({{
         action: "post_tool_call",
         sessionId: sessionId(event, ctx),
+        traceId: traceId(event, ctx),
         toolName: String(event?.toolName || ""),
         toolInput: event?.params || {{}},
         toolResult: event?.result,
@@ -910,6 +1135,7 @@ export default definePluginEntry({{
       const decision = await invokeAgency({{
         action: "pre_verify",
         sessionId: sessionId(event, ctx),
+        traceId: traceId(event, ctx),
         finalResponse: finalAssistantText(event),
         model: modelId(ctx),
         attempt: Number(event?.attempt || 0),
@@ -987,7 +1213,6 @@ def _bundle_files(host: str, cfg: AgencyConfig | None = None) -> tuple[dict[str,
             "license": "MIT",
             "keywords": ["routing", "delegation", "observability"],
             "mcpServers": "./.mcp.json",
-            "hooks": "./hooks/hooks.json",
             "interface": {
                 "displayName": "Agency Runtime",
                 "shortDescription": "Specialist routing and delegation evidence",
@@ -995,6 +1220,10 @@ def _bundle_files(host: str, cfg: AgencyConfig | None = None) -> tuple[dict[str,
                 "developerName": "Agency Runtime Contributors",
                 "category": "Developer Tools",
                 "capabilities": ["Read", "Write"],
+                "defaultPrompt": (
+                    "Use Agency Runtime for specialist routing, delegation evidence, "
+                    "and auditable response finalization."
+                ),
             },
         }
         marketplace = {
@@ -1014,6 +1243,7 @@ def _bundle_files(host: str, cfg: AgencyConfig | None = None) -> tuple[dict[str,
             f"{plugin_prefix}/.codex-plugin/plugin.json": json.dumps(manifest, indent=2) + "\n",
             f"{plugin_prefix}/hooks/hooks.json": json.dumps(_codex_hooks(timeout_seconds), indent=2) + "\n",
             f"{plugin_prefix}/.mcp.json": json.dumps(_mcp_config(), indent=2) + "\n",
+            f"{plugin_prefix}/skills/agency/SKILL.md": _agency_control_skill("codex"),
         }
         return files, f"{plugin_prefix}/.codex-plugin/plugin.json"
 
@@ -1045,6 +1275,7 @@ def _bundle_files(host: str, cfg: AgencyConfig | None = None) -> tuple[dict[str,
         f"{plugin_prefix}/.claude-plugin/plugin.json": json.dumps(manifest, indent=2) + "\n",
         f"{plugin_prefix}/hooks/hooks.json": json.dumps(_claude_hooks(timeout_seconds), indent=2) + "\n",
         f"{plugin_prefix}/.mcp.json": json.dumps(_mcp_config(), indent=2) + "\n",
+        f"{plugin_prefix}/skills/agency/SKILL.md": _agency_control_skill("claude"),
     }
     return files, f"{plugin_prefix}/.claude-plugin/plugin.json"
 
@@ -1094,6 +1325,7 @@ def _atomic_install_tree(
             "host": host,
             "plugin_id": PLUGIN_ID,
             "plugin_version": PLUGIN_VERSION,
+            "install_id": str(uuid.uuid4()),
             "installed_at": datetime.now(timezone.utc).isoformat(),
             "target": str(target),
             "owned_files": owned_files,
@@ -1819,6 +2051,10 @@ def rollback_agent_adapter(
         if displaced is not None and displaced.exists() and not target.exists():
             os.replace(displaced, target)
         return {"ok": False, "exit_code": 1, "error": f"{type(exc).__name__}: {exc}"}
+    attestation_invalidated = _invalidate_canary_attestation(
+        host,
+        home_dir=home_dir,
+    )
     result: dict[str, Any] = {
         "ok": True,
         "exit_code": 0,
@@ -1830,6 +2066,7 @@ def rollback_agent_adapter(
         "restart_required": True,
         "native_steps": [],
         "native_refreshed": False,
+        "canary_attestation_invalidated": attestation_invalidated,
     }
     if not executable or not _can_execute_native(home_dir=home_dir, command_runner=command_runner):
         result["maturity"] = "filesystem-restored-native-unverified"
@@ -1911,14 +2148,68 @@ def toggle_agency(
         home_dir=home_dir,
         command_runner=command_runner,
     )
+    verification: NativeCommandResult | None = None
+    record: dict[str, Any] | None = None
+    native_flag: bool | None = None
+    postcondition = False
+    observed_enabled: bool | None = None
+    if result.ok:
+        verification = _run_native(
+            _inventory_command(host),
+            host=host,
+            home_dir=home_dir,
+            command_runner=command_runner,
+        )
+        if verification.ok:
+            record = (
+                _hermes_text_plugin_record(verification.stdout)
+                if host == "hermes"
+                else _plugin_record(_json_output(verification))
+            )
+            native_flag = _bool_field(record, "enabled", "active", "isEnabled")
+            if enabled:
+                postcondition = record is not None and native_flag is True
+                observed_enabled = native_flag
+            else:
+                postcondition = record is None or native_flag is False
+                observed_enabled = False if postcondition else native_flag
+    ok = result.ok and verification is not None and verification.ok and postcondition
+    verification_state = "verified" if ok else "command_failed"
+    if result.ok and (verification is None or not verification.ok):
+        verification_state = "inventory_failed"
+    elif result.ok and verification is not None and verification.ok and not postcondition:
+        verification_state = (
+            "enablement_unverified"
+            if enabled and record is not None and native_flag is None
+            else "postcondition_mismatch"
+        )
+    error = None
+    if not result.ok:
+        error = (result.stderr or result.stdout or "native toggle failed").strip()[:500]
+    elif verification is None or not verification.ok:
+        detail = (
+            (verification.stderr or verification.stdout).strip()
+            if verification is not None
+            else ""
+        )
+        error = (detail or "native toggle inventory verification failed")[:500]
+    elif not postcondition:
+        error = (
+            f"native toggle postcondition was not proven for {host}: "
+            f"wanted enabled={enabled}, inventory={record!r}"
+        )[:500]
     return {
-        "ok": result.ok,
-        "exit_code": result.returncode,
+        "ok": ok,
+        "exit_code": 0 if ok else (result.returncode or 1),
         "host": host,
-        "enabled": enabled if result.ok else None,
-        "action": ("enabled" if enabled else "disabled") if result.ok else "failed",
+        "enabled": observed_enabled if ok else None,
+        "action": ("enabled" if enabled else "disabled") if ok else verification_state,
         "native_step": result.to_dict(),
-        "error": None if result.ok else (result.stderr or result.stdout or "native toggle failed").strip()[:500],
+        "verification_step": verification.to_dict() if verification is not None else None,
+        "postcondition_verified": postcondition,
+        "verification_state": verification_state,
+        "partial": bool(result.ok and not ok),
+        "error": error,
         "restart_required": True,
     }
 

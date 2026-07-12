@@ -20,9 +20,11 @@ from agency_runtime.core.config import (
 )
 from agency_runtime.core.installer import (
     INSTALL_MANIFEST,
+    MAX_NATIVE_OUTPUT_CHARS,
     _bundle_files,
     _effective_judge_budget_seconds,
     _owned_process_kwargs,
+    _plugin_record,
     detect_installed_agents,
     inspect_host_installations,
     inspect_host_installation,
@@ -121,10 +123,14 @@ class FakeNativeRunner:
             self.installed.discard("agency-preflight")
             return {"returncode": 0, "stdout": "disabled"}
         if "plugin list" in joined:
+            identity_key = "pluginId" if command[0] == "codex" else "name"
             return {
                 "returncode": 0,
                 "stdout": json.dumps(
-                    [{"name": name, "enabled": True} for name in sorted(self.installed)]
+                    [
+                        {identity_key: name, "enabled": True}
+                        for name in sorted(self.installed)
+                    ]
                 ),
             }
         if "plugins inspect agency-preflight --runtime" in joined:
@@ -200,6 +206,14 @@ def test_detection_separates_bare_stale_root_from_current_native_state(
     assert "codex" in detect_installed_agents(
         home_dir=tmp_path, binary_resolver=_resolver()
     )
+
+
+def test_codex_current_plugin_id_inventory_shape_is_recognized() -> None:
+    record = _plugin_record(
+        {"plugins": [{"pluginId": "agency-preflight", "enabled": True}]}
+    )
+
+    assert record == {"pluginId": "agency-preflight", "enabled": True}
 
 
 def test_executable_discovery_is_independent_from_config_state(tmp_path: Path) -> None:
@@ -293,6 +307,38 @@ def test_windows_command_shim_without_safe_companion_fails_closed(
         )
 
 
+@pytest.mark.parametrize(
+    ("command", "script_parts"),
+    [
+        ("codex", ("@openai", "codex", "bin", "codex.js")),
+        ("claude", ("@anthropic-ai", "claude-code", "cli.js")),
+    ],
+)
+def test_windows_npm_cli_uses_allowlisted_node_entry_instead_of_powershell_stdin(
+    command: str,
+    script_parts: tuple[str, ...],
+    tmp_path: Path,
+) -> None:
+    shim = tmp_path / f"{command}.cmd"
+    shim.write_text("@echo off\n", encoding="utf-8")
+    shim.with_suffix(".ps1").write_text("throw 'must not run'\n", encoding="utf-8")
+    node = tmp_path / "node.exe"
+    node.write_bytes(b"fake")
+    script = tmp_path / "node_modules"
+    for part in script_parts:
+        script /= part
+    script.parent.mkdir(parents=True, exist_ok=True)
+    script.write_text("// fake\n", encoding="utf-8")
+
+    prepared = _prepare_process_argv(
+        [command, "exec", "-"],
+        platform_name="nt",
+        resolver=lambda _name: str(shim),
+    )
+
+    assert prepared == [str(node), str(script), "exec", "-"]
+
+
 def test_native_process_group_flags_cover_windows_and_posix() -> None:
     windows = _owned_process_kwargs(platform_name="nt")
     posix = _owned_process_kwargs(platform_name="posix")
@@ -334,6 +380,25 @@ def test_native_timeout_terminates_descendant_process_tree(
     assert not marker.exists()
 
 
+def test_native_command_output_is_bounded_and_truncation_fails_closed() -> None:
+    result = _run_native(
+        [
+            sys.executable,
+            "-c",
+            f"import sys;sys.stdout.write('x'*{MAX_NATIVE_OUTPUT_CHARS * 4})",
+        ],
+        host="codex",
+        timeout=30,
+    )
+
+    assert result.returncode == 0
+    assert result.ok is False
+    assert result.stdout_truncated is True
+    assert len(result.stdout) == MAX_NATIVE_OUTPUT_CHARS
+    assert "capture limit" in result.stderr
+    assert result.to_dict()["stdout_truncated"] is True
+
+
 def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget() -> (
     None
 ):
@@ -351,9 +416,16 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
             ProviderEntry(
                 model="secondary", base_url="http://secondary.invalid", timeout=11
             ),
+            ProviderEntry(
+                name="codex-cli",
+                type="cli",
+                transport="codex",
+                timeout=13,
+            ),
         ),
     )
     judge_budget = _effective_judge_budget_seconds(cfg)
+    assert judge_budget >= 65
 
     codex_files, _ = _bundle_files("codex", cfg)
     codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
@@ -443,6 +515,8 @@ def test_hermes_enabled_state_comes_only_from_agency_preflight_row(
     tmp_path: Path,
 ) -> None:
     def runner(command: list[str], **_kwargs: Any) -> dict[str, Any]:
+        if command == ["hermes", "--version"]:
+            return {"returncode": 0, "stdout": "hermes 1.0.0"}
         assert command == ["hermes", "plugins", "list"]
         return {"returncode": 0, "stdout": inventory}
 
@@ -1076,7 +1150,64 @@ def test_toggle_uses_only_native_host_lifecycle(
     )
 
     assert result["ok"] is True
-    assert " ".join(runner.commands[-1]) == expected
+    assert " ".join(runner.commands[0]) == expected
+    assert result["postcondition_verified"] is True
+    assert result["verification_state"] == "verified"
+    assert runner.commands[-1] != runner.commands[0]
+
+
+@pytest.mark.parametrize("host", ["hermes", "openclaw", "codex", "claude"])
+def test_native_toggle_verifies_both_directions(
+    host: str,
+    tmp_path: Path,
+) -> None:
+    runner = FakeNativeRunner()
+
+    enabled = toggle_agency(
+        host,
+        True,
+        home_dir=tmp_path,
+        binary_resolver=_resolver(host),
+        command_runner=runner,
+    )
+    disabled = toggle_agency(
+        host,
+        False,
+        home_dir=tmp_path,
+        binary_resolver=_resolver(host),
+        command_runner=runner,
+    )
+
+    assert enabled["ok"] is True
+    assert enabled["enabled"] is True
+    assert disabled["ok"] is True
+    assert disabled["enabled"] is False
+
+
+def test_native_enablement_unknown_is_never_promoted_to_success(
+    tmp_path: Path,
+) -> None:
+    def runner(command: list[str], **_kwargs: Any) -> dict[str, Any]:
+        if "plugin list" in " ".join(command):
+            return {
+                "returncode": 0,
+                "stdout": json.dumps([{"pluginId": "agency-preflight"}]),
+            }
+        return {"returncode": 0, "stdout": "{}"}
+
+    result = toggle_agency(
+        "codex",
+        True,
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["enabled"] is None
+    assert result["postcondition_verified"] is False
+    assert result["verification_state"] == "enablement_unverified"
+    assert result["partial"] is True
 
 
 def test_inspection_never_promotes_staged_bundle_to_registered(tmp_path: Path) -> None:

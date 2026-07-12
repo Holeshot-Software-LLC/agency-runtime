@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -26,6 +29,7 @@ from agency_runtime.core.delegation.backends import (
     GenericCLIBackend,
     HermesDelegateBackend,
     OpenClawSessionsBackend,
+    run_bounded_process,
 )
 from agency_runtime.core.store.sqlite import Store
 
@@ -36,6 +40,7 @@ def _fake_cli(tmp_path: Path) -> Path:
         """
 import json
 import os
+import pathlib
 import sys
 import time
 
@@ -44,12 +49,42 @@ if mode == "echo":
     sys.stdout.write(sys.argv[-1])
 elif mode == "argv":
     print(json.dumps(sys.argv[1:]))
+elif mode == "env":
+    names = [
+        "PATH", "HTTP_PROXY", "SSL_CERT_FILE", "GH_TOKEN",
+        "AWS_SECRET_ACCESS_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
+        "CODEX_HOME", "CLAUDE_CONFIG_DIR",
+    ]
+    print(json.dumps({name: os.environ.get(name) for name in names}))
 elif mode == "codex":
+    prompt = sys.stdin.read()
+    if capture := os.environ.get("FAKE_INPUT_CAPTURE"):
+        pathlib.Path(capture).write_text(prompt, encoding="utf-8")
     print(json.dumps({"type": "thread.started", "thread_id": "thread-1"}))
     print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": "done"}}))
     print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 1}}))
+elif mode == "codex_echo":
+    prompt = sys.stdin.read()
+    print(json.dumps({
+        "type": "item.completed",
+        "item": {"type": "agent_message", "text": prompt},
+        "diagnostic": prompt,
+    }))
+    print(json.dumps({"type": "turn.completed"}))
 elif mode == "claude":
+    prompt = sys.stdin.read()
+    if capture := os.environ.get("FAKE_INPUT_CAPTURE"):
+        pathlib.Path(capture).write_text(prompt, encoding="utf-8")
     print(json.dumps({"type": "result", "subtype": "success", "is_error": False, "result": "done"}))
+elif mode == "claude_echo":
+    prompt = sys.stdin.read()
+    print(json.dumps({
+        "type": "result",
+        "subtype": "success",
+        "is_error": False,
+        "result": prompt,
+        "diagnostic": prompt,
+    }))
 elif mode == "claude_error":
     print(json.dumps({"type": "result", "subtype": "error", "is_error": True, "result": "bad"}))
 elif mode == "openclaw":
@@ -60,8 +95,18 @@ elif mode == "invalid":
     print("not-json")
 elif mode == "large":
     print("x" * 1000, end="")
+elif mode == "large_both":
+    chunk = "x" * 65536
+    for _ in range(64):
+        sys.stdout.write(chunk)
+        sys.stdout.flush()
+        sys.stderr.write(chunk)
+        sys.stderr.flush()
 elif mode == "fail":
     print("backend rejected task", file=sys.stderr)
+    raise SystemExit(7)
+elif mode == "fail_echo":
+    print(sys.argv[-1], file=sys.stderr)
     raise SystemExit(7)
 elif mode == "sleep":
     time.sleep(5)
@@ -83,8 +128,9 @@ def test_command_backend_uses_argv_without_shell_interpretation(tmp_path: Path) 
     result = backend.delegate(task=task, workdir=str(tmp_path))
 
     assert result["status"] == "completed"
-    assert result["output"] == task
-    assert result["command"][-1] == task
+    assert result["output"] == "<task>"
+    assert result["command"][-1] == "<task>"
+    assert task not in repr(result)
     assert not (tmp_path / "injected").exists()
 
 
@@ -98,7 +144,7 @@ def test_command_backend_preserves_environment_and_resolved_workdir(tmp_path: Pa
 
     result = backend.delegate(task="inspect argv", workdir=str(tmp_path))
 
-    assert result["output"][-1] == "inspect argv"
+    assert result["output"][-1] == "<task>"
     assert result["workdir"] == str(tmp_path.resolve())
     assert Path(result["executable"]).resolve() == Path(sys.executable).resolve()
 
@@ -116,6 +162,55 @@ def test_command_backend_reports_nonzero_exit_with_result(tmp_path: Path) -> Non
     assert caught.value.result["status"] == "failed"
     assert caught.value.result["exit_code"] == 7
     assert "backend rejected task" in caught.value.result["stderr"]
+
+
+def test_command_backend_redacts_task_from_failure_diagnostics(
+    tmp_path: Path,
+) -> None:
+    script = _fake_cli(tmp_path)
+    task = "never-return-this-sensitive-task"
+    backend = CommandBackend(
+        command=_command(script),
+        extra_env={"FAKE_AGENT_MODE": "fail_echo"},
+    )
+
+    with pytest.raises(BackendExecutionError) as caught:
+        backend.delegate(task=task)
+
+    rendered = f"{caught.value!s} {caught.value.result!r}"
+    assert task not in rendered
+    assert caught.value.result["stderr"].strip() == "<task>"
+    assert caught.value.result["command"][-1] == "<task>"
+
+
+def test_command_backend_inherits_only_allowlisted_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    script = _fake_cli(tmp_path)
+    monkeypatch.setenv("HTTP_PROXY", "http://127.0.0.1:8080")
+    monkeypatch.setenv("SSL_CERT_FILE", str(tmp_path / "ca.pem"))
+    monkeypatch.setenv("GH_TOKEN", "github-secret")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "aws-secret")
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-secret")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "anthropic-secret")
+    backend = CommandBackend(
+        command=_command(script),
+        extra_env={"FAKE_AGENT_MODE": "env"},
+        output_format="json",
+    )
+
+    result = backend.delegate(task="inspect environment")
+
+    assert result["output"]["PATH"]
+    assert result["output"]["HTTP_PROXY"] == "http://127.0.0.1:8080"
+    assert result["output"]["SSL_CERT_FILE"] == str(tmp_path / "ca.pem")
+    assert result["output"]["GH_TOKEN"] is None
+    assert result["output"]["AWS_SECRET_ACCESS_KEY"] is None
+    assert result["output"]["OPENAI_API_KEY"] is None
+    assert result["output"]["ANTHROPIC_API_KEY"] is None
+    assert result["output"]["CODEX_HOME"] is None
+    assert result["output"]["CLAUDE_CONFIG_DIR"] is None
 
 
 def test_command_backend_timeout_is_not_success(tmp_path: Path) -> None:
@@ -160,6 +255,103 @@ def test_command_backend_timeout_terminates_descendant_processes(tmp_path: Path)
     assert not marker.exists()
 
 
+def test_successful_parent_with_lingering_child_is_cleaned_and_failed(
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "lingering-descendant-survived.txt"
+    child = tmp_path / "lingering_child.py"
+    child.write_text(
+        "import pathlib, sys, time\n"
+        "time.sleep(2.0)\n"
+        "pathlib.Path(sys.argv[1]).write_text('survived', encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    parent = tmp_path / "successful_parent.py"
+    parent.write_text(
+        "import subprocess, sys\n"
+        "print('ready', flush=True)\n"
+        "subprocess.Popen([sys.executable, sys.argv[1], sys.argv[2]])\n",
+        encoding="utf-8",
+    )
+    backend = CommandBackend(
+        command=(sys.executable, str(parent), str(child), str(marker)),
+        timeout=5,
+    )
+
+    with pytest.raises(BackendExecutionError, match="descendants outlived"):
+        backend.delegate(task="ignored")
+
+    time.sleep(2.2)
+    assert not marker.exists()
+    assert not any(
+        thread.name in {"agency-stdout-drain", "agency-stderr-drain"}
+        for thread in threading.enumerate()
+    )
+
+
+def test_partial_drain_thread_start_failure_cleans_contained_process(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "setup-failure-child-survived.txt"
+    script = tmp_path / "delayed_marker.py"
+    script.write_text(
+        "import pathlib, sys, time\n"
+        "time.sleep(1.0)\n"
+        "pathlib.Path(sys.argv[1]).write_text('survived', encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    original_start = threading.Thread.start
+
+    def fail_second_drain(thread: threading.Thread) -> None:
+        if thread.name == "agency-stderr-drain":
+            raise RuntimeError("synthetic thread setup failure")
+        original_start(thread)
+
+    monkeypatch.setattr(threading.Thread, "start", fail_second_drain)
+    backend = CommandBackend(
+        command=(sys.executable, str(script), str(marker)),
+        timeout=5,
+    )
+
+    with pytest.raises(BackendExecutionError, match="I/O workers"):
+        backend.delegate(task="ignored")
+
+    time.sleep(1.2)
+    assert not marker.exists()
+    assert not any(
+        thread.name in {"agency-stdout-drain", "agency-stderr-drain"}
+        for thread in threading.enumerate()
+    )
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows containment")
+def test_windows_resume_failure_kills_suspended_root_before_execution(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "suspended-root-executed.txt"
+    script = tmp_path / "immediate_marker.py"
+    script.write_text(
+        "import pathlib, sys\n"
+        "pathlib.Path(sys.argv[1]).write_text('executed', encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.delegation.backends._resume_windows_process",
+        lambda _process_id: False,
+    )
+    backend = CommandBackend(
+        command=(sys.executable, str(script), str(marker)),
+        timeout=5,
+    )
+
+    with pytest.raises(BackendExecutionError, match="contained Windows"):
+        backend.delegate(task="ignored")
+
+    assert not marker.exists()
+
+
 def test_command_backend_bounds_text_output(tmp_path: Path) -> None:
     script = _fake_cli(tmp_path)
     backend = CommandBackend(
@@ -175,6 +367,42 @@ def test_command_backend_bounds_text_output(tmp_path: Path) -> None:
     assert len(result["stdout"]) <= 80
 
 
+def test_command_backend_drains_and_bounds_large_stdout_and_stderr(
+    tmp_path: Path,
+) -> None:
+    script = _fake_cli(tmp_path)
+    backend = CommandBackend(
+        command=_command(script),
+        max_output_chars=4096,
+        extra_env={"FAKE_AGENT_MODE": "large_both"},
+    )
+
+    result = backend.delegate(task="large")
+
+    assert result["stdout_truncated"] is True
+    assert result["stderr_truncated"] is True
+    assert len(result["stdout"]) <= 4096
+    assert len(result["stderr"]) <= 4096
+
+
+def test_bounded_process_discards_high_volume_output_while_draining(
+    tmp_path: Path,
+) -> None:
+    script = _fake_cli(tmp_path)
+    result = run_bounded_process(
+        [sys.executable, str(script), "unused"],
+        timeout=5,
+        env={**os.environ, "FAKE_AGENT_MODE": "large_both"},
+        max_output_chars=2048,
+    )
+
+    assert result.returncode == 0
+    assert result.stdout_truncated is True
+    assert result.stderr_truncated is True
+    assert len(result.stdout) <= 2048
+    assert len(result.stderr) <= 2048
+
+
 @pytest.mark.parametrize("timeout", [0, -1, float("inf"), float("nan")])
 def test_command_backend_rejects_invalid_timeout(timeout: float) -> None:
     with pytest.raises(ValueError, match="timeout"):
@@ -184,6 +412,119 @@ def test_command_backend_rejects_invalid_timeout(timeout: float) -> None:
 def test_command_backend_rejects_shell_command_strings() -> None:
     with pytest.raises(TypeError, match="argv sequence"):
         CommandBackend(command="agent --unsafe")  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    "backend_type",
+    [
+        CommandBackend,
+        GenericCLIBackend,
+        CodexExecBackend,
+        ClaudeExecBackend,
+        HermesDelegateBackend,
+        OpenClawSessionsBackend,
+    ],
+)
+def test_every_backend_rejects_oversized_tasks(backend_type) -> None:
+    backend = backend_type(command=(sys.executable,))
+
+    with pytest.raises(ValueError, match="delegation limit"):
+        backend.delegate(task="x" * 20_000)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows batch semantics")
+@pytest.mark.parametrize(
+    "backend_type",
+    [
+        GenericCLIBackend,
+        CodexExecBackend,
+        ClaudeExecBackend,
+        HermesDelegateBackend,
+        OpenClawSessionsBackend,
+    ],
+)
+def test_windows_batch_shim_is_rejected_before_task_metacharacters_execute(
+    backend_type,
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "injected.txt"
+    shim = tmp_path / "agent.cmd"
+    shim.write_text("@echo off\r\necho invoked\r\n", encoding="utf-8")
+    backend = backend_type(command=(str(shim),), timeout=2)
+
+    with pytest.raises(BackendExecutionError, match="unsafe cmd.exe shim"):
+        backend.delegate(task=f"safe&echo injected>{marker}")
+
+    assert not marker.exists()
+
+
+@pytest.mark.skipif(
+    sys.platform != "win32" or shutil.which("powershell.exe") is None,
+    reason="Windows PowerShell shim semantics",
+)
+@pytest.mark.parametrize(
+    ("backend_type", "kind"),
+    [
+        (GenericCLIBackend, "text"),
+        (CodexExecBackend, "codex"),
+        (ClaudeExecBackend, "claude"),
+        (HermesDelegateBackend, "text"),
+        (OpenClawSessionsBackend, "openclaw"),
+    ],
+)
+def test_windows_powershell_companion_uses_backend_safe_task_transport(
+    backend_type,
+    kind: str,
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "injected.txt"
+    capture = tmp_path / f"{kind}-argv.json"
+    shim = tmp_path / "agent.cmd"
+    powershell_shim = shim.with_suffix(".ps1")
+    shim.write_text("@echo off\r\nexit /b 99\r\n", encoding="utf-8")
+    powershell_shim.write_text(
+        "$stdinText = [Console]::In.ReadToEnd()\n"
+        "$record = @{ args = @($args); stdin = $stdinText }\n"
+        "[IO.File]::WriteAllText($env:AGENCY_ARG_CAPTURE, "
+        "(ConvertTo-Json -InputObject $record -Compress))\n"
+        "switch ($env:AGENCY_FAKE_KIND) {\n"
+        "  'codex' {\n"
+        "    Write-Output '{\"type\":\"item.completed\",\"item\":"
+        "{\"type\":\"agent_message\",\"text\":\"done\"}}'\n"
+        "    Write-Output '{\"type\":\"turn.completed\"}'\n"
+        "  }\n"
+        "  'claude' { Write-Output "
+        "'{\"type\":\"result\",\"subtype\":\"success\","
+        "\"is_error\":false,\"result\":\"done\"}' }\n"
+        "  'openclaw' { Write-Output "
+        "'{\"payloads\":[{\"text\":\"done\"}]}' }\n"
+        "  default { Write-Output 'done' }\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    task = f"literal&echo injected>{marker}"
+    backend = backend_type(
+        command=(str(shim),),
+        timeout=5,
+        extra_env={
+            "AGENCY_ARG_CAPTURE": str(capture),
+            "AGENCY_FAKE_KIND": kind,
+        },
+    )
+
+    result = backend.delegate(task=task)
+    captured = json.loads(capture.read_text(encoding="utf-8"))
+    arguments = captured["args"]
+    arguments = arguments if isinstance(arguments, list) else [arguments]
+
+    assert result["status"] == "completed"
+    if backend_type in {CodexExecBackend, ClaudeExecBackend}:
+        assert task not in arguments
+        assert captured["stdin"] == task
+    else:
+        assert task in arguments
+        assert captured["stdin"] == ""
+    assert not marker.exists()
 
 
 def test_command_backend_rejects_missing_workdir(tmp_path: Path) -> None:
@@ -212,17 +553,25 @@ def test_registry_error_includes_unavailability_reason() -> None:
 
 def test_codex_backend_validates_jsonl_and_extracts_final_message(tmp_path: Path) -> None:
     script = _fake_cli(tmp_path)
+    capture = tmp_path / "codex-stdin.txt"
     backend = CodexExecBackend(
         command=_command(script),
-        extra_env={"FAKE_AGENT_MODE": "codex"},
+        extra_env={
+            "FAKE_AGENT_MODE": "codex",
+            "FAKE_INPUT_CAPTURE": str(capture),
+        },
     )
 
     result = backend.delegate(task="fix it", recommended_agent="code-reviewer")
 
     assert result["output"] == "done"
     assert result["events"][-1]["type"] == "turn.completed"
-    assert result["command"][-4:-1] == ["--json", "--color", "never"]
-    assert "code-reviewer" in result["command"][-1]
+    assert result["command"][-3:] == ["--json", "--color", "never"]
+    assert "fix it" not in repr(result)
+    assert capture.read_text(encoding="utf-8") == (
+        "Agency specialist perspective requested: code-reviewer\n\n"
+        "Delegated task:\nfix it"
+    )
 
 
 def test_codex_backend_rejects_incomplete_jsonl_success(tmp_path: Path) -> None:
@@ -237,15 +586,21 @@ def test_codex_backend_rejects_incomplete_jsonl_success(tmp_path: Path) -> None:
 
 def test_claude_backend_validates_json_result(tmp_path: Path) -> None:
     script = _fake_cli(tmp_path)
+    capture = tmp_path / "claude-stdin.txt"
     backend = ClaudeExecBackend(
         command=_command(script),
-        extra_env={"FAKE_AGENT_MODE": "claude"},
+        extra_env={
+            "FAKE_AGENT_MODE": "claude",
+            "FAKE_INPUT_CAPTURE": str(capture),
+        },
     )
 
     result = backend.delegate(task="fix it")
 
     assert result["output"] == "done"
     assert result["response"]["is_error"] is False
+    assert "fix it" not in result["command"]
+    assert capture.read_text(encoding="utf-8") == "fix it"
 
 
 def test_claude_backend_does_not_promote_is_error_response(tmp_path: Path) -> None:
@@ -258,6 +613,31 @@ def test_claude_backend_does_not_promote_is_error_response(tmp_path: Path) -> No
         backend.delegate(task="fix it")
 
 
+@pytest.mark.parametrize(
+    ("backend_type", "mode"),
+    [
+        (CodexExecBackend, "codex_echo"),
+        (ClaudeExecBackend, "claude_echo"),
+    ],
+)
+def test_structured_backend_echoes_are_redacted_recursively(
+    backend_type,
+    mode: str,
+    tmp_path: Path,
+) -> None:
+    script = _fake_cli(tmp_path)
+    task = "structured-sensitive-task"
+    backend = backend_type(
+        command=_command(script),
+        extra_env={"FAKE_AGENT_MODE": mode},
+    )
+
+    result = backend.delegate(task=task)
+
+    assert result["output"] == "<task>"
+    assert task not in repr(result)
+
+
 def test_hermes_backend_uses_documented_scripted_one_shot(tmp_path: Path) -> None:
     script = _fake_cli(tmp_path)
     backend = HermesDelegateBackend(command=_command(script))
@@ -265,8 +645,9 @@ def test_hermes_backend_uses_documented_scripted_one_shot(tmp_path: Path) -> Non
     result = backend.delegate(task="fix it", recommended_agent="python-pro")
 
     assert result["status"] == "completed"
-    assert "python-pro" in result["output"]
-    assert "fix it" in result["output"]
+    assert result["output"] == "<task>"
+    assert "python-pro" not in repr(result)
+    assert "fix it" not in repr(result)
 
 
 def test_openclaw_backend_uses_agent_cli_not_fake_sessions_spawn(tmp_path: Path) -> None:
@@ -283,7 +664,7 @@ def test_openclaw_backend_uses_agent_cli_not_fake_sessions_spawn(tmp_path: Path)
     assert "sessions_spawn" not in argv
     assert argv[2:4] == ["--agent", "main"]
     assert argv[-1] == "--json"
-    assert "code-reviewer" in argv[-2]
+    assert argv[-2] == "<task>"
     assert result["output"] == "done"
 
 
@@ -320,6 +701,83 @@ def test_openclaw_in_flight_response_is_not_completed(tmp_path: Path) -> None:
         backend.delegate(task="fix it")
 
 
+@pytest.mark.parametrize(
+    ("backend_type", "auth_variable", "wire_format"),
+    [
+        (CodexExecBackend, "CODEX_HOME", "codex"),
+        (ClaudeExecBackend, "CLAUDE_CONFIG_DIR", "claude"),
+        (HermesDelegateBackend, "HERMES_HOME", "text"),
+        (OpenClawSessionsBackend, "OPENCLAW_HOME", "openclaw"),
+        (GenericCLIBackend, None, "text"),
+    ],
+)
+def test_each_backend_receives_only_its_required_auth_root(
+    backend_type,
+    auth_variable: str | None,
+    wire_format: str,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    auth_roots = {
+        "CODEX_HOME": str(tmp_path / "codex"),
+        "CLAUDE_CONFIG_DIR": str(tmp_path / "claude"),
+        "HERMES_HOME": str(tmp_path / "hermes"),
+        "OPENCLAW_HOME": str(tmp_path / "openclaw"),
+    }
+    for name, value in auth_roots.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setenv("GH_TOKEN", "github-secret")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "aws-secret")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-secret")
+    monkeypatch.setenv("SSL_CERT_FILE", str(tmp_path / "ca.pem"))
+    observed: dict[str, Any] = {}
+
+    def available(_name: str, **_kwargs: Any) -> str:
+        return sys.executable
+
+    def completed(
+        argv: list[str],
+        **kwargs: Any,
+    ) -> subprocess.CompletedProcess[str]:
+        observed.update(kwargs["env"])
+        if wire_format == "codex":
+            kwargs["stdout"].write(
+                json.dumps({"type": "turn.completed"}) + "\n"
+            )
+        elif wire_format == "claude":
+            kwargs["stdout"].write(
+                json.dumps({"is_error": False, "result": "done"})
+            )
+        elif wire_format == "openclaw":
+            kwargs["stdout"].write(
+                json.dumps({"payloads": [{"text": "done"}]})
+            )
+        else:
+            kwargs["stdout"].write("done")
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr(
+        "agency_runtime.core.delegation.backends.shutil.which",
+        available,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.delegation.backends._run_owned_process",
+        completed,
+    )
+    backend = backend_type(command=("fake-agent",))
+
+    assert backend.delegate(task="task")["status"] == "completed"
+    for name, value in auth_roots.items():
+        if name == auth_variable:
+            assert observed[name] == value
+        else:
+            assert name not in observed
+    assert observed["SSL_CERT_FILE"] == str(tmp_path / "ca.pem")
+    assert "GH_TOKEN" not in observed
+    assert "AWS_SECRET_ACCESS_KEY" not in observed
+    assert "OPENAI_API_KEY" not in observed
+
+
 def test_adapter_wrappers_use_hardened_process_results(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -329,10 +787,10 @@ def test_adapter_wrappers_use_hardened_process_results(
     def available(_name: str) -> str:
         return sys.executable
 
-    calls: list[list[str]] = []
+    calls: list[tuple[list[str], str | None]] = []
 
-    def completed(argv: list[str], **_kwargs: Any) -> subprocess.CompletedProcess[str]:
-        calls.append(argv)
+    def completed(argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        calls.append((argv, kwargs.get("input_text")))
         if "--json" in argv and "--color" in argv:
             stdout = "\n".join(
                 [
@@ -356,7 +814,13 @@ def test_adapter_wrappers_use_hardened_process_results(
     assert (codex["status"], codex["output"]) == ("completed", "ok")
     assert (claude["status"], claude["output"]) == ("completed", "ok")
     assert (generic["status"], generic["output"]) == ("completed", "ok")
-    assert all(isinstance(argv, list) for argv in calls)
+    assert all(isinstance(argv, list) for argv, _input in calls)
+    codex_argv, codex_input = calls[0]
+    claude_argv, claude_input = calls[1]
+    generic_argv, generic_input = calls[2]
+    assert "task" not in codex_argv and codex_input == "task"
+    assert "task" not in claude_argv and claude_input == "task"
+    assert generic_argv[-1] == "task" and generic_input is None
 
 
 def test_generic_adapter_without_command_returns_unavailable(tmp_path: Path) -> None:

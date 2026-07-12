@@ -9,20 +9,34 @@ import json
 import re
 import sqlite3
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
-from agency_runtime.core.config import AgencyConfig, ProviderEntry, load_config
+from agency_runtime.core.config import (
+    AgencyConfig,
+    ProviderEntry,
+    is_safe_credential_url,
+    load_config,
+)
 from agency_runtime.core.installer import inspect_host_installations
 from agency_runtime.core.policy.profiles import PROFILES
+from agency_runtime.core.provider_validation import (
+    ProviderValidationResult,
+    validate_provider,
+)
+from agency_runtime.core.http_safety import open_no_redirect
+from agency_runtime.core.display import safe_display_token
 
 
 _MAX_HTTP_JSON_BYTES = 1024 * 1024
 _MAX_DIAGNOSTIC_CHARS = 500
 _MAX_DIAGNOSTIC_MODELS = 1000
 _URL_PATTERN = re.compile(r"https?://[^\s]+", re.IGNORECASE)
+_PROVIDER_VALIDATION_TIMEOUT_SECONDS = 2.0
+_PROVIDER_VALIDATION_WORKERS = 4
 
 
 def _safe_endpoint(value: str) -> str:
@@ -42,7 +56,7 @@ def _safe_endpoint(value: str) -> str:
 
 def _sanitize_diagnostic(value: Any, *, secrets: tuple[str, ...] = ()) -> str:
     """Bound diagnostic text and remove common credential-bearing URL parts."""
-    text = str(value)
+    text = safe_display_token(value, limit=_MAX_DIAGNOSTIC_CHARS * 2)
     for secret in secrets:
         if secret:
             text = text.replace(secret, "<redacted>")
@@ -95,7 +109,7 @@ class DoctorReport:
             "exit_code": self.exit_code,
             "checks": [
                 {
-                    "name": c.name,
+                    "name": _sanitize_diagnostic(c.name),
                     "status": c.status,
                     "message": _sanitize_diagnostic(c.message),
                     "detail": _sanitize_diagnostic(c.detail),
@@ -108,7 +122,7 @@ class DoctorReport:
 def _http_check(url: str, timeout: float = 2.0) -> tuple[bool, str]:
     try:
         req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with open_no_redirect(req, timeout=timeout) as resp:
             return resp.status == 200, f"HTTP {resp.status}"
     except Exception as exc:
         return False, f"network error ({type(exc).__name__})"
@@ -122,6 +136,8 @@ def _http_check_authed(
     provider_type: str = "openai-compatible",
 ) -> tuple[bool, str]:
     """HTTP check with Authorization header for authenticated endpoints."""
+    if not is_safe_credential_url(url):
+        return False, "credential transport requires HTTPS or literal loopback HTTP"
     try:
         if provider_type.strip().lower() == "anthropic":
             headers = {
@@ -131,7 +147,7 @@ def _http_check_authed(
         else:
             headers = {"Authorization": f"Bearer {api_key}"}
         req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with open_no_redirect(req, timeout=timeout) as resp:
             return resp.status == 200, f"HTTP {resp.status}"
     except Exception as exc:
         return False, f"network error ({type(exc).__name__})"
@@ -140,7 +156,7 @@ def _http_check_authed(
 def _http_get_json(url: str, timeout: float = 2.0) -> dict[str, Any] | None:
     try:
         req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with open_no_redirect(req, timeout=timeout) as resp:
             raw = resp.read(_MAX_HTTP_JSON_BYTES + 1)
         if len(raw) > _MAX_HTTP_JSON_BYTES:
             return None
@@ -151,32 +167,42 @@ def _http_get_json(url: str, timeout: float = 2.0) -> dict[str, Any] | None:
 
 
 def _probe_provider(provider: ProviderEntry, *, timeout: float = 5.0) -> tuple[bool, str]:
-    """Probe a configured provider using its declared wire protocol."""
-    provider_type = provider.type.strip().lower()
-    if provider_type == "ollama" or provider.ollama_mode:
-        return _http_check(_join_api_path(provider.base_url, "/api/tags"), timeout)
+    """Probe a configured provider through the shared validation contract."""
 
-    api_key = provider.resolve_api_key()
-    models_url = _join_api_path(provider.base_url, "/v1/models")
-    if api_key:
-        return _http_check_authed(
-            models_url,
-            api_key,
-            timeout,
-            provider_type=provider_type,
-        )
-    return _http_check(models_url, timeout)
+    result = validate_provider(
+        provider,
+        timeout=timeout,
+        opener=open_no_redirect,
+    )
+    return result.usable, result.reason
 
 
 def _provider_is_ready(provider: ProviderEntry) -> bool:
-    """Mirror the selector's minimum requirements for a network attempt."""
-    if not provider.model or not provider.base_url:
-        return False
-    return (
-        provider.type.strip().lower() == "ollama"
-        or provider.ollama_mode
-        or bool(provider.resolve_api_key())
-    )
+    """Return structural readiness; live usability is validated separately."""
+
+    return provider.is_available()
+
+
+def _validate_provider_entries(
+    providers: tuple[ProviderEntry, ...],
+) -> list[ProviderValidationResult]:
+    """Probe every entry concurrently while preserving configured order."""
+
+    if not providers:
+        return []
+
+    def validate(entry: ProviderEntry) -> ProviderValidationResult:
+        return validate_provider(
+            entry,
+            timeout=min(entry.timeout, _PROVIDER_VALIDATION_TIMEOUT_SECONDS),
+            opener=open_no_redirect,
+        )
+
+    with ThreadPoolExecutor(
+        max_workers=min(_PROVIDER_VALIDATION_WORKERS, len(providers)),
+        thread_name_prefix="agency-provider-check",
+    ) as executor:
+        return list(executor.map(validate, providers))
 
 
 def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
@@ -226,6 +252,13 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
         report.checks.append(CheckResult("db", "fail", f"Database error: {exc}", str(exc)))
 
     # ── Judge / selector checks ───────────────────────────────
+    provider_validations = {
+        id(provider): result
+        for provider, result in zip(
+            cfg.providers,
+            _validate_provider_entries(cfg.providers),
+        )
+    }
     primary_provider = next(
         (provider for provider in cfg.providers if _provider_is_ready(provider)),
         None,
@@ -234,7 +267,8 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
 
     if primary_provider is not None:
         provider_type = primary_provider.type.strip().lower()
-        if provider_type != "ollama":
+        validation = provider_validations[id(primary_provider)]
+        if provider_type not in {"ollama", "cli"}:
             source = (
                 "stored in config"
                 if primary_provider.api_key
@@ -245,20 +279,37 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
                 "pass",
                 f"API key present ({_sanitize_diagnostic(source)})",
             ))
-        ok, msg = _probe_provider(primary_provider, timeout=5)
-        endpoint = _safe_endpoint(primary_provider.base_url)
-        if ok:
+        if provider_type == "cli":
+            message = (
+                f"CLI judge {primary_provider.transport} is authenticated and usable"
+                if validation.usable
+                else (
+                    f"CLI judge {primary_provider.transport} unavailable: "
+                    f"{validation.reason}"
+                )
+            )
             report.checks.append(CheckResult(
                 "judge_provider",
-                "pass",
-                f"Judge provider {provider_type} reachable at {endpoint}",
+                "pass" if validation.usable else "fail",
+                message,
             ))
         else:
-            report.checks.append(CheckResult(
-                "judge_provider",
-                "fail",
-                f"Judge provider {provider_type} unreachable at {endpoint}: {msg}",
-            ))
+            endpoint = _safe_endpoint(primary_provider.base_url)
+            if validation.usable:
+                report.checks.append(CheckResult(
+                    "judge_provider",
+                    "pass",
+                    f"Judge provider {provider_type} reachable at {endpoint}",
+                ))
+            else:
+                report.checks.append(CheckResult(
+                    "judge_provider",
+                    "fail",
+                    (
+                        f"Judge provider {provider_type} unreachable at "
+                        f"{endpoint}: {validation.reason}"
+                    ),
+                ))
     elif (not cfg.judge.ollama_mode) and bool(api_key):
         source = (
             "stored in config"
@@ -452,21 +503,26 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
         available_count = 0
         for provider in cfg.providers:
             auth = provider.auth_method()
-            if _provider_is_ready(provider):
+            validation = provider_validations[id(provider)]
+            if validation.usable:
                 available_count += 1
+                detail = (
+                    f"transport={provider.transport} installed={validation.installed} "
+                    f"authenticated={validation.authenticated} usable=True"
+                    if provider.type.strip().lower() == "cli"
+                    else f"model={provider.model} auth={auth}"
+                )
                 report.checks.append(CheckResult(
                     f"provider_{provider.name}", "pass",
-                    f"{provider.name}: {provider.type} model={provider.model} auth={auth}",
-                ))
-            elif not provider.model or not provider.base_url:
-                report.checks.append(CheckResult(
-                    f"provider_{provider.name}", "warn",
-                    f"{provider.name}: incomplete provider configuration (model and base_url required)",
+                    f"{provider.name}: {provider.type} {detail}",
                 ))
             else:
                 report.checks.append(CheckResult(
                     f"provider_{provider.name}", "warn",
-                    f"{provider.name}: configured but no API key (need {provider.api_key_env or 'api_key'})",
+                    (
+                        f"{provider.name}: {provider.type} unavailable "
+                        f"({validation.reason})"
+                    ),
                 ))
 
         if available_count == 0:
@@ -496,7 +552,10 @@ def format_report_human(report: DoctorReport) -> str:
 
     for check in report.checks:
         icon = icons.get(check.status, "?")
-        lines.append(f"  {icon} {check.name}: {_sanitize_diagnostic(check.message)}")
+        lines.append(
+            f"  {icon} {_sanitize_diagnostic(check.name)}: "
+            f"{_sanitize_diagnostic(check.message)}"
+        )
 
     lines.append("")
     lines.append("  ─────────────────────────")

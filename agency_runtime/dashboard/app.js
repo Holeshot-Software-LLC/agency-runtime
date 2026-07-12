@@ -136,6 +136,7 @@ function handleModalKeyboard(event) {
   }
 }
 function hostState(host) {
+  if (host.runtime_enabled === false) return "runtime-disabled";
   if (host.inspection_status && host.inspection_status !== "complete") {
     return "inspection-" + host.inspection_status;
   }
@@ -511,22 +512,24 @@ function renderHosts() {
     card.append(heading, el("small", "", hostLocation(host)));
     const tags = el("div", "token-list");
     tags.append(el("span", "token", truthLabel(host.registered, "registered", "not registered", "registration unknown")));
-    tags.append(el("span", "token", truthLabel(host.enabled, "enabled", "disabled", "enablement unknown")));
+    tags.append(el("span", "token", truthLabel(host.enabled, "native enabled", "native disabled", "native enablement unknown")));
+    tags.append(el("span", "token", host.runtime_enabled === false ? "runtime off" : "runtime on"));
+    tags.append(el("span", "token", truthLabel(host.effective_enabled, "effective", "inactive", "effective state unverified")));
     tags.append(el("span", "token", host.maturity || "unverified"));
     card.append(tags);
     if (host.executable_discovered === true) {
       const actions = el("div", "card-actions");
       const inspectionCurrent = !host.inspection_status || host.inspection_status === "complete";
-      const directionKnown = inspectionCurrent && host.registered === true && typeof host.enabled === "boolean";
-      const enabled = host.enabled === true;
+      const directionKnown = inspectionCurrent && typeof host.runtime_enabled === "boolean";
+      const enabled = host.runtime_enabled === true;
       const label = directionKnown
         ? (enabled ? "Disable" : "Enable")
-        : (!inspectionCurrent ? "Inspection stale" : (host.registered === false ? "Not registered" : "State unknown"));
+        : (!inspectionCurrent ? "Inspection stale" : "State unknown");
       const button = el("button", `button compact ${enabled ? "danger" : "solid"}`, label);
       button.type = "button";
       button.disabled = !directionKnown;
       if (directionKnown) button.addEventListener("click", () => toggleHost(host.host, !enabled));
-      else button.title = "A native inventory must prove registration and current enablement before this action is available.";
+      else button.title = "A current host inspection is required before this action is available.";
       actions.append(button); card.append(actions);
     }
     grid.append(card);
@@ -1055,13 +1058,13 @@ async function toggleHost(host, enabled) {
   const expected = `${enabled ? "ENABLE" : "DISABLE"} ${host}`;
   const accepted = await requestConfirmation(
     expected,
-    "This changes native host state. The host may require a restart.",
+    "This changes Agency Runtime immediately for this host. Native plugin registration is unchanged.",
   );
   if (!accepted) return showNotice("Host action cancelled.", true);
   pauseForMutation();
   try {
     await api("/api/hosts/toggle", { method: "POST", body: JSON.stringify({ host, enabled, confirm: expected }) });
-    await reconcileAll(`${host} ${enabled ? "enabled" : "disabled"}. Restart the host to finish activation.`);
+    await reconcileAll(`${host} runtime ${enabled ? "enabled" : "disabled"}.`);
   } catch (error) { showNotice(error.message, true); }
   finally { resumeAfterMutation(); }
 }

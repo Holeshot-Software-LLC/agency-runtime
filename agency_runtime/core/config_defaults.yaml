@@ -7,7 +7,7 @@
 # it falls back to 'judge' (legacy), then 'ollama', then token-only.
 #
 # Provider types: openai-compatible, anthropic, ollama, litellm, cli
-# Auth: api_key (stored directly), api_key_env (env var), or none (ollama)
+# Auth: api_key, api_key_env, OAuth session (cli), or none (loopback local)
 #
 # Env var overrides (highest precedence):
 #   AGENCY_JUDGE_MODEL, AGENCY_JUDGE_BASE_URL, AGENCY_JUDGE_API_KEY,

@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import time
+from collections.abc import Collection
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -171,9 +172,225 @@ def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
     return _COMPANION_POLICY or _load_bundled_policy()
 
 
+def _policy_routes(
+    policy: dict[str, Any],
+) -> tuple[list[dict[str, str]], list[str]]:
+    """Collect every action and division route with precise validation paths."""
+    routes: list[dict[str, str]] = []
+    errors: list[str] = []
+    actions = policy.get("actions")
+    if not isinstance(actions, dict):
+        errors.append("actions must be a mapping")
+        actions = {}
+    for action_name, action in actions.items():
+        action_path = f"actions.{action_name}"
+        if not isinstance(action, dict):
+            errors.append(f"{action_path} must be a mapping")
+            continue
+        for kind in ("always_include", "conditional"):
+            entries = action.get(kind, [])
+            if not isinstance(entries, list):
+                errors.append(f"{action_path}.{kind} must be a list")
+                continue
+            for index, entry in enumerate(entries):
+                path = f"{action_path}.{kind}[{index}]"
+                if not isinstance(entry, dict):
+                    errors.append(f"{path} must be a mapping")
+                    continue
+                slug = entry.get("slug")
+                if not isinstance(slug, str) or not slug.strip():
+                    errors.append(f"{path}.slug must be a non-empty string")
+                    continue
+                if kind == "conditional":
+                    condition = entry.get("when")
+                    if not isinstance(condition, str) or not condition.strip():
+                        errors.append(f"{path}.when must be a non-empty string")
+                routes.append(
+                    {
+                        "path": path,
+                        "slug": slug.strip(),
+                        "source": "action",
+                        "group": str(action_name),
+                        "kind": kind,
+                    }
+                )
+
+    divisions = policy.get("division_anchors", {})
+    if not isinstance(divisions, dict):
+        errors.append("division_anchors must be a mapping")
+        divisions = {}
+    for division_name, division in divisions.items():
+        division_path = f"division_anchors.{division_name}"
+        if not isinstance(division, dict):
+            errors.append(f"{division_path} must be a mapping")
+            continue
+        anchor = division.get("anchor")
+        if anchor is not None:
+            if not isinstance(anchor, str) or not anchor.strip():
+                errors.append(f"{division_path}.anchor must be a non-empty string")
+            else:
+                routes.append(
+                    {
+                        "path": f"{division_path}.anchor",
+                        "slug": anchor.strip(),
+                        "source": "division",
+                        "group": str(division_name),
+                        "kind": "anchor",
+                    }
+                )
+        conditional = division.get("conditional", [])
+        if not isinstance(conditional, list):
+            errors.append(f"{division_path}.conditional must be a list")
+            continue
+        for index, entry in enumerate(conditional):
+            path = f"{division_path}.conditional[{index}]"
+            if isinstance(entry, dict):
+                slug = entry.get("slug")
+                condition = entry.get("when")
+            elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
+                slug, condition = entry[0], entry[1]
+            else:
+                errors.append(f"{path} must contain a slug and condition")
+                continue
+            if not isinstance(slug, str) or not slug.strip():
+                errors.append(f"{path}.slug must be a non-empty string")
+                continue
+            if not isinstance(condition, str) or not condition.strip():
+                errors.append(f"{path}.when must be a non-empty string")
+            routes.append(
+                {
+                    "path": path,
+                    "slug": slug.strip(),
+                    "source": "division",
+                    "group": str(division_name),
+                    "kind": "conditional",
+                }
+            )
+    return routes, errors
+
+
+def _slug_list(value: Any, *, path: str, errors: list[str]) -> list[str]:
+    if not isinstance(value, list):
+        errors.append(f"{path} must be a list")
+        return []
+    result: list[str] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, str) or not item.strip():
+            errors.append(f"{path}[{index}] must be a non-empty string")
+            continue
+        result.append(item.strip())
+    if len(result) != len(set(result)):
+        errors.append(f"{path} must not contain duplicate slugs")
+    return result
+
+
+def validate_policy(
+    policy: dict[str, Any],
+    active_slugs: Collection[str],
+) -> dict[str, Any]:
+    """Validate policy structure and resolve governed route availability.
+
+    Policies predating the availability registry remain loadable: their routes
+    are treated as enabled and therefore validate only when every referenced
+    specialist is active. The bundled policy uses the explicit v1 registry.
+    """
+    routes, errors = _policy_routes(policy)
+    referenced = {route["slug"] for route in routes}
+    active = {str(slug) for slug in active_slugs if str(slug)}
+    availability = policy.get("specialist_availability")
+    gated_reason = ""
+    mode = "explicit"
+    if availability is None:
+        mode = "legacy-all-enabled"
+        enabled = set(referenced)
+        gated: set[str] = set()
+    elif not isinstance(availability, dict):
+        errors.append("specialist_availability must be a mapping")
+        enabled = set()
+        gated = set()
+    else:
+        if availability.get("schema_version") != 1:
+            errors.append("specialist_availability.schema_version must be 1")
+        enabled_items = _slug_list(
+            availability.get("enabled"),
+            path="specialist_availability.enabled",
+            errors=errors,
+        )
+        gated_config = availability.get("roster_gated")
+        if not isinstance(gated_config, dict):
+            errors.append("specialist_availability.roster_gated must be a mapping")
+            gated_items: list[str] = []
+        else:
+            reason = gated_config.get("reason")
+            if not isinstance(reason, str) or not reason.strip():
+                errors.append(
+                    "specialist_availability.roster_gated.reason "
+                    "must be a non-empty string"
+                )
+            else:
+                gated_reason = reason.strip()
+            gated_items = _slug_list(
+                gated_config.get("slugs"),
+                path="specialist_availability.roster_gated.slugs",
+                errors=errors,
+            )
+        enabled = set(enabled_items)
+        gated = set(gated_items)
+
+    overlap = sorted(enabled & gated)
+    if overlap:
+        errors.append(
+            "availability slugs cannot be both enabled and roster-gated: "
+            + ", ".join(overlap)
+        )
+    undeclared = sorted(referenced - enabled - gated)
+    if undeclared:
+        errors.append(
+            "policy routes have no availability declaration: "
+            + ", ".join(undeclared)
+        )
+    unreferenced = sorted((enabled | gated) - referenced)
+    if unreferenced:
+        errors.append(
+            "availability declares unreferenced specialists: "
+            + ", ".join(unreferenced)
+        )
+
+    missing_enabled = sorted((enabled & referenced) - active)
+    for slug in missing_enabled:
+        errors.append(f"enabled specialist is not active: {slug}")
+    active_gated = gated & referenced & active
+    enabled_slugs = sorted((enabled & referenced & active) | active_gated)
+    disabled_slugs = sorted((gated & referenced) - active)
+    disabled_routes = [
+        {
+            "slug": slug,
+            "reason": gated_reason,
+        }
+        for slug in disabled_slugs
+    ]
+    return {
+        "valid": not errors,
+        "mode": mode,
+        "errors": errors,
+        "route_count": len(routes),
+        "unique_policy_slugs": len(referenced),
+        "enabled_declared": sorted(enabled & referenced),
+        "enabled_slugs": enabled_slugs,
+        "roster_gated_slugs": sorted(gated & referenced),
+        "roster_gated_enabled": sorted(active_gated),
+        "missing_enabled": missing_enabled,
+        "disabled_count": len(disabled_slugs),
+        "disabled_routes": disabled_routes,
+        "routes": routes,
+    }
+
+
 def detect_actions(
     message: str,
     policy: dict[str, Any] | None = None,
+    *,
+    active_slugs: Collection[str] | None = None,
 ) -> tuple[list[str], list[str]]:
     """Detect which actions match the user message.
 
@@ -190,6 +407,28 @@ def detect_actions(
 
     matched_actions: list[str] = []
     companion_ids: list[str] = []
+    eligible: set[str] | None = None
+    if active_slugs is not None:
+        availability = validate_policy(policy, active_slugs)
+        eligible = set(availability["enabled_slugs"])
+    elif isinstance(policy.get("specialist_availability"), dict):
+        # Explicit policies default to their required bundled set. Roster-gated
+        # routes need an active roster supplied by the caller before they can
+        # become eligible. Legacy custom policies retain their prior behavior.
+        declared = policy["specialist_availability"].get("enabled", [])
+        eligible = {
+            item.strip()
+            for item in declared
+            if isinstance(item, str) and item.strip()
+        }
+
+    def add_companion(slug: Any) -> None:
+        if not isinstance(slug, str) or not slug:
+            return
+        if eligible is not None and slug not in eligible:
+            return
+        if slug not in companion_ids:
+            companion_ids.append(slug)
 
     for action_name, action_def in actions_def.items():
         triggers = action_def.get("triggers", [])
@@ -198,37 +437,36 @@ def detect_actions(
 
         if action_name == "DEFAULT":
             for companion in action_def.get("always_include", []):
-                slug = companion.get("slug", "")
-                if slug and slug not in companion_ids:
-                    companion_ids.append(slug)
+                add_companion(companion.get("slug", ""))
             continue
 
         if any(_matches(message, trigger) for trigger in triggers):
             matched_actions.append(action_name)
             for companion in action_def.get("always_include", []):
-                slug = companion.get("slug", "")
-                if slug and slug not in companion_ids:
-                    companion_ids.append(slug)
+                add_companion(companion.get("slug", ""))
 
             for cond in action_def.get("conditional", []):
                 cond_slug = cond.get("slug", "")
                 cond_when = cond.get("when", "")
                 if cond_slug and cond_when:
                     if _matches_condition(message, cond_when):
-                        if cond_slug not in companion_ids:
-                            companion_ids.append(cond_slug)
+                        add_companion(cond_slug)
 
     division_anchors = policy.get("division_anchors", {})
     for _div_name, div_def in division_anchors.items():
         anchor_keywords = div_def.get("keywords", [])
         if any(_matches(message, keyword) for keyword in anchor_keywords):
             anchor = div_def.get("anchor", "")
-            if anchor and anchor not in companion_ids:
-                companion_ids.append(anchor)
+            add_companion(anchor)
             for cond_entry in div_def.get("conditional", []):
-                if len(cond_entry) >= 2:
+                if isinstance(cond_entry, dict):
+                    cond_slug = cond_entry.get("slug", "")
+                    cond_kw = cond_entry.get("when", "")
+                elif isinstance(cond_entry, (list, tuple)) and len(cond_entry) >= 2:
                     cond_slug, cond_kw = cond_entry[0], cond_entry[1]
-                    if _matches(message, cond_kw) and cond_slug not in companion_ids:
-                        companion_ids.append(cond_slug)
+                else:
+                    continue
+                if _matches(message, cond_kw):
+                    add_companion(cond_slug)
 
     return matched_actions, companion_ids

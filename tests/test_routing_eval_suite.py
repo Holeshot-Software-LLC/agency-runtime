@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from agency_runtime.core.evals.benchmarks import run_candidate_microbenchmark
+import threading
+import sys
+
+from agency_runtime.core.evals.benchmarks import (
+    _run_concurrency_probe,
+    generated_catalog,
+    run_candidate_microbenchmark,
+)
 from agency_runtime.core.delegation.lifecycle import (
     build_dependency_graph,
     normalize_work_units,
@@ -181,8 +188,8 @@ def test_routing_eval_meets_published_thresholds() -> None:
     report = run_routing_eval()
 
     assert report["schema"] == "agency-runtime.routing-eval"
-    assert report["version"] == "1.1.0"
-    assert report["corpus"]["version"] == "1.1.0"
+    assert report["version"] == "1.2.0"
+    assert report["corpus"]["version"] == "1.2.0"
     assert report["passed"] is True
     assert all(gate["passed"] for gate in report["gates"])
     assert report["metrics"]["routing"]["required_recall_at_3"] >= 0.97
@@ -190,6 +197,8 @@ def test_routing_eval_meets_published_thresholds() -> None:
     assert report["metrics"]["routing"]["abstain_accuracy"] == 1.0
     assert report["metrics"]["policy"]["forbidden_case_rate"] == 0.0
     assert report["metrics"]["policy"]["macro_f1"] >= 0.95
+    assert report["metrics"]["policy"]["companion_required_recall"] == 1.0
+    assert report["metrics"]["policy"]["companion_case_accuracy"] == 1.0
     assert report["metrics"]["delegation"]["decision_accuracy"] >= 0.94
     assert report["metrics"]["delegation"]["precision"] >= 0.95
     assert report["metrics"]["delegation"]["recall"] >= 0.90
@@ -198,6 +207,7 @@ def test_routing_eval_meets_published_thresholds() -> None:
     assert report["metrics"]["performance"]["cache_hit_p95_ms"] < 2.0
     assert report["metrics"]["performance"]["concurrent_calls"] >= 32
     assert report["metrics"]["performance"]["concurrent_overlap"] >= 2
+    assert report["metrics"]["performance"]["concurrent_probe_synchronized"] is True
 
 
 def test_microbenchmark_is_concurrent_deterministic_and_production_bounded() -> None:
@@ -216,8 +226,53 @@ def test_microbenchmark_is_concurrent_deterministic_and_production_bounded() -> 
     assert len(result["p95_batches_ms"]) == result["benchmark_batches"]
     assert len(result["cache_hit_p95_batches_ms"]) == result["benchmark_batches"]
     assert result["concurrent_calls"] >= 32
-    assert result["concurrent_overlap"] >= 2
+    assert result["concurrent_overlap"] == result["workers"]
+    assert result["concurrent_probe_threads"] == result["workers"]
+    assert result["concurrent_probe_synchronized"] is True
     assert result["deterministic"] is True
     assert result["cache_hit_deterministic"] is True
     assert result["p95_ms"] < 20.0
     assert result["cache_hit_p95_ms"] < 2.0
+
+
+def test_concurrency_probe_detects_real_narrowing_serialization() -> None:
+    serialization_lock = threading.Lock()
+
+    def serialized_narrow(
+        query: str,
+        catalog: list[dict[str, object]],
+        limit: int,
+    ) -> tuple[list[dict[str, object]], list[float]]:
+        with serialization_lock:
+            return pre_narrow(query, catalog, limit)
+
+    result = _run_concurrency_probe(
+        query="profile production API latency with benchmarks",
+        catalog=generated_catalog(64),
+        concurrent_calls=8,
+        workers=4,
+        narrow=serialized_narrow,
+        timeout_seconds=0.05,
+    )
+
+    assert result["synchronized"] is False
+    assert result["overlap"] == 1
+
+
+def test_concurrency_probe_is_independent_of_python_switch_interval() -> None:
+    original_interval = sys.getswitchinterval()
+    try:
+        # The former outer-call counter returned overlap=1 whenever one
+        # narrowing call completed inside this deliberately long GIL slice.
+        sys.setswitchinterval(0.05)
+        result = _run_concurrency_probe(
+            query="profile production API latency with benchmarks",
+            catalog=generated_catalog(64),
+            concurrent_calls=8,
+            workers=4,
+        )
+    finally:
+        sys.setswitchinterval(original_interval)
+
+    assert result["synchronized"] is True
+    assert result["overlap"] == 4

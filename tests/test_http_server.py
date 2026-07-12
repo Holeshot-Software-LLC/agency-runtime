@@ -21,13 +21,11 @@ AUTH_HEADERS = {"Authorization": "Bearer test-token"}
 
 
 @pytest.fixture()
-def http_server(tmp_path: Path):
+def http_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """Start a real HTTP server on an ephemeral port backed by a tmp DB."""
-    import os
-
     # Use a fast judge timeout so the test doesn't hang when no LLM is available
-    os.environ["AGENCY_JUDGE_TIMEOUT"] = "1"
-    os.environ["AGENCY_CONFIG_PATH"] = "/dev/null"
+    monkeypatch.setenv("AGENCY_JUDGE_TIMEOUT", "1")
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
     from agency_runtime.core.config import reset_config_cache
 
     reset_config_cache()
@@ -88,6 +86,7 @@ def http_server(tmp_path: Path):
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+        reset_config_cache()
 
 
 def _post(base: str, path: str, payload: dict) -> tuple[int, dict]:
@@ -102,7 +101,8 @@ def _post(base: str, path: str, payload: dict) -> tuple[int, dict]:
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status, json.loads(resp.read())
     except urllib.error.HTTPError as exc:
-        return exc.code, json.loads(exc.read())
+        with exc:
+            return exc.code, json.loads(exc.read())
 
 
 def _get(base: str, path: str) -> tuple[int, dict]:
@@ -111,7 +111,8 @@ def _get(base: str, path: str) -> tuple[int, dict]:
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status, json.loads(resp.read())
     except urllib.error.HTTPError as exc:
-        return exc.code, json.loads(exc.read())
+        with exc:
+            return exc.code, json.loads(exc.read())
 
 
 # ── /status ─────────────────────────────────────────────────────────────
@@ -144,26 +145,31 @@ def test_cross_origin_requests_are_rejected(http_server):
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(request, timeout=5)
-    assert exc_info.value.code == 403
+    with exc_info.value as error:
+        assert error.code == 403
 
 
 def test_non_json_post_is_rejected(http_server):
-    request = urllib.request.Request(
-        f"{http_server['base']}/search",
-        data=b'{"query":"code"}',
-        headers={"Content-Type": "text/plain", **AUTH_HEADERS},
-        method="POST",
-    )
-    with pytest.raises(urllib.error.HTTPError) as exc_info:
-        urllib.request.urlopen(request, timeout=5)
-    assert exc_info.value.code == 415
+    for _attempt in range(10):
+        request = urllib.request.Request(
+            f"{http_server['base']}/search",
+            data=b'{"query":"code"}',
+            headers={"Content-Type": "text/plain", **AUTH_HEADERS},
+            method="POST",
+        )
+        with pytest.raises(urllib.error.HTTPError) as exc_info:
+            urllib.request.urlopen(request, timeout=5)
+        with exc_info.value as error:
+            assert error.code == 415
+            assert "application/json" in json.loads(error.read())["error"]
 
 
 def test_unauthenticated_local_request_is_rejected(http_server):
     request = urllib.request.Request(f"{http_server['base']}/status", method="GET")
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(request, timeout=5)
-    assert exc_info.value.code == 401
+    with exc_info.value as error:
+        assert error.code == 401
 
 
 def test_http_server_refuses_non_loopback_binding(tmp_path):
@@ -390,7 +396,8 @@ def test_invalid_json_returns_400(http_server):
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
-    assert exc_info.value.code == 400
+    with exc_info.value as error:
+        assert error.code == 400
 
 
 def test_invalid_utf8_json_returns_400(http_server):
@@ -403,7 +410,8 @@ def test_invalid_utf8_json_returns_400(http_server):
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
-    assert exc_info.value.code == 400
+    with exc_info.value as error:
+        assert error.code == 400
 
 
 def test_empty_body_returns_400(http_server):
@@ -416,7 +424,8 @@ def test_empty_body_returns_400(http_server):
     )
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(req, timeout=5)
-    assert exc_info.value.code == 400
+    with exc_info.value as error:
+        assert error.code == 400
 
 
 def test_server_enforces_configured_body_limit(tmp_path: Path) -> None:
@@ -438,8 +447,9 @@ def test_server_enforces_configured_body_limit(tmp_path: Path) -> None:
     try:
         with pytest.raises(urllib.error.HTTPError) as raised:
             urllib.request.urlopen(request, timeout=5)
-        assert raised.value.code == 413
-        assert json.loads(raised.value.read()) == {"error": "request body too large"}
+        with raised.value as error:
+            assert error.code == 413
+            assert json.loads(error.read()) == {"error": "request body too large"}
     finally:
         server.shutdown()
         server.server_close()

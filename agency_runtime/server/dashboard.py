@@ -473,6 +473,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             )
             if content_type != "application/json":
+                self._drain_bounded_request_body()
                 self._json_error(
                     HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required"
                 )
@@ -562,8 +563,14 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         )
 
     def _handle_hosts(self) -> None:
+        from agency_runtime.core.host_control import inspect_host_status
+
         inspector = self.server.host_inspector  # type: ignore[attr-defined]
-        self._json_ok({"hosts": inspector()})
+        hosts = [
+            inspect_host_status(self.store, str(item.get("host") or ""), native_record=item)
+            for item in inspector()
+        ]
+        self._json_ok({"hosts": hosts})
 
     def _handle_config(self) -> None:
         self._json_ok(_config_payload(read_config_state()))
@@ -649,10 +656,14 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         self._json_ok({"ok": True, "action": action, "snapshot_id": snapshot_id})
 
     def _handle_host_toggle(self, body: dict[str, Any]) -> None:
-        from agency_runtime.core.installer import HOSTS, toggle_agency
+        from agency_runtime.core.host_control import (
+            SUPPORTED_HOSTS,
+            inspect_host_status,
+            set_runtime_control,
+        )
 
         host = str(body.get("host") or "").strip().lower()
-        if host not in HOSTS:
+        if host not in SUPPORTED_HOSTS:
             raise ValueError(f"unknown host: {host or '<empty>'}")
         enabled = body.get("enabled")
         if not isinstance(enabled, bool):
@@ -661,11 +672,19 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         expected = f"{verb} {host}"
         if body.get("confirm") != expected:
             raise ValueError(f"confirmation phrase must be {expected}")
-        result = toggle_agency(host, enabled=enabled)
-        if result.get("ok"):
-            _HOST_INSPECTIONS.invalidate(host)
-        status = HTTPStatus.OK if result.get("ok") else HTTPStatus.CONFLICT
-        self._send_json(status, result)
+        control = set_runtime_control(
+            self.store,
+            host,
+            enabled=enabled,
+            source="dashboard",
+        )
+        inspector = self.server.host_inspector  # type: ignore[attr-defined]
+        native = next(
+            (item for item in inspector() if item.get("host") == host),
+            {"host": host},
+        )
+        result = inspect_host_status(self.store, host, native_record=native)
+        self._send_json(HTTPStatus.OK, {"ok": True, **control, "status": result})
 
 
 class DashboardHTTPServer(AgencyHTTPServer):

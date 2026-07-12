@@ -38,7 +38,7 @@ def test_openai_compatible_base_v1_is_not_duplicated(monkeypatch):
             "choices": [{"message": {"content": '{"selected_ids":["security-reviewer"],"confidence":0.9}'}}],
         })
 
-    monkeypatch.setattr(judge.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(judge, "open_no_redirect", fake_urlopen)
     provider = ProviderEntry(
         name="openai",
         type="openai-compatible",
@@ -72,7 +72,7 @@ def test_anthropic_provider_uses_messages_protocol(monkeypatch):
             }],
         })
 
-    monkeypatch.setattr(judge.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(judge, "open_no_redirect", fake_urlopen)
     provider = ProviderEntry(
         name="anthropic",
         type="anthropic",

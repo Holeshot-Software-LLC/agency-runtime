@@ -1,13 +1,14 @@
 ---
 title: "AR-02: Close specialist coverage gaps"
-status: open
+status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-11
 tags: [roster, policy]
 related:
   - docs/decisions/0013-approval-gated-roster-activation.md
   - docs/decisions/0021-full-companion-policy-with-precedence.md
+  - docs/decisions/0033-explicit-companion-route-availability.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -27,11 +28,21 @@ The bundled companion policy contains conditional routes to specialist slugs tha
 
 ## Current state
 
-The policy references `internationalization-engineer`, `payments-billing-engineer`, and `test-automation-engineer`, while the current starter roster does not activate those specialists. The README reports these as coverage gaps, and the same slugs appear in multiple policy actions.
+The starter roster now includes governed, versioned definitions for
+`internationalization-engineer`, `payments-billing-engineer`, and
+`test-automation-engineer`. The bundled policy classifies all 238 referenced
+specialists: seven are required bundled specialists and 231 are roster-gated.
+A roster-gated route is skipped with an explicit reason until an approved
+active roster supplies the specialist.
 
 ## Approach
 
-Resolve each gap deliberately: add an in-repository, governed specialist definition when the role is genuinely required, or map the condition to an existing specialist with equivalent responsibility. Keep policy validation strict so a new unresolved slug cannot be introduced silently.
+Keep specialist definitions in-repository when they are required for the
+starter experience. Generate the explicit availability registry from every
+action and division route, validate it against the active roster, and fail the
+policy command when a required or unclassified route cannot resolve. Preserve
+the extended policy by enabling roster-gated specialists after governed
+activation rather than deleting their routes.
 
 ## Dependencies
 
@@ -39,8 +50,14 @@ None. This item does not block the initial release if unresolved branches remain
 
 ## Acceptance
 
-- [ ] Every enabled policy route resolves to an active, governed specialist.
-- [ ] Any intentionally unavailable route is explicitly disabled and carries a tested reason.
-- [ ] Policy validation fails on an unrecognized enabled slug.
-- [ ] Tests exercise internationalization, payments, and test-automation routing cases.
-- [ ] User-facing coverage documentation matches the validated roster.
+- [x] Every enabled policy route resolves to an active, governed specialist.
+- [x] Any intentionally unavailable route is explicitly disabled and carries a tested reason.
+- [x] Policy validation fails on an unrecognized enabled slug.
+- [x] Tests exercise internationalization, payments, and test-automation routing cases.
+- [x] User-facing coverage documentation matches the validated roster.
+
+## Verification
+
+- `python scripts/update_policy_availability.py --check`
+- `python -m pytest tests/test_policy_validation.py -q`
+- `agency eval routing --json --no-details`

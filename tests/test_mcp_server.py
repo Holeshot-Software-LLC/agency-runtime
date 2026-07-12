@@ -9,6 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.mcp import MAX_INPUT_BYTES, MCP_TOOLS, handle_tool_call, run_stdio
 
@@ -35,6 +37,100 @@ def test_mcp_exposes_explain_selection_tool() -> None:
     names = {tool["name"] for tool in MCP_TOOLS}
 
     assert "agency.explain_selection" in names
+
+
+def test_mcp_exposes_host_status_and_exact_confirmed_control_tools() -> None:
+    tools = {tool["name"]: tool for tool in MCP_TOOLS}
+
+    assert {"agency.host_status", "agency.host_control"} <= set(tools)
+    control = tools["agency.host_control"]["inputSchema"]
+    assert control["properties"]["enabled"]["type"] == "boolean"
+    assert control["properties"]["host"]["enum"] == [
+        "hermes",
+        "openclaw",
+        "codex",
+        "claude",
+    ]
+
+
+def test_mcp_host_control_requires_exact_confirmation_and_persists(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+
+    rejected = handle_tool_call(
+        "agency.host_control",
+        {"host": "codex", "enabled": False, "confirm": "yes"},
+        store=store,
+    )
+    assert "confirmation must exactly match" in rejected["error"]
+    assert store.get_host_control("codex")["enabled"] is True
+
+    changed = handle_tool_call(
+        "agency.host_control",
+        {"host": "codex", "enabled": False, "confirm": "DISABLE codex"},
+        store=store,
+    )
+    assert changed["ok"] is True
+    assert changed["enabled"] is False
+    assert Store(tmp_path / "agency.db").get_host_control("codex")["enabled"] is False
+
+
+def test_mcp_host_status_reports_native_and_runtime_layers(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.set_host_control("claude", enabled=False, source="test")
+    monkeypatch.setattr(
+        "agency_runtime.core.host_control.inspect_host_status",
+        lambda runtime_store, host: {
+            "host": host,
+            "registered": True,
+            "enabled": True,
+            "runtime_enabled": runtime_store.get_host_control(host)["enabled"],
+            "effective_enabled": False,
+        },
+    )
+
+    status = handle_tool_call(
+        "agency.host_status",
+        {"host": "claude"},
+        store=store,
+    )
+
+    assert status["enabled"] is True
+    assert status["runtime_enabled"] is False
+    assert status["effective_enabled"] is False
+
+
+def test_canary_mode_blocks_every_mutating_mcp_surface(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    before = store.runtime_table_counts()
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+
+    calls = {
+        "agency.preflight": {"user_message": "route this"},
+        "agency.explain_selection": {"task": "explain"},
+        "agency.load_specialist": {"slug": "x", "session_id": "s"},
+        "agency.record_skill_loaded": {"skill_name": "x"},
+        "agency.delegate": {"agent": "x", "task": "work"},
+        "agency.finalize": {"draft_text": "draft"},
+        "agency.host_control": {
+            "host": "codex",
+            "enabled": False,
+            "confirm": "DISABLE codex",
+        },
+    }
+    for name, arguments in calls.items():
+        result = handle_tool_call(name, arguments, store=store)
+        assert "disabled during a live canary" in result["error"]
+
+    assert store.runtime_table_counts() == before
+    assert store.get_host_control("codex")["enabled"] is True
 
 
 def test_mcp_load_specialist_returns_prompt_and_records_evidence(tmp_path: Path) -> None:

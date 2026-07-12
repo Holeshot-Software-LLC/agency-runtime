@@ -20,13 +20,26 @@ import time
 import urllib.request
 from typing import Any
 
-from agency_runtime.core.config import AgencyConfig, JudgeConfig, ProviderEntry, load_config
+from agency_runtime.core.config import (
+    MAX_PROVIDER_CHAIN_ENTRIES,
+    AgencyConfig,
+    JudgeConfig,
+    ProviderEntry,
+    _is_loopback_http_url,
+    is_safe_credential_url,
+    load_config,
+)
+from agency_runtime.core.http_safety import open_no_redirect
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
+from agency_runtime.core.cli_transport import (
+    SUPPORTED_CLI_TRANSPORTS,
+    invoke_cli_judge,
+)
 
 logger = logging.getLogger("agency_runtime.selector.judge")
 
 _MAX_JUDGE_RESPONSE_BYTES = 256 * 1024
-_MAX_PROVIDER_ATTEMPTS = 4
+_MAX_PROVIDER_ATTEMPTS = MAX_PROVIDER_CHAIN_ENTRIES
 _MAX_JUDGE_DEADLINE_SECONDS = 60.0
 
 
@@ -46,19 +59,30 @@ def _attempt_signature(
     model: str,
     ollama_mode: bool,
     provider_type: str = "openai-compatible",
+    transport: str = "",
 ) -> tuple[str, str, str]:
     """Identify equivalent network attempts across new and legacy config."""
-    protocol = "ollama" if ollama_mode else provider_type.strip().lower()
+    normalized_type = provider_type.strip().lower()
+    if normalized_type == "cli":
+        return "cli", transport.strip().lower(), model.strip().lower()
+    protocol = "ollama" if ollama_mode else normalized_type
     return protocol, base_url.rstrip("/").lower(), model.strip().lower()
 
 
 def _provider_is_attemptable(provider: ProviderEntry) -> bool:
+    provider_type = provider.type.strip().lower()
+    if provider_type == "cli":
+        return provider.transport.strip().lower() in SUPPORTED_CLI_TRANSPORTS
     if not provider.model or not provider.base_url:
         return False
     return (
-        provider.type.strip().lower() == "ollama"
+        provider_type == "ollama"
         or provider.ollama_mode
         or bool(provider.resolve_api_key())
+        or (
+            provider_type in {"openai", "openai-compatible", "litellm"}
+            and _is_loopback_http_url(provider.base_url)
+        )
     )
 
 
@@ -123,6 +147,29 @@ def parse_json_response(text: str) -> dict[str, Any] | None:
     return None
 
 
+def _build_judge_prompt(
+    task_description: str,
+    candidates: list[dict[str, Any]],
+    max_sel: int,
+) -> str:
+    """Build the bounded semantic-selection prompt shared by all transports."""
+
+    judge_candidates = candidates[:20]
+    catalog_lines = []
+    for agent in judge_candidates:
+        slug = agent.get("slug", "")
+        desc = agent.get("description", "")[:80]
+        catalog_lines.append(f"  {slug}: {desc}")
+    catalog_str = "\n".join(catalog_lines)
+    return (
+        f"Task: {task_description}\n\n"
+        f"Select 1-{max_sel} specialists from these {len(judge_candidates)} "
+        f"candidates. Return JSON only.\n\n"
+        f"Candidates:\n{catalog_str}\n\n"
+        f'Return: {{"selected_ids": ["id1"], "confidence": 0.9}}'
+    )
+
+
 def _build_judge_payload(
     task_description: str,
     candidates: list[dict[str, Any]],
@@ -131,21 +178,7 @@ def _build_judge_payload(
     provider_type: str = "openai-compatible",
 ) -> tuple[bytes, str, str]:
     """Build the HTTP request payload and return (body, url_path, content_type)."""
-    judge_candidates = candidates[:20]
-    catalog_lines = []
-    for agent in judge_candidates:
-        slug = agent.get("slug", "")
-        desc = agent.get("description", "")[:80]
-        catalog_lines.append(f"  {slug}: {desc}")
-    catalog_str = "\n".join(catalog_lines)
-
-    user_content = (
-        f"Task: {task_description}\n\n"
-        f"Select 1-{max_sel} specialists from these {len(judge_candidates)} "
-        f"candidates. Return JSON only.\n\n"
-        f"Candidates:\n{catalog_str}\n\n"
-        f'Return: {{"selected_ids": ["id1"], "confidence": 0.9}}'
-    )
+    user_content = _build_judge_prompt(task_description, candidates, max_sel)
 
     if ollama_mode:
         payload = json.dumps({
@@ -221,12 +254,63 @@ def _try_provider(
     provider_type = provider.type.strip().lower()
     ollama_mode = provider.ollama_mode or provider_type == "ollama"
 
+    if provider_type == "cli":
+        prompt = _build_judge_prompt(task_description, candidates, max_sel)
+        started = time.monotonic()
+        try:
+            parsed = invoke_cli_judge(
+                provider,
+                prompt,
+                timeout=(
+                    provider.timeout
+                    if request_timeout is None
+                    else request_timeout
+                ),
+            )
+        except Exception as exc:
+            logger.debug(
+                "provider %s failed (%s)",
+                provider.name[:80],
+                type(exc).__name__,
+            )
+            return None
+        if parsed is None:
+            return None
+        selected = parsed.get("selected_ids") or parsed.get("selected") or []
+        if not isinstance(selected, list):
+            return None
+        known_ids = {agent.get("slug", "") for agent in candidates}
+        valid_selected = list(dict.fromkeys(
+            str(item) for item in selected if str(item) in known_ids
+        ))
+        confidence = _bounded_confidence(parsed.get("confidence"))
+        if not valid_selected or confidence is None:
+            return None
+        return {
+            "selected_ids": valid_selected[:max_sel],
+            "confidence": confidence,
+            "latency_ms": int((time.monotonic() - started) * 1000),
+            "status": "applied",
+            "provider": (
+                f"{provider.name} (cli:{provider.transport.strip().lower()})"
+            ),
+            "candidate_count": candidate_count,
+            "top_score": top_score,
+        }
+
     # Auth check
     if not provider.model or not provider.base_url:
         logger.debug("provider %s: model or base URL missing, skipping", provider.name)
         return None
-    if not ollama_mode and not api_key:
+    keyless_loopback = (
+        provider_type in {"openai", "openai-compatible", "litellm"}
+        and _is_loopback_http_url(provider.base_url)
+    )
+    if not ollama_mode and not api_key and not keyless_loopback:
         logger.debug("provider %s: no api key, skipping", provider.name)
+        return None
+    if api_key and not is_safe_credential_url(provider.base_url):
+        logger.debug("provider %s: unsafe credential transport, skipping", provider.name)
         return None
 
     body, path, content_type = _build_judge_payload(
@@ -265,7 +349,7 @@ def _try_provider(
     req = urllib.request.Request(request_url, data=body, headers=headers, method="POST")
     t0 = time.monotonic()
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with open_no_redirect(req, timeout=timeout) as resp:
             data = _read_json_object(resp)
     except Exception as exc:
         logger.debug("provider %s failed (%s)", provider.name[:80], type(exc).__name__)
@@ -339,6 +423,9 @@ def _try_legacy_judge(
     api_key = jc.resolve_api_key()
     if not jc.model or not jc.base_url:
         return None
+    if api_key and not is_safe_credential_url(jc.base_url):
+        logger.debug("legacy judge: unsafe credential transport, skipping")
+        return None
 
     ollama_mode = jc.ollama_mode
     body, path, content_type = _build_judge_payload(
@@ -366,7 +453,7 @@ def _try_legacy_judge(
     req = urllib.request.Request(request_url, data=body, headers=headers, method="POST")
     t0 = time.monotonic()
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with open_no_redirect(req, timeout=timeout) as resp:
             data = _read_json_object(resp)
     except Exception as exc:
         logger.debug("legacy judge failed (%s)", type(exc).__name__)
@@ -430,10 +517,9 @@ def query_judge(
     """Query the agency judge model to select specialists.
 
     Fallback chain (first success wins):
-    1. Each provider in cfg.providers (user-configured priority list)
-    2. Legacy judge config (cfg.judge — backward compat)
-    3. Ollama fallback (cfg.ollama)
-    4. Token-only (no LLM needed)
+    1. Each provider in a nonempty cfg.providers chain, then token-only.
+    2. For legacy configs with no provider chain: cfg.judge, cfg.ollama,
+       then token-only.
     """
     cfg = config or load_config()
     jc = judge_config or cfg.judge
@@ -504,6 +590,7 @@ def query_judge(
             provider.model,
             provider.ollama_mode,
             provider.type,
+            provider.transport,
         )
         if signature in attempted or not _provider_is_attemptable(provider):
             continue
@@ -518,7 +605,12 @@ def query_judge(
             break
         attempted.add(signature)
         attempted_targets.add(
-            _network_target_signature(provider.base_url, provider.model)
+            (
+                f"cli:{provider.transport.strip().lower()}",
+                provider.model.strip().lower(),
+            )
+            if provider.type.strip().lower() == "cli"
+            else _network_target_signature(provider.base_url, provider.model)
         )
         res = _try_provider(
             provider, task_description, candidates, max_sel,
@@ -529,7 +621,19 @@ def query_judge(
             return _with_cumulative_latency(res, attempts_started)
         logger.debug("provider %s failed, trying next", provider.name)
 
-    # Layer 2: Legacy judge config (backward compat for existing configs)
+    # A typed provider chain is authoritative. Never make a hidden legacy or
+    # Ollama request after the user removed it from that ordered chain.
+    if cfg.providers:
+        fallback = _token_only_fallback(
+            candidates,
+            scores,
+            candidate_count,
+            top_score,
+            max_sel,
+        )
+        return _with_cumulative_latency(fallback, attempts_started)
+
+    # Legacy layers apply only when the typed provider chain is absent.
     legacy_signature = _attempt_signature(jc.base_url, jc.model, jc.ollama_mode)
     legacy_target = _network_target_signature(jc.base_url, jc.model)
     if (

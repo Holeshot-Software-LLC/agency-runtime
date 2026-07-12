@@ -144,10 +144,11 @@ returns nonzero. The foreground dashboard remains usable, or rerun with
 | Claude Code | `~/.agency-runtime/marketplaces/claude/` | `claude plugin` |
 
 Codex and Claude bundles contain their host-native marketplace manifest, plugin
-manifest, hook manifest, and `.mcp.json`. OpenClaw receives a native JavaScript
-package that invokes the installed Python runtime through bounded JSON. Hermes
-receives its native Python plugin manifest and hook registration. Backups live
-under `~/.agency-runtime/backups/<host>/`.
+manifest, hook contract, `.mcp.json`, and an Agency control skill. OpenClaw
+receives a native JavaScript package that invokes the installed Python runtime
+through bounded JSON. Hermes receives its native Python plugin manifest, hook
+registration, and direct command registration. Backups live under
+`~/.agency-runtime/backups/<host>/`.
 
 ### Installation maturity
 
@@ -171,16 +172,67 @@ from file existence.
 ### Enable, disable, and restore
 
 ```bash
+agency status --agent codex
 agency off --agent codex --dry-run
 agency off --agent codex
 agency on --agent codex
+agency off --agent codex --native --dry-run
+agency off --agent codex --native
 ```
 
-These commands use native host lifecycle operations. They do not delete the
-SQLite store, configuration, roster, or retained backups. A host restart may be
-required. There is not yet a uniform in-conversation `/agency on|off` command,
-and an already-running host is not claimed to reload unless its native contract
-proves that behavior.
+The default `on` and `off` commands write a persistent host-scoped soft
+control to SQLite. Every adapter reads it again at each routing, tool,
+model-receipt, finalization, and verification boundary, so an already-created
+adapter stops recording or shaping work after `off` and resumes after `on`.
+This does not unregister the native plugin or require a host restart. It also
+does not prove that the host loaded the integration in the first place.
+
+`--native` is the explicit host-plugin lifecycle operation. It succeeds only
+when post-operation native inventory proves the requested state; unknown
+enablement remains unverified and may require a host restart. Neither control
+mode deletes configuration, roster state, runtime evidence, or backups.
+
+Hermes and OpenClaw bundles register a direct `/agency status|on|off` command.
+Codex and Claude bundles provide the equivalent `agency status|on|off` control
+skill, including a leading-slash form when the host routes it through the skill;
+it calls exact-confirmed `agency.host_status` and `agency.host_control` MCP
+tools. The CLI, dashboard, generated host surfaces, and MCP tools share the same
+soft-control record. These paths have deterministic contract coverage; no live
+chat-command execution is claimed in this checkout.
+
+### Host canaries
+
+```bash
+agency host-canary codex
+agency host-canary codex --execute --confirm "RUN LIVE codex CANARY"
+```
+
+The default command is a read-only readiness report and never creates a
+database or claims a live result. Live execution requires the exact confirmation
+phrase, a discovered host and managed bundle identity, enabled soft control, a
+bounded safe backend, a valid final-response header, and nonce-bound correlated
+routing/finalization evidence. Prompts and host output are not stored in the
+attestation.
+
+Codex uses a private temporary `CODEX_HOME`, copies only its bounded
+authentication artifact into that owner-private home, registers the managed marketplace and
+plugin inside that temporary profile, ignores user configuration and project
+rules, disables shell/web/app/MCP mutation surfaces, and removes the profile
+afterward. Its report preserves the real profile's native registration facts
+separately and records any success as `isolated-profile`; that attestation
+cannot promote the real profile's `canary` state. Claude likewise copies only
+its bounded credentials into a temporary `CLAUDE_CONFIG_DIR`, requests the
+managed plugin explicitly, disables user/project setting sources, tools, MCP,
+and session persistence, and reports it loaded/invoked only when nonce-bound
+hook evidence proves that fact. It does not use Claude's `--safe-mode`, because
+that mode disables the plugin and hooks being tested. Hermes and OpenClaw fail
+closed because no equally safe noninteractive mode is yet proven.
+
+A durable attestation is matched against operating system, host version, plugin
+version, install ID, bundle digest, profile scope, and current native state.
+Upgrade, reinstall, rollback, bundle drift, or a non-current profile makes it
+stale. This repository has deterministic canary tests but does not claim that a
+real model-backed canary was run.
 
 ## Secure operations dashboard
 
@@ -244,6 +296,48 @@ The Settings view exposes runtime policy, provider order, judge/Ollama,
 selector, adapter, privacy, storage, HTTP, and dashboard-service port settings.
 Changing a restart-bound field is reported explicitly. Enabling content capture
 or switching to `local-only` requires an additional operation-specific phrase.
+
+### Ordered judge providers
+
+`agency configure` edits the same ordered provider chain used at runtime. A
+chain contains at most four entries, matching the bounded attempt budget. When
+`providers` is nonempty it is authoritative: failure of its last entry goes
+directly to deterministic token routing. Legacy `judge` and separate `ollama`
+fallback settings are consulted only when no typed chain exists.
+
+```yaml
+providers:
+  - name: codex-cli
+    type: cli
+    transport: codex
+    model: ""  # use the CLI's configured default
+    timeout: 15
+  - name: local-compatible
+    type: openai-compatible
+    model: local-model
+    base_url: http://127.0.0.1:1234/v1
+    timeout: 15
+```
+
+Supported CLI judge transports are `codex` and `claude`. They reuse an existing
+authenticated local CLI session and need no Agency Runtime API key. Detection
+reports installed, authenticated, and usable separately. Judge prompts travel
+over standard input, are capped at 16 KiB, and are redacted recursively from
+results and errors. Executions use isolated home/temp roots, a minimal
+allowlisted environment plus only the selected host's authentication root, and
+bounded output. Project customizations and tools are disabled through the CLI
+controls the installed version exposes. Windows uses a kill-on-close Job Object;
+POSIX uses an owned process group. A delegation fails if descendants outlive a
+nominally successful parent. On Windows, `.cmd` and `.bat` shims never receive
+user-controlled arguments; a sibling native or PowerShell entry point is used,
+or the provider fails closed.
+
+Credentialed remote provider URLs require HTTPS; literal loopback HTTP is the
+only exception. Provider URLs reject embedded user information, query strings,
+and fragments, and credentials are never followed through redirects. Custom
+model catalogs are byte-, count-, and string-bounded, and model IDs containing
+terminal control characters are rejected before display. Keyless compatible
+providers are accepted only on a literal loopback endpoint.
 
 Observability is metadata-only by default:
 
@@ -343,15 +437,15 @@ agency eval routing
 agency eval routing --json --no-details
 ```
 
-Corpus v1 currently contains 31 routing cases, 20 adversarial policy cases, and
+Corpus v1 currently contains 31 routing cases, 25 policy cases, and
 17 delegation-detection cases. The checked-in v1 gates are:
 
 | Area | Gate |
 |---|---|
 | Routing | precision@3 ≥ 0.75; required recall@3 ≥ 0.97; top-k accuracy ≥ 0.95; top-1 accuracy ≥ 0.90; forbidden-case rate = 0; abstention accuracy = 1.0 |
-| Policy | required recall ≥ 0.95; case accuracy ≥ 0.95; forbidden-case rate = 0 |
+| Policy | required recall ≥ 0.95; case accuracy ≥ 0.95; forbidden-case rate = 0; resolved-companion recall = 1.0; resolved-companion case accuracy = 1.0 |
 | Delegation | decision accuracy ≥ 0.94; count accuracy ≥ 0.90; source accuracy ≥ 0.90 |
-| Performance | deterministic narrowing and p95 ≤ 50 ms for the 1,000-agent microbenchmark |
+| Performance | deterministic narrowing and p95 ≤ 20 ms for the 1,000-agent microbenchmark; concurrent overlap ≥ 2; internal concurrency probe synchronized |
 
 These are release regression gates, not a claim of universal accuracy. Changing
 the corpus, metric definitions, or thresholds requires a version change and a
@@ -397,6 +491,14 @@ Environment overrides include `AGENCY_CONFIG_PATH`, `AGENCY_DB_PATH`,
 `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `OLLAMA_BASE_URL`.
 `AGENCY_DASHBOARD_PORT` overrides the fixed user-service port.
 
+The default `~/.agency-runtime` directory is an Agency Runtime-owned private
+directory. When a custom config or database path points into a pre-existing
+shared directory, Agency Runtime does not chmod that directory or replace its
+ACL. It still hardens the config/database files and SQLite sidecars themselves,
+fails closed when a private Windows file DACL cannot be enforced, and rejects a
+database path that is a symlink or reparse point. The operator remains
+responsible for access to a custom parent directory.
+
 ## Roster governance
 
 Imported JSON, YAML, or Markdown roster data moves through quarantine, diff,
@@ -415,6 +517,29 @@ agency roster list
 `--auto-approve` is fail-closed and requires every enabled source to be marked
 trusted. Repository examples are self-contained; the runtime does not depend on
 a sibling repository.
+
+### Companion-policy availability
+
+The bundled starter roster contains seven governed specialists, including
+dedicated internationalization, payments and billing, and test-automation
+roles. The broad companion policy references 238 unique specialists across
+action routes and division anchors. Seven are required bundled specialists; the
+other 231 are explicitly roster-gated. A roster-gated route stays disabled with
+a recorded reason until an approved active roster supplies that specialist.
+
+`agency policy` validates both action and division routes against the active
+roster. Its JSON form reports enabled, disabled, and invalid routes, and the
+command exits nonzero when a required specialist is absent, a route lacks an
+availability declaration, or the policy structure is malformed:
+
+```bash
+agency policy --json
+python scripts/update_policy_availability.py --check
+```
+
+The availability block is generated deterministically from the policy. Adding
+a route requires regenerating and reviewing that block, so an unresolved slug
+cannot enter the enabled policy silently.
 
 ## Development and release
 

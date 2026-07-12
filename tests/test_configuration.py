@@ -589,6 +589,198 @@ def test_provider_secret_can_be_set_after_adding_provider(tmp_path: Path) -> Non
     assert "provider-secret" not in repr(result)
 
 
+def test_cli_provider_and_keyless_loopback_round_trip(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+    result = apply_config_operations(
+        [{
+            "op": "set",
+            "path": "providers",
+            "value": [
+                {
+                    "name": "codex",
+                    "type": "cli",
+                    "transport": "codex",
+                    "model": "",
+                    "base_url": "",
+                    "timeout": 3,
+                },
+                {
+                    "name": "lm-studio",
+                    "type": "openai-compatible",
+                    "model": "local-model",
+                    "base_url": "http://127.0.0.1:1234/v1",
+                    "timeout": 3,
+                },
+            ],
+        }],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    assert result.state.persisted["providers"][0]["transport"] == "codex"
+    loaded = load_config(path, reload=True)
+    assert loaded.providers[0].auth_method() == "oauth"
+    assert loaded.providers[0].is_available() is True
+    assert loaded.providers[1].is_available() is True
+
+
+def test_cli_provider_rejects_windows_batch_metacharacters_in_model(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ConfigValidationError, match="providers.0.model"):
+        replace_config_document(
+            {
+                "providers": [{
+                    "name": "codex-cli",
+                    "type": "cli",
+                    "transport": "codex",
+                    "model": "gpt-5&whoami",
+                }],
+            },
+            expected_revision=read_config_state(tmp_path / "agency.yaml").revision,
+            path=tmp_path / "agency.yaml",
+        )
+
+
+def test_provider_chain_rejects_more_entries_than_runtime_can_attempt(
+    tmp_path: Path,
+) -> None:
+    providers = [
+        {
+            "name": f"provider-{index}",
+            "type": "ollama",
+            "model": "model",
+            "base_url": "http://127.0.0.1:11434",
+        }
+        for index in range(5)
+    ]
+    with pytest.raises(ConfigValidationError, match="at most 4"):
+        replace_config_document(
+            {"providers": providers},
+            expected_revision=read_config_state(tmp_path / "agency.yaml").revision,
+            path=tmp_path / "agency.yaml",
+        )
+
+
+@pytest.mark.parametrize("field", ["name", "model"])
+def test_provider_display_tokens_reject_terminal_controls(
+    field: str,
+    tmp_path: Path,
+) -> None:
+    provider = {
+        "name": "provider",
+        "type": "ollama",
+        "model": "model",
+        "base_url": "http://127.0.0.1:11434",
+    }
+    provider[field] = "unsafe\x1b[31m"
+    with pytest.raises(ConfigValidationError, match="terminal control"):
+        replace_config_document(
+            {"providers": [provider]},
+            expected_revision=read_config_state(tmp_path / "agency.yaml").revision,
+            path=tmp_path / "agency.yaml",
+        )
+
+
+def test_keyless_remote_compatible_provider_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+    with pytest.raises(ConfigValidationError, match="authentication"):
+        apply_config_operations(
+            [{
+                "op": "set",
+                "path": "providers",
+                "value": [{
+                    "name": "remote",
+                    "type": "openai-compatible",
+                    "model": "model",
+                    "base_url": "https://provider.invalid/v1",
+                }],
+            }],
+            expected_revision=state.revision,
+            path=path,
+        )
+
+
+@pytest.mark.parametrize(
+    "document",
+    [
+        {
+            "providers": [{
+                "name": "remote",
+                "type": "openai-compatible",
+                "model": "model",
+                "base_url": "http://provider.invalid/v1",
+                "api_key": "secret",
+            }],
+        },
+        {
+            "judge": {
+                "model": "model",
+                "base_url": "http://judge.invalid/v1",
+                "api_key_env": "JUDGE_KEY",
+            },
+        },
+        {
+            "adapters": {
+                "litellm": {
+                    "base_url": "http://adapter.invalid",
+                    "api_key": "secret",
+                },
+            },
+        },
+    ],
+)
+def test_strict_writer_rejects_credentials_over_remote_http(
+    document: dict,
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+
+    with pytest.raises(ConfigValidationError, match="literal loopback HTTP"):
+        replace_config_document(
+            document,
+            expected_revision=read_config_state(path).revision,
+            path=path,
+        )
+
+
+def test_strict_writer_accepts_credentials_over_literal_loopback_http(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    result = replace_config_document(
+        {
+            "judge": {
+                "model": "model",
+                "base_url": "http://[::1]:4000/v1",
+                "api_key": "secret",
+            },
+        },
+        expected_revision=read_config_state(path).revision,
+        path=path,
+    )
+
+    assert result.state.persisted["judge"]["api_key"] == "***REDACTED***"
+
+
+def test_strict_writer_rejects_query_bearing_base_url(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+
+    with pytest.raises(ConfigValidationError, match="HTTP"):
+        replace_config_document(
+            {
+                "judge": {
+                    "base_url": "https://judge.invalid/v1?token=leaky",
+                    "api_key": "secret",
+                },
+            },
+            expected_revision=read_config_state(path).revision,
+            path=path,
+        )
+
+
 def test_local_only_profile_enforces_local_provider_and_disables_adapters(
     tmp_path: Path,
 ) -> None:
@@ -656,6 +848,78 @@ def test_atomic_replace_failure_preserves_original_and_removes_temporary_file(
 
     assert path.read_bytes() == before
     assert list(tmp_path.glob(".agency.yaml.*.tmp")) == []
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits are not Windows ACLs")
+def test_environment_config_path_preserves_preexisting_parent_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent = tmp_path / "shared"
+    parent.mkdir()
+    parent.chmod(0o755)
+    target = parent / "agency.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(target))
+    revision = read_config_state().revision
+
+    apply_config_operations(
+        [{"op": "set", "path": "profile", "value": "power"}],
+        expected_revision=revision,
+    )
+
+    assert stat.S_IMODE(parent.stat().st_mode) == 0o755
+    assert stat.S_IMODE(target.stat().st_mode) == 0o600
+
+
+def test_environment_config_path_never_rewrites_preexisting_parent_acl(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent = tmp_path / "shared"
+    parent.mkdir()
+    target = parent / "agency.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(target))
+    calls: list[tuple[Path, bool]] = []
+    monkeypatch.setattr(configuration, "_IS_WINDOWS", True)
+
+    def allow_acl(candidate: Path, *, directory: bool = False) -> bool:
+        calls.append((candidate, directory))
+        return True
+
+    monkeypatch.setattr(configuration, "_restrict_windows_acl", allow_acl)
+
+    configuration._atomic_write_yaml(
+        resolve_config_path(),
+        {"profile": "power"},
+    )
+
+    assert (parent, True) not in calls
+    assert calls
+    assert all(candidate != parent for candidate, _directory in calls)
+
+
+def test_config_hardens_a_newly_created_target_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "owned" / "runtime" / "agency.yaml"
+    calls: list[tuple[Path, bool]] = []
+
+    def observe(
+        candidate: Path,
+        *,
+        required: bool = False,
+        directory: bool = False,
+    ) -> bool:
+        del required
+        calls.append((candidate, directory))
+        return True
+
+    monkeypatch.setattr(configuration, "_restrict_permissions", observe)
+
+    configuration._atomic_write_yaml(target, {"profile": "standard"})
+
+    assert (target.parent, True) in calls
 
 
 def test_private_write_fails_before_replace_when_windows_acl_cannot_be_enforced(

@@ -1,12 +1,13 @@
 ---
 title: "AR-06: Implement CLI-authenticated judge providers"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-11
 tags: [providers, authentication]
 related:
   - docs/decisions/0008-ordered-provider-fallback.md
+  - docs/decisions/0035-authoritative-bounded-provider-chain.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -26,11 +27,33 @@ Users who already authenticate through a supported local model CLI cannot curren
 
 ## Current state
 
-`ProviderEntry` recognizes `type: cli` and reports its authentication method as OAuth, but the judge runtime only performs HTTP requests and skips non-local providers without a resolved API key. Host CLI binaries are detected for adapter and delegation use, not as judge providers. No CLI judge transport, timeout contract, response normalization, or fallback test exists.
+`type: cli` is now a real, allowlisted provider contract for `transport:
+codex` and `transport: claude`. Detection reports executable discovery,
+authentication, and usable structured-output capability as separate facts.
+Codex is capability-probed for the required non-interactive controls; Claude
+must be at least 2.1.205 for the required fail-closed structured-output
+behavior.
+
+Both transports accept the routing prompt only on standard input, run in an
+empty temporary working directory with isolated home and temp roots, disable
+tools and project customizations through their supported controls, and receive
+only a narrow platform/proxy/certificate-path environment. Output is drained
+concurrently into bounded memory, overflow is discarded, and timeouts terminate
+the owned process tree.
 
 ## Approach
 
-Define a narrow provider transport contract and implement explicit CLI-backed providers only where a stable, non-interactive JSON invocation is available. Normalize output into the same selection result used by HTTP providers, enforce timeouts and bounded output, redact command diagnostics, and continue through the fallback chain on unavailable auth, malformed output, or process failure.
+CLI results normalize into the same selected-ID and confidence contract as HTTP
+providers. Missing authentication, unavailable capability, timeout, truncated
+output, process failure, and malformed or incomplete structured output are
+failures; the selector proceeds in configured order and ultimately uses
+deterministic token routing.
+
+Windows executable preparation never passes user-controlled arguments through
+a `.cmd` or `.bat` shim. A trusted sibling native executable is preferred, a
+sibling PowerShell shim receives discrete literal arguments, and a batch-only
+installation is rejected. This shared boundary also protects Codex, Claude,
+Hermes, OpenClaw, and generic delegation backends.
 
 ## Dependencies
 
@@ -38,8 +61,28 @@ Depends on `AR-05` so CLI-authenticated entries can be configured and validated 
 
 ## Acceptance
 
-- [ ] At least one supported CLI-authenticated provider completes a judge selection without an API key.
-- [ ] Provider detection distinguishes an installed binary from a usable authenticated session.
-- [ ] Invocation is non-interactive, time-bounded, output-bounded, and secret-safe.
-- [ ] Failures fall through to the next configured provider and ultimately to deterministic token routing.
-- [ ] Unit and integration tests cover success, missing authentication, timeout, invalid JSON, and fallback order.
+- [ ] At least one supported CLI-authenticated provider completes an authorized live judge selection without an API key.
+- [x] Provider detection distinguishes an installed binary from a usable authenticated session.
+- [x] Invocation is non-interactive, time-bounded, output-bounded, and secret-safe.
+- [x] Failures fall through to the next configured provider and ultimately to deterministic token routing.
+- [x] Unit and integration tests cover success, missing authentication, timeout, invalid JSON, and fallback order.
+
+## Verification
+
+- `tests/test_cli_judge_providers.py` covers Codex and Claude capability status,
+  keyless success, standard-input prompts, isolated environments, tool gates,
+  missing auth, launch failure, timeout, truncation, invalid output, Windows
+  model-token safety, and ordered fallback.
+- `tests/test_delegation_backends.py` exercises high-volume stdout and stderr,
+  owned-process timeouts, successful parents with lingering descendants,
+  partial I/O-worker startup, task/environment redaction, batch-only rejection,
+  and real `.cmd` plus sibling `.ps1` literal-argument handling across all
+  intended host backends.
+- The installed Codex 0.144.1 CLI accepted the complete judge override set
+  under `--strict-config` during an isolated, auth-free configuration check.
+  This proves current CLI configuration compatibility, not live judge success.
+- `tests/test_native_installer.py` proves CLI provider timeouts contribute to
+  generated host-hook deadlines.
+- Deterministic transport and selector coverage is complete, but no authorized
+  live model invocation is accepted as release evidence yet. Keep this item
+  open until an operator explicitly approves and records that canary.

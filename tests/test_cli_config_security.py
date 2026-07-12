@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import io
+import json
 import os
 import sys
 from pathlib import Path
@@ -15,11 +16,13 @@ from agency_runtime.core.configuration import (
     read_config_state,
     replace_config_document,
 )
+from agency_runtime.core.cli_transport import CLIProviderStatus
 from agency_runtime.core.detect import (
     AdapterDetection,
     DetectionResult,
     ProviderDetection,
 )
+from agency_runtime.core.provider_validation import ProviderValidationResult
 
 
 @pytest.fixture(autouse=True)
@@ -338,6 +341,244 @@ def test_anthropic_wizard_emits_typed_provider_for_messages_protocol(
     _write_config(path, result)
     config = load_config(path, reload=True)
     assert config.providers[0].type == "anthropic"
+
+
+def test_guided_provider_chain_reorders_suggested_fallbacks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    detection = DetectionResult(providers=ProviderDetection(
+        ollama_available=True,
+        ollama_models=["local-model"],
+        openai_key_present=True,
+        openai_models=["remote-model"],
+    ))
+    answers = iter(["2", "1", "2", "4"])
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
+
+    providers = cli._guided_provider_chain(detection, "standard")
+
+    assert [provider["name"] for provider in providers] == ["ollama", "openai"]
+
+
+def test_guided_provider_chain_explains_four_entry_limit(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    detection = DetectionResult(
+        providers=ProviderDetection(
+            litellm_available=True,
+            litellm_models=["proxy-model"],
+            openai_key_present=True,
+            openai_models=["openai-model"],
+            anthropic_key_present=True,
+            ollama_available=True,
+            ollama_models=["local-model"],
+        ),
+        cli_providers={
+            "codex": CLIProviderStatus("codex", True, True, True),
+        },
+    )
+    answers = iter(["1", "4"])
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
+
+    providers = cli._guided_provider_chain(detection, "standard")
+
+    assert len(providers) == 4
+    assert "support at most 4 entries; remove one first" in capsys.readouterr().out
+
+
+def test_cli_only_chain_disables_legacy_judge_fallback() -> None:
+    legacy = cli._legacy_judge_from_chain(
+        [{"name": "codex", "type": "cli", "transport": "codex"}],
+        {
+            "model": "removed",
+            "base_url": "https://removed.invalid/v1",
+            "api_key": "secret",
+            "ollama_mode": False,
+        },
+    )
+
+    assert legacy == {
+        "model": "",
+        "base_url": "",
+        "api_key": "",
+        "api_key_env": "",
+        "ollama_mode": False,
+    }
+
+
+def test_wizard_applies_timeout_to_every_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    detection = DetectionResult(providers=ProviderDetection(
+        ollama_available=True,
+        ollama_models=["local-model"],
+        openai_key_present=True,
+        openai_models=["remote-model"],
+    ))
+    answers = iter(["", "n", "7", "2", "15"])
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
+
+    result = cli._interactive_wizard(detection, "standard")
+
+    assert len(result["providers"]) == 2
+    assert {provider["timeout"] for provider in result["providers"]} == {7.0}
+
+
+def test_local_only_chain_can_bootstrap_ollama_when_detection_is_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    answers = iter(["1", "1", "local-model", "4"])
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
+
+    providers = cli._guided_provider_chain(DetectionResult(), "local-only")
+
+    assert [provider["type"] for provider in providers] == ["ollama"]
+    assert providers[0]["model"] == "local-model"
+    assert cli._is_loopback_url(providers[0]["base_url"])
+
+
+def test_custom_provider_authenticates_before_discovery_and_hides_direct_key(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    captured: list[tuple[str, str | None]] = []
+    answers = iter(["5", "https://provider.example/v1", "2", ""])
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
+    monkeypatch.setattr(cli.getpass, "getpass", lambda _prompt="": "direct-secret")
+    monkeypatch.setattr(
+        cli,
+        "_fetch_models_custom",
+        lambda url, key=None: captured.append((url, key)) or ["model-a"],
+    )
+
+    provider = cli._pick_custom_endpoint()
+
+    assert captured == [("https://provider.example/v1", "direct-secret")]
+    assert provider["api_key"] == "direct-secret"
+    assert provider["model"] == "model-a"
+    assert "direct-secret" not in capsys.readouterr().out
+
+
+def test_custom_model_discovery_rejects_oversized_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    read_sizes: list[int] = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        def read(self, size: int = -1) -> bytes:
+            read_sizes.append(size)
+            return b"x" * (cli._MAX_MODEL_DISCOVERY_BYTES + 1)
+
+    monkeypatch.setattr(cli, "open_no_redirect", lambda *_a, **_kw: Response())
+
+    assert cli._fetch_models_custom("http://127.0.0.1:1234/v1") == []
+    assert read_sizes == [cli._MAX_MODEL_DISCOVERY_BYTES + 1]
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "http://provider.invalid/v1",
+        "https://provider.invalid/v1?token=leaky",
+    ],
+)
+def test_custom_model_discovery_never_sends_credentials_to_unsafe_base(
+    base_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unexpected_call(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("credentialed discovery attempted")
+
+    monkeypatch.setattr(cli, "open_no_redirect", unexpected_call)
+
+    assert cli._fetch_models_custom(base_url, "secret") == []
+
+
+def test_remote_model_ids_are_count_length_and_terminal_safe(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    payload = json.dumps({
+        "data": [
+            {"id": "\x1b[31mhostile"},
+            {"id": "x" * (cli._MAX_MODEL_ID_CHARS + 1)},
+            *({"id": f"safe-{index:04d}"} for index in range(1200)),
+        ],
+    }).encode()
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        def read(self, _size: int = -1) -> bytes:
+            return payload
+
+    monkeypatch.setattr(cli, "open_no_redirect", lambda *_a, **_kw: Response())
+    models = cli._fetch_models_custom("http://127.0.0.1:1234/v1")
+
+    assert len(models) == cli._MAX_DISCOVERED_MODELS
+    assert all("\x1b" not in model for model in models)
+    assert all(len(model) <= cli._MAX_MODEL_ID_CHARS for model in models)
+    assert "\x1b" not in capsys.readouterr().out
+
+
+def test_interactive_chain_validation_reports_ordered_failures(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    seen: list[str] = []
+
+    def validate(provider, **_kwargs):
+        seen.append(provider.name)
+        usable = provider.name == "first"
+        return ProviderValidationResult(
+            provider.name,
+            provider.type,
+            usable,
+            usable,
+            "authentication unavailable" if not usable else "",
+        )
+
+    monkeypatch.setattr(cli, "validate_provider", validate)
+    providers = [
+        {
+            "name": "first",
+            "type": "cli",
+            "transport": "codex",
+            "model": "",
+            "base_url": "",
+            "api_key": "",
+            "api_key_env": "",
+            "ollama_mode": False,
+        },
+        {
+            "name": "second",
+            "type": "cli",
+            "transport": "claude",
+            "model": "",
+            "base_url": "",
+            "api_key": "",
+            "api_key_env": "",
+            "ollama_mode": False,
+        },
+    ]
+
+    assert cli._validate_interactive_provider_chain(providers) is False
+
+    output = capsys.readouterr().out
+    assert seen == ["first", "second"]
+    assert "providers.0 (first): usable" in output
+    assert "providers.1 (second): authentication unavailable" in output
 
 
 def test_console_output_uses_safe_encoding_errors(

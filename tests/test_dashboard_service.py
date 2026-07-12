@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import threading
 from contextlib import contextmanager
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +24,66 @@ from agency_runtime.core.dashboard_service import (
     stop_dashboard_service,
     uninstall_dashboard_service,
 )
+
+
+def test_dashboard_health_token_is_never_forwarded_through_redirect() -> None:
+    from agency_runtime.core.dashboard_runtime import dashboard_service_reachable
+
+    received_authorization: list[str | None] = []
+
+    class SinkHandler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            received_authorization.append(self.headers.get("Authorization"))
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status":"ok"}')
+
+        def log_message(self, *_args: Any) -> None:
+            return
+
+    sink = ThreadingHTTPServer(("127.0.0.1", 0), SinkHandler)
+    sink_port = int(sink.server_address[1])
+
+    class RedirectHandler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            self.send_response(302)
+            self.send_header(
+                "Location",
+                f"http://127.0.0.1:{sink_port}/capture",
+            )
+            self.end_headers()
+
+        def log_message(self, *_args: Any) -> None:
+            return
+
+    redirect = ThreadingHTTPServer(("127.0.0.1", 0), RedirectHandler)
+    threads = [
+        threading.Thread(target=server.serve_forever, daemon=True)
+        for server in (sink, redirect)
+    ]
+    for thread in threads:
+        thread.start()
+    try:
+        reachable = dashboard_service_reachable(
+            descriptor={
+                "schema_version": 1,
+                "pid": 1,
+                "port": int(redirect.server_address[1]),
+                "token": "t" * 32,
+                "started_at": "2026-07-11T00:00:00+00:00",
+            },
+            timeout=2,
+        )
+    finally:
+        for server in (redirect, sink):
+            server.shutdown()
+            server.server_close()
+        for thread in threads:
+            thread.join(timeout=2)
+
+    assert reachable is False
+    assert received_authorization == []
 
 
 class FakeSystemd:

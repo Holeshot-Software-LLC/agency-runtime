@@ -45,7 +45,18 @@ def handle(payload: dict[str, Any]) -> dict[str, Any]:
     adapter = OpenClawAdapter()
     action = str(payload.get("action") or "")
     session_id = str(payload.get("sessionId") or "")
+    trace_id = str(payload.get("traceId") or "")
     model = str(payload.get("model") or "")
+
+    if action == "control":
+        from agency_runtime.core.host_control import handle_host_control_command
+
+        return handle_host_control_command(
+            "openclaw",
+            str(payload.get("command") or "status"),
+            store=adapter.store,
+            source="openclaw-command",
+        )
 
     if action == "preflight":
         user_message = str(payload.get("userMessage") or "")
@@ -55,15 +66,29 @@ def handle(payload: dict[str, Any]) -> dict[str, Any]:
             session_id=session_id,
             user_message=user_message,
             model=model,
+            trace_id=trace_id,
         ) or {}
 
     if action == "pre_verify":
-        return adapter.pre_verify_handler(
+        decision = adapter.pre_verify_handler(
             final_response=str(payload.get("finalResponse") or ""),
             session_id=session_id,
             model=model,
             attempt=int(payload.get("attempt") or 0),
         ) or {}
+        if trace_id and adapter.runtime_enabled():
+            try:
+                adapter.store.record_finalization(
+                    trace_id=trace_id,
+                    host="openclaw",
+                    action="continue"
+                    if decision.get("action") == "continue"
+                    else "accept",
+                    missing=[],
+                )
+            except Exception:
+                pass
+        return decision
 
     if action == "post_tool_call":
         tool_input = payload.get("toolInput")
@@ -73,6 +98,7 @@ def handle(payload: dict[str, Any]) -> dict[str, Any]:
             result=payload.get("toolResult"),
             error=payload.get("error"),
             session_id=session_id,
+            trace_id=trace_id,
         )
         return {}
 

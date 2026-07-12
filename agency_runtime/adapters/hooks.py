@@ -68,7 +68,9 @@ class HookCorrelation:
 
     @property
     def trace_id(self) -> str:
-        return self.turn_id or self.tool_use_id or self.session_id
+        # A session is not a turn. Falling back to it would falsely correlate
+        # unrelated turns; callers without a turn/tool id remain uncorrelated.
+        return self.turn_id or self.tool_use_id
 
 
 def _optional_string(payload: dict[str, Any], key: str) -> str:
@@ -220,6 +222,7 @@ class HookBridge:
                 session_id=correlation.session_id,
                 user_message=prompt,
                 model=correlation.model,
+                trace_id=correlation.trace_id,
             )
             context = result.get("context") if isinstance(result, dict) else None
             if not isinstance(context, str) or not context:
