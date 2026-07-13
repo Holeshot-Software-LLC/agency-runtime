@@ -3,7 +3,7 @@ title: "Threat Model"
 status: active
 category: security
 created: 2026-07-12
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [security, architecture, privacy, supply-chain]
 related:
   - SECURITY.md
@@ -67,7 +67,7 @@ It assumes the operating-system account and Python interpreter are trusted.
 | Evidence and finalization | Fresh trace and decision IDs; explicit work-unit identity; duplicate and missing results fail; protocol input and output remain strict finite JSON; success is recorded only after verified outcomes; final headers reconcile against canonical SQLite evidence and reject spoofed or ambiguous fallbacks. |
 | Installation and canaries | Canonical bundle digest and exact managed-tree comparison; unexpected files force replacement; owner-private staging; backups and rollback; native inventory postconditions; Windows permission setup rejects restricted or indeterminate tokens before DACL mutation; isolated canary homes receive an owner-only directory policy before credentials exist; bounded link-resistant authentication copy hardens the empty destination before writing; nonce-bound proof; attestations bind to host, OS, version, capability, and installation identity. |
 | Privacy | Metadata-only default; bounded defensive redaction; secrets remain write-only in dashboard and CLI projections; finite retention; logs sanitize control characters and content-bearing failures. |
-| Supply chain | Minimal runtime dependency; pinned build, audit, and workflow tools; immutable GitHub Action SHAs; wheel/sdist parity checks; pip vulnerability audit; Bandit; CodeQL; dependency review; offline workflow security linting; no credential persistence in checkout steps. |
+| Supply chain | Minimal runtime dependency; pinned build, audit, and workflow tools; immutable GitHub Action SHAs; wheel/sdist parity checks; exact installed-runtime vulnerability audit; Bandit; CodeQL; native dependency-diff review when GitHub exposes it; offline workflow security linting; no credential persistence in checkout steps. |
 
 ## Residual risk and non-goals
 

@@ -3,7 +3,7 @@ title: "Use layered pinned supply-chain gates"
 status: accepted
 category: decisions
 created: 2026-07-12
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [security, supply-chain, ci, release]
 related:
   - SECURITY.md
@@ -44,7 +44,10 @@ Use a layered release gate with these properties:
    checkout credential persistence unless a job explicitly requires it.
 3. Run deterministic source hygiene and secret/path checks, Ruff, Bandit,
    runtime dependency auditing, offline workflow auditing, CodeQL for Python
-   and JavaScript, and pull-request dependency review.
+   and JavaScript, and pull-request dependency review. Probe GitHub's
+   dependency-diff capability first: use native review when available and the
+   strict exact installed-runtime vulnerability audit when it is not, without
+   silently enabling a potentially billable repository security product.
 4. Verify wheel and source distributions structurally, compare shared payload
    hashes, install the built wheel in clean Windows and Linux environments, and
    keep publication or provenance claims separate until an authorized release
@@ -58,6 +61,9 @@ Use a layered release gate with these properties:
   release signal.
 - CI configuration is itself audited and receives the same immutable-input
   discipline as product code.
+- Private repositories without licensed dependency review retain an enforced
+  vulnerability gate, while public or licensed repositories automatically use
+  GitHub's base-versus-head dependency review.
 - Tool upgrades become visible repository changes that require review and may
   briefly lag a release while compatibility is tested.
 - Local contributors install more packages only when they request development,

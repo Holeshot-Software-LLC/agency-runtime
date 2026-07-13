@@ -149,6 +149,28 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         assert required in script
 
 
+def test_dependency_review_has_an_enforced_private_repository_fallback() -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "dependency-review.yml").read_text("utf-8")
+    )
+    steps = workflow["jobs"]["dependency-review"]["steps"]
+
+    probe = next(step for step in steps if step["name"] == "Detect dependency review capability")
+    assert "dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}" in probe["run"]
+    assert "403|404" in probe["run"]
+    assert "exit 1" in probe["run"]
+
+    native = next(step for step in steps if step["name"] == "Reject vulnerable dependency changes")
+    assert native["if"].endswith("available == 'true'")
+    assert native["with"]["fail-on-severity"] == "moderate"
+
+    fallback = next(
+        step for step in steps if step["name"] == "Audit the exact installed runtime dependency"
+    )
+    assert fallback["if"].endswith("available == 'false'")
+    assert fallback["run"] == "python scripts/audit_runtime_dependencies.py"
+
+
 def test_release_hygiene_recognizes_common_secret_families() -> None:
     examples = {
         "Anthropic API key": b"sk-ant-" + (b"a" * 24),

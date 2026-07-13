@@ -3,7 +3,7 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [release, verification]
 related:
   - CHANGELOG.md
@@ -112,7 +112,8 @@ zizmor --pedantic --strict-collection --offline .
 - [ ] Security reporting instructions and the current supported-version statement
       are accurate.
 - [ ] The threat model covers current assets, trust boundaries, controls, and
-      residual risks; CodeQL and dependency-review checks are green upstream.
+      residual risks; CodeQL is green upstream, and the dependency-review job
+      passes through native diff review or the exact installed-runtime audit.
 - [ ] GitHub Actions use immutable SHAs, least-privilege permissions, and no
       persisted checkout credentials without an explicit need.
 

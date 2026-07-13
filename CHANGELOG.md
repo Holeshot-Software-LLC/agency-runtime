@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -55,14 +55,17 @@ changes rather than duplicating every commit.
 - A nonmutating host-canary readiness report and exact-confirmed, nonce-bound
   live workflow with content-free fingerprinted attestations.
 - A self-contained threat model, release gate, code of conduct, issue
-  templates, pinned dependency groups, CodeQL, dependency review, Dependabot,
-  and offline workflow auditing for open-source operation.
+  templates, pinned dependency groups, CodeQL, capability-aware dependency
+  review, Dependabot, and offline workflow auditing for open-source operation.
 - Strict bounded JSON, YAML, and regular-file readers shared by configuration,
   protocols, native inventory, provider responses, roster ingress, and
   persisted projections.
 
 ### Changed
 
+- Pull requests use GitHub's native dependency-diff review when the repository
+  exposes that capability and otherwise enforce the exact installed-runtime
+  vulnerability audit, without requiring a billable security product.
 - Routing cache and session state now include roster, configuration, and policy
   fingerprints; zero-signal routing abstains.
 - Provider fallthrough rejects semantically invalid results and reports
