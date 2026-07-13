@@ -308,8 +308,10 @@ def test_stream_workers_tolerate_early_child_exit() -> None:
 
     target = _BrokenWriteStream()
     process = SimpleNamespace(stdin=target)
-    backend_process._write_process_stdin(process, "payload")
+    completed = backend_process.threading.Event()
+    backend_process._write_process_stdin(process, "payload", completed)
     assert target.closed is True
+    assert completed.is_set()
 
     backend_process._write_process_stdin(SimpleNamespace(stdin=None), "payload")
 
@@ -364,6 +366,179 @@ def test_no_input_closes_child_stdin_before_stream_workers_start() -> None:
     assert stdin.parts == [""]
     assert stdin.closed is True
     assert stdin_thread is None
+
+
+def test_input_writer_starts_before_output_drainers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    started: list[str] = []
+
+    class RecordingThread:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        def start(self) -> None:
+            started.append(self.name)
+
+    threads = (
+        RecordingThread("stdout"),
+        RecordingThread("stderr"),
+        RecordingThread("stdin"),
+    )
+    monkeypatch.setattr(
+        backend_process,
+        "_create_process_io_threads",
+        lambda *_args, **_kwargs: threads,
+    )
+
+    result = backend_process._start_process_io_threads(
+        SimpleNamespace(stdin=object()),
+        stdout=object(),
+        stderr=object(),
+        input_text="payload",
+        windows_job=None,
+    )
+
+    assert result == threads
+    assert started == ["stdin", "stdout", "stderr"]
+
+
+def test_small_suspended_input_reaches_eof_before_output_drainers_start(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[str] = []
+
+    class Completion:
+        def __init__(self) -> None:
+            self.ready = False
+
+        def set(self) -> None:
+            self.ready = True
+
+        def wait(self, timeout: float) -> bool:
+            events.append(f"wait:{timeout}")
+            return self.ready
+
+    completion = Completion()
+
+    class RecordingThread:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        def start(self) -> None:
+            events.append(self.name)
+            if self.name == "stdin":
+                completion.set()
+
+    threads = (
+        RecordingThread("stdout"),
+        RecordingThread("stderr"),
+        RecordingThread("stdin"),
+    )
+    monkeypatch.setattr(backend_process.threading, "Event", lambda: completion)
+    monkeypatch.setattr(
+        backend_process,
+        "_create_process_io_threads",
+        lambda *_args, **_kwargs: threads,
+    )
+
+    backend_process._start_process_io_threads(
+        SimpleNamespace(stdin=object()),
+        stdout=object(),
+        stderr=object(),
+        input_text="payload",
+        windows_job=None,
+        prime_suspended_stdin=True,
+    )
+
+    assert events == [
+        "stdin",
+        f"wait:{backend_process._SUSPENDED_STDIN_PRIME_TIMEOUT_SECONDS}",
+        "stdout",
+        "stderr",
+    ]
+
+
+def test_large_suspended_input_does_not_wait_for_eof(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    started: list[str] = []
+
+    class RecordingThread:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        def start(self) -> None:
+            started.append(self.name)
+
+    threads = (
+        RecordingThread("stdout"),
+        RecordingThread("stderr"),
+        RecordingThread("stdin"),
+    )
+    monkeypatch.setattr(
+        backend_process,
+        "_create_process_io_threads",
+        lambda *_args, **_kwargs: threads,
+    )
+    monkeypatch.setattr(
+        backend_process.threading,
+        "Event",
+        lambda: pytest.fail("large input must not create a completion event"),
+    )
+
+    backend_process._start_process_io_threads(
+        SimpleNamespace(stdin=object()),
+        stdout=object(),
+        stderr=object(),
+        input_text="x" * (backend_process._SUSPENDED_STDIN_PRIME_BYTES + 1),
+        windows_job=None,
+        prime_suspended_stdin=True,
+    )
+
+    assert started == ["stdin", "stdout", "stderr"]
+
+
+def test_suspended_stdin_prime_timeout_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Completion:
+        def wait(self, timeout: float) -> bool:
+            assert timeout == backend_process._SUSPENDED_STDIN_PRIME_TIMEOUT_SECONDS
+            return False
+
+    class RecordingThread:
+        def start(self) -> None:
+            pass
+
+    process = SimpleNamespace(stdin=object())
+    cleaned: list[Any] = []
+    monkeypatch.setattr(backend_process.threading, "Event", Completion)
+    monkeypatch.setattr(
+        backend_process,
+        "_create_process_io_threads",
+        lambda *_args, **_kwargs: (
+            RecordingThread(),
+            RecordingThread(),
+            RecordingThread(),
+        ),
+    )
+    monkeypatch.setattr(
+        backend_process,
+        "_cleanup_partial_io_start",
+        lambda proc, **_kwargs: cleaned.append(proc),
+    )
+
+    with pytest.raises(OSError, match="could not start process I/O workers"):
+        backend_process._start_process_io_threads(
+            process,
+            stdout=object(),
+            stderr=object(),
+            input_text="payload",
+            windows_job=None,
+            prime_suspended_stdin=True,
+        )
+    assert cleaned == [process]
 
 
 def test_io_thread_start_reraises_cancellation_after_cleanup(

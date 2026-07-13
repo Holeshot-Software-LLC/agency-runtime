@@ -21,10 +21,12 @@ import secrets
 import socket
 import traceback
 import uuid
+from contextlib import suppress
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from threading import BoundedSemaphore
+from threading import BoundedSemaphore, Thread
+from time import monotonic
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -56,6 +58,16 @@ _MAX_CONTEXT_TEXT = 2048
 _MAX_ROSTER_RESPONSE_AGENTS = 1000
 _MAX_ROSTER_CURSOR_BYTES = 1024
 _MAX_CONTENT_LENGTH_DIGITS = 20
+_MAX_REJECTION_WORKERS = 4
+_MAX_REJECTION_HEADER_BYTES = 64 * 1024
+_REJECTION_DEADLINE_SECONDS = 0.25
+_REJECTION_POLL_SECONDS = 0.05
+_OVERLOAD_RESPONSE = (
+    b"HTTP/1.1 503 Service Unavailable\r\n"
+    b"Connection: close\r\n"
+    b"Content-Length: 0\r\n"
+    b"Retry-After: 1\r\n\r\n"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -567,6 +579,7 @@ class AgencyHTTPServer(ThreadingHTTPServer):
             raise ValueError("max_concurrent_requests must be between 1 and 1024")
         self.max_concurrent_requests = max_concurrent_requests
         self._request_slots = BoundedSemaphore(max_concurrent_requests)
+        self._rejection_slots = BoundedSemaphore(_MAX_REJECTION_WORKERS)
         # ``TCPServer`` creates its listening socket during ``__init__`` using
         # this attribute.  Set it on the instance before delegating so an
         # explicit ``::1`` binding is genuinely IPv6 rather than merely
@@ -588,24 +601,62 @@ class AgencyHTTPServer(ThreadingHTTPServer):
     def process_request(self, request: Any, client_address: Any) -> None:
         """Start one bounded request worker or reject excess concurrency."""
         if not self._request_slots.acquire(blocking=False):
-            try:
-                request.settimeout(0.5)
-                request.sendall(
-                    b"HTTP/1.1 503 Service Unavailable\r\n"
-                    b"Connection: close\r\n"
-                    b"Content-Length: 0\r\n"
-                    b"Retry-After: 1\r\n\r\n"
-                )
-            except OSError:
-                pass
-            finally:
+            if not self._rejection_slots.acquire(blocking=False):
                 self.shutdown_request(request)
+                return
+            try:
+                worker = Thread(
+                    target=self._reject_excess_request,
+                    args=(request,),
+                    daemon=True,
+                    name="agency-http-overload",
+                )
+                worker.start()
+            except BaseException:
+                self._rejection_slots.release()
+                raise
             return
         try:
             super().process_request(request, client_address)
         except BaseException:
             self._request_slots.release()
             raise
+
+    def _reject_excess_request(self, request: Any) -> None:
+        """Deliver a bounded overload response without stalling the accept loop.
+
+        Winsock may replace a response with a TCP reset when a socket is closed
+        while request bytes remain unread. Half-close the response side, then
+        drain only a small, time-bounded amount of input in a separately bounded
+        worker. Clients beyond either rejection bound are closed immediately.
+        """
+        deadline = monotonic() + _REJECTION_DEADLINE_SECONDS
+        try:
+            request.settimeout(_REJECTION_DEADLINE_SECONDS)
+            request.sendall(_OVERLOAD_RESPONSE)
+            with suppress(OSError):
+                request.shutdown(socket.SHUT_WR)
+
+            remaining = self.max_body_size + _MAX_REJECTION_HEADER_BYTES
+            while remaining > 0:
+                timeout = deadline - monotonic()
+                if timeout <= 0:
+                    break
+                request.settimeout(min(timeout, _REJECTION_POLL_SECONDS))
+                try:
+                    chunk = request.recv(min(remaining, _MAX_REJECTION_HEADER_BYTES))
+                except (OSError, TimeoutError):
+                    break
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+        except (OSError, TimeoutError):
+            pass
+        finally:
+            try:
+                self.close_request(request)
+            finally:
+                self._rejection_slots.release()
 
     def process_request_thread(self, request: Any, client_address: Any) -> None:
         """Release the request slot after the stdlib worker fully shuts down."""

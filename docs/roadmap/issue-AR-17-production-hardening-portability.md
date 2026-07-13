@@ -16,6 +16,9 @@ related:
   - docs/decisions/0038-refuse-executable-git-configuration-during-delegation.md
   - docs/decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md
   - docs/decisions/0040-preserve-environment-owned-python-launchers.md
+  - docs/decisions/0041-bounded-asynchronous-overload-responses.md
+  - docs/decisions/0042-local-only-bounded-work-file-inference.md
+  - docs/decisions/0043-prime-stdin-before-windows-child-resume.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []
@@ -25,7 +28,7 @@ epic: release
 issue_id: AR-17
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/17"
-depends_on: [AR-18]
+depends_on: [AR-18, AR-19]
 blocks: [AR-07]
 ---
 
@@ -59,13 +62,22 @@ smoke also exercises real packaged MCP stdio, authenticated dashboard health,
 configuration defaults, assets, and every generated host bundle outside the
 checkout.
 
+Hosted Windows also exposed a suspended-child stdin race in every PowerShell
+companion case. Small bounded payloads now reach an explicitly closed pipe
+before the child resumes; larger payloads retain the asynchronous writer so a
+full pipe cannot deadlock a suspended reader. The regression continues to use
+PowerShell's original Console.In behavior rather than substituting a different
+reader. Hosted Linux exposed a second-match suffix bug in spaced-path recovery;
+the scanner now skips recovered suffixes and path-like URL query or fragment
+values while retaining assignment and colon-delimited local paths.
+
 Final local evidence includes a Windows warning-strict coverage run with
-`2255` passed, `5` skipped, and `2` performance tests deselected. All
-`17,141` statements and `5,352` branches had zero missing lines or partial
+`2303` passed, `5` skipped, and `2` performance tests deselected. All
+`17,284` statements and `5,408` branches had zero missing lines or partial
 branches (`100.00%`). Ubuntu 24.04 WSL/Python 3.12 passed `2215` tests with
 `16` expected skips from native ext4, plus both performance tests. The final
-performance selection passed both tests with `2260` deselected: routing p95
-`11.032 ms`, cache p95 `0.337 ms`, `154.14` calls/second, and overlap `8`.
+performance selection passed both tests with `2308` deselected: routing p95
+`8.640 ms`, cache p95 `0.385 ms`, `155.73` calls/second, and overlap `8`.
 All `25` routing gates and `12/12` delegation cases passed. The dashboard
 passed all `60/60` JavaScript tests at exact line, branch, and function
 coverage across seven modules, plus authenticated browser smoke.
@@ -88,9 +100,9 @@ attestation does not promote real-profile maturity to `runtime-verified`, and
 there is no live Linux Codex proof. Claude Code, Hermes, and OpenClaw were absent
 and retain contract-only status.
 
-The final security gate passed release hygiene over `367` inputs,
+The final security gate passed release hygiene over `377` inputs,
 high-severity Bandit, strict offline Zizmor, dependency consistency, an exact
-runtime dependency audit with no known vulnerability, Ruff/format over `258`
+runtime dependency audit with no known vulnerability, Ruff/format over `259`
 files, compileall, and whitespace validation. Fresh wheel/source artifacts
 passed build, strict Twine, and distribution verification. Clean
 Windows/Python 3.14 and WSL/Python 3.12 wheel installs exercised MCP and all ten
@@ -146,7 +158,7 @@ evidence to AR-07 but does not authorize publication or issue closure.
 
 ## Verification
 
-- The final Windows warning-strict coverage run passed `2255` tests with `5`
+- The final Windows warning-strict coverage run passed `2303` tests with `5`
   skips and zero missing statements or branches. The native-ext4 WSL/Python
   3.12 suite passed `2215` tests with `16` expected skips; the final wheel
   then passed clean WSL installation and packaged-surface smoke.

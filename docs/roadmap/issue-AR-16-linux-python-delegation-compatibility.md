@@ -8,6 +8,7 @@ tags: [linux, python, delegation, compatibility, testing]
 related:
   - docs/decisions/0019-bounded-machine-readable-cli-delegation.md
   - docs/decisions/0035-authoritative-bounded-provider-chain.md
+  - docs/decisions/0043-prime-stdin-before-windows-child-resume.md
 supersedes: []
 superseded_by: null
 type: issue

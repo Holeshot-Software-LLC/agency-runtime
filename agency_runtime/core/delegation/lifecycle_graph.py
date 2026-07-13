@@ -25,6 +25,7 @@ _FILE_BOUNDARY_RE = re.compile(
     re.I,
 )
 _PATH_MATCH_LIMIT = 32
+_PATH_SCAN_LIMIT = _PATH_MATCH_LIMIT * 4
 _SPACED_PATH_WINDOW_CHARS = 4096
 _SPACED_PATH_CANDIDATES_PER_MATCH = 4
 _DEP_RE = re.compile(
@@ -36,6 +37,27 @@ _DEP_RE = re.compile(
     r".{0,40}\bcompletes?\b",
     re.I,
 )
+
+
+def _path_match_is_embedded(description: str, start: int) -> bool:
+    """Reject roots that are suffixes of a larger path or URL."""
+
+    token_start = max(description.rfind(character, 0, start) for character in " \t\r\n") + 1
+    token_prefix = description[token_start:start]
+    network_prefix = chr(92) * 2
+    if (
+        description.startswith("//", start)
+        or description.startswith(network_prefix, start)
+        or "//" in token_prefix
+        or network_prefix in token_prefix
+    ):
+        return True
+    if start <= 0:
+        return False
+    previous = description[start - 1]
+    if previous == ":":
+        return description.startswith("//", start)
+    return previous.isalnum() or previous in "_./\\@+-"
 
 
 def _items(work_units: Any) -> list[Any]:
@@ -143,11 +165,12 @@ def _existing_spaced_file(
     start: int,
     *,
     max_candidates: int,
-) -> tuple[Path | None, int]:
+) -> tuple[Path | None, int, int]:
     """Recover an existing file path when natural-language tokenizing split it."""
 
     tail = description[start : start + _SPACED_PATH_WINDOW_CHARS]
     longest: Path | None = None
+    longest_end = 0
     considered = 0
     for match in islice(_FILE_BOUNDARY_RE.finditer(tail), max_candidates):
         considered += 1
@@ -157,7 +180,8 @@ def _existing_spaced_file(
         candidate = Path(raw_path).expanduser()
         if candidate.is_file():
             longest = candidate
-    return longest, considered
+            longest_end = start + match.end()
+    return longest, longest_end, considered
 
 
 def normalize_work_units(
@@ -195,13 +219,23 @@ def normalize_work_units(
         )
         files = _explicit_files(item)
         depends_on = _explicit_dependencies(item)
-        for match in islice(_PATH_RE.finditer(description), _PATH_MATCH_LIMIT):
+        consumed_until = 0
+        path_matches = 0
+        for match in islice(_PATH_RE.finditer(description), _PATH_SCAN_LIMIT):
+            match_start = match.start("path")
+            if match_start < consumed_until or _path_match_is_embedded(description, match_start):
+                continue
+            if path_matches >= _PATH_MATCH_LIMIT:
+                break
+            path_matches += 1
             compact_path = Path(match.group("path").rstrip(".,);]}'\"")).expanduser()
-            spaced_file, _considered = _existing_spaced_file(
+            spaced_file, spaced_end, _considered = _existing_spaced_file(
                 description,
-                match.start("path"),
+                match_start,
                 max_candidates=_SPACED_PATH_CANDIDATES_PER_MATCH,
             )
+            if spaced_file is not None:
+                consumed_until = max(consumed_until, spaced_end)
             path = spaced_file or compact_path
             repo = repo or git_root(path)
             if (

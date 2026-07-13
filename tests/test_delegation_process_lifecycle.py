@@ -178,6 +178,31 @@ def test_success_returns_exact_process_result_without_termination(
     assert terminations == []
 
 
+def test_windows_io_starts_before_suspended_process_resumes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _Process()
+    job = _Job()
+    events: list[tuple[str, bool]] = []
+    _configure_lifecycle(monkeypatch, process, windows=True, job=job)
+    threads = (_Thread(), _Thread(), _Thread())
+    monkeypatch.setattr(
+        backends,
+        "_start_process_io_threads",
+        lambda *_args, **kwargs: events.append(("io", kwargs["prime_suspended_stdin"])) or threads,
+    )
+    monkeypatch.setattr(
+        backends,
+        "_resume_windows_process",
+        lambda _pid: not events.append(("resume", True)),
+    )
+
+    result = _run()
+
+    assert result.returncode == 0
+    assert events == [("io", True), ("resume", True)]
+
+
 def test_containment_setup_cancellation_cleans_the_just_spawned_process(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

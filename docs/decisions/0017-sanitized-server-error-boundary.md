@@ -3,9 +3,12 @@ title: Sanitize errors at the server boundary
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-13
 tags: [security, http, errors]
-related: []
+related:
+  - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
+  - docs/roadmap/issue-AR-15-reliable-json-rejection-responses.md
+  - docs/roadmap/issue-AR-19-bounded-overload-responses.md
 supersedes: []
 superseded_by: null
 id: ADR-0017

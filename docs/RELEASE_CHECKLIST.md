@@ -207,8 +207,8 @@ review and new-session step, and it does not establish Linux Codex maturity.
 
 Final local warning-strict coverage, security, performance, dashboard,
 wheel/source, and isolated Windows/WSL install gates pass. `AR-07`, `AR-16`,
-and `AR-17` remain in progress only for the hosted Python, security, CodeQL,
-and artifact matrix, review and merge, and the required worklog/clean-tree
-closure. Claude Code, Hermes, and OpenClaw were absent and remain contract-only.
-Publication remains a separate authorization-gated action, not evidence of
-readiness.
+`AR-17`, `AR-18`, and `AR-19` remain in progress only for the hosted
+Python, security, CodeQL, and artifact matrix, review and merge, and the
+required worklog/clean-tree closure. Claude Code, Hermes, and OpenClaw were
+absent and remain contract-only. Publication remains a separate
+authorization-gated action, not evidence of readiness.

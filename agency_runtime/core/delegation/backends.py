@@ -158,6 +158,7 @@ def _start_owned_process_io(
         stderr=stderr,
         input_text=input_text,
         windows_job=state.windows_job,
+        prime_suspended_stdin=_is_windows(),
     )
 
 
@@ -256,13 +257,16 @@ def _run_owned_process(
     )
     state = _OwnedProcessState(argv=process_argv, process=process)
     try:
-        _establish_windows_containment(state)
         _start_owned_process_io(
             state,
             stdout=stdout,
             stderr=stderr,
             input_text=input_text,
         )
+        # Windows children are created suspended. Prepare stdin and its EOF
+        # before assignment/resume so runtimes cannot observe an ambient or
+        # not-yet-closed input source during startup.
+        _establish_windows_containment(state)
         _wait_for_owned_process(state, timeout)
         _quiesce_owned_process(state)
         _raise_for_incomplete_process(state, timeout)

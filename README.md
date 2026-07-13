@@ -48,14 +48,14 @@ both operating systems.
 
 ### Current verification snapshot
 
-This checkout was inspected on 2026-07-12. These are dated local results, not a
+This checkout was inspected on 2026-07-13. These are dated local results, not a
 substitute for the final hosted release matrix:
 
 | Environment / host | Contract evidence | Live evidence in this checkout |
 |---|---|---|
-| Windows / Python | Warning-strict suite and exact line/branch coverage | `2255 passed`, `5 skipped`, and `2` performance tests deselected. All `17,141` statements and `5,352` branches were covered with zero missing lines or partial branches (`100.00%`). |
+| Windows / Python | Warning-strict suite and exact line/branch coverage | `2303 passed`, `5 skipped`, and `2` performance tests deselected. All `17,284` statements and `5,408` branches were covered with zero missing lines or partial branches (`100.00%`). |
 | Ubuntu 24.04 WSL / Python 3.12 | Native ext4 full-suite and performance execution | `2215 passed`, `16 skipped`; the separate performance run passed both tests. No Linux host was installed, so no live Linux host maturity is claimed. |
-| Routing and delegation | Versioned offline routing, policy, delegation-detection, DAG, concurrency, and latency gates | All `25` routing gates passed: precision@3 `0.9744`, required recall/top-1/top-k `1.0`, and policy macro F1 `0.9958`. Delegation passed `12/12`; the final 1,000-agent benchmark measured p95 `11.032 ms`, cache p95 `0.337 ms`, `154.14` calls/second, and overlap `8`. |
+| Routing and delegation | Versioned offline routing, policy, delegation-detection, DAG, concurrency, and latency gates | All `25` routing gates passed: precision@3 `0.9744`, required recall/top-1/top-k `1.0`, and policy macro F1 `0.9958`. Delegation passed `12/12`; the final 1,000-agent benchmark measured p95 `8.640 ms`, cache p95 `0.385 ms`, `155.73` calls/second, and overlap `8`. |
 | Dashboard | Authenticated server, lifecycle, configuration, accessibility, and modular browser contracts | All `60/60` JavaScript tests passed at `100.00%` line, branch, and function coverage. Authenticated Chrome smoke loaded all seven scripts, rendered host cards, refreshed live state, re-enabled the control, and produced no application console errors. |
 | Codex 0.144.1 on native Windows | Deterministic bundle, hook, MCP, lifecycle, `.CMD` launch, rollback, and isolated-canary contracts | Agency Runtime is registered and enabled. An exact-confirmed native isolated-profile canary exited `0`, produced a valid six-line header with no missing fields, recorded one correlated routing event and one finalization, and persisted the attestation for trace `019f5bdd-612d-70c0-b369-2b038faa3d02`; it recorded no model receipt. A live keyless judge selection used `codex-cli (cli:codex)` with confidence `0.87` in `6880 ms`; the installed `$agency status` skill loaded and called `agency.host_status`; live CLI `off`/`on` succeeded and ended enabled. Real-profile command-hook trust remains a manual `/hooks` review, is reported as `unverified`, and is not promoted to `runtime-verified` by the isolated result. |
 | Claude Code on native Windows | Deterministic bundle, hook, MCP, lifecycle, and rollback tests | Host absent |

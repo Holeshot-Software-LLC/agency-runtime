@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -95,6 +95,9 @@ Status meanings:
 | [ADR-0038](0038-refuse-executable-git-configuration-during-delegation.md) | Refuse executable Git configuration during delegated mutations | Accepted |
 | [ADR-0039](0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md) | Fail before DACL mutation under restricted Windows tokens | Accepted |
 | [ADR-0040](0040-preserve-environment-owned-python-launchers.md) | Preserve environment-owned Python launchers | Accepted |
+| [ADR-0041](0041-bounded-asynchronous-overload-responses.md) | Use bounded asynchronous overload responses | Accepted |
+| [ADR-0042](0042-local-only-bounded-work-file-inference.md) | Keep automatic work-file inference local and bounded | Accepted |
+| [ADR-0043](0043-prime-stdin-before-windows-child-resume.md) | Prime bounded stdin before resuming Windows children | Accepted |
 
 ## Documentation governance
 

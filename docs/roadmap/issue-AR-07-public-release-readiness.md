@@ -41,13 +41,13 @@ builds wheel/source artifacts, verifies their contents, installs and exercises
 both artifacts in isolated Windows/Ubuntu jobs, and runs source/dependency
 security checks.
 
-The final local Windows warning-strict coverage run passed `2255` tests with
-`5` skips and `2` performance tests deselected. All `17,141` statements and
-`5,352` branches had zero missing lines or partial branches (`100.00%`).
+The final local Windows warning-strict coverage run passed `2303` tests with
+`5` skips and `2` performance tests deselected. All `17,284` statements and
+`5,408` branches had zero missing lines or partial branches (`100.00%`).
 Ubuntu 24.04 WSL/Python 3.12 passed `2215` tests with `16` expected
 platform/host skips from native ext4, plus both performance tests. The final
-performance selection passed both tests (`2260` deselected) with routing p95
-`11.032 ms`, cache p95 `0.337 ms`, `154.14` calls/second, and overlap `8`.
+performance selection passed both tests (`2308` deselected) with routing p95
+`8.640 ms`, cache p95 `0.385 ms`, `155.73` calls/second, and overlap `8`.
 All `25` routing gates and `12/12` delegation cases passed. All `60/60`
 dashboard JavaScript tests reached exact line, branch, and function coverage
 across seven modules, and authenticated Chrome smoke completed without

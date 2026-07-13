@@ -3,9 +3,10 @@ title: Make CLI delegation bounded and machine-readable
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-13
 tags: [delegation, cli, automation]
-related: []
+related:
+  - docs/roadmap/issue-AR-16-linux-python-delegation-compatibility.md
 supersedes: []
 superseded_by: null
 id: ADR-0019

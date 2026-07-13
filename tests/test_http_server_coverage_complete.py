@@ -211,21 +211,201 @@ class _Slot:
         self.releases += 1
 
 
-def test_concurrency_rejection_handles_a_closed_socket() -> None:
-    class _Request:
-        def settimeout(self, value: float) -> None:
-            assert value == 0.5
+def test_concurrency_rejection_schedules_a_bounded_daemon_worker(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = object.__new__(http.AgencyHTTPServer)
+    server._request_slots = _Slot(False)
+    server._rejection_slots = _Slot(True)
+    request = object()
+    scheduled: list[tuple[Any, tuple[Any, ...], bool, str]] = []
+    started: list[bool] = []
 
-        def sendall(self, _payload: bytes) -> None:
-            raise OSError("closed")
+    class _Thread:
+        def __init__(
+            self,
+            *,
+            target: Any,
+            args: tuple[Any, ...],
+            daemon: bool,
+            name: str,
+        ) -> None:
+            scheduled.append((target, args, daemon, name))
+
+        def start(self) -> None:
+            started.append(True)
+
+    monkeypatch.setattr(http, "Thread", _Thread)
+    server.process_request(request, ("127.0.0.1", 1))
+    assert scheduled == [(server._reject_excess_request, (request,), True, "agency-http-overload")]
+    assert started == [True]
+
+
+def test_concurrency_rejection_hard_closes_when_rejection_budget_is_full(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = object.__new__(http.AgencyHTTPServer)
+    server._request_slots = _Slot(False)
+    server._rejection_slots = _Slot(False)
+    shutdown: list[Any] = []
+    server.shutdown_request = shutdown.append
+    monkeypatch.setattr(
+        http,
+        "Thread",
+        lambda **_kwargs: pytest.fail("a rejection worker must not be created"),
+    )
+    request = object()
+    server.process_request(request, ("127.0.0.1", 1))
+    assert shutdown == [request]
+
+
+def test_concurrency_rejection_restores_budget_when_thread_start_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Thread:
+        def __init__(self, **_kwargs: Any) -> None:
+            pass
+
+        def start(self) -> None:
+            raise RuntimeError("thread unavailable")
 
     server = object.__new__(http.AgencyHTTPServer)
     server._request_slots = _Slot(False)
-    shutdown: list[Any] = []
-    server.shutdown_request = shutdown.append
-    request = _Request()
-    server.process_request(request, ("127.0.0.1", 1))
-    assert shutdown == [request]
+    rejection_slot = _Slot(True)
+    server._rejection_slots = rejection_slot
+    monkeypatch.setattr(http, "Thread", _Thread)
+    with pytest.raises(RuntimeError, match="thread unavailable"):
+        server.process_request(object(), ("127.0.0.1", 1))
+    assert rejection_slot.releases == 1
+
+
+class _RejectedRequest:
+    def __init__(
+        self,
+        events: list[Any],
+        *,
+        chunks: list[bytes] | None = None,
+        fail: str | None = None,
+    ) -> None:
+        self.events = events
+        self.chunks = list(chunks or [b""])
+        self.fail = fail
+
+    def settimeout(self, value: float) -> None:
+        self.events.append(("timeout", value))
+        if self.fail == "timeout":
+            raise OSError("closed")
+
+    def sendall(self, payload: bytes) -> None:
+        self.events.append(("send", payload))
+        if self.fail == "send":
+            raise OSError("closed")
+
+    def shutdown(self, how: int) -> None:
+        self.events.append(("shutdown", how))
+        if self.fail == "shutdown":
+            raise OSError("closed")
+
+    def recv(self, size: int) -> bytes:
+        self.events.append(("recv", size))
+        if self.fail == "recv":
+            raise TimeoutError("slow peer")
+        return self.chunks.pop(0)
+
+
+def _bare_rejection_server(
+    events: list[Any],
+) -> tuple[http.AgencyHTTPServer, _Slot]:
+    server = object.__new__(http.AgencyHTTPServer)
+    server.max_body_size = 1024
+    slot = _Slot(True)
+    server._rejection_slots = slot
+    server.close_request = lambda request: events.append(("close", request))
+    return server, slot
+
+
+def test_overload_worker_half_closes_drains_and_releases(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[Any] = []
+    request = _RejectedRequest(events, chunks=[b"GET / HTTP/1.1\r\n\r\n", b""])
+    server, slot = _bare_rejection_server(events)
+    moments = iter([100.0, 100.01, 100.02])
+    monkeypatch.setattr(http, "monotonic", lambda: next(moments))
+
+    server._reject_excess_request(request)
+
+    assert events[0] == ("timeout", http._REJECTION_DEADLINE_SECONDS)
+    assert events[1] == ("send", http._OVERLOAD_RESPONSE)
+    assert events[2] == ("shutdown", http.socket.SHUT_WR)
+    assert [event[0] for event in events[3:]] == [
+        "timeout",
+        "recv",
+        "timeout",
+        "recv",
+        "close",
+    ]
+    assert events[-1] == ("close", request)
+    assert slot.releases == 1
+
+
+def test_overload_worker_enforces_byte_and_deadline_bounds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    byte_events: list[Any] = []
+    byte_request = _RejectedRequest(
+        byte_events,
+        chunks=[
+            b"x" * http._MAX_REJECTION_HEADER_BYTES,
+            b"x" * 1024,
+        ],
+    )
+    byte_server, byte_slot = _bare_rejection_server(byte_events)
+    monkeypatch.setattr(http, "monotonic", lambda: 10.0)
+    byte_server._reject_excess_request(byte_request)
+    assert [event for event in byte_events if event[0] == "recv"] == [
+        ("recv", http._MAX_REJECTION_HEADER_BYTES),
+        ("recv", 1024),
+    ]
+    assert byte_slot.releases == 1
+
+    deadline_events: list[Any] = []
+    deadline_request = _RejectedRequest(deadline_events)
+    deadline_server, deadline_slot = _bare_rejection_server(deadline_events)
+    moments = iter([20.0, 21.0])
+    monkeypatch.setattr(http, "monotonic", lambda: next(moments))
+    deadline_server._reject_excess_request(deadline_request)
+    assert not [event for event in deadline_events if event[0] == "recv"]
+    assert deadline_slot.releases == 1
+
+
+@pytest.mark.parametrize("failure", ["timeout", "send", "shutdown", "recv"])
+def test_overload_worker_closes_and_releases_after_socket_failures(
+    failure: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[Any] = []
+    request = _RejectedRequest(events, fail=failure)
+    server, slot = _bare_rejection_server(events)
+    monkeypatch.setattr(http, "monotonic", lambda: 1.0)
+    server._reject_excess_request(request)
+    assert events[-1] == ("close", request)
+    assert slot.releases == 1
+
+
+def test_overload_worker_releases_budget_when_close_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = _RejectedRequest([])
+    server = object.__new__(http.AgencyHTTPServer)
+    slot = _Slot(True)
+    server._rejection_slots = slot
+    server.close_request = lambda _request: (_ for _ in ()).throw(OSError("close failed"))
+    moments = iter([1.0, 2.0])
+    monkeypatch.setattr(http, "monotonic", lambda: next(moments))
+    with pytest.raises(OSError, match="close failed"):
+        server._reject_excess_request(request)
+    assert slot.releases == 1
 
 
 def test_worker_start_failure_releases_concurrency_slot(

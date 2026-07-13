@@ -3,13 +3,16 @@ title: "Keep the operations dashboard local and observability bounded"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-13
 tags: [dashboard, security, privacy, retention]
 related:
   - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
   - docs/roadmap/issue-AR-14-live-signal-observatory.md
+  - docs/roadmap/issue-AR-15-reliable-json-rejection-responses.md
+  - docs/roadmap/issue-AR-17-production-hardening-portability.md
+  - docs/roadmap/issue-AR-19-bounded-overload-responses.md
   - SECURITY.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md

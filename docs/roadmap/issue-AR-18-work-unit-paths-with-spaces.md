@@ -6,6 +6,7 @@ created: 2026-07-13
 updated: 2026-07-13
 tags: [delegation, portability, testing, windows]
 related:
+  - docs/decisions/0042-local-only-bounded-work-file-inference.md
   - docs/roadmap/issue-AR-16-linux-python-delegation-compatibility.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/worklog/README.md
@@ -35,6 +36,9 @@ Name\...`.
 Explicit `files` fields remained authoritative, but the natural-language path
 scanner stopped at the first space. Final Windows validation reproduced the
 gap with a real existing Python file beneath the repository's spaced path.
+Hosted Linux then showed that the compact scanner could re-read the suffix of
+that recovered path as a second root. URL query and fragment values could also
+look like local paths and distort worktree conflict inference.
 
 ## Approach
 
@@ -42,7 +46,12 @@ Keep the compact parser for planned and nonexistent path tokens. When that
 parser finds a path prefix, inspect only bounded supported file suffixes and
 accept a longer spaced candidate only when it is an existing regular file.
 Pass the recovered file through the existing repository-relative
-normalization. This avoids broadly treating surrounding prose as a path.
+normalization. Skip matches inside the recovered span and inside the current
+URL token, without narrowing assignment or colon-delimited local syntax. Bound
+both accepted paths and total scanned candidates. Reject protocol-relative and
+network-root tokens before any filesystem probe so automatic inference cannot
+trigger outbound share access. This avoids broadly treating surrounding prose
+as a path.
 
 ## Dependencies
 
@@ -56,5 +65,11 @@ Windows and Linux matrix passes and the reviewed fix is merged.
       work-unit descriptions.
 - [x] Captured in-repository paths normalize to repository-relative file sets.
 - [x] A nonexistent spaced phrase is not reclassified as a file path.
+- [x] A recovered path suffix is not emitted as a second local path.
+- [x] Path-like URL query and fragment values are not classified as local
+      work files.
+- [x] Accepted matches and total scanned candidates remain bounded.
+- [x] Protocol-relative and network-root tokens are rejected before filesystem
+      probing.
 - [ ] Warning-strict exact coverage and hosted Windows/Linux matrices pass.
 - [ ] The reviewed fix is merged and tracker issue #19 is closed.

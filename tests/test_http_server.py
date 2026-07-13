@@ -668,8 +668,21 @@ def test_server_rejects_excess_connections_and_releases_worker_slot(
             f"http://127.0.0.1:{server.server_address[1]}/status",
             headers=AUTH_HEADERS,
         )
+        for _ in range(8):
+            with pytest.raises(urllib.error.HTTPError) as raised:
+                urllib.request.urlopen(request, timeout=2)
+            with raised.value as error:
+                assert error.code == 503
+                assert error.headers["Retry-After"] == "1"
+                assert error.read() == b""
+
+        large_request = urllib.request.Request(
+            f"http://127.0.0.1:{server.server_address[1]}/preflight",
+            data=b"x" * server.max_body_size,
+            headers={**AUTH_HEADERS, "Content-Type": "application/json"},
+        )
         with pytest.raises(urllib.error.HTTPError) as raised:
-            urllib.request.urlopen(request, timeout=2)
+            urllib.request.urlopen(large_request, timeout=2)
         with raised.value as error:
             assert error.code == 503
             assert error.headers["Retry-After"] == "1"
