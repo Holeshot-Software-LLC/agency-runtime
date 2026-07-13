@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -23,11 +24,19 @@ from agency_runtime.core.doctor import CheckResult, DoctorReport, run_doctor
 from agency_runtime.core.selector import judge
 from agency_runtime.core.store.sqlite import Store
 
+CATALOG = [
+    {
+        "slug": "security-reviewer",
+        "description": "Reviews authentication and application security.",
+    }
+]
 
-CATALOG = [{
-    "slug": "security-reviewer",
-    "description": "Reviews authentication and application security.",
-}]
+
+@pytest.fixture(autouse=True)
+def _isolated_config_cache() -> Iterator[None]:
+    reset_config_cache()
+    yield
+    reset_config_cache()
 
 
 class _Response:
@@ -36,7 +45,7 @@ class _Response:
         self.status = status
         self.read_sizes: list[int] = []
 
-    def __enter__(self) -> "_Response":
+    def __enter__(self) -> _Response:
         return self
 
     def __exit__(self, *_args: object) -> None:
@@ -62,37 +71,42 @@ def test_local_only_is_enforced_after_file_and_environment_overrides(
     tmp_path: Path,
 ) -> None:
     config_path = tmp_path / "agency.yaml"
-    config_path.write_text(yaml.safe_dump({
-        "profile": "standard",
-        "judge": {
-            "model": "remote-judge",
-            "base_url": "https://judge.example/v1",
-            "api_key": "file-secret",
-            "ollama_mode": False,
-        },
-        "ollama": {
-            "enabled": True,
-            "base_url": "https://remote-ollama.example",
-            "model": "local-model",
-        },
-        "providers": [{
-            "name": "remote",
-            "type": "openai-compatible",
-            "model": "remote-model",
-            "base_url": "https://provider.example/v1",
-            "api_key": "provider-secret",
-        }],
-        "adapters": {
-            name: {"enabled": True}
-            for name in ("litellm", "hermes", "openclaw", "codex", "claude")
-        },
-    }), encoding="utf-8")
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "profile": "standard",
+                "judge": {
+                    "model": "remote-judge",
+                    "base_url": "https://judge.example/v1",
+                    "api_key": "file-secret",
+                    "ollama_mode": False,
+                },
+                "ollama": {
+                    "enabled": True,
+                    "base_url": "https://remote-ollama.example",
+                    "model": "local-model",
+                },
+                "providers": [
+                    {
+                        "name": "remote",
+                        "type": "openai-compatible",
+                        "model": "remote-model",
+                        "base_url": "https://provider.example/v1",
+                        "api_key": "provider-secret",
+                    }
+                ],
+                "adapters": {
+                    name: {"enabled": True}
+                    for name in ("litellm", "hermes", "openclaw", "codex", "claude")
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
     monkeypatch.setenv("AGENCY_PROFILE", "local-only")
     monkeypatch.setenv("AGENCY_JUDGE_BASE_URL", "https://env-judge.example/v1")
     monkeypatch.setenv("AGENCY_JUDGE_API_KEY", "env-secret")
     monkeypatch.setenv("OLLAMA_BASE_URL", "https://env-ollama.example")
-    reset_config_cache()
-
     cfg = load_config(config_path, reload=True)
 
     assert cfg.profile == "local-only"
@@ -125,9 +139,7 @@ def test_detection_bounds_response_bytes_and_model_count(
     monkeypatch.setattr(
         detect,
         "_http_get_json",
-        lambda *_a, **_kw: {
-            "data": [{"id": f"model-{index:04d}"} for index in range(1200)]
-        },
+        lambda *_a, **_kw: {"data": [{"id": f"model-{index:04d}"} for index in range(1200)]},
     )
     models = detect._fetch_model_list("https://models.invalid")
     assert len(models) == detect._MAX_DISCOVERED_MODELS
@@ -295,6 +307,78 @@ def test_programmatic_provider_and_legacy_judge_never_send_credentials_over_http
     )
 
 
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "file:///tmp/provider",
+        "https://provider.invalid/v1?probe=unsafe",
+        "https://provider.invalid:not-a-port/v1",
+    ],
+)
+def test_provider_validation_rejects_malformed_endpoints_before_network(
+    base_url: str,
+) -> None:
+    def unexpected_call(*_args: Any, **_kwargs: Any) -> _Response:
+        raise AssertionError("malformed endpoint reached the network")
+
+    result = provider_validation.validate_provider(
+        ProviderEntry(
+            name="invalid",
+            model="model",
+            base_url=base_url,
+            api_key="secret",
+        ),
+        opener=unexpected_call,
+    )
+
+    assert result.usable is False
+    assert "HTTP(S)" in result.reason
+
+
+@pytest.mark.parametrize("timeout", [0, -1, float("nan"), float("inf"), True])
+def test_provider_validation_rejects_invalid_timeout_before_network(
+    timeout: object,
+) -> None:
+    def unexpected_call(*_args: Any, **_kwargs: Any) -> _Response:
+        raise AssertionError("invalid timeout reached the network")
+
+    result = provider_validation.validate_provider(
+        _provider(1),
+        timeout=timeout,  # type: ignore[arg-type]
+        opener=unexpected_call,
+    )
+
+    assert result.usable is False
+    assert result.reason == "validation timeout is invalid"
+
+
+@pytest.mark.parametrize(
+    "response_status,expected_authenticated",
+    [(200, True), (401, False), (403, False), (500, None)],
+)
+def test_provider_validation_reports_only_proven_authentication_state(
+    response_status: int,
+    expected_authenticated: bool | None,
+) -> None:
+    result = provider_validation.validate_provider(
+        _provider(1),
+        opener=lambda *_a, **_kw: _Response(status=response_status),
+    )
+
+    assert result.authenticated is expected_authenticated
+    assert result.usable is (response_status == 200)
+
+
+def test_provider_network_failure_does_not_claim_authentication() -> None:
+    def fail(*_args: Any, **_kwargs: Any) -> _Response:
+        raise TimeoutError("offline")
+
+    result = provider_validation.validate_provider(_provider(1), opener=fail)
+
+    assert result.usable is False
+    assert result.authenticated is None
+
+
 def test_doctor_probes_anthropic_with_typed_headers_and_redacts_urls(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -302,10 +386,12 @@ def test_doctor_probes_anthropic_with_typed_headers_and_redacts_urls(
     captured: list[tuple[str, dict[str, str]]] = []
 
     def respond(request: Any, **_kwargs: Any) -> _Response:
-        captured.append((
-            request.full_url,
-            {key.lower(): value for key, value in request.header_items()},
-        ))
+        captured.append(
+            (
+                request.full_url,
+                {key.lower(): value for key, value in request.header_items()},
+            )
+        )
         return _Response(status=200)
 
     monkeypatch.setattr(doctor, "open_no_redirect", respond)
@@ -339,12 +425,16 @@ def test_doctor_probes_anthropic_with_typed_headers_and_redacts_urls(
 
 
 def test_doctor_report_sanitizes_credential_bearing_diagnostics() -> None:
-    report = DoctorReport(checks=[CheckResult(
-        "network",
-        "fail",
-        "failed at https://user:password@example.invalid/v1?token=hidden",
-        "https://user:password@example.invalid/detail#secret",
-    )])
+    report = DoctorReport(
+        checks=[
+            CheckResult(
+                "network",
+                "fail",
+                "failed at https://user:password@example.invalid/v1?token=hidden",
+                "https://user:password@example.invalid/detail#secret",
+            )
+        ]
+    )
 
     rendered = json.dumps(report.to_dict())
 

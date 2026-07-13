@@ -3,13 +3,15 @@ title: "Security Policy"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [security, reporting, privacy]
 related:
   - README.md
+  - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
   - docs/RELEASE_CHECKLIST.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
+  - docs/decisions/0037-layered-pinned-supply-chain-gates.md
 supersedes: []
 superseded_by: null
 ---
@@ -42,6 +44,10 @@ and avoid publishing identifying or exploit-enabling detail before a fix is
 available. This document does not promise a response-time service level.
 
 ## Security boundaries
+
+The asset, attacker, control, and residual-risk analysis is maintained in the
+[repository threat model](docs/THREAT_MODEL.md). The following boundaries are
+the operator-facing summary.
 
 The following boundaries are intentional and should be treated as part of the
 product contract:

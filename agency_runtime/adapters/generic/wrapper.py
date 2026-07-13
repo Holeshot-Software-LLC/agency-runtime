@@ -44,7 +44,9 @@ class GenericAdapter(BaseAdapter):
     def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
         return {}
 
-    def exec(self, task: str, args: list[str] | None = None, workdir: str | None = None) -> dict[str, Any]:
+    def exec(
+        self, task: str, args: list[str] | None = None, workdir: str | None = None
+    ) -> dict[str, Any]:
         """Execute a task via a generic CLI command."""
         workdir = workdir or os.getcwd()
         command = (self.cli_cmd, *(args or [])) if self.cli_cmd else ()

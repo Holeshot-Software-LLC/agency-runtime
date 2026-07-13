@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -54,6 +54,12 @@ changes rather than duplicating every commit.
   control.
 - A nonmutating host-canary readiness report and exact-confirmed, nonce-bound
   live workflow with content-free fingerprinted attestations.
+- A self-contained threat model, release gate, code of conduct, issue
+  templates, pinned dependency groups, CodeQL, dependency review, Dependabot,
+  and offline workflow auditing for open-source operation.
+- Strict bounded JSON, YAML, and regular-file readers shared by configuration,
+  protocols, native inventory, provider responses, roster ingress, and
+  persisted projections.
 
 ### Changed
 
@@ -81,6 +87,13 @@ changes rather than duplicating every commit.
 - Codex and Claude canaries use isolated temporary plugin profiles and preserve
   real-profile native facts separately; only current-profile attestations can
   promote native inspection maturity.
+- Oversized CLI, installer, dashboard-service, configuration, delegation,
+  selector, LiteLLM, and SQLite facades are split into cohesive modules while
+  preserving their public and monkeypatch compatibility surfaces.
+- Dashboard activity omits discarded sensitive fields at query time and reads
+  materialized snapshot summaries; the representative 1,000-row projection is
+  about 3.4 times faster and large snapshot projection no longer reparses
+  manifests on every request.
 
 ### Fixed
 
@@ -112,6 +125,23 @@ changes rather than duplicating every commit.
 - Host adapters re-read persistent control at every boundary, trace correlation
   no longer falls back to a whole session, and native lifecycle success requires
   a proven inventory postcondition.
+- Negated routing intent no longer leaks into policy, domain, token, or
+  work-unit selection; explicit dependencies take precedence over incidental
+  file overlap; output-format vocabulary no longer creates false graph edges.
+- Nested roster snapshot diffs now materialize their real added, changed, and
+  removed counts instead of reporting zero.
+- Missing managed canary targets and empty file URLs no longer resolve
+  implicitly to the current working directory.
+- Routing cache hits compare detached mutation snapshots instead of rebuilding
+  a 1,000-agent Python guard on every request, preserving nested-mutation
+  invalidation while making the profiled hot path about ten times faster.
+- Current Codex plugin manifests declare their hook bundle with the host's
+  supported command schema. The exact-confirmed Windows Codex 0.144.1
+  isolated-profile canary now loads those hooks and produces a valid
+  nonce-correlated six-line response header. Its explicit one-invocation trust
+  bypass remains isolated and never promotes durable real-profile trust.
+- Windows dashboard task inspection rejects DTD and entity declarations before
+  parsing bounded XML.
 
 ### Security
 
@@ -147,3 +177,19 @@ changes rather than duplicating every commit.
   explicitly, restoring structured delegation on Python 3.12 Linux; optional
   host capability tests no longer confuse an unusable WSL interop shim with a
   native executable.
+- Protocol and configuration JSON rejects duplicate keys, non-finite numbers,
+  oversized integers, excess bytes, deep nesting, and excess nodes; YAML also
+  rejects aliases, merge keys, non-text keys, and shared containers.
+- Delegated Git operations strip inherited Git configuration, disable hooks and
+  fsmonitor, bound process output, and refuse executable filters, merge drivers,
+  diff commands, and text converters before mutation.
+- Windows owner-only permission setup detects restricted or indeterminate
+  process tokens before changing a DACL, preventing a sandbox from locking
+  itself out while preserving the fail-closed privacy contract.
+- Existing exact owner-only Windows DACLs are verified and reused without a
+  rewrite, including SQLite sidecars inherited from a recursively private
+  parent; restricted tokens still fail before any required permission change.
+- Roster downloads enforce one total deadline across slow reads; native canary
+  credentials harden an empty destination before content exists; Git checkout
+  hooks are suppressed; and strict finite JSON output is serialized before any
+  protocol bytes are written.

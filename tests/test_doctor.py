@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import tempfile
 import time
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -24,16 +25,16 @@ from agency_runtime.core.doctor import (
     format_report_human,
     run_doctor,
 )
-from agency_runtime.core.provider_validation import ProviderValidationResult
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
+from agency_runtime.core.provider_validation import ProviderValidationResult
 from agency_runtime.core.store.sqlite import Store
 
 
 @pytest.fixture(autouse=True)
-def _clean_env():
+def _clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     for key in list(os.environ):
         if key.startswith("AGENCY_") or key == "LITELLM_API_KEY":
-            os.environ.pop(key, None)
+            monkeypatch.delenv(key, raising=False)
     reset_config_cache()
     yield
     reset_config_cache()
@@ -41,12 +42,34 @@ def _clean_env():
 
 def test_doctor_returns_report():
     """Doctor returns a DoctorReport with checks."""
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = AgencyConfig(
+            store=StoreConfig(db_path=f"{tmp}/test.db"),
+            judge=JudgeConfig(
+                model="test",
+                ollama_mode=False,
+                base_url="http://127.0.0.1:1",
+            ),
+        )
+        store = Store(cfg.store.resolved_path())
+        for agent in STARTER_ROSTER:
+            store.activate_agent(dict(agent))
+
+        report = run_doctor(cfg)
+
+        assert isinstance(report, DoctorReport)
+        assert len(report.checks) > 0
+        check_names = [check.name for check in report.checks]
+        assert "db_integrity" in check_names
+        assert "db_roster" in check_names
 
 
 def test_doctor_escapes_terminal_controls_in_names_and_messages() -> None:
-    report = DoctorReport([
-        CheckResult("provider_\x1b[31m", "warn", "model=\x9bhostile"),
-    ])
+    report = DoctorReport(
+        [
+            CheckResult("provider_\x1b[31m", "warn", "model=\x9bhostile"),
+        ]
+    )
 
     rendered = format_report_human(report)
     payload = report.to_dict()
@@ -55,6 +78,23 @@ def test_doctor_escapes_terminal_controls_in_names_and_messages() -> None:
     assert "\x9b" not in rendered
     assert "\\u001b" in rendered
     assert "\x1b" not in payload["checks"][0]["name"]
+
+
+def test_doctor_keeps_safe_endpoint_when_sentence_punctuation_follows_port() -> None:
+    report = DoctorReport(
+        [
+            CheckResult(
+                "judge_provider",
+                "fail",
+                "Ollama unreachable at http://127.0.0.1:11434: network error",
+            )
+        ]
+    )
+
+    message = report.to_dict()["checks"][0]["message"]
+
+    assert message == "Ollama unreachable at http://127.0.0.1:11434: network error"
+    assert "<invalid endpoint>" not in message
 
 
 @pytest.mark.parametrize(
@@ -98,21 +138,6 @@ def test_doctor_legacy_authenticated_probe_uses_redirect_refusing_opener(
         "Bearer secret",
         "secret",
     }
-    with tempfile.TemporaryDirectory() as tmp:
-        cfg = AgencyConfig(
-            store=StoreConfig(db_path=f"{tmp}/test.db"),
-            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
-        )
-        store = Store(cfg.store.resolved_path())
-        for agent in STARTER_ROSTER:
-            store.activate_agent(dict(agent))
-
-        report = run_doctor(cfg)
-        assert isinstance(report, DoctorReport)
-        assert len(report.checks) > 0
-        check_names = [c.name for c in report.checks]
-        assert "db_integrity" in check_names
-        assert "db_roster" in check_names
 
 
 def test_doctor_detects_empty_roster():
@@ -125,7 +150,7 @@ def test_doctor_detects_empty_roster():
         Store(cfg.store.resolved_path())
 
         report = run_doctor(cfg)
-        roster_check = [c for c in report.checks if c.name == "db_roster"][0]
+        roster_check = next(c for c in report.checks if c.name == "db_roster")
         assert roster_check.status == "fail"
 
 
@@ -195,7 +220,7 @@ def test_doctor_distinguishes_host_discovery_from_native_registration(monkeypatc
             ],
         )
         report = run_doctor(cfg)
-        openclaw_check = [c for c in report.checks if c.name == "adapter_openclaw"][0]
+        openclaw_check = next(c for c in report.checks if c.name == "adapter_openclaw")
         assert openclaw_check.status == "warn"
         assert "not natively registered" in openclaw_check.message
 
@@ -212,7 +237,7 @@ def test_doctor_accepts_yolo_profile():
             store.activate_agent(dict(agent))
 
         report = run_doctor(cfg)
-        profile_check = [c for c in report.checks if c.name == "config_profile"][0]
+        profile_check = next(c for c in report.checks if c.name == "config_profile")
     assert profile_check.status == "pass"
 
 
@@ -241,9 +266,7 @@ def test_provider_validation_is_parallel_and_preserves_order(monkeypatch):
     results = _validate_provider_entries(providers)
 
     assert time.monotonic() - started < 0.2
-    assert [result.name for result in results] == [
-        f"provider-{index}" for index in range(8)
-    ]
+    assert [result.name for result in results] == [f"provider-{index}" for index in range(8)]
 
 
 def test_smoke_all_exercises_generated_host_plugins(monkeypatch):
@@ -259,6 +282,7 @@ def test_smoke_all_exercises_generated_host_plugins(monkeypatch):
         monkeypatch.setenv("AGENCY_DB_PATH", str(cfg.store.resolved_path()))
 
         from agency_runtime.core.smoke import run_smoke
+
         report = run_smoke(all_hosts=True)
 
         assert report["passed"] is True
@@ -271,10 +295,13 @@ def test_smoke_all_passes_with_empty_active_roster(monkeypatch, tmp_path):
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "empty.db"))
 
     from agency_runtime.core.smoke import run_smoke
+
     report = run_smoke(all_hosts=True)
 
     assert report["passed"] is True
-    roster_check = [check for check in report["checks"] if check["name"] == "routing_roster_available"][0]
+    roster_check = next(
+        check for check in report["checks"] if check["name"] == "routing_roster_available"
+    )
     assert roster_check["detail"]["source"] == "starter_roster"
 
 

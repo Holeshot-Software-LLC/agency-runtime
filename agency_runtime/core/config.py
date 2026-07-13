@@ -13,9 +13,10 @@ Env vars are override-only, never the primary mechanism.
 
 from __future__ import annotations
 
-import os
 import ipaddress
+import os
 import re
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,8 @@ from urllib.parse import urlsplit
 
 import yaml
 
+from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
+from agency_runtime.core.bounded_yaml import BoundedYAMLError, safe_load_bounded
 
 # ── Config path resolution ────────────────────────────────────
 
@@ -62,9 +65,7 @@ class ProviderEntry:
     """
 
     name: str = ""
-    type: str = (
-        "openai-compatible"  # openai-compatible, anthropic, ollama, litellm, cli
-    )
+    type: str = "openai-compatible"  # openai-compatible, anthropic, ollama, litellm, cli
     transport: str = ""  # allowlisted CLI transport: codex or claude
     model: str = ""
     base_url: str = ""
@@ -100,14 +101,15 @@ class ProviderEntry:
         if provider_type == "ollama":
             return bool(self.model and self.base_url)
         if provider_type == "cli":
-            return (
-                self.transport.strip().lower() in {"codex", "claude"}
-                and is_safe_cli_model_id(self.model)
-            )
-        if (
-            provider_type in {"openai", "openai-compatible", "litellm"}
-            and _is_loopback_http_url(self.base_url)
-        ):
+            return self.transport.strip().lower() in {
+                "codex",
+                "claude",
+            } and is_safe_cli_model_id(self.model)
+        if provider_type in {
+            "openai",
+            "openai-compatible",
+            "litellm",
+        } and _is_loopback_http_url(self.base_url):
             return bool(self.model)
         return bool(self.model and self.resolve_api_key())
 
@@ -228,11 +230,30 @@ class AgencyConfig:
 # ── YAML loading helpers ──────────────────────────────────────
 
 
+_MAX_CONFIG_BYTES = 1024 * 1024
+
+
 def _load_yaml(path: Path) -> dict[str, Any]:
-    if not path.exists():
+    try:
+        raw = read_bounded_regular_file(
+            path,
+            limit=_MAX_CONFIG_BYTES,
+            label="configuration file",
+        )
+    except FileNotFoundError:
         return {}
-    with open(path) as f:
-        data = yaml.safe_load(f)
+    except FileSizeLimitError as exc:
+        raise ValueError("configuration file exceeds the 1 MiB size limit") from exc
+    except OSError as exc:
+        raise ValueError("configuration file is unavailable or unsafe") from exc
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("configuration file must be UTF-8") from exc
+    try:
+        data = safe_load_bounded(text)
+    except BoundedYAMLError as exc:
+        raise ValueError(str(exc)) from exc
     return data if isinstance(data, dict) else {}
 
 
@@ -276,18 +297,15 @@ def _build_providers(raw: list[Any] | None) -> tuple[ProviderEntry, ...]:
     if not raw or not isinstance(raw, list):
         return ()
     if len(raw) > MAX_PROVIDER_CHAIN_ENTRIES:
-        raise ValueError(
-            f"providers supports at most {MAX_PROVIDER_CHAIN_ENTRIES} entries"
-        )
+        raise ValueError(f"providers supports at most {MAX_PROVIDER_CHAIN_ENTRIES} entries")
     return tuple(_build_provider_entry(p) for p in raw if isinstance(p, dict))
 
 
 def _build_adapters(raw: dict[str, Any]) -> AdaptersConfig:
     litellm_raw = raw.get("litellm", {})
-    if isinstance(litellm_raw, dict):
-        # Ensure skip_models default is preserved if not overridden
-        if "skip_models" not in litellm_raw:
-            litellm_raw = {**litellm_raw}
+    # Ensure skip_models default is preserved if not overridden.
+    if isinstance(litellm_raw, dict) and "skip_models" not in litellm_raw:
+        litellm_raw = {**litellm_raw}
     return AdaptersConfig(
         litellm=_build_adapter_entry(
             {
@@ -328,9 +346,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             ollama_mode=bool(judge_raw.get("ollama_mode", False)),
             timeout=float(judge_raw.get("timeout", 15.0)),
             max_selected=int(judge_raw.get("max_selected", 3)),
-            confidence_bypass_threshold=float(
-                judge_raw.get("confidence_bypass_threshold", 15.0)
-            ),
+            confidence_bypass_threshold=float(judge_raw.get("confidence_bypass_threshold", 15.0)),
         ),
         ollama=OllamaConfig(
             enabled=bool(ollama_raw.get("enabled", True)),
@@ -356,8 +372,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
         ),
         observability=ObservabilityConfig(
             capture_content=(
-                _normalize_enabled(observability_raw.get("capture_content", False))
-                == "true"
+                _normalize_enabled(observability_raw.get("capture_content", False)) == "true"
             ),
             retention_days=max(1, int(observability_raw.get("retention_days", 30))),
         ),
@@ -371,123 +386,135 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
 # ── Env var override layer ────────────────────────────────────
 
 
-def _apply_env_overrides(cfg: AgencyConfig) -> AgencyConfig:
-    """Apply environment variable overrides on top of the config."""
-    from dataclasses import asdict
+def _converted_env_value(
+    environ: Mapping[str, str],
+    name: str,
+    converter: Callable[[str], Any],
+) -> Any | None:
+    raw = environ.get(name)
+    if not raw:
+        return None
+    try:
+        return converter(raw)
+    except ValueError:
+        return None
 
-    judge_replacements: dict[str, Any] = {}
-    if v := os.environ.get("AGENCY_JUDGE_MODEL"):
-        judge_replacements["model"] = v
-    if v := os.environ.get("AGENCY_JUDGE_BASE_URL"):
-        judge_replacements["base_url"] = v
-    if v := os.environ.get("AGENCY_JUDGE_API_KEY"):
-        judge_replacements["api_key"] = v
-    elif v := os.environ.get("LITELLM_API_KEY"):
-        if not cfg.judge.resolve_api_key():
-            judge_replacements["api_key"] = v
-    if v := os.environ.get("AGENCY_JUDGE_TIMEOUT"):
-        try:
-            judge_replacements["timeout"] = float(v)
-        except ValueError:
-            pass
-    if v := os.environ.get("AGENCY_MAX_SELECTED"):
-        try:
-            judge_replacements["max_selected"] = int(v)
-        except ValueError:
-            pass
-    if v := os.environ.get("AGENCY_BYPASS_THRESHOLD"):
-        try:
-            judge_replacements["confidence_bypass_threshold"] = float(v)
-        except ValueError:
-            pass
 
-    if "model" in judge_replacements or "base_url" in judge_replacements:
-        base = judge_replacements.get("base_url", cfg.judge.base_url)
-        if "11434" not in base:
-            judge_replacements["ollama_mode"] = False
+def _judge_has_resolved_key(
+    judge: JudgeConfig,
+    environ: Mapping[str, str],
+) -> bool:
+    return bool(judge.api_key or (judge.api_key_env and environ.get(judge.api_key_env, "")))
 
-    if judge_replacements:
-        new_judge = JudgeConfig(**{**asdict(cfg.judge), **judge_replacements})
-    else:
-        new_judge = cfg.judge
 
-    ollama_replacements: dict[str, Any] = {}
-    if v := os.environ.get("OLLAMA_BASE_URL"):
-        ollama_replacements["base_url"] = v
-    if v := os.environ.get("AGENCY_OLLAMA_FALLBACK_MODEL"):
-        ollama_replacements["model"] = v
-    if ollama_replacements:
-        new_ollama = OllamaConfig(**{**asdict(cfg.ollama), **ollama_replacements})
-    else:
-        new_ollama = cfg.ollama
+def _judge_env_replacements(
+    judge: JudgeConfig,
+    environ: Mapping[str, str],
+) -> dict[str, Any]:
+    replacements = {
+        field_name: value
+        for env_name, field_name in (
+            ("AGENCY_JUDGE_MODEL", "model"),
+            ("AGENCY_JUDGE_BASE_URL", "base_url"),
+        )
+        if (value := environ.get(env_name))
+    }
+    direct_key = environ.get("AGENCY_JUDGE_API_KEY")
+    fallback_key = environ.get("LITELLM_API_KEY")
+    if direct_key:
+        replacements["api_key"] = direct_key
+    elif fallback_key and not _judge_has_resolved_key(judge, environ):
+        replacements["api_key"] = fallback_key
+    for env_name, field_name, converter in (
+        ("AGENCY_JUDGE_TIMEOUT", "timeout", float),
+        ("AGENCY_MAX_SELECTED", "max_selected", int),
+        ("AGENCY_BYPASS_THRESHOLD", "confidence_bypass_threshold", float),
+    ):
+        value = _converted_env_value(environ, env_name, converter)
+        if value is not None:
+            replacements[field_name] = value
+    if replacements.keys() & {"model", "base_url"}:
+        base_url = replacements.get("base_url", judge.base_url)
+        if "11434" not in base_url:
+            replacements["ollama_mode"] = False
+    return replacements
 
-    store_replacements: dict[str, Any] = {}
-    if v := os.environ.get("AGENCY_DB_PATH"):
-        store_replacements["db_path"] = v
-    if store_replacements:
-        new_store = StoreConfig(**{**asdict(cfg.store), **store_replacements})
-    else:
-        new_store = cfg.store
 
-    observability_replacements: dict[str, Any] = {}
-    if v := os.environ.get("AGENCY_CAPTURE_CONTENT"):
-        observability_replacements["capture_content"] = v.strip().lower() in (
+def _observability_env_replacements(
+    environ: Mapping[str, str],
+) -> dict[str, Any]:
+    replacements: dict[str, Any] = {}
+    if capture_content := environ.get("AGENCY_CAPTURE_CONTENT"):
+        replacements["capture_content"] = capture_content.strip().lower() in {
             "1",
             "true",
             "yes",
             "on",
-        )
-    if v := os.environ.get("AGENCY_RETENTION_DAYS"):
-        try:
-            observability_replacements["retention_days"] = max(1, int(v))
-        except ValueError:
-            pass
-    if observability_replacements:
-        new_observability = ObservabilityConfig(
-            **{**asdict(cfg.observability), **observability_replacements}
-        )
-    else:
-        new_observability = cfg.observability
+        }
+    retention_days = _converted_env_value(environ, "AGENCY_RETENTION_DAYS", int)
+    if retention_days is not None:
+        replacements["retention_days"] = max(1, retention_days)
+    return replacements
 
-    dashboard_replacements: dict[str, Any] = {}
-    if v := os.environ.get("AGENCY_DASHBOARD_PORT"):
-        try:
-            dashboard_replacements["port"] = int(v)
-        except ValueError:
-            pass
-    if dashboard_replacements:
-        new_dashboard = DashboardConfig(
-            **{**asdict(cfg.dashboard), **dashboard_replacements}
+
+def _replace_if(instance: Any, replacements: dict[str, Any]) -> Any:
+    return replace(instance, **replacements) if replacements else instance
+
+
+def _apply_env_overrides(
+    cfg: AgencyConfig,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> AgencyConfig:
+    """Apply environment variable overrides on top of the config."""
+
+    environment = os.environ if environ is None else environ
+    ollama_replacements = {
+        field_name: value
+        for env_name, field_name in (
+            ("OLLAMA_BASE_URL", "base_url"),
+            ("AGENCY_OLLAMA_FALLBACK_MODEL", "model"),
         )
-    else:
-        new_dashboard = cfg.dashboard
-
-    profile = os.environ.get("AGENCY_PROFILE", cfg.profile).strip() or cfg.profile
-
-    return AgencyConfig(
-        judge=new_judge,
-        ollama=new_ollama,
-        providers=cfg.providers,
-        selector=cfg.selector,
-        store=new_store,
-        server=cfg.server,
-        dashboard=new_dashboard,
-        observability=new_observability,
-        adapters=cfg.adapters,
+        if (value := environment.get(env_name))
+    }
+    store_path = environment.get("AGENCY_DB_PATH")
+    dashboard_port = _converted_env_value(environment, "AGENCY_DASHBOARD_PORT", int)
+    profile = environment.get("AGENCY_PROFILE", cfg.profile).strip() or cfg.profile
+    return replace(
+        cfg,
+        judge=_replace_if(
+            cfg.judge,
+            _judge_env_replacements(cfg.judge, environment),
+        ),
+        ollama=_replace_if(cfg.ollama, ollama_replacements),
+        store=_replace_if(cfg.store, {"db_path": store_path} if store_path else {}),
+        dashboard=_replace_if(
+            cfg.dashboard,
+            {"port": dashboard_port} if dashboard_port is not None else {},
+        ),
+        observability=_replace_if(
+            cfg.observability,
+            _observability_env_replacements(environment),
+        ),
         profile=profile,
-        companion_policy_path=cfg.companion_policy_path,
-        config_path=cfg.config_path,
     )
 
 
 def _is_loopback_http_url(value: str) -> bool:
-    """Return whether *value* is an uncredentialed loopback HTTP endpoint."""
+    """Return whether *value* is an uncredentialed loopback HTTP(S) endpoint."""
     try:
         parsed = urlsplit(value)
         host = (parsed.hostname or "").rstrip(".").lower()
+        _ = parsed.port
         if parsed.scheme not in {"http", "https"} or not host:
             return False
-        if parsed.username is not None or parsed.password is not None:
+        if (
+            parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+            or any(character.isspace() for character in value)
+        ):
             return False
         if host == "localhost":
             return True
@@ -501,12 +528,14 @@ def is_safe_credential_url(value: str) -> bool:
     try:
         parsed = urlsplit(value)
         host = parsed.hostname or ""
+        _ = parsed.port
         if (
             parsed.username is not None
             or parsed.password is not None
             or parsed.query
             or parsed.fragment
             or not host
+            or any(character.isspace() for character in value)
         ):
             return False
         if parsed.scheme.lower() == "https":
@@ -521,26 +550,19 @@ def is_safe_credential_url(value: str) -> bool:
 def _enforce_credential_transport_constraints(cfg: AgencyConfig) -> AgencyConfig:
     """Fail closed before configured credentials can reach an unsafe endpoint."""
     for provider in cfg.providers:
-        if (
-            provider.api_key or provider.api_key_env
-        ) and not is_safe_credential_url(provider.base_url):
+        if (provider.api_key or provider.api_key_env) and not is_safe_credential_url(
+            provider.base_url
+        ):
             raise ValueError(
-                f"provider {provider.name!r} credentials require HTTPS or "
-                "literal loopback HTTP"
+                f"provider {provider.name!r} credentials require HTTPS or literal loopback HTTP"
             )
-    if (
-        cfg.judge.api_key or cfg.judge.api_key_env
-    ) and not is_safe_credential_url(cfg.judge.base_url):
-        raise ValueError(
-            "judge credentials require HTTPS or literal loopback HTTP"
-        )
+    if (cfg.judge.api_key or cfg.judge.api_key_env) and not is_safe_credential_url(
+        cfg.judge.base_url
+    ):
+        raise ValueError("judge credentials require HTTPS or literal loopback HTTP")
     litellm = cfg.adapters.litellm
-    if (
-        litellm.api_key or litellm.api_key_env
-    ) and not is_safe_credential_url(litellm.base_url):
-        raise ValueError(
-            "LiteLLM adapter credentials require HTTPS or literal loopback HTTP"
-        )
+    if (litellm.api_key or litellm.api_key_env) and not is_safe_credential_url(litellm.base_url):
+        raise ValueError("LiteLLM adapter credentials require HTTPS or literal loopback HTTP")
     return cfg
 
 
@@ -564,8 +586,7 @@ def _enforce_profile_constraints(cfg: AgencyConfig) -> AgencyConfig:
             ollama_mode=provider.type.strip().lower() == "ollama",
         )
         for provider in cfg.providers
-        if provider.type.strip().lower()
-        in {"ollama", "openai", "openai-compatible", "litellm"}
+        if provider.type.strip().lower() in {"ollama", "openai", "openai-compatible", "litellm"}
         and _is_loopback_http_url(provider.base_url)
     )
     primary = local_providers[0] if local_providers else None
@@ -603,9 +624,7 @@ def _enforce_profile_constraints(cfg: AgencyConfig) -> AgencyConfig:
 _cached_config: AgencyConfig | None = None
 
 
-def load_config(
-    path: str | Path | None = None, *, reload: bool = False
-) -> AgencyConfig:
+def load_config(path: str | Path | None = None, *, reload: bool = False) -> AgencyConfig:
     """Load config with precedence: env > file > bundled defaults.
 
     Args:
@@ -667,9 +686,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "model": cfg.judge.model,
             "base_url": cfg.judge.base_url,
             "api_key_env": cfg.judge.api_key_env,
-            "api_key": "***REDACTED***"
-            if redact and cfg.judge.api_key
-            else cfg.judge.api_key,
+            "api_key": "***REDACTED***" if redact and cfg.judge.api_key else cfg.judge.api_key,
             "ollama_mode": cfg.judge.ollama_mode,
             "timeout": cfg.judge.timeout,
             "max_selected": cfg.judge.max_selected,

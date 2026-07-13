@@ -3,10 +3,13 @@ title: "Contributing to Agency Runtime"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [contributing, development]
 related:
   - AGENTS.md
+  - CODE_OF_CONDUCT.md
+  - SECURITY.md
+  - docs/THREAT_MODEL.md
   - docs/roadmap/README.md
   - docs/decisions/README.md
   - docs/RELEASE_CHECKLIST.md
@@ -21,6 +24,9 @@ delegation, and evidence boundaries. Contributions are welcome, but a passing
 unit test is not enough when a change affects native host discovery, persisted
 evidence, or security claims.
 
+Participation is governed by [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Review
+the [threat model](docs/THREAT_MODEL.md) before changing a trust boundary.
+
 ## Set up a development environment
 
 Use Python 3.10 or newer in an isolated environment:
@@ -29,8 +35,10 @@ Use Python 3.10 or newer in an isolated environment:
 python -m venv .venv
 # PowerShell: .venv\Scripts\Activate.ps1
 # POSIX:      . .venv/bin/activate
-python -m pip install -e ".[dev]"
-python -m pytest tests -q
+python -m pip install -e ".[dev,release,security]"
+ruff check agency_runtime tests scripts
+python -m pytest tests -q -W error
+node --test tests/dashboard_ui.test.mjs
 ```
 
 Tests that generate host files must use an explicit temporary home and database.
@@ -88,6 +96,9 @@ For packaging or release-facing changes also run:
 
 ```bash
 python scripts/verify_release_hygiene.py
+bandit -q -r agency_runtime -lll
+python scripts/audit_runtime_dependencies.py
+zizmor --pedantic --strict-collection --offline .
 python -m build --sdist --wheel
 python -m twine check --strict dist/*
 python scripts/verify_distribution.py dist

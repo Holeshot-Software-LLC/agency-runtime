@@ -17,9 +17,7 @@ def safe_display_token(value: Any, *, limit: int = 160) -> str:
     if limit <= 0:
         raise ValueError("display limit must be positive")
     rendered = "".join(
-        f"\\u{ord(char):04x}"
-        if ord(char) < 32 or 127 <= ord(char) < 160
-        else char
+        f"\\u{ord(char):04x}" if ord(char) < 32 or 127 <= ord(char) < 160 else char
         for char in str(value)
     )
     if len(rendered) <= limit:

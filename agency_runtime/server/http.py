@@ -24,9 +24,11 @@ import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Type
-from urllib.parse import urlparse
+from threading import BoundedSemaphore
+from typing import Any
+from urllib.parse import parse_qs, urlparse
 
+from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.config import load_config
 from agency_runtime.core.header.finalize import finalize_response
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
@@ -47,6 +49,13 @@ DEFAULT_PORT = 7800
 # Body size cap to prevent unbounded reads. Routing and finalization payloads do
 # not need multi-megabyte request bodies.
 _MAX_BODY = 1024 * 1024
+_DEFAULT_REQUEST_TIMEOUT = 15.0
+_DEFAULT_MAX_CONCURRENT_REQUESTS = 64
+_MAX_CONTEXT_ITEMS = 128
+_MAX_CONTEXT_TEXT = 2048
+_MAX_ROSTER_RESPONSE_AGENTS = 1000
+_MAX_ROSTER_CURSOR_BYTES = 1024
+_MAX_CONTENT_LENGTH_DIGITS = 20
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +67,16 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
     """HTTP request handler for Agency Runtime endpoints."""
 
     server_version = "AgencyRuntimeHTTP/0.1"
+    sys_version = ""
     protocol_version = "HTTP/1.1"
+
+    def setup(self) -> None:
+        """Bound header/body socket I/O before stdlib stream wrappers are built."""
+
+        self.request.settimeout(  # type: ignore[union-attr]
+            float(getattr(self.server, "request_timeout", _DEFAULT_REQUEST_TIMEOUT))
+        )
+        super().setup()
 
     @property
     def store(self) -> Store:
@@ -66,12 +84,10 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
     # ── Method dispatch ──────────────────────────────────────────────
 
-    def do_OPTIONS(self) -> None:  # noqa: N802 — http.server contract
-        self._json_error(
-            HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed"
-        )
+    def do_OPTIONS(self) -> None:
+        self._json_error(HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed")
 
-    def do_GET(self) -> None:  # noqa: N802 — http.server contract
+    def do_GET(self) -> None:
         if not self._validate_request_boundary():
             return
         path = _normalise_path(self.path)
@@ -86,14 +102,14 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             _log_unhandled_request_error("GET", path, exc)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
-    def do_POST(self) -> None:  # noqa: N802 — http.server contract
+    def do_POST(self) -> None:
         if not self._validate_request_boundary(require_json=True):
             return
         path = _normalise_path(self.path)
-        body = self._read_json_body()
-        if body is None:
-            return  # error already sent
         try:
+            body = self._read_json_body()
+            if body is None:
+                return  # error already sent
             if path == "/preflight":
                 self._handle_preflight(body)
             elif path == "/explain":
@@ -111,32 +127,55 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
     # ── Body parsing ─────────────────────────────────────────────────
 
     def _read_json_body(self) -> dict[str, Any] | None:
-        try:
-            length = int(self.headers.get("Content-Length", 0))
-        except (TypeError, ValueError):
+        content_lengths = self.headers.get_all("Content-Length", [])
+        transfer_encodings = self.headers.get_all("Transfer-Encoding", [])
+        if transfer_encodings or len(content_lengths) != 1:
+            self.close_connection = True
             self._json_error(
-                HTTPStatus.BAD_REQUEST, "invalid or missing Content-Length"
+                HTTPStatus.BAD_REQUEST,
+                "exactly one Content-Length is required; transfer encoding is unsupported",
             )
+            return None
+        raw_length = content_lengths[0]
+        if len(raw_length) > _MAX_CONTENT_LENGTH_DIGITS:
+            self.close_connection = True
+            self._json_error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "request body too large")
+            return None
+        if not raw_length.isascii() or not raw_length.isdigit():
+            self.close_connection = True
+            self._json_error(HTTPStatus.BAD_REQUEST, "invalid or missing Content-Length")
+            return None
+        try:
+            length = int(raw_length)
+        except (ValueError, OverflowError):  # defensive if integer parsing semantics change
+            self.close_connection = True
+            self._json_error(HTTPStatus.BAD_REQUEST, "invalid or missing Content-Length")
             return None
         if length <= 0:
             self._json_error(HTTPStatus.BAD_REQUEST, "request body is empty")
             return None
         max_body_size = int(getattr(self.server, "max_body_size", _MAX_BODY))
         if length > max_body_size:
-            self._json_error(
-                HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "request body too large"
-            )
+            self.close_connection = True
+            self._json_error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "request body too large")
             return None
-        raw = self.rfile.read(length)
         try:
-            body = json.loads(raw)
-        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-            self._json_error(HTTPStatus.BAD_REQUEST, f"invalid JSON: {exc}")
+            raw = self.rfile.read(length)
+        except (OSError, TimeoutError):
+            self.close_connection = True
+            self._json_error(HTTPStatus.REQUEST_TIMEOUT, "request body timed out")
+            return None
+        if len(raw) != length:
+            self.close_connection = True
+            self._json_error(HTTPStatus.BAD_REQUEST, "request body ended early")
+            return None
+        try:
+            body = safe_load_bounded_json(raw)
+        except (BoundedJSONError, UnicodeDecodeError):
+            self._json_error(HTTPStatus.BAD_REQUEST, "invalid bounded JSON")
             return None
         if not isinstance(body, dict):
-            self._json_error(
-                HTTPStatus.BAD_REQUEST, "request body must be a JSON object"
-            )
+            self._json_error(HTTPStatus.BAD_REQUEST, "request body must be a JSON object")
             return None
         return body
 
@@ -163,7 +202,11 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             return
         remaining = length
         while remaining:
-            chunk = self.rfile.read(min(remaining, 64 * 1024))
+            try:
+                chunk = self.rfile.read(min(remaining, 64 * 1024))
+            except (OSError, TimeoutError):
+                self.close_connection = True
+                return
             if not chunk:
                 self.close_connection = True
                 return
@@ -172,13 +215,19 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
     # ── Response helpers ─────────────────────────────────────────────
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
-        data = json.dumps(payload).encode("utf-8")
+        try:
+            data = json.dumps(
+                payload,
+                allow_nan=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        except (TypeError, ValueError):
+            status = HTTPStatus.INTERNAL_SERVER_ERROR
+            data = b'{"error":"internal serialization error"}'
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
-        self.send_header(
-            "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
-        )
+        self.send_header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
@@ -204,26 +253,24 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         if origin:
             expected = f"http://{host}"
             if origin.rstrip("/").lower() != expected.rstrip("/"):
-                self._json_error(
-                    HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed"
-                )
+                self._json_error(HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed")
                 return False
 
         supplied = self.headers.get("Authorization", "")
         expected = f"Bearer {self.server.auth_token}"  # type: ignore[attr-defined]
-        if not secrets.compare_digest(supplied, expected):
+        if (
+            len(supplied) > 8192
+            or not supplied.isascii()
+            or not secrets.compare_digest(supplied, expected)
+        ):
             self._json_error(HTTPStatus.UNAUTHORIZED, "authentication required")
             return False
 
         if require_json:
-            content_type = (
-                self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
-            )
+            content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if content_type != "application/json":
                 self._drain_bounded_request_body()
-                self._json_error(
-                    HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required"
-                )
+                self._json_error(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required")
                 return False
         return True
 
@@ -251,8 +298,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         context = build_routing_context(routing)
         if trivial:
             active_slugs = {
-                str(agent.get("slug") or agent.get("agent_slug") or "")
-                for agent in catalog
+                str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog
             }
             _matched, companion_ids = detect_actions(
                 user_message,
@@ -288,6 +334,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             limit = int(body.get("limit", 10))
         except (TypeError, ValueError):
             limit = 10
+        limit = max(1, min(limit, 100))
 
         payload = explain_route(
             str(body.get("session_id", "")),
@@ -310,6 +357,37 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             self._json_error(HTTPStatus.BAD_REQUEST, "draft_text is required")
             return
 
+        if (
+            not isinstance(skills_loaded, list)
+            or len(skills_loaded) > _MAX_CONTEXT_ITEMS
+            or any(
+                not isinstance(skill, str) or len(skill) > _MAX_CONTEXT_TEXT
+                for skill in skills_loaded
+            )
+        ):
+            self._json_error(HTTPStatus.BAD_REQUEST, "skills_loaded must be a bounded string list")
+            return
+        delegation_fields = {
+            "agent",
+            "recommended_agent",
+            "status",
+            "backend",
+            "skip_reason",
+            "error",
+        }
+        if (
+            not isinstance(delegations, list)
+            or len(delegations) > _MAX_CONTEXT_ITEMS
+            or any(not isinstance(delegation, dict) for delegation in delegations)
+            or any(
+                not isinstance(delegation[field], str) or len(delegation[field]) > _MAX_CONTEXT_TEXT
+                for delegation in delegations
+                for field in delegation_fields & delegation.keys()
+            )
+        ):
+            self._json_error(HTTPStatus.BAD_REQUEST, "delegations must be a bounded object list")
+            return
+
         if (skills_loaded or delegations) and not self.server.allow_context_writes:  # type: ignore[attr-defined]
             self._json_error(
                 HTTPStatus.FORBIDDEN,
@@ -323,19 +401,18 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         for skill in skills_loaded:
             self.store.record_skill_loaded(session_key, str(skill))
         for delegation in delegations:
-            if isinstance(delegation, dict):
-                self.store.record_delegation(
-                    trace_id=trace_id,
-                    session_id=session_key,
-                    host=host,
-                    recommended_agent=str(
-                        delegation.get("agent", delegation.get("recommended_agent", ""))
-                    ),
-                    status=str(delegation.get("status", "suggested")),
-                    backend=str(delegation.get("backend", "")),
-                    skip_reason=str(delegation.get("skip_reason", "")),
-                    error=str(delegation.get("error", "")),
-                )
+            self.store.record_delegation(
+                trace_id=trace_id,
+                session_id=session_key,
+                host=host,
+                recommended_agent=str(
+                    delegation.get("agent", delegation.get("recommended_agent", ""))
+                ),
+                status=str(delegation.get("status", "suggested")),
+                backend=str(delegation.get("backend", "")),
+                skip_reason=str(delegation.get("skip_reason", "")),
+                error=str(delegation.get("error", "")),
+            )
 
         result = finalize_response(
             draft_text,
@@ -371,7 +448,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         catalog = self.store.get_active_roster_as_catalog()
         candidates, scores = pre_narrow(query, catalog, limit=limit)
         results = []
-        for candidate, score in zip(candidates, scores):
+        for candidate, score in zip(candidates, scores, strict=True):
             entry = dict(candidate)
             entry["score"] = round(float(score), 2)
             results.append(entry)
@@ -385,28 +462,43 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         )
 
     def _handle_status(self) -> None:
-        roster = self.store.get_active_roster()
         self._json_ok(
             {
                 "status": "ok",
-                "roster_count": len(roster),
+                "roster_count": self.store.count_active_roster(),
                 "db_path": str(self.store.db_path),
             }
         )
 
     def _handle_roster(self) -> None:
-        roster = self.store.get_active_roster()
+        try:
+            limit, after = _bounded_roster_page(self.path)
+        except ValueError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        page = self.store.get_active_roster(limit=limit + 1, after=after)
+        truncated = len(page) > limit
+        roster = page[:limit]
+        total_count = self.store.count_active_roster()
         self._json_ok(
             {
                 "agents": roster,
                 "count": len(roster),
+                "total_count": total_count,
+                "limit": limit,
+                "truncated": truncated,
+                "next_cursor": roster[-1]["agent_slug"] if truncated else None,
             }
         )
 
     # ── Logging ──────────────────────────────────────────────────────
 
     def log_message(self, format: str, *args: Any) -> None:
-        logger.info("%s - %s", self.address_string(), format % args)
+        logger.info(
+            "%s - %s",
+            self.address_string(),
+            _escape_log_text(format % args, limit=2048),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -430,28 +522,51 @@ class AgencyHTTPServer(ThreadingHTTPServer):
         store: Store,
         host: str = DEFAULT_HOST,
         port: int = DEFAULT_PORT,
-        handler_class: Type[AgencyHTTPHandler] = AgencyHTTPHandler,
+        handler_class: type[AgencyHTTPHandler] = AgencyHTTPHandler,
         *,
         allow_remote: bool = False,
         allow_context_writes: bool = False,
         auth_token: str | None = None,
         max_body_size: int = _MAX_BODY,
+        request_timeout: float = _DEFAULT_REQUEST_TIMEOUT,
+        max_concurrent_requests: int = _DEFAULT_MAX_CONCURRENT_REQUESTS,
     ):
         if not allow_remote and not _is_loopback_host(host):
-            raise ValueError(
-                "Agency HTTP server is loopback-only unless allow_remote is explicit"
-            )
+            raise ValueError("Agency HTTP server is loopback-only unless allow_remote is explicit")
         self.store = store
         self.allow_context_writes = allow_context_writes
-        self.auth_token = (
-            auth_token or getattr(self, "auth_token", "") or secrets.token_urlsafe(32)
-        )
+        if auth_token is None:
+            candidate_token = getattr(self, "auth_token", "") or secrets.token_urlsafe(32)
+        else:
+            candidate_token = auth_token
         if (
-            isinstance(max_body_size, bool)
-            or not 1024 <= int(max_body_size) <= 64 * 1024 * 1024
+            not isinstance(candidate_token, str)
+            or not candidate_token
+            or len(candidate_token) > 4096
+            or any(character in candidate_token for character in "\r\n")
         ):
+            raise ValueError("auth_token must be a bounded single-line string")
+        self.auth_token = candidate_token
+        if isinstance(max_body_size, bool) or not isinstance(max_body_size, int):
+            raise ValueError("max_body_size must be an integer")
+        if not 1024 <= max_body_size <= 64 * 1024 * 1024:
             raise ValueError("max_body_size must be between 1024 bytes and 64 MiB")
-        self.max_body_size = int(max_body_size)
+        self.max_body_size = max_body_size
+        if (
+            isinstance(request_timeout, bool)
+            or not isinstance(request_timeout, (int, float))
+            or not 0.05 <= float(request_timeout) <= 300.0
+        ):
+            raise ValueError("request_timeout must be between 0.05 and 300 seconds")
+        self.request_timeout = float(request_timeout)
+        if (
+            isinstance(max_concurrent_requests, bool)
+            or not isinstance(max_concurrent_requests, int)
+            or not 1 <= max_concurrent_requests <= 1024
+        ):
+            raise ValueError("max_concurrent_requests must be between 1 and 1024")
+        self.max_concurrent_requests = max_concurrent_requests
+        self._request_slots = BoundedSemaphore(max_concurrent_requests)
         # ``TCPServer`` creates its listening socket during ``__init__`` using
         # this attribute.  Set it on the instance before delegating so an
         # explicit ``::1`` binding is genuinely IPv6 rather than merely
@@ -470,6 +585,35 @@ class AgencyHTTPServer(ThreadingHTTPServer):
             f"[::1]:{actual_port}",
         }
 
+    def process_request(self, request: Any, client_address: Any) -> None:
+        """Start one bounded request worker or reject excess concurrency."""
+        if not self._request_slots.acquire(blocking=False):
+            try:
+                request.settimeout(0.5)
+                request.sendall(
+                    b"HTTP/1.1 503 Service Unavailable\r\n"
+                    b"Connection: close\r\n"
+                    b"Content-Length: 0\r\n"
+                    b"Retry-After: 1\r\n\r\n"
+                )
+            except OSError:
+                pass
+            finally:
+                self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self._request_slots.release()
+            raise
+
+    def process_request_thread(self, request: Any, client_address: Any) -> None:
+        """Release the request slot after the stdlib worker fully shuts down."""
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._request_slots.release()
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -482,6 +626,42 @@ def _normalise_path(raw_path: str) -> str:
     return path.rstrip("/") or "/"
 
 
+def _bounded_roster_limit(raw_path: str) -> int:
+    """Return an explicit, compatible bound for roster response materialization."""
+    return _bounded_roster_page(raw_path)[0]
+
+
+def _bounded_roster_page(raw_path: str) -> tuple[int, str | None]:
+    """Validate and return the bounded limit and stable roster cursor."""
+    try:
+        query = parse_qs(
+            urlparse(raw_path).query,
+            keep_blank_values=True,
+            max_num_fields=16,
+        )
+    except ValueError as exc:
+        raise ValueError("invalid roster query") from exc
+    raw_limit = query.get(
+        "limit",
+        [str(_MAX_ROSTER_RESPONSE_AGENTS)],
+    )[0]
+    try:
+        value = int(raw_limit)
+    except (TypeError, ValueError):
+        value = _MAX_ROSTER_RESPONSE_AGENTS
+    limit = max(1, min(value, _MAX_ROSTER_RESPONSE_AGENTS))
+
+    cursors = query.get("after", [])
+    if len(cursors) > 1:
+        raise ValueError("after cursor must be provided at most once")
+    after = cursors[0] if cursors else None
+    if after is not None and (not after or len(after.encode("utf-8")) > _MAX_ROSTER_CURSOR_BYTES):
+        raise ValueError(
+            f"after cursor must be between 1 and {_MAX_ROSTER_CURSOR_BYTES} UTF-8 bytes"
+        )
+    return limit, after
+
+
 def _is_loopback_host(host: str) -> bool:
     normalized = str(host or "").strip().lower()
     if normalized == "localhost":
@@ -492,18 +672,23 @@ def _is_loopback_host(host: str) -> bool:
         return False
 
 
+def _escape_log_text(value: object, *, limit: int) -> str:
+    """Render bounded single-line diagnostics without terminal control bytes."""
+
+    text = str(value)[:limit]
+    return text.encode("unicode_escape", errors="backslashreplace").decode("ascii")
+
+
 def _log_unhandled_request_error(method: str, path: str, exc: Exception) -> None:
     """Log traceback shape without leaking exception messages or payload values."""
     frames = traceback.extract_tb(exc.__traceback__)
-    frame_refs = ", ".join(
-        f"{Path(frame.filename).name}:{frame.lineno}" for frame in frames[-5:]
-    )
+    frame_refs = ", ".join(f"{Path(frame.filename).name}:{frame.lineno}" for frame in frames[-5:])
     logger.error(
         "unhandled error on %s %s: %s at %s",
         method,
-        path,
+        _escape_log_text(path, limit=512),
         type(exc).__name__,
-        frame_refs or "unknown",
+        _escape_log_text(frame_refs or "unknown", limit=1024),
     )
 
 
@@ -519,8 +704,8 @@ def serve(
 ) -> None:
     """Run the Agency Runtime HTTP server until interrupted."""
     cfg = load_config()
-    host = host or cfg.server.host
-    port = port or cfg.server.port
+    host = cfg.server.host if host is None else host
+    port = cfg.server.port if port is None else port
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
@@ -533,7 +718,8 @@ def serve(
         max_body_size=cfg.server.max_body_size,
     )
     print(f"Agency Runtime HTTP bearer token: {server.auth_token}")
-    logger.info("Agency Runtime HTTP server listening on %s:%d", host, port)
+    actual_host, actual_port = server.server_address[:2]
+    logger.info("Agency Runtime HTTP server listening on %s:%d", actual_host, actual_port)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -544,9 +730,7 @@ def serve(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Agency Runtime HTTP server")
-    parser.add_argument(
-        "--host", default=DEFAULT_HOST, help="bind address (default: 127.0.0.1)"
-    )
+    parser.add_argument("--host", default=DEFAULT_HOST, help="bind address (default: 127.0.0.1)")
     parser.add_argument(
         "--port", type=int, default=DEFAULT_PORT, help="listen port (default: 7800)"
     )

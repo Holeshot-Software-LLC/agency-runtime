@@ -11,12 +11,12 @@ import pytest
 import yaml
 
 from agency_runtime.cli import main as cli
+from agency_runtime.core.cli_transport import CLIProviderStatus
 from agency_runtime.core.config import load_config, reset_config_cache
 from agency_runtime.core.configuration import (
     read_config_state,
     replace_config_document,
 )
-from agency_runtime.core.cli_transport import CLIProviderStatus
 from agency_runtime.core.detect import (
     AdapterDetection,
     DetectionResult,
@@ -100,6 +100,31 @@ def test_config_set_rejects_ambiguous_positional_and_stdin_values(
     assert cli.main(["config", "set", "profile", "standard", "--stdin"]) == 1
 
     assert "either a positional value or --stdin" in capsys.readouterr().err
+    assert not path.exists()
+
+
+@pytest.mark.parametrize(
+    ("key", "payload"),
+    [
+        ("judge.api_key", "s" * 4097 + "\n"),
+        ("profile", "s" * (1024 * 1024 + 1)),
+    ],
+    ids=("secret", "non-secret"),
+)
+def test_config_set_bounds_standard_input_before_parsing_or_writing(
+    key: str,
+    payload: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path = tmp_path / "agency.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(path))
+    monkeypatch.setattr(sys, "stdin", io.StringIO(payload))
+
+    assert cli.main(["config", "set", key, "--stdin"]) == 1
+
+    assert "standard input exceeds the size limit" in capsys.readouterr().err
     assert not path.exists()
 
 
@@ -259,9 +284,7 @@ def test_explicit_local_only_configure_never_exposes_remote_keys_to_detection(
     assert observed == {"openai": None, "anthropic": None}
     assert written["profile"] == "local-only"
     assert [provider["type"] for provider in written["providers"]] == ["ollama"]
-    assert all(
-        adapter["enabled"] == "false" for adapter in written["adapters"].values()
-    )
+    assert all(adapter["enabled"] == "false" for adapter in written["adapters"].values())
     assert os.environ["OPENAI_API_KEY"] == "openai-secret"
     assert os.environ["ANTHROPIC_API_KEY"] == "anthropic-secret"
 
@@ -278,10 +301,7 @@ def test_configure_force_recovers_invalid_existing_yaml(
     monkeypatch.setattr(cli, "_store", lambda _config: object())
     monkeypatch.setattr(cli, "_seed_starter_roster", lambda _store: 0)
 
-    assert (
-        cli.main(["configure", "--non-interactive", "--profile", "standard", "--force"])
-        == 0
-    )
+    assert cli.main(["configure", "--non-interactive", "--profile", "standard", "--force"]) == 0
 
     output = capsys.readouterr().out
     written = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -346,12 +366,14 @@ def test_anthropic_wizard_emits_typed_provider_for_messages_protocol(
 def test_guided_provider_chain_reorders_suggested_fallbacks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    detection = DetectionResult(providers=ProviderDetection(
-        ollama_available=True,
-        ollama_models=["local-model"],
-        openai_key_present=True,
-        openai_models=["remote-model"],
-    ))
+    detection = DetectionResult(
+        providers=ProviderDetection(
+            ollama_available=True,
+            ollama_models=["local-model"],
+            openai_key_present=True,
+            openai_models=["remote-model"],
+        )
+    )
     answers = iter(["2", "1", "2", "4"])
     monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
 
@@ -410,12 +432,14 @@ def test_cli_only_chain_disables_legacy_judge_fallback() -> None:
 def test_wizard_applies_timeout_to_every_provider(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    detection = DetectionResult(providers=ProviderDetection(
-        ollama_available=True,
-        ollama_models=["local-model"],
-        openai_key_present=True,
-        openai_models=["remote-model"],
-    ))
+    detection = DetectionResult(
+        providers=ProviderDetection(
+            ollama_available=True,
+            ollama_models=["local-model"],
+            openai_key_present=True,
+            openai_models=["remote-model"],
+        )
+    )
     answers = iter(["", "n", "7", "2", "15"])
     monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
 
@@ -505,13 +529,15 @@ def test_remote_model_ids_are_count_length_and_terminal_safe(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    payload = json.dumps({
-        "data": [
-            {"id": "\x1b[31mhostile"},
-            {"id": "x" * (cli._MAX_MODEL_ID_CHARS + 1)},
-            *({"id": f"safe-{index:04d}"} for index in range(1200)),
-        ],
-    }).encode()
+    payload = json.dumps(
+        {
+            "data": [
+                {"id": "\x1b[31mhostile"},
+                {"id": "x" * (cli._MAX_MODEL_ID_CHARS + 1)},
+                *({"id": f"safe-{index:04d}"} for index in range(1200)),
+            ],
+        }
+    ).encode()
 
     class Response:
         def __enter__(self):

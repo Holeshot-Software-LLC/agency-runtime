@@ -47,7 +47,9 @@ def test_failed_load_tool_results_do_not_create_success_evidence(
     assert store.get_specialists_for_session("session-1") == []
 
 
-def test_failed_delegate_correlates_explicit_work_unit_and_records_only_failure(tmp_path: Path) -> None:
+def test_failed_delegate_correlates_explicit_work_unit_and_records_only_failure(
+    tmp_path: Path,
+) -> None:
     store = Store(tmp_path / "agency.db")
     for unit_id in ("unit-first", "unit-second"):
         store.record_delegation(
@@ -185,13 +187,18 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
     assert filled["agencies_loaded"] == "code-reviewer"
     assert filled["agencies_delegated"] == "code-reviewer via delegate_task"
     assert filled["skills_loaded"] == "repo-audit"
-    assert filled["actual_model_selected"] == "[general] task-general -> provider/actual-model (host)"
+    assert (
+        filled["actual_model_selected"] == "[general] task-general -> provider/actual-model (host)"
+    )
 
     finalized = finalize_header(_response(spoofed), "session-1", store, "task-general")
     assert "Agency/Agencies loaded: code-reviewer\n" in finalized
     assert "Agency/Agencies delegated: code-reviewer via delegate_task\n" in finalized
     assert "Skills loaded: repo-audit\n" in finalized
-    assert "Actual Model selected: [general] task-general -> provider/actual-model (host)\n" in finalized
+    assert (
+        "Actual Model selected: [general] task-general -> provider/actual-model (host)\n"
+        in finalized
+    )
     assert "invented-agent" not in finalized
     assert "fabricated-model" not in finalized
     assert "fake-admin-skill" not in finalized

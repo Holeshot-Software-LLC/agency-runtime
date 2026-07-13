@@ -14,8 +14,8 @@ from agency_runtime.core import configuration
 from agency_runtime.core.config import load_config, reset_config_cache
 from agency_runtime.core.configuration import (
     ConfigConflictError,
-    ConfigValidationError,
     ConfigurationError,
+    ConfigValidationError,
     apply_config_operations,
     read_config_revision,
     read_config_state,
@@ -54,6 +54,18 @@ def test_resolve_config_path_honors_nonexistent_environment_target(
     assert read_config_state().path == str(target)
     assert not target.exists()
     assert not target.parent.exists()
+
+
+def test_resolve_config_path_defaults_to_user_runtime_home(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import configuration_persistence as persistence
+
+    monkeypatch.delenv("AGENCY_CONFIG_PATH", raising=False)
+    monkeypatch.setattr(persistence.Path, "home", classmethod(lambda _cls: tmp_path))
+
+    assert resolve_config_path() == tmp_path / ".agency-runtime" / "agency.yaml"
 
 
 def test_state_separates_redacted_persisted_and_effective_values(
@@ -244,6 +256,25 @@ def test_trusted_replacement_recovers_invalid_existing_yaml_with_revision_check(
     assert result.state.revision != revision
 
 
+@pytest.mark.parametrize(
+    "document",
+    [
+        "profile: standard\nprofile: power\n",
+        "base: &base {profile: standard}\ncopy: *base\n",
+        "profile: .nan\n",
+    ],
+)
+def test_config_reader_rejects_ambiguous_yaml_constructs(
+    document: str,
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text(document, encoding="utf-8")
+
+    with pytest.raises(ConfigValidationError, match="not valid UTF-8 YAML"):
+        read_config_state(path)
+
+
 def test_trusted_replacement_invalid_environment_preserves_original_bytes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -314,12 +345,7 @@ def test_stale_revision_is_rejected_without_lost_update(tmp_path: Path) -> None:
         )
 
     assert read_config_state(path).revision == first.state.revision
-    assert (
-        yaml.safe_load(path.read_text(encoding="utf-8"))["observability"][
-            "retention_days"
-        ]
-        == 45
-    )
+    assert yaml.safe_load(path.read_text(encoding="utf-8"))["observability"]["retention_days"] == 45
 
 
 @pytest.mark.parametrize(
@@ -593,27 +619,29 @@ def test_cli_provider_and_keyless_loopback_round_trip(tmp_path: Path) -> None:
     path = tmp_path / "agency.yaml"
     state = read_config_state(path)
     result = apply_config_operations(
-        [{
-            "op": "set",
-            "path": "providers",
-            "value": [
-                {
-                    "name": "codex",
-                    "type": "cli",
-                    "transport": "codex",
-                    "model": "",
-                    "base_url": "",
-                    "timeout": 3,
-                },
-                {
-                    "name": "lm-studio",
-                    "type": "openai-compatible",
-                    "model": "local-model",
-                    "base_url": "http://127.0.0.1:1234/v1",
-                    "timeout": 3,
-                },
-            ],
-        }],
+        [
+            {
+                "op": "set",
+                "path": "providers",
+                "value": [
+                    {
+                        "name": "codex",
+                        "type": "cli",
+                        "transport": "codex",
+                        "model": "",
+                        "base_url": "",
+                        "timeout": 3,
+                    },
+                    {
+                        "name": "lm-studio",
+                        "type": "openai-compatible",
+                        "model": "local-model",
+                        "base_url": "http://127.0.0.1:1234/v1",
+                        "timeout": 3,
+                    },
+                ],
+            }
+        ],
         expected_revision=state.revision,
         path=path,
     )
@@ -628,15 +656,17 @@ def test_cli_provider_and_keyless_loopback_round_trip(tmp_path: Path) -> None:
 def test_cli_provider_rejects_windows_batch_metacharacters_in_model(
     tmp_path: Path,
 ) -> None:
-    with pytest.raises(ConfigValidationError, match="providers.0.model"):
+    with pytest.raises(ConfigValidationError, match=r"providers\.0\.model"):
         replace_config_document(
             {
-                "providers": [{
-                    "name": "codex-cli",
-                    "type": "cli",
-                    "transport": "codex",
-                    "model": "gpt-5&whoami",
-                }],
+                "providers": [
+                    {
+                        "name": "codex-cli",
+                        "type": "cli",
+                        "transport": "codex",
+                        "model": "gpt-5&whoami",
+                    }
+                ],
             },
             expected_revision=read_config_state(tmp_path / "agency.yaml").revision,
             path=tmp_path / "agency.yaml",
@@ -688,16 +718,20 @@ def test_keyless_remote_compatible_provider_is_rejected(tmp_path: Path) -> None:
     state = read_config_state(path)
     with pytest.raises(ConfigValidationError, match="authentication"):
         apply_config_operations(
-            [{
-                "op": "set",
-                "path": "providers",
-                "value": [{
-                    "name": "remote",
-                    "type": "openai-compatible",
-                    "model": "model",
-                    "base_url": "https://provider.invalid/v1",
-                }],
-            }],
+            [
+                {
+                    "op": "set",
+                    "path": "providers",
+                    "value": [
+                        {
+                            "name": "remote",
+                            "type": "openai-compatible",
+                            "model": "model",
+                            "base_url": "https://provider.invalid/v1",
+                        }
+                    ],
+                }
+            ],
             expected_revision=state.revision,
             path=path,
         )
@@ -707,13 +741,15 @@ def test_keyless_remote_compatible_provider_is_rejected(tmp_path: Path) -> None:
     "document",
     [
         {
-            "providers": [{
-                "name": "remote",
-                "type": "openai-compatible",
-                "model": "model",
-                "base_url": "http://provider.invalid/v1",
-                "api_key": "secret",
-            }],
+            "providers": [
+                {
+                    "name": "remote",
+                    "type": "openai-compatible",
+                    "model": "model",
+                    "base_url": "http://provider.invalid/v1",
+                    "api_key": "secret",
+                }
+            ],
         },
         {
             "judge": {
@@ -988,18 +1024,73 @@ def test_cross_process_lock_and_revision_allow_only_one_concurrent_writer(
     assert stored_days in {30, 60}
 
 
+def test_config_lock_rejects_symlink_without_touching_its_target(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    target = tmp_path / "unrelated.txt"
+    target.write_bytes(b"unrelated")
+    lock_path = tmp_path / ".agency.yaml.lock"
+    try:
+        lock_path.symlink_to(target)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"symlink creation is unavailable: {exc}")
+
+    with pytest.raises(configuration.ConfigLockError, match="symlink or reparse"):
+        apply_config_operations(
+            [{"op": "set", "path": "profile", "value": "power"}],
+            expected_revision=read_config_state(path).revision,
+            path=path,
+        )
+
+    assert target.read_bytes() == b"unrelated"
+    assert not path.exists()
+
+
+def test_config_writer_rejects_symlink_target(tmp_path: Path) -> None:
+    destination = tmp_path / "destination.yaml"
+    destination.write_text("profile: standard\n", encoding="utf-8")
+    link = tmp_path / "agency.yaml"
+    try:
+        link.symlink_to(destination)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"symlink creation is unavailable: {exc}")
+
+    with pytest.raises(ConfigurationError, match="symlink or reparse"):
+        configuration._atomic_write_yaml(link, {"profile": "power"})
+
+    assert destination.read_text(encoding="utf-8") == "profile: standard\n"
+    assert link.is_symlink()
+
+
+def test_config_writer_rejects_symlink_parent_directory(tmp_path: Path) -> None:
+    destination = tmp_path / "destination"
+    destination.mkdir()
+    link = tmp_path / "redirect"
+    try:
+        link.symlink_to(destination, target_is_directory=True)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"directory symlink creation is unavailable: {exc}")
+
+    with pytest.raises(ConfigurationError, match="directory symlink or reparse"):
+        configuration._atomic_write_yaml(
+            link / "agency.yaml",
+            {"profile": "power"},
+        )
+
+    assert not (destination / "agency.yaml").exists()
+
+
 def test_document_validation_rejects_unknown_fields_and_string_booleans() -> None:
     with pytest.raises(ConfigValidationError, match="unsupported top-level"):
         configuration.validate_config_document({"unknown": {}})
 
     with pytest.raises(ConfigValidationError, match="JSON boolean"):
-        configuration.validate_config_document(
-            {"observability": {"capture_content": "false"}}
-        )
+        configuration.validate_config_document({"observability": {"capture_content": "false"}})
 
-    assert configuration.validate_config_document(
-        {"adapters": {"codex": {"enabled": True}}}
-    ) == {"adapters": {"codex": {"enabled": "true"}}}
+    assert configuration.validate_config_document({"adapters": {"codex": {"enabled": True}}}) == {
+        "adapters": {"codex": {"enabled": "true"}}
+    }
 
 
 def test_config_errors_do_not_include_submitted_secret_value(tmp_path: Path) -> None:

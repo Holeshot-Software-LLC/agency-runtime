@@ -3,13 +3,17 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [release, verification]
 related:
   - CHANGELOG.md
   - CONTRIBUTING.md
   - SECURITY.md
+  - CODE_OF_CONDUCT.md
+  - docs/THREAT_MODEL.md
+  - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
+  - docs/roadmap/issue-AR-17-production-hardening-portability.md
 supersedes: []
 superseded_by: null
 ---
@@ -42,6 +46,13 @@ or adding an index-install claim.
 - [ ] Codex, Claude Code, Hermes, and OpenClaw install, disable, enable, rollback,
       preflight, evidence, and finalization paths have been exercised for the v1
       matrix or clearly marked below that maturity.
+- [ ] Codex generated-bundle smoke proves the expected three hook events,
+      commands, and timeout schema; native inventory proves plugin registration
+      and enablement. Installation, status, and doctor report trust as
+      `unverified` and never query or mutate Codex's live trust store. An
+      operator reviews and trusts the hooks through `/hooks`, then starts a new
+      session and records the release evidence. Any one-invocation canary bypass
+      remains isolated and is never treated as durable installation trust.
 - [ ] Windows npm command shims and POSIX executable launch are both verified.
 - [ ] Ubuntu/WSL live evidence comes from a Linux environment with the project
       and test tooling installed; Windows-only evidence is not relabeled Linux.
@@ -59,7 +70,11 @@ machine-specific credential paths.
 ## 3. Correctness and performance
 
 ```bash
-python -m pytest tests -q
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
+python -m pytest tests -q -W error -p no:cacheprovider -m "not performance" --cov=agency_runtime --cov-branch --cov-report=term-missing --cov-fail-under=100
+python -m pytest tests -q -W error -p no:cacheprovider -m performance
+node --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/dashboard_ui.test.mjs
 agency eval delegation --json
 agency eval routing --json --no-details
 ```
@@ -72,13 +87,17 @@ agency eval routing --json --no-details
 - [ ] Delegation DAG tests cover failed prerequisites, missing results, duplicate
       work units, independent concurrency, and successful worktree merging.
 - [ ] Evidence tests reject failed, stale, ambiguous, and spoofed claims.
+- [ ] Measured runtime code reaches 100 percent line and branch coverage; any
+      unreachable platform-only exclusion is narrow, documented, and reviewed
+      rather than hidden through a broad omit rule.
 
 ## 4. Security and privacy
 
 ```bash
 python scripts/verify_release_hygiene.py
 python -m bandit -q -r agency_runtime -lll
-python -m pip_audit . --strict
+python scripts/audit_runtime_dependencies.py
+zizmor --pedantic --strict-collection --offline .
 ```
 
 - [ ] No tracked secret, credential file, database, build output, generated host
@@ -92,11 +111,16 @@ python -m pip_audit . --strict
       success protocols.
 - [ ] Security reporting instructions and the current supported-version statement
       are accurate.
+- [ ] The threat model covers current assets, trust boundaries, controls, and
+      residual risks; CodeQL and dependency-review checks are green upstream.
+- [ ] GitHub Actions use immutable SHAs, least-privilege permissions, and no
+      persisted checkout credentials without an explicit need.
 
 ## 5. Documentation integrity
 
 ```bash
 python scripts/docs_metadata.py --check
+python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check
 python scripts/verify_docs.py --require-tracker
 python scripts/verify_tracker.py
@@ -107,23 +131,24 @@ git diff --check
 - [ ] No intra-repository link dangles and no doc depends on a sibling repo.
 - [ ] README CLI examples match `agency --help` and actual exit behavior.
 - [ ] Host paths and maturity labels match the installer source and doctor output.
-- [ ] Contribution, security, changelog, troubleshooting, and release-checklist
-      documents are linked from README and `AGENTS.md`.
+- [ ] Contribution, code-of-conduct, security, threat-model, changelog,
+      troubleshooting, and release-checklist documents are linked from README
+      and `AGENTS.md`.
 
 ## 6. Build and isolated install
 
 From a clean checkout:
 
 ```bash
-python -m pip install ".[dev]"
+python -m pip install ".[dev,release,security]"
 python -m build --sdist --wheel
 python -m twine check --strict dist/*
 python scripts/verify_distribution.py dist
 ```
 
-- [ ] Wheel and source distribution contain config defaults, companion policy,
-      dashboard assets and service modules, eval corpora, license, and required
-      package modules.
+- [ ] Wheel and source distribution contain every package module and asset; the
+      source distribution also contains governance docs, the threat model,
+      release scripts, tests, and self-contained examples.
 - [ ] Windows service contract tests prove current-user Task Scheduler
       registration, owned updates, rollback-on-failure, start/stop/restart,
       uninstall, readiness, and `--no-dashboard` without touching a real task.
@@ -141,11 +166,11 @@ python scripts/verify_distribution.py dist
       horizontal page overflow, and a clean console.
 - [ ] Every dashboard asset is present in wheel and source artifacts, passes the
       static CSP/security scan, and stays within the documented asset budget.
-- [ ] A fresh Python 3.10 environment on Windows installs only the built wheel,
-      runs `agency --help`, imports package data, and passes the packaged smoke
-      procedure.
-- [ ] The same isolated wheel procedure passes on Ubuntu.
-- [ ] `python -m pip check` passes in both environments.
+- [ ] Fresh Python 3.10 environments on Windows install the built wheel and
+      source distribution separately, run `agency --help`, import package data,
+      and pass the full packaged smoke procedure for each artifact.
+- [ ] The same isolated wheel and source-distribution procedures pass on Ubuntu.
+- [ ] `python -m pip check` passes for both artifacts in both environments.
 - [ ] Rebuilding from the same source does not depend on untracked local files.
 
 ## 7. Publish and post-publish
@@ -166,9 +191,18 @@ outward-facing actions and require explicit authorization.
 
 ## Current blockers
 
-Before a public release claim, the live acceptance items in `AR-03`, `AR-04`,
-and `AR-06` must be completed or explicitly deferred with narrower claims and a
-recorded decision. `AR-07` also requires a clean hosted CI matrix and confirmed
-publication evidence. `AR-16` has native Linux/Python 3.12 evidence but still
-awaits the hosted Python matrix. Local contract and artifact results do not
-establish Linux live-host execution or a live canary for every v1 target.
+`AR-03` and `AR-04` are locally complete. The exact-confirmed Windows Codex
+0.144.1 isolated-profile canary exited `0`, produced a valid six-line header,
+and persisted one correlated routing/finalization attestation; isolated
+conversation controls exercised disable and enable while ending enabled. The
+canary used a one-invocation trust bypass and recorded no model receipt. It does
+not establish durable real-profile trust, which remains an explicit `/hooks`
+review and new-session step, and it does not establish Linux Codex maturity.
+
+Final local warning-strict coverage, security, performance, dashboard,
+wheel/source, and isolated Windows/WSL install gates pass. `AR-07`, `AR-16`,
+and `AR-17` remain in progress only for the hosted Python, security, CodeQL,
+and artifact matrix, review and merge, and the required worklog/clean-tree
+closure. Claude Code, Hermes, and OpenClaw were absent and remain contract-only.
+Publication remains a separate authorization-gated action, not evidence of
+readiness.

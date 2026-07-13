@@ -174,6 +174,19 @@ def test_runtime_descriptor_rejects_untrusted_shapes(tmp_path: Path) -> None:
         read_dashboard_runtime(home_dir=tmp_path)
 
 
+def test_runtime_descriptor_rejects_duplicate_fields(tmp_path: Path) -> None:
+    target = dashboard_runtime_path(home_dir=tmp_path)
+    target.parent.mkdir(parents=True)
+    target.write_text(
+        '{"schema_version":1,"pid":1,"pid":2,"port":7810,'
+        '"token":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","started_at":"now"}',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="invalid"):
+        read_dashboard_runtime(home_dir=tmp_path)
+
+
 def test_open_result_never_contains_the_private_token(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -228,6 +241,40 @@ def test_reachability_uses_authenticated_health(tmp_path: Path) -> None:
         thread.join(timeout=2)
 
 
+def test_reachability_rejects_oversized_health_responses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class OversizedResponse:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def read(self, size: int) -> bytes:
+            assert size == runtime_module._MAX_HEALTH_RESPONSE_BYTES + 1
+            return b"x" * size
+
+    def fake_open_no_redirect(request, *, timeout: float):
+        assert request.full_url == "http://127.0.0.1:7810/api/health"
+        assert request.get_header("Authorization") == ("Bearer bounded-health-token-" + "x" * 32)
+        assert timeout == 0.25
+        return OversizedResponse()
+
+    monkeypatch.setattr(runtime_module, "open_no_redirect", fake_open_no_redirect)
+    descriptor = {
+        "schema_version": 1,
+        "pid": 123,
+        "port": 7810,
+        "token": "bounded-health-token-" + "x" * 32,
+        "started_at": "2026-07-11T00:00:00+00:00",
+    }
+
+    assert dashboard_service_reachable(descriptor=descriptor, timeout=0.25) is False
+
+
 def test_service_mode_publishes_descriptor_without_printing_token(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -261,9 +308,7 @@ def test_service_mode_publishes_descriptor_without_printing_token(
         "load_config",
         lambda: AgencyConfig(dashboard=DashboardConfig(port=8123)),
     )
-    monkeypatch.setattr(
-        dashboard_module, "Store", lambda *_args, **_kwargs: FakeStore()
-    )
+    monkeypatch.setattr(dashboard_module, "Store", lambda *_args, **_kwargs: FakeStore())
     monkeypatch.setattr(dashboard_module, "DashboardHTTPServer", FakeServer)
     monkeypatch.setattr(
         dashboard_module,

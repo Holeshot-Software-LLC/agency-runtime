@@ -20,9 +20,11 @@ class OpenClawAdapter(BaseAdapter):
     host_name = "openclaw"
 
     def is_available(self) -> bool:
-        """Check if OpenClaw is running."""
-        import os
-        return os.path.exists(os.path.expanduser("~/.openclaw"))
+        """Return canonical executable or native-state discovery for OpenClaw."""
+
+        from agency_runtime.core.installer import detect_installed_agents
+
+        return "openclaw" in detect_installed_agents()
 
     def report_skills_loaded(self, session_id: str) -> list[str]:
         return self.store.get_skills_for_session(session_id)

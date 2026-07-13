@@ -12,6 +12,7 @@ import sys
 from dataclasses import dataclass
 from typing import Any, BinaryIO, TextIO
 
+from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.store.sqlite import Store
 
 MAX_HOOK_INPUT_BYTES = 1_048_576
@@ -111,7 +112,15 @@ def _first_string(mapping: dict[str, Any], *keys: str) -> str:
 def _response_work_unit(response: Any) -> str:
     if not isinstance(response, dict):
         return ""
-    return _first_string(response, "work_unit_id", "workUnitId", "task_id", "taskId", "agentId", "agent_id")
+    return _first_string(
+        response,
+        "work_unit_id",
+        "workUnitId",
+        "task_id",
+        "taskId",
+        "agentId",
+        "agent_id",
+    )
 
 
 def _is_internal_continuation(prompt: str) -> bool:
@@ -160,14 +169,19 @@ def _canonical_tool_call(
             "goal": _first_string(args, "goal", "task", "prompt", "description", "message"),
             "work_unit_id": work_unit_id,
         }
-        return "agency_agents_delegate" if suffix == "agency_agents_delegate" else "delegate_task", normalized
+        return (
+            "agency_agents_delegate" if suffix == "agency_agents_delegate" else "delegate_task",
+            normalized,
+        )
     return tool_name, args
 
 
 class HookBridge:
     """Translate one native hook event to a host adapter operation."""
 
-    def __init__(self, host: str, *, store: Store | None = None, adapter: Any | None = None) -> None:
+    def __init__(
+        self, host: str, *, store: Store | None = None, adapter: Any | None = None
+    ) -> None:
         normalized_host = host.strip().casefold()
         if normalized_host not in {"codex", "claude"}:
             raise ValueError(f"unsupported hook host: {host}")
@@ -191,7 +205,9 @@ class HookBridge:
             raise HookInputError(f"unsupported {self.host} hook event: {event}")
         return event
 
-    def _correlation(self, payload: dict[str, Any], tool_input: Any = None, tool_response: Any = None) -> HookCorrelation:
+    def _correlation(
+        self, payload: dict[str, Any], tool_input: Any = None, tool_response: Any = None
+    ) -> HookCorrelation:
         args = _dict_or_empty(tool_input)
         session_id = _required_string(payload, "session_id")
         turn_id = _optional_string(payload, "turn_id")
@@ -207,6 +223,41 @@ class HookBridge:
         work_unit_id = work_unit_id or _optional_string(payload, "agent_id")
         work_unit_id = work_unit_id or _response_work_unit(tool_response) or tool_use_id
         return HookCorrelation(session_id, turn_id, work_unit_id, model, tool_use_id)
+
+    def _unambiguous_open_trace(self, session_id: str) -> str:
+        """Recover one open routed turn when a host omits native turn IDs.
+
+        Claude's documented hook envelope does not guarantee a ``turn_id``.
+        Falling back to the session ID would merge unrelated turns, while
+        dropping correlation makes response finalization and live-canary
+        evidence impossible.  A recent routing trace is therefore reused only
+        when exactly one trace for this session has not been finalized yet.
+        Ambiguous or unavailable history remains deliberately uncorrelated.
+        """
+
+        recent_activity = getattr(self.store, "recent_runtime_activity", None)
+        if not callable(recent_activity) or not session_id:
+            return ""
+        try:
+            activity = recent_activity(limit=200)
+        except Exception:
+            return ""
+        if not isinstance(activity, dict):
+            return ""
+        finalized = {
+            str(row.get("trace_id"))
+            for row in activity.get("finalizations", [])
+            if isinstance(row, dict) and row.get("trace_id")
+        }
+        open_traces = {
+            str(row.get("trace_id"))
+            for row in activity.get("routing", [])
+            if isinstance(row, dict)
+            and row.get("session_id") == session_id
+            and row.get("trace_id")
+            and str(row.get("trace_id")) not in finalized
+        }
+        return next(iter(open_traces)) if len(open_traces) == 1 else ""
 
     def handle(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(payload, dict):
@@ -251,7 +302,9 @@ class HookBridge:
                 tool_input,
                 tool_response,
             )
-            if correlation.work_unit_id and not _first_string(canonical_args, "work_unit_id", "workUnitId"):
+            if correlation.work_unit_id and not _first_string(
+                canonical_args, "work_unit_id", "workUnitId"
+            ):
                 canonical_args["work_unit_id"] = correlation.work_unit_id
             self.adapter.post_tool_call_handler(
                 tool_name=canonical_name,
@@ -279,11 +332,15 @@ class HookBridge:
                 model=correlation.model,
                 attempt=0,
             )
+            trace_id = correlation.trace_id or self._unambiguous_open_trace(correlation.session_id)
             if isinstance(verification, dict) and verification.get("action") == "continue":
-                reason = str(verification.get("message") or "Agency Runtime evidence verification requires another pass.")
-                self._record_finalization(correlation.trace_id, "continue")
+                reason = str(
+                    verification.get("message")
+                    or "Agency Runtime evidence verification requires another pass."
+                )
+                self._record_finalization(trace_id, "continue")
                 return {"decision": "block", "reason": reason[:MAX_CONTEXT_CHARS]}
-            self._record_finalization(correlation.trace_id, "accept")
+            self._record_finalization(trace_id, "accept")
             return {}
 
         # Session, pre-tool, compaction, permission, and subagent lifecycle
@@ -306,7 +363,18 @@ class HookBridge:
 
 
 def _write_output(stream: BinaryIO | TextIO, payload: dict[str, Any]) -> None:
-    encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8") + b"\n"
+    try:
+        encoded = (
+            json.dumps(
+                payload,
+                allow_nan=False,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            + b"\n"
+        )
+    except (TypeError, ValueError):
+        encoded = b"{}\n"
     if len(encoded) > MAX_HOOK_OUTPUT_BYTES:
         encoded = b"{}\n"
     try:
@@ -334,17 +402,27 @@ def run_hook_stdio(
         raw_bytes = raw.encode("utf-8") if isinstance(raw, str) else raw
         if len(raw_bytes) > MAX_HOOK_INPUT_BYTES:
             raise HookInputError("hook input exceeds the size limit")
-        payload = json.loads(raw_bytes.decode("utf-8"))
+        payload = safe_load_bounded_json(raw_bytes)
         if not isinstance(payload, dict):
             raise HookInputError("hook input must be one JSON object")
         result = HookBridge(host, store=store).handle(payload)
         if not isinstance(result, dict):
             raise RuntimeError("hook bridge returned a non-object result")
-    except (HookInputError, UnicodeDecodeError, json.JSONDecodeError, ValueError, RuntimeError) as exc:
+    except (
+        HookInputError,
+        BoundedJSONError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        ValueError,
+        RuntimeError,
+    ) as exc:
         print(f"agency hook {host}: {exc}; host operation continues", file=errors)
         result = {}
     except Exception as exc:  # Defensive boundary around adapters and storage.
-        print(f"agency hook {host}: {type(exc).__name__}; host operation continues", file=errors)
+        print(
+            f"agency hook {host}: {type(exc).__name__}; host operation continues",
+            file=errors,
+        )
         result = {}
 
     _write_output(sink, result)
@@ -352,10 +430,10 @@ def run_hook_stdio(
 
 
 __all__ = [
+    "MAX_HOOK_INPUT_BYTES",
+    "MAX_HOOK_OUTPUT_BYTES",
     "HookBridge",
     "HookCorrelation",
     "HookInputError",
-    "MAX_HOOK_INPUT_BYTES",
-    "MAX_HOOK_OUTPUT_BYTES",
     "run_hook_stdio",
 ]

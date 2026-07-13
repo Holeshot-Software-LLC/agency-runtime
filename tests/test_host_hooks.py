@@ -9,7 +9,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from agency_runtime.adapters.hooks import HookBridge, MAX_HOOK_INPUT_BYTES, run_hook_stdio
+from agency_runtime.adapters.hooks import (
+    MAX_HOOK_INPUT_BYTES,
+    HookBridge,
+    _write_output,
+    run_hook_stdio,
+)
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -104,7 +109,7 @@ def test_realistic_prompt_to_stop_sequence_uses_one_turn_trace(
     assert activity["finalizations"][0]["trace_id"] == turn_id
 
 
-def test_missing_turn_id_never_false_correlates_to_the_session(
+def test_missing_turn_id_uses_only_the_unambiguous_open_routing_trace(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "agency.db")
@@ -128,8 +133,35 @@ def test_missing_turn_id_never_false_correlates_to_the_session(
 
     activity = store.recent_runtime_activity(limit=20)
     assert activity["routing"]
-    assert activity["routing"][0]["trace_id"] != "shared-session"
-    assert activity["finalizations"] == []
+    routing_trace = activity["routing"][0]["trace_id"]
+    assert routing_trace != "shared-session"
+    assert activity["finalizations"][0]["trace_id"] == routing_trace
+
+
+def test_missing_turn_id_stays_uncorrelated_when_open_turns_are_ambiguous(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    bridge = HookBridge("claude", store=store)
+    for trace_id, query_hash in (("turn-a", "a" * 64), ("turn-b", "b" * 64)):
+        store.record_routing_decision(
+            trace_id=trace_id,
+            session_id="shared-session",
+            query_hash=query_hash,
+            context_fingerprint="c" * 64,
+            decision={"status": "applied", "selected_ids": []},
+        )
+
+    bridge.handle(
+        {
+            "hook_event_name": "Stop",
+            "session_id": "shared-session",
+            "stop_hook_active": False,
+            "last_assistant_message": "Draft.",
+        }
+    )
+
+    assert store.recent_runtime_activity(limit=20)["finalizations"] == []
 
 
 def test_stop_continuation_prompt_is_not_routed_as_a_new_user_request() -> None:
@@ -237,7 +269,10 @@ def test_claude_failed_delegation_is_forwarded_as_failure_evidence() -> None:
 
 def test_stop_verification_uses_host_continuation_shape_and_turn_trace() -> None:
     adapter = FakeAdapter()
-    adapter.verify_result = {"action": "continue", "message": "Correct the evidence header."}
+    adapter.verify_result = {
+        "action": "continue",
+        "message": "Correct the evidence header.",
+    }
     store = FakeStore()
     bridge = HookBridge("codex", store=store, adapter=adapter)  # type: ignore[arg-type]
 
@@ -318,10 +353,14 @@ def test_agency_hook_codex_runs_as_an_actual_stdin_process(tmp_path: Path) -> No
     assert completed.stderr == ""
     output = json.loads(completed.stdout)
     assert output["hookSpecificOutput"]["hookEventName"] == "UserPromptSubmit"
-    assert "agents-orchestrator, chief-of-staff" in output["hookSpecificOutput"]["additionalContext"]
+    assert (
+        "agents-orchestrator, chief-of-staff" in output["hookSpecificOutput"]["additionalContext"]
+    )
 
 
-def test_agency_hook_claude_records_real_tool_evidence_from_stdin(tmp_path: Path) -> None:
+def test_agency_hook_claude_records_real_tool_evidence_from_stdin(
+    tmp_path: Path,
+) -> None:
     db_path = tmp_path / "claude-hook.db"
     event = json.dumps(
         {
@@ -365,3 +404,28 @@ def test_hook_boundary_bounds_input_and_output() -> None:
     assert status == 0
     assert json.loads(sink.getvalue()) == {}
     assert "size limit" in errors.getvalue()
+
+
+def test_hook_boundary_fails_open_on_duplicate_json_fields() -> None:
+    source = io.BytesIO(b'{"action":"before","action":"after"}')
+    sink = io.BytesIO()
+    errors = io.StringIO()
+
+    status = run_hook_stdio(
+        "codex",
+        input_stream=source,
+        output_stream=sink,
+        error_stream=errors,
+    )
+
+    assert status == 0
+    assert json.loads(sink.getvalue()) == {}
+    assert "duplicate object key" in errors.getvalue()
+
+
+def test_hook_boundary_never_emits_nonfinite_json() -> None:
+    sink = io.BytesIO()
+
+    _write_output(sink, {"value": float("nan")})
+
+    assert sink.getvalue() == b"{}\n"

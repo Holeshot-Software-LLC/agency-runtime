@@ -52,7 +52,12 @@ STARTER_ROSTER: list[dict[str, object]] = [
         "division": "documentation",
         "description": "Writes clear documentation, READMEs, runbooks, changelogs, and user-facing technical explanations.",
         "categories": ["documentation", "writing", "communication"],
-        "capabilities": ["technical writing", "editing", "documentation structure", "release notes"],
+        "capabilities": [
+            "technical writing",
+            "editing",
+            "documentation structure",
+            "release notes",
+        ],
         "tool_affinity": ["markdown", "docs"],
         "version": "1.0.0",
         "source": "bundled",

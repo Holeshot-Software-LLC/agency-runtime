@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import threading
 import time
 from argparse import Namespace
 from pathlib import Path
@@ -12,6 +13,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core import installer_payloads
 from agency_runtime.core.config import (
     AgencyConfig,
     JudgeConfig,
@@ -21,19 +23,22 @@ from agency_runtime.core.config import (
 from agency_runtime.core.installer import (
     INSTALL_MANIFEST,
     MAX_NATIVE_OUTPUT_CHARS,
+    NativeCommandResult,
+    _bundle_digest,
     _bundle_files,
     _effective_judge_budget_seconds,
+    _managed_bundle_identity,
     _owned_process_kwargs,
     _plugin_record,
+    _prepare_process_argv,
+    _run_native,
     detect_installed_agents,
-    inspect_host_installations,
     inspect_host_installation,
+    inspect_host_installations,
     install_agent_adapter,
     plan_agent_adapter,
     rollback_agent_adapter,
     toggle_agency,
-    _prepare_process_argv,
-    _run_native,
 )
 
 
@@ -68,9 +73,7 @@ def _no_live_dashboard_service(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _resolver(*present: str):
     selected = set(present)
-    return lambda name: (
-        str(Path("C:/fake") / f"{name}.exe") if name in selected else None
-    )
+    return lambda name: str(Path("C:/fake") / f"{name}.exe") if name in selected else None
 
 
 class FakeNativeRunner:
@@ -90,12 +93,7 @@ class FakeNativeRunner:
         self.installed: set[str] = set()
         self.marketplaces: set[str] = set()
 
-    def __call__(self, command: list[str], **_kwargs: Any) -> dict[str, Any]:
-        self.commands.append(command)
-        joined = " ".join(command)
-        if self.fail_token and self.fail_token in joined:
-            return {"returncode": 9, "stderr": f"forced failure: {self.fail_token}"}
-
+    def _gateway_or_marketplace_result(self, joined: str) -> dict[str, Any] | None:
         if "gateway status" in joined:
             if self.gateway_result is not None:
                 return dict(self.gateway_result)
@@ -106,13 +104,14 @@ class FakeNativeRunner:
         if "marketplace list" in joined:
             return {
                 "returncode": 0,
-                "stdout": json.dumps(
-                    [{"name": name} for name in sorted(self.marketplaces)]
-                ),
+                "stdout": json.dumps([{"name": name} for name in sorted(self.marketplaces)]),
             }
         if "marketplace add" in joined:
             self.marketplaces.add("agency-runtime")
             return {"returncode": 0, "stdout": "{}"}
+        return None
+
+    def _plugin_result(self, command: list[str], joined: str) -> dict[str, Any] | None:
         if "plugin add" in joined or "plugin install" in joined:
             self.installed.add("agency-preflight")
             return {"returncode": 0, "stdout": "{}"}
@@ -127,12 +126,12 @@ class FakeNativeRunner:
             return {
                 "returncode": 0,
                 "stdout": json.dumps(
-                    [
-                        {identity_key: name, "enabled": True}
-                        for name in sorted(self.installed)
-                    ]
+                    [{identity_key: name, "enabled": True} for name in sorted(self.installed)]
                 ),
             }
+        return None
+
+    def _plugins_result(self, command: list[str], joined: str) -> dict[str, Any] | None:
         if "plugins inspect agency-preflight --runtime" in joined:
             payload = self.runtime_payload
             if payload is None:
@@ -150,9 +149,7 @@ class FakeNativeRunner:
             found = "agency-preflight" in self.installed
             return {
                 "returncode": 0 if found else 1,
-                "stdout": json.dumps({"id": "agency-preflight", "enabled": True})
-                if found
-                else "",
+                "stdout": json.dumps({"id": "agency-preflight", "enabled": True}) if found else "",
             }
         if "plugins install" in joined:
             self.installed.add("agency-preflight")
@@ -170,8 +167,7 @@ class FakeNativeRunner:
                     "stdout": json.dumps(
                         {
                             "plugins": [
-                                {"id": name, "enabled": True}
-                                for name in sorted(self.installed)
+                                {"id": name, "enabled": True} for name in sorted(self.installed)
                             ]
                         }
                     ),
@@ -180,6 +176,22 @@ class FakeNativeRunner:
             return {"returncode": 0, "stdout": text}
         if "config set" in joined:
             return {"returncode": 0, "stdout": "updated"}
+        return None
+
+    def __call__(self, command: list[str], **_kwargs: Any) -> dict[str, Any]:
+        self.commands.append(command)
+        joined = " ".join(command)
+        if self.fail_token and self.fail_token in joined:
+            return {"returncode": 9, "stderr": f"forced failure: {self.fail_token}"}
+        result = self._gateway_or_marketplace_result(joined)
+        if result is not None:
+            return result
+        result = self._plugin_result(command, joined)
+        if result is not None:
+            return result
+        result = self._plugins_result(command, joined)
+        if result is not None:
+            return result
         return {"returncode": 0, "stdout": "{}"}
 
 
@@ -188,9 +200,7 @@ def test_detection_separates_bare_stale_root_from_current_native_state(
 ) -> None:
     (tmp_path / ".codex").mkdir()
 
-    assert "codex" not in detect_installed_agents(
-        home_dir=tmp_path, binary_resolver=_resolver()
-    )
+    assert "codex" not in detect_installed_agents(home_dir=tmp_path, binary_resolver=_resolver())
     codex = {
         item["host"]: item
         for item in inspect_host_installations(
@@ -203,15 +213,11 @@ def test_detection_separates_bare_stale_root_from_current_native_state(
     assert codex["discovered"] is False
 
     (tmp_path / ".codex" / "config.toml").write_text("", encoding="utf-8")
-    assert "codex" in detect_installed_agents(
-        home_dir=tmp_path, binary_resolver=_resolver()
-    )
+    assert "codex" in detect_installed_agents(home_dir=tmp_path, binary_resolver=_resolver())
 
 
 def test_codex_current_plugin_id_inventory_shape_is_recognized() -> None:
-    record = _plugin_record(
-        {"plugins": [{"pluginId": "agency-preflight", "enabled": True}]}
-    )
+    record = _plugin_record({"plugins": [{"pluginId": "agency-preflight", "enabled": True}]})
 
     assert record == {"pluginId": "agency-preflight", "enabled": True}
 
@@ -235,9 +241,7 @@ def test_native_windows_hermes_payload_is_current_install_evidence(
 ) -> None:
     (tmp_path / "AppData" / "Local" / "hermes").mkdir(parents=True)
 
-    assert "hermes" in detect_installed_agents(
-        home_dir=tmp_path, binary_resolver=_resolver()
-    )
+    assert "hermes" in detect_installed_agents(home_dir=tmp_path, binary_resolver=_resolver())
     hermes = {
         item["host"]: item
         for item in inspect_host_installations(
@@ -271,6 +275,7 @@ def test_windows_command_shims_preserve_metacharacter_arguments_without_cmd_inte
         ["codex", "plugin", "marketplace", "add", special_path],
         platform_name="nt",
         resolver=resolver,
+        system_resolver=lambda name: name,
     )
     linux = _prepare_process_argv(
         ["codex", "plugin", "list", "--json"],
@@ -299,7 +304,7 @@ def test_windows_command_shim_without_safe_companion_fails_closed(
     cmd_shim = tmp_path / "host.cmd"
     cmd_shim.write_text("@echo off\n", encoding="utf-8")
 
-    with pytest.raises(OSError, match="refusing unsafe cmd.exe shim"):
+    with pytest.raises(OSError, match=r"refusing unsafe cmd\.exe shim"):
         _prepare_process_argv(
             ["host", "plugin", "list"],
             platform_name="nt",
@@ -399,9 +404,7 @@ def test_native_command_output_is_bounded_and_truncation_fails_closed() -> None:
     assert result.to_dict()["stdout_truncated"] is True
 
 
-def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget() -> (
-    None
-):
+def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget() -> None:
     cfg = AgencyConfig(
         judge=JudgeConfig(
             model="legacy-model",
@@ -410,12 +413,8 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
         ),
         ollama=OllamaConfig(enabled=True, model="fallback-model"),
         providers=(
-            ProviderEntry(
-                model="primary", base_url="http://primary.invalid", timeout=7
-            ),
-            ProviderEntry(
-                model="secondary", base_url="http://secondary.invalid", timeout=11
-            ),
+            ProviderEntry(model="primary", base_url="http://primary.invalid", timeout=7),
+            ProviderEntry(model="secondary", base_url="http://secondary.invalid", timeout=11),
             ProviderEntry(
                 name="codex-cli",
                 type="cli",
@@ -429,15 +428,15 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
 
     codex_files, _ = _bundle_files("codex", cfg)
     codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
-    hook_timeout = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"]
+    codex_handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
+    hook_timeout = codex_handler["timeout"]
+    assert codex_handler["async"] is False
+    assert "timeoutSec" not in codex_handler
     assert hook_timeout > judge_budget
 
     claude_files, _ = _bundle_files("claude", cfg)
     claude_hooks = json.loads(claude_files["plugins/agency-preflight/hooks/hooks.json"])
-    assert (
-        claude_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"]
-        == hook_timeout
-    )
+    assert claude_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"] == hook_timeout
 
     openclaw_files, _ = _bundle_files("openclaw", cfg)
     bridge = openclaw_files["index.js"]
@@ -445,10 +444,137 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
     assert f"timeoutMs: {(hook_timeout + 2) * 1000}" in bridge
 
 
-def test_dry_run_is_a_write_free_complete_plan(tmp_path: Path) -> None:
-    plan = plan_agent_adapter(
-        "codex", home_dir=tmp_path, binary_resolver=_resolver("codex")
+def test_codex_windows_hook_command_is_inert_powershell_argv(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        installer_payloads.sys,
+        "executable",
+        r"C:\Program Files\O'Brien & Sons\python.exe",
     )
+
+    _posix, windows = installer_payloads.python_commands(
+        "agency_runtime.cli",
+        "hook",
+        "codex; Write-Output injected",
+        "$HOME",
+        "O'Brien",
+    )
+
+    assert windows == (
+        "& 'C:\\Program Files\\O''Brien & Sons\\python.exe' '-m' "
+        "'agency_runtime.cli' 'hook' 'codex; Write-Output injected' "
+        "'$HOME' 'O''Brien'"
+    )
+
+
+def test_generated_hook_timeout_is_capped_below_host_maximum() -> None:
+    cfg = AgencyConfig(
+        judge=JudgeConfig(timeout=600),
+        providers=tuple(
+            ProviderEntry(
+                name=f"provider-{index}",
+                model="model",
+                base_url="https://provider.invalid/v1",
+                timeout=600,
+            )
+            for index in range(20)
+        ),
+    )
+
+    codex_files, _ = _bundle_files("codex", cfg)
+    codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
+    handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
+    timeout = handler["timeout"]
+    openclaw_files, _ = _bundle_files("openclaw", cfg)
+
+    assert timeout == 595
+    assert "timeoutSec" not in handler
+    assert "timeoutMs: 597000" in openclaw_files["index.js"]
+
+
+def test_codex_bundle_uses_a_deterministic_content_cachebuster() -> None:
+    first, _ = _bundle_files("codex", AgencyConfig())
+    second, _ = _bundle_files("codex", AgencyConfig())
+    slower, _ = _bundle_files(
+        "codex",
+        AgencyConfig(judge=JudgeConfig(timeout=31)),
+    )
+
+    manifest_path = "plugins/agency-preflight/.codex-plugin/plugin.json"
+    first_version = json.loads(first[manifest_path])["version"]
+    second_version = json.loads(second[manifest_path])["version"]
+    slower_version = json.loads(slower[manifest_path])["version"]
+
+    assert first_version == second_version
+    assert first_version.startswith("0.1.0+codex.")
+    assert len(first_version.rsplit(".", 1)[-1]) == 12
+    assert slower_version != first_version
+
+
+def test_unchanged_codex_reinstall_is_idempotent(tmp_path: Path) -> None:
+    runner = FakeNativeRunner()
+    first = install_agent_adapter(
+        "codex",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex"),
+        command_runner=runner,
+    )
+    command_count = len(runner.commands)
+    first_manifest = json.loads(Path(first["target"], INSTALL_MANIFEST).read_text(encoding="utf-8"))
+
+    second = install_agent_adapter(
+        "codex",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex"),
+        command_runner=runner,
+    )
+    second_commands = [" ".join(command) for command in runner.commands[command_count:]]
+    second_manifest = json.loads(
+        Path(second["target"], INSTALL_MANIFEST).read_text(encoding="utf-8")
+    )
+
+    assert second["ok"] is True
+    assert second["filesystem"]["unchanged"] is True
+    assert second["backup_path"] is None
+    assert second["restart_required"] is False
+    assert first_manifest["install_id"] == second_manifest["install_id"]
+    assert not any("plugin remove" in command for command in second_commands)
+    assert not any("plugin add" in command for command in second_commands)
+
+
+def test_changed_codex_bundle_forces_native_cache_refresh(tmp_path: Path) -> None:
+    runner = FakeNativeRunner()
+    first = install_agent_adapter(
+        "codex",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex"),
+        command_runner=runner,
+    )
+    Path(first["target"], "unexpected.js").write_text(
+        "throw new Error('must not load');\n",
+        encoding="utf-8",
+    )
+    command_count = len(runner.commands)
+
+    second = install_agent_adapter(
+        "codex",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex"),
+        command_runner=runner,
+    )
+    commands = [" ".join(command) for command in runner.commands[command_count:]]
+
+    assert second["ok"] is True
+    assert second["filesystem"]["unchanged"] is False
+    assert Path(second["backup_path"], "unexpected.js").is_file()
+    assert not Path(second["target"], "unexpected.js").exists()
+    assert any("plugin remove" in command for command in commands)
+    assert any("plugin add" in command for command in commands)
+
+
+def test_dry_run_is_a_write_free_complete_plan(tmp_path: Path) -> None:
+    plan = plan_agent_adapter("codex", home_dir=tmp_path, binary_resolver=_resolver("codex"))
 
     assert plan["ok"] is True
     assert plan["dry_run"] is True
@@ -496,8 +622,7 @@ def test_custom_hermes_home_controls_plugin_target(
 
     assert Path(plan["native_root"]) == custom_home.resolve()
     assert (
-        Path(plan["plugin_path"]).parent
-        == (custom_home / "plugins" / "agency-preflight").resolve()
+        Path(plan["plugin_path"]).parent == (custom_home / "plugins" / "agency-preflight").resolve()
     )
 
 
@@ -531,6 +656,33 @@ def test_hermes_enabled_state_comes_only_from_agency_preflight_row(
     assert record["enabled"] is expected_enabled
 
 
+def test_codex_inventory_surfaces_manual_hook_trust_boundary(tmp_path: Path) -> None:
+    def runner(command: list[str], **_kwargs: Any) -> dict[str, Any]:
+        if command == ["codex", "--version"]:
+            return {"returncode": 0, "stdout": "codex-cli 0.144.1"}
+        if command == ["codex", "plugin", "list", "--json"]:
+            return {
+                "returncode": 0,
+                "stdout": json.dumps(
+                    [{"pluginId": "agency-preflight@agency-runtime", "enabled": True}]
+                ),
+            }
+        assert command == ["codex", "plugin", "marketplace", "list", "--json"]
+        return {"returncode": 0, "stdout": json.dumps([{"name": "agency-runtime"}])}
+
+    record = inspect_host_installation(
+        "codex",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex"),
+        command_runner=runner,
+    )
+
+    assert record["registered"] is True
+    assert record["enabled"] is True
+    assert record["hook_trust_status"] == "unverified"
+    assert "`/hooks`" in record["hook_trust_action"]
+
+
 def test_filtered_host_inspection_validates_names_and_preserves_canonical_order(
     tmp_path: Path,
 ) -> None:
@@ -543,6 +695,247 @@ def test_filtered_host_inspection_validates_names_and_preserves_canonical_order(
 
     with pytest.raises(ValueError, match="Unknown host"):
         inspect_host_installations(home_dir=tmp_path, hosts=("missing",))
+
+
+def test_bulk_host_inspection_fans_out_and_preserves_canonical_order(
+    tmp_path: Path,
+) -> None:
+    version_barrier = threading.Barrier(4)
+    version_hosts: set[str] = set()
+    lock = threading.Lock()
+
+    def runner(command: list[str], **_kwargs: Any) -> dict[str, Any]:
+        if command[1:] == ["--version"]:
+            with lock:
+                version_hosts.add(command[0])
+            version_barrier.wait(timeout=5)
+            return {"returncode": 0, "stdout": f"{command[0]} 1.0.0"}
+        return {"returncode": 0, "stdout": json.dumps({"plugins": []})}
+
+    records = inspect_host_installations(
+        home_dir=tmp_path,
+        binary_resolver=_resolver("claude", "codex", "openclaw", "hermes"),
+        command_runner=runner,
+        hosts=("claude", "codex", "openclaw", "hermes"),
+    )
+
+    assert [record["host"] for record in records] == [
+        "hermes",
+        "openclaw",
+        "codex",
+        "claude",
+    ]
+    assert version_hosts == {"hermes", "openclaw", "codex", "claude"}
+
+
+def test_bulk_host_inspection_preserves_native_probe_deadlines() -> None:
+    deadlines: dict[tuple[str, ...], float] = {}
+    lock = threading.Lock()
+
+    def runner(command: list[str], **kwargs: Any) -> dict[str, Any]:
+        with lock:
+            deadlines[tuple(command)] = kwargs["timeout"]
+        if command[1:] == ["--version"]:
+            return {"returncode": 0, "stdout": f"{command[0]} 1.0.0"}
+        if "marketplace" in command:
+            return {"returncode": 0, "stdout": "[]"}
+        if "inspect" in command:
+            payload = {"id": "agency-preflight", "loaded": True}
+            return {"returncode": 0, "stdout": json.dumps(payload)}
+        payload = {"plugins": [{"id": "agency-preflight", "enabled": True}]}
+        return {"returncode": 0, "stdout": json.dumps(payload)}
+
+    records = inspect_host_installations(
+        home_dir=Path("__agency_missing_profile_for_deadline_test__"),
+        binary_resolver=_resolver("codex", "openclaw"),
+        command_runner=runner,
+        probe_runtime=True,
+        hosts=("codex", "openclaw"),
+    )
+
+    assert [record["host"] for record in records] == ["openclaw", "codex"]
+    assert deadlines[("openclaw", "--version")] == 8
+    assert deadlines[("openclaw", "plugins", "list", "--json")] == 12
+    assert (
+        deadlines[
+            (
+                "openclaw",
+                "plugins",
+                "inspect",
+                "agency-preflight",
+                "--runtime",
+                "--json",
+            )
+        ]
+        == 20
+    )
+    assert deadlines[("codex", "--version")] == 8
+    assert deadlines[("codex", "plugin", "list", "--json")] == 12
+    assert deadlines[("codex", "plugin", "marketplace", "list", "--json")] == 12
+
+
+@pytest.mark.parametrize(
+    ("failure", "expected_code"),
+    [
+        (RuntimeError("inventory exploded"), "RuntimeError: inventory exploded"),
+        (
+            TimeoutError("inventory deadline elapsed"),
+            "TimeoutError: inventory deadline elapsed",
+        ),
+    ],
+)
+def test_bulk_host_inspection_isolates_native_runner_failures(
+    failure: Exception,
+    expected_code: str,
+    tmp_path: Path,
+) -> None:
+    def runner(command: list[str], **_kwargs: Any) -> dict[str, Any]:
+        if command == ["hermes", "plugins", "list"]:
+            raise failure
+        if command[1:] == ["--version"]:
+            return {"returncode": 0, "stdout": f"{command[0]} 1.0.0"}
+        return {"returncode": 0, "stdout": json.dumps({"plugins": []})}
+
+    records = inspect_host_installations(
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex", "hermes"),
+        command_runner=runner,
+        hosts=("codex", "hermes"),
+    )
+
+    assert [record["host"] for record in records] == ["hermes", "codex"]
+    hermes, codex = records
+    assert hermes["registered"] is None
+    assert hermes["inventory_error"] == expected_code
+    assert "native-inventory:error" in hermes["evidence"]
+    assert codex["inventory_error"] is None
+    assert codex["registered"] is False
+
+
+def test_bulk_host_inspection_isolates_filesystem_probe_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    real_host_root = installer._host_root
+
+    def host_root(host: str, **kwargs: Any) -> Path:
+        if host == "hermes":
+            raise OSError("hermes root unavailable")
+        return real_host_root(host, **kwargs)
+
+    monkeypatch.setattr(installer, "_host_root", host_root)
+
+    records = installer.inspect_host_installations(
+        home_dir=tmp_path,
+        binary_resolver=_resolver(),
+        hosts=("codex", "hermes"),
+    )
+
+    assert [record["host"] for record in records] == ["hermes", "codex"]
+    hermes, codex = records
+    assert hermes["inventory_error"] == "OSError: hermes root unavailable"
+    assert hermes["evidence"] == ["inspection:error:OSError"]
+    assert codex["inventory_error"] is None
+    assert codex["maturity"] == "absent"
+
+
+def test_managed_bundle_identity_rejects_oversized_manifest(tmp_path: Path) -> None:
+    target = tmp_path / "plugin"
+    target.mkdir()
+    (target / INSTALL_MANIFEST).write_bytes(b"{" + b" " * (64 * 1024))
+
+    assert _managed_bundle_identity(target, "codex") == (None, None, None)
+
+
+def test_managed_bundle_identity_reads_a_valid_bounded_bundle(tmp_path: Path) -> None:
+    target = tmp_path / "plugin"
+    target.mkdir()
+    files = {"nested/payload.js": "export default true;\n"}
+    (target / "nested").mkdir()
+    (target / "nested" / "payload.js").write_text(
+        files["nested/payload.js"],
+        encoding="utf-8",
+        newline="\n",
+    )
+    manifest = {
+        "owner": "agency-runtime",
+        "host": "codex",
+        "plugin_id": "agency-preflight",
+        "plugin_version": "0.1.0",
+        "install_id": "valid-bounded-read",
+        "owned_files": list(files),
+    }
+    (target / INSTALL_MANIFEST).write_text(json.dumps(manifest), encoding="utf-8")
+
+    assert _managed_bundle_identity(target, "codex") == (
+        "0.1.0",
+        "valid-bounded-read",
+        _bundle_digest(files),
+    )
+
+
+@pytest.mark.parametrize(
+    "owned_files",
+    [[], ["../outside.js"], ["C:/outside.js"], ["payload.js", "payload.js"], [{}]],
+)
+def test_managed_bundle_identity_rejects_malformed_owned_files(
+    owned_files: list[Any],
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "plugin"
+    target.mkdir()
+    manifest = {
+        "owner": "agency-runtime",
+        "host": "codex",
+        "plugin_id": "agency-preflight",
+        "plugin_version": "0.1.0",
+        "install_id": "malformed-owned-files",
+        "owned_files": owned_files,
+    }
+    (target / INSTALL_MANIFEST).write_text(json.dumps(manifest), encoding="utf-8")
+
+    assert _managed_bundle_identity(target, "codex") == (None, None, None)
+
+
+def test_managed_bundle_identity_rejects_oversized_owned_file(tmp_path: Path) -> None:
+    target = tmp_path / "plugin"
+    target.mkdir()
+    (target / "payload.bin").write_bytes(b"x" * (8 * 1024 * 1024 + 1))
+    manifest = {
+        "owner": "agency-runtime",
+        "host": "codex",
+        "plugin_id": "agency-preflight",
+        "plugin_version": "0.1.0",
+        "install_id": "bounded-read-test",
+        "owned_files": ["payload.bin"],
+    }
+    (target / INSTALL_MANIFEST).write_text(json.dumps(manifest), encoding="utf-8")
+
+    assert _managed_bundle_identity(target, "codex") == (None, None, None)
+
+
+def test_managed_bundle_identity_rejects_linked_owned_file(tmp_path: Path) -> None:
+    target = tmp_path / "plugin"
+    target.mkdir()
+    outside = tmp_path / "outside.js"
+    outside.write_text("export default 'outside';\n", encoding="utf-8")
+    try:
+        (target / "payload.js").symlink_to(outside)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable on this host: {exc}")
+    manifest = {
+        "owner": "agency-runtime",
+        "host": "codex",
+        "plugin_id": "agency-preflight",
+        "plugin_version": "0.1.0",
+        "install_id": "link-test",
+        "owned_files": ["payload.js"],
+    }
+    (target / INSTALL_MANIFEST).write_text(json.dumps(manifest), encoding="utf-8")
+
+    assert _managed_bundle_identity(target, "codex") == (None, None, None)
 
 
 def test_explicit_home_suppresses_real_host_commands_without_injected_runner(
@@ -580,11 +973,13 @@ def test_native_installers_register_and_enable_with_host_lifecycle(
     commands = [" ".join(command) for command in runner.commands]
     if host in {"codex", "claude"}:
         assert any("plugin marketplace add" in command for command in commands)
+    if host == "codex":
+        assert result["hook_trust_status"] == "unverified"
+        assert "`/hooks`" in result["hook_trust_action"]
     if host == "openclaw":
         assert any("plugins install" in command for command in commands)
         assert any(
-            "plugins inspect agency-preflight --runtime --json" in command
-            for command in commands
+            "plugins inspect agency-preflight --runtime --json" in command for command in commands
         )
     if host == "hermes":
         assert (
@@ -624,9 +1019,7 @@ def test_openclaw_refuses_install_that_would_silently_restart_live_gateway(
     assert result["failed_step"] == "host_restart_consent_required"
     assert result["partial"] is False
     assert not Path(result["target"]).exists()
-    assert not any(
-        "plugins install" in " ".join(command) for command in runner.commands
-    )
+    assert not any("plugins install" in " ".join(command) for command in runner.commands)
 
 
 @pytest.mark.parametrize(
@@ -656,9 +1049,7 @@ def test_openclaw_unknown_gateway_status_fails_closed_without_mutation(
     assert result["native_steps"][0]["gateway_state"] == "unknown"
     assert result["partial"] is False
     assert not Path(result["target"]).exists()
-    assert not any(
-        "plugins install" in " ".join(command) for command in runner.commands
-    )
+    assert not any("plugins install" in " ".join(command) for command in runner.commands)
 
 
 def test_openclaw_runtime_metadata_without_loaded_fact_stays_unverified(
@@ -716,9 +1107,7 @@ def test_reinstall_keeps_timestamped_backup_and_rollback_restores_it(
     assert backup.exists()
     assert "prior managed version" not in plugin.read_text(encoding="utf-8")
 
-    rolled_back = rollback_agent_adapter(
-        "hermes", home_dir=tmp_path, backup_path=backup
-    )
+    rolled_back = rollback_agent_adapter("hermes", home_dir=tmp_path, backup_path=backup)
     assert rolled_back["ok"] is True
     assert "prior managed version" in plugin.read_text(encoding="utf-8")
 
@@ -758,7 +1147,8 @@ def test_rollback_rejects_managed_root_backup_with_mismatched_ownership_manifest
     tmp_path: Path,
 ) -> None:
     (tmp_path / ".hermes").mkdir()
-    install_agent_adapter("hermes", home_dir=tmp_path)
+    first = install_agent_adapter("hermes", home_dir=tmp_path)
+    Path(first["target"], "force-refresh.txt").write_text("changed\n", encoding="utf-8")
     second = install_agent_adapter("hermes", home_dir=tmp_path)
     backup = Path(second["backup_path"])
     manifest_path = backup / INSTALL_MANIFEST
@@ -775,11 +1165,35 @@ def test_rollback_rejects_managed_root_backup_with_mismatched_ownership_manifest
     assert target_marker.read_text(encoding="utf-8") == "current"
 
 
+def test_rollback_rejects_oversized_ownership_manifest_without_moving_state(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / ".hermes").mkdir()
+    first = install_agent_adapter("hermes", home_dir=tmp_path)
+    Path(first["target"], "force-refresh.txt").write_text(
+        "changed\n",
+        encoding="utf-8",
+    )
+    second = install_agent_adapter("hermes", home_dir=tmp_path)
+    backup = Path(second["backup_path"])
+    (backup / INSTALL_MANIFEST).write_bytes(b"{" + b" " * (64 * 1024))
+    target_marker = Path(second["target"]) / "current-target.txt"
+    target_marker.write_text("current", encoding="utf-8")
+
+    result = rollback_agent_adapter("hermes", home_dir=tmp_path, backup_path=backup)
+
+    assert result["ok"] is False
+    assert "unreadable or invalid" in result["error"]
+    assert backup.exists()
+    assert target_marker.read_text(encoding="utf-8") == "current"
+
+
 def test_rollback_accepts_and_reports_a_well_formed_prior_plugin_version(
     tmp_path: Path,
 ) -> None:
     (tmp_path / ".hermes").mkdir()
-    install_agent_adapter("hermes", home_dir=tmp_path)
+    first = install_agent_adapter("hermes", home_dir=tmp_path)
+    Path(first["target"], "force-refresh.txt").write_text("changed\n", encoding="utf-8")
     second = install_agent_adapter("hermes", home_dir=tmp_path)
     backup = Path(second["backup_path"])
     manifest_path = backup / INSTALL_MANIFEST
@@ -804,9 +1218,7 @@ def test_rollback_refreshes_codex_native_cache_when_runner_is_available(
         command_runner=runner,
     )
     manifest = Path(first["plugin_path"])
-    manifest.write_text(
-        '{"name":"agency-preflight","version":"prior"}\n', encoding="utf-8"
-    )
+    manifest.write_text('{"name":"agency-preflight","version":"prior"}\n', encoding="utf-8")
     second = install_agent_adapter(
         "codex",
         home_dir=tmp_path,
@@ -846,12 +1258,13 @@ def test_openclaw_rollback_fails_closed_before_moving_files(
     tmp_path: Path,
 ) -> None:
     runner = FakeNativeRunner(gateway_live=False)
-    install_agent_adapter(
+    first = install_agent_adapter(
         "openclaw",
         home_dir=tmp_path,
         binary_resolver=_resolver("openclaw"),
         command_runner=runner,
     )
+    Path(first["target"], "force-refresh.txt").write_text("changed\n", encoding="utf-8")
     current = install_agent_adapter(
         "openclaw",
         home_dir=tmp_path,
@@ -1097,9 +1510,7 @@ def test_install_dry_run_includes_dashboard_plan_without_mutation(
     monkeypatch.setattr(
         dashboard_service,
         "install_dashboard_service",
-        lambda **_kwargs: (_ for _ in ()).throw(
-            AssertionError("dry-run must not install")
-        ),
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("dry-run must not install")),
     )
 
     exit_code = cli.cmd_install(
@@ -1247,3 +1658,145 @@ def test_hermes_staged_files_without_executable_are_not_native_registration(
     assert record["loaded"] is None
     assert record["canary"] is None
     assert record["maturity"] == "staged-not-registered"
+
+
+def test_split_installer_resolves_facade_dependencies_at_invocation_time(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    target = tmp_path / "managed-plugin"
+    host_root = tmp_path / "host-root"
+    config = AgencyConfig()
+    calls: list[str] = []
+
+    monkeypatch.setattr(
+        installer,
+        "_plugin_target",
+        lambda *_args, **_kwargs: target,
+    )
+    monkeypatch.setattr(
+        installer,
+        "_host_root",
+        lambda *_args, **_kwargs: host_root,
+    )
+    monkeypatch.setattr(
+        installer,
+        "_resolve_install_config",
+        lambda *_args, **_kwargs: config,
+    )
+    monkeypatch.setattr(
+        installer,
+        "_bundle_files",
+        lambda *_args, **_kwargs: ({"plugin.json": "{}\n"}, "plugin.json"),
+    )
+    monkeypatch.setattr(installer, "_resolve_binary", lambda *_args: None)
+    monkeypatch.setattr(
+        installer,
+        "_root_state",
+        lambda *_args, **_kwargs: (False, False, []),
+    )
+
+    def filesystem_plan(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        calls.append("filesystem")
+        return {"changed": True, "dry_run": True}
+
+    monkeypatch.setattr(installer, "_atomic_install_tree", filesystem_plan)
+
+    result = installer.plan_agent_adapter("hermes", home_dir=tmp_path)
+
+    assert calls == ["filesystem"]
+    assert result["plugin_path"] == str(target / "plugin.json")
+    assert result["native_root"] == str(host_root)
+    assert result["filesystem"] == {"changed": True, "dry_run": True}
+
+
+def test_split_installer_preserves_config_and_argv_monkeypatches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    config = AgencyConfig()
+    monkeypatch.setattr(installer, "load_config", lambda **_kwargs: config)
+    monkeypatch.setattr(
+        installer,
+        "prepare_process_argv",
+        lambda *_args, **_kwargs: ["patched", "argv"],
+    )
+
+    assert installer._resolve_install_config(None, home_dir=None) is config
+    assert installer._prepare_process_argv(["ignored"]) == ["patched", "argv"]
+
+
+def test_split_bundle_generation_resolves_facade_helpers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    monkeypatch.setattr(installer, "_hook_timeout_seconds", lambda _cfg: 17)
+    monkeypatch.setattr(
+        installer,
+        "_codex_hooks",
+        lambda timeout: {"marker": f"hooks-{timeout}"},
+    )
+    monkeypatch.setattr(installer, "_mcp_config", lambda: {"marker": "mcp"})
+    monkeypatch.setattr(
+        installer,
+        "_agency_control_skill",
+        lambda host: f"skill-{host}",
+    )
+    monkeypatch.setattr(
+        installer,
+        "_codex_plugin_version",
+        lambda _manifest, _files: "9.9.9+patched",
+    )
+
+    files, _primary = installer._bundle_files("codex", AgencyConfig())
+
+    prefix = "plugins/agency-preflight"
+    assert json.loads(files[f"{prefix}/hooks/hooks.json"]) == {"marker": "hooks-17"}
+    assert json.loads(files[f"{prefix}/.mcp.json"]) == {"marker": "mcp"}
+    assert files[f"{prefix}/skills/agency/SKILL.md"] == "skill-codex"
+    assert json.loads(files[f"{prefix}/.codex-plugin/plugin.json"])["version"] == "9.9.9+patched"
+
+
+def test_split_detection_resolves_facade_predicate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    monkeypatch.setattr(
+        installer,
+        "_is_host_installed",
+        lambda host, **_kwargs: host == "codex",
+    )
+
+    assert installer.detect_installed_agents() == ["codex"]
+
+
+def test_split_inspection_uses_monkeypatched_native_runner(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    calls: list[tuple[str, ...]] = []
+
+    def run_native(command: list[str], **_kwargs: Any) -> NativeCommandResult:
+        calls.append(tuple(command))
+        if command[1:] == ["--version"]:
+            return NativeCommandResult(tuple(command), 0, "codex-cli 1.0")
+        return NativeCommandResult(tuple(command), 0, "[]")
+
+    monkeypatch.setattr(installer, "_run_native", run_native)
+
+    installer.inspect_host_installations(
+        hosts=["codex"],
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex"),
+        command_runner=lambda *_args, **_kwargs: None,
+    )
+
+    assert calls
+    assert calls[0][1:] == ("--version",)

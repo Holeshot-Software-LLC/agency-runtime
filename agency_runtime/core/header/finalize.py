@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, TypedDict
+from collections.abc import Mapping
+from typing import Any, TypedDict
 
-from .contract import HEADER_FIELDS, fill_header_fields, format_header, parse_header, validate_header
+from .contract import (
+    HEADER_FIELDS,
+    fill_header_fields,
+    format_header,
+    parse_header,
+    validate_header,
+)
 
 
 class FinalizationResult(TypedDict):
@@ -30,8 +37,7 @@ def _metadata_value(metadata: Mapping[str, Any], *keys: str, default: str = "") 
 def _starts_with_header(text: str) -> bool:
     lines = text.splitlines()
     return len(lines) >= len(HEADER_FIELDS) and all(
-        lines[index].startswith(f"{label}:")
-        for index, (_key, label) in enumerate(HEADER_FIELDS)
+        lines[index].startswith(f"{label}:") for index, (_key, label) in enumerate(HEADER_FIELDS)
     )
 
 
@@ -60,7 +66,11 @@ def finalize_response(
     requested_model = model or _metadata_value(metadata, "requested_model", "model", default="")
 
     if not _clean(draft_text):
-        result: FinalizationResult = {"action": "continue", "text": draft_text, "missing": ["draft_text"]}
+        result: FinalizationResult = {
+            "action": "continue",
+            "text": draft_text,
+            "missing": ["draft_text"],
+        }
         _record_finalization(store, trace_id, host, result["action"], result["missing"])
         return result
 
@@ -96,7 +106,9 @@ def finalize(
     return finalize_response(draft_text, trace_metadata=trace_metadata, store=store, model=model)
 
 
-def _record_finalization(store: Any, trace_id: str, host: str, action: str, missing: list[str]) -> None:
+def _record_finalization(
+    store: Any, trace_id: str, host: str, action: str, missing: list[str]
+) -> None:
     recorder = getattr(store, "record_finalization", None)
     if not callable(recorder) or not trace_id:
         return
@@ -108,4 +120,4 @@ def _record_finalization(store: Any, trace_id: str, host: str, action: str, miss
         return
 
 
-__all__ = ["FinalizationResult", "finalize_response", "finalize"]
+__all__ = ["FinalizationResult", "finalize", "finalize_response"]

@@ -3,7 +3,7 @@ title: "AR-14: Transform the dashboard into a live signal observatory"
 status: done
 category: roadmap
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [dashboard, live-updates, visualization, accessibility, user-experience]
 related:
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
@@ -15,7 +15,7 @@ type: issue
 epic: operations
 issue_id: AR-14
 priority: p1
-tracker_url: null
+tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/14"
 depends_on: [AR-12, AR-13]
 blocks: [AR-07]
 ---
@@ -32,12 +32,18 @@ signals easy to understand at a glance.
 
 ## Current state
 
-The package ships source-owned HTML, CSS, and JavaScript behind a loopback-only
-authenticated server. The overview, activity, host, roster, snapshot, and
-configuration endpoints are correct, but a full refresh rebuilds hidden views
-and can overwrite an in-progress configuration form. There is no charting
-layer, reduced-motion contract, live-update scheduler, or complete keyboard
-model for tabs and confirmations.
+The package now ships a modular, source-owned Signal Observatory behind its
+loopback-only authenticated server. A bounded consolidated live snapshot drives
+metadata-only charts and event transitions; single-flight polling pauses with
+the tab or Live control, rejects stale generations, backs off transient errors,
+and stops on terminal authentication failures. Native host inspection, roster
+governance, and dirty configuration state remain outside the fast refresh loop.
+
+The interface provides readable summaries, accessible controls and dialogs,
+responsive desktop/mobile layouts, reduced-motion and forced-color behavior,
+and no external runtime dependency. Configuration and route/explain workflows
+share the same authenticated surface without allowing background refreshes to
+overwrite operator input.
 
 ## Approach
 
@@ -73,21 +79,22 @@ dashboard experience portion of AR-07 release readiness.
 
 ## Verification
 
-- The complete Windows suite passed: 536 tests, with two expected
-  platform-specific skips. The focused dashboard, store-index, and packaging
-  suite passed 63 tests with one expected skip; the source-owned JavaScript
-  suite passed 13 tests, including executable polling-race and lifecycle
-  coverage.
+- The source-owned JavaScript suite passed all `60/60` tests at `100.00%` line,
+  branch, and function coverage, including scheduler teardown, abort races,
+  stale-generation rejection, terminal authentication, configuration safety,
+  navigation, chart, and accessibility behavior.
 - Desktop (1440 by 1000) and mobile (390 by 844) browser QA covered the live
   toggle, charts and summaries, Settings controls, accessible tab naming,
   responsive navigation, horizontal overflow, and console output. No browser
   warnings or errors were observed.
-- The routing v1.1 evaluation passed every accuracy, determinism, concurrency,
-  and performance gate.
-- Rebuilt wheel and source artifacts passed strict Twine and distribution
-  checks. The installed wheel served the authenticated dashboard and live
-  endpoint in an isolated Windows environment; the same packaged assets and
-  endpoint passed a direct-wheel WSL smoke under Python 3.12.3.
+- A final authenticated Chrome smoke loaded the chart, application, and five
+  dashboard modules, rendered all four host cards, exercised refresh and its
+  re-enabled control state, and reported no application/module console errors.
+- The current routing and delegation evaluations passed every checked-in
+  accuracy, policy, determinism, concurrency, and performance gate.
+- Package-data and distribution checks enumerate the chart, application, five
+  dashboard modules, stylesheet, HTML, and module manifest. Earlier isolated
+  wheels served the authenticated dashboard and live endpoint on Windows and
+  WSL/Python 3.12.3; AR-17 retains the final-candidate artifact rebuild.
 - Markdown metadata, documentation links, JavaScript syntax, Ruff, and Git
-  whitespace checks passed. Tracker creation remains an outward-facing action
-  pending explicit authorization.
+  whitespace checks passed.

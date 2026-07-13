@@ -4,21 +4,25 @@ from __future__ import annotations
 
 from typing import Any
 
+from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
+from agency_runtime.core.delegation.lifecycle import (
+    build_dependency_graph,
+    normalize_work_units,
+)
 from agency_runtime.core.evals.benchmarks import run_candidate_microbenchmark
 from agency_runtime.core.evals.data.routing_v1 import (
     CATALOG,
     DELEGATION_CASES,
     POLICY_CASES,
     ROUTING_CASES,
+)
+from agency_runtime.core.evals.data.routing_v1 import (
     SCHEMA as CORPUS_SCHEMA,
+)
+from agency_runtime.core.evals.data.routing_v1 import (
     VERSION as CORPUS_VERSION,
 )
-from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
-from agency_runtime.core.delegation.lifecycle import (
-    build_dependency_graph,
-    normalize_work_units,
-)
 from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.selector.pipeline import route
@@ -101,12 +105,11 @@ def _routing_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
             config=offline,
         )
         predicted = [
-            str(item)
-            for item in decision.get("semantic_ids", decision.get("selected_ids", []))
+            str(item) for item in decision.get("semantic_ids", decision.get("selected_ids", []))
         ][:TOP_K]
-        required = set(str(item) for item in case.get("required", []))
-        acceptable = set(str(item) for item in case.get("acceptable", []))
-        forbidden = set(str(item) for item in case.get("forbidden", []))
+        required = {str(item) for item in case.get("required", [])}
+        acceptable = {str(item) for item in case.get("acceptable", [])}
+        forbidden = {str(item) for item in case.get("forbidden", [])}
         relevant = required | acceptable
         abstain = bool(case.get("abstain", False))
 
@@ -126,21 +129,21 @@ def _routing_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
         forbidden_cases += int(forbidden_hit)
 
         passed = (
-            required.issubset(predicted)
-            and not forbidden_hit
-            and (not abstain or not predicted)
+            required.issubset(predicted) and not forbidden_hit and (not abstain or not predicted)
         )
-        details.append({
-            "id": case["id"],
-            "predicted": predicted,
-            "required": sorted(required),
-            "acceptable": sorted(acceptable),
-            "forbidden_hit": sorted(forbidden.intersection(predicted)),
-            "final_selected": list(decision.get("selected_ids", [])),
-            "status": decision.get("status"),
-            "trace_id": decision.get("trace_id"),
-            "passed": passed,
-        })
+        details.append(
+            {
+                "id": case["id"],
+                "predicted": predicted,
+                "required": sorted(required),
+                "acceptable": sorted(acceptable),
+                "forbidden_hit": sorted(forbidden.intersection(predicted)),
+                "final_selected": list(decision.get("selected_ids", [])),
+                "status": decision.get("status"),
+                "trace_id": decision.get("trace_id"),
+                "passed": passed,
+            }
+        )
 
     total_cases = len(ROUTING_CASES)
     return {
@@ -176,11 +179,9 @@ def _policy_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
         )
         predicted = set(matched)
         predicted_companions = set(companions)
-        required = set(str(item) for item in case.get("required", []))
-        required_companions = set(
-            str(item) for item in case.get("required_companions", [])
-        )
-        forbidden = set(str(item) for item in case.get("forbidden", []))
+        required = {str(item) for item in case.get("required", [])}
+        required_companions = {str(item) for item in case.get("required_companions", [])}
+        forbidden = {str(item) for item in case.get("forbidden", [])}
         required_total += len(required)
         required_hits += len(required.intersection(predicted))
         forbidden_hit = forbidden.intersection(predicted)
@@ -192,33 +193,33 @@ def _policy_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]:
                     counts["tp"] += 1
                 else:
                     counts["fn"] += 1
-            elif action in predicted:
+            else:
+                # ``action`` comes from required | predicted. If it is not
+                # required, it is necessarily a false-positive prediction.
                 counts["fp"] += 1
         forbidden_cases += int(bool(forbidden_hit))
         if required_companions:
             companion_cases += 1
             companion_required_total += len(required_companions)
-            companion_required_hits += len(
-                required_companions.intersection(predicted_companions)
-            )
-            companion_passed_cases += int(
-                required_companions.issubset(predicted_companions)
-            )
+            companion_required_hits += len(required_companions.intersection(predicted_companions))
+            companion_passed_cases += int(required_companions.issubset(predicted_companions))
         passed = (
             required.issubset(predicted)
             and required_companions.issubset(predicted_companions)
             and not forbidden_hit
         )
         passed_cases += int(passed)
-        details.append({
-            "id": case["id"],
-            "predicted": matched,
-            "predicted_companions": companions,
-            "required": sorted(required),
-            "required_companions": sorted(required_companions),
-            "forbidden_hit": sorted(forbidden_hit),
-            "passed": passed,
-        })
+        details.append(
+            {
+                "id": case["id"],
+                "predicted": matched,
+                "predicted_companions": companions,
+                "required": sorted(required),
+                "required_companions": sorted(required_companions),
+                "forbidden_hit": sorted(forbidden_hit),
+                "passed": passed,
+            }
+        )
     total = len(POLICY_CASES)
     action_f1 = []
     for counts in by_action.values():
@@ -255,19 +256,28 @@ def _delegation_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]
         decision_match = bool(result["delegate"]) is bool(case["delegate"])
         count_match = int(result["count"]) == int(case["count"])
         source_match = str(result["source"]) == str(case["source"])
-        units = normalize_work_units(result.get("units", []))
-        graph = build_dependency_graph(units)
+        units = normalize_work_units(case.get("graph_units", result.get("units", [])))
         unit_indexes = {unit.id: index for index, unit in enumerate(units)}
-        actual_edges = sorted(
-            (unit_indexes[source], unit_indexes[target])
-            for source, targets in graph.edges.items()
-            for target in targets
-        )
+        graph_error = ""
+        try:
+            graph = build_dependency_graph(units)
+            actual_edges = sorted(
+                (unit_indexes[source], unit_indexes[target])
+                for source, targets in graph.edges.items()
+                for target in targets
+            )
+        except ValueError as exc:
+            actual_edges = []
+            graph_error = str(exc)
         expected_edges = sorted(
-            tuple(int(index) for index in edge)
-            for edge in case.get("edges", [])
+            tuple(int(index) for index in edge) for edge in case.get("edges", [])
         )
-        graph_match = actual_edges == expected_edges
+        expected_graph_error = str(case.get("graph_error", ""))
+        graph_match = (
+            expected_graph_error in graph_error
+            if expected_graph_error
+            else not graph_error and actual_edges == expected_edges
+        )
         decision_hits += int(decision_match)
         expected_delegate = bool(case["delegate"])
         actual_delegate = bool(result["delegate"])
@@ -277,22 +287,24 @@ def _delegation_metrics() -> tuple[dict[str, float | int], list[dict[str, Any]]]
         count_hits += int(count_match)
         source_hits += int(source_match)
         graph_hits += int(graph_match)
-        details.append({
-            "id": case["id"],
-            "actual": {
-                "delegate": result["delegate"],
-                "count": result["count"],
-                "source": result["source"],
-                "edges": [list(edge) for edge in actual_edges],
-            },
-            "expected": {
-                "delegate": case["delegate"],
-                "count": case["count"],
-                "source": case["source"],
-                "edges": [list(edge) for edge in expected_edges],
-            },
-            "passed": decision_match and count_match and source_match and graph_match,
-        })
+        details.append(
+            {
+                "id": case["id"],
+                "actual": {
+                    "delegate": result["delegate"],
+                    "count": result["count"],
+                    "source": result["source"],
+                    "edges": [list(edge) for edge in actual_edges],
+                },
+                "expected": {
+                    "delegate": case["delegate"],
+                    "count": case["count"],
+                    "source": case["source"],
+                    "edges": [list(edge) for edge in expected_edges],
+                },
+                "passed": decision_match and count_match and source_match and graph_match,
+            }
+        )
     total = len(DELEGATION_CASES)
     return {
         "cases": total,
@@ -319,14 +331,16 @@ def _gates(metrics: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
                 passed = float(metrics[area][metric_name]) <= threshold
             else:  # pragma: no cover - constant schema defense
                 raise ValueError(f"invalid threshold name: {threshold_name}")
-            results.append({
-                "area": area,
-                "metric": metric_name,
-                "value": metrics[area][metric_name],
-                "operator": operator,
-                "threshold": threshold,
-                "passed": passed,
-            })
+            results.append(
+                {
+                    "area": area,
+                    "metric": metric_name,
+                    "value": metrics[area][metric_name],
+                    "operator": operator,
+                    "threshold": threshold,
+                    "passed": passed,
+                }
+            )
     return results
 
 

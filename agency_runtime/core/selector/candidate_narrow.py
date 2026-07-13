@@ -60,6 +60,8 @@ _TOKEN_ALIASES = {
     "dependencies": "dependency",
     "decomposes": "decompose",
     "designs": "design",
+    "docs": "document",
+    "documentation": "document",
     "endpoints": "endpoint",
     "features": "feature",
     "fixes": "fix",
@@ -84,8 +86,18 @@ _TOKEN_ALIASES = {
     "transports": "transport",
     "vulnerabilities": "vulnerability",
     "workflows": "workflow",
+    "writing": "write",
     "writes": "write",
 }
+_AMBIGUOUS_SINGLE_TOKENS = frozenset(
+    {
+        "component",
+        "design",
+        "layout",
+        "plan",
+        "review",
+    }
+)
 
 # Field weights reflect how deliberately each piece of roster metadata is
 # curated.  Capabilities and names carry more signal than prose descriptions.
@@ -143,9 +155,7 @@ def _agent_signature(
     agent: dict[str, Any],
 ) -> tuple[tuple[str, tuple[str, ...]], ...]:
     """Build a stable, mutation-aware key for routing-relevant metadata."""
-    return tuple(
-        (field, _field_values(agent.get(field))) for field, _weight in _FIELD_WEIGHTS
-    )
+    return tuple((field, _field_values(agent.get(field))) for field, _weight in _FIELD_WEIGHTS)
 
 
 @lru_cache(maxsize=8192)
@@ -166,6 +176,7 @@ def _compiled_agent_score_inputs(
 
     for field, values in signature:
         weight = weights[field]
+        field_tokens_seen: set[str] = set()
         for value in values:
             field_order = _normalized_field_tokens(value)
             if not field_order or (field, field_order) in seen_fields:
@@ -176,10 +187,12 @@ def _compiled_agent_score_inputs(
             if field in {"slug", "agent_slug"}:
                 seen_slug_aliases.add(field_order)
             for token in set(field_order):
-                token_weights[token] = token_weights.get(token, 0.0) + weight
+                if token not in field_tokens_seen:
+                    token_weights[token] = token_weights.get(token, 0.0) + weight
+                    field_tokens_seen.add(token)
             if len(field_order) > 1:
                 phrases.append((field_order, weight * min(len(field_order), 3) * 0.75))
-            elif field != "description":
+            elif field != "description" and field_order[0] not in _AMBIGUOUS_SINGLE_TOKENS:
                 strong_single_tokens.add(field_order[0])
 
     return (
@@ -194,10 +207,7 @@ def _contains_phrase(query: tuple[str, ...], phrase: tuple[str, ...]) -> bool:
     if len(phrase) < 2 or len(phrase) > len(query):
         return False
     width = len(phrase)
-    return any(
-        query[index : index + width] == phrase
-        for index in range(len(query) - width + 1)
-    )
+    return any(query[index : index + width] == phrase for index in range(len(query) - width + 1))
 
 
 def score_agent(
@@ -271,9 +281,7 @@ def pre_narrow(
         return selected, [0.0] * len(selected)
 
     query_order = _ordered_tokens(query)
-    compiled = [
-        _compiled_agent_score_inputs(_agent_signature(agent)) for agent in catalog
-    ]
+    compiled = [_compiled_agent_score_inputs(_agent_signature(agent)) for agent in catalog]
     phrase_lengths = {
         len(phrase)
         for _weighted, _single, phrases in compiled
@@ -287,7 +295,7 @@ def pre_narrow(
     )
     positive: list[tuple[float, str, dict[str, Any]]] = []
     unmatched: list[tuple[str, dict[str, Any]]] = []
-    for agent, score_inputs in zip(catalog, compiled):
+    for agent, score_inputs in zip(catalog, compiled, strict=True):
         score = score_agent(
             agent,
             query_tokens,

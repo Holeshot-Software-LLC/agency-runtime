@@ -19,6 +19,61 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 jobs:
+  quality:
+    name: lint, coverage, performance, and dashboard UI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Check Python code quality
+        run: |
+          ruff check agency_runtime tests scripts
+          ruff format --check agency_runtime tests scripts
+      - name: Run warning-strict 100% line and branch coverage
+        env:
+          AGENCY_CONFIG_PATH: ${{ runner.temp }}/agency-runtime/agency.yaml
+          AGENCY_DB_PATH: ${{ runner.temp }}/agency-runtime/agency.db
+          HOME: ${{ runner.temp }}/agency-home
+          PYTEST_BASETEMP: ${{ runner.temp }}/pytest-coverage
+          USERPROFILE: ${{ runner.temp }}/agency-home
+        run: >-
+          python -m pytest tests -q -W error -p no:cacheprovider
+          -m "not performance"
+          --basetemp "${PYTEST_BASETEMP}"
+          --cov=agency_runtime --cov-branch --cov-report=term-missing
+          --cov-fail-under=100
+      - name: Run uninstrumented wall-clock performance gates
+        env:
+          AGENCY_CONFIG_PATH: ${{ runner.temp }}/agency-runtime/performance.yaml
+          AGENCY_DB_PATH: ${{ runner.temp }}/agency-runtime/performance.db
+          HOME: ${{ runner.temp }}/agency-performance-home
+          PYTEST_BASETEMP: ${{ runner.temp }}/pytest-performance
+          USERPROFILE: ${{ runner.temp }}/agency-performance-home
+        run: >-
+          python -m pytest tests -q -W error -p no:cacheprovider
+          -m performance
+          --basetemp "${PYTEST_BASETEMP}"
+      - name: Run dashboard UI tests with 100% coverage
+        run: >-
+          node --test --experimental-test-coverage
+          --test-coverage-lines=100 --test-coverage-branches=100
+          --test-coverage-functions=100 tests/dashboard_ui.test.mjs
+
   test:
     name: tests / ${{ matrix.os }} / py${{ matrix.python }}
     runs-on: ${{ matrix.os }}
@@ -36,9 +91,11 @@ jobs:
           - {os: windows-2022, python: "3.14"}
     steps:
       - name: Check out source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -46,19 +103,20 @@ jobs:
       - name: Install test dependencies
         run: python -m pip install -e ".[dev]"
       - name: Run tests
+        shell: bash
         env:
           AGENCY_CONFIG_PATH: ${{ runner.temp }}/agency-runtime/agency.yaml
           AGENCY_DB_PATH: ${{ runner.temp }}/agency-runtime/agency.db
           HOME: ${{ runner.temp }}/agency-home
           USERPROFILE: ${{ runner.temp }}/agency-home
-        run: python -m pytest tests -q -p no:cacheprovider --basetemp "${{ runner.temp }}/pytest"
+        run: python -m pytest tests -q -W error -p no:cacheprovider --basetemp "${RUNNER_TEMP}/pytest"
       - name: Verify documentation ledgers
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.14'
         run: |
           python scripts/docs_metadata.py --check
           python scripts/update_policy_availability.py --check
           python scripts/update_worklog.py --check
-          python scripts/verify_docs.py
+          python scripts/verify_docs.py --require-tracker
       - name: Check dependency consistency
         run: python -m pip check
       - name: Check patch whitespace
@@ -70,15 +128,17 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install release tools
-        run: python -m pip install "build==1.3.0" "twine==6.2.0"
+        run: python -m pip install "build==1.5.1" "twine==6.2.0"
       - name: Check tracked release inputs
         run: python scripts/verify_release_hygiene.py
       - name: Build wheel and source distribution
@@ -88,54 +148,88 @@ jobs:
           python -m twine check --strict dist/*
           python scripts/verify_distribution.py dist
       - name: Upload distributions
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: python-distributions
           path: dist/*
           if-no-files-found: error
           retention-days: 7
 
-  wheel-smoke:
-    name: wheel smoke / ${{ matrix.os }}
+  artifact-smoke:
+    name: artifact smoke / ${{ matrix.os }}
     needs: artifacts
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, windows-2022]
     steps:
+      - name: Check out release smoke procedure
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Set up minimum supported Python
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.10"
+      - name: Set up Node.js for generated OpenClaw syntax validation
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
       - name: Download distributions
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: python-distributions
           path: ${{ runner.temp }}/agency-dist
-      - name: Install and smoke-test only the built wheel in a clean environment
+      - name: Install and smoke-test the built wheel and source distribution
         working-directory: ${{ runner.temp }}
         shell: bash
-        env:
-          AGENCY_CONFIG_PATH: ${{ runner.temp }}/agency-runtime/agency.yaml
-          AGENCY_DB_PATH: ${{ runner.temp }}/agency-runtime/agency.db
-          HOME: ${{ runner.temp }}/agency-home
-          USERPROFILE: ${{ runner.temp }}/agency-home
         run: |
-          python -m venv wheel-smoke
-          if [ "${RUNNER_OS}" = "Windows" ]; then
-            PYTHON="./wheel-smoke/Scripts/python.exe"
-            AGENCY="./wheel-smoke/Scripts/agency.exe"
-          else
-            PYTHON="./wheel-smoke/bin/python"
-            AGENCY="./wheel-smoke/bin/agency"
+          wheel_artifacts=(agency-dist/*.whl)
+          sdist_artifacts=(agency-dist/*.tar.gz)
+          if [ "${#wheel_artifacts[@]}" -ne 1 ] || [ ! -f "${wheel_artifacts[0]}" ]; then
+            exit 1
           fi
-          "${PYTHON}" -m pip install --only-binary=:all: agency-dist/*.whl
-          "${PYTHON}" -I -c "from importlib.metadata import version; from importlib.resources import files; import agency_runtime; from agency_runtime.core.canary import run_canary; assert callable(run_canary); assert version('agency-runtime') == agency_runtime.__version__; assert files('agency_runtime.dashboard').joinpath('index.html').is_file(); assert files('agency_runtime.core').joinpath('canary.py').is_file(); assert files('agency_runtime.core.evals.data').joinpath('routing_v1.py').is_file()"
-          "${AGENCY}" --help
-          "${AGENCY}" host-canary --help
-          "${PYTHON}" -m pip check
+          if [ "${#sdist_artifacts[@]}" -ne 1 ] || [ ! -f "${sdist_artifacts[0]}" ]; then
+            exit 1
+          fi
+
+          python -m venv wheel-smoke
+          python -m venv sdist-smoke
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            WHEEL_PYTHON="./wheel-smoke/Scripts/python.exe"
+            WHEEL_AGENCY="./wheel-smoke/Scripts/agency.exe"
+            SDIST_PYTHON="./sdist-smoke/Scripts/python.exe"
+            SDIST_AGENCY="./sdist-smoke/Scripts/agency.exe"
+          else
+            WHEEL_PYTHON="./wheel-smoke/bin/python"
+            WHEEL_AGENCY="./wheel-smoke/bin/agency"
+            SDIST_PYTHON="./sdist-smoke/bin/python"
+            SDIST_AGENCY="./sdist-smoke/bin/agency"
+          fi
+
+          smoke_distribution() {
+            local label="$1"
+            local python="$2"
+            local agency="$3"
+            local artifact="$4"
+            export AGENCY_CONFIG_PATH="${RUNNER_TEMP}/agency-${label}/agency.yaml"
+            export AGENCY_DB_PATH="${RUNNER_TEMP}/agency-${label}/agency.db"
+            export HOME="${RUNNER_TEMP}/agency-${label}-home"
+            export USERPROFILE="${RUNNER_TEMP}/agency-${label}-home"
+            "${python}" -m pip install --no-cache-dir --only-binary=:all: "${artifact}"
+            "${python}" -I -c "from importlib.metadata import version; from importlib.resources import files; import agency_runtime; from agency_runtime.core.canary import run_canary; assert callable(run_canary); assert version('agency-runtime') == agency_runtime.__version__; assert files('agency_runtime.dashboard').joinpath('index.html').is_file(); assert files('agency_runtime.core').joinpath('canary.py').is_file(); assert files('agency_runtime.core.evals.data').joinpath('routing_v1.py').is_file()"
+            "${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py"
+            "${agency}" --help
+            "${agency}" host-canary --help
+            "${agency}" smoke --all --json
+            "${agency}" config show
+            "${python}" -m pip check
+          }
+
+          smoke_distribution wheel "${WHEEL_PYTHON}" "${WHEEL_AGENCY}" "${wheel_artifacts[0]}"
+          smoke_distribution sdist "${SDIST_PYTHON}" "${SDIST_AGENCY}" "${sdist_artifacts[0]}"
 
   security:
     name: deterministic source checks and dependency audit
@@ -143,9 +237,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
           cache: pip
@@ -156,8 +252,6 @@ jobs:
         run: |
           python scripts/verify_release_hygiene.py
           python -m bandit -q -r agency_runtime -lll
+          zizmor --pedantic --strict-collection --offline .
       - name: Audit the exact installed runtime dependency
-        shell: bash
-        run: |
-          python -c "from importlib.metadata import version; print('PyYAML==' + version('PyYAML'))" > "${RUNNER_TEMP}/runtime-dependencies.txt"
-          python -m pip_audit --strict --no-deps --requirement "${RUNNER_TEMP}/runtime-dependencies.txt"
+        run: python scripts/audit_runtime_dependencies.py

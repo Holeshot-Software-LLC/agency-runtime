@@ -21,10 +21,12 @@ def test_smoke_all_hosts_ignores_cached_real_store_path(
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
     monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
     reset_config_cache()
-    assert load_config().store.resolved_path() == operator_db
+    try:
+        assert load_config().store.resolved_path() == operator_db
 
-    report = run_smoke(all_hosts=True)
+        report = run_smoke(all_hosts=True)
 
-    assert report["passed"] is True
-    assert operator_db.exists() is False
-    reset_config_cache()
+        assert report["passed"] is True
+        assert operator_db.exists() is False
+    finally:
+        reset_config_cache()

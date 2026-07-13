@@ -44,7 +44,9 @@ class CodexAdapter(BaseAdapter):
     def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
         return {}
 
-    def exec(self, task: str, workdir: str | None = None, specialist_prompt: str = "") -> dict[str, Any]:
+    def exec(
+        self, task: str, workdir: str | None = None, specialist_prompt: str = ""
+    ) -> dict[str, Any]:
         """Execute a task via Codex's non-interactive JSONL contract.
 
         Returns:

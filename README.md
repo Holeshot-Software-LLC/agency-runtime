@@ -3,9 +3,13 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [agents, routing, operations]
 related:
+  - CODE_OF_CONDUCT.md
+  - CONTRIBUTING.md
+  - SECURITY.md
+  - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/README.md
@@ -44,15 +48,19 @@ both operating systems.
 
 ### Current verification snapshot
 
-This checkout was inspected on 2026-07-10:
+This checkout was inspected on 2026-07-12. These are dated local results, not a
+substitute for the final hosted release matrix:
 
 | Environment / host | Contract evidence | Live evidence in this checkout |
 |---|---|---|
-| Codex on native Windows | Deterministic bundle, hook, MCP, lifecycle, `.CMD` launch, and rollback tests | Executable and current native state discovered; Agency Runtime not registered; load and canary unproven |
+| Windows / Python | Warning-strict suite and exact line/branch coverage | `2255 passed`, `5 skipped`, and `2` performance tests deselected. All `17,141` statements and `5,352` branches were covered with zero missing lines or partial branches (`100.00%`). |
+| Ubuntu 24.04 WSL / Python 3.12 | Native ext4 full-suite and performance execution | `2215 passed`, `16 skipped`; the separate performance run passed both tests. No Linux host was installed, so no live Linux host maturity is claimed. |
+| Routing and delegation | Versioned offline routing, policy, delegation-detection, DAG, concurrency, and latency gates | All `25` routing gates passed: precision@3 `0.9744`, required recall/top-1/top-k `1.0`, and policy macro F1 `0.9958`. Delegation passed `12/12`; the final 1,000-agent benchmark measured p95 `11.032 ms`, cache p95 `0.337 ms`, `154.14` calls/second, and overlap `8`. |
+| Dashboard | Authenticated server, lifecycle, configuration, accessibility, and modular browser contracts | All `60/60` JavaScript tests passed at `100.00%` line, branch, and function coverage. Authenticated Chrome smoke loaded all seven scripts, rendered host cards, refreshed live state, re-enabled the control, and produced no application console errors. |
+| Codex 0.144.1 on native Windows | Deterministic bundle, hook, MCP, lifecycle, `.CMD` launch, rollback, and isolated-canary contracts | Agency Runtime is registered and enabled. An exact-confirmed native isolated-profile canary exited `0`, produced a valid six-line header with no missing fields, recorded one correlated routing event and one finalization, and persisted the attestation for trace `019f5bdd-612d-70c0-b369-2b038faa3d02`; it recorded no model receipt. A live keyless judge selection used `codex-cli (cli:codex)` with confidence `0.87` in `6880 ms`; the installed `$agency status` skill loaded and called `agency.host_status`; live CLI `off`/`on` succeeded and ended enabled. Real-profile command-hook trust remains a manual `/hooks` review, is reported as `unverified`, and is not promoted to `runtime-verified` by the isolated result. |
 | Claude Code on native Windows | Deterministic bundle, hook, MCP, lifecycle, and rollback tests | Host absent |
 | Hermes on native Windows | Deterministic native plugin, lifecycle, delegation, and rollback tests | Host absent |
 | OpenClaw on native Windows | Deterministic JavaScript bundle, JSON bridge, lifecycle, runtime-inspection, and rollback tests | Host absent |
-| Ubuntu / WSL target | POSIX command construction and isolated host contracts are covered; CI is configured for Ubuntu | WSL has Python, but this checkout has no WSL `pytest` or installed `agency` command, so no live Linux host or suite result is claimed |
 
 Run `agency doctor --json` for current evidence. A local result may differ from
 the snapshot above.
@@ -91,13 +99,17 @@ Python 3.10 or newer is required.
 ```bash
 git clone https://github.com/Holeshot-Software-LLC/agency-runtime.git
 cd agency-runtime
-python -m pip install -e ".[dev]"
-python -m pytest tests -q
+python -m pip install .
+agency smoke --all --json
 agency configure --non-interactive --profile standard
 agency install --all --dry-run
 agency install --all
 agency doctor
 ```
+
+This installs an ordinary wheel-backed environment from the checkout. Use the
+editable development extras and full test matrix documented in
+[CONTRIBUTING.md](CONTRIBUTING.md) only when contributing code.
 
 `agency install --all` discovers hosts from their executable or a current
 native-state marker. A bare historical configuration directory is reported as
@@ -150,6 +162,17 @@ through bounded JSON. Hermes receives its native Python plugin manifest, hook
 registration, and direct command registration. Backups live under
 `~/.agency-runtime/backups/<host>/`.
 
+Codex intentionally does not trust command hooks merely because a plugin was
+installed or enabled. Agency Runtime's generated-bundle smoke validates the
+expected events, commands, and timeout schema, while native plugin inventory
+proves registration and enablement. Installation, status, and doctor
+conservatively report hook trust as `unverified` with the required action; they
+do not query or mutate Codex's live trust store. The operator must open
+`/hooks`, review and trust the three Agency hooks, and then start a new
+session. The exact-confirmed isolated canary may request Codex's explicit
+one-invocation trust bypass; that is scoped to the canary and is never persisted
+or used as installation policy.
+
 ### Installation maturity
 
 `agency doctor`, the installer JSON output, and the dashboard use the same
@@ -197,8 +220,12 @@ Codex and Claude bundles provide the equivalent `agency status|on|off` control
 skill, including a leading-slash form when the host routes it through the skill;
 it calls exact-confirmed `agency.host_status` and `agency.host_control` MCP
 tools. The CLI, dashboard, generated host surfaces, and MCP tools share the same
-soft-control record. These paths have deterministic contract coverage; no live
-chat-command execution is claimed in this checkout.
+soft-control record. In the 2026-07-12 native Codex check, `$agency status`
+loaded the installed skill and called `agency.host_status` successfully. Two
+noninteractive chat control mutations were correctly cancelled by Codex's user-
+approval layer, so live chat `on`/`off` is not claimed; direct CLI `off` and
+`on` succeeded and left the integration enabled. Deterministic MCP tests cover
+both control mutations.
 
 ### Host canaries
 
@@ -231,8 +258,12 @@ closed because no equally safe noninteractive mode is yet proven.
 A durable attestation is matched against operating system, host version, plugin
 version, install ID, bundle digest, profile scope, and current native state.
 Upgrade, reinstall, rollback, bundle drift, or a non-current profile makes it
-stale. This repository has deterministic canary tests but does not claim that a
-real model-backed canary was run.
+stale. On 2026-07-12, the exact-confirmed Codex 0.144.1 isolated-profile canary
+completed with exit code `0`, a valid six-line header, one nonce-bound routing
+event, one correlated finalization, no model receipt, and a persisted
+attestation. The canary's explicit one-invocation trust bypass did not trust the
+real profile or establish Linux Codex maturity: operators still review the
+installed hooks through `/hooks` and start a new session.
 
 ## Secure operations dashboard
 
@@ -428,6 +459,13 @@ For delegation to an unsupported CLI, configure a `GenericCLIBackend` or
 `GenericAdapter` with an explicit argv command. The unconfigured generic backend
 is deliberately unavailable; it never reports a no-op as completed.
 
+Managed Git worktree mutations use bounded owned processes with repository
+hooks, inherited Git settings, fsmonitor, prompts, and recursive submodules
+disabled. A repository-local or included executable filter, merge driver, diff
+command, or text converter causes the mutation to fail before checkout or
+staging. This intentionally includes Git LFS filters; use a reviewed manual
+workflow when those repository features are required.
+
 ## Quantitative routing evaluation
 
 The versioned offline gate is reproducible and does not call a network model:
@@ -437,8 +475,8 @@ agency eval routing
 agency eval routing --json --no-details
 ```
 
-Corpus v1 currently contains 31 routing cases, 25 policy cases, and
-17 delegation-detection cases. The checked-in v1 gates are:
+Corpus v1.3 contains 37 routing cases, 30 policy cases, and 22
+delegation-detection cases. The checked-in gates are:
 
 | Area | Gate |
 |---|---|
@@ -497,7 +535,13 @@ shared directory, Agency Runtime does not chmod that directory or replace its
 ACL. It still hardens the config/database files and SQLite sidecars themselves,
 fails closed when a private Windows file DACL cannot be enforced, and rejects a
 database path that is a symlink or reparse point. The operator remains
-responsible for access to a custom parent directory.
+responsible for access to a custom parent directory. A Windows restricted
+process may reuse an existing DACL only after verifying the exact owner-only
+shape, including a recursively private parent for inherited SQLite sidecars. If
+a permission change is required, a restricted token is rejected before any DACL
+mutation; rerun that operation from an unrestricted user process or an
+explicitly approved host action. Agency Runtime never keeps broader inherited
+access merely to make that operation appear successful.
 
 ## Roster governance
 
@@ -547,15 +591,22 @@ cannot enter the enabled policy silently.
 python -m pip install -e ".[dev]"
 python scripts/docs_metadata.py --check
 python scripts/update_worklog.py --check
-python scripts/verify_docs.py --require-tracker
-python scripts/verify_tracker.py
-python -m pytest tests -q
+python scripts/verify_docs.py
+ruff check agency_runtime tests scripts
+python -m pytest tests -q -W error
+node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details
 git diff --check
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md),
-[CHANGELOG.md](CHANGELOG.md), [troubleshooting](docs/TROUBLESHOOTING.md), and the
+After an authorized tracker synchronization, also run
+`python scripts/verify_docs.py --require-tracker` and
+`python scripts/verify_tracker.py`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), the
+[Code of Conduct](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md), the
+[threat model](docs/THREAT_MODEL.md), [CHANGELOG.md](CHANGELOG.md),
+[troubleshooting](docs/TROUBLESHOOTING.md), and the
 [release checklist](docs/RELEASE_CHECKLIST.md). Planning, worklog, and decision
 records are indexed under [docs/](docs/roadmap/README.md).
 

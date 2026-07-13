@@ -126,7 +126,6 @@
   }
 
   function pathFromPoints(points) {
-    if (!points.length) return "";
     let path = `M${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
     for (let index = 1; index < points.length; index += 1) {
       const previous = points[index - 1];
@@ -140,7 +139,6 @@
   }
 
   function areaFromPoints(points, baseline) {
-    if (!points.length) return "";
     const first = points[0];
     const last = points[points.length - 1];
     return `${pathFromPoints(points)} L${last.x.toFixed(2)},${baseline} L${first.x.toFixed(2)},${baseline} Z`;
@@ -151,7 +149,7 @@
     const routes = buckets.reduce((total, bucket) => total + bucket.routes, 0);
     const delegations = buckets.reduce((total, bucket) => total + bucket.delegations, 0);
     const minutes = Math.round(
-      (buckets.length * (buckets[0]?.endMs - buckets[0]?.startMs || 60000)) / 60000,
+      (buckets.length * (buckets[0].endMs - buckets[0].startMs)) / 60000,
     );
     const summary = `${routes} observed routes · ${delegations} delegations · last ${minutes} minutes`;
     if (summaryRoot) summaryRoot.textContent = summary;
@@ -183,6 +181,22 @@
         y2: y,
       }));
     }
+    svg.append(
+      svgNode(documentRef, "text", {
+        class: "axis-label axis-label-y",
+        "aria-hidden": "true",
+        x: left - 9,
+        y: top + 3,
+        "text-anchor": "end",
+      }, maximum),
+      svgNode(documentRef, "text", {
+        class: "axis-label axis-label-y",
+        "aria-hidden": "true",
+        x: left - 9,
+        y: baseline + 3,
+        "text-anchor": "end",
+      }, 0),
+    );
 
     const routePoints = linePoints(buckets, "routes", plotWidth, plotHeight, left, top, maximum);
     const delegationPoints = linePoints(buckets, "delegations", plotWidth, plotHeight, left, top, maximum);
@@ -285,14 +299,14 @@
 
     let offset = 0;
     [
-      ["success", counts.success],
-      ["failed", counts.failed],
-      ["skipped", counts.skipped],
-      ["unknown", counts.unknown],
-    ].forEach(([name, value]) => {
+      ["success", "Completed", counts.success],
+      ["failed", "Failed", counts.failed],
+      ["skipped", "Skipped", counts.skipped],
+      ["unknown", "Unknown", counts.unknown],
+    ].forEach(([name, label, value]) => {
       if (!counts.total || !value) return;
       const share = (value / counts.total) * 100;
-      svg.append(svgNode(documentRef, "circle", {
+      const segment = svgNode(documentRef, "circle", {
         class: `ring-segment ring-${name}`,
         cx: center,
         cy: center,
@@ -303,7 +317,12 @@
         "stroke-dasharray": `${share.toFixed(3)} ${(100 - share).toFixed(3)}`,
         "stroke-dashoffset": (-offset).toFixed(3),
         transform: `rotate(-90 ${center} ${center})`,
-      }));
+        tabindex: 0,
+        role: "img",
+        "aria-label": `${label}: ${value} (${share.toFixed(1)}%)`,
+      });
+      segment.append(svgNode(documentRef, "title", {}, `${label}: ${value}`));
+      svg.append(segment);
       offset += share;
     });
     svg.append(

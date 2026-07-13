@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
-import threading
 import sys
+import threading
 
+import pytest
+
+from agency_runtime.core.delegation.lifecycle import (
+    build_dependency_graph,
+    normalize_work_units,
+)
 from agency_runtime.core.evals.benchmarks import (
     _run_concurrency_probe,
     generated_catalog,
     run_candidate_microbenchmark,
-)
-from agency_runtime.core.delegation.lifecycle import (
-    build_dependency_graph,
-    normalize_work_units,
 )
 from agency_runtime.core.evals.data.routing_v1 import (
     DELEGATION_CASES,
@@ -125,13 +127,39 @@ def test_policy_reload_cache_is_keyed_by_resolved_path(
     assert "CODING" in missing["actions"]
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "actions: {}\nactions: {}\n",
+        "shared: &shared [code]\nactions:\n  CODING:\n    triggers: *shared\n",
+    ],
+    ids=["duplicate-key", "alias"],
+)
+def test_custom_policy_rejects_ambiguous_yaml(tmp_path, payload: str) -> None:
+    from agency_runtime.core.selector import policy as policy_module
+
+    path = tmp_path / "unsafe.yaml"
+    path.write_text(payload, encoding="utf-8")
+    loaded = policy_module.load_policy(path)
+
+    assert "CODING" in loaded["actions"]
+
+
+def test_custom_policy_rejects_oversized_input(tmp_path) -> None:
+    from agency_runtime.core.selector import policy as policy_module
+
+    path = tmp_path / "oversized.yaml"
+    path.write_bytes(b"#" * (policy_module._MAX_CUSTOM_POLICY_BYTES + 1))
+    loaded = policy_module.load_policy(path)
+
+    assert "CODING" in loaded["actions"]
+
+
 def test_status_mixture_and_cross_platform_paths_are_decomposed() -> None:
     status_mix = detect_work_units(
         "Give me status. Also, fix the API. Separately, update the docs."
     )
-    windows = detect_work_units(
-        r"Fix C:\repo\src\auth.py and update D:\repo\docs\README.md"
-    )
+    windows = detect_work_units(r"Fix C:\repo\src\auth.py and update D:\repo\docs\README.md")
 
     assert status_mix["delegate"] is True
     assert status_mix["count"] == 2
@@ -157,15 +185,76 @@ def test_choices_and_sequential_steps_do_not_request_parallel_delegation() -> No
     assert graph.edges[units[0].id] == {units[1].id}
 
 
+def test_explicit_dependencies_and_cycles_are_deterministic() -> None:
+    dependency_units = normalize_work_units(
+        [
+            {"id": "producer", "description": "Build artifact"},
+            {
+                "id": "consumer",
+                "description": "Publish artifact",
+                "depends_on": ["producer"],
+            },
+        ]
+    )
+    graph = build_dependency_graph(dependency_units)
+    assert graph.topological_batches() == [["producer"], ["consumer"]]
+
+    cyclic_units = normalize_work_units(
+        [
+            {"id": "alpha", "description": "Task alpha", "depends_on": ["beta"]},
+            {"id": "beta", "description": "Task beta", "depends_on": ["alpha"]},
+        ]
+    )
+    with pytest.raises(ValueError, match="dependency graph contains a cycle"):
+        build_dependency_graph(cyclic_units)
+
+
+def test_explicit_dependency_wins_over_input_order_and_file_overlap() -> None:
+    units = normalize_work_units(
+        [
+            {
+                "id": "consumer",
+                "description": "Publish artifact",
+                "depends_on": ["producer"],
+                "repo_path": ".",
+                "files": ["shared.py"],
+            },
+            {
+                "id": "producer",
+                "description": "Build artifact",
+                "repo_path": ".",
+                "files": ["shared.py"],
+            },
+        ]
+    )
+
+    graph = build_dependency_graph(units)
+
+    assert graph.edges == {"consumer": set(), "producer": {"consumer"}}
+    assert graph.topological_batches() == [["producer"], ["consumer"]]
+
+
+def test_output_vocabulary_does_not_infer_a_dependency() -> None:
+    units = normalize_work_units(
+        [
+            {"id": "alpha", "description": "Audit the endpoint"},
+            {"id": "beta", "description": "Use JSON output formatting"},
+        ]
+    )
+
+    graph = build_dependency_graph(units)
+
+    assert graph.edges == {"alpha": set(), "beta": set()}
+    assert graph.topological_batches() == [["alpha", "beta"]]
+
+
 def test_bundled_policy_avoids_generic_design_collisions() -> None:
     actions, companions = detect_actions(
         "Review the authentication design, then document the deployment workflow.",
         load_bundled_policy(),
     )
 
-    assert {"ORCHESTRATION", "DEVOPS_INFRA", "DOCUMENTATION", "SECURITY"}.issubset(
-        actions
-    )
+    assert {"ORCHESTRATION", "DEVOPS_INFRA", "DOCUMENTATION", "SECURITY"}.issubset(actions)
     assert "UI_UX" not in actions
     assert "multi-agent-systems-architect" not in companions
 
@@ -184,12 +273,13 @@ def test_versioned_corpus_is_nontrivial_and_has_unique_cases() -> None:
     assert all("required" in case and "forbidden" in case for case in ROUTING_CASES)
 
 
+@pytest.mark.performance
 def test_routing_eval_meets_published_thresholds() -> None:
     report = run_routing_eval()
 
     assert report["schema"] == "agency-runtime.routing-eval"
     assert report["version"] == "1.2.0"
-    assert report["corpus"]["version"] == "1.2.0"
+    assert report["corpus"]["version"] == "1.3.0"
     assert report["passed"] is True
     assert all(gate["passed"] for gate in report["gates"])
     assert report["metrics"]["routing"]["required_recall_at_3"] >= 0.97
@@ -210,6 +300,7 @@ def test_routing_eval_meets_published_thresholds() -> None:
     assert report["metrics"]["performance"]["concurrent_probe_synchronized"] is True
 
 
+@pytest.mark.performance
 def test_microbenchmark_is_concurrent_deterministic_and_production_bounded() -> None:
     result = run_candidate_microbenchmark(
         roster_size=1000,
@@ -219,9 +310,7 @@ def test_microbenchmark_is_concurrent_deterministic_and_production_bounded() -> 
 
     assert result["roster_size"] == 1000
     assert result["benchmark_batches"] >= 3
-    assert result["latency_samples"] == (
-        result["iterations"] * result["benchmark_batches"]
-    )
+    assert result["latency_samples"] == (result["iterations"] * result["benchmark_batches"])
     assert result["cache_hit_samples"] >= (128 * result["benchmark_batches"])
     assert len(result["p95_batches_ms"]) == result["benchmark_batches"]
     assert len(result["cache_hit_p95_batches_ms"]) == result["benchmark_batches"]

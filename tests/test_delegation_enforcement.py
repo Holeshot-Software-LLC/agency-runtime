@@ -7,13 +7,13 @@ from pathlib import Path
 import pytest
 
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
-from agency_runtime.core.header.contract import fill_header_fields
-from agency_runtime.core.selector.pipeline import build_routing_context
 from agency_runtime.core.delegation.events import (
     mark_delegation_executed,
     record_suggested_delegations,
     work_unit_id_from_text,
 )
+from agency_runtime.core.header.contract import fill_header_fields
+from agency_runtime.core.selector.pipeline import build_routing_context
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -65,18 +65,24 @@ def test_suggestions_dedupe_within_trace_but_repeat_across_turns(tmp_path: Path)
         },
     }
 
-    assert record_suggested_delegations(
-        store,
-        session_id="session",
-        host="test",
-        routing={**base, "trace_id": "turn-1"},
-    ) == 2
-    assert record_suggested_delegations(
-        store,
-        session_id="session",
-        host="test",
-        routing={**base, "trace_id": "turn-1"},
-    ) == 0
+    assert (
+        record_suggested_delegations(
+            store,
+            session_id="session",
+            host="test",
+            routing={**base, "trace_id": "turn-1"},
+        )
+        == 2
+    )
+    assert (
+        record_suggested_delegations(
+            store,
+            session_id="session",
+            host="test",
+            routing={**base, "trace_id": "turn-1"},
+        )
+        == 0
+    )
     mark_delegation_executed(
         store,
         session_id="session",
@@ -85,12 +91,15 @@ def test_suggestions_dedupe_within_trace_but_repeat_across_turns(tmp_path: Path)
         trace_id="turn-1",
         work_unit_id=work_unit_id_from_text("audit delegation"),
     )
-    assert record_suggested_delegations(
-        store,
-        session_id="session",
-        host="test",
-        routing={**base, "trace_id": "turn-2"},
-    ) == 2
+    assert (
+        record_suggested_delegations(
+            store,
+            session_id="session",
+            host="test",
+            routing={**base, "trace_id": "turn-2"},
+        )
+        == 2
+    )
 
     assert len(store.get_delegations("turn-1")) == 2
     assert len(store.get_delegations("turn-2")) == 2
@@ -144,7 +153,9 @@ def test_pre_verify_accepts_trivial_turn_with_no_agency_evidence(tmp_path: Path)
     assert result is None
 
 
-def test_pre_verify_rejects_nontrivial_turn_with_no_loaded_specialist(monkeypatch, tmp_path: Path) -> None:
+def test_pre_verify_rejects_nontrivial_turn_with_no_loaded_specialist(
+    monkeypatch, tmp_path: Path
+) -> None:
     from agency_runtime.core.selector import pipeline
 
     store = Store(tmp_path / "agency.db")
@@ -307,7 +318,9 @@ def test_agency_agents_delegate_nested_failure_records_skipped_blocker(tmp_path:
     assert fields["agencies_delegated"] == "none - delegate_task requires a parent agent context."
 
 
-def test_agency_agents_delegate_nested_success_false_records_skipped_blocker(tmp_path: Path) -> None:
+def test_agency_agents_delegate_nested_success_false_records_skipped_blocker(
+    tmp_path: Path,
+) -> None:
     store = Store(tmp_path / "agency.db")
     adapter = HermesAdapter(store=store)
     store.record_delegation(

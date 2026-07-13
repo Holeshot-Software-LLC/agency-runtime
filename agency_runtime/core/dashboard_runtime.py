@@ -10,28 +10,24 @@ import time
 import urllib.error
 import urllib.request
 import webbrowser
-from contextlib import contextmanager
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager, suppress
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator, Mapping
+from typing import Any
 
+from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
+from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.configuration import (
     ConfigurationError,
     restrict_private_file,
 )
-
+from agency_runtime.core.http_safety import open_no_redirect
 
 DESCRIPTOR_SCHEMA_VERSION = 1
 _MAX_DESCRIPTOR_BYTES = 64 * 1024
+_MAX_HEALTH_RESPONSE_BYTES = 4 * 1024
 _LOCK_TIMEOUT_SECONDS = 5.0
-
-
-class _NoTokenRedirects(urllib.request.HTTPRedirectHandler):
-    """Never forward a dashboard bearer token to a redirect target."""
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        del req, fp, code, msg, headers, newurl
-        return None
 
 
 def dashboard_runtime_path(
@@ -45,26 +41,21 @@ def dashboard_runtime_path(
 
 
 @contextmanager
-def _runtime_lock(
-    target: Path, *, timeout: float = _LOCK_TIMEOUT_SECONDS
-) -> Iterator[None]:
+def _runtime_lock(target: Path, *, timeout: float = _LOCK_TIMEOUT_SECONDS) -> Iterator[None]:
     """Serialize worker publication and identity-checked removal."""
 
     target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     if os.name != "nt":
         os.chmod(target.parent, 0o700)
     lock_path = target.with_name(f".{target.name}.lock")
-    handle = open(lock_path, "a+b")
-    try:
+    with open(lock_path, "a+b") as handle:
         if lock_path.stat().st_size == 0:
             handle.write(b"\0")
             handle.flush()
         # The lock contains one sentinel byte, never credentials. Keep lock
         # availability independent from optional ACL narrowing.
-        try:
+        with suppress(ConfigurationError, OSError):
             restrict_private_file(lock_path)
-        except (ConfigurationError, OSError):
-            pass
         deadline = time.monotonic() + max(0.0, timeout)
         while True:
             try:
@@ -96,8 +87,6 @@ def _runtime_lock(
                 import fcntl
 
                 fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-    finally:
-        handle.close()
 
 
 def _validate_descriptor(value: Any) -> dict[str, Any]:
@@ -176,9 +165,7 @@ def write_dashboard_runtime(
 ) -> dict[str, Any]:
     """Atomically publish a rotating token in an owner-only descriptor."""
 
-    target = (
-        Path(path) if path is not None else dashboard_runtime_path(home_dir=home_dir)
-    )
+    target = Path(path) if path is not None else dashboard_runtime_path(home_dir=home_dir)
     descriptor = _validate_descriptor(
         {
             "schema_version": DESCRIPTOR_SCHEMA_VERSION,
@@ -200,20 +187,22 @@ def read_dashboard_runtime(
 ) -> dict[str, Any]:
     """Read and validate the descriptor without returning a public payload."""
 
-    target = (
-        Path(path) if path is not None else dashboard_runtime_path(home_dir=home_dir)
-    )
+    target = Path(path) if path is not None else dashboard_runtime_path(home_dir=home_dir)
     try:
-        raw = target.read_bytes()
+        raw = read_bounded_regular_file(
+            target,
+            limit=_MAX_DESCRIPTOR_BYTES,
+            label="dashboard runtime descriptor",
+        )
     except FileNotFoundError as exc:
         raise ValueError("dashboard service has no runtime descriptor") from exc
+    except FileSizeLimitError as exc:
+        raise ValueError("dashboard runtime descriptor exceeds the size limit") from exc
     except OSError as exc:
         raise ValueError("dashboard runtime descriptor could not be read") from exc
-    if len(raw) > _MAX_DESCRIPTOR_BYTES:
-        raise ValueError("dashboard runtime descriptor exceeds the size limit")
     try:
-        return _validate_descriptor(json.loads(raw))
-    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        return _validate_descriptor(safe_load_bounded_json(raw))
+    except (BoundedJSONError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise ValueError("dashboard runtime descriptor is invalid") from exc
 
 
@@ -226,15 +215,11 @@ def remove_dashboard_runtime(
 ) -> bool:
     """Remove only the descriptor still owned by the exiting worker."""
 
-    target = (
-        Path(path) if path is not None else dashboard_runtime_path(home_dir=home_dir)
-    )
+    target = Path(path) if path is not None else dashboard_runtime_path(home_dir=home_dir)
     try:
         with _runtime_lock(target):
             current = read_dashboard_runtime(path=target)
-            if current["pid"] != pid or not hmac.compare_digest(
-                current["token"], token
-            ):
+            if current["pid"] != pid or not hmac.compare_digest(current["token"], token):
                 return False
             target.unlink()
             return True
@@ -262,11 +247,19 @@ def dashboard_service_reachable(
             f"http://127.0.0.1:{value['port']}/api/health",
             headers={"Authorization": f"Bearer {value['token']}"},
         )
-        opener = urllib.request.build_opener(_NoTokenRedirects())
-        with opener.open(request, timeout=timeout) as response:
-            payload = json.loads(response.read())
+        with open_no_redirect(request, timeout=timeout) as response:
+            raw = response.read(_MAX_HEALTH_RESPONSE_BYTES + 1)
+            if len(raw) > _MAX_HEALTH_RESPONSE_BYTES:
+                return False
+            payload = safe_load_bounded_json(raw)
         return response.status == 200 and payload == {"status": "ok"}
-    except (OSError, ValueError, urllib.error.URLError, json.JSONDecodeError):
+    except (
+        BoundedJSONError,
+        OSError,
+        ValueError,
+        urllib.error.URLError,
+        json.JSONDecodeError,
+    ):
         return False
 
 

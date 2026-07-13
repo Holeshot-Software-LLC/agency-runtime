@@ -9,19 +9,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agency_runtime.core.header.contract import (
-    parse_header,
     format_header,
+    parse_header,
     validate_header,
 )
 from agency_runtime.core.header.finalize import finalize_response
+from agency_runtime.core.policy.defaults import STARTER_ROSTER
+from agency_runtime.core.policy.profiles import LOCAL_ONLY, POWER, STANDARD, YOLO
 from agency_runtime.core.receipts.normalize import (
-    normalize_litellm_receipt,
     build_unavailable_receipt,
+    normalize_litellm_receipt,
 )
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.core.policy.profiles import LOCAL_ONLY, STANDARD, POWER, YOLO
-from agency_runtime.core.policy.defaults import STARTER_ROSTER
-
 
 # ─── Header contract ────────────────────────────────────────────────
 
@@ -175,6 +174,7 @@ def test_hermes_adapter_post_api_request_captures_dynamic_model():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
         from agency_runtime.adapters.hermes.plugin import HermesAdapter
+
         adapter = HermesAdapter(store=store)
 
         # Simulate a response where LiteLLM complexity-routed to gpt-5.5-pro-extended
@@ -200,6 +200,7 @@ def test_hermes_adapter_post_api_request_no_response_model():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
         from agency_runtime.adapters.hermes.plugin import HermesAdapter
+
         adapter = HermesAdapter(store=store)
 
         adapter.post_api_request_handler(
@@ -219,6 +220,7 @@ def test_hermes_adapter_post_tool_call_records_specialist_load():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
         from agency_runtime.adapters.hermes.plugin import HermesAdapter
+
         adapter = HermesAdapter(store=store)
 
         adapter.post_tool_call_handler(
@@ -237,6 +239,7 @@ def test_hermes_adapter_post_tool_call_records_skill_load():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
         from agency_runtime.adapters.hermes.plugin import HermesAdapter
+
         adapter = HermesAdapter(store=store)
 
         adapter.post_tool_call_handler(
@@ -254,6 +257,7 @@ def test_hermes_adapter_post_tool_call_ignores_unknown_tools():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
         from agency_runtime.adapters.hermes.plugin import HermesAdapter
+
         adapter = HermesAdapter(store=store)
 
         adapter.post_tool_call_handler(
@@ -276,6 +280,7 @@ def test_header_reflects_loaded_specialist():
         store.record_specialist_loaded("s1", "codebase-onboarding-engineer")
 
         from agency_runtime.core.header.contract import fill_header_fields
+
         filled = fill_header_fields({}, "s1", store, "task-chunk-planner")
         assert filled["agencies_loaded"] == "code-reviewer, codebase-onboarding-engineer"
 
@@ -294,6 +299,7 @@ def test_header_replaces_bare_none_when_store_has_agency_evidence():
         )
 
         from agency_runtime.core.header.contract import fill_header_fields
+
         filled = fill_header_fields(
             {"agencies_loaded": "none", "agencies_delegated": "none"},
             "s1",
@@ -310,6 +316,7 @@ def test_header_replaces_noneish_loaded_reason_when_store_has_agency_evidence():
         store.record_specialist_loaded("s1", "senior-developer")
 
         from agency_runtime.core.header.contract import fill_header_fields
+
         filled = fill_header_fields(
             {"agencies_loaded": "none -- direct implementation"},
             "s1",
@@ -321,13 +328,15 @@ def test_header_replaces_noneish_loaded_reason_when_store_has_agency_evidence():
 
 def _activate_default_companions(store: Store) -> None:
     for slug in ("agents-orchestrator", "chief-of-staff"):
-        store.activate_agent({
-            "slug": slug,
-            "name": slug.replace("-", " ").title(),
-            "description": f"Default companion specialist {slug}",
-            "division": "specialized",
-            "source": "test",
-        })
+        store.activate_agent(
+            {
+                "slug": slug,
+                "name": slug.replace("-", " ").title(),
+                "description": f"Default companion specialist {slug}",
+                "division": "specialized",
+                "source": "test",
+            }
+        )
 
 
 def test_trivial_preflight_loads_defaults_equally_for_hermes_and_openclaw():
@@ -342,14 +351,22 @@ def test_trivial_preflight_loads_defaults_equally_for_hermes_and_openclaw():
         _activate_default_companions(openclaw_store)
 
         hermes_result = HermesAdapter(store=hermes_store).build_preflight_context("s1", "ping")
-        openclaw_result = OpenClawAdapter(store=openclaw_store).build_preflight_context("s1", "ping")
+        openclaw_result = OpenClawAdapter(store=openclaw_store).build_preflight_context(
+            "s1", "ping"
+        )
 
         assert hermes_result is not None
         assert openclaw_result is not None
         assert hermes_result["context"] == openclaw_result["context"]
         assert "agents-orchestrator, chief-of-staff" in hermes_result["context"]
-        assert hermes_store.get_specialists_for_session("s1") == ["agents-orchestrator", "chief-of-staff"]
-        assert openclaw_store.get_specialists_for_session("s1") == ["agents-orchestrator", "chief-of-staff"]
+        assert hermes_store.get_specialists_for_session("s1") == [
+            "agents-orchestrator",
+            "chief-of-staff",
+        ]
+        assert openclaw_store.get_specialists_for_session("s1") == [
+            "agents-orchestrator",
+            "chief-of-staff",
+        ]
 
 
 def test_store_delegation():

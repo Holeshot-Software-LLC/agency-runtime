@@ -12,11 +12,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
-from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.cache import clear_cache
+from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.pipeline import route
 from agency_runtime.core.selector.stickiness import clear_session_routing
-
 
 _BENCHMARK_BATCHES = 5
 _WARMUP_CALLS = 4
@@ -252,8 +251,7 @@ def run_candidate_microbenchmark(
         cache_latency_batch_p95_ms.append(_percentile(batch_latencies_ms, 0.95))
     expected_ids = tuple(warm.get("selected_ids", []))
     cache_consistent = all(
-        result.get("cache_hit") is True
-        and tuple(result.get("selected_ids", [])) == expected_ids
+        result.get("cache_hit") is True and tuple(result.get("selected_ids", [])) == expected_ids
         for result in cached_results
     )
     trace_ids = {str(result.get("trace_id") or "") for result in cached_results}
@@ -275,9 +273,7 @@ def run_candidate_microbenchmark(
         "concurrent_probe_threads": concurrency["threads"],
         "concurrent_probe_synchronized": concurrency["synchronized"],
         "concurrent_total_ms": round(concurrent_ms, 3),
-        "concurrent_calls_per_second": round(
-            concurrent_calls / max(concurrent_ms / 1000, 1e-9), 2
-        ),
+        "concurrent_calls_per_second": round(concurrent_calls / max(concurrent_ms / 1000, 1e-9), 2),
         "deterministic": consistent,
         "cache_hit_samples": len(cache_latencies_ms),
         "cache_hit_p50_ms": round(statistics.median(cache_latencies_ms), 3),
@@ -289,9 +285,7 @@ def run_candidate_microbenchmark(
             _percentile(cache_latencies_ms, 0.95),
             3,
         ),
-        "cache_hit_p95_batches_ms": [
-            round(value, 3) for value in cache_latency_batch_p95_ms
-        ],
+        "cache_hit_p95_batches_ms": [round(value, 3) for value in cache_latency_batch_p95_ms],
         "cache_hit_max_ms": round(max(cache_latencies_ms), 3),
         "cache_hit_deterministic": cache_consistent and unique_traces,
     }

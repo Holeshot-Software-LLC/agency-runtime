@@ -14,7 +14,6 @@ from urllib.parse import unquote, urlparse
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CORE_FIELDS = {
     "title",
@@ -118,13 +117,15 @@ def as_date(value: object) -> date | None:
     return None
 
 
-def require_fields(doc: Document, names: set[str], errors: list[str]) -> None:
-    for name in sorted(names - set(doc.meta)):
-        errors.append(f"{doc.relative}: missing front-matter field {name!r}")
+def _missing_field_errors(doc: Document, names: set[str]) -> list[str]:
+    return [
+        f"{doc.relative}: missing front-matter field {name!r}"
+        for name in sorted(names - set(doc.meta))
+    ]
 
 
-def validate_schema(doc: Document, errors: list[str]) -> None:
-    require_fields(doc, CORE_FIELDS, errors)
+def _common_schema_errors(doc: Document) -> list[str]:
+    errors = _missing_field_errors(doc, CORE_FIELDS)
     meta = doc.meta
     if not isinstance(meta.get("title"), str) or not meta.get("title"):
         errors.append(f"{doc.relative}: title must be a non-empty string")
@@ -140,72 +141,102 @@ def validate_schema(doc: Document, errors: list[str]) -> None:
     for field in ("tags", "related", "supersedes"):
         if not isinstance(meta.get(field), list):
             errors.append(f"{doc.relative}: {field} must be a list")
-    if meta.get("superseded_by") is not None and not isinstance(
-        meta.get("superseded_by"), str
-    ):
+    if meta.get("superseded_by") is not None and not isinstance(meta.get("superseded_by"), str):
         errors.append(f"{doc.relative}: superseded_by must be a string or null")
+    return errors
 
-    doc_type = meta.get("type")
+
+def _issue_schema_errors(doc: Document) -> list[str]:
+    errors = _missing_field_errors(
+        doc,
+        {
+            "type",
+            "epic",
+            "issue_id",
+            "priority",
+            "tracker_url",
+            "depends_on",
+            "blocks",
+        },
+    )
+    meta = doc.meta
     status = meta.get("status")
-    if doc_type == "issue":
-        require_fields(
-            doc,
-            {
-                "type",
-                "epic",
-                "issue_id",
-                "priority",
-                "tracker_url",
-                "depends_on",
-                "blocks",
-            },
-            errors,
-        )
-        if status not in ISSUE_STATUSES:
-            errors.append(f"{doc.relative}: invalid issue status {status!r}")
-        if not re.fullmatch(r"AR-\d{2,}", str(meta.get("issue_id", ""))):
-            errors.append(f"{doc.relative}: issue_id must match AR-NN")
-        if meta.get("priority") not in {"p0", "p1", "p2", "p3"}:
-            errors.append(f"{doc.relative}: priority must be p0, p1, p2, or p3")
-        for field in ("depends_on", "blocks"):
-            if not isinstance(meta.get(field), list):
-                errors.append(f"{doc.relative}: {field} must be a list")
-    elif doc_type == "worklog":
-        require_fields(
-            doc,
-            {"type", "commit", "short", "date", "pr", "related_issues"},
-            errors,
-        )
-        if status not in GENERAL_STATUSES:
-            errors.append(f"{doc.relative}: invalid worklog status {status!r}")
-        if not isinstance(meta.get("related_issues"), list):
-            errors.append(f"{doc.relative}: related_issues must be a list")
-    elif doc_type == "decision":
-        require_fields(doc, {"id", "type", "deciders"}, errors)
-        if status not in DECISION_STATUSES:
-            errors.append(f"{doc.relative}: invalid decision status {status!r}")
-        if not re.fullmatch(r"ADR-\d{4}", str(meta.get("id", ""))):
-            errors.append(f"{doc.relative}: decision id must match ADR-NNNN")
-        if not isinstance(meta.get("deciders"), list):
-            errors.append(f"{doc.relative}: deciders must be a list")
-    elif status not in GENERAL_STATUSES:
-        errors.append(f"{doc.relative}: invalid general-document status {status!r}")
+    if status not in ISSUE_STATUSES:
+        errors.append(f"{doc.relative}: invalid issue status {status!r}")
+    if not re.fullmatch(r"AR-\d{2,}", str(meta.get("issue_id", ""))):
+        errors.append(f"{doc.relative}: issue_id must match AR-NN")
+    if meta.get("priority") not in {"p0", "p1", "p2", "p3"}:
+        errors.append(f"{doc.relative}: priority must be p0, p1, p2, or p3")
+    for field in ("depends_on", "blocks"):
+        if not isinstance(meta.get(field), list):
+            errors.append(f"{doc.relative}: {field} must be a list")
+    return errors
 
-    if status == "retired":
-        require_fields(doc, {"retired", "retired_reason"}, errors)
-        if "/archive/" not in f"/{doc.relative}":
-            errors.append(f"{doc.relative}: retired document must live in category archive/")
-        if not is_date(meta.get("retired")):
-            errors.append(f"{doc.relative}: retired must be YYYY-MM-DD")
-        if not meta.get("superseded_by"):
-            errors.append(f"{doc.relative}: retired document needs superseded_by")
+
+def _worklog_schema_errors(doc: Document) -> list[str]:
+    errors = _missing_field_errors(
+        doc,
+        {"type", "commit", "short", "date", "pr", "related_issues"},
+    )
+    meta = doc.meta
+    status = meta.get("status")
+    if status not in GENERAL_STATUSES:
+        errors.append(f"{doc.relative}: invalid worklog status {status!r}")
+    if not isinstance(meta.get("related_issues"), list):
+        errors.append(f"{doc.relative}: related_issues must be a list")
+    return errors
+
+
+def _decision_schema_errors(doc: Document) -> list[str]:
+    errors = _missing_field_errors(doc, {"id", "type", "deciders"})
+    meta = doc.meta
+    status = meta.get("status")
+    if status not in DECISION_STATUSES:
+        errors.append(f"{doc.relative}: invalid decision status {status!r}")
+    if not re.fullmatch(r"ADR-\d{4}", str(meta.get("id", ""))):
+        errors.append(f"{doc.relative}: decision id must match ADR-NNNN")
+    if not isinstance(meta.get("deciders"), list):
+        errors.append(f"{doc.relative}: deciders must be a list")
+    return errors
+
+
+def _variant_schema_errors(doc: Document) -> list[str]:
+    doc_type = doc.meta.get("type")
+    if doc_type == "issue":
+        return _issue_schema_errors(doc)
+    if doc_type == "worklog":
+        return _worklog_schema_errors(doc)
+    if doc_type == "decision":
+        return _decision_schema_errors(doc)
+    status = doc.meta.get("status")
+    if status not in GENERAL_STATUSES:
+        return [f"{doc.relative}: invalid general-document status {status!r}"]
+    return []
+
+
+def _retired_schema_errors(doc: Document) -> list[str]:
+    errors = _missing_field_errors(doc, {"retired", "retired_reason"})
+    meta = doc.meta
+    if "/archive/" not in f"/{doc.relative}":
+        errors.append(f"{doc.relative}: retired document must live in category archive/")
+    if not is_date(meta.get("retired")):
+        errors.append(f"{doc.relative}: retired must be YYYY-MM-DD")
+    if not meta.get("superseded_by"):
+        errors.append(f"{doc.relative}: retired document needs superseded_by")
+    return errors
+
+
+def validate_schema(doc: Document, errors: list[str]) -> None:
+    errors.extend(_common_schema_errors(doc))
+    errors.extend(_variant_schema_errors(doc))
+    if doc.meta.get("status") == "retired":
+        errors.extend(_retired_schema_errors(doc))
 
 
 def validate_metadata_references(doc: Document, errors: list[str]) -> None:
     values: list[tuple[str, object]] = []
     for field in ("related", "supersedes"):
-        for value in doc.meta.get(field, []):
-            values.append((field, value))
+        values.extend((field, value) for value in doc.meta.get(field, []))
     if doc.meta.get("superseded_by"):
         values.append(("superseded_by", doc.meta["superseded_by"]))
 
@@ -302,8 +333,7 @@ def validate_links_and_boundaries(doc: Document, errors: list[str]) -> None:
         repo = repository.rstrip(".,;:").removesuffix(".git").lower()
         if (owner.lower(), repo) != ("holeshot-software-llc", "agency-runtime"):
             errors.append(
-                f"{doc.relative}: cross-repository GitHub URL is not allowed "
-                f"({owner}/{repository})"
+                f"{doc.relative}: cross-repository GitHub URL is not allowed ({owner}/{repository})"
             )
     forbidden = {
         "legacy sibling repository name": re.compile(r"agency-agents", re.I),
@@ -382,7 +412,6 @@ def validate_worklog(docs: list[Document], errors: list[str]) -> None:
         if commit_date not in row or subject not in row:
             errors.append(f"docs/worklog/README.md: inaccurate row for {short}")
 
-
     ledger_output = git("log", "--format=%H%x09%s")
     for line in ledger_output.splitlines():
         commit, subject = line.split("\t", 1)
@@ -394,8 +423,7 @@ def validate_worklog(docs: list[Document], errors: list[str]) -> None:
         disallowed = [
             path
             for path in changed_paths
-            if not path.startswith("docs/worklog/")
-            and path != "docs/roadmap/README.md"
+            if not path.startswith("docs/worklog/") and path != "docs/roadmap/README.md"
         ]
         if disallowed:
             errors.append(
@@ -403,11 +431,45 @@ def validate_worklog(docs: list[Document], errors: list[str]) -> None:
                 + ", ".join(disallowed)
             )
 
+
 def normalized_adr_ref(value: str, by_path: dict[str, str]) -> str:
     if re.fullmatch(r"ADR-\d{4}", value):
         return value
     cleaned = value.split("#", 1)[0].replace("\\", "/")
     return by_path.get(Path(cleaned).name, value)
+
+
+def _decision_relation_errors(
+    decision_id: str,
+    doc: Document,
+    by_id: dict[str, Document],
+    by_path: dict[str, str],
+    graph: dict[str, set[str]],
+) -> list[str]:
+    errors: list[str] = []
+    for raw in doc.meta.get("supersedes", []):
+        target = normalized_adr_ref(str(raw), by_path)
+        if target not in by_id:
+            errors.append(f"{doc.relative}: unknown supersedes reference {raw!r}")
+            continue
+        graph[decision_id].add(target)
+        reverse = by_id[target].meta.get("superseded_by")
+        if reverse is None or normalized_adr_ref(str(reverse), by_path) != decision_id:
+            errors.append(
+                f"{doc.relative}: {target} does not reciprocate superseded_by={decision_id}"
+            )
+    raw_successor = doc.meta.get("superseded_by")
+    if not raw_successor:
+        return errors
+    successor = normalized_adr_ref(str(raw_successor), by_path)
+    if successor not in by_id:
+        errors.append(f"{doc.relative}: unknown superseded_by reference {raw_successor!r}")
+    elif decision_id not in {
+        normalized_adr_ref(str(item), by_path)
+        for item in by_id[successor].meta.get("supersedes", [])
+    }:
+        errors.append(f"{doc.relative}: {successor} does not reciprocate supersedes={decision_id}")
+    return errors
 
 
 def validate_decisions(docs: list[Document], errors: list[str]) -> None:
@@ -428,29 +490,7 @@ def validate_decisions(docs: list[Document], errors: list[str]) -> None:
     by_path = {doc.path.name: decision_id for decision_id, doc in by_id.items()}
     graph: dict[str, set[str]] = {decision_id: set() for decision_id in by_id}
     for decision_id, doc in by_id.items():
-        for raw in doc.meta.get("supersedes", []):
-            target = normalized_adr_ref(str(raw), by_path)
-            if target not in by_id:
-                errors.append(f"{doc.relative}: unknown supersedes reference {raw!r}")
-                continue
-            graph[decision_id].add(target)
-            reverse = by_id[target].meta.get("superseded_by")
-            if reverse is None or normalized_adr_ref(str(reverse), by_path) != decision_id:
-                errors.append(
-                    f"{doc.relative}: {target} does not reciprocate superseded_by={decision_id}"
-                )
-        raw_successor = doc.meta.get("superseded_by")
-        if raw_successor:
-            successor = normalized_adr_ref(str(raw_successor), by_path)
-            if successor not in by_id:
-                errors.append(f"{doc.relative}: unknown superseded_by reference {raw_successor!r}")
-            elif decision_id not in {
-                normalized_adr_ref(str(item), by_path)
-                for item in by_id[successor].meta.get("supersedes", [])
-            }:
-                errors.append(
-                    f"{doc.relative}: {successor} does not reciprocate supersedes={decision_id}"
-                )
+        errors.extend(_decision_relation_errors(decision_id, doc, by_id, by_path, graph))
 
     visiting: set[str] = set()
     visited: set[str] = set()
@@ -493,7 +533,10 @@ def main() -> int:
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
-        print(f"documentation validation failed with {len(errors)} error(s)", file=sys.stderr)
+        print(
+            f"documentation validation failed with {len(errors)} error(s)",
+            file=sys.stderr,
+        )
         return 1
     print(f"documentation validation passed for {len(docs)} Markdown files")
     return 0

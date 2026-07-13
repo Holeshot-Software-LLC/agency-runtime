@@ -16,12 +16,12 @@
         <span><strong>Agency</strong><small>Runtime</small></span>
       </div>
       <nav aria-label="Dashboard sections">
-        <button class="nav-item active" data-view="overview"><span>01</span>Overview</button>
-        <button class="nav-item" data-view="routing"><span>02</span>Routing lab</button>
-        <button class="nav-item" data-view="evidence"><span>03</span>Evidence</button>
-        <button class="nav-item" data-view="roster"><span>04</span>Roster</button>
-        <button class="nav-item" data-view="hosts"><span>05</span>Hosts</button>
-        <button class="nav-item" data-view="settings"><span>06</span>Settings</button>
+        <button class="nav-item active" type="button" data-view="overview" aria-controls="view-overview" title="Overview"><span data-short="OV" aria-hidden="true">01</span>Overview</button>
+        <button class="nav-item" type="button" data-view="routing" aria-controls="view-routing" title="Routing lab"><span data-short="RT" aria-hidden="true">02</span>Routing lab</button>
+        <button class="nav-item" type="button" data-view="evidence" aria-controls="view-evidence" title="Evidence"><span data-short="EV" aria-hidden="true">03</span>Evidence</button>
+        <button class="nav-item" type="button" data-view="roster" aria-controls="view-roster" title="Roster"><span data-short="RO" aria-hidden="true">04</span>Roster</button>
+        <button class="nav-item" type="button" data-view="hosts" aria-controls="view-hosts" title="Hosts"><span data-short="HO" aria-hidden="true">05</span>Hosts</button>
+        <button class="nav-item" type="button" data-view="settings" aria-controls="view-settings" title="Settings"><span data-short="SE" aria-hidden="true">06</span>Settings</button>
       </nav>
       <div class="rail-foot">
         <span class="pulse" aria-hidden="true"></span>
@@ -45,20 +45,20 @@
             <span id="last-sync" class="last-sync">Awaiting first sync</span>
           </div>
           <span id="privacy-chip" class="privacy-chip">Metadata only</span>
-          <button id="refresh-button" class="button ghost">Refresh</button>
+          <button id="refresh-button" class="button ghost" type="button">Refresh</button>
         </div>
       </header>
 
       <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       <span id="live-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></span>
 
-      <section class="view active" data-view-panel="overview">
+      <section id="view-overview" class="view active" data-view-panel="overview">
         <div class="observatory-intro">
           <div>
             <p class="eyebrow">SIGNAL OBSERVATORY</p>
             <p class="observatory-lede">A live, metadata-only view of how work moves through the local runtime.</p>
           </div>
-          <span class="window-label">Observed evidence window</span>
+          <span id="window-label" class="window-label">Observed evidence window</span>
         </div>
         <div class="metric-grid observatory-metrics">
           <article class="metric primary"><span>Control plane</span><strong id="metric-runtime">—</strong><small>authenticated loopback runtime</small></article>
@@ -88,6 +88,12 @@
               <span class="panel-tag">WINDOW</span>
             </div>
             <div id="outcome-chart" class="chart-surface outcome-chart"></div>
+            <ul class="outcome-legend" aria-label="Delegation outcome counts">
+              <li class="outcome-success"><span>Completed</span><strong id="outcome-success">0</strong></li>
+              <li class="outcome-failed"><span>Failed</span><strong id="outcome-failed">0</strong></li>
+              <li class="outcome-skipped"><span>Skipped</span><strong id="outcome-skipped">0</strong></li>
+              <li class="outcome-unknown"><span>Unknown</span><strong id="outcome-unknown">0</strong></li>
+            </ul>
             <figcaption id="outcome-chart-summary" class="chart-summary">No delegation outcomes have been observed yet.</figcaption>
           </figure>
 
@@ -109,7 +115,7 @@
         </article>
       </section>
 
-      <section class="view" data-view-panel="routing">
+      <section id="view-routing" class="view" data-view-panel="routing" hidden>
         <div class="split routing-layout">
           <article class="panel route-form">
             <div class="panel-head"><div><p class="eyebrow">DETERMINISTIC + JUDGE</p><h2>Test a routing decision</h2></div></div>
@@ -125,7 +131,7 @@
         </div>
       </section>
 
-      <section class="view" data-view-panel="evidence">
+      <section id="view-evidence" class="view" data-view-panel="evidence" hidden>
         <article class="panel">
           <div class="panel-head"><div><p class="eyebrow">AUTHORITATIVE EVENTS</p><h2>Runtime evidence</h2></div><span class="panel-tag">CONTENT REDACTED</span></div>
           <div class="subnav" role="tablist" aria-label="Evidence types">
@@ -135,14 +141,15 @@
             <button class="subnav-item" role="tab" aria-selected="false" data-evidence="runs">Runs</button>
             <button class="subnav-item" role="tab" aria-selected="false" data-evidence="finalizations">Finalization</button>
           </div>
-          <div class="table-wrap"><table><thead id="evidence-head"></thead><tbody id="evidence-body"></tbody></table></div>
+          <div class="table-wrap"><table><caption id="evidence-caption" class="sr-only">Delegations runtime evidence</caption><thead id="evidence-head"></thead><tbody id="evidence-body"></tbody></table></div>
         </article>
       </section>
 
-      <section class="view" data-view-panel="roster">
+      <section id="view-roster" class="view" data-view-panel="roster" hidden>
         <div class="split wide-left">
           <article class="panel">
             <div class="panel-head"><div><p class="eyebrow">ACTIVE</p><h2>Specialist roster</h2></div><span id="roster-count" class="panel-tag">0</span></div>
+            <p id="roster-page-status" class="panel-copy" role="status" aria-live="polite" hidden></p>
             <div id="roster-grid" class="roster-grid"></div>
           </article>
           <article class="panel">
@@ -152,7 +159,7 @@
         </div>
       </section>
 
-      <section class="view" data-view-panel="hosts">
+      <section id="view-hosts" class="view" data-view-panel="hosts" hidden>
         <article class="panel">
           <div class="panel-head"><div><p class="eyebrow">NATIVE DISCOVERY</p><h2>Installed agent hosts</h2></div><span class="panel-tag">WINDOWS + LINUX</span></div>
           <p class="panel-copy">Detection distinguishes an executable host from stale configuration and reports registration maturity separately.</p>
@@ -160,7 +167,7 @@
         </article>
       </section>
 
-      <section class="view" data-view-panel="settings">
+      <section id="view-settings" class="view" data-view-panel="settings" hidden>
         <div class="split">
           <article class="panel">
             <div class="panel-head"><div><p class="eyebrow">PRIVACY</p><h2>Telemetry policy</h2></div></div>
@@ -289,7 +296,7 @@
           </details>
 
           <div class="config-savebar">
-            <div><strong id="config-change-count">No unsaved changes</strong><small id="config-path">Configuration path unavailable</small></div>
+            <div><strong id="config-change-count" aria-live="polite">No unsaved changes</strong><small id="config-path">Configuration path unavailable</small></div>
             <div class="card-actions"><button id="config-reset-button" class="button ghost" type="button">Reset fields</button><button id="config-save-button" class="button solid" type="submit" disabled>Review &amp; save</button></div>
           </div>
         </form>
@@ -312,6 +319,6 @@
     </div>
   </div>
   <script src="/charts.js" defer></script>
-  <script src="/app.js" defer></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

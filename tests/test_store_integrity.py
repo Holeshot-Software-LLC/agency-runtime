@@ -12,7 +12,9 @@ from pathlib import Path
 
 import pytest
 
+import agency_runtime.core.store.queries as store_queries
 import agency_runtime.core.store.sqlite as sqlite_store
+from agency_runtime.core.store.queries import retention_predicates
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -62,18 +64,13 @@ def test_concurrent_legacy_store_migration_is_serialized_and_idempotent(
     migrated = sqlite3.connect(path)
     try:
         columns = {
-            row[1]
-            for row in migrated.execute(
-                "PRAGMA table_info(host_canary_attestations)"
-            )
+            row[1] for row in migrated.execute("PRAGMA table_info(host_canary_attestations)")
         }
-        version = migrated.execute(
-            "SELECT MAX(version) FROM schema_version"
-        ).fetchone()[0]
+        version = migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
     finally:
         migrated.close()
     assert {"profile_scope", "host_version", "install_id", "bundle_digest"} <= columns
-    assert version == 9
+    assert version == 10
 
 
 def test_current_schema_store_opens_while_another_connection_holds_writer(
@@ -93,12 +90,7 @@ def test_current_schema_store_opens_while_another_connection_holds_writer(
         reopened = Store(path)
         reader = reopened._connect()
         try:
-            assert (
-                reader.execute(
-                    "SELECT MAX(version) FROM schema_version"
-                ).fetchone()[0]
-                == 9
-            )
+            assert reader.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 10
         finally:
             reader.close()
     finally:
@@ -112,7 +104,7 @@ def test_newer_schema_is_refused_without_rewriting_version(tmp_path: Path) -> No
     connection = store._connect()
     try:
         connection.execute("DELETE FROM schema_version")
-        connection.execute("INSERT INTO schema_version (version) VALUES (10)")
+        connection.execute("INSERT INTO schema_version (version) VALUES (11)")
         connection.commit()
     finally:
         connection.close()
@@ -122,9 +114,7 @@ def test_newer_schema_is_refused_without_rewriting_version(tmp_path: Path) -> No
 
     unchanged = sqlite3.connect(path)
     try:
-        assert unchanged.execute(
-            "SELECT MAX(version) FROM schema_version"
-        ).fetchone()[0] == 10
+        assert unchanged.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 11
     finally:
         unchanged.close()
 
@@ -134,9 +124,7 @@ def test_dashboard_activity_orders_use_global_timestamp_indexes(tmp_path: Path):
     connection = store._connect()
     try:
         plans = {
-            "idx_runs_recent": (
-                "SELECT id FROM runs ORDER BY started_at DESC, id DESC LIMIT 100"
-            ),
+            "idx_runs_recent": ("SELECT id FROM runs ORDER BY started_at DESC, id DESC LIMIT 100"),
             "idx_receipts_recent": (
                 "SELECT id FROM model_receipts "
                 "ORDER BY COALESCE(ended_at, started_at) DESC, id DESC LIMIT 100"
@@ -146,18 +134,15 @@ def test_dashboard_activity_orders_use_global_timestamp_indexes(tmp_path: Path):
                 "ORDER BY COALESCE(completed_at, started_at) DESC, id DESC LIMIT 100"
             ),
             "idx_finalization_recent": (
-                "SELECT id FROM finalization_events "
-                "ORDER BY created_at DESC, id DESC LIMIT 100"
+                "SELECT id FROM finalization_events ORDER BY created_at DESC, id DESC LIMIT 100"
             ),
             "idx_routing_recent": (
-                "SELECT id FROM routing_decisions "
-                "ORDER BY created_at DESC, id DESC LIMIT 100"
+                "SELECT id FROM routing_decisions ORDER BY created_at DESC, id DESC LIMIT 100"
             ),
         }
         for index_name, sql in plans.items():
             details = " ".join(
-                str(row["detail"])
-                for row in connection.execute(f"EXPLAIN QUERY PLAN {sql}")
+                str(row["detail"]) for row in connection.execute(f"EXPLAIN QUERY PLAN {sql}")
             )
             assert index_name in details, (index_name, details)
             assert "USE TEMP B-TREE" not in details, (index_name, details)
@@ -165,9 +150,243 @@ def test_dashboard_activity_orders_use_global_timestamp_indexes(tmp_path: Path):
         connection.close()
 
 
-def test_create_run_default_is_a_fixed_metadata_only_projection(
-    tmp_path: Path, monkeypatch
-):
+def test_dashboard_activity_projection_is_five_queries_without_discarded_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.record_delegation(
+        trace_id="dashboard-query-count",
+        session_id="session",
+        host="codex",
+        skip_reason="policy_denied",
+    )
+    store.record_routing_decision(
+        trace_id="dashboard-query-count",
+        session_id="session",
+        query_hash="a" * 64,
+        context_fingerprint="b" * 64,
+        decision={
+            "status": "selected",
+            "selected_ids": ["reviewer"],
+            "work_units": {"delegate": True, "count": 1},
+        },
+    )
+    statements: list[str] = []
+    original_connect = store._connect
+
+    def traced_connect() -> sqlite3.Connection:
+        connection = original_connect()
+        connection.set_trace_callback(statements.append)
+        return connection
+
+    monkeypatch.setattr(store, "_connect", traced_connect)
+
+    activity = store.recent_dashboard_activity(limit=200)
+
+    selects = [
+        statement for statement in statements if statement.lstrip().upper().startswith("SELECT")
+    ]
+    assert len(selects) == 5
+    assert "skip_reason" not in activity["delegations"][0]
+    assert "work_units" not in activity["routing"][0]
+    delegation_sql = next(statement for statement in selects if "delegation_events" in statement)
+    routing_sql = next(statement for statement in selects if "routing_decisions" in statement)
+    assert "skip_reason" not in delegation_sql
+    assert "work_units" not in routing_sql
+
+
+def test_snapshot_listing_uses_materialized_prompt_free_summary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    secret = "candidate-prompt-must-not-enter-dashboard-read"
+    store.create_snapshot(
+        "snapshot-summary",
+        {
+            "approved": True,
+            "candidates": [{"id": "candidate", "content": secret}],
+            "diff": {
+                "added": ["one", "two"],
+                "changed": {"three": {"prompt_body_changed": True}},
+                "removed": ["four"],
+            },
+        },
+    )
+    statements: list[str] = []
+    original_connect = store._connect
+
+    def traced_connect() -> sqlite3.Connection:
+        connection = original_connect()
+        connection.set_trace_callback(statements.append)
+        return connection
+
+    monkeypatch.setattr(store, "_connect", traced_connect)
+    monkeypatch.setattr(
+        store_queries,
+        "project_snapshot_summary",
+        lambda _value: pytest.fail("snapshot reads must not parse manifests"),
+    )
+
+    [snapshot] = store.list_roster_snapshots()
+
+    assert snapshot["approved"] is True
+    assert snapshot["added"] == 2
+    assert snapshot["changed"] == 1
+    assert snapshot["removed"] == 1
+    assert secret not in repr(snapshot)
+    selects = [
+        statement for statement in statements if statement.lstrip().upper().startswith("SELECT")
+    ]
+    assert len(selects) == 1
+    assert "manifest" not in selects[0].casefold()
+
+
+def test_schema_v10_materializes_nested_snapshot_diff_once(tmp_path: Path) -> None:
+    path = tmp_path / "legacy-snapshot.db"
+    manifest = {
+        "approved": True,
+        "candidates": [{"id": "candidate", "content": "private prompt"}],
+        "diff": {
+            "added": ["one", "two"],
+            "changed": {"three": {}},
+            "removed": ["four"],
+        },
+    }
+    connection = sqlite3.connect(path)
+    connection.executescript(
+        """
+        CREATE TABLE schema_version (version INTEGER PRIMARY KEY);
+        INSERT INTO schema_version (version) VALUES (9);
+        CREATE TABLE agent_snapshots (
+            id TEXT PRIMARY KEY,
+            snapshot_id TEXT NOT NULL UNIQUE,
+            created_at TEXT NOT NULL,
+            agent_count INTEGER,
+            manifest TEXT,
+            activated INTEGER DEFAULT 0
+        );
+        """
+    )
+    connection.execute(
+        "INSERT INTO agent_snapshots "
+        "(id, snapshot_id, created_at, agent_count, manifest, activated) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        ("row", "legacy", "2026-07-12T00:00:00Z", 1, json.dumps(manifest), 0),
+    )
+    connection.commit()
+    connection.close()
+
+    store = Store(path)
+    [snapshot] = store.list_roster_snapshots()
+
+    assert snapshot["approved"] is True
+    assert snapshot["added"] == 2
+    assert snapshot["changed"] == 1
+    assert snapshot["removed"] == 1
+    migrated = store._connect()
+    try:
+        row = migrated.execute(
+            "SELECT approved, added_count, changed_count, removed_count "
+            "FROM agent_snapshots WHERE snapshot_id = 'legacy'"
+        ).fetchone()
+        version = migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+    finally:
+        migrated.close()
+    assert tuple(row) == (1, 2, 1, 1)
+    assert version == 10
+
+
+def test_operator_activity_normalizes_invalid_json_projection_shapes(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.record_routing_decision(
+        trace_id="trace-invalid-shapes",
+        session_id="session-invalid-shapes",
+        query_hash="a" * 64,
+        context_fingerprint="b" * 64,
+        decision={"status": "selected", "selected_ids": ["reviewer"]},
+    )
+    store.record_finalization(
+        trace_id="trace-invalid-shapes",
+        host="codex",
+        action="continue",
+    )
+    connection = store._connect()
+    try:
+        connection.execute(
+            "UPDATE routing_decisions SET selected_ids = ?, work_units = ?",
+            (json.dumps("not-a-list"), json.dumps(["not-a-mapping"])),
+        )
+        connection.execute(
+            "UPDATE finalization_events SET missing = ?",
+            (json.dumps({"not": "a-list"}),),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    activity = store.recent_runtime_activity()
+
+    assert activity["routing"][0]["selected_ids"] == []
+    assert activity["routing"][0]["work_units"] == {}
+    assert activity["finalizations"][0]["missing"] == ["unparseable"]
+
+
+@pytest.mark.parametrize(
+    "manifest",
+    [
+        ["not-a-mapping"],
+        {"added": None, "changed": "not-a-list", "removed": {}},
+    ],
+)
+def test_roster_snapshot_reads_tolerate_invalid_manifest_shapes(
+    tmp_path: Path,
+    manifest: object,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.create_snapshot("invalid-shape", {"candidates": []})
+    connection = store._connect()
+    try:
+        connection.execute(
+            "UPDATE agent_snapshots SET manifest = ? WHERE snapshot_id = ?",
+            (json.dumps(manifest), "invalid-shape"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    snapshot = store.list_roster_snapshots()[0]
+
+    assert snapshot["approved"] is False
+    assert snapshot["added"] == 0
+    assert snapshot["changed"] == 0
+    assert snapshot["removed"] == 0
+
+
+@pytest.mark.parametrize(
+    ("table", "timestamp_expression"),
+    [
+        ("runs; DROP TABLE runs", "COALESCE(ended_at, started_at)"),
+        ("runs", "started_at); DROP TABLE runs"),
+    ],
+)
+def test_retention_query_builder_rejects_non_allowlisted_identifiers(
+    table: str,
+    timestamp_expression: str,
+) -> None:
+    with pytest.raises(ValueError, match="must be allowlisted"):
+        retention_predicates(
+            table,
+            timestamp_expression,
+            cutoff=None,
+            keep_last=1,
+        )
+
+
+def test_create_run_default_is_a_fixed_metadata_only_projection(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(
         "agency_runtime.core.store.sqlite._capture_content_enabled",
         lambda: False,
@@ -277,9 +496,7 @@ def test_schema_upgrade_scrubs_legacy_private_fields(tmp_path: Path, monkeypatch
         "SELECT user_message, metadata FROM runs WHERE trace_id = ?",
         ("legacy-trace",),
     )
-    receipt = _row(
-        migrated, "SELECT api_base FROM model_receipts WHERE id = ?", (receipt_id,)
-    )
+    receipt = _row(migrated, "SELECT api_base FROM model_receipts WHERE id = ?", (receipt_id,))
     event = _row(
         migrated,
         "SELECT skip_reason, error FROM delegation_events WHERE id = ?",
@@ -322,8 +539,7 @@ def test_delegation_details_are_projected_by_default_and_redacted_when_opted_in(
         trace_id="trace-captured-detail",
         skip_reason="backend command timed out after 1s",
         error=(
-            "password=hunter2 "
-            "https://alice:hunter2@example.test/v1?token=hunter2 " + ("z" * 4_000)
+            "password=hunter2 https://alice:hunter2@example.test/v1?token=hunter2 " + ("z" * 4_000)
         ),
     )
     captured = _row(
@@ -441,6 +657,82 @@ def test_store_rejects_preexisting_database_symlink_before_permission_repair(
     assert target.read_bytes() == b"not-a-database"
 
 
+@pytest.mark.parametrize("suffix", ["-journal", "-wal", "-shm"])
+def test_store_rejects_preexisting_sqlite_sidecar_symlinks(
+    tmp_path: Path,
+    suffix: str,
+) -> None:
+    path = tmp_path / "agency.db"
+    target = tmp_path / "unrelated.txt"
+    target.write_bytes(b"unrelated")
+    sidecar = Path(f"{path}{suffix}")
+    try:
+        sidecar.symlink_to(target)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"symlink creation is unavailable: {exc}")
+
+    with pytest.raises(PermissionError, match="sidecar symlink"):
+        Store(path)
+
+    assert target.read_bytes() == b"unrelated"
+    assert not path.exists()
+
+
+@pytest.mark.parametrize("suffix", ["", "-journal", "-wal", "-shm"])
+def test_store_rejects_nonregular_database_paths_before_permission_repair(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    suffix: str,
+) -> None:
+    path = tmp_path / "agency.db"
+    unsafe_path = path if not suffix else Path(f"{path}{suffix}")
+    unsafe_path.mkdir()
+    permission_repairs: list[tuple[Path, bool]] = []
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda candidate, *, directory: permission_repairs.append((candidate, directory)),
+    )
+
+    with pytest.raises(PermissionError, match="non-regular file"):
+        Store(path)
+
+    assert permission_repairs == []
+    assert unsafe_path.is_dir()
+    if suffix:
+        assert not path.exists()
+
+
+def test_connect_closes_connection_when_setup_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+
+    class Connection:
+        row_factory = None
+        closed = False
+
+        def execute(self, _sql: str) -> Connection:
+            return self
+
+        def close(self) -> None:
+            self.closed = True
+
+    connection = Connection()
+    monkeypatch.setattr(sqlite_store.sqlite3, "connect", lambda *_a, **_kw: connection)
+    monkeypatch.setattr(
+        store,
+        "_repair_storage_permissions",
+        lambda: (_ for _ in ()).throw(PermissionError("hardening failed")),
+    )
+
+    with pytest.raises(PermissionError, match="hardening failed"):
+        store._connect()
+
+    assert connection.closed is True
+
+
 def test_agent_versions_are_immutable_and_idempotent(tmp_path: Path):
     store = Store(tmp_path / "agency.db")
     content = "You are a production security specialist."
@@ -511,9 +803,7 @@ def test_routing_decision_projection_excludes_raw_work_unit_text(tmp_path: Path)
 
     connection = store._connect()
     try:
-        row = connection.execute(
-            "SELECT work_units, decision FROM routing_decisions"
-        ).fetchone()
+        row = connection.execute("SELECT work_units, decision FROM routing_decisions").fetchone()
     finally:
         connection.close()
 
@@ -572,15 +862,11 @@ def test_create_run_promotes_implicit_evidence_parent(tmp_path: Path, monkeypatc
 
     connection = store._connect()
     try:
-        row = connection.execute(
-            "SELECT * FROM runs WHERE id = ?", (run_id,)
-        ).fetchone()
+        row = connection.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
         assert row["status"] == "active"
         assert row["user_message"] == ""
         assert (
-            connection.execute(
-                "SELECT COUNT(*) FROM runs WHERE trace_id = 'trace-1'"
-            ).fetchone()[0]
+            connection.execute("SELECT COUNT(*) FROM runs WHERE trace_id = 'trace-1'").fetchone()[0]
             == 1
         )
     finally:
@@ -638,9 +924,7 @@ def test_legacy_orphans_and_duplicate_runs_are_migrated(tmp_path: Path):
     migrated = store._connect()
     try:
         assert (
-            migrated.execute(
-                "SELECT COUNT(*) FROM runs WHERE trace_id = 'duplicate'"
-            ).fetchone()[0]
+            migrated.execute("SELECT COUNT(*) FROM runs WHERE trace_id = 'duplicate'").fetchone()[0]
             == 1
         )
         orphan_parent = migrated.execute(
@@ -651,16 +935,11 @@ def test_legacy_orphans_and_duplicate_runs_are_migrated(tmp_path: Path):
             "host": "codex",
             "status": "evidence_only",
         }
-        assert (
-            migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
-            == 9
-        )
+        assert migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 10
         recent_plan = " ".join(
             str(row["detail"])
             for row in migrated.execute(
-                "EXPLAIN QUERY PLAN "
-                "SELECT id FROM runs "
-                "ORDER BY started_at DESC, id DESC LIMIT 100"
+                "EXPLAIN QUERY PLAN SELECT id FROM runs ORDER BY started_at DESC, id DESC LIMIT 100"
             )
         )
         assert "idx_runs_recent" in recent_plan
@@ -691,8 +970,7 @@ def test_retention_preserves_parents_of_retained_child_evidence(tmp_path: Path):
     connection = store._connect()
     try:
         traces = {
-            row["trace_id"]
-            for row in connection.execute("SELECT trace_id FROM runs").fetchall()
+            row["trace_id"] for row in connection.execute("SELECT trace_id FROM runs").fetchall()
         }
     finally:
         connection.close()
@@ -767,8 +1045,7 @@ def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(
     try:
         connection.execute("UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00'")
         connection.execute(
-            "UPDATE delegation_events SET started_at = '2100-01-01T00:00:00+00:00' "
-            "WHERE id = ?",
+            "UPDATE delegation_events SET started_at = '2100-01-01T00:00:00+00:00' WHERE id = ?",
             (delegation_id,),
         )
         connection.commit()
@@ -780,8 +1057,7 @@ def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(
     connection = store._connect()
     try:
         retained = {
-            row["trace_id"]
-            for row in connection.execute("SELECT trace_id FROM runs").fetchall()
+            row["trace_id"] for row in connection.execute("SELECT trace_id FROM runs").fetchall()
         }
         fk_errors = connection.execute("PRAGMA foreign_key_check").fetchall()
     finally:
@@ -789,3 +1065,64 @@ def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(
     assert retained == set(traces.values())
     assert report["tables"]["runs"]["deleted"] == 1
     assert fk_errors == []
+
+
+def test_get_roster_entry_returns_one_normalized_active_record(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.activate_agent(
+        {
+            "slug": "security-reviewer",
+            "name": "Security Reviewer",
+            "description": "Reviews trust boundaries",
+            "categories": ["security"],
+            "capabilities": ["threat-modeling"],
+            "tool_affinity": ["git"],
+        }
+    )
+
+    assert store.get_roster_entry("missing") is None
+    entry = store.get_roster_entry("security-reviewer")
+    assert entry is not None
+    assert entry["agent_slug"] == "security-reviewer"
+    assert entry["categories"] == ["security"]
+    assert entry["capabilities"] == ["threat-modeling"]
+    assert entry["tool_affinity"] == ["git"]
+
+
+def test_roster_reads_normalize_corrupt_legacy_json_projections(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.activate_agent(
+        {
+            "slug": "legacy-reviewer",
+            "name": "Legacy Reviewer",
+            "description": "Exercises legacy SQLite projections",
+            "categories": ["security"],
+            "capabilities": ["review"],
+            "tool_affinity": ["git"],
+            "prompt_body": "Review the supplied change.",
+        }
+    )
+    connection = store._connect()
+    try:
+        connection.execute(
+            "UPDATE agent_active SET categories = ?, capabilities = ?, "
+            "tool_affinity = ? WHERE agent_slug = ?",
+            ("{not-json", '{"unexpected":"mapping"}', "7", "legacy-reviewer"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    roster_entry = store.get_active_roster()[0]
+    direct_entry = store.get_roster_entry("legacy-reviewer")
+    prompt_entry = store.get_specialist_prompt("legacy-reviewer")
+    catalog_entry = store.get_active_roster_as_catalog()[0]
+
+    assert direct_entry is not None
+    assert prompt_entry is not None
+    for entry in (roster_entry, direct_entry, prompt_entry):
+        assert entry["categories"] == []
+        assert entry["capabilities"] == []
+        assert entry["tool_affinity"] == []
+    assert catalog_entry["categories"] == []
+    assert catalog_entry["capabilities"] == []

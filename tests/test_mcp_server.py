@@ -17,19 +17,21 @@ from agency_runtime.server.mcp import MAX_INPUT_BYTES, MCP_TOOLS, handle_tool_ca
 
 def _seed_store(tmp_path: Path) -> Store:
     store = Store(tmp_path / "agency.db")
-    store.activate_agent({
-        "slug": "code-reviewer",
-        "name": "Code Reviewer",
-        "division": "engineering",
-        "description": "Reviews code quality and security.",
-        "source": "test",
-        "version": "1.0",
-        "hash": "abc123",
-        "categories": ["code-review"],
-        "capabilities": ["code-review"],
-        "tool_affinity": [],
-        "prompt_path": "",
-    })
+    store.activate_agent(
+        {
+            "slug": "code-reviewer",
+            "name": "Code Reviewer",
+            "division": "engineering",
+            "description": "Reviews code quality and security.",
+            "source": "test",
+            "version": "1.0",
+            "hash": "abc123",
+            "categories": ["code-review"],
+            "capabilities": ["code-review"],
+            "tool_affinity": [],
+            "prompt_path": "",
+        }
+    )
     return store
 
 
@@ -268,12 +270,16 @@ def _transcript() -> str:
             }
         ),
         json.dumps({"jsonrpc": "2.0", "id": 6, "method": "missing/method", "params": {}}),
-        json.dumps({"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {"requestId": 4}}),
+        json.dumps(
+            {"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {"requestId": 4}}
+        ),
     ]
     return "\n".join(messages) + "\n"
 
 
-def _run_transcript(command: list[str], tmp_path: Path) -> tuple[subprocess.CompletedProcess[str], list[dict]]:
+def _run_transcript(
+    command: list[str], tmp_path: Path
+) -> tuple[subprocess.CompletedProcess[str], list[dict]]:
     env = os.environ.copy()
     env["AGENCY_DB_PATH"] = str(tmp_path / "mcp-transcript.db")
     completed = subprocess.run(
@@ -300,7 +306,9 @@ def _assert_transcript(completed: subprocess.CompletedProcess[str], responses: l
         "id": 0,
         "error": {"code": -32002, "message": "Server not initialized"},
     }
-    by_id = {response.get("id"): response for response in responses if response.get("id") is not None}
+    by_id = {
+        response.get("id"): response for response in responses if response.get("id") is not None
+    }
     assert by_id[1]["result"]["protocolVersion"] == "2025-11-25"
     assert by_id[1]["result"]["capabilities"] == {"tools": {"listChanged": False}}
     assert by_id[2]["result"] == {}

@@ -3,7 +3,7 @@ title: "AR-12: Ship a secure installed operations dashboard"
 status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [dashboard, operations, security]
 related:
   - docs/decisions/0010-one-command-install-and-reversible-toggle.md
@@ -51,8 +51,7 @@ unauthenticated flows, route/evidence refresh, long-path rendering, and
 responsive layout without console errors. An isolated Ubuntu/WSL wheel install
 served the packaged dashboard assets, rejected unauthenticated API access,
 accepted the per-launch token, passed all seven generated-host smoke checks and
-the v1.1 routing evaluation, and passed dependency validation. Tracker issue
-#12 remains open because issue closure was not authorized.
+the v1.1 routing evaluation, and passed dependency validation.
 
 ## Approach
 

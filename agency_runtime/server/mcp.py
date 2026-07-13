@@ -11,11 +11,12 @@ import json
 import logging
 import os
 import sys
-import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any, BinaryIO, TextIO
 
 from agency_runtime import __version__
+from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 
 logger = logging.getLogger("agency_runtime.server.mcp")
 
@@ -81,11 +82,10 @@ MCP_TOOLS = [
             {
                 "session_id": {"type": "string", "maxLength": 512},
                 "task": {"type": "string", "maxLength": 262_144},
-                "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 50},
             },
             ["task"],
         ),
-        "annotations": {"readOnlyHint": True, "idempotentHint": True},
     },
     {
         "name": "agency.load_specialist",
@@ -98,7 +98,6 @@ MCP_TOOLS = [
             },
             ["slug", "session_id"],
         ),
-        "annotations": {"readOnlyHint": True, "idempotentHint": True},
     },
     {
         "name": "agency.record_skill_loaded",
@@ -183,148 +182,21 @@ _TOOLS_BY_NAME = {tool["name"]: tool for tool in MCP_TOOLS}
 
 def handle_tool_call(tool_name: str, arguments: dict[str, Any], store=None) -> dict[str, Any]:
     """Dispatch a tool call to the existing runtime core."""
-    if (
-        os.environ.get("AGENCY_CANARY_MODE") == "1"
-        and tool_name in _CANARY_MUTATING_TOOLS
-    ):
+    if os.environ.get("AGENCY_CANARY_MODE") == "1" and tool_name in _CANARY_MUTATING_TOOLS:
         return {"error": "mutating Agency tools are disabled during a live canary"}
     from agency_runtime.core.store.sqlite import Store as _Store
+    from agency_runtime.server.mcp_tools import dispatch_tool_call
 
     s = store if store is not None else _Store()
-
-    if tool_name == "agency.preflight":
-        from agency_runtime.core.selector.pipeline import route_and_build_context
-
-        trace_id = str(arguments.get("trace_id") or uuid.uuid4())
-        context = route_and_build_context(
-            arguments.get("session_id", ""),
-            arguments["user_message"],
-            s.get_active_roster_as_catalog(),
-            store=s,
-            trace_id=trace_id,
-        )
-        return {
-            "context": context or "No routing suggestion.",
-            "trace_id": trace_id,
-        }
-
-    if tool_name == "agency.search_agents":
-        from agency_runtime.core.selector.candidate_narrow import pre_narrow
-
-        candidates, _scores = pre_narrow(
-            arguments["query"],
-            s.get_active_roster_as_catalog(),
-            limit=10,
-        )
-        return {"agents": candidates}
-
-    if tool_name == "agency.explain_selection":
-        from agency_runtime.core.selector.explain import explain_route
-
-        return explain_route(
-            arguments.get("session_id", ""),
-            arguments["task"],
-            s.get_active_roster_as_catalog(),
-            limit=arguments.get("limit"),
-            store=s,
-        )
-
-    if tool_name == "agency.load_specialist":
-        slug = str(arguments["slug"])
-        session_id = str(arguments["session_id"])
-        trace_id = str(arguments.get("trace_id") or uuid.uuid4())
-        row = s.get_specialist_prompt(slug)
-        if not row or not row.get("prompt_body"):
-            return {"error": f"active agent prompt '{slug}' not found"}
-        s.record_specialist_loaded(session_id, slug)
-        return {
-            "trace_id": trace_id,
-            "session_id": session_id,
-            "slug": slug,
-            "name": row.get("name", ""),
-            "description": row.get("description", ""),
-            "version": row.get("version", ""),
-            "prompt_hash": row.get("prompt_hash") or row.get("hash") or "",
-            "prompt": row["prompt_body"],
-            "prompt_truncated": bool(row.get("prompt_truncated")),
-        }
-
-    if tool_name == "agency.record_skill_loaded":
-        s.record_skill_loaded(arguments.get("session_id", ""), arguments["skill_name"])
-        return {"status": "recorded"}
-
-    if tool_name == "agency.delegate":
-        trace_id = str(arguments.get("trace_id") or arguments.get("session_id") or uuid.uuid4())
-        s.record_delegation(
-            trace_id=trace_id,
-            session_id=arguments.get("session_id", ""),
-            host="mcp",
-            work_unit_id=arguments.get("work_unit_id", ""),
-            recommended_agent=arguments["agent"],
-            status="suggested",
-            backend=arguments.get("backend", ""),
-        )
-        return {
-            "status": "delegation suggested",
-            "agent": arguments["agent"],
-            "trace_id": trace_id,
-            "work_unit_id": arguments.get("work_unit_id", ""),
-        }
-
-    if tool_name == "agency.finalize":
-        from agency_runtime.core.header.finalize import finalize_response
-
-        trace_id = arguments.get("trace_id") or arguments.get("session_id", "")
-        session_id = arguments.get("session_id") or trace_id
-        result = finalize_response(
-            arguments["draft_text"],
-            trace_metadata={
-                "trace_id": trace_id,
-                "session_id": session_id,
-                "host": arguments.get("host") or "mcp",
-            },
-            store=s,
-            model=arguments.get("model", ""),
-        )
-        return dict(result)
-
-    if tool_name == "agency.status":
-        from agency_runtime.core.host_control import SUPPORTED_HOSTS, get_runtime_control
-
-        return {
-            "roster_count": len(s.get_active_roster()),
-            "db_path": str(s.db_path),
-            "hosts": {
-                host: get_runtime_control(s, host) for host in SUPPORTED_HOSTS
-            },
-        }
-
-    if tool_name == "agency.host_status":
-        from agency_runtime.core.host_control import inspect_host_status
-
-        return inspect_host_status(s, str(arguments["host"]))
-
-    if tool_name == "agency.host_control":
-        from agency_runtime.core.host_control import set_runtime_control
-
-        host = str(arguments["host"])
-        enabled = bool(arguments["enabled"])
-        expected = f"{'ENABLE' if enabled else 'DISABLE'} {host}"
-        if arguments["confirm"] != expected:
-            return {"error": f"confirmation must exactly match: {expected}"}
-        control = set_runtime_control(
-            s,
-            host,
-            enabled=enabled,
-            source="mcp",
-        )
-        return {"ok": True, **control}
-
-    return {"error": f"unknown tool: {tool_name}"}
+    return dispatch_tool_call(tool_name, arguments, s)
 
 
 def _error(request_id: Any, code: int, message: str) -> dict[str, Any]:
-    return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
+    return {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "error": {"code": code, "message": message},
+    }
 
 
 def _result(request_id: Any, result: dict[str, Any]) -> dict[str, Any]:
@@ -335,44 +207,93 @@ def _is_request_id(value: Any) -> bool:
     return isinstance(value, (str, int)) and not isinstance(value, bool)
 
 
+def _validate_argument(key: str, value: Any, spec: dict[str, Any]) -> str | None:
+    expected = spec.get("type")
+    if expected == "string" and not isinstance(value, str):
+        return f"argument '{key}' must be a string"
+    if expected == "integer" and (not isinstance(value, int) or isinstance(value, bool)):
+        return f"argument '{key}' must be an integer"
+    if expected == "boolean" and not isinstance(value, bool):
+        return f"argument '{key}' must be a boolean"
+    if "enum" in spec and value not in spec["enum"]:
+        return f"argument '{key}' must be one of: {', '.join(spec['enum'])}"
+    if isinstance(value, str) and len(value) > int(spec.get("maxLength", len(value))):
+        return f"argument '{key}' exceeds its maximum length"
+    if not isinstance(value, int) or isinstance(value, bool):
+        return None
+    if "minimum" in spec and value < spec["minimum"]:
+        return f"argument '{key}' is below its minimum"
+    if "maximum" in spec and value > spec["maximum"]:
+        return f"argument '{key}' exceeds its maximum"
+    return None
+
+
 def _validate_tool_arguments(tool: dict[str, Any], arguments: dict[str, Any]) -> str | None:
     schema = tool["inputSchema"]
     properties = schema.get("properties", {})
-    for required in schema.get("required", []):
-        if required not in arguments:
-            return f"missing required argument: {required}"
+    missing = next(
+        (name for name in schema.get("required", []) if name not in arguments),
+        None,
+    )
+    if missing is not None:
+        return f"missing required argument: {missing}"
     if schema.get("additionalProperties") is False:
         unexpected = sorted(set(arguments) - set(properties))
         if unexpected:
             return f"unexpected argument: {unexpected[0]}"
     for key, value in arguments.items():
-        spec = properties.get(key, {})
-        expected = spec.get("type")
-        if expected == "string" and not isinstance(value, str):
-            return f"argument '{key}' must be a string"
-        if expected == "integer" and (not isinstance(value, int) or isinstance(value, bool)):
-            return f"argument '{key}' must be an integer"
-        if expected == "boolean" and not isinstance(value, bool):
-            return f"argument '{key}' must be a boolean"
-        if "enum" in spec and value not in spec["enum"]:
-            return f"argument '{key}' must be one of: {', '.join(spec['enum'])}"
-        if isinstance(value, str) and len(value) > int(spec.get("maxLength", len(value))):
-            return f"argument '{key}' exceeds its maximum length"
-        if isinstance(value, int) and not isinstance(value, bool):
-            if "minimum" in spec and value < spec["minimum"]:
-                return f"argument '{key}' is below its minimum"
-            if "maximum" in spec and value > spec["maximum"]:
-                return f"argument '{key}' exceeds its maximum"
+        if error := _validate_argument(key, value, properties.get(key, {})):
+            return error
     return None
 
 
 def _call_result(payload: dict[str, Any], *, is_error: bool = False) -> dict[str, Any]:
-    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    text = json.dumps(
+        payload,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
     return {
         "content": [{"type": "text", "text": text}],
         "structuredContent": payload,
         "isError": is_error,
     }
+
+
+@dataclass(frozen=True, slots=True)
+class _RequestEnvelope:
+    request_id: Any
+    has_id: bool
+    method: str
+    params: dict[str, Any]
+
+
+def _parse_request_envelope(
+    message: Any,
+) -> tuple[_RequestEnvelope | None, dict[str, Any] | None]:
+    if not isinstance(message, dict):
+        return None, _error(None, -32600, "Invalid Request")
+    request_id = message.get("id")
+    has_id = "id" in message
+    method = message.get("method")
+    if message.get("jsonrpc") != "2.0" or not isinstance(method, str):
+        response_id = request_id if _is_request_id(request_id) else None
+        return None, _error(response_id, -32600, "Invalid Request")
+    if has_id and not _is_request_id(request_id):
+        return None, _error(None, -32600, "Invalid Request")
+    params = message.get("params", {})
+    if not isinstance(params, dict):
+        response = None if not has_id else _error(request_id, -32602, "Invalid params")
+        return None, response
+    return _RequestEnvelope(request_id, has_id, method, params), None
+
+
+_INITIALIZED_REQUEST_HANDLERS = {
+    "tools/list": "_dispatch_tools_list",
+    "tools/call": "_dispatch_tools_call",
+}
 
 
 class MCPServer:
@@ -392,86 +313,107 @@ class MCPServer:
             self.store = Store()
         return self.store
 
-    def dispatch(self, message: Any) -> dict[str, Any] | None:
-        if not isinstance(message, dict):
-            return _error(None, -32600, "Invalid Request")
-
-        request_id = message.get("id")
-        has_id = "id" in message
-        if message.get("jsonrpc") != "2.0" or not isinstance(message.get("method"), str):
-            return _error(request_id if _is_request_id(request_id) else None, -32600, "Invalid Request")
-        if has_id and not _is_request_id(request_id):
-            return _error(None, -32600, "Invalid Request")
-        params = message.get("params", {})
-        if not isinstance(params, dict):
-            return None if not has_id else _error(request_id, -32602, "Invalid params")
-
-        method = message["method"]
-        if method == "initialize":
-            if not has_id or self.initialize_responded:
-                return None if not has_id else _error(request_id, -32600, "Invalid Request")
-            requested = params.get("protocolVersion")
-            capabilities = params.get("capabilities")
-            client_info = params.get("clientInfo")
-            if not isinstance(requested, str) or not isinstance(capabilities, dict) or not isinstance(client_info, dict):
-                return _error(request_id, -32602, "Invalid initialize parameters")
-            if not isinstance(client_info.get("name"), str) or not isinstance(client_info.get("version"), str):
-                return _error(request_id, -32602, "Invalid clientInfo")
-            self.protocol_version = requested if requested in SUPPORTED_PROTOCOL_VERSIONS else LATEST_PROTOCOL_VERSION
-            self.initialize_responded = True
-            return _result(
-                request_id,
-                {
-                    "protocolVersion": self.protocol_version,
-                    "capabilities": {"tools": {"listChanged": False}},
-                    "serverInfo": {
-                        "name": "agency-runtime",
-                        "title": "Agency Runtime",
-                        "version": __version__,
-                    },
-                    "instructions": "Use Agency tools for specialist routing, evidence, and response finalization.",
-                },
-            )
-
-        if method == "notifications/initialized":
-            if not has_id and self.initialize_responded:
-                self.initialized = True
-            return None if not has_id else _error(request_id, -32600, "initialized must be a notification")
-
-        # Notifications never receive JSON-RPC responses, including unknown ones.
-        if not has_id:
+    def _dispatch_initialize(
+        self,
+        request: _RequestEnvelope,
+    ) -> dict[str, Any] | None:
+        if not request.has_id:
             return None
+        if self.initialize_responded:
+            return _error(request.request_id, -32600, "Invalid Request")
+        requested = request.params.get("protocolVersion")
+        capabilities = request.params.get("capabilities")
+        client_info = request.params.get("clientInfo")
+        if not all(
+            (
+                isinstance(requested, str),
+                isinstance(capabilities, dict),
+                isinstance(client_info, dict),
+            )
+        ):
+            return _error(request.request_id, -32602, "Invalid initialize parameters")
+        if not isinstance(client_info.get("name"), str) or not isinstance(
+            client_info.get("version"), str
+        ):
+            return _error(request.request_id, -32602, "Invalid clientInfo")
+        self.protocol_version = (
+            requested if requested in SUPPORTED_PROTOCOL_VERSIONS else LATEST_PROTOCOL_VERSION
+        )
+        self.initialize_responded = True
+        return _result(
+            request.request_id,
+            {
+                "protocolVersion": self.protocol_version,
+                "capabilities": {"tools": {"listChanged": False}},
+                "serverInfo": {
+                    "name": "agency-runtime",
+                    "title": "Agency Runtime",
+                    "version": __version__,
+                },
+                "instructions": "Use Agency tools for specialist routing, evidence, and response finalization.",
+            },
+        )
 
-        if method == "ping":
-            return _result(request_id, {})
+    def _dispatch_initialized(
+        self,
+        request: _RequestEnvelope,
+    ) -> dict[str, Any] | None:
+        if request.has_id:
+            return _error(
+                request.request_id,
+                -32600,
+                "initialized must be a notification",
+            )
+        if self.initialize_responded:
+            self.initialized = True
+        return None
+
+    @staticmethod
+    def _dispatch_tools_list(request: _RequestEnvelope) -> dict[str, Any]:
+        return _result(request.request_id, {"tools": MCP_TOOLS})
+
+    def _dispatch_tools_call(self, request: _RequestEnvelope) -> dict[str, Any]:
+        name = request.params.get("name")
+        arguments = request.params.get("arguments", {})
+        if not isinstance(name, str) or not isinstance(arguments, dict):
+            return _error(request.request_id, -32602, "Invalid tools/call parameters")
+        tool = _TOOLS_BY_NAME.get(name)
+        if tool is None:
+            return _error(request.request_id, -32602, f"Unknown tool: {name}")
+        validation_error = _validate_tool_arguments(tool, arguments)
+        if validation_error:
+            result = _call_result({"error": validation_error}, is_error=True)
+            return _result(request.request_id, result)
+        try:
+            payload = handle_tool_call(name, arguments, store=self._runtime_store())
+        except Exception:
+            logger.exception("MCP tool execution failed: %s", name)
+            payload = {"error": "Agency Runtime tool execution failed safely."}
+        return _result(
+            request.request_id,
+            _call_result(payload, is_error=bool(payload.get("error"))),
+        )
+
+    def dispatch(self, message: Any) -> dict[str, Any] | None:
+        request, error = _parse_request_envelope(message)
+        if request is None:
+            return error
+        if request.method == "initialize":
+            return self._dispatch_initialize(request)
+        if request.method == "notifications/initialized":
+            return self._dispatch_initialized(request)
+        # Notifications never receive JSON-RPC responses, including unknown ones.
+        if not request.has_id:
+            return None
+        if request.method == "ping":
+            return _result(request.request_id, {})
         if not self.initialized:
-            return _error(request_id, -32002, "Server not initialized")
-
-        if method == "tools/list":
-            return _result(request_id, {"tools": MCP_TOOLS})
-
-        if method == "tools/call":
-            name = params.get("name")
-            arguments = params.get("arguments", {})
-            if not isinstance(name, str) or not isinstance(arguments, dict):
-                return _error(request_id, -32602, "Invalid tools/call parameters")
-            tool = _TOOLS_BY_NAME.get(name)
-            if tool is None:
-                return _error(request_id, -32602, f"Unknown tool: {name}")
-            validation_error = _validate_tool_arguments(tool, arguments)
-            if validation_error:
-                return _result(request_id, _call_result({"error": validation_error}, is_error=True))
-            try:
-                payload = handle_tool_call(name, arguments, store=self._runtime_store())
-            except Exception:
-                logger.exception("MCP tool execution failed: %s", name)
-                return _result(
-                    request_id,
-                    _call_result({"error": "Agency Runtime tool execution failed safely."}, is_error=True),
-                )
-            return _result(request_id, _call_result(payload, is_error=bool(payload.get("error"))))
-
-        return _error(request_id, -32601, "Method not found")
+            return _error(request.request_id, -32002, "Server not initialized")
+        handler_name = _INITIALIZED_REQUEST_HANDLERS.get(request.method)
+        if handler_name is None:
+            return _error(request.request_id, -32601, "Method not found")
+        handler = getattr(self, handler_name)
+        return handler(request)
 
     def dispatch_payload(self, payload: Any) -> dict[str, Any] | list[dict[str, Any]] | None:
         if not isinstance(payload, list):
@@ -485,13 +427,34 @@ class MCPServer:
 
 
 def _write_json(stream: BinaryIO | TextIO, payload: Any) -> bool:
-    encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8") + b"\n"
+    try:
+        encoded = (
+            json.dumps(
+                payload,
+                allow_nan=False,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            + b"\n"
+        )
+    except (TypeError, ValueError):
+        request_id = payload.get("id") if isinstance(payload, dict) else None
+        encoded = (
+            json.dumps(
+                _error(request_id, -32603, "Response is not valid JSON"),
+                separators=(",", ":"),
+            ).encode("utf-8")
+            + b"\n"
+        )
     if len(encoded) > MAX_OUTPUT_BYTES:
         request_id = payload.get("id") if isinstance(payload, dict) else None
-        encoded = json.dumps(
-            _error(request_id, -32603, "Response exceeds server output limit"),
-            separators=(",", ":"),
-        ).encode("utf-8") + b"\n"
+        encoded = (
+            json.dumps(
+                _error(request_id, -32603, "Response exceeds server output limit"),
+                separators=(",", ":"),
+            ).encode("utf-8")
+            + b"\n"
+        )
     try:
         stream.write(encoded)  # type: ignore[arg-type]
     except TypeError:
@@ -500,7 +463,12 @@ def _write_json(stream: BinaryIO | TextIO, payload: Any) -> bool:
     return True
 
 
-def run_stdio(*, store=None, input_stream: BinaryIO | TextIO | None = None, output_stream: BinaryIO | TextIO | None = None) -> int:
+def run_stdio(
+    *,
+    store=None,
+    input_stream: BinaryIO | TextIO | None = None,
+    output_stream: BinaryIO | TextIO | None = None,
+) -> int:
     """Serve newline-delimited MCP JSON-RPC until stdin closes."""
     source = input_stream or sys.stdin.buffer
     sink = output_stream or sys.stdout.buffer
@@ -517,8 +485,8 @@ def run_stdio(*, store=None, input_stream: BinaryIO | TextIO | None = None, outp
         if not raw_bytes.strip():
             continue
         try:
-            payload = json.loads(raw_bytes.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError):
+            payload = safe_load_bounded_json(raw_bytes)
+        except (BoundedJSONError, UnicodeDecodeError):
             _write_json(sink, _error(None, -32700, "Parse error"))
             continue
         response = server.dispatch_payload(payload)
@@ -528,7 +496,11 @@ def run_stdio(*, store=None, input_stream: BinaryIO | TextIO | None = None, outp
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agency_runtime.server.mcp")
-    parser.add_argument("--stdio", action="store_true", help="Serve MCP over stdin/stdout (default transport)")
+    parser.add_argument(
+        "--stdio",
+        action="store_true",
+        help="Serve MCP over stdin/stdout (default transport)",
+    )
     parser.add_argument("--db", default=None, help="SQLite database path")
     return parser
 

@@ -3,7 +3,7 @@ title: "AR-13: Add an optional cross-platform dashboard service and configuratio
 status: done
 category: roadmap
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [dashboard, operations, configuration, installer]
 related:
   - docs/decisions/0006-config-first-redacted-configuration.md
@@ -98,6 +98,4 @@ documentation validation, release hygiene, and wheel/sdist verification also
 passed.
 
 The local implementation is complete and is mapped to tracker issue
-[#13](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/13). The
-issue remains open because closure was not part of the tracker-creation
-authorization.
+[#13](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/13).

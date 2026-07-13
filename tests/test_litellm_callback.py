@@ -25,7 +25,6 @@ from agency_runtime.core.config import AgencyConfig, ObservabilityConfig
 from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.store.sqlite import Store
 
-
 START = datetime(2026, 7, 10, 12, 0, tzinfo=timezone.utc)
 END = datetime(2026, 7, 10, 12, 0, 1, tzinfo=timezone.utc)
 
@@ -82,7 +81,9 @@ def _db_text(store: Store, sql: str, params: tuple[Any, ...] = ()) -> str:
         conn.close()
 
 
-def test_programmatic_registration_is_thread_safe_idempotent_and_preserves_callbacks(tmp_path: Path) -> None:
+def test_programmatic_registration_is_thread_safe_idempotent_and_preserves_callbacks(
+    tmp_path: Path,
+) -> None:
     existing = object()
     fake_litellm = SimpleNamespace(callbacks=[existing])
     store = Store(tmp_path / "agency.db")
@@ -133,7 +134,9 @@ def test_proxy_config_uses_dotted_callback_and_metadata_only_default() -> None:
     }
 
 
-def test_proxy_config_never_enables_litellm_raw_logging_and_respects_disabled_adapter(tmp_path: Path) -> None:
+def test_proxy_config_never_enables_litellm_raw_logging_and_respects_disabled_adapter(
+    tmp_path: Path,
+) -> None:
     base = AgencyConfig()
     capture = replace(
         base,
@@ -147,7 +150,10 @@ def test_proxy_config_never_enables_litellm_raw_logging_and_respects_disabled_ad
         ),
     )
 
-    assert litellm_proxy_callback_config(capture)["litellm_settings"]["turn_off_message_logging"] is True
+    assert (
+        litellm_proxy_callback_config(capture)["litellm_settings"]["turn_off_message_logging"]
+        is True
+    )
     assert litellm_proxy_callback_config(disabled) == {
         "litellm_settings": {"turn_off_message_logging": True}
     }
@@ -158,7 +164,9 @@ def test_proxy_config_never_enables_litellm_raw_logging_and_respects_disabled_ad
     assert store.runtime_table_counts()["model_receipts"] == 0
 
 
-def test_success_callback_records_authoritative_sanitized_metadata_only_receipt(tmp_path: Path) -> None:
+def test_success_callback_records_authoritative_sanitized_metadata_only_receipt(
+    tmp_path: Path,
+) -> None:
     store = Store(tmp_path / "agency.db")
     callback = AgencyLiteLLMCallback(store=store, config=AgencyConfig())
 
@@ -183,7 +191,9 @@ def test_success_callback_records_authoritative_sanitized_metadata_only_receipt(
     assert b"user:secret" not in database_text
 
 
-def test_failure_callback_never_promotes_requested_or_selected_model_to_actual(tmp_path: Path) -> None:
+def test_failure_callback_never_promotes_requested_or_selected_model_to_actual(
+    tmp_path: Path,
+) -> None:
     store = Store(tmp_path / "agency.db")
     callback = AgencyLiteLLMCallback(store=store, config=AgencyConfig())
     payload = _payload("trace-failed")
@@ -211,7 +221,9 @@ def test_sync_and_async_callbacks_dedupe_same_litellm_event(tmp_path: Path) -> N
     assert counts["model_receipts"] == 1
 
 
-def test_proxy_hook_injects_context_and_correlates_routing_with_receipt_trace(tmp_path: Path) -> None:
+def test_proxy_hook_injects_context_and_correlates_routing_with_receipt_trace(
+    tmp_path: Path,
+) -> None:
     clear_cache()
     store = Store(tmp_path / "agency.db")
     store.activate_agent(
@@ -249,7 +261,9 @@ def test_proxy_hook_injects_context_and_correlates_routing_with_receipt_trace(tm
     assert activity["routing"][0]["trace_id"] == "route-trace"
     assert activity["routing"][0]["session_id"] == "route-session"
     assert "security-reviewer" in activity["routing"][0]["selected_ids"]
-    assert _db_text(store, "SELECT user_message FROM runs WHERE trace_id = ?", ("route-trace",)) == ""
+    assert (
+        _db_text(store, "SELECT user_message FROM runs WHERE trace_id = ?", ("route-trace",)) == ""
+    )
 
 
 def test_concurrent_pre_hooks_persist_one_routing_decision_per_trace(tmp_path: Path) -> None:
@@ -361,7 +375,9 @@ def test_opt_in_content_capture_is_redacted_before_store(
 
     asyncio.run(callback.async_pre_call_hook(None, None, request, "completion"))
 
-    captured = _db_text(store, "SELECT user_message FROM runs WHERE trace_id = ?", ("capture-trace",))
+    captured = _db_text(
+        store, "SELECT user_message FROM runs WHERE trace_id = ?", ("capture-trace",)
+    )
     assert "[REDACTED_EMAIL]" in captured
     assert "Bearer [REDACTED]" in captured
     assert "api_key=[REDACTED]" in captured
@@ -393,7 +409,9 @@ def test_spawned_workers_write_receipts_safely_to_one_store(tmp_path: Path) -> N
         assert receipt["status"] == "success"
 
 
-def test_callback_failures_are_isolated_from_model_traffic(caplog: pytest.LogCaptureFixture) -> None:
+def test_callback_failures_are_isolated_from_model_traffic(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     class BrokenStore:
         def record_model_receipt(self, **kwargs: Any) -> None:
             raise sqlite3.OperationalError("database is unavailable")

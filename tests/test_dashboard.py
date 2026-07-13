@@ -60,9 +60,7 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         backend="test",
     )
     token = "test-dashboard-token"
-    server = DashboardHTTPServer(
-        store, auth_token=token, port=0, host_inspector=lambda: []
-    )
+    server = DashboardHTTPServer(store, auth_token=token, port=0, host_inspector=lambda: [])
     thread = threading.Thread(
         target=server.serve_forever,
         kwargs={"poll_interval": 0.01},
@@ -73,6 +71,7 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     try:
         yield {
             "base": f"http://127.0.0.1:{port}",
+            "port": port,
             "token": token,
             "store": store,
         }
@@ -121,11 +120,22 @@ def _json_response(*args, **kwargs) -> tuple[int, dict, dict[str, str]]:
     return status, json.loads(raw), headers
 
 
+def _raw_request(server: dict, payload: bytes) -> bytes:
+    client = socket.create_connection(("127.0.0.1", server["port"]), timeout=2)
+    client.settimeout(2)
+    try:
+        client.sendall(payload)
+        response = bytearray()
+        while chunk := client.recv(4096):
+            response.extend(chunk)
+        return bytes(response)
+    finally:
+        client.close()
+
+
 def _nested_keys(value: object) -> set[str]:
     if isinstance(value, dict):
-        return set(value) | {
-            key for nested in value.values() for key in _nested_keys(nested)
-        }
+        return set(value) | {key for nested in value.values() for key in _nested_keys(nested)}
     if isinstance(value, list):
         return {key for nested in value for key in _nested_keys(nested)}
     return set()
@@ -138,6 +148,10 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"Signal Observatory" in raw
     assert headers["X-Frame-Options"] == "DENY"
     assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]
+    assert "object-src 'none'" in headers["Content-Security-Policy"]
+    assert "connect-src 'self'" in headers["Content-Security-Policy"]
+    assert headers["Cross-Origin-Opener-Policy"] == "same-origin"
+    assert headers["Cross-Origin-Resource-Policy"] == "same-origin"
     assert headers["Cache-Control"] == "no-store"
 
     status, charts, _headers = _request(dashboard_server, "/charts.js")
@@ -147,8 +161,23 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"outcomeCounts" in charts
     assert b"retryDelay" in charts
 
-    status, script, _headers = _request(dashboard_server, "/app.js")
+    status, app_entry, _headers = _request(dashboard_server, "/app.js")
     assert status == 200
+    assert b'from "./dashboard-actions.js"' in app_entry
+    assert b"createDashboard" in app_entry
+    module_assets = []
+    for module_name in (
+        "dashboard-actions.js",
+        "dashboard-config.js",
+        "dashboard-core.js",
+        "dashboard-live.js",
+        "dashboard-render.js",
+    ):
+        status, module_asset, module_headers = _request(dashboard_server, f"/{module_name}")
+        assert status == 200
+        assert module_headers["Content-Type"] == "text/javascript; charset=utf-8"
+        module_assets.append(module_asset)
+    script = app_entry + b"".join(module_assets)
     assert b"registration unknown" in script
     assert b"enablement unknown" in script
     assert b"runtime off" in script
@@ -161,6 +190,8 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"Number.isInteger(days)" in script
     assert b"await refreshRuntimeEvidence()" in script
     assert b"collectConfigChanges" in script
+    assert b"total_count" in script
+    assert b"next_cursor" in script
     assert b"/api/config" in script
     assert b"SAVE SENSITIVE CONFIG" in script
     assert b"APPLY LOCAL-ONLY PROFILE" in script
@@ -200,8 +231,16 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b'id="activity-chart-summary"' in raw
     assert b'id="outcome-chart"' in raw
     assert b'id="outcome-chart-summary"' in raw
-    assert raw.index(b'<script src="/charts.js"') < raw.index(b'<script src="/app.js"')
+    assert b'id="outcome-success"' in raw
+    assert b'id="evidence-caption"' in raw
+    assert b'aria-controls="view-overview"' in raw
+    assert b'id="view-routing" class="view" data-view-panel="routing" hidden' in raw
+    assert raw.index(b'<script src="/charts.js"') < raw.index(
+        b'<script type="module" src="/app.js"'
+    )
     assert b'id="provider-health"' in raw
+    assert b'id="roster-page-status"' in raw
+    assert b'role="status" aria-live="polite"' in raw
     assert b'id="config-form"' in raw
     assert b'data-config-path="dashboard.port"' in raw
     assert b'id="config-server-host"' in raw
@@ -234,7 +273,15 @@ def test_dashboard_javascript_parses_when_node_is_available() -> None:
         pytest.skip("Node.js is unavailable")
 
     root = Path(__file__).parents[1]
-    for name in ("app.js", "charts.js"):
+    for name in (
+        "app.js",
+        "charts.js",
+        "dashboard-actions.js",
+        "dashboard-config.js",
+        "dashboard-core.js",
+        "dashboard-live.js",
+        "dashboard-render.js",
+    ):
         script = root / "agency_runtime" / "dashboard" / name
         completed = subprocess.run(
             [node, "--check", str(script)],
@@ -354,7 +401,7 @@ def test_dashboard_live_snapshot_is_metadata_only_and_never_leaks_credentials(
         backend="test",
         error=secret,
     )
-    original = Store.recent_runtime_activity
+    original = Store.recent_dashboard_activity
 
     def captured_detail(self: Store, *, limit: int = 50):
         activity = original(self, limit=limit)
@@ -368,7 +415,7 @@ def test_dashboard_live_snapshot_is_metadata_only_and_never_leaks_credentials(
         )
         return activity
 
-    monkeypatch.setattr(Store, "recent_runtime_activity", captured_detail)
+    monkeypatch.setattr(Store, "recent_dashboard_activity", captured_detail)
 
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -403,14 +450,14 @@ def test_dashboard_live_snapshot_reads_activity_once(
     dashboard_server,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    original = Store.recent_runtime_activity
+    original = Store.recent_dashboard_activity
     calls: list[int] = []
 
     def counted(self: Store, *, limit: int = 50):
         calls.append(limit)
         return original(self, limit=limit)
 
-    monkeypatch.setattr(Store, "recent_runtime_activity", counted)
+    monkeypatch.setattr(Store, "recent_dashboard_activity", counted)
 
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -449,6 +496,65 @@ def test_dashboard_post_requires_json_content_type(dashboard_server):
 
         assert status == 415
         assert "application/json" in payload["error"]
+
+
+def test_dashboard_rejects_unbounded_numeric_content_length_without_conversion(
+    dashboard_server,
+):
+    response = _raw_request(
+        dashboard_server,
+        (
+            "POST /api/route HTTP/1.1\r\n"
+            f"Host: 127.0.0.1:{dashboard_server['port']}\r\n"
+            f"Authorization: Bearer {dashboard_server['token']}\r\n"
+            "Content-Type: application/json\r\n"
+            f"Content-Length: {'9' * 5000}\r\n"
+            "Connection: close\r\n\r\n"
+        ).encode("ascii"),
+    )
+
+    assert b"HTTP/1.1 413 " in response
+    assert b"request body too large" in response
+
+
+def test_dashboard_roster_cursor_pages_are_stable_and_complete(dashboard_server):
+    for slug in ("alpha-reviewer", "zulu-reviewer"):
+        dashboard_server["store"].activate_agent(
+            {
+                "slug": slug,
+                "name": slug,
+                "description": f"{slug} description",
+                "version": "1.0.0",
+                "content": f"You are {slug}.",
+            }
+        )
+
+    status, first, _headers = _json_response(
+        dashboard_server,
+        "/api/roster?limit=2",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert [agent["agent_slug"] for agent in first["agents"]] == [
+        "alpha-reviewer",
+        "security-reviewer",
+    ]
+    assert first["total_count"] == 3
+    assert first["truncated"] is True
+    assert first["next_cursor"] == "security-reviewer"
+
+    status, second, _headers = _json_response(
+        dashboard_server,
+        f"/api/roster?limit=2&after={first['next_cursor']}",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert [agent["agent_slug"] for agent in second["agents"]] == ["zulu-reviewer"]
+    assert second["total_count"] == 3
+    assert second["truncated"] is False
+    assert second["next_cursor"] is None
 
 
 def test_dashboard_config_get_reports_redacted_revision_and_target(dashboard_server):
@@ -705,7 +811,11 @@ def test_dashboard_config_sensitive_policy_changes_require_specific_phrase(
     assert payload == {"error": f"missing confirmation phrase: {required}"}
 
 
-def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server):
+def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server, monkeypatch):
+    def fail_if_materialized(*_args, **_kwargs):
+        raise AssertionError("overview must not materialize roster rows")
+
+    monkeypatch.setattr(dashboard_server["store"], "get_active_roster", fail_if_materialized)
     status, overview, _headers = _json_response(
         dashboard_server,
         "/api/overview",
@@ -725,10 +835,7 @@ def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server):
     assert status == 200
     assert activity["delegations"][0]["recommended_agent"] == "security-reviewer"
     assert all("user_message" not in row for row in activity["runs"])
-    assert all(
-        "stdout" not in row and "stderr" not in row
-        for row in activity.get("workers", [])
-    )
+    assert all("stdout" not in row and "stderr" not in row for row in activity.get("workers", []))
 
 
 def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
@@ -748,9 +855,9 @@ def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
     assert payload["task"] == "review this application security design"
     assert payload["selected"]
     assert payload["delegation_graph"]["nodes"]
-    assert [
-        item["description"] for item in payload["delegation_graph"]["nodes"]
-    ] == payload["signals"]["work_units"]["units"]
+    assert [item["description"] for item in payload["delegation_graph"]["nodes"]] == payload[
+        "signals"
+    ]["work_units"]["units"]
 
 
 def test_dashboard_route_lab_uses_authoritative_dependency_graph(dashboard_server):
@@ -950,9 +1057,7 @@ def test_dashboard_host_toggle_validates_host_before_confirmation(
         called = True
         return {"ok": True}
 
-    monkeypatch.setattr(
-        "agency_runtime.core.host_control.set_runtime_control", unexpected_toggle
-    )
+    monkeypatch.setattr("agency_runtime.core.host_control.set_runtime_control", unexpected_toggle)
     status, payload, _headers = _json_response(
         dashboard_server,
         "/api/hosts/toggle",

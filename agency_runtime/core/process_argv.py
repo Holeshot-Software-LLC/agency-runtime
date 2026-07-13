@@ -7,8 +7,23 @@ import shutil
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
+from agency_runtime.core.windows_system import trusted_windows_system_executable
 
 BinaryResolver = Callable[[str], str | None]
+
+
+def absolute_executable_path(value: str | Path) -> str:
+    """Return an absolute launcher path without dereferencing environment shims.
+
+    Virtual environments commonly expose ``bin/python`` as a symlink. Resolving
+    that symlink would persist the base interpreter in generated services and
+    host plugins, where the installed Agency Runtime package may be unavailable.
+    """
+
+    text = str(value)
+    if not text or any(ord(character) < 32 or ord(character) == 127 for character in text):
+        raise ValueError("executable path contains an invalid character")
+    return os.path.abspath(os.path.expanduser(text))
 
 
 def _trusted_npm_companion(
@@ -56,13 +71,7 @@ def _trusted_npm_companion(
             return [str(native)]
         script = npm_root / "node_modules" / "@openai" / "codex" / "bin" / "codex.js"
     elif command == "claude":
-        script = (
-            npm_root
-            / "node_modules"
-            / "@anthropic-ai"
-            / "claude-code"
-            / "cli.js"
-        )
+        script = npm_root / "node_modules" / "@anthropic-ai" / "claude-code" / "cli.js"
     else:
         return None
 
@@ -73,17 +82,38 @@ def _trusted_npm_companion(
     return [node, str(script)] if node else None
 
 
+def _trusted_powershell(
+    *,
+    platform_name: str,
+    system_resolver: BinaryResolver | None,
+) -> str:
+    executable = (
+        system_resolver("powershell.exe")
+        if system_resolver is not None
+        else trusted_windows_system_executable(
+            "powershell.exe",
+            platform_name=platform_name,
+        )
+    )
+    if not executable:
+        raise FileNotFoundError("trusted Windows PowerShell executable is unavailable")
+    return executable
+
+
 def prepare_process_argv(
     argv: Sequence[str],
     *,
     platform_name: str | None = None,
     resolver: BinaryResolver | None = None,
+    system_resolver: BinaryResolver | None = None,
 ) -> list[str]:
     """Resolve argv[0] and never send user arguments through cmd.exe."""
 
     if isinstance(argv, (str, bytes)) or not argv:
         raise TypeError("argv must be a non-empty sequence of strings")
-    process_argv = [str(part) for part in argv]
+    if any(not isinstance(part, str) for part in argv):
+        raise TypeError("argv must be a non-empty sequence of strings")
+    process_argv = list(argv)
     if any(not part or "\x00" in part for part in process_argv):
         raise ValueError("argv contains an invalid item")
     binary_resolver = resolver or shutil.which
@@ -93,6 +123,8 @@ def prepare_process_argv(
     process_argv[0] = resolved
     if (platform_name or os.name) != "nt":
         return process_argv
+
+    windows_platform = platform_name or os.name
 
     shim = Path(resolved)
     suffix = shim.suffix.casefold()
@@ -105,8 +137,12 @@ def prepare_process_argv(
             return [*npm_companion, *process_argv[1:]]
         powershell_shim = shim.with_suffix(".ps1")
         if powershell_shim.is_file():
+            powershell = _trusted_powershell(
+                platform_name=windows_platform,
+                system_resolver=system_resolver,
+            )
             return [
-                "powershell.exe",
+                powershell,
                 "-NoLogo",
                 "-NoProfile",
                 "-NonInteractive",
@@ -117,12 +153,15 @@ def prepare_process_argv(
                 *process_argv[1:],
             ]
         raise OSError(
-            "refusing unsafe cmd.exe shim invocation without .exe or .ps1 "
-            f"companion: {shim}"
+            f"refusing unsafe cmd.exe shim invocation without .exe or .ps1 companion: {shim}"
         )
     if suffix == ".ps1":
+        powershell = _trusted_powershell(
+            platform_name=windows_platform,
+            system_resolver=system_resolver,
+        )
         return [
-            "powershell.exe",
+            powershell,
             "-NoLogo",
             "-NoProfile",
             "-NonInteractive",
@@ -134,4 +173,4 @@ def prepare_process_argv(
     return process_argv
 
 
-__all__ = ["BinaryResolver", "prepare_process_argv"]
+__all__ = ["BinaryResolver", "absolute_executable_path", "prepare_process_argv"]

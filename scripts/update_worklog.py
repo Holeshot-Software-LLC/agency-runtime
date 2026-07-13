@@ -9,7 +9,6 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "docs" / "worklog" / "README.md"
 START = "<!-- worklog:start -->"
@@ -66,9 +65,7 @@ def generated_table(text: str) -> str:
     for short, commit_date, raw_subject in git_log():
         related, detail = annotations.get(short, ("null", "null"))
         subject = raw_subject.replace("|", "\\|")
-        lines.append(
-            f"| `{short}` | {commit_date} | {subject} | {related} | {detail} |"
-        )
+        lines.append(f"| `{short}` | {commit_date} | {subject} | {related} | {detail} |")
     lines.append(END)
     return "\n".join(lines)
 

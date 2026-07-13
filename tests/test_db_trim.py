@@ -28,7 +28,8 @@ def test_store_trim_runtime_tables_keeps_roster_and_recent_rows(tmp_path: Path) 
         status="delegated",
     )
 
-    with sqlite3.connect(db) as conn:
+    conn = sqlite3.connect(db)
+    try:
         conn.execute(
             "UPDATE delegation_events SET started_at = '2000-01-01T00:00:00+00:00' WHERE id = ?",
             (old_event,),
@@ -38,11 +39,15 @@ def test_store_trim_runtime_tables_keeps_roster_and_recent_rows(tmp_path: Path) 
             (recent_event,),
         )
         conn.commit()
+    finally:
+        conn.close()
 
     report = store.trim_runtime_tables(older_than_days=1, vacuum=False)
 
     assert report["tables"]["delegation_events"]["deleted"] == 1
-    assert [row["recommended_agent"] for row in store.get_delegations_for_session("session-new")] == ["new-agent"]
+    assert [
+        row["recommended_agent"] for row in store.get_delegations_for_session("session-new")
+    ] == ["new-agent"]
     assert store.get_delegations_for_session("session-old") == []
     assert [agent["agent_slug"] for agent in store.get_active_roster()] == ["code-reviewer"]
 
@@ -121,12 +126,23 @@ def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_pa
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         input_text = kwargs.get("input_text")
-        commands.append((
-            command,
-            input_text if isinstance(input_text, str) else None,
-        ))
+        commands.append(
+            (
+                command,
+                input_text if isinstance(input_text, str) else None,
+            )
+        )
         stdout = kwargs["stdout"]
         if command[0].endswith("codex"):
+            stdout.write(
+                json.dumps(
+                    {
+                        "type": "item.completed",
+                        "item": {"type": "agent_message", "text": "done"},
+                    }
+                )
+                + "\n"
+            )
             stdout.write(json.dumps({"type": "turn.completed"}) + "\n")
         elif command[0].endswith("claude"):
             stdout.write(json.dumps({"type": "result", "is_error": False, "result": "done"}))
@@ -164,17 +180,19 @@ def test_cli_delegate_timeout_marks_delegation_skipped(monkeypatch, tmp_path: Pa
     monkeypatch.setattr("agency_runtime.core.delegation.backends.shutil.which", fake_which)
     monkeypatch.setattr("agency_runtime.core.delegation.backends._run_owned_process", fake_run)
 
-    code = main([
-        "delegate",
-        "--backend",
-        "hermes",
-        "--agent",
-        "code-reviewer",
-        "--task",
-        "review diff",
-        "--timeout",
-        "0.01",
-    ])
+    code = main(
+        [
+            "delegate",
+            "--backend",
+            "hermes",
+            "--agent",
+            "code-reviewer",
+            "--task",
+            "review diff",
+            "--timeout",
+            "0.01",
+        ]
+    )
 
     assert code == 124
     assert "timed out after 0.01s" in capsys.readouterr().err
@@ -201,17 +219,19 @@ def test_cli_delegate_exit_124_remains_failed(monkeypatch, tmp_path: Path) -> No
     monkeypatch.setattr("agency_runtime.core.delegation.backends.shutil.which", fake_which)
     monkeypatch.setattr("agency_runtime.core.delegation.backends._run_owned_process", fake_run)
 
-    code = main([
-        "delegate",
-        "--backend",
-        "hermes",
-        "--agent",
-        "code-reviewer",
-        "--task",
-        "review diff",
-        "--timeout",
-        "0.01",
-    ])
+    code = main(
+        [
+            "delegate",
+            "--backend",
+            "hermes",
+            "--agent",
+            "code-reviewer",
+            "--task",
+            "review diff",
+            "--timeout",
+            "0.01",
+        ]
+    )
 
     assert code == 124
     store = Store(db)
@@ -238,18 +258,20 @@ def test_cli_delegate_json_success_reports_event(monkeypatch, tmp_path: Path, ca
     monkeypatch.setattr("agency_runtime.core.delegation.backends.shutil.which", fake_which)
     monkeypatch.setattr("agency_runtime.core.delegation.backends._run_owned_process", fake_run)
 
-    code = main([
-        "delegate",
-        "--backend",
-        "hermes",
-        "--agent",
-        "code-reviewer",
-        "--task",
-        "review diff",
-        "--timeout",
-        "2",
-        "--json",
-    ])
+    code = main(
+        [
+            "delegate",
+            "--backend",
+            "hermes",
+            "--agent",
+            "code-reviewer",
+            "--task",
+            "review diff",
+            "--timeout",
+            "2",
+            "--json",
+        ]
+    )
 
     captured = capsys.readouterr()
     assert code == 0
@@ -282,18 +304,20 @@ def test_cli_delegate_json_timeout_reports_skipped(monkeypatch, tmp_path: Path, 
     monkeypatch.setattr("agency_runtime.core.delegation.backends.shutil.which", fake_which)
     monkeypatch.setattr("agency_runtime.core.delegation.backends._run_owned_process", fake_run)
 
-    code = main([
-        "delegate",
-        "--backend",
-        "hermes",
-        "--agent",
-        "code-reviewer",
-        "--task",
-        "review diff",
-        "--timeout",
-        "0.01",
-        "--json",
-    ])
+    code = main(
+        [
+            "delegate",
+            "--backend",
+            "hermes",
+            "--agent",
+            "code-reviewer",
+            "--task",
+            "review diff",
+            "--timeout",
+            "0.01",
+            "--json",
+        ]
+    )
 
     captured = capsys.readouterr()
     assert code == 124
@@ -333,7 +357,9 @@ def test_cli_delegate_json_rejects_bad_timeout_as_json(monkeypatch, tmp_path: Pa
     db = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
 
-    code = main(["delegate", "--backend", "hermes", "--task", "review diff", "--timeout", "inf", "--json"])
+    code = main(
+        ["delegate", "--backend", "hermes", "--task", "review diff", "--timeout", "inf", "--json"]
+    )
 
     captured = capsys.readouterr()
     assert code == 2

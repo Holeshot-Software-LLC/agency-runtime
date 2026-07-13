@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import math
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
+from numbers import Real
 from typing import Any
+from urllib.parse import urlsplit
 
 from agency_runtime.core.cli_transport import CLIProviderStatus, inspect_cli_transport
 from agency_runtime.core.config import (
@@ -35,6 +38,25 @@ def _join_api_path(base_url: str, path: str) -> str:
     return f"{base}{normalized_path}"
 
 
+def _is_http_endpoint(value: str) -> bool:
+    """Validate the URL shape before constructing or dispatching a probe."""
+
+    try:
+        parsed = urlsplit(value)
+        _ = parsed.port
+    except (TypeError, ValueError):
+        return False
+    return bool(
+        parsed.scheme.casefold() in {"http", "https"}
+        and parsed.hostname
+        and parsed.username is None
+        and parsed.password is None
+        and not parsed.query
+        and not parsed.fragment
+        and not any(character.isspace() for character in value)
+    )
+
+
 def _cli_result(
     provider: ProviderEntry,
     inspector: Callable[..., CLIProviderStatus],
@@ -62,6 +84,19 @@ def validate_provider(
     """Validate one configured entry without returning endpoint or credential data."""
 
     provider_type = provider.type.strip().lower()
+    if (
+        isinstance(timeout, bool)
+        or not isinstance(timeout, Real)
+        or not math.isfinite(float(timeout))
+        or float(timeout) <= 0
+    ):
+        return ProviderValidationResult(
+            provider.name,
+            provider_type,
+            False,
+            False,
+            "validation timeout is invalid",
+        )
     if provider_type == "cli":
         return _cli_result(provider, cli_inspector, timeout)
     if not provider.model or not provider.base_url:
@@ -71,6 +106,14 @@ def validate_provider(
             False,
             False,
             "model and base URL are required",
+        )
+    if not _is_http_endpoint(provider.base_url):
+        return ProviderValidationResult(
+            provider.name,
+            provider_type,
+            False,
+            False,
+            "base URL must be an uncredentialed HTTP(S) endpoint",
         )
     api_key = provider.resolve_api_key()
     if api_key and not is_safe_credential_url(provider.base_url):
@@ -82,10 +125,11 @@ def validate_provider(
             "credentials require HTTPS or literal loopback HTTP",
             authenticated=False,
         )
-    keyless_loopback = (
-        provider_type in {"openai", "openai-compatible", "litellm"}
-        and _is_loopback_http_url(provider.base_url)
-    )
+    keyless_loopback = provider_type in {
+        "openai",
+        "openai-compatible",
+        "litellm",
+    } and _is_loopback_http_url(provider.base_url)
     if not (provider_type == "ollama" or provider.ollama_mode or api_key or keyless_loopback):
         return ProviderValidationResult(
             provider.name,
@@ -113,7 +157,8 @@ def validate_provider(
     request_opener = opener or open_no_redirect
     try:
         with request_opener(request, timeout=timeout) as response:
-            ok = int(getattr(response, "status", 0)) == 200
+            status = int(getattr(response, "status", 0))
+            ok = status == 200
     except Exception as exc:
         return ProviderValidationResult(
             provider.name,
@@ -121,15 +166,21 @@ def validate_provider(
             False,
             False,
             f"network probe failed ({type(exc).__name__})",
-            authenticated=bool(api_key) if not keyless_loopback else None,
+            authenticated=None,
         )
+    authenticated: bool | None = None
+    if api_key:
+        if ok:
+            authenticated = True
+        elif status in {401, 403}:
+            authenticated = False
     return ProviderValidationResult(
         provider.name,
         provider_type,
         ok,
         ok,
         "" if ok else "provider returned a non-success status",
-        authenticated=bool(api_key) if not keyless_loopback else None,
+        authenticated=authenticated,
     )
 
 

@@ -12,19 +12,17 @@ Model discovery:
 
 from __future__ import annotations
 
-import importlib.util
-import json
 import os
-import shutil
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.cli_transport import (
-    CLIProviderStatus,
     SUPPORTED_CLI_TRANSPORTS,
+    CLIProviderStatus,
     inspect_cli_transport,
 )
 from agency_runtime.core.config import (
@@ -32,7 +30,6 @@ from agency_runtime.core.config import (
     is_safe_credential_url,
 )
 from agency_runtime.core.http_safety import open_no_redirect
-
 
 _MAX_HTTP_JSON_BYTES = 1024 * 1024
 _MAX_DISCOVERED_MODELS = 1000
@@ -92,13 +89,15 @@ class DetectionResult:
 
     @property
     def has_any_adapter(self) -> bool:
-        return any([
-            self.adapters.hermes,
-            self.adapters.openclaw,
-            self.adapters.codex,
-            self.adapters.claude,
-            self.providers.litellm_available,
-        ])
+        return any(
+            [
+                self.adapters.hermes,
+                self.adapters.openclaw,
+                self.adapters.codex,
+                self.adapters.claude,
+                self.providers.litellm_available,
+            ]
+        )
 
 
 # ── HTTP helpers ──────────────────────────────────────────────
@@ -116,7 +115,12 @@ def _http_get_json(
             raw = resp.read(_MAX_HTTP_JSON_BYTES + 1)
         if len(raw) > _MAX_HTTP_JSON_BYTES:
             return None
-        parsed = json.loads(raw.decode("utf-8"))
+        parsed = safe_load_bounded_json(
+            raw,
+            maximum_bytes=_MAX_HTTP_JSON_BYTES,
+            maximum_depth=32,
+            maximum_nodes=10_000,
+        )
         return parsed if isinstance(parsed, dict) else None
     except Exception:
         return None
@@ -139,7 +143,9 @@ def _fetch_model_list(base_url: str, api_key: str | None = None) -> list[str]:
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     normalized = base_url.rstrip("/")
-    models_url = f"{normalized}/models" if normalized.lower().endswith("/v1") else f"{normalized}/v1/models"
+    models_url = (
+        f"{normalized}/models" if normalized.lower().endswith("/v1") else f"{normalized}/v1/models"
+    )
     data = _http_get_json(models_url, timeout=5, headers=headers)
     if data is None:
         return []
@@ -177,8 +183,45 @@ def detect_providers(
         litellm_base_url=litellm_base_url,
     )
 
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    litellm_key = os.environ.get("LITELLM_API_KEY", "")
+    with ThreadPoolExecutor(
+        max_workers=4,
+        thread_name_prefix="agency-detect",
+    ) as executor:
+        ollama_future = executor.submit(
+            _http_get_json,
+            f"{ollama_base_url}/api/tags",
+            timeout=2,
+        )
+        litellm_health_future = executor.submit(
+            _http_check,
+            f"{litellm_base_url}/health/liveness",
+            2,
+        )
+        litellm_models_future = executor.submit(
+            _fetch_model_list,
+            litellm_base_url,
+            litellm_key or None,
+        )
+        openai_models_future = (
+            executor.submit(
+                _fetch_model_list,
+                "https://api.openai.com/v1",
+                openai_key,
+            )
+            if openai_key
+            else None
+        )
+
+        tags = ollama_future.result()
+        result.litellm_available = litellm_health_future.result()
+        discovered_litellm_models = litellm_models_future.result()
+        discovered_openai_models = (
+            openai_models_future.result() if openai_models_future is not None else []
+        )
+
     # Ollama — get real installed models
-    tags = _http_get_json(f"{ollama_base_url}/api/tags", timeout=2)
     if tags is not None:
         result.ollama_available = True
         entries = tags.get("models", [])
@@ -196,57 +239,63 @@ def detect_providers(
         result.ollama_models = sorted(models)
 
     # OpenAI — check key, then try to list models
-    openai_key = os.environ.get("OPENAI_API_KEY", "")
     result.openai_key_present = bool(openai_key)
-    if openai_key:
-        result.openai_models = _fetch_model_list("https://api.openai.com/v1", openai_key)
+    result.openai_models = discovered_openai_models
 
     # Anthropic — just check key (Anthropic doesn't have a /models endpoint)
     result.anthropic_key_present = bool(os.environ.get("ANTHROPIC_API_KEY", ""))
 
     # LiteLLM — check health, then list model groups
-    result.litellm_available = _http_check(f"{litellm_base_url}/health/liveness", timeout=2)
     if result.litellm_available:
-        litellm_key = os.environ.get("LITELLM_API_KEY", "")
-        result.litellm_models = _fetch_model_list(litellm_base_url, litellm_key or None)
+        result.litellm_models = discovered_litellm_models
 
     return result
 
 
 def detect_adapters() -> AdapterDetection:
-    """Detect installed host adapters."""
-    result = AdapterDetection()
+    """Detect current hosts through the canonical cross-platform inventory."""
 
-    result.hermes = bool(
-        shutil.which("hermes")
-        or importlib.util.find_spec("hermes")
-    )
-    result.openclaw = bool(
-        shutil.which("openclaw")
-        or Path.home().joinpath(".openclaw").exists()
-    )
-    result.codex = bool(shutil.which("codex"))
-    result.claude = bool(shutil.which("claude"))
+    from agency_runtime.core.installer import detect_installed_agents
 
-    return result
+    try:
+        installed = set(detect_installed_agents())
+    except (OSError, RuntimeError, ValueError):
+        installed = set()
+    return AdapterDetection(
+        hermes="hermes" in installed,
+        openclaw="openclaw" in installed,
+        codex="codex" in installed,
+        claude="claude" in installed,
+    )
 
 
 def detect_cli_providers() -> dict[str, CLIProviderStatus]:
     """Inspect supported CLI judge transports without invoking a model."""
 
-    return {
-        name: inspect_cli_transport(name)
-        for name in sorted(SUPPORTED_CLI_TRANSPORTS)
-    }
+    transports = sorted(SUPPORTED_CLI_TRANSPORTS)
+    with ThreadPoolExecutor(
+        max_workers=len(transports),
+        thread_name_prefix="agency-cli-detect",
+    ) as executor:
+        statuses = executor.map(inspect_cli_transport, transports)
+        return dict(zip(transports, statuses, strict=True))
 
 
 def detect_all() -> DetectionResult:
     """Run full detection."""
-    return DetectionResult(
-        providers=detect_providers(),
-        adapters=detect_adapters(),
-        cli_providers=detect_cli_providers(),
-    )
+
+    with ThreadPoolExecutor(
+        max_workers=3,
+        thread_name_prefix="agency-inventory",
+    ) as executor:
+        providers = executor.submit(detect_providers)
+        adapters = executor.submit(detect_adapters)
+        cli_providers = executor.submit(detect_cli_providers)
+        return DetectionResult(
+            providers=providers.result(),
+            adapters=adapters.result(),
+            cli_providers=cli_providers.result(),
+        )
 
 
 # ── Config generation from detection ─────────────────────────
@@ -295,135 +344,127 @@ def _preferred_model(discovered: list[str], preferred: list[str], fallback: str)
     return discovered[0] if discovered else fallback
 
 
-def generate_config_from_detection(
-    detection: DetectionResult,
-    profile: str = "standard",
+def _local_judge_config(providers: ProviderDetection) -> dict[str, Any]:
+    return {
+        "model": providers.ollama_models[0] if providers.ollama_models else "qwen3.5:2b",
+        "base_url": providers.ollama_base_url,
+        "api_key": "",
+        "ollama_mode": True,
+    }
+
+
+def _generated_judge_config(
+    providers: ProviderDetection,
+    profile: str,
 ) -> dict[str, Any]:
-    """Generate a config dict from detection results.
-
-    Used by non-interactive mode and as defaults for interactive mode.
-    """
-    p = detection.providers
-    a = detection.adapters
-
-    # Determine judge config based on best-available provider
     if profile == "local-only":
-        model = p.ollama_models[0] if p.ollama_models else "qwen3.5:2b"
-        judge_cfg = {
-            "model": model,
-            "base_url": p.ollama_base_url,
-            "api_key": "",
-            "ollama_mode": True,
-        }
-    elif p.litellm_available and p.litellm_models:
-        # Pick the first model — user can change via config
-        judge_cfg: dict[str, Any] = {
-            "model": p.litellm_models[0],
-            "base_url": p.litellm_base_url,
+        return _local_judge_config(providers)
+    if providers.litellm_available and providers.litellm_models:
+        return {
+            "model": providers.litellm_models[0],
+            "base_url": providers.litellm_base_url,
             "api_key_env": "LITELLM_API_KEY",
             "ollama_mode": False,
         }
-    elif p.openai_key_present:
-        model = _preferred_model(
-            p.openai_models,
-            _OPENAI_SUGGESTIONS,
-            _PROVIDER_DEFAULTS["openai"]["model"],
-        )
-        judge_cfg = {
-            "model": model,
+    if providers.openai_key_present:
+        return {
+            "model": _preferred_model(
+                providers.openai_models,
+                _OPENAI_SUGGESTIONS,
+                _PROVIDER_DEFAULTS["openai"]["model"],
+            ),
             "base_url": _PROVIDER_DEFAULTS["openai"]["base_url"],
             "api_key_env": "OPENAI_API_KEY",
             "ollama_mode": False,
         }
-    elif p.ollama_available:
-        model = p.ollama_models[0] if p.ollama_models else "qwen3.5:2b"
-        judge_cfg = {
-            "model": model,
-            "base_url": p.ollama_base_url,
-            "api_key": "",
-            "ollama_mode": True,
-        }
-    else:
-        # Nothing detected — default to Ollama URL, will fail gracefully
-        judge_cfg = {
-            "model": "qwen3.5:2b",
-            "base_url": "http://127.0.0.1:11434",
-            "api_key": "",
-            "ollama_mode": True,
-        }
-
-    # Ollama fallback config
-    ollama_cfg: dict[str, Any] = {
-        "enabled": p.ollama_available,
-        "base_url": p.ollama_base_url,
+    if providers.ollama_available:
+        return _local_judge_config(providers)
+    return {
+        "model": "qwen3.5:2b",
+        "base_url": "http://127.0.0.1:11434",
+        "api_key": "",
+        "ollama_mode": True,
     }
-    if p.ollama_available and p.ollama_models:
-        ollama_cfg["model"] = p.ollama_models[0]
 
-    # Adapter config
-    def adapter_enabled(detected: bool) -> str:
-        if profile == "local-only":
-            return "false"
-        return "true" if detected else "auto"
 
-    # If LiteLLM is the judge provider, add the chosen model to skip_models
-    # so routing doesn't recurse into itself
-    litellm_skip = ["complexity_router", "auto_router/"]
-    if judge_cfg.get("base_url") == p.litellm_base_url and judge_cfg.get("model"):
-        skip_model = judge_cfg["model"]
-        if skip_model not in litellm_skip:
-            litellm_skip.append(skip_model)
+def _generated_ollama_config(providers: ProviderDetection) -> dict[str, Any]:
+    config: dict[str, Any] = {
+        "enabled": providers.ollama_available,
+        "base_url": providers.ollama_base_url,
+    }
+    if providers.ollama_available and providers.ollama_models:
+        config["model"] = providers.ollama_models[0]
+    return config
 
-    # Build providers fallback chain — ordered list of all detected providers
-    providers_list: list[dict[str, Any]] = []
 
-    # LiteLLM proxy (highest priority if detected)
-    if profile != "local-only" and p.litellm_available:
-        litellm_model = p.litellm_models[0] if p.litellm_models else judge_cfg.get("model", "")
-        if litellm_model:
-            providers_list.append({
-                "name": "litellm",
-                "type": "litellm",
-                "model": litellm_model,
-                "base_url": p.litellm_base_url,
-                "api_key_env": "LITELLM_API_KEY",
-                "ollama_mode": False,
-            })
+def _litellm_skip_models(
+    providers: ProviderDetection,
+    judge: dict[str, Any],
+) -> list[str]:
+    skip_models = ["complexity_router", "auto_router/"]
+    if judge.get("base_url") == providers.litellm_base_url and judge.get("model"):
+        model = judge["model"]
+        if model not in skip_models:
+            skip_models.append(model)
+    return skip_models
 
-    # OpenAI API
-    if profile != "local-only" and p.openai_key_present:
-        openai_model = _preferred_model(
-            p.openai_models,
+
+def _litellm_provider(
+    providers: ProviderDetection,
+    judge: dict[str, Any],
+) -> dict[str, Any] | None:
+    if not providers.litellm_available:
+        return None
+    model = providers.litellm_models[0] if providers.litellm_models else judge.get("model", "")
+    if not model:
+        return None
+    return {
+        "name": "litellm",
+        "type": "litellm",
+        "model": model,
+        "base_url": providers.litellm_base_url,
+        "api_key_env": "LITELLM_API_KEY",
+        "ollama_mode": False,
+    }
+
+
+def _openai_provider(providers: ProviderDetection) -> dict[str, Any] | None:
+    if not providers.openai_key_present:
+        return None
+    return {
+        "name": "openai",
+        "type": "openai-compatible",
+        "model": _preferred_model(
+            providers.openai_models,
             _OPENAI_SUGGESTIONS,
             _PROVIDER_DEFAULTS["openai"]["model"],
-        )
-        providers_list.append({
-            "name": "openai",
-            "type": "openai-compatible",
-            "model": openai_model,
-            "base_url": _PROVIDER_DEFAULTS["openai"]["base_url"],
-            "api_key_env": "OPENAI_API_KEY",
-            "ollama_mode": False,
-        })
+        ),
+        "base_url": _PROVIDER_DEFAULTS["openai"]["base_url"],
+        "api_key_env": "OPENAI_API_KEY",
+        "ollama_mode": False,
+    }
 
-    # Anthropic API
-    if profile != "local-only" and p.anthropic_key_present:
-        providers_list.append({
-            "name": "anthropic",
-            "type": "anthropic",
-            "model": _ANTHROPIC_SUGGESTIONS[0],
-            "base_url": _PROVIDER_DEFAULTS["anthropic"]["base_url"],
-            "api_key_env": "ANTHROPIC_API_KEY",
-            "ollama_mode": False,
-        })
 
-    # Authenticated local CLI sessions. These use the CLI's configured default
-    # model unless the user later supplies an explicit model override.
-    if profile != "local-only":
-        for transport in ("codex", "claude"):
-            status = detection.cli_providers.get(transport)
-            if status is not None and status.usable:
-                providers_list.append({
+def _anthropic_provider(providers: ProviderDetection) -> dict[str, Any] | None:
+    if not providers.anthropic_key_present:
+        return None
+    return {
+        "name": "anthropic",
+        "type": "anthropic",
+        "model": _ANTHROPIC_SUGGESTIONS[0],
+        "base_url": _PROVIDER_DEFAULTS["anthropic"]["base_url"],
+        "api_key_env": "ANTHROPIC_API_KEY",
+        "ollama_mode": False,
+    }
+
+
+def _cli_providers(detection: DetectionResult) -> list[dict[str, Any]]:
+    providers: list[dict[str, Any]] = []
+    for transport in ("codex", "claude"):
+        status = detection.cli_providers.get(transport)
+        if status is not None and status.usable:
+            providers.append(
+                {
                     "name": f"{transport}-cli",
                     "type": "cli",
                     "transport": transport,
@@ -432,46 +473,103 @@ def generate_config_from_detection(
                     "api_key": "",
                     "api_key_env": "",
                     "ollama_mode": False,
-                })
+                }
+            )
+    return providers
 
-    # Ollama (local, free — always last in the chain if available)
-    if p.ollama_available:
-        ollama_model = p.ollama_models[0] if p.ollama_models else "qwen3.5:2b"
-        providers_list.append({
-            "name": "ollama",
-            "type": "ollama",
-            "model": ollama_model,
-            "base_url": p.ollama_base_url,
-            "api_key": "",
-            "ollama_mode": True,
-        })
 
-    providers_list = providers_list[:MAX_PROVIDER_CHAIN_ENTRIES]
-    if providers_list and all(item.get("type") == "cli" for item in providers_list):
-        judge_cfg = {
+def _ollama_provider(providers: ProviderDetection) -> dict[str, Any] | None:
+    if not providers.ollama_available:
+        return None
+    return {
+        "name": "ollama",
+        "type": "ollama",
+        "model": providers.ollama_models[0] if providers.ollama_models else "qwen3.5:2b",
+        "base_url": providers.ollama_base_url,
+        "api_key": "",
+        "ollama_mode": True,
+    }
+
+
+def _generated_provider_chain(
+    detection: DetectionResult,
+    judge: dict[str, Any],
+    profile: str,
+) -> list[dict[str, Any]]:
+    providers: list[dict[str, Any]] = []
+    if profile != "local-only":
+        providers.extend(
+            item
+            for item in (
+                _litellm_provider(detection.providers, judge),
+                _openai_provider(detection.providers),
+                _anthropic_provider(detection.providers),
+            )
+            if item is not None
+        )
+        providers.extend(_cli_providers(detection))
+    ollama = _ollama_provider(detection.providers)
+    if ollama is not None:
+        providers.append(ollama)
+    return providers[:MAX_PROVIDER_CHAIN_ENTRIES]
+
+
+def _adapter_enabled(profile: str, detected: bool) -> str:
+    if profile == "local-only":
+        return "false"
+    return "true" if detected else "auto"
+
+
+def _generated_adapters_config(
+    detection: DetectionResult,
+    profile: str,
+    litellm_skip: list[str],
+) -> dict[str, Any]:
+    providers = detection.providers
+    adapters = detection.adapters
+    return {
+        "litellm": {
+            "enabled": _adapter_enabled(profile, providers.litellm_available),
+            "base_url": providers.litellm_base_url,
+            "api_key_env": "LITELLM_API_KEY",
+            "skip_models": litellm_skip,
+        },
+        "hermes": {"enabled": _adapter_enabled(profile, adapters.hermes)},
+        "openclaw": {"enabled": _adapter_enabled(profile, adapters.openclaw)},
+        "codex": {"enabled": _adapter_enabled(profile, adapters.codex)},
+        "claude": {"enabled": _adapter_enabled(profile, adapters.claude)},
+    }
+
+
+def _judge_for_provider_chain(
+    judge: dict[str, Any],
+    providers: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if providers and all(item.get("type") == "cli" for item in providers):
+        return {
             "model": "",
             "base_url": "",
             "api_key": "",
             "api_key_env": "",
             "ollama_mode": False,
         }
+    return judge
 
-    adapters_cfg: dict[str, Any] = {
-        "litellm": {
-            "enabled": (
-                "false"
-                if profile == "local-only"
-                else ("true" if p.litellm_available else "auto")
-            ),
-            "base_url": p.litellm_base_url,
-            "api_key_env": "LITELLM_API_KEY",
-            "skip_models": litellm_skip,
-        },
-        "hermes": {"enabled": adapter_enabled(a.hermes)},
-        "openclaw": {"enabled": adapter_enabled(a.openclaw)},
-        "codex": {"enabled": adapter_enabled(a.codex)},
-        "claude": {"enabled": adapter_enabled(a.claude)},
-    }
+
+def generate_config_from_detection(
+    detection: DetectionResult,
+    profile: str = "standard",
+) -> dict[str, Any]:
+    """Generate a config dict from detection results.
+
+    Used by non-interactive mode and as defaults for interactive mode.
+    """
+    judge_cfg = _generated_judge_config(detection.providers, profile)
+    ollama_cfg = _generated_ollama_config(detection.providers)
+    litellm_skip = _litellm_skip_models(detection.providers, judge_cfg)
+    providers_list = _generated_provider_chain(detection, judge_cfg, profile)
+    judge_cfg = _judge_for_provider_chain(judge_cfg, providers_list)
+    adapters_cfg = _generated_adapters_config(detection, profile, litellm_skip)
 
     return {
         "providers": providers_list,

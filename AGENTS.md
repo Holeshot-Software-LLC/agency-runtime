@@ -3,7 +3,7 @@ title: "Repository Agent Instructions"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags:
   - governance
   - documentation
@@ -12,7 +12,9 @@ related:
   - docs/worklog/README.md
   - docs/decisions/README.md
   - CONTRIBUTING.md
+  - CODE_OF_CONDUCT.md
   - SECURITY.md
+  - docs/THREAT_MODEL.md
   - docs/RELEASE_CHECKLIST.md
 supersedes: []
 superseded_by: null
@@ -34,6 +36,7 @@ below.
 | Durable decisions | [docs/decisions/README.md](docs/decisions/README.md) | Canonical ADR registry and superseding chains |
 | Contributor workflow | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, implementation boundaries, and validation |
 | Security | [SECURITY.md](SECURITY.md) | Vulnerability reporting, threat boundaries, and hardening |
+| Threat model | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) | Assets, trust boundaries, enforced controls, and residual risks |
 | Release history | [CHANGELOG.md](CHANGELOG.md) | User-visible unreleased and versioned changes |
 | Operations help | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Host maturity, MCP, LiteLLM, dashboard, and platform diagnostics |
 | Release gate | [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) | Support evidence, security, artifact, and publication checklist |
@@ -119,7 +122,10 @@ python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check
 python scripts/verify_docs.py
-python -m pytest tests/ -q
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
+python -m pytest tests/ -q -W error
+node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details
 git diff --check
 ```

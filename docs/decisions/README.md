@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -91,6 +91,10 @@ Status meanings:
 | [ADR-0032](0032-adaptive-authenticated-dashboard-polling.md) | Use adaptive authenticated polling and source-owned signal visualizations | Accepted |
 | [ADR-0034](0034-persistent-soft-host-control.md) | Separate immediate host control from native plugin lifecycle | Accepted |
 | [ADR-0036](0036-capability-bound-host-canary-attestations.md) | Bind live host canary attestations to capability and installation identity | Accepted |
+| [ADR-0037](0037-layered-pinned-supply-chain-gates.md) | Use layered pinned supply-chain gates | Accepted |
+| [ADR-0038](0038-refuse-executable-git-configuration-during-delegation.md) | Refuse executable Git configuration during delegated mutations | Accepted |
+| [ADR-0039](0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md) | Fail before DACL mutation under restricted Windows tokens | Accepted |
+| [ADR-0040](0040-preserve-environment-owned-python-launchers.md) | Preserve environment-owned Python launchers | Accepted |
 
 ## Documentation governance
 

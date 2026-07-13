@@ -16,7 +16,6 @@ from agency_runtime.core.selector.policy import (
     validate_policy,
 )
 
-
 STARTER_SLUGS = {str(item["slug"]) for item in STARTER_ROSTER}
 
 
@@ -135,9 +134,7 @@ def test_roster_gated_routes_require_a_reason() -> None:
     report = validate_policy(policy, STARTER_SLUGS)
 
     assert report["valid"] is False
-    assert any(
-        "reason must be a non-empty string" in error for error in report["errors"]
-    )
+    assert any("reason must be a non-empty string" in error for error in report["errors"])
 
 
 class _CatalogStore:
@@ -164,6 +161,25 @@ def test_policy_cli_json_is_truthful_and_includes_division_routes(
     assert payload["division_count"] == 6
     assert payload["disabled_count"] == 231
     assert payload["all_missing"] == []
+
+
+def test_policy_cli_text_preserves_the_availability_breakdown(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(cli, "load_policy", load_bundled_policy)
+    monkeypatch.setattr(cli, "_store", lambda: _CatalogStore(STARTER_SLUGS))
+
+    result = cli.cmd_policy(argparse.Namespace(json=False))
+    output = capsys.readouterr().out
+
+    assert result == 0
+    assert output.startswith("Companion policy: 16 broad actions, 6 division anchors, ")
+    assert "\n✅ VALID:" in output
+    assert "\n✅ CODING\n" in output
+    assert "   always_include (" in output
+    assert "   roster-gated and disabled (" in output
+    assert "   conditional (" in output
 
 
 def test_policy_cli_returns_nonzero_for_missing_enabled_specialists(

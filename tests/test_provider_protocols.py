@@ -7,7 +7,6 @@ import json
 from agency_runtime.core.config import ProviderEntry
 from agency_runtime.core.selector import judge
 
-
 CATALOG = [{"slug": "security-reviewer", "description": "Reviews application security."}]
 
 
@@ -34,9 +33,17 @@ def test_openai_compatible_base_v1_is_not_duplicated(monkeypatch):
         captured["headers"] = dict(request.header_items())
         captured["body"] = json.loads(request.data)
         captured["timeout"] = kwargs["timeout"]
-        return _Response({
-            "choices": [{"message": {"content": '{"selected_ids":["security-reviewer"],"confidence":0.9}'}}],
-        })
+        return _Response(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "content": '{"selected_ids":["security-reviewer"],"confidence":0.9}'
+                        }
+                    }
+                ],
+            }
+        )
 
     monkeypatch.setattr(judge, "open_no_redirect", fake_urlopen)
     provider = ProviderEntry(
@@ -65,12 +72,16 @@ def test_anthropic_provider_uses_messages_protocol(monkeypatch):
         captured["url"] = request.full_url
         captured["headers"] = {key.lower(): value for key, value in request.header_items()}
         captured["body"] = json.loads(request.data)
-        return _Response({
-            "content": [{
-                "type": "text",
-                "text": '{"selected_ids":["security-reviewer"],"confidence":0.88}',
-            }],
-        })
+        return _Response(
+            {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": '{"selected_ids":["security-reviewer"],"confidence":0.88}',
+                    }
+                ],
+            }
+        )
 
     monkeypatch.setattr(judge, "open_no_redirect", fake_urlopen)
     provider = ProviderEntry(
@@ -129,14 +140,16 @@ def test_local_only_config_never_selects_network_provider():
         generate_config_from_detection,
     )
 
-    detection = DetectionResult(providers=ProviderDetection(
-        openai_key_present=True,
-        openai_models=["gpt-5.4-mini"],
-        anthropic_key_present=True,
-        litellm_available=True,
-        litellm_models=["remote-model"],
-        ollama_available=False,
-    ))
+    detection = DetectionResult(
+        providers=ProviderDetection(
+            openai_key_present=True,
+            openai_models=["gpt-5.4-mini"],
+            anthropic_key_present=True,
+            litellm_available=True,
+            litellm_models=["remote-model"],
+            ollama_available=False,
+        )
+    )
 
     config = generate_config_from_detection(detection, profile="local-only")
 

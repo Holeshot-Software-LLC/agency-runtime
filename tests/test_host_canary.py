@@ -2,24 +2,25 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
-import platform
+import json
 import os
+import platform
 import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
 
+import agency_runtime.core.canary as canary_module
+from agency_runtime.core.canary import CODEX_CANARY_EXEC_OPTIONS, _backend, run_canary
+from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.installer import (
     INSTALL_MANIFEST,
     PLUGIN_VERSION,
     inspect_host_installations,
     install_agent_adapter,
 )
-from agency_runtime.core.canary import CODEX_CANARY_EXEC_OPTIONS, _backend, run_canary
-from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -62,6 +63,7 @@ def test_readiness_is_nonmutating_and_never_claims_a_live_canary(
     )
 
     assert report["ready"] is True
+    assert report["execute_confirmation"] == "RUN LIVE claude CANARY"
     assert report["live_attempted"] is False
     assert report["canary_passed"] is False
     assert path.exists() is False
@@ -90,6 +92,200 @@ def test_live_canary_requires_exact_confirmation_before_backend_execution(
     assert "RUN LIVE claude CANARY" in report["unmet_prerequisites"][-1]
 
 
+def test_unavailable_evidence_store_fails_before_live_attempt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = False
+
+    class UnavailableStore:
+        def __init__(self, _path: Path) -> None:
+            raise OSError("private storage detail")
+
+    def unexpected_backend(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("backend must not run without an evidence store")
+
+    monkeypatch.setattr(canary_module, "Store", UnavailableStore)
+    monkeypatch.setattr(
+        canary_module.secrets,
+        "token_hex",
+        lambda _size: (_ for _ in ()).throw(
+            AssertionError("a nonce must not be created before the evidence store")
+        ),
+    )
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=tmp_path / "agency.db",
+        inspector=_ready_host,
+        backend_factory=unexpected_backend,
+    )
+
+    assert report["live_attempted"] is False
+    assert report["unmet_prerequisites"] == ["runtime evidence store is unavailable"]
+    assert "private storage detail" not in json.dumps(report)
+    assert called is False
+
+
+def test_unavailable_backend_fails_before_live_attempt(tmp_path: Path) -> None:
+    path = tmp_path / "agency.db"
+    Store(path)
+
+    def unavailable_backend(*_args, **_kwargs):
+        raise RuntimeError("private backend detail")
+
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=path,
+        inspector=_ready_host,
+        backend_factory=unavailable_backend,
+    )
+
+    assert report["live_attempted"] is False
+    assert report["unmet_prerequisites"] == ["safe noninteractive canary backend is unavailable"]
+    assert "private backend detail" not in json.dumps(report)
+
+
+def test_post_invocation_evidence_failure_preserves_attempt_truth(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FailingEvidenceStore:
+        def __init__(self, _path: Path) -> None:
+            self.reads = 0
+
+        def recent_runtime_activity(self, *, limit: int):
+            assert limit == 200
+            self.reads += 1
+            if self.reads == 1:
+                return {}
+            raise OSError("private post-invocation detail")
+
+    class Backend:
+        def execute(self, **_kwargs):
+            return {
+                "backend": "codex",
+                "status": "completed",
+                "exit_code": 0,
+                "output": _valid_header(),
+            }
+
+    monkeypatch.setattr(canary_module, "Store", FailingEvidenceStore)
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=tmp_path / "agency.db",
+        inspector=_ready_host,
+        backend_factory=lambda *_args, **_kwargs: Backend(),
+    )
+
+    assert report["live_attempted"] is True
+    assert report["canary_passed"] is False
+    assert report["unmet_prerequisites"] == [
+        "runtime evidence could not be read after host invocation"
+    ]
+    assert "private post-invocation detail" not in json.dumps(report)
+
+
+def test_proof_failures_are_complete_ordered_and_safely_rendered(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.db"
+    Store(path)
+
+    class FailedBackend:
+        def execute(self, **_kwargs):
+            return {
+                "backend": "codex",
+                "status": "timed_out",
+                "exit_code": 124,
+                "stdout_truncated": True,
+                "stderr_truncated": True,
+                "output": "not a valid header",
+            }
+
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=path,
+        inspector=_ready_host,
+        backend_factory=lambda *_args, **_kwargs: FailedBackend(),
+    )
+
+    assert report["invocation"]["timed_out"] is True
+    assert report["invocation"]["stdout_truncated"] is True
+    assert report["invocation"]["stderr_truncated"] is True
+    assert report["unmet_prerequisites"] == [
+        "host invocation did not complete successfully",
+        "canary profile plugin registration and enablement were not proven",
+        "final response header was not proven",
+        "correlated routing and finalization evidence was not proven",
+    ]
+
+
+def test_attestation_failure_cannot_turn_valid_evidence_into_a_pass(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.db"
+    Store(path)
+
+    class FailingAttestationStore(Store):
+        def record_host_canary_attestation(self, **_kwargs):
+            raise OSError("private persistence detail")
+
+    class EvidenceBackend:
+        def execute(self, **kwargs):
+            trace_id = "attestation-write-failure"
+            store = Store(path)
+            store.record_routing_decision(
+                trace_id=trace_id,
+                session_id="attestation-session",
+                query_hash=hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest(),
+                context_fingerprint="a" * 64,
+                decision={"status": "selected", "selected_ids": ["reviewer"]},
+            )
+            store.record_finalization(
+                trace_id=trace_id,
+                host="codex",
+                action="accept",
+            )
+            return {
+                "backend": "codex",
+                "profile_scope": "isolated-profile",
+                "isolated_plugin": {"registered": True, "enabled": True},
+                "status": "completed",
+                "exit_code": 0,
+                "output": _valid_header(),
+            }
+
+    monkeypatch.setattr(canary_module, "Store", FailingAttestationStore)
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=path,
+        inspector=_ready_host,
+        backend_factory=lambda *_args, **_kwargs: EvidenceBackend(),
+    )
+
+    assert report["invocation"]["header_valid"] is True
+    assert report["evidence"]["correlated_trace_ids"] == ["attestation-write-failure"]
+    assert report["attestation_persisted"] is False
+    assert report["canary_passed"] is False
+    assert report["unmet_prerequisites"] == [
+        "successful canary evidence could not be durably attested"
+    ]
+    assert "private persistence detail" not in json.dumps(report)
+
+
 def test_live_canary_passes_only_with_correlated_runtime_evidence(
     tmp_path: Path,
 ) -> None:
@@ -114,9 +310,7 @@ def test_live_canary_passes_only_with_correlated_runtime_evidence(
                 store.record_routing_decision(
                     trace_id=trace_id,
                     session_id=session_id,
-                    query_hash=hashlib.sha256(
-                        kwargs["task"].encode("utf-8")
-                    ).hexdigest(),
+                    query_hash=hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest(),
                     context_fingerprint="b" * 64,
                     decision={
                         "status": "selected",
@@ -241,9 +435,7 @@ def test_claude_real_shape_canary_passes_without_synthesizing_a_receipt(
             store.record_routing_decision(
                 trace_id=trace_id,
                 session_id="claude-session",
-                query_hash=hashlib.sha256(
-                    kwargs["task"].encode("utf-8")
-                ).hexdigest(),
+                query_hash=hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest(),
                 context_fingerprint="d" * 64,
                 decision={"status": "selected", "selected_ids": ["reviewer"]},
             )
@@ -299,9 +491,7 @@ def test_codex_canary_attests_isolated_profile_without_claiming_real_profile(
             store.record_routing_decision(
                 trace_id=trace_id,
                 session_id="codex-isolated-session",
-                query_hash=hashlib.sha256(
-                    kwargs["task"].encode("utf-8")
-                ).hexdigest(),
+                query_hash=hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest(),
                 context_fingerprint="f" * 64,
                 decision={"status": "selected", "selected_ids": ["reviewer"]},
             )
@@ -404,9 +594,7 @@ def test_codex_safe_backend_isolates_auth_plugins_config_and_secrets(
     def runner(argv: list[str], **kwargs):
         calls.append({"argv": list(argv), **kwargs})
         assert json.loads(
-            (Path(kwargs["env"]["CODEX_HOME"]) / "auth.json").read_text(
-                encoding="utf-8"
-            )
+            (Path(kwargs["env"]["CODEX_HOME"]) / "auth.json").read_text(encoding="utf-8")
         ) == {"token": secret}
         stdout = (
             final
@@ -448,9 +636,7 @@ def test_codex_safe_backend_isolates_auth_plugins_config_and_secrets(
 
     assert result["status"] == "completed"
     assert result["output"] == _valid_header()
-    assert (real_home / "auth.json").read_text(encoding="utf-8") == json.dumps(
-        {"token": secret}
-    )
+    assert (real_home / "auth.json").read_text(encoding="utf-8") == json.dumps({"token": secret})
     assert config.read_text(encoding="utf-8") == 'model = "real-profile"\n'
     flattened_argv = json.dumps([call["argv"] for call in calls])
     assert secret not in flattened_argv
@@ -464,6 +650,9 @@ def test_codex_safe_backend_isolates_auth_plugins_config_and_secrets(
     assert 'web_search="disabled"' in calls[-1]["argv"]
     assert "apps._default.enabled=false" in calls[-1]["argv"]
     assert "mcp_servers={}" in calls[-1]["argv"]
+    assert "--ignore-user-config" not in calls[-1]["argv"]
+    assert "--ignore-rules" in calls[-1]["argv"]
+    assert "--dangerously-bypass-hook-trust" in calls[-1]["argv"]
     assert list(workdir.iterdir()) == []
 
 
@@ -497,9 +686,9 @@ def test_claude_canary_loads_managed_plugin_without_safe_mode_or_profile_setting
         calls.append({"argv": list(argv), **kwargs})
         isolated = Path(kwargs["env"]["CLAUDE_CONFIG_DIR"])
         assert isolated != real_home
-        assert (isolated / ".credentials.json").read_text(
-            encoding="utf-8"
-        ) == json.dumps({"token": secret})
+        assert (isolated / ".credentials.json").read_text(encoding="utf-8") == json.dumps(
+            {"token": secret}
+        )
         assert not (isolated / "settings.json").exists()
         return BoundedProcessResult(
             0,
@@ -547,9 +736,7 @@ def test_claude_canary_loads_managed_plugin_without_safe_mode_or_profile_setting
     assert "ANTHROPIC_API_KEY" not in calls[0]["env"]
     assert calls[0]["env"]["AGENCY_CANARY_MODE"] == "1"
     assert not Path(calls[0]["env"]["CLAUDE_CONFIG_DIR"]).exists()
-    assert settings.read_text(encoding="utf-8") == json.dumps(
-        {"hooks": {"unsafe-user-hook": []}}
-    )
+    assert settings.read_text(encoding="utf-8") == json.dumps({"hooks": {"unsafe-user-hook": []}})
     assert secret not in json.dumps(result)
     assert secret not in json.dumps(argv)
     assert list(workdir.iterdir()) == []
@@ -598,6 +785,8 @@ def test_current_codex_cli_exposes_every_canary_command_capability(
     }:
         assert option in exec_help
     assert CODEX_CANARY_EXEC_OPTIONS[-1] == "-"
+    assert "--ignore-user-config" not in CODEX_CANARY_EXEC_OPTIONS
+    assert "--ignore-rules" in CODEX_CANARY_EXEC_OPTIONS
     assert "--json" in help_text("plugin", "marketplace", "add")
     assert "--json" in help_text("plugin", "add")
     plugin_list_help = help_text("plugin", "list")

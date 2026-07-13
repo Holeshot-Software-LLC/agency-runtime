@@ -17,7 +17,6 @@ from typing import Any
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "agency_runtime" / "core" / "companion_policy.yaml"
 BEGIN = "# BEGIN GENERATED SPECIALIST AVAILABILITY"
@@ -37,38 +36,48 @@ ENABLED = (
 )
 
 
-def _referenced_slugs(policy: dict[str, Any]) -> set[str]:
+def _action_slugs(actions: Any) -> set[str]:
     slugs: set[str] = set()
-    actions = policy.get("actions") or {}
-    if isinstance(actions, dict):
-        for action in actions.values():
-            if not isinstance(action, dict):
+    if not isinstance(actions, dict):
+        return slugs
+    for action in actions.values():
+        if not isinstance(action, dict):
+            continue
+        for key in ("always_include", "conditional"):
+            entries = action.get(key) or []
+            if not isinstance(entries, list):
                 continue
-            for key in ("always_include", "conditional"):
-                entries = action.get(key) or []
-                if not isinstance(entries, list):
-                    continue
-                for entry in entries:
-                    if isinstance(entry, dict) and entry.get("slug"):
-                        slugs.add(str(entry["slug"]))
-
-    divisions = policy.get("division_anchors") or {}
-    if isinstance(divisions, dict):
-        for division in divisions.values():
-            if not isinstance(division, dict):
-                continue
-            anchor = division.get("anchor")
-            if isinstance(anchor, str) and anchor:
-                slugs.add(anchor)
-            conditional = division.get("conditional") or []
-            if not isinstance(conditional, list):
-                continue
-            for entry in conditional:
-                if isinstance(entry, (list, tuple)) and entry and entry[0]:
-                    slugs.add(str(entry[0]))
-                elif isinstance(entry, dict) and entry.get("slug"):
+            for entry in entries:
+                if isinstance(entry, dict) and entry.get("slug"):
                     slugs.add(str(entry["slug"]))
     return slugs
+
+
+def _division_slugs(divisions: Any) -> set[str]:
+    slugs: set[str] = set()
+    if not isinstance(divisions, dict):
+        return slugs
+    for division in divisions.values():
+        if not isinstance(division, dict):
+            continue
+        anchor = division.get("anchor")
+        if isinstance(anchor, str) and anchor:
+            slugs.add(anchor)
+        conditional = division.get("conditional") or []
+        if not isinstance(conditional, list):
+            continue
+        for entry in conditional:
+            if isinstance(entry, (list, tuple)) and entry and entry[0]:
+                slugs.add(str(entry[0]))
+            elif isinstance(entry, dict) and entry.get("slug"):
+                slugs.add(str(entry["slug"]))
+    return slugs
+
+
+def _referenced_slugs(policy: dict[str, Any]) -> set[str]:
+    return _action_slugs(policy.get("actions") or {}) | _division_slugs(
+        policy.get("division_anchors") or {}
+    )
 
 
 def _without_generated_block(text: str) -> str:

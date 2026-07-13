@@ -1,46 +1,87 @@
-"""LLM judge — query a model to select specialists from candidates.
+"""Semantic judge facade and deterministic routing fallbacks.
 
-Uses the centralized config system for all model/URL/key/tuning values.
-No hardcoded user-specific identifiers.
-
-Fallback chain (in priority order):
-1. Each provider in cfg.providers (user-configured priority list)
-2. Legacy judge config (cfg.judge — backward compat for existing configs)
-3. Ollama fallback (cfg.ollama — if enabled)
-4. Token-only (no LLM call, uses pre_narrow scores)
+Provider protocols, transport execution, and ordered attempt accounting live in
+small sibling modules.  This facade intentionally retains the historical names
+used by callers and tests, including dynamic monkeypatch seams.
 """
 
 from __future__ import annotations
 
-import json
 import logging
 import math
-import re
 import time
-import urllib.request
 from typing import Any
 
+# These imports are deliberate facade attributes.  Sibling modules resolve
+# them dynamically so downstream monkeypatches keep working after the split.
+from agency_runtime.core.bounded_json import safe_load_bounded_json  # noqa: F401
+from agency_runtime.core.cli_transport import (  # noqa: F401
+    SUPPORTED_CLI_TRANSPORTS,
+    invoke_cli_judge,
+)
 from agency_runtime.core.config import (
     MAX_PROVIDER_CHAIN_ENTRIES,
     AgencyConfig,
     JudgeConfig,
     ProviderEntry,
     _is_loopback_http_url,
-    is_safe_credential_url,
     load_config,
 )
-from agency_runtime.core.http_safety import open_no_redirect
+from agency_runtime.core.http_safety import open_no_redirect  # noqa: F401
+from agency_runtime.core.selector import judge_attempts as _attempts
+from agency_runtime.core.selector import judge_protocol as _protocol
+from agency_runtime.core.selector import judge_transport as _transport
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
-from agency_runtime.core.cli_transport import (
-    SUPPORTED_CLI_TRANSPORTS,
-    invoke_cli_judge,
-)
+from agency_runtime.core.selector.intent_text import affirmative_intent
 
 logger = logging.getLogger("agency_runtime.selector.judge")
 
 _MAX_JUDGE_RESPONSE_BYTES = 256 * 1024
 _MAX_PROVIDER_ATTEMPTS = MAX_PROVIDER_CHAIN_ENTRIES
 _MAX_JUDGE_DEADLINE_SECONDS = 60.0
+_MAX_JUDGE_CANDIDATES = 20
+_MAX_SELECTED = 50
+_MIN_RELATIVE_FALLBACK_SCORE = 0.30
+
+
+def _agent_id(agent: dict[str, Any]) -> str:
+    """Return the catalog identity accepted across selector entry points."""
+    return str(agent.get("slug") or agent.get("agent_slug") or "")
+
+
+def _judge_candidates(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return only identified candidates that can actually appear in a prompt."""
+    return [candidate for candidate in candidates if _agent_id(candidate)][:_MAX_JUDGE_CANDIDATES]
+
+
+def _validated_max_selected(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError("max_selected must be an integer")
+    if not 1 <= value <= _MAX_SELECTED:
+        raise ValueError(f"max_selected must be between 1 and {_MAX_SELECTED}")
+    return value
+
+
+def _scored_selection(
+    candidates: list[dict[str, Any]],
+    scores: list[float],
+    max_selected: int,
+) -> list[str]:
+    """Keep strong deterministic matches without padding with weak positives."""
+    top_score = scores[0] if scores else 0.0
+    if top_score <= 0:
+        return []
+    cutoff = top_score * _MIN_RELATIVE_FALLBACK_SCORE
+    selected: list[str] = []
+    for agent, score in zip(candidates, scores, strict=True):
+        agent_id = _agent_id(agent)
+        if score >= cutoff and agent_id and agent_id not in selected:
+            selected.append(agent_id)
+            if len(selected) >= max_selected:
+                break
+    return selected
 
 
 def _bounded_confidence(value: Any) -> float | None:
@@ -102,18 +143,6 @@ def _bounded_duration(value: Any, *, maximum: float) -> float:
     return min(duration, maximum)
 
 
-def _read_json_object(response: Any) -> dict[str, Any] | None:
-    """Read one bounded JSON object from an HTTP response."""
-    try:
-        raw = response.read(_MAX_JUDGE_RESPONSE_BYTES + 1)
-        if len(raw) > _MAX_JUDGE_RESPONSE_BYTES:
-            return None
-        parsed = json.loads(raw.decode("utf-8"))
-    except (OSError, UnicodeError, ValueError, TypeError):
-        return None
-    return parsed if isinstance(parsed, dict) else None
-
-
 def _with_cumulative_latency(
     result: dict[str, Any],
     attempts_started: float,
@@ -123,387 +152,86 @@ def _with_cumulative_latency(
     return result
 
 
-def parse_json_response(text: str) -> dict[str, Any] | None:
-    """Parse JSON from a model response, handling markdown fences."""
-    text = text.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"\s*```$", "", text)
-    try:
-        parsed = json.loads(text)
-        if isinstance(parsed, dict):
-            return parsed
-    except json.JSONDecodeError:
-        pass
-    start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        try:
-            parsed = json.loads(text[start : end + 1])
-            if isinstance(parsed, dict):
-                return parsed
-        except json.JSONDecodeError:
-            pass
-    return None
+# Protocol compatibility surface.  Sibling modules resolve dependencies back
+# through this facade so existing monkeypatches remain effective.
+_read_json_object = _protocol.read_json_object
+parse_json_response = _protocol.parse_json_response
+_build_judge_prompt = _protocol.build_judge_prompt
+_response_content = _protocol.response_content
+_build_judge_payload = _protocol.build_judge_payload
+_join_api_path = _protocol.join_api_path
+_validated_decision = _protocol.validated_decision
+_applied_result = _protocol.applied_result
+_encoded_model_payload = _protocol.encoded_model_payload
+_provider_headers = _protocol.provider_headers
+_build_http_request = _protocol.build_http_request
+
+# Provider transport compatibility surface.
+_try_cli_provider = _transport.try_cli_provider
+_provider_credentials_are_safe = _transport.provider_credentials_are_safe
+_execute_http_request = _transport.execute_http_request
+_try_http_provider = _transport.try_http_provider
+_try_provider = _transport.try_provider
+_try_legacy_judge = _transport.try_legacy_judge
+
+# Ordered-attempt compatibility surface.
+_AttemptState = _attempts.AttemptState
+_provider_attempt_identity = _attempts.provider_attempt_identity
+_try_provider_chain = _attempts.try_provider_chain
+_try_legacy_fallback = _attempts.try_legacy_fallback
+_try_ollama_fallback = _attempts.try_ollama_fallback
 
 
-def _build_judge_prompt(
-    task_description: str,
+def _empty_judge_result() -> dict[str, Any]:
+    return {
+        "selected_ids": [],
+        "confidence": 0.0,
+        "latency_ms": 0,
+        "status": "unknown",
+        "error": "",
+    }
+
+
+def _confidence_bypass_result(
     candidates: list[dict[str, Any]],
+    scores: list[float],
+    *,
     max_sel: int,
-) -> str:
-    """Build the bounded semantic-selection prompt shared by all transports."""
-
-    judge_candidates = candidates[:20]
-    catalog_lines = []
-    for agent in judge_candidates:
-        slug = agent.get("slug", "")
-        desc = agent.get("description", "")[:80]
-        catalog_lines.append(f"  {slug}: {desc}")
-    catalog_str = "\n".join(catalog_lines)
-    return (
-        f"Task: {task_description}\n\n"
-        f"Select 1-{max_sel} specialists from these {len(judge_candidates)} "
-        f"candidates. Return JSON only.\n\n"
-        f"Candidates:\n{catalog_str}\n\n"
-        f'Return: {{"selected_ids": ["id1"], "confidence": 0.9}}'
-    )
-
-
-def _build_judge_payload(
-    task_description: str,
-    candidates: list[dict[str, Any]],
-    max_sel: int,
-    ollama_mode: bool,
-    provider_type: str = "openai-compatible",
-) -> tuple[bytes, str, str]:
-    """Build the HTTP request payload and return (body, url_path, content_type)."""
-    user_content = _build_judge_prompt(task_description, candidates, max_sel)
-
-    if ollama_mode:
-        payload = json.dumps({
-            "model": "",  # filled by caller
-            "stream": False,
-            "think": False,
-            "format": "json",
-            "options": {
-                "temperature": 0,
-                "num_predict": 128,
-                "num_ctx": 8192,
-            },
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a semantic selector. Return strict JSON only.",
-                },
-                {"role": "user", "content": user_content},
-            ],
-        }).encode("utf-8")
-        return payload, "/api/chat", "application/json"
-
-    if provider_type == "anthropic":
-        payload = json.dumps({
-            "model": "",  # filled by caller
-            "system": "You are a semantic selector. Return strict JSON only.",
-            "messages": [{"role": "user", "content": user_content}],
-            "max_tokens": 256,
-            "temperature": 0.0,
-        }).encode("utf-8")
-        return payload, "/v1/messages", "application/json"
-
-    payload = json.dumps({
-        "model": "",  # filled by caller
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are a semantic selector for AI agent specialists. "
-                    "Return strict JSON only. No markdown fences."
-                ),
-            },
-            {"role": "user", "content": user_content},
-        ],
-        "max_tokens": 256,
-        "temperature": 0.0,
-        "stream": False,
-    }).encode("utf-8")
-    return payload, "/v1/chat/completions", "application/json"
-
-
-def _join_api_path(base_url: str, path: str) -> str:
-    """Join API paths without producing duplicate `/v1/v1/...` segments."""
-    base = base_url.rstrip("/")
-    normalized_path = "/" + path.lstrip("/")
-    if base.lower().endswith("/v1") and normalized_path.lower().startswith("/v1/"):
-        normalized_path = normalized_path[3:]
-    return f"{base}{normalized_path}"
-
-
-def _try_provider(
-    provider: ProviderEntry,
-    task_description: str,
-    candidates: list[dict[str, Any]],
-    max_sel: int,
+    threshold: float,
     candidate_count: int,
     top_score: float,
-    request_timeout: float | None = None,
 ) -> dict[str, Any] | None:
-    """Try a single provider. Returns result dict on success, None on failure."""
-
-    api_key = provider.resolve_api_key()
-    provider_type = provider.type.strip().lower()
-    ollama_mode = provider.ollama_mode or provider_type == "ollama"
-
-    if provider_type == "cli":
-        prompt = _build_judge_prompt(task_description, candidates, max_sel)
-        started = time.monotonic()
-        try:
-            parsed = invoke_cli_judge(
-                provider,
-                prompt,
-                timeout=(
-                    provider.timeout
-                    if request_timeout is None
-                    else request_timeout
-                ),
-            )
-        except Exception as exc:
-            logger.debug(
-                "provider %s failed (%s)",
-                provider.name[:80],
-                type(exc).__name__,
-            )
-            return None
-        if parsed is None:
-            return None
-        selected = parsed.get("selected_ids") or parsed.get("selected") or []
-        if not isinstance(selected, list):
-            return None
-        known_ids = {agent.get("slug", "") for agent in candidates}
-        valid_selected = list(dict.fromkeys(
-            str(item) for item in selected if str(item) in known_ids
-        ))
-        confidence = _bounded_confidence(parsed.get("confidence"))
-        if not valid_selected or confidence is None:
-            return None
-        return {
-            "selected_ids": valid_selected[:max_sel],
-            "confidence": confidence,
-            "latency_ms": int((time.monotonic() - started) * 1000),
-            "status": "applied",
-            "provider": (
-                f"{provider.name} (cli:{provider.transport.strip().lower()})"
-            ),
-            "candidate_count": candidate_count,
-            "top_score": top_score,
-        }
-
-    # Auth check
-    if not provider.model or not provider.base_url:
-        logger.debug("provider %s: model or base URL missing, skipping", provider.name)
+    if top_score < threshold:
         return None
-    keyless_loopback = (
-        provider_type in {"openai", "openai-compatible", "litellm"}
-        and _is_loopback_http_url(provider.base_url)
-    )
-    if not ollama_mode and not api_key and not keyless_loopback:
-        logger.debug("provider %s: no api key, skipping", provider.name)
+    selected_ids = _scored_selection(candidates, scores, max_sel)
+    if not selected_ids:
         return None
-    if api_key and not is_safe_credential_url(provider.base_url):
-        logger.debug("provider %s: unsafe credential transport, skipping", provider.name)
-        return None
-
-    body, path, content_type = _build_judge_payload(
-        task_description,
-        candidates,
-        max_sel,
-        ollama_mode,
-        provider_type,
-    )
-    body_json = json.loads(body)
-    body_json["model"] = provider.model
-    if (
-        provider_type in {"openai", "openai-compatible"}
-        and provider.model.lower().startswith("gpt-5")
-    ):
-        body_json["max_completion_tokens"] = body_json.pop("max_tokens", 256)
-        body_json.pop("temperature", None)
-    body = json.dumps(body_json).encode("utf-8")
-
-    request_url = _join_api_path(provider.base_url, path)
-    headers = {"Content-Type": content_type}
-    if api_key:
-        if provider_type == "anthropic":
-            headers["x-api-key"] = api_key
-            headers["anthropic-version"] = "2023-06-01"
-        else:
-            headers["Authorization"] = f"Bearer {api_key}"
-
-    timeout = _bounded_duration(
-        provider.timeout if request_timeout is None else request_timeout,
-        maximum=_MAX_JUDGE_DEADLINE_SECONDS,
-    )
-    if timeout <= 0:
-        return None
-
-    req = urllib.request.Request(request_url, data=body, headers=headers, method="POST")
-    t0 = time.monotonic()
-    try:
-        with open_no_redirect(req, timeout=timeout) as resp:
-            data = _read_json_object(resp)
-    except Exception as exc:
-        logger.debug("provider %s failed (%s)", provider.name[:80], type(exc).__name__)
-        return None
-    if data is None:
-        logger.debug("provider %s returned an invalid or oversized response", provider.name[:80])
-        return None
-
-    elapsed = time.monotonic() - t0
-
-    content = ""
-    if provider_type == "anthropic":
-        blocks = data.get("content", []) if isinstance(data, dict) else []
-        if isinstance(blocks, list):
-            content = "".join(
-                str(block.get("text", ""))
-                for block in blocks
-                if isinstance(block, dict) and block.get("type") == "text"
-            )
-    else:
-        try:
-            content = data["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError):
-            content = data.get("message", {}).get("content", "") if ollama_mode else str(data)
-
-    parsed = parse_json_response(content)
-    if parsed is None:
-        # Parse failed; fall through to the deterministic token-only fallback.
-        return None
-
-    selected = parsed.get("selected_ids") or parsed.get("selected") or []
-    if not isinstance(selected, list):
-        return None
-
-    known_ids = {a.get("slug", "") for a in candidates}
-    valid_selected = list(dict.fromkeys(
-        str(sid) for sid in selected if str(sid) in known_ids
-    ))
-
-    if not valid_selected:
-        # A syntactically valid response that selects no catalog member is not
-        # a successful attempt. Let the next provider evaluate the task.
-        return None
-
-    confidence = _bounded_confidence(parsed.get("confidence"))
-    if confidence is None:
-        return None
-
     return {
-        "selected_ids": valid_selected[:max_sel],
-        "confidence": confidence,
-        "latency_ms": int(elapsed * 1000),
-        "status": "applied",
-        "provider": f"{provider.name} ({provider_type})",
+        "selected_ids": selected_ids,
+        "confidence": min(0.99, 0.7 + top_score / 100),
+        "latency_ms": 0,
+        "status": "confidence_bypass",
         "candidate_count": candidate_count,
         "top_score": top_score,
     }
 
 
-def _try_legacy_judge(
-    jc: JudgeConfig,
-    task_description: str,
+def _fallback_result(
+    state: _AttemptState,
     candidates: list[dict[str, Any]],
-    max_sel: int,
+    scores: list[float],
     candidate_count: int,
     top_score: float,
-    request_timeout: float | None = None,
-) -> dict[str, Any] | None:
-    """Try the legacy judge config (backward compat). Returns result or None."""
-
-    api_key = jc.resolve_api_key()
-    if not jc.model or not jc.base_url:
-        return None
-    if api_key and not is_safe_credential_url(jc.base_url):
-        logger.debug("legacy judge: unsafe credential transport, skipping")
-        return None
-
-    ollama_mode = jc.ollama_mode
-    body, path, content_type = _build_judge_payload(
-        task_description, candidates, max_sel, ollama_mode
+    max_sel: int,
+) -> dict[str, Any]:
+    fallback = _token_only_fallback(
+        candidates,
+        scores,
+        candidate_count,
+        top_score,
+        max_sel,
     )
-    body_json = json.loads(body)
-    body_json["model"] = jc.model
-    if not ollama_mode and jc.model.lower().startswith("gpt-5"):
-        body_json["max_completion_tokens"] = body_json.pop("max_tokens", 256)
-        body_json.pop("temperature", None)
-    body = json.dumps(body_json).encode("utf-8")
-
-    request_url = _join_api_path(jc.base_url, path)
-    headers = {"Content-Type": content_type}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-
-    timeout = _bounded_duration(
-        jc.timeout if request_timeout is None else request_timeout,
-        maximum=_MAX_JUDGE_DEADLINE_SECONDS,
-    )
-    if timeout <= 0:
-        return None
-
-    req = urllib.request.Request(request_url, data=body, headers=headers, method="POST")
-    t0 = time.monotonic()
-    try:
-        with open_no_redirect(req, timeout=timeout) as resp:
-            data = _read_json_object(resp)
-    except Exception as exc:
-        logger.debug("legacy judge failed (%s)", type(exc).__name__)
-        return None
-    if data is None:
-        logger.debug("legacy judge returned an invalid or oversized response")
-        return None
-
-    elapsed = time.monotonic() - t0
-    result: dict[str, Any] = {
-        "selected_ids": [],
-        "confidence": 0.0,
-        "latency_ms": int(elapsed * 1000),
-        "status": "unknown",
-        "error": "",
-    }
-    result["provider"] = jc.model
-
-    content = ""
-    try:
-        content = data["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError):
-        content = data.get("message", {}).get("content", "") if ollama_mode else str(data)
-
-    parsed = parse_json_response(content)
-    if parsed is None:
-        return None
-
-    selected = parsed.get("selected_ids") or parsed.get("selected") or []
-    if not isinstance(selected, list):
-        return None
-
-    known_ids = {a.get("slug", "") for a in candidates}
-    valid_selected = list(dict.fromkeys(
-        str(sid) for sid in selected if str(sid) in known_ids
-    ))
-
-    if not valid_selected:
-        return None
-
-    confidence = _bounded_confidence(parsed.get("confidence"))
-    if confidence is None:
-        return None
-
-    result["selected_ids"] = valid_selected[:max_sel]
-    result["confidence"] = confidence
-    result["candidate_count"] = candidate_count
-    result["top_score"] = top_score
-    result["status"] = "applied"
-    return result
+    return _with_cumulative_latency(fallback, state.started)
 
 
 def query_judge(
@@ -514,182 +242,95 @@ def query_judge(
     judge_config: JudgeConfig | None = None,
     max_selected: int | None = None,
 ) -> dict[str, Any]:
-    """Query the agency judge model to select specialists.
+    """Query configured providers and fall back deterministically.
 
-    Fallback chain (first success wins):
-    1. Each provider in a nonempty cfg.providers chain, then token-only.
-    2. For legacy configs with no provider chain: cfg.judge, cfg.ollama,
-       then token-only.
+    A nonempty typed provider chain is authoritative.  Legacy judge and Ollama
+    fallbacks are used only when no typed chain is configured.
     """
+    if not isinstance(task_description, str):
+        raise TypeError("task_description must be a string")
     cfg = config or load_config()
     jc = judge_config or cfg.judge
-    max_sel = max_selected or jc.max_selected
-    attempts_started = time.monotonic()
-    deadline = attempts_started + _bounded_duration(
-        jc.timeout,
-        maximum=_MAX_JUDGE_DEADLINE_SECONDS,
-    )
-
-    result: dict[str, Any] = {
-        "selected_ids": [],
-        "confidence": 0.0,
-        "latency_ms": 0,
-        "status": "unknown",
-        "error": "",
-    }
+    max_sel = _validated_max_selected(jc.max_selected if max_selected is None else max_selected)
+    state = _AttemptState.begin(jc.timeout)
+    result = _empty_judge_result()
 
     if not catalog:
         result["status"] = "no_catalog"
         result["error"] = "agent catalog not loaded"
         return result
 
-    candidates, scores = pre_narrow(task_description, catalog)
+    # Lexical narrowing cannot infer negation.  Exclude high-confidence opt-out
+    # clauses from scoring while retaining the complete task for the judge.
+    candidates, scores = pre_narrow(affirmative_intent(task_description), catalog)
     candidate_count = len(candidates)
     top_score = scores[0] if scores else 0.0
 
-    # Confidence bypass — skip LLM entirely
-    if top_score >= jc.confidence_bypass_threshold:
-        bypass_ids = [
-            a.get("slug", "")
-            for a, s in zip(candidates, scores)
-            if s > 0
-        ][:max_sel]
-        if bypass_ids:
-            result["selected_ids"] = bypass_ids
-            result["confidence"] = min(0.99, 0.7 + top_score / 100)
-            result["latency_ms"] = 0
-            result["status"] = "confidence_bypass"
-            result["candidate_count"] = candidate_count
-            result["top_score"] = top_score
-            return result
+    bypass_result = _confidence_bypass_result(
+        candidates,
+        scores,
+        max_sel=max_sel,
+        threshold=jc.confidence_bypass_threshold,
+        candidate_count=candidate_count,
+        top_score=top_score,
+    )
+    if bypass_result is not None:
+        return bypass_result
 
-    # Layer 1: Iterate providers list (user-configured fallback chain)
-    attempted: set[tuple[str, str, str]] = set()
-    attempted_targets: set[tuple[str, str]] = set()
-    attempt_count = 0
+    provider_result = _try_provider_chain(
+        state,
+        cfg.providers,
+        task_description,
+        candidates,
+        max_sel,
+        candidate_count,
+        top_score,
+    )
+    if provider_result is not None:
+        return _with_cumulative_latency(provider_result, state.started)
 
-    def reserve_attempt(configured_timeout: float) -> float:
-        """Reserve one bounded network attempt and return its remaining timeout."""
-        nonlocal attempt_count
-        if attempt_count >= _MAX_PROVIDER_ATTEMPTS:
-            return 0.0
-        remaining = deadline - time.monotonic()
-        per_attempt = _bounded_duration(
-            configured_timeout,
-            maximum=_MAX_JUDGE_DEADLINE_SECONDS,
-        )
-        timeout = min(remaining, per_attempt)
-        if timeout <= 0:
-            return 0.0
-        attempt_count += 1
-        return timeout
-
-    for provider in cfg.providers:
-        signature = _attempt_signature(
-            provider.base_url,
-            provider.model,
-            provider.ollama_mode,
-            provider.type,
-            provider.transport,
-        )
-        if signature in attempted or not _provider_is_attemptable(provider):
-            continue
-        configured_timeout = _bounded_duration(
-            provider.timeout,
-            maximum=_MAX_JUDGE_DEADLINE_SECONDS,
-        )
-        if configured_timeout <= 0:
-            continue
-        timeout = reserve_attempt(configured_timeout)
-        if timeout <= 0:
-            break
-        attempted.add(signature)
-        attempted_targets.add(
-            (
-                f"cli:{provider.transport.strip().lower()}",
-                provider.model.strip().lower(),
-            )
-            if provider.type.strip().lower() == "cli"
-            else _network_target_signature(provider.base_url, provider.model)
-        )
-        res = _try_provider(
-            provider, task_description, candidates, max_sel,
-            candidate_count, top_score,
-            request_timeout=timeout,
-        )
-        if res is not None:
-            return _with_cumulative_latency(res, attempts_started)
-        logger.debug("provider %s failed, trying next", provider.name)
-
-    # A typed provider chain is authoritative. Never make a hidden legacy or
-    # Ollama request after the user removed it from that ordered chain.
     if cfg.providers:
-        fallback = _token_only_fallback(
+        return _fallback_result(
+            state,
             candidates,
             scores,
             candidate_count,
             top_score,
             max_sel,
         )
-        return _with_cumulative_latency(fallback, attempts_started)
 
-    # Legacy layers apply only when the typed provider chain is absent.
-    legacy_signature = _attempt_signature(jc.base_url, jc.model, jc.ollama_mode)
-    legacy_target = _network_target_signature(jc.base_url, jc.model)
-    if (
-        jc.model
-        and jc.base_url
-        and legacy_signature not in attempted
-        and legacy_target not in attempted_targets
-    ):
-        legacy_timeout = reserve_attempt(jc.timeout)
-        if legacy_timeout > 0:
-            attempted.add(legacy_signature)
-            attempted_targets.add(legacy_target)
-            legacy_result = _try_legacy_judge(
-                jc, task_description, candidates, max_sel,
-                candidate_count, top_score,
-                request_timeout=legacy_timeout,
-            )
-            if legacy_result is not None:
-                return _with_cumulative_latency(legacy_result, attempts_started)
+    legacy_result = _try_legacy_fallback(
+        state,
+        jc,
+        task_description,
+        candidates,
+        max_sel,
+        candidate_count,
+        top_score,
+    )
+    if legacy_result is not None:
+        return _with_cumulative_latency(legacy_result, state.started)
 
-    # Layer 3: Ollama fallback (if enabled and configured)
-    if cfg.ollama.enabled and cfg.ollama.model:
-        ollama_provider = ProviderEntry(
-            name="ollama-fallback",
-            type="ollama",
-            model=cfg.ollama.model,
-            base_url=cfg.ollama.base_url,
-            ollama_mode=True,
-            timeout=cfg.judge.timeout,
-        )
-        ollama_signature = _attempt_signature(
-            ollama_provider.base_url,
-            ollama_provider.model,
-            ollama_provider.ollama_mode,
-        )
-        if ollama_signature not in attempted:
-            ollama_timeout = reserve_attempt(ollama_provider.timeout)
-            if ollama_timeout > 0:
-                attempted.add(ollama_signature)
-                ollama_result = _try_provider(
-                    ollama_provider, task_description, candidates, max_sel,
-                    candidate_count, top_score,
-                    request_timeout=ollama_timeout,
-                )
-                if ollama_result is not None:
-                    return _with_cumulative_latency(ollama_result, attempts_started)
+    ollama_result = _try_ollama_fallback(
+        state,
+        cfg,
+        task_description,
+        candidates,
+        max_sel,
+        candidate_count,
+        top_score,
+    )
+    if ollama_result is not None:
+        return _with_cumulative_latency(ollama_result, state.started)
 
-    # Layer 4: Token-only (no LLM)
-    fallback = _token_only_fallback(
+    return _fallback_result(
+        state,
         candidates,
         scores,
         candidate_count,
         top_score,
         max_sel,
     )
-    return _with_cumulative_latency(fallback, attempts_started)
 
 
 def _token_only_fallback(
@@ -699,18 +340,11 @@ def _token_only_fallback(
     top_score: float,
     max_sel: int,
 ) -> dict[str, Any]:
-    """Last resort: return top token-scored candidates without an LLM call."""
-    has_signal = top_score > 0
-    result: dict[str, Any] = {
-        "selected_ids": (
-            [
-                agent.get("slug", "")
-                for agent, score in zip(candidates, scores)
-                if score > 0
-            ][:max_sel]
-            if has_signal
-            else []
-        ),
+    """Return bounded token-scored candidates without an LLM call."""
+    selected_ids = _scored_selection(candidates, scores, max_sel)
+    has_signal = bool(selected_ids)
+    return {
+        "selected_ids": selected_ids,
         "confidence": 0.3 if has_signal else 0.0,
         "latency_ms": 0,
         "status": "token_fallback" if has_signal else "abstained",
@@ -718,4 +352,3 @@ def _token_only_fallback(
         "candidate_count": candidate_count,
         "top_score": top_score,
     }
-    return result

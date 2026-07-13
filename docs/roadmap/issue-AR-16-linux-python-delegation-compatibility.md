@@ -3,7 +3,7 @@ title: "AR-16: Restore Linux and Python 3.12 delegation compatibility"
 status: in_progress
 category: roadmap
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [linux, python, delegation, compatibility, testing]
 related:
   - docs/decisions/0019-bounded-machine-readable-cli-delegation.md
@@ -14,7 +14,7 @@ type: issue
 epic: testing
 issue_id: AR-16
 priority: p0
-tracker_url: null
+tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/16"
 depends_on: []
 blocks: [AR-07]
 ---
@@ -42,6 +42,15 @@ avoiding the dataclass/closure ambiguity across supported Python versions. The
 optional installed-Codex capability check skips when a discovered executable
 cannot run, while deterministic detection tests continue to distinguish
 installed, authenticated, and usable states.
+
+On Ubuntu 24.04 WSL with Python 3.12, the complete warning-strict suite ran from
+a native ext4 copy and passed `2215` tests with `16` expected platform/host
+skips. The separate performance selection passed both tests. This is local Linux
+evidence. A fresh final-candidate wheel also installed cleanly under WSL/Python
+3.12 and exercised packaged MCP discovery, authenticated dashboard health,
+configuration defaults, assets, and every generated host bundle without
+checkout-relative imports. The hosted Python 3.10 through 3.14 matrix remains
+pending.
 
 ## Approach
 
@@ -76,5 +85,12 @@ native Linux suite passes.
   covers the CLI-facing protocol boundary.
 - `tests/test_host_canary.py::test_current_codex_cli_exposes_every_canary_command_capability`
   distinguishes a usable native CLI from a merely discoverable interop shim.
-- Native Ubuntu WSL on Python 3.12 passed 673 tests with 15 expected
-  platform/host skips from an isolated ext4 working copy.
+- Native Ubuntu 24.04 WSL on Python 3.12 passed `2215` tests with `16` expected
+  platform/host skips from an isolated ext4 working copy. A separate run passed
+  both performance tests.
+- The final wheel installed into a clean WSL/Python 3.12 environment and passed
+  MCP, dashboard-health, configuration, asset, and four-host bundle smoke.
+- No Linux target host was installed for this run; it proves the Linux runtime,
+  protocol, package, and host-contract suite, not live Linux host maturity.
+- Hosted CI across Python 3.10 through 3.14 remains the sole unchecked
+  acceptance criterion, so this item remains `in_progress`.

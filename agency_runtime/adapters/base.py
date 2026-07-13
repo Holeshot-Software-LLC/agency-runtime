@@ -2,11 +2,22 @@
 
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
+from collections import OrderedDict
+from hashlib import sha256
+from threading import RLock
 from typing import Any
 
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.store.sqlite import Store
+
+_MAX_EMBEDDED_RESULT_BYTES = 256 * 1024
+_MAX_NONTRIVIAL_SESSIONS = 4096
+
+
+def _session_evidence_key(session_id: str) -> bytes:
+    """Return a fixed-width digest key so raw session IDs are not retained."""
+    return sha256(session_id.encode("utf-8", errors="surrogatepass")).digest()
 
 
 def _clean(value: Any, default: str = "") -> str:
@@ -42,6 +53,16 @@ _FAILURE_STATUSES = {
     "timed_out",
     "timeout",
 }
+_FALSE_FAILURE_KEYS = ("success", "ok", "delegated", "loaded")
+_TRUE_FAILURE_KEYS = (
+    "isError",
+    "is_error",
+    "cancelled",
+    "canceled",
+    "timed_out",
+)
+_EXIT_CODE_KEYS = ("returncode", "return_code", "exit_code", "exitCode")
+_NESTED_RESULT_KEYS = ("result", "output", "data", "content", "text")
 
 
 def _failure_message(payload: dict[str, Any], default: str = "tool call failed") -> str:
@@ -59,6 +80,68 @@ def _failure_message(payload: dict[str, Any], default: str = "tool call failed")
     return default
 
 
+def _sequence_failure_reason(result: list[Any] | tuple[Any, ...], depth: int) -> str:
+    for item in result:
+        reason = _tool_failure_reason(item, _depth=depth + 1)
+        if reason:
+            return reason
+    return ""
+
+
+def _text_failure_reason(result: str, depth: int) -> str:
+    text = result.strip()
+    if not text:
+        return ""
+    try:
+        parsed = safe_load_bounded_json(
+            text,
+            maximum_bytes=_MAX_EMBEDDED_RESULT_BYTES,
+            maximum_depth=32,
+            maximum_nodes=5_000,
+        )
+    except Exception:
+        if text.startswith(("{", "[")):
+            return "tool call returned invalid structured output"
+    else:
+        # Successful JSON parsing necessarily changes the source representation:
+        # containers and scalars become Python values, while JSON strings lose
+        # their required quoting. Recurse directly instead of retaining an
+        # unreachable parsed-equals-source branch.
+        return _tool_failure_reason(parsed, _depth=depth + 1)
+    if text.lower().startswith(("error:", "failed:", "failure:", "exception:", "tool error:")):
+        return text
+    return ""
+
+
+def _direct_mapping_failure(payload: dict[str, Any]) -> str:
+    if payload.get("error") not in (None, "", False):
+        return _failure_message(payload)
+    if any(payload.get(key) is False for key in _FALSE_FAILURE_KEYS):
+        return _failure_message(payload)
+    if any(payload.get(key) is True for key in _TRUE_FAILURE_KEYS):
+        return _failure_message(payload)
+    if _clean(payload.get("status")).lower() in _FAILURE_STATUSES:
+        return _failure_message(payload)
+    for key in _EXIT_CODE_KEYS:
+        value = payload.get(key)
+        if value not in (None, "", 0, "0"):
+            return _failure_message(payload, f"tool call exited with {value}")
+    return ""
+
+
+def _mapping_failure_reason(payload: dict[str, Any], depth: int) -> str:
+    direct = _direct_mapping_failure(payload)
+    if direct:
+        return direct
+    for key in _NESTED_RESULT_KEYS:
+        if key not in payload:
+            continue
+        reason = _tool_failure_reason(payload.get(key), _depth=depth + 1)
+        if reason:
+            return reason
+    return ""
+
+
 def _tool_failure_reason(result: Any, *, _depth: int = 0) -> str:
     """Return an explicit tool failure reason without guessing from prose.
 
@@ -72,54 +155,10 @@ def _tool_failure_reason(result: Any, *, _depth: int = 0) -> str:
     if result is False:
         return "tool call returned false"
     if isinstance(result, (list, tuple)):
-        for item in result:
-            reason = _tool_failure_reason(item, _depth=_depth + 1)
-            if reason:
-                return reason
-        return ""
+        return _sequence_failure_reason(result, _depth)
     if isinstance(result, str):
-        text = result.strip()
-        if not text:
-            return ""
-        try:
-            parsed = json.loads(text)
-        except Exception:
-            parsed = None
-        if parsed is not None and parsed != result:
-            return _tool_failure_reason(parsed, _depth=_depth + 1)
-        lowered = text.lower()
-        if lowered.startswith(("error:", "failed:", "failure:", "exception:", "tool error:")):
-            return text
-        return ""
-    if not isinstance(result, dict):
-        return ""
-
-    payload = result
-    error = payload.get("error")
-    if error not in (None, "", False):
-        return _failure_message(payload)
-    if payload.get("success") is False or payload.get("ok") is False:
-        return _failure_message(payload)
-    if payload.get("delegated") is False or payload.get("loaded") is False:
-        return _failure_message(payload)
-    if payload.get("isError") is True or payload.get("is_error") is True:
-        return _failure_message(payload)
-    if payload.get("cancelled") is True or payload.get("canceled") is True or payload.get("timed_out") is True:
-        return _failure_message(payload)
-    if _clean(payload.get("status")).lower() in _FAILURE_STATUSES:
-        return _failure_message(payload)
-    for key in ("returncode", "return_code", "exit_code", "exitCode"):
-        value = payload.get(key)
-        if value not in (None, "", 0, "0"):
-            return _failure_message(payload, f"tool call exited with {value}")
-
-    for key in ("result", "output", "data", "content", "text"):
-        if key not in payload:
-            continue
-        reason = _tool_failure_reason(payload.get(key), _depth=_depth + 1)
-        if reason:
-            return reason
-    return ""
+        return _text_failure_reason(result, _depth)
+    return _mapping_failure_reason(result, _depth) if isinstance(result, dict) else ""
 
 
 def _tool_result(kwargs: dict[str, Any]) -> Any:
@@ -165,7 +204,12 @@ def _nested_value(value: Any, keys: tuple[str, ...], *, _depth: int = 0) -> Any:
         return None
     if isinstance(value, str):
         try:
-            value = json.loads(value)
+            value = safe_load_bounded_json(
+                value,
+                maximum_bytes=_MAX_EMBEDDED_RESULT_BYTES,
+                maximum_depth=32,
+                maximum_nodes=5_000,
+            )
         except Exception:
             return None
     if isinstance(value, dict):
@@ -187,7 +231,6 @@ def _first_value(*values: Any) -> Any:
 
 
 class BaseAdapter(ABC):
-
     """Base class for host/runtime adapters.
 
     Adapters are thin I/O shims. They translate between host events and
@@ -199,7 +242,30 @@ class BaseAdapter(ABC):
 
     def __init__(self, store: Store | None = None):
         self.store = store or Store()
-        self._nontrivial_sessions: set[str] = set()
+        self._nontrivial_sessions: OrderedDict[bytes, None] = OrderedDict()
+        self._nontrivial_sessions_lock = RLock()
+
+    def _remember_nontrivial_session(self, session_id: str) -> None:
+        """Retain bounded, thread-safe evidence that a session required routing."""
+        if not session_id:
+            return
+        evidence_key = _session_evidence_key(session_id)
+        with self._nontrivial_sessions_lock:
+            self._nontrivial_sessions[evidence_key] = None
+            self._nontrivial_sessions.move_to_end(evidence_key)
+            while len(self._nontrivial_sessions) > _MAX_NONTRIVIAL_SESSIONS:
+                self._nontrivial_sessions.popitem(last=False)
+
+    def _was_nontrivial_session(self, session_id: str) -> bool:
+        """Return recent routing evidence without racing concurrent host callbacks."""
+        if not session_id:
+            return False
+        evidence_key = _session_evidence_key(session_id)
+        with self._nontrivial_sessions_lock:
+            if evidence_key not in self._nontrivial_sessions:
+                return False
+            self._nontrivial_sessions.move_to_end(evidence_key)
+            return True
 
     def runtime_enabled(self) -> bool:
         """Return the current persistent soft-control state for this host."""
@@ -235,6 +301,7 @@ class BaseAdapter(ABC):
         if not self.runtime_enabled():
             return draft_text
         from agency_runtime.core.header.contract import finalize_header
+
         return finalize_header(
             draft_text,
             session_id=trace_id,
@@ -244,6 +311,7 @@ class BaseAdapter(ABC):
 
     def _suggested_delegations(self, session_id: str) -> list[dict[str, Any]]:
         from agency_runtime.core.delegation.events import suggested_delegations
+
         return suggested_delegations(self.store, session_id)
 
     def record_tool_call(self, **kwargs: Any) -> None:
@@ -273,33 +341,41 @@ class BaseAdapter(ABC):
                 self.store.record_specialist_loaded(session_id, agent)
 
         elif tool_name in ("agency_agents_delegate", "delegate_task", "delegate_async"):
-            agent = _clean(_first_value(
-                args.get("agent"),
-                args.get("slug"),
-                args.get("recommended_agent"),
-                kwargs.get("agent"),
-                kwargs.get("recommended_agent"),
-                _nested_value(result, ("agent", "slug", "recommended_agent")),
-            ))
-            goal = _clean(_first_value(
-                args.get("goal"),
-                args.get("task"),
-                args.get("prompt"),
-                args.get("description"),
-                kwargs.get("goal"),
-                kwargs.get("task"),
-                _nested_value(result, ("goal", "task", "prompt", "description")),
-            ))
-            work_unit_id = _clean(_first_value(
-                args.get("work_unit_id"),
-                args.get("workUnitId"),
-                args.get("unit_id"),
-                args.get("task_id"),
-                kwargs.get("work_unit_id"),
-                kwargs.get("workUnitId"),
-                _nested_value(result, ("work_unit_id", "workUnitId", "unit_id", "task_id")),
-            ))
-            backend = "agency_agents_delegate" if tool_name == "agency_agents_delegate" else tool_name
+            agent = _clean(
+                _first_value(
+                    args.get("agent"),
+                    args.get("slug"),
+                    args.get("recommended_agent"),
+                    kwargs.get("agent"),
+                    kwargs.get("recommended_agent"),
+                    _nested_value(result, ("agent", "slug", "recommended_agent")),
+                )
+            )
+            goal = _clean(
+                _first_value(
+                    args.get("goal"),
+                    args.get("task"),
+                    args.get("prompt"),
+                    args.get("description"),
+                    kwargs.get("goal"),
+                    kwargs.get("task"),
+                    _nested_value(result, ("goal", "task", "prompt", "description")),
+                )
+            )
+            work_unit_id = _clean(
+                _first_value(
+                    args.get("work_unit_id"),
+                    args.get("workUnitId"),
+                    args.get("unit_id"),
+                    args.get("task_id"),
+                    kwargs.get("work_unit_id"),
+                    kwargs.get("workUnitId"),
+                    _nested_value(result, ("work_unit_id", "workUnitId", "unit_id", "task_id")),
+                )
+            )
+            backend = (
+                "agency_agents_delegate" if tool_name == "agency_agents_delegate" else tool_name
+            )
             if failure_reason:
                 mark_delegation_skipped(
                     self.store,
@@ -349,9 +425,7 @@ class BaseAdapter(ABC):
         requested_model = _clean(kwargs.get("model") or kwargs.get("requested_model"))
         session_id = _clean(kwargs.get("session_id"))
         resolved_model = _clean(
-            kwargs.get("response_model")
-            or kwargs.get("resolved_model")
-            or response.get("model")
+            kwargs.get("response_model") or kwargs.get("resolved_model") or response.get("model")
         )
         resolved_provider = _clean(kwargs.get("resolved_provider"))
         actual_model = resolved_model
@@ -404,7 +478,9 @@ class BaseAdapter(ABC):
             status=receipt.get("status", "success"),
         )
 
-    def _selected_catalog_agents(self, catalog: list[dict[str, Any]], routing: dict[str, Any]) -> list[dict[str, Any]]:
+    def _selected_catalog_agents(
+        self, catalog: list[dict[str, Any]], routing: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Return routed active specialists with versioned, bounded prompts."""
         selected_ids = [str(agent_id) for agent_id in routing.get("selected_ids", []) if agent_id]
         if not selected_ids:
@@ -426,8 +502,14 @@ class BaseAdapter(ABC):
         """Render approved versioned specialist prompts as injected context."""
         lines = ["[AGENCY LOADED] Approved specialist instructions loaded for this turn:"]
         for agent in agents:
-            capabilities = agent.get("capabilities") if isinstance(agent.get("capabilities"), list) else []
-            capability_text = f" Capabilities: {', '.join(str(item) for item in capabilities[:4])}." if capabilities else ""
+            capabilities = (
+                agent.get("capabilities") if isinstance(agent.get("capabilities"), list) else []
+            )
+            capability_text = (
+                f" Capabilities: {', '.join(str(item) for item in capabilities[:4])}."
+                if capabilities
+                else ""
+            )
             lines.append(
                 "- "
                 + str(agent.get("agent_slug") or agent.get("slug") or "")
@@ -450,14 +532,18 @@ class BaseAdapter(ABC):
             return None
         del model
         from agency_runtime.core.delegation.events import record_suggested_delegations
-        from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, route
+        from agency_runtime.core.selector.pipeline import (
+            build_routing_context,
+            is_trivial,
+            route,
+        )
         from agency_runtime.core.selector.policy import detect_actions
 
         trivial = is_trivial(user_message)
 
         if not trivial:
             if session_id:
-                self._nontrivial_sessions.add(session_id)
+                self._remember_nontrivial_session(session_id)
             catalog = self.store.get_active_roster_as_catalog()
             if not catalog:
                 from agency_runtime.core.installer import seed_starter_roster
@@ -471,7 +557,9 @@ class BaseAdapter(ABC):
                 store=self.store,
                 trace_id=trace_id or None,
             )
-            record_suggested_delegations(self.store, session_id=session_id, host=self.host_name, routing=routing)
+            record_suggested_delegations(
+                self.store, session_id=session_id, host=self.host_name, routing=routing
+            )
             context = build_routing_context(routing)
             selected = self._selected_catalog_agents(catalog, routing)
             if selected:
@@ -487,8 +575,7 @@ class BaseAdapter(ABC):
         # never shows "loaded: none" when DEFAULT policy says otherwise.
         catalog = self.store.get_active_roster_as_catalog()
         active_slugs = {
-            str(agent.get("slug") or agent.get("agent_slug") or "")
-            for agent in catalog
+            str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog
         }
         _matched, companion_ids = detect_actions(
             user_message,
@@ -534,13 +621,24 @@ class BaseAdapter(ABC):
             trace_id,
         )
 
-    def enforce_pre_verify(self, final_response: str, session_id: str = "", model: str = "", attempt: int = 0) -> dict[str, Any] | None:
+    def enforce_pre_verify(
+        self,
+        final_response: str,
+        session_id: str = "",
+        model: str = "",
+        attempt: int = 0,
+    ) -> dict[str, Any] | None:
         """Gate response completion on header, specialist, and delegation evidence."""
         if not self.runtime_enabled():
             return None
         del attempt
 
-        from agency_runtime.core.header.contract import fill_header_fields, parse_header, validate_header
+        from agency_runtime.core.header.contract import (
+            fill_header_fields,
+            parse_header,
+            validate_header,
+        )
+
         valid, missing = validate_header(final_response)
         if not valid:
             return {
@@ -558,7 +656,9 @@ class BaseAdapter(ABC):
 
         specialists = self.report_specialists_loaded(session_id)
         open_delegations = self._suggested_delegations(session_id)
-        requires_agency_evidence = bool(session_id and (session_id in self._nontrivial_sessions or specialists)) or bool(open_delegations)
+        requires_agency_evidence = bool(
+            session_id and (self._was_nontrivial_session(session_id) or specialists)
+        ) or bool(open_delegations)
         if requires_agency_evidence and _is_noneish_agency_line(loaded):
             actual = ", ".join(specialists) if specialists else "the actual loaded specialist"
             return {
@@ -609,6 +709,12 @@ class BaseAdapter(ABC):
 
         return None
 
-    def pre_verify_handler(self, final_response: str, session_id: str = "", model: str = "", attempt: int = 0) -> dict[str, Any] | None:
+    def pre_verify_handler(
+        self,
+        final_response: str,
+        session_id: str = "",
+        model: str = "",
+        attempt: int = 0,
+    ) -> dict[str, Any] | None:
         """Host hook alias for final-response verification."""
         return self.enforce_pre_verify(final_response, session_id, model, attempt)

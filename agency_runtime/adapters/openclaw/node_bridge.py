@@ -8,12 +8,39 @@ from __future__ import annotations
 
 import json
 import sys
+from contextlib import suppress
 from typing import Any
 
 from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
-
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 
 MAX_INPUT_BYTES = 1_048_576
+MAX_ID_CHARS = 1_024
+MAX_MODEL_CHARS = 512
+MAX_TOOL_NAME_CHARS = 512
+
+
+def _bounded_string(
+    payload: dict[str, Any],
+    key: str,
+    *,
+    limit: int,
+) -> str:
+    value = payload.get(key)
+    if not isinstance(value, str) or "\x00" in value:
+        return ""
+    return value[:limit]
+
+
+def _attempt_number(payload: dict[str, Any]) -> int:
+    value = payload.get("attempt", 0)
+    if isinstance(value, bool):
+        return 0
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+    return parsed if 0 <= parsed <= 100 else 0
 
 
 def _read_payload() -> dict[str, Any]:
@@ -24,10 +51,14 @@ def _read_payload() -> dict[str, Any]:
             return {"action": "", "error": "hook payload exceeds 1 MiB"}
         if isinstance(raw, bytes):
             raw = raw.decode("utf-8")
-        payload = json.loads(raw)
+        payload = safe_load_bounded_json(raw)
     except Exception as exc:  # pragma: no cover - defensive CLI boundary
         return {"action": "", "error": f"invalid json: {exc}"}
-    return payload if isinstance(payload, dict) else {"action": "", "error": "payload must be an object"}
+    return (
+        payload
+        if isinstance(payload, dict)
+        else {"action": "", "error": "payload must be an object"}
+    )
 
 
 def _is_revision_instruction(message: str) -> bool:
@@ -42,58 +73,79 @@ def _is_revision_instruction(message: str) -> bool:
 
 
 def handle(payload: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {"error": "payload must be an object"}
     adapter = OpenClawAdapter()
-    action = str(payload.get("action") or "")
-    session_id = str(payload.get("sessionId") or "")
-    trace_id = str(payload.get("traceId") or "")
-    model = str(payload.get("model") or "")
+    action = _bounded_string(payload, "action", limit=32).strip()
+    session_id = _bounded_string(payload, "sessionId", limit=MAX_ID_CHARS)
+    trace_id = _bounded_string(payload, "traceId", limit=MAX_ID_CHARS)
+    model = _bounded_string(payload, "model", limit=MAX_MODEL_CHARS)
 
     if action == "control":
         from agency_runtime.core.host_control import handle_host_control_command
 
         return handle_host_control_command(
             "openclaw",
-            str(payload.get("command") or "status"),
+            _bounded_string(payload, "command", limit=64) or "status",
             store=adapter.store,
             source="openclaw-command",
         )
 
     if action == "preflight":
-        user_message = str(payload.get("userMessage") or "")
+        user_message = _bounded_string(
+            payload,
+            "userMessage",
+            limit=MAX_INPUT_BYTES,
+        )
+        if not user_message.strip():
+            return {}
         if _is_revision_instruction(user_message):
             return {}
-        return adapter.pre_llm_call_handler(
-            session_id=session_id,
-            user_message=user_message,
-            model=model,
-            trace_id=trace_id,
-        ) or {}
+        return (
+            adapter.pre_llm_call_handler(
+                session_id=session_id,
+                user_message=user_message,
+                model=model,
+                trace_id=trace_id,
+            )
+            or {}
+        )
 
     if action == "pre_verify":
-        decision = adapter.pre_verify_handler(
-            final_response=str(payload.get("finalResponse") or ""),
-            session_id=session_id,
-            model=model,
-            attempt=int(payload.get("attempt") or 0),
-        ) or {}
+        final_response = _bounded_string(
+            payload,
+            "finalResponse",
+            limit=MAX_INPUT_BYTES,
+        )
+        if not final_response.strip():
+            return {}
+        decision = (
+            adapter.pre_verify_handler(
+                final_response=final_response,
+                session_id=session_id,
+                model=model,
+                attempt=_attempt_number(payload),
+            )
+            or {}
+        )
         if trace_id and adapter.runtime_enabled():
-            try:
+            with suppress(Exception):
                 adapter.store.record_finalization(
                     trace_id=trace_id,
                     host="openclaw",
-                    action="continue"
-                    if decision.get("action") == "continue"
-                    else "accept",
+                    action="continue" if decision.get("action") == "continue" else "accept",
                     missing=[],
                 )
-            except Exception:
-                pass
         return decision
 
     if action == "post_tool_call":
         tool_input = payload.get("toolInput")
         adapter.post_tool_call_handler(
-            tool_name=str(payload.get("toolName") or ""),
+            tool_name=_bounded_string(
+                payload,
+                "toolName",
+                limit=MAX_TOOL_NAME_CHARS,
+            ),
             args=tool_input if isinstance(tool_input, dict) else {},
             result=payload.get("toolResult"),
             error=payload.get("error"),
@@ -107,8 +159,20 @@ def handle(payload: dict[str, Any]) -> dict[str, Any]:
 
 def main() -> int:
     payload = _read_payload()
-    result = handle(payload) if not payload.get("error") else {"error": payload["error"]}
-    json.dump(result, sys.stdout, separators=(",", ":"))
+    try:
+        result = handle(payload) if not payload.get("error") else {"error": payload["error"]}
+    except Exception as exc:  # Defensive fail-open host boundary.
+        print(
+            f"agency openclaw bridge: {type(exc).__name__}; host operation continues",
+            file=sys.stderr,
+        )
+        result = {}
+    try:
+        encoded = json.dumps(result, allow_nan=False, separators=(",", ":"))
+    except (TypeError, ValueError):
+        encoded = "{}"
+        result = {}
+    sys.stdout.write(encoded)
     sys.stdout.write("\n")
     return 0 if "error" not in result else 2
 

@@ -24,11 +24,12 @@ from agency_runtime.core.config import (
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.selector import judge
 
-
-CATALOG = [{
-    "slug": "security-reviewer",
-    "description": "Reviews authentication and application security.",
-}]
+CATALOG = [
+    {
+        "slug": "security-reviewer",
+        "description": "Reviews authentication and application security.",
+    }
+]
 
 
 def _result(
@@ -131,17 +132,19 @@ def test_claude_status_version_gates_fail_closed_schema_support(
 
 
 def test_safe_cli_environment_drops_unrelated_credentials() -> None:
-    safe = safe_cli_environment({
-        "PATH": "/tools",
-        "HOME": "/home/user",
-        "CODEX_HOME": "/home/user/.codex",
-        "NODE_EXTRA_CA_CERTS": "/trust/corporate-ca.pem",
-        "REQUESTS_CA_BUNDLE": "/trust/python-ca.pem",
-        "SSL_CERT_FILE": "/trust/openssl-ca.pem",
-        "OPENAI_API_KEY": "secret",
-        "AWS_SECRET_ACCESS_KEY": "secret",
-        "UNRELATED_TOKEN": "secret",
-    })
+    safe = safe_cli_environment(
+        {
+            "PATH": "/tools",
+            "HOME": "/home/user",
+            "CODEX_HOME": "/home/user/.codex",
+            "NODE_EXTRA_CA_CERTS": "/trust/corporate-ca.pem",
+            "REQUESTS_CA_BUNDLE": "/trust/python-ca.pem",
+            "SSL_CERT_FILE": "/trust/openssl-ca.pem",
+            "OPENAI_API_KEY": "secret",
+            "AWS_SECRET_ACCESS_KEY": "secret",
+            "UNRELATED_TOKEN": "secret",
+        }
+    )
 
     assert safe["PATH"] == "/tools"
     assert safe["CODEX_HOME"] == "/home/user/.codex"
@@ -156,17 +159,23 @@ def test_safe_cli_environment_drops_unrelated_credentials() -> None:
 def test_codex_judge_uses_stdin_strict_tool_gates_and_isolated_home() -> None:
     prompt = "route this private task"
     observed: dict[str, Any] = {}
-    selection = json.dumps({
-        "selected_ids": ["security-reviewer"],
-        "confidence": 0.92,
-    })
-    stdout = "\n".join([
-        json.dumps({
-            "type": "item.completed",
-            "item": {"type": "agent_message", "text": selection},
-        }),
-        json.dumps({"type": "turn.completed"}),
-    ])
+    selection = json.dumps(
+        {
+            "selected_ids": ["security-reviewer"],
+            "confidence": 0.92,
+        }
+    )
+    stdout = "\n".join(
+        [
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": selection},
+                }
+            ),
+            json.dumps({"type": "turn.completed"}),
+        ]
+    )
 
     def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
         observed.update({"argv": argv, **kwargs})
@@ -198,9 +207,7 @@ def test_codex_judge_uses_stdin_strict_tool_gates_and_isolated_home() -> None:
     }
     assert prompt not in observed["argv"]
     assert observed["input_text"] == prompt
-    assert observed["argv"][observed["argv"].index("--model") + 1] == (
-        "openai/gpt-5-mini"
-    )
+    assert observed["argv"][observed["argv"].index("--model") + 1] == ("openai/gpt-5-mini")
     assert "--strict-config" in observed["argv"]
     assert "features.shell_tool=false" in observed["argv"]
     assert "features.unified_exec=false" in observed["argv"]
@@ -214,15 +221,17 @@ def test_codex_judge_uses_stdin_strict_tool_gates_and_isolated_home() -> None:
 
 def test_claude_judge_disables_tools_customizations_and_persistence() -> None:
     observed: dict[str, Any] = {}
-    stdout = json.dumps({
-        "type": "result",
-        "subtype": "success",
-        "is_error": False,
-        "structured_output": {
-            "selected_ids": ["security-reviewer"],
-            "confidence": 0.81,
-        },
-    })
+    stdout = json.dumps(
+        {
+            "type": "result",
+            "subtype": "success",
+            "is_error": False,
+            "structured_output": {
+                "selected_ids": ["security-reviewer"],
+                "confidence": 0.81,
+            },
+        }
+    )
 
     def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
         observed.update({"argv": argv, **kwargs})
@@ -254,23 +263,29 @@ def test_claude_judge_disables_tools_customizations_and_persistence() -> None:
 def test_cli_judge_failures_are_not_promoted(
     process_result: BoundedProcessResult,
 ) -> None:
-    assert invoke_cli_judge(
-        ProviderEntry(name="codex", type="cli", transport="codex"),
-        "select",
-        timeout=1,
-        resolver=lambda _name: "/tools/codex",
-        runner=lambda *_args, **_kwargs: process_result,
-    ) is None
+    assert (
+        invoke_cli_judge(
+            ProviderEntry(name="codex", type="cli", transport="codex"),
+            "select",
+            timeout=1,
+            resolver=lambda _name: "/tools/codex",
+            runner=lambda *_args, **_kwargs: process_result,
+        )
+        is None
+    )
 
 
 def test_cli_judge_launch_exception_is_not_promoted() -> None:
-    assert invoke_cli_judge(
-        ProviderEntry(name="claude", type="cli", transport="claude"),
-        "select",
-        timeout=1,
-        resolver=lambda _name: "/tools/claude",
-        runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("private")),
-    ) is None
+    assert (
+        invoke_cli_judge(
+            ProviderEntry(name="claude", type="cli", transport="claude"),
+            "select",
+            timeout=1,
+            resolver=lambda _name: "/tools/claude",
+            runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("private")),
+        )
+        is None
+    )
 
 
 def test_windows_cmd_shim_rejects_model_metacharacters_before_launch() -> None:
@@ -281,18 +296,21 @@ def test_windows_cmd_shim_rejects_model_metacharacters_before_launch() -> None:
         called = True
         return _result()
 
-    assert invoke_cli_judge(
-        ProviderEntry(
-            name="codex",
-            type="cli",
-            transport="codex",
-            model="gpt-5&whoami",
-        ),
-        "private prompt remains on stdin",
-        timeout=1,
-        resolver=lambda _name: "C:\\tools\\codex.CMD",
-        runner=runner,
-    ) is None
+    assert (
+        invoke_cli_judge(
+            ProviderEntry(
+                name="codex",
+                type="cli",
+                transport="codex",
+                model="gpt-5&whoami",
+            ),
+            "private prompt remains on stdin",
+            timeout=1,
+            resolver=lambda _name: "C:\\tools\\codex.CMD",
+            runner=runner,
+        )
+        is None
+    )
     assert called is False
 
 
@@ -306,12 +324,15 @@ def test_cli_judge_rejects_batch_shim_without_safe_companion(
     shim = tmp_path / f"{transport}.cmd"
     shim.write_text(f"@echo invoked>{marker}\r\n", encoding="utf-8")
 
-    assert invoke_cli_judge(
-        ProviderEntry(name=transport, type="cli", transport=transport),
-        "private prompt",
-        timeout=2,
-        resolver=lambda _name: str(shim),
-    ) is None
+    assert (
+        invoke_cli_judge(
+            ProviderEntry(name=transport, type="cli", transport=transport),
+            "private prompt",
+            timeout=2,
+            resolver=lambda _name: str(shim),
+        )
+        is None
+    )
     assert not marker.exists()
 
 
@@ -327,12 +348,14 @@ def test_cli_judge_success_requires_no_agency_api_key(
         },
     )
     cfg = AgencyConfig(
-        providers=(ProviderEntry(
-            name="codex",
-            type="cli",
-            transport="codex",
-            timeout=2,
-        ),),
+        providers=(
+            ProviderEntry(
+                name="codex",
+                type="cli",
+                transport="codex",
+                timeout=2,
+            ),
+        ),
         judge=JudgeConfig(model="", timeout=3, confidence_bypass_threshold=999),
         ollama=OllamaConfig(enabled=False, model=""),
     )
@@ -363,12 +386,22 @@ def test_failed_cli_falls_through_to_http_then_token(
 
         def read(self, _size: int = -1) -> bytes:
             order.append("http")
-            return json.dumps({
-                "choices": [{"message": {"content": json.dumps({
-                    "selected_ids": ["security-reviewer"],
-                    "confidence": 0.8,
-                })}}],
-            }).encode()
+            return json.dumps(
+                {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": json.dumps(
+                                    {
+                                        "selected_ids": ["security-reviewer"],
+                                        "confidence": 0.8,
+                                    }
+                                )
+                            }
+                        }
+                    ],
+                }
+            ).encode()
 
     monkeypatch.setattr(judge, "open_no_redirect", lambda *_a, **_kw: Response())
     cfg = AgencyConfig(
@@ -410,11 +443,13 @@ def test_nonempty_cli_chain_never_calls_removed_legacy_or_ollama(
         lambda request, **_kwargs: calls.append(request.full_url),
     )
     cfg = AgencyConfig(
-        providers=(ProviderEntry(
-            name="codex",
-            type="cli",
-            transport="codex",
-        ),),
+        providers=(
+            ProviderEntry(
+                name="codex",
+                type="cli",
+                transport="codex",
+            ),
+        ),
         judge=JudgeConfig(
             model="removed-paid-model",
             base_url="https://removed.invalid/v1",

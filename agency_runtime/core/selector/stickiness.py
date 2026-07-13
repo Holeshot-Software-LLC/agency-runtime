@@ -10,9 +10,9 @@ from typing import Any
 
 from agency_runtime.core.selector.candidate_narrow import tokenize
 
-_SESSION_STICKY_THRESHOLD = float(0.6)
+_SESSION_STICKY_THRESHOLD = 0.6
 _SESSION_STICKY_MAX_AGE = float(300)
-_SESSION_MAX_ENTRIES = int(128)
+_SESSION_MAX_ENTRIES = 128
 
 _SESSION_ROUTING: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _SESSION_LOCK = threading.RLock()
@@ -37,10 +37,7 @@ def session_check(
         if age > max_age:
             del _SESSION_ROUTING[session_id]
             return None
-        if (
-            context_fingerprint
-            and entry.get("_context_fingerprint", "") != context_fingerprint
-        ):
+        if context_fingerprint and entry.get("_context_fingerprint", "") != context_fingerprint:
             return None
         prev_tokens = entry["_tokens"]
         curr_tokens = tokenize(query)
@@ -48,19 +45,13 @@ def session_check(
             return None
         overlap = len(prev_tokens & curr_tokens)
         union = len(prev_tokens | curr_tokens)
-        if union == 0:
-            return None
         jaccard = overlap / union
         if jaccard >= threshold:
             _SESSION_ROUTING.move_to_end(session_id)
-            result = deepcopy(
-                {k: v for k, v in entry.items() if not k.startswith("_")}
-            )
+            result = deepcopy({k: v for k, v in entry.items() if not k.startswith("_")})
             if valid_ids is not None:
                 result["selected_ids"] = [
-                    slug
-                    for slug in result.get("selected_ids", [])
-                    if str(slug) in valid_ids
+                    slug for slug in result.get("selected_ids", []) if str(slug) in valid_ids
                 ]
             result["session_reused"] = True
             return result

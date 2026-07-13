@@ -1,9 +1,9 @@
 ---
 title: "AR-06: Implement CLI-authenticated judge providers"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [providers, authentication]
 related:
   - docs/decisions/0008-ordered-provider-fallback.md
@@ -61,7 +61,7 @@ Depends on `AR-05` so CLI-authenticated entries can be configured and validated 
 
 ## Acceptance
 
-- [ ] At least one supported CLI-authenticated provider completes an authorized live judge selection without an API key.
+- [x] At least one supported CLI-authenticated provider completes an authorized live judge selection without an API key.
 - [x] Provider detection distinguishes an installed binary from a usable authenticated session.
 - [x] Invocation is non-interactive, time-bounded, output-bounded, and secret-safe.
 - [x] Failures fall through to the next configured provider and ultimately to deterministic token routing.
@@ -78,11 +78,14 @@ Depends on `AR-05` so CLI-authenticated entries can be configured and validated 
   partial I/O-worker startup, task/environment redaction, batch-only rejection,
   and real `.cmd` plus sibling `.ps1` literal-argument handling across all
   intended host backends.
-- The installed Codex 0.144.1 CLI accepted the complete judge override set
-  under `--strict-config` during an isolated, auth-free configuration check.
-  This proves current CLI configuration compatibility, not live judge success.
+- On 2026-07-12, the installed Codex 0.144.1 CLI completed an authorized live
+  keyless judge selection for a production-safe OAuth architecture task. The
+  normalized result was `applied` through `codex-cli (cli:codex)`, selected
+  `senior-developer`, `workflow-architect`, and `code-reviewer`, reported
+  confidence `0.87`, and completed in `6880 ms`. It reused the current Codex
+  authentication session; no Agency Runtime API key was configured or supplied.
 - `tests/test_native_installer.py` proves CLI provider timeouts contribute to
   generated host-hook deadlines.
-- Deterministic transport and selector coverage is complete, but no authorized
-  live model invocation is accepted as release evidence yet. Keep this item
-  open until an operator explicitly approves and records that canary.
+- Deterministic transport and selector coverage plus the dated live keyless
+  result satisfy this item's acceptance criteria. Host hook/header canary proof
+  is tracked separately by AR-03, AR-04, and AR-17.

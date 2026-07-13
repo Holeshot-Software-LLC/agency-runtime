@@ -21,7 +21,6 @@ from agency_runtime.core.host_control import (
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.mcp import handle_tool_call
 
-
 HOST_ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter]
 
 
@@ -97,12 +96,8 @@ def test_same_adapter_observes_mcp_off_status_on_at_successive_boundaries(
             "host": requested_host,
             "registered": True,
             "enabled": True,
-            "runtime_enabled": runtime_store.get_host_control(requested_host)[
-                "enabled"
-            ],
-            "effective_enabled": runtime_store.get_host_control(requested_host)[
-                "enabled"
-            ],
+            "runtime_enabled": runtime_store.get_host_control(requested_host)["enabled"],
+            "effective_enabled": runtime_store.get_host_control(requested_host)["enabled"],
         },
     )
 
@@ -147,9 +142,7 @@ def test_same_adapter_observes_mcp_off_status_on_at_successive_boundaries(
         args={"name": "recorded-after-enable"},
         session_id="same-adapter",
     )
-    assert adapter.report_skills_loaded("same-adapter") == [
-        "recorded-after-enable"
-    ]
+    assert adapter.report_skills_loaded("same-adapter") == ["recorded-after-enable"]
 
 
 def test_host_command_supports_status_off_and_on_across_store_restarts(
@@ -158,16 +151,10 @@ def test_host_command_supports_status_off_and_on_across_store_restarts(
     path = tmp_path / "agency.db"
     store = Store(path)
 
-    assert handle_host_control_command("hermes", "status", store=store)[
-        "runtime_enabled"
-    ] is True
-    assert handle_host_control_command("hermes", "off", store=store)[
-        "runtime_enabled"
-    ] is False
+    assert handle_host_control_command("hermes", "status", store=store)["runtime_enabled"] is True
+    assert handle_host_control_command("hermes", "off", store=store)["runtime_enabled"] is False
     assert Store(path).get_host_control("hermes")["enabled"] is False
-    assert handle_host_control_command("hermes", "on", store=Store(path))[
-        "runtime_enabled"
-    ] is True
+    assert handle_host_control_command("hermes", "on", store=Store(path))["runtime_enabled"] is True
     with pytest.raises(ValueError, match="usage"):
         handle_host_control_command("hermes", "disable now", store=store)
 

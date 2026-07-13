@@ -41,8 +41,7 @@ def test_credentialed_provider_redirect_is_rejected_before_headers_cross_origin(
 
     origin = ThreadingHTTPServer(("127.0.0.1", 0), RedirectHandler)
     threads = [
-        threading.Thread(target=server.serve_forever, daemon=True)
-        for server in (sink, origin)
+        threading.Thread(target=server.serve_forever, daemon=True) for server in (sink, origin)
     ]
     for thread in threads:
         thread.start()
@@ -81,3 +80,49 @@ def test_credentialed_provider_redirect_is_rejected_before_headers_cross_origin(
             server.server_close()
         for thread in threads:
             thread.join(timeout=2)
+
+
+def test_loopback_requests_explicitly_bypass_environment_proxies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: list[object] = []
+
+    class Opener:
+        def open(self, request: urllib.request.Request, *, timeout: float) -> object:
+            assert request.full_url == "http://127.0.0.1:11434/api/tags"
+            assert timeout == 2
+            return object()
+
+    def build_opener(*handlers: object) -> Opener:
+        captured.extend(handlers)
+        return Opener()
+
+    monkeypatch.setattr(urllib.request, "build_opener", build_opener)
+
+    open_no_redirect(
+        urllib.request.Request("http://127.0.0.1:11434/api/tags"),
+        timeout=2,
+    )
+
+    proxy_handlers = [
+        handler for handler in captured if isinstance(handler, urllib.request.ProxyHandler)
+    ]
+    assert len(proxy_handlers) == 1
+    assert proxy_handlers[0].proxies == {}
+
+
+@pytest.mark.parametrize("timeout", [0, -1, float("nan"), float("inf"), True])
+def test_http_helper_rejects_unbounded_timeouts(timeout: object) -> None:
+    with pytest.raises(ValueError, match="timeout"):
+        open_no_redirect(
+            urllib.request.Request("https://provider.invalid/v1/models"),
+            timeout=timeout,  # type: ignore[arg-type]
+        )
+
+
+def test_http_helper_rejects_non_http_schemes() -> None:
+    with pytest.raises(ValueError, match=r"HTTP\(S\)"):
+        open_no_redirect(
+            urllib.request.Request("file:///tmp/provider"),
+            timeout=2,
+        )

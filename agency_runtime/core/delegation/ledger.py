@@ -11,11 +11,11 @@ from __future__ import annotations
 import json
 import socket
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
 
 from agency_runtime.core.store.sqlite import Store
-
 
 TERMINAL_STATUSES = {"completed", "failed", "skipped"}
 
@@ -66,7 +66,9 @@ class DelegationLedger:
         """Return entries in insertion order."""
         return list(self._entries.values())
 
-    def suggest(self, work_unit_id: str, recommended_agent: str = "", *, backend: str = "") -> DelegationLedgerEntry:
+    def suggest(
+        self, work_unit_id: str, recommended_agent: str = "", *, backend: str = ""
+    ) -> DelegationLedgerEntry:
         """Create or update a suggested work unit."""
         entry = self._entries.get(work_unit_id)
         if entry is None:
@@ -152,7 +154,9 @@ class DelegationLedger:
         return json.dumps(self.as_dict(), indent=indent, sort_keys=True)
 
     @classmethod
-    def from_store(cls, store: Store, trace_id: str, *, session_id: str = "", host: str | None = None) -> "DelegationLedger":
+    def from_store(
+        cls, store: Store, trace_id: str, *, session_id: str = "", host: str | None = None
+    ) -> DelegationLedger:
         """Hydrate a ledger contract from existing Store delegation rows."""
         ledger = cls(store, trace_id=trace_id, session_id=session_id, host=host)
         for row in store.get_delegations(trace_id):
@@ -169,4 +173,4 @@ class DelegationLedger:
         return ledger
 
 
-__all__ = ["DelegationLedger", "DelegationLedgerEntry", "TERMINAL_STATUSES"]
+__all__ = ["TERMINAL_STATUSES", "DelegationLedger", "DelegationLedgerEntry"]

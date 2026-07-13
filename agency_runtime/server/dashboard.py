@@ -9,6 +9,7 @@ import os
 import secrets
 import signal
 import webbrowser
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -16,20 +17,20 @@ from importlib.resources import files
 from pathlib import Path
 from threading import RLock, Thread, current_thread, main_thread
 from time import monotonic
-from typing import Any, Callable
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from agency_runtime.core.config import load_config, reset_config_cache
-from agency_runtime.core.dashboard_runtime import (
-    remove_dashboard_runtime,
-    write_dashboard_runtime,
-)
 from agency_runtime.core.configuration import (
     ConfigConflictError,
     ConfigState,
     ConfigurationError,
     apply_config_operations,
     read_config_state,
+)
+from agency_runtime.core.dashboard_runtime import (
+    remove_dashboard_runtime,
+    write_dashboard_runtime,
 )
 from agency_runtime.core.roster.sync import activate_snapshot, approve_snapshot
 from agency_runtime.core.selector.explain import explain_route
@@ -44,6 +45,11 @@ _ASSETS: dict[str, tuple[str, str]] = {
     "/app.css": ("app.css", "text/css; charset=utf-8"),
     "/app.js": ("app.js", "text/javascript; charset=utf-8"),
     "/charts.js": ("charts.js", "text/javascript; charset=utf-8"),
+    "/dashboard-core.js": ("dashboard-core.js", "text/javascript; charset=utf-8"),
+    "/dashboard-config.js": ("dashboard-config.js", "text/javascript; charset=utf-8"),
+    "/dashboard-render.js": ("dashboard-render.js", "text/javascript; charset=utf-8"),
+    "/dashboard-live.js": ("dashboard-live.js", "text/javascript; charset=utf-8"),
+    "/dashboard-actions.js": ("dashboard-actions.js", "text/javascript; charset=utf-8"),
 }
 
 _HOST_INSPECTION_CACHE_SECONDS = 3.0
@@ -92,9 +98,7 @@ def _required_config_confirmations(operations: list[Any]) -> set[str]:
     return required
 
 
-def _unknown_host(
-    host: str, *, status: str, error: str | None = None
-) -> dict[str, Any]:
+def _unknown_host(host: str, *, status: str, error: str | None = None) -> dict[str, Any]:
     """Return a truth-preserving placeholder when inspection is incomplete."""
     return {
         "host": host,
@@ -111,9 +115,7 @@ def _unknown_host(
         "loaded": None,
         "canary": None,
         "marketplace_registered": None,
-        "maturity": "inspection-pending"
-        if status == "timed_out"
-        else "inspection-error",
+        "maturity": "inspection-pending" if status == "timed_out" else "inspection-error",
         "evidence": [],
         "inspection_status": status,
         "inspection_error": error,
@@ -162,17 +164,23 @@ class _HostInspectionCoordinator:
         self._lock = RLock()
         self._cache: dict[str, tuple[float, dict[str, Any]]] = {}
         self._in_flight: dict[str, Future[dict[str, Any]]] = {}
+        self._invalidated: set[str] = set()
 
     def _finished(self, host: str, future: Future[dict[str, Any]]) -> None:
+        with self._lock:
+            if self._in_flight.get(host) is not future:
+                return
+            if host in self._invalidated:
+                self._in_flight.pop(host, None)
+                self._invalidated.discard(host)
+                return
         try:
             value = dict(future.result())
             value["host"] = host
             value["inspection_status"] = "complete"
             value["inspection_error"] = None
         except Exception as exc:  # native details remain in server logs
-            logger.warning(
-                "host inspection failed for %s (%s)", host, type(exc).__name__
-            )
+            logger.warning("host inspection failed for %s (%s)", host, type(exc).__name__)
             value = _unknown_host(
                 host,
                 status="error",
@@ -182,6 +190,9 @@ class _HostInspectionCoordinator:
             if self._in_flight.get(host) is not future:
                 return
             self._in_flight.pop(host, None)
+            if host in self._invalidated:
+                self._invalidated.discard(host)
+                return
             self._cache[host] = (monotonic() + self.cache_seconds, value)
 
     def invalidate(self, host: str | None = None) -> None:
@@ -190,9 +201,16 @@ class _HostInspectionCoordinator:
         with self._lock:
             for target in targets:
                 self._cache.pop(target, None)
-                future = self._in_flight.pop(target, None)
+                future = self._in_flight.get(target)
                 if future is not None:
-                    future.cancel()
+                    self._invalidated.add(target)
+                    cancelled = future.cancel()
+                    # Production futures have callbacks, which synchronously
+                    # remove a successfully cancelled future. Keep this fallback
+                    # for injected executors/futures without callback support.
+                    if cancelled and self._in_flight.get(target) is future:
+                        self._in_flight.pop(target, None)
+                        self._invalidated.discard(target)
 
     def inspect(self) -> list[dict[str, Any]]:
         now = monotonic()
@@ -206,9 +224,7 @@ class _HostInspectionCoordinator:
                 if future is None:
                     future = self.executor.submit(self.inspect_one, host)
                     self._in_flight[host] = future
-                    future.add_done_callback(
-                        lambda item, name=host: self._finished(name, item)
-                    )
+                    future.add_done_callback(lambda item, name=host: self._finished(name, item))
                 pending.append(future)
 
         # ``wait`` returns at the shared deadline and never waits for slow
@@ -243,10 +259,7 @@ def _provider_health(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     successful = {"success", "completed", "ok"}
     failed = {"failed", "failure", "error", "cancelled", "timed_out", "timeout"}
     for receipt in receipts:
-        provider = (
-            str(receipt.get("resolved_provider") or "unresolved").strip()
-            or "unresolved"
-        )
+        provider = str(receipt.get("resolved_provider") or "unresolved").strip() or "unresolved"
         status = str(receipt.get("status") or "unknown").strip().lower() or "unknown"
         item = observed.setdefault(
             provider,
@@ -288,14 +301,15 @@ def _dashboard_activity(
     rendered: dict[str, list[dict[str, Any]]] = {}
     for name in ("runs", "routing", "delegations", "receipts", "finalizations"):
         rows = activity.get(name, [])
-        rendered[name] = []
-        for row in rows:
-            item = dict(row)
-            if name == "delegations":
-                item.pop("skip_reason", None)
-            elif name == "routing":
-                item.pop("work_units", None)
-            rendered[name].append(item)
+        excluded = (
+            "skip_reason" if name == "delegations" else "work_units" if name == "routing" else None
+        )
+        if excluded is not None and any(excluded in row for row in rows):
+            rendered[name] = [
+                {key: value for key, value in row.items() if key != excluded} for row in rows
+            ]
+        else:
+            rendered[name] = rows
     return rendered
 
 
@@ -319,10 +333,10 @@ def _dashboard_revision(payload: dict[str, Any]) -> str:
 
     canonical = json.dumps(
         payload,
+        allow_nan=False,
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=True,
-        default=str,
     ).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()
 
@@ -373,12 +387,10 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
     def auth_token(self) -> str:
         return self.server.auth_token  # type: ignore[attr-defined]
 
-    def do_OPTIONS(self) -> None:  # noqa: N802 - http.server contract
-        self._json_error(
-            HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed"
-        )
+    def do_OPTIONS(self) -> None:
+        self._json_error(HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed")
 
-    def do_GET(self) -> None:  # noqa: N802 - http.server contract
+    def do_GET(self) -> None:
         path = urlparse(self.path).path.rstrip("/") or "/"
         if path in _ASSETS:
             self._serve_asset(path)
@@ -408,22 +420,20 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             else:
                 self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
         except Exception as exc:  # defensive boundary; details stay in logs
-            logger.exception(
-                "dashboard GET failed for %s (%s)", path, type(exc).__name__
-            )
+            logger.exception("dashboard GET failed for %s (%s)", path, type(exc).__name__)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
-    def do_POST(self) -> None:  # noqa: N802 - http.server contract
+    def do_POST(self) -> None:
         path = urlparse(self.path).path.rstrip("/") or "/"
         if not path.startswith("/api/"):
             self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
             return
         if not self._authorise_api_request(require_json=True):
             return
-        body = self._read_json_body()
-        if body is None:
-            return
         try:
+            body = self._read_json_body()
+            if body is None:
+                return
             if path == "/api/route":
                 self._handle_route_lab(body)
             elif path == "/api/maintenance/trim":
@@ -443,9 +453,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         except (KeyError, ValueError, RuntimeError) as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
-            logger.exception(
-                "dashboard POST failed for %s (%s)", path, type(exc).__name__
-            )
+            logger.exception("dashboard POST failed for %s (%s)", path, type(exc).__name__)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     def _authorise_api_request(self, *, require_json: bool = False) -> bool:
@@ -457,26 +465,26 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         if origin:
             expected_origin = f"http://{self.headers.get('Host', '')}"
             if origin.rstrip("/").lower() != expected_origin.rstrip("/").lower():
-                self._json_error(
-                    HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed"
-                )
+                self._json_error(HTTPStatus.FORBIDDEN, "cross-origin requests are not allowed")
                 return False
 
         supplied = self.headers.get("Authorization", "")
         expected = f"Bearer {self.auth_token}"
-        if not secrets.compare_digest(supplied, expected):
+        if (
+            len(supplied) > 8192
+            or not supplied.isascii()
+            or len(expected) > 8192
+            or not expected.isascii()
+            or not secrets.compare_digest(supplied, expected)
+        ):
             self._json_error(HTTPStatus.UNAUTHORIZED, "authentication required")
             return False
 
         if require_json:
-            content_type = (
-                self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
-            )
+            content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if content_type != "application/json":
                 self._drain_bounded_request_body()
-                self._json_error(
-                    HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required"
-                )
+                self._json_error(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "application/json is required")
                 return False
         return True
 
@@ -504,17 +512,27 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         self.send_header("Cache-Control", cache_control)
         self.send_header(
             "Content-Security-Policy",
-            "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+            "default-src 'self'; base-uri 'none'; object-src 'none'; "
+            "script-src 'self'; style-src 'self'; connect-src 'self'; "
+            "frame-ancestors 'none'; form-action 'self'",
         )
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header(
-            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
-        )
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
-        data = json.dumps(payload, separators=(",", ":"), default=str).encode("utf-8")
+        try:
+            data = json.dumps(
+                payload,
+                allow_nan=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        except (TypeError, ValueError):
+            status = HTTPStatus.INTERNAL_SERVER_ERROR
+            data = b'{"error":"internal serialization error"}'
         self.send_response(status)
         self._send_security_headers(
             content_type="application/json; charset=utf-8", cache_control="no-store"
@@ -525,13 +543,12 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
 
     def _handle_overview(self) -> None:
         stats = self.store.database_stats()
-        activity = _dashboard_activity(self.store.recent_runtime_activity(limit=200))
+        activity = _dashboard_activity(self.store.recent_dashboard_activity(limit=200))
         cfg = load_config()
-        active = self.store.get_active_roster()
         self._json_ok(
             {
                 **_live_overview(activity, stats),
-                "roster_count": len(active),
+                "roster_count": self.store.count_active_roster(),
                 "retention_days": cfg.observability.retention_days,
                 "capture_content": cfg.observability.capture_content,
                 "counts": stats["tables"],
@@ -540,7 +557,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
 
     def _handle_live(self) -> None:
         limit = _bounded_query_limit(self.path, default=100)
-        activity = _dashboard_activity(self.store.recent_runtime_activity(limit=limit))
+        activity = _dashboard_activity(self.store.recent_dashboard_activity(limit=limit))
         core = {
             "schema_version": 1,
             "overview": _live_overview(activity, self.store.database_sizes()),
@@ -558,9 +575,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
 
     def _handle_activity(self) -> None:
         limit = _bounded_query_limit(self.path, default=50)
-        self._json_ok(
-            _dashboard_activity(self.store.recent_runtime_activity(limit=limit))
-        )
+        self._json_ok(_dashboard_activity(self.store.recent_dashboard_activity(limit=limit)))
 
     def _handle_hosts(self) -> None:
         from agency_runtime.core.host_control import inspect_host_status
@@ -584,9 +599,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             not isinstance(item, str) for item in confirmations
         ):
             raise ValueError("confirmations must be a JSON string array")
-        missing = sorted(
-            _required_config_confirmations(operations) - set(confirmations)
-        )
+        missing = sorted(_required_config_confirmations(operations) - set(confirmations))
         if missing:
             raise ValueError(f"missing confirmation phrase: {missing[0]}")
         result = apply_config_operations(

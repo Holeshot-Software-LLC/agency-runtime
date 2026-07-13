@@ -6,9 +6,13 @@ or spawning real workers. It is intended for `agency eval delegation` and CI.
 
 from __future__ import annotations
 
+import secrets
+import shutil
 import tempfile
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
 from agency_runtime.adapters.codex.wrapper import CodexAdapter
@@ -20,6 +24,51 @@ from agency_runtime.core.header.contract import fill_header_fields
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.selector.pipeline import build_routing_context
 from agency_runtime.core.store.sqlite import Store
+
+
+class _SyntheticEvalStore(Store):
+    """Store non-sensitive eval evidence without owner-ACL mutation.
+
+    The real Store remains fail-closed. This internal subclass exists only for
+    deterministic synthetic records, uses exclusive creation, and retains every
+    link/reparse and regular-file check while avoiding a Windows DACL operation
+    that restricted agent tokens are not allowed to perform.
+    """
+
+    def _ensure_private_storage_file(self) -> None:
+        self._assert_storage_paths_safe()
+        with self.db_path.open("xb"):
+            pass
+        self._assert_storage_paths_safe()
+
+    def _repair_storage_permissions(self) -> None:
+        self._assert_storage_paths_safe()
+
+
+@contextmanager
+def _temporary_eval_directory() -> Iterator[Path]:
+    """Create a synthetic-data temp directory usable by restricted Windows hosts.
+
+    ``tempfile.TemporaryDirectory`` asks Windows for mode ``0o700``. Under a
+    restricted Codex token, Python 3.13 can translate that into a DACL that the
+    creating process itself cannot traverse. Eval stores contain no credentials
+    or user content, so an unpredictable directory with inherited permissions is
+    both safe for this purpose and portable across native Windows and POSIX.
+    """
+
+    root = Path(tempfile.gettempdir())
+    for _attempt in range(100):
+        candidate = root / f"agency-delegation-eval-{secrets.token_hex(16)}"
+        try:
+            candidate.mkdir()
+        except FileExistsError:
+            continue
+        try:
+            yield candidate
+        finally:
+            shutil.rmtree(candidate)
+        return
+    raise RuntimeError("could not allocate a unique delegation eval directory")
 
 
 def _header(*, delegated: str = "none") -> str:
@@ -60,26 +109,30 @@ def _case_status_query_no_delegate() -> dict[str, Any]:
 
 
 def _case_context_shows_opportunity_without_specialist_match() -> dict[str, Any]:
-    context = build_routing_context({
-        "selected_ids": [],
-        "confidence": 0.0,
-        "status": "no_catalog",
-        "work_units": {
-            "delegate": True,
-            "count": 2,
-            "confidence": "high",
-            "source": "numbered_list",
-            "units": ["audit delegation", "add eval"],
-        },
-    })
+    context = build_routing_context(
+        {
+            "selected_ids": [],
+            "confidence": 0.0,
+            "status": "no_catalog",
+            "work_units": {
+                "delegate": True,
+                "count": 2,
+                "confidence": "high",
+                "source": "numbered_list",
+                "units": ["audit delegation", "add eval"],
+            },
+        }
+    )
     assert "[AGENCY PREFLIGHT] No high-confidence specialist match" in context
     assert "[DELEGATION OPPORTUNITY] 2 independent work units" in context
     return {"markers": ["AGENCY PREFLIGHT", "DELEGATION OPPORTUNITY"]}
 
 
-def _with_store(fn: Callable[[Store, HermesAdapter], dict[str, Any] | None]) -> dict[str, Any] | None:
-    with tempfile.TemporaryDirectory() as tmpdir:
-        store = Store(Path(tmpdir) / "agency.db")
+def _with_store(
+    fn: Callable[[Store, HermesAdapter], dict[str, Any] | None],
+) -> dict[str, Any] | None:
+    with _temporary_eval_directory() as tmpdir:
+        store = _SyntheticEvalStore(tmpdir / "agency.db")
         adapter = HermesAdapter(store=store)
         return fn(store, adapter)
 
@@ -92,9 +145,15 @@ def _make_adapter(adapter_cls: type, store: Store):
 
 def _case_all_adapters_track_evidence() -> dict[str, Any]:
     hosts: list[str] = []
-    for adapter_cls in (HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            store = Store(Path(tmpdir) / "agency.db")
+    for adapter_cls in (
+        HermesAdapter,
+        OpenClawAdapter,
+        CodexAdapter,
+        ClaudeAdapter,
+        GenericAdapter,
+    ):
+        with _temporary_eval_directory() as tmpdir:
+            store = _SyntheticEvalStore(tmpdir / "agency.db")
             adapter = _make_adapter(adapter_cls, store)
             adapter.post_tool_call_handler(
                 tool_name="skill_view",
@@ -122,9 +181,15 @@ def _case_all_adapters_track_evidence() -> dict[str, Any]:
 
 def _case_all_adapters_capture_model_receipts() -> dict[str, Any]:
     hosts: list[str] = []
-    for adapter_cls in (HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            store = Store(Path(tmpdir) / "agency.db")
+    for adapter_cls in (
+        HermesAdapter,
+        OpenClawAdapter,
+        CodexAdapter,
+        ClaudeAdapter,
+        GenericAdapter,
+    ):
+        with _temporary_eval_directory() as tmpdir:
+            store = _SyntheticEvalStore(tmpdir / "agency.db")
             adapter = _make_adapter(adapter_cls, store)
             adapter.post_api_request_handler(
                 response={"model": "eval-provider/eval-model"},
@@ -160,6 +225,7 @@ def _case_suggestions_are_persisted() -> dict[str, Any] | None:
         assert count == 2
         assert [row["status"] for row in rows] == ["suggested", "suggested"]
         return {"suggested": len(rows)}
+
     return _with_store(run)
 
 
@@ -174,10 +240,13 @@ def _case_pre_verify_blocks_open_suggestions() -> dict[str, Any] | None:
             recommended_agent="multi-agent-systems-architect",
             status="suggested",
         )
-        result = adapter.pre_verify_handler(_header(delegated="none"), session_id="eval-session", attempt=1)
+        result = adapter.pre_verify_handler(
+            _header(delegated="none"), session_id="eval-session", attempt=1
+        )
         assert result is not None
         assert result["action"] == "continue"
         return {"action": result["action"]}
+
     return _with_store(run)
 
 
@@ -202,6 +271,7 @@ def _case_delegate_task_promotes_suggestion() -> dict[str, Any] | None:
         fields = fill_header_fields({}, "eval-session", store, "task-chunk-planner")
         assert "delegate_task" in fields["agencies_delegated"]
         return {"header": fields["agencies_delegated"]}
+
     return _with_store(run)
 
 
@@ -217,6 +287,7 @@ def _case_agency_agents_delegate_records_event() -> dict[str, Any] | None:
         assert rows[0]["recommended_agent"] == "software-architect"
         assert rows[0]["status"] == "delegated"
         return {"backend": rows[0]["backend"]}
+
     return _with_store(run)
 
 
@@ -235,6 +306,7 @@ def _case_skipped_blocker_renders_in_header() -> dict[str, Any] | None:
         fields = fill_header_fields({}, "eval-session", store, "task-chunk-planner")
         assert fields["agencies_delegated"] == "none - delegate_task unavailable"
         return {"header": fields["agencies_delegated"]}
+
     return _with_store(run)
 
 
@@ -258,6 +330,7 @@ def _case_recorded_delegation_blocker_is_accepted() -> dict[str, Any] | None:
         )
         assert result is None
         return {"accepted": True}
+
     return _with_store(run)
 
 
@@ -280,6 +353,7 @@ def _case_generated_no_delegation_explanation_is_rejected() -> dict[str, Any] | 
         assert result is not None
         assert result["action"] == "continue"
         return {"action": result["action"]}
+
     return _with_store(run)
 
 
@@ -288,7 +362,10 @@ def run_delegation_eval() -> dict[str, Any]:
     cases = [
         ("detect_numbered_list", _case_detect_numbered_list),
         ("detect_status_query_no_delegate", _case_status_query_no_delegate),
-        ("context_shows_opportunity_without_specialist_match", _case_context_shows_opportunity_without_specialist_match),
+        (
+            "context_shows_opportunity_without_specialist_match",
+            _case_context_shows_opportunity_without_specialist_match,
+        ),
         ("all_adapters_track_evidence", _case_all_adapters_track_evidence),
         ("all_adapters_capture_model_receipts", _case_all_adapters_capture_model_receipts),
         ("suggestions_are_persisted", _case_suggestions_are_persisted),
@@ -297,7 +374,10 @@ def run_delegation_eval() -> dict[str, Any]:
         ("agency_agents_delegate_records_event", _case_agency_agents_delegate_records_event),
         ("recorded_delegation_blocker_is_accepted", _case_recorded_delegation_blocker_is_accepted),
         ("skipped_blocker_renders_in_header", _case_skipped_blocker_renders_in_header),
-        ("generated_no_delegation_explanation_is_rejected", _case_generated_no_delegation_explanation_is_rejected),
+        (
+            "generated_no_delegation_explanation_is_rejected",
+            _case_generated_no_delegation_explanation_is_rejected,
+        ),
     ]
     results = [_run_case(name, fn) for name, fn in cases]
     passed = sum(1 for case in results if case["passed"])

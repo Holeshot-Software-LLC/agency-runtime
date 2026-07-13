@@ -3,7 +3,7 @@ title: "AR-10: Make runtime evidence authoritative"
 status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [evidence, delegation, correctness]
 related:
   - docs/decisions/0007-six-line-evidence-header.md
@@ -41,8 +41,7 @@ records and rejects spoofed claims on every attempt.
 Routing decisions receive a fresh trace and are stored without the raw prompt by
 default. SQLite enforces unique trace parents and migrates legacy orphaned
 evidence. Focused evidence, delegation-lifecycle, routing, and storage tests
-exercise the failure paths. Tracker issue #10 remains open because this
-documentation change does not perform issue closure.
+exercise the failure paths.
 
 ## Approach
 

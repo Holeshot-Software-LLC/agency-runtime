@@ -3,7 +3,7 @@ title: "AR-15: Deliver reliable JSON rejection responses on Windows"
 status: done
 category: roadmap
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [dashboard, http, windows, reliability, security]
 related:
   - docs/decisions/0017-sanitized-server-error-boundary.md
@@ -14,7 +14,7 @@ type: issue
 epic: operations
 issue_id: AR-15
 priority: p1
-tracker_url: null
+tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/15"
 depends_on: []
 blocks: [AR-07]
 ---

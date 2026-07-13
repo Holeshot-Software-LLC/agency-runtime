@@ -1,6 +1,7 @@
 """Delegation lifecycle, ledger, and backend registry for agency-runtime."""
 
 from agency_runtime.core.delegation.backends import (
+    DEFAULT_REGISTRY,
     BackendError,
     BackendExecutionError,
     BackendProtocolError,
@@ -10,7 +11,6 @@ from agency_runtime.core.delegation.backends import (
     ClaudeExecBackend,
     CodexExecBackend,
     CommandBackend,
-    DEFAULT_REGISTRY,
     DelegateBackend,
     GenericCLIBackend,
     HermesDelegateBackend,
@@ -25,8 +25,8 @@ from agency_runtime.core.delegation.lifecycle import (
     DEFAULT_WORKTREE_ROOT,
     DependencyGraph,
     LifecycleResult,
-    WorkUnit,
     WorktreeInfo,
+    WorkUnit,
     aggregate_results,
     build_dependency_graph,
     cleanup_worktrees,
@@ -37,6 +37,9 @@ from agency_runtime.core.delegation.lifecycle import (
 )
 
 __all__ = [
+    "DEFAULT_MAX_WORKERS",
+    "DEFAULT_REGISTRY",
+    "DEFAULT_WORKTREE_ROOT",
     "BackendError",
     "BackendExecutionError",
     "BackendProtocolError",
@@ -46,9 +49,6 @@ __all__ = [
     "ClaudeExecBackend",
     "CodexExecBackend",
     "CommandBackend",
-    "DEFAULT_REGISTRY",
-    "DEFAULT_MAX_WORKERS",
-    "DEFAULT_WORKTREE_ROOT",
     "DelegateBackend",
     "DelegationLedger",
     "DelegationLedgerEntry",

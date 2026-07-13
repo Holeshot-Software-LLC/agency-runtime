@@ -16,7 +16,6 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 ROADMAP = ROOT / "docs" / "roadmap"
 ID_RE = re.compile(r"^\[(AR-\d{2,})\]\s+.+")
@@ -107,24 +106,18 @@ def main(argv: list[str] | None = None) -> int:
             errors.append(f"{issue_id}: tracker_url does not match issue URL")
         expected_label = f"epic:{meta.get('epic')}"
         labels = {
-            str(label.get("name"))
-            for label in item.get("labels", [])
-            if isinstance(label, dict)
+            str(label.get("name")) for label in item.get("labels", []) if isinstance(label, dict)
         }
         if expected_label not in labels:
             errors.append(f"{issue_id}: missing tracker label {expected_label}")
-        expected_state = (
-            "CLOSED" if meta.get("status") in {"done", "wont_do"} else "OPEN"
-        )
+        expected_state = "CLOSED" if meta.get("status") in {"done", "wont_do"} else "OPEN"
         if item.get("state") != expected_state:
             allow_open_complete = (
                 args.allow_open_complete
                 and expected_state == "CLOSED"
                 and item.get("state") == "OPEN"
             )
-            message = (
-                f"{issue_id}: tracker state {item.get('state')} != {expected_state}"
-            )
+            message = f"{issue_id}: tracker state {item.get('state')} != {expected_state}"
             if allow_open_complete:
                 warnings.append(f"{message} (closure pending authorization)")
             else:
@@ -136,11 +129,7 @@ def main(argv: list[str] | None = None) -> int:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
-    suffix = (
-        f" ({len(warnings)} open complete item(s) allowed)"
-        if warnings
-        else ""
-    )
+    suffix = f" ({len(warnings)} open complete item(s) allowed)" if warnings else ""
     print(f"tracker validation passed for {len(local)} roadmap items{suffix}")
     return 0
 

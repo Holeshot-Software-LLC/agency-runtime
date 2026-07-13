@@ -11,13 +11,27 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-import yaml
+from agency_runtime.core.bounded_io import read_bounded_regular_file
+from agency_runtime.core.bounded_yaml import safe_load_bounded
+from agency_runtime.core.selector.intent_text import affirmative_intent
 
 logger = logging.getLogger("agency_runtime.selector.policy")
 
 _DEFAULT_POLICY_PATH = Path.home() / ".agency-runtime" / "companion_policy.yaml"
 _BUNDLED_POLICY_PATH = Path(__file__).resolve().parents[1] / "companion_policy.yaml"
 _BUNDLED_COMPANION_POLICY: dict[str, Any] | None = None
+_MAX_CUSTOM_POLICY_BYTES = 1024 * 1024
+
+
+def _read_bounded_policy(path: Path, *, maximum_bytes: int | None = None) -> Any:
+    """Read and strictly parse a policy without unbounded custom-file reads."""
+    limit = _MAX_CUSTOM_POLICY_BYTES if maximum_bytes is None else maximum_bytes
+    payload = read_bounded_regular_file(
+        path,
+        limit=limit,
+        label="companion policy",
+    )
+    return safe_load_bounded(payload)
 
 
 def _resolve_policy_path() -> Path:
@@ -27,6 +41,7 @@ def _resolve_policy_path() -> Path:
         return Path(env_path)
     try:
         from agency_runtime.core.config import load_config
+
         cfg = load_config()
         if cfg.companion_policy_path:
             return Path(os.path.expanduser(cfg.companion_policy_path))
@@ -34,12 +49,13 @@ def _resolve_policy_path() -> Path:
         pass
     return _DEFAULT_POLICY_PATH
 
+
 def _load_bundled_policy() -> dict[str, Any]:
     """Load the packaged broad-action companion policy."""
     global _BUNDLED_COMPANION_POLICY
     if _BUNDLED_COMPANION_POLICY is None:
         try:
-            loaded = yaml.safe_load(_BUNDLED_POLICY_PATH.read_text(encoding="utf-8")) or {}
+            loaded = _read_bounded_policy(_BUNDLED_POLICY_PATH) or {}
             _BUNDLED_COMPANION_POLICY = loaded if isinstance(loaded, dict) else {}
         except Exception as exc:
             logger.warning("could not load bundled companion policy: %s", exc)
@@ -62,14 +78,37 @@ _POLICY_RECHECK_SECONDS = 1.0
 # The bundled policy historically used a handful of intentionally truncated
 # stems.  Keep those compatible, but constrain them to the start of a complete
 # lexical token.  All other triggers are exact words or contiguous phrases.
-_PREFIX_TRIGGERS = frozenset({
-    "orchestrat", "profil", "scalab", "tokeni", "vulnerab",
-})
+_PREFIX_TRIGGERS = frozenset(
+    {
+        "orchestrat",
+        "profil",
+        "scalab",
+        "tokeni",
+        "vulnerab",
+    }
+)
 _LEXEME_RE = re.compile(r"[a-z0-9]+(?:\+\+|#)?", re.IGNORECASE)
-_CONDITION_STOPWORDS = frozenset({
-    "and", "are", "for", "from", "in", "into", "new", "of", "on", "or",
-    "the", "to", "when", "with", "work", "needed", "involved",
-})
+_CONDITION_STOPWORDS = frozenset(
+    {
+        "and",
+        "are",
+        "for",
+        "from",
+        "in",
+        "into",
+        "new",
+        "of",
+        "on",
+        "or",
+        "the",
+        "to",
+        "when",
+        "with",
+        "work",
+        "needed",
+        "involved",
+    }
+)
 
 
 def _lexemes(text: str) -> tuple[str, ...]:
@@ -88,9 +127,7 @@ def _compiled_trigger(trigger: str) -> re.Pattern[str] | None:
         return None
     separator = r"(?:[^a-z0-9+#]+)"
     phrase = separator.join(re.escape(word) for word in words)
-    use_prefix = normalized.endswith("*") or (
-        len(words) == 1 and words[0] in _PREFIX_TRIGGERS
-    )
+    use_prefix = normalized.endswith("*") or (len(words) == 1 and words[0] in _PREFIX_TRIGGERS)
     suffix = r"[a-z0-9+#]*" if use_prefix else ""
     return re.compile(rf"(?<![a-z0-9+#]){phrase}{suffix}(?![a-z0-9+#])", re.IGNORECASE)
 
@@ -154,7 +191,13 @@ def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
 
     if _COMPANION_POLICY is None or path != _POLICY_PATH or mtime != _POLICY_MTIME:
         try:
-            loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            loaded = (
+                _read_bounded_policy(
+                    path,
+                    maximum_bytes=_MAX_CUSTOM_POLICY_BYTES,
+                )
+                or {}
+            )
             _COMPANION_POLICY = loaded if isinstance(loaded, dict) else {}
             _POLICY_MTIME = mtime
             _POLICY_PATH = path
@@ -164,7 +207,7 @@ def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
             logger.info("companion policy loaded (%d actions)", len(actions))
         except Exception as exc:
             logger.warning("could not load companion policy: %s", exc)
-            if _POLICY_PATH != path:
+            if path != _POLICY_PATH:
                 return _load_bundled_policy()
     else:
         _POLICY_REQUEST_KEY = request_key
@@ -172,16 +215,11 @@ def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
     return _COMPANION_POLICY or _load_bundled_policy()
 
 
-def _policy_routes(
-    policy: dict[str, Any],
-) -> tuple[list[dict[str, str]], list[str]]:
-    """Collect every action and division route with precise validation paths."""
-    routes: list[dict[str, str]] = []
-    errors: list[str] = []
-    actions = policy.get("actions")
-    if not isinstance(actions, dict):
-        errors.append("actions must be a mapping")
-        actions = {}
+def _append_action_routes(
+    actions: dict[Any, Any],
+    routes: list[dict[str, str]],
+    errors: list[str],
+) -> None:
     for action_name, action in actions.items():
         action_path = f"actions.{action_name}"
         if not isinstance(action, dict):
@@ -215,10 +253,26 @@ def _policy_routes(
                     }
                 )
 
-    divisions = policy.get("division_anchors", {})
-    if not isinstance(divisions, dict):
-        errors.append("division_anchors must be a mapping")
-        divisions = {}
+
+def _division_condition(
+    entry: Any,
+    *,
+    path: str,
+    errors: list[str],
+) -> tuple[Any, Any] | None:
+    if isinstance(entry, dict):
+        return entry.get("slug"), entry.get("when")
+    if isinstance(entry, (list, tuple)) and len(entry) >= 2:
+        return entry[0], entry[1]
+    errors.append(f"{path} must contain a slug and condition")
+    return None
+
+
+def _append_division_routes(
+    divisions: dict[Any, Any],
+    routes: list[dict[str, str]],
+    errors: list[str],
+) -> None:
     for division_name, division in divisions.items():
         division_path = f"division_anchors.{division_name}"
         if not isinstance(division, dict):
@@ -244,14 +298,10 @@ def _policy_routes(
             continue
         for index, entry in enumerate(conditional):
             path = f"{division_path}.conditional[{index}]"
-            if isinstance(entry, dict):
-                slug = entry.get("slug")
-                condition = entry.get("when")
-            elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
-                slug, condition = entry[0], entry[1]
-            else:
-                errors.append(f"{path} must contain a slug and condition")
+            values = _division_condition(entry, path=path, errors=errors)
+            if values is None:
                 continue
+            slug, condition = values
             if not isinstance(slug, str) or not slug.strip():
                 errors.append(f"{path}.slug must be a non-empty string")
                 continue
@@ -266,6 +316,24 @@ def _policy_routes(
                     "kind": "conditional",
                 }
             )
+
+
+def _policy_routes(
+    policy: dict[str, Any],
+) -> tuple[list[dict[str, str]], list[str]]:
+    """Collect every action and division route with precise validation paths."""
+    routes: list[dict[str, str]] = []
+    errors: list[str] = []
+    actions = policy.get("actions")
+    if not isinstance(actions, dict):
+        errors.append("actions must be a mapping")
+        actions = {}
+    _append_action_routes(actions, routes, errors)
+    divisions = policy.get("division_anchors", {})
+    if not isinstance(divisions, dict):
+        errors.append("division_anchors must be a mapping")
+        divisions = {}
+    _append_division_routes(divisions, routes, errors)
     return routes, errors
 
 
@@ -324,8 +392,7 @@ def validate_policy(
             reason = gated_config.get("reason")
             if not isinstance(reason, str) or not reason.strip():
                 errors.append(
-                    "specialist_availability.roster_gated.reason "
-                    "must be a non-empty string"
+                    "specialist_availability.roster_gated.reason must be a non-empty string"
                 )
             else:
                 gated_reason = reason.strip()
@@ -340,21 +407,14 @@ def validate_policy(
     overlap = sorted(enabled & gated)
     if overlap:
         errors.append(
-            "availability slugs cannot be both enabled and roster-gated: "
-            + ", ".join(overlap)
+            "availability slugs cannot be both enabled and roster-gated: " + ", ".join(overlap)
         )
     undeclared = sorted(referenced - enabled - gated)
     if undeclared:
-        errors.append(
-            "policy routes have no availability declaration: "
-            + ", ".join(undeclared)
-        )
+        errors.append("policy routes have no availability declaration: " + ", ".join(undeclared))
     unreferenced = sorted((enabled | gated) - referenced)
     if unreferenced:
-        errors.append(
-            "availability declares unreferenced specialists: "
-            + ", ".join(unreferenced)
-        )
+        errors.append("availability declares unreferenced specialists: " + ", ".join(unreferenced))
 
     missing_enabled = sorted((enabled & referenced) - active)
     for slug in missing_enabled:
@@ -386,6 +446,89 @@ def validate_policy(
     }
 
 
+def _eligible_companions(
+    policy: dict[str, Any],
+    active_slugs: Collection[str] | None,
+) -> set[str] | None:
+    if active_slugs is not None:
+        availability = validate_policy(policy, active_slugs)
+        return set(availability["enabled_slugs"])
+    declared_availability = policy.get("specialist_availability")
+    if not isinstance(declared_availability, dict):
+        return None
+    declared = declared_availability.get("enabled", [])
+    return {item.strip() for item in declared if isinstance(item, str) and item.strip()}
+
+
+def _append_eligible_companion(
+    companion_ids: list[str],
+    slug: Any,
+    eligible: set[str] | None,
+) -> None:
+    if not isinstance(slug, str) or not slug:
+        return
+    if eligible is not None and slug not in eligible:
+        return
+    if slug not in companion_ids:
+        companion_ids.append(slug)
+
+
+def _append_action_companions(
+    message: str,
+    actions: dict[Any, Any],
+    eligible: set[str] | None,
+    companion_ids: list[str],
+) -> list[str]:
+    matched_actions: list[str] = []
+    for action_name, action_def in actions.items():
+        triggers = action_def.get("triggers", [])
+        if not triggers:
+            continue
+        if action_name == "DEFAULT":
+            for companion in action_def.get("always_include", []):
+                _append_eligible_companion(companion_ids, companion.get("slug", ""), eligible)
+            continue
+        if not any(_matches(message, trigger) for trigger in triggers):
+            continue
+        matched_actions.append(action_name)
+        for companion in action_def.get("always_include", []):
+            _append_eligible_companion(companion_ids, companion.get("slug", ""), eligible)
+        for condition in action_def.get("conditional", []):
+            slug = condition.get("slug", "")
+            when = condition.get("when", "")
+            if slug and when and _matches_condition(message, when):
+                _append_eligible_companion(companion_ids, slug, eligible)
+    return matched_actions
+
+
+def _division_companion_values(entry: Any) -> tuple[Any, Any] | None:
+    if isinstance(entry, dict):
+        return entry.get("slug", ""), entry.get("when", "")
+    if isinstance(entry, (list, tuple)) and len(entry) >= 2:
+        return entry[0], entry[1]
+    return None
+
+
+def _append_division_companions(
+    message: str,
+    divisions: dict[Any, Any],
+    eligible: set[str] | None,
+    companion_ids: list[str],
+) -> None:
+    for division in divisions.values():
+        keywords = division.get("keywords", [])
+        if not any(_matches(message, keyword) for keyword in keywords):
+            continue
+        _append_eligible_companion(companion_ids, division.get("anchor", ""), eligible)
+        for entry in division.get("conditional", []):
+            values = _division_companion_values(entry)
+            if values is None:
+                continue
+            slug, condition = values
+            if _matches(message, condition):
+                _append_eligible_companion(companion_ids, slug, eligible)
+
+
 def detect_actions(
     message: str,
     policy: dict[str, Any] | None = None,
@@ -405,68 +548,19 @@ def detect_actions(
     if not actions_def:
         return [], []
 
-    matched_actions: list[str] = []
+    affirmative_message = affirmative_intent(message)
     companion_ids: list[str] = []
-    eligible: set[str] | None = None
-    if active_slugs is not None:
-        availability = validate_policy(policy, active_slugs)
-        eligible = set(availability["enabled_slugs"])
-    elif isinstance(policy.get("specialist_availability"), dict):
-        # Explicit policies default to their required bundled set. Roster-gated
-        # routes need an active roster supplied by the caller before they can
-        # become eligible. Legacy custom policies retain their prior behavior.
-        declared = policy["specialist_availability"].get("enabled", [])
-        eligible = {
-            item.strip()
-            for item in declared
-            if isinstance(item, str) and item.strip()
-        }
-
-    def add_companion(slug: Any) -> None:
-        if not isinstance(slug, str) or not slug:
-            return
-        if eligible is not None and slug not in eligible:
-            return
-        if slug not in companion_ids:
-            companion_ids.append(slug)
-
-    for action_name, action_def in actions_def.items():
-        triggers = action_def.get("triggers", [])
-        if not triggers:
-            continue
-
-        if action_name == "DEFAULT":
-            for companion in action_def.get("always_include", []):
-                add_companion(companion.get("slug", ""))
-            continue
-
-        if any(_matches(message, trigger) for trigger in triggers):
-            matched_actions.append(action_name)
-            for companion in action_def.get("always_include", []):
-                add_companion(companion.get("slug", ""))
-
-            for cond in action_def.get("conditional", []):
-                cond_slug = cond.get("slug", "")
-                cond_when = cond.get("when", "")
-                if cond_slug and cond_when:
-                    if _matches_condition(message, cond_when):
-                        add_companion(cond_slug)
-
-    division_anchors = policy.get("division_anchors", {})
-    for _div_name, div_def in division_anchors.items():
-        anchor_keywords = div_def.get("keywords", [])
-        if any(_matches(message, keyword) for keyword in anchor_keywords):
-            anchor = div_def.get("anchor", "")
-            add_companion(anchor)
-            for cond_entry in div_def.get("conditional", []):
-                if isinstance(cond_entry, dict):
-                    cond_slug = cond_entry.get("slug", "")
-                    cond_kw = cond_entry.get("when", "")
-                elif isinstance(cond_entry, (list, tuple)) and len(cond_entry) >= 2:
-                    cond_slug, cond_kw = cond_entry[0], cond_entry[1]
-                else:
-                    continue
-                if _matches(message, cond_kw):
-                    add_companion(cond_slug)
-
+    eligible = _eligible_companions(policy, active_slugs)
+    matched_actions = _append_action_companions(
+        affirmative_message,
+        actions_def,
+        eligible,
+        companion_ids,
+    )
+    _append_division_companions(
+        affirmative_message,
+        policy.get("division_anchors", {}),
+        eligible,
+        companion_ids,
+    )
     return matched_actions, companion_ids

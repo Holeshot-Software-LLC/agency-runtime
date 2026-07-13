@@ -3,7 +3,7 @@ title: "AR-11: Establish routing accuracy and performance gates"
 status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [routing, evaluation, performance]
 related:
   - docs/decisions/0001-layered-specialist-routing.md
@@ -55,7 +55,7 @@ The production-readiness run passed every gate: required Recall@3 and top-one
 accuracy were 1.0, policy macro F1 was 0.9921, delegation precision, recall,
 and graph accuracy were 1.0, 1,000-agent p95 was 7.584 ms, cache-hit p95 was
 0.582 ms, and 32 concurrent requests completed deterministically without trace
-reuse. Tracker issue #11 remains open because issue closure was not authorized.
+reuse.
 
 ## Approach
 

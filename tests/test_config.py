@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-import tempfile
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -12,18 +12,22 @@ import yaml
 from agency_runtime.core.config import (
     AgencyConfig,
     JudgeConfig,
+    config_to_yaml,
     load_config,
     reset_config_cache,
-    config_to_yaml,
 )
 
 
 @pytest.fixture(autouse=True)
-def _clean_env():
+def _clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Clear agency env vars before each test."""
     for key in list(os.environ):
-        if key.startswith("AGENCY_") or key == "LITELLM_API_KEY":
-            os.environ.pop(key, None)
+        if key.startswith("AGENCY_") or key in {
+            "LITELLM_API_KEY",
+            "TEST_ADAPTER_KEY",
+            "TEST_PROVIDER_KEY",
+        }:
+            monkeypatch.delenv(key, raising=False)
     reset_config_cache()
     yield
     reset_config_cache()
@@ -38,39 +42,55 @@ def test_load_defaults_when_no_config():
     assert cfg.profile == "standard"
 
 
-def test_load_from_yaml_file():
-    """Config file values override defaults."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml.dump({
-            "judge": {
-                "model": "gpt-4o-mini",
-                "base_url": "https://api.openai.com/v1",
-                "api_key_env": "OPENAI_API_KEY",
-                "ollama_mode": False,
-            },
-            "profile": "local-only",
-        }, f)
-        f.flush()
+def test_config_loader_rejects_oversized_and_non_utf8_files(tmp_path: Path) -> None:
+    oversized = tmp_path / "oversized.yaml"
+    oversized.write_bytes(b"x" * (1024 * 1024 + 1))
+    with pytest.raises(ValueError, match="1 MiB"):
+        load_config(oversized, reload=True)
 
-    cfg = load_config(path=f.name, reload=True)
+    non_utf8 = tmp_path / "non-utf8.yaml"
+    non_utf8.write_bytes(b"profile: \xff\n")
+    with pytest.raises(ValueError, match="UTF-8"):
+        load_config(non_utf8, reload=True)
+
+
+def test_load_from_yaml_file(tmp_path: Path) -> None:
+    """Config file values override defaults."""
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "judge": {
+                    "model": "gpt-4o-mini",
+                    "base_url": "https://api.openai.com/v1",
+                    "api_key_env": "OPENAI_API_KEY",
+                    "ollama_mode": False,
+                },
+                "profile": "local-only",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    cfg = load_config(path=path, reload=True)
     assert cfg.judge.model == "qwen3.5:2b"
     assert cfg.judge.base_url == "http://127.0.0.1:11434"
     assert cfg.judge.api_key_env == ""
     assert cfg.judge.ollama_mode is True
     assert cfg.profile == "local-only"
-    Path(f.name).unlink()
 
 
-def test_env_overrides_file():
+def test_env_overrides_file(tmp_path: Path) -> None:
     """Environment variables override file values."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml.dump({"judge": {"model": "file-model"}}, f)
-        f.flush()
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        yaml.safe_dump({"judge": {"model": "file-model"}}),
+        encoding="utf-8",
+    )
 
     os.environ["AGENCY_JUDGE_MODEL"] = "env-model"
-    cfg = load_config(path=f.name, reload=True)
+    cfg = load_config(path=path, reload=True)
     assert cfg.judge.model == "env-model"
-    Path(f.name).unlink()
 
 
 def test_env_overrides_timeout():
@@ -132,12 +152,14 @@ def test_no_private_operator_defaults():
 def test_profile_has_no_private_operator_name():
     """Private operator profiles must not exist in the public API."""
     from agency_runtime.core.policy.profiles import PROFILES
+
     assert "private-operator" not in PROFILES
 
 
 def test_adapter_entry_stores_api_key_directly():
     """AdapterEntryConfig can store api_key directly (config-first pattern)."""
     from agency_runtime.core.config import AdapterEntryConfig
+
     adapter = AdapterEntryConfig(
         enabled="true",
         base_url="http://localhost:4000",
@@ -149,6 +171,7 @@ def test_adapter_entry_stores_api_key_directly():
 def test_adapter_entry_resolve_env_fallback():
     """AdapterEntryConfig falls back to env var when no direct key."""
     from agency_runtime.core.config import AdapterEntryConfig
+
     os.environ["TEST_ADAPTER_KEY"] = "sk-from-env"
     adapter = AdapterEntryConfig(api_key_env="TEST_ADAPTER_KEY")
     assert adapter.resolve_api_key() == "sk-from-env"
@@ -158,6 +181,7 @@ def test_adapter_entry_resolve_env_fallback():
 def test_normalize_enabled_boolean():
     """_normalize_enabled handles YAML booleans correctly."""
     from agency_runtime.core.config import _normalize_enabled
+
     assert _normalize_enabled(True) == "true"
     assert _normalize_enabled(False) == "false"
     assert _normalize_enabled("true") == "true"
@@ -170,7 +194,8 @@ def test_normalize_enabled_boolean():
 
 def test_config_to_yaml_redacts_adapter_api_key():
     """config_to_yaml redacts adapter api_key values."""
-    from agency_runtime.core.config import AdaptersConfig, AdapterEntryConfig
+    from agency_runtime.core.config import AdapterEntryConfig, AdaptersConfig
+
     cfg = AgencyConfig(
         adapters=AdaptersConfig(
             litellm=AdapterEntryConfig(
@@ -188,7 +213,9 @@ def test_config_to_yaml_redacts_adapter_api_key():
 def test_store_expanduser_db_path():
     """Store constructor expands ~ in db_path."""
     import tempfile
+
     from agency_runtime.core.store.sqlite import Store
+
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "test.db")
         store = Store(db_path)
@@ -199,12 +226,14 @@ def test_store_expanduser_db_path():
 def test_wheel_includes_defaults_yaml():
     """Bundled config_defaults.yaml exists in installed package."""
     from agency_runtime.core.config import _BUNDLED_DEFAULTS
+
     assert _BUNDLED_DEFAULTS.exists(), f"Defaults file not found: {_BUNDLED_DEFAULTS}"
 
 
 def test_provider_entry_basic():
     """ProviderEntry stores all fields and resolves API keys."""
     from agency_runtime.core.config import ProviderEntry
+
     p = ProviderEntry(
         name="openai",
         type="openai-compatible",
@@ -220,6 +249,7 @@ def test_provider_entry_basic():
 def test_provider_entry_env_key():
     """ProviderEntry resolves env var keys."""
     from agency_runtime.core.config import ProviderEntry
+
     os.environ["TEST_PROVIDER_KEY"] = "sk-env"
     p = ProviderEntry(
         name="openai",
@@ -237,6 +267,7 @@ def test_provider_entry_env_key():
 def test_provider_entry_ollama_no_key():
     """Ollama providers don't need API keys."""
     from agency_runtime.core.config import ProviderEntry
+
     p = ProviderEntry(
         name="ollama",
         type="ollama",
@@ -252,31 +283,45 @@ def test_provider_entry_ollama_no_key():
 def test_provider_entry_unavailable():
     """Provider without model or key is not available."""
     from agency_runtime.core.config import ProviderEntry
+
     p = ProviderEntry(name="empty", type="openai-compatible")
     assert not p.is_available()
 
 
-def test_config_parses_providers_list():
+def test_config_parses_providers_list(tmp_path: Path) -> None:
     """Config YAML with providers list is parsed correctly."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml.dump({
-            "providers": [
-                {"name": "litellm", "type": "litellm", "model": "task-general",
-                 "base_url": "http://127.0.0.1:4000", "api_key": "sk-test"},
-                {"name": "ollama", "type": "ollama", "model": "qwen3.5:2b",
-                 "base_url": "http://localhost:11434", "ollama_mode": True},
-            ],
-            "judge": {"model": "task-general", "base_url": "http://localhost:4000"},
-        }, f)
-        f.flush()
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "providers": [
+                    {
+                        "name": "litellm",
+                        "type": "litellm",
+                        "model": "task-general",
+                        "base_url": "http://127.0.0.1:4000",
+                        "api_key": "sk-test",
+                    },
+                    {
+                        "name": "ollama",
+                        "type": "ollama",
+                        "model": "qwen3.5:2b",
+                        "base_url": "http://localhost:11434",
+                        "ollama_mode": True,
+                    },
+                ],
+                "judge": {"model": "task-general", "base_url": "http://localhost:4000"},
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    cfg = load_config(path=f.name, reload=True)
+    cfg = load_config(path=path, reload=True)
     assert len(cfg.providers) == 2
     assert cfg.providers[0].name == "litellm"
     assert cfg.providers[0].type == "litellm"
     assert cfg.providers[1].name == "ollama"
     assert cfg.providers[1].ollama_mode is True
-    Path(f.name).unlink()
 
 
 def test_load_rejects_credentialed_typed_provider_over_remote_http(
@@ -284,15 +329,19 @@ def test_load_rejects_credentialed_typed_provider_over_remote_http(
 ) -> None:
     path = tmp_path / "agency.yaml"
     path.write_text(
-        yaml.safe_dump({
-            "providers": [{
-                "name": "remote",
-                "type": "openai-compatible",
-                "model": "model",
-                "base_url": "http://provider.invalid/v1",
-                "api_key": "secret",
-            }],
-        }),
+        yaml.safe_dump(
+            {
+                "providers": [
+                    {
+                        "name": "remote",
+                        "type": "openai-compatible",
+                        "model": "model",
+                        "base_url": "http://provider.invalid/v1",
+                        "api_key": "secret",
+                    }
+                ],
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -305,14 +354,16 @@ def test_load_rejects_credentialed_legacy_judge_over_remote_http(
 ) -> None:
     path = tmp_path / "agency.yaml"
     path.write_text(
-        yaml.safe_dump({
-            "judge": {
-                "model": "model",
-                "base_url": "http://judge.invalid/v1",
-                "api_key": "secret",
-                "ollama_mode": False,
-            },
-        }),
+        yaml.safe_dump(
+            {
+                "judge": {
+                    "model": "model",
+                    "base_url": "http://judge.invalid/v1",
+                    "api_key": "secret",
+                    "ollama_mode": False,
+                },
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -333,15 +384,17 @@ def test_load_rejects_credentialed_litellm_adapter_over_remote_http(
 ) -> None:
     path = tmp_path / "agency.yaml"
     path.write_text(
-        yaml.safe_dump({
-            "adapters": {
-                "litellm": {
-                    "enabled": "true",
-                    "base_url": "http://adapter.invalid",
-                    "api_key_env": "LITELLM_API_KEY",
+        yaml.safe_dump(
+            {
+                "adapters": {
+                    "litellm": {
+                        "enabled": "true",
+                        "base_url": "http://adapter.invalid",
+                        "api_key_env": "LITELLM_API_KEY",
+                    },
                 },
-            },
-        }),
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -352,14 +405,16 @@ def test_load_rejects_credentialed_litellm_adapter_over_remote_http(
 def test_load_accepts_credentialed_literal_loopback_http(tmp_path: Path) -> None:
     path = tmp_path / "agency.yaml"
     path.write_text(
-        yaml.safe_dump({
-            "judge": {
-                "model": "model",
-                "base_url": "http://127.0.0.1:4000/v1",
-                "api_key": "secret",
-                "ollama_mode": False,
-            },
-        }),
+        yaml.safe_dump(
+            {
+                "judge": {
+                    "model": "model",
+                    "base_url": "http://127.0.0.1:4000/v1",
+                    "api_key": "secret",
+                    "ollama_mode": False,
+                },
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -369,14 +424,16 @@ def test_load_accepts_credentialed_literal_loopback_http(tmp_path: Path) -> None
 def test_runtime_rejects_query_bearing_credential_base_url(tmp_path: Path) -> None:
     path = tmp_path / "agency.yaml"
     path.write_text(
-        yaml.safe_dump({
-            "judge": {
-                "model": "model",
-                "base_url": "https://judge.invalid/v1?token=leaky",
-                "api_key": "secret",
-                "ollama_mode": False,
-            },
-        }),
+        yaml.safe_dump(
+            {
+                "judge": {
+                    "model": "model",
+                    "base_url": "https://judge.invalid/v1?token=leaky",
+                    "api_key": "secret",
+                    "ollama_mode": False,
+                },
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -387,6 +444,7 @@ def test_runtime_rejects_query_bearing_credential_base_url(tmp_path: Path) -> No
 def test_config_to_yaml_includes_providers():
     """config_to_yaml serializes providers list with redaction."""
     from agency_runtime.core.config import AgencyConfig, ProviderEntry
+
     cfg = AgencyConfig(
         providers=(
             ProviderEntry(name="openai", model="gpt-4o", api_key="secret"),

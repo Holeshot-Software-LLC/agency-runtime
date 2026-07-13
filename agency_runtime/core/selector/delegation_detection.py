@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from agency_runtime.core.selector.intent_text import mask_excluded_intent
+
 _LIST_ITEM_RE = re.compile(
     r"^(?P<indent>[ \t]*)(?P<marker>(?:\d+[.)]|[-*+•]|[a-zA-Z][.)]))[ \t]+(?P<body>.+?)\s*$",
     re.MULTILINE,
@@ -70,9 +72,10 @@ def _without_status_language(text: str) -> str:
 
 def _is_actionable(text: str) -> bool:
     """Choices and status labels are not work merely because they are listed."""
-    if not _IMPERATIVE_RE.search(text):
+    affirmative = mask_excluded_intent(text)
+    if not _IMPERATIVE_RE.search(affirmative):
         return False
-    return bool(_IMPERATIVE_RE.search(_without_status_language(text)))
+    return bool(_IMPERATIVE_RE.search(_without_status_language(affirmative)))
 
 
 def _list_units(message: str) -> list[str]:
@@ -87,7 +90,7 @@ def _list_units(message: str) -> list[str]:
         if not actionable:
             continue
         has_actionable_child = False
-        for child_indent, _child_body, child_actionable in entries[index + 1:]:
+        for child_indent, _child_body, child_actionable in entries[index + 1 :]:
             if child_indent <= indent:
                 break
             if child_actionable:
@@ -99,16 +102,15 @@ def _list_units(message: str) -> list[str]:
 
 
 def _imperative_units(message: str) -> list[str]:
-    matches = list(_IMPERATIVE_RE.finditer(_without_status_language(message)))
+    signal_text = _without_status_language(mask_excluded_intent(message))
+    matches = list(_IMPERATIVE_RE.finditer(signal_text))
     if not matches:
         return []
     starts = [match.start() for match in matches]
     ends = [*starts[1:], len(message)]
     for index in range(1, len(matches)):
         previous_start = starts[index - 1]
-        separator = _FORWARD_SEQUENCE_SUFFIX_RE.search(
-            message[previous_start:starts[index]]
-        )
+        separator = _FORWARD_SEQUENCE_SUFFIX_RE.search(message[previous_start : starts[index]])
         if separator is not None:
             boundary = previous_start + separator.start()
             ends[index - 1] = boundary
@@ -166,16 +168,12 @@ def detect_work_units(message: str) -> dict[str, Any]:
 
     # Split only on boundaries that communicate parallel or unrelated work.
     segments = [
-        _unit(segment)
-        for segment in _PARALLEL_BOUNDARY_RE.split(msg)
-        if _is_actionable(segment)
+        _unit(segment) for segment in _PARALLEL_BOUNDARY_RE.split(msg) if _is_actionable(segment)
     ]
     if len(segments) >= 2:
         return _result(segments, source="boundary_words", delegate=True)
 
-    status_without_work = (
-        bool(_STATUS_REPORT_PATTERNS.search(msg)) and not _is_actionable(msg)
-    )
+    status_without_work = bool(_STATUS_REPORT_PATTERNS.search(msg)) and not _is_actionable(msg)
     if status_without_work:
         return _result(fallback, source="status_query", delegate=False)
 

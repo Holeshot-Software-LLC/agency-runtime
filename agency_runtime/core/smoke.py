@@ -8,15 +8,17 @@ plugin templates in a temporary HOME.
 from __future__ import annotations
 
 import importlib.util
-import json
 import os
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
+from agency_runtime.core.bounded_io import read_bounded_regular_file
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.evals.delegation import run_delegation_eval
 from agency_runtime.core.installer import HOSTS, detect_installed_agents, install_agent_adapter
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
@@ -33,6 +35,16 @@ class _FakeHookContext:
 
     def register_command(self, name: str, fn: Any, **_kwargs: Any) -> None:
         self.commands[name] = fn
+
+
+def _load_plugin_json(path: Path, *, label: str) -> Any:
+    payload = read_bounded_regular_file(path, limit=1024 * 1024, label=label)
+    return safe_load_bounded_json(
+        payload,
+        maximum_bytes=1024 * 1024,
+        maximum_depth=32,
+        maximum_nodes=10_000,
+    )
 
 
 @contextmanager
@@ -53,7 +65,7 @@ def _check(name: str, fn: Any) -> dict[str, Any]:
     try:
         detail = fn() or {}
         return {"name": name, "status": "pass", "detail": detail}
-    except Exception as exc:  # pragma: no cover - smoke boundary
+    except Exception as exc:
         return {"name": name, "status": "fail", "error": f"{type(exc).__name__}: {exc}"}
 
 
@@ -75,8 +87,8 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     if not manifest_path.exists() or not package_path.exists():
         raise RuntimeError("missing OpenClaw plugin manifest or package.json")
 
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    package = json.loads(package_path.read_text(encoding="utf-8"))
+    manifest = _load_plugin_json(manifest_path, label="OpenClaw plugin manifest")
+    package = _load_plugin_json(package_path, label="OpenClaw package manifest")
     code = plugin_path.read_text(encoding="utf-8")
     if manifest.get("id") != "agency-preflight":
         raise RuntimeError("invalid OpenClaw plugin manifest id")
@@ -100,7 +112,9 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     forbidden_tokens = {"spawnSync"}
     present_forbidden = sorted(token for token in forbidden_tokens if token in code)
     if present_forbidden:
-        raise RuntimeError(f"OpenClaw plugin contains forbidden bridge tokens: {', '.join(present_forbidden)}")
+        raise RuntimeError(
+            f"OpenClaw plugin contains forbidden bridge tokens: {', '.join(present_forbidden)}"
+        )
 
     syntax_check = "skipped: node unavailable"
     node = shutil.which("node")
@@ -126,9 +140,60 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     }
 
 
+_CODEX_HOOK_EVENTS = ("PostToolUse", "Stop", "UserPromptSubmit")
+
+
+def _validate_codex_hooks(hooks: Any) -> list[str]:
+    """Validate the exact command-hook contract consumed by current Codex."""
+    hook_map = hooks.get("hooks") if isinstance(hooks, dict) else None
+    if not isinstance(hook_map, dict) or set(hook_map) != set(_CODEX_HOOK_EVENTS):
+        raise RuntimeError("Codex bundle has an invalid hook event set")
+    for event in _CODEX_HOOK_EVENTS:
+        registrations = hook_map[event]
+        if (
+            not isinstance(registrations, list)
+            or len(registrations) != 1
+            or not isinstance(registrations[0], dict)
+        ):
+            raise RuntimeError(f"Codex {event} hook registration is invalid")
+        registration = registrations[0]
+        handlers = registration.get("hooks")
+        if (
+            not isinstance(handlers, list)
+            or len(handlers) != 1
+            or not isinstance(handlers[0], dict)
+        ):
+            raise RuntimeError(f"Codex {event} command handler is invalid")
+        handler = handlers[0]
+        if "timeoutSec" in handler:
+            raise RuntimeError("Codex hook uses unsupported input key timeoutSec; use timeout")
+        timeout = handler.get("timeout")
+        if isinstance(timeout, bool) or not isinstance(timeout, int) or timeout <= 0:
+            raise RuntimeError(f"Codex {event} hook timeout is invalid")
+        if handler.get("type") != "command" or handler.get("async") is not False:
+            raise RuntimeError(f"Codex {event} hook must be a synchronous command handler")
+        command = handler.get("command")
+        command_windows = handler.get("commandWindows")
+        if not (
+            isinstance(command, str)
+            and "agency_runtime.cli" in command
+            and "hook codex" in command
+            and isinstance(command_windows, str)
+            and all(
+                token in command_windows for token in ("'agency_runtime.cli'", "'hook'", "'codex'")
+            )
+        ):
+            raise RuntimeError(f"Codex {event} hook command is invalid")
+        if not command_windows.startswith("& "):
+            raise RuntimeError(f"Codex {event} Windows hook must use the PowerShell call operator")
+        if event == "PostToolUse" and registration.get("matcher") != "*":
+            raise RuntimeError("Codex PostToolUse hook must match every tool")
+    return list(_CODEX_HOOK_EVENTS)
+
+
 def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
     """Validate native Codex/Claude plugin layout and executable MCP wiring."""
-    manifest = json.loads(plugin_path.read_text(encoding="utf-8"))
+    manifest = _load_plugin_json(plugin_path, label=f"{host} plugin manifest")
     plugin_root = plugin_path.parents[1]
     hooks_path = plugin_root / "hooks" / "hooks.json"
     mcp_path = plugin_root / ".mcp.json"
@@ -137,12 +202,13 @@ def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
         raise RuntimeError(f"invalid {host} plugin manifest name")
     if not hooks_path.exists() or not mcp_path.exists() or not skill_path.exists():
         raise RuntimeError(f"{host} bundle missing hooks, MCP config, or control skill")
-    hooks = json.loads(hooks_path.read_text(encoding="utf-8"))
-    mcp = json.loads(mcp_path.read_text(encoding="utf-8"))
+    hooks = _load_plugin_json(hooks_path, label=f"{host} hooks manifest")
+    mcp = _load_plugin_json(mcp_path, label=f"{host} MCP manifest")
     if "UserPromptSubmit" not in hooks.get("hooks", {}):
         raise RuntimeError(f"{host} bundle missing UserPromptSubmit hook")
-    if host == "codex" and "hooks" in manifest:
-        raise RuntimeError("Codex manifest declares unsupported top-level hooks")
+    if host == "codex" and manifest.get("hooks") != "./hooks/hooks.json":
+        raise RuntimeError("Codex manifest does not declare its hooks component")
+    validated_hooks = _validate_codex_hooks(hooks) if host == "codex" else sorted(hooks["hooks"])
     skill = skill_path.read_text(encoding="utf-8")
     if "agency.host_status" not in skill or "agency.host_control" not in skill:
         raise RuntimeError(f"{host} control skill is incomplete")
@@ -156,7 +222,7 @@ def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
         "host": host,
         "plugin_path": str(plugin_path),
         "format": f"{host}-plugin-bundle",
-        "hooks": sorted(hooks["hooks"]),
+        "hooks": validated_hooks,
         "mcp_server": "agency-runtime",
     }
 
@@ -231,16 +297,32 @@ def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
                 def _delegation_eval() -> dict[str, Any]:
                     report = run_delegation_eval()
                     if not report["passed"]:
-                        raise RuntimeError(f"delegation eval failed: {report['failed_count']} failed")
-                    return {"passed_count": report["passed_count"], "failed_count": report["failed_count"]}
+                        raise RuntimeError(
+                            f"delegation eval failed: {report['failed_count']} failed"
+                        )
+                    return {
+                        "passed_count": report["passed_count"],
+                        "failed_count": report["failed_count"],
+                    }
 
                 checks.append(_check("delegation_eval", _delegation_eval))
 
                 if not hosts:
-                    checks.append({"name": "host_plugins", "status": "skip", "detail": {"reason": "no installed hosts detected"}})
+                    checks.append(
+                        {
+                            "name": "host_plugins",
+                            "status": "skip",
+                            "detail": {"reason": "no installed hosts detected"},
+                        }
+                    )
                 else:
-                    for host in hosts:
-                        checks.append(_check(f"plugin_{host}", lambda host=host: _smoke_generated_plugin(host, tmp_home)))
+                    checks.extend(
+                        _check(
+                            f"plugin_{host}",
+                            lambda host=host: _smoke_generated_plugin(host, tmp_home),
+                        )
+                        for host in hosts
+                    )
             finally:
                 reset_config_cache()
 

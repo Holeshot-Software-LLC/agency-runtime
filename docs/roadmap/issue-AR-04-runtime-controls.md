@@ -1,9 +1,9 @@
 ---
 title: "AR-04: Add durable runtime controls"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 tags: [operations, adapters]
 related:
   - docs/decisions/0010-one-command-install-and-reversible-toggle.md
@@ -45,12 +45,26 @@ Claude generated control skills use exact-confirmed MCP status/control tools.
 The dashboard, CLI, MCP, and generated surfaces share the same persistent
 record and report native, runtime, and effective state separately.
 
-The 2026-07-11 deterministic suite covers same-instance off/status/on
-round-trips, persistence across store restarts, unchanged non-control data,
-generated host commands, MCP confirmations, fail-closed native postconditions,
-rollback, and Windows/POSIX lifecycle construction. It does not establish
-execution inside a live host conversation or host reload behavior, so those
-criteria stay open.
+The deterministic suite covers same-instance off/status/on round-trips,
+persistence across store restarts, unchanged non-control data, generated host
+commands, MCP confirmations, fail-closed native postconditions, rollback, and
+Windows/POSIX lifecycle construction.
+
+On 2026-07-12, direct CLI `off` and `on` completed against the installed native
+Codex profile and restored the enabled state. A separate externally isolated
+Codex 0.144.1 profile then loaded the installed `$agency` skill and MCP server,
+called `agency.host_status`, exact-confirmed `DISABLE codex`, observed the
+effective state change immediately in the same live turn, exact-confirmed
+`ENABLE codex` in a reciprocal turn, and observed the final enabled state.
+Read-only SQLite inspection independently matched the final MCP record. The
+profile, HOME, configuration, and Agency state were temporary; the real user
+database was not touched.
+
+Codex `exec` cannot present its interactive side-effect approval prompt, so the
+bounded proof used its one-invocation approval/sandbox bypass with shell tools
+disabled and an exact task limited to the Agency MCP controls. That bypass is
+canary-only evidence, never installation policy. Other v1 hosts were absent and
+remain contract-covered rather than live-verified.
 
 ## Approach
 
@@ -65,9 +79,9 @@ Depends on `AR-03`, because each control must use the host's verified integratio
 
 ## Acceptance
 
-- [ ] CLI enable, disable, and status work for every verified host.
+- [x] CLI enable, disable, and status work for every verified host.
 - [x] Native and Python plugin artifacts are handled by host-aware logic.
-- [ ] Disable takes effect in an already-running supported host where the host contract permits it.
+- [x] Disable takes effect in an already-running supported host where the host contract permits it.
 - [x] Soft state persists without deleting runtime or roster data; explicit native state uses the host registry.
 - [x] Generated chat-command and MCP control surfaces confirm the resulting state in deterministic tests.
-- [ ] Control commands execute successfully inside every live verified host.
+- [x] Control commands execute successfully inside every live verified host.

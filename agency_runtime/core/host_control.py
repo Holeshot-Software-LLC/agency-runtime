@@ -7,10 +7,10 @@ boundaries consult this state before doing work.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from agency_runtime.core.store.sqlite import Store
-
 
 SUPPORTED_HOSTS: tuple[str, ...] = ("hermes", "openclaw", "codex", "claude")
 
@@ -19,9 +19,7 @@ def normalize_host(host: str) -> str:
     """Return a supported normalized host or raise a useful error."""
     normalized = str(host or "").strip().lower()
     if normalized not in SUPPORTED_HOSTS:
-        raise ValueError(
-            f"unsupported host {host!r}; expected one of {', '.join(SUPPORTED_HOSTS)}"
-        )
+        raise ValueError(f"unsupported host {host!r}; expected one of {', '.join(SUPPORTED_HOSTS)}")
     return normalized
 
 
@@ -103,10 +101,7 @@ def inspect_all_host_statuses(
         from agency_runtime.core.installer import inspect_host_installations
 
         inspector = inspect_host_installations
-    native = {
-        str(item.get("host") or "").strip().lower(): item
-        for item in inspector()
-    }
+    native = {str(item.get("host") or "").strip().lower(): item for item in inspector()}
     return [
         inspect_host_status(store, host, native_record=native.get(host, {"host": host}))
         for host in SUPPORTED_HOSTS

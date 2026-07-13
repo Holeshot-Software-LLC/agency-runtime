@@ -33,11 +33,7 @@ def suggested_delegations(
 ) -> list[dict[str, Any]]:
     """Return open delegation suggestions for a session."""
     if trace_id:
-        return [
-            row
-            for row in store.get_delegations(trace_id)
-            if row.get("status") == "suggested"
-        ]
+        return [row for row in store.get_delegations(trace_id) if row.get("status") == "suggested"]
     return store.get_delegations_for_session(session_id, statuses=("suggested",))
 
 
@@ -60,10 +56,7 @@ def record_suggested_delegations(
     selected = routing.get("selected_ids") if isinstance(routing.get("selected_ids"), list) else []
     recommended_agent = _clean(selected[0]) if selected else ""
     trace_id = _clean(routing.get("trace_id")) or str(uuid.uuid4())
-    existing = {
-        row.get("work_unit_id")
-        for row in store.get_delegations(trace_id)
-    }
+    existing = {row.get("work_unit_id") for row in store.get_delegations(trace_id)}
     recorded = 0
 
     for unit in work_units.get("units") or []:
@@ -134,7 +127,8 @@ def mark_delegation_executed(
         trace_id=_clean(trace_id) or str(uuid.uuid4()),
         session_id=session_id,
         host=host,
-        work_unit_id=_clean(work_unit_id) or work_unit_id_from_text(goal or chosen_agent or backend),
+        work_unit_id=_clean(work_unit_id)
+        or work_unit_id_from_text(goal or chosen_agent or backend),
         recommended_agent=chosen_agent,
         status="delegated",
         backend=backend,
@@ -188,7 +182,8 @@ def mark_delegation_skipped(
         trace_id=_clean(trace_id) or str(uuid.uuid4()),
         session_id=session_id,
         host=host,
-        work_unit_id=_clean(work_unit_id) or work_unit_id_from_text(goal or chosen_agent or backend or skip_reason),
+        work_unit_id=_clean(work_unit_id)
+        or work_unit_id_from_text(goal or chosen_agent or backend or skip_reason),
         recommended_agent=chosen_agent,
         status="skipped",
         backend=backend,
@@ -231,8 +226,7 @@ def _matching_suggestions(
     chosen_agent = _clean(agent)
     if chosen_agent:
         agent_matches = [
-            row for row in rows
-            if _clean(row.get("recommended_agent")) == chosen_agent
+            row for row in rows if _clean(row.get("recommended_agent")) == chosen_agent
         ]
         if len(agent_matches) == 1:
             return agent_matches
