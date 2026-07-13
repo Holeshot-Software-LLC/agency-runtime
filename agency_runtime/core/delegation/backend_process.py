@@ -17,8 +17,6 @@ from typing import Any
 from agency_runtime.core.delegation.backend_windows import WindowsJob as _WindowsJob
 
 _DRAIN_GRACE_SECONDS = 0.5
-_SUSPENDED_STDIN_PRIME_BYTES = 4096
-_SUSPENDED_STDIN_PRIME_TIMEOUT_SECONDS = 5.0
 _ProcessRunner = Callable[..., subprocess.CompletedProcess[str]]
 _IS_WINDOWS = os.name == "nt"
 
@@ -215,7 +213,6 @@ def _drain_process_stream(stream: Any, capture: Any) -> None:
 def _write_process_stdin(
     process: subprocess.Popen[str],
     input_text: str,
-    completion: threading.Event | None = None,
 ) -> None:
     """Write exact text and close child stdin, tolerating an early child exit."""
     try:
@@ -237,8 +234,6 @@ def _write_process_stdin(
         if process.stdin is not None:
             with suppress(OSError, ValueError):
                 process.stdin.close()
-        if completion is not None:
-            completion.set()
 
 
 def _create_process_io_threads(
@@ -247,7 +242,6 @@ def _create_process_io_threads(
     stdout: Any,
     stderr: Any,
     input_text: str | None,
-    stdin_completion: threading.Event | None = None,
 ) -> tuple[threading.Thread, threading.Thread, threading.Thread | None]:
     """Construct, but do not start, the workers for one child process."""
     stdout_thread = threading.Thread(
@@ -265,7 +259,7 @@ def _create_process_io_threads(
     stdin_thread = (
         threading.Thread(
             target=_write_process_stdin,
-            args=(process, input_text, stdin_completion),
+            args=(process, input_text),
             name="agency-stdin-writer",
             daemon=True,
         )
@@ -295,7 +289,6 @@ def _start_process_io_threads(
     stderr: Any,
     input_text: str | None,
     windows_job: _WindowsJob | None,
-    prime_suspended_stdin: bool = False,
 ) -> tuple[threading.Thread, threading.Thread, threading.Thread | None]:
     """Start bounded pipe workers, cleaning the tree after any partial failure."""
     if input_text is None:
@@ -303,36 +296,21 @@ def _start_process_io_threads(
         # null device. Writing an empty payload is synchronous and cannot block,
         # while the existing helper also tolerates an early child exit.
         _write_process_stdin(process, "")
-    prime_stdin = (
-        prime_suspended_stdin
-        and input_text is not None
-        and len(input_text.encode("utf-8", errors="replace")) <= _SUSPENDED_STDIN_PRIME_BYTES
-    )
-    stdin_completion = threading.Event() if prime_stdin else None
     threads = _create_process_io_threads(
         process,
         stdout=stdout,
         stderr=stderr,
         input_text=input_text,
-        stdin_completion=stdin_completion,
     )
     started: list[threading.Thread] = []
     try:
-        # Begin stdin delivery first. A Windows child is still suspended at
-        # this point. Small payloads fit in the inherited pipe, so require the
-        # writer to close it before resume; larger payloads must remain
-        # asynchronous because waiting while the reader is suspended can fill
-        # the pipe and deadlock.
+        # Begin asynchronous stdin delivery first. Windows bounded payloads are
+        # already present in a preclosed launch pipe and therefore arrive here
+        # without an input writer; only larger payloads need this worker.
         for thread in (threads[2], threads[0], threads[1]):
             if thread is not None:
                 thread.start()
                 started.append(thread)
-                if (
-                    thread is threads[2]
-                    and stdin_completion is not None
-                    and not stdin_completion.wait(_SUSPENDED_STDIN_PRIME_TIMEOUT_SECONDS)
-                ):
-                    raise OSError("could not prime suspended child stdin")
     except BaseException as exc:
         _cleanup_partial_io_start(
             process,

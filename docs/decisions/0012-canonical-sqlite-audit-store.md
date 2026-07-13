@@ -3,9 +3,10 @@ title: Use SQLite as the canonical audit store with explicit retention
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-13
 tags: [storage, audit, retention]
-related: []
+related:
+  - docs/roadmap/issue-AR-22-concurrent-storage-acl-repair.md
 supersedes: []
 superseded_by: null
 id: ADR-0012

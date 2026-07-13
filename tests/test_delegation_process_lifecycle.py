@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import os
 import subprocess
 
 import pytest
@@ -162,6 +163,180 @@ def test_spawn_uses_an_explicitly_closed_pipe_for_no_input(
     assert observed["stdin"] is subprocess.PIPE
 
 
+@pytest.mark.parametrize(
+    ("input_text", "expected"),
+    [
+        (None, b""),
+        ("", b""),
+        ("payload", b"payload"),
+        ("é" * 2048, ("é" * 2048).encode()),
+    ],
+)
+def test_windows_bounded_stdin_is_complete_before_child_creation(
+    monkeypatch: pytest.MonkeyPatch,
+    input_text: str | None,
+    expected: bytes,
+) -> None:
+    observed: dict[str, object] = {}
+    sentinel = object()
+
+    def fake_popen(*_args: object, **kwargs: object) -> object:
+        stdin_fd = kwargs["stdin"]
+        assert isinstance(stdin_fd, int)
+        observed["payload"] = os.read(stdin_fd, 8192)
+        return sentinel
+
+    monkeypatch.setattr(backends, "_is_windows", lambda: True)
+    monkeypatch.setattr(backends.subprocess, "Popen", fake_popen)
+
+    result = backends._spawn_owned_process(
+        ["agent"],
+        cwd=None,
+        env={"PATH": "test"},
+        input_text=input_text,
+    )
+
+    assert result is sentinel
+    assert observed["payload"] == expected
+
+
+def test_windows_large_stdin_remains_asynchronous(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+    sentinel = object()
+    monkeypatch.setattr(backends, "_is_windows", lambda: True)
+    monkeypatch.setattr(
+        backends.subprocess,
+        "Popen",
+        lambda *_args, **kwargs: observed.update(kwargs) or sentinel,
+    )
+
+    result = backends._spawn_owned_process(
+        ["agent"],
+        cwd=None,
+        env={"PATH": "test"},
+        input_text="x" * (backends._WINDOWS_PREFILLED_STDIN_BYTES + 1),
+    )
+
+    assert result is sentinel
+    assert observed["stdin"] is subprocess.PIPE
+
+
+def test_windows_prefilled_stdin_fails_closed_on_partial_write(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    closed: list[int] = []
+    monkeypatch.setattr(backends.os, "pipe", lambda: (10, 11))
+    monkeypatch.setattr(backends.os, "write", lambda _fd, _payload: 1)
+    monkeypatch.setattr(backends.os, "close", lambda fd: closed.append(fd))
+
+    with pytest.raises(OSError, match="prefill child stdin"):
+        backends._create_prefilled_stdin_pipe("payload")
+
+    assert closed == [10, 11]
+
+
+def test_windows_prefilled_stdin_requires_confirmed_writer_close(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    closed: list[int] = []
+    monkeypatch.setattr(backends.os, "pipe", lambda: (10, 11))
+
+    def close(fd: int) -> None:
+        if fd == 11:
+            raise OSError("writer close failed")
+        closed.append(fd)
+
+    monkeypatch.setattr(backends.os, "close", close)
+
+    with pytest.raises(OSError, match="writer close failed"):
+        backends._create_prefilled_stdin_pipe(None)
+
+    assert closed == [10]
+
+
+def test_windows_prefilled_stdin_cleans_child_when_parent_read_close_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = object()
+    reaped: list[object] = []
+    pipes_closed: list[object] = []
+    monkeypatch.setattr(backends, "_is_windows", lambda: True)
+    monkeypatch.setattr(backends, "_create_prefilled_stdin_pipe", lambda _input: 10)
+    monkeypatch.setattr(backends.subprocess, "Popen", lambda *_args, **_kwargs: process)
+    monkeypatch.setattr(
+        backends.os,
+        "close",
+        lambda _fd: (_ for _ in ()).throw(OSError("reader close failed")),
+    )
+    monkeypatch.setattr(
+        backends._process,
+        "_kill_and_reap_process",
+        lambda owned: reaped.append(owned),
+    )
+    monkeypatch.setattr(backends, "_close_process_pipes", pipes_closed.append)
+
+    with pytest.raises(OSError, match="reader close failed"):
+        backends._spawn_owned_process(
+            ["agent"],
+            cwd=None,
+            env={"PATH": "test"},
+            input_text="payload",
+        )
+
+    assert reaped == [process]
+    assert pipes_closed == [process]
+
+
+def test_windows_prefilled_stdin_closes_parent_fd_when_spawn_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    closed: list[int] = []
+    monkeypatch.setattr(backends, "_is_windows", lambda: True)
+    monkeypatch.setattr(backends, "_create_prefilled_stdin_pipe", lambda _input: 10)
+    monkeypatch.setattr(
+        backends.subprocess,
+        "Popen",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("spawn failed")),
+    )
+    monkeypatch.setattr(backends.os, "close", closed.append)
+
+    with pytest.raises(RuntimeError, match="spawn failed"):
+        backends._spawn_owned_process(
+            ["agent"],
+            cwd=None,
+            env={"PATH": "test"},
+            input_text="payload",
+        )
+
+    assert closed == [10]
+
+
+def test_spawn_failure_without_prefilled_stdin_has_no_fd_cleanup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(backends, "_is_windows", lambda: False)
+    monkeypatch.setattr(
+        backends.subprocess,
+        "Popen",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("spawn failed")),
+    )
+    monkeypatch.setattr(
+        backends.os,
+        "close",
+        lambda _fd: pytest.fail("ordinary pipe ownership belongs to Popen"),
+    )
+
+    with pytest.raises(RuntimeError, match="spawn failed"):
+        backends._spawn_owned_process(
+            ["agent"],
+            cwd=None,
+            env={"PATH": "test"},
+            input_text="payload",
+        )
+
+
 def test_success_returns_exact_process_result_without_termination(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -189,7 +364,7 @@ def test_windows_io_starts_before_suspended_process_resumes(
     monkeypatch.setattr(
         backends,
         "_start_process_io_threads",
-        lambda *_args, **kwargs: events.append(("io", kwargs["prime_suspended_stdin"])) or threads,
+        lambda *_args, **kwargs: events.append(("io", kwargs["input_text"] is None)) or threads,
     )
     monkeypatch.setattr(
         backends,

@@ -11,6 +11,7 @@ related:
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
+  - docs/roadmap/issue-AR-20-full-history-ledger-ci.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

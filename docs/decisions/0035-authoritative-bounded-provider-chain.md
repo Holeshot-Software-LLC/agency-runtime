@@ -3,11 +3,12 @@ title: "Use an authoritative bounded provider chain with allowlisted CLI transpo
 status: accepted
 category: decisions
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-13
 tags: [providers, routing, authentication, subprocess, security]
 related:
   - docs/roadmap/issue-AR-05-guided-provider-configuration.md
   - docs/roadmap/issue-AR-06-cli-authenticated-judge-providers.md
+  - docs/roadmap/issue-AR-21-fully-resume-windows-children.md
   - docs/decisions/0006-config-first-redacted-configuration.md
   - docs/decisions/0008-ordered-provider-fallback.md
   - docs/decisions/0019-bounded-machine-readable-cli-delegation.md

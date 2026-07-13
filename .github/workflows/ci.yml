@@ -110,17 +110,28 @@ jobs:
           HOME: ${{ runner.temp }}/agency-home
           USERPROFILE: ${{ runner.temp }}/agency-home
         run: python -m pytest tests -q -W error -p no:cacheprovider --basetemp "${RUNNER_TEMP}/pytest"
-      - name: Verify documentation ledgers
-        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.14'
-        run: |
-          python scripts/docs_metadata.py --check
-          python scripts/update_policy_availability.py --check
-          python scripts/update_worklog.py --check
-          python scripts/verify_docs.py --require-tracker
       - name: Check dependency consistency
         run: python -m pip check
       - name: Check patch whitespace
         run: git diff --check
+      - name: Check out canonical documentation history
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.14'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify documentation ledgers
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.14'
+        env:
+          EXPECTED_HISTORY_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse --is-shallow-repository)" = "false"
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HISTORY_HEAD}"
+          python scripts/docs_metadata.py --check
+          python scripts/update_policy_availability.py --check
+          python scripts/update_worklog.py --check
+          python scripts/verify_docs.py --require-tracker
 
   artifacts:
     name: build and verify distributions

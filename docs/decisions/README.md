@@ -31,6 +31,7 @@ Status meanings:
 - ADR-0009 Generate One Python Hook Scaffold for Every Host → ADR-0024 Package Each Host Integration in Its Native Format
 - ADR-0020 Keep a Partial Companion Policy in Code → ADR-0021 Load a Full Companion Policy with Explicit Precedence
 - ADR-0022 Omit Preflight Context for Trivial Messages → ADR-0023 Load Default Companions Even for Trivial Messages
+- ADR-0043 Prime Bounded Stdin Before Resuming Windows Children → ADR-0044 Preclose Bounded Windows Child Stdin and Own One Suspension
 
 ## Architecture and integrations
 
@@ -97,7 +98,8 @@ Status meanings:
 | [ADR-0040](0040-preserve-environment-owned-python-launchers.md) | Preserve environment-owned Python launchers | Accepted |
 | [ADR-0041](0041-bounded-asynchronous-overload-responses.md) | Use bounded asynchronous overload responses | Accepted |
 | [ADR-0042](0042-local-only-bounded-work-file-inference.md) | Keep automatic work-file inference local and bounded | Accepted |
-| [ADR-0043](0043-prime-stdin-before-windows-child-resume.md) | Prime bounded stdin before resuming Windows children | Accepted |
+| [ADR-0043](0043-prime-stdin-before-windows-child-resume.md) | Prime bounded stdin before resuming Windows children | Superseded |
+| [ADR-0044](0044-preclose-bounded-windows-child-stdin.md) | Preclose bounded Windows child stdin and own one suspension | Accepted |
 
 ## Documentation governance
 

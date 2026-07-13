@@ -1,6 +1,6 @@
 ---
 title: "Prime bounded stdin before resuming Windows children"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-13
 updated: 2026-07-13
@@ -8,9 +8,10 @@ tags: [delegation, windows, subprocess, portability, reliability]
 related:
   - docs/roadmap/issue-AR-16-linux-python-delegation-compatibility.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
+  - docs/roadmap/issue-AR-21-fully-resume-windows-children.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0044-preclose-bounded-windows-child-stdin.md
 id: ADR-0043
 type: decision
 deciders: [maintainers]

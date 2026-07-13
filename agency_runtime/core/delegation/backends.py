@@ -12,6 +12,7 @@ import subprocess
 import threading
 import time
 from collections.abc import Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any
 
@@ -75,6 +76,7 @@ _BoundedTextCapture = _process._BoundedTextCapture
 _bounded = _process._bounded
 _read_process_stream = _process._read_process_stream
 _stream_text = _process._stream_text
+_WINDOWS_PREFILLED_STDIN_BYTES = 4096
 
 
 @dataclass(slots=True)
@@ -87,6 +89,7 @@ class _OwnedProcessState:
     stdout_thread: threading.Thread | None = None
     stderr_thread: threading.Thread | None = None
     stdin_thread: threading.Thread | None = None
+    stdin_preloaded: bool = False
     timeout_error: subprocess.TimeoutExpired | None = None
     descendants_detected: bool = False
     io_lingering: bool = False
@@ -105,6 +108,34 @@ def _is_windows() -> bool:
     return os.name == "nt"
 
 
+def _uses_prefilled_windows_stdin(input_text: str | None) -> bool:
+    """Return whether stdin can be complete before a Windows child exists."""
+    size = len((input_text or "").encode("utf-8", errors="replace"))
+    return _is_windows() and size <= _WINDOWS_PREFILLED_STDIN_BYTES
+
+
+def _create_prefilled_stdin_pipe(input_text: str | None) -> int:
+    """Return a read descriptor whose bounded UTF-8 payload is already at EOF."""
+    payload = (input_text or "").encode("utf-8", errors="replace")
+    read_fd, write_fd = os.pipe()
+    try:
+        if payload and os.write(write_fd, payload) != len(payload):
+            raise OSError("could not prefill child stdin")
+    except BaseException:
+        with suppress(OSError):
+            os.close(read_fd)
+        with suppress(OSError):
+            os.close(write_fd)
+        raise
+    try:
+        os.close(write_fd)
+    except OSError:
+        with suppress(OSError):
+            os.close(read_fd)
+        raise
+    return read_fd
+
+
 def _spawn_owned_process(
     process_argv: list[str],
     *,
@@ -113,22 +144,39 @@ def _spawn_owned_process(
     input_text: str | None,
 ) -> subprocess.Popen[str]:
     """Launch a process in a new, initially contained process group."""
-    return subprocess.Popen(
-        process_argv,
-        cwd=cwd,
-        # A real pipe with an explicit parent-side close is the only portable
-        # EOF contract for every supported host. In particular, Windows
-        # PowerShell's Console.In can wait indefinitely on the NUL device even
-        # though native readers commonly treat it as immediate EOF.
-        stdin=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        **_owned_process_kwargs(suspended=_is_windows()),
+    prefilled_fd = (
+        _create_prefilled_stdin_pipe(input_text)
+        if _uses_prefilled_windows_stdin(input_text)
+        else None
     )
+    try:
+        process = subprocess.Popen(
+            process_argv,
+            cwd=cwd,
+            # Bounded Windows input uses a prefilled, preclosed anonymous pipe.
+            # Other launches keep a writable pipe for asynchronous delivery.
+            stdin=prefilled_fd if prefilled_fd is not None else subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            **_owned_process_kwargs(suspended=_is_windows()),
+        )
+    except BaseException:
+        if prefilled_fd is not None:
+            with suppress(OSError):
+                os.close(prefilled_fd)
+        raise
+    if prefilled_fd is not None:
+        try:
+            os.close(prefilled_fd)
+        except OSError:
+            _process._kill_and_reap_process(process)
+            _close_process_pipes(process)
+            raise
+    return process
 
 
 def _establish_windows_containment(state: _OwnedProcessState) -> None:
@@ -156,9 +204,8 @@ def _start_owned_process_io(
         state.process,
         stdout=stdout,
         stderr=stderr,
-        input_text=input_text,
+        input_text=None if state.stdin_preloaded else input_text,
         windows_job=state.windows_job,
-        prime_suspended_stdin=_is_windows(),
     )
 
 
@@ -255,7 +302,11 @@ def _run_owned_process(
         env=env,
         input_text=input_text,
     )
-    state = _OwnedProcessState(argv=process_argv, process=process)
+    state = _OwnedProcessState(
+        argv=process_argv,
+        process=process,
+        stdin_preloaded=_uses_prefilled_windows_stdin(input_text),
+    )
     try:
         _start_owned_process_io(
             state,
@@ -263,9 +314,9 @@ def _run_owned_process(
             stderr=stderr,
             input_text=input_text,
         )
-        # Windows children are created suspended. Prepare stdin and its EOF
-        # before assignment/resume so runtimes cannot observe an ambient or
-        # not-yet-closed input source during startup.
+        # Windows children are created suspended. Bounded stdin and EOF were
+        # frozen before launch; a larger asynchronous writer is already active.
+        # Establish containment before any child instruction can execute.
         _establish_windows_containment(state)
         _wait_for_owned_process(state, timeout)
         _quiesce_owned_process(state)

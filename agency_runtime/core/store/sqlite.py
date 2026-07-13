@@ -10,6 +10,7 @@ import json
 import os
 import sqlite3
 import stat
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -58,6 +59,7 @@ _DELEGATION_DETAIL_LIMIT = DELEGATION_DETAIL_LIMIT
 _DIAGNOSTIC_REASON_LIMIT = DIAGNOSTIC_REASON_LIMIT
 _API_BASE_LIMIT = API_BASE_LIMIT
 _IS_WINDOWS = os.name == "nt"
+_STORAGE_PERMISSION_REPAIR_LOCK = threading.RLock()
 
 
 # Compatibility wrappers intentionally resolve dependencies through this module.
@@ -187,7 +189,8 @@ class Store(EvidenceStoreMixin, MaintenanceStoreMixin, RosterStoreMixin):
         """Securely create the DB without taking ownership of arbitrary parents."""
         self._assert_storage_paths_safe()
         if self._harden_storage_parent:
-            _restrict_path_permissions(self.db_path.parent, directory=True)
+            with _STORAGE_PERMISSION_REPAIR_LOCK:
+                _restrict_path_permissions(self.db_path.parent, directory=True)
         if not self.db_path.exists():
             flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
             if hasattr(os, "O_BINARY"):
@@ -203,7 +206,8 @@ class Store(EvidenceStoreMixin, MaintenanceStoreMixin, RosterStoreMixin):
                 os.close(fd)
         if _is_link_or_reparse_point(self.db_path):
             raise PermissionError("refusing Agency Runtime database symlink or reparse point")
-        _restrict_path_permissions(self.db_path, directory=False)
+        with _STORAGE_PERMISSION_REPAIR_LOCK:
+            _restrict_path_permissions(self.db_path, directory=False)
 
     def _assert_storage_paths_safe(self) -> None:
         """Reject links and non-files before permission repair or SQLite access."""
@@ -262,6 +266,22 @@ class Store(EvidenceStoreMixin, MaintenanceStoreMixin, RosterStoreMixin):
             if optional_sidecar:
                 return True
             raise
+        except PermissionError:
+            if not optional_sidecar:
+                raise
+            observed = self._storage_metadata(path, optional=True)
+            if observed is None:
+                return True
+            if _metadata_is_link_or_reparse_point(observed):
+                raise PermissionError(
+                    "refusing Agency Runtime database or sidecar symlink or reparse point"
+                ) from None
+            observed_fingerprint = (int(observed.st_dev), int(observed.st_ino))
+            if observed_fingerprint != fingerprint:
+                return True
+            # A stable object that still rejects owner-only permissions is a
+            # real hardening failure, not benign SQLite sidecar churn.
+            raise
         repaired = self._storage_metadata(path, optional=optional_sidecar)
         if repaired is None:
             return True
@@ -284,26 +304,27 @@ class Store(EvidenceStoreMixin, MaintenanceStoreMixin, RosterStoreMixin):
     ) -> None:
         """Secure one stable storage identity or fail before caching it."""
 
-        changed = self._repair_storage_target_once(
-            path,
-            directory=directory,
-            optional_sidecar=optional_sidecar,
-        )
-        if not changed:
-            return
-        if not optional_sidecar:
-            raise PermissionError(
-                "refusing Agency Runtime storage that changed during permission repair"
+        with _STORAGE_PERMISSION_REPAIR_LOCK:
+            changed = self._repair_storage_target_once(
+                path,
+                directory=directory,
+                optional_sidecar=optional_sidecar,
             )
-        changed_again = self._repair_storage_target_once(
-            path,
-            directory=directory,
-            optional_sidecar=True,
-        )
-        if changed_again:
-            raise PermissionError(
-                "refusing Agency Runtime storage that changed during permission repair"
+            if not changed:
+                return
+            if not optional_sidecar:
+                raise PermissionError(
+                    "refusing Agency Runtime storage that changed during permission repair"
+                )
+            changed_again = self._repair_storage_target_once(
+                path,
+                directory=directory,
+                optional_sidecar=True,
             )
+            if changed_again:
+                raise PermissionError(
+                    "refusing Agency Runtime storage that changed during permission repair"
+                )
 
     def _repair_storage_permissions(self) -> None:
         """Keep owned storage files and, when applicable, its directory private."""

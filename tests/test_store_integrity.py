@@ -7,8 +7,10 @@ import json
 import os
 import sqlite3
 import stat
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -612,6 +614,200 @@ def test_store_never_sends_preexisting_arbitrary_parent_to_permission_repair(
 
     assert (parent, True) not in calls
     assert (parent / "agency.db", False) in calls
+
+
+def test_storage_permission_repair_is_serialized_process_wide(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stores = [Store.__new__(Store), Store.__new__(Store)]
+    target = tmp_path / "shared.db-shm"
+    first_entered = threading.Event()
+    second_started = threading.Event()
+    second_entered = threading.Event()
+    release_first = threading.Event()
+    call_lock = threading.Lock()
+    calls = 0
+
+    def observe_repair(
+        _self: Store,
+        _path: Path,
+        *,
+        directory: bool,
+        optional_sidecar: bool,
+    ) -> bool:
+        nonlocal calls
+        assert directory is False
+        assert optional_sidecar is True
+        with call_lock:
+            calls += 1
+            call = calls
+        if call == 1:
+            first_entered.set()
+            assert release_first.wait(timeout=2.0)
+        else:
+            second_entered.set()
+        return False
+
+    monkeypatch.setattr(Store, "_repair_storage_target_once", observe_repair)
+
+    def repair_second() -> None:
+        second_started.set()
+        stores[1]._repair_storage_target(
+            target,
+            directory=False,
+            optional_sidecar=True,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first = executor.submit(
+            stores[0]._repair_storage_target,
+            target,
+            directory=False,
+            optional_sidecar=True,
+        )
+        assert first_entered.wait(timeout=2.0)
+        second = executor.submit(repair_second)
+        assert second_started.wait(timeout=2.0)
+        assert not second_entered.wait(timeout=0.2)
+        release_first.set()
+        first.result(timeout=2.0)
+        second.result(timeout=2.0)
+
+    assert second_entered.is_set()
+
+
+def test_optional_sidecar_acl_failure_tolerates_disappearance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store.__new__(Store)
+    store._permission_fingerprints = {}
+    sidecar = tmp_path / "agency.db-shm"
+    sidecar.write_bytes(b"sidecar")
+    monkeypatch.setattr(sqlite_store, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        sqlite_store,
+        "_metadata_is_link_or_reparse_point",
+        lambda _metadata: False,
+    )
+
+    def disappear(path: Path, *, directory: bool) -> None:
+        assert directory is False
+        path.unlink()
+        raise PermissionError("sidecar disappeared during ACL repair")
+
+    monkeypatch.setattr(sqlite_store, "_restrict_path_permissions", disappear)
+
+    store._repair_storage_target(
+        sidecar,
+        directory=False,
+        optional_sidecar=True,
+    )
+
+    assert not sidecar.exists()
+    assert store._permission_fingerprints == {}
+
+
+def test_optional_sidecar_acl_failure_retries_only_after_identity_change(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store.__new__(Store)
+    store._permission_fingerprints = {}
+    sidecar = tmp_path / "agency.db-shm"
+    original = SimpleNamespace(st_mode=stat.S_IFREG | 0o600, st_dev=1, st_ino=2)
+    replacement = SimpleNamespace(st_mode=stat.S_IFREG | 0o600, st_dev=3, st_ino=4)
+    metadata = iter((original, replacement, replacement, replacement))
+    repair_attempts = 0
+    monkeypatch.setattr(sqlite_store, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        sqlite_store,
+        "_metadata_is_link_or_reparse_point",
+        lambda _metadata: False,
+    )
+    monkeypatch.setattr(store, "_storage_metadata", lambda *_args, **_kwargs: next(metadata))
+
+    def replace_once(_path: Path, *, directory: bool) -> None:
+        nonlocal repair_attempts
+        assert directory is False
+        repair_attempts += 1
+        if repair_attempts == 1:
+            raise PermissionError("original sidecar was replaced")
+
+    monkeypatch.setattr(sqlite_store, "_restrict_path_permissions", replace_once)
+
+    store._repair_storage_target(
+        sidecar,
+        directory=False,
+        optional_sidecar=True,
+    )
+
+    assert repair_attempts == 2
+    assert store._permission_fingerprints[sidecar] == (3, 4)
+
+
+@pytest.mark.parametrize("optional_sidecar", [False, True])
+def test_acl_failure_for_stable_storage_identity_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    optional_sidecar: bool,
+) -> None:
+    store = Store.__new__(Store)
+    store._permission_fingerprints = {}
+    sidecar = tmp_path / "agency.db-shm"
+    sidecar.write_bytes(b"sidecar")
+    monkeypatch.setattr(sqlite_store, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        sqlite_store,
+        "_metadata_is_link_or_reparse_point",
+        lambda _metadata: False,
+    )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(PermissionError("stable ACL failure")),
+    )
+
+    with pytest.raises(PermissionError, match="stable ACL failure"):
+        store._repair_storage_target(
+            sidecar,
+            directory=False,
+            optional_sidecar=optional_sidecar,
+        )
+
+
+def test_optional_sidecar_acl_failure_rejects_replacement_link(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store.__new__(Store)
+    store._permission_fingerprints = {}
+    sidecar = tmp_path / "agency.db-shm"
+    regular = SimpleNamespace(st_mode=stat.S_IFREG | 0o600, st_dev=1, st_ino=2)
+    replacement_link = SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_dev=3, st_ino=4)
+    metadata = iter((regular, replacement_link))
+    monkeypatch.setattr(sqlite_store, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        sqlite_store,
+        "_metadata_is_link_or_reparse_point",
+        lambda observed: observed is replacement_link,
+    )
+    monkeypatch.setattr(store, "_storage_metadata", lambda *_args, **_kwargs: next(metadata))
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            PermissionError("original sidecar was replaced")
+        ),
+    )
+
+    with pytest.raises(PermissionError, match="symlink or reparse"):
+        store._repair_storage_target(
+            sidecar,
+            directory=False,
+            optional_sidecar=True,
+        )
 
 
 def test_windows_file_acl_hardening_fails_closed_when_dacl_restriction_fails(

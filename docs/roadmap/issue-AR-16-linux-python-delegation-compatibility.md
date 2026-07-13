@@ -3,12 +3,13 @@ title: "AR-16: Restore Linux and Python 3.12 delegation compatibility"
 status: in_progress
 category: roadmap
 created: 2026-07-11
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [linux, python, delegation, compatibility, testing]
 related:
   - docs/decisions/0019-bounded-machine-readable-cli-delegation.md
   - docs/decisions/0035-authoritative-bounded-provider-chain.md
   - docs/decisions/0043-prime-stdin-before-windows-child-resume.md
+  - docs/decisions/0044-preclose-bounded-windows-child-stdin.md
 supersedes: []
 superseded_by: null
 type: issue

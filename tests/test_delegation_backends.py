@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import gc
 import json
 import os
@@ -495,11 +496,13 @@ def test_windows_powershell_companion_uses_backend_safe_task_transport(
     tmp_path: Path,
 ) -> None:
     marker = tmp_path / "injected.txt"
+    started = tmp_path / f"{kind}-started.txt"
     capture = tmp_path / f"{kind}-argv.json"
     shim = tmp_path / "agent.cmd"
     powershell_shim = shim.with_suffix(".ps1")
     shim.write_text("@echo off\r\nexit /b 99\r\n", encoding="utf-8")
     powershell_shim.write_text(
+        "[IO.File]::WriteAllText($env:AGENCY_START_MARKER, 'started')\n"
         "$stdinText = [Console]::In.ReadToEnd()\n"
         "$record = @{ args = @($args); stdin = $stdinText }\n"
         "[IO.File]::WriteAllText($env:AGENCY_ARG_CAPTURE, "
@@ -530,10 +533,18 @@ def test_windows_powershell_companion_uses_backend_safe_task_transport(
         extra_env={
             "AGENCY_ARG_CAPTURE": str(capture),
             "AGENCY_FAKE_KIND": kind,
+            "AGENCY_START_MARKER": str(started),
         },
     )
 
-    result = backend.delegate(task=task)
+    try:
+        result = backend.delegate(task=task)
+    except BackendTimeoutError as exc:
+        raise AssertionError(
+            "PowerShell companion timed out after child startup"
+            if started.exists()
+            else "PowerShell companion timed out before child startup"
+        ) from exc
     captured = json.loads(capture.read_text(encoding="utf-8"))
     arguments = captured["args"]
     arguments = arguments if isinstance(arguments, list) else [arguments]
@@ -546,6 +557,51 @@ def test_windows_powershell_companion_uses_backend_safe_task_transport(
         assert task in arguments
         assert captured["stdin"] == ""
     assert not marker.exists()
+
+
+@pytest.mark.skipif(
+    sys.platform != "win32" or shutil.which("powershell.exe") is None,
+    reason="Windows PowerShell stdin semantics",
+)
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "",
+        "a\n" + ("é" * 2047),
+        "a\nb\r\n" + ("x" * 4092),
+    ],
+    ids=["empty", "prefill-boundary", "asynchronous-boundary"],
+)
+def test_windows_powershell_receives_exact_stdin_across_pipe_boundaries(
+    payload: str,
+    tmp_path: Path,
+) -> None:
+    script = tmp_path / "read-stdin.ps1"
+    script.write_text(
+        "[Console]::InputEncoding = [Text.UTF8Encoding]::new($false)\n"
+        "$value = [Console]::In.ReadToEnd()\n"
+        "$bytes = [Text.Encoding]::UTF8.GetBytes($value)\n"
+        "[Console]::Out.Write([Convert]::ToBase64String($bytes))\n",
+        encoding="utf-8",
+    )
+
+    result = run_bounded_process(
+        [
+            "powershell.exe",
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-File",
+            str(script),
+        ],
+        input_text=payload,
+        timeout=_WINDOWS_POWERSHELL_INTEGRATION_TIMEOUT_SECONDS,
+        max_output_chars=8192,
+    )
+
+    assert result.returncode == 0
+    assert base64.b64decode(result.stdout) == payload.encode("utf-8")
+    assert result.stderr == ""
 
 
 def test_command_backend_rejects_missing_workdir(tmp_path: Path) -> None:

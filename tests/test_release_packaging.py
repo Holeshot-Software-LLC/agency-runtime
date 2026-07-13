@@ -149,6 +149,30 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         assert required in script
 
 
+def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+    steps = workflow["jobs"]["test"]["steps"]
+
+    checkout = next(
+        step for step in steps if step["name"] == "Check out canonical documentation history"
+    )
+    ledger = next(step for step in steps if step["name"] == "Verify documentation ledgers")
+    condition = "matrix.os == 'ubuntu-24.04' && matrix.python == '3.14'"
+
+    assert checkout["if"] == ledger["if"] == condition
+    assert checkout["with"] == {
+        "fetch-depth": 0,
+        "persist-credentials": False,
+        "ref": "${{ github.event.pull_request.head.sha || github.sha }}",
+    }
+    assert ledger["env"]["EXPECTED_HISTORY_HEAD"] == checkout["with"]["ref"]
+    assert 'test "$(git rev-parse --is-shallow-repository)" = "false"' in ledger["run"]
+    assert 'test "$(git rev-parse HEAD)" = "${EXPECTED_HISTORY_HEAD}"' in ledger["run"]
+    assert steps.index(checkout) > steps.index(
+        next(step for step in steps if step["name"] == "Check patch whitespace")
+    )
+
+
 def test_dependency_review_has_an_enforced_private_repository_fallback() -> None:
     workflow = yaml.safe_load(
         (ROOT / ".github" / "workflows" / "dependency-review.yml").read_text("utf-8")

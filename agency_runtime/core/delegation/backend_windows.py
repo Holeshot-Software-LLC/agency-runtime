@@ -153,7 +153,7 @@ def create_windows_job(process: subprocess.Popen[str]) -> WindowsJob | None:
 
 
 def resume_windows_process(process_id: int) -> bool:
-    """Resume every initial thread in a process launched with CREATE_SUSPENDED."""
+    """Resume the sole primary thread created by CREATE_SUSPENDED."""
     if not _IS_WINDOWS:
         return True
     try:
@@ -195,6 +195,12 @@ def resume_windows_process(process_id: int) -> bool:
         kernel32.OpenThread.restype = wintypes.HANDLE
         kernel32.ResumeThread.argtypes = [wintypes.HANDLE]
         kernel32.ResumeThread.restype = wintypes.DWORD
+        kernel32.GetProcessIdOfThread.argtypes = [wintypes.HANDLE]
+        kernel32.GetProcessIdOfThread.restype = wintypes.DWORD
+        kernel32.SetLastError.argtypes = [wintypes.DWORD]
+        kernel32.SetLastError.restype = None
+        kernel32.GetLastError.argtypes = []
+        kernel32.GetLastError.restype = wintypes.DWORD
         kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
         kernel32.CloseHandle.restype = wintypes.BOOL
 
@@ -202,29 +208,40 @@ def resume_windows_process(process_id: int) -> bool:
         invalid_handle = ctypes.c_void_p(-1).value
         if not snapshot or int(snapshot) == invalid_handle:
             return False
-        resumed = 0
-        failed = False
+        thread_ids: list[int] = []
         try:
             entry = ThreadEntry32()
             entry.dwSize = ctypes.sizeof(entry)
+            kernel32.SetLastError(0)
             found = bool(kernel32.Thread32First(snapshot, ctypes.byref(entry)))
             while found:
                 if int(entry.th32OwnerProcessID) == process_id:
-                    thread = kernel32.OpenThread(0x0002, False, entry.th32ThreadID)
-                    if not thread:
-                        failed = True
-                    else:
-                        try:
-                            if int(kernel32.ResumeThread(thread)) == 0xFFFFFFFF:
-                                failed = True
-                            else:
-                                resumed += 1
-                        finally:
-                            kernel32.CloseHandle(thread)
+                    thread_ids.append(int(entry.th32ThreadID))
+                kernel32.SetLastError(0)
                 found = bool(kernel32.Thread32Next(snapshot, ctypes.byref(entry)))
+            enumeration_error = int(kernel32.GetLastError())
         finally:
             kernel32.CloseHandle(snapshot)
-        return resumed > 0 and not failed
+        # CREATE_SUSPENDED owns exactly the primary thread's one suspension.
+        # Any additional thread was created or injected by another actor. Check
+        # the complete snapshot before mutation so failure cannot partially
+        # resume a debugger- or endpoint-security-owned thread.
+        if enumeration_error != 18 or len(thread_ids) != 1:
+            return False
+        thread = kernel32.OpenThread(0x0002 | 0x0800, False, thread_ids[0])
+        if not thread:
+            return False
+        try:
+            # The snapshot does not pin a TID. Verify the opened handle still
+            # belongs to this process before touching a potentially reused ID.
+            if int(kernel32.GetProcessIdOfThread(thread)) != process_id:
+                return False
+            # Zero means containment was established too late; greater than one
+            # includes a suspension owned by another actor. Only release the
+            # exact count Agency Runtime created.
+            return int(kernel32.ResumeThread(thread)) == 1
+        finally:
+            kernel32.CloseHandle(thread)
     except (AttributeError, OSError, TypeError, ValueError):
         return False
 

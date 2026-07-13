@@ -247,6 +247,7 @@ class _ThreadKernel:
     def __init__(self, *, owner: int) -> None:
         self.owner = owner
         self.closed: list[int] = []
+        self.last_error = 0
         self.CreateToolhelp32Snapshot = _NativeFunction(lambda *_args: 123)
 
         def first(_snapshot: Any, entry: Any) -> bool:
@@ -255,9 +256,17 @@ class _ThreadKernel:
             return True
 
         self.Thread32First = _NativeFunction(first)
-        self.Thread32Next = _NativeFunction(lambda *_args: False)
+
+        def next_thread(*_args: Any) -> bool:
+            self.last_error = 18
+            return False
+
+        self.Thread32Next = _NativeFunction(next_thread)
         self.OpenThread = _NativeFunction(lambda *_args: 456)
-        self.ResumeThread = _NativeFunction(lambda *_args: 0)
+        self.GetProcessIdOfThread = _NativeFunction(lambda *_args: self.owner)
+        self.SetLastError = _NativeFunction(lambda value: setattr(self, "last_error", int(value)))
+        self.GetLastError = _NativeFunction(lambda: self.last_error)
+        self.ResumeThread = _NativeFunction(lambda *_args: 1)
         self.CloseHandle = _NativeFunction(lambda handle: self.closed.append(int(handle)) or True)
 
 
@@ -291,7 +300,7 @@ def test_windows_resume_success_and_nonmatching_thread_paths(
     monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
 
     assert backend_windows.resume_windows_process(10) is expected
-    assert kernel.closed == ([456, 123] if expected else [123])
+    assert kernel.closed == ([123, 456] if expected else [123])
 
 
 def test_windows_job_quiescence_waits_for_descendants(

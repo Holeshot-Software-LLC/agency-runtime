@@ -3,11 +3,12 @@ title: "Fail before DACL mutation under restricted Windows tokens"
 status: accepted
 category: decisions
 created: 2026-07-12
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [security, windows, permissions, portability]
 related:
   - docs/THREAT_MODEL.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
+  - docs/roadmap/issue-AR-22-concurrent-storage-acl-repair.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

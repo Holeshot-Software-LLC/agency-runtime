@@ -19,6 +19,7 @@ related:
   - docs/decisions/0041-bounded-asynchronous-overload-responses.md
   - docs/decisions/0042-local-only-bounded-work-file-inference.md
   - docs/decisions/0043-prime-stdin-before-windows-child-resume.md
+  - docs/decisions/0044-preclose-bounded-windows-child-stdin.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []
@@ -28,7 +29,7 @@ epic: release
 issue_id: AR-17
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/17"
-depends_on: [AR-18, AR-19]
+depends_on: [AR-18, AR-19, AR-20, AR-21, AR-22]
 blocks: [AR-07]
 ---
 

@@ -37,6 +37,9 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-17` | [Complete production hardening and portable release gates](issue-AR-17-production-hardening-portability.md) | in_progress | p0 | release | [#17](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/17) |
 | `AR-18` | [Detect work-unit file paths containing spaces](issue-AR-18-work-unit-paths-with-spaces.md) | in_progress | p1 | testing | [#19](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/19) |
 | `AR-19` | [Deliver reliable bounded overload responses](issue-AR-19-bounded-overload-responses.md) | in_progress | p0 | operations | [#20](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/20) |
+| `AR-20` | [Validate documentation ledgers against canonical full history](issue-AR-20-full-history-ledger-ci.md) | in_progress | p0 | testing | [#21](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/21) |
+| `AR-21` | [Make Windows child startup deterministic and fail closed](issue-AR-21-fully-resume-windows-children.md) | in_progress | p0 | host-integrations | [#22](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/22) |
+| `AR-22` | [Serialize concurrent Windows storage ACL repair](issue-AR-22-concurrent-storage-acl-repair.md) | in_progress | p0 | operations | [#23](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/23) |
 
 ## Traceability
 
@@ -61,10 +64,13 @@ not stable internal identifiers.
 | [AR-13](issue-AR-13-optional-dashboard-service-configuration.md) | [`d1275c3`](../worklog/README.md), [`2515bfc`](../worklog/README.md) | [ADR-0006](../decisions/0006-config-first-redacted-configuration.md), [ADR-0010](../decisions/0010-one-command-install-and-reversible-toggle.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md) |
 | [AR-14](issue-AR-14-live-signal-observatory.md) | [`63ea805`](../worklog/README.md), [`2515bfc`](../worklog/README.md) | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
 | [AR-15](issue-AR-15-reliable-json-rejection-responses.md) | [`2515bfc`](../worklog/README.md) | [ADR-0017](../decisions/0017-sanitized-server-error-boundary.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
-| [AR-16](issue-AR-16-linux-python-delegation-compatibility.md) | [`2515bfc`](../worklog/README.md), [`852359d`](../worklog/README.md), [`c7e06fd`](../worklog/README.md), [`a096236`](../worklog/README.md) | [ADR-0019](../decisions/0019-bounded-machine-readable-cli-delegation.md), [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0043](../decisions/0043-prime-stdin-before-windows-child-resume.md) |
-| [AR-17](issue-AR-17-production-hardening-portability.md) | [`e4a846d`](../worklog/README.md), [`a60b41c`](../worklog/README.md), [`852359d`](../worklog/README.md), [`c7e06fd`](../worklog/README.md), [`a096236`](../worklog/README.md) | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0028](../decisions/0028-host-support-maturity-and-reversible-install.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0038](../decisions/0038-refuse-executable-git-configuration-during-delegation.md), [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md), [ADR-0041](../decisions/0041-bounded-asynchronous-overload-responses.md), [ADR-0042](../decisions/0042-local-only-bounded-work-file-inference.md), [ADR-0043](../decisions/0043-prime-stdin-before-windows-child-resume.md) |
+| [AR-16](issue-AR-16-linux-python-delegation-compatibility.md) | [`2515bfc`](../worklog/README.md), [`852359d`](../worklog/README.md), [`c7e06fd`](../worklog/README.md), [`a096236`](../worklog/README.md) | [ADR-0019](../decisions/0019-bounded-machine-readable-cli-delegation.md), [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0043](../decisions/0043-prime-stdin-before-windows-child-resume.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md) |
+| [AR-17](issue-AR-17-production-hardening-portability.md) | [`e4a846d`](../worklog/README.md), [`a60b41c`](../worklog/README.md), [`852359d`](../worklog/README.md), [`c7e06fd`](../worklog/README.md), [`a096236`](../worklog/README.md) | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0028](../decisions/0028-host-support-maturity-and-reversible-install.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0038](../decisions/0038-refuse-executable-git-configuration-during-delegation.md), [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md), [ADR-0041](../decisions/0041-bounded-asynchronous-overload-responses.md), [ADR-0042](../decisions/0042-local-only-bounded-work-file-inference.md), [ADR-0043](../decisions/0043-prime-stdin-before-windows-child-resume.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md) |
 | [AR-18](issue-AR-18-work-unit-paths-with-spaces.md) | [`c7e06fd`](../worklog/README.md), [`a096236`](../worklog/README.md) | [ADR-0042](../decisions/0042-local-only-bounded-work-file-inference.md) |
 | [AR-19](issue-AR-19-bounded-overload-responses.md) | [`a096236`](../worklog/README.md) | [ADR-0017](../decisions/0017-sanitized-server-error-boundary.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0041](../decisions/0041-bounded-asynchronous-overload-responses.md) |
+| [AR-20](issue-AR-20-full-history-ledger-ci.md) | pending | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md) |
+| [AR-21](issue-AR-21-fully-resume-windows-children.md) | pending | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0043](../decisions/0043-prime-stdin-before-windows-child-resume.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md) |
+| [AR-22](issue-AR-22-concurrent-storage-acl-repair.md) | pending | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md) |
 
 ## Dependency summary
 
@@ -122,6 +128,17 @@ not stable internal identifiers.
 - `AR-19` records the saturated-server Windows reset and accept-loop blocking
   bugs surfaced by final warning-strict validation. Its separately bounded
   overload workers block `AR-17` until hosted CI and merge complete.
+- `AR-20` records the synthetic-merge and shallow-history mismatch in the
+  history-derived worklog gate. Its targeted canonical-head checkout blocks
+  `AR-17` until the hosted documentation-ledger job passes and the fix is
+  merged.
+- `AR-21` records the hosted PowerShell stdin race and the Windows native
+  resume helper's incorrect ownership boundary. Its preclosed bounded-input
+  contract and fail-closed single-count resume block `AR-17` until both hosted
+  Windows versions pass and the fix is merged.
+- `AR-22` records concurrent Store instances racing the same SQLite sidecar
+  ACL. Its process-wide repair critical section and identity-checked sidecar
+  retry block `AR-17` until the hosted Windows matrix and merge pass.
 
 ## Status conventions
 

@@ -3,11 +3,12 @@ title: Keep a self-contained planning-to-evidence documentation chain
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-13
 tags: [documentation, governance, traceability]
 related:
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-08-self-contained-documentation.md
+  - docs/roadmap/issue-AR-20-full-history-ledger-ci.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

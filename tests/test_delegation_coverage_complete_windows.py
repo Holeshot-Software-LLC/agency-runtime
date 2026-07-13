@@ -114,20 +114,47 @@ class _ThreadKernel:
         snapshot: int = 123,
         thread: int = 456,
         resume_result: int = 0,
+        thread_ids: tuple[int, ...] = (7,),
+        enumeration_error: int = 18,
+        reopened_process_id: int | None = None,
     ) -> None:
         self.process_id = process_id
         self.closed: list[int] = []
+        self.open_calls = 0
+        self.resume_calls = 0
+        self.last_error = 0
+        entries = iter(thread_ids)
         self.CreateToolhelp32Snapshot = _Function(lambda *_args: snapshot)
 
-        def first(_snapshot: Any, entry_pointer: Any) -> bool:
+        def populate(entry_pointer: Any) -> bool:
+            try:
+                thread_id = next(entries)
+            except StopIteration:
+                self.last_error = enumeration_error
+                return False
             entry_pointer._obj.th32OwnerProcessID = process_id
-            entry_pointer._obj.th32ThreadID = 7
+            entry_pointer._obj.th32ThreadID = thread_id
             return True
 
-        self.Thread32First = _Function(first)
-        self.Thread32Next = _Function(lambda *_args: False)
-        self.OpenThread = _Function(lambda *_args: thread)
-        self.ResumeThread = _Function(lambda *_args: resume_result)
+        self.Thread32First = _Function(lambda _snapshot, entry: populate(entry))
+        self.Thread32Next = _Function(lambda _snapshot, entry: populate(entry))
+
+        def open_thread(*_args: Any) -> int:
+            self.open_calls += 1
+            return thread
+
+        self.OpenThread = _Function(open_thread)
+        self.GetProcessIdOfThread = _Function(
+            lambda *_args: process_id if reopened_process_id is None else reopened_process_id
+        )
+        self.SetLastError = _Function(lambda value: setattr(self, "last_error", int(value)))
+        self.GetLastError = _Function(lambda: self.last_error)
+
+        def resume(*_args: Any) -> int:
+            self.resume_calls += 1
+            return resume_result
+
+        self.ResumeThread = _Function(resume)
         self.CloseHandle = _Function(lambda value: self.closed.append(int(value)) or True)
 
 
@@ -143,7 +170,9 @@ def test_resume_windows_process_returns_true_off_windows(
     [
         (_ThreadKernel(process_id=10, snapshot=0), []),
         (_ThreadKernel(process_id=10, thread=0), [123]),
-        (_ThreadKernel(process_id=10, resume_result=0xFFFFFFFF), [456, 123]),
+        (_ThreadKernel(process_id=10, resume_result=0), [123, 456]),
+        (_ThreadKernel(process_id=10, resume_result=2), [123, 456]),
+        (_ThreadKernel(process_id=10, resume_result=0xFFFFFFFF), [123, 456]),
     ],
 )
 def test_resume_windows_process_fails_closed_for_native_thread_errors(
@@ -158,6 +187,57 @@ def test_resume_windows_process_fails_closed_for_native_thread_errors(
 
     assert backend_windows.resume_windows_process(10) is False
     assert kernel.closed == expected_closed
+
+
+def test_resume_windows_process_releases_exactly_its_owned_suspend_count(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import ctypes
+
+    kernel = _ThreadKernel(process_id=10, resume_result=1)
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", True)
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
+
+    assert backend_windows.resume_windows_process(10) is True
+    assert kernel.resume_calls == 1
+    assert kernel.closed == [123, 456]
+
+
+def test_resume_windows_process_rejects_extra_threads_before_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import ctypes
+
+    kernel = _ThreadKernel(process_id=10, resume_result=1, thread_ids=(7, 8))
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", True)
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
+
+    assert backend_windows.resume_windows_process(10) is False
+    assert kernel.open_calls == 0
+    assert kernel.resume_calls == 0
+    assert kernel.closed == [123]
+
+
+@pytest.mark.parametrize(
+    "kernel",
+    [
+        _ThreadKernel(process_id=10, resume_result=1, enumeration_error=5),
+        _ThreadKernel(process_id=10, resume_result=1, reopened_process_id=11),
+    ],
+    ids=["enumeration-error", "reused-thread-id"],
+)
+def test_resume_windows_process_revalidates_complete_snapshot_and_owner(
+    monkeypatch: pytest.MonkeyPatch,
+    kernel: _ThreadKernel,
+) -> None:
+    import ctypes
+
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", True)
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
+
+    assert backend_windows.resume_windows_process(10) is False
+    assert kernel.resume_calls == 0
+    assert kernel.closed == ([123] if kernel.open_calls == 0 else [123, 456])
 
 
 def test_resume_windows_process_normalizes_native_exception(
