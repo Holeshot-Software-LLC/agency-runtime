@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -35,6 +35,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-15` | [Deliver reliable JSON rejection responses on Windows](issue-AR-15-reliable-json-rejection-responses.md) | done | p1 | operations | [#15](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/15) |
 | `AR-16` | [Restore Linux and Python 3.12 delegation compatibility](issue-AR-16-linux-python-delegation-compatibility.md) | in_progress | p0 | testing | [#16](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/16) |
 | `AR-17` | [Complete production hardening and portable release gates](issue-AR-17-production-hardening-portability.md) | in_progress | p0 | release | [#17](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/17) |
+| `AR-18` | [Detect work-unit file paths containing spaces](issue-AR-18-work-unit-paths-with-spaces.md) | in_progress | p1 | testing | [#19](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/19) |
 
 ## Traceability
 
@@ -61,6 +62,7 @@ not stable internal identifiers.
 | [AR-15](issue-AR-15-reliable-json-rejection-responses.md) | [`2515bfc`](../worklog/README.md) | [ADR-0017](../decisions/0017-sanitized-server-error-boundary.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-16](issue-AR-16-linux-python-delegation-compatibility.md) | [`2515bfc`](../worklog/README.md), [`852359d`](../worklog/README.md) | [ADR-0019](../decisions/0019-bounded-machine-readable-cli-delegation.md), [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md) |
 | [AR-17](issue-AR-17-production-hardening-portability.md) | [`e4a846d`](../worklog/README.md), [`a60b41c`](../worklog/README.md), [`852359d`](../worklog/README.md) | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0028](../decisions/0028-host-support-maturity-and-reversible-install.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0038](../decisions/0038-refuse-executable-git-configuration-during-delegation.md), [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md) |
+| [AR-18](issue-AR-18-work-unit-paths-with-spaces.md) | pending | null |
 
 ## Dependency summary
 
@@ -81,6 +83,9 @@ not stable internal identifiers.
   pending hosted CI, review/merge, and clean-tree/worklog evidence. The
   `AR-03`, `AR-05`, `AR-06`, `AR-08`, `AR-09`, `AR-10`, `AR-11`,
   `AR-12`, `AR-13`, `AR-14`, and `AR-15` dependencies are complete locally.
+- `AR-18` records the work-unit path-with-spaces bug surfaced by final Windows
+  validation. Its fix is part of the reviewed portability branch and blocks
+  `AR-17` until hosted CI and merge complete.
 - `AR-01` is implemented and its tracker issue is closed.
 - `AR-08` is implemented and its tracker issue is closed.
 - `AR-09` is complete locally and prevents tests from escaping their explicit

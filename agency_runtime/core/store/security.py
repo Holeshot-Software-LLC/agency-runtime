@@ -49,6 +49,9 @@ def restrict_path_permissions(
         raise PermissionError(f"Agency Runtime storage must be a {kind}: {path}")
     if is_windows:
         if not windows_acl(path, directory=directory):
+            current = path.lstat()
+            if link_checker(path) or metadata_is_link_or_reparse_point(current):
+                raise PermissionError("refusing Agency Runtime storage symlink or reparse point")
             raise PermissionError(
                 f"could not enforce private Windows ACL on Agency Runtime storage: {path}"
             )

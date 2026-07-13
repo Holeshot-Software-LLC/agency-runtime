@@ -112,9 +112,13 @@ zizmor --pedantic --strict-collection --offline .
 - [ ] Security reporting instructions and the current supported-version statement
       are accurate.
 - [ ] The threat model covers current assets, trust boundaries, controls, and
-      residual risks; CodeQL completes with native upload or a retained SARIF
-      artifact, and dependency review passes through native diff review or the
-      exact installed-runtime audit.
+      residual risks; CodeQL completes natively when repository visibility and
+      licensing permit it, or a positively recognized private/internal
+      missing-entitlement response produces machine-readable evidence that
+      analysis was not performed while Bandit, offline workflow auditing, and
+      the exact installed-runtime vulnerability audit pass. Ambiguous probe
+      responses fail closed. Dependency review passes through native diff review
+      or that exact runtime audit.
 - [ ] GitHub Actions use immutable SHAs, least-privilege permissions, and no
       persisted checkout credentials without an explicit need.
 

@@ -385,11 +385,12 @@ def _file_source_path(parsed: Any) -> tuple[str, Path]:
         raise RosterSyncError("file roster source may not contain credentials")
     if parsed.netloc and parsed.netloc.casefold() != "localhost":
         raise RosterSyncError("remote file URL authorities are not supported")
-    local_value = urllib.request.url2pathname(unquote(parsed.path))
-    if not local_value:
+    decoded_path = unquote(parsed.path)
+    if not decoded_path:
         raise RosterSyncError("file roster source must include a path")
-    if local_value.startswith(("\\\\", "//")):
+    if len(decoded_path) >= 2 and all(character in "/\\\\" for character in decoded_path[:2]):
         raise RosterSyncError("remote file URL paths are not supported")
+    local_value = urllib.request.url2pathname(decoded_path)
     return "path", Path(local_value).expanduser()
 
 

@@ -116,7 +116,11 @@ def _spawn_owned_process(
     return subprocess.Popen(
         process_argv,
         cwd=cwd,
-        stdin=subprocess.PIPE if input_text is not None else subprocess.DEVNULL,
+        # A real pipe with an explicit parent-side close is the only portable
+        # EOF contract for every supported host. In particular, Windows
+        # PowerShell's Console.In can wait indefinitely on the NUL device even
+        # though native readers commonly treat it as immediate EOF.
+        stdin=subprocess.PIPE,
         text=True,
         encoding="utf-8",
         errors="replace",

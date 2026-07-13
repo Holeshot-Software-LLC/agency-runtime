@@ -47,10 +47,16 @@ Use a layered release gate with these properties:
    and JavaScript, and pull-request dependency review. Probe GitHub's
    dependency-diff capability first: use native review when available and the
    strict exact installed-runtime vulnerability audit when it is not, without
-   silently enabling a potentially billable repository security product. Run
-   CodeQL queries regardless of hosted code-scanning availability; upload
-   natively when supported and otherwise retain the SARIF as a short-lived
-   workflow artifact.
+   silently enabling a potentially billable repository security product. Probe
+   native CodeQL capability before registering its actions: initialize, analyze,
+   and upload only where repository visibility and GitHub Code Security licensing
+   permit them. Accept the unavailable path only for a private or internal
+   repository whose HTTP 403 body exactly identifies Code Security as not
+   enabled; authorization, rate-limit, malformed, not-found, and other ambiguous
+   responses fail closed. For that recognized boundary, execute no CodeQL action
+   or CLI, retain short-lived machine-readable evidence that analysis was not
+   performed, and rely on the independently enforced Bandit, offline workflow,
+   and exact installed-runtime vulnerability gates.
 4. Verify wheel and source distributions structurally, compare shared payload
    hashes, install the built wheel in clean Windows and Linux environments, and
    keep publication or provenance claims separate until an authorized release
@@ -67,8 +73,10 @@ Use a layered release gate with these properties:
 - Private repositories without licensed dependency review retain an enforced
   vulnerability gate, while public or licensed repositories automatically use
   GitHub's base-versus-head dependency review.
-- CodeQL analysis remains executable in private forks without licensed hosted
-  upload, and its local SARIF output remains available for review.
+- Public or licensed repositories automatically receive native CodeQL analysis
+  and upload. Private or internal repositories with a positively identified
+  missing entitlement record the capability boundary without implying that
+  analysis ran or invoking an unlicensed analyzer; ambiguous probes fail.
 - Tool upgrades become visible repository changes that require review and may
   briefly lag a release while compatibility is tested.
 - Local contributors install more packages only when they request development,
@@ -79,9 +87,11 @@ Use a layered release gate with these properties:
 
 ## Alternatives
 
-- **Rely only on hosted CodeQL.** Rejected because it does not validate local
-  artifacts, dependency state, workflow configuration, or secrets in unpushed
-  work.
+- **Treat CodeQL as a universal mandatory gate.** Rejected because GitHub's
+  action and CLI are not available for every private repository; initializing
+  them without the required capability produces a configuration failure and
+  would overstate the security evidence. Independent source, dependency, and
+  workflow gates remain mandatory everywhere.
 - **Use moving action tags and unpinned latest tools.** Rejected because the
   reviewed source can change without a repository diff and break
   reproducibility.

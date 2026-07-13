@@ -66,9 +66,14 @@ changes rather than duplicating every commit.
 - Pull requests use GitHub's native dependency-diff review when the repository
   exposes that capability and otherwise enforce the exact installed-runtime
   vulnerability audit, without requiring a billable security product.
-- CodeQL always performs its Python and JavaScript analysis; repositories
-  without hosted code-scanning upload retain the generated SARIF as short-lived
-  workflow artifacts instead of failing after a successful analysis.
+- Native CodeQL analysis and upload run when repository visibility and GitHub
+  Code Security licensing expose that capability. Private or internal
+  repositories with a positively recognized Code Security-not-enabled response
+  skip CodeQL initialization, publish short-lived machine-readable capability
+  evidence that analysis was not performed, and continue to enforce Bandit,
+  offline workflow auditing, and the exact installed-runtime vulnerability audit
+  without executing an unlicensed analyzer. Ambiguous authorization, rate-limit,
+  malformed, and not-found responses fail closed.
 - Routing cache and session state now include roster, configuration, and policy
   fingerprints; zero-signal routing abstains.
 - Provider fallthrough rejects semantically invalid results and reports

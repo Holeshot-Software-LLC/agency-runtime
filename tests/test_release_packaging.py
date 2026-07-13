@@ -171,25 +171,55 @@ def test_dependency_review_has_an_enforced_private_repository_fallback() -> None
     assert fallback["run"] == "python scripts/audit_runtime_dependencies.py"
 
 
-def test_codeql_retains_sarif_when_hosted_upload_is_unavailable() -> None:
+def test_codeql_gates_native_actions_and_records_unavailable_capability() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "codeql.yml").read_text("utf-8"))
     steps = workflow["jobs"]["analyze"]["steps"]
 
-    probe = next(step for step in steps if step["name"] == "Detect code scanning upload capability")
+    probe = next(step for step in steps if step["name"] == "Detect native CodeQL capability")
     assert "code-scanning/alerts?per_page=1" in probe["run"]
-    assert "403|404" in probe["run"]
-    assert "exit 1" in probe["run"]
+    assert probe["env"]["REPOSITORY_VISIBILITY"] == "${{ github.event.repository.visibility }}"
+    probe_script = probe["run"]
+    for required in (
+        '--output "${response}"',
+        "403)",
+        "404)",
+        "\"${REPOSITORY_VISIBILITY}\" != 'private'",
+        "\"${REPOSITORY_VISIBILITY}\" != 'internal'",
+        "code security must be enabled for this repository to use code scanning",
+        "github code security or github advanced security must be enabled",
+        "ambiguous HTTP 403",
+        "private_or_internal_repository_code_security_not_enabled",
+        "exit 1",
+    ):
+        assert required in probe_script
+    assert "403|404" not in probe_script
 
+    initialize = next(step for step in steps if step["name"] == "Initialize CodeQL")
     analyze = next(step for step in steps if step["name"] == "Analyze source")
-    assert analyze["with"]["upload"].endswith("&& 'always' || 'never' }}")
+    assert initialize["if"].endswith("available == 'true'")
+    assert analyze["if"].endswith("available == 'true'")
+    assert analyze["with"]["upload"] == "always"
     assert analyze["with"]["output"] == "${{ runner.temp }}/codeql-results"
 
-    retained = next(
-        step
-        for step in steps
-        if step["name"] == "Retain SARIF when code scanning upload is unavailable"
+    evidence = next(
+        step for step in steps if step["name"] == "Record unavailable CodeQL capability"
     )
+    assert evidence["if"].endswith("available == 'false'")
+    for required in (
+        '"evidence_type": "codeql-capability"',
+        '"available": False',
+        '"analysis_performed": False',
+        '"repository_visibility": os.environ["REPOSITORY_VISIBILITY"]',
+        '"probe_http_status": int(os.environ["CAPABILITY_HTTP_STATUS"])',
+        '"bandit-source-analysis"',
+        '"exact-installed-runtime-vulnerability-audit"',
+        '"offline-workflow-security-audit"',
+    ):
+        assert required in evidence["run"]
+
+    retained = next(step for step in steps if step["name"] == "Retain CodeQL capability evidence")
     assert retained["if"].endswith("available == 'false'")
+    assert retained["with"]["path"].endswith("${{ matrix.language }}.json")
     assert retained["with"]["if-no-files-found"] == "error"
     assert retained["with"]["retention-days"] == 7
 

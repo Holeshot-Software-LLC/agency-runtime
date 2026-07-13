@@ -317,7 +317,15 @@ def restrict_windows_acl(
     if restricted:
         raise RestrictedWindowsTokenError(_RESTRICTED_TOKEN_MESSAGE)
     apply_acl = acl_applier or _apply_owner_only_acl
-    return bool(apply_acl(path, directory=directory))
+    if apply_acl(path, directory=directory):
+        return True
+    # Another process may have secured the same SQLite sidecar between the
+    # initial inspection and our mutation attempt. Verify the security
+    # postcondition once without issuing a second DACL write.
+    try:
+        return bool(privacy_probe(path, directory=directory))
+    except Exception:
+        return False
 
 
 __all__ = [

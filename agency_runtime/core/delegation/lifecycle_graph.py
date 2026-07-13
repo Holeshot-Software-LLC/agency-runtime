@@ -6,6 +6,7 @@ import hashlib
 import re
 import uuid
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from itertools import islice
 from pathlib import Path
 from typing import Any
 
@@ -17,10 +18,15 @@ _PATH_RE = re.compile(
     r"(?P<path>(?:[A-Za-z]:[\\/]|~[\\/]|/|\.\.?[\\/])"
     r"[A-Za-z0-9_./\\@:+\-=]+)"
 )
-_FILE_RE = re.compile(
-    r"\.(?:py|js|jsx|ts|tsx|go|rs|java|rb|css|html|md|json|ya?ml|toml|sh|sql|txt)$",
+_FILE_SUFFIX = r"(?:py|js|jsx|ts|tsx|go|rs|java|rb|css|html|md|json|ya?ml|toml|sh|sql|txt)"
+_FILE_RE = re.compile(rf"\.{_FILE_SUFFIX}$", re.I)
+_FILE_BOUNDARY_RE = re.compile(
+    rf"\.{_FILE_SUFFIX}(?![A-Za-z0-9_./\\@:+\-=])",
     re.I,
 )
+_PATH_MATCH_LIMIT = 32
+_SPACED_PATH_WINDOW_CHARS = 4096
+_SPACED_PATH_CANDIDATES_PER_MATCH = 4
 _DEP_RE = re.compile(
     r"^\s*(?:after(?:\s+that)?|then|once)\b"
     r"|\bdepends?\s+on\b"
@@ -132,6 +138,28 @@ def _explicit_dependencies(item: Any) -> set[str]:
     return normalized
 
 
+def _existing_spaced_file(
+    description: str,
+    start: int,
+    *,
+    max_candidates: int,
+) -> tuple[Path | None, int]:
+    """Recover an existing file path when natural-language tokenizing split it."""
+
+    tail = description[start : start + _SPACED_PATH_WINDOW_CHARS]
+    longest: Path | None = None
+    considered = 0
+    for match in islice(_FILE_BOUNDARY_RE.finditer(tail), max_candidates):
+        considered += 1
+        raw_path = tail[: match.end()].rstrip(".,);]}'\"")
+        if not any(character.isspace() for character in raw_path):
+            continue
+        candidate = Path(raw_path).expanduser()
+        if candidate.is_file():
+            longest = candidate
+    return longest, considered
+
+
 def normalize_work_units(
     work_units: Any,
     repo_path: str | Path | None,
@@ -167,10 +195,20 @@ def normalize_work_units(
         )
         files = _explicit_files(item)
         depends_on = _explicit_dependencies(item)
-        for match in _PATH_RE.finditer(description):
-            path = Path(match.group("path").rstrip(".,);]}'\"")).expanduser()
+        for match in islice(_PATH_RE.finditer(description), _PATH_MATCH_LIMIT):
+            compact_path = Path(match.group("path").rstrip(".,);]}'\"")).expanduser()
+            spaced_file, _considered = _existing_spaced_file(
+                description,
+                match.start("path"),
+                max_candidates=_SPACED_PATH_CANDIDATES_PER_MATCH,
+            )
+            path = spaced_file or compact_path
             repo = repo or git_root(path)
-            if _FILE_RE.search(str(path)) or (path.exists() and path.is_file()):
+            if (
+                spaced_file is not None
+                or _FILE_RE.search(str(path))
+                or (path.exists() and path.is_file())
+            ):
                 files.add(path)
         repo = repo or repo_fallback
         normalized_files: set[Path] = set()

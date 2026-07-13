@@ -137,6 +137,31 @@ def _run() -> subprocess.CompletedProcess[str]:
     )
 
 
+def test_spawn_uses_an_explicitly_closed_pipe_for_no_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+    sentinel = object()
+
+    def fake_popen(*args: object, **kwargs: object) -> object:
+        observed["args"] = args
+        observed.update(kwargs)
+        return sentinel
+
+    monkeypatch.setattr(backends.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(backends, "_is_windows", lambda: False)
+
+    result = backends._spawn_owned_process(
+        ["agent"],
+        cwd=None,
+        env={"PATH": "test"},
+        input_text=None,
+    )
+
+    assert result is sentinel
+    assert observed["stdin"] is subprocess.PIPE
+
+
 def test_success_returns_exact_process_result_without_termination(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

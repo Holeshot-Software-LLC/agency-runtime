@@ -13,6 +13,19 @@ import pytest
 from agency_runtime.core.delegation import backend_process
 
 
+def test_close_process_pipes_skips_absent_streams() -> None:
+    closed: list[str] = []
+    process = SimpleNamespace(
+        stdin=None,
+        stdout=SimpleNamespace(close=lambda: closed.append("stdout")),
+        stderr=SimpleNamespace(close=lambda: closed.append("stderr")),
+    )
+
+    backend_process._close_process_pipes(process)
+
+    assert closed == ["stdout", "stderr"]
+
+
 def test_posix_group_probe_reports_live_and_missing_groups(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -330,6 +343,29 @@ def test_stdin_writer_preserves_lf_and_tolerates_reconfigure_fallbacks() -> None
     assert non_text.closed is True
 
 
+def test_no_input_closes_child_stdin_before_stream_workers_start() -> None:
+    stdin = _NonTextStream()
+    process = SimpleNamespace(
+        stdin=stdin,
+        stdout=io.StringIO(),
+        stderr=io.StringIO(),
+    )
+
+    stdout_thread, stderr_thread, stdin_thread = backend_process._start_process_io_threads(
+        process,
+        stdout=backend_process._BoundedTextCapture(10),
+        stderr=backend_process._BoundedTextCapture(10),
+        input_text=None,
+        windows_job=None,
+    )
+    stdout_thread.join(timeout=1)
+    stderr_thread.join(timeout=1)
+
+    assert stdin.parts == [""]
+    assert stdin.closed is True
+    assert stdin_thread is None
+
+
 def test_io_thread_start_reraises_cancellation_after_cleanup(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -337,7 +373,7 @@ def test_io_thread_start_reraises_cancellation_after_cleanup(
         def start(self) -> None:
             raise KeyboardInterrupt
 
-    process = SimpleNamespace()
+    process = SimpleNamespace(stdin=None)
     cleaned: list[Any] = []
     monkeypatch.setattr(
         backend_process,

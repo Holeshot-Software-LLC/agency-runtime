@@ -3,7 +3,7 @@ title: "AR-17: Complete production hardening and portable release gates"
 status: in_progress
 category: roadmap
 created: 2026-07-12
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [security, portability, quality, performance, dashboard, hosts]
 related:
   - docs/THREAT_MODEL.md
@@ -25,7 +25,7 @@ epic: release
 issue_id: AR-17
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/17"
-depends_on: []
+depends_on: [AR-18]
 blocks: [AR-07]
 ---
 

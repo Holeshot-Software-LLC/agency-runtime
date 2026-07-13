@@ -34,14 +34,17 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - name: Detect code scanning upload capability
+      - name: Detect native CodeQL capability
         id: code-scanning-capability
         env:
           GH_TOKEN: ${{ github.token }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
         run: |
           set -euo pipefail
+          response="${RUNNER_TEMP}/code-scanning-capability-response.json"
           status="$(
-            curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            curl --silent --show-error --connect-timeout 10 --max-time 30 \
+              --output "${response}" --write-out '%{http_code}' \
               --header 'Accept: application/vnd.github+json' \
               --header "Authorization: Bearer ${GH_TOKEN}" \
               --header 'X-GitHub-Api-Version: 2022-11-28' \
@@ -50,10 +53,44 @@ jobs:
           case "${status}" in
             200)
               echo 'available=true' >> "${GITHUB_OUTPUT}"
+              echo 'reason=repository_code_scanning_available' >> "${GITHUB_OUTPUT}"
+              echo "http_status=${status}" >> "${GITHUB_OUTPUT}"
               ;;
-            403|404)
+            403)
+              if [[ "${REPOSITORY_VISIBILITY}" != 'private' && "${REPOSITORY_VISIBILITY}" != 'internal' ]]; then
+                echo "::error::Code scanning returned HTTP 403 for a ${REPOSITORY_VISIBILITY:-unknown}-visibility repository."
+                exit 1
+              fi
+              if ! python - "${response}" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          recognized = {
+              "code security must be enabled for this repository to use code scanning",
+              "github code security or github advanced security must be enabled for this repository to use code scanning",
+          }
+          try:
+              payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              message = payload["message"]
+          except (OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError):
+              raise SystemExit(1) from None
+          normalized = message.strip().casefold().removesuffix(".") if isinstance(message, str) else ""
+          raise SystemExit(0 if normalized in recognized else 1)
+          PY
+              then
+                echo '::error::Code scanning returned an ambiguous HTTP 403; refusing to classify it as a missing entitlement.'
+                exit 1
+              fi
               echo 'available=false' >> "${GITHUB_OUTPUT}"
-              echo '::notice::Code scanning upload is unavailable; retaining the local SARIF analysis as a workflow artifact.'
+              echo 'reason=private_or_internal_repository_code_security_not_enabled' >> "${GITHUB_OUTPUT}"
+              echo "http_status=${status}" >> "${GITHUB_OUTPUT}"
+              echo "repository_visibility=${REPOSITORY_VISIBILITY}" >> "${GITHUB_OUTPUT}"
+              echo '::notice::Native CodeQL is unavailable because Code Security is not enabled for this private or internal repository; no CodeQL action or CLI will be initialized.'
+              ;;
+            404)
+              echo '::error::Code scanning capability probe returned HTTP 404; refusing to treat an ambiguous response as a missing entitlement.'
+              exit 1
               ;;
             *)
               echo "::error::Code scanning capability probe returned HTTP ${status}."
@@ -61,21 +98,60 @@ jobs:
               ;;
           esac
       - name: Initialize CodeQL
+        if: steps.code-scanning-capability.outputs.available == 'true'
         uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
       - name: Analyze source
+        if: steps.code-scanning-capability.outputs.available == 'true'
         uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
         with:
           category: /language:${{ matrix.language }}
           output: ${{ runner.temp }}/codeql-results
-          upload: ${{ steps.code-scanning-capability.outputs.available == 'true' && 'always' || 'never' }}
-      - name: Retain SARIF when code scanning upload is unavailable
-        if: always() && steps.code-scanning-capability.outputs.available == 'false'
+          upload: always
+      - name: Record unavailable CodeQL capability
+        if: steps.code-scanning-capability.outputs.available == 'false'
+        env:
+          CAPABILITY_HTTP_STATUS: ${{ steps.code-scanning-capability.outputs.http_status }}
+          CAPABILITY_REASON: ${{ steps.code-scanning-capability.outputs.reason }}
+          CODEQL_LANGUAGE: ${{ matrix.language }}
+          REPOSITORY_VISIBILITY: ${{ steps.code-scanning-capability.outputs.repository_visibility }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = {
+              "schema_version": 1,
+              "evidence_type": "codeql-capability",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "ref": os.environ["GITHUB_REF"],
+              "sha": os.environ["GITHUB_SHA"],
+              "event": os.environ["GITHUB_EVENT_NAME"],
+              "language": os.environ["CODEQL_LANGUAGE"],
+              "repository_visibility": os.environ["REPOSITORY_VISIBILITY"],
+              "available": False,
+              "analysis_performed": False,
+              "reason": os.environ["CAPABILITY_REASON"],
+              "probe_http_status": int(os.environ["CAPABILITY_HTTP_STATUS"]),
+              "compensating_controls": [
+                  "bandit-source-analysis",
+                  "exact-installed-runtime-vulnerability-audit",
+                  "offline-workflow-security-audit",
+              ],
+          }
+          output = Path(os.environ["RUNNER_TEMP"]) / "codeql-capability"
+          output.mkdir(parents=True, exist_ok=True)
+          path = output / f"{os.environ['CODEQL_LANGUAGE']}.json"
+          path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+      - name: Retain CodeQL capability evidence
+        if: steps.code-scanning-capability.outputs.available == 'false'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: codeql-${{ matrix.language }}-sarif
-          path: ${{ runner.temp }}/codeql-results
+          name: codeql-${{ matrix.language }}-capability
+          path: ${{ runner.temp }}/codeql-capability/${{ matrix.language }}.json
           if-no-files-found: error
           retention-days: 7

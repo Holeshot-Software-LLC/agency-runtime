@@ -222,32 +222,101 @@ class Store(EvidenceStoreMixin, MaintenanceStoreMixin, RosterStoreMixin):
                     "refusing Agency Runtime database or sidecar non-regular file"
                 )
 
+    @staticmethod
+    def _storage_metadata(path: Path, *, optional: bool) -> os.stat_result | None:
+        """Read one storage identity while tolerating only absent sidecars."""
+
+        try:
+            return path.lstat()
+        except FileNotFoundError:
+            if optional:
+                return None
+            raise
+
+    def _repair_storage_target_once(
+        self,
+        path: Path,
+        *,
+        directory: bool,
+        optional_sidecar: bool,
+    ) -> bool:
+        """Secure one target, returning whether its identity changed mid-repair."""
+
+        current = self._storage_metadata(path, optional=optional_sidecar)
+        if current is None:
+            return False
+        if _metadata_is_link_or_reparse_point(current):
+            raise PermissionError(
+                "refusing Agency Runtime database or sidecar symlink or reparse point"
+            )
+        fingerprint = (int(current.st_dev), int(current.st_ino))
+        expected_mode = stat.S_IRWXU if directory else stat.S_IRUSR | stat.S_IWUSR
+        if not _IS_WINDOWS and stat.S_IMODE(current.st_mode) == expected_mode:
+            return False
+        if _IS_WINDOWS and self._permission_fingerprints.get(path) == fingerprint:
+            return False
+        try:
+            _restrict_path_permissions(path, directory=directory)
+        except FileNotFoundError:
+            # SQLite removes WAL sidecars when the final connection closes.
+            if optional_sidecar:
+                return True
+            raise
+        repaired = self._storage_metadata(path, optional=optional_sidecar)
+        if repaired is None:
+            return True
+        if _metadata_is_link_or_reparse_point(repaired):
+            raise PermissionError(
+                "refusing Agency Runtime database or sidecar symlink or reparse point"
+            )
+        repaired_fingerprint = (int(repaired.st_dev), int(repaired.st_ino))
+        if repaired_fingerprint != fingerprint:
+            return True
+        self._permission_fingerprints[path] = repaired_fingerprint
+        return False
+
+    def _repair_storage_target(
+        self,
+        path: Path,
+        *,
+        directory: bool,
+        optional_sidecar: bool,
+    ) -> None:
+        """Secure one stable storage identity or fail before caching it."""
+
+        changed = self._repair_storage_target_once(
+            path,
+            directory=directory,
+            optional_sidecar=optional_sidecar,
+        )
+        if not changed:
+            return
+        if not optional_sidecar:
+            raise PermissionError(
+                "refusing Agency Runtime storage that changed during permission repair"
+            )
+        changed_again = self._repair_storage_target_once(
+            path,
+            directory=directory,
+            optional_sidecar=True,
+        )
+        if changed_again:
+            raise PermissionError(
+                "refusing Agency Runtime storage that changed during permission repair"
+            )
+
     def _repair_storage_permissions(self) -> None:
         """Keep owned storage files and, when applicable, its directory private."""
+
         targets = [(path, False) for path in _sqlite_storage_paths(self.db_path)]
         if self._harden_storage_parent:
             targets.insert(0, (self.db_path.parent, True))
         for path, directory in targets:
-            try:
-                current = path.lstat()
-            except OSError:
-                continue
-            if _metadata_is_link_or_reparse_point(current):
-                raise PermissionError(
-                    "refusing Agency Runtime database or sidecar symlink or reparse point"
-                )
-            fingerprint = (int(current.st_dev), int(current.st_ino))
-            expected_mode = stat.S_IRWXU if directory else stat.S_IRUSR | stat.S_IWUSR
-            if not _IS_WINDOWS and stat.S_IMODE(current.st_mode) == expected_mode:
-                continue
-            if _IS_WINDOWS and self._permission_fingerprints.get(path) == fingerprint:
-                continue
-            try:
-                _restrict_path_permissions(path, directory=directory)
-            except FileNotFoundError:
-                # SQLite removes WAL sidecars when the final connection closes.
-                continue
-            self._permission_fingerprints[path] = fingerprint
+            self._repair_storage_target(
+                path,
+                directory=directory,
+                optional_sidecar=not directory and path != self.db_path,
+            )
 
     def _connect(self) -> sqlite3.Connection:
         self._assert_storage_paths_safe()

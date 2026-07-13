@@ -108,6 +108,53 @@ def test_failed_acl_inspection_falls_back_to_safe_token_gate() -> None:
     assert calls == ["token", "mutation"]
 
 
+def test_failed_acl_mutation_accepts_a_concurrently_private_postcondition() -> None:
+    inspections = 0
+
+    def inspect(_path: Path, *, directory: bool) -> bool:
+        nonlocal inspections
+        del directory
+        inspections += 1
+        return inspections == 2
+
+    assert restrict_windows_acl(
+        Path("private"),
+        is_windows=True,
+        acl_privacy_probe=inspect,
+        token_restriction_probe=lambda: False,
+        acl_applier=lambda *_args, **_kwargs: False,
+    )
+    assert inspections == 2
+
+
+def test_failed_acl_mutation_remains_failed_when_postcondition_is_unknown() -> None:
+    inspections = 0
+
+    def inspect(_path: Path, *, directory: bool) -> bool:
+        nonlocal inspections
+        del directory
+        inspections += 1
+        if inspections == 2:
+            raise OSError("sidecar disappeared")
+        return False
+
+    assert not restrict_windows_acl(
+        Path("private"),
+        is_windows=True,
+        acl_privacy_probe=inspect,
+        token_restriction_probe=lambda: False,
+        acl_applier=lambda *_args, **_kwargs: False,
+    )
+
+    assert not restrict_windows_acl(
+        Path("still-public"),
+        is_windows=True,
+        acl_privacy_probe=lambda *_args, **_kwargs: False,
+        token_restriction_probe=lambda: False,
+        acl_applier=lambda *_args, **_kwargs: False,
+    )
+
+
 def test_owner_only_acl_recognizes_protected_and_private_inherited_shapes(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

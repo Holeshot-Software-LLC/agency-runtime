@@ -291,6 +291,11 @@ def _start_process_io_threads(
     windows_job: _WindowsJob | None,
 ) -> tuple[threading.Thread, threading.Thread, threading.Thread | None]:
     """Start bounded pipe workers, cleaning the tree after any partial failure."""
+    if input_text is None:
+        # Close a real pipe instead of delegating EOF semantics to the platform
+        # null device. Writing an empty payload is synchronous and cannot block,
+        # while the existing helper also tolerates an early child exit.
+        _write_process_stdin(process, "")
     threads = _create_process_io_threads(
         process,
         stdout=stdout,

@@ -128,6 +128,45 @@ def test_store_permission_security_rejects_links_kinds_and_failed_repairs(
     )
 
 
+def test_windows_permission_repair_reports_a_vanished_target(
+    tmp_path: Path,
+) -> None:
+    sidecar = tmp_path / "agency.db-shm"
+    sidecar.write_bytes(b"transient")
+
+    def disappear(path: Path, *, directory: bool) -> bool:
+        del directory
+        path.unlink()
+        return False
+
+    with pytest.raises(FileNotFoundError):
+        security.restrict_path_permissions(
+            sidecar,
+            directory=False,
+            is_windows=True,
+            link_checker=lambda _path: False,
+            windows_acl=disappear,
+        )
+    assert not sidecar.exists()
+
+    regular = SimpleNamespace(st_mode=stat.S_IFREG | 0o600)
+    link_checks = 0
+
+    def replaced_by_link(_path: Path) -> bool:
+        nonlocal link_checks
+        link_checks += 1
+        return link_checks == 2
+
+    with pytest.raises(PermissionError, match="symlink"):
+        security.restrict_path_permissions(
+            _PermissionPath(regular),  # type: ignore[arg-type]
+            directory=False,
+            is_windows=True,
+            link_checker=replaced_by_link,
+            windows_acl=lambda *_args, **_kwargs: False,
+        )
+
+
 def test_default_store_path_falls_back_when_config_is_unavailable(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -358,10 +397,11 @@ def test_store_permission_repair_rejects_link_and_tolerates_sidecar_race(
 ) -> None:
     store = Store.__new__(Store)
     store.db_path = tmp_path / "agency.db"
-    store.db_path.write_bytes(b"database")
+    sidecar = Path(f"{store.db_path}-shm")
+    sidecar.write_bytes(b"sidecar")
     store._harden_storage_parent = False
     store._permission_fingerprints = {}
-    monkeypatch.setattr(sqlite_store, "_sqlite_storage_paths", lambda _path: (store.db_path,))
+    monkeypatch.setattr(sqlite_store, "_sqlite_storage_paths", lambda _path: (sidecar,))
     monkeypatch.setattr(
         sqlite_store,
         "_metadata_is_link_or_reparse_point",
@@ -375,12 +415,170 @@ def test_store_permission_repair_rejects_link_and_tolerates_sidecar_race(
         "_metadata_is_link_or_reparse_point",
         lambda _metadata: False,
     )
+
+    def vanish_sidecar(path: Path, **_kwargs: Any) -> None:
+        path.unlink()
+        raise FileNotFoundError
+
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        vanish_sidecar,
+    )
+    store._repair_storage_permissions()
+
+    sidecar.write_bytes(b"sidecar")
+    monkeypatch.setattr(sqlite_store, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda path, **_kwargs: path.unlink(),
+    )
+    store._repair_storage_permissions()
+    assert store._permission_fingerprints == {}
+
+    sidecar.write_bytes(b"sidecar")
+    link_checks = 0
+
+    def replaced_by_link(_metadata: Any) -> bool:
+        nonlocal link_checks
+        link_checks += 1
+        return link_checks == 2
+
+    monkeypatch.setattr(
+        sqlite_store,
+        "_metadata_is_link_or_reparse_point",
+        replaced_by_link,
+    )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda *_args, **_kwargs: None,
+    )
+    with pytest.raises(PermissionError, match="symlink"):
+        store._repair_storage_permissions()
+
+    sidecar.unlink()
+    monkeypatch.setattr(
+        sqlite_store,
+        "_metadata_is_link_or_reparse_point",
+        lambda _metadata: False,
+    )
+    store._repair_storage_permissions()
+
+    monkeypatch.setattr(
+        sqlite_store,
+        "_sqlite_storage_paths",
+        lambda _path: (store.db_path,),
+    )
+    with pytest.raises(FileNotFoundError):
+        store._repair_storage_permissions()
+
+    store.db_path.write_bytes(b"database")
     monkeypatch.setattr(
         sqlite_store,
         "_restrict_path_permissions",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(FileNotFoundError()),
     )
+    with pytest.raises(FileNotFoundError):
+        store._repair_storage_permissions()
+
+    store.db_path.write_bytes(b"database")
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda path, **_kwargs: path.unlink(),
+    )
+    with pytest.raises(FileNotFoundError):
+        store._repair_storage_permissions()
+
+    class PermissionDeniedAfterRepair:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def lstat(self) -> Any:
+            self.calls += 1
+            if self.calls == 2:
+                raise PermissionError("ACL metadata denied")
+            return SimpleNamespace(st_mode=stat.S_IFREG | 0o600, st_dev=1, st_ino=2)
+
+    denied = PermissionDeniedAfterRepair()
+    monkeypatch.setattr(
+        sqlite_store,
+        "_sqlite_storage_paths",
+        lambda _path: (denied,),
+    )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda *_args, **_kwargs: None,
+    )
+    with pytest.raises(PermissionError, match="metadata denied"):
+        store._repair_storage_permissions()
+
+    class ReplacedDuringRepair:
+        def __init__(self, fingerprints: list[tuple[int, int]]) -> None:
+            self.fingerprints = iter(fingerprints)
+            self.current = fingerprints[0]
+
+        def lstat(self) -> Any:
+            self.current = next(self.fingerprints, self.current)
+            return SimpleNamespace(
+                st_mode=stat.S_IFREG | 0o600,
+                st_dev=self.current[0],
+                st_ino=self.current[1],
+            )
+
+    replaced_once = ReplacedDuringRepair([(1, 2), (3, 4), (3, 4), (3, 4)])
+    repairs: list[Any] = []
+    monkeypatch.setattr(
+        sqlite_store,
+        "_sqlite_storage_paths",
+        lambda _path: (replaced_once,),
+    )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_restrict_path_permissions",
+        lambda path, **_kwargs: repairs.append(path),
+    )
     store._repair_storage_permissions()
+    assert repairs == [replaced_once, replaced_once]
+    assert store._permission_fingerprints[replaced_once] == (3, 4)
+
+    reappearing = ReplacedDuringRepair([(1, 2), (3, 4), (3, 4)])
+    repair_attempts = 0
+
+    def disappear_then_reappear(*_args: Any, **_kwargs: Any) -> None:
+        nonlocal repair_attempts
+        repair_attempts += 1
+        if repair_attempts == 1:
+            raise FileNotFoundError
+
+    monkeypatch.setattr(sqlite_store, "_restrict_path_permissions", disappear_then_reappear)
+    store._repair_storage_target(
+        reappearing,  # type: ignore[arg-type]
+        directory=False,
+        optional_sidecar=True,
+    )
+    assert repair_attempts == 2
+    assert store._permission_fingerprints[reappearing] == (3, 4)
+
+    replaced_twice = ReplacedDuringRepair([(1, 2), (3, 4), (3, 4), (5, 6)])
+    monkeypatch.setattr(
+        sqlite_store,
+        "_sqlite_storage_paths",
+        lambda _path: (replaced_twice,),
+    )
+    with pytest.raises(PermissionError, match="changed during permission repair"):
+        store._repair_storage_permissions()
+
+    replaced_database = ReplacedDuringRepair([(1, 2), (3, 4)])
+    with pytest.raises(PermissionError, match="changed during permission repair"):
+        store._repair_storage_target(
+            replaced_database,  # type: ignore[arg-type]
+            directory=False,
+            optional_sidecar=False,
+        )
 
 
 def test_store_permission_repair_skips_already_private_posix_file(

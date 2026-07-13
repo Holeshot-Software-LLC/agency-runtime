@@ -315,6 +315,29 @@ def test_source_spec_rejects_ambiguous_or_credentialed_inputs(source, message):
         download_from_source(source)
 
 
+@pytest.mark.parametrize(
+    "source",
+    [
+        "file:////fileserver/share/agents.json",
+        "file:/%5cserver/share/agents.json",
+        "file:%5c/server/share/agents.json",
+        "file:/\\\\server/share/agents.json",
+    ],
+)
+def test_remote_file_url_path_is_rejected_before_platform_conversion(monkeypatch, source):
+    def unexpected_conversion(_path):
+        raise AssertionError("remote file paths must be rejected before conversion")
+
+    monkeypatch.setattr(
+        roster_ingress.urllib.request,
+        "url2pathname",
+        unexpected_conversion,
+    )
+
+    with pytest.raises(RosterSyncError, match="remote file URL paths"):
+        download_from_source(source)
+
+
 def test_http_network_error_message_redacts_query_and_underlying_detail(monkeypatch):
     def fail(*_args, **_kwargs):
         raise OSError("transport leaked do-not-show")
