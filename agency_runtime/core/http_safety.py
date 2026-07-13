@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import ipaddress
 import math
+import urllib.error
 import urllib.request
+from contextlib import suppress
 from numbers import Real
 from typing import Any
 from urllib.parse import urlsplit
@@ -64,7 +66,15 @@ def open_no_redirect(
         handlers.append(urllib.request.ProxyHandler({}))
     handlers.append(_NoRedirectHandler())
     opener = urllib.request.build_opener(*handlers)
-    return opener.open(request, timeout=timeout)
+    try:
+        return opener.open(request, timeout=timeout)
+    except urllib.error.HTTPError as exc:
+        # HTTPError is both an exception and the response object. Callers treat
+        # every HTTP error as a failed probe, so release its socket-backed body
+        # before propagating the status-bearing exception.
+        with suppress(OSError, ValueError):
+            exc.close()
+        raise
 
 
 __all__ = ["open_no_redirect"]

@@ -31,6 +31,7 @@ _MAX_LOCK_TIMEOUT_SECONDS = 300.0
 _MAX_MANIFEST_BYTES = 64 * 1024
 _MAX_SERVICE_FILE_BYTES = 256 * 1024
 _WINDOWS_REPARSE_POINT = 0x400
+_IS_WINDOWS = os.name == "nt"
 
 
 def _runtime_fingerprint(ctx: _Context) -> str:
@@ -221,14 +222,14 @@ def _prepare_private_parent(path: Path, *, trusted_root: Path | None = None) -> 
     parent = os.lstat(path.parent)
     if _link_like(parent) or not stat.S_ISDIR(parent.st_mode):
         raise OSError("dashboard service state directory must be a real directory")
-    if os.name != "nt":
+    if not _IS_WINDOWS:
         path.parent.chmod(0o700)
 
 
 def _sync_parent(path: Path) -> None:
     """Persist directory-entry changes on Linux after replace or unlink."""
 
-    if os.name == "nt":
+    if _IS_WINDOWS:
         return
     flags = os.O_RDONLY | int(getattr(os, "O_DIRECTORY", 0))
     descriptor = os.open(path.parent, flags)
@@ -319,7 +320,7 @@ def _service_lock(
         while True:
             try:
                 handle.seek(0)
-                if os.name == "nt":
+                if _IS_WINDOWS:
                     import msvcrt
 
                     msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
@@ -337,7 +338,7 @@ def _service_lock(
     finally:
         if locked:
             handle.seek(0)
-            if os.name == "nt":
+            if _IS_WINDOWS:
                 import msvcrt
 
                 msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)

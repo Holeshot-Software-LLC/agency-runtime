@@ -112,8 +112,9 @@ zizmor --pedantic --strict-collection --offline .
 - [ ] Security reporting instructions and the current supported-version statement
       are accurate.
 - [ ] The threat model covers current assets, trust boundaries, controls, and
-      residual risks; CodeQL is green upstream, and the dependency-review job
-      passes through native diff review or the exact installed-runtime audit.
+      residual risks; CodeQL completes with native upload or a retained SARIF
+      artifact, and dependency review passes through native diff review or the
+      exact installed-runtime audit.
 - [ ] GitHub Actions use immutable SHAs, least-privilege permissions, and no
       persisted checkout credentials without an explicit need.
 

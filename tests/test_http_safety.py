@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import threading
 import urllib.error
 import urllib.request
@@ -109,6 +110,34 @@ def test_loopback_requests_explicitly_bypass_environment_proxies(
     ]
     assert len(proxy_handlers) == 1
     assert proxy_handlers[0].proxies == {}
+
+
+def test_http_errors_are_closed_before_they_are_reraised(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    body = io.BytesIO(b"rejected")
+    error = urllib.error.HTTPError(
+        "https://provider.invalid/v1/models",
+        401,
+        "Unauthorized",
+        None,
+        body,
+    )
+
+    class RejectingOpener:
+        def open(self, *_args: object, **_kwargs: object) -> object:
+            raise error
+
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *_handlers: RejectingOpener())
+
+    with pytest.raises(urllib.error.HTTPError) as caught:
+        open_no_redirect(
+            urllib.request.Request("https://provider.invalid/v1/models"),
+            timeout=2,
+        )
+
+    assert caught.value is error
+    assert body.closed is True
 
 
 @pytest.mark.parametrize("timeout", [0, -1, float("nan"), float("inf"), True])

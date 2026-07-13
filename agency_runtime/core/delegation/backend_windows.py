@@ -6,6 +6,8 @@ import os
 import subprocess
 from typing import Any
 
+_IS_WINDOWS = os.name == "nt"
+
 
 class WindowsJob:
     """Small kill-on-close Job Object wrapper; constructed only on Windows."""
@@ -43,7 +45,7 @@ class WindowsJob:
 
 def create_windows_job(process: subprocess.Popen[str]) -> WindowsJob | None:
     """Assign a child to a kill-on-close Job Object when native APIs permit."""
-    if os.name != "nt":
+    if not _IS_WINDOWS:
         return None
     handle: Any = None
     kernel32: Any = None
@@ -152,7 +154,7 @@ def create_windows_job(process: subprocess.Popen[str]) -> WindowsJob | None:
 
 def resume_windows_process(process_id: int) -> bool:
     """Resume every initial thread in a process launched with CREATE_SUSPENDED."""
-    if os.name != "nt":
+    if not _IS_WINDOWS:
         return True
     try:
         import ctypes

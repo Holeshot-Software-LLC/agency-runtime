@@ -127,9 +127,9 @@ def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
 def test_windows_sid_non_windows_and_library_failure(monkeypatch):
     import ctypes
 
-    monkeypatch.setattr(subject.os, "name", "posix")
+    monkeypatch.setattr(subject, "_IS_WINDOWS", False)
     assert subject._windows_current_user_sid() is None
-    monkeypatch.setattr(subject.os, "name", "nt")
+    monkeypatch.setattr(subject, "_IS_WINDOWS", True)
 
     monkeypatch.setattr(
         ctypes,

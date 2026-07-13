@@ -18,10 +18,11 @@ from agency_runtime.core.delegation.backend_windows import WindowsJob as _Window
 
 _DRAIN_GRACE_SECONDS = 0.5
 _ProcessRunner = Callable[..., subprocess.CompletedProcess[str]]
+_IS_WINDOWS = os.name == "nt"
 
 
 def _posix_process_group_active(process: subprocess.Popen[str]) -> bool:
-    if os.name == "nt":
+    if _IS_WINDOWS:
         return False
     try:
         os.killpg(process.pid, 0)

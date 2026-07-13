@@ -17,7 +17,7 @@ def test_posix_group_probe_reports_live_and_missing_groups(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     process = SimpleNamespace(pid=42)
-    monkeypatch.setattr(backend_process.os, "name", "posix")
+    monkeypatch.setattr(backend_process, "_IS_WINDOWS", False)
     monkeypatch.setattr(backend_process.os, "killpg", lambda _pid, _signal: None, raising=False)
     assert backend_process._posix_process_group_active(process) is True
 

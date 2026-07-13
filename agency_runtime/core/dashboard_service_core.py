@@ -33,6 +33,7 @@ WINDOWS_TASK_XML_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/t
 
 _MAX_COMMAND_TIMEOUT_SECONDS = 300.0
 _MAX_MANAGER_OUTPUT_BYTES = 1024 * 1024
+_IS_WINDOWS = os.name == "nt"
 
 CommandRunner = Callable[..., Any]
 ReadinessProbe = Callable[[], bool]
@@ -139,7 +140,7 @@ def _config_path(
 def _windows_current_user_sid() -> str | None:
     """Return the current process token SID without invoking a shell."""
 
-    if os.name != "nt":
+    if not _IS_WINDOWS:
         return None
     try:
         import ctypes

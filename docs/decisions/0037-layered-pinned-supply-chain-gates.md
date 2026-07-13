@@ -47,7 +47,10 @@ Use a layered release gate with these properties:
    and JavaScript, and pull-request dependency review. Probe GitHub's
    dependency-diff capability first: use native review when available and the
    strict exact installed-runtime vulnerability audit when it is not, without
-   silently enabling a potentially billable repository security product.
+   silently enabling a potentially billable repository security product. Run
+   CodeQL queries regardless of hosted code-scanning availability; upload
+   natively when supported and otherwise retain the SARIF as a short-lived
+   workflow artifact.
 4. Verify wheel and source distributions structurally, compare shared payload
    hashes, install the built wheel in clean Windows and Linux environments, and
    keep publication or provenance claims separate until an authorized release
@@ -64,6 +67,8 @@ Use a layered release gate with these properties:
 - Private repositories without licensed dependency review retain an enforced
   vulnerability gate, while public or licensed repositories automatically use
   GitHub's base-versus-head dependency review.
+- CodeQL analysis remains executable in private forks without licensed hosted
+  upload, and its local SARIF output remains available for review.
 - Tool upgrades become visible repository changes that require review and may
   briefly lag a release while compatibility is tested.
 - Local contributors install more packages only when they request development,

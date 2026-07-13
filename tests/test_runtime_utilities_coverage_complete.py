@@ -8,6 +8,7 @@ from urllib.request import Request
 
 import pytest
 
+from agency_runtime.core import process_argv as process_argv_module
 from agency_runtime.core.config import ProviderEntry
 from agency_runtime.core.display import has_terminal_control, safe_display_token
 from agency_runtime.core.host_control import (
@@ -52,6 +53,36 @@ def test_absolute_executable_path_preserves_virtualenv_launcher(tmp_path: Path) 
 
     assert absolute_executable_path(virtualenv_python) == str(virtualenv_python.absolute())
     assert absolute_executable_path(virtualenv_python) != str(interpreter.resolve())
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        r"C:\Program Files\O'Brien & Sons\python.exe",
+        r"\\build-host\agency-runtime\venv\Scripts\python.exe",
+    ],
+)
+def test_absolute_executable_path_preserves_foreign_windows_absolute_paths(
+    value: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unexpected_native_abspath(_value: str) -> str:
+        raise AssertionError("foreign Windows path reached native abspath")
+
+    monkeypatch.setattr(process_argv_module.os.path, "abspath", unexpected_native_abspath)
+
+    assert absolute_executable_path(value) == value
+
+
+def test_absolute_executable_path_absolutizes_relative_native_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert absolute_executable_path(Path("venv") / "python") == str(
+        (tmp_path / "venv" / "python").absolute()
+    )
 
 
 @pytest.mark.parametrize("value", ["", "bad\x00path"])

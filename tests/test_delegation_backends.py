@@ -35,6 +35,8 @@ from agency_runtime.core.delegation.backends import (
 )
 from agency_runtime.core.store.sqlite import Store
 
+_WINDOWS_POWERSHELL_INTEGRATION_TIMEOUT_SECONDS = 20
+
 
 def _fake_cli(tmp_path: Path) -> Path:
     script = tmp_path / "fake_agent.py"
@@ -520,7 +522,11 @@ def test_windows_powershell_companion_uses_backend_safe_task_transport(
     task = f"literal&echo injected>{marker}"
     backend = backend_type(
         command=(str(shim),),
-        timeout=5,
+        # This integration test launches Windows PowerShell and establishes a
+        # native Job Object on every parametrized case. Hosted runners can take
+        # more than five seconds to scan and start a newly written script. Keep
+        # a bounded CI allowance here without weakening backend timeout behavior.
+        timeout=_WINDOWS_POWERSHELL_INTEGRATION_TIMEOUT_SECONDS,
         extra_env={
             "AGENCY_ARG_CAPTURE": str(capture),
             "AGENCY_FAKE_KIND": kind,

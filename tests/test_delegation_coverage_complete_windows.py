@@ -62,7 +62,7 @@ def test_windows_job_handles_query_failure_empty_termination_and_close() -> None
 
 
 def test_create_windows_job_returns_none_off_windows(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(backend_windows.os, "name", "posix")
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", False)
     assert backend_windows.create_windows_job(SimpleNamespace()) is None
 
 
@@ -81,7 +81,7 @@ def test_create_windows_job_closes_unassigned_native_handle(
 ) -> None:
     import ctypes
 
-    monkeypatch.setattr(backend_windows.os, "name", "nt")
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", True)
     monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
 
     result = backend_windows.create_windows_job(SimpleNamespace(_handle=456))
@@ -99,7 +99,7 @@ def test_create_windows_job_closes_handle_after_native_exception(
     kernel.SetInformationJobObject = _Function(
         lambda *_args: (_ for _ in ()).throw(OSError("configuration failed"))
     )
-    monkeypatch.setattr(backend_windows.os, "name", "nt")
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", True)
     monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
 
     assert backend_windows.create_windows_job(SimpleNamespace(_handle=456)) is None
@@ -134,7 +134,7 @@ class _ThreadKernel:
 def test_resume_windows_process_returns_true_off_windows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(backend_windows.os, "name", "posix")
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", False)
     assert backend_windows.resume_windows_process(10) is True
 
 
@@ -153,7 +153,7 @@ def test_resume_windows_process_fails_closed_for_native_thread_errors(
 ) -> None:
     import ctypes
 
-    monkeypatch.setattr(backend_windows.os, "name", "nt")
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", True)
     monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
 
     assert backend_windows.resume_windows_process(10) is False
@@ -165,7 +165,7 @@ def test_resume_windows_process_normalizes_native_exception(
 ) -> None:
     import ctypes
 
-    monkeypatch.setattr(backend_windows.os, "name", "nt")
+    monkeypatch.setattr(backend_windows, "_IS_WINDOWS", True)
     monkeypatch.setattr(
         ctypes,
         "WinDLL",

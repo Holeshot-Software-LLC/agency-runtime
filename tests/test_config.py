@@ -210,17 +210,23 @@ def test_config_to_yaml_redacts_adapter_api_key():
     assert "***REDACTED***" in yaml_str
 
 
-def test_store_expanduser_db_path():
-    """Store constructor expands ~ in db_path."""
-    import tempfile
-
+def test_store_expanduser_db_path_preserves_literal_tilde_in_home(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only the leading user token is expanded; tildes in the home path are valid."""
     from agency_runtime.core.store.sqlite import Store
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        db_path = os.path.join(tmpdir, "test.db")
-        store = Store(db_path)
-        assert "~" not in str(store.db_path)
-        assert store.db_path.exists()
+    home = tmp_path / "RUNNER~1"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    expected = home / "runtime" / "test.db"
+
+    store = Store(Path("~") / "runtime" / "test.db")
+
+    assert store.db_path == expected
+    assert store.db_path.exists()
 
 
 def test_wheel_includes_defaults_yaml():

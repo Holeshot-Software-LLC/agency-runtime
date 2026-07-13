@@ -397,7 +397,7 @@ def test_store_permission_repair_skips_already_private_posix_file(
     store.db_path = Path("agency.db")
     store._harden_storage_parent = False
     store._permission_fingerprints = {}
-    monkeypatch.setattr(sqlite_store.os, "name", "posix")
+    monkeypatch.setattr(sqlite_store, "_IS_WINDOWS", False)
     monkeypatch.setattr(sqlite_store, "_sqlite_storage_paths", lambda _path: (path,))
     monkeypatch.setattr(
         sqlite_store,

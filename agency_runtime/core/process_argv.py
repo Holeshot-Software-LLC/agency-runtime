@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 from collections.abc import Callable, Sequence
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from agency_runtime.core.windows_system import trusted_windows_system_executable
 
@@ -18,11 +18,16 @@ def absolute_executable_path(value: str | Path) -> str:
     Virtual environments commonly expose ``bin/python`` as a symlink. Resolving
     that symlink would persist the base interpreter in generated services and
     host plugins, where the installed Agency Runtime package may be unavailable.
+    A drive-qualified or UNC Windows path is already absolute even when payloads
+    are generated on POSIX, whose native path helpers would otherwise prepend
+    the current working directory and corrupt the generated Windows command.
     """
 
     text = str(value)
     if not text or any(ord(character) < 32 or ord(character) == 127 for character in text):
         raise ValueError("executable path contains an invalid character")
+    if PureWindowsPath(text).is_absolute():
+        return text
     return os.path.abspath(os.path.expanduser(text))
 
 

@@ -98,7 +98,7 @@ def test_windows_sid_api_failure_and_success_paths(monkeypatch, scenario, expect
         lambda name, **_kw: advapi if name.startswith("Advapi") else kernel,
         raising=False,
     )
-    monkeypatch.setattr(core.os, "name", "nt")
+    monkeypatch.setattr(core, "_IS_WINDOWS", True)
     assert core._windows_current_user_sid() == expected
     if scenario != "open-fail":
         assert closed
@@ -144,7 +144,7 @@ def test_prepare_parent_rejects_special_and_posix_chmods(tmp_path, monkeypatch):
     with pytest.raises(OSError, match="real directory"):
         manifest._prepare_private_parent(path)
     monkeypatch.setattr(manifest.os, "lstat", real_lstat)
-    monkeypatch.setattr(manifest.os, "name", "posix")
+    monkeypatch.setattr(manifest, "_IS_WINDOWS", False)
     modes = []
     monkeypatch.setattr(
         type(path.parent),
@@ -158,10 +158,10 @@ def test_prepare_parent_rejects_special_and_posix_chmods(tmp_path, monkeypatch):
 def test_sync_parent_posix_and_windows_paths(tmp_path, monkeypatch):
     path = tmp_path / "parent" / "value"
     path.parent.mkdir()
-    monkeypatch.setattr(manifest.os, "name", "nt")
+    monkeypatch.setattr(manifest, "_IS_WINDOWS", True)
     manifest._sync_parent(path)
     calls = []
-    monkeypatch.setattr(manifest.os, "name", "posix")
+    monkeypatch.setattr(manifest, "_IS_WINDOWS", False)
     monkeypatch.setattr(manifest.os, "open", lambda *_a, **_kw: 7)
     monkeypatch.setattr(manifest.os, "fsync", lambda fd: calls.append(("fsync", fd)))
     monkeypatch.setattr(manifest.os, "close", lambda fd: calls.append(("close", fd)))
@@ -201,7 +201,7 @@ def test_service_lock_posix_success_and_busy(tmp_path, monkeypatch):
         flock=lambda _fd, operation: calls.append(operation),
     )
     monkeypatch.setitem(sys.modules, "fcntl", fake)
-    monkeypatch.setattr(manifest.os, "name", "posix")
+    monkeypatch.setattr(manifest, "_IS_WINDOWS", False)
     monkeypatch.setattr(manifest.os, "O_NOFOLLOW", 0, raising=False)
     with manifest._service_lock(ctx, timeout=1):
         pass

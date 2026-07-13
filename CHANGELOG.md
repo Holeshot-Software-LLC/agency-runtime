@@ -66,6 +66,9 @@ changes rather than duplicating every commit.
 - Pull requests use GitHub's native dependency-diff review when the repository
   exposes that capability and otherwise enforce the exact installed-runtime
   vulnerability audit, without requiring a billable security product.
+- CodeQL always performs its Python and JavaScript analysis; repositories
+  without hosted code-scanning upload retain the generated SARIF as short-lived
+  workflow artifacts instead of failing after a successful analysis.
 - Routing cache and session state now include roster, configuration, and policy
   fingerprints; zero-signal routing abstains.
 - Provider fallthrough rejects semantically invalid results and reports
@@ -145,6 +148,12 @@ changes rather than duplicating every commit.
   bypass remains isolated and never promotes durable real-profile trust.
 - Windows dashboard task inspection rejects DTD and entity declarations before
   parsing bounded XML.
+- Windows drive-qualified and UNC executable paths remain absolute when payloads
+  are generated on Linux, and platform-branch tests no longer mutate the shared
+  process-wide `os.name` value.
+- Rejected HTTP responses close their socket-backed bodies before the status
+  exception is propagated, preventing repeated authentication failures from
+  leaking connection resources.
 
 ### Security
 

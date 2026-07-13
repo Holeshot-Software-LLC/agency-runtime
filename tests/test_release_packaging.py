@@ -171,6 +171,29 @@ def test_dependency_review_has_an_enforced_private_repository_fallback() -> None
     assert fallback["run"] == "python scripts/audit_runtime_dependencies.py"
 
 
+def test_codeql_retains_sarif_when_hosted_upload_is_unavailable() -> None:
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "codeql.yml").read_text("utf-8"))
+    steps = workflow["jobs"]["analyze"]["steps"]
+
+    probe = next(step for step in steps if step["name"] == "Detect code scanning upload capability")
+    assert "code-scanning/alerts?per_page=1" in probe["run"]
+    assert "403|404" in probe["run"]
+    assert "exit 1" in probe["run"]
+
+    analyze = next(step for step in steps if step["name"] == "Analyze source")
+    assert analyze["with"]["upload"].endswith("&& 'always' || 'never' }}")
+    assert analyze["with"]["output"] == "${{ runner.temp }}/codeql-results"
+
+    retained = next(
+        step
+        for step in steps
+        if step["name"] == "Retain SARIF when code scanning upload is unavailable"
+    )
+    assert retained["if"].endswith("available == 'false'")
+    assert retained["with"]["if-no-files-found"] == "error"
+    assert retained["with"]["retention-days"] == 7
+
+
 def test_release_hygiene_recognizes_common_secret_families() -> None:
     examples = {
         "Anthropic API key": b"sk-ant-" + (b"a" * 24),

@@ -238,9 +238,9 @@ class Store(EvidenceStoreMixin, MaintenanceStoreMixin, RosterStoreMixin):
                 )
             fingerprint = (int(current.st_dev), int(current.st_ino))
             expected_mode = stat.S_IRWXU if directory else stat.S_IRUSR | stat.S_IWUSR
-            if os.name != "nt" and stat.S_IMODE(current.st_mode) == expected_mode:
+            if not _IS_WINDOWS and stat.S_IMODE(current.st_mode) == expected_mode:
                 continue
-            if os.name == "nt" and self._permission_fingerprints.get(path) == fingerprint:
+            if _IS_WINDOWS and self._permission_fingerprints.get(path) == fingerprint:
                 continue
             try:
                 _restrict_path_permissions(path, directory=directory)
