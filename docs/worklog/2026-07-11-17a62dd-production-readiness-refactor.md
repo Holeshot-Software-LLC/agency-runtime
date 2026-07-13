@@ -3,7 +3,7 @@ title: "Production readiness refactor and operations dashboard"
 status: active
 category: worklog
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-13
 tags: [production-readiness, dashboard, cross-platform]
 related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
@@ -16,7 +16,7 @@ type: worklog
 commit: "17a62dd5924a4a6fc5931ee355984f233b6e664d"
 short: "17a62dd"
 date: 2026-07-11
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/18
 related_issues:
   - docs/roadmap/issue-AR-03-supported-host-integrations.md
   - docs/roadmap/issue-AR-04-runtime-controls.md

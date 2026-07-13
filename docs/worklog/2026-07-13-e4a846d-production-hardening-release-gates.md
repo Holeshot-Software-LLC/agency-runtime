@@ -17,7 +17,7 @@ type: worklog
 commit: e4a846d
 short: e4a846d
 date: 2026-07-13
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/18
 related_issues:
   - docs/roadmap/issue-AR-02-specialist-coverage-gaps.md
   - docs/roadmap/issue-AR-03-supported-host-integrations.md

@@ -3,7 +3,7 @@ title: "Live Signal Observatory"
 status: active
 category: worklog
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-13
 tags: [worklog, dashboard, visualization, live-updates, accessibility]
 related:
   - docs/roadmap/issue-AR-14-live-signal-observatory.md
@@ -17,7 +17,7 @@ type: worklog
 commit: "63ea805be52d7bb014b8416c6a7fb600305759db"
 short: "63ea805"
 date: 2026-07-11
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/18
 related_issues:
   - docs/roadmap/issue-AR-14-live-signal-observatory.md
 ---

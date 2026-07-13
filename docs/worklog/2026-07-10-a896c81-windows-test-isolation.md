@@ -3,7 +3,7 @@ title: "Worklog: isolate generated-plugin tests from the user profile"
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-13
 tags: [testing, windows, portability, safety]
 related:
   - docs/decisions/0026-explicit-test-home-boundaries.md
@@ -13,7 +13,7 @@ type: worklog
 commit: a896c817739757062071bb172156b60b9afb686a
 short: a896c81
 date: 2026-07-10
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/18
 related_issues:
   - docs/roadmap/issue-AR-09-windows-test-isolation.md
 ---

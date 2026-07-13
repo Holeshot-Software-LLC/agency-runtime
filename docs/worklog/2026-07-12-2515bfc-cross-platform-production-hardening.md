@@ -3,7 +3,7 @@ title: "Cross-platform production hardening and host operations"
 status: active
 category: worklog
 created: 2026-07-12
-updated: 2026-07-12
+updated: 2026-07-13
 tags: [production-readiness, security, delegation, providers, cross-platform]
 related:
   - docs/decisions/0033-explicit-companion-route-availability.md
@@ -16,7 +16,7 @@ type: worklog
 commit: "2515bfc119e5313d55bef5b7d8f6ac9325342a91"
 short: "2515bfc"
 date: 2026-07-12
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/18
 related_issues:
   - docs/roadmap/issue-AR-02-specialist-coverage-gaps.md
   - docs/roadmap/issue-AR-03-supported-host-integrations.md

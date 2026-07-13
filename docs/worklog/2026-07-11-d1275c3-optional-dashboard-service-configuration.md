@@ -3,7 +3,7 @@ title: "Optional dashboard service and shared configuration"
 status: active
 category: worklog
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-13
 tags: [worklog, dashboard, operations, configuration, routing]
 related:
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
@@ -16,7 +16,7 @@ type: worklog
 commit: "d1275c37afd5c537768eed0f0eda3715c0ce707c"
 short: "d1275c3"
 date: 2026-07-11
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/18
 related_issues:
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
   - docs/roadmap/issue-AR-11-routing-evaluation-and-performance.md

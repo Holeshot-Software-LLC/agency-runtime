@@ -3,7 +3,7 @@ title: "Worklog: linked roadmap, worklog, and decision system"
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-13
 tags: [documentation, governance, traceability]
 related:
   - docs/decisions/0025-self-contained-linked-documentation.md
@@ -13,7 +13,7 @@ type: worklog
 commit: 4d17668695da7bdd0d32166c1bc63f56a0c91385
 short: 4d17668
 date: 2026-07-10
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/18
 related_issues:
   - docs/roadmap/issue-AR-08-self-contained-documentation.md
   - docs/roadmap/issue-AR-09-windows-test-isolation.md
