@@ -40,6 +40,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-20` | [Validate documentation ledgers against canonical full history](issue-AR-20-full-history-ledger-ci.md) | in_progress | p0 | testing | [#21](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/21) |
 | `AR-21` | [Make Windows child startup deterministic and fail closed](issue-AR-21-fully-resume-windows-children.md) | in_progress | p0 | host-integrations | [#22](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/22) |
 | `AR-22` | [Serialize concurrent Windows storage ACL repair](issue-AR-22-concurrent-storage-acl-repair.md) | in_progress | p0 | operations | [#23](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/23) |
+| `AR-23` | [Stabilize hosted Windows PowerShell integration gate](issue-AR-23-hosted-windows-powershell-gate.md) | in_progress | p0 | testing | [#24](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/24) |
 
 ## Traceability
 
@@ -71,6 +72,7 @@ not stable internal identifiers.
 | [AR-20](issue-AR-20-full-history-ledger-ci.md) | [`26fd65a`](../worklog/README.md) | [ADR-0025](../decisions/0025-self-contained-linked-documentation.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md) |
 | [AR-21](issue-AR-21-fully-resume-windows-children.md) | [`26fd65a`](../worklog/README.md) | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0043](../decisions/0043-prime-stdin-before-windows-child-resume.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md) |
 | [AR-22](issue-AR-22-concurrent-storage-acl-repair.md) | [`26fd65a`](../worklog/README.md) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md) |
+| [AR-23](issue-AR-23-hosted-windows-powershell-gate.md) | pending | None; test-only hosted-runner allowance |
 
 ## Dependency summary
 
@@ -139,6 +141,9 @@ not stable internal identifiers.
 - `AR-22` records concurrent Store instances racing the same SQLite sidecar
   ACL. Its process-wide repair critical section and identity-checked sidecar
   retry block `AR-17` until the hosted Windows matrix and merge pass.
+- `AR-23` records hosted Windows PowerShell cold-start variance exhausting the
+  integration-only 20-second allowance. Its bounded 60-second test margin
+  blocks `AR-17` until both hosted Windows versions pass and the fix is merged.
 
 ## Status conventions
 
