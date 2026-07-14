@@ -1,9 +1,9 @@
 ---
 title: "AR-22: Serialize concurrent Windows storage ACL repair"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [windows, sqlite, security, concurrency, reliability]
 related:
   - docs/decisions/0012-canonical-sqlite-audit-store.md
@@ -49,9 +49,9 @@ Continue to reject stable failures and any replacement link or reparse point.
 
 ## Dependencies
 
-This blocks AR-17's hosted Windows release matrix. It applies ADR-0012's shared
-SQLite evidence boundary and ADR-0039's fail-before-mutation owner-private
-storage rule without weakening either postcondition.
+This applies ADR-0012's shared SQLite evidence boundary and ADR-0039's
+fail-before-mutation owner-private storage rule without weakening either
+postcondition. Both hosted Windows endpoints passed with the serialized repair.
 
 ## Acceptance
 
@@ -61,5 +61,5 @@ storage rule without weakening either postcondition.
 - [x] Replacement links and reparse points remain fatal.
 - [x] Deterministic concurrency and identity-race regressions pass.
 - [x] The original native Windows concurrent migration stress passes repeatedly.
-- [ ] Hosted Windows Python 3.10 and 3.14 suites pass.
-- [ ] Exact coverage, review, merge, and tracker closure pass.
+- [x] Hosted Windows Python 3.10 and 3.14 suites pass.
+- [x] Exact coverage, review, merge, and tracker closure pass.

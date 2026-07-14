@@ -1,9 +1,9 @@
 ---
 title: "AR-17: Complete production hardening and portable release gates"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-12
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [security, portability, quality, performance, dashboard, hosts]
 related:
   - docs/THREAT_MODEL.md
@@ -73,12 +73,12 @@ the scanner now skips recovered suffixes and path-like URL query or fragment
 values while retaining assignment and colon-delimited local paths.
 
 Final local evidence includes a Windows warning-strict coverage run with
-`2303` passed, `5` skipped, and `2` performance tests deselected. All
-`17,284` statements and `5,408` branches had zero missing lines or partial
+`2327` passed, `5` skipped, and `2` performance tests deselected. All
+`17,343` statements and `5,420` branches had zero missing lines or partial
 branches (`100.00%`). Ubuntu 24.04 WSL/Python 3.12 passed `2215` tests with
 `16` expected skips from native ext4, plus both performance tests. The final
-performance selection passed both tests with `2308` deselected: routing p95
-`8.640 ms`, cache p95 `0.385 ms`, `155.73` calls/second, and overlap `8`.
+performance selection passed both tests with `2332` deselected: routing p95
+`8.774 ms`, cache p95 `0.394 ms`, `150.02` calls/second, and overlap `8`.
 All `25` routing gates and `12/12` delegation cases passed. The dashboard
 passed all `60/60` JavaScript tests at exact line, branch, and function
 coverage across seven modules, plus authenticated browser smoke.
@@ -110,6 +110,15 @@ Windows/Python 3.14 and WSL/Python 3.12 wheel installs exercised MCP and all ten
 tools, authenticated dashboard health, configuration defaults, assets, and all
 four generated host bundles.
 
+The complete pull-request gate then passed on the reviewed head: Ubuntu Python
+3.10 through 3.14, Windows Python 3.10 and 3.14, security and dependency
+analysis, deterministic build and artifact smoke, exact coverage and
+performance, dashboard JavaScript coverage, and the CodeQL capability workflow.
+The latter recorded unavailable native analysis and retained the required
+compensating source and dependency controls rather than claiming an analysis.
+Pull request #18 merged the reviewed changes into `main`, and the required
+merge and reconciliation ledger commits preserve the planning-to-commit chain.
+
 ## Approach
 
 1. Threat-model every filesystem, network, process, protocol, evidence, and
@@ -129,7 +138,7 @@ four generated host bundles.
 
 This is the final integrated gate over the host, operations, provider,
 dashboard, evaluation, and Linux-compatibility work. It supplies completion
-evidence to AR-07 but does not authorize publication or issue closure.
+evidence to AR-07 but does not authorize public package publication or tagging.
 
 ## Acceptance
 
@@ -152,14 +161,14 @@ evidence to AR-07 but does not authorize publication or issue closure.
       isolated-profile native canary is protocol-tested and smoke-tested with a
       valid evidence header; real-profile trust remains unverified and absent
       hosts remain contract-covered rather than live-verified.
-- [ ] Hosted CI passes the supported Python, security, CodeQL, and artifact
+- [x] Hosted CI passes the supported Python, security, CodeQL, and artifact
       matrix for the reviewed commit, and the reviewed changes are merged.
-- [ ] The working tree is clean after the implementation and its required
+- [x] The working tree is clean after the implementation and its required
       worklog ledger commit; outward publication remains separately authorized.
 
 ## Verification
 
-- The final Windows warning-strict coverage run passed `2303` tests with `5`
+- The final Windows warning-strict coverage run passed `2327` tests with `5`
   skips and zero missing statements or branches. The native-ext4 WSL/Python
   3.12 suite passed `2215` tests with `16` expected skips; the final wheel
   then passed clean WSL installation and packaged-surface smoke.
@@ -177,5 +186,5 @@ evidence to AR-07 but does not authorize publication or issue closure.
 - The isolated Codex canary passed with a valid header and persisted
   nonce-bound evidence. Durable real-profile trust remains an explicit
   operator `/hooks` action and is not claimed by that attestation.
-- Hosted CI, review/merge, the substantive/worklog ledger commits, and
-  clean-tree proof remain open.
+- Hosted CI and review passed, pull request #18 merged, and the adjacent merge
+  and post-merge reconciliation ledger commits complete the clean-tree proof.

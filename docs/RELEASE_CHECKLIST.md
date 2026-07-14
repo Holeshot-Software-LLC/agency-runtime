@@ -3,7 +3,7 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [release, verification]
 related:
   - CHANGELOG.md
@@ -205,10 +205,11 @@ canary used a one-invocation trust bypass and recorded no model receipt. It does
 not establish durable real-profile trust, which remains an explicit `/hooks`
 review and new-session step, and it does not establish Linux Codex maturity.
 
-Final local warning-strict coverage, security, performance, dashboard,
-wheel/source, and isolated Windows/WSL install gates pass. `AR-07`, `AR-16`,
-`AR-17`, `AR-18`, and `AR-19` remain in progress only for the hosted
-Python, security, CodeQL, and artifact matrix, review and merge, and the
-required worklog/clean-tree closure. Claude Code, Hermes, and OpenClaw were
-absent and remain contract-only. Publication remains a separate
-authorization-gated action, not evidence of readiness.
+The source-readiness blockers are closed. Warning-strict coverage, security,
+performance, dashboard, wheel/source, isolated Windows/WSL install, hosted
+Python, dependency, artifact, and CodeQL capability workflows passed for the
+reviewed head. CodeQL recorded unavailable native analysis and the compensating
+source and dependency controls passed. Pull request #18 merged into `main`, the
+required ledgers are reconciled, and the associated tracker items are closed.
+Claude Code, Hermes, and OpenClaw were absent and remain contract-only. A public
+tag and package publication remain separate authorization-gated actions.

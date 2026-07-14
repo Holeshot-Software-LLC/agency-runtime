@@ -1,9 +1,9 @@
 ---
 title: "AR-24: Make evidence event ordering deterministic"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [evidence, sqlite, windows, determinism, reliability]
 related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
@@ -36,6 +36,8 @@ Hosted Windows Python 3.10 exposed the tie after all Windows Python 3.14 tests
 passed. The ambiguous-delegation regression received two same-session
 suggestions, correctly recorded a separate delegated fallback event, and then
 observed the three rows in nondeterministic order.
+The row-ID tie-breaker and frozen-clock regressions now make every supported
+consumer deterministic, and the complete hosted matrix passed.
 
 ## Approach
 
@@ -49,8 +51,9 @@ statuses directly.
 
 ## Dependencies
 
-This applies ADR-0027's authoritative correlated-evidence contract and blocks
-AR-17 until deterministic evidence ordering and the complete hosted matrix pass.
+This applies ADR-0027's authoritative correlated-evidence contract. The
+deterministic ordering regressions and complete hosted matrix passed before
+pull request #18 merged.
 
 ## Acceptance
 
@@ -58,5 +61,5 @@ AR-17 until deterministic evidence ordering and the complete hosted matrix pass.
 - [x] Trace and session delegation queries use an insertion-order tie-breaker.
 - [x] Ambiguous execution leaves both suggestions untouched and records a separate event.
 - [x] Focused and warning-strict exact-coverage tests pass.
-- [ ] Hosted Windows Python 3.10 and the complete PR matrix pass.
-- [ ] Review, merge, roadmap/worklog reconciliation, and tracker closure pass.
+- [x] Hosted Windows Python 3.10 and the complete PR matrix pass.
+- [x] Review, merge, roadmap/worklog reconciliation, and tracker closure pass.

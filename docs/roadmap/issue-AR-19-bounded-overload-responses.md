@@ -1,9 +1,9 @@
 ---
 title: "AR-19: Deliver reliable bounded overload responses"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [http, windows, reliability, security, performance]
 related:
   - docs/decisions/0041-bounded-asynchronous-overload-responses.md
@@ -57,8 +57,8 @@ Restore the rejection slot on every socket, close, and thread-start path.
 ## Dependencies
 
 This bug was surfaced by AR-17's final warning-strict Windows validation and
-extends AR-15's reliable rejection work to server-overload responses. It blocks
-AR-17 until exact coverage, hosted Windows/Linux CI, review, and merge pass.
+extends AR-15's reliable rejection work to server-overload responses. Exact
+coverage and hosted Windows/Linux CI passed before pull request #18 merged.
 
 ## Acceptance
 
@@ -69,5 +69,5 @@ AR-17 until exact coverage, hosted Windows/Linux CI, review, and merge pass.
 - [x] Socket and thread-start failures restore all capacity.
 - [x] A real saturated Windows connection delivers 503 after sending a
       one-megabyte request at the configured body limit.
-- [ ] Warning-strict exact coverage and hosted Windows/Linux matrices pass.
-- [ ] The reviewed fix is merged and tracker issue #20 is closed.
+- [x] Warning-strict exact coverage and hosted Windows/Linux matrices pass.
+- [x] The reviewed fix is merged and tracker issue #20 is closed.

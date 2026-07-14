@@ -1,9 +1,9 @@
 ---
 title: "AR-23: Stabilize hosted Windows PowerShell integration gate"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [windows, testing, ci, powershell, reliability]
 related:
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
@@ -35,6 +35,8 @@ Windows Python 3.10 timed out in the first two companion parameters and Python
 startup marker, but the marker has no timestamp and can be written near the
 deadline after endpoint scanning and PowerShell cold start. Production command
 delegation retains its independent 3,600-second default timeout.
+Both hosted Windows Python endpoints passed with the bounded integration-only
+margin, without changing production timeout behavior.
 
 ## Approach
 
@@ -45,8 +47,9 @@ hosted Windows versions to pass before merge.
 
 ## Dependencies
 
-This blocks AR-17's portable release gate. It does not change the product's
-delegation contract or introduce a new durable architectural decision.
+This completed AR-17's final hosted Windows gate. It does not change the
+product's delegation contract or introduce a new durable architectural
+decision.
 
 ## Acceptance
 
@@ -54,5 +57,5 @@ delegation contract or introduce a new durable architectural decision.
 - [x] Production delegation timeout behavior remains unchanged.
 - [x] The Windows-only integration allowance has bounded hosted-runner margin.
 - [x] Focused native Windows companion and stdin-boundary tests pass.
-- [ ] Hosted Windows Python 3.10 and 3.14 suites pass.
-- [ ] Review, merge, roadmap/worklog reconciliation, and tracker closure pass.
+- [x] Hosted Windows Python 3.10 and 3.14 suites pass.
+- [x] Review, merge, roadmap/worklog reconciliation, and tracker closure pass.

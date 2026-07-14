@@ -1,9 +1,9 @@
 ---
 title: "AR-16: Restore Linux and Python 3.12 delegation compatibility"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-11
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [linux, python, delegation, compatibility, testing]
 related:
   - docs/decisions/0019-bounded-machine-readable-cli-delegation.md
@@ -51,8 +51,8 @@ skips. The separate performance selection passed both tests. This is local Linux
 evidence. A fresh final-candidate wheel also installed cleanly under WSL/Python
 3.12 and exercised packaged MCP discovery, authenticated dashboard health,
 configuration defaults, assets, and every generated host bundle without
-checkout-relative imports. The hosted Python 3.10 through 3.14 matrix remains
-pending.
+checkout-relative imports. The hosted Ubuntu Python 3.10 through 3.14 matrix
+subsequently passed for the reviewed head.
 
 ## Approach
 
@@ -65,8 +65,8 @@ fact.
 
 ## Dependencies
 
-This is a cross-platform compatibility correction and blocks `AR-07` until the
-native Linux suite passes.
+This cross-platform compatibility correction supplies the Linux prerequisite
+for `AR-07`; both the native Linux suite and hosted Ubuntu matrix passed.
 
 ## Acceptance
 
@@ -76,7 +76,7 @@ native Linux suite passes.
 - [x] A discovered but non-executable WSL interop shim does not fail the
   optional current-machine capability test.
 - [x] The complete Linux suite passes from a native ext4 working copy.
-- [ ] Hosted CI passes the supported Python 3.10 through 3.14 Linux matrix.
+- [x] Hosted CI passes the supported Python 3.10 through 3.14 Linux matrix.
 
 ## Verification
 
@@ -94,5 +94,5 @@ native Linux suite passes.
   MCP, dashboard-health, configuration, asset, and four-host bundle smoke.
 - No Linux target host was installed for this run; it proves the Linux runtime,
   protocol, package, and host-contract suite, not live Linux host maturity.
-- Hosted CI across Python 3.10 through 3.14 remains the sole unchecked
-  acceptance criterion, so this item remains `in_progress`.
+- Hosted Ubuntu CI passed Python 3.10 through 3.14, completing the remaining
+  acceptance criterion before pull request #18 merged.

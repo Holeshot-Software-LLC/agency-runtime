@@ -1,9 +1,9 @@
 ---
 title: "AR-20: Validate documentation ledgers against canonical full history"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [ci, documentation, git, testing, release]
 related:
   - docs/decisions/0025-self-contained-linked-documentation.md
@@ -55,9 +55,10 @@ the single ledger-owning matrix entry.
 
 ## Dependencies
 
-This bug was surfaced by AR-17's final hosted matrix and blocks its integrated
-release gate. It enforces ADR-0025's planning-to-evidence chain through the
-pinned, read-only workflow boundary governed by ADR-0037.
+This bug was surfaced by AR-17's final hosted matrix. The canonical-history
+Ubuntu/Python 3.14 ledger job passed, enforcing ADR-0025's
+planning-to-evidence chain through the pinned, read-only workflow boundary
+governed by ADR-0037.
 
 ## Acceptance
 
@@ -68,5 +69,5 @@ pinned, read-only workflow boundary governed by ADR-0037.
 - [x] CI asserts the checkout is non-shallow and at the expected commit.
 - [x] Credentials remain non-persistent and ordinary jobs remain shallow.
 - [x] A workflow regression test binds the ledger gate to this checkout.
-- [ ] Hosted Ubuntu/Python 3.14 documentation-ledger validation passes.
-- [ ] The reviewed fix is merged and tracker issue #21 is closed.
+- [x] Hosted Ubuntu/Python 3.14 documentation-ledger validation passes.
+- [x] The reviewed fix is merged and tracker issue #21 is closed.

@@ -1,9 +1,9 @@
 ---
 title: "AR-18: Detect work-unit file paths containing spaces"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [delegation, portability, testing, windows]
 related:
   - docs/decisions/0042-local-only-bounded-work-file-inference.md
@@ -56,8 +56,8 @@ as a path.
 ## Dependencies
 
 This bug was surfaced by the integrated AR-17 portability gate and complements
-AR-16's delegation compatibility work. It blocks AR-17 until the same hosted
-Windows and Linux matrix passes and the reviewed fix is merged.
+AR-16's delegation compatibility work. The exact-coverage and hosted Windows
+and Linux matrices passed, and pull request #18 merged the reviewed fix.
 
 ## Acceptance
 
@@ -71,5 +71,5 @@ Windows and Linux matrix passes and the reviewed fix is merged.
 - [x] Accepted matches and total scanned candidates remain bounded.
 - [x] Protocol-relative and network-root tokens are rejected before filesystem
       probing.
-- [ ] Warning-strict exact coverage and hosted Windows/Linux matrices pass.
-- [ ] The reviewed fix is merged and tracker issue #19 is closed.
+- [x] Warning-strict exact coverage and hosted Windows/Linux matrices pass.
+- [x] The reviewed fix is merged and tracker issue #19 is closed.

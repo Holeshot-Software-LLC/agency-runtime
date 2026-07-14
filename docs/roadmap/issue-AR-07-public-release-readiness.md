@@ -1,9 +1,9 @@
 ---
 title: "AR-07: Complete public release readiness"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-14
 tags: [release, packaging]
 related:
   - docs/decisions/0010-one-command-install-and-reversible-toggle.md
@@ -41,13 +41,13 @@ builds wheel/source artifacts, verifies their contents, installs and exercises
 both artifacts in isolated Windows/Ubuntu jobs, and runs source/dependency
 security checks.
 
-The final local Windows warning-strict coverage run passed `2303` tests with
-`5` skips and `2` performance tests deselected. All `17,284` statements and
-`5,408` branches had zero missing lines or partial branches (`100.00%`).
+The final local Windows warning-strict coverage run passed `2327` tests with
+`5` skips and `2` performance tests deselected. All `17,343` statements and
+`5,420` branches had zero missing lines or partial branches (`100.00%`).
 Ubuntu 24.04 WSL/Python 3.12 passed `2215` tests with `16` expected
 platform/host skips from native ext4, plus both performance tests. The final
-performance selection passed both tests (`2308` deselected) with routing p95
-`8.640 ms`, cache p95 `0.385 ms`, `155.73` calls/second, and overlap `8`.
+performance selection passed both tests (`2332` deselected) with routing p95
+`8.774 ms`, cache p95 `0.394 ms`, `150.02` calls/second, and overlap `8`.
 All `25` routing gates and `12/12` delegation cases passed. All `60/60`
 dashboard JavaScript tests reached exact line, branch, and function coverage
 across seven modules, and authenticated Chrome smoke completed without
@@ -77,12 +77,16 @@ Final release hygiene, high-severity Bandit, strict offline Zizmor, dependency
 consistency and runtime dependency audit, Ruff/format, compile, and whitespace
 checks passed.
 
-Those local results and configured workflows are not a completed release:
-hosted cross-platform CI, review/merge, the required worklog ledger, and a clean
-post-merge tree remain pending. Other absent hosts remain contract-covered
-rather than live-verified. Installation from this repository remains the
-canonical prerelease path; public package publication is a separate authorized
-release action, not an acceptance criterion for release readiness.
+The reviewed head passed the hosted Python, security, dependency, artifact,
+exact-coverage, performance, dashboard, and CodeQL capability gates. CodeQL
+recorded the unavailable repository capability and the required compensating
+source and dependency controls passed. Pull request #18
+merged that head into `main`; the merge and its post-merge reconciliation are
+recorded by the required adjacent worklog ledger commits, and the associated
+tracker items are closed. Other absent hosts remain contract-covered rather
+than live-verified. Installation from this repository remains the canonical
+prerelease path; public package publication is a separate authorized release
+action, not an acceptance criterion for source release readiness.
 
 ## Approach
 
@@ -103,9 +107,9 @@ decision.
 - [x] Contribution, security, changelog, troubleshooting, and release-checklist documentation exists.
 - [x] Versioning, tagging, and release notes follow a documented repeatable process.
 - [x] The post-hook warning-strict suites, exact coverage, documentation validation, secret scanning, and machine-specific path checks pass on the final candidate.
-- [ ] Hosted CI passes the supported Python matrix plus security and artifact jobs for the reviewed commit.
+- [x] Hosted CI passes the supported Python matrix plus security and artifact jobs for the reviewed commit.
 - [x] The isolated Codex header canary passes with truthful profile scope; durable
       real-profile `/hooks` trust remains an explicit operator installation
       step and is not claimed by the canary.
-- [ ] The reviewed changes are merged with the required worklog ledger and a
+- [x] The reviewed changes are merged with the required worklog ledger and a
       clean resulting tree.

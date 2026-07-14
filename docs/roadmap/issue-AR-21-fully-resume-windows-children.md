@@ -1,9 +1,9 @@
 ---
 title: "AR-21: Make Windows child startup deterministic and fail closed"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-14
 tags: [windows, subprocess, delegation, reliability, security]
 related:
   - docs/decisions/0035-authoritative-bounded-provider-chain.md
@@ -43,10 +43,10 @@ boundary.
 
 CPython's Windows launch path correctly inherits only duplicated child-side
 standard handles, and Job Object assignment does not duplicate pipe handles.
-Local native PowerShell tests passed, but hosted Python 3.10 and 3.14 timed out
-all five companion variants at Console.In.ReadToEnd. The startup contract needs
-immutable input state before process creation plus strict ownership of the one
-CREATE_SUSPENDED count.
+The bounded-input path now closes its writer before child creation, while the
+native resume helper releases exactly the runtime-owned suspend count and fails
+closed for every ambiguous state. The native regressions and both hosted
+Windows endpoints passed after AR-23 added bounded cold-start test margin.
 
 ## Approach
 
@@ -67,9 +67,9 @@ failures distinguish launch from stdin delivery.
 
 ## Dependencies
 
-This bug was surfaced by AR-17's hosted Windows matrix and blocks that release
-gate. It hardens ADR-0035's suspended Job Object containment through ADR-0044,
-which supersedes ADR-0043's scheduling-dependent priming mechanism.
+This bug was surfaced by AR-17's hosted Windows matrix. It hardens ADR-0035's
+suspended Job Object containment through ADR-0044, which supersedes ADR-0043's
+scheduling-dependent priming mechanism; both hosted Windows gates passed.
 
 ## Acceptance
 
@@ -80,5 +80,5 @@ which supersedes ADR-0043's scheduling-dependent priming mechanism.
 - [x] Already-running, externally suspended, missing-handle, and native-error states fail closed.
 - [x] Job Object assignment still precedes child execution.
 - [x] Hosted diagnostics distinguish child startup from stdin EOF failure.
-- [ ] The original Windows PowerShell integration passes on hosted Python 3.10 and 3.14.
-- [ ] Exact coverage, review, merge, and tracker closure pass.
+- [x] The original Windows PowerShell integration passes on hosted Python 3.10 and 3.14.
+- [x] Exact coverage, review, merge, and tracker closure pass.
