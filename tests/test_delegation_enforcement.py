@@ -7,6 +7,11 @@ from pathlib import Path
 import pytest
 
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
+from agency_runtime.core.delegation.events import (
+    mark_delegation_executed,
+    record_suggested_delegations,
+    work_unit_id_from_text,
+)
 from agency_runtime.core.header.contract import fill_header_fields
 from agency_runtime.core.selector.pipeline import build_routing_context
 from agency_runtime.core.store.sqlite import Store
@@ -17,8 +22,8 @@ def _valid_header(*, loaded: str = "multi-agent-systems-architect", delegated: s
         [
             f"Agency/Agencies loaded: {loaded}",
             f"Agency/Agencies delegated: {delegated}",
-            "Skills loaded: agency-specialist-routing",
-            "Actual Model selected: task-chunk-planner -> test/model",
+            "Skills loaded: none",
+            "Actual Model selected: [planner] task-chunk-planner -> unavailable - no model receipt recorded",
             "Why: test",
             "How it shaped outcome: test",
             "",
@@ -46,6 +51,92 @@ def test_build_routing_context_surfaces_delegation_even_without_specialist_match
     assert "[AGENCY PREFLIGHT] No high-confidence specialist match" in context
     assert "[DELEGATION OPPORTUNITY] 2 independent work units" in context
     assert "audit the delegation layer" in context
+    assert f"[{work_unit_id_from_text('audit the delegation layer')}]" in context
+
+
+def test_suggestions_dedupe_within_trace_but_repeat_across_turns(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    base = {
+        "selected_ids": ["code-reviewer"],
+        "work_units": {
+            "delegate": True,
+            "count": 2,
+            "units": ["audit delegation", "add tests"],
+        },
+    }
+
+    assert (
+        record_suggested_delegations(
+            store,
+            session_id="session",
+            host="test",
+            routing={**base, "trace_id": "turn-1"},
+        )
+        == 2
+    )
+    assert (
+        record_suggested_delegations(
+            store,
+            session_id="session",
+            host="test",
+            routing={**base, "trace_id": "turn-1"},
+        )
+        == 0
+    )
+    mark_delegation_executed(
+        store,
+        session_id="session",
+        host="test",
+        backend="delegate_task",
+        trace_id="turn-1",
+        work_unit_id=work_unit_id_from_text("audit delegation"),
+    )
+    assert (
+        record_suggested_delegations(
+            store,
+            session_id="session",
+            host="test",
+            routing={**base, "trace_id": "turn-2"},
+        )
+        == 2
+    )
+
+    assert len(store.get_delegations("turn-1")) == 2
+    assert len(store.get_delegations("turn-2")) == 2
+
+
+def test_explicit_trace_and_work_unit_correlate_paraphrased_delegate(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    routing = {
+        "trace_id": "turn-1",
+        "selected_ids": ["code-reviewer"],
+        "work_units": {
+            "delegate": True,
+            "count": 2,
+            "units": ["audit delegation", "add tests"],
+        },
+    }
+    record_suggested_delegations(
+        store,
+        session_id="session",
+        host="test",
+        routing=routing,
+    )
+
+    updated = mark_delegation_executed(
+        store,
+        session_id="session",
+        host="test",
+        backend="delegate_task",
+        trace_id="turn-1",
+        work_unit_id=work_unit_id_from_text("add tests"),
+        goal="paraphrased by the host",
+    )
+
+    assert updated == 1
+    rows = store.get_delegations("turn-1")
+    assert [row["status"] for row in rows].count("delegated") == 1
+    assert [row["status"] for row in rows].count("suggested") == 1
 
 
 def test_pre_verify_accepts_trivial_turn_with_no_agency_evidence(tmp_path: Path) -> None:
@@ -62,7 +153,9 @@ def test_pre_verify_accepts_trivial_turn_with_no_agency_evidence(tmp_path: Path)
     assert result is None
 
 
-def test_pre_verify_rejects_nontrivial_turn_with_no_loaded_specialist(monkeypatch, tmp_path: Path) -> None:
+def test_pre_verify_rejects_nontrivial_turn_with_no_loaded_specialist(
+    monkeypatch, tmp_path: Path
+) -> None:
     from agency_runtime.core.selector import pipeline
 
     store = Store(tmp_path / "agency.db")
@@ -225,7 +318,9 @@ def test_agency_agents_delegate_nested_failure_records_skipped_blocker(tmp_path:
     assert fields["agencies_delegated"] == "none - delegate_task requires a parent agent context."
 
 
-def test_agency_agents_delegate_nested_success_false_records_skipped_blocker(tmp_path: Path) -> None:
+def test_agency_agents_delegate_nested_success_false_records_skipped_blocker(
+    tmp_path: Path,
+) -> None:
     store = Store(tmp_path / "agency.db")
     adapter = HermesAdapter(store=store)
     store.record_delegation(
@@ -257,13 +352,13 @@ def test_agency_agents_delegate_nested_success_false_records_skipped_blocker(tmp
 
 
 @pytest.mark.parametrize(
-    "delegated_header",
+    "blocker",
     [
-        "none - delegate_task unavailable",
-        "none; blocked because host delegate backend is unavailable",
+        "delegate_task unavailable",
+        "host delegate backend is unavailable",
     ],
 )
-def test_pre_verify_accepts_explicit_delegation_blocker(delegated_header: str, tmp_path: Path) -> None:
+def test_pre_verify_accepts_recorded_delegation_blocker(blocker: str, tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     store.record_specialist_loaded("session-1", "multi-agent-systems-architect")
     store.record_delegation(
@@ -271,12 +366,14 @@ def test_pre_verify_accepts_explicit_delegation_blocker(delegated_header: str, t
         session_id="session-1",
         work_unit_id="unit-1",
         recommended_agent="multi-agent-systems-architect",
-        status="suggested",
+        status="skipped",
+        backend="delegate_task",
+        skip_reason=blocker,
     )
     adapter = HermesAdapter(store=store)
 
     result = adapter.pre_verify_handler(
-        _valid_header(delegated=delegated_header),
+        _valid_header(delegated=f"none - {blocker}"),
         session_id="session-1",
         model="task-chunk-planner",
         attempt=1,

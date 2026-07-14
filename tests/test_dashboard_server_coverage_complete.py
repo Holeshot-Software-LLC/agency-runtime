@@ -1,0 +1,589 @@
+"""Complete dashboard server error, lifecycle, and platform branch coverage."""
+
+from __future__ import annotations
+
+import json
+import threading
+import urllib.error
+import urllib.request
+from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import contextmanager
+from http.client import HTTPConnection
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+
+import pytest
+
+from agency_runtime.core.config import reset_config_cache
+from agency_runtime.core.store.sqlite import Store
+from agency_runtime.server import dashboard as dashboard
+
+
+@contextmanager
+def _running_dashboard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "agency.yaml"))
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "agency.db"))
+    reset_config_cache()
+    store = Store(tmp_path / "agency.db")
+    token = "coverage-token"
+    server = dashboard.DashboardHTTPServer(
+        store,
+        auth_token=token,
+        port=0,
+        host_inspector=lambda: [],
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield SimpleNamespace(
+            base=f"http://127.0.0.1:{server.server_address[1]}",
+            port=int(server.server_address[1]),
+            token=token,
+            store=store,
+            server=server,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+        reset_config_cache()
+
+
+def _request(
+    server: SimpleNamespace,
+    path: str,
+    *,
+    method: str = "GET",
+    body: object | None = None,
+    content_type: str = "application/json",
+    origin: str | None = None,
+) -> tuple[int, dict[str, Any]]:
+    headers = {"Authorization": f"Bearer {server.token}"}
+    if origin is not None:
+        headers["Origin"] = origin
+    data = None
+    if body is not None:
+        data = body if isinstance(body, bytes) else json.dumps(body).encode()
+        headers["Content-Type"] = content_type
+    request = urllib.request.Request(
+        f"{server.base}{path}", data=data, headers=headers, method=method
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status, json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        with exc:
+            return exc.code, json.loads(exc.read())
+
+
+def test_dashboard_miscellaneous_get_post_and_options_routes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        request = urllib.request.Request(f"{server.base}/api/health", method="OPTIONS")
+        with pytest.raises(urllib.error.HTTPError) as denied:
+            urllib.request.urlopen(request, timeout=5)
+        with denied.value as error:
+            assert error.code == 405
+
+        assert _request(server, "/outside")[0] == 404
+        assert _request(server, "/api/health") == (200, {"status": "ok"})
+        assert _request(server, "/api/roster")[0] == 200
+        assert _request(server, "/api/snapshots")[0] == 200
+        assert _request(server, "/api/activity?limit=invalid")[0] == 200
+        assert _request(server, "/api/unknown")[0] == 404
+        assert _request(server, "/outside", method="POST", body={})[0] == 404
+        assert _request(server, "/api/unknown", method="POST", body={})[0] == 404
+
+        status, payload = _request(
+            server,
+            "/api/config",
+            method="POST",
+            body={"operations": {}, "confirmations": []},
+        )
+        assert status == 400
+        assert "operations" in payload["error"]
+        status, payload = _request(
+            server,
+            "/api/config",
+            method="POST",
+            body={"operations": [], "confirmations": [1]},
+        )
+        assert status == 400
+        assert "confirmations" in payload["error"]
+
+
+def test_dashboard_confirmation_helper_and_default_host_inspector(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    required = dashboard._required_config_confirmations(
+        [
+            object(),
+            {"op": "set", "path": "profile", "value": 1},
+            {"op": "secret"},
+            {"op": "set", "path": "profile", "value": " local-only "},
+            {"op": "set", "path": "observability.capture_content", "value": True},
+        ]
+    )
+    assert required == {
+        "SAVE CONFIG",
+        "SAVE SENSITIVE CONFIG",
+        "APPLY LOCAL-ONLY PROFILE",
+        "ENABLE CONTENT CAPTURE",
+    }
+    monkeypatch.setattr(
+        "agency_runtime.core.installer.inspect_host_installation",
+        lambda host: {"host": host, "registered": True},
+    )
+    assert dashboard._inspect_one_host("codex")["registered"] is True
+
+
+def test_dashboard_rejects_bad_host_same_origin_mismatch_and_invalid_json(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        connection = HTTPConnection("127.0.0.1", server.port, timeout=5)
+        connection.putrequest("GET", "/api/health", skip_host=True)
+        connection.putheader("Host", "attacker.invalid")
+        connection.putheader("Authorization", f"Bearer {server.token}")
+        connection.endheaders()
+        response = connection.getresponse()
+        assert response.status == 400
+        assert json.loads(response.read())["error"] == "invalid Host header"
+        connection.close()
+
+        assert (
+            _request(
+                server,
+                "/api/health",
+                origin=f"http://127.0.0.1:{server.port}/",
+            )[0]
+            == 200
+        )
+
+        status, payload = _request(
+            server,
+            "/api/route",
+            method="POST",
+            body=b"{invalid",
+        )
+        assert status == 400
+        assert "JSON" in payload["error"]
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ({}, "task is required"),
+        ({"task": "x", "limit": object()}, ""),
+    ],
+)
+def test_dashboard_route_lab_validation_and_limit_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    body: dict[str, Any],
+    message: str,
+) -> None:
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        if body.get("limit") is not None:
+            body["limit"] = {"invalid": True}
+        status, payload = _request(server, "/api/route", method="POST", body=body)
+        if message:
+            assert status == 400
+            assert payload["error"] == message
+        else:
+            assert status == 200
+            assert payload["schema_version"] == "agency.selection_explain.v1"
+
+
+def test_dashboard_route_lab_rejects_oversized_task(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        maximum = dashboard.load_config().selector.max_user_msg_len
+        status, payload = _request(
+            server,
+            "/api/route",
+            method="POST",
+            body={"task": "x" * (maximum + 1)},
+        )
+        assert status == 400
+        assert "maximum" in payload["error"]
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ({}, "confirmation phrase"),
+        ({"confirm": "TRIM RUNTIME DATA", "older_than_days": True}, "older_than_days"),
+        (
+            {"confirm": "TRIM RUNTIME DATA", "older_than_days": 30, "dry_run": "yes"},
+            "dry_run",
+        ),
+        (
+            {"confirm": "TRIM RUNTIME DATA", "older_than_days": 30, "vacuum": "yes"},
+            "vacuum",
+        ),
+    ],
+)
+def test_dashboard_trim_validates_each_destructive_field(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    body: dict[str, Any],
+    message: str,
+) -> None:
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        status, payload = _request(server, "/api/maintenance/trim", method="POST", body=body)
+        assert status == 400
+        assert message in payload["error"]
+
+
+def test_dashboard_roster_actions_validate_and_dispatch_both_branches(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        dashboard,
+        "approve_snapshot",
+        lambda _store, snapshot: calls.append(("approve", snapshot)),
+    )
+    monkeypatch.setattr(
+        dashboard,
+        "activate_snapshot",
+        lambda _store, snapshot: calls.append(("activate", snapshot)),
+    )
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        assert _request(server, "/api/roster/action", method="POST", body={})[0] == 400
+        assert (
+            _request(
+                server,
+                "/api/roster/action",
+                method="POST",
+                body={"action": "approve", "snapshot_id": "one", "confirm": "wrong"},
+            )[0]
+            == 400
+        )
+        for action in ("approve", "activate"):
+            status, payload = _request(
+                server,
+                "/api/roster/action",
+                method="POST",
+                body={
+                    "action": action,
+                    "snapshot_id": "one",
+                    "confirm": f"{action.upper()} one",
+                },
+            )
+            assert status == 200
+            assert payload["action"] == action
+    assert calls == [("approve", "one"), ("activate", "one")]
+
+
+def test_dashboard_host_toggle_validates_fields_and_handles_missing_native_record(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        invalid = [
+            ({}, "unknown host"),
+            ({"host": "codex", "enabled": "yes"}, "boolean"),
+            ({"host": "codex", "enabled": False, "confirm": "wrong"}, "confirmation"),
+        ]
+        for body, message in invalid:
+            status, payload = _request(server, "/api/hosts/toggle", method="POST", body=body)
+            assert status == 400
+            assert message in payload["error"]
+        status, payload = _request(
+            server,
+            "/api/hosts/toggle",
+            method="POST",
+            body={"host": "codex", "enabled": False, "confirm": "DISABLE codex"},
+        )
+        assert status == 200
+        assert payload["status"]["host"] == "codex"
+        assert payload["status"]["runtime_enabled"] is False
+
+
+def test_dashboard_json_serialization_failure_is_redacted() -> None:
+    sent: list[tuple[str, Any]] = []
+    handler = object.__new__(dashboard.DashboardHTTPHandler)
+    handler.send_response = lambda status: sent.append(("status", status))
+    handler.send_header = lambda name, value: sent.append((name, value))
+    handler.end_headers = lambda: None
+    handler.wfile = SimpleNamespace(write=lambda value: sent.append(("body", value)))
+    handler._send_json(200, {"invalid": object()})
+    assert ("status", 500) in sent
+    assert ("body", b'{"error":"internal serialization error"}') in sent
+
+
+def test_dashboard_get_and_post_unexpected_failures_are_redacted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        monkeypatch.setattr(
+            Store,
+            "list_roster_snapshots",
+            lambda _self: (_ for _ in ()).throw(TypeError("private get detail")),
+        )
+        status, payload = _request(server, "/api/snapshots")
+        assert status == 500
+        assert payload == {"error": "internal server error"}
+
+        monkeypatch.setattr(
+            dashboard,
+            "explain_route",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(TypeError("private post detail")),
+        )
+        status, payload = _request(
+            server,
+            "/api/route",
+            method="POST",
+            body={"task": "review security"},
+        )
+        assert status == 500
+        assert payload == {"error": "internal server error"}
+
+
+def test_host_inspection_coordinator_error_stale_and_invalidation() -> None:
+    calls = {"value": 0}
+
+    def inspect(host: str) -> dict[str, Any]:
+        calls["value"] += 1
+        if calls["value"] == 1:
+            raise RuntimeError("private detail")
+        return {"host": host, "registered": True, "enabled": True}
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = dashboard._HostInspectionCoordinator(
+        inspect_one=inspect,
+        hosts=("codex",),
+        cache_seconds=0,
+        deadline_seconds=1,
+        executor=executor,
+    )
+    try:
+        failed = coordinator.inspect()[0]
+        assert failed["inspection_status"] in {"error", "stale"}
+        coordinator.invalidate("codex")
+        complete = coordinator.inspect()[0]
+        assert complete["inspection_status"] in {"complete", "stale"}
+        # A current cached result avoids submission and the wait path.
+        coordinator._cache["codex"] = (
+            dashboard.monotonic() + 10,
+            {"host": "codex", "inspection_status": "complete"},
+        )
+        assert coordinator.inspect()[0]["inspection_status"] == "complete"
+
+        stale_future: Future[dict[str, Any]] = Future()
+        replacement: Future[dict[str, Any]] = Future()
+        coordinator._in_flight["codex"] = replacement
+        stale_future.set_result({"registered": False})
+        coordinator._finished("codex", stale_future)
+        assert coordinator._in_flight["codex"] is replacement
+        coordinator.invalidate()
+        assert not coordinator._in_flight
+    finally:
+        executor.shutdown(wait=True, cancel_futures=True)
+
+
+def test_host_inspection_deadline_returns_explicit_unknown() -> None:
+    release = threading.Event()
+
+    def slow(_host: str) -> dict[str, Any]:
+        release.wait(timeout=2)
+        return {"registered": True}
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = dashboard._HostInspectionCoordinator(
+        inspect_one=slow,
+        hosts=("codex",),
+        cache_seconds=1,
+        deadline_seconds=0,
+        executor=executor,
+    )
+    try:
+        assert coordinator.inspect()[0]["inspection_status"] == "timed_out"
+        coordinator.invalidate()
+    finally:
+        release.set()
+        executor.shutdown(wait=True, cancel_futures=True)
+
+
+def test_host_inspection_reuses_an_existing_inflight_future() -> None:
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = dashboard._HostInspectionCoordinator(
+        inspect_one=lambda host: {"host": host},
+        hosts=("codex",),
+        deadline_seconds=0,
+        executor=executor,
+    )
+    future: Future[dict[str, Any]] = Future()
+    coordinator._in_flight["codex"] = future
+    try:
+        assert coordinator.inspect()[0]["inspection_status"] == "timed_out"
+    finally:
+        future.cancel()
+        coordinator.invalidate()
+        executor.shutdown(wait=True, cancel_futures=True)
+
+
+def test_dashboard_server_rejects_non_loopback_host(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="loopback-only"):
+        dashboard.DashboardHTTPServer(
+            Store(tmp_path / "agency.db"),
+            auth_token="token",
+            host="0.0.0.0",
+        )
+
+
+def test_run_dashboard_service_lifecycle_and_browser_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    events: list[tuple[str, Any]] = []
+
+    class _Store:
+        def __init__(self, path: object | None = None) -> None:
+            events.append(("store", path))
+
+        def trim_runtime_tables(self, **kwargs: Any) -> None:
+            events.append(("trim", kwargs))
+
+    class _Server:
+        server_address = ("127.0.0.1", 8123)
+
+        def __init__(self, *_args: Any, **kwargs: Any) -> None:
+            events.append(("server", kwargs))
+
+        def serve_forever(self, **kwargs: Any) -> None:
+            events.append(("serve", kwargs))
+            raise KeyboardInterrupt
+
+        def server_close(self) -> None:
+            events.append(("close", None))
+
+        def shutdown(self) -> None:
+            events.append(("shutdown", None))
+
+    config = SimpleNamespace(
+        dashboard=SimpleNamespace(port=8123),
+        observability=SimpleNamespace(retention_days=30),
+    )
+    monkeypatch.setattr(dashboard, "load_config", lambda: config)
+    monkeypatch.setattr(dashboard, "Store", _Store)
+    monkeypatch.setattr(dashboard, "DashboardHTTPServer", _Server)
+    monkeypatch.setattr(dashboard.secrets, "token_urlsafe", lambda _size: "token")
+    monkeypatch.setattr(
+        dashboard,
+        "write_dashboard_runtime",
+        lambda **kwargs: events.append(("write", kwargs)),
+    )
+    monkeypatch.setattr(
+        dashboard,
+        "remove_dashboard_runtime",
+        lambda **kwargs: events.append(("remove", kwargs)),
+    )
+    monkeypatch.setattr(dashboard, "current_thread", lambda: object())
+    monkeypatch.setattr(dashboard, "main_thread", lambda: object())
+
+    dashboard.run_dashboard(
+        db_path=tmp_path / "service.db",
+        port=0,
+        service_mode=True,
+        config_path=tmp_path / "agency.yaml",
+        home_dir=tmp_path / "home",
+    )
+    assert any(name == "write" for name, _value in events)
+    assert any(name == "remove" for name, _value in events)
+
+    events.clear()
+    opened: list[str] = []
+    monkeypatch.setattr(dashboard.webbrowser, "open", lambda url, new: opened.append(url))
+    dashboard.run_dashboard(port=0, open_browser=True)
+    assert opened == ["http://127.0.0.1:8123/#token=token"]
+    assert "access token is temporary" in capsys.readouterr().out
+
+
+def test_run_dashboard_main_thread_signal_lifecycle_and_no_browser(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[tuple[str, Any]] = []
+
+    class _Store:
+        def __init__(self, _path: object | None = None) -> None:
+            pass
+
+        def trim_runtime_tables(self, **_kwargs: Any) -> None:
+            pass
+
+    class _Server:
+        server_address = ("127.0.0.1", 8124)
+
+        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+            pass
+
+        def serve_forever(self, **_kwargs: Any) -> None:
+            raise KeyboardInterrupt
+
+        def server_close(self) -> None:
+            events.append(("closed", None))
+
+        def shutdown(self) -> None:
+            events.append(("shutdown", None))
+
+    class _ImmediateThread:
+        def __init__(self, *, target: Any, daemon: bool) -> None:
+            assert daemon is True
+            self.target = target
+
+        def start(self) -> None:
+            self.target()
+
+    config = SimpleNamespace(
+        dashboard=SimpleNamespace(port=8124),
+        observability=SimpleNamespace(retention_days=30),
+    )
+    sentinel = object()
+    monkeypatch.setattr(dashboard, "load_config", lambda: config)
+    monkeypatch.setattr(dashboard, "Store", _Store)
+    monkeypatch.setattr(dashboard, "DashboardHTTPServer", _Server)
+    monkeypatch.setattr(dashboard, "current_thread", lambda: sentinel)
+    monkeypatch.setattr(dashboard, "main_thread", lambda: sentinel)
+    monkeypatch.setattr(dashboard, "Thread", _ImmediateThread)
+    monkeypatch.setattr(dashboard.signal, "getsignal", lambda signum: f"previous-{signum}")
+
+    installed = {"count": 0}
+
+    def set_signal(signum: int, handler: Any) -> None:
+        if callable(handler):
+            installed["count"] += 1
+            if installed["count"] == 1:
+                handler(signum, None)
+            else:
+                raise ValueError("unsupported signal")
+        elif str(handler).endswith(str(dashboard.signal.SIGINT)):
+            return
+        else:
+            raise OSError("restore failed")
+
+    monkeypatch.setattr(dashboard.signal, "signal", set_signal)
+    monkeypatch.setattr(
+        dashboard.webbrowser,
+        "open",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("browser opened")),
+    )
+    dashboard.run_dashboard(
+        db_path=tmp_path / "main.db",
+        port=8124,
+        open_browser=False,
+    )
+    assert ("shutdown", None) in events
+    assert ("closed", None) in events

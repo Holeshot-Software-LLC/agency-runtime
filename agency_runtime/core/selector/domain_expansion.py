@@ -2,8 +2,16 @@
 
 from __future__ import annotations
 
+import re
+from functools import lru_cache
+
 _DOMAIN_EXPANSIONS: dict[str, list[str]] = {
-    "conveyor": ["ci cd pipeline", "workflow automation", "task orchestration", "software delivery"],
+    "conveyor": [
+        "ci cd pipeline",
+        "workflow automation",
+        "task orchestration",
+        "software delivery",
+    ],
     "openclaw": ["multi-agent system", "ai agent orchestration", "distributed system"],
     "nexus": ["multi-agent system", "ai agent orchestration", "distributed system"],
     "mentor": ["ai agent", "system architecture", "code review"],
@@ -24,12 +32,18 @@ _DOMAIN_EXPANSIONS: dict[str, list[str]] = {
 }
 
 
+@lru_cache(maxsize=len(_DOMAIN_EXPANSIONS))
+def _domain_pattern(term: str) -> re.Pattern[str]:
+    words = re.findall(r"[a-z0-9]+", term.lower())
+    phrase = r"[^a-z0-9]+".join(re.escape(word) for word in words)
+    return re.compile(rf"(?<![a-z0-9]){phrase}(?![a-z0-9])", re.IGNORECASE)
+
+
 def expand_query(query: str) -> str:
     """Expand domain-specific terms with discipline equivalents."""
-    query_lower = query.lower()
     expansions: list[str] = []
     for term, disciplines in _DOMAIN_EXPANSIONS.items():
-        if term in query_lower:
+        if _domain_pattern(term).search(query):
             expansions.extend(disciplines)
     if expansions:
         seen: set[str] = set()

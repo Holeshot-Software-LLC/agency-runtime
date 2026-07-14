@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
 
-from agency_runtime.cli.main import main
+import pytest
+
+from agency_runtime.cli.main import build_parser, main
 from agency_runtime.core.config import AgencyConfig, JudgeConfig, reset_config_cache
 from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.explain import explain_route
@@ -26,9 +29,19 @@ def _seed_store(db: Path) -> None:
         store.activate_agent(agent)
 
 
-def test_explain_route_returns_selection_receipt() -> None:
+@pytest.fixture
+def _isolated_selector_state() -> Iterator[None]:
+    """Reset process-local routing state even when an assertion fails."""
+    reset_config_cache()
     clear_cache()
     clear_session_routing()
+    yield
+    clear_session_routing()
+    clear_cache()
+    reset_config_cache()
+
+
+def test_explain_route_returns_selection_receipt(_isolated_selector_state) -> None:
     config = AgencyConfig(judge=JudgeConfig(confidence_bypass_threshold=1.0))
 
     receipt = explain_route("s1", "review code", _catalog(), config=config, limit=2)
@@ -42,14 +55,16 @@ def test_explain_route_returns_selection_receipt() -> None:
     assert "reason" in receipt["rejected_candidates"][0]
 
 
-def test_cli_explain_json(monkeypatch, tmp_path: Path, capsys) -> None:
-    clear_cache()
-    clear_session_routing()
+def test_cli_explain_json(
+    _isolated_selector_state,
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+) -> None:
     db = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
     monkeypatch.setenv("AGENCY_BYPASS_THRESHOLD", "1")
-    reset_config_cache()
     _seed_store(db)
 
     assert main(["explain", "review code", "--session-id", "s1", "--limit", "2"]) == 0
@@ -58,3 +73,17 @@ def test_cli_explain_json(monkeypatch, tmp_path: Path, capsys) -> None:
     assert payload["schema_version"] == "agency.selection_explain.v1"
     assert payload["selected"][0]["slug"] == "code-reviewer"
     assert payload["signals"]["selection"]["roster_size"] == 2
+
+
+@pytest.mark.parametrize("command", ["search", "route", "explain"])
+@pytest.mark.parametrize("limit", ["0", "-1"])
+def test_selector_cli_rejects_nonpositive_limits(
+    command: str,
+    limit: str,
+    capsys,
+) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        build_parser().parse_args([command, "review code", "--limit", limit])
+
+    assert exc_info.value.code == 2
+    assert "positive integer" in capsys.readouterr().err

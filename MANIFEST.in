@@ -1,0 +1,24 @@
+include LICENSE
+include README.md
+include .editorconfig
+include .gitattributes
+include AGENTS.md
+include CHANGELOG.md
+include CODE_OF_CONDUCT.md
+include CONTRIBUTING.md
+include SECURITY.md
+include pyproject.toml
+recursive-include agency_runtime *.css *.html *.js *.json *.py *.yaml *.yml
+recursive-include docs *.md
+recursive-include examples *.json *.md *.yaml *.yml
+recursive-include scripts *.py
+recursive-include tests *.mjs *.py
+
+global-exclude *.db
+global-exclude *.py[cod]
+global-exclude .coverage
+global-exclude .DS_Store
+prune .mypy_cache
+prune .pytest_cache
+prune build
+prune dist

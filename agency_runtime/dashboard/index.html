@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Agency Runtime — Signal Observatory</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to dashboard</a>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand" aria-label="Agency Runtime">
+        <span class="brand-mark">AR</span>
+        <span><strong>Agency</strong><small>Runtime</small></span>
+      </div>
+      <nav aria-label="Dashboard sections">
+        <button class="nav-item active" type="button" data-view="overview" aria-controls="view-overview" title="Overview"><span data-short="OV" aria-hidden="true">01</span>Overview</button>
+        <button class="nav-item" type="button" data-view="routing" aria-controls="view-routing" title="Routing lab"><span data-short="RT" aria-hidden="true">02</span>Routing lab</button>
+        <button class="nav-item" type="button" data-view="evidence" aria-controls="view-evidence" title="Evidence"><span data-short="EV" aria-hidden="true">03</span>Evidence</button>
+        <button class="nav-item" type="button" data-view="roster" aria-controls="view-roster" title="Roster"><span data-short="RO" aria-hidden="true">04</span>Roster</button>
+        <button class="nav-item" type="button" data-view="hosts" aria-controls="view-hosts" title="Hosts"><span data-short="HO" aria-hidden="true">05</span>Hosts</button>
+        <button class="nav-item" type="button" data-view="settings" aria-controls="view-settings" title="Settings"><span data-short="SE" aria-hidden="true">06</span>Settings</button>
+      </nav>
+      <div class="rail-foot">
+        <span class="pulse" aria-hidden="true"></span>
+        <span id="connection-label">Connecting</span>
+      </div>
+    </aside>
+
+    <main id="main-content" tabindex="-1">
+      <header class="topbar">
+        <div class="topbar-heading">
+          <p class="eyebrow">LOCAL CONTROL PLANE</p>
+          <h1 id="view-title">Runtime overview</h1>
+        </div>
+        <div class="top-actions">
+          <div class="live-console" aria-label="Live dashboard controls">
+            <time id="local-clock" class="local-clock">--:--:--</time>
+            <button id="live-toggle" class="live-toggle" type="button" aria-pressed="true">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span id="live-status">Live</span>
+            </button>
+            <span id="last-sync" class="last-sync">Awaiting first sync</span>
+          </div>
+          <span id="privacy-chip" class="privacy-chip">Metadata only</span>
+          <button id="refresh-button" class="button ghost" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <span id="live-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></span>
+
+      <section id="view-overview" class="view active" data-view-panel="overview">
+        <div class="observatory-intro">
+          <div>
+            <p class="eyebrow">SIGNAL OBSERVATORY</p>
+            <p class="observatory-lede">A live, metadata-only view of how work moves through the local runtime.</p>
+          </div>
+          <span id="window-label" class="window-label">Observed evidence window</span>
+        </div>
+        <div class="metric-grid observatory-metrics">
+          <article class="metric primary"><span>Control plane</span><strong id="metric-runtime">—</strong><small>authenticated loopback runtime</small></article>
+          <article class="metric"><span>Active roster</span><strong id="metric-roster">—</strong><small>governed specialists now</small></article>
+          <article class="metric"><span>Observed routes</span><strong id="metric-routing">—</strong><small>bounded evidence window</small></article>
+          <article class="metric"><span>Observed delegations</span><strong id="metric-delegations">—</strong><small>bounded evidence window</small></article>
+          <article class="metric"><span>Evidence footprint</span><strong id="metric-store">—</strong><small>SQLite database + WAL</small></article>
+        </div>
+
+        <div class="observatory-grid">
+          <figure class="panel chart-panel activity-figure">
+            <div class="panel-head">
+              <div><p class="eyebrow">RUNTIME PULSE</p><h2>Routing and delegation flow</h2></div>
+              <span class="panel-tag observed-tag">OBSERVED</span>
+            </div>
+            <div class="chart-legend" aria-label="Chart series">
+              <span class="legend-item legend-routing">Routes</span>
+              <span class="legend-item legend-delegations">Delegations</span>
+            </div>
+            <div id="activity-chart" class="chart-surface activity-chart"></div>
+            <figcaption id="activity-chart-summary" class="chart-summary">Waiting for enough runtime evidence to draw the activity signal.</figcaption>
+          </figure>
+
+          <figure class="panel chart-panel outcome-figure">
+            <div class="panel-head">
+              <div><p class="eyebrow">OUTCOMES</p><h2>Delegation state</h2></div>
+              <span class="panel-tag">WINDOW</span>
+            </div>
+            <div id="outcome-chart" class="chart-surface outcome-chart"></div>
+            <ul class="outcome-legend" aria-label="Delegation outcome counts">
+              <li class="outcome-success"><span>Completed</span><strong id="outcome-success">0</strong></li>
+              <li class="outcome-failed"><span>Failed</span><strong id="outcome-failed">0</strong></li>
+              <li class="outcome-skipped"><span>Skipped</span><strong id="outcome-skipped">0</strong></li>
+              <li class="outcome-unknown"><span>Unknown</span><strong id="outcome-unknown">0</strong></li>
+            </ul>
+            <figcaption id="outcome-chart-summary" class="chart-summary">No delegation outcomes have been observed yet.</figcaption>
+          </figure>
+
+          <article class="panel event-panel">
+            <div class="panel-head"><div><p class="eyebrow">EVENT STREAM</p><h2>Recent delegation activity</h2></div><span class="panel-tag live-tag"><span aria-hidden="true"></span>LIVE</span></div>
+            <div class="table-wrap"><table><caption class="sr-only">Recent observed delegation activity</caption><thead><tr><th scope="col">Agent</th><th scope="col">Host</th><th scope="col">Status</th><th scope="col">Backend</th><th scope="col">Started</th></tr></thead><tbody id="overview-delegations"></tbody></table></div>
+          </article>
+
+          <article class="panel host-summary observatory-hosts">
+            <div class="panel-head"><div><p class="eyebrow">DISCOVERY</p><h2>Host posture</h2></div></div>
+            <div id="overview-hosts" class="host-stack"></div>
+          </article>
+        </div>
+
+        <article class="panel config-panel provider-observatory">
+          <div class="panel-head"><div><p class="eyebrow">RECEIPT EVIDENCE</p><h2>Provider health</h2></div><span class="panel-tag">OBSERVED</span></div>
+          <p class="panel-copy">Health is derived from recent model receipts. It is not a live provider probe, so providers without receipts remain unknown.</p>
+          <div id="provider-health" class="provider-grid"></div>
+        </article>
+      </section>
+
+      <section id="view-routing" class="view" data-view-panel="routing" hidden>
+        <div class="split routing-layout">
+          <article class="panel route-form">
+            <div class="panel-head"><div><p class="eyebrow">DETERMINISTIC + JUDGE</p><h2>Test a routing decision</h2></div></div>
+            <label for="route-task">Task</label>
+            <textarea id="route-task" rows="8" placeholder="Describe a real task, including independent work units when relevant."></textarea>
+            <div class="form-row"><label for="route-session">Session</label><input id="route-session" value="dashboard-lab"></div>
+            <button id="route-button" class="button solid">Run explain receipt</button>
+          </article>
+          <article class="panel receipt-panel">
+            <div class="panel-head"><div><p class="eyebrow">DECISION TRACE</p><h2>Selection receipt</h2></div><span id="route-status" class="panel-tag">IDLE</span></div>
+            <div id="route-result" class="empty-state">Run a task to inspect selected specialists, policy signals, work units, and rejected candidates.</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="view-evidence" class="view" data-view-panel="evidence" hidden>
+        <article class="panel">
+          <div class="panel-head"><div><p class="eyebrow">AUTHORITATIVE EVENTS</p><h2>Runtime evidence</h2></div><span class="panel-tag">CONTENT REDACTED</span></div>
+          <div class="subnav" role="tablist" aria-label="Evidence types">
+            <button class="subnav-item active" role="tab" aria-selected="true" data-evidence="delegations">Delegations</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="routing">Routing decisions</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="receipts">Model receipts</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="runs">Runs</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="finalizations">Finalization</button>
+          </div>
+          <div class="table-wrap"><table><caption id="evidence-caption" class="sr-only">Delegations runtime evidence</caption><thead id="evidence-head"></thead><tbody id="evidence-body"></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="view-roster" class="view" data-view-panel="roster" hidden>
+        <div class="split wide-left">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">ACTIVE</p><h2>Specialist roster</h2></div><span id="roster-count" class="panel-tag">0</span></div>
+            <p id="roster-page-status" class="panel-copy" role="status" aria-live="polite" hidden></p>
+            <div id="roster-grid" class="roster-grid"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">GOVERNANCE</p><h2>Snapshots</h2></div></div>
+            <div id="snapshot-list" class="stack-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="view-hosts" class="view" data-view-panel="hosts" hidden>
+        <article class="panel">
+          <div class="panel-head"><div><p class="eyebrow">NATIVE DISCOVERY</p><h2>Installed agent hosts</h2></div><span class="panel-tag">WINDOWS + LINUX</span></div>
+          <p class="panel-copy">Detection distinguishes an executable host from stale configuration and reports registration maturity separately.</p>
+          <div id="host-grid" class="host-grid"></div>
+        </article>
+      </section>
+
+      <section id="view-settings" class="view" data-view-panel="settings" hidden>
+        <div class="split">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">PRIVACY</p><h2>Telemetry policy</h2></div></div>
+            <dl class="settings-list"><div><dt>Content capture</dt><dd id="setting-capture">—</dd></div><div><dt>Retention</dt><dd id="setting-retention">—</dd></div><div><dt>Binding</dt><dd>Loopback only</dd></div><div><dt>Authentication</dt><dd>Per launch token</dd></div></dl>
+          </article>
+          <article class="panel danger-panel">
+            <div class="panel-head"><div><p class="eyebrow">MAINTENANCE</p><h2>Trim runtime data</h2></div></div>
+            <p class="panel-copy">Delete evidence older than the selected retention window. Roster and configuration data are never included.</p>
+            <label for="trim-days">Older than days</label><input id="trim-days" type="number" min="1" max="3650" value="30">
+            <label for="trim-confirm">Type <code>TRIM RUNTIME DATA</code></label><input id="trim-confirm" autocomplete="off">
+            <button id="trim-button" class="button danger">Trim evidence</button>
+          </article>
+        </div>
+        <form id="config-form" class="config-editor" autocomplete="off">
+          <article class="panel config-panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">RUNTIME POLICY</p><h2>Configure Agency Runtime</h2></div>
+              <span id="config-revision" class="panel-tag">LOADING</span>
+            </div>
+            <p class="panel-copy">The dashboard and CLI use the same validated configuration writer. Changes are written atomically to the user configuration file; fields marked restart required take effect after the affected process restarts.</p>
+            <div class="config-grid">
+              <div>
+                <label for="config-profile">Profile</label>
+                <select id="config-profile" data-config-path="profile">
+                  <option value="standard">Standard</option>
+                  <option value="local-only">Local only</option>
+                  <option value="power">Power</option>
+                  <option value="yolo">YOLO</option>
+                </select>
+              </div>
+              <div>
+                <label for="config-dashboard-port">Dashboard service port <span class="restart-note">restart required</span></label>
+                <input id="config-dashboard-port" data-config-path="dashboard.port" data-value-type="integer" type="number" min="1" max="65535">
+              </div>
+              <div>
+                <label for="config-retention">Runtime retention days</label>
+                <input id="config-retention" data-config-path="observability.retention_days" data-value-type="integer" type="number" min="1" max="3650">
+              </div>
+              <div class="check-field">
+                <input id="config-capture" data-config-path="observability.capture_content" data-value-type="boolean" type="checkbox">
+                <label for="config-capture">Capture redacted prompt content</label>
+              </div>
+            </div>
+          </article>
+
+          <div class="split config-split">
+            <article class="panel">
+              <div class="panel-head"><div><p class="eyebrow">SELECTION</p><h2>Judge and selector</h2></div></div>
+              <div class="config-grid">
+                <div><label for="config-judge-model">Judge model</label><input id="config-judge-model" data-config-path="judge.model"></div>
+                <div><label for="config-judge-url">Judge base URL</label><input id="config-judge-url" data-config-path="judge.base_url" inputmode="url"></div>
+                <div><label for="config-judge-env">API key environment variable</label><input id="config-judge-env" data-config-path="judge.api_key_env" spellcheck="false"></div>
+                <div><label for="config-judge-timeout">Timeout seconds</label><input id="config-judge-timeout" data-config-path="judge.timeout" data-value-type="number" type="number" min="0.05" max="60" step="0.05"></div>
+                <div><label for="config-max-selected">Maximum selected agents</label><input id="config-max-selected" data-config-path="judge.max_selected" data-value-type="integer" type="number" min="1" max="50"></div>
+                <div><label for="config-bypass">Confidence bypass threshold</label><input id="config-bypass" data-config-path="judge.confidence_bypass_threshold" data-value-type="number" type="number" min="0" max="100" step="0.1"></div>
+                <div><label for="config-min-confidence">Minimum candidate confidence</label><input id="config-min-confidence" data-config-path="selector.min_confidence" data-value-type="number" type="number" min="0" max="1" step="0.01"></div>
+                <div><label for="config-max-message">Maximum task length</label><input id="config-max-message" data-config-path="selector.max_user_msg_len" data-value-type="integer" type="number" min="1" max="1000000"></div>
+                <div><label for="config-trivial">Trivial-message threshold</label><input id="config-trivial" data-config-path="selector.trivial_msg_threshold" data-value-type="integer" type="number" min="0" max="10000"></div>
+                <div class="check-field"><input id="config-judge-ollama" data-config-path="judge.ollama_mode" data-value-type="boolean" type="checkbox"><label for="config-judge-ollama">Use Ollama chat protocol</label></div>
+              </div>
+              <details class="secret-editor">
+                <summary>Direct judge key</summary>
+                <p class="field-help">Prefer an environment-variable name above. A direct key is write-only and is never returned by the API.</p>
+                <label for="config-judge-secret">New key (blank preserves the current key)</label>
+                <input id="config-judge-secret" type="password" data-secret-path="judge.api_key">
+                <div class="check-field"><input id="config-judge-secret-clear" type="checkbox"><label for="config-judge-secret-clear">Clear the stored direct key</label></div>
+              </details>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><div><p class="eyebrow">LOCAL FALLBACK</p><h2>Ollama</h2></div></div>
+              <div class="config-grid single-column">
+                <div class="check-field"><input id="config-ollama-enabled" data-config-path="ollama.enabled" data-value-type="boolean" type="checkbox"><label for="config-ollama-enabled">Enable Ollama fallback</label></div>
+                <div><label for="config-ollama-model">Model</label><input id="config-ollama-model" data-config-path="ollama.model"></div>
+                <div><label for="config-ollama-url">Base URL</label><input id="config-ollama-url" data-config-path="ollama.base_url" inputmode="url"></div>
+              </div>
+              <div class="panel-head subsection-head"><div><p class="eyebrow">HOSTS</p><h2>Adapter enablement</h2></div></div>
+              <div class="adapter-grid">
+                <label for="config-adapter-codex">Codex<select id="config-adapter-codex" data-config-path="adapters.codex.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label for="config-adapter-claude">Claude<select id="config-adapter-claude" data-config-path="adapters.claude.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label for="config-adapter-hermes">Hermes<select id="config-adapter-hermes" data-config-path="adapters.hermes.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label for="config-adapter-openclaw">OpenClaw<select id="config-adapter-openclaw" data-config-path="adapters.openclaw.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label for="config-adapter-litellm">LiteLLM<select id="config-adapter-litellm" data-config-path="adapters.litellm.enabled"><option value="auto">Auto</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+              </div>
+              <div class="config-grid">
+                <div><label for="config-litellm-url">LiteLLM base URL</label><input id="config-litellm-url" data-config-path="adapters.litellm.base_url" inputmode="url"></div>
+                <div><label for="config-litellm-env">LiteLLM key environment variable</label><input id="config-litellm-env" data-config-path="adapters.litellm.api_key_env" spellcheck="false"></div>
+                <div><label for="config-litellm-skips">Skipped model prefixes (JSON)</label><textarea id="config-litellm-skips" data-config-path="adapters.litellm.skip_models" data-value-type="json" rows="4" spellcheck="false"></textarea></div>
+              </div>
+              <details class="secret-editor">
+                <summary>Direct LiteLLM key</summary>
+                <p class="field-help">Blank preserves the current key. The value is write-only.</p>
+                <label for="config-litellm-secret">New key</label>
+                <input id="config-litellm-secret" type="password" data-secret-path="adapters.litellm.api_key">
+                <div class="check-field"><input id="config-litellm-secret-clear" type="checkbox"><label for="config-litellm-secret-clear">Clear the stored LiteLLM key</label></div>
+              </details>
+            </article>
+          </div>
+
+          <article class="panel config-panel">
+            <div class="panel-head"><div><p class="eyebrow">ORDERED FALLBACK</p><h2>Providers</h2></div><span class="panel-tag">JSON</span></div>
+            <p class="panel-copy">Providers are tried in order. Supported types are <code>openai-compatible</code>, <code>anthropic</code>, <code>ollama</code>, <code>litellm</code>, and allowlisted <code>cli</code> entries with <code>transport: codex|claude</code>. Prefer <code>api_key_env</code> over direct keys.</p>
+            <label for="config-providers">Provider array</label>
+            <textarea id="config-providers" data-config-path="providers" data-value-type="json" rows="12" spellcheck="false"></textarea>
+            <details class="secret-editor">
+              <summary>Direct provider key</summary>
+              <p class="field-help">Prefer `api_key_env`. Provider keys are selected by the current array index, are write-only, and never appear in API responses.</p>
+              <div class="config-grid">
+                <div><label for="config-provider-secret-index">Provider</label><select id="config-provider-secret-index"></select></div>
+                <div><label for="config-provider-secret">New key (blank preserves)</label><input id="config-provider-secret" type="password"></div>
+              </div>
+              <div class="check-field"><input id="config-provider-secret-clear" type="checkbox"><label for="config-provider-secret-clear">Clear the selected provider key</label></div>
+            </details>
+          </article>
+
+          <details class="panel config-panel advanced-config">
+            <summary>Advanced storage and server settings</summary>
+            <p class="panel-copy">These settings affect newly started processes; changing the store path does not move existing data.</p>
+            <div class="config-grid">
+              <div><label for="config-store-path">SQLite path <span class="restart-note">restart required</span></label><input id="config-store-path" data-config-path="store.db_path"></div>
+              <div><label for="config-server-host">HTTP API host <span class="restart-note">restart required</span></label><input id="config-server-host" data-config-path="server.host" list="config-loopback-hosts" maxlength="255" spellcheck="false" aria-describedby="config-server-host-help"><small id="config-server-host-help" class="field-help">Loopback only; for example <code>127.0.0.1</code>, <code>localhost</code>, or <code>::1</code>.</small><datalist id="config-loopback-hosts"><option value="127.0.0.1"></option><option value="localhost"></option><option value="::1"></option></datalist></div>
+              <div><label for="config-server-port">HTTP API port <span class="restart-note">restart required</span></label><input id="config-server-port" data-config-path="server.port" data-value-type="integer" type="number" min="1" max="65535"></div>
+              <div><label for="config-body-size">Maximum HTTP body bytes <span class="restart-note">restart required</span></label><input id="config-body-size" data-config-path="server.max_body_size" data-value-type="integer" type="number" min="1024" max="67108864"></div>
+              <div><label for="config-policy-path">Companion policy path <span class="restart-note">restart required</span></label><input id="config-policy-path" data-config-path="companion_policy_path" data-nullable="true"></div>
+            </div>
+          </details>
+
+          <div class="config-savebar">
+            <div><strong id="config-change-count" aria-live="polite">No unsaved changes</strong><small id="config-path">Configuration path unavailable</small></div>
+            <div class="card-actions"><button id="config-reset-button" class="button ghost" type="button">Reset fields</button><button id="config-save-button" class="button solid" type="submit" disabled>Review &amp; save</button></div>
+          </div>
+        </form>
+        <article class="panel config-panel"><div class="panel-head"><div><p class="eyebrow">REDACTED</p><h2>Effective configuration</h2></div><span id="config-override-count" class="panel-tag">NO OVERRIDES</span></div><pre id="config-output">Loading…</pre></article>
+      </section>
+    </main>
+  </div>
+  <div id="confirmation-modal" class="confirmation-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmation-title" aria-describedby="confirmation-message" hidden>
+    <div class="confirmation-card">
+      <p class="eyebrow">CONFIRM MUTATION</p>
+      <h2 id="confirmation-title">Confirm this operation</h2>
+      <p id="confirmation-message" class="panel-copy"></p>
+      <label for="confirmation-input">Type <code id="confirmation-phrase"></code></label>
+      <input id="confirmation-input" autocomplete="off" spellcheck="false">
+      <p id="confirmation-error" class="field-error" role="alert" hidden>The confirmation phrase does not match.</p>
+      <div class="card-actions">
+        <button id="confirmation-cancel" class="button ghost" type="button">Cancel</button>
+        <button id="confirmation-accept" class="button solid" type="button">Confirm</button>
+      </div>
+    </div>
+  </div>
+  <script src="/charts.js" defer></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

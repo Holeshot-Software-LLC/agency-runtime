@@ -16,7 +16,6 @@ import logging
 from typing import Any
 
 from agency_runtime.adapters.base import BaseAdapter
-from agency_runtime.core.store.sqlite import Store
 
 logger = logging.getLogger("agency_runtime.adapters.hermes")
 
@@ -27,9 +26,11 @@ class HermesAdapter(BaseAdapter):
     host_name = "hermes"
 
     def is_available(self) -> bool:
-        """Check if Hermes is the current host."""
-        import sys
-        return any("hermes" in module for module in sys.modules)
+        """Return canonical executable or native-state discovery for Hermes."""
+
+        from agency_runtime.core.installer import detect_installed_agents
+
+        return "hermes" in detect_installed_agents()
 
     def report_skills_loaded(self, session_id: str) -> list[str]:
         return self.store.get_skills_for_session(session_id)
@@ -49,13 +50,20 @@ class HermesAdapter(BaseAdapter):
 
     def _suggested_delegations(self, session_id: str) -> list[dict[str, Any]]:
         from agency_runtime.core.delegation.events import suggested_delegations
+
         return suggested_delegations(self.store, session_id)
 
     def post_tool_call_handler(self, **kwargs: Any) -> None:
         """Record skills, specialist loads, and actual delegation tool use."""
         self.record_tool_call(**kwargs)
 
-    def pre_llm_call_handler(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
+    def pre_llm_call_handler(
+        self,
+        session_id: str,
+        user_message: str,
+        model: str = "",
+        trace_id: str = "",
+    ) -> dict[str, Any] | None:
         """Pre-LLM call handler for Hermes plugin system.
 
         ALWAYS runs routing and injects specialist suggestions, even when
@@ -67,9 +75,15 @@ class HermesAdapter(BaseAdapter):
         sees [AGENCY PREFLIGHT] suggestions and writes 'loaded: none' on
         every turn — making the entire plugin broken from the start.
         """
-        return self.build_preflight_context(session_id, user_message, model)
+        return self.build_preflight_context(session_id, user_message, model, trace_id)
 
-    def pre_verify_handler(self, final_response: str, session_id: str = "", model: str = "", attempt: int = 0) -> dict[str, Any] | None:
+    def pre_verify_handler(
+        self,
+        final_response: str,
+        session_id: str = "",
+        model: str = "",
+        attempt: int = 0,
+    ) -> dict[str, Any] | None:
         """Pre-verify handler — gate response completion on agency header.
 
         Two checks:

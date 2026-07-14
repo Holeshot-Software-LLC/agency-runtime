@@ -1,502 +1,615 @@
-<div align="center">
+---
+title: "Agency Runtime"
+status: active
+category: overview
+created: 2026-07-08
+updated: 2026-07-12
+tags: [agents, routing, operations]
+related:
+  - CODE_OF_CONDUCT.md
+  - CONTRIBUTING.md
+  - SECURITY.md
+  - docs/THREAT_MODEL.md
+  - docs/TROUBLESHOOTING.md
+  - docs/RELEASE_CHECKLIST.md
+  - docs/roadmap/README.md
+  - docs/decisions/README.md
+supersedes: []
+superseded_by: null
+---
 
 # Agency Runtime
 
-**A portable control plane for AI-agent specialist routing, delegation evidence, roster governance, and model/run observability.**
+Agency Runtime is a local control plane for specialist routing, delegation,
+roster governance, and evidence about what an AI-agent host actually did. It
+runs as a Python package, keeps durable state in SQLite, and can integrate with
+Codex, Claude Code, Hermes, OpenClaw, LiteLLM, MCP clients, or an explicitly
+configured generic command.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#testing)
+The project is prerelease software. Installation from this repository is the
+canonical distribution path; there is no claim that a package has been
+published to a public index.
 
-</div>
+## What is production-gated
 
----
+Agency Runtime does not treat generated files as proof of a working host
+integration. Host support has two independent dimensions:
 
-## Architecture at a Glance
+1. **Contract coverage** proves bundle layouts, hook translations, native
+   lifecycle commands, failure handling, MCP protocol behavior, and Windows /
+   POSIX process construction in deterministic tests.
+2. **Live maturity** advances only when native inventory proves discovery,
+   registration, enablement, loading, and a canary where the host exposes one.
 
-```mermaid
-graph TB
-    subgraph "Roster Governance"
-        SRC[Upstream Source] --> QUAR[Quarantine]
-        QUAR --> DIFF[Diff Snapshot]
-        DIFF --> APPROVE{Approve}
-        APPROVE -->|yes| ACT[Activate Roster]
-        APPROVE -->|no| QUAR
-    end
+The v1 target matrix is Codex, Claude Code, Hermes, and OpenClaw on native
+Windows and Ubuntu/WSL. All four have deterministic v1 host-contract coverage.
+That does not by itself mean all four were live-tested on this machine or on
+both operating systems.
 
-    subgraph "8-Layer Routing Pipeline"
-        MSG[User Message] --> L0
-        L0[Layer 0: Companion Policy] --> L1[Layer 1: Domain Expansion]
-        L1 --> L2[Layer 2: Content-Hash Cache]
-        L2 -->|miss| L3[Layer 3: Session Stickiness]
-        L3 -->|miss| L4[Layer 4: Confidence Bypass]
-        L4 -->|below threshold| L5[Layer 5: Token Pre-Narrow]
-        L5 --> L6[Layer 6: LLM Judge]
-        L6 --> L7[Layer 7: Union Companion + Semantic]
-        L7 --> RESULT[Routing Result]
-        ACT --> L0
-        ACT --> L5
-    end
+### Current verification snapshot
 
-    subgraph "Delegation Evidence"
-        RESULT -->|2+ work units| SUGG[suggested]
-        SUGG -->|delegate_task call| DELEG[delegated]
-        SUGG -->|no call| SUGG
-    end
+This checkout was inspected on 2026-07-13. These are dated local results, not a
+substitute for the final hosted release matrix:
 
-    subgraph "Observability"
-        RESULT --> HDR[6-Line Header]
-        DELEG --> HDR
-    end
-```
-
-```mermaid
-graph LR
-    subgraph "Policy Resolution Order"
-        A[AGENCY_POLICY_PATH env] -->|fallback| B[companion_policy_path in agency.yaml]
-        B -->|fallback| C[Bundled companion_policy.yaml]
-    end
-
-    subgraph "Config Resolution Order"
-        D[Env Vars] -->|fallback| E[~/.agency-runtime/agency.yaml]
-        E -->|fallback| F[Bundled config_defaults.yaml]
-    end
-```
-
-## Thank You: agency-agents
-
-Agency Runtime exists because [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) made a high-quality open specialist-agent roster available to the community.
-
-That project is the inspiration and the default upstream roster source. Agency Runtime is intentionally complementary: it does **not** replace `agency-agents`; it gives AI-agent hosts a portable runtime that can import, quarantine, diff, activate, route, delegate, and audit specialist rosters such as `agency-agents`.
-
-## Why This Exists
-
-Every AI-agent framework eventually hits the same operational wall: the agent can call tools, but it cannot reliably prove which specialist it consulted, which work it delegated, which model actually ran, or why a routing decision happened.
-
-Agency Runtime makes those decisions visible and durable:
-
-1. **Specialist Routing** - an 8-layer pipeline matches tasks to the right specialist from your active roster.
-2. **Delegation Accountability** - independent work units are persisted as `suggested`, then promoted to `delegated` only when a host actually calls a delegation tool.
-3. **Model Receipts** - every host adapter can record the resolved model from runtime telemetry, including honest `unavailable` receipts when a host emits no model truth.
-4. **Observability Headers** - responses start with a six-line header showing loaded specialists, delegated specialists, loaded skills, actual model, and outcome rationale.
-5. **Roster Governance** - upstream agent rosters flow through quarantine, diff, approval, and activation before they affect routing.
-
-## Agency Runtime vs agency-agents
-
-| Project | What it is | What it owns |
+| Environment / host | Contract evidence | Live evidence in this checkout |
 |---|---|---|
-| [`agency-agents`](https://github.com/msitarzewski/agency-agents) | Open specialist-agent roster and prompt ecosystem | Agent definitions, names, roles, specialist prompts, upstream community roster |
-| `agency-runtime` | Portable runtime/control plane | Host adapters, SQLite state, routing, delegation evidence, model receipts, roster import/governance, CLI/server surfaces |
-
-Use them together:
-
-```bash
-agency source add /path/to/agency-agents/integrations/hermes/agency-agents-router/data/agents.json --name agency-agents
-agency sync --review
-agency roster approve <snapshot-id>
-agency roster activate <snapshot-id>
-```
-
-## Install
-
-### From GitHub
-
-```bash
-python -m pip install "agency-runtime @ git+https://github.com/<owner>/agency-runtime.git"
-agency configure --non-interactive --profile standard
-agency install --all
-agency doctor
-agency smoke --all
-```
-
-### From a Local Clone
-
-```bash
-git clone https://github.com/<owner>/agency-runtime.git
-cd agency-runtime
-python -m pip install -e ".[dev]"
-python -m pytest tests/ -q
-agency configure --non-interactive --profile standard
-agency install --all
-agency doctor
-agency smoke --all
-```
-
-### Paste-Into-An-Agent Prompt
-
-Use this prompt in Codex, Claude Code, Hermes, OpenClaw/Nexus, or another coding agent:
-
-```text
-Install Agency Runtime from https://github.com/<owner>/agency-runtime.
-Use the repo README as source of truth. Install it in editable mode if working from a clone, run `agency configure --non-interactive --profile standard`, then run `agency install --all`, `agency doctor`, `agency smoke --all`, `agency eval delegation --json`, and `agency route "review this PR for security issues"`.
-If the package is already cloned locally, do not reclone it; update/install from that working tree. Preserve existing config and do not delete roster data. Report the exact plugin paths wired, test results, and any host that was not detected.
-```
-
-## Setup Modes
-
-### Auto-Detect Every Host
-
-```bash
-agency install --all
-```
-
-Scans for supported hosts and writes thin plugin files that import from the installed `agency_runtime` package. No host gets vendored code.
-
-### Single Host
-
-```bash
-agency install --agent hermes
-agency install --agent openclaw
-agency install --agent codex
-agency install --agent claude
-```
-
-### Standalone CLI/Library
-
-```bash
-agency install
-agency route "review this PR for security issues"
-agency search "SRE incident"
-agency route "review this PR"     # now shows companion actions + ids
-agency policy                      # validate all 16 broad actions against roster
-agency policy --json               # machine-readable coverage report
-```
-
-This seeds the starter roster and leaves host plugin wiring untouched.
-
-### Enable / Disable Host Wiring
-
-```bash
-agency off --agent hermes
-agency on --agent hermes
-```
-
-Disable renames the generated plugin to `__init__.py.disabled`; it does not delete SQLite state.
-
-## Supported Hosts
-
-| Host | Runtime surface | Evidence support |
-|---|---|---|
-| Hermes Agent | `~/.hermes-nexus/plugins/agency-preflight/` | Preflight, pre-verify, post-tool evidence, model receipts, response finalization |
-| OpenClaw / Nexus | `~/.openclaw/agency-preflight/` | Typed hook parity, post-tool evidence, model receipts, response finalization |
-| Codex | `~/.codex/agency-preflight/` plus `codex exec` backend | Generated hook plugin, CLI delegation backend, tool evidence, model receipts |
-| Claude Code | `~/.claude/agency-preflight/` plus `claude` backend | Generated hook plugin, CLI delegation backend, tool evidence, model receipts |
-| Generic CLI | `agency_runtime.adapters.generic.wrapper.GenericAdapter` | Generic command backend, tool evidence, model receipts |
-
-Generated plugins are smoke-tested by importing the written plugin, registering hooks, and exercising `pre_llm_call`, `pre_verify`, `post_tool_call`, `post_api_request`, and `transform_llm_output`.
-
-## Configuration
-
-`agency configure` writes `~/.agency-runtime/agency.yaml` and stores runtime state in `~/.agency-runtime/agency.db` by default.
-
-```bash
-agency configure                    # guided setup
-agency configure --non-interactive  # detected defaults
-agency config show                  # redacted effective config
-agency config validate              # config + provider reachability checks
-agency config path                  # config location
-```
-
-Environment overrides:
-
-| Variable | Purpose |
-|---|---|
-| `AGENCY_CONFIG_PATH` | Config file location |
-| `AGENCY_DB_PATH` | SQLite database path |
-| `AGENCY_JUDGE_MODEL` | Specialist-routing judge model |
-| `AGENCY_JUDGE_BASE_URL` | Judge endpoint URL |
-| `AGENCY_JUDGE_API_KEY` | Judge API key |
-| `AGENCY_JUDGE_TIMEOUT` | Judge timeout in seconds |
-| `AGENCY_MAX_SELECTED` | Max specialists per task |
-| `AGENCY_BYPASS_THRESHOLD` | Token-score threshold before skipping the LLM judge |
-| `LITELLM_API_KEY` | LiteLLM proxy key |
-| `OPENAI_API_KEY` | OpenAI-compatible provider key |
-| `ANTHROPIC_API_KEY` | Anthropic provider key |
-| `OLLAMA_BASE_URL` | Ollama endpoint |
-
-Profiles:
-
-```bash
-agency configure --profile local-only   # local/free-first, no network sync
-agency configure --profile standard     # default detected providers, manual roster activation
-agency configure --profile power        # power-user defaults, still approval-gated
-agency configure --profile yolo         # trusted-source nightly automation mode
-```
-
-## Roster Sync Job
-
-Agency Runtime's built-in roster sync job is `agency sync`. It is intentionally approval-gated:
-
-```bash
-agency source add /path/to/agency-agents/integrations/hermes/agency-agents-router/data/agents.json --name agency-agents
-agency sync --dry-run                  # fetch + validate without writing candidates
-agency sync --review                   # quarantine candidates and show snapshot diff
-agency roster approve <snapshot-id>    # approve the generated snapshot
-agency roster activate <snapshot-id>   # activate approved agents for routing
-agency roster list
-```
-
-For trusted automation, use:
-
-```bash
-agency source add /path/to/agents.json --name agency-agents --trusted-for-auto-approve
-agency sync --auto-approve
-```
-
-`--auto-approve` fails closed unless every enabled source is explicitly marked `--trusted-for-auto-approve`, every source fetches and validates successfully, and at least one candidate is quarantined. Use a raw JSON/YAML/Markdown file, a local directory, or a generated `agents.json`; regular GitHub repository pages are HTML and are rejected.
-
-The sync pipeline is:
-
-1. **Source** - registered with `agency source add`.
-2. **Download** - agent files are fetched and hashed.
-3. **Quarantine** - candidates are normalized and validated before activation.
-4. **Diff** - `added`, `changed`, `removed`, and `unchanged` are captured in a snapshot.
-5. **Approve** - an operator or trusted job approves the snapshot.
-6. **Activate** - active roster rows are replaced from the approved snapshot.
-7. **Audit** - import events, snapshots, active agents, and versions remain in SQLite.
-
-No sync path silently enables arbitrary upstream agents unless you explicitly run `--auto-approve` or approve/activate the snapshot. `agency install` seeds bundled starter agents only when those slugs are missing, so reinstalling host plugins does not downgrade agents that were already activated from a trusted synced roster.
-
-## How Routing Works
-
-```text
-User Message
-  -> Layer 0: companion policy for deterministic action-to-agent matches
-  -> Layer 1: domain expansion
-  -> Layer 2: content-hash cache
-  -> Layer 3: session stickiness
-  -> Layer 4: confidence bypass for strong token matches
-  -> Layer 5: token pre-narrowing
-  -> Layer 6: LLM judge with provider fallback
-  -> Layer 7: union companion + semantic results
-  -> Routing Result: selected_ids, confidence, status, work_units
-```
-
-Even without a working LLM provider, routing falls back to token scoring so the agent gets a deterministic result instead of a silent failure.
-
-### Current Companion Policy Coverage
-
-Layer 0 loads deterministic companions from `AGENCY_POLICY_PATH`, then `companion_policy_path` in `agency.yaml`, then the bundled fallback. The full policy used by the current runtime configuration is the broad-action matrix below.
-
-Current verification against the active roster shows:
-
-- All `always_include` specialists in the matrix are present in the active roster.
-- The full policy references 16 broad actions and 238 unique specialist slugs.
-- Three conditional entries are configured but not currently active in the roster: `internationalization-engineer`, `payments-billing-engineer`, and `test-automation-engineer`.
-- `agency route` is a token-ranked CLI helper that now also displays Layer 0 companion actions and ids; use `agency explain` or `agency policy` for full selector/policy inspection.
-
-| Broad action | Always include | Conditional coverage |
-|---|---|---|
-| `CODING` | `code-reviewer`, `reality-checker`, `senior-developer` | AppSec, codebase onboarding, minimal-change, prompt/API/LSP/git specialists, CMS/e-commerce, embedded/mobile, Solidity, voice AI, Feishu/WeChat, and other engineering niches. Roster gaps: `internationalization-engineer`, `payments-billing-engineer`. |
-| `PERFORMANCE` | `performance-benchmarker`, `autonomous-optimization-architect` | Database optimization, codebase onboarding, architecture, senior implementation, and test automation. Roster gap: `test-automation-engineer`. |
-| `GITHUB_WRITE` | `technical-writer`, `git-workflow-master`, `code-reviewer` | Jira-linked Git workflow stewardship. |
-| `ARCHITECTURE` | `software-architect`, `workflow-architect` | Multi-agent systems, backend/API architecture, rapid prototyping, i18n, and payments architecture. Roster gaps: `internationalization-engineer`, `payments-billing-engineer`. |
-| `ORCHESTRATION` | `agents-orchestrator`, `workflow-architect`, `chief-of-staff` | Product/project management, project shepherding, infrastructure maintenance, automation governance, and multi-agent systems. |
-| `DEBUGGING` | `codebase-onboarding-engineer`, `code-reviewer` | Incident command, SRE, SecOps, and reality-check verification. |
-| `DEVOPS_INFRA` | `devops-automator`, `infrastructure-maintainer` | SRE, network engineering, IT service management, support response, i18n, and payments. Roster gaps: `internationalization-engineer`, `payments-billing-engineer`. |
-| `IDEATION` | `trend-researcher`, `developer-advocate`, `product-manager` | Sprint prioritization, business strategy, growth, feedback synthesis, and behavioral nudging. |
-| `DOCUMENTATION` | `technical-writer` | Document generation, Zettelkasten/knowledge-base stewardship, and grant writing. |
-| `SECURITY` | `application-security-engineer`, `security-architect` | Pen testing, compliance, SecOps, cloud security, threat intel, incident response, blockchain security, privacy, and detection engineering. |
-| `TESTING_QA` | `reality-checker`, `evidence-collector` | Performance/API/accessibility testing, result analysis, tool evaluation, workflow optimization, model QA, and test automation. Roster gap: `test-automation-engineer`. |
-| `UI_UX` | `ui-designer`, `ux-architect` | UX research, frontend implementation, visual storytelling, brand, whimsy, persona walkthroughs, inclusive visuals, accessibility, and image prompting. |
-| `DATA_ML` | `ai-engineer`, `data-engineer` | Autonomous optimization, model QA, analytics reporting, prompt engineering, and AI data remediation. |
-| `BUSINESS` | `business-strategist`, `financial-analyst` | Finance, sales, marketing, legal, compliance, content, social, paid media, China market, and growth specialists. |
-| `PROJECT_MGMT` | `senior-project-manager`, `project-shepherd` | Product management, studio production/operations, experiment tracking, meeting notes, and operations management. |
-| `DEFAULT` | `agents-orchestrator`, `chief-of-staff` | Executive summaries, strategy duel, business strategy, game-development, GIS, spatial, and other specialized fallback coverage. |
-
-### Explain Routing Decisions
-
-Use `agency explain` or `POST /explain` when an operator needs to debug why a specialist was selected:
-
-```bash
-agency explain "review this PR for security issues" --session-id session-1 --limit 10
-curl -s http://127.0.0.1:7800/explain \
-  -H 'Content-Type: application/json' \
-  -d '{"session_id":"session-1","task":"review this PR for security issues","limit":10}'
-```
-
-The JSON receipt is stable under `schema_version="agency.selection_explain.v1"` and includes selected specialists, considered candidates, rejected-candidate reasons, policy hits, domain expansion, cache/stickiness state, selection status, and work-unit evidence. The MCP surface exposes the same receipt as `agency.explain_selection`.
-
-## Delegation Evidence
-
-When the selector detects multiple independent work units, Agency Runtime writes `delegation_events` rows with `status='suggested'`. Host tool calls then promote those rows:
-
-| Host tool | Event transition | Header effect |
-|---|---|---|
-| `delegate_task` / `delegate_async` | `suggested -> delegated` | `Agency/Agencies delegated: <agent> via delegate_task` |
-| `agency_agents_delegate` | `suggested -> delegated` when nested `delegate_task` succeeds; `suggested -> skipped` with `skip_reason` when the host delegate backend fails | delegated specialist or explicit blocker |
-| no delegation tool call | remains `suggested` | pre-verify rejects bare `Agency/Agencies delegated: none` |
-| explicit blocker | remains `suggested` with a non-bare reason in the header | accepted as surfaced evidence |
-
-This is the contract: detection alone is not delegation. A passing run must align preflight context, SQLite delegation events, the final header, and pre-verify behavior.
-
-```mermaid
-stateDiagram-v2
-    [*] --> Suggested: Route detects 2+ work units
-    Suggested --> Delegated: Host calls delegate_task
-    Suggested --> Skipped: Backend fails / timeout
-    Suggested --> Suggested: No delegation call
-    Delegated --> [*]
-    Skipped --> [*]
-```
-
-## Observability Header
-
-Every enabled host can finalize responses into this shape:
-
-```text
-Agency/Agencies loaded: security-architect, code-reviewer
-Agency/Agencies delegated: security-architect via delegate_task
-Skills loaded: github-code-review
-Actual Model selected: task-implementation -> anthropic/claude-3-5-sonnet
-Why: Security review requires threat modeling expertise
-How it shaped outcome: Identified injection vectors in auth middleware
-```
-
-Important distinction: skills are not Agency roster agents. For example, `agent-reach` is reported under `Skills loaded`, never under `Agency/Agencies loaded`.
-
-## Model Receipts
-
-The `Actual Model selected` line is populated from runtime receipts, not from a requested alias. If a LiteLLM group or host fallback resolves `task-implementation` to another model, Agency Runtime stores the resolved provider/model. If a host emits no model telemetry, the receipt records `resolved_model='unavailable'` instead of inventing a value.
-
-```sql
-SELECT requested_model, resolved_provider, resolved_model, status
-FROM model_receipts
-WHERE session_id = '...'
-ORDER BY ended_at DESC;
-```
-
-## SQLite Maintenance
-
-Runtime tables are append-only by design. Keep the DB bounded with:
-
-```bash
-agency db stats
-agency db trim --older-than-days 30 --dry-run
-agency db trim --older-than-days 30
-agency db trim --keep-last 1000 --no-vacuum
-```
-
-Trim only touches runtime/audit tables (`runs`, `model_receipts`, `skills_loaded`, `specialists_loaded`, `delegation_events`, `worker_runs`, `finalization_events`). Roster sources, candidates, snapshots, versions, and active agents are preserved.
-
-## CLI Reference
-
-```bash
-# Setup / health
-agency configure
-agency install [--all|--agent NAME]
-agency on [--agent NAME]
-agency off [--agent NAME]
-agency doctor [--json]
-agency smoke [--all] [--json]
-
-# Config
-agency config show
-agency config set judge.model <model>
-agency config validate
-agency config path
-
-# Roster
-agency source add <url> [--name NAME] [--trusted-for-auto-approve]
-agency source list
-agency sync [--dry-run|--review|--auto-approve]
-agency roster list
-agency roster diff --json
-agency roster approve <snapshot-id>
-agency roster activate <snapshot-id>
-agency search "security"
-agency route "review this PR"
-agency explain "review this PR" --session-id session-1 --limit 10
-
-# Evidence / maintenance
-agency eval delegation --json
-agency smoke --all --json
-agency db stats --json
-agency db trim --older-than-days 30 --json
-
-# Servers / adapters
-agency serve
-agency delegate --backend codex --agent code-reviewer --task "review this diff" --timeout 30 --json
-agency codex exec --help
-```
-
-## Python API
-
-```python
-from agency_runtime.core.selector.pipeline import route
-from agency_runtime.core.store.sqlite import Store
-
-store = Store()
-result = route(
-    session_id="session-1",
-    user_message="Review this PR for security issues",
-    catalog=store.get_active_roster_as_catalog(),
-)
-print(result["selected_ids"])
-print(result["work_units"])
-```
+| Windows / Python | Warning-strict suite and exact line/branch coverage | `2303 passed`, `5 skipped`, and `2` performance tests deselected. All `17,284` statements and `5,408` branches were covered with zero missing lines or partial branches (`100.00%`). |
+| Ubuntu 24.04 WSL / Python 3.12 | Native ext4 full-suite and performance execution | `2215 passed`, `16 skipped`; the separate performance run passed both tests. No Linux host was installed, so no live Linux host maturity is claimed. |
+| Routing and delegation | Versioned offline routing, policy, delegation-detection, DAG, concurrency, and latency gates | All `25` routing gates passed: precision@3 `0.9744`, required recall/top-1/top-k `1.0`, and policy macro F1 `0.9958`. Delegation passed `12/12`; the final 1,000-agent benchmark measured p95 `8.640 ms`, cache p95 `0.385 ms`, `155.73` calls/second, and overlap `8`. |
+| Dashboard | Authenticated server, lifecycle, configuration, accessibility, and modular browser contracts | All `60/60` JavaScript tests passed at `100.00%` line, branch, and function coverage. Authenticated Chrome smoke loaded all seven scripts, rendered host cards, refreshed live state, re-enabled the control, and produced no application console errors. |
+| Codex 0.144.1 on native Windows | Deterministic bundle, hook, MCP, lifecycle, `.CMD` launch, rollback, and isolated-canary contracts | Agency Runtime is registered and enabled. An exact-confirmed native isolated-profile canary exited `0`, produced a valid six-line header with no missing fields, recorded one correlated routing event and one finalization, and persisted the attestation for trace `019f5bdd-612d-70c0-b369-2b038faa3d02`; it recorded no model receipt. A live keyless judge selection used `codex-cli (cli:codex)` with confidence `0.87` in `6880 ms`; the installed `$agency status` skill loaded and called `agency.host_status`; live CLI `off`/`on` succeeded and ended enabled. Real-profile command-hook trust remains a manual `/hooks` review, is reported as `unverified`, and is not promoted to `runtime-verified` by the isolated result. |
+| Claude Code on native Windows | Deterministic bundle, hook, MCP, lifecycle, and rollback tests | Host absent |
+| Hermes on native Windows | Deterministic native plugin, lifecycle, delegation, and rollback tests | Host absent |
+| OpenClaw on native Windows | Deterministic JavaScript bundle, JSON bridge, lifecycle, runtime-inspection, and rollback tests | Host absent |
+
+Run `agency doctor --json` for current evidence. A local result may differ from
+the snapshot above.
 
 ## Architecture
 
-```text
-agency_runtime/
-  core/
-    config.py              # agency.yaml loader, provider entries, env overrides
-    doctor.py              # health checks
-    installer.py           # host detection, plugin writing, on/off toggle
-    store/sqlite.py        # canonical SQLite store
-    selector/              # routing pipeline, cache, stickiness, judge, policy
-    header/                # six-line header parsing/fill/finalization
-    receipts/              # host + LiteLLM receipt normalization
-    delegation/            # lifecycle, backends, events, ledger
-    evals/                 # deterministic runtime evals
-  adapters/
-    base.py                # shared host adapter contract
-    hermes/plugin.py       # Hermes adapter
-    openclaw/plugin.py     # OpenClaw/Nexus adapter
-    codex/wrapper.py       # Codex wrapper/backend
-    claude/wrapper.py      # Claude wrapper/backend
-    generic/wrapper.py     # generic CLI adapter
-    litellm/callback.py    # LiteLLM callback adapter
-  cli/main.py              # agency CLI
-  server/http.py           # REST API
-  server/mcp.py            # MCP server
+```mermaid
+flowchart LR
+    H["Agent host or MCP client"] --> P["Routing and policy pipeline"]
+    P --> D["Immutable decision trace"]
+    P --> W["Delegation lifecycle"]
+    D --> S["Canonical SQLite store"]
+    W --> S
+    H --> E["Tool and model events"]
+    E --> S
+    S --> F["Evidence-reconciled final response"]
+    S --> U["Loopback operations dashboard"]
 ```
 
-## Testing
+The selector fingerprints the active roster, full selector/provider
+configuration, and companion policy. Cache and session reuse are rejected when
+that fingerprint changes. Zero-signal requests abstain instead of selecting an
+arbitrary agent. Every routing call receives a fresh trace identity even when
+the selection result came from cache.
+
+Runtime claims are failure-aware. A specialist load, delegation, model receipt,
+or final response is not promoted to success merely because a tool was called.
+Delegations correlate to a stable work-unit identity; failed prerequisites skip
+dependents; and the final header is reconciled against canonical evidence rather
+than trusting model-authored claims.
+
+## Install
+
+Python 3.10 or newer is required.
 
 ```bash
-python -m pytest tests/ -q
-python -m pytest tests/test_delegation_enforcement.py tests/test_adapter_parity.py -q
-agency eval delegation --json
+git clone https://github.com/Holeshot-Software-LLC/agency-runtime.git
+cd agency-runtime
+python -m pip install .
 agency smoke --all --json
+agency configure --non-interactive --profile standard
+agency install --all --dry-run
+agency install --all
+agency doctor
 ```
 
-Coverage includes config parsing, provider fallback, roster sync, routing, header validation/finalization, model receipts, delegation lifecycle, all-host adapter evidence parity, generated plugin imports, deterministic smoke checks, SQLite trimming, doctor checks, and HTTP server endpoints.
+This installs an ordinary wheel-backed environment from the checkout. Use the
+editable development extras and full test matrix documented in
+[CONTRIBUTING.md](CONTRIBUTING.md) only when contributing code.
 
-## Contributing
+`agency install --all` discovers hosts from their executable or a current
+native-state marker. A bare historical configuration directory is reported as
+`stale-config` and is not selected automatically. Use `--agent` for an explicit
+single-host operation:
 
-1. Keep host adapters thin; shared behavior belongs in `BaseAdapter` or `core/`.
-2. Add tests for every behavior change.
-3. Run `python -m pytest tests/ -q` before opening a PR.
-4. Do not commit credentials, provider keys, or private host paths.
-5. Keep generated code indexes local: `.codegraph/`, `.chunkhound/`, `.graphify/`, and `graphify-out/` should be regenerated on demand, not committed.
-6. Preserve attribution for upstream roster sources such as `agency-agents`.
+```bash
+agency install --agent codex --dry-run
+agency install --agent codex
+agency install --agent codex --rollback
+agency install --agent codex --rollback --backup <retained-backup-path>
+```
 
-## Requirements
+Installation also registers and starts the optional dashboard for the current
+operating-system user: Task Scheduler on Windows and `systemd --user` on Linux.
+It never requests an administrator/system service. Opt out without probing or
+changing the service manager:
 
-- Python 3.10+
-- SQLite3 from the Python standard library
-- `pyyaml`
-- Optional: Ollama for local routing fallback
-- Optional: host CLIs such as `codex`, `claude`, `hermes`, or OpenClaw/Nexus
+```bash
+agency install --all --no-dashboard
+```
+
+The dry run writes nothing and includes the exact dashboard-service plan. A
+real install stages a complete managed tree
+atomically, moves the previous managed tree to a timestamped backup, and then
+uses the host's native plugin lifecycle. Native registration failure returns a
+nonzero partial-failure result; staged files are never reported as registered.
+The installer never restarts a host automatically. In particular, OpenClaw
+installation stops when a live gateway is proven and requires the operator to
+schedule the restart.
+
+The dashboard service is also fail-honest: if Task Scheduler or the Linux user
+manager is unavailable, installation reports that component incomplete and
+returns nonzero. The foreground dashboard remains usable, or rerun with
+`--no-dashboard` after reviewing the limitation.
+
+### Installed paths
+
+| Host | Managed source path | Native lifecycle |
+|---|---|---|
+| Hermes | `~/.hermes/plugins/agency-preflight/` | `hermes plugins` |
+| OpenClaw | `~/.agency-runtime/host-plugins/openclaw/agency-preflight/` | `openclaw plugins` |
+| Codex | `~/.agency-runtime/marketplaces/codex/` | `codex plugin` |
+| Claude Code | `~/.agency-runtime/marketplaces/claude/` | `claude plugin` |
+
+Codex and Claude bundles contain their host-native marketplace manifest, plugin
+manifest, hook contract, `.mcp.json`, and an Agency control skill. OpenClaw
+receives a native JavaScript package that invokes the installed Python runtime
+through bounded JSON. Hermes receives its native Python plugin manifest, hook
+registration, and direct command registration. Backups live under
+`~/.agency-runtime/backups/<host>/`.
+
+Codex intentionally does not trust command hooks merely because a plugin was
+installed or enabled. Agency Runtime's generated-bundle smoke validates the
+expected events, commands, and timeout schema, while native plugin inventory
+proves registration and enablement. Installation, status, and doctor
+conservatively report hook trust as `unverified` with the required action; they
+do not query or mutate Codex's live trust store. The operator must open
+`/hooks`, review and trust the three Agency hooks, and then start a new
+session. The exact-confirmed isolated canary may request Codex's explicit
+one-invocation trust bypass; that is scoped to the canary and is never persisted
+or used as installation policy.
+
+### Installation maturity
+
+`agency doctor`, the installer JSON output, and the dashboard use the same
+evidence vocabulary:
+
+| Maturity | Meaning |
+|---|---|
+| `absent` | No executable, current native state, stale root, or managed stage was found |
+| `stale-config` | A host root exists, but no executable or current native marker proves an installed host |
+| `host-discovered` | An executable or current native state was found; Agency Runtime is not registered |
+| `staged-not-registered` | The managed bundle exists, but native inventory does not prove registration |
+| `registered-disabled` | Native inventory proves registration and disablement |
+| `registered-enablement-unverified` | Registration is proven; enablement is not exposed or not proven |
+| `enabled-runtime-unverified` | Registration and enablement are proven; a loaded runtime is not |
+| `runtime-verified` | Native runtime inspection proves the integration loaded; `canary` is separately reported when supported |
+
+Unknown values remain unknown. The system does not infer `loaded` or `canary`
+from file existence.
+
+### Enable, disable, and restore
+
+```bash
+agency status --agent codex
+agency off --agent codex --dry-run
+agency off --agent codex
+agency on --agent codex
+agency off --agent codex --native --dry-run
+agency off --agent codex --native
+```
+
+The default `on` and `off` commands write a persistent host-scoped soft
+control to SQLite. Every adapter reads it again at each routing, tool,
+model-receipt, finalization, and verification boundary, so an already-created
+adapter stops recording or shaping work after `off` and resumes after `on`.
+This does not unregister the native plugin or require a host restart. It also
+does not prove that the host loaded the integration in the first place.
+
+`--native` is the explicit host-plugin lifecycle operation. It succeeds only
+when post-operation native inventory proves the requested state; unknown
+enablement remains unverified and may require a host restart. Neither control
+mode deletes configuration, roster state, runtime evidence, or backups.
+
+Hermes and OpenClaw bundles register a direct `/agency status|on|off` command.
+Codex and Claude bundles provide the equivalent `agency status|on|off` control
+skill, including a leading-slash form when the host routes it through the skill;
+it calls exact-confirmed `agency.host_status` and `agency.host_control` MCP
+tools. The CLI, dashboard, generated host surfaces, and MCP tools share the same
+soft-control record. In the 2026-07-12 native Codex check, `$agency status`
+loaded the installed skill and called `agency.host_status` successfully. Two
+noninteractive chat control mutations were correctly cancelled by Codex's user-
+approval layer, so live chat `on`/`off` is not claimed; direct CLI `off` and
+`on` succeeded and left the integration enabled. Deterministic MCP tests cover
+both control mutations.
+
+### Host canaries
+
+```bash
+agency host-canary codex
+agency host-canary codex --execute --confirm "RUN LIVE codex CANARY"
+```
+
+The default command is a read-only readiness report and never creates a
+database or claims a live result. Live execution requires the exact confirmation
+phrase, a discovered host and managed bundle identity, enabled soft control, a
+bounded safe backend, a valid final-response header, and nonce-bound correlated
+routing/finalization evidence. Prompts and host output are not stored in the
+attestation.
+
+Codex uses a private temporary `CODEX_HOME`, copies only its bounded
+authentication artifact into that owner-private home, registers the managed marketplace and
+plugin inside that temporary profile, ignores user configuration and project
+rules, disables shell/web/app/MCP mutation surfaces, and removes the profile
+afterward. Its report preserves the real profile's native registration facts
+separately and records any success as `isolated-profile`; that attestation
+cannot promote the real profile's `canary` state. Claude likewise copies only
+its bounded credentials into a temporary `CLAUDE_CONFIG_DIR`, requests the
+managed plugin explicitly, disables user/project setting sources, tools, MCP,
+and session persistence, and reports it loaded/invoked only when nonce-bound
+hook evidence proves that fact. It does not use Claude's `--safe-mode`, because
+that mode disables the plugin and hooks being tested. Hermes and OpenClaw fail
+closed because no equally safe noninteractive mode is yet proven.
+
+A durable attestation is matched against operating system, host version, plugin
+version, install ID, bundle digest, profile scope, and current native state.
+Upgrade, reinstall, rollback, bundle drift, or a non-current profile makes it
+stale. On 2026-07-12, the exact-confirmed Codex 0.144.1 isolated-profile canary
+completed with exit code `0`, a valid six-line header, one nonce-bound routing
+event, one correlated finalization, no model receipt, and a persisted
+attestation. The canary's explicit one-invocation trust bypass did not trust the
+real profile or establish Linux Codex maturity: operators still review the
+installed hooks through `/hooks` and start a new session.
+
+## Secure operations dashboard
+
+The dashboard is installed as package data; Node.js and a separate web build
+are not required. A normal `agency install` runs it as an optional user-scoped
+service. Manage or open that service with:
+
+```bash
+agency dashboard service status
+agency dashboard service open
+agency dashboard service restart
+agency dashboard service uninstall
+agency dashboard service install --dry-run
+agency dashboard service install
+```
+
+The foreground mode remains available on both Windows and Linux:
+
+```bash
+agency dashboard
+agency dashboard --no-open
+agency dashboard --port 7801 --db ~/.agency-runtime/agency.db
+```
+
+It binds only to loopback and creates a new high-entropy access token for each
+process. Foreground mode prints the one-time URL. Service mode writes the
+rotating token only to an owner-restricted runtime descriptor; the systemd unit,
+scheduled task, process arguments, status output, and logs never contain it.
+`agency dashboard service open` reads that descriptor and verifies the
+authenticated health endpoint before opening a token-fragment URL. The browser
+moves the token to session storage. The server validates `Host` and same-origin
+requests, accepts mutation bodies only as JSON, sends restrictive browser
+security headers, and requires exact confirmation phrases for roster, host,
+retention, and configuration mutations.
+
+The Signal Observatory overview streams bounded routing and delegation
+metadata while the tab is visible, with source-owned accessible charts,
+animated event transitions, provider evidence, and host posture. Polling is
+single-flight, pauses with the tab or the Live control, backs off transient
+failures, and stops on expired authentication instead of retrying forever.
+Configuration, roster governance, and native host inspection stay outside the
+fast loop.
+
+The other views provide evidence tables, roster snapshots, an authoritative
+detected dependency graph, editable redacted configuration, and a route/explain
+lab. The dashboard is not a remote multi-user control plane and does not turn
+cold host inventory into a live verification claim.
+
+Dashboard and CLI configuration changes use the same typed, locked, atomic
+writer. Unknown fields, invalid types/ranges, embedded URL credentials, stale
+browser revisions, and redaction-marker round trips are rejected before the
+file is replaced. Direct secrets are write-only:
+
+```bash
+agency config set judge.model qwen3.5:2b
+agency config set judge.api_key --prompt
+agency config set judge.api_key --clear
+```
+
+The Settings view exposes runtime policy, provider order, judge/Ollama,
+selector, adapter, privacy, storage, HTTP, and dashboard-service port settings.
+Changing a restart-bound field is reported explicitly. Enabling content capture
+or switching to `local-only` requires an additional operation-specific phrase.
+
+### Ordered judge providers
+
+`agency configure` edits the same ordered provider chain used at runtime. A
+chain contains at most four entries, matching the bounded attempt budget. When
+`providers` is nonempty it is authoritative: failure of its last entry goes
+directly to deterministic token routing. Legacy `judge` and separate `ollama`
+fallback settings are consulted only when no typed chain exists.
+
+```yaml
+providers:
+  - name: codex-cli
+    type: cli
+    transport: codex
+    model: ""  # use the CLI's configured default
+    timeout: 15
+  - name: local-compatible
+    type: openai-compatible
+    model: local-model
+    base_url: http://127.0.0.1:1234/v1
+    timeout: 15
+```
+
+Supported CLI judge transports are `codex` and `claude`. They reuse an existing
+authenticated local CLI session and need no Agency Runtime API key. Detection
+reports installed, authenticated, and usable separately. Judge prompts travel
+over standard input, are capped at 16 KiB, and are redacted recursively from
+results and errors. Executions use isolated home/temp roots, a minimal
+allowlisted environment plus only the selected host's authentication root, and
+bounded output. Project customizations and tools are disabled through the CLI
+controls the installed version exposes. Windows uses a kill-on-close Job Object;
+POSIX uses an owned process group. A delegation fails if descendants outlive a
+nominally successful parent. On Windows, `.cmd` and `.bat` shims never receive
+user-controlled arguments; a sibling native or PowerShell entry point is used,
+or the provider fails closed.
+
+Credentialed remote provider URLs require HTTPS; literal loopback HTTP is the
+only exception. Provider URLs reject embedded user information, query strings,
+and fragments, and credentials are never followed through redirects. Custom
+model catalogs are byte-, count-, and string-bounded, and model IDs containing
+terminal control characters are rejected before display. Keyless compatible
+providers are accepted only on a literal loopback endpoint.
+
+Observability is metadata-only by default:
+
+```yaml
+observability:
+  capture_content: false
+  retention_days: 30
+```
+
+Set `capture_content: true` only after accepting the data-governance impact.
+Supported callback capture is bounded and redacts common secrets, bearer tokens,
+API keys, and email addresses; this is defensive redaction, not a guarantee that
+all sensitive content can be recognized. Starting the dashboard applies the
+configured runtime-retention window without deleting roster-governance data.
+
+## MCP integration
+
+`agency mcp` is a dependency-light MCP stdio server. It implements the
+initialization handshake, tool discovery, bounded newline-delimited JSON-RPC,
+structured errors, and these tools:
+
+- `agency.preflight`
+- `agency.search_agents`
+- `agency.explain_selection`
+- `agency.load_specialist`
+- `agency.record_skill_loaded`
+- `agency.delegate`
+- `agency.finalize`
+- `agency.status`
+
+Run it directly for another MCP client:
+
+```bash
+agency mcp
+agency mcp --db ~/.agency-runtime/alternate.db
+```
+
+The generated Codex and Claude bundles use the interpreter that installed
+Agency Runtime and execute `python -m agency_runtime.server.mcp --stdio`.
+Standard output is reserved for MCP protocol frames; diagnostics go to standard
+error.
+
+## LiteLLM activation
+
+LiteLLM is optional and is not installed as a required dependency. For an SDK
+process, register the callback once in every worker:
+
+```python
+from agency_runtime.adapters.litellm import register_litellm_callback
+
+registration = register_litellm_callback()
+if not registration.registered:
+    raise RuntimeError(registration.reason)
+```
+
+Registration is thread-safe, idempotent, and preserves existing callbacks. It
+injects preflight context where LiteLLM exposes a request hook and records
+success or failure receipts without turning callback failures into model-traffic
+failures.
+
+For LiteLLM Proxy, merge the following fragment into its configuration so every
+worker imports the callback object:
+
+```yaml
+litellm_settings:
+  turn_off_message_logging: true
+  callbacks: agency_runtime.adapters.litellm.callback.proxy_handler_instance
+```
+
+The equivalent programmatic fragment is returned by
+`litellm_proxy_callback_config()`. Activation still depends on
+`adapters.litellm.enabled`; `false` disables it, `true` enables it, and `auto`
+uses gateway discovery. Confirm liveness and authentication with `agency doctor`
+instead of assuming that importing the adapter registered it.
+
+## Generic CLI fallback
+
+Routing, search, explanation, roster governance, SQLite evidence, and the
+dashboard work without a native host plugin:
+
+```bash
+agency route "review this authentication design"
+agency explain "review this authentication design" --session-id demo
+agency search "incident response"
+```
+
+For delegation to an unsupported CLI, configure a `GenericCLIBackend` or
+`GenericAdapter` with an explicit argv command. The unconfigured generic backend
+is deliberately unavailable; it never reports a no-op as completed.
+
+Managed Git worktree mutations use bounded owned processes with repository
+hooks, inherited Git settings, fsmonitor, prompts, and recursive submodules
+disabled. A repository-local or included executable filter, merge driver, diff
+command, or text converter causes the mutation to fail before checkout or
+staging. This intentionally includes Git LFS filters; use a reviewed manual
+workflow when those repository features are required.
+
+## Quantitative routing evaluation
+
+The versioned offline gate is reproducible and does not call a network model:
+
+```bash
+agency eval routing
+agency eval routing --json --no-details
+```
+
+Corpus v1.3 contains 37 routing cases, 30 policy cases, and 22
+delegation-detection cases. The checked-in gates are:
+
+| Area | Gate |
+|---|---|
+| Routing | precision@3 ≥ 0.75; required recall@3 ≥ 0.97; top-k accuracy ≥ 0.95; top-1 accuracy ≥ 0.90; forbidden-case rate = 0; abstention accuracy = 1.0 |
+| Policy | required recall ≥ 0.95; case accuracy ≥ 0.95; forbidden-case rate = 0; resolved-companion recall = 1.0; resolved-companion case accuracy = 1.0 |
+| Delegation | decision accuracy ≥ 0.94; count accuracy ≥ 0.90; source accuracy ≥ 0.90 |
+| Performance | deterministic narrowing and p95 ≤ 20 ms for the 1,000-agent microbenchmark; concurrent overlap ≥ 2; internal concurrency probe synchronized |
+
+These are release regression gates, not a claim of universal accuracy. Changing
+the corpus, metric definitions, or thresholds requires a version change and a
+durable decision record.
+
+## Configuration and storage
+
+Defaults:
+
+- Configuration: `~/.agency-runtime/agency.yaml`
+- SQLite: `~/.agency-runtime/agency.db`
+- Profile: `standard`
+- Dashboard service: installed for the current user by default; use
+  `agency install --no-dashboard` to opt out
+- Dashboard/content capture: disabled until explicitly opted in
+- Runtime retention: 30 days when the dashboard starts, or when explicitly
+  trimmed
+
+Useful commands:
+
+```bash
+agency configure
+agency configure --non-interactive --profile local-only
+agency config show
+agency config set judge.model qwen3.5:2b
+agency config set judge.api_key --prompt
+agency config validate
+agency config path
+agency dashboard service status
+agency db stats
+agency db trim --older-than-days 30 --dry-run
+agency db trim --older-than-days 30
+```
+
+`local-only` disables network model adapters and still provides deterministic
+token/policy routing. Provider order is configured; a failed or semantically
+invalid provider response falls through without being promoted as a valid
+selection.
+
+Environment overrides include `AGENCY_CONFIG_PATH`, `AGENCY_DB_PATH`,
+`AGENCY_CAPTURE_CONTENT`, `AGENCY_RETENTION_DAYS`, `AGENCY_JUDGE_MODEL`,
+`AGENCY_JUDGE_BASE_URL`, `AGENCY_JUDGE_API_KEY`, `LITELLM_API_KEY`,
+`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `OLLAMA_BASE_URL`.
+`AGENCY_DASHBOARD_PORT` overrides the fixed user-service port.
+
+The default `~/.agency-runtime` directory is an Agency Runtime-owned private
+directory. When a custom config or database path points into a pre-existing
+shared directory, Agency Runtime does not chmod that directory or replace its
+ACL. It still hardens the config/database files and SQLite sidecars themselves,
+fails closed when a private Windows file DACL cannot be enforced, and rejects a
+database path that is a symlink or reparse point. The operator remains
+responsible for access to a custom parent directory. A Windows restricted
+process may reuse an existing DACL only after verifying the exact owner-only
+shape, including a recursively private parent for inherited SQLite sidecars. If
+a permission change is required, a restricted token is rejected before any DACL
+mutation; rerun that operation from an unrestricted user process or an
+explicitly approved host action. Agency Runtime never keeps broader inherited
+access merely to make that operation appear successful.
+
+## Roster governance
+
+Imported JSON, YAML, or Markdown roster data moves through quarantine, diff,
+approval, and activation. Nothing downloaded becomes active merely because a
+sync ran.
+
+```bash
+agency source add examples/rosters/agents.json --name local-example
+agency sync --dry-run
+agency sync --review
+agency roster approve <snapshot-id>
+agency roster activate <snapshot-id>
+agency roster list
+```
+
+`--auto-approve` is fail-closed and requires every enabled source to be marked
+trusted. Repository examples are self-contained; the runtime does not depend on
+a sibling repository.
+
+### Companion-policy availability
+
+The bundled starter roster contains seven governed specialists, including
+dedicated internationalization, payments and billing, and test-automation
+roles. The broad companion policy references 238 unique specialists across
+action routes and division anchors. Seven are required bundled specialists; the
+other 231 are explicitly roster-gated. A roster-gated route stays disabled with
+a recorded reason until an approved active roster supplies that specialist.
+
+`agency policy` validates both action and division routes against the active
+roster. Its JSON form reports enabled, disabled, and invalid routes, and the
+command exits nonzero when a required specialist is absent, a route lacks an
+availability declaration, or the policy structure is malformed:
+
+```bash
+agency policy --json
+python scripts/update_policy_availability.py --check
+```
+
+The availability block is generated deterministically from the policy. Adding
+a route requires regenerating and reviewing that block, so an unresolved slug
+cannot enter the enabled policy silently.
+
+## Development and release
+
+```bash
+python -m pip install -e ".[dev]"
+python scripts/docs_metadata.py --check
+python scripts/update_worklog.py --check
+python scripts/verify_docs.py
+ruff check agency_runtime tests scripts
+python -m pytest tests -q -W error
+node --test tests/dashboard_ui.test.mjs
+agency eval routing --json --no-details
+git diff --check
+```
+
+After an authorized tracker synchronization, also run
+`python scripts/verify_docs.py --require-tracker` and
+`python scripts/verify_tracker.py`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), the
+[Code of Conduct](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md), the
+[threat model](docs/THREAT_MODEL.md), [CHANGELOG.md](CHANGELOG.md),
+[troubleshooting](docs/TROUBLESHOOTING.md), and the
+[release checklist](docs/RELEASE_CHECKLIST.md). Planning, worklog, and decision
+records are indexed under [docs/](docs/roadmap/README.md).
 
 ## License
 
-MIT - see [LICENSE](LICENSE). Compatible with [agency-agents](https://github.com/msitarzewski/agency-agents), also MIT.
-
-## Related Projects
-
-- [agency-agents](https://github.com/msitarzewski/agency-agents) - open-source specialist agent roster and prompt ecosystem
-- [LiteLLM](https://github.com/BerriAI/litellm) - multi-provider LLM proxy
-- [Ollama](https://ollama.ai) - local LLM inference
+MIT. See [LICENSE](LICENSE).

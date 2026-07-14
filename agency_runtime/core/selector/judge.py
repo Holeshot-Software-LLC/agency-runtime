@@ -1,294 +1,237 @@
-"""LLM judge — query a model to select specialists from candidates.
+"""Semantic judge facade and deterministic routing fallbacks.
 
-Uses the centralized config system for all model/URL/key/tuning values.
-No hardcoded user-specific identifiers.
-
-Fallback chain (in priority order):
-1. Each provider in cfg.providers (user-configured priority list)
-2. Legacy judge config (cfg.judge — backward compat for existing configs)
-3. Ollama fallback (cfg.ollama — if enabled)
-4. Token-only (no LLM call, uses pre_narrow scores)
+Provider protocols, transport execution, and ordered attempt accounting live in
+small sibling modules.  This facade intentionally retains the historical names
+used by callers and tests, including dynamic monkeypatch seams.
 """
 
 from __future__ import annotations
 
-import json
 import logging
-import os
-import re
+import math
 import time
-import urllib.error
-import urllib.request
 from typing import Any
 
-from agency_runtime.core.config import AgencyConfig, JudgeConfig, ProviderEntry, load_config
+# These imports are deliberate facade attributes.  Sibling modules resolve
+# them dynamically so downstream monkeypatches keep working after the split.
+from agency_runtime.core.bounded_json import safe_load_bounded_json  # noqa: F401
+from agency_runtime.core.cli_transport import (  # noqa: F401
+    SUPPORTED_CLI_TRANSPORTS,
+    invoke_cli_judge,
+)
+from agency_runtime.core.config import (
+    MAX_PROVIDER_CHAIN_ENTRIES,
+    AgencyConfig,
+    JudgeConfig,
+    ProviderEntry,
+    _is_loopback_http_url,
+    load_config,
+)
+from agency_runtime.core.http_safety import open_no_redirect  # noqa: F401
+from agency_runtime.core.selector import judge_attempts as _attempts
+from agency_runtime.core.selector import judge_protocol as _protocol
+from agency_runtime.core.selector import judge_transport as _transport
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
+from agency_runtime.core.selector.intent_text import affirmative_intent
 
 logger = logging.getLogger("agency_runtime.selector.judge")
 
-
-def parse_json_response(text: str) -> dict[str, Any] | None:
-    """Parse JSON from a model response, handling markdown fences."""
-    text = text.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"\s*```$", "", text)
-    try:
-        parsed = json.loads(text)
-        if isinstance(parsed, dict):
-            return parsed
-    except json.JSONDecodeError:
-        pass
-    start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        try:
-            parsed = json.loads(text[start : end + 1])
-            if isinstance(parsed, dict):
-                return parsed
-        except json.JSONDecodeError:
-            pass
-    return None
+_MAX_JUDGE_RESPONSE_BYTES = 256 * 1024
+_MAX_PROVIDER_ATTEMPTS = MAX_PROVIDER_CHAIN_ENTRIES
+_MAX_JUDGE_DEADLINE_SECONDS = 60.0
+_MAX_JUDGE_CANDIDATES = 20
+_MAX_SELECTED = 50
+_MIN_RELATIVE_FALLBACK_SCORE = 0.30
 
 
-def _build_judge_payload(
-    task_description: str,
+def _agent_id(agent: dict[str, Any]) -> str:
+    """Return the catalog identity accepted across selector entry points."""
+    return str(agent.get("slug") or agent.get("agent_slug") or "")
+
+
+def _judge_candidates(
     candidates: list[dict[str, Any]],
-    max_sel: int,
-    ollama_mode: bool,
-) -> tuple[bytes, str, str]:
-    """Build the HTTP request payload and return (body, url_path, content_type)."""
-    judge_candidates = candidates[:20]
-    catalog_lines = []
-    for agent in judge_candidates:
-        slug = agent.get("slug", "")
-        desc = agent.get("description", "")[:80]
-        catalog_lines.append(f"  {slug}: {desc}")
-    catalog_str = "\n".join(catalog_lines)
+) -> list[dict[str, Any]]:
+    """Return only identified candidates that can actually appear in a prompt."""
+    return [candidate for candidate in candidates if _agent_id(candidate)][:_MAX_JUDGE_CANDIDATES]
 
-    user_content = (
-        f"Task: {task_description}\n\n"
-        f"Select 1-{max_sel} specialists from these {len(judge_candidates)} "
-        f"candidates. Return JSON only.\n\n"
-        f"Candidates:\n{catalog_str}\n\n"
-        f'Return: {{"selected_ids": ["id1"], "confidence": 0.9}}'
+
+def _validated_max_selected(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError("max_selected must be an integer")
+    if not 1 <= value <= _MAX_SELECTED:
+        raise ValueError(f"max_selected must be between 1 and {_MAX_SELECTED}")
+    return value
+
+
+def _scored_selection(
+    candidates: list[dict[str, Any]],
+    scores: list[float],
+    max_selected: int,
+) -> list[str]:
+    """Keep strong deterministic matches without padding with weak positives."""
+    top_score = scores[0] if scores else 0.0
+    if top_score <= 0:
+        return []
+    cutoff = top_score * _MIN_RELATIVE_FALLBACK_SCORE
+    selected: list[str] = []
+    for agent, score in zip(candidates, scores, strict=True):
+        agent_id = _agent_id(agent)
+        if score >= cutoff and agent_id and agent_id not in selected:
+            selected.append(agent_id)
+            if len(selected) >= max_selected:
+                break
+    return selected
+
+
+def _bounded_confidence(value: Any) -> float | None:
+    """Parse model confidence and constrain it to the public 0..1 contract."""
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(confidence):
+        return None
+    return max(0.0, min(1.0, confidence))
+
+
+def _attempt_signature(
+    base_url: str,
+    model: str,
+    ollama_mode: bool,
+    provider_type: str = "openai-compatible",
+    transport: str = "",
+) -> tuple[str, str, str]:
+    """Identify equivalent network attempts across new and legacy config."""
+    normalized_type = provider_type.strip().lower()
+    if normalized_type == "cli":
+        return "cli", transport.strip().lower(), model.strip().lower()
+    protocol = "ollama" if ollama_mode else normalized_type
+    return protocol, base_url.rstrip("/").lower(), model.strip().lower()
+
+
+def _provider_is_attemptable(provider: ProviderEntry) -> bool:
+    provider_type = provider.type.strip().lower()
+    if provider_type == "cli":
+        return provider.transport.strip().lower() in SUPPORTED_CLI_TRANSPORTS
+    if not provider.model or not provider.base_url:
+        return False
+    return (
+        provider_type == "ollama"
+        or provider.ollama_mode
+        or bool(provider.resolve_api_key())
+        or (
+            provider_type in {"openai", "openai-compatible", "litellm"}
+            and _is_loopback_http_url(provider.base_url)
+        )
     )
 
-    if ollama_mode:
-        payload = json.dumps({
-            "model": "",  # filled by caller
-            "stream": False,
-            "think": False,
-            "format": "json",
-            "options": {
-                "temperature": 0,
-                "num_predict": 128,
-                "num_ctx": 8192,
-            },
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a semantic selector. Return strict JSON only.",
-                },
-                {"role": "user", "content": user_content},
-            ],
-        }).encode("utf-8")
-        return payload, "/api/chat", "application/json"
 
-    payload = json.dumps({
-        "model": "",  # filled by caller
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are a semantic selector for AI agent specialists. "
-                    "Return strict JSON only. No markdown fences."
-                ),
-            },
-            {"role": "user", "content": user_content},
-        ],
-        "max_tokens": 256,
-        "temperature": 0.0,
-        "stream": False,
-    }).encode("utf-8")
-    return payload, "/v1/chat/completions", "application/json"
+def _network_target_signature(base_url: str, model: str) -> tuple[str, str]:
+    """Identify a concrete endpoint/model independent of protocol metadata."""
+    return base_url.rstrip("/").lower(), model.strip().lower()
 
 
-def _try_provider(
-    provider: ProviderEntry,
-    task_description: str,
+def _bounded_duration(value: Any, *, maximum: float) -> float:
+    """Return a finite positive duration constrained to *maximum*."""
+    try:
+        duration = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(duration) or duration <= 0:
+        return 0.0
+    return min(duration, maximum)
+
+
+def _with_cumulative_latency(
+    result: dict[str, Any],
+    attempts_started: float,
+) -> dict[str, Any]:
+    elapsed_ms = int((time.monotonic() - attempts_started) * 1000)
+    result["latency_ms"] = max(int(result.get("latency_ms", 0) or 0), elapsed_ms)
+    return result
+
+
+# Protocol compatibility surface.  Sibling modules resolve dependencies back
+# through this facade so existing monkeypatches remain effective.
+_read_json_object = _protocol.read_json_object
+parse_json_response = _protocol.parse_json_response
+_build_judge_prompt = _protocol.build_judge_prompt
+_response_content = _protocol.response_content
+_build_judge_payload = _protocol.build_judge_payload
+_join_api_path = _protocol.join_api_path
+_validated_decision = _protocol.validated_decision
+_applied_result = _protocol.applied_result
+_encoded_model_payload = _protocol.encoded_model_payload
+_provider_headers = _protocol.provider_headers
+_build_http_request = _protocol.build_http_request
+
+# Provider transport compatibility surface.
+_try_cli_provider = _transport.try_cli_provider
+_provider_credentials_are_safe = _transport.provider_credentials_are_safe
+_execute_http_request = _transport.execute_http_request
+_try_http_provider = _transport.try_http_provider
+_try_provider = _transport.try_provider
+_try_legacy_judge = _transport.try_legacy_judge
+
+# Ordered-attempt compatibility surface.
+_AttemptState = _attempts.AttemptState
+_provider_attempt_identity = _attempts.provider_attempt_identity
+_try_provider_chain = _attempts.try_provider_chain
+_try_legacy_fallback = _attempts.try_legacy_fallback
+_try_ollama_fallback = _attempts.try_ollama_fallback
+
+
+def _empty_judge_result() -> dict[str, Any]:
+    return {
+        "selected_ids": [],
+        "confidence": 0.0,
+        "latency_ms": 0,
+        "status": "unknown",
+        "error": "",
+    }
+
+
+def _confidence_bypass_result(
     candidates: list[dict[str, Any]],
+    scores: list[float],
+    *,
     max_sel: int,
+    threshold: float,
     candidate_count: int,
     top_score: float,
 ) -> dict[str, Any] | None:
-    """Try a single provider. Returns result dict on success, None on failure."""
-
-    api_key = provider.resolve_api_key()
-
-    # Auth check
-    if provider.type != "ollama" and not api_key:
-        logger.debug("provider %s: no api key, skipping", provider.name)
+    if top_score < threshold:
         return None
-
-    body, path, content_type = _build_judge_payload(
-        task_description, candidates, max_sel, provider.ollama_mode,
-    )
-    body_json = json.loads(body)
-    body_json["model"] = provider.model
-    body = json.dumps(body_json).encode("utf-8")
-
-    request_url = f"{provider.base_url.rstrip('/')}{path}"
-    headers = {"Content-Type": content_type}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-
-    req = urllib.request.Request(request_url, data=body, headers=headers, method="POST")
-    t0 = time.monotonic()
-    try:
-        with urllib.request.urlopen(req, timeout=provider.timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except Exception as exc:
-        logger.debug("provider %s failed: %s", provider.name, exc)
+    selected_ids = _scored_selection(candidates, scores, max_sel)
+    if not selected_ids:
         return None
-
-    elapsed = time.monotonic() - t0
-
-    content = ""
-    try:
-        content = data["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError):
-        content = data.get("message", {}).get("content", "") if provider.ollama_mode else str(data)
-
-    parsed = parse_json_response(content)
-    if parsed is None:
-        # Parse failed; fall through to the deterministic token-only fallback.
-        return None
-
-    selected = parsed.get("selected_ids") or parsed.get("selected") or []
-    if not isinstance(selected, list):
-        return None
-
-    known_ids = {a.get("slug", "") for a in candidates}
-    valid_selected = [sid for sid in selected if str(sid) in known_ids]
-
-    if not valid_selected:
-        valid_selected = [a.get("slug", "") for a in candidates[:max_sel]]
-        status = "token_fallback"
-    else:
-        status = "applied"
-
-    try:
-        confidence = float(parsed.get("confidence", 0))
-    except (TypeError, ValueError):
-        confidence = 0.0
-
     return {
-        "selected_ids": valid_selected[:max_sel],
-        "confidence": confidence,
-        "latency_ms": int(elapsed * 1000),
-        "status": status,
-        "provider": f"{provider.name} ({provider.type})",
+        "selected_ids": selected_ids,
+        "confidence": min(0.99, 0.7 + top_score / 100),
+        "latency_ms": 0,
+        "status": "confidence_bypass",
         "candidate_count": candidate_count,
         "top_score": top_score,
     }
 
 
-def _try_legacy_judge(
-    jc: JudgeConfig,
-    task_description: str,
+def _fallback_result(
+    state: _AttemptState,
     candidates: list[dict[str, Any]],
-    max_sel: int,
+    scores: list[float],
     candidate_count: int,
     top_score: float,
-) -> dict[str, Any] | None:
-    """Try the legacy judge config (backward compat). Returns result or None."""
-
-    api_key = jc.resolve_api_key()
-    if not jc.model:
-        return None
-
-    ollama_mode = jc.ollama_mode
-    body, path, content_type = _build_judge_payload(
-        task_description, candidates, max_sel, ollama_mode
+    max_sel: int,
+) -> dict[str, Any]:
+    fallback = _token_only_fallback(
+        candidates,
+        scores,
+        candidate_count,
+        top_score,
+        max_sel,
     )
-    body_json = json.loads(body)
-    body_json["model"] = jc.model
-    body = json.dumps(body_json).encode("utf-8")
-
-    request_url = f"{jc.base_url.rstrip('/')}{path}"
-    headers = {"Content-Type": content_type}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-
-    req = urllib.request.Request(request_url, data=body, headers=headers, method="POST")
-    t0 = time.monotonic()
-    try:
-        with urllib.request.urlopen(req, timeout=jc.timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except Exception as exc:
-        logger.debug("legacy judge failed: %s", exc)
-        return None
-
-    elapsed = time.monotonic() - t0
-    result: dict[str, Any] = {
-        "selected_ids": [],
-        "confidence": 0.0,
-        "latency_ms": int(elapsed * 1000),
-        "status": "unknown",
-        "error": "",
-    }
-    result["provider"] = jc.model
-
-    content = ""
-    try:
-        content = data["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError):
-        content = data.get("message", {}).get("content", "") if ollama_mode else str(data)
-
-    parsed = parse_json_response(content)
-    if parsed is None:
-        fallback_ids = [a.get("slug", "") for a in candidates[:max_sel]]
-        if fallback_ids:
-            result["selected_ids"] = fallback_ids
-            result["confidence"] = 0.3
-            result["status"] = "token_fallback"
-            result["candidate_count"] = candidate_count
-            result["top_score"] = top_score
-            return result
-        result["status"] = "parse_failed"
-        result["error"] = f"could not parse JSON from response: {content[:200]}"
-        return result
-
-    selected = parsed.get("selected_ids") or parsed.get("selected") or []
-    if not isinstance(selected, list):
-        result["status"] = "invalid_format"
-        result["error"] = "selected_ids is not a list"
-        return result
-
-    known_ids = {a.get("slug", "") for a in candidates}
-    valid_selected = [sid for sid in selected if str(sid) in known_ids]
-
-    if not valid_selected:
-        valid_selected = [a.get("slug", "") for a in candidates[:max_sel]]
-        if not valid_selected:
-            result["status"] = "no_valid_matches"
-            result["error"] = f"selected_ids {selected} not in catalog"
-            return result
-        result["status"] = "token_fallback"
-
-    try:
-        confidence = float(parsed.get("confidence", 0))
-    except (TypeError, ValueError):
-        confidence = 0.0
-
-    result["selected_ids"] = valid_selected[:max_sel]
-    result["confidence"] = confidence
-    result["candidate_count"] = candidate_count
-    result["top_score"] = top_score
-    if result["status"] not in ("token_fallback",):
-        result["status"] = "applied"
-    return result
+    return _with_cumulative_latency(fallback, state.started)
 
 
 def query_judge(
@@ -299,104 +242,113 @@ def query_judge(
     judge_config: JudgeConfig | None = None,
     max_selected: int | None = None,
 ) -> dict[str, Any]:
-    """Query the agency judge model to select specialists.
+    """Query configured providers and fall back deterministically.
 
-    Fallback chain (first success wins):
-    1. Each provider in cfg.providers (user-configured priority list)
-    2. Legacy judge config (cfg.judge — backward compat)
-    3. Ollama fallback (cfg.ollama)
-    4. Token-only (no LLM needed)
+    A nonempty typed provider chain is authoritative.  Legacy judge and Ollama
+    fallbacks are used only when no typed chain is configured.
     """
+    if not isinstance(task_description, str):
+        raise TypeError("task_description must be a string")
     cfg = config or load_config()
     jc = judge_config or cfg.judge
-    max_sel = max_selected or jc.max_selected
-
-    result: dict[str, Any] = {
-        "selected_ids": [],
-        "confidence": 0.0,
-        "latency_ms": 0,
-        "status": "unknown",
-        "error": "",
-    }
+    max_sel = _validated_max_selected(jc.max_selected if max_selected is None else max_selected)
+    state = _AttemptState.begin(jc.timeout)
+    result = _empty_judge_result()
 
     if not catalog:
         result["status"] = "no_catalog"
         result["error"] = "agent catalog not loaded"
         return result
 
-    candidates, scores = pre_narrow(task_description, catalog)
+    # Lexical narrowing cannot infer negation.  Exclude high-confidence opt-out
+    # clauses from scoring while retaining the complete task for the judge.
+    candidates, scores = pre_narrow(affirmative_intent(task_description), catalog)
     candidate_count = len(candidates)
     top_score = scores[0] if scores else 0.0
 
-    # Confidence bypass — skip LLM entirely
-    if top_score >= jc.confidence_bypass_threshold:
-        bypass_ids = [
-            a.get("slug", "")
-            for a, s in zip(candidates, scores)
-            if s > 0
-        ][:max_sel]
-        if bypass_ids:
-            result["selected_ids"] = bypass_ids
-            result["confidence"] = min(0.99, 0.7 + top_score / 100)
-            result["latency_ms"] = 0
-            result["status"] = "confidence_bypass"
-            result["candidate_count"] = candidate_count
-            result["top_score"] = top_score
-            return result
+    bypass_result = _confidence_bypass_result(
+        candidates,
+        scores,
+        max_sel=max_sel,
+        threshold=jc.confidence_bypass_threshold,
+        candidate_count=candidate_count,
+        top_score=top_score,
+    )
+    if bypass_result is not None:
+        return bypass_result
 
-    # Layer 1: Iterate providers list (user-configured fallback chain)
-    for provider in cfg.providers:
-        res = _try_provider(
-            provider, task_description, candidates, max_sel,
-            candidate_count, top_score,
+    provider_result = _try_provider_chain(
+        state,
+        cfg.providers,
+        task_description,
+        candidates,
+        max_sel,
+        candidate_count,
+        top_score,
+    )
+    if provider_result is not None:
+        return _with_cumulative_latency(provider_result, state.started)
+
+    if cfg.providers:
+        return _fallback_result(
+            state,
+            candidates,
+            scores,
+            candidate_count,
+            top_score,
+            max_sel,
         )
-        if res is not None:
-            return res
-        logger.debug("provider %s failed, trying next", provider.name)
 
-    # Layer 2: Legacy judge config (backward compat for existing configs)
-    legacy_result = _try_legacy_judge(
-        jc, task_description, candidates, max_sel,
-        candidate_count, top_score,
+    legacy_result = _try_legacy_fallback(
+        state,
+        jc,
+        task_description,
+        candidates,
+        max_sel,
+        candidate_count,
+        top_score,
     )
     if legacy_result is not None:
-        return legacy_result
+        return _with_cumulative_latency(legacy_result, state.started)
 
-    # Layer 3: Ollama fallback (if enabled and configured)
-    if cfg.ollama.enabled and cfg.ollama.model:
-        ollama_provider = ProviderEntry(
-            name="ollama-fallback",
-            type="ollama",
-            model=cfg.ollama.model,
-            base_url=cfg.ollama.base_url,
-            ollama_mode=True,
-            timeout=cfg.judge.timeout,
-        )
-        ollama_result = _try_provider(
-            ollama_provider, task_description, candidates, max_sel,
-            candidate_count, top_score,
-        )
-        if ollama_result is not None:
-            return ollama_result
+    ollama_result = _try_ollama_fallback(
+        state,
+        cfg,
+        task_description,
+        candidates,
+        max_sel,
+        candidate_count,
+        top_score,
+    )
+    if ollama_result is not None:
+        return _with_cumulative_latency(ollama_result, state.started)
 
-    # Layer 4: Token-only (no LLM)
-    return _token_only_fallback(candidates, candidate_count, top_score, max_sel)
+    return _fallback_result(
+        state,
+        candidates,
+        scores,
+        candidate_count,
+        top_score,
+        max_sel,
+    )
 
 
 def _token_only_fallback(
     candidates: list[dict[str, Any]],
+    scores: list[float],
     candidate_count: int,
     top_score: float,
     max_sel: int,
 ) -> dict[str, Any]:
-    """Last resort: return top token-scored candidates without an LLM call."""
-    result: dict[str, Any] = {
-        "selected_ids": [a.get("slug", "") for a in candidates[:max_sel]],
-        "confidence": 0.3,
+    """Return bounded token-scored candidates without an LLM call."""
+    selected_ids = _scored_selection(candidates, scores, max_sel)
+    has_signal = bool(selected_ids)
+    return {
+        "selected_ids": selected_ids,
+        "confidence": 0.3 if has_signal else 0.0,
         "latency_ms": 0,
-        "status": "token_fallback",
-        "error": "",
+        "status": "token_fallback" if has_signal else "abstained",
+        "error": "" if has_signal else "no positive routing signal",
         "candidate_count": candidate_count,
         "top_score": top_score,
     }
-    return result

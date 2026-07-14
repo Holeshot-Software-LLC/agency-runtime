@@ -6,6 +6,7 @@ import importlib.util
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -17,17 +18,29 @@ from agency_runtime.adapters.generic.wrapper import GenericAdapter
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
 from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core.installer import install_agent_adapter
+from agency_runtime.core.process_argv import absolute_executable_path
 from agency_runtime.core.store.sqlite import Store
 
-
 ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter]
+
 
 class FakeHookContext:
     def __init__(self) -> None:
         self.hooks: dict[str, Any] = {}
+        self.commands: dict[str, Any] = {}
 
     def register_hook(self, name: str, fn: Any) -> None:
         self.hooks[name] = fn
+
+    def register_command(self, name: str, fn: Any, **_kwargs: Any) -> None:
+        self.commands[name] = fn
+
+
+def test_explicit_host_home_rejects_path_escape(tmp_path: Path) -> None:
+    from agency_runtime.core.installer import _host_path
+
+    with pytest.raises(ValueError, match="escapes explicit home boundary"):
+        _host_path("~/../outside", home_dir=tmp_path)
 
 
 def _adapter(adapter_cls: type, store: Store):
@@ -36,7 +49,9 @@ def _adapter(adapter_cls: type, store: Store):
     return adapter_cls(store=store)
 
 
-def test_cli_adapter_availability_uses_path_lookup_without_shelling_out(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_cli_adapter_availability_uses_path_lookup_without_shelling_out(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     store = Store(tmp_path / "agency.db")
     requested: list[str] = []
 
@@ -58,7 +73,9 @@ def test_cli_adapter_availability_uses_path_lookup_without_shelling_out(monkeypa
 
 
 @pytest.mark.parametrize("adapter_cls", ADAPTERS)
-def test_all_adapters_report_tool_call_evidence_from_store(adapter_cls: type, tmp_path: Path) -> None:
+def test_all_adapters_report_tool_call_evidence_from_store(
+    adapter_cls: type, tmp_path: Path
+) -> None:
     store = Store(tmp_path / "agency.db")
     adapter = _adapter(adapter_cls, store)
 
@@ -87,7 +104,9 @@ def test_all_adapters_report_tool_call_evidence_from_store(adapter_cls: type, tm
 
 
 @pytest.mark.parametrize("adapter_cls", ADAPTERS)
-def test_all_adapters_post_api_request_is_safe_and_records_when_model_present(adapter_cls: type, tmp_path: Path) -> None:
+def test_all_adapters_post_api_request_is_safe_and_records_when_model_present(
+    adapter_cls: type, tmp_path: Path
+) -> None:
     store = Store(tmp_path / "agency.db")
     adapter = _adapter(adapter_cls, store)
 
@@ -119,46 +138,36 @@ def test_all_adapters_post_api_request_is_safe_and_records_when_model_present(ad
     assert receipt["status"] == "failed"
 
 
-@pytest.mark.parametrize(
-    ("host", "expected_class", "expected_host"),
-    [
-        ("hermes", "HermesAdapter", "hermes"),
-        ("codex", "CodexAdapter", "codex"),
-        ("claude", "ClaudeAdapter", "claude"),
-    ],
-)
-def test_generated_python_plugins_import_and_register_host_specific_adapters(
-    host: str,
-    expected_class: str,
-    expected_host: str,
+def test_generated_hermes_plugin_imports_and_registers_native_hooks(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("HOME", str(tmp_path))
-    # Satisfy installer host detection without touching the real machine.
-    if host == "hermes":
-        (tmp_path / ".hermes-nexus" / "plugins").mkdir(parents=True)
-    elif host == "codex":
-        (tmp_path / ".codex").mkdir()
-    elif host == "claude":
-        (tmp_path / ".claude").mkdir()
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "hermes.db"))
+    (tmp_path / ".hermes" / "plugins").mkdir(parents=True)
 
-    result = install_agent_adapter(host)
+    result = install_agent_adapter("hermes", home_dir=tmp_path)
     assert result["ok"] is True
     plugin_path = Path(result["plugin_path"])
+    assert plugin_path.is_relative_to(tmp_path)
     assert (plugin_path.parent / "plugin.yaml").exists()
 
-    spec = importlib.util.spec_from_file_location(f"agency_runtime_generated_{host}", plugin_path)
+    spec = importlib.util.spec_from_file_location("agency_runtime_generated_hermes", plugin_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
     ctx = FakeHookContext()
     module.register(ctx)
-    assert {"pre_llm_call", "pre_verify", "post_tool_call", "post_api_request", "transform_llm_output"} <= set(ctx.hooks)
+    assert {"pre_llm_call", "post_tool_call", "post_api_request", "transform_llm_output"} <= set(
+        ctx.hooks
+    )
+    assert set(ctx.commands) == {"agency"}
+    assert "disabled" in ctx.commands["agency"]("off")
+    assert "disabled" in ctx.commands["agency"]("status")
+    assert "enabled" in ctx.commands["agency"]("on")
     adapter = module._get_adapter()
-    assert adapter.__class__.__name__ == expected_class
-    assert adapter.host_name == expected_host
+    assert adapter.__class__.__name__ == "HermesAdapter"
+    assert adapter.host_name == "hermes"
     # Generated plugins must not crash if their host emits a post-API hook with no model telemetry.
     assert ctx.hooks["post_api_request"](response={}, model="task-general", session_id="s1") is None
     receipt = adapter.store.get_model_receipt_for_session("s1")
@@ -166,11 +175,50 @@ def test_generated_python_plugins_import_and_register_host_specific_adapters(
     assert receipt["resolved_model"] == "unavailable"
 
 
-def test_openclaw_bridge_routes_user_prompts_but_ignores_revision_instructions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize(
+    ("host", "manifest_dir"), [("codex", ".codex-plugin"), ("claude", ".claude-plugin")]
+)
+def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
+    host: str,
+    manifest_dir: str,
+    tmp_path: Path,
+) -> None:
+    (tmp_path / f".{host}").mkdir()
+
+    result = install_agent_adapter(host, home_dir=tmp_path)
+    assert result["ok"] is True
+    manifest_path = Path(result["plugin_path"])
+    assert manifest_path.parent.name == manifest_dir
+    plugin_root = manifest_path.parents[1]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    hooks = json.loads((plugin_root / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+    mcp = json.loads((plugin_root / ".mcp.json").read_text(encoding="utf-8"))
+    skill = (plugin_root / "skills" / "agency" / "SKILL.md").read_text(encoding="utf-8")
+
+    assert manifest["name"] == "agency-preflight"
+    if host == "codex":
+        assert manifest["hooks"] == "./hooks/hooks.json"
+        assert manifest["interface"]["defaultPrompt"]
+    assert "UserPromptSubmit" in hooks["hooks"]
+    assert mcp["mcpServers"]["agency-runtime"]["args"] == [
+        "-m",
+        "agency_runtime.server.mcp",
+        "--stdio",
+    ]
+    assert f"`ENABLE {host}`" in skill
+    assert f"`DISABLE {host}`" in skill
+    assert "`agency.host_status`" in skill
+    assert "`agency.host_control`" in skill
+    assert result["maturity"] == "staged-not-registered"
+
+
+def test_openclaw_bridge_routes_user_prompts_but_ignores_revision_instructions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "bridge.db"))
     from agency_runtime.adapters.openclaw.node_bridge import handle
-    from agency_runtime.core.store.sqlite import Store
     from agency_runtime.core.policy.defaults import STARTER_ROSTER
+    from agency_runtime.core.store.sqlite import Store
 
     store = Store(tmp_path / "bridge.db")
     for agent in STARTER_ROSTER:
@@ -178,33 +226,99 @@ def test_openclaw_bridge_routes_user_prompts_but_ignores_revision_instructions(t
     store.activate_agent({"slug": "agents-orchestrator", "name": "Agents Orchestrator"})
     store.activate_agent({"slug": "chief-of-staff", "name": "Chief of Staff"})
 
-    routed = handle({"action": "preflight", "sessionId": "bridge", "userMessage": "ping", "model": "task-general"})
-    skipped = handle({"action": "preflight", "sessionId": "bridge", "userMessage": "Please revise. AGENCY HEADER INVALID: loaded none", "model": "task-general"})
+    routed = handle(
+        {
+            "action": "preflight",
+            "sessionId": "bridge",
+            "traceId": "bridge-trivial",
+            "userMessage": "ping",
+            "model": "task-general",
+        }
+    )
+    correlated = handle(
+        {
+            "action": "preflight",
+            "sessionId": "bridge",
+            "traceId": "bridge-turn",
+            "userMessage": "Review the authentication architecture and deployment controls.",
+            "model": "task-general",
+        }
+    )
+    skipped = handle(
+        {
+            "action": "preflight",
+            "sessionId": "bridge",
+            "userMessage": "Please revise. AGENCY HEADER INVALID: loaded none",
+            "model": "task-general",
+        }
+    )
+    recorded = handle(
+        {
+            "action": "post_tool_call",
+            "sessionId": "bridge",
+            "toolName": "agency_agents_load",
+            "toolInput": {"agent": "chief-of-staff"},
+            "toolResult": {"ok": True},
+        }
+    )
+    verified = handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "bridge",
+            "traceId": "bridge-turn",
+            "finalResponse": "Draft without a header.",
+            "model": "task-general",
+        }
+    )
+    disabled = handle({"action": "control", "command": "off"})
+    status = handle({"action": "control", "command": "status"})
+    enabled = handle({"action": "control", "command": "on"})
+    enabled_status = handle({"action": "control", "command": "status"})
 
     assert "agents-orchestrator, chief-of-staff" in routed["context"]
+    assert correlated["context"]
     assert skipped == {}
+    assert recorded == {}
+    assert verified["action"] == "continue"
+    activity = store.recent_runtime_activity(limit=20)
+    assert activity["routing"][0]["trace_id"] == "bridge-turn"
+    assert activity["finalizations"][0]["trace_id"] == "bridge-turn"
+    assert disabled["runtime_enabled"] is False
+    assert status["runtime_enabled"] is False
+    assert enabled["runtime_enabled"] is True
+    assert enabled_status["runtime_enabled"] is True
+    assert "chief-of-staff" in store.get_specialists_for_session("bridge")
 
 
-def test_generated_openclaw_plugin_is_native_openclaw_package(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("HOME", str(tmp_path))
+def test_generated_openclaw_plugin_is_native_openclaw_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     (tmp_path / ".openclaw").mkdir()
 
-    result = install_agent_adapter("openclaw")
+    result = install_agent_adapter("openclaw", home_dir=tmp_path)
     assert result["ok"] is True
     plugin_path = Path(result["plugin_path"])
     assert plugin_path.name == "index.js"
-    assert plugin_path.parent == tmp_path / ".openclaw" / "plugins" / "agency-preflight"
+    assert (
+        plugin_path.parent
+        == tmp_path / ".agency-runtime" / "host-plugins" / "openclaw" / "agency-preflight"
+    )
 
-    manifest = json.loads((plugin_path.parent / "openclaw.plugin.json").read_text())
-    package = json.loads((plugin_path.parent / "package.json").read_text())
-    code = plugin_path.read_text()
+    manifest = json.loads((plugin_path.parent / "openclaw.plugin.json").read_text(encoding="utf-8"))
+    package = json.loads((plugin_path.parent / "package.json").read_text(encoding="utf-8"))
+    code = plugin_path.read_text(encoding="utf-8")
 
     assert manifest["id"] == "agency-preflight"
     assert manifest["activation"]["onStartup"] is True
     assert package["openclaw"]["extensions"] == ["./index.js"]
     assert "before_prompt_build" in code
     assert "before_agent_finalize" in code
-    assert "function userPrompt" in code
+    assert "api.registerCommand" in code
+    assert 'name: "agency"' in code
+    assert 'action: "control"' in code
+    assert "event?.prompt" in code
     assert "event?.lastAssistantMessage" in code
-    assert 'join("\\n")' in code
     assert "agency_runtime.adapters.openclaw.node_bridge" in code
+    assert "execFile" in code
+    assert "spawnSync" not in code
+    assert json.dumps(absolute_executable_path(sys.executable)) in code

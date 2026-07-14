@@ -8,7 +8,9 @@ from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core.store.sqlite import Store
 
 
-def test_openclaw_message_preflight_records_suggested_delegations(monkeypatch, tmp_path: Path) -> None:
+def test_openclaw_message_preflight_records_suggested_delegations(
+    monkeypatch, tmp_path: Path
+) -> None:
     from agency_runtime.core.selector import pipeline
 
     store = Store(tmp_path / "agency.db")

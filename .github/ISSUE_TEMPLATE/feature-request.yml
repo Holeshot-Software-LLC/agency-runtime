@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose a scoped, portable Agency Runtime capability.
+title: "[Feature] "
+labels: [needs-grillme]
+body:
+  - type: markdown
+    attributes:
+      value: Maintainers assign the stable `AR-NN` roadmap ID and epic during triage.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or operator problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Suggested approach
+      description: Describe behavior and boundaries, not just implementation details.
+    validations:
+      required: true
+  - type: checkboxes
+    id: portability
+    attributes:
+      label: Portability considerations
+      options:
+        - label: Windows
+        - label: Linux or WSL
+        - label: Codex
+        - label: Claude Code
+        - label: Hermes
+        - label: OpenClaw
+        - label: Dashboard
+        - label: CLI or MCP
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that would make the request complete.
+    validations:
+      required: true

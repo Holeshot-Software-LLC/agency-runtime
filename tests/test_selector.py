@@ -8,13 +8,16 @@ from pathlib import Path
 # Ensure package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from agency_runtime.core.selector.candidate_narrow import tokenize, score_agent, pre_narrow
-from agency_runtime.core.selector.domain_expansion import expand_query
+from agency_runtime.core.selector.cache import cache_get, cache_key, cache_put, clear_cache
+from agency_runtime.core.selector.candidate_narrow import pre_narrow, score_agent, tokenize
 from agency_runtime.core.selector.delegation_detection import detect_work_units
+from agency_runtime.core.selector.domain_expansion import expand_query
+from agency_runtime.core.selector.intent_text import (
+    affirmative_intent,
+    mask_excluded_intent,
+)
 from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, refine_query
 from agency_runtime.core.selector.policy import detect_actions
-from agency_runtime.core.selector.cache import cache_key, cache_put, cache_get, clear_cache
-
 
 # ─── Token scoring ──────────────────────────────────────────────────
 
@@ -65,6 +68,26 @@ def test_score_agent_no_match():
     assert score == 0.0, "should have zero score for non-matching agent"
 
 
+def test_repeated_token_values_do_not_multiply_one_field_weight():
+    base = {
+        "slug": "ui-specialist",
+        "name": "UI Specialist",
+        "categories": ["design"],
+        "capabilities": ["interface design"],
+    }
+    repeated = {
+        **base,
+        "capabilities": [
+            "interface design",
+            "dashboard design",
+            "component design",
+        ],
+    }
+    tokens = tokenize("design")
+
+    assert score_agent(repeated, tokens) == score_agent(base, tokens)
+
+
 def test_pre_narrow_returns_top_candidates():
     catalog = [
         {"slug": "code-reviewer", "name": "Code Reviewer", "description": "Reviews code"},
@@ -83,7 +106,7 @@ def test_pre_narrow_pads_when_few_matches():
         {"slug": "b", "name": "B", "description": "desc b"},
         {"slug": "c", "name": "C", "description": "desc c"},
     ]
-    candidates, scores = pre_narrow("zzz", catalog, limit=3)
+    candidates, _scores = pre_narrow("zzz", catalog, limit=3)
     assert len(candidates) == 3
 
 
@@ -101,6 +124,25 @@ def test_expand_query_no_match():
     assert result == "hello world"
 
 
+def test_expand_query_requires_complete_domain_terms():
+    assert expand_query("slackened validation rules") == "slackened validation rules"
+    assert "real-time communication" in expand_query("Configure Slack alerts")
+
+
+def test_affirmative_intent_masks_only_explicit_exclusions():
+    message = (
+        "Do not redesign the dashboard UI; fix authentication security. The login is not working."
+    )
+    masked = mask_excluded_intent(message)
+
+    assert len(masked) == len(message)
+    assert "dashboard" not in affirmative_intent(message)
+    assert "fix authentication security" in affirmative_intent(message)
+    assert "not working" in affirmative_intent(message)
+    assert "skip tests" in affirmative_intent("Do not skip tests before release")
+    assert affirmative_intent("No UI changes, fix the backend") == ", fix the backend"
+
+
 # ─── Work unit detection ────────────────────────────────────────────
 
 
@@ -111,14 +153,18 @@ def test_detect_work_units_single():
 
 
 def test_detect_work_units_numbered_list():
-    result = detect_work_units("Please do the following:\n1. Fix the login bug\n2. Update the README\n3. Add tests")
+    result = detect_work_units(
+        "Please do the following:\n1. Fix the login bug\n2. Update the README\n3. Add tests"
+    )
     assert result["count"] >= 2
     assert result["delegate"] is True
     assert result["source"] == "numbered_list"
 
 
 def test_detect_work_units_boundary_words():
-    result = detect_work_units("Fix the login bug in auth.py. Also, update the README file to document the new flow.")
+    result = detect_work_units(
+        "Fix the login bug in auth.py. Also, update the README file to document the new flow."
+    )
     assert result["count"] >= 2
     assert result["delegate"] is True
 
@@ -132,6 +178,14 @@ def test_detect_work_units_status_query_not_delegated():
 def test_detect_work_units_whats_next_not_delegated():
     result = detect_work_units("What's next?")
     assert result["delegate"] is False
+
+
+def test_detect_work_units_ignores_explicitly_negated_items():
+    result = detect_work_units("1. Do not deploy the service\n2. Update the README")
+
+    assert result["delegate"] is False
+    assert result["count"] == 1
+    assert result["source"] == "single"
 
 
 # ─── Trivial message detection ─────────────────────────────────────
@@ -152,6 +206,7 @@ def test_is_trivial_short_meaningful_not_trivial(monkeypatch):
     """Short messages that carry real intent must not be trivial."""
     monkeypatch.setenv("AGENCY_CONFIG_PATH", "/nonexistent")
     from agency_runtime.core.config import load_config
+
     load_config(reload=True)
     assert is_trivial("whats next") is False
     assert is_trivial("status") is False
@@ -162,6 +217,7 @@ def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
     """Force bundled policy by pointing env to a missing file, then reset cache."""
     monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing-policy.yaml"))
     from agency_runtime.core.selector import policy as policy_mod
+
     policy_mod._COMPANION_POLICY = None
     policy_mod._POLICY_MTIME = 0.0
     matched_actions, companion_ids = detect_actions("fix the routing bug and add tests")
@@ -169,33 +225,48 @@ def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
     assert "CODING" in matched_actions
     assert "senior-developer" in companion_ids
     assert "code-reviewer" in companion_ids
-    assert "reality-checker" in companion_ids
+    assert "reality-checker" not in companion_ids
 
 
-def test_bundled_companion_policy_default_includes_orchestrators(monkeypatch, tmp_path):
-    """DEFAULT action must always include agents-orchestrator and chief-of-staff."""
+def test_bundled_companion_policy_skips_gated_default_agents(monkeypatch, tmp_path):
+    """DEFAULT agents remain disabled until they exist in an active roster."""
     monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing.yaml"))
     # Force reload of cached policy
     from agency_runtime.core.selector import policy as policy_mod
+
     policy_mod._COMPANION_POLICY = None
     policy_mod._POLICY_MTIME = 0.0
     _, companion_ids = detect_actions("anything at all")
 
-    assert "agents-orchestrator" in companion_ids
-    assert "chief-of-staff" in companion_ids
+    assert "agents-orchestrator" not in companion_ids
+    assert "chief-of-staff" not in companion_ids
 
 
 def test_bundled_policy_has_all_broad_actions(monkeypatch, tmp_path):
     """Bundled policy must include all 16 broad actions."""
     monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing.yaml"))
     from agency_runtime.core.selector import policy as policy_mod
+
     policy_mod._COMPANION_POLICY = None
     policy_mod._POLICY_MTIME = 0.0
     policy = policy_mod.load_policy()
     expected = {
-        "CODING", "PERFORMANCE", "GITHUB_WRITE", "ARCHITECTURE", "ORCHESTRATION",
-        "DEBUGGING", "DEVOPS_INFRA", "IDEATION", "DOCUMENTATION", "SECURITY",
-        "TESTING_QA", "UI_UX", "DATA_ML", "BUSINESS", "PROJECT_MGMT", "DEFAULT",
+        "CODING",
+        "PERFORMANCE",
+        "GITHUB_WRITE",
+        "ARCHITECTURE",
+        "ORCHESTRATION",
+        "DEBUGGING",
+        "DEVOPS_INFRA",
+        "IDEATION",
+        "DOCUMENTATION",
+        "SECURITY",
+        "TESTING_QA",
+        "UI_UX",
+        "DATA_ML",
+        "BUSINESS",
+        "PROJECT_MGMT",
+        "DEFAULT",
     }
     found = set(policy.get("actions", {}).keys())
     missing = expected - found
@@ -203,12 +274,14 @@ def test_bundled_policy_has_all_broad_actions(monkeypatch, tmp_path):
 
 
 def test_routing_context_surfaces_low_confidence_default_agents():
-    context = build_routing_context({
-        "selected_ids": ["senior-developer", "code-reviewer"],
-        "confidence": 0.3,
-        "status": "token_fallback",
-        "work_units": {"delegate": False, "count": 1},
-    })
+    context = build_routing_context(
+        {
+            "selected_ids": ["senior-developer", "code-reviewer"],
+            "confidence": 0.3,
+            "status": "token_fallback",
+            "work_units": {"delegate": False, "count": 1},
+        }
+    )
 
     assert "Default specialist routing suggestion" in context
     assert "senior-developer, code-reviewer" in context

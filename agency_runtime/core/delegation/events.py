@@ -21,12 +21,19 @@ def _clean(value: Any) -> str:
 
 def work_unit_id_from_text(text: str) -> str:
     """Return a stable ID for a detected work-unit description."""
-    digest = hashlib.sha1(text.strip().encode("utf-8")).hexdigest()[:10]
+    digest = hashlib.sha256(text.strip().encode("utf-8")).hexdigest()[:10]
     return f"unit-{digest}"
 
 
-def suggested_delegations(store: Store, session_id: str) -> list[dict[str, Any]]:
+def suggested_delegations(
+    store: Store,
+    session_id: str,
+    *,
+    trace_id: str = "",
+) -> list[dict[str, Any]]:
     """Return open delegation suggestions for a session."""
+    if trace_id:
+        return [row for row in store.get_delegations(trace_id) if row.get("status") == "suggested"]
     return store.get_delegations_for_session(session_id, statuses=("suggested",))
 
 
@@ -48,11 +55,8 @@ def record_suggested_delegations(
 
     selected = routing.get("selected_ids") if isinstance(routing.get("selected_ids"), list) else []
     recommended_agent = _clean(selected[0]) if selected else ""
-    existing = {
-        row.get("work_unit_id")
-        for row in store.get_delegations_for_session(session_id)
-    }
-    trace_id = f"preflight-{session_id or uuid.uuid4()}"
+    trace_id = _clean(routing.get("trace_id")) or str(uuid.uuid4())
+    existing = {row.get("work_unit_id") for row in store.get_delegations(trace_id)}
     recorded = 0
 
     for unit in work_units.get("units") or []:
@@ -84,6 +88,8 @@ def mark_delegation_executed(
     backend: str,
     agent: str = "",
     goal: str = "",
+    work_unit_id: str = "",
+    trace_id: str = "",
     count: int = 1,
 ) -> int:
     """Mark one or more suggested work units as delegated.
@@ -91,11 +97,20 @@ def mark_delegation_executed(
     If no suggestion exists, still record the explicit delegation tool use so
     the response header can truthfully report that delegation happened.
     """
-    open_rows = suggested_delegations(store, session_id)
-    chosen_agent = _clean(agent) or (_clean(open_rows[0].get("recommended_agent")) if open_rows else "")
+    open_rows = suggested_delegations(store, session_id, trace_id=trace_id)
+    matched_rows = _matching_suggestions(
+        open_rows,
+        work_unit_id=work_unit_id,
+        agent=agent,
+        goal=goal,
+        count=count,
+    )
+    chosen_agent = _clean(agent) or (
+        _clean(matched_rows[0].get("recommended_agent")) if matched_rows else ""
+    )
     updated = 0
 
-    for row in open_rows[: max(1, count)]:
+    for row in matched_rows:
         store.update_delegation(
             row["id"],
             status="delegated",
@@ -109,10 +124,11 @@ def mark_delegation_executed(
         return updated
 
     store.record_delegation(
-        trace_id=f"tool-{session_id or uuid.uuid4()}",
+        trace_id=_clean(trace_id) or str(uuid.uuid4()),
         session_id=session_id,
         host=host,
-        work_unit_id=work_unit_id_from_text(goal or chosen_agent or backend),
+        work_unit_id=_clean(work_unit_id)
+        or work_unit_id_from_text(goal or chosen_agent or backend),
         recommended_agent=chosen_agent,
         status="delegated",
         backend=backend,
@@ -129,15 +145,26 @@ def mark_delegation_skipped(
     reason: str,
     agent: str = "",
     goal: str = "",
+    work_unit_id: str = "",
+    trace_id: str = "",
     count: int = 1,
 ) -> int:
     """Mark suggested work units as skipped, or record an explicit blocker."""
-    open_rows = suggested_delegations(store, session_id)
-    chosen_agent = _clean(agent) or (_clean(open_rows[0].get("recommended_agent")) if open_rows else "")
+    open_rows = suggested_delegations(store, session_id, trace_id=trace_id)
+    matched_rows = _matching_suggestions(
+        open_rows,
+        work_unit_id=work_unit_id,
+        agent=agent,
+        goal=goal,
+        count=count,
+    )
+    chosen_agent = _clean(agent) or (
+        _clean(matched_rows[0].get("recommended_agent")) if matched_rows else ""
+    )
     skip_reason = _clean(reason) or "delegation failed"
     updated = 0
 
-    for row in open_rows[: max(1, count)]:
+    for row in matched_rows:
         store.update_delegation(
             row["id"],
             status="skipped",
@@ -152,16 +179,61 @@ def mark_delegation_skipped(
         return updated
 
     store.record_delegation(
-        trace_id=f"tool-{session_id or uuid.uuid4()}",
+        trace_id=_clean(trace_id) or str(uuid.uuid4()),
         session_id=session_id,
         host=host,
-        work_unit_id=work_unit_id_from_text(goal or chosen_agent or backend or skip_reason),
+        work_unit_id=_clean(work_unit_id)
+        or work_unit_id_from_text(goal or chosen_agent or backend or skip_reason),
         recommended_agent=chosen_agent,
         status="skipped",
         backend=backend,
         skip_reason=skip_reason,
     )
     return 1
+
+
+def _matching_suggestions(
+    rows: list[dict[str, Any]],
+    *,
+    work_unit_id: str,
+    agent: str,
+    goal: str,
+    count: int,
+) -> list[dict[str, Any]]:
+    """Return suggestions that can be correlated without relying on row order.
+
+    An explicit work-unit ID is authoritative.  A task description uses the
+    same stable ID as preflight detection, and an agent can disambiguate when
+    it identifies a unique suggestion.  A sole open suggestion is safe as a
+    compatibility fallback; with multiple ambiguous suggestions, the caller
+    records a separate explicit event instead of mutating an arbitrary row.
+    """
+    if not rows:
+        return []
+
+    limit = max(1, int(count or 1))
+    explicit_id = _clean(work_unit_id)
+    if explicit_id:
+        return [row for row in rows if _clean(row.get("work_unit_id")) == explicit_id][:limit]
+
+    task = _clean(goal)
+    if task:
+        task_id = work_unit_id_from_text(task)
+        task_matches = [row for row in rows if _clean(row.get("work_unit_id")) == task_id]
+        if task_matches:
+            return task_matches[:limit]
+
+    chosen_agent = _clean(agent)
+    if chosen_agent:
+        agent_matches = [
+            row for row in rows if _clean(row.get("recommended_agent")) == chosen_agent
+        ]
+        if len(agent_matches) == 1:
+            return agent_matches
+        if len(agent_matches) > 1 and limit > 1:
+            return agent_matches[:limit]
+
+    return rows if len(rows) == 1 else []
 
 
 __all__ = [

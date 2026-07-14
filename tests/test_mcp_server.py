@@ -2,27 +2,36 @@
 
 from __future__ import annotations
 
+import io
+import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
+import pytest
+
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.server.mcp import MCP_TOOLS, handle_tool_call
+from agency_runtime.server.mcp import MAX_INPUT_BYTES, MCP_TOOLS, handle_tool_call, run_stdio
 
 
 def _seed_store(tmp_path: Path) -> Store:
     store = Store(tmp_path / "agency.db")
-    store.activate_agent({
-        "slug": "code-reviewer",
-        "name": "Code Reviewer",
-        "division": "engineering",
-        "description": "Reviews code quality and security.",
-        "source": "test",
-        "version": "1.0",
-        "hash": "abc123",
-        "categories": ["code-review"],
-        "capabilities": ["code-review"],
-        "tool_affinity": [],
-        "prompt_path": "",
-    })
+    store.activate_agent(
+        {
+            "slug": "code-reviewer",
+            "name": "Code Reviewer",
+            "division": "engineering",
+            "description": "Reviews code quality and security.",
+            "source": "test",
+            "version": "1.0",
+            "hash": "abc123",
+            "categories": ["code-review"],
+            "capabilities": ["code-review"],
+            "tool_affinity": [],
+            "prompt_path": "",
+        }
+    )
     return store
 
 
@@ -30,6 +39,115 @@ def test_mcp_exposes_explain_selection_tool() -> None:
     names = {tool["name"] for tool in MCP_TOOLS}
 
     assert "agency.explain_selection" in names
+
+
+def test_mcp_exposes_host_status_and_exact_confirmed_control_tools() -> None:
+    tools = {tool["name"]: tool for tool in MCP_TOOLS}
+
+    assert {"agency.host_status", "agency.host_control"} <= set(tools)
+    control = tools["agency.host_control"]["inputSchema"]
+    assert control["properties"]["enabled"]["type"] == "boolean"
+    assert control["properties"]["host"]["enum"] == [
+        "hermes",
+        "openclaw",
+        "codex",
+        "claude",
+    ]
+
+
+def test_mcp_host_control_requires_exact_confirmation_and_persists(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+
+    rejected = handle_tool_call(
+        "agency.host_control",
+        {"host": "codex", "enabled": False, "confirm": "yes"},
+        store=store,
+    )
+    assert "confirmation must exactly match" in rejected["error"]
+    assert store.get_host_control("codex")["enabled"] is True
+
+    changed = handle_tool_call(
+        "agency.host_control",
+        {"host": "codex", "enabled": False, "confirm": "DISABLE codex"},
+        store=store,
+    )
+    assert changed["ok"] is True
+    assert changed["enabled"] is False
+    assert Store(tmp_path / "agency.db").get_host_control("codex")["enabled"] is False
+
+
+def test_mcp_host_status_reports_native_and_runtime_layers(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.set_host_control("claude", enabled=False, source="test")
+    monkeypatch.setattr(
+        "agency_runtime.core.host_control.inspect_host_status",
+        lambda runtime_store, host: {
+            "host": host,
+            "registered": True,
+            "enabled": True,
+            "runtime_enabled": runtime_store.get_host_control(host)["enabled"],
+            "effective_enabled": False,
+        },
+    )
+
+    status = handle_tool_call(
+        "agency.host_status",
+        {"host": "claude"},
+        store=store,
+    )
+
+    assert status["enabled"] is True
+    assert status["runtime_enabled"] is False
+    assert status["effective_enabled"] is False
+
+
+def test_canary_mode_blocks_every_mutating_mcp_surface(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    before = store.runtime_table_counts()
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+
+    calls = {
+        "agency.preflight": {"user_message": "route this"},
+        "agency.explain_selection": {"task": "explain"},
+        "agency.load_specialist": {"slug": "x", "session_id": "s"},
+        "agency.record_skill_loaded": {"skill_name": "x"},
+        "agency.delegate": {"agent": "x", "task": "work"},
+        "agency.finalize": {"draft_text": "draft"},
+        "agency.host_control": {
+            "host": "codex",
+            "enabled": False,
+            "confirm": "DISABLE codex",
+        },
+    }
+    for name, arguments in calls.items():
+        result = handle_tool_call(name, arguments, store=store)
+        assert "disabled during a live canary" in result["error"]
+
+    assert store.runtime_table_counts() == before
+    assert store.get_host_control("codex")["enabled"] is True
+
+
+def test_mcp_load_specialist_returns_prompt_and_records_evidence(tmp_path: Path) -> None:
+    store = _seed_store(tmp_path)
+
+    result = handle_tool_call(
+        "agency.load_specialist",
+        {"slug": "code-reviewer", "session_id": "session-load"},
+        store=store,
+    )
+
+    assert result["slug"] == "code-reviewer"
+    assert "Code Reviewer" in result["prompt"]
+    assert result["trace_id"]
+    assert store.get_specialists_for_session("session-load") == ["code-reviewer"]
 
 
 def test_mcp_explain_selection_returns_receipt(tmp_path: Path) -> None:
@@ -49,6 +167,44 @@ def test_mcp_explain_selection_returns_receipt(tmp_path: Path) -> None:
     assert receipt["schema_version"] == "agency.selection_explain.v1"
     assert receipt["selected"][0]["slug"] == "code-reviewer"
     assert receipt["signals"]["selection"]["roster_size"] == 1
+    conn = store._connect()
+    try:
+        persisted = conn.execute(
+            "SELECT trace_id, session_id FROM routing_decisions WHERE session_id = ?",
+            ("s1",),
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(persisted) == 1
+    assert dict(persisted[0]) == {
+        "trace_id": receipt["routing"]["trace_id"],
+        "session_id": "s1",
+    }
+
+
+def test_mcp_preflight_persists_authoritative_routing_trace(tmp_path: Path) -> None:
+    store = _seed_store(tmp_path)
+
+    result = handle_tool_call(
+        "agency.preflight",
+        {"session_id": "preflight-session", "user_message": "Review code quality and security"},
+        store=store,
+    )
+
+    assert result["context"].startswith("[AGENCY PREFLIGHT]")
+    conn = store._connect()
+    try:
+        row = conn.execute(
+            "SELECT session_id, query_hash, decision FROM routing_decisions WHERE session_id = ?",
+            ("preflight-session",),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert row is not None
+    persisted = dict(row)
+    assert persisted["session_id"] == "preflight-session"
+    assert len(persisted["query_hash"]) == 64
+    assert "code-reviewer" in persisted["decision"]
 
 
 def test_mcp_finalize_returns_header_text(tmp_path: Path) -> None:
@@ -76,3 +232,119 @@ def test_mcp_finalize_returns_header_text(tmp_path: Path) -> None:
         conn.close()
     assert event is not None
     assert dict(event) == {"host": "mcp", "action": "accept"}
+
+
+def _transcript() -> str:
+    messages = [
+        "{not-json",
+        json.dumps({"jsonrpc": "2.0", "id": 0, "method": "tools/list", "params": {}}),
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-11-25",
+                    "capabilities": {},
+                    "clientInfo": {"name": "transcript-test", "version": "1.0"},
+                },
+            }
+        ),
+        json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}),
+        json.dumps({"jsonrpc": "2.0", "id": 2, "method": "ping", "params": {}}),
+        json.dumps({"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": {}}),
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 4,
+                "method": "tools/call",
+                "params": {"name": "agency.status", "arguments": {}},
+            }
+        ),
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "tools/call",
+                "params": {"name": "agency.preflight", "arguments": {}},
+            }
+        ),
+        json.dumps({"jsonrpc": "2.0", "id": 6, "method": "missing/method", "params": {}}),
+        json.dumps(
+            {"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {"requestId": 4}}
+        ),
+    ]
+    return "\n".join(messages) + "\n"
+
+
+def _run_transcript(
+    command: list[str], tmp_path: Path
+) -> tuple[subprocess.CompletedProcess[str], list[dict]]:
+    env = os.environ.copy()
+    env["AGENCY_DB_PATH"] = str(tmp_path / "mcp-transcript.db")
+    completed = subprocess.run(
+        command,
+        input=_transcript(),
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).parents[1],
+        env=env,
+        timeout=30,
+        check=False,
+    )
+    responses = [json.loads(line) for line in completed.stdout.splitlines()]
+    return completed, responses
+
+
+def _assert_transcript(completed: subprocess.CompletedProcess[str], responses: list[dict]) -> None:
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert len(responses) == 8  # Two notifications intentionally have no response.
+    assert responses[0]["error"]["code"] == -32700
+    assert responses[1] == {
+        "jsonrpc": "2.0",
+        "id": 0,
+        "error": {"code": -32002, "message": "Server not initialized"},
+    }
+    by_id = {
+        response.get("id"): response for response in responses if response.get("id") is not None
+    }
+    assert by_id[1]["result"]["protocolVersion"] == "2025-11-25"
+    assert by_id[1]["result"]["capabilities"] == {"tools": {"listChanged": False}}
+    assert by_id[2]["result"] == {}
+    assert "agency.status" in {tool["name"] for tool in by_id[3]["result"]["tools"]}
+    call_result = by_id[4]["result"]
+    assert call_result["isError"] is False
+    assert call_result["structuredContent"]["roster_count"] == 0
+    assert json.loads(call_result["content"][0]["text"]) == call_result["structuredContent"]
+    assert by_id[5]["result"]["isError"] is True
+    assert "missing required argument" in by_id[5]["result"]["structuredContent"]["error"]
+    assert by_id[6]["error"]["code"] == -32601
+
+
+def test_mcp_module_runs_a_real_stdio_json_rpc_transcript(tmp_path: Path) -> None:
+    completed, responses = _run_transcript(
+        [sys.executable, "-m", "agency_runtime.server.mcp", "--stdio"],
+        tmp_path,
+    )
+    _assert_transcript(completed, responses)
+
+
+def test_agency_mcp_cli_runs_the_same_stdio_transport(tmp_path: Path) -> None:
+    completed, responses = _run_transcript(
+        [sys.executable, "-m", "agency_runtime.cli", "mcp", "--db", str(tmp_path / "cli.db")],
+        tmp_path,
+    )
+    _assert_transcript(completed, responses)
+
+
+def test_mcp_stdio_rejects_oversized_input_without_unbounded_read() -> None:
+    source = io.BytesIO(b"x" * (MAX_INPUT_BYTES + 1) + b"\n")
+    sink = io.BytesIO()
+
+    status = run_stdio(input_stream=source, output_stream=sink)
+
+    assert status == 1
+    response = json.loads(sink.getvalue())
+    assert response["error"]["code"] == -32700
+    assert "input limit" in response["error"]["message"]

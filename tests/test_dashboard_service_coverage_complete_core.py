@@ -1,0 +1,295 @@
+"""Boundary and subprocess coverage for dashboard service primitives."""
+
+from __future__ import annotations
+
+import io
+import subprocess
+from types import SimpleNamespace
+
+import pytest
+
+from agency_runtime.core import dashboard_service_core as subject
+
+
+def test_command_result_terminal_safety_and_public_shape():
+    success = subject._CommandResult(("manager",), 0, "ok", "")
+    assert success.ok and success.public() == {
+        "command": ["manager"],
+        "returncode": 0,
+        "ok": True,
+    }
+    failure = subject._CommandResult(("manager",), 2, "fallback", "bad\x00detail")
+    assert failure.public()["error"] == "bad?detail"
+    assert subject._CommandResult(("manager",), 1).public()["error"] == (
+        "service-manager command failed"
+    )
+
+
+@pytest.mark.parametrize("value", ["", "bad\x00value"])
+def test_validate_text_rejects_empty_and_control_values(value):
+    with pytest.raises(ValueError):
+        subject._validate_text(value, label="value")
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("Windows", "windows"),
+        ("WIN32", "windows"),
+        ("nt", "windows"),
+        ("Linux", "linux"),
+        ("GNU/Linux", "linux"),
+        ("Darwin", "darwin"),
+    ],
+)
+def test_platform_normalization(value, expected):
+    assert subject._normalise_platform(value) == expected
+
+
+def test_config_path_precedence_and_worker_argv(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    explicit = tmp_path / "explicit.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "environment.yaml"))
+    assert subject._config_path(home, None, explicit) == explicit.resolve()
+    assert subject._config_path(home, None, None) == (tmp_path / "environment.yaml").resolve()
+    assert (
+        subject._config_path(home, home, None)
+        == (home / ".agency-runtime" / "agency.yaml").resolve()
+    )
+    argv = subject.build_service_worker_argv(
+        home_dir=home,
+        config_path=explicit,
+        python_executable=tmp_path / "python",
+    )
+    assert argv == [
+        str((tmp_path / "python").resolve()),
+        "-m",
+        "agency_runtime.cli",
+        "dashboard",
+        "--service-mode",
+        "--config",
+        str(explicit.resolve()),
+    ]
+
+
+def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
+    assert (
+        subject._context(
+            home_dir=tmp_path,
+            platform_name="darwin",
+            config_path=None,
+            python_executable=tmp_path / "python",
+        )
+        is None
+    )
+    monkeypatch.setattr(subject, "_windows_current_user_sid", lambda: "S-1-5-test")
+    windows = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=None,
+        python_executable=tmp_path / "python",
+    )
+    assert windows is not None
+    assert windows.manager == "schtasks" and windows.windows_user == "S-1-5-test"
+    monkeypatch.setattr(subject, "_windows_current_user_sid", lambda: None)
+    monkeypatch.setenv("USERNAME", "user")
+    monkeypatch.setenv("USERDOMAIN", "DOMAIN")
+    windows = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=None,
+        python_executable=tmp_path / "python",
+    )
+    assert windows is not None and windows.windows_user == "DOMAIN\\user"
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
+    linux = subject._context(
+        home_dir=None,
+        platform_name="linux",
+        config_path=tmp_path / "config.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert linux is not None and linux.unit_path == (
+        tmp_path / "xdg" / "systemd" / "user" / subject.SYSTEMD_UNIT_NAME
+    )
+    monkeypatch.setenv("XDG_CONFIG_HOME", "relative")
+    monkeypatch.setattr(subject.Path, "home", lambda: tmp_path)
+    linux = subject._context(
+        home_dir=None,
+        platform_name="linux",
+        config_path=None,
+        python_executable=tmp_path / "python",
+    )
+    assert linux is not None and linux.unit_path == (
+        tmp_path / ".config" / "systemd" / "user" / subject.SYSTEMD_UNIT_NAME
+    )
+
+
+def test_windows_sid_non_windows_and_library_failure(monkeypatch):
+    import ctypes
+
+    monkeypatch.setattr(subject, "_IS_WINDOWS", False)
+    assert subject._windows_current_user_sid() is None
+    monkeypatch.setattr(subject, "_IS_WINDOWS", True)
+
+    monkeypatch.setattr(
+        ctypes,
+        "WinDLL",
+        lambda *_a, **_kw: (_ for _ in ()).throw(OSError("missing")),
+        raising=False,
+    )
+    assert subject._windows_current_user_sid() is None
+
+
+def test_service_worker_preserves_virtualenv_python_symlink(tmp_path):
+    interpreter = tmp_path / "python3.12"
+    interpreter.write_bytes(b"python")
+    virtualenv_python = tmp_path / ".venv" / "bin" / "python"
+    virtualenv_python.parent.mkdir(parents=True)
+    try:
+        virtualenv_python.symlink_to(interpreter)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable on this host: {exc}")
+
+    argv = subject.build_service_worker_argv(
+        home_dir=tmp_path / "home",
+        python_executable=virtualenv_python,
+    )
+
+    assert argv[0] == str(virtualenv_python.absolute())
+    assert argv[0] != str(interpreter.resolve())
+
+
+def test_bounded_text_and_stream_cover_bytes_strings_and_limits(monkeypatch):
+    monkeypatch.setattr(subject, "_MAX_MANAGER_OUTPUT_BYTES", 4)
+    assert subject._bounded_text(b"abc") == ("abc", False)
+    assert subject._bounded_text("abcdef") == ("abcd", True)
+    stream = io.BytesIO(b"abcdef")
+    stream.seek(3)
+    assert subject._read_command_stream(stream) == ("abcd", True)
+
+
+def test_invoke_runner_supports_timeout_legacy_and_uninspectable(monkeypatch):
+    calls = []
+
+    def modern(argv, *, timeout):
+        calls.append((argv, timeout))
+        return "modern"
+
+    def legacy(argv):
+        calls.append(argv)
+        return "legacy"
+
+    assert subject._invoke_runner(modern, ("one",), timeout=2) == "modern"
+    assert subject._invoke_runner(legacy, ("two",), timeout=3) == "legacy"
+    monkeypatch.setattr(
+        subject.inspect,
+        "signature",
+        lambda _runner: (_ for _ in ()).throw(ValueError("opaque")),
+    )
+    assert subject._invoke_runner(modern, ("three",), timeout=4) == "modern"
+
+
+@pytest.mark.parametrize("value", [True, 1.5, "1", None])
+def test_returncode_rejects_non_integer_values(value):
+    with pytest.raises(TypeError):
+        subject._coerce_returncode(value)
+
+
+@pytest.mark.parametrize("value", [-(2**31) - 1, 2**31])
+def test_returncode_rejects_out_of_range_values(value):
+    with pytest.raises(ValueError):
+        subject._coerce_returncode(value)
+
+
+@pytest.mark.parametrize("timeout", [True, 0, -1, float("nan"), 301, "30"])
+def test_run_rejects_invalid_timeout(timeout):
+    with pytest.raises(ValueError, match="timeout"):
+        subject._run(["manager"], command_runner=lambda _argv: None, timeout=timeout)
+
+
+def test_run_rejects_empty_command():
+    with pytest.raises(ValueError, match="must not be empty"):
+        subject._run([], command_runner=None)
+
+
+def test_run_normalizes_injected_result_shapes(monkeypatch):
+    direct = subject._run(
+        ["one"],
+        command_runner=lambda _argv, **_kw: subject._CommandResult(("raw",), 2, "out", "err"),
+    )
+    assert direct.command == ("one",) and direct.returncode == 2
+    mapped = subject._run(
+        ["two"],
+        command_runner=lambda _argv, **_kw: {
+            "exit_code": 3,
+            "stdout": b"out",
+            "error": "err",
+        },
+    )
+    assert (mapped.returncode, mapped.stdout, mapped.stderr) == (3, "out", "err")
+    obj = SimpleNamespace(returncode=4, stdout="object", stderr="failure")
+    normalized = subject._run(["three"], command_runner=lambda _argv, **_kw: obj)
+    assert normalized.returncode == 4 and normalized.stdout == "object"
+    monkeypatch.setattr(subject, "_MAX_MANAGER_OUTPUT_BYTES", 2)
+    limited = subject._run(
+        ["four"],
+        command_runner=lambda _argv, **_kw: {"returncode": 0, "stdout": "long"},
+    )
+    assert limited.returncode == 125 and "exceeded" in limited.stderr
+
+
+@pytest.mark.parametrize(
+    ("failure", "code", "message"),
+    [
+        (subprocess.TimeoutExpired("manager", 1, output="partial"), 124, "timed out"),
+        (OSError("offline"), 127, "OSError"),
+        (TypeError("invalid"), 125, "invalid service-manager result"),
+        (LookupError("unexpected"), 127, "runner failed: LookupError"),
+    ],
+)
+def test_run_normalizes_runner_failures(failure, code, message):
+    def fail(*_args, **_kwargs):
+        raise failure
+
+    result = subject._run(["manager"], command_runner=fail)
+    assert result.returncode == code and message in result.stderr
+
+
+def test_run_rejects_async_runner_and_closes_coroutine():
+    async def async_result():
+        return 0
+
+    result = subject._run(["manager"], command_runner=lambda *_a, **_kw: async_result())
+    assert result.returncode == 125 and "must be synchronous" not in result.stderr
+
+
+def test_run_real_subprocess_success_and_inner_timeout(monkeypatch):
+    def success(_argv, *, stdout, stderr, **_kwargs):
+        stdout.write(b"out")
+        stderr.write(b"err")
+        return SimpleNamespace(returncode=5)
+
+    monkeypatch.setattr(subject.subprocess, "run", success)
+    result = subject._run(["manager"], command_runner=None)
+    assert (result.returncode, result.stdout, result.stderr) == (5, "out", "err")
+
+    def timeout(_argv, *, stdout, **_kwargs):
+        stdout.write(b"partial")
+        raise subprocess.TimeoutExpired("manager", 1)
+
+    monkeypatch.setattr(subject.subprocess, "run", timeout)
+    result = subject._run(["manager"], command_runner=None)
+    assert result.returncode == 124 and result.stdout == "partial"
+
+
+def test_base_and_unsupported_payloads(tmp_path):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="linux",
+        config_path=None,
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    assert subject._base("inspect", ctx)["action"] == "inspect"
+    unsupported = subject._unsupported("install", "darwin")
+    assert unsupported["exit_code"] == 2 and unsupported["supported"] is False

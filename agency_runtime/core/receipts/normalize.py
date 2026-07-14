@@ -8,8 +8,9 @@ one SQLite-compatible dictionary shape.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from datetime import datetime, timezone
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import urlparse
 
 from .litellm import extract_litellm_receipt_headers
@@ -84,7 +85,11 @@ def _provider_from_api_base(api_base: str) -> str:
         return ""
     parsed = urlparse(api_base if "://" in api_base else f"//{api_base}")
     host = (parsed.hostname or "").lower()
-    if not host:
+    if (
+        not host
+        or len(host) > 253
+        or any(char.isspace() or ord(char) < 32 or ord(char) == 127 for char in host)
+    ):
         return ""
     if "openai" in host:
         return "openai"
@@ -98,7 +103,8 @@ def _provider_from_api_base(api_base: str) -> str:
         return "openrouter"
     if "azure" in host:
         return "azure"
-    if host in {"localhost", "127.0.0.1", "0.0.0.0"}:
+    # This classifies a receipt string; it does not bind a listening socket.
+    if host in {"localhost", "127.0.0.1", "0.0.0.0"}:  # nosec B104
         return "local"
     # Return the hostname, not any requested model alias.
     return host
@@ -106,7 +112,7 @@ def _provider_from_api_base(api_base: str) -> str:
 
 def _canonical_receipt(**values: Any) -> dict[str, Any]:
     now = _now()
-    receipt: dict[str, Any] = {field: "" for field in RECEIPT_FIELDS}
+    receipt: dict[str, Any] = dict.fromkeys(RECEIPT_FIELDS, "")
     receipt.update(
         {
             "host": "unknown",
@@ -147,7 +153,9 @@ def _canonical_receipt(**values: Any) -> dict[str, Any]:
     return receipt
 
 
-def normalize_litellm_receipt(headers: Mapping[str, Any] | Any | None, requested_model: str) -> dict[str, Any]:
+def normalize_litellm_receipt(
+    headers: Mapping[str, Any] | Any | None, requested_model: str
+) -> dict[str, Any]:
     """Normalize LiteLLM response headers into a canonical receipt."""
     extracted = extract_litellm_receipt_headers(headers)
     provider, resolved_model = _provider_model_from_model_id(extracted.get("model_id", ""))
@@ -201,7 +209,8 @@ def normalize_host_receipt(host_metadata: Mapping[str, Any] | None) -> dict[str,
     if not provider:
         provider = inferred_provider or _provider_from_api_base(_clean(api_base))
 
-    source = _clean(_first(metadata, "source", default="host")).lower() or "host"
+    default_source = "host" if metadata else "unknown"
+    source = _clean(_first(metadata, "source", default=default_source)).lower() or default_source
     if source not in {"host", "wrapper", "unknown"}:
         source = "host" if metadata else "unknown"
 
@@ -239,7 +248,7 @@ def build_unavailable_receipt(requested_model: str, reason: str) -> dict[str, An
 
 __all__ = [
     "RECEIPT_FIELDS",
-    "normalize_litellm_receipt",
-    "normalize_host_receipt",
     "build_unavailable_receipt",
+    "normalize_host_receipt",
+    "normalize_litellm_receipt",
 ]

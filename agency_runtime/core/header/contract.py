@@ -6,7 +6,8 @@ specialist use, delegation, skill context, and actual model selection explicit.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 HEADER_FIELDS: tuple[tuple[str, str], ...] = (
     ("agencies_loaded", "Agency/Agencies loaded"),
@@ -21,7 +22,13 @@ _REQUIRED_KEYS = tuple(key for key, _ in HEADER_FIELDS)
 _LABEL_TO_KEY = {label.lower(): key for key, label in HEADER_FIELDS}
 _KEY_TO_LABEL = dict(HEADER_FIELDS)
 
-_EMPTY_VALUES = {"", "<none>", "<none | agent-id[, agent-id...]>", "<none | skill-id[, skill-id...]>", "<one line>"}
+_EMPTY_VALUES = {
+    "",
+    "<none>",
+    "<none | agent-id[, agent-id...]>",
+    "<none | skill-id[, skill-id...]>",
+    "<one line>",
+}
 
 
 def _clean(value: Any) -> str:
@@ -38,20 +45,21 @@ def _is_present(value: Any) -> bool:
     return bool(text) and text.lower() not in _EMPTY_VALUES
 
 
-def _is_noneish(value: Any) -> bool:
-    text = _clean(value).lower().rstrip(".!")
-    return text == "none" or text.startswith(("none ", "none-", "none--"))
-
-
 def _starts_with_header(response_text: str) -> bool:
     lines = response_text.splitlines()
-    return bool(lines) and lines[0].startswith(f"{HEADER_FIELDS[0][1]}:")
+    return len(lines) >= len(HEADER_FIELDS) and all(
+        lines[index].startswith(f"{label}:") for index, (_key, label) in enumerate(HEADER_FIELDS)
+    )
 
 
 def _split_header_body(response_text: str) -> tuple[list[str], str]:
     lines = response_text.splitlines()
     header_lines = lines[: len(HEADER_FIELDS)]
-    body = "\n".join(lines[len(HEADER_FIELDS) :]).lstrip("\n") if len(lines) > len(HEADER_FIELDS) else ""
+    body = (
+        "\n".join(lines[len(HEADER_FIELDS) :]).lstrip("\n")
+        if len(lines) > len(HEADER_FIELDS)
+        else ""
+    )
     return header_lines, body
 
 
@@ -130,7 +138,9 @@ def _get_loaded_specialists(store: Any, session_id: str) -> list[str]:
                 "SELECT agent_slug FROM specialists_loaded WHERE session_id = ? ORDER BY loaded_at",
                 (session_id,),
             )
-            return _dedupe([row["agent_slug"] if hasattr(row, "keys") else row[0] for row in cur.fetchall()])
+            return _dedupe(
+                [row["agent_slug"] if hasattr(row, "keys") else row[0] for row in cur.fetchall()]
+            )
         finally:
             conn.close()
     except Exception:
@@ -148,7 +158,8 @@ def _get_delegations(store: Any, session_id: str) -> list[dict[str, Any]]:
         try:
             cur = conn.execute(
                 "SELECT recommended_agent, backend, status, skip_reason, error "
-                "FROM delegation_events WHERE session_id = ? ORDER BY started_at",
+                "FROM delegation_events "
+                "WHERE session_id = ? ORDER BY started_at, rowid",
                 (session_id,),
             )
             return [dict(row) for row in cur.fetchall()]
@@ -205,7 +216,9 @@ def _complexity_for_model_group(model_group: str) -> str:
 
 
 def _model_line(receipt: Mapping[str, Any] | None, requested_model: str) -> str:
-    requested = _clean((receipt or {}).get("requested_model")) or _clean(requested_model) or "unknown"
+    requested = (
+        _clean((receipt or {}).get("requested_model")) or _clean(requested_model) or "unknown"
+    )
     tier = _complexity_for_model_group(requested)
     tier_prefix = f"[{tier}] " if tier else ""
     if not receipt:
@@ -218,14 +231,17 @@ def _model_line(receipt: Mapping[str, Any] | None, requested_model: str) -> str:
     model_group = _clean(receipt.get("model_group"))
 
     if not resolved_model or resolved_model == "unavailable":
-        reason = status if status and status not in {"success", "unknown"} else "unavailable - no resolved model telemetry"
+        reason = (
+            status
+            if status and status not in {"success", "unknown"}
+            else "unavailable - no resolved model telemetry"
+        )
         return f"{tier_prefix}{requested} -> {reason}"
 
     target = f"{resolved_provider}/{resolved_model}" if resolved_provider else resolved_model
     if model_group and model_group != resolved_model:
         target = f"{target} via {model_group}"
-    if source:
-        target = f"{target} ({source})"
+    target = f"{target} ({source})"
     return f"{tier_prefix}{requested} -> {target}"
 
 
@@ -250,36 +266,35 @@ def _delegation_line(delegations: list[dict[str, Any]]) -> str:
     return "none - delegation suggested but not executed"
 
 
-def fill_header_fields(fields: Mapping[str, Any] | None, session_id: str, store: Any, model: str = "") -> dict[str, str]:
-    """Fill missing header fields from store/session data and safe defaults."""
+def fill_header_fields(
+    fields: Mapping[str, Any] | None, session_id: str, store: Any, model: str = ""
+) -> dict[str, str]:
+    """Reconcile header fields with authoritative store/session evidence.
+
+    Specialist, delegation, and model claims are evidence fields: authored
+    values never outrank runtime records.  The remaining explanatory fields
+    retain authored content and receive safe defaults only when absent.
+    """
     filled = {key: _clean((fields or {}).get(key, "")) for key in _REQUIRED_KEYS}
 
     agents = _get_loaded_specialists(store, session_id)
-    if agents and _is_noneish(filled["agencies_loaded"]):
-        filled["agencies_loaded"] = ""
-    if not _is_present(filled["agencies_loaded"]):
-        filled["agencies_loaded"] = ", ".join(agents) if agents else "none"
+    filled["agencies_loaded"] = ", ".join(agents) if agents else "none"
 
     delegations = _get_delegations(store, session_id)
-    if delegations and filled["agencies_delegated"].lower() == "none":
-        filled["agencies_delegated"] = ""
-    if not _is_present(filled["agencies_delegated"]):
-        filled["agencies_delegated"] = _delegation_line(delegations)
+    filled["agencies_delegated"] = _delegation_line(delegations)
 
     skills = _get_skills(store, session_id)
-    if skills and filled["skills_loaded"].lower() == "none":
-        filled["skills_loaded"] = ""
-    if not _is_present(filled["skills_loaded"]):
-        filled["skills_loaded"] = ", ".join(skills) if skills else "none"
+    filled["skills_loaded"] = ", ".join(skills) if skills else "none"
 
-    if not _is_present(filled["actual_model_selected"]):
-        filled["actual_model_selected"] = _model_line(_latest_model_receipt(store, session_id), model)
+    filled["actual_model_selected"] = _model_line(_latest_model_receipt(store, session_id), model)
 
     if not _is_present(filled["why"]):
         filled["why"] = "Required for Agency Runtime auditability."
 
     if not _is_present(filled["how_it_shaped_outcome"]):
-        filled["how_it_shaped_outcome"] = "Made runtime context explicit without changing the substantive answer."
+        filled["how_it_shaped_outcome"] = (
+            "Made runtime context explicit without changing the substantive answer."
+        )
 
     return filled
 
@@ -287,8 +302,8 @@ def fill_header_fields(fields: Mapping[str, Any] | None, session_id: str, store:
 def finalize_header(response_text: str, session_id: str, store: Any, model: str) -> str:
     """Ensure response_text starts with a complete Agency header.
 
-    Existing header values are preserved when present; missing fields are filled
-    from the SQLite Store where possible and otherwise with honest defaults.
+    Evidence fields are overwritten from the SQLite Store.  Explanatory fields
+    are preserved when present and otherwise receive honest defaults.
     """
     valid, _ = validate_header(response_text)
     has_header = _starts_with_header(response_text)
@@ -303,9 +318,9 @@ def finalize_header(response_text: str, session_id: str, store: Any, model: str)
 
 __all__ = [
     "HEADER_FIELDS",
-    "parse_header",
-    "format_header",
-    "validate_header",
     "fill_header_fields",
     "finalize_header",
+    "format_header",
+    "parse_header",
+    "validate_header",
 ]

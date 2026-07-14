@@ -5,18 +5,18 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from agency_runtime.core.delegation.backends import BackendRegistry, CommandBackend
+from agency_runtime.core.delegation.ledger import DelegationLedger
 from agency_runtime.core.delegation.lifecycle import (
-    WorkUnit,
-    normalize_work_units,
+    DependencyGraph,
     build_dependency_graph,
     delegate_with_lifecycle,
-    DependencyGraph,
+    normalize_work_units,
 )
-from agency_runtime.core.delegation.ledger import DelegationLedger
-from agency_runtime.core.delegation.backends import BackendRegistry, CommandBackend
-
 
 # ─── Work unit normalization ────────────────────────────────────────
 
@@ -44,9 +44,11 @@ def test_normalize_detect_work_units_output():
 
 
 def test_normalize_with_recommended_agent():
-    units = normalize_work_units([
-        {"description": "review code", "recommended_agent": "code-reviewer"},
-    ])
+    units = normalize_work_units(
+        [
+            {"description": "review code", "recommended_agent": "code-reviewer"},
+        ]
+    )
     assert len(units) == 1
     assert units[0].recommended_agent == "code-reviewer"
 
@@ -65,11 +67,8 @@ def test_dependency_graph_no_deps():
 def test_dependency_graph_cycle_detection():
     graph = DependencyGraph()
     graph.edges = {"a": {"b"}, "b": {"a"}}  # cycle
-    try:
+    with pytest.raises(ValueError):
         graph.topological_batches()
-        assert False, "should have raised ValueError"
-    except ValueError:
-        pass
 
 
 # ─── Delegation ledger ──────────────────────────────────────────────
@@ -99,6 +98,7 @@ def test_ledger_skip():
 
 def test_ledger_json_serializable():
     import json
+
     ledger = DelegationLedger(trace_id="test")
     ledger.suggest("unit-1", "agent-a", backend="codex")
     ledger.suggest("unit-2", "agent-b", backend="hermes")
@@ -112,6 +112,7 @@ def test_ledger_json_serializable():
 
 def test_delegate_with_lifecycle_no_repo():
     """Test lifecycle dispatch without git repos (pure function calls)."""
+
     def mock_delegate(**kwargs):
         return {"status": "done", "task": kwargs.get("task", "")}
 
@@ -133,11 +134,11 @@ def test_delegate_with_lifecycle_empty():
 
 def test_backend_registry():
     registry = BackendRegistry()
-    backend = CommandBackend(command=["echo"], name="test-echo")
+    backend = CommandBackend(command=[sys.executable], name="test-python")
     registry.register(backend)
     available = registry.available_backends()
     assert len(available) == 1
-    assert available[0].name == "test-echo"
+    assert available[0].name == "test-python"
 
 
 def test_backend_registry_no_available():
