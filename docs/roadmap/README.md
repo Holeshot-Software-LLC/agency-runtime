@@ -74,7 +74,7 @@ not stable internal identifiers.
 | [AR-21](issue-AR-21-fully-resume-windows-children.md) | [`26fd65a`](../worklog/README.md) | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0043](../decisions/0043-prime-stdin-before-windows-child-resume.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md) |
 | [AR-22](issue-AR-22-concurrent-storage-acl-repair.md) | [`26fd65a`](../worklog/README.md) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md) |
 | [AR-23](issue-AR-23-hosted-windows-powershell-gate.md) | [`11387ad`](../worklog/README.md) | None; test-only hosted-runner allowance |
-| [AR-24](issue-AR-24-deterministic-evidence-ordering.md) | pending | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
+| [AR-24](issue-AR-24-deterministic-evidence-ordering.md) | [`d9f6d37`](../worklog/README.md) | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 
 ## Dependency summary
 
