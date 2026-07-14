@@ -29,7 +29,7 @@ epic: release
 issue_id: AR-17
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/17"
-depends_on: [AR-18, AR-19, AR-20, AR-21, AR-22, AR-23]
+depends_on: [AR-18, AR-19, AR-20, AR-21, AR-22, AR-23, AR-24]
 blocks: [AR-07]
 ---
 

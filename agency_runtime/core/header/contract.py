@@ -158,7 +158,8 @@ def _get_delegations(store: Any, session_id: str) -> list[dict[str, Any]]:
         try:
             cur = conn.execute(
                 "SELECT recommended_agent, backend, status, skip_reason, error "
-                "FROM delegation_events WHERE session_id = ? ORDER BY started_at",
+                "FROM delegation_events "
+                "WHERE session_id = ? ORDER BY started_at, rowid",
                 (session_id,),
             )
             return [dict(row) for row in cur.fetchall()]

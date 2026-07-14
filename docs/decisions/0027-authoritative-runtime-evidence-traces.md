@@ -3,11 +3,12 @@ title: "Derive runtime claims from authoritative correlated evidence"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-13
 tags: [evidence, tracing, delegation]
 related:
   - docs/roadmap/issue-AR-10-authoritative-runtime-evidence.md
   - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
+  - docs/roadmap/issue-AR-24-deterministic-evidence-ordering.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

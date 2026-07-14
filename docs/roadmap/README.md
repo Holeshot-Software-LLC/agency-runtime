@@ -41,6 +41,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-21` | [Make Windows child startup deterministic and fail closed](issue-AR-21-fully-resume-windows-children.md) | in_progress | p0 | host-integrations | [#22](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/22) |
 | `AR-22` | [Serialize concurrent Windows storage ACL repair](issue-AR-22-concurrent-storage-acl-repair.md) | in_progress | p0 | operations | [#23](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/23) |
 | `AR-23` | [Stabilize hosted Windows PowerShell integration gate](issue-AR-23-hosted-windows-powershell-gate.md) | in_progress | p0 | testing | [#24](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/24) |
+| `AR-24` | [Make evidence event ordering deterministic](issue-AR-24-deterministic-evidence-ordering.md) | in_progress | p0 | observability | [#25](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/25) |
 
 ## Traceability
 
@@ -73,6 +74,7 @@ not stable internal identifiers.
 | [AR-21](issue-AR-21-fully-resume-windows-children.md) | [`26fd65a`](../worklog/README.md) | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0043](../decisions/0043-prime-stdin-before-windows-child-resume.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md) |
 | [AR-22](issue-AR-22-concurrent-storage-acl-repair.md) | [`26fd65a`](../worklog/README.md) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md) |
 | [AR-23](issue-AR-23-hosted-windows-powershell-gate.md) | [`11387ad`](../worklog/README.md) | None; test-only hosted-runner allowance |
+| [AR-24](issue-AR-24-deterministic-evidence-ordering.md) | pending | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 
 ## Dependency summary
 
@@ -144,6 +146,9 @@ not stable internal identifiers.
 - `AR-23` records hosted Windows PowerShell cold-start variance exhausting the
   integration-only 20-second allowance. Its bounded 60-second test margin
   blocks `AR-17` until both hosted Windows versions pass and the fix is merged.
+- `AR-24` records same-timestamp delegation evidence surfacing in index order
+  rather than insertion order. Its explicit row-ID tie-breaker blocks `AR-17`
+  until deterministic evidence tests, hosted CI, and merge pass.
 
 ## Status conventions
 

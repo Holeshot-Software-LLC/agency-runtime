@@ -148,8 +148,57 @@ def test_ambiguous_delegate_does_not_mutate_arbitrary_suggestion(tmp_path: Path)
     )
 
     rows = store.get_delegations_for_session("session-1")
-    assert [row["status"] for row in rows[:2]] == ["suggested", "suggested"]
-    assert rows[2]["status"] == "delegated"
+    by_work_unit = {row["work_unit_id"]: row for row in rows}
+    assert by_work_unit["unit-first"]["status"] == "suggested"
+    assert by_work_unit["unit-second"]["status"] == "suggested"
+    fallback = [row for row in rows if row["work_unit_id"] not in {"unit-first", "unit-second"}]
+    assert len(rows) == 3
+    assert len(fallback) == 1
+    assert fallback[0]["status"] == "delegated"
+    assert fallback[0]["work_unit_id"] == work_unit_id_from_text("software-architect")
+
+
+def test_delegation_queries_preserve_insertion_order_when_timestamps_tie(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        Store,
+        "_now",
+        staticmethod(lambda: "2026-07-13T22:25:00+00:00"),
+    )
+    store = Store(tmp_path / "agency.db")
+    events = [
+        ("unit-first", "suggested", "code-reviewer"),
+        ("unit-second", "suggested", "software-architect"),
+        ("unit-third", "delegated", "technical-writer"),
+        ("unit-fourth", "delegated", "senior-developer"),
+    ]
+    for work_unit_id, status, agent in events:
+        store.record_delegation(
+            trace_id="trace-1",
+            session_id="session-1",
+            work_unit_id=work_unit_id,
+            recommended_agent=agent,
+            status=status,
+        )
+
+    expected = [work_unit_id for work_unit_id, _status, _agent in events]
+    assert [row["work_unit_id"] for row in store.get_delegations("trace-1")] == expected
+    assert [
+        row["work_unit_id"] for row in store.get_delegations_for_session("session-1")
+    ] == expected
+    assert [
+        row["work_unit_id"]
+        for row in store.get_delegations_for_session(
+            "session-1",
+            statuses=("suggested",),
+        )
+    ] == expected[:2]
+    assert (
+        fill_header_fields({}, "session-1", store)["agencies_delegated"]
+        == "technical-writer via unknown backend, senior-developer via unknown backend"
+    )
 
 
 def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path) -> None:

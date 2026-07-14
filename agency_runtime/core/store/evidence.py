@@ -472,7 +472,7 @@ class EvidenceStoreMixin:
         conn = self._connect()
         try:
             cur = conn.execute(
-                "SELECT * FROM delegation_events WHERE trace_id = ? ORDER BY started_at",
+                "SELECT * FROM delegation_events WHERE trace_id = ? ORDER BY started_at, rowid",
                 (trace_id,),
             )
             return [dict(row) for row in cur.fetchall()]
@@ -489,12 +489,13 @@ class EvidenceStoreMixin:
                 placeholders = ",".join("?" for _ in statuses)
                 # SQL text added here consists only of parameter placeholders.
                 cur = conn.execute(
-                    f"SELECT * FROM delegation_events WHERE session_id = ? AND status IN ({placeholders}) ORDER BY started_at",  # nosec B608
+                    f"SELECT * FROM delegation_events WHERE session_id = ? AND status IN ({placeholders}) ORDER BY started_at, rowid",  # nosec B608
                     (session_id, *statuses),
                 )
             else:
                 cur = conn.execute(
-                    "SELECT * FROM delegation_events WHERE session_id = ? ORDER BY started_at",
+                    "SELECT * FROM delegation_events "
+                    "WHERE session_id = ? ORDER BY started_at, rowid",
                     (session_id,),
                 )
             return [dict(row) for row in cur.fetchall()]
