@@ -21,8 +21,11 @@ def test_openclaw_message_preflight_records_suggested_delegations(
     adapter = OpenClawAdapter(store=store)
 
     def fake_route(session_id: str, user_message: str, catalog, **kwargs):
+        selected = (
+            "code-reviewer" if user_message.casefold().startswith("audit ") else "senior-developer"
+        )
         return {
-            "selected_ids": ["senior-developer"],
+            "selected_ids": [selected],
             "confidence": 0.95,
             "status": "applied",
             "query_hash": "a" * 64,

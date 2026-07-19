@@ -64,6 +64,7 @@ from agency_runtime.core.installer_contracts import (
 )
 from agency_runtime.core.policy.defaults import NO_MATCH_FALLBACK_SLUGS, STARTER_ROSTER
 from agency_runtime.core.process_argv import prepare_process_argv
+from agency_runtime.core.store.roster import BundledRosterReconciliation
 from agency_runtime.core.store.sqlite import Store, _default_db_path
 
 # Host discovery and native command compatibility surface.
@@ -133,13 +134,52 @@ rollback_agent_adapter = _orchestration.rollback_agent_adapter
 toggle_agency = _orchestration.toggle_agency
 
 
-def seed_starter_roster(store: Store) -> int:
-    """Seed the built-in roster without overwriting operator-owned entries."""
+def reconcile_starter_roster(store: Store) -> BundledRosterReconciliation:
+    """Add missing bundled agents and separately report proven legacy upgrades."""
 
+    reconcile = getattr(store, "reconcile_bundled_agents", None)
+    if callable(reconcile):
+        result = reconcile(STARTER_ROSTER)
+        if isinstance(result, BundledRosterReconciliation):
+            return result
+        return BundledRosterReconciliation(added=int(result), upgraded=0)
     activate_many = getattr(store, "activate_agents_if_missing", None)
     if callable(activate_many):
-        return int(activate_many(STARTER_ROSTER))
-    return sum(bool(store.activate_agent_if_missing(entry)) for entry in STARTER_ROSTER)
+        added = int(activate_many(STARTER_ROSTER))
+    else:
+        activate_one = getattr(store, "activate_agent_if_missing", None)
+        if callable(activate_one):
+            added = sum(bool(activate_one(entry)) for entry in STARTER_ROSTER)
+        else:
+            active = {
+                str(agent.get("agent_slug") or agent.get("slug") or "")
+                for agent in store.get_active_roster()
+            }
+            added = 0
+            for entry in STARTER_ROSTER:
+                if str(entry["slug"]) in active:
+                    continue
+                store.activate_agent(dict(entry))
+                added += 1
+    return BundledRosterReconciliation(added=added, upgraded=0)
+
+
+class _StarterRosterSeedCount(int):
+    """Additions-only integer carrying optional upgrade detail for new callers."""
+
+    upgraded: int
+
+    def __new__(cls, added: int, *, upgraded: int) -> _StarterRosterSeedCount:
+        value = super().__new__(cls, added)
+        value.upgraded = upgraded
+        return value
+
+
+def seed_starter_roster(store: Store) -> int:
+    """Seed missing built-ins while preserving the historical additions-only API."""
+
+    result = reconcile_starter_roster(store)
+    return _StarterRosterSeedCount(result.added, upgraded=result.upgraded)
 
 
 def ensure_no_match_fallback_roster(store: Store) -> int:

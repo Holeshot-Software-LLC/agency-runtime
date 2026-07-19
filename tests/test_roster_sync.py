@@ -368,10 +368,22 @@ def test_http_source_enforces_total_deadline_across_slow_reads(monkeypatch):
     assert len(response.read_calls) == 2
 
 
-def test_http_source_preserves_explicit_loopback_and_sanitizes_query_metadata(
+@pytest.mark.parametrize(
+    "query",
+    [
+        "token=PLANTED_TOKEN_QUERY",
+        "key=PLANTED_KEY_QUERY",
+        "api_key=PLANTED_API_KEY_QUERY",
+        "signature=PLANTED_SIGNATURE_QUERY",
+        "unrecognized=PLANTED_ARBITRARY_QUERY",
+    ],
+)
+def test_http_source_keeps_query_auth_at_the_content_free_fetch_boundary(
     monkeypatch,
+    query,
 ):
-    url = "http://127.0.0.1:9080/agents.json?token=do-not-persist"
+    url = f"http://127.0.0.1:9080/agents.json?{query}"
+    secret = query.partition("=")[2]
     response = _HTTPResponse(
         json.dumps([_agent("local-reviewer")]).encode(),
         url=url,
@@ -390,7 +402,12 @@ def test_http_source_preserves_explicit_loopback_and_sanitizes_query_metadata(
     assert [agent["slug"] for agent in agents] == ["local-reviewer"]
     assert agents[0]["source"] == "http://127.0.0.1:9080/agents.json"
     assert agents[0]["prompt_path"] == "http://127.0.0.1:9080/agents.json"
-    assert "do-not-persist" not in json.dumps(agents)
+    public_result = {
+        "agents": list(agents),
+        "outcomes": [outcome.public_dict() for outcome in agents.outcomes],
+    }
+    assert secret not in json.dumps(public_result)
+    assert observed["request"].full_url == url
     assert observed["request"].get_header("Accept-encoding") == "identity"
     assert observed["request"].get_header("Authorization") is None
     assert observed["timeout"] == roster_ingress.HTTP_TIMEOUT_SECONDS

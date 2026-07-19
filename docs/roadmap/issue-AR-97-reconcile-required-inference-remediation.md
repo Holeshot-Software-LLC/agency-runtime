@@ -3,7 +3,7 @@ title: "AR-97: Reconcile required-inference remediation in one ingestion"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [roster, quarantine, remediation, inference]
 related:
   - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
@@ -37,7 +37,8 @@ The post-audit reconciliation boundary now rechecks only the persisted scan and
 candidate identities from the same import. Focused regressions prove a single
 authorized resolution, no stale pending entry, bounded idempotence, and
 fail-closed behavior when required inference is unavailable or unsuccessful.
-Final full-suite and installed-artifact evidence remain pending.
+The full repository suite and fresh wheel/source installed-artifact smoke pass;
+the hosted cross-platform release matrix remains.
 
 ## Approach
 

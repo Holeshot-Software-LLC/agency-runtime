@@ -3,7 +3,7 @@ title: "AR-92: Redact roster source credentials from persistence and output"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [roster, credentials, privacy, security]
 related:
   - docs/roadmap/issue-AR-83-manifest-roster-import.md
@@ -30,9 +30,11 @@ creates safe labels, but Store and CLI boundaries can retain the raw URL.
 
 ## Current state
 
-Fetch behavior is bounded, but credential-bearing URL identity is not
-consistently rejected or redacted at persistence and display boundaries. A
-synthetic query-token probe was returned in operator-facing error JSON.
+Durable source identity rejects userinfo, every non-empty query, and fragments
+before persistence. One-shot HTTP ingestion may carry query authentication only
+to the network request; candidate content, source labels, errors, and durable
+records receive the query-free identity. Legacy unsafe rows are disabled,
+redacted, and purged during schema migration.
 
 ## Approach
 
@@ -48,9 +50,9 @@ source ingestion.
 
 ## Acceptance
 
-- [ ] Userinfo credentials are rejected.
-- [ ] Query credentials are never persisted or returned by CLI, dashboard, API, or errors.
-- [ ] Authenticated fetching is unavailable unless a separate secret-safe mechanism exists.
-- [ ] Credential-free canonical source matching remains deterministic.
-- [ ] Common token, key, and signature query names plus arbitrary values are covered.
+- [x] Userinfo credentials are rejected.
+- [x] Query credentials are never persisted or returned by CLI, dashboard, API, or errors.
+- [x] Query-authenticated fetching is confined to the content-free transient fetch boundary.
+- [x] Credential-free canonical source matching remains deterministic.
+- [x] Common token, key, API-key, and signature query names plus arbitrary values are covered.
 - [ ] Full coverage, documentation, packaging, Windows, and Linux gates pass.

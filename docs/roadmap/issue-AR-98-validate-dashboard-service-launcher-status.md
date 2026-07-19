@@ -1,9 +1,9 @@
 ---
 title: "AR-98: Validate launcher identity in dashboard service status"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [dashboard, service, installer, diagnostics]
 related:
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
@@ -32,10 +32,10 @@ registered definition and running process were current.
 
 ## Current state
 
-The installed Windows artifact reproduced the contradictory signal. Calling the
-same inspector with launcher validation enabled returned the truthful current
-state without mutating the service. The focused correction and installed
-artifact regression are in progress.
+The installed Windows artifact reproduced the contradictory signal. The
+corrected inspector now validates launcher identity on both read-only paths.
+The rebuilt installed service reports a current owned manifest, no definition
+drift, no repair recommendation, and remains active and reachable.
 
 ## Approach
 
@@ -52,9 +52,9 @@ ADR-0029 owns the secure, truthful local dashboard boundary.
 
 ## Acceptance
 
-- [ ] Service status validates the installed launcher identity without mutation.
-- [ ] Open recovery uses the same current-manifest evidence.
-- [ ] A healthy service reports `manifest_current: true` and
+- [x] Service status validates the installed launcher identity without mutation.
+- [x] Open recovery uses the same current-manifest evidence.
+- [x] A healthy service reports `manifest_current: true` and
       `repair_recommended: false`.
-- [ ] Regression tests cover both read-only paths and preserve token redaction.
-- [ ] The rebuilt installed Windows artifact and live dashboard service pass.
+- [x] Regression tests cover both read-only paths and preserve token redaction.
+- [x] The rebuilt installed Windows artifact and live dashboard service pass.

@@ -3,7 +3,7 @@ title: "AR-96: Serve a packaged dashboard favicon without console noise"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [dashboard, browser, packaging, quality]
 related:
   - docs/roadmap/issue-AR-71-dashboard-accessible-truthful-states.md
@@ -34,8 +34,8 @@ without a first-party dashboard icon.
 
 The shell declares a local SVG favicon, the hardened loopback server serves it
 with an exact media type, and wheel/source package manifests include the asset.
-Focused server and packaging regressions pass; the final browser, artifact, and
-cross-platform gates remain in progress.
+Focused server and packaging regressions, built-artifact inspection, and live
+Chromium console QA pass. The cross-platform release matrix remains.
 
 ## Approach
 

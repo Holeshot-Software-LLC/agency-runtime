@@ -350,6 +350,7 @@ def test_no_hosts_dashboard_install_and_summary(monkeypatch, capsys):
             profile_name="standard",
             cfg=config(),
             roster_added=2,
+            roster_upgraded=1,
             dashboard_result=result,
             dashboard_opted_out=opted_out,
         )

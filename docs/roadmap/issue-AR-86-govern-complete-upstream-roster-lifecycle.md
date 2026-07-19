@@ -3,7 +3,7 @@ title: "AR-86: Govern the complete upstream roster lifecycle"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [roster, upstream, audit, quarantine, synchronization]
 related:
   - docs/roadmap/issue-AR-83-manifest-roster-import.md
@@ -35,8 +35,10 @@ into a one-off exception rather than an ingestion discipline.
 
 ## Current state
 
-The complete pinned source snapshot has been classified into explicit approved
-and quarantined outcomes and the approved routing contracts are packaged.
+The complete pinned source snapshot now contains 263 approved agents, zero
+quarantined agents, and zero retired agents. The two known corrupt definitions
+were repaired through exact-hash governed ingestion rather than a one-off data
+edit, and the approved routing contracts are packaged.
 Delta-only source operations, immutable deterministic audits and candidate
 status history, review commands, active-version preservation, and the
 non-activating nightly workflow are implemented. Every rejected source now enters
@@ -49,7 +51,8 @@ anomalies. Configured-provider inference audit reconciliation is implemented;
 final repository-wide gates remain in progress. The shared ingestion and packaged-
 loader scanner now quarantines unsafe Unicode format controls and encoding
 corruption across prompt, metadata, list, and path boundaries; re-signing local
-bundle material cannot promote the unsafe content.
+bundle material cannot promote unsafe content. Unknown or ambiguous future
+corruption remains quarantined and non-executable.
 
 ## Approach
 

@@ -3,7 +3,7 @@ title: "AR-88: Compare Agency modes against native host outcomes"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [evaluation, outcomes, delegation, comparison, evidence]
 related:
   - docs/roadmap/issue-AR-11-routing-evaluation-and-performance.md
@@ -31,9 +31,11 @@ claims without paired, controlled, evidence-labelled comparisons.
 
 ## Current state
 
-The deterministic routing and delegation gates remain available. A strict
-content-free comparison observation schema and paired evaluator are being added;
-live installed-host trials and full-roster scenario expansion remain required.
+The strict content-free, model/router-aware comparison schema and paired
+evaluator are implemented. They enforce evidence-class parity, report outcome
+deltas and delegation regret without superiority claims, and cover the bounded
+full-roster and lifecycle scenario corpus. Fresh paired installed-host trials
+remain required.
 
 ## Approach
 
@@ -51,11 +53,11 @@ Codex evidence, and AR-87 owns the delegation variants being compared.
 
 ## Acceptance
 
-- [ ] Comparison observations are strict, bounded, content-free, and model/router-aware.
-- [ ] Exact scenario trials pair only matching hosts, evidence classes, and model identities.
-- [ ] Simulated, contract-only, and isolated evidence cannot support a live claim.
-- [ ] The evaluator reports outcome deltas and delegation regret without claiming superiority.
-- [ ] Full-roster direct, ambiguous, short, revised, adversarial, conflict, and abstention cases exist.
-- [ ] Provider failure, parent/child routing, authorization, decline, and Stop correction are covered.
+- [x] Comparison observations are strict, bounded, content-free, and model/router-aware.
+- [x] Exact scenario trials pair only matching hosts, evidence classes, and model identities.
+- [x] Simulated, contract-only, and isolated evidence cannot support a live claim.
+- [x] The evaluator reports outcome deltas and delegation regret without claiming superiority.
+- [x] Full-roster direct, ambiguous, short, revised, adversarial, conflict, and abstention cases exist.
+- [x] Provider failure, parent/child routing, authorization, decline, and Stop correction are covered.
 - [ ] Installed hosts run fresh-session Agency-on and native-only trials where available.
-- [ ] Documentation labels every result by evidence maturity.
+- [x] Documentation labels every result by evidence maturity.

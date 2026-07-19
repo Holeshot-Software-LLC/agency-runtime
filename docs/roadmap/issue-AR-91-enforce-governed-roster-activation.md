@@ -3,7 +3,7 @@ title: "AR-91: Enforce governed roster activation at every public store boundary
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [roster, activation, governance, security]
 related:
   - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
@@ -32,9 +32,10 @@ agent was proven active with zero candidate, snapshot, and audit rows.
 
 ## Current state
 
-Downloaded and synchronized definitions are governance-gated, but the
-lower-level public API can bypass that lifecycle. Bundled immutable seeding and
-explicit test fixtures need a separate, narrowly named trusted boundary.
+Every public activation and upsert boundary now requires either an exact
+verified bundled contract or validated approved-candidate authority before
+opening the store. The installation-only seed boundary is explicit,
+idempotent, and non-replacing for operator-owned active revisions.
 
 ## Approach
 
@@ -51,9 +52,9 @@ owns the complete upstream lifecycle.
 
 ## Acceptance
 
-- [ ] Unknown synthetic definitions cannot become active through public Store APIs.
-- [ ] Exact verified bundled definitions can seed without overwriting operator-owned active versions.
-- [ ] Approved candidate activation remains the only path for imported or changed definitions.
-- [ ] Direct upsert aliases cannot bypass the same checks.
-- [ ] Refusal leaves no active, version, or category residue.
+- [x] Unknown synthetic definitions cannot become active through public Store APIs.
+- [x] Exact verified bundled definitions can seed without overwriting operator-owned active versions.
+- [x] Approved candidate activation remains the only path for imported or changed definitions.
+- [x] Direct upsert aliases cannot bypass the same checks.
+- [x] Refusal leaves no active, version, or category residue.
 - [ ] Full coverage, documentation, packaging, Windows, and Linux gates pass.

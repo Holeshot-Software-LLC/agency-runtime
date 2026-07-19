@@ -1798,7 +1798,11 @@ def test_install_defaults_to_user_dashboard_service(
     calls: list[dict[str, Any]] = []
     monkeypatch.setattr(cli, "load_config", lambda: AgencyConfig())
     monkeypatch.setattr(cli, "_store", lambda _cfg: object())
-    monkeypatch.setattr(installer, "seed_starter_roster", lambda _store: 0)
+    monkeypatch.setattr(
+        installer,
+        "seed_starter_roster",
+        lambda _store: installer._StarterRosterSeedCount(0, upgraded=2),
+    )
     monkeypatch.setattr(
         dashboard_service,
         "install_dashboard_service",
@@ -1827,6 +1831,8 @@ def test_install_defaults_to_user_dashboard_service(
     report = json.loads(capsys.readouterr().out)
 
     assert exit_code == 0
+    assert report["roster_added"] == 0
+    assert report["roster_upgraded"] == 2
     assert report["dashboard"]["status"] == "installed"
     assert len(calls) == 1
     assert callable(calls[0]["reachability_probe"])

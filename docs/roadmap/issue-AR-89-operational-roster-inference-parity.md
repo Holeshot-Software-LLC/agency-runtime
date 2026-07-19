@@ -3,7 +3,7 @@ title: "AR-89: Expose roster governance and inference health operationally"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [dashboard, cli, roster, inference, observability]
 related:
   - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
@@ -44,7 +44,8 @@ eligibility context. CLI status and the authenticated dashboard now consume one
 bounded, secret-safe inference-health projection. Route Lab presents the
 complete recommendation-only unit-to-specialist plan, including assignment
 strength, native mechanism, and the evidence required to distinguish a plan
-from execution. Installed-service parity gates remain in progress.
+from execution. The installed Windows service, browser, accessibility,
+performance, and exact coverage gates pass; Linux hosted service proof remains.
 
 ## Approach
 
@@ -69,4 +70,4 @@ secure operational boundary.
 - [x] Provider failures and mandatory-inference degradation are authoritative and live-updating.
 - [x] Parent/child routing, delegation plans, outcomes, and model reconciliation are visible.
 - [ ] The optional service remains durable and secure on Windows and Linux.
-- [ ] Accessibility, performance, Node coverage, Python coverage, and installed-service gates pass.
+- [x] Accessibility, performance, Node coverage, Python coverage, and installed-service gates pass.

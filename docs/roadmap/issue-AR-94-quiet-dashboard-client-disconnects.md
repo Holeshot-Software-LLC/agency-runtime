@@ -1,9 +1,9 @@
 ---
 title: "AR-94: Treat dashboard client disconnects as quiet transport completion"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [dashboard, reliability, networking, observability]
 related:
   - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
@@ -37,7 +37,8 @@ closes the abandoned connection quietly, and never performs the defensive
 second write for that transport outcome. Genuine application failures still
 log and attempt one bounded 500 response, while unrelated `OSError` values
 propagate. Nineteen focused regressions and the 167-test dashboard-server lane
-pass; a post-fix live abort canary and the repository-wide gates remain.
+pass. Exact coverage, live browser QA, and a 70-abort installed-package canary
+also pass without an application error or traceback.
 
 ## Approach
 
@@ -53,8 +54,8 @@ states.
 
 ## Acceptance
 
-- [ ] Browser abort or navigation produces no application error log or traceback.
+- [x] Browser abort or navigation produces no application error log or traceback.
 - [x] No second response write is attempted after a disconnect.
 - [x] Genuine handler failures still return one bounded error when possible and are logged.
 - [x] Windows and Linux disconnect exception variants are covered.
-- [ ] Full statement and branch coverage plus live browser QA pass.
+- [x] Full statement and branch coverage plus live browser QA pass.

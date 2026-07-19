@@ -111,14 +111,15 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-91` | [Enforce governed roster activation at every public store boundary](issue-AR-91-enforce-governed-roster-activation.md) | in_progress | p0 | roster-governance | [#92](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/92) |
 | `AR-92` | [Redact roster source credentials from persistence and output](issue-AR-92-redact-roster-source-credentials.md) | in_progress | p0 | security | [#93](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/93) |
 | `AR-93` | [Reject invisible Unicode controls at roster ingestion boundaries](issue-AR-93-reject-invisible-unicode-controls.md) | in_progress | p0 | security | [#94](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/94) |
-| `AR-94` | [Treat dashboard client disconnects as quiet transport completion](issue-AR-94-quiet-dashboard-client-disconnects.md) | in_progress | p1 | dashboard | [#95](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/95) |
+| `AR-94` | [Treat dashboard client disconnects as quiet transport completion](issue-AR-94-quiet-dashboard-client-disconnects.md) | done | p1 | dashboard | [#95](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/95) |
 | `AR-95` | [Bind remediation resolution authority to complete durable evidence](issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md) | in_progress | p0 | security | [#96](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/96) |
 | `AR-96` | [Serve a packaged dashboard favicon without console noise](issue-AR-96-packaged-dashboard-favicon.md) | in_progress | p1 | dashboard | [#97](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/97) |
 | `AR-97` | [Reconcile required-inference remediation in one ingestion](issue-AR-97-reconcile-required-inference-remediation.md) | in_progress | p1 | roster-governance | [#98](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/98) |
-| `AR-98` | [Validate launcher identity in dashboard service status](issue-AR-98-validate-dashboard-service-launcher-status.md) | in_progress | p1 | dashboard | [#99](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/99) |
-| `AR-99` | [Keep dashboard brokerage usable after master control materializes](issue-AR-99-dashboard-broker-materialized-master-control.md) | in_progress | p0 | operations | [#100](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/100) |
+| `AR-98` | [Validate launcher identity in dashboard service status](issue-AR-98-validate-dashboard-service-launcher-status.md) | done | p1 | dashboard | [#99](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/99) |
+| `AR-99` | [Keep dashboard brokerage usable after master control materializes](issue-AR-99-dashboard-broker-materialized-master-control.md) | done | p0 | operations | [#100](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/100) |
 | `AR-100` | [Wait for the old Windows dashboard runtime to exit](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | in_progress | p0 | dashboard | [#101](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/101) |
 | `AR-101` | [Enforce the global master switch in restricted host consumers](issue-AR-101-enforce-restricted-global-master-switch.md) | in_progress | p0 | operations | [#102](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/102) |
+| `AR-102` | [Refresh legacy bundled roster contracts on upgrade](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | in_progress | p0 | roster-governance | [#103](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/103) |
 
 ## Traceability
 
@@ -229,6 +230,7 @@ not stable internal identifiers.
 | [AR-99](issue-AR-99-dashboard-broker-materialized-master-control.md) | [`a022b5d`](../worklog/README.md) | [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0061](../decisions/0061-validate-brokered-control-transition-receipts.md) |
 | [AR-100](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0051](../decisions/0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md) |
 | [AR-101](issue-AR-101-enforce-restricted-global-master-switch.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
+| [AR-102](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | Pending | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md) |
 
 ## Dependency summary
 

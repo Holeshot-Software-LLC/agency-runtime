@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,7 @@ from typing import Any
 import pytest
 
 from agency_runtime.core.config import AgencyConfig, OllamaConfig
+from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.preflight_versions import PREFLIGHT_REPLAY_RECIPE_VERSION
 from agency_runtime.core.selector import pipeline
@@ -38,6 +40,15 @@ def _deterministic_config() -> AgencyConfig:
     return AgencyConfig(ollama=OllamaConfig(enabled=False, model=""))
 
 
+def _capability_receipt(*, host: str, trace_id: str):
+    return native_adapter_capability_receipt(
+        host,
+        platform="windows" if os.name == "nt" else "linux",
+        session_id="durable-session",
+        trace_id=trace_id,
+    )
+
+
 def _first_turn(
     path: Path,
     *,
@@ -59,6 +70,7 @@ def _first_turn(
         host="codex",
         trace_id="turn-one",
         config=config or _deterministic_config(),
+        capability_receipt=_capability_receipt(host="codex", trace_id="turn-one"),
         origin_receipt=origin_receipt,
     )
     assert result.selected_specialists
@@ -90,6 +102,7 @@ def _continue(
         host=host,
         trace_id=trace_id,
         config=config or _deterministic_config(),
+        capability_receipt=_capability_receipt(host=host, trace_id=trace_id),
         origin_receipt=origin_receipt,
     )
 
@@ -140,6 +153,7 @@ def test_continuation_replays_after_restart_without_cache_or_judge(
         host="codex",
         trace_id="turn-two",
         config=_deterministic_config(),
+        capability_receipt=_capability_receipt(host="codex", trace_id="turn-two"),
         origin_receipt=origin_receipt,
     )
     second_recipe = _recipe(restarted, "turn-two")

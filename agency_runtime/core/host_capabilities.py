@@ -149,6 +149,7 @@ def _alias_map() -> dict[str, str]:
             "source-code-reader",
             "file-read",
             "filesystem-reader",
+            "filesystem-search",
             "artifact-reader",
             "architecture-document-reader",
             "requirements-reader",

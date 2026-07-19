@@ -3,7 +3,7 @@ title: "AR-82: Route each delegated work unit against the full active roster"
 status: in_progress
 category: roadmap
 created: 2026-07-17
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [routing, delegation, roster, replay, performance]
 related:
   - docs/decisions/0054-unit-aware-assignment-and-event-driven-dag.md
@@ -30,10 +30,10 @@ creating a hard recall ceiling before delegation began.
 
 ## Current state
 
-Implementation is moving unit assignment to bounded deterministic narrowing over
-the full revision-stable active catalog. Exact assignment winners are persisted
-for replay while older recipes remain readable. Final performance and integrated
-verification remain in progress.
+Unit assignment now performs bounded deterministic narrowing over the full
+revision-stable active catalog. Exact assignment winners persist for replay,
+older recipes remain readable, and the 1,000-agent performance gate passes.
+Only merged-install and hosted integration proof remain.
 
 ## Approach
 
@@ -48,8 +48,8 @@ AR-58 defines unit assignment and AR-59 defines the event-driven dependency DAG.
 
 ## Acceptance
 
-- [ ] A globally omitted specialist can win its matching work unit.
-- [ ] Assignment searches the full active catalog snapshot.
-- [ ] Replay preserves exact bounded winners and reads prior recipes safely.
-- [ ] Large-roster selection remains within the performance budget.
+- [x] A globally omitted specialist can win its matching work unit.
+- [x] Assignment searches the full active catalog snapshot.
+- [x] Replay preserves exact bounded winners and reads prior recipes safely.
+- [x] Large-roster selection remains within the performance budget.
 - [ ] Full branch and merged-install gates pass.

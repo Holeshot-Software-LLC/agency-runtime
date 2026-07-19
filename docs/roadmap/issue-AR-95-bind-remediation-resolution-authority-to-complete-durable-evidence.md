@@ -3,7 +3,7 @@ title: "AR-95: Bind remediation resolution authority to complete durable evidenc
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [roster, remediation, security, sqlite, provenance]
 related:
   - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
@@ -43,10 +43,10 @@ history queries trust only a valid marker whose receipt, dependency count, child
 edges, causal timestamps, agent identity, and durable event sequence all verify.
 Raw or ambiguous resolution events remain visible as quarantined anomalies and
 never suppress the queue. Focused remediation, forged-provenance, duplicate,
-rollback, dependency-loss, and `VACUUM` regressions pass; repository-wide gates
-remain. The focused bundled-loader, remediation, dashboard, and documentation
-checks also pass, including re-signed Unicode-control tampering and visible
-unvalidated-resolution anomaly counts.
+rollback, dependency-loss, and `VACUUM` regressions pass. The repository-wide
+suite, built artifacts, and installed Windows smoke also pass; hosted Linux
+evidence remains. Bundled-loader and dashboard checks include re-signed
+Unicode-control tampering and visible unvalidated-resolution anomaly counts.
 
 ## Approach
 

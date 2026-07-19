@@ -1045,7 +1045,7 @@ def test_failure_first_prevents_late_ready_commit(
         request_fingerprint=fingerprint,
         request_kind="nontrivial",
         host="codex",
-        lease_seconds=1,
+        lease_seconds=60,
     )
     routing = {
         "trace_id": "failure-wins",

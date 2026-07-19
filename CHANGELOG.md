@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -240,6 +240,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Upgrades now refresh only immutable hash-proven legacy package starter rows
+  to current audited bundled contracts, preserve custom and synced specialists,
+  and report additions separately from migrations. Per-unit selection also
+  filters write-intent candidates by reviewed mutation authority before
+  inference, preventing a review-only specialist from receiving implementation
+  or documentation changes.
 - Dashboard service status and open recovery now validate the installed
   launcher identity before deciding whether a schema-v2 manifest is current,
   preventing healthy services from reporting a false repair recommendation.

@@ -327,6 +327,7 @@ def _fail_no_detected_hosts(
                 "complete": False,
                 "profile": profile_name,
                 "roster_added": 0,
+                "roster_upgraded": 0,
                 "hosts": [],
                 "dashboard": dashboard_result,
                 "error": "No supported AI agent hosts detected",
@@ -362,12 +363,14 @@ def _render_install_summary(
     profile_name: str,
     cfg: AgencyConfig,
     roster_added: int,
+    roster_upgraded: int,
     dashboard_result: dict[str, Any],
     dashboard_opted_out: bool,
 ) -> None:
     """Render profile, provider, roster, and dashboard setup results."""
     print(f"✅ Agency Runtime profile: {profile_name}")
-    print(f"✅ Starter roster activated: {roster_added} agents")
+    print(f"✅ Starter roster added: {roster_added} agents")
+    print(f"✅ Legacy bundled contracts upgraded: {roster_upgraded} agents")
     print(f"   Config: {cfg.config_path or '(defaults only)'}")
     print(
         f"   Judge model: {safe_display_token(cfg.judge.model)} "
@@ -444,19 +447,17 @@ def _install_succeeded(
 
 
 def _seed_starter_roster(store: Store) -> int:
-    activate_many = getattr(store, "activate_agents_if_missing", None)
-    if callable(activate_many):
-        count = int(activate_many(STARTER_ROSTER))
-    else:
-        existing_slugs = {agent.get("agent_slug") for agent in store.get_active_roster()}
-        count = 0
-        for agent in STARTER_ROSTER:
-            if agent["slug"] in existing_slugs:
-                continue
-            store.activate_agent(dict(agent))
-            count += 1
-    store.record_import_event("starter_roster_installed", "", f"count={count}")
-    return count
+    from agency_runtime.core.installer import reconcile_starter_roster
+
+    result = reconcile_starter_roster(store)
+    store.record_import_event("starter_roster_installed", "", f"count={result.added}")
+    if result.upgraded:
+        store.record_import_event(
+            "starter_roster_upgraded",
+            "",
+            f"count={result.upgraded}",
+        )
+    return result.added
 
 
 def _materialize_install_controls(store: object, hosts: list[str]) -> None:
@@ -533,6 +534,7 @@ def cmd_install(
                     "complete": False,
                     "profile": profile_name,
                     "roster_added": 0,
+                    "roster_upgraded": 0,
                     "hosts": [],
                     "dashboard": dashboard_result,
                     "error": dashboard_result.get("error", "dashboard service preflight failed"),
@@ -559,6 +561,7 @@ def cmd_install(
             "complete": False,
             "profile": profile_name,
             "roster_added": 0,
+            "roster_upgraded": 0,
             "hosts": [],
             "dashboard": None,
             "error": error,
@@ -570,7 +573,8 @@ def cmd_install(
         return 1
     try:
         _materialize_install_controls(runtime_store, targets)
-        count = seed_starter_roster(runtime_store)
+        roster_added = seed_starter_roster(runtime_store)
+        roster_upgraded = int(getattr(roster_added, "upgraded", 0))
     except Exception as exc:
         require_restricted_windows_token(exc)
         error = safe_display_token(
@@ -584,6 +588,7 @@ def cmd_install(
             "complete": False,
             "profile": profile_name,
             "roster_added": None,
+            "roster_upgraded": None,
             "hosts": [],
             "dashboard": None,
             "error": error,
@@ -603,7 +608,8 @@ def cmd_install(
         _render_install_summary(
             profile_name=profile_name,
             cfg=cfg,
-            roster_added=count,
+            roster_added=int(roster_added),
+            roster_upgraded=roster_upgraded,
             dashboard_result=dashboard_result,
             dashboard_opted_out=dashboard_opted_out,
         )
@@ -628,7 +634,8 @@ def cmd_install(
                 "ok": complete,
                 "complete": complete,
                 "profile": profile_name,
-                "roster_added": count,
+                "roster_added": int(roster_added),
+                "roster_upgraded": roster_upgraded,
                 "hosts": host_results,
                 "dashboard": dashboard_result,
             }

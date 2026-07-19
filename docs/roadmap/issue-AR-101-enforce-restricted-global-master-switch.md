@@ -3,7 +3,7 @@ title: "AR-101: Enforce the global master switch in restricted host consumers"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [operations, windows, security, runtime-control, routing]
 related:
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
@@ -38,8 +38,9 @@ dashboard, so host consumers could ignore the intentional off state.
 The installed smoke reproduced ten search results while the authoritative
 master state was false, then restored master state to enabled. Canonical
 restricted consumers now use one broker-aware authoritative snapshot per
-operation, and strict regressions cover global-off bypass across every public
-work surface. Complete installed bypass proof remains in progress.
+operation. A real restricted off/on cycle bypassed search, route, and
+delegation while disabled, then restored normal selection at the next
+generation. Hosted Windows/Linux proof remains.
 
 ## Approach
 
@@ -64,5 +65,5 @@ correction can be verified independently.
 - [x] Custom identities are never redirected and unavailable or malformed brokerage stays fail-enabled.
 - [x] Restricted global mutation uses the dashboard after a brokered authoritative read.
 - [x] Off bypasses search, route, preflight, delegation, model, and finalization work.
-- [ ] On restores normal behavior and the installed restricted Codex smoke passes.
+- [x] On restores normal behavior and the installed restricted Codex smoke passes.
 - [ ] The full suite and hosted Windows/Linux gates pass.

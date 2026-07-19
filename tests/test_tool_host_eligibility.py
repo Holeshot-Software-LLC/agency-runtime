@@ -57,10 +57,17 @@ def _agent(slug: str, **overrides: Any) -> dict[str, Any]:
 
 def test_tool_aliases_are_canonical_bounded_and_unknowns_stay_unknown() -> None:
     capabilities, unknown = canonicalize_tool_capabilities(
-        ["source", "repository", "shell", "not-a-governed-tool"]
+        [
+            "source",
+            "repository",
+            "filesystem-search",
+            "documentation-test-runner",
+            "shell",
+            "not-a-governed-tool",
+        ]
     )
 
-    assert capabilities == ("repository-read", "shell-execution")
+    assert capabilities == ("repository-read", "shell-execution", "test-execution")
     assert unknown == ("not-a-governed-tool",)
 
 

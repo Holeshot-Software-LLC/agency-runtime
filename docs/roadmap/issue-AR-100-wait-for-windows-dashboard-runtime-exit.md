@@ -3,7 +3,7 @@ title: "AR-100: Wait for the old Windows dashboard runtime to exit"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [dashboard, windows, service, lifecycle, reliability]
 related:
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
@@ -38,7 +38,8 @@ The rebuilt real artifact reproduced this exact race, and rollback restored the
 prior owned registration and restarted the service. Lifecycle transitions now
 use a bounded generation-identity-safe clearance wait. A replacement generation
 is preserved and reported as an explicit conflict; a live prior generation
-still fails closed. Real reinstall proof remains in progress.
+still fails closed. A real rebuilt Windows reinstall completed transactionally,
+and the owned service is active, reachable, current, and drift-free.
 
 ## Approach
 
@@ -60,5 +61,5 @@ independently.
 - [x] Install, restart, and stop wait a bounded time for the exact prior runtime generation to clear.
 - [x] Replacement generations remain protected and cannot be mistaken for stale state.
 - [x] A genuinely live old runtime still fails closed and rolls back.
-- [ ] Focused simulated regressions and the real Windows reinstall pass.
+- [x] Focused simulated regressions and the real Windows reinstall pass.
 - [ ] The full suite and hosted Windows/Linux gates pass.

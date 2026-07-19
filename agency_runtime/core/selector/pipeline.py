@@ -40,6 +40,7 @@ from agency_runtime.core.host_guidance import (
     SPECIALIST_TOOL_GUIDANCE,
     WORK_UNIT_CORRELATION_GUIDANCE,
 )
+from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.selector import policy as policy_module
 from agency_runtime.core.selector.cache import (
     cache_get,
@@ -338,6 +339,7 @@ class _RouteRequest:
     capability_status: str = "unknown"
     capability_receipt: dict[str, Any] = field(default_factory=dict)
     eligibility_rejections: tuple[dict[str, str], ...] = ()
+    semantic_root_ids: frozenset[str] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -367,6 +369,7 @@ def _route_request(
     capability_session_id: str = "",
     capability_trace_id: str = "",
     allow_installation_diagnostic: bool = False,
+    semantic_root_ids: tuple[str, ...] | None = None,
 ) -> _RouteRequest:
     user_message = _bounded_signal_text(user_message)
     capabilities = current_host_capability_receipt(
@@ -390,6 +393,20 @@ def _route_request(
         capability_status=capabilities.status,
     )
     eligible_catalog = list(eligibility.eligible)
+    eligible_slugs = {
+        str(agent.get("slug") or agent.get("agent_slug") or "").strip()
+        for agent in eligible_catalog
+    }
+    bounded_semantic_roots = (
+        None
+        if semantic_root_ids is None
+        else frozenset(
+            slug
+            for item in semantic_root_ids[:MAX_ACTIVE_ROSTER_SIZE]
+            if (slug := str(item or "").strip()[:MAX_ROUTING_TOKEN_CHARS])
+            and slug in eligible_slugs
+        )
+    )
     policy = load_policy(policy_path_for_config(config))
     base_fingerprint = routing_fingerprint(eligible_catalog, config, policy)
     fingerprint = hashlib.sha256(
@@ -401,6 +418,7 @@ def _route_request(
                 capabilities.inference_surface,
                 normalized_platform,
                 capabilities.status,
+                "*" if bounded_semantic_roots is None else ",".join(sorted(bounded_semantic_roots)),
                 *normalized_tools,
                 *capabilities.unknown_tools,
             )
@@ -427,6 +445,7 @@ def _route_request(
         capability_status=capabilities.status,
         capability_receipt=receipt,
         eligibility_rejections=eligibility.rejected,
+        semantic_root_ids=bounded_semantic_roots,
     )
 
 
@@ -605,12 +624,13 @@ def _semantic_catalog(
 ) -> list[dict[str, Any]]:
     """Exclude DEFAULT-only identities from ordinary semantic selection."""
     fallback_ids = set(signals.fallback_companion_ids)
-    if not fallback_ids:
-        return request.catalog
     return [
         agent
         for agent in request.catalog
-        if str(agent.get("slug") or agent.get("agent_slug") or "") not in fallback_ids
+        if (
+            (slug := str(agent.get("slug") or agent.get("agent_slug") or "")) not in fallback_ids
+            and (request.semantic_root_ids is None or slug in request.semantic_root_ids)
+        )
     ]
 
 
@@ -768,6 +788,7 @@ def route(
     capability_session_id: str = "",
     capability_trace_id: str = "",
     allow_installation_diagnostic: bool = False,
+    semantic_root_ids: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     """Run the full 8-layer routing pipeline.
 
@@ -803,6 +824,7 @@ def route(
         capability_session_id=capability_session_id,
         capability_trace_id=capability_trace_id,
         allow_installation_diagnostic=allow_installation_diagnostic,
+        semantic_root_ids=semantic_root_ids,
     )
     if not classification.selection_required:
         # Exact controls and a proven pure acknowledgement backed by explicitly

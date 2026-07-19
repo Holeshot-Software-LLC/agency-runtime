@@ -319,6 +319,8 @@ def test_metadata_disambiguates_opaque_agent_slugs() -> None:
                 "description": "Reviews trust boundaries.",
                 "capabilities": ["OAuth threat modeling", "security review"],
                 "categories": ["security"],
+                "authority": "review",
+                "task_types": ["analysis", "review"],
             },
             {
                 "slug": "agent-02",
@@ -326,6 +328,8 @@ def test_metadata_disambiguates_opaque_agent_slugs() -> None:
                 "description": "Maintains public guidance.",
                 "capabilities": ["installation documentation", "README writing"],
                 "categories": ["documentation"],
+                "authority": "modify",
+                "task_types": ["analysis", "implementation", "review"],
             },
         ],
         routing,
@@ -344,24 +348,32 @@ def test_each_delegated_unit_can_select_a_specialist_outside_global_top_three() 
             "name": "Code Reviewer",
             "capabilities": ["code review", "test validation"],
             "categories": ["quality"],
+            "authority": "review",
+            "task_types": ["analysis", "review"],
         },
         {
             "slug": "technical-writer",
             "name": "Technical Writer",
             "capabilities": ["README writing", "installation documentation"],
             "categories": ["documentation"],
+            "authority": "modify",
+            "task_types": ["analysis", "implementation", "review"],
         },
         {
             "slug": "security-engineer",
             "name": "Security Engineer",
             "capabilities": ["authentication security", "threat modeling"],
             "categories": ["security"],
+            "authority": "review",
+            "task_types": ["analysis", "review"],
         },
         {
             "slug": "database-migration-specialist",
             "name": "Database Migration Specialist",
             "capabilities": ["PostgreSQL schema migration", "database migration"],
             "categories": ["database"],
+            "authority": "modify",
+            "task_types": ["analysis", "implementation"],
         },
     ]
     routing = _routing(
@@ -776,6 +788,8 @@ def test_preflight_replay_preserves_the_metadata_assignment(
             "categories": ["security"],
             "prompt_body": "Audit authentication and security boundaries.",
             "version": "1.0.0",
+            "authority": "review",
+            "task_types": ["analysis", "review"],
         },
         {
             "slug": "agent-02",
@@ -785,6 +799,8 @@ def test_preflight_replay_preserves_the_metadata_assignment(
             "categories": ["documentation"],
             "prompt_body": "Write accurate installation documentation.",
             "version": "1.0.0",
+            "authority": "modify",
+            "task_types": ["analysis", "implementation", "review"],
         },
     ):
         store._activate_prevalidated_agent(agent)
@@ -1145,7 +1161,7 @@ def test_unmatched_unit_is_omitted_without_assigning_a_resident_manager(
         selected_ids=["technical-writer", "code-reviewer"],
         unit_routes={
             "Analyze lunar telemetry": [],
-            "Document the public API": ["api-platform-engineer"],
+            "Document the public API": ["technical-writer"],
         },
     )
     store = Store(tmp_path / f"fallback-plan-{host}.db")
@@ -1160,8 +1176,8 @@ def test_unmatched_unit_is_omitted_without_assigning_a_resident_manager(
 
     context = result["hookSpecificOutput"]["additionalContext"]
     rows = store.get_delegations("trace")
-    assert [row["recommended_agent"] for row in rows] == ["api-platform-engineer"]
-    assert "unit-plan specialists: api-platform-engineer" in context
+    assert [row["recommended_agent"] for row in rows] == ["technical-writer"]
+    assert "unit-plan specialists: technical-writer" in context
     assert "work_unit_id=specialist:" not in context
     if host == "codex":
         for row in rows:

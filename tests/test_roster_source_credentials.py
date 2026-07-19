@@ -324,6 +324,23 @@ def test_canonical_source_identity_rejects_unsafe_durable_sources(
         canonical_source_identity(value)
 
 
+@pytest.mark.parametrize(
+    "query",
+    [
+        "token=PLANTED_TOKEN_QUERY",
+        "key=PLANTED_KEY_QUERY",
+        "api_key=PLANTED_API_KEY_QUERY",
+        "signature=PLANTED_SIGNATURE_QUERY",
+        "unrecognized=PLANTED_ARBITRARY_QUERY",
+    ],
+)
+def test_canonical_source_identity_rejects_every_query_parameter(query: str) -> None:
+    """Durable identity rejects all query data, not only known credential names."""
+
+    with pytest.raises(SourceIdentityError, match="may not contain a query"):
+        canonical_source_identity(f"https://example.test/agents?{query}")
+
+
 def test_legacy_source_redaction_is_stable_and_only_marks_unsafe_urls() -> None:
     assert (
         legacy_source_redaction(

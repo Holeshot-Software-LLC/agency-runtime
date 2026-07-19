@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Callable, Container, Mapping, Sequence
@@ -67,6 +68,67 @@ _ACTIVE_ROSTER_JOIN = (
     "ON v.agent_slug = a.agent_slug AND v.version = a.version"
 )
 _ACTIVE_ROSTER_ROUTING_PROJECTION = "a.*, v.metadata AS revision_metadata"
+_LEGACY_BUNDLED_VERSION = "1.0.0"
+_LEGACY_BUNDLED_SOURCE = "bundled"
+_LEGACY_BUNDLED_IDENTITIES: Mapping[str, tuple[str, str]] = {
+    # Exact prompt and active-projection SHA-256 identities from the released
+    # seven-agent inline starter roster. They are intentionally immutable:
+    # changing this allowlist would expand migration authority.
+    "workflow-architect": (
+        "3b5261b6b5ef770f1466be9eb688c011f7a756fc45258e1fba17f98ab13b0f3f",
+        "2c8f20df8c326100f0a157705ee943e867236b977a13a8388edba41d052f6210",
+    ),
+    "code-reviewer": (
+        "cdc08a324947021899e903944337d3767b6b24aa187997fb56260960a5f0fcfe",
+        "152f2cc9ea95efc7033e39d28181a27b5ddb7f0da0e4246e5c66168d24890677",
+    ),
+    "senior-developer": (
+        "f43616c7d37d27d1cbd6fb86843218899d571082a2e09627583b7f2eaf64c32a",
+        "e2187a941bb8951e85b473e9a6fe959674111a71e081a7f159aac47035dc9c51",
+    ),
+    "technical-writer": (
+        "dbe2342d2a447665feb4c0cf287b793c599af30a49a49b509a7f96963a3f30ac",
+        "81fa9c04f8bb3cbfd861824fbae928f0ced079f6d4770cc005d462d538f933ae",
+    ),
+    "internationalization-engineer": (
+        "8cc757d3593283efec8aa41e308e090ec36f2d783f5dd1d425b212cce3d153c5",
+        "b006bbd8d7f0cd2fad3f869f36577a74a1785f2981b9f16572b76420d0b8c878",
+    ),
+    "payments-billing-engineer": (
+        "2467cc54b843124978e8e14bc13895a10864f7ae3b7fc6ef458ed2fd42bc1654",
+        "3240bd865350d93aa2ff9dd7ecf4a921792d0b5ecf334624b397c7afe4a7d672",
+    ),
+    "test-automation-engineer": (
+        "a56f5e9977f853be39a7ff797ed4d008b19e2b35baf915cd680dd36f3d86b27a",
+        "6dc0ef4b95280ed9ea6b8e8648a2f6cb44c2994f6572cb7e0d31df9131bf949c",
+    ),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class BundledRosterReconciliation:
+    """Cardinality-preserving result for install-time bundled reconciliation."""
+
+    added: int
+    upgraded: int
+
+
+def _legacy_active_projection_hash(row: Mapping[str, Any]) -> str:
+    projection = {
+        "name": str(row.get("name") or ""),
+        "division": str(row.get("division") or ""),
+        "description": str(row.get("description") or ""),
+        "categories": _decode_json_list(row.get("categories")),
+        "capabilities": _decode_json_list(row.get("capabilities")),
+        "tool_affinity": _decode_json_list(row.get("tool_affinity")),
+    }
+    serialized = json.dumps(
+        projection,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(serialized).hexdigest()
 
 
 def _validate_roster_page(
@@ -136,6 +198,33 @@ def _count_present_slugs(conn: Any, slugs: Container[str]) -> int:
         ).fetchone()
         count += int(row["count"])
     return count
+
+
+def _is_legacy_bundled_active(row: Mapping[str, Any], slug: str) -> bool:
+    """Recognize only the package-owned starter shape used before audited revisions."""
+
+    legacy_identity = _LEGACY_BUNDLED_IDENTITIES.get(slug)
+    if legacy_identity is None:
+        return False
+    expected_content_hash, expected_projection_hash = legacy_identity
+    content = str(row.get("revision_content") or "")
+    content_hash = str(row.get("revision_hash") or "")
+    return bool(
+        str(row.get("agent_slug") or "") == slug
+        and str(row.get("version") or "") == _LEGACY_BUNDLED_VERSION
+        and str(row.get("source") or "") == _LEGACY_BUNDLED_SOURCE
+        and not str(row.get("source_id") or "")
+        and not str(row.get("source_version") or "")
+        and str(row.get("prompt_path") or "") == f"bundled://{slug}"
+        and str(row.get("revision_source_id") or "") == ""
+        and str(row.get("revision_source_version") or "") == ""
+        and str(row.get("revision_metadata") or "{}") == "{}"
+        and content
+        and content_identity_matches(content, content_hash)
+        and content_hash == expected_content_hash
+        and str(row.get("hash") or "") == expected_content_hash
+        and _legacy_active_projection_hash(row) == expected_projection_hash
+    )
 
 
 def _disabled_agent_slugs(config_path: str | Path | None = None) -> frozenset[str]:
@@ -354,6 +443,79 @@ class RosterStoreMixin:
             agents,
             require_exact_bundled=True,
         )
+
+    def reconcile_bundled_agents(
+        self,
+        agents: Sequence[Mapping[str, Any]],
+    ) -> BundledRosterReconciliation:
+        """Seed current contracts and replace only provable legacy bundled rows.
+
+        Synced, operator-owned, and already-current active revisions are never
+        replaced. The legacy predicate binds the historical package source,
+        version, prompt URI, empty routing metadata, and prompt digest before
+        the current audited bundled revision can become active.
+        """
+
+        if isinstance(agents, (str, bytes, bytearray)) or not isinstance(agents, Sequence):
+            raise TypeError("agents must be a sequence of mappings")
+        if len(agents) > _MAX_ACTIVE_ROSTER_LIMIT:
+            raise ValueError(f"agents must contain at most {_MAX_ACTIVE_ROSTER_LIMIT} entries")
+        prepared: list[_PreparedRosterAgent] = []
+        seen_slugs: set[str] = set()
+        for agent in agents:
+            if not isinstance(agent, Mapping):
+                raise TypeError("every roster entry must be a mapping")
+            item = _prepared_roster_agent(agent, require_exact_bundled=True)
+            if item.slug in seen_slugs:
+                raise ValueError(f"duplicate roster slug in batch: {item.slug}")
+            seen_slugs.add(item.slug)
+            prepared.append(item)
+        if not prepared:
+            return BundledRosterReconciliation(added=0, upgraded=0)
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            active_count = int(
+                conn.execute("SELECT COUNT(*) AS count FROM agent_active").fetchone()["count"]
+            )
+            missing_count = len(prepared) - _count_present_slugs(
+                conn, (item.slug for item in prepared)
+            )
+            if active_count + missing_count > _MAX_ACTIVE_ROSTER_LIMIT:
+                raise ValueError(f"active roster cannot exceed {_MAX_ACTIVE_ROSTER_LIMIT} entries")
+
+            added = 0
+            upgraded = 0
+            for item in prepared:
+                current = conn.execute(
+                    "SELECT a.*, v.source_id AS revision_source_id, "
+                    "v.source_version AS revision_source_version, "
+                    "v.hash AS revision_hash, v.content AS revision_content, "
+                    "v.metadata AS revision_metadata "
+                    "FROM agent_active AS a JOIN agent_versions AS v "
+                    "ON v.agent_slug = a.agent_slug AND v.version = a.version "
+                    "WHERE a.agent_slug = ? LIMIT 1",
+                    (item.slug,),
+                ).fetchone()
+                if current is None:
+                    added += self._activate_prepared_agent(conn, item, replace=False)
+                    continue
+                if _is_legacy_bundled_active(dict(current), item.slug):
+                    upgraded += self._activate_prepared_agent(conn, item, replace=True)
+            changed = added + upgraded
+            if changed:
+                conn.execute(
+                    "UPDATE store_counters SET value = value + ? WHERE name = 'roster-generation'",
+                    (changed,),
+                )
+            conn.commit()
+            return BundledRosterReconciliation(added=added, upgraded=upgraded)
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def _activate_prevalidated_agents_if_missing(
         self,

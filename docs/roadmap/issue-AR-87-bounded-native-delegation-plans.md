@@ -3,7 +3,7 @@ title: "AR-87: Produce bounded native delegation plans and correction"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [delegation, routing, native-hosts, stop, evidence]
 related:
   - docs/roadmap/issue-AR-27-authoritative-delegation-stop-enforcement.md
@@ -31,9 +31,11 @@ or enforce one safe corrective pass without Stop loops.
 
 ## Current state
 
-Unit-specific specialist routing and authoritative execution receipts exist.
-The richer content-free durable plan, typed delegation policy, native guidance,
-and single strongly-preferred correction are being integrated.
+Unit-specific routing now produces a complete content-free durable plan with a
+typed delegation policy and exact native guidance. Recommendations remain
+separate from authoritative execution receipts; a strongly preferred plan gets
+at most one evidence-checked correction before terminalization. Cross-host
+hosted proof remains.
 
 ## Approach
 
@@ -51,11 +53,11 @@ unit-specific full-roster assignment.
 
 ## Acceptance
 
-- [ ] Typed configuration exposes observe/prefer behavior and bounded thresholds.
-- [ ] Durable plans contain the complete metadata contract without raw prompt content.
-- [ ] Native host guidance names exact units, specialists, mechanisms, and evidence.
-- [ ] Recommendations remain distinct from authoritative worker and run receipts.
-- [ ] Preferred plans may be declined with a durable bounded reason.
-- [ ] Strongly preferred plans receive at most one evidence-checked correction.
-- [ ] The second Stop terminalizes without opening a new trace or claiming execution.
+- [x] Typed configuration exposes observe/prefer behavior and bounded thresholds.
+- [x] Durable plans contain the complete metadata contract without raw prompt content.
+- [x] Native host guidance names exact units, specialists, mechanisms, and evidence.
+- [x] Recommendations remain distinct from authoritative worker and run receipts.
+- [x] Preferred plans may be declined with a durable bounded reason.
+- [x] Strongly preferred plans receive at most one evidence-checked correction.
+- [x] The second Stop terminalizes without opening a new trace or claiming execution.
 - [ ] Cross-host lifecycle, full coverage, and portability gates pass.

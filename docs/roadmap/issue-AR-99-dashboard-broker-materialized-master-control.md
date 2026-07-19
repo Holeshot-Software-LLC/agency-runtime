@@ -1,9 +1,9 @@
 ---
 title: "AR-99: Keep dashboard brokerage usable after master control materializes"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [operations, dashboard, windows, security, runtime-control]
 related:
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
@@ -36,9 +36,10 @@ and host-control requests returned HTTP 400.
 ## Current state
 
 The installed service reproduced the failure while remaining active, reachable,
-and authenticated. The strict owner-side reader validates the same durable
-document successfully. The server-bound correction and installed off/on
-regression are in progress; the master state is currently enabled.
+and authenticated. The dashboard now uses the strict owner-side reader, and a
+real restricted Windows global off/on cycle succeeded after `control.json`
+existed. Search, route, and delegation bypassed while off; generation-checked
+brokered restoration returned the runtime to enabled.
 
 ## Approach
 
@@ -58,8 +59,8 @@ proxy.
 
 ## Acceptance
 
-- [ ] The authenticated dashboard reads its authoritative master document through the strict boundary.
-- [ ] Restricted host consumers remain fail-enabled and cannot forge disabled state.
-- [ ] Installed global off then on succeeds after `control.json` exists.
-- [ ] Generation CAS and transition-receipt validation remain exact.
-- [ ] Focused security review, full suite, rebuilt artifact, and installed Codex smoke pass.
+- [x] The authenticated dashboard reads its authoritative master document through the strict boundary.
+- [x] Restricted host consumers remain fail-enabled and cannot forge disabled state.
+- [x] Installed global off then on succeeds after `control.json` exists.
+- [x] Generation CAS and transition-receipt validation remain exact.
+- [x] Focused security review, full suite, rebuilt artifact, and installed Codex smoke pass.

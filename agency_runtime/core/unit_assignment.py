@@ -12,7 +12,10 @@ from functools import partial
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, DelegationConfig, OllamaConfig
-from agency_runtime.core.host_capabilities import HostCapabilityReceipt
+from agency_runtime.core.host_capabilities import (
+    HostCapabilityReceipt,
+    diagnostic_installation_capability_receipt,
+)
 from agency_runtime.core.resident_managers import is_resident_manager_slug
 
 MAX_SUGGESTED_WORK_UNITS = 16
@@ -54,14 +57,28 @@ _BARE_FILE_RESOURCE_RE = re.compile(
     r"[A-Za-z0-9_.@-]+\.[A-Za-z0-9_-]{1,16})$",
     re.IGNORECASE,
 )
+_ACTION_PREFIX = (
+    r"(?:^\s*(?:(?:please|kindly)\s+|"
+    r"(?:can|could|would|will)\s+you\s+|"
+    r"(?:i|we)\s+(?:need|want)\s+(?:you\s+)?to\s+|"
+    r"(?:need|required)\s+to\s+)?|"
+    r"(?:\b(?:and|then)\b|[,;:])\s*(?:(?:please|kindly)\s+)?)"
+)
 _EXTERNAL_MUTATION_RE = re.compile(
-    r"\b(?:close\s+(?:an?\s+)?issue|create\s+(?:an?\s+)?issue|deploy|merge|"
-    r"publish|push|release|send|ship)\b",
+    _ACTION_PREFIX + r"(?:close\s+(?:(?:an?|the)\s+)?issue|create\s+(?:(?:an?|the)\s+)?issue|"
+    r"deploy|merge|publish|push|release|send|ship)\b",
     re.IGNORECASE,
 )
 _WORKSPACE_MUTATION_RE = re.compile(
-    r"\b(?:add|build|change|configure|create|delete|fix|implement|migrate|move|"
-    r"optimi[sz]e|refactor|remove|rename|update|write)\b",
+    _ACTION_PREFIX + r"(?:add|adding|build|building|change|changing|configure|configuring|"
+    r"correct|correcting|create|creating|debug|debugging|delete|deleting|"
+    r"document|documenting|edit|editing|enhance|enhancing|fix|fixing|harden|"
+    r"hardening|implement|implementing|improve|improving|install|installing|"
+    r"migrate|migrating|move|moving|optimi[sz]e|"
+    r"optimi[sz]ing|patch|patching|refactor|refactoring|remove|removing|"
+    r"rename|renaming|repair|repairing|redesign|redesigning|revise|revising|"
+    r"rewrite|rewriting|secure|securing|set\s+up|split|splitting|update|updating|"
+    r"write|writing)\b",
     re.IGNORECASE,
 )
 _REVIEW_DELIVERABLE_RE = re.compile(r"\b(?:audit|inspect|review)\b", re.IGNORECASE)
@@ -407,22 +424,138 @@ def _policy_selection_for_degraded_route(
     return [slug for slug in selected if slug in explicit_policy]
 
 
-def _compatible_unit_selection(
+def _supports_unit_deliverable(unit: str, agent: Mapping[str, Any]) -> bool:
+    """Keep deterministic fallback inside the specialist's reviewed authority."""
+
+    raw_task_types = agent.get("task_types")
+    task_types = (
+        {str(item or "").strip().casefold() for item in raw_task_types if str(item or "").strip()}
+        if isinstance(raw_task_types, (list, tuple))
+        else set()
+    )
+    authority = str(agent.get("authority") or "").strip().casefold()
+    mutation_scope = _mutation_scope(unit)
+    if mutation_scope != "read_only" and authority != "modify":
+        return False
+    if not task_types and not authority:
+        # Legacy/test catalogs without reviewed authority metadata retain their
+        # explicit read-only route result. Mutation requires positive authority.
+        return mutation_scope == "read_only"
+    deliverable = _deliverable_kind(unit)
+    if deliverable == "implementation":
+        return authority == "modify" and "implementation" in task_types
+    if deliverable == "documentation":
+        capabilities = agent.get("capabilities")
+        categories = agent.get("categories")
+        metadata = " ".join(
+            (
+                str(agent.get("slug") or ""),
+                str(agent.get("name") or ""),
+                str(agent.get("description") or ""),
+                *(
+                    str(item)
+                    for item in (capabilities if isinstance(capabilities, (list, tuple)) else ())
+                ),
+                *(
+                    str(item)
+                    for item in (categories if isinstance(categories, (list, tuple)) else ())
+                ),
+            )
+        )
+        return bool(_DOC_DELIVERABLE_RE.search(metadata))
+    if deliverable == "verification":
+        return bool(task_types.intersection({"review", "testing", "verification"}))
+    if deliverable == "review":
+        return authority == "review" or "review" in task_types
+    return True
+
+
+def _deterministic_unit_selection(
+    unit: str,
+    catalog_list: list[dict[str, Any]],
+) -> list[str]:
+    """Select the strongest eligible reviewed contract for one exact unit."""
+
+    scored = [
+        (_agent_score(unit, slug, agent), index, slug)
+        for index, agent in enumerate(catalog_list)
+        if (
+            slug := _clean(
+                agent.get("slug") or agent.get("agent_slug"),
+                MAX_AGENT_SLUG_CHARS,
+            ).casefold()
+        )
+        and not is_resident_manager_slug(slug)
+        and _supports_unit_deliverable(unit, agent)
+    ]
+    winner = min(
+        (item for item in scored if item[0] > 0),
+        key=lambda item: (-item[0], item[1], item[2]),
+        default=None,
+    )
+    if winner is None:
+        return []
+    from agency_runtime.core.selector.compatibility import enforce_compatible_set
+
+    compatible = enforce_compatible_set([winner[2]], catalog_list, limit=1)
+    return list(compatible["selected_ids"])
+
+
+def _eligible_unit_catalog(
     unit_routing: Mapping[str, Any],
     catalog_list: list[dict[str, Any]],
-    catalog_by_slug: Mapping[str, Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Mapping[str, Any]]]:
+    """Rebuild the pipeline's host/tool-eligible catalog from bounded rejections."""
+
+    rejected = {
+        str(item.get("slug") or "").strip().casefold()
+        for item in unit_routing.get("eligibility_rejections") or ()
+        if isinstance(item, Mapping)
+    }
+    eligible = [
+        agent
+        for agent in catalog_list
+        if _clean(
+            agent.get("slug") or agent.get("agent_slug"),
+            MAX_AGENT_SLUG_CHARS,
+        ).casefold()
+        not in rejected
+    ]
+    eligible_list, eligible_by_slug = _assignment_catalog(eligible)
+    return eligible_list, eligible_by_slug
+
+
+def _compatible_unit_selection(
+    unit: str,
+    unit_routing: Mapping[str, Any],
+    catalog_list: list[dict[str, Any]],
 ) -> list[str]:
     from agency_runtime.core.selector.compatibility import enforce_compatible_set
 
+    eligible_catalog, eligible_by_slug = _eligible_unit_catalog(unit_routing, catalog_list)
     selected = [
         slug
         for slug in _bounded_agent_ids(unit_routing.get("selected_ids"))
-        if slug in catalog_by_slug and not is_resident_manager_slug(slug)
+        if slug in eligible_by_slug and not is_resident_manager_slug(slug)
     ]
     inference_mode = str(unit_routing.get("inference_mode") or "")
     compatibility = unit_routing.get("compatibility")
     if unit_routing.get("inference_configured") is True and inference_mode != "inferred":
         selected = _policy_selection_for_degraded_route(unit_routing, selected)
+        compatibility = enforce_compatible_set(
+            selected,
+            eligible_catalog,
+            limit=len(selected),
+        )
+        selected = list(compatibility["selected_ids"])
+    elif inference_mode == "heuristic" and unit_routing.get("status") == "token_fallback":
+        selected = _deterministic_unit_selection(unit, eligible_catalog)
+        compatibility = enforce_compatible_set(
+            selected,
+            eligible_catalog,
+            limit=len(selected),
+        )
+        selected = list(compatibility["selected_ids"])
     else:
         semantic_ids = [
             slug
@@ -433,18 +566,32 @@ def _compatible_unit_selection(
             requested = semantic_ids[:1] if inference_mode == "heuristic" else semantic_ids
             compatibility = enforce_compatible_set(
                 requested,
-                catalog_list,
+                eligible_catalog,
                 limit=len(requested),
             )
             selected = list(compatibility["selected_ids"])
+    if not isinstance(compatibility, Mapping):
+        compatibility = enforce_compatible_set(
+            selected,
+            eligible_catalog,
+            limit=len(selected),
+        )
+        selected = list(compatibility["selected_ids"])
     roots = (
         _bounded_agent_ids(compatibility.get("selected_root_ids"))
         if isinstance(compatibility, Mapping)
         else []
     )
-    primary = next((slug for slug in roots if slug in selected), "")
-    if not primary and selected:
-        primary = selected[0]
+    primary = next(
+        (
+            slug
+            for slug in roots
+            if slug in selected
+            and (agent := eligible_by_slug.get(slug)) is not None
+            and _supports_unit_deliverable(unit, agent)
+        ),
+        "",
+    )
     return [primary, *(slug for slug in selected if slug != primary)] if primary else []
 
 
@@ -453,24 +600,49 @@ def _route_exact_unit(
     *,
     route: Any,
     catalog_list: list[dict[str, Any]],
-    catalog_by_slug: Mapping[str, Mapping[str, Any]],
     config: AgencyConfig,
     session_id: str,
     trace_id: str,
     host: str,
     platform: str,
     available_tools: tuple[str, ...] | None,
-    capability_receipt: HostCapabilityReceipt | None,
+    capability_receipt: Mapping[str, Any] | HostCapabilityReceipt | None,
 ) -> tuple[str, list[str]]:
     work_unit_id, unit = unit_entry
+    semantic_root_ids = tuple(
+        slug
+        for agent in catalog_list
+        if _supports_unit_deliverable(unit, agent)
+        and (
+            slug := _clean(
+                agent.get("slug") or agent.get("agent_slug"),
+                MAX_AGENT_SLUG_CHARS,
+            ).casefold()
+        )
+    )
+    if not semantic_root_ids:
+        return work_unit_id, []
     route_session_id = f"{session_id}:unit:{work_unit_id}"
     route_trace_id = f"{trace_id}:unit:{work_unit_id}" if trace_id else None
+    diagnostic_receipt = (
+        diagnostic_installation_capability_receipt(
+            capability_receipt,
+            surface=host,
+            platform=platform,
+        )
+        if capability_receipt is not None
+        else None
+    )
+    resolved_receipt = diagnostic_receipt or (
+        capability_receipt if isinstance(capability_receipt, HostCapabilityReceipt) else None
+    )
     capability_kwargs: dict[str, Any] = {}
-    if capability_receipt is not None:
+    if resolved_receipt is not None:
         capability_kwargs = {
-            "capability_receipt": capability_receipt,
+            "capability_receipt": resolved_receipt,
             "capability_session_id": session_id,
             "capability_trace_id": trace_id,
+            "allow_installation_diagnostic": diagnostic_receipt is not None,
         }
     unit_routing = route(
         route_session_id,
@@ -482,12 +654,13 @@ def _route_exact_unit(
         host=host,
         platform=platform,
         available_tools=available_tools,
+        semantic_root_ids=semantic_root_ids,
         **capability_kwargs,
     )
     return work_unit_id, _compatible_unit_selection(
+        unit,
         unit_routing,
         catalog_list,
-        catalog_by_slug,
     )
 
 
@@ -495,14 +668,13 @@ def _route_unit_assignments(
     units: list[tuple[str, str]],
     *,
     catalog_list: list[dict[str, Any]],
-    catalog_by_slug: Mapping[str, Mapping[str, Any]],
     config: AgencyConfig,
     session_id: str,
     trace_id: str,
     host: str,
     platform: str,
     available_tools: tuple[str, ...] | None,
-    capability_receipt: HostCapabilityReceipt | None,
+    capability_receipt: Mapping[str, Any] | HostCapabilityReceipt | None,
 ) -> list[tuple[str, list[str]]]:
     from agency_runtime.core.selector import pipeline
     from agency_runtime.core.selector.judge import inference_is_configured
@@ -511,7 +683,6 @@ def _route_unit_assignments(
         _route_exact_unit,
         route=pipeline.route,
         catalog_list=catalog_list,
-        catalog_by_slug=catalog_by_slug,
         config=config,
         session_id=session_id,
         trace_id=trace_id,
@@ -603,7 +774,7 @@ def assignment_agents_from_catalog(
     host: str = "unknown",
     platform: str = "unknown",
     available_tools: tuple[str, ...] | None = None,
-    capability_receipt: HostCapabilityReceipt | None = None,
+    capability_receipt: Mapping[str, Any] | HostCapabilityReceipt | None = None,
 ) -> list[dict[str, Any]]:
     """Route every delegated unit through the complete eligible catalog.
 
@@ -624,7 +795,6 @@ def assignment_agents_from_catalog(
     routed_units = _route_unit_assignments(
         units,
         catalog_list=catalog_list,
-        catalog_by_slug=catalog_by_slug,
         config=cfg,
         session_id=session_id,
         trace_id=trace_id,
