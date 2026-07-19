@@ -81,6 +81,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0c41fbd` | 2026-07-19 | fix(ci): preserve durable hosted runtime authority | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-0c41fbd-durable-hosted-runtime-authority.md) |
 | `89576f0` | 2026-07-19 | fix(windows): report protected root receipt failures | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | null |
 | `07de83c` | 2026-07-19 | fix(windows): accept protected canonical ACL receipts | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | null |
+| `a1c6744` | 2026-07-19 | fix(windows): classify canonical ACL receipt failures | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
