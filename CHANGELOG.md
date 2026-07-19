@@ -240,6 +240,13 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Dashboard service status and open recovery now validate the installed
+  launcher identity before deciding whether a schema-v2 manifest is current,
+  preventing healthy services from reporting a false repair recommendation.
+- The restricted-Windows dashboard broker now reads its own authoritative
+  master-control document through the strict owner-side boundary, preserving
+  authenticated off/on control after the document is first materialized.
+
 - Concurrent host-control writers no longer overwrite each other. SQLite
   compares the observed generation in the publishing transaction, increments
   only real transitions, preserves no-op generations, and returns explicit

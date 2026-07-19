@@ -2567,6 +2567,36 @@ def test_dashboard_host_snapshot_reads_one_master_generation(
     ]
 
 
+def test_dashboard_master_control_uses_strict_service_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The authenticated broker must not enter the sandbox-only reader path."""
+
+    from types import SimpleNamespace
+
+    target = tmp_path / "control.json"
+    expected = {
+        "schema_version": 1,
+        "enabled": True,
+        "generation": 7,
+        "updated_at": "2026-07-18T00:00:00Z",
+        "source": "dashboard",
+    }
+    calls: list[Path] = []
+
+    def strict_reader(*, path: Path) -> dict[str, object]:
+        calls.append(path)
+        return expected
+
+    monkeypatch.setattr(dashboard_module, "read_runtime_control", strict_reader)
+    handler = object.__new__(dashboard_module.DashboardHTTPHandler)
+    handler.server = SimpleNamespace(runtime_control_path=target)
+
+    assert handler._master_control() == expected
+    assert calls == [target]
+
+
 @pytest.mark.parametrize("enabled", [None, 0, 1, "false", [], {}])
 def test_dashboard_host_toggle_requires_json_boolean(dashboard_server, enabled):
     status, payload, _headers = _json_response(

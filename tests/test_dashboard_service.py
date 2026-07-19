@@ -2330,7 +2330,7 @@ def test_dashboard_service_cli_status_is_machine_readable_without_tokens(
     result = json.loads(capsys.readouterr().out)
     assert result["installed"] is True
     assert "token" not in json.dumps(result).lower()
-    assert captured["_validate_launcher"] is False
+    assert captured["_validate_launcher"] is True
 
 
 def test_dashboard_service_cli_open_repairs_stale_owned_registration(

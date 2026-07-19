@@ -93,7 +93,7 @@ def _open_dashboard_with_recovery(*, open_browser: bool) -> dict[str, object]:
     state = inspect_dashboard_service(
         **common,
         reachability_probe=dashboard_service_reachable,
-        _validate_launcher=False,
+        _validate_launcher=True,
     )
     if not state.get("ok"):
         return {
@@ -179,7 +179,7 @@ def cmd_dashboard_service(args: argparse.Namespace) -> int:
         result = inspect_dashboard_service(
             **common,
             reachability_probe=dashboard_service_reachable,
-            _validate_launcher=False,
+            _validate_launcher=True,
         )
     elif action == "install" and args.dry_run:
         result = plan_dashboard_service(**common)

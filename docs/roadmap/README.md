@@ -115,6 +115,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-95` | [Bind remediation resolution authority to complete durable evidence](issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md) | in_progress | p0 | security | [#96](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/96) |
 | `AR-96` | [Serve a packaged dashboard favicon without console noise](issue-AR-96-packaged-dashboard-favicon.md) | in_progress | p1 | dashboard | [#97](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/97) |
 | `AR-97` | [Reconcile required-inference remediation in one ingestion](issue-AR-97-reconcile-required-inference-remediation.md) | in_progress | p1 | roster-governance | [#98](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/98) |
+| `AR-98` | [Validate launcher identity in dashboard service status](issue-AR-98-validate-dashboard-service-launcher-status.md) | in_progress | p1 | dashboard | [#99](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/99) |
+| `AR-99` | [Keep dashboard brokerage usable after master control materializes](issue-AR-99-dashboard-broker-materialized-master-control.md) | in_progress | p0 | operations | [#100](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/100) |
 
 ## Traceability
 
@@ -221,6 +223,8 @@ not stable internal identifiers.
 | [AR-95](issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-96](issue-AR-96-packaged-dashboard-favicon.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-97](issue-AR-97-reconcile-required-inference-remediation.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
+| [AR-98](issue-AR-98-validate-dashboard-service-launcher-status.md) | Pending final implementation commit | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
+| [AR-99](issue-AR-99-dashboard-broker-materialized-master-control.md) | Pending final implementation commit | [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0061](../decisions/0061-validate-brokered-control-transition-receipts.md) |
 
 ## Dependency summary
 
@@ -277,15 +281,17 @@ not stable internal identifiers.
   durable state-aware classifier and independent selection, rerouting, and
   execution-decision requirements. Its final full-suite and installed-host
   evidence remains in progress.
-- `AR-86` through `AR-97` own the newly separated production gaps: governed
+- `AR-86` through `AR-99` own the newly separated production gaps: governed
   upstream deltas, bounded native delegation guidance, controlled outcome
   comparison, complete roster/inference operations parity, and legacy
   activation-receipt migration ordering, plus the activation-governance,
   source-credential, invisible-Unicode, dashboard-disconnect, and durable
   remediation-authority defects found during the independent final review, the
   packaged favicon required for console-clean browser verification, and
-  same-ingestion reconciliation after required inference.
-  Tracker issues #87 through #98 are open
+  same-ingestion reconciliation after required inference, and truthful launcher
+  identity validation in read-only dashboard service status, and durable
+  authenticated brokerage after the Windows master document materializes.
+  Tracker issues #87 through #100 are open
   and linked; implementation and final evidence remain in progress.
 - `AR-17` integrates the security, modularity, browser, host-contract,
   cross-platform, packaging, performance, and live Codex evidence. Pull request

@@ -66,7 +66,7 @@ from agency_runtime.core.roster.sync import activate_snapshot, approve_snapshot
 from agency_runtime.core.routing_snapshot import RoutingSnapshot, capture_routing_snapshot
 from agency_runtime.core.runtime_control import (
     RuntimeControlConflictError,
-    read_effective_runtime_control,
+    read_runtime_control,
     runtime_control_path,
     set_master_enabled,
 )
@@ -973,9 +973,16 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         return self.server.runtime_control_path  # type: ignore[attr-defined]
 
     def _master_control(self) -> dict[str, Any]:
-        """Read the strict durable master state for one response boundary."""
+        """Read master state through the authenticated writer's strict boundary.
 
-        return read_effective_runtime_control(path=self.runtime_control_path)
+        The effective-state adapter is for untrusted consumer sandboxes and
+        requires a restricted caller to have no mutation rights.  This service
+        intentionally owns those rights so it can broker compare-and-swap
+        updates; its immutable server-bound path still receives the complete
+        owner-private and identity validation performed by the strict reader.
+        """
+
+        return read_runtime_control(path=self.runtime_control_path)
 
     def _close_expected_client_disconnect(self, exc: BaseException) -> bool:
         """Close one abandoned connection without turning it into a server fault."""
