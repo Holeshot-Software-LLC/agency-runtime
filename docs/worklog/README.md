@@ -78,6 +78,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `664fcf1` | 2026-07-19 | test(ci): import Windows ctypes types portably | [AR-103](../roadmap/issue-AR-103-import-windows-ctypes-fixtures-portably.md) | [detail](2026-07-19-664fcf1-portable-windows-ctypes-fixtures.md) |
 | `11a2c86` | 2026-07-19 | fix(runtime): close ingestion and hosted portability gaps | [AR-86](../roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md), [AR-95](../roadmap/issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md), [AR-102](../roadmap/issue-AR-102-refresh-legacy-bundled-roster-contracts.md), [AR-103](../roadmap/issue-AR-103-import-windows-ctypes-fixtures-portably.md), [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-11a2c86-governed-ingestion-portability.md) |
 | `0df5050` | 2026-07-19 | fix(ci): harden hosted runtime portability | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-0df5050-hosted-runtime-portability.md) |
+| `0c41fbd` | 2026-07-19 | fix(ci): preserve durable hosted runtime authority | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-0c41fbd-durable-hosted-runtime-authority.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
