@@ -18,6 +18,7 @@ from agency_runtime.core.windows_acl import (
     current_process_token_is_restricted,
     current_process_user_sid,
     read_windows_sddl,
+    windows_directory_prevents_untrusted_writes,
 )
 
 _ERROR_ALREADY_EXISTS = 183
@@ -294,6 +295,28 @@ def _owner_private_acl_is_present(
     return read_windows_sddl(path) == _owner_private_sddl(user_sid)
 
 
+def _persistent_root_acl_is_present(path: Path, user_sid: str) -> bool:
+    """Accept the exact DACL or a protected, private canonical equivalent."""
+
+    value = read_windows_sddl(path)
+    if value == _owner_private_sddl(user_sid):
+        return True
+    dacl_offset = value.find("D:")
+    if dacl_offset < 0:
+        return False
+    control = value[dacl_offset + 2 :].split("(", 1)[0]
+    if "P" not in control:
+        return False
+    return windows_directory_prevents_untrusted_writes(
+        path,
+        is_windows=True,
+        sddl_reader=lambda _path: value,
+        current_sid_reader=lambda: user_sid,
+        final_parent=True,
+        private_access=True,
+    )
+
+
 def create_or_validate_windows_owner_private_directory(
     path: Path,
     *,
@@ -327,8 +350,8 @@ def create_or_validate_windows_owner_private_directory(
             failure = "parent identity changed before verification"
         elif not guard.is_current():
             failure = "root identity changed before verification"
-        elif not _owner_private_acl_is_present(path, user_sid):
-            failure = "protected ACL receipt mismatch"
+        elif not _persistent_root_acl_is_present(path, user_sid):
+            failure = "durable ACL receipt mismatch"
         elif not current_process_can_mutate_path(
             path,
             directory=True,

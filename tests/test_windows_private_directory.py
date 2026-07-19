@@ -348,6 +348,65 @@ def test_sddl_and_exact_acl_receipt(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     assert not private._owner_private_acl_is_present(tmp_path, "USER")
 
 
+def test_persistent_root_acl_accepts_exact_or_canonical_private_form(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    exact = private._owner_private_sddl("USER")
+    canonical = "O:USERD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)(D;;SD;;;AU)"
+    semantic_calls: list[tuple[Path, str, str]] = []
+
+    def semantic(path: Path, **kwargs: object) -> bool:
+        sid_reader = kwargs["current_sid_reader"]
+        sddl_reader = kwargs["sddl_reader"]
+        assert callable(sid_reader)
+        assert callable(sddl_reader)
+        semantic_calls.append((path, sid_reader(), sddl_reader(path)))
+        assert kwargs["final_parent"] is True
+        assert kwargs["private_access"] is True
+        return True
+
+    monkeypatch.setattr(private, "windows_directory_prevents_untrusted_writes", semantic)
+    monkeypatch.setattr(private, "read_windows_sddl", lambda _path: exact)
+    assert private._persistent_root_acl_is_present(tmp_path, "USER")
+    assert semantic_calls == []
+
+    monkeypatch.setattr(private, "read_windows_sddl", lambda _path: canonical)
+    assert private._persistent_root_acl_is_present(tmp_path, "USER")
+    assert semantic_calls == [(tmp_path, "USER", canonical)]
+
+    monkeypatch.setattr(
+        private,
+        "windows_directory_prevents_untrusted_writes",
+        lambda *_args, **_kwargs: False,
+    )
+    assert not private._persistent_root_acl_is_present(tmp_path, "USER")
+
+
+@pytest.mark.parametrize(
+    ("sddl", "expected"),
+    [
+        ("O:USERD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;USER)", True),
+        ("O:OTHERD:P(A;OICI;FA;;;USER)", False),
+        ("O:USERD:AI(A;OICI;FA;;;USER)", False),
+        ("O:USERD:P(A;;GR;;;BU)(A;OICI;FA;;;USER)", False),
+        ("O:USERD:P(A;;GW;;;BU)(A;OICI;FA;;;USER)", False),
+        ("O:USERD:P(A;CIIO;GW;;;BU)(A;OICI;FA;;;USER)", False),
+        ("O:USERD:P(X;;GR;;;BU)(A;OICI;FA;;;USER)", False),
+        ("", False),
+    ],
+)
+def test_persistent_root_acl_rejects_nonprivate_canonical_forms(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    sddl: str,
+    expected: bool,
+) -> None:
+    monkeypatch.setattr(private, "read_windows_sddl", lambda _path: sddl)
+
+    assert private._persistent_root_acl_is_present(tmp_path, "USER") is expected
+
+
 def test_owner_private_root_requires_windows_location_and_unrestricted_owner(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -420,7 +479,7 @@ def test_owner_private_root_creates_or_reuses_only_an_exact_sealed_identity(
         "open_windows_directory_guard",
         lambda *_args, **_kwargs: guard,
     )
-    monkeypatch.setattr(private, "_owner_private_acl_is_present", lambda *_a, **_k: True)
+    monkeypatch.setattr(private, "_persistent_root_acl_is_present", lambda *_a, **_k: True)
     monkeypatch.setattr(private, "current_process_can_mutate_path", lambda *_a, **_k: True)
 
     assert (
@@ -439,7 +498,7 @@ def test_owner_private_root_creates_or_reuses_only_an_exact_sealed_identity(
     ("failure", "reason"),
     [
         ("reparse", "root handle unavailable"),
-        ("permissive", "protected ACL receipt mismatch"),
+        ("permissive", "durable ACL receipt mismatch"),
         ("unusable", "current token cannot use protected root"),
         ("changed", "root identity changed before verification"),
     ],
@@ -464,7 +523,7 @@ def test_owner_private_root_rejects_unsafe_collisions_without_mutation(
     )
     monkeypatch.setattr(
         private,
-        "_owner_private_acl_is_present",
+        "_persistent_root_acl_is_present",
         lambda *_args, **_kwargs: failure != "permissive",
     )
     monkeypatch.setattr(
@@ -546,7 +605,7 @@ def test_owner_private_root_reports_identity_drift_stage(
     monkeypatch.setattr(private, "current_process_token_is_restricted", lambda **_kwargs: False)
     monkeypatch.setattr(private, "_create_windows_directory_with_sddl", lambda *_args: None)
     monkeypatch.setattr(private, "open_windows_directory_guard", lambda *_args, **_kwargs: root)
-    monkeypatch.setattr(private, "_owner_private_acl_is_present", lambda *_args: True)
+    monkeypatch.setattr(private, "_persistent_root_acl_is_present", lambda *_args: True)
     monkeypatch.setattr(private, "current_process_can_mutate_path", lambda *_args, **_kwargs: True)
 
     with pytest.raises(WindowsACLSafetyError, match=reason):
@@ -579,7 +638,7 @@ def test_owner_private_root_never_mutates_a_failed_fresh_creation(
     )
     monkeypatch.setattr(
         private,
-        "_owner_private_acl_is_present",
+        "_persistent_root_acl_is_present",
         lambda *_args, **_kwargs: exact_acl,
     )
     security: list[tuple[Path, str]] = []
