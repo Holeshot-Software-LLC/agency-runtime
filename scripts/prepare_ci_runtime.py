@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -16,9 +17,12 @@ from agency_runtime.core.private_paths import (
     bootstrap_private_directory,
     ensure_private_directory,
 )
+from agency_runtime.core.store.security import storage_parent_is_trusted
+from agency_runtime.core.windows_acl import current_process_user_sid
 from scripts.ci_private_node import prepare_private_node
 
 _SAFE_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}")
+_IS_WINDOWS = os.name == "nt"
 
 
 def _private_directory(path: Path) -> Path:
@@ -58,18 +62,44 @@ def _validated_environment_python(root: Path, environment: Path) -> Path:
     return python
 
 
+def _ci_bootstrap_request(home: Path, *, is_windows: bool | None = None) -> Path:
+    """Choose a CI root whose full path remains trustworthy to child processes."""
+
+    windows = _IS_WINDOWS if is_windows is None else is_windows
+    requested = home / ".agency-runtime-ci"
+    if not windows:
+        return requested
+    parent = home
+    while not storage_parent_is_trusted(parent, is_windows=True, final_parent=False):
+        if parent == parent.parent:
+            raise RuntimeError("CI runtime has no trusted Windows creation boundary")
+        parent = parent.parent
+    if parent == home:
+        return requested
+    sid = current_process_user_sid(is_windows=True)
+    if not sid:
+        raise RuntimeError("CI runtime cannot identify the current Windows user")
+    digest = hashlib.sha256(
+        f"{sid}\0{requested.as_posix().casefold()}".encode(
+            "utf-8",
+            errors="surrogatepass",
+        )
+    ).hexdigest()[:32]
+    return parent / f".agency-runtime-ci-{digest}"
+
+
 def prepare_ci_runtime(
     label: str,
     *,
     home_dir: Path | None = None,
     node_resolver: Callable[[str], str | None] | None = None,
 ) -> dict[str, str]:
-    """Build an idempotent private test runtime below the current user profile."""
+    """Build an idempotent private test runtime in a durable user boundary."""
 
     if not _SAFE_LABEL.fullmatch(label):
         raise ValueError("CI runtime label must be a bounded filesystem-safe identifier")
     home = (home_dir or Path.home()).expanduser().resolve(strict=True)
-    base = bootstrap_private_directory(home / ".agency-runtime-ci")
+    base = bootstrap_private_directory(_ci_bootstrap_request(home))
     root = _private_directory(base / label)
     isolated_home = _private_directory(root / "home")
     temporary = _private_directory(root / "tmp")

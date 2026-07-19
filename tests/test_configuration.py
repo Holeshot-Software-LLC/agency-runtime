@@ -22,12 +22,13 @@ from agency_runtime.core.configuration import (
     replace_config_document,
     resolve_config_path,
 )
+from tests.runtime_support import is_agency_product_environment_key
 
 
 @pytest.fixture(autouse=True)
 def _isolated_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in tuple(os.environ):
-        if name.startswith("AGENCY_") or name in {
+        if is_agency_product_environment_key(name) or name in {
             "LITELLM_API_KEY",
             "OLLAMA_BASE_URL",
         }:

@@ -28,12 +28,13 @@ from agency_runtime.core.doctor import (
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.provider_validation import ProviderValidationResult
 from agency_runtime.core.store.sqlite import Store
+from tests.runtime_support import is_agency_product_environment_key
 
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     for key in list(os.environ):
-        if key.startswith("AGENCY_") or key == "LITELLM_API_KEY":
+        if is_agency_product_environment_key(key) or key == "LITELLM_API_KEY":
             monkeypatch.delenv(key, raising=False)
     reset_config_cache()
     yield
@@ -321,6 +322,7 @@ def test_openclaw_smoke_uses_static_validation_when_node_is_unavailable(
     installed = install_agent_adapter("openclaw", home_dir=tmp_path)
     assert installed["ok"] is True
 
+    monkeypatch.delenv("AGENCY_CI_NODE", raising=False)
     monkeypatch.setattr(smoke.shutil, "which", lambda _name: None)
     detail = smoke._smoke_openclaw_plugin("openclaw", Path(installed["plugin_path"]))
 

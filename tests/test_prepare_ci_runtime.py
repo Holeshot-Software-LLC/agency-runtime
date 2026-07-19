@@ -6,6 +6,7 @@ import json
 import os
 import stat
 import subprocess
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -83,6 +84,140 @@ def test_prepare_ci_runtime_bootstraps_only_its_profile_root(
 
     assert bootstrapped == [tmp_path.resolve() / ".agency-runtime-ci"]
     assert Path(values["AGENCY_CI_ROOT"]).is_relative_to(bootstrapped[0])
+
+
+def test_ci_bootstrap_request_is_direct_and_probe_free_off_windows(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "storage_parent_is_trusted",
+        lambda *_args, **_kwargs: pytest.fail("non-Windows request probed Windows trust"),
+    )
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "current_process_user_sid",
+        lambda **_kwargs: pytest.fail("non-Windows request probed a Windows SID"),
+    )
+
+    assert prepare_ci_runtime._ci_bootstrap_request(
+        tmp_path.resolve(),
+        is_windows=False,
+    ) == (tmp_path.resolve() / ".agency-runtime-ci")
+
+
+def test_ci_bootstrap_request_uses_a_trusted_windows_profile_without_identity(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "storage_parent_is_trusted",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "current_process_user_sid",
+        lambda **_kwargs: pytest.fail("trusted Windows profile probed a SID"),
+    )
+
+    assert prepare_ci_runtime._ci_bootstrap_request(
+        tmp_path.resolve(),
+        is_windows=True,
+    ) == (tmp_path.resolve() / ".agency-runtime-ci")
+
+
+def test_ci_bootstrap_request_relocates_untrusted_windows_profile_deterministically(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    home = tmp_path / "Users" / "runneradmin"
+    home.mkdir(parents=True)
+    requested = home.resolve() / ".agency-runtime-ci"
+    trust_probes: list[Path] = []
+
+    def trusted(path: Path, **_kwargs: object) -> bool:
+        trust_probes.append(path)
+        return path == home.parent.resolve()
+
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "storage_parent_is_trusted",
+        trusted,
+    )
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "current_process_user_sid",
+        lambda **_kwargs: "S-1-5-21-42",
+    )
+
+    first = prepare_ci_runtime._ci_bootstrap_request(home.resolve(), is_windows=True)
+    second = prepare_ci_runtime._ci_bootstrap_request(home.resolve(), is_windows=True)
+
+    digest = sha256(f"S-1-5-21-42\0{requested.as_posix().casefold()}".encode()).hexdigest()[:32]
+    expected = home.parent.resolve() / f".agency-runtime-ci-{digest}"
+    assert first == second == expected
+    assert trust_probes == [home.resolve(), home.parent.resolve()] * 2
+    assert "S-1-5-21-42" not in first.name
+
+
+def test_ci_bootstrap_request_changes_with_windows_identity(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    home = tmp_path / "Users" / "runneradmin"
+    home.mkdir(parents=True)
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "storage_parent_is_trusted",
+        lambda path, **_kwargs: path == home.parent.resolve(),
+    )
+    identity = iter(("S-1-5-21-42", "S-1-5-21-43"))
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "current_process_user_sid",
+        lambda **_kwargs: next(identity),
+    )
+
+    first = prepare_ci_runtime._ci_bootstrap_request(home.resolve(), is_windows=True)
+    second = prepare_ci_runtime._ci_bootstrap_request(home.resolve(), is_windows=True)
+
+    assert first != second
+    assert first.parent == second.parent == home.parent.resolve()
+
+
+def test_ci_bootstrap_request_fails_closed_without_identity_or_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    home = tmp_path / "Users" / "runneradmin"
+    home.mkdir(parents=True)
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "storage_parent_is_trusted",
+        lambda path, **_kwargs: path == home.parent.resolve(),
+    )
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "current_process_user_sid",
+        lambda **_kwargs: None,
+    )
+    with pytest.raises(RuntimeError, match="identify the current Windows user"):
+        prepare_ci_runtime._ci_bootstrap_request(home.resolve(), is_windows=True)
+
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "storage_parent_is_trusted",
+        lambda *_args, **_kwargs: False,
+    )
+    monkeypatch.setattr(
+        prepare_ci_runtime,
+        "current_process_user_sid",
+        lambda **_kwargs: pytest.fail("untrusted path probed a SID"),
+    )
+    with pytest.raises(RuntimeError, match="no trusted Windows creation boundary"):
+        prepare_ci_runtime._ci_bootstrap_request(home.resolve(), is_windows=True)
 
 
 @pytest.mark.parametrize("label", ["", "../escape", "space here", "x" * 81])
@@ -195,6 +330,13 @@ def test_trusted_test_interpreter_prefers_private_ci_runtime(
     monkeypatch.setenv("AGENCY_CI_PYTHON", str(configured))
 
     assert runtime_support.trusted_test_interpreter() == configured.resolve()
+
+
+def test_product_environment_isolation_preserves_ci_runtime_authority() -> None:
+    assert runtime_support.is_agency_product_environment_key("AGENCY_CONFIG_PATH")
+    assert runtime_support.is_agency_product_environment_key("AGENCY_DB_PATH")
+    assert not runtime_support.is_agency_product_environment_key("AGENCY_CI_NODE")
+    assert not runtime_support.is_agency_product_environment_key("AGENCY_CI_PYTHON")
 
 
 def test_github_environment_writer_is_append_only_and_rejects_injection(

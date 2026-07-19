@@ -9,6 +9,12 @@ from pathlib import Path
 from agency_runtime.core.private_paths import ensure_private_directory
 
 
+def is_agency_product_environment_key(name: str) -> bool:
+    """Separate product configuration from reserved CI authority receipts."""
+
+    return name.startswith("AGENCY_") and not name.startswith("AGENCY_CI_")
+
+
 def trusted_test_interpreter() -> Path:
     """Return the CI-private interpreter or the local environment's base Python."""
 

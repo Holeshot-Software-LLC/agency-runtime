@@ -23,6 +23,7 @@ from agency_runtime.core.configuration_contracts import (
     ConfigurationError,
     ConfigValidationError,
 )
+from tests.runtime_support import is_agency_product_environment_key
 
 
 @pytest.fixture(autouse=True)
@@ -30,7 +31,7 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Clear agency env vars before each test."""
     original_environment = dict(os.environ)
     for key in list(os.environ):
-        if key.startswith("AGENCY_") or key in {
+        if is_agency_product_environment_key(key) or key in {
             "LITELLM_API_KEY",
             "TEST_ADAPTER_KEY",
             "TEST_PROVIDER_KEY",
