@@ -236,6 +236,7 @@ not stable internal identifiers.
 | [AR-102](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | [`164188b`](../worklog/README.md), [`11a2c86`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md) |
 | [AR-103](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | [`664fcf1`](../worklog/README.md), [`11a2c86`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-104](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [`11a2c86`](../worklog/README.md), [`0df5050`](../worklog/README.md), [`0c41fbd`](../worklog/README.md), [`89576f0`](../worklog/README.md), [`07de83c`](../worklog/README.md), [`a1c6744`](../worklog/README.md), [`31516d1`](../worklog/README.md), [`b05b180`](../worklog/README.md), [`361962f`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md) |
+| [AR-105](issue-AR-105-current-codex-hook-event-count.md) | [`9400f76`](../worklog/README.md) | null |
 
 ## Dependency summary
 
