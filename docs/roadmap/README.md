@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-18
+updated: 2026-07-19
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -227,8 +227,8 @@ not stable internal identifiers.
 | [AR-97](issue-AR-97-reconcile-required-inference-remediation.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-98](issue-AR-98-validate-dashboard-service-launcher-status.md) | [`a022b5d`](../worklog/README.md) | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-99](issue-AR-99-dashboard-broker-materialized-master-control.md) | [`a022b5d`](../worklog/README.md) | [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0061](../decisions/0061-validate-brokered-control-transition-receipts.md) |
-| [AR-100](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | [`cbe9bc9`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0051](../decisions/0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md) |
-| [AR-101](issue-AR-101-enforce-restricted-global-master-switch.md) | [`cbe9bc9`](../worklog/README.md) | [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
+| [AR-100](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0051](../decisions/0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md) |
+| [AR-101](issue-AR-101-enforce-restricted-global-master-switch.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
 
 ## Dependency summary
 

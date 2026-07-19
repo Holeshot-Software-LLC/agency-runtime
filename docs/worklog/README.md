@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-18
+updated: 2026-07-19
 tags: []
 related: []
 supersedes: []
@@ -72,6 +72,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e5f4a8c` | 2026-07-18 | feat(runtime): harden dynamic agency orchestration | [AR-25 through AR-97](../roadmap/README.md) | [detail](2026-07-18-e5f4a8c-dynamic-agency-hardening.md) |
 | `a022b5d` | 2026-07-18 | fix(dashboard): validate installed control identity | [AR-98](../roadmap/issue-AR-98-validate-dashboard-service-launcher-status.md), [AR-99](../roadmap/issue-AR-99-dashboard-broker-materialized-master-control.md) | [detail](2026-07-18-a022b5d-dashboard-control-identity.md) |
 | `cbe9bc9` | 2026-07-18 | fix(runtime): harden installed control transitions | [AR-89](../roadmap/issue-AR-89-operational-roster-inference-parity.md), [AR-100](../roadmap/issue-AR-100-wait-for-windows-dashboard-runtime-exit.md), [AR-101](../roadmap/issue-AR-101-enforce-restricted-global-master-switch.md) | [detail](2026-07-18-cbe9bc9-installed-control-transitions.md) |
+| `c8ebbfa` | 2026-07-19 | test(runtime): cover defensive control branches | [AR-100](../roadmap/issue-AR-100-wait-for-windows-dashboard-runtime-exit.md), [AR-101](../roadmap/issue-AR-101-enforce-restricted-global-master-switch.md) | [detail](2026-07-19-c8ebbfa-defensive-control-coverage.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
