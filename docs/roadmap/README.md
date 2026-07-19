@@ -223,8 +223,8 @@ not stable internal identifiers.
 | [AR-95](issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-96](issue-AR-96-packaged-dashboard-favicon.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-97](issue-AR-97-reconcile-required-inference-remediation.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
-| [AR-98](issue-AR-98-validate-dashboard-service-launcher-status.md) | Pending final implementation commit | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
-| [AR-99](issue-AR-99-dashboard-broker-materialized-master-control.md) | Pending final implementation commit | [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0061](../decisions/0061-validate-brokered-control-transition-receipts.md) |
+| [AR-98](issue-AR-98-validate-dashboard-service-launcher-status.md) | [`a022b5d`](../worklog/README.md) | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
+| [AR-99](issue-AR-99-dashboard-broker-materialized-master-control.md) | [`a022b5d`](../worklog/README.md) | [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0061](../decisions/0061-validate-brokered-control-transition-receipts.md) |
 
 ## Dependency summary
 
