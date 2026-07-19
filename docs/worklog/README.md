@@ -88,6 +88,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9400f76` | 2026-07-19 | fix(codex): report all installed hook events | [AR-105](../roadmap/issue-AR-105-current-codex-hook-event-count.md) | [detail](2026-07-19-9400f76-report-all-installed-hook-events.md) |
 | `3f9eb96` | 2026-07-19 | fix(dashboard): redact failed manager probe output | [AR-38](../roadmap/issue-AR-38-dashboard-service-environment-durability.md) | [detail](2026-07-19-3f9eb96-redact-failed-manager-probe-output.md) |
 | `22434e8` | 2026-07-19 | fix(mcp): validate injected Store identities | [AR-47](../roadmap/issue-AR-47-freeze-store-config-identity-at-construction.md), [AR-48](../roadmap/issue-AR-48-enforce-strict-schema-on-config-read.md) | [detail](2026-07-19-22434e8-validate-injected-store-identities.md) |
+| `fdaad17` | 2026-07-19 | docs: reconcile runtime identity and routing contracts | [AR-36](../roadmap/issue-AR-36-config-relative-runtime-paths.md), [AR-46](../roadmap/issue-AR-46-bind-routing-to-store-config-identity.md), [AR-58](../roadmap/issue-AR-58-unit-aware-delegation-assignment.md), [AR-81](../roadmap/issue-AR-81-conflict-safe-direct-context.md) | [detail](2026-07-19-fdaad17-reconcile-runtime-identity-routing-contracts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
