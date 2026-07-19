@@ -384,16 +384,38 @@ def test_persistent_root_acl_accepts_exact_or_canonical_private_form(
 
 
 @pytest.mark.parametrize(
-    ("sddl", "expected"),
+    ("sddl", "expected", "failure"),
     [
-        ("O:USERD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;USER)", True),
-        ("O:OTHERD:P(A;OICI;FA;;;USER)", False),
-        ("O:USERD:AI(A;OICI;FA;;;USER)", False),
-        ("O:USERD:P(A;;GR;;;BU)(A;OICI;FA;;;USER)", False),
-        ("O:USERD:P(A;;GW;;;BU)(A;OICI;FA;;;USER)", False),
-        ("O:USERD:P(A;CIIO;GW;;;BU)(A;OICI;FA;;;USER)", False),
-        ("O:USERD:P(X;;GR;;;BU)(A;OICI;FA;;;USER)", False),
-        ("", False),
+        (
+            "O:USERD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;USER)",
+            True,
+            None,
+        ),
+        ("O:OTHERD:P(A;OICI;FA;;;USER)", False, "owner mismatch"),
+        ("D:P(A;OICI;FA;;;USER)", False, "owner missing"),
+        ("O:USER", False, "DACL missing"),
+        ("O:USERD:AI(A;OICI;FA;;;USER)", False, "DACL not protected"),
+        (
+            "O:USERD:P(A;;GR;;;BU)(A;OICI;FA;;;USER)",
+            False,
+            "DACL not private or malformed",
+        ),
+        (
+            "O:USERD:P(A;;GW;;;BU)(A;OICI;FA;;;USER)",
+            False,
+            "DACL not private or malformed",
+        ),
+        (
+            "O:USERD:P(A;CIIO;GW;;;BU)(A;OICI;FA;;;USER)",
+            False,
+            "DACL not private or malformed",
+        ),
+        (
+            "O:USERD:P(X;;GR;;;BU)(A;OICI;FA;;;USER)",
+            False,
+            "DACL not private or malformed",
+        ),
+        ("", False, "receipt unavailable"),
     ],
 )
 def test_persistent_root_acl_rejects_nonprivate_canonical_forms(
@@ -401,10 +423,12 @@ def test_persistent_root_acl_rejects_nonprivate_canonical_forms(
     tmp_path: Path,
     sddl: str,
     expected: bool,
+    failure: str | None,
 ) -> None:
     monkeypatch.setattr(private, "read_windows_sddl", lambda _path: sddl)
 
     assert private._persistent_root_acl_is_present(tmp_path, "USER") is expected
+    assert private._persistent_root_acl_failure(tmp_path, "USER") == failure
 
 
 def test_owner_private_root_requires_windows_location_and_unrestricted_owner(
@@ -479,7 +503,7 @@ def test_owner_private_root_creates_or_reuses_only_an_exact_sealed_identity(
         "open_windows_directory_guard",
         lambda *_args, **_kwargs: guard,
     )
-    monkeypatch.setattr(private, "_persistent_root_acl_is_present", lambda *_a, **_k: True)
+    monkeypatch.setattr(private, "_persistent_root_acl_failure", lambda *_a, **_k: None)
     monkeypatch.setattr(private, "current_process_can_mutate_path", lambda *_a, **_k: True)
 
     assert (
@@ -523,8 +547,8 @@ def test_owner_private_root_rejects_unsafe_collisions_without_mutation(
     )
     monkeypatch.setattr(
         private,
-        "_persistent_root_acl_is_present",
-        lambda *_args, **_kwargs: failure != "permissive",
+        "_persistent_root_acl_failure",
+        lambda *_args, **_kwargs: "unsafe test ACL" if failure == "permissive" else None,
     )
     monkeypatch.setattr(
         private,
@@ -605,7 +629,7 @@ def test_owner_private_root_reports_identity_drift_stage(
     monkeypatch.setattr(private, "current_process_token_is_restricted", lambda **_kwargs: False)
     monkeypatch.setattr(private, "_create_windows_directory_with_sddl", lambda *_args: None)
     monkeypatch.setattr(private, "open_windows_directory_guard", lambda *_args, **_kwargs: root)
-    monkeypatch.setattr(private, "_persistent_root_acl_is_present", lambda *_args: True)
+    monkeypatch.setattr(private, "_persistent_root_acl_failure", lambda *_args: None)
     monkeypatch.setattr(private, "current_process_can_mutate_path", lambda *_args, **_kwargs: True)
 
     with pytest.raises(WindowsACLSafetyError, match=reason):
@@ -638,8 +662,8 @@ def test_owner_private_root_never_mutates_a_failed_fresh_creation(
     )
     monkeypatch.setattr(
         private,
-        "_persistent_root_acl_is_present",
-        lambda *_args, **_kwargs: exact_acl,
+        "_persistent_root_acl_failure",
+        lambda *_args, **_kwargs: None if exact_acl else "unsafe test ACL",
     )
     security: list[tuple[Path, str]] = []
     removed: list[Path] = []

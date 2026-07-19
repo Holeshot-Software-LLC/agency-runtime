@@ -295,26 +295,45 @@ def _owner_private_acl_is_present(
     return read_windows_sddl(path) == _owner_private_sddl(user_sid)
 
 
-def _persistent_root_acl_is_present(path: Path, user_sid: str) -> bool:
-    """Accept the exact DACL or a protected, private canonical equivalent."""
+def _persistent_root_acl_failure(path: Path, user_sid: str) -> str | None:
+    """Return a bounded reason when a persistent-root ACL receipt is unsafe."""
 
     value = read_windows_sddl(path)
     if value == _owner_private_sddl(user_sid):
-        return True
+        return None
+    if not value:
+        return "receipt unavailable"
+    if not value.startswith("O:"):
+        return "owner missing"
+    owner_payload = value[2:]
+    owner_boundaries = [
+        index for marker in ("G:", "D:") if (index := owner_payload.find(marker)) >= 0
+    ]
+    owner = owner_payload[: min(owner_boundaries)] if owner_boundaries else owner_payload
+    if owner != user_sid:
+        return "owner mismatch"
     dacl_offset = value.find("D:")
     if dacl_offset < 0:
-        return False
+        return "DACL missing"
     control = value[dacl_offset + 2 :].split("(", 1)[0]
     if "P" not in control:
-        return False
-    return windows_directory_prevents_untrusted_writes(
+        return "DACL not protected"
+    if not windows_directory_prevents_untrusted_writes(
         path,
         is_windows=True,
         sddl_reader=lambda _path: value,
         current_sid_reader=lambda: user_sid,
         final_parent=True,
         private_access=True,
-    )
+    ):
+        return "DACL not private or malformed"
+    return None
+
+
+def _persistent_root_acl_is_present(path: Path, user_sid: str) -> bool:
+    """Accept the exact DACL or a protected, private canonical equivalent."""
+
+    return _persistent_root_acl_failure(path, user_sid) is None
 
 
 def create_or_validate_windows_owner_private_directory(
@@ -350,8 +369,8 @@ def create_or_validate_windows_owner_private_directory(
             failure = "parent identity changed before verification"
         elif not guard.is_current():
             failure = "root identity changed before verification"
-        elif not _persistent_root_acl_is_present(path, user_sid):
-            failure = "durable ACL receipt mismatch"
+        elif (acl_failure := _persistent_root_acl_failure(path, user_sid)) is not None:
+            failure = f"durable ACL receipt mismatch ({acl_failure})"
         elif not current_process_can_mutate_path(
             path,
             directory=True,
