@@ -10,9 +10,10 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core.config import AgencyConfig, SelectorConfig
+from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig, SelectorConfig
 from agency_runtime.core.evals import benchmarks
 from agency_runtime.core.evals import delegation as delegation_eval
+from agency_runtime.core.evals import full_roster as full_roster_eval
 from agency_runtime.core.evals import routing as routing_eval
 from agency_runtime.core.selector import (
     cache,
@@ -21,8 +22,10 @@ from agency_runtime.core.selector import (
     explain,
     intent_text,
     pipeline,
+    semantic_retrieval,
     stickiness,
 )
+from agency_runtime.core.turn_intent import TurnState, classify_turn_intent
 
 
 @pytest.fixture(autouse=True)
@@ -359,7 +362,11 @@ def test_pipeline_refreshes_legacy_cache_and_survives_persistence_failure() -> N
 def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    cfg = AgencyConfig(selector=SelectorConfig(max_user_msg_len=4, min_confidence=0.5))
+    cfg = AgencyConfig(
+        judge=JudgeConfig(model="", base_url=""),
+        ollama=OllamaConfig(enabled=False, model=""),
+        selector=SelectorConfig(max_user_msg_len=4, min_confidence=0.5),
+    )
     assert pipeline.refine_query("abcdefgh", cfg) == "abcd"
     assert pipeline._available_companions(["active", "missing"], {"active"}) == (
         ["active"],
@@ -384,6 +391,9 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
         companion_ids=[],
         available_companion_ids=[],
         unavailable_companion_ids=[],
+        fallback_companion_ids=["agents-orchestrator", "chief-of-staff"],
+        available_fallback_companion_ids=["agents-orchestrator", "chief-of-staff"],
+        unavailable_fallback_companion_ids=[],
         work_units={"delegate": False},
     )
     monkeypatch.setattr(pipeline, "_route_request", lambda *_args, **_kwargs: request)
@@ -397,8 +407,26 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
         },
     )
     monkeypatch.setattr(pipeline, "_route_signals", lambda _request: signals)
+    continuation_message = "continue"
+    unchanged_continuation = classify_turn_intent(
+        continuation_message,
+        TurnState(
+            previous_trace_id="prior-trace",
+            state_known=True,
+            state_status="current",
+            previous_status="active",
+            previous_turn_kind="new_intent",
+            active_plan=True,
+        ),
+    )
 
-    reused = pipeline.route("session", "work", request.catalog, config=cfg)
+    reused = pipeline.route(
+        "session",
+        continuation_message,
+        request.catalog,
+        config=cfg,
+        turn_classification=unchanged_continuation,
+    )
     assert reused["selected_ids"] == ["active"]
     assert reused["source_message_hash"] == "current"
 
@@ -410,7 +438,13 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
             "source_message_hash": "current",
         },
     )
-    exact = pipeline.route("session", "work", request.catalog, config=cfg)
+    exact = pipeline.route(
+        "session",
+        continuation_message,
+        request.catalog,
+        config=cfg,
+        turn_classification=unchanged_continuation,
+    )
     assert exact["selected_ids"] == ["active"]
 
     low_confidence = {
@@ -436,7 +470,18 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
     )
     assert "[DELEGATION OPPORTUNITY]" in opportunity
     assert "Detected work units:" not in opportunity
-    assert pipeline.route_and_build_context("session", "ok", config=cfg) is None
+    trivial_context = pipeline.route_and_build_context(
+        "session",
+        "ok",
+        [
+            {"slug": "agents-orchestrator"},
+            {"slug": "chief-of-staff"},
+        ],
+        config=cfg,
+        turn_state={"state_known": True},
+    )
+    assert "agents-orchestrator, chief-of-staff" in trivial_context
+    assert "source=policy_fallback" in trivial_context
 
 
 @pytest.mark.parametrize(
@@ -502,6 +547,116 @@ def test_eval_helpers_fail_closed_without_running_wall_clock_gates(
     report = routing_eval.run_routing_eval(include_details=False)
     assert report["passed"] is True
     assert "details" not in report
+
+
+def test_generated_benchmark_catalog_reserves_resident_manager_slots() -> None:
+    assert benchmarks.generated_catalog(0) == []
+    assert [item["slug"] for item in benchmarks.generated_catalog(1)] == ["agents-orchestrator"]
+    assert [item["slug"] for item in benchmarks.generated_catalog(3)] == [
+        "agents-orchestrator",
+        "chief-of-staff",
+        "security-specialist-0000",
+    ]
+
+
+def test_full_roster_probe_scaffolding_is_neutral_to_both_retrievers() -> None:
+    scaffold = full_roster_eval._PROBE_QUERY_TEMPLATE.format(
+        first="",
+        second="",
+        paraphrased="",
+    )
+
+    assert candidate_narrow.tokenize(scaffold) == set()
+    assert semantic_retrieval._tokens(scaffold) == ()
+
+
+def test_full_roster_card_projection_skips_nonapproved_entries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = {
+        "agents": [
+            {
+                "slug": "quarantined-agent",
+                "display_name": "Quarantined Agent",
+                "audit_status": "quarantined",
+            },
+            {
+                "slug": "approved-agent",
+                "display_name": "Approved Agent",
+                "audit_status": "approved",
+            },
+        ]
+    }
+    monkeypatch.setattr(full_roster_eval, "bundled_manifest", lambda: manifest)
+    monkeypatch.setattr(full_roster_eval, "selector_roster_projection", dict)
+
+    loaded_manifest, cards = full_roster_eval._routing_cards()
+
+    assert loaded_manifest is manifest
+    assert cards == [
+        {
+            "slug": "approved-agent",
+            "display_name": "Approved Agent",
+            "audit_status": "approved",
+            "agent_slug": "approved-agent",
+            "name": "Approved Agent",
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    ("warm", "probe", "message"),
+    [
+        (
+            {"selected_ids": [], "trace_id": "warm"},
+            {"selected_ids": [], "trace_id": "probe", "cache_hit": True},
+            "warm-up did not produce a cacheable selection",
+        ),
+        (
+            {"selected_ids": ["agents-orchestrator"], "trace_id": "warm"},
+            {"selected_ids": ["agents-orchestrator"], "trace_id": "probe"},
+            "warm-up was not reused by the probe request",
+        ),
+        (
+            {"selected_ids": ["agents-orchestrator"], "trace_id": "warm"},
+            {
+                "selected_ids": ["chief-of-staff"],
+                "trace_id": "probe",
+                "cache_hit": True,
+            },
+            "probe changed the warm-up selection",
+        ),
+    ],
+)
+def test_microbenchmark_rejects_an_invalid_cache_warmup(
+    monkeypatch: pytest.MonkeyPatch,
+    warm: dict[str, Any],
+    probe: dict[str, Any],
+    message: str,
+) -> None:
+    monkeypatch.setattr(benchmarks, "_WARMUP_CALLS", 0)
+    monkeypatch.setattr(benchmarks, "_BENCHMARK_BATCHES", 1)
+    monkeypatch.setattr(benchmarks, "_MIN_CACHE_SAMPLES", 1)
+    monkeypatch.setattr(
+        benchmarks,
+        "_run_concurrency_probe",
+        lambda **_kwargs: {
+            "results": [()],
+            "elapsed_ms": 1.0,
+            "overlap": 1,
+            "threads": 1,
+            "synchronized": True,
+        },
+    )
+    responses = iter((warm, probe))
+    monkeypatch.setattr(benchmarks, "route", lambda *_args, **_kwargs: next(responses))
+
+    with pytest.raises(RuntimeError, match=message):
+        benchmarks.run_candidate_microbenchmark(
+            roster_size=1,
+            iterations=1,
+            workers=1,
+        )
 
 
 def test_microbenchmark_harness_runs_with_synthetic_clock_not_wall_time(

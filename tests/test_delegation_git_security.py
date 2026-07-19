@@ -29,7 +29,7 @@ def _isolated_git_environment() -> dict[str, str]:
 
 def _raw_git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["git", *args],
+        ["git", "-c", "core.longpaths=true", *args],
         cwd=repo,
         env=_isolated_git_environment(),
         check=check,

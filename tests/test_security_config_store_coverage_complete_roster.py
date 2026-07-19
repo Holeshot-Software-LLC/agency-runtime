@@ -715,6 +715,7 @@ def test_approve_already_approved_snapshot_commits_without_rewrite(
     manifest = {"approved": True, "candidates": [_agent()]}
     monkeypatch.setattr(sync, "_snapshot_from_connection", lambda *_args: (manifest, False))
     monkeypatch.setattr(sync, "_assert_candidate_records", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(sync, "assert_candidate_audits_current", lambda *_args, **_kwargs: None)
     sync.approve_snapshot(store, "s")  # type: ignore[arg-type]
     assert connection.committed is True
     assert connection.closed is True

@@ -3,9 +3,13 @@ title: Treat response telemetry as model truth
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-16
 tags: [observability, models, receipts]
-related: []
+related:
+  - docs/roadmap/issue-AR-29-reconcile-litellm-model-and-router-evidence.md
+  - docs/roadmap/issue-AR-64-reject-unproven-litellm-router-alias-echoes.md
+  - docs/roadmap/issue-AR-78-preserve-litellm-router-when-model-is-unavailable.md
+  - docs/worklog/README.md
 supersedes: [docs/decisions/0002-model-attribution-from-post-request-logs.md]
 superseded_by: null
 id: ADR-0003

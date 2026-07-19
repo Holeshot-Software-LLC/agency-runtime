@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
+import stat
 import subprocess
 from pathlib import Path
 
@@ -11,10 +13,31 @@ from agency_runtime.cli.main import main
 from agency_runtime.core.store.sqlite import Store
 
 
+def _fake_delegate_binaries(tmp_path: Path, monkeypatch) -> dict[str, str]:
+    bin_dir = tmp_path / "delegate-bin"
+    bin_dir.mkdir()
+    suffix = ".EXE" if os.name == "nt" else ""
+    binaries: dict[str, str] = {}
+    for name in ("claude", "codex", "hermes"):
+        executable = bin_dir / f"{name}{suffix}"
+        executable.write_bytes(b"test executable")
+        if os.name != "nt":
+            executable.chmod(executable.stat().st_mode | stat.S_IXUSR)
+        binaries[name] = str(executable)
+    monkeypatch.setenv("PATH", str(bin_dir))
+    return binaries
+
+
 def test_store_trim_runtime_tables_keeps_roster_and_recent_rows(tmp_path: Path) -> None:
     db = tmp_path / "agency.db"
     store = Store(db)
-    store.activate_agent({"slug": "code-reviewer", "name": "Code Reviewer"})
+    store._activate_prevalidated_agent(
+        {
+            "slug": "trim-code-reviewer",
+            "name": "Trim Code Reviewer",
+            "prompt_body": "Review retained runtime evidence.",
+        }
+    )
     old_event = store.record_delegation(
         trace_id="old-trace",
         session_id="session-old",
@@ -24,9 +47,16 @@ def test_store_trim_runtime_tables_keeps_roster_and_recent_rows(tmp_path: Path) 
     recent_event = store.record_delegation(
         trace_id="new-trace",
         session_id="session-new",
+        work_unit_id="unit-new",
         recommended_agent="new-agent",
         status="delegated",
+        backend="test-worker",
+        executed_worker_kind="test-worker",
+        executed_worker_id="worker-new",
+        native_run_id="native-new",
     )
+    store.close_turn_evidence("session-old", "old-trace")
+    store.close_turn_evidence("session-new", "new-trace")
 
     conn = sqlite3.connect(db)
     try:
@@ -37,6 +67,10 @@ def test_store_trim_runtime_tables_keeps_roster_and_recent_rows(tmp_path: Path) 
         conn.execute(
             "UPDATE delegation_events SET started_at = '2100-01-01T00:00:00+00:00' WHERE id = ?",
             (recent_event,),
+        )
+        conn.execute(
+            "UPDATE runs SET last_activity_at = '2000-01-01T00:00:00+00:00' "
+            "WHERE trace_id = 'old-trace'"
         )
         conn.commit()
     finally:
@@ -49,7 +83,7 @@ def test_store_trim_runtime_tables_keeps_roster_and_recent_rows(tmp_path: Path) 
         row["recommended_agent"] for row in store.get_delegations_for_session("session-new")
     ] == ["new-agent"]
     assert store.get_delegations_for_session("session-old") == []
-    assert [agent["agent_slug"] for agent in store.get_active_roster()] == ["code-reviewer"]
+    assert [agent["agent_slug"] for agent in store.get_active_roster()] == ["trim-code-reviewer"]
 
 
 def test_store_trim_runtime_tables_dry_run_does_not_delete(tmp_path: Path) -> None:
@@ -60,6 +94,7 @@ def test_store_trim_runtime_tables_dry_run_does_not_delete(tmp_path: Path) -> No
         recommended_agent="agent",
         status="suggested",
     )
+    store.close_turn_evidence("session", "trace")
 
     report = store.trim_runtime_tables(keep_last=0, dry_run=True)
 
@@ -89,6 +124,7 @@ def test_cli_db_trim_json(tmp_path: Path, monkeypatch, capsys) -> None:
         recommended_agent="agent",
         status="suggested",
     )
+    store.close_turn_evidence("session", "trace")
 
     code = main(["db", "trim", "--keep-last", "0", "--json"])
 
@@ -120,9 +156,10 @@ def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_pa
     db = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
     commands: list[tuple[list[str], str | None]] = []
+    binaries = _fake_delegate_binaries(tmp_path, monkeypatch)
 
     def fake_which(name: str, **_kwargs: object) -> str:
-        return f"/bin/{name}"
+        return binaries[name]
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         input_text = kwargs.get("input_text")
@@ -133,7 +170,7 @@ def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_pa
             )
         )
         stdout = kwargs["stdout"]
-        if command[0].endswith("codex"):
+        if Path(command[0]).stem.casefold() == "codex":
             stdout.write(
                 json.dumps(
                     {
@@ -144,11 +181,13 @@ def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_pa
                 + "\n"
             )
             stdout.write(json.dumps({"type": "turn.completed"}) + "\n")
-        elif command[0].endswith("claude"):
+        elif Path(command[0]).stem.casefold() == "claude":
             stdout.write(json.dumps({"type": "result", "is_error": False, "result": "done"}))
         else:
             stdout.write("done")
-        return subprocess.CompletedProcess(command, 0)
+        completed = subprocess.CompletedProcess(command, 0)
+        completed.process_id = 4242
+        return completed
 
     monkeypatch.setattr("agency_runtime.core.delegation.backends.shutil.which", fake_which)
     monkeypatch.setattr("agency_runtime.core.delegation.backends._run_owned_process", fake_run)
@@ -158,21 +197,22 @@ def test_cli_delegate_builds_noninteractive_backend_commands(monkeypatch, tmp_pa
     assert main(["delegate", "--backend", "hermes", "--task", "review diff"]) == 0
 
     assert commands == [
-        (["/bin/codex", "exec", "--json", "--color", "never"], "review diff"),
-        (["/bin/claude", "-p", "--output-format", "json"], "review diff"),
-        (["/bin/hermes", "-z", "review diff"], None),
+        ([binaries["codex"], "exec", "--json", "--color", "never"], "review diff"),
+        ([binaries["claude"], "-p", "--output-format", "json"], "review diff"),
+        ([binaries["hermes"], "-z", "review diff"], None),
     ]
 
 
 def test_cli_delegate_timeout_marks_delegation_skipped(monkeypatch, tmp_path: Path, capsys) -> None:
     db = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
+    binaries = _fake_delegate_binaries(tmp_path, monkeypatch)
 
     def fake_which(name: str, **_kwargs: object) -> str:
-        return f"/bin/{name}"
+        return binaries[name]
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-        assert command[:2] == ["/bin/hermes", "-z"]
+        assert command[:2] == [binaries["hermes"], "-z"]
         assert "code-reviewer" in command[-1]
         assert kwargs["timeout"] == 0.01
         raise subprocess.TimeoutExpired(command, 0.01)
@@ -208,9 +248,10 @@ def test_cli_delegate_timeout_marks_delegation_skipped(monkeypatch, tmp_path: Pa
 def test_cli_delegate_exit_124_remains_failed(monkeypatch, tmp_path: Path) -> None:
     db = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
+    binaries = _fake_delegate_binaries(tmp_path, monkeypatch)
 
     def fake_which(name: str, **_kwargs: object) -> str:
-        return f"/bin/{name}"
+        return binaries[name]
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         assert kwargs["timeout"] == 0.01
@@ -246,14 +287,17 @@ def test_cli_delegate_json_success_reports_event(monkeypatch, tmp_path: Path, ca
     db = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
     calls: list[tuple[list[str], float | None]] = []
+    binaries = _fake_delegate_binaries(tmp_path, monkeypatch)
 
     def fake_which(name: str, **_kwargs: object) -> str:
-        return f"/bin/{name}"
+        return binaries[name]
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         calls.append((command, kwargs.get("timeout")))
         kwargs["stdout"].write("done")
-        return subprocess.CompletedProcess(command, 0)
+        completed = subprocess.CompletedProcess(command, 0)
+        completed.process_id = 4242
+        return completed
 
     monkeypatch.setattr("agency_runtime.core.delegation.backends.shutil.which", fake_which)
     monkeypatch.setattr("agency_runtime.core.delegation.backends._run_owned_process", fake_run)
@@ -284,7 +328,7 @@ def test_cli_delegate_json_success_reports_event(monkeypatch, tmp_path: Path, ca
     assert payload["agent"] == "code-reviewer"
     assert payload["timeout_seconds"] == 2.0
     assert len(calls) == 1
-    assert calls[0][0][:2] == ["/bin/hermes", "-z"]
+    assert calls[0][0][:2] == [binaries["hermes"], "-z"]
     assert "code-reviewer" in calls[0][0][-1]
     assert calls[0][1] == 2.0
     [event] = Store(db).get_delegations(payload["trace_id"])
@@ -294,9 +338,10 @@ def test_cli_delegate_json_success_reports_event(monkeypatch, tmp_path: Path, ca
 def test_cli_delegate_json_timeout_reports_skipped(monkeypatch, tmp_path: Path, capsys) -> None:
     db = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
+    binaries = _fake_delegate_binaries(tmp_path, monkeypatch)
 
     def fake_which(name: str, **_kwargs: object) -> str:
-        return f"/bin/{name}"
+        return binaries[name]
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         raise subprocess.TimeoutExpired(command, float(kwargs["timeout"]))

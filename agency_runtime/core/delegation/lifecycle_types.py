@@ -5,9 +5,12 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from agency_runtime.core.delegation.ledger import DelegationLedger
+
+if TYPE_CHECKING:
+    from agency_runtime.core.private_paths import PrivateDirectoryIdentity
 
 
 @dataclass(slots=True)
@@ -21,6 +24,15 @@ class WorkUnit:
     files: set[Path] = field(default_factory=set)
     depends_on: set[str] = field(default_factory=set)
     raw: Any = None
+
+
+@dataclass(frozen=True, slots=True)
+class WorktreePathIdentity:
+    """Filesystem identity receipt for a lifecycle-owned directory."""
+
+    path: Path
+    device: int
+    inode: int
 
 
 @dataclass(slots=True)
@@ -37,6 +49,11 @@ class WorktreeInfo:
     dirty_repo: bool = False
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    worktree_identity: WorktreePathIdentity | None = field(default=None, repr=False)
+    run_root_identity: WorktreePathIdentity | None = field(default=None, repr=False)
+    run_parent_identity: WorktreePathIdentity | None = field(default=None, repr=False)
+    run_private_identity: PrivateDirectoryIdentity | None = field(default=None, repr=False)
+    repo_scoped_root: bool = False
 
 
 @dataclass(slots=True)
@@ -95,6 +112,8 @@ class LifecycleResult:
     errors: list[str]
     summary: str
     ledger: DelegationLedger | None = None
+    runtime_enabled: bool = True
+    bypassed: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         """Render the portable delegation lifecycle contract."""
@@ -143,7 +162,15 @@ class LifecycleResult:
             "errors": self.errors,
             "summary": self.summary,
             "ledger": self.ledger.as_dict() if self.ledger else None,
+            "runtime_enabled": self.runtime_enabled,
+            "bypassed": self.bypassed,
         }
 
 
-__all__ = ["DependencyGraph", "LifecycleResult", "WorkUnit", "WorktreeInfo"]
+__all__ = [
+    "DependencyGraph",
+    "LifecycleResult",
+    "WorkUnit",
+    "WorktreeInfo",
+    "WorktreePathIdentity",
+]

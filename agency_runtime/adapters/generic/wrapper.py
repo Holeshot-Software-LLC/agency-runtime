@@ -32,17 +32,8 @@ class GenericAdapter(BaseAdapter):
             return False
         return bool(shutil.which(self.cli_cmd))
 
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_specialists_for_session(session_id)
-
     def get_delegate_backend(self) -> str | None:
         return "generic_command" if self.is_available() else None
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
 
     def exec(
         self, task: str, args: list[str] | None = None, workdir: str | None = None

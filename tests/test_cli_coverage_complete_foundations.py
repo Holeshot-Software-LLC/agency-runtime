@@ -195,11 +195,10 @@ def test_service_entrypoints_forward_process_boundaries(monkeypatch):
         "run_dashboard",
         lambda **kwargs: calls.append(("dashboard", kwargs)),
     )
-    monkeypatch.setattr(services, "Store", lambda path: f"store:{path}")
-
     assert services.cmd_serve(_args()) == 0
     assert services.cmd_mcp(_args(db="one.db")) == 7
     assert services.cmd_mcp(_args(db=None)) == 7
+    assert services.cmd_mcp(_args(db=None, config="operator.yaml")) == 7
     assert services.cmd_hook(_args(db="two.db", host="codex")) == 8
     assert services.cmd_hook(_args(db=None, host="claude")) == 8
     assert (
@@ -210,10 +209,19 @@ def test_service_entrypoints_forward_process_boundaries(monkeypatch):
     )
     assert calls == [
         ("serve",),
-        ("mcp", {"store": "store:one.db"}),
-        ("mcp", {"store": None}),
-        ("hook", "codex", {"store": "store:two.db"}),
-        ("hook", "claude", {"store": None}),
+        ("mcp", {"db_path": "one.db", "config_path": None}),
+        ("mcp", {"db_path": None, "config_path": None}),
+        ("mcp", {"db_path": None, "config_path": "operator.yaml"}),
+        (
+            "hook",
+            "codex",
+            {"db_path": "two.db", "config_path": None, "expected_event": ""},
+        ),
+        (
+            "hook",
+            "claude",
+            {"db_path": None, "config_path": None, "expected_event": ""},
+        ),
         (
             "dashboard",
             {
@@ -334,6 +342,7 @@ def test_dashboard_service_rejects_unknown_action():
         (["missing"], FileNotFoundError(), 127, "Command not found"),
         (["denied"], PermissionError(), 126, "not executable"),
         (["slow"], subprocess.TimeoutExpired("slow", 1), 124, "timed out"),
+        (["invalid"], TypeError("detail must not leak"), 2, "TypeError"),
         (["broken"], OSError("detail must not leak"), 1, "OSError"),
     ],
 )
@@ -393,18 +402,43 @@ def test_delegate_result_rendering(monkeypatch, capsys, args, payload, stderr, e
 class _DelegationStore:
     def __init__(self):
         self.updates = []
+        self.run = {}
+        self.completed = []
 
-    def record_delegation(self, **_kwargs):
+    def record_delegation(self, **kwargs):
+        self.run = {
+            "id": "run-1",
+            "trace_id": kwargs["trace_id"],
+            "session_id": kwargs["session_id"],
+            "status": "evidence_only",
+        }
         return "event-1"
 
     def update_delegation(self, *args, **kwargs):
         self.updates.append((args, kwargs))
 
+    def get_run(self, _trace_id):
+        return dict(self.run)
+
+    def complete_run(self, run_id, status="completed"):
+        self.completed.append((run_id, status))
+        self.run["status"] = status
+
 
 @pytest.mark.parametrize(
     ("outcome", "expected_status", "expected_exit"),
     [
-        ({"status": "completed", "exit_code": 0, "output": "ok"}, "completed", 0),
+        (
+            {
+                "status": "completed",
+                "exit_code": 0,
+                "output": "ok",
+                "executable": "codex",
+                "process_id": 4242,
+            },
+            "completed",
+            0,
+        ),
         ({"status": "unavailable", "exit_code": 127, "error": "offline"}, "skipped", 127),
         ({"status": "timed_out", "exit_code": 124}, "skipped", 124),
         ({"status": "failed", "exit_code": 3, "error": "bad"}, "failed", 3),
@@ -438,6 +472,8 @@ def test_delegate_normalizes_backend_outcomes(monkeypatch, outcome, expected_sta
 
 
 def test_delegate_rejects_invalid_timeout_and_backend(monkeypatch, capsys):
+    assert delegation.cmd_delegate(_args(agent="chief-of-staff")) == 2
+    assert "parent-only" in capsys.readouterr().err
     assert delegation.cmd_delegate(_args(timeout=float("nan"))) == 2
     assert "finite value" in capsys.readouterr().err
     assert delegation.cmd_delegate(_args(backend="unknown")) == 2
@@ -446,10 +482,17 @@ def test_delegate_rejects_invalid_timeout_and_backend(monkeypatch, capsys):
 
 def test_command_compatibility_wrappers(monkeypatch):
     calls = []
-    monkeypatch.setattr(delegation, "_run_command", lambda value: calls.append(value) or 4)
+    monkeypatch.setattr(
+        delegation,
+        "_run_command",
+        lambda value, **kwargs: calls.append((value, kwargs)) or 4,
+    )
     assert delegation.cmd_codex_exec(SimpleNamespace(args=["--help"])) == 4
     assert delegation.cmd_run(SimpleNamespace(args=["tool", "arg"])) == 4
-    assert calls == [["codex", "exec", "--help"], ["tool", "arg"]]
+    assert calls == [
+        (["codex", "exec", "--help"], {"secure_executable": True}),
+        (["tool", "arg"], {}),
+    ]
 
 
 def test_facade_thin_wrappers_forward_to_cohesive_modules(monkeypatch):

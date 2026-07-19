@@ -6,6 +6,7 @@ import copy
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from agency_runtime.core.agent_activation import normalize_disabled_agents
 from agency_runtime.core.configuration_contracts import (
     MAX_OPERATIONS,
     REDACTED,
@@ -88,6 +89,27 @@ _SET_VALIDATORS = {
     "selector.trivial_msg_threshold": lambda item: _integer(
         item, "selector.trivial_msg_threshold", minimum=0, maximum=10_000
     ),
+    "delegation.mode": lambda item: _choice(
+        item,
+        "delegation.mode",
+        frozenset({"observe", "prefer", "strong"}),
+    ),
+    "delegation.preferred_min_units": lambda item: _integer(
+        item, "delegation.preferred_min_units", minimum=2, maximum=16
+    ),
+    "delegation.strongly_preferred_min_units": lambda item: _integer(
+        item,
+        "delegation.strongly_preferred_min_units",
+        minimum=2,
+        maximum=16,
+    ),
+    "delegation.strongly_preferred_min_confidence": lambda item: _number(
+        item,
+        "delegation.strongly_preferred_min_confidence",
+        minimum=0.0,
+        maximum=1.0,
+    ),
+    "agents.disabled": lambda item: list(normalize_disabled_agents(item)),
     "store.db_path": lambda item: _string(item, "store.db_path", allow_empty=False, maximum=4096),
     "server.host": lambda item: _loopback_host(item, "server.host"),
     "server.port": lambda item: _integer(item, "server.port", minimum=1, maximum=65535),

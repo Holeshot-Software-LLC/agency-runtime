@@ -2,16 +2,169 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
+import re
+from collections.abc import Callable, Container, Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.agent_activation import agent_is_enabled, normalize_agent_slug
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.config import load_config
+from agency_runtime.core.roster.bundled import (
+    BundledRosterError,
+    verify_bundled_agent_contract,
+)
+from agency_runtime.core.roster.limits import (
+    MAX_ACTIVE_ROSTER_CURSOR_BYTES,
+    MAX_ACTIVE_ROSTER_SIZE,
+)
+from agency_runtime.core.roster.remediation import is_registered_encoding_intermediate
+from agency_runtime.core.roster.revisions import (
+    ROUTING_LIST_METADATA_FIELDS,
+    ROUTING_SCALAR_METADATA_FIELDS,
+    content_identity_matches,
+    decode_revision_metadata,
+    serialized_revision_metadata,
+    source_version,
+)
+from agency_runtime.core.roster.selector_projection import selector_roster_projection
+from agency_runtime.core.roster.source_identity import (
+    MAX_DURABLE_SOURCE_COUNT,
+    SourceIdentityError,
+    canonical_source_display_name,
+    canonical_source_identity,
+)
+from agency_runtime.core.roster.source_safety import scan_source_text
 from agency_runtime.core.store.projections import project_snapshot_summary
+from agency_runtime.core.store.roster_authority import (
+    assert_active_revision_projection,
+    assert_revision_activation_authority,
+)
+from agency_runtime.core.store.version_identity import normalize_version_identity
 
 _JSON_LIST_FIELDS = ("categories", "capabilities", "tool_affinity")
-_MAX_ACTIVE_ROSTER_LIMIT = 10_000
-_MAX_ACTIVE_ROSTER_CURSOR_BYTES = 1024
+_MAX_ACTIVE_ROSTER_LIMIT = MAX_ACTIVE_ROSTER_SIZE
+_MAX_ACTIVE_ROSTER_CURSOR_BYTES = MAX_ACTIVE_ROSTER_CURSOR_BYTES
+_SQLITE_PARAMETER_CHUNK = 900
+_UI_CAPABILITY_COLUMNS = tuple(f"capability_{index}" for index in range(4))
+_UI_ROSTER_PROJECTION = ", ".join(
+    (
+        "agent_slug",
+        "name",
+        "division",
+        *(
+            "CASE WHEN json_valid(capabilities) "
+            f"THEN json_extract(capabilities, '$[{index}]') ELSE NULL END "
+            f"AS {column}"
+            for index, column in enumerate(_UI_CAPABILITY_COLUMNS)
+        ),
+    )
+)
+_ACTIVE_ROSTER_JOIN = (
+    "agent_active AS a JOIN agent_versions AS v "
+    "ON v.agent_slug = a.agent_slug AND v.version = a.version"
+)
+_ACTIVE_ROSTER_ROUTING_PROJECTION = "a.*, v.metadata AS revision_metadata"
+
+
+def _validate_roster_page(
+    limit: int | None,
+    after: str | None,
+) -> tuple[int | None, str | None]:
+    if limit is not None:
+        if isinstance(limit, bool) or not isinstance(limit, int):
+            raise TypeError("limit must be an integer or None")
+        if not 1 <= limit <= _MAX_ACTIVE_ROSTER_LIMIT:
+            raise ValueError(f"limit must be between 1 and {_MAX_ACTIVE_ROSTER_LIMIT}")
+    if after is not None:
+        if not isinstance(after, str):
+            raise TypeError("after must be a string or None")
+        if not after or len(after.encode("utf-8")) > _MAX_ACTIVE_ROSTER_CURSOR_BYTES:
+            raise ValueError(
+                f"after must be between 1 and {_MAX_ACTIVE_ROSTER_CURSOR_BYTES} UTF-8 bytes"
+            )
+    return limit, after
+
+
+def _decoded_roster_rows(rows: list[Any]) -> list[dict[str, Any]]:
+    agents: list[dict[str, Any]] = []
+    for row in rows:
+        agent = dict(row)
+        for field in _JSON_LIST_FIELDS:
+            agent[field] = _decode_json_list(agent.get(field))
+        raw_metadata = agent.pop("revision_metadata", None)
+        if raw_metadata is not None:
+            metadata = decode_revision_metadata(raw_metadata)
+            agent["routing_contract_valid"] = metadata is not None
+            for field in ROUTING_SCALAR_METADATA_FIELDS:
+                agent[field] = str(metadata.get(field) or "") if metadata else ""
+            for field in ROUTING_LIST_METADATA_FIELDS:
+                value = metadata.get(field) if metadata else []
+                agent[field] = list(value) if isinstance(value, list) else []
+        agents.append(agent)
+    return agents
+
+
+def _decoded_ui_roster_rows(rows: list[Any]) -> list[dict[str, Any]]:
+    """Materialize only fixed-width fields rendered by dashboard roster cards."""
+
+    agents: list[dict[str, Any]] = []
+    for row in rows:
+        agent = dict(row)
+        capabilities = [
+            value
+            for column in _UI_CAPABILITY_COLUMNS
+            if isinstance((value := agent.pop(column, None)), str) and value
+        ]
+        agent["capabilities"] = capabilities
+        agents.append(agent)
+    return agents
+
+
+def _count_present_slugs(conn: Any, slugs: Container[str]) -> int:
+    values = sorted(set(slugs))
+    count = 0
+    for offset in range(0, len(values), _SQLITE_PARAMETER_CHUNK):
+        chunk = values[offset : offset + _SQLITE_PARAMETER_CHUNK]
+        placeholders = ",".join("?" for _item in chunk)
+        row = conn.execute(
+            f"SELECT COUNT(*) AS count FROM agent_active "  # nosec B608
+            f"WHERE agent_slug IN ({placeholders})",
+            chunk,
+        ).fetchone()
+        count += int(row["count"])
+    return count
+
+
+def _disabled_agent_slugs(config_path: str | Path | None = None) -> frozenset[str]:
+    """Resolve file-aware policy so external writes take effect without reparsing."""
+
+    return frozenset(load_config(config_path).agents.disabled)
+
+
+def _validated_source_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Project stored sources only after proving their display-safe identity."""
+
+    validated: list[dict[str, Any]] = []
+    for raw_row in rows:
+        row = dict(raw_row)
+        stored_url = row.get("url")
+        stored_name = row.get("name")
+        try:
+            source_identity = canonical_source_identity(stored_url)
+            source_name = canonical_source_display_name(
+                stored_name,
+                source_identity=source_identity,
+                source_input=stored_url,
+            )
+        except SourceIdentityError:
+            raise SourceIdentityError("stored roster source identity is invalid") from None
+        if source_identity != stored_url or source_name != stored_name:
+            raise SourceIdentityError("stored roster source identity is invalid")
+        validated.append(row)
+    return validated
 
 
 def _decode_json_list(value: object) -> list[Any]:
@@ -29,6 +182,87 @@ def _decode_json_list(value: object) -> list[Any]:
     return parsed if isinstance(parsed, list) else []
 
 
+@dataclass(frozen=True, slots=True)
+class _PreparedRosterAgent:
+    slug: str
+    name: str
+    division: str
+    description: str
+    source: str
+    source_id: str
+    source_version: str
+    version: str
+    content_hash: str
+    content: str
+    metadata: str
+    categories: tuple[str, ...]
+    capabilities: tuple[str, ...]
+    tool_affinity: tuple[str, ...]
+    prompt_path: str
+
+
+def _prepared_roster_agent(
+    agent: Mapping[str, Any],
+    *,
+    require_exact_bundled: bool = False,
+) -> _PreparedRosterAgent:
+    """Validate behavior-bearing fields before opening a write transaction."""
+
+    raw_content = agent.get("prompt_body") or agent.get("content") or agent.get("body")
+    if not isinstance(raw_content, str) or not raw_content.strip():
+        raise ValueError("roster agent requires explicit behavior content")
+    content = raw_content
+    original_slug = str(agent.get("slug") or "")
+    normalized_slug = normalize_agent_slug(original_slug)
+    try:
+        exact_bundled = verify_bundled_agent_contract(agent, content)
+        bundled_alias_slug = re.sub(r"[._]+", "-", normalized_slug)
+        if not exact_bundled and (
+            normalized_slug != original_slug or bundled_alias_slug != normalized_slug
+        ):
+            aliased = {**agent, "slug": bundled_alias_slug}
+            if verify_bundled_agent_contract(aliased, content):
+                raise BundledRosterError(
+                    "recognized bundled specialist must use its canonical slug"
+                )
+    except BundledRosterError as exc:
+        raise ValueError("recognized bundled roster contract is invalid") from exc
+    if require_exact_bundled and not exact_bundled:
+        raise ValueError("public activation requires an exact approved bundled agent")
+    agent = {**agent, "slug": normalized_slug}
+    if is_registered_encoding_intermediate(content):
+        raise ValueError("registered encoding repair requires a verified semantic projection")
+    safety = scan_source_text(content)
+    if safety.controls or safety.suspicious_encoding:
+        raise ValueError("roster content contains unsafe controls or suspicious encoding")
+    version = str(agent.get("version") or "1.0.0")
+    upstream_version = source_version(agent)
+    content_hash = normalize_version_identity(agent.get("hash"), fallback_content=content)
+    if not content_identity_matches(content, content_hash):
+        raise ValueError("digest-shaped specialist hash does not match prompt content")
+    metadata = serialized_revision_metadata(agent)
+    decoded_metadata = decode_revision_metadata(metadata)
+    if decoded_metadata is None:  # pragma: no cover - serializer contract
+        raise ValueError("agent revision metadata could not be serialized")
+    return _PreparedRosterAgent(
+        slug=str(agent["slug"]),
+        name=str(agent.get("name") or ""),
+        division=str(agent.get("division") or ""),
+        description=str(agent.get("description") or ""),
+        source=str(agent.get("source") or ""),
+        source_id=str(agent.get("source_id") or ""),
+        source_version=upstream_version,
+        version=version,
+        content_hash=content_hash,
+        content=content,
+        metadata=metadata,
+        categories=tuple(decoded_metadata["categories"]),
+        capabilities=tuple(decoded_metadata["capabilities"]),
+        tool_affinity=tuple(decoded_metadata["tool_affinity"]),
+        prompt_path=str(agent.get("prompt_path") or ""),
+    )
+
+
 class RosterStoreMixin:
     """Roster-domain behavior composed into the canonical SQLite store."""
 
@@ -37,26 +271,45 @@ class RosterStoreMixin:
     def add_agent_source(
         self, url: str, name: str = "", *, trusted_for_auto_approve: bool = False
     ) -> str:
+        source_identity = canonical_source_identity(url)
+        source_name = canonical_source_display_name(
+            name,
+            source_identity=source_identity,
+            source_input=url,
+        )
         source_id = self._uuid()
         conn = self._connect()
         try:
-            existing = conn.execute("SELECT id FROM agent_sources WHERE url = ?", (url,)).fetchone()
+            conn.execute("BEGIN IMMEDIATE")
+            existing = conn.execute(
+                "SELECT id FROM agent_sources WHERE url = ?",
+                (source_identity,),
+            ).fetchone()
             if existing:
                 conn.execute(
                     "UPDATE agent_sources "
                     "SET name = COALESCE(NULLIF(?, ''), name), enabled = 1, "
                     "trusted_for_auto_approve = CASE WHEN ? THEN 1 ELSE trusted_for_auto_approve END "
                     "WHERE url = ?",
-                    (name, 1 if trusted_for_auto_approve else 0, url),
+                    (
+                        source_name,
+                        1 if trusted_for_auto_approve else 0,
+                        source_identity,
+                    ),
                 )
                 source_id = existing["id"]
             else:
+                source_count = int(conn.execute("SELECT COUNT(*) FROM agent_sources").fetchone()[0])
+                if source_count >= MAX_DURABLE_SOURCE_COUNT:
+                    raise SourceIdentityError(
+                        f"roster source count may not exceed {MAX_DURABLE_SOURCE_COUNT}"
+                    )
                 conn.execute(
                     "INSERT INTO agent_sources (id, url, name, added_at, trusted_for_auto_approve) VALUES (?, ?, ?, ?, ?)",
                     (
                         source_id,
-                        url,
-                        name or url,
+                        source_identity,
+                        source_name,
                         self._now(),
                         1 if trusted_for_auto_approve else 0,
                     ),
@@ -72,71 +325,235 @@ class RosterStoreMixin:
             cur = conn.execute(
                 "SELECT * FROM agent_sources WHERE enabled = 1 ORDER BY added_at DESC"
             )
-            return [dict(row) for row in cur.fetchall()]
+            return _validated_source_rows(cur.fetchall())
         finally:
             conn.close()
 
     def activate_agent(self, agent: dict[str, Any]) -> None:
-        content = str(agent.get("prompt_body") or agent.get("content") or agent.get("body") or "")
-        if not content.strip():
-            identity = str(agent.get("name") or agent.get("slug") or "specialist")
-            description = str(agent.get("description") or "Apply your named specialty to the task.")
-            content = f"You are the {identity} specialist. {description}".strip()
-        version = str(agent.get("version") or "1.0.0")
-        content_hash = str(agent.get("hash") or hashlib.sha256(content.encode("utf-8")).hexdigest())
+        """Install one exact bundled fallback without replacing active state."""
+
+        self._activate_agent(
+            agent,
+            replace=False,
+            require_exact_bundled=True,
+        )
+
+    def activate_agent_if_missing(self, agent: dict[str, Any]) -> bool:
+        """Activate a bundled fallback only when its slug is wholly absent."""
+
+        return self._activate_agent(
+            agent,
+            replace=False,
+            require_exact_bundled=True,
+        )
+
+    def activate_agents_if_missing(self, agents: Sequence[Mapping[str, Any]]) -> int:
+        """Atomically seed exact bundled fallbacks without replacing entries."""
+
+        return self._activate_agents_if_missing(
+            agents,
+            require_exact_bundled=True,
+        )
+
+    def _activate_prevalidated_agents_if_missing(
+        self,
+        agents: Sequence[Mapping[str, Any]],
+    ) -> int:
+        """Trusted internal batch seam for already-governed revisions."""
+
+        return self._activate_agents_if_missing(
+            agents,
+            require_exact_bundled=False,
+        )
+
+    def _activate_agents_if_missing(
+        self,
+        agents: Sequence[Mapping[str, Any]],
+        *,
+        require_exact_bundled: bool,
+    ) -> int:
+        """Atomically activate a bounded roster batch without replacing entries.
+
+        Every behavior-bearing field is validated before a connection or write
+        transaction is opened.  A conflict in any immutable revision rolls the
+        complete batch back, so installation cannot expose a partial roster.
+        """
+
+        if isinstance(agents, (str, bytes, bytearray)) or not isinstance(agents, Sequence):
+            raise TypeError("agents must be a sequence of mappings")
+        if len(agents) > _MAX_ACTIVE_ROSTER_LIMIT:
+            raise ValueError(f"agents must contain at most {_MAX_ACTIVE_ROSTER_LIMIT} entries")
+        prepared: list[_PreparedRosterAgent] = []
+        seen_slugs: set[str] = set()
+        for agent in agents:
+            if not isinstance(agent, Mapping):
+                raise TypeError("every roster entry must be a mapping")
+            item = _prepared_roster_agent(
+                agent,
+                require_exact_bundled=require_exact_bundled,
+            )
+            if item.slug in seen_slugs:
+                raise ValueError(f"duplicate roster slug in batch: {item.slug}")
+            seen_slugs.add(item.slug)
+            prepared.append(item)
+        if not prepared:
+            return 0
+
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
-            existing_version = conn.execute(
-                "SELECT id, hash, content FROM agent_versions WHERE agent_slug = ? AND version = ?",
-                (agent["slug"], version),
-            ).fetchone()
-            if existing_version is not None and (
-                str(existing_version["hash"] or "") != content_hash
-                or str(existing_version["content"] or "") != content
-            ):
-                raise ValueError(f"immutable agent version conflict for {agent['slug']}@{version}")
-            if existing_version is None:
-                conn.execute(
-                    "INSERT INTO agent_versions "
-                    "(id, agent_slug, version, hash, content, created_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                    (
-                        self._uuid(),
-                        agent["slug"],
-                        version,
-                        content_hash,
-                        content,
-                        self._now(),
-                    ),
-                )
-            conn.execute(
-                "INSERT OR REPLACE INTO agent_active "
-                "(id, agent_slug, name, division, description, source, version, hash, "
-                "categories, capabilities, tool_affinity, prompt_path, activated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    self._uuid(),
-                    agent["slug"],
-                    agent.get("name", ""),
-                    agent.get("division", ""),
-                    agent.get("description", ""),
-                    agent.get("source", ""),
-                    version,
-                    content_hash,
-                    json.dumps(agent.get("categories", [])),
-                    json.dumps(agent.get("capabilities", [])),
-                    json.dumps(agent.get("tool_affinity", [])),
-                    agent.get("prompt_path", ""),
-                    self._now(),
-                ),
+            active_count = int(
+                conn.execute("SELECT COUNT(*) AS count FROM agent_active").fetchone()["count"]
             )
+            missing_count = len(prepared) - _count_present_slugs(
+                conn, (item.slug for item in prepared)
+            )
+            if active_count + missing_count > _MAX_ACTIVE_ROSTER_LIMIT:
+                raise ValueError(f"active roster cannot exceed {_MAX_ACTIVE_ROSTER_LIMIT} entries")
+            inserted = sum(
+                self._activate_prepared_agent(conn, item, replace=False) for item in prepared
+            )
+            if inserted:
+                conn.execute(
+                    "UPDATE store_counters SET value = value + ? WHERE name = 'roster-generation'",
+                    (inserted,),
+                )
             conn.commit()
+            return inserted
         except Exception:
             conn.rollback()
             raise
         finally:
             conn.close()
+
+    def _activate_agent(
+        self,
+        agent: Mapping[str, Any],
+        *,
+        replace: bool,
+        require_exact_bundled: bool,
+    ) -> bool:
+        prepared = _prepared_roster_agent(
+            agent,
+            require_exact_bundled=require_exact_bundled,
+        )
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            changed = self._activate_prepared_agent(conn, prepared, replace=replace)
+            if changed:
+                conn.execute(
+                    "UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'"
+                )
+            conn.commit()
+            return changed
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def _activate_prevalidated_agent(self, agent: Mapping[str, Any]) -> bool:
+        """Trusted internal seam for already-governed candidate/test revisions."""
+
+        return self._activate_agent(
+            agent,
+            replace=True,
+            require_exact_bundled=False,
+        )
+
+    def _activate_prevalidated_agent_if_missing(self, agent: Mapping[str, Any]) -> bool:
+        """Trusted internal non-replacing seam for already-governed revisions."""
+
+        return self._activate_agent(
+            agent,
+            replace=False,
+            require_exact_bundled=False,
+        )
+
+    def _activate_prepared_agent(
+        self,
+        conn: Any,
+        agent: _PreparedRosterAgent,
+        *,
+        replace: bool,
+    ) -> bool:
+        """Apply one validated roster entry inside the caller's transaction."""
+
+        if not replace:
+            existing_active = conn.execute(
+                "SELECT 1 FROM agent_active WHERE agent_slug = ? LIMIT 1",
+                (agent.slug,),
+            ).fetchone()
+            if existing_active is not None:
+                return False
+        existing_version = conn.execute(
+            "SELECT id, hash, content, metadata FROM agent_versions "
+            "WHERE agent_slug = ? AND version = ?",
+            (agent.slug, agent.version),
+        ).fetchone()
+        if existing_version is not None and (
+            str(existing_version["hash"] or "") != agent.content_hash
+            or str(existing_version["content"] or "") != agent.content
+            or not content_identity_matches(existing_version["content"], existing_version["hash"])
+            or (
+                str(existing_version["metadata"] or "{}") != "{}"
+                and str(existing_version["metadata"]) != agent.metadata
+            )
+        ):
+            raise ValueError(f"immutable agent version conflict for {agent.slug}@{agent.version}")
+        if existing_version is None:
+            conn.execute(
+                "INSERT INTO agent_versions "
+                "(id, agent_slug, version, source_version, source_id, hash, content, "
+                "metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    self._uuid(),
+                    agent.slug,
+                    agent.version,
+                    agent.source_version,
+                    agent.source_id,
+                    agent.content_hash,
+                    agent.content,
+                    agent.metadata,
+                    self._now(),
+                ),
+            )
+        statement = (
+            "INSERT OR REPLACE INTO agent_active " if replace else "INSERT INTO agent_active "
+        )
+        conn.execute(
+            statement + "(id, agent_slug, name, division, description, source, version, hash, "
+            "source_id, source_version, categories, capabilities, tool_affinity, "
+            "prompt_path, activated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                self._uuid(),
+                agent.slug,
+                agent.name,
+                agent.division,
+                agent.description,
+                agent.source,
+                agent.version,
+                agent.content_hash,
+                agent.source_id,
+                agent.source_version,
+                json.dumps(agent.categories),
+                json.dumps(agent.capabilities),
+                json.dumps(agent.tool_affinity),
+                agent.prompt_path,
+                self._now(),
+            ),
+        )
+        conn.execute("DELETE FROM agent_categories WHERE agent_slug = ?", (agent.slug,))
+        conn.executemany(
+            "INSERT INTO agent_categories (id, agent_slug, category) VALUES (?, ?, ?)",
+            (
+                (self._uuid(), agent.slug, category)
+                for category in dict.fromkeys(agent.categories)
+                if category
+            ),
+        )
+        return True
 
     def upsert_roster_entry(self, agent: dict[str, Any]) -> None:
         """Persist one active roster entry through the immutable-version boundary."""
@@ -150,44 +567,179 @@ class RosterStoreMixin:
         after: str | None = None,
     ) -> list[dict[str, Any]]:
         """Return a stable active-roster page ordered after an optional slug cursor."""
-        if limit is not None:
-            if isinstance(limit, bool) or not isinstance(limit, int):
-                raise TypeError("limit must be an integer or None")
-            if not 1 <= limit <= _MAX_ACTIVE_ROSTER_LIMIT:
-                raise ValueError(f"limit must be between 1 and {_MAX_ACTIVE_ROSTER_LIMIT}")
-        if after is not None:
-            if not isinstance(after, str):
-                raise TypeError("after must be a string or None")
-            if not after or len(after.encode("utf-8")) > _MAX_ACTIVE_ROSTER_CURSOR_BYTES:
-                raise ValueError(
-                    f"after must be between 1 and {_MAX_ACTIVE_ROSTER_CURSOR_BYTES} UTF-8 bytes"
-                )
+        limit, after = _validate_roster_page(limit, after)
         conn = self._connect()
         try:
             if after is None and limit is None:
-                cur = conn.execute("SELECT * FROM agent_active ORDER BY agent_slug")
+                cur = conn.execute(
+                    f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
+                    f"FROM {_ACTIVE_ROSTER_JOIN} ORDER BY a.agent_slug"  # nosec B608
+                )
             elif after is None:
                 cur = conn.execute(
-                    "SELECT * FROM agent_active ORDER BY agent_slug LIMIT ?",
+                    f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
+                    f"FROM {_ACTIVE_ROSTER_JOIN} "  # nosec B608
+                    "ORDER BY a.agent_slug LIMIT ?",
                     (limit,),
                 )
             elif limit is None:
                 cur = conn.execute(
-                    "SELECT * FROM agent_active WHERE agent_slug > ? ORDER BY agent_slug",
+                    f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
+                    f"FROM {_ACTIVE_ROSTER_JOIN} "  # nosec B608
+                    "WHERE a.agent_slug > ? ORDER BY a.agent_slug",
                     (after,),
                 )
             else:
                 cur = conn.execute(
-                    "SELECT * FROM agent_active WHERE agent_slug > ? ORDER BY agent_slug LIMIT ?",
+                    f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
+                    f"FROM {_ACTIVE_ROSTER_JOIN} "  # nosec B608
+                    "WHERE a.agent_slug > ? ORDER BY a.agent_slug LIMIT ?",
                     (after, limit),
                 )
-            agents = []
-            for row in cur.fetchall():
-                d = dict(row)
-                for field in _JSON_LIST_FIELDS:
-                    d[field] = _decode_json_list(d.get(field))
-                agents.append(d)
-            return agents
+            return _decoded_roster_rows(cur.fetchall())
+        finally:
+            conn.close()
+
+    def get_active_roster_page_snapshot(
+        self,
+        *,
+        limit: int,
+        after: str | None = None,
+        disabled_agents: Container[str] = (),
+    ) -> dict[str, Any]:
+        """Read one internally consistent roster page and monotonic revision."""
+
+        return self._get_active_roster_page_snapshot(
+            limit=limit,
+            after=after,
+            disabled_agents=disabled_agents,
+            projection="*",
+            decode_rows=_decoded_roster_rows,
+        )
+
+    def get_active_roster_ui_page_snapshot(
+        self,
+        *,
+        limit: int,
+        after: str | None = None,
+        disabled_agents: Container[str] = (),
+    ) -> dict[str, Any]:
+        """Read a card-only roster page without materializing routing metadata."""
+
+        return self._get_active_roster_page_snapshot(
+            limit=limit,
+            after=after,
+            disabled_agents=disabled_agents,
+            projection=_UI_ROSTER_PROJECTION,
+            decode_rows=_decoded_ui_roster_rows,
+        )
+
+    def get_active_roster_activation_page_snapshot(
+        self,
+        *,
+        limit: int,
+        after: str | None = None,
+        disabled_agents: Container[str] = (),
+    ) -> dict[str, Any]:
+        """Read activation-list labels without taxonomy or routing metadata."""
+
+        return self._get_active_roster_page_snapshot(
+            limit=limit,
+            after=after,
+            disabled_agents=disabled_agents,
+            projection="agent_slug, name, division",
+            decode_rows=lambda rows: [dict(row) for row in rows],
+        )
+
+    def _get_active_roster_page_snapshot(
+        self,
+        *,
+        limit: int,
+        after: str | None,
+        disabled_agents: Container[str],
+        projection: str,
+        decode_rows: Callable[[list[Any]], list[dict[str, Any]]],
+    ) -> dict[str, Any]:
+        """Read one projection, counts, and generation in a single transaction."""
+
+        validated_limit, validated_after = _validate_roster_page(limit, after)
+        if validated_limit is None:
+            raise ValueError("limit is required for roster page snapshots")
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            counter = conn.execute(
+                "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+            ).fetchone()
+            if counter is None or isinstance(counter["value"], bool):
+                raise RuntimeError("roster generation counter is unavailable")
+            total = int(
+                conn.execute("SELECT COUNT(*) AS count FROM agent_active").fetchone()["count"]
+            )
+            disabled_count = _count_present_slugs(conn, disabled_agents)
+            if validated_after is None:
+                rows = conn.execute(
+                    f"SELECT {projection} FROM agent_active "  # nosec B608
+                    "ORDER BY agent_slug LIMIT ?",
+                    (validated_limit + 1,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    f"SELECT {projection} FROM agent_active "  # nosec B608
+                    "WHERE agent_slug > ? "
+                    "ORDER BY agent_slug LIMIT ?",
+                    (validated_after, validated_limit + 1),
+                ).fetchall()
+            result = {
+                "generation": int(counter["value"]),
+                "total_count": total,
+                "enabled_count": total - disabled_count,
+                "rows": decode_rows(rows),
+            }
+            conn.commit()
+            return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def get_active_roster_entry_snapshot(
+        self,
+        slug: str,
+        *,
+        disabled_agents: Container[str] = (),
+    ) -> dict[str, Any]:
+        """Read one exact entry and global roster counters from one snapshot."""
+
+        normalized = normalize_agent_slug(slug)
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            counter = conn.execute(
+                "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+            ).fetchone()
+            if counter is None or isinstance(counter["value"], bool):
+                raise RuntimeError("roster generation counter is unavailable")
+            total = int(
+                conn.execute("SELECT COUNT(*) AS count FROM agent_active").fetchone()["count"]
+            )
+            disabled_count = _count_present_slugs(conn, disabled_agents)
+            row = conn.execute(
+                "SELECT * FROM agent_active WHERE agent_slug = ? LIMIT 1",
+                (normalized,),
+            ).fetchone()
+            result = {
+                "generation": int(counter["value"]),
+                "total_count": total,
+                "enabled_count": total - disabled_count,
+                "rows": _decoded_roster_rows([row]) if row is not None else [],
+            }
+            conn.commit()
+            return result
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
 
@@ -200,46 +752,148 @@ class RosterStoreMixin:
         finally:
             conn.close()
 
+    def get_enabled_roster(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        disabled_agents: Container[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Return enabled active definitions without deleting disabled rows."""
+
+        if limit is not None:
+            if isinstance(limit, bool) or not isinstance(limit, int):
+                raise TypeError("limit must be an integer or None")
+            if not 1 <= limit <= _MAX_ACTIVE_ROSTER_LIMIT:
+                raise ValueError(f"limit must be between 1 and {_MAX_ACTIVE_ROSTER_LIMIT}")
+        disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
+        agents = self.get_active_roster(after=after)
+        enabled = [agent for agent in agents if agent_is_enabled(agent["agent_slug"], disabled)]
+        return enabled if limit is None else enabled[:limit]
+
+    def count_enabled_roster(
+        self,
+        *,
+        disabled_agents: Container[str] | None = None,
+    ) -> int:
+        """Return the effective routing-roster cardinality."""
+
+        disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
+        conn = self._connect()
+        try:
+            rows = conn.execute("SELECT agent_slug FROM agent_active").fetchall()
+            return sum(agent_is_enabled(row["agent_slug"], disabled) for row in rows)
+        finally:
+            conn.close()
+
+    def get_disabled_agent_slugs(self) -> frozenset[str]:
+        """Return one fresh immutable activation-policy snapshot."""
+
+        from agency_runtime.core.config_binding import config_for_store
+
+        return frozenset(config_for_store(self).agents.disabled)
+
     def get_roster_entry(self, slug: str) -> dict[str, Any] | None:
         """Return one active roster entry without exposing versioned prompt content."""
 
         conn = self._connect()
         try:
             row = conn.execute(
-                "SELECT * FROM agent_active WHERE agent_slug = ? LIMIT 1",
+                f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
+                f"FROM {_ACTIVE_ROSTER_JOIN} "  # nosec B608
+                "WHERE a.agent_slug = ? LIMIT 1",
                 (slug,),
             ).fetchone()
             if row is None:
                 return None
-            entry = dict(row)
-            for field in _JSON_LIST_FIELDS:
-                entry[field] = _decode_json_list(entry.get(field))
-            return entry
+            return _decoded_roster_rows([row])[0]
         finally:
             conn.close()
 
-    def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
-        """Return active roster in selector-compatible format."""
-        agents = self.get_active_roster()
+    def get_active_roster_as_catalog(
+        self,
+        *,
+        disabled_agents: Container[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Return enabled active roster in selector-compatible format."""
+        agents = self.get_enabled_roster(disabled_agents=disabled_agents)
+        projected = [selector_roster_projection(agent) for agent in agents]
         return [
             {
+                **agent,
                 "slug": agent["agent_slug"],
-                "name": agent.get("name", ""),
-                "description": agent.get("description", ""),
-                "division": agent.get("division", ""),
-                "categories": agent.get("categories", []),
-                "capabilities": agent.get("capabilities", []),
+                **(
+                    {
+                        "version": str(source.get("version") or ""),
+                        "hash": str(source.get("hash") or ""),
+                    }
+                    if source.get("version") and source.get("hash")
+                    else {}
+                ),
             }
-            for agent in agents
+            for source, agent in zip(agents, projected, strict=True)
         ]
+
+    def get_routing_roster_snapshot(
+        self,
+        *,
+        disabled_agents: Container[str] = (),
+    ) -> dict[str, Any]:
+        """Read the complete enabled selector catalog and generation atomically."""
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            counter = conn.execute(
+                "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+            ).fetchone()
+            if counter is None or isinstance(counter["value"], bool):
+                raise RuntimeError("roster generation counter is unavailable")
+            rows = conn.execute(
+                f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
+                f"FROM {_ACTIVE_ROSTER_JOIN} ORDER BY a.agent_slug"  # nosec B608
+            ).fetchall()
+            enabled_agents = [
+                agent
+                for agent in _decoded_roster_rows(rows)
+                if agent_is_enabled(str(agent["agent_slug"]), disabled_agents)
+            ]
+            agents = [selector_roster_projection(agent) for agent in enabled_agents]
+            result = {
+                "generation": int(counter["value"]),
+                "catalog": [
+                    {
+                        **agent,
+                        "slug": agent["agent_slug"],
+                        "version": str(source.get("version") or ""),
+                        "hash": str(source.get("hash") or ""),
+                    }
+                    for source, agent in zip(enabled_agents, agents, strict=True)
+                ],
+            }
+            conn.commit()
+            return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def get_specialist_prompt(
         self,
         slug: str,
         *,
         max_chars: int = 65_536,
+        disabled_agents: Container[str] | None = None,
     ) -> dict[str, Any] | None:
         """Return one active specialist with its versioned bounded prompt."""
+        try:
+            normalized_slug = normalize_agent_slug(slug)
+        except ValueError:
+            return None
+        disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
+        if not agent_is_enabled(normalized_slug, disabled):
+            return None
         bounded = max(1, min(int(max_chars), 262_144))
         conn = self._connect()
         try:
@@ -249,7 +903,7 @@ class RosterStoreMixin:
                 "LEFT JOIN agent_versions AS v "
                 "ON v.agent_slug = a.agent_slug AND v.version = a.version "
                 "WHERE a.agent_slug = ? LIMIT 1",
-                (slug,),
+                (normalized_slug,),
             ).fetchone()
             if row is None:
                 return None
@@ -257,16 +911,215 @@ class RosterStoreMixin:
             for field in _JSON_LIST_FIELDS:
                 result[field] = _decode_json_list(result.get(field))
             content = str(result.get("prompt_body") or "")
+            prompt_hash = str(result.get("prompt_hash") or "")
+            if (
+                not content
+                or prompt_hash != str(result.get("hash") or "")
+                or not content_identity_matches(content, prompt_hash)
+            ):
+                return None
             result["prompt_body"] = content[:bounded]
             result["prompt_truncated"] = len(content) > bounded
             return result
         finally:
             conn.close()
 
+    def get_versioned_specialist_prompt(
+        self,
+        slug: str,
+        version: str,
+        content_hash: str,
+        *,
+        max_chars: int = 65_536,
+        disabled_agents: Container[str] | None = None,
+    ) -> dict[str, Any] | None:
+        """Read one exact immutable prompt version for side-effect-free replay."""
+
+        try:
+            normalized_slug = normalize_agent_slug(slug)
+        except ValueError:
+            return None
+        disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
+        if not agent_is_enabled(normalized_slug, disabled):
+            return None
+        normalized_version = str(version or "").strip()
+        try:
+            normalized_hash = normalize_version_identity(content_hash)
+        except ValueError:
+            return None
+        if not normalized_version:
+            return None
+        bounded = max(1, min(int(max_chars), 262_144))
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT agent_slug, version, hash, content FROM agent_versions "
+                "WHERE agent_slug = ? AND version = ? AND hash = ? LIMIT 1",
+                (normalized_slug, normalized_version, normalized_hash),
+            ).fetchone()
+            if row is None:
+                return None
+            content = str(row["content"] or "")
+            if not content or not content_identity_matches(content, row["hash"]):
+                return None
+            return {
+                "slug": str(row["agent_slug"]),
+                "version": str(row["version"]),
+                "hash": str(row["hash"]),
+                "prompt_body": content[:bounded],
+                "prompt_truncated": len(content) > bounded,
+            }
+        finally:
+            conn.close()
+
+    def rollback_agent_revision(
+        self,
+        slug: str,
+        target_version: str,
+        *,
+        expected_current_version: str,
+        expected_current_hash: str,
+    ) -> dict[str, Any]:
+        """Restore one immutable revision under an exact current-revision CAS."""
+
+        normalized_slug = normalize_agent_slug(slug)
+        target = str(target_version or "").strip()
+        expected_version = str(expected_current_version or "").strip()
+        if not target or not expected_version:
+            raise ValueError("target and expected current versions are required")
+        expected_hash = normalize_version_identity(expected_current_hash)
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            current = conn.execute(
+                "SELECT * FROM agent_active WHERE agent_slug = ? LIMIT 1",
+                (normalized_slug,),
+            ).fetchone()
+            if current is None:
+                raise ValueError(f"active agent not found: {normalized_slug}")
+            current_revision = conn.execute(
+                "SELECT agent_slug, version, source_version, source_id, hash, content, metadata "
+                "FROM agent_versions WHERE agent_slug = ? AND version = ? LIMIT 1",
+                (normalized_slug, str(current["version"] or "")),
+            ).fetchone()
+            if current_revision is None:
+                raise ValueError(
+                    f"active revision is missing: {normalized_slug}@{current['version']!s}"
+                )
+            assert_active_revision_projection(
+                dict(current),
+                dict(current_revision),
+            )
+            if (
+                str(current["version"] or "") != expected_version
+                or str(current["hash"] or "") != expected_hash
+            ):
+                raise ValueError(
+                    f"active revision changed for {normalized_slug}; refresh and retry rollback"
+                )
+            revision = conn.execute(
+                "SELECT agent_slug, version, source_version, source_id, hash, content, metadata "
+                "FROM agent_versions WHERE agent_slug = ? AND version = ? LIMIT 1",
+                (normalized_slug, target),
+            ).fetchone()
+            if revision is None:
+                raise ValueError(f"revision not found: {normalized_slug}@{target}")
+            revision_record = dict(revision)
+            content = str(revision_record["content"] or "")
+            revision_hash = str(revision_record["hash"] or "")
+            if not content or not content_identity_matches(content, revision_hash):
+                raise ValueError(f"revision integrity failed: {normalized_slug}@{target}")
+            assert_revision_activation_authority(
+                conn,
+                slug=normalized_slug,
+                revision=revision_record,
+            )
+            metadata = decode_revision_metadata(revision_record["metadata"])
+            if metadata is None:
+                raise ValueError(f"revision {normalized_slug}@{target} predates rollback metadata")
+            if target == expected_version and revision_hash == expected_hash:
+                conn.commit()
+                result = dict(current)
+                for field in _JSON_LIST_FIELDS:
+                    result[field] = _decode_json_list(result.get(field))
+                return result
+
+            activated_at = self._now()
+            conn.execute(
+                "INSERT OR REPLACE INTO agent_active "
+                "(id, agent_slug, name, division, description, source, source_id, "
+                "source_version, version, hash, categories, capabilities, tool_affinity, "
+                "prompt_path, activated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    self._uuid(),
+                    normalized_slug,
+                    metadata["name"],
+                    metadata["division"],
+                    metadata["description"],
+                    metadata["source"],
+                    str(revision_record["source_id"] or ""),
+                    str(revision_record["source_version"] or metadata["source_version"]),
+                    target,
+                    revision_hash,
+                    json.dumps(metadata["categories"]),
+                    json.dumps(metadata["capabilities"]),
+                    json.dumps(metadata["tool_affinity"]),
+                    metadata["prompt_path"],
+                    activated_at,
+                ),
+            )
+            conn.execute("DELETE FROM agent_categories WHERE agent_slug = ?", (normalized_slug,))
+            conn.executemany(
+                "INSERT INTO agent_categories (id, agent_slug, category) VALUES (?, ?, ?)",
+                ((self._uuid(), normalized_slug, category) for category in metadata["categories"]),
+            )
+            conn.execute(
+                "INSERT INTO agent_import_events "
+                "(id, event_type, agent_slug, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+                (
+                    self._uuid(),
+                    "agent_revision_rolled_back",
+                    normalized_slug,
+                    json.dumps(
+                        {
+                            "from_hash": expected_hash,
+                            "from_version": expected_version,
+                            "to_hash": revision_hash,
+                            "to_version": target,
+                        },
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    activated_at,
+                ),
+            )
+            conn.execute(
+                "UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'"
+            )
+            row = conn.execute(
+                "SELECT * FROM agent_active WHERE agent_slug = ?",
+                (normalized_slug,),
+            ).fetchone()
+            conn.commit()
+            result = dict(row)
+            for field in _JSON_LIST_FIELDS:
+                result[field] = _decode_json_list(result.get(field))
+            return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def deactivate_agent(self, slug: str) -> None:
         conn = self._connect()
         try:
-            conn.execute("DELETE FROM agent_active WHERE agent_slug = ?", (slug,))
+            deleted = conn.execute("DELETE FROM agent_active WHERE agent_slug = ?", (slug,))
+            if deleted.rowcount:
+                conn.execute("DELETE FROM agent_categories WHERE agent_slug = ?", (slug,))
+                conn.execute(
+                    "UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'"
+                )
             conn.commit()
         finally:
             conn.close()

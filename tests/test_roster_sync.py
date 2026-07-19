@@ -4,25 +4,31 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterator
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from agency_runtime.cli import roster_commands
 from agency_runtime.cli.main import main
-from agency_runtime.core.config import reset_config_cache
+from agency_runtime.core.config import AgencyConfig, OllamaConfig, reset_config_cache
 from agency_runtime.core.installer import seed_starter_roster
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.roster import ingress as roster_ingress
+from agency_runtime.core.roster import remediation as roster_remediation
 from agency_runtime.core.roster import sync as roster_sync
 from agency_runtime.core.roster.sync import (
     RosterSyncError,
     activate_snapshot,
     approve_snapshot,
+    create_retirement_diff,
     create_roster_diff,
     download_from_source,
+    list_source_scans,
     parse_agent_file,
     quarantine_candidate,
+    quarantine_manifest_import,
 )
 from agency_runtime.core.store.sqlite import Store
 
@@ -34,19 +40,97 @@ def _isolated_config_cache() -> Iterator[None]:
     reset_config_cache()
 
 
-def _agent(slug: str, description: str = "Useful specialist") -> dict[str, object]:
+def _governed_payload(
+    slug: str,
+    description: str,
+    *,
+    prompt: str | None = None,
+    categories: list[str] | None = None,
+) -> dict[str, object]:
     return {
         "slug": slug,
         "name": slug.replace("-", " ").title(),
         "description": description,
         "division": "engineering",
-        "body": f"You are {slug}, a useful specialist.",
+        "categories": categories or ["engineering", "testing"],
+        "capabilities": ["perform bounded fixture work"],
+        "anti_capabilities": ["claim unverified completion"],
+        "task_types": ["review"],
+        "preferred_when": ["the bounded fixture matches"],
+        "avoid_when": ["required evidence is unavailable"],
+        "required_tools": [],
+        "tool_affinity": [],
+        "supported_hosts": ["codex"],
+        "supported_platforms": ["linux", "windows"],
+        "authority": "review",
+        "context_mode": "isolated_only",
+        "conflicts_with": [],
+        "requires": [],
+        "independence_group": f"fixture-{slug}",
+        "expected_output_contract": "Return bounded evidence-backed fixture output.",
+        "evidence_requirements": ["cite the fixture result"],
+        "model_requirements": ["instruction-adherence"],
+        "source_revision": "test-revision",
+        "audit_revision": "test",
+        "audit_status": "approved",
+        "findings": [],
+        "prompt_body": prompt or f"You are {slug}, a useful specialist.",
     }
+
+
+def _agent(
+    slug: str,
+    description: str = "Useful specialist",
+    *,
+    prompt: str | None = None,
+    categories: list[str] | None = None,
+) -> dict[str, object]:
+    payload = _governed_payload(
+        slug,
+        description,
+        prompt=prompt,
+        categories=categories,
+    )
+    return {**payload, "content": json.dumps(payload, sort_keys=True, separators=(",", ":"))}
+
+
+def _governed_markdown(
+    slug: str,
+    description: str,
+    prompt: str,
+    *,
+    categories: list[str] | None = None,
+) -> str:
+    payload = _governed_payload(
+        slug,
+        description,
+        prompt=prompt,
+        categories=categories,
+    )
+    front_matter = "\n".join(
+        f"{key}: {json.dumps(value)}" for key, value in payload.items() if key != "prompt_body"
+    )
+    return f"---\n{front_matter}\n---\n{prompt}\n"
 
 
 def _write_roster(path: Path, *agents: dict[str, object]) -> Path:
     path.write_text(json.dumps(list(agents)), encoding="utf-8")
     return path
+
+
+def test_documented_example_roster_passes_governed_approval_gate(tmp_path: Path) -> None:
+    source = Path(__file__).parents[1] / "examples" / "rosters" / "agents.json"
+    downloaded = download_from_source(str(source))
+    assert [agent["slug"] for agent in downloaded] == [
+        "example-code-reviewer",
+        "example-technical-writer",
+    ]
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(source), "documented-example")
+    candidate_ids = [quarantine_candidate(agent, source_id, store) for agent in downloaded]
+    snapshot = create_roster_diff(store, candidate_ids=candidate_ids)
+
+    approve_snapshot(store, snapshot["snapshot_id"])
 
 
 def test_source_add_can_mark_trusted_for_auto_approve(monkeypatch, tmp_path):
@@ -99,19 +183,27 @@ def test_auto_approve_fails_closed_on_source_errors(monkeypatch, tmp_path):
     assert Store().get_active_roster_as_catalog() == []
 
 
-def test_auto_approve_activates_trusted_snapshot_and_prunes_removed_agents(
+def test_auto_approve_activates_trusted_delta_and_preserves_unrelated_agents(
     monkeypatch, tmp_path, capsys
 ):
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "agency.db"))
+    monkeypatch.setattr(
+        roster_commands,
+        "load_config",
+        lambda: AgencyConfig(ollama=OllamaConfig(enabled=False, model="")),
+    )
     source = _write_roster(tmp_path / "agents.json", _agent("new-specialist"))
     store = Store()
-    store.activate_agent(_agent("obsolete-specialist"))
+    store._activate_prevalidated_agent(_agent("obsolete-specialist"))
     store.add_agent_source(str(source), "trusted", trusted_for_auto_approve=True)
 
     assert main(["sync", "--auto-approve"]) == 0
 
     roster = Store().get_active_roster_as_catalog()
-    assert [agent["slug"] for agent in roster] == ["new-specialist"]
+    assert [agent["slug"] for agent in roster] == [
+        "new-specialist",
+        "obsolete-specialist",
+    ]
     assert roster[0]["description"] == "Useful specialist"
 
     capsys.readouterr()
@@ -131,6 +223,11 @@ def test_auto_approve_activates_trusted_snapshot_and_prunes_removed_agents(
 
 def test_auto_approve_snapshot_is_scoped_to_current_sync(monkeypatch, tmp_path):
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "agency.db"))
+    monkeypatch.setattr(
+        roster_commands,
+        "load_config",
+        lambda: AgencyConfig(ollama=OllamaConfig(enabled=False, model="")),
+    )
     old_source = _write_roster(tmp_path / "old.json", _agent("old-pending"))
     new_source = _write_roster(tmp_path / "new.json", _agent("new-specialist"))
     store = Store()
@@ -162,15 +259,19 @@ def test_auto_approve_snapshot_is_scoped_to_current_sync(monkeypatch, tmp_path):
 
 def test_starter_roster_seed_does_not_overwrite_synced_agents(tmp_path):
     store = Store(tmp_path / "agency.db")
-    store.activate_agent(
+    source_id = store.add_agent_source("trusted-source", "trusted")
+    candidate_id = quarantine_candidate(
         {
-            "slug": "code-reviewer",
-            "name": "Code Reviewer",
-            "description": "Synced upstream reviewer",
+            **_agent("code-reviewer", "Synced upstream reviewer"),
             "source": "trusted-source",
-            "hash": "upstream-hash",
-        }
+        },
+        source_id,
+        store,
     )
+    snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
+    approve_snapshot(store, snapshot["snapshot_id"])
+    activate_snapshot(store, snapshot["snapshot_id"])
+    before = store.get_roster_entry("code-reviewer")
 
     count = seed_starter_roster(store)
 
@@ -180,7 +281,8 @@ def test_starter_roster_seed_does_not_overwrite_synced_agents(tmp_path):
     )
     assert code_reviewer["description"] == "Synced upstream reviewer"
     assert code_reviewer["source"] == "trusted-source"
-    assert code_reviewer["hash"] == "upstream-hash"
+    assert code_reviewer["hash"] == before["hash"]
+    assert code_reviewer["version"] == before["version"]
     assert seed_starter_roster(store) == 0
 
 
@@ -483,6 +585,1088 @@ def test_file_url_is_portable_for_local_sources(tmp_path):
     assert [agent["slug"] for agent in agents] == ["file-url-agent"]
 
 
+def test_manifest_directory_imports_only_declared_agents_and_infers_identity(tmp_path):
+    (tmp_path / "engineering").mkdir()
+    (tmp_path / "support").mkdir()
+    (tmp_path / "examples").mkdir()
+    (tmp_path / "integrations").mkdir()
+    (tmp_path / "divisions.json").write_text(
+        json.dumps(
+            {
+                "_note": "Only these source divisions contain agents.",
+                "divisions": {
+                    "support": {"label": "Support"},
+                    "engineering": {"label": "Engineering"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "engineering" / "api-data.md").write_text(
+        """---
+name: API & Data_Engineer++
+description: Designs dependable data APIs: secure, observable, and maintainable.
+---
+Build secure, observable data services.
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "engineering" / "explicit.md").write_text(
+        """---
+slug: operator-owned
+name: Explicit Agent
+description: Keeps explicit metadata.
+division: custom
+---
+Preserve explicit identity fields.
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "support" / "bundle.json").write_text(
+        json.dumps(
+            [
+                {
+                    "name": "Support Responder",
+                    "description": "Resolves customer incidents.",
+                    "body": "Triage and resolve the support request.",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "engineering" / "QUICKSTART.md").write_text(
+        "# Not an agent\nThis documentation has no front matter.",
+        encoding="utf-8",
+    )
+    (tmp_path / "README.md").write_text("# Catalog documentation", encoding="utf-8")
+    (tmp_path / "examples" / "example.md").write_text(
+        """---
+name: Example Output
+description: Must not be imported.
+---
+This is an orchestration example, not an agent.
+""",
+        encoding="utf-8",
+    )
+    _write_roster(tmp_path / "integrations" / "converted.json", _agent("converted-copy"))
+
+    agents = download_from_source(str(tmp_path))
+
+    assert {
+        agent["slug"]: (agent["division"], Path(agent["prompt_path"]).name) for agent in agents
+    } == {
+        "api-data-engineer": ("engineering", "api-data.md"),
+        "operator-owned": ("custom", "explicit.md"),
+        "support-responder": ("support", "bundle.json"),
+    }
+    assert all(agent["source"] == str(tmp_path) for agent in agents)
+    assert [
+        (outcome.status, outcome.relative_path, outcome.slug) for outcome in agents.outcomes
+    ] == [
+        ("candidate", "engineering/api-data.md", "api-data-engineer"),
+        ("candidate", "engineering/explicit.md", "operator-owned"),
+        ("ignored", "engineering/QUICKSTART.md", ""),
+        ("candidate", "support/bundle.json", "support-responder"),
+    ]
+    assert (
+        next(agent for agent in agents if agent["slug"] == "api-data-engineer")["description"]
+        == "Designs dependable data APIs: secure, observable, and maintainable."
+    )
+
+
+def test_manifest_agent_flat_front_matter_fallback_is_bounded_and_context_scoped(
+    monkeypatch,
+):
+    content = """---
+name: Developer Tooling Engineer
+description: Builds developer platforms with great DX: intuitive commands and errors.
+color: "#4F46E5"
+
+---
+Build dependable command-line tools.
+"""
+    agent = parse_agent_file(content, inferred_division="engineering")
+    assert agent["slug"] == "developer-tooling-engineer"
+    assert agent["division"] == "engineering"
+    assert agent["description"].endswith("intuitive commands and errors.")
+
+    with pytest.raises(RosterSyncError, match="YAML is not valid bounded data"):
+        parse_agent_file(content)
+
+    malformed_fields = (
+        "missing separator",
+        " nested: value",
+        "not.valid: value",
+        "empty:",
+        "anchor: &shared",
+        "name: Agent\nname: Duplicate",
+    )
+    for fields in malformed_fields:
+        with pytest.raises(RosterSyncError, match="front matter"):
+            roster_ingress._load_flat_front_matter(fields, "front matter")
+
+    with pytest.raises(RosterSyncError, match="must not be empty"):
+        roster_ingress._load_flat_front_matter("\n", "front matter")
+
+    monkeypatch.setattr(roster_ingress, "MAX_LIST_ITEMS", 1)
+    with pytest.raises(RosterSyncError, match="more than 1 fields"):
+        roster_ingress._load_flat_front_matter("one: value\ntwo: value", "front matter")
+
+    monkeypatch.setattr(roster_ingress, "MAX_LIST_ITEMS", 256)
+    monkeypatch.setattr(roster_ingress, "MAX_METADATA_TEXT_BYTES", 4)
+    with pytest.raises(RosterSyncError, match="field name is 5 bytes"):
+        roster_ingress._load_flat_front_matter("name: Agent", "front matter")
+
+
+def test_manifest_ingress_edge_outcomes_remain_bounded_and_fail_closed():
+    source_document = roster_ingress._SourceDocument(
+        "root/engineering/agent.md",
+        "plain source",
+        "engineering",
+        "engineering/agent.md",
+    )
+    assert list(source_document) == [
+        "root/engineering/agent.md",
+        "plain source",
+    ]
+    assert roster_ingress._manifest_slug_hint("plain", "odd.name.md") == "odd-name"
+    assert roster_ingress._manifest_slug_hint("plain", "---") == (
+        "invalid-agent-" + roster_ingress._hash_text("---")[:12]
+    )
+    assert roster_ingress._manifest_slug_hint("---\n---\nPrompt", "fallback.md") == "fallback"
+    assert (
+        roster_ingress._manifest_slug_hint(
+            "---\ndescription: No name\ncolor: blue\n---\nPrompt",
+            "described.md",
+        )
+        == "described"
+    )
+    assert roster_ingress._manifest_finding("safe", ValueError("bad shape")) == (
+        "invalid_agent:ValueError:bad shape"
+    )
+
+    accumulator = roster_ingress._DownloadAccumulator("source")
+    accumulator._quarantine(source_document, ValueError("bad shape"))
+    accumulator._quarantine(source_document, ValueError("bad shape"))
+    assert len(accumulator.outcomes) == 1
+
+    invalid_candidate_document = replace(
+        source_document,
+        origin="root/engineering/invalid.md",
+        relative_path="engineering/invalid.md",
+    )
+    accumulator._append(
+        {
+            "slug": "x",
+            "name": "X",
+            "description": "Too-short slug.",
+            "prompt_body": "Prompt.",
+            "content": "Prompt.",
+        },
+        invalid_candidate_document,
+    )
+    assert accumulator.outcomes[-1].status == "quarantined"
+    assert accumulator.outcomes[-1].finding.startswith("invalid_agent:slug must")
+
+    malformed_json = replace(
+        source_document,
+        origin="root/engineering/malformed.json",
+        relative_path="engineering/malformed.json",
+    )
+    accumulator._ingest_json(malformed_json, "{}")
+    invalid_item = replace(
+        malformed_json,
+        origin="root/engineering/item.json",
+        relative_path="engineering/item.json",
+    )
+    accumulator._ingest_json(invalid_item, "[1]")
+    assert [outcome.status for outcome in accumulator.outcomes[-2:]] == [
+        "quarantined",
+        "quarantined",
+    ]
+
+    generic = roster_ingress._SourceDocument("generic.json", "{}")
+    with pytest.raises(ValueError, match="must be a list"):
+        accumulator._ingest_json(generic, "{}")
+    with pytest.raises(ValueError, match="empty agent file"):
+        accumulator._ingest_agent(roster_ingress._SourceDocument("empty.md", " "))
+
+    invalid_flat_fallback = """---
+name: Agent
+description: Invalid YAML: forces the flat fallback.
+ nested: rejected
+---
+Prompt.
+"""
+    with pytest.raises(RosterSyncError, match="YAML is not valid bounded data"):
+        parse_agent_file(
+            invalid_flat_fallback,
+            inferred_division="engineering",
+        )
+
+
+@pytest.mark.parametrize(
+    ("manifest", "reason"),
+    [
+        ("[]", "must be an object"),
+        ("{}", "non-empty divisions object"),
+        ('{"divisions":[]}', "non-empty divisions object"),
+        ('{"divisions":{}}', "non-empty divisions object"),
+        ('{"divisions":{"engineering":[]}}', "entry must be an object"),
+        ('{"divisions":{"../escape":{}}}', "unsafe division name"),
+        (
+            '{"divisions":{"engineering":{},"engineering":{}}}',
+            "duplicate key",
+        ),
+    ],
+)
+def test_manifest_directory_fails_closed_on_malformed_manifest(
+    tmp_path,
+    manifest,
+    reason,
+):
+    (tmp_path / "engineering").mkdir()
+    (tmp_path / "divisions.json").write_text(manifest, encoding="utf-8")
+
+    with pytest.raises(RosterSyncError, match=reason):
+        download_from_source(str(tmp_path))
+
+
+def test_manifest_directory_rejects_missing_and_oversize_manifests(monkeypatch, tmp_path):
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"missing":{}}}',
+        encoding="utf-8",
+    )
+    with pytest.raises(RosterSyncError, match="path is unavailable"):
+        download_from_source(str(tmp_path))
+
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    (tmp_path / "engineering").mkdir()
+    monkeypatch.setattr(roster_ingress, "MAX_DIVISION_MANIFEST_BYTES", 8)
+    with pytest.raises(RosterSyncError, match=r"division manifest is .* bytes"):
+        download_from_source(str(tmp_path))
+
+
+def test_manifest_directory_rejects_duplicate_derived_agent_slugs(tmp_path):
+    for division in ("engineering", "support"):
+        path = tmp_path / division
+        path.mkdir()
+        (path / "agent.md").write_text(
+            """---
+name: Shared Specialist
+description: A colliding agent identity.
+---
+Do specialist work.
+""",
+            encoding="utf-8",
+        )
+    (tmp_path / "divisions.json").write_text(
+        json.dumps({"divisions": {"engineering": {}, "support": {}}}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RosterSyncError, match="duplicate agent slug 'shared-specialist'"):
+        download_from_source(str(tmp_path))
+
+
+def test_manifest_directory_quarantines_an_unsafe_agent_with_exact_evidence(tmp_path):
+    division = tmp_path / "engineering"
+    division.mkdir()
+    corrupt = division / "corrupt-agent.md"
+    corrupt.write_text(
+        """---
+name: Corrupt Agent
+description: Contains an unsafe prompt byte.
+---
+Unsafe \x04 prompt.
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+
+    downloaded = download_from_source(str(tmp_path))
+
+    assert downloaded == []
+    [outcome] = downloaded.outcomes
+    assert outcome.status == "quarantined"
+    assert outcome.relative_path == "engineering/corrupt-agent.md"
+    assert outcome.slug == "corrupt-agent"
+    byte_offset = corrupt.read_bytes().find(b"\x04")
+    assert outcome.finding == f"unsafe_control:U+0004x1@{byte_offset}"
+    assert outcome.content == corrupt.read_bytes().decode("utf-8")
+    assert outcome.content_hash == roster_ingress._hash_text(outcome.content)
+
+
+@pytest.mark.parametrize(
+    ("body", "finding"),
+    [
+        ("Unknown \x80 C1 corruption.", "unsafe_control:U+0080x1"),
+        (
+            "## =' Platform Integrations\nUnknown mojibake marker.",
+            "suspicious_source_encoding:markdown_heading_mojibake",
+        ),
+        ("## ðŸš€ Feature", "suspicious_source_encoding:markdown_heading_mojibake"),
+        ("## â€” Plan", "suspicious_source_encoding:markdown_heading_mojibake"),
+        ("## Ã¢ Broken", "suspicious_source_encoding:markdown_heading_mojibake"),
+        ("Replacement \ufffd marker", "suspicious_source_encoding:markdown_heading_mojibake"),
+        ("Embedded \ufeff BOM", "unsafe_control:U+FEFFx1"),
+    ],
+)
+def test_manifest_directory_quarantines_unknown_encoding_without_guessing(
+    tmp_path,
+    body,
+    finding,
+):
+    division = tmp_path / "engineering"
+    division.mkdir()
+    source = division / "unknown-encoding.md"
+    source.write_text(
+        f"---\nname: Unknown Encoding\ndescription: Must remain quarantined.\n---\n{body}\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+
+    downloaded = download_from_source(str(tmp_path))
+
+    assert downloaded == []
+    [outcome] = downloaded.outcomes
+    assert outcome.status == "quarantined"
+    expected = finding
+    if "\x80" in body or "\ufeff" in body:
+        control = "\x80" if "\x80" in body else "\ufeff"
+        expected += f"@{source.read_bytes().find(control.encode('utf-8'))}"
+    assert outcome.finding == expected
+    assert outcome.content == source.read_bytes().decode("utf-8")
+
+
+def test_manifest_ingress_scans_each_document_once(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    division = tmp_path / "engineering"
+    division.mkdir()
+    source = division / "unsafe.md"
+    source.write_text(
+        "---\nname: Unsafe\ndescription: Must remain quarantined.\n---\nInvisible \u202e marker.\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    calls = 0
+    original = roster_ingress.scan_source_text
+
+    def counted_scan(content: str):
+        nonlocal calls
+        calls += 1
+        return original(content)
+
+    monkeypatch.setattr(roster_ingress, "scan_source_text", counted_scan)
+
+    downloaded = download_from_source(str(tmp_path))
+
+    assert downloaded == []
+    assert downloaded.outcomes[0].finding.startswith("unsafe_control:U+202E")
+    assert calls == 1
+
+
+def test_manifest_directory_accepts_legitimate_accented_prose(tmp_path):
+    division = tmp_path / "marketing"
+    division.mkdir()
+    (division / "accented.md").write_bytes(
+        (
+            "---\nname: Accented Reviewer\ndescription: Reviews localized prose.\n---\n"
+            "## À propos\n## Équipe\n"
+            "José reviewed São Paulo, a naïve café phrase, and the word Âge.\n"
+        ).encode()
+    )
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"marketing":{}}}',
+        encoding="utf-8",
+    )
+
+    downloaded = download_from_source(str(tmp_path))
+
+    assert [agent["slug"] for agent in downloaded] == ["accented-reviewer"]
+    assert downloaded.outcomes[0].status == "candidate"
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        '{"slug":"c1-json","description":"bad \\u0080","content":"bad \\u0080"}',
+        "---\nname: C1 YAML\ndescription: bad \x80\n---\nPrompt",
+        "# C1 Markdown\nBad \x80 prompt",
+    ],
+)
+def test_single_agent_parsers_reject_c1_controls(content):
+    with pytest.raises(RosterSyncError, match="unsafe control character"):
+        parse_agent_file(content)
+
+
+def test_manifest_partial_quarantine_is_atomic_idempotent_and_never_activates_rejects(
+    tmp_path,
+):
+    source = tmp_path / "catalog"
+    division = source / "engineering"
+    division.mkdir(parents=True)
+    (source / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    (division / "valid.md").write_text(
+        _governed_markdown(
+            "valid-builder",
+            "Builds valid systems.",
+            "Build the requested system.",
+        ),
+        encoding="utf-8",
+    )
+    corrupt = division / "corrupt.md"
+    corrupt.write_text(
+        """---
+name: Corrupt Builder
+description: Contains upstream corruption.
+---
+Broken \x04 heading and another \x04 marker.
+""",
+        encoding="utf-8",
+    )
+    (division / "README.md").write_text("# Division notes", encoding="utf-8")
+    downloaded = download_from_source(str(source))
+    assert [agent["slug"] for agent in downloaded] == ["valid-builder"]
+    assert {(outcome.relative_path, outcome.status) for outcome in downloaded.outcomes} == {
+        ("engineering/corrupt.md", "quarantined"),
+        ("engineering/README.md", "ignored"),
+        ("engineering/valid.md", "candidate"),
+    }
+
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(source), "manifest")
+    store._activate_prevalidated_agent(
+        {
+            **_agent("corrupt-builder"),
+            "source_id": source_id,
+            "source": str(source),
+        }
+    )
+    store._activate_prevalidated_agent(_agent("unrelated-agent"))
+    first_ids, first_outcomes = quarantine_manifest_import(
+        downloaded,
+        downloaded.outcomes,
+        source_id,
+        store,
+    )
+    second_ids, second_outcomes = quarantine_manifest_import(
+        downloaded,
+        downloaded.outcomes,
+        source_id,
+        store,
+    )
+    assert second_ids == first_ids
+    assert second_outcomes == first_outcomes
+
+    conn = store._connect()
+    try:
+        counts = {
+            table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in (
+                "agent_downloads",
+                "agent_candidates",
+                "agent_import_events",
+            )
+        }
+        rejected = conn.execute(
+            "SELECT d.content, d.hash, d.status "
+            "FROM agent_downloads d "
+            "LEFT JOIN agent_candidates c ON c.download_id = d.id "
+            "WHERE c.id IS NULL"
+        ).fetchone()
+        event_types = {
+            row["event_type"]
+            for row in conn.execute("SELECT event_type FROM agent_import_events").fetchall()
+        }
+    finally:
+        conn.close()
+    assert counts == {
+        "agent_downloads": 2,
+        "agent_candidates": 1,
+        "agent_import_events": 5,
+    }
+    assert rejected["content"] == corrupt.read_bytes().decode("utf-8")
+    assert rejected["hash"] == roster_ingress._hash_text(rejected["content"])
+    assert rejected["status"] == "quarantined"
+    assert event_types == {
+        "candidate_quarantined",
+        "manifest_entry_ignored",
+        "manifest_entry_quarantined",
+        "manifest_entry_remediation_queued",
+        "source_scan_recorded",
+    }
+
+    diff = create_roster_diff(store, candidate_ids=first_ids)
+    approve_snapshot(store, diff["snapshot_id"])
+    activate_snapshot(store, diff["snapshot_id"])
+    assert [row["agent_slug"] for row in store.get_active_roster()] == [
+        "corrupt-builder",
+        "unrelated-agent",
+        "valid-builder",
+    ]
+    assert list_source_scans(store)[0]["status"] == "partial"
+    conn = store._connect()
+    try:
+        rejected_status = conn.execute(
+            "SELECT d.status FROM agent_downloads d "
+            "LEFT JOIN agent_candidates c ON c.download_id = d.id "
+            "WHERE c.id IS NULL"
+        ).fetchone()["status"]
+    finally:
+        conn.close()
+    assert rejected_status == "quarantined"
+
+
+def test_manifest_partial_quarantine_rolls_back_the_entire_batch(
+    monkeypatch,
+    tmp_path,
+):
+    source = tmp_path / "catalog"
+    division = source / "engineering"
+    division.mkdir(parents=True)
+    (source / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    (division / "valid.md").write_text(
+        """---
+name: Valid Agent
+description: Valid candidate.
+---
+Valid prompt.
+""",
+        encoding="utf-8",
+    )
+    (division / "corrupt.md").write_text(
+        """---
+name: Corrupt Agent
+description: Invalid candidate.
+---
+Invalid \x04 prompt.
+""",
+        encoding="utf-8",
+    )
+    downloaded = download_from_source(str(source))
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(source), "manifest")
+
+    def fail_event(*_args, **_kwargs):
+        raise RuntimeError("event write failed")
+
+    monkeypatch.setattr(roster_sync, "_record_import_event", fail_event)
+    with pytest.raises(RuntimeError, match="event write failed"):
+        quarantine_manifest_import(
+            downloaded,
+            downloaded.outcomes,
+            source_id,
+            store,
+        )
+
+    conn = store._connect()
+    try:
+        assert conn.execute("SELECT COUNT(*) FROM agent_downloads").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM agent_candidates").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM agent_import_events").fetchone()[0] == 0
+    finally:
+        conn.close()
+
+
+def test_manifest_batch_validation_rejects_inconsistent_or_unbounded_evidence(
+    monkeypatch,
+):
+    agent = roster_ingress._normalize_agent(_agent("valid-agent"))
+    candidate = roster_ingress.ManifestImportOutcome(
+        status="candidate",
+        origin="root/engineering/valid.md",
+        relative_path="engineering/valid.md",
+        slug="valid-agent",
+        content_hash=agent["hash"],
+        finding="candidate_ready",
+    )
+    rejected_content = "unsafe \x04 content"
+    rejected = roster_ingress.ManifestImportOutcome(
+        status="quarantined",
+        origin="root/engineering/rejected.md",
+        relative_path="engineering/rejected.md",
+        slug="rejected-agent",
+        content_hash=roster_ingress._hash_text(rejected_content),
+        finding="unsafe_control:U+0004x1",
+        content=rejected_content,
+        remediation_attempt=roster_remediation.remediation_attempt(
+            rejected_content,
+            "unsafe_control:U+0004x1",
+        ),
+    )
+    ignored = roster_ingress.ManifestImportOutcome(
+        status="ignored",
+        origin="root/engineering/README.md",
+        relative_path="engineering/README.md",
+        slug="",
+        content_hash=roster_ingress._hash_text("# Notes"),
+        finding="not_agent_definition:missing_front_matter",
+    )
+
+    with monkeypatch.context() as context:
+        context.setattr(roster_sync, "MAX_SOURCE_CANDIDATES", 0)
+        with pytest.raises(RosterSyncError, match="more than 0 candidates"):
+            roster_sync._validated_manifest_batch([agent], [candidate])
+    with pytest.raises(RosterSyncError, match="invalid manifest candidate"):
+        roster_sync._validated_manifest_batch(
+            [{**agent, "description": ""}],
+            [candidate],
+        )
+    with pytest.raises(RosterSyncError, match="duplicate agent slug"):
+        roster_sync._validated_manifest_batch([agent, agent], [candidate])
+
+    validation_sets = {
+        "candidates_by_slug": {"valid-agent": agent},
+        "candidate_outcome_slugs": set(),
+        "quarantined_entries": set(),
+    }
+    with pytest.raises(RosterSyncError, match="invalid type"):
+        roster_sync._validate_manifest_outcome(object(), **validation_sets)
+    with pytest.raises(RosterSyncError, match="invalid status"):
+        roster_sync._validate_manifest_outcome(
+            replace(candidate, status="unknown"),
+            **validation_sets,
+        )
+    with pytest.raises(RosterSyncError, match="unsafe relative path"):
+        roster_sync._validate_manifest_outcome(
+            replace(candidate, relative_path="../escape.md"),
+            **validation_sets,
+        )
+    with pytest.raises(RosterSyncError, match="hash is invalid"):
+        roster_sync._validate_manifest_outcome(
+            replace(candidate, content_hash="bad"),
+            **validation_sets,
+        )
+    with pytest.raises(RosterSyncError, match="does not match its candidate"):
+        roster_sync._validate_manifest_outcome(
+            replace(candidate, slug="other-agent"),
+            **validation_sets,
+        )
+    with pytest.raises(RosterSyncError, match="may not carry source content"):
+        roster_sync._validate_manifest_outcome(
+            replace(ignored, content="# Notes"),
+            **validation_sets,
+        )
+    with pytest.raises(RosterSyncError, match="content hash does not match"):
+        roster_sync._validate_manifest_outcome(
+            replace(rejected, content="changed"),
+            **validation_sets,
+        )
+    duplicate_identity = {
+        (
+            rejected.relative_path,
+            rejected.slug,
+            rejected.content_hash,
+        )
+    }
+    with pytest.raises(RosterSyncError, match="duplicate quarantined outcomes"):
+        roster_sync._validate_manifest_outcome(
+            rejected,
+            candidates_by_slug={"valid-agent": agent},
+            candidate_outcome_slugs=set(),
+            quarantined_entries=duplicate_identity,
+        )
+
+    with monkeypatch.context() as context:
+        context.setattr(roster_sync, "MAX_SOURCE_CANDIDATES", 0)
+        context.setattr(roster_sync, "MAX_SOURCE_FILES", 0)
+        with pytest.raises(RosterSyncError, match="too many entry outcomes"):
+            roster_sync._validated_manifest_batch([], [ignored])
+    with pytest.raises(RosterSyncError, match="candidates and entry outcomes"):
+        roster_sync._validated_manifest_batch([agent], [])
+    with monkeypatch.context() as context:
+        context.setattr(roster_sync, "MAX_TOTAL_SOURCE_BYTES", 0)
+        with pytest.raises(RosterSyncError, match="manifest import content"):
+            roster_sync._validated_manifest_batch([agent], [candidate])
+
+
+def test_manifest_batch_rejects_unknown_and_disabled_sources(tmp_path):
+    agent = roster_ingress._normalize_agent(_agent("valid-agent"))
+    candidate = roster_ingress.ManifestImportOutcome(
+        status="candidate",
+        origin="root/engineering/valid.md",
+        relative_path="engineering/valid.md",
+        slug="valid-agent",
+        content_hash=agent["hash"],
+        finding="candidate_ready",
+    )
+    store = Store(tmp_path / "agency.db")
+    with pytest.raises(RosterSyncError, match="unknown source"):
+        quarantine_manifest_import([agent], [candidate], "missing", store)
+
+    source_id = store.add_agent_source("source", "source")
+    conn = store._connect()
+    try:
+        conn.execute("UPDATE agent_sources SET enabled = 0 WHERE id = ?", (source_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    with pytest.raises(RosterSyncError, match="disabled source"):
+        quarantine_manifest_import([agent], [candidate], source_id, store)
+
+
+def test_manifest_rejection_evidence_is_path_specific_and_tamper_evident(tmp_path):
+    def rejected(path, content):
+        finding = "unsafe_control:U+0004x1"
+        return roster_ingress.ManifestImportOutcome(
+            status="quarantined",
+            origin=f"root/{path}",
+            relative_path=path,
+            slug="same-agent",
+            content_hash=roster_ingress._hash_text(content),
+            finding=finding,
+            content=content,
+            remediation_attempt=roster_remediation.remediation_attempt(content, finding),
+        )
+
+    path_store = Store(tmp_path / "paths.db")
+    path_source = path_store.add_agent_source("path-source", "path-source")
+    first = rejected("engineering/first.md", "first \x04")
+    second = rejected("engineering/second.md", "second \x04")
+    quarantine_manifest_import([], [first], path_source, path_store)
+    quarantine_manifest_import([], [second], path_source, path_store)
+    conn = path_store._connect()
+    try:
+        assert conn.execute("SELECT COUNT(*) FROM agent_downloads").fetchone()[0] == 2
+        assert (
+            conn.execute(
+                "SELECT COUNT(*) FROM agent_import_events "
+                "WHERE event_type = 'manifest_entry_quarantined'"
+            ).fetchone()[0]
+            == 2
+        )
+    finally:
+        conn.close()
+
+    tamper_store = Store(tmp_path / "tamper.db")
+    tamper_source = tamper_store.add_agent_source("tamper-source", "tamper-source")
+    quarantine_manifest_import([], [first], tamper_source, tamper_store)
+    conn = tamper_store._connect()
+    try:
+        conn.execute(
+            "UPDATE agent_downloads SET content = 'tampered' WHERE source_id = ?",
+            (tamper_source,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    with pytest.raises(RosterSyncError, match="evidence is incomplete or tampered"):
+        quarantine_manifest_import([], [first], tamper_source, tamper_store)
+
+    event_store = Store(tmp_path / "event.db")
+    event_source = event_store.add_agent_source("event-source", "event-source")
+    quarantine_manifest_import([], [first], event_source, event_store)
+    conn = event_store._connect()
+    try:
+        conn.execute(
+            "UPDATE agent_import_events SET detail = '[]' "
+            "WHERE event_type = 'manifest_entry_quarantined'"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    with pytest.raises(RosterSyncError, match="evidence is incomplete or tampered"):
+        quarantine_manifest_import([], [first], event_source, event_store)
+
+
+def test_cli_collects_manifest_outcomes_without_turning_rejections_into_errors(
+    monkeypatch,
+    tmp_path,
+):
+    source = tmp_path / "catalog"
+    division = source / "engineering"
+    division.mkdir(parents=True)
+    (source / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    (division / "valid.md").write_text(
+        """---
+name: Valid Agent
+description: Valid candidate.
+---
+Valid prompt.
+""",
+        encoding="utf-8",
+    )
+    (division / "corrupt.md").write_text(
+        """---
+name: Corrupt Agent
+description: Invalid candidate.
+---
+Invalid \x04 prompt.
+""",
+        encoding="utf-8",
+    )
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(source), "manifest")
+    source_row = {"id": source_id, "url": str(source)}
+
+    persisted_outcomes: list[dict[str, str]] = []
+    candidate_ids, errors = roster_commands._collect_sync_candidates(
+        [source_row],
+        store,
+        dry_run=False,
+        outcome_sink=persisted_outcomes,
+    )
+    assert len(candidate_ids) == 1
+    assert errors == []
+    assert {outcome["status"] for outcome in persisted_outcomes} == {
+        "candidate",
+        "quarantined",
+    }
+
+    dry_outcomes: list[dict[str, str]] = []
+    dry_candidates, dry_errors = roster_commands._collect_sync_candidates(
+        [source_row],
+        store,
+        dry_run=True,
+        outcome_sink=dry_outcomes,
+    )
+    assert dry_candidates == ["valid-agent"]
+    assert dry_errors == []
+    assert {outcome["status"] for outcome in dry_outcomes} == {
+        "candidate",
+        "quarantined",
+    }
+
+    monkeypatch.setattr(
+        roster_commands,
+        "quarantine_manifest_import",
+        lambda *_args: (_ for _ in ()).throw(RuntimeError("batch failed")),
+    )
+    failed_outcomes: list[dict[str, str]] = []
+    failed_ids, failed_errors = roster_commands._collect_sync_candidates(
+        [source_row],
+        store,
+        dry_run=False,
+        outcome_sink=failed_outcomes,
+    )
+    assert failed_ids == []
+    assert failed_outcomes == []
+    assert failed_errors == [{"source": str(source), "error": "batch failed"}]
+
+    emitted: list[dict[str, object]] = []
+    monkeypatch.setattr(roster_commands, "_print_json", emitted.append)
+    monkeypatch.setattr(
+        roster_commands,
+        "create_roster_diff",
+        lambda *_args, **_kwargs: {"snapshot_id": "snapshot", "diff": {}},
+    )
+    result = roster_commands._complete_sync(
+        SimpleNamespace(review=False, auto_approve=False),
+        store,
+        ["candidate"],
+        [],
+        [{"status": "quarantined"}],
+    )
+    assert result == 0
+    assert emitted == [{"outcomes": [{"status": "quarantined"}]}]
+
+
+def test_manifest_directory_uses_shared_discovery_budgets(monkeypatch, tmp_path):
+    for division in ("engineering", "support"):
+        path = tmp_path / division
+        path.mkdir()
+        (path / "agent.md").write_text(
+            f"""---
+name: {division.title()} Agent
+description: A bounded agent.
+---
+Do bounded work.
+""",
+            encoding="utf-8",
+        )
+    (tmp_path / "divisions.json").write_text(
+        json.dumps({"divisions": {"engineering": {}, "support": {}}}),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(roster_ingress, "MAX_SOURCE_FILES", 1)
+    with pytest.raises(RosterSyncError, match="more than 1 agent files"):
+        download_from_source(str(tmp_path))
+
+    monkeypatch.setattr(roster_ingress, "MAX_SOURCE_FILES", 2)
+    monkeypatch.setattr(roster_ingress, "MAX_DIRECTORY_ENTRIES", 1)
+    with pytest.raises(RosterSyncError, match="exceeds 1 entries"):
+        download_from_source(str(tmp_path))
+
+
+def test_manifest_directory_rejects_declared_division_symlink(tmp_path):
+    target = tmp_path / "real-engineering"
+    target.mkdir()
+    try:
+        (tmp_path / "engineering").symlink_to(target, target_is_directory=True)
+    except (NotImplementedError, OSError):
+        pytest.skip("symbolic links are unavailable for this test user")
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RosterSyncError, match="symbolic links"):
+        download_from_source(str(tmp_path))
+
+
+def test_manifest_directory_rejects_non_directory_shapes_and_excess_divisions(
+    monkeypatch,
+    tmp_path,
+):
+    manifest_directory_root = tmp_path / "manifest-directory"
+    manifest_directory_root.mkdir()
+    (manifest_directory_root / "divisions.json").mkdir()
+    with pytest.raises(RosterSyncError, match="manifest must be a regular file"):
+        download_from_source(str(manifest_directory_root))
+
+    division_file_root = tmp_path / "division-file"
+    division_file_root.mkdir()
+    (division_file_root / "engineering").write_text("not a directory", encoding="utf-8")
+    (division_file_root / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    with pytest.raises(RosterSyncError, match="division must be a real directory"):
+        download_from_source(str(division_file_root))
+
+    excess_root = tmp_path / "excess"
+    excess_root.mkdir()
+    (excess_root / "divisions.json").write_text(
+        '{"divisions":{"engineering":{},"support":{}}}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(roster_ingress, "MAX_LIST_ITEMS", 1)
+    with pytest.raises(RosterSyncError, match="more than 1 divisions"):
+        download_from_source(str(excess_root))
+
+    ordinary_file = tmp_path / "ordinary.md"
+    ordinary_file.write_text("# Agent", encoding="utf-8")
+    with pytest.raises(RosterSyncError, match="must be a real directory"):
+        roster_ingress._directory_source_files(ordinary_file)
+
+
+def test_manifest_discovery_detects_root_and_manifest_mutation(monkeypatch, tmp_path):
+    def source_root(name):
+        root = tmp_path / name
+        root.mkdir()
+        (root / "engineering").mkdir()
+        (root / "divisions.json").write_text(
+            '{"divisions":{"engineering":{}}}',
+            encoding="utf-8",
+        )
+        return root
+
+    root_changed = source_root("root-changed")
+    original_load_json = roster_ingress._load_json
+
+    def mutate_root(content, label):
+        loaded = original_load_json(content, label)
+        (root_changed / "appeared-during-parse.txt").write_text("changed", encoding="utf-8")
+        return loaded
+
+    with monkeypatch.context() as context:
+        context.setattr(roster_ingress, "_load_json", mutate_root)
+        with pytest.raises(RosterSyncError, match="changed during manifest discovery"):
+            download_from_source(str(root_changed))
+
+    manifest_changed = source_root("manifest-changed")
+
+    def mutate_manifest(content, label):
+        loaded = original_load_json(content, label)
+        (manifest_changed / "divisions.json").write_text(
+            '{ "divisions": { "engineering": {} } }',
+            encoding="utf-8",
+        )
+        return loaded
+
+    with monkeypatch.context() as context:
+        context.setattr(roster_ingress, "_load_json", mutate_manifest)
+        with pytest.raises(RosterSyncError, match="manifest changed during discovery"):
+            download_from_source(str(manifest_changed))
+
+
+def test_loaded_manifest_detects_later_source_changes(tmp_path):
+    def load_manifest(name):
+        root = tmp_path / name
+        root.mkdir()
+        root = roster_ingress._assert_real_path_chain(root)
+        (root / "engineering").mkdir()
+        (root / "divisions.json").write_text(
+            '{"divisions":{"engineering":{}}}',
+            encoding="utf-8",
+        )
+        fingerprint = roster_ingress._directory_fingerprint(roster_ingress.os.lstat(root))
+        manifest = roster_ingress._load_division_manifest(root, fingerprint)
+        assert manifest is not None
+        return root, manifest
+
+    missing_root, missing_manifest = load_manifest("missing")
+    missing_manifest.path.unlink()
+    with pytest.raises(RosterSyncError, match="source changed during discovery"):
+        roster_ingress._assert_division_manifest_unchanged(missing_root, missing_manifest)
+
+    root_changed, root_manifest = load_manifest("root")
+    (root_changed / "new-entry.txt").write_text("changed", encoding="utf-8")
+    with pytest.raises(RosterSyncError, match="roster directory changed"):
+        roster_ingress._assert_division_manifest_unchanged(root_changed, root_manifest)
+
+    manifest_changed, manifest_snapshot = load_manifest("manifest")
+    manifest_snapshot.path.write_text(
+        '{ "divisions": { "engineering": {} } }',
+        encoding="utf-8",
+    )
+    with pytest.raises(RosterSyncError, match="division manifest changed"):
+        roster_ingress._assert_division_manifest_unchanged(
+            manifest_changed,
+            manifest_snapshot,
+        )
+
+
+def test_directory_fingerprint_mismatch_fails_closed(tmp_path):
+    with pytest.raises(RosterSyncError, match="changed during discovery"):
+        roster_ingress._assert_expected_directory_fingerprint(
+            tmp_path,
+            (1, 1, 1, 1, 1),
+            (2, 2, 2, 2, 2),
+        )
+
+
+def test_manifest_unavailable_os_error_is_wrapped(monkeypatch, tmp_path):
+    root = roster_ingress._assert_real_path_chain(tmp_path)
+    root_fingerprint = roster_ingress._directory_fingerprint(roster_ingress.os.lstat(root))
+    original_lstat = roster_ingress.os.lstat
+    manifest_path = root / "divisions.json"
+
+    def deny_manifest(path):
+        if Path(path) == manifest_path:
+            raise PermissionError("denied")
+        return original_lstat(path)
+
+    monkeypatch.setattr(roster_ingress.os, "lstat", deny_manifest)
+    with pytest.raises(RosterSyncError, match="division manifest is unavailable"):
+        roster_ingress._load_division_manifest(root, root_fingerprint)
+
+
 def test_directory_source_rejects_file_changed_after_discovery(monkeypatch, tmp_path):
     source = tmp_path / "agents"
     source.mkdir()
@@ -667,12 +1851,12 @@ def test_snapshot_manifest_limit_is_checked_before_persistence(monkeypatch, tmp_
 def _approved_snapshot(store: Store, source_id: str, prompt: str) -> str:
     candidate_id = quarantine_candidate(
         {
-            "slug": "revision-agent",
-            "name": "Revision Agent",
-            "description": "Tests immutable revisions",
+            **_agent(
+                "revision-agent",
+                "Tests immutable revisions",
+                prompt=prompt,
+            ),
             "version": "1.0.0",
-            "prompt_body": prompt,
-            "content": prompt,
         },
         source_id,
         store,
@@ -687,13 +1871,15 @@ def test_same_agent_version_and_hash_is_idempotent(tmp_path):
     source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
     first_snapshot = _approved_snapshot(store, source_id, "stable prompt")
     activate_snapshot(store, first_snapshot)
+    active_version = store.get_roster_entry("revision-agent")["version"]
 
     conn = store._connect()
     try:
         before = dict(
             conn.execute(
                 "SELECT id, hash, content, created_at FROM agent_versions "
-                "WHERE agent_slug = 'revision-agent' AND version = '1.0.0'"
+                "WHERE agent_slug = 'revision-agent' AND version = ?",
+                (active_version,),
             ).fetchone()
         )
     finally:
@@ -706,7 +1892,8 @@ def test_same_agent_version_and_hash_is_idempotent(tmp_path):
     try:
         rows = conn.execute(
             "SELECT id, hash, content, created_at FROM agent_versions "
-            "WHERE agent_slug = 'revision-agent' AND version = '1.0.0'"
+            "WHERE agent_slug = 'revision-agent' AND version = ?",
+            (active_version,),
         ).fetchall()
     finally:
         conn.close()
@@ -714,40 +1901,48 @@ def test_same_agent_version_and_hash_is_idempotent(tmp_path):
     assert dict(rows[0]) == before
 
 
-def test_changed_hash_cannot_replace_immutable_agent_version(tmp_path):
+def test_changed_content_with_same_source_version_creates_new_immutable_revision(tmp_path):
     store = Store(tmp_path / "agency.db")
     source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
     first_snapshot = _approved_snapshot(store, source_id, "original prompt")
     activate_snapshot(store, first_snapshot)
-    store.activate_agent(
+    first_active = store.get_roster_entry("revision-agent")
+    store._activate_prevalidated_agent(
         {
             "slug": "independent-agent",
             "name": "Independent Agent",
             "description": "Must survive failed activation",
+            "prompt_body": "Preserve this independent active revision.",
         }
     )
     changed_snapshot = _approved_snapshot(store, source_id, "changed prompt")
-
-    with pytest.raises(RosterSyncError, match="refusing to replace immutable agent version"):
-        activate_snapshot(store, changed_snapshot)
+    activate_snapshot(store, changed_snapshot)
+    changed_active = store.get_roster_entry("revision-agent")
 
     conn = store._connect()
     try:
-        version = dict(
-            conn.execute(
-                "SELECT hash, content FROM agent_versions "
-                "WHERE agent_slug = 'revision-agent' AND version = '1.0.0'"
-            ).fetchone()
-        )
+        versions = [
+            dict(row)
+            for row in conn.execute(
+                "SELECT version, source_version, hash, content FROM agent_versions "
+                "WHERE agent_slug = 'revision-agent' ORDER BY created_at"
+            ).fetchall()
+        ]
         activated = conn.execute(
             "SELECT activated FROM agent_snapshots WHERE snapshot_id = ?",
             (changed_snapshot,),
         ).fetchone()["activated"]
     finally:
         conn.close()
-    assert version["content"] == "original prompt"
-    assert version["hash"] == roster_ingress._hash_text("original prompt")
-    assert activated == 0
+    assert first_active["version"].startswith("sha256:")
+    assert changed_active["version"].startswith("sha256:")
+    assert changed_active["version"] != first_active["version"]
+    assert [row["source_version"] for row in versions] == ["1.0.0", "1.0.0"]
+    assert {json.loads(row["content"])["prompt_body"] for row in versions} == {
+        "original prompt",
+        "changed prompt",
+    }
+    assert activated == 1
     assert {agent["agent_slug"] for agent in store.get_active_roster()} == {
         "independent-agent",
         "revision-agent",
@@ -853,18 +2048,19 @@ def test_approval_rejects_tampered_quarantine_and_is_fully_atomic(monkeypatch, t
         approve_snapshot(store, snapshot["snapshot_id"])
 
 
-def test_activation_rejects_stale_review_without_mutating_roster(tmp_path):
+def test_activation_allows_unrelated_concurrent_roster_change(tmp_path):
     store = Store(tmp_path / "agency.db")
     source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
     candidate_id = quarantine_candidate(_agent("reviewed-agent"), source_id, store)
     snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
     approve_snapshot(store, snapshot["snapshot_id"])
-    store.activate_agent(_agent("concurrent-agent"))
+    store._activate_prevalidated_agent(_agent("concurrent-agent"))
+    activate_snapshot(store, snapshot["snapshot_id"])
 
-    with pytest.raises(RosterSyncError, match="different active roster"):
-        activate_snapshot(store, snapshot["snapshot_id"])
-
-    assert [row["agent_slug"] for row in store.get_active_roster()] == ["concurrent-agent"]
+    assert [row["agent_slug"] for row in store.get_active_roster()] == [
+        "concurrent-agent",
+        "reviewed-agent",
+    ]
     conn = store._connect()
     try:
         assert (
@@ -872,16 +2068,40 @@ def test_activation_rejects_stale_review_without_mutating_roster(tmp_path):
                 "SELECT activated FROM agent_snapshots WHERE snapshot_id = ?",
                 (snapshot["snapshot_id"],),
             ).fetchone()["activated"]
-            == 0
+            == 1
         )
         assert (
             conn.execute(
                 "SELECT status FROM agent_candidates WHERE id = ?", (candidate_id,)
             ).fetchone()["status"]
-            == "approved"
+            == "activated"
         )
     finally:
         conn.close()
+
+
+def test_activation_rejects_same_agent_concurrent_revision_change(tmp_path):
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
+    store._activate_prevalidated_agent(_agent("reviewed-agent"))
+    candidate_id = quarantine_candidate(
+        _agent("reviewed-agent", prompt="reviewed replacement"),
+        source_id,
+        store,
+    )
+    snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
+    approve_snapshot(store, snapshot["snapshot_id"])
+    store._activate_prevalidated_agent(
+        {
+            **_agent("reviewed-agent", prompt="concurrent revision"),
+            "version": "2.0.0",
+        }
+    )
+
+    with pytest.raises(RosterSyncError, match="different revision of reviewed-agent"):
+        activate_snapshot(store, snapshot["snapshot_id"])
+
+    assert store.get_specialist_prompt("reviewed-agent")["prompt_body"] == "concurrent revision"
 
 
 def test_activation_rolls_back_every_projection_when_audit_write_fails(monkeypatch, tmp_path):
@@ -951,12 +2171,14 @@ def test_existing_version_content_is_verified_even_when_hash_column_matches(tmp_
     source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
     first_snapshot = _approved_snapshot(store, source_id, "stable prompt")
     activate_snapshot(store, first_snapshot)
+    active_version = store.get_roster_entry("revision-agent")["version"]
     second_snapshot = _approved_snapshot(store, source_id, "stable prompt")
     conn = store._connect()
     try:
         conn.execute(
             "UPDATE agent_versions SET content = 'corrupted content' "
-            "WHERE agent_slug = 'revision-agent' AND version = '1.0.0'"
+            "WHERE agent_slug = 'revision-agent' AND version = ?",
+            (active_version,),
         )
         conn.commit()
     finally:
@@ -991,7 +2213,9 @@ def test_repeated_activation_is_idempotent_and_does_not_duplicate_audit_event(tm
         assert (
             conn.execute(
                 "SELECT COUNT(*) FROM agent_import_events "
-                "WHERE event_type = 'snapshot_activated' AND detail = ?",
+                "WHERE event_type = 'snapshot_activated' "
+                "AND json_valid(detail) "
+                "AND json_extract(detail, '$.snapshot_id') = ?",
                 (snapshot_id,),
             ).fetchone()[0]
             == 1
@@ -1112,3 +2336,215 @@ def test_activation_rebuilds_category_projection_without_stale_values(tmp_path):
     finally:
         conn.close()
     assert [row["category"] for row in categories] == ["code"]
+
+
+def test_retirement_requires_latest_complete_scan_and_preserves_history(tmp_path):
+    source = tmp_path / "catalog"
+    division = source / "engineering"
+    division.mkdir(parents=True)
+    (source / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    for slug in ("keep-agent", "retire-agent"):
+        (division / f"{slug}.md").write_text(
+            _governed_markdown(
+                slug,
+                "Complete scan fixture.",
+                f"Perform {slug} work.",
+            ),
+            encoding="utf-8",
+        )
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(source), "manifest")
+    first = download_from_source(str(source))
+    candidate_ids, _outcomes = quarantine_manifest_import(
+        first,
+        first.outcomes,
+        source_id,
+        store,
+    )
+    activation = create_roster_diff(store, candidate_ids=candidate_ids)
+    approve_snapshot(store, activation["snapshot_id"])
+    activate_snapshot(store, activation["snapshot_id"])
+    store._activate_prevalidated_agent(_agent("unrelated-agent"))
+    retired_version = store.get_roster_entry("retire-agent")["version"]
+
+    (division / "retire-agent.md").unlink()
+    latest = download_from_source(str(source))
+    quarantine_manifest_import(latest, latest.outcomes, source_id, store)
+    scan = list_source_scans(store)[0]
+    assert scan["status"] == "complete"
+    retirement = create_retirement_diff(
+        store,
+        scan_id=scan["id"],
+        slugs=["retire-agent"],
+    )
+    approve_snapshot(store, retirement["snapshot_id"])
+    activate_snapshot(store, retirement["snapshot_id"])
+
+    assert [row["agent_slug"] for row in store.get_active_roster()] == [
+        "keep-agent",
+        "unrelated-agent",
+    ]
+    conn = store._connect()
+    try:
+        assert (
+            conn.execute(
+                "SELECT COUNT(*) FROM agent_versions "
+                "WHERE agent_slug = 'retire-agent' AND version = ?",
+                (retired_version,),
+            ).fetchone()[0]
+            == 1
+        )
+        retired = conn.execute(
+            "SELECT source_scan_id FROM agent_retirements WHERE agent_slug = 'retire-agent'"
+        ).fetchone()
+    finally:
+        conn.close()
+    assert retired["source_scan_id"] == scan["id"]
+
+
+def test_partial_scan_cannot_authorize_retirement(tmp_path):
+    source = tmp_path / "catalog"
+    division = source / "engineering"
+    division.mkdir(parents=True)
+    (source / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    active_path = division / "retire-agent.md"
+    active_path.write_text(
+        _governed_markdown(
+            "retire-agent",
+            "Active fixture.",
+            "Original prompt.",
+        ),
+        encoding="utf-8",
+    )
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(source), "manifest")
+    initial = download_from_source(str(source))
+    candidate_ids, _outcomes = quarantine_manifest_import(
+        initial,
+        initial.outcomes,
+        source_id,
+        store,
+    )
+    snapshot = create_roster_diff(store, candidate_ids=candidate_ids)
+    approve_snapshot(store, snapshot["snapshot_id"])
+    activate_snapshot(store, snapshot["snapshot_id"])
+
+    active_path.unlink()
+    (division / "corrupt.md").write_text(
+        "---\nname: Corrupt Agent\ndescription: Invalid fixture.\n---\nBad \x04 prompt.\n",
+        encoding="utf-8",
+    )
+    partial = download_from_source(str(source))
+    quarantine_manifest_import(partial, partial.outcomes, source_id, store)
+    scan = list_source_scans(store)[0]
+    assert scan["status"] == "partial"
+    with pytest.raises(RosterSyncError, match="partial and cannot authorize retirement"):
+        create_retirement_diff(store, scan_id=scan["id"], slugs=["retire-agent"])
+    assert store.get_roster_entry("retire-agent") is not None
+
+
+def test_empty_scan_receipt_is_partial_and_cannot_authorize_mass_retirement(tmp_path):
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(tmp_path / "empty"), "empty")
+    store._activate_prevalidated_agent(
+        {
+            **_agent("retire-agent"),
+            "source_id": source_id,
+            "source": str(tmp_path / "empty"),
+        }
+    )
+    quarantine_manifest_import([], [], source_id, store)
+    scan = list_source_scans(store)[0]
+    assert scan["status"] == "partial"
+    with pytest.raises(RosterSyncError, match="partial and cannot authorize retirement"):
+        create_retirement_diff(store, scan_id=scan["id"], slugs=["retire-agent"])
+
+
+def test_revision_rollback_is_exact_metadata_restore_with_stale_cas_rejection(tmp_path):
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
+
+    def activate_revision(prompt, *, description, categories):
+        candidate_id = quarantine_candidate(
+            {
+                **_agent(
+                    "rollback-agent",
+                    description,
+                    prompt=prompt,
+                    categories=categories,
+                ),
+                "version": "1.0.0",
+            },
+            source_id,
+            store,
+        )
+        snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
+        approve_snapshot(store, snapshot["snapshot_id"])
+        activate_snapshot(store, snapshot["snapshot_id"])
+        return store.get_roster_entry("rollback-agent")
+
+    first = activate_revision(
+        "first prompt",
+        description="First description",
+        categories=["code", "security"],
+    )
+    second = activate_revision(
+        "second prompt",
+        description="Second description",
+        categories=["code"],
+    )
+    store._activate_prevalidated_agent(_agent("unrelated-agent"))
+
+    restored = store.rollback_agent_revision(
+        "rollback-agent",
+        first["version"],
+        expected_current_version=second["version"],
+        expected_current_hash=second["hash"],
+    )
+    assert restored["description"] == "First description"
+    assert restored["categories"] == ["code", "security"]
+    assert (
+        json.loads(store.get_specialist_prompt("rollback-agent")["prompt_body"])["prompt_body"]
+        == "first prompt"
+    )
+    assert store.get_roster_entry("unrelated-agent") is not None
+    with pytest.raises(ValueError, match="active revision changed"):
+        store.rollback_agent_revision(
+            "rollback-agent",
+            second["version"],
+            expected_current_version=second["version"],
+            expected_current_hash=second["hash"],
+        )
+
+
+def test_prompt_reads_fail_closed_when_imported_revision_content_is_tampered(tmp_path):
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
+    snapshot = _approved_snapshot(store, source_id, "stable prompt")
+    activate_snapshot(store, snapshot)
+    active = store.get_roster_entry("revision-agent")
+    conn = store._connect()
+    try:
+        conn.execute(
+            "UPDATE agent_versions SET content = 'tampered' "
+            "WHERE agent_slug = 'revision-agent' AND version = ?",
+            (active["version"],),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    assert store.get_specialist_prompt("revision-agent") is None
+    assert (
+        store.get_versioned_specialist_prompt(
+            "revision-agent",
+            active["version"],
+            active["hash"],
+        )
+        is None
+    )

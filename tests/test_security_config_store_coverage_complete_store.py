@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from agency_runtime.core import config
+from agency_runtime.core.bounded_io import UnsafeFileError
 from agency_runtime.core.store import projections, schema, security
 from agency_runtime.core.store import sqlite as sqlite_store
 from agency_runtime.core.store.evidence import EvidenceStoreMixin
@@ -107,7 +108,11 @@ def test_store_permission_security_rejects_links_kinds_and_failed_repairs(
             windows_acl=lambda *_args, **_kwargs: False,
         )
 
-    monkeypatch.setattr(security.os, "chmod", lambda *_args: None)
+    monkeypatch.setattr(
+        security,
+        "restrict_posix_path_permissions",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("failed")),
+    )
     with pytest.raises(PermissionError, match="private permissions"):
         security.restrict_path_permissions(
             _PermissionPath(
@@ -119,6 +124,26 @@ def test_store_permission_security_rejects_links_kinds_and_failed_repairs(
             link_checker=lambda _path: False,
             windows_acl=lambda *_args, **_kwargs: True,
         )
+    monkeypatch.setattr(
+        security,
+        "restrict_posix_path_permissions",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            UnsafeFileError("permission target changed before mutation")
+        ),
+    )
+    with pytest.raises(PermissionError, match="changed before mutation"):
+        security.restrict_path_permissions(
+            _PermissionPath(regular),  # type: ignore[arg-type]
+            directory=False,
+            is_windows=False,
+            link_checker=lambda _path: False,
+            windows_acl=lambda *_args, **_kwargs: True,
+        )
+    monkeypatch.setattr(
+        security,
+        "restrict_posix_path_permissions",
+        lambda *_args, **_kwargs: None,
+    )
     security.restrict_path_permissions(
         _PermissionPath(regular),  # type: ignore[arg-type]
         directory=False,
@@ -167,7 +192,7 @@ def test_windows_permission_repair_reports_a_vanished_target(
         )
 
 
-def test_default_store_path_falls_back_when_config_is_unavailable(
+def test_default_store_path_fails_closed_when_config_is_unavailable(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -178,13 +203,33 @@ def test_default_store_path_falls_back_when_config_is_unavailable(
         "load_config",
         lambda: (_ for _ in ()).throw(RuntimeError("invalid")),
     )
-    assert security.default_db_path() == tmp_path / ".agency-runtime" / "agency.db"
+    with pytest.raises(RuntimeError, match="invalid"):
+        security.default_db_path()
+    assert not (tmp_path / ".agency-runtime" / "agency.db").exists()
+
+
+def test_default_store_does_not_split_state_for_malformed_config(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "invalid-agency.yaml"
+    config_path.write_text("store: [", encoding="utf-8")
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
+    monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+    config.reset_config_cache()
+    try:
+        with pytest.raises(ValueError):
+            Store()
+    finally:
+        config.reset_config_cache()
+    assert not (tmp_path / ".agency-runtime" / "agency.db").exists()
 
 
 def test_store_evidence_and_roster_persistence_error_and_update_paths(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     with pytest.raises(ValueError, match="host is required"):
-        store.set_host_control("", enabled=True)
+        store.set_host_control("", enabled=True, expected_generation=0)
     with pytest.raises(ValueError, match="complete host canary"):
         store.record_host_canary_attestation(
             host="",
@@ -316,7 +361,7 @@ def test_sqlite_compatibility_wrappers_delegate(monkeypatch: pytest.MonkeyPatch)
     assert sqlite_store._sanitize_api_base("url") == "safe:url"
     assert sqlite_store._redact_sensitive_text("secret", 4) == "redacted:secret:4"
     assert sqlite_store._project_run_metadata({}) == "metadata"
-    monkeypatch.setattr(sqlite_store, "_capture_content_enabled", lambda: True)
+    monkeypatch.setattr(sqlite_store, "_capture_content_enabled", lambda *_args: True)
     monkeypatch.setattr(
         sqlite_store,
         "project_delegation_detail",
@@ -341,7 +386,7 @@ def test_sqlite_static_migration_wrappers_delegate(monkeypatch: pytest.MonkeyPat
         "migrate_private_projections",
         lambda *_args, **_kwargs: calls.append("private"),
     )
-    monkeypatch.setattr(sqlite_store, "_capture_content_enabled", lambda: False)
+    monkeypatch.setattr(sqlite_store, "_capture_content_enabled", lambda *_args: False)
     store = Store.__new__(Store)
     store._ensure_column(object(), "table", "column", "TEXT")  # type: ignore[arg-type]
     assert store._runs_trace_is_unique(object()) is True  # type: ignore[arg-type]
@@ -381,12 +426,18 @@ def test_store_private_file_race_to_regular_file_continues(
     store._harden_storage_parent = False
     monkeypatch.setattr(store, "_assert_storage_paths_safe", lambda: None)
     monkeypatch.delattr(sqlite_store.os, "O_BINARY", raising=False)
+
+    def lose_create_race(*_args, **_kwargs):
+        store.db_path.write_bytes(b"database")
+        raise FileExistsError()
+
     monkeypatch.setattr(
         sqlite_store.os,
         "open",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(FileExistsError()),
+        lose_create_race,
     )
     monkeypatch.setattr(sqlite_store, "_is_link_or_reparse_point", lambda _path: False)
+    monkeypatch.setattr(sqlite_store, "_storage_file_is_trusted", lambda path: path.is_file())
     monkeypatch.setattr(sqlite_store, "_restrict_path_permissions", lambda *_args, **_kwargs: None)
     store._ensure_private_storage_file()
 
@@ -395,6 +446,11 @@ def test_store_permission_repair_rejects_link_and_tolerates_sidecar_race(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    monkeypatch.setattr(
+        sqlite_store,
+        "_require_storage_target_trusted",
+        lambda *_args, **_kwargs: None,
+    )
     store = Store.__new__(Store)
     store.db_path = tmp_path / "agency.db"
     sidecar = Path(f"{store.db_path}-shm")
@@ -604,6 +660,11 @@ def test_store_permission_repair_skips_already_private_posix_file(
     )
     monkeypatch.setattr(
         sqlite_store,
+        "_require_storage_target_trusted",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        sqlite_store,
         "_restrict_path_permissions",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("must skip")),
     )
@@ -617,7 +678,14 @@ class _JournalConnection:
         self.closed = False
         self.row_factory: Any = None
 
+    def create_function(self, *_args: Any, **_kwargs: Any) -> None:
+        return None
+
     def execute(self, sql: str) -> Any:
+        if sql == "PRAGMA recursive_triggers":
+            return SimpleNamespace(fetchone=lambda: (1,))
+        if sql == "PRAGMA secure_delete=ON":
+            return SimpleNamespace(fetchone=lambda: (1,))
         if sql == "PRAGMA journal_mode=WAL":
             self.journal_attempts += 1
             if self.journal_attempts == 1:
@@ -632,6 +700,7 @@ class _JournalConnection:
 def _uninitialized_store(tmp_path: Path) -> Store:
     store = Store.__new__(Store)
     store.db_path = tmp_path / "agency.db"
+    store.db_path.touch()
     store._journal_ready = False
     store._foreign_keys_ready = False
     store._permission_fingerprints = {}

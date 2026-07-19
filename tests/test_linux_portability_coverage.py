@@ -93,6 +93,7 @@ def test_config_lock_accepts_binary_flag_without_global_os_mutation(
         "os",
         _OSFacade(persistence.os, O_BINARY=getattr(os, "O_BINARY", 0)),
     )
+    monkeypatch.setattr(persistence, "assert_config_namespace", lambda *_args, **_kwargs: None)
 
     with persistence.config_lock(
         tmp_path / "agency.yaml",
@@ -351,9 +352,9 @@ def test_installer_and_process_argv_cover_windows_discovery_without_host_depende
     resolved = process_argv.prepare_process_argv(
         ["agent", "task"],
         platform_name="nt",
-        resolver=lambda _name: str(tmp_path / "agent.exe"),
+        resolver=lambda _name: r"C:\tools\agent.exe",
     )
-    assert resolved == [str(tmp_path / "agent.exe"), "task"]
+    assert resolved == [r"C:\tools\agent.exe", "task"]
 
 
 def test_roster_local_read_without_nofollow_attribute(
@@ -464,6 +465,11 @@ def test_store_windows_permission_cache_skips_and_records_fingerprints(
         sqlite_store,
         "_restrict_path_permissions",
         lambda path, **_kwargs: restricted.append(path),
+    )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_require_storage_target_trusted",
+        lambda *_args, **_kwargs: None,
     )
 
     store._repair_storage_permissions()

@@ -1,16 +1,16 @@
 ---
 title: Use ordered provider fallback ending in deterministic scoring
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-18
 tags: [providers, routing, resilience]
 related:
   - docs/roadmap/issue-AR-05-guided-provider-configuration.md
   - docs/roadmap/issue-AR-06-cli-authenticated-judge-providers.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0067-require-configured-inference-for-selection.md
 id: ADR-0008
 type: decision
 deciders: []

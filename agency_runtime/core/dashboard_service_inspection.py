@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.config import load_config
+from agency_runtime.core.configuration import ConfigurationError
 from agency_runtime.core.dashboard_service_core import (
     OWNER_MARKER,
     SYSTEMD_UNIT_NAME,
@@ -19,6 +21,10 @@ from agency_runtime.core.dashboard_service_core import (
     _RollbackOutcome,
     _run,
     _unsupported,
+    _validate_dashboard_launcher,
+    dashboard_service_environment_error,
+    dashboard_service_environment_overrides,
+    dashboard_service_manager_environment_overrides,
 )
 from agency_runtime.core.dashboard_service_manifest import (
     _decode_service_file,
@@ -26,9 +32,10 @@ from agency_runtime.core.dashboard_service_manifest import (
     _manifest_owned,
     _path_present,
     _read_manifest,
-    _read_service_file,
 )
 from agency_runtime.core.dashboard_service_systemd import (
+    _assert_systemd_unit_namespace,
+    _read_systemd_unit,
     _systemd_active_state,
     _systemd_enabled_state,
     _unit_content,
@@ -108,12 +115,20 @@ def _linux_unit_path(ctx: _Context) -> Path:
 
 def _read_linux_unit(ctx: _Context) -> _LinuxUnitSnapshot:
     path = _linux_unit_path(ctx)
+    try:
+        _assert_systemd_unit_namespace(ctx)
+    except (ConfigurationError, OSError):
+        return _LinuxUnitSnapshot(
+            exists=_path_present(path),
+            content="",
+            readable=False,
+        )
     exists = _path_present(path)
     if not exists:
         return _LinuxUnitSnapshot(exists=False, content="", readable=True)
     try:
-        content = _decode_service_file(_read_service_file(path))
-    except (OSError, UnicodeError):
+        content = _decode_service_file(_read_systemd_unit(ctx))
+    except (ConfigurationError, OSError, UnicodeError):
         return _LinuxUnitSnapshot(exists=True, content="", readable=False)
     return _LinuxUnitSnapshot(exists=True, content=content, readable=True)
 
@@ -317,9 +332,36 @@ def plan_dashboard_service(
     )
     if ctx is None:
         return _unsupported("plan", platform_name)
+    config = load_config(ctx.config_path, reload=True)
+    environment_overrides = dashboard_service_environment_overrides(config)
+    if environment_overrides:
+        result = _failed(
+            "plan",
+            ctx,
+            error=dashboard_service_environment_error(environment_overrides),
+            commands=[],
+        )
+        result["dry_run"] = True
+        result["non_durable_environment_overrides"] = list(environment_overrides)
+        return result
     available, probe, registration_state = _manager_probe(
         ctx, home_dir=home_dir, command_runner=command_runner
     )
+    manager_overrides = (
+        dashboard_service_manager_environment_overrides(config, probe.stdout)
+        if ctx.platform == "linux" and probe is not None and probe.ok
+        else ()
+    )
+    if manager_overrides:
+        result = _failed(
+            "plan",
+            ctx,
+            error=dashboard_service_environment_error(manager_overrides),
+            commands=[],
+        )
+        result["dry_run"] = True
+        result["non_durable_manager_environment_overrides"] = list(manager_overrides)
+        return result
     registration = _plan_registration(
         ctx,
         probe=probe,
@@ -444,6 +486,8 @@ def _render_inspection(
     registration: _InspectionRegistration,
     reachable: bool | None,
 ) -> dict[str, Any]:
+    manifest_current = _manifest_current(ctx, manifest)
+    stale_manifest = bool(manifest_owned and registration.installed is False)
     return {
         **_base("inspect", ctx),
         "ok": True,
@@ -453,7 +497,19 @@ def _render_inspection(
         "installed": registration.installed,
         "owned": registration.owned,
         "manifest_owned": manifest_owned,
-        "manifest_current": _manifest_current(ctx, manifest),
+        "manifest_current": manifest_current,
+        "stale_manifest": stale_manifest,
+        "repair_recommended": bool(
+            stale_manifest
+            or (
+                registration.owned
+                and (
+                    registration.definition_drift is True
+                    or not manifest_current
+                    or reachable is False
+                )
+            )
+        ),
         "registration_owned": registration.registration_owned,
         "definition_drift": registration.definition_drift,
         "enabled": registration.enabled,
@@ -474,9 +530,12 @@ def inspect_dashboard_service(
     command_runner: CommandRunner | None = None,
     reachability_probe: ReadinessProbe | None = None,
     readiness_probe: ReadinessProbe | None = None,
+    _config: object | None = None,
+    _ctx: _Context | None = None,
+    _validate_launcher: bool = True,
 ) -> dict[str, Any]:
     """Separate registration, ownership, manager, and reachability truth."""
-    ctx = _context(
+    ctx = _ctx or _context(
         home_dir=home_dir,
         platform_name=platform_name,
         config_path=config_path,
@@ -484,9 +543,33 @@ def inspect_dashboard_service(
     )
     if ctx is None:
         return _unsupported("inspect", platform_name)
+    if _validate_launcher and not ctx.launcher_artifacts:
+        try:
+            ctx = _validate_dashboard_launcher(ctx)
+        except OSError as exc:
+            return _failed("inspect", ctx, error=str(exc), commands=[])
+    config = _config if _config is not None else load_config(ctx.config_path)
     available, probe, registration_state = _manager_probe(
         ctx, home_dir=home_dir, command_runner=command_runner
     )
+    manager_overrides = (
+        dashboard_service_manager_environment_overrides(config, probe.stdout)
+        if ctx.platform == "linux" and probe is not None and probe.ok
+        else ()
+    )
+    if manager_overrides:
+        result = _failed(
+            "inspect",
+            ctx,
+            error=dashboard_service_environment_error(manager_overrides),
+            # systemctl's stdout contains the environment values. Only names
+            # may cross this response boundary.
+            commands=[],
+        )
+        result["manager_available"] = available
+        result["manager_environment_durable"] = False
+        result["non_durable_manager_environment_overrides"] = list(manager_overrides)
+        return result
     manifest = _read_manifest(ctx)
     manifest_owned = _manifest_owned(ctx, manifest)
     immediate_probe = _select_immediate_probe(
@@ -501,7 +584,7 @@ def inspect_dashboard_service(
         command_runner=command_runner,
         manifest_owned=manifest_owned,
     )
-    return _render_inspection(
+    result = _render_inspection(
         ctx,
         available=available,
         manifest=manifest,
@@ -509,6 +592,9 @@ def inspect_dashboard_service(
         registration=registration,
         reachable=_readiness(immediate_probe),
     )
+    result["manager_environment_durable"] = not bool(manager_overrides)
+    result["non_durable_manager_environment_overrides"] = list(manager_overrides)
+    return result
 
 
 def _preflight(
@@ -518,6 +604,7 @@ def _preflight(
     home_dir: str | Path | None,
     command_runner: CommandRunner | None,
     reachability_probe: ReadinessProbe | None = None,
+    config: object | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     state = inspect_dashboard_service(
         home_dir=home_dir,
@@ -526,7 +613,24 @@ def _preflight(
         python_executable=ctx.python_executable,
         command_runner=command_runner,
         reachability_probe=reachability_probe,
+        _config=config,
+        _ctx=ctx,
+        _validate_launcher=action in {"install", "start", "restart"},
     )
+    manager_overrides = state.get("non_durable_manager_environment_overrides") or []
+    if manager_overrides:
+        return (
+            {
+                **_base(action, ctx),
+                "ok": False,
+                "exit_code": 1,
+                "changed": False,
+                "error": dashboard_service_environment_error(manager_overrides),
+                "non_durable_manager_environment_overrides": list(manager_overrides),
+                "commands": [],
+            },
+            state,
+        )
     if state.get("manager_available") is not True:
         return (
             {
@@ -573,6 +677,24 @@ def _preflight(
                 "exit_code": 1,
                 "changed": False,
                 "error": "refusing to modify a dashboard service registration not owned by Agency Runtime",
+            },
+            state,
+        )
+    if (
+        action in {"start", "restart"}
+        and state.get("installed")
+        and not state.get("manifest_current")
+    ):
+        return (
+            {
+                **_base(action, ctx),
+                "ok": False,
+                "exit_code": 1,
+                "changed": False,
+                "error": (
+                    "dashboard launcher identity drift must be repaired by reinstalling the service"
+                ),
+                "commands": [],
             },
             state,
         )

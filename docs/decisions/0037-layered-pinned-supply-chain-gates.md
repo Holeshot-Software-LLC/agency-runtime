@@ -3,15 +3,19 @@ title: "Use layered pinned supply-chain gates"
 status: accepted
 category: decisions
 created: 2026-07-12
-updated: 2026-07-13
+updated: 2026-07-16
 tags: [security, supply-chain, ci, release]
 related:
+  - docs/roadmap/issue-AR-63-replace-yanked-release-build-dependency.md
+  - docs/roadmap/issue-AR-43-isolate-installed-python-module-resolution.md
+  - docs/decisions/0050-isolate-installed-python-module-resolution.md
   - SECURITY.md
   - docs/THREAT_MODEL.md
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/roadmap/issue-AR-20-full-history-ledger-ci.md
+  - docs/roadmap/issue-AR-72-align-release-tooling-and-artifact-contract.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

@@ -62,7 +62,7 @@ from agency_runtime.core.installer_contracts import (
     CommandRunner,
     NativeCommandResult,
 )
-from agency_runtime.core.policy.defaults import STARTER_ROSTER
+from agency_runtime.core.policy.defaults import NO_MATCH_FALLBACK_SLUGS, STARTER_ROSTER
 from agency_runtime.core.process_argv import prepare_process_argv
 from agency_runtime.core.store.sqlite import Store, _default_db_path
 
@@ -105,6 +105,8 @@ inspect_host_installation = _inventory.inspect_host_installation
 
 # Generated payload and install-time configuration compatibility surface.
 _python_commands = _payloads.python_commands
+_launcher_artifact_paths = _payloads.launcher_artifact_paths
+_runtime_python_argv = _payloads.runtime_python_argv
 _resolve_install_config = _payloads.resolve_install_config
 _effective_judge_budget_seconds = _payloads.effective_judge_budget_seconds
 _hook_timeout_seconds = _payloads.hook_timeout_seconds
@@ -134,11 +136,22 @@ toggle_agency = _orchestration.toggle_agency
 def seed_starter_roster(store: Store) -> int:
     """Seed the built-in roster without overwriting operator-owned entries."""
 
-    count = 0
-    for entry in STARTER_ROSTER:
-        existing = store.get_roster_entry(entry["slug"])
-        if existing is not None:
-            continue
-        store.upsert_roster_entry(entry)
-        count += 1
-    return count
+    activate_many = getattr(store, "activate_agents_if_missing", None)
+    if callable(activate_many):
+        return int(activate_many(STARTER_ROSTER))
+    return sum(bool(store.activate_agent_if_missing(entry)) for entry in STARTER_ROSTER)
+
+
+def ensure_no_match_fallback_roster(store: Store) -> int:
+    """Idempotently add only missing governed fallback dependencies."""
+
+    required = set(NO_MATCH_FALLBACK_SLUGS)
+    active = {
+        str(entry.get("agent_slug") or entry.get("slug") or "")
+        for entry in store.get_active_roster()
+    }
+    return sum(
+        bool(store.activate_agent_if_missing(entry))
+        for entry in STARTER_ROSTER
+        if str(entry.get("slug") or "") in required and str(entry.get("slug") or "") not in active
+    )

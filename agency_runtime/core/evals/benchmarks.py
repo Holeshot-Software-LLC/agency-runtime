@@ -14,8 +14,10 @@ from typing import Any
 from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
 from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
+from agency_runtime.core.selector.compatibility import clear_eligibility_cache
 from agency_runtime.core.selector.pipeline import route
 from agency_runtime.core.selector.stickiness import clear_session_routing
+from agency_runtime.core.turn_intent import TurnState, classify_turn_intent
 
 _BENCHMARK_BATCHES = 5
 _WARMUP_CALLS = 4
@@ -130,6 +132,26 @@ def generated_catalog(size: int) -> list[dict[str, Any]]:
     """Build a varied synthetic roster without copying one trivial row."""
     if size < 0:
         raise ValueError("size must be non-negative")
+    resident_managers = (
+        {
+            "slug": "agents-orchestrator",
+            "name": "Agents Orchestrator",
+            "division": "operations",
+            "description": "Routes work to the best available specialists.",
+            "categories": ["orchestration", "routing"],
+            "capabilities": ["agent selection", "delegation planning"],
+            "tool_affinity": ["terminal"],
+        },
+        {
+            "slug": "chief-of-staff",
+            "name": "Chief of Staff",
+            "division": "operations",
+            "description": "Coordinates execution across active work.",
+            "categories": ["coordination", "planning"],
+            "capabilities": ["execution coordination", "work tracking"],
+            "tool_affinity": ["terminal"],
+        },
+    )
     domains = (
         ("security", "oauth threat modeling", "sast"),
         ("performance", "latency profiling", "benchmarks"),
@@ -140,8 +162,9 @@ def generated_catalog(size: int) -> list[dict[str, Any]]:
         ("data", "etl warehouse pipelines", "dbt"),
         ("planning", "workflow dependency mapping", "issues"),
     )
-    catalog: list[dict[str, Any]] = []
-    for index in range(size):
+    manager_count = min(size, len(resident_managers))
+    catalog: list[dict[str, Any]] = [dict(agent) for agent in resident_managers[:manager_count]]
+    for index in range(size - manager_count):
         domain, capability, tool = domains[index % len(domains)]
         catalog.append(
             {
@@ -187,6 +210,10 @@ def run_candidate_microbenchmark(
         raise ValueError("roster_size must be at least one")
 
     catalog = generated_catalog(roster_size)
+    # Benchmark runs may share a process with earlier evals. Start from a
+    # defined eligibility-cache generation so a prior equivalent catalog does
+    # not make the hot-path sample depend on test or command ordering.
+    clear_eligibility_cache()
     query = "profile production API latency with benchmarks"
     for _ in range(_WARMUP_CALLS):
         pre_narrow(query, catalog, limit=20)  # warm caches and the interpreter
@@ -229,8 +256,39 @@ def run_candidate_microbenchmark(
     )
     clear_cache()
     clear_session_routing()
-    warm = route("benchmark-warm", query, catalog, config=offline)
-    route("benchmark-cache-warm", query, catalog, config=offline)
+    cache_query = "continue"
+    validated_continuation = classify_turn_intent(
+        cache_query,
+        TurnState(
+            previous_trace_id="benchmark-warm",
+            state_known=True,
+            state_status="current",
+            previous_status="active",
+            previous_turn_kind="new_intent",
+            active_plan=True,
+        ),
+    )
+    cache_warm = route(
+        "benchmark-cache-warm",
+        cache_query,
+        catalog,
+        config=offline,
+        turn_classification=validated_continuation,
+    )
+    cache_probe = route(
+        "benchmark-cache-probe",
+        cache_query,
+        catalog,
+        config=offline,
+        turn_classification=validated_continuation,
+    )
+    expected_ids = tuple(cache_warm.get("selected_ids", []))
+    if not expected_ids:
+        raise RuntimeError("cache benchmark warm-up did not produce a cacheable selection")
+    if cache_probe.get("cache_hit") is not True:
+        raise RuntimeError("cache benchmark warm-up was not reused by the probe request")
+    if tuple(cache_probe.get("selected_ids", [])) != expected_ids:
+        raise RuntimeError("cache benchmark probe changed the warm-up selection")
     cache_iterations = max(iterations, _MIN_CACHE_SAMPLES)
     cache_latencies_ms: list[float] = []
     cache_latency_batch_p95_ms: list[float] = []
@@ -241,15 +299,15 @@ def run_candidate_microbenchmark(
             started = time.perf_counter()
             cached = route(
                 f"benchmark-cache-{batch}-{index}",
-                query,
+                cache_query,
                 catalog,
                 config=offline,
+                turn_classification=validated_continuation,
             )
             batch_latencies_ms.append((time.perf_counter() - started) * 1000)
             cached_results.append(cached)
         cache_latencies_ms.extend(batch_latencies_ms)
         cache_latency_batch_p95_ms.append(_percentile(batch_latencies_ms, 0.95))
-    expected_ids = tuple(warm.get("selected_ids", []))
     cache_consistent = all(
         result.get("cache_hit") is True and tuple(result.get("selected_ids", [])) == expected_ids
         for result in cached_results

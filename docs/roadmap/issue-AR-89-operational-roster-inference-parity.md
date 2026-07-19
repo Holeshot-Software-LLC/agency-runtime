@@ -1,0 +1,69 @@
+---
+title: "AR-89: Expose roster governance and inference health operationally"
+status: in_progress
+category: roadmap
+created: 2026-07-18
+updated: 2026-07-18
+tags: [dashboard, cli, roster, inference, observability]
+related:
+  - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
+  - docs/roadmap/issue-AR-28-reversible-agent-activation-controls.md
+  - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
+  - docs/roadmap/issue-AR-87-bounded-native-delegation-plans.md
+  - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
+  - docs/decisions/0032-adaptive-authenticated-dashboard-polling.md
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+type: issue
+epic: operations
+issue_id: AR-89
+priority: p1
+tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/90"
+depends_on: [AR-12, AR-28, AR-80, AR-86, AR-87]
+blocks: []
+---
+
+# AR-89: Expose roster governance and inference health operationally
+
+## Problem
+
+Basic roster state and agent toggles do not let operators inspect the complete
+routing contract, audit queue, active/candidate history, upstream delta status,
+or authoritative inference degradation required by the architecture.
+
+## Current state
+
+The authenticated dashboard and shared configuration writer already expose
+runtime control, agent activation, recent evidence, route testing, full
+governance projections, provider failure history, rich roster filters, and
+bounded remediation history. CLI route and explain diagnostics now bind the
+single exact verified enabled installation when one exists, so the selected
+specialists and visible candidate ranking share the same truthful host
+eligibility context. Final delegation-plan and installed-service parity gates
+remain in progress.
+
+## Approach
+
+Build shared typed services consumed by CLI and dashboard for source revisions,
+hashes, audits, findings, active/candidate comparison, conflict and requirement
+metadata, activation history, upstream status, provider-chain health,
+inference-required/degraded state, parent/child routing, delegation plans and
+outcomes, and requested/router/actual-model reconciliation. Keep responses
+bounded, redacted, authenticated, accessible, animated, and live-updating.
+
+## Dependencies
+
+AR-86 owns governance data, AR-87 owns delegation plans, AR-80 owns optional
+provider degradation, and the existing dashboard and activation records own the
+secure operational boundary.
+
+## Acceptance
+
+- [ ] CLI and dashboard expose equivalent governance and inference-health information.
+- [ ] Roster search filters division, capability, authority, host, platform, and tool.
+- [ ] Audit queue, findings, candidate comparison, conflicts, requirements, and history are visible.
+- [ ] Provider failures and mandatory-inference degradation are authoritative and live-updating.
+- [ ] Parent/child routing, delegation plans, outcomes, and model reconciliation are visible.
+- [ ] The optional service remains durable and secure on Windows and Linux.
+- [ ] Accessibility, performance, Node coverage, Python coverage, and installed-service gates pass.

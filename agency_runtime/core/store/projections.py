@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 from urllib.parse import SplitResult, urlsplit, urlunsplit
 
@@ -19,12 +20,22 @@ SNAPSHOT_MANIFEST_LIMIT = 32 * 1024 * 1024
 _SAFE_RUN_METADATA_FIELDS = frozenset(
     {
         "callback",
+        "classifier_version",
+        "continuation_of",
         "content_capture",
+        "execution_decision_required",
         "event_type",
+        "pending_interaction",
+        "pending_interaction_fingerprint",
         "reason_code",
+        "reroute_required",
+        "request_fingerprint",
         "request_kind",
+        "selection_required",
         "source",
+        "state_revision",
         "transport",
+        "turn_kind",
     }
 )
 _SAFE_METADATA_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\Z")
@@ -50,13 +61,14 @@ _SAFE_DIAGNOSTIC_MESSAGES = {
 }
 
 
-def capture_content_enabled() -> bool:
+def capture_content_enabled(config_path: str | Path | None = None) -> bool:
     """Read the explicit content-capture opt-in, failing closed."""
 
     try:
         from agency_runtime.core.config import load_config
 
-        return bool(load_config().observability.capture_content)
+        cfg = load_config(config_path) if config_path is not None else load_config()
+        return bool(cfg.observability.capture_content)
     except Exception:
         return False
 
@@ -138,6 +150,15 @@ def project_delegation_detail(
         return normalized
     if _REASON_CODE.fullmatch(normalized):
         return normalized
+
+    correlation_gap = re.fullmatch(
+        r"delegation execution correlation incomplete: missing "
+        r"(?:backend|executed_worker_kind|executed_worker_id|native_run_id)"
+        r"(?:, (?:backend|executed_worker_kind|executed_worker_id|native_run_id)){0,3}",
+        normalized,
+    )
+    if correlation_gap:
+        return correlation_gap.group(0)[:DIAGNOSTIC_REASON_LIMIT]
 
     timeout = re.fullmatch(r"backend command timed out after ([0-9]+(?:\.[0-9]+)?)s", normalized)
     if timeout:

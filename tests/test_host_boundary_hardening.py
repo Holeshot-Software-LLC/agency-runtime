@@ -6,6 +6,7 @@ import io
 import json
 import sys
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -216,8 +217,61 @@ def test_openclaw_bridge_normalizes_invalid_attempt_without_crashing(
     observed: dict[str, Any] = {}
 
     class StoreStub:
+        def has_finalization_action(
+            self,
+            _trace_id: str,
+            _action: str,
+            *,
+            response_hash: str = "",
+        ) -> bool:
+            del response_hash
+            return False
+
+        def get_run(self, trace_id: str) -> dict[str, str]:
+            return {
+                "trace_id": trace_id,
+                "session_id": "session",
+                "status": "active",
+            }
+
+        def get_authoritative_finalization(
+            self,
+            _session_id: str,
+            _trace_id: str,
+            *,
+            action: str = "",
+            response_hash: str = "",
+            policy_response_hash: str = "",
+        ) -> None:
+            del action, response_hash, policy_response_hash
+            return None
+
         def record_finalization(self, **kwargs: Any) -> None:
             observed["finalization"] = kwargs
+
+        def commit_terminal_finalization(self, **kwargs: Any) -> dict[str, Any]:
+            observed["finalization"] = kwargs
+            observed["closed"] = (
+                kwargs["session_id"],
+                kwargs["trace_id"],
+                kwargs["status"],
+            )
+            return {
+                "outcome": "committed",
+                "authoritative": True,
+                "action": kwargs["action"],
+                "response_hash": kwargs["response_hash"],
+                "status": kwargs["status"],
+            }
+
+        def close_turn_evidence(
+            self,
+            session_id: str,
+            trace_id: str,
+            *,
+            status: str,
+        ) -> None:
+            observed["closed"] = (session_id, trace_id, status)
 
     class AdapterStub:
         store = StoreStub()
@@ -225,8 +279,9 @@ def test_openclaw_bridge_normalizes_invalid_attempt_without_crashing(
         def runtime_enabled(self) -> bool:
             return True
 
-        def pre_verify_handler(self, **kwargs: Any) -> None:
+        def pre_verify_handler(self, **kwargs: Any) -> dict[str, int]:
             observed.update(kwargs)
+            return {"evidence_revision": 7}
 
     monkeypatch.setattr(node_bridge, "OpenClawAdapter", AdapterStub)
 
@@ -240,9 +295,244 @@ def test_openclaw_bridge_normalizes_invalid_attempt_without_crashing(
         }
     )
 
-    assert result is None or result == {}
+    assert result["action"] == "allow_pending"
     assert observed["attempt"] == 0
-    assert observed["finalization"]["trace_id"] == "trace"
+    assert result["evidenceRevision"] == 7
+    assert "finalization" not in observed
+    assert "closed" not in observed
+
+
+def test_openclaw_pre_verify_exception_requires_revision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters.openclaw import node_bridge
+
+    class AdapterStub:
+        def pre_verify_handler(self, **_kwargs: Any) -> None:
+            raise OSError("database offline")
+
+        def resolve_turn_trace(self, _session_id: str, trace_id: str) -> str:
+            return trace_id
+
+    monkeypatch.setattr(node_bridge, "OpenClawAdapter", AdapterStub)
+
+    result = node_bridge.handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "session",
+            "traceId": "trace",
+            "finalResponse": "Parsed final response",
+        }
+    )
+
+    assert result["action"] == "continue"
+    assert "VERIFICATION UNAVAILABLE" in result["message"]
+
+
+def test_openclaw_pre_verify_store_construction_failure_requires_revision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters.openclaw import node_bridge
+
+    class BrokenAdapter:
+        def __init__(self) -> None:
+            raise OSError("database offline")
+
+    monkeypatch.setattr(node_bridge, "OpenClawAdapter", BrokenAdapter)
+
+    result = node_bridge.handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "session",
+            "traceId": "trace",
+            "finalResponse": "Parsed final response",
+        }
+    )
+
+    assert result["action"] == "continue"
+    assert "VERIFICATION UNAVAILABLE" in result["message"]
+
+
+def test_openclaw_enabled_accept_requires_evidence_revision(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters.openclaw import node_bridge
+
+    store = Store(tmp_path / "missing-revision.db")
+    store.create_run(
+        trace_id="turn",
+        session_id="session",
+        host="openclaw",
+        metadata={"request_kind": "trivial"},
+    )
+
+    class AdapterStub:
+        def __init__(self) -> None:
+            self.store = store
+
+        def runtime_enabled(self) -> bool:
+            return True
+
+        def resolve_turn_trace(self, _session_id: str, trace_id: str) -> str:
+            return trace_id
+
+        def evaluate_completion_policy(
+            self,
+            _final_response: str,
+            **_kwargs: Any,
+        ) -> dict[str, str]:
+            return {"action": "accept"}
+
+    monkeypatch.setattr(node_bridge, "OpenClawAdapter", AdapterStub)
+
+    result = node_bridge.handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "session",
+            "traceId": "turn",
+            "finalResponse": "draft",
+        }
+    )
+
+    assert result["action"] == "continue"
+    assert store.get_run("turn")["status"] == "active"
+    assert store.get_authoritative_finalization("session", "turn") is None
+
+
+def test_openclaw_soft_off_never_terminalizes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters.openclaw import node_bridge
+
+    class StoreSpy:
+        def commit_terminal_finalization(self, **_kwargs: Any) -> None:
+            raise AssertionError("soft-off must not commit")
+
+    class AdapterStub:
+        store = StoreSpy()
+
+        def runtime_enabled(self) -> bool:
+            return False
+
+    monkeypatch.setattr(node_bridge, "OpenClawAdapter", AdapterStub)
+
+    assert node_bridge.handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "session",
+            "traceId": "turn",
+            "finalResponse": "original",
+        }
+    ) == {"runtimeDisabled": True}
+
+
+def test_openclaw_stale_evidence_cannot_terminalize(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters.openclaw import node_bridge
+    from agency_runtime.core.header.contract import fill_header_fields, format_header
+
+    store = Store(tmp_path / "stale-revision.db")
+    store.create_run(
+        trace_id="turn",
+        session_id="session",
+        host="openclaw",
+        metadata={"request_kind": "trivial"},
+    )
+    fields = fill_header_fields({}, "session", store, "", "turn")
+    response = f"{format_header(fields)}\n\nDone."
+
+    class MutatingAdapter(OpenClawAdapter):
+        def evaluate_completion_policy(
+            self,
+            final_response: str,
+            **kwargs: Any,
+        ) -> dict[str, Any]:
+            decision = super().evaluate_completion_policy(final_response, **kwargs)
+            self.store.record_skill_loaded("session", "late-skill", trace_id="turn")
+            return decision
+
+    adapter = MutatingAdapter(store=store)
+    monkeypatch.setattr(node_bridge, "OpenClawAdapter", lambda: adapter)
+
+    result = node_bridge.handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "session",
+            "traceId": "turn",
+            "finalResponse": response,
+        }
+    )
+
+    assert result["action"] == "allow_pending"
+    assert store.get_run("turn")["status"] == "active"
+    assert store.get_authoritative_finalization("session", "turn") is None
+
+    outbound = node_bridge.handle(
+        {
+            "action": "outbound_gate",
+            "sessionId": "session",
+            "traceId": "turn",
+            "finalResponse": response,
+        }
+    )
+
+    assert outbound["action"] == "replace"
+    assert store.get_run("turn")["status"] == "active"
+    assert store.get_authoritative_finalization("session", "turn") is None
+
+
+def test_openclaw_concurrent_duplicate_callback_replays_one_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters.openclaw import node_bridge
+
+    store = Store(tmp_path / "concurrent-retry.db")
+    store.create_run(
+        trace_id="turn",
+        session_id="session",
+        host="openclaw",
+        metadata={"request_kind": "trivial"},
+    )
+    barrier = threading.Barrier(2)
+
+    class BarrierAdapter(OpenClawAdapter):
+        def evaluate_completion_policy(
+            self,
+            final_response: str,
+            **kwargs: Any,
+        ) -> dict[str, Any]:
+            decision = super().evaluate_completion_policy(final_response, **kwargs)
+            barrier.wait(timeout=5)
+            return decision
+
+    adapter = BarrierAdapter(store=store)
+    monkeypatch.setattr(node_bridge, "OpenClawAdapter", lambda: adapter)
+    payload = {
+        "action": "pre_verify",
+        "sessionId": "session",
+        "traceId": "turn",
+        "finalResponse": "invalid",
+    }
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(node_bridge.handle, (payload, payload)))
+
+    assert {result["revisionId"] for result in results} == {results[0]["revisionId"]}
+    assert store.get_run("turn")["status"] == "active"
+
+    plain_adapter = OpenClawAdapter(store=store)
+    monkeypatch.setattr(node_bridge, "OpenClawAdapter", lambda: plain_adapter)
+    exhausted = node_bridge.handle({**payload, "finalResponse": "changed invalid"})
+
+    assert exhausted["action"] == "terminal"
+    assert exhausted["terminalRejected"] is True
+    assert exhausted["terminalStatus"] == "retry_exhausted"
+    assert "revisionId" not in exhausted
+    assert store.get_run("turn")["status"] == "retry_exhausted"
 
 
 def test_openclaw_bridge_main_fails_open_without_leaking_exception_text(
@@ -268,6 +558,38 @@ def test_openclaw_bridge_main_fails_open_without_leaking_exception_text(
     assert json.loads(stdout.getvalue()) == {}
     assert "host operation continues" in stderr.getvalue()
     assert "private bridge detail" not in stderr.getvalue()
+
+
+def test_openclaw_bridge_main_fails_closed_for_unexpected_pre_verify_exception(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters.openclaw import node_bridge
+
+    monkeypatch.setattr(
+        node_bridge,
+        "handle",
+        lambda _payload: (_ for _ in ()).throw(RuntimeError("private verifier detail")),
+    )
+    stdin = io.StringIO(
+        json.dumps(
+            {
+                "action": "pre_verify",
+                "sessionId": "session",
+                "traceId": "turn",
+                "finalResponse": "draft",
+            }
+        )
+    )
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    monkeypatch.setattr(sys, "stdin", stdin)
+    monkeypatch.setattr(sys, "stdout", stdout)
+    monkeypatch.setattr(sys, "stderr", stderr)
+
+    assert node_bridge.main() == 0
+    assert json.loads(stdout.getvalue())["action"] == "continue"
+    assert "response publication blocked" in stderr.getvalue()
+    assert "private verifier detail" not in stderr.getvalue()
 
 
 def test_openclaw_bridge_main_never_emits_nonfinite_json(

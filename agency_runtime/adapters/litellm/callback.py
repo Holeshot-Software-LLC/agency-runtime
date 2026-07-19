@@ -14,6 +14,7 @@ redacted first.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import importlib
 import logging
 import threading
@@ -28,6 +29,7 @@ from typing import Any
 
 from agency_runtime.adapters.base import BaseAdapter
 from agency_runtime.core.config import AgencyConfig, is_safe_credential_url, load_config
+from agency_runtime.core.config_binding import config_for_store
 from agency_runtime.core.http_safety import open_no_redirect
 from agency_runtime.core.store.sqlite import Store
 
@@ -38,16 +40,16 @@ from .evidence import (
     event_identity,
     first,
     hidden_params,
+    identifier,
     iso_time,
     known_headers,
     mapping,
     metadata,
-    provider_model,
-    response_value,
     sanitize_api_base,
     session_id,
     trace_id,
 )
+from .reconciliation import reconcile_litellm_model
 from .request_context import (
     inject_message_context,
     inject_proxy_context,
@@ -74,6 +76,8 @@ _MAX_DEDUPE_EVENTS = 4096
 _MAX_ROUTE_CONTEXTS = 1024
 _MAX_ROUTE_CONTEXT_CHARS = 16_384
 _registration_lock = threading.RLock()
+_RouteLockKey = tuple[str, str]
+_RouteContextKey = tuple[str, str, str]
 
 
 def litellm_health_check(base_url: str | None = None, config: AgencyConfig | None = None) -> bool:
@@ -114,30 +118,64 @@ class LiteLLMAdapter(BaseAdapter):
         base_url: str | None = None,
         config: AgencyConfig | None = None,
     ):
+        self._config_input = config
+        self._config = config
+        self._base_url = base_url
         super().__init__(store)
-        self._config = config or load_config()
-        self.base_url = base_url or self._config.adapters.litellm.base_url
+
+    @property
+    def config(self) -> AgencyConfig:
+        """Return explicit config or refresh the Store-bound file-aware snapshot."""
+
+        if self._config_input is not None:
+            return self._config_input
+        return config_for_store(self._store)
+
+    @property
+    def store(self) -> Store:
+        """Open the configured Store lazily for enabled LiteLLM work."""
+
+        if self._store is None:
+            cfg = self.config
+            self._store = (
+                Store(
+                    cfg.store.resolved_path(),
+                    config_path=cfg.config_path or None,
+                )
+                if self._config_input is not None
+                else Store(config_path=cfg.config_path or None)
+            )
+        return self._store
+
+    @store.setter
+    def store(self, value: Store) -> None:
+        self._store = value
+
+    def _uses_explicit_config(self) -> bool:
+        """Keep caller-supplied config immutable and independent from file reloads."""
+
+        return self._config_input is not None
+
+    @property
+    def base_url(self) -> str:
+        return self._base_url or self.config.adapters.litellm.base_url
 
     def is_available(self) -> bool:
-        enabled = self._config.adapters.litellm.enabled
+        from agency_runtime.core.runtime_control import master_enabled
+
+        if not master_enabled():
+            return False
+        config = self.config
+        enabled = config.adapters.litellm.enabled
         if enabled == "false":
             return False
         if enabled == "true":
             return True
-        return litellm_health_check(self.base_url, self._config)
-
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_specialists_for_session(session_id)
+        base_url = self._base_url or config.adapters.litellm.base_url
+        return litellm_health_check(base_url, config)
 
     def get_delegate_backend(self) -> str | None:
         return None
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        receipt = self.store.get_model_receipt_for_session(session_id)
-        return receipt or {}
 
     def extract_receipt_from_headers(
         self,
@@ -165,26 +203,26 @@ class LiteLLMAdapter(BaseAdapter):
     ) -> dict[str, Any] | None:
         """Run selector preflight and return context for one LiteLLM request."""
         del messages
-        from agency_runtime.core.selector.pipeline import (
-            is_trivial,
-            route_and_build_context,
+        from agency_runtime.core.runtime_control import master_enabled
+
+        if not master_enabled():
+            return None
+        config = self.config
+        if config.adapters.litellm.enabled == "false":
+            return None
+        if _model_is_skipped(model, config.adapters.litellm.skip_models):
+            return None
+        captured_message = (
+            redact_content(user_message) if config.observability.capture_content else ""
         )
-
-        if _model_is_skipped(model, self._config.adapters.litellm.skip_models):
-            return None
-        if is_trivial(user_message, self._config):
-            return None
-
-        catalog = self.store.get_active_roster_as_catalog()
-        context = route_and_build_context(
+        return self.build_preflight_context(
             session_id,
             user_message,
-            catalog,
-            config=self._config,
-            store=self.store,
-            trace_id=trace_id,
+            model,
+            trace_id or "",
+            config=config,
+            persisted_user_message=captured_message,
         )
-        return {"context": context} if context else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,14 +251,14 @@ class AgencyLiteLLMCallback(_CustomLogger):
         store: Store | None = None,
         config: AgencyConfig | None = None,
     ) -> None:
-        self._config = config or load_config()
-        self._enabled = self._config.adapters.litellm.enabled != "false"
+        self._config_input = config
+        self._config: AgencyConfig | None = None
         self._store = store
         self._adapter: LiteLLMAdapter | None = None
         self._lock = threading.RLock()
         self._recorded_events: OrderedDict[str, None] = OrderedDict()
-        self._route_contexts: OrderedDict[str, str] = OrderedDict()
-        self._route_locks: weakref.WeakValueDictionary[str, threading.Lock] = (
+        self._route_contexts: OrderedDict[_RouteContextKey, str] = OrderedDict()
+        self._route_locks: weakref.WeakValueDictionary[_RouteLockKey, threading.Lock] = (
             weakref.WeakValueDictionary()
         )
         try:
@@ -231,10 +269,32 @@ class AgencyLiteLLMCallback(_CustomLogger):
             super().__init__()
 
     @property
+    def config(self) -> AgencyConfig:
+        """Return explicit config or refresh the Store-bound file-aware snapshot."""
+
+        with self._lock:
+            if self._config_input is not None:
+                return self._config_input
+            bound_store = self._store
+            if bound_store is None and self._adapter is not None:
+                bound_store = self._adapter._store
+        return config_for_store(bound_store)
+
+    def _runtime_active(self) -> bool:
+        """Check the master switch before config, Store, routing, or evidence work."""
+
+        from agency_runtime.core.runtime_control import master_enabled
+
+        return master_enabled() and self.config.adapters.litellm.enabled != "false"
+
+    @property
     def adapter(self) -> LiteLLMAdapter:
         with self._lock:
             if self._adapter is None:
-                self._adapter = LiteLLMAdapter(store=self._store, config=self._config)
+                self._adapter = LiteLLMAdapter(
+                    store=self._store,
+                    config=self._config_input,
+                )
             return self._adapter
 
     def _claim(self, event_key: str) -> bool:
@@ -251,6 +311,14 @@ class AgencyLiteLLMCallback(_CustomLogger):
         with self._lock:
             self._recorded_events.pop(event_key, None)
 
+    def _discard_route_contexts(self, session_id: str, trace_id: str) -> None:
+        """Discard every request fingerprint owned by one terminal model call."""
+
+        with self._lock:
+            for key in tuple(self._route_contexts):
+                if key[:2] == (session_id, trace_id):
+                    self._route_contexts.pop(key, None)
+
     def _event_key(
         self,
         payload: Mapping[str, Any],
@@ -258,11 +326,14 @@ class AgencyLiteLLMCallback(_CustomLogger):
         start_time: Any,
         status: str,
     ) -> tuple[str, str]:
-        request_trace_id = trace_id(payload, response_obj) or str(uuid.uuid4())
         identity = event_identity(response_obj, start_time)
+        request_trace_id = trace_id(payload, response_obj) or identifier(
+            f"litellm-terminal:{identity}"
+        )
+        terminal_status = bounded(status, 32).casefold() or "unknown"
         return (
             request_trace_id,
-            f"{bounded(status, 16)}:{request_trace_id}:{identity}",
+            f"terminal:{request_trace_id}:{identity}:{terminal_status}",
         )
 
     def _record_receipt(
@@ -274,27 +345,24 @@ class AgencyLiteLLMCallback(_CustomLogger):
         *,
         status: str,
     ) -> None:
-        if not self._enabled:
+        if not self._runtime_active():
             return
-        trace_id, event_key = self._event_key(payload, response_obj, start_time, status)
-        if not self._claim(event_key):
-            return
+        event_key = ""
         try:
+            trace_id, event_key = self._event_key(payload, response_obj, start_time, status)
+            if not self._claim(event_key):
+                return
             requested_model = bounded(payload.get("model"), 256)
             request_session_id = session_id(payload, trace_id)
             headers = known_headers(response_obj)
             receipt = self.adapter.extract_receipt_from_headers(headers, requested_model, trace_id)
             params = mapping(payload.get("litellm_params"))
             hidden = hidden_params(response_obj)
-            actual_provider, actual_model = provider_model(response_value(response_obj, "model"))
-            resolved_provider = bounded(
-                first(
-                    actual_provider,
-                    receipt.get("resolved_provider"),
-                    params.get("custom_llm_provider"),
-                    payload.get("custom_llm_provider"),
-                ),
-                128,
+            reconciled = reconcile_litellm_model(
+                payload,
+                response_obj,
+                receipt=receipt,
+                status=status,
             )
             api_base = sanitize_api_base(
                 first(
@@ -312,44 +380,47 @@ class AgencyLiteLLMCallback(_CustomLogger):
             ):
                 attempted_fallbacks = len(previous_models)
 
-            if status != "success":
-                # A selected deployment is not proof that a failed call ran.
-                actual_model = ""
-                resolved_provider = ""
-            resolved_model = actual_model or (
-                clean(receipt.get("resolved_model")) if status == "success" else ""
-            )
-            if not resolved_model:
-                resolved_model = "unavailable"
-
-            self.adapter.store.record_model_receipt(
-                trace_id=trace_id,
-                session_id=request_session_id,
-                host=self.adapter.host_name,
-                requested_model=requested_model,
-                model_group=bounded(
-                    first(receipt.get("model_group"), requested_model),
-                    256,
-                ),
-                resolved_provider=resolved_provider,
-                resolved_model=bounded(resolved_model, 256),
-                api_base=bounded(api_base, 1024),
-                attempted_fallbacks=bounded_count(attempted_fallbacks),
-                model_id=bounded(
+            receipt_values = {
+                "trace_id": trace_id,
+                "session_id": request_session_id,
+                "host": self.adapter.host_name,
+                "requested_model": requested_model,
+                "model_group": reconciled.model_group,
+                "resolved_provider": reconciled.resolved_provider,
+                "resolved_model": reconciled.resolved_model,
+                "api_base": bounded(api_base, 1024),
+                "attempted_fallbacks": bounded_count(attempted_fallbacks),
+                "model_id": bounded(
                     first(receipt.get("model_id"), hidden.get("model_id")),
                     512,
                 ),
-                source="litellm",
-                started_at=iso_time(start_time),
-                ended_at=iso_time(end_time),
-                status=status,
+                "started_at": iso_time(start_time),
+                "ended_at": iso_time(end_time),
+                "status": status,
+            }
+            trusted_recorder = getattr(
+                self.adapter.store,
+                "_record_litellm_model_receipt",
+                None,
             )
-            # Routing context can contain task excerpts for injection.  Keep it
-            # only until the terminal callback for this request has persisted.
-            with self._lock:
-                self._route_contexts.pop(trace_id, None)
+            if callable(trusted_recorder):
+                trusted_recorder(**receipt_values)
+            else:
+                # Compatibility for Store-like test doubles and embedders.
+                # Canonical Store instances always use the provenance-bound
+                # path above; a generic Store call cannot persist this source.
+                self.adapter.store.record_model_receipt(
+                    source="litellm",
+                    **receipt_values,
+                )
+            # A model-call terminal callback is not an Agency-turn terminal
+            # callback. Stop/finalize owns run closure after it validates the
+            # response against all correlated evidence. The request-scoped
+            # routing context is no longer needed once this receipt persists.
+            self._discard_route_contexts(request_session_id, trace_id)
         except Exception as exc:  # callbacks must never break model traffic
-            self._unclaim(event_key)
+            if event_key:
+                self._unclaim(event_key)
             logger.warning("LiteLLM evidence callback failed: %s", type(exc).__name__)
 
     def _routing_context(
@@ -359,7 +430,7 @@ class AgencyLiteLLMCallback(_CustomLogger):
         messages: Any,
         payload: MutableMapping[str, Any],
     ) -> str:
-        if not self._enabled:
+        if not self._runtime_active():
             return ""
         request_message = user_message(messages)
         if not request_message:
@@ -372,38 +443,31 @@ class AgencyLiteLLMCallback(_CustomLogger):
             request_metadata["agency_trace_id"] = request_trace_id
             payload["metadata"] = request_metadata
         request_session_id = session_id(payload, request_trace_id)
+        route_lock_key = (request_session_id, request_trace_id)
+        request_fingerprint = hashlib.sha256(
+            f"{bounded(model, 1024)}\0{request_message}".encode(
+                "utf-8",
+                errors="surrogatepass",
+            )
+        ).hexdigest()
+        route_key = (*route_lock_key, request_fingerprint)
 
         with self._lock:
             route_lock = self._route_locks.setdefault(
-                request_trace_id,
+                route_lock_key,
                 threading.Lock(),
             )
 
         with route_lock:
             with self._lock:
-                cached = self._route_contexts.get(request_trace_id)
+                cached = self._route_contexts.get(route_key)
                 if cached is not None:
-                    self._route_contexts.move_to_end(request_trace_id)
+                    self._route_contexts.move_to_end(route_key)
                     return cached
 
-            # Establish the shared trace parent.  Passing an empty string when
-            # capture is disabled prevents a differently loaded global config
-            # from accidentally persisting content.
-            captured = (
-                redact_content(request_message)
-                if self._config.observability.capture_content
-                else ""
-            )
-            self.adapter.store.create_run(
-                trace_id=request_trace_id,
-                session_id=request_session_id,
-                host=self.adapter.host_name,
-                user_message=captured,
-                metadata={
-                    "callback": "agency-runtime-litellm",
-                    "content_capture": bool(captured),
-                },
-            )
+            # Shared preflight owns trace creation and request fingerprinting.
+            # The callback lock makes same-trace re-entry idempotent, while the
+            # configured capture flag is applied by that shared boundary.
             result = self.adapter.pre_call_handler(
                 request_session_id,
                 request_message,
@@ -416,12 +480,12 @@ class AgencyLiteLLMCallback(_CustomLogger):
                 ),
                 trace_id=request_trace_id,
             )
-            context = bounded(
-                (result or {}).get("context"),
-                _MAX_ROUTE_CONTEXT_CHARS,
-            )
+            raw_context = (result or {}).get("context")
+            context = clean(raw_context) if isinstance(raw_context, str) else ""
+            if len(context) > _MAX_ROUTE_CONTEXT_CHARS:
+                raise RuntimeError("Agency routing context exceeds the LiteLLM delivery ceiling")
             with self._lock:
-                self._route_contexts[request_trace_id] = context
+                self._route_contexts[route_key] = context
                 while len(self._route_contexts) > _MAX_ROUTE_CONTEXTS:
                     self._route_contexts.popitem(last=False)
             return context
@@ -446,16 +510,20 @@ class AgencyLiteLLMCallback(_CustomLogger):
         kwargs: dict[str, Any],
     ) -> dict[str, Any]:
         """Inject routing context for LiteLLM SDK async requests."""
+        if not self._runtime_active():
+            return kwargs
         try:
             updated = dict(kwargs)
+            cleaned_messages = inject_message_context(messages, "")
             context = await asyncio.to_thread(
                 self._routing_context,
                 model=model,
-                messages=messages,
+                messages=cleaned_messages,
                 payload=updated,
             )
-            if context:
-                updated["messages"] = inject_message_context(messages, context)
+            original_messages = list(messages)
+            if context or cleaned_messages != original_messages:
+                updated["messages"] = inject_message_context(cleaned_messages, context)
             return updated
         except Exception as exc:
             logger.warning("LiteLLM request hook failed: %s", type(exc).__name__)
@@ -470,6 +538,8 @@ class AgencyLiteLLMCallback(_CustomLogger):
     ) -> dict[str, Any]:
         """Inject routing context in LiteLLM Proxy chat/message requests."""
         del user_api_key_dict, cache
+        if not self._runtime_active():
+            return data
         try:
             if clean(call_type).casefold() not in {
                 "completion",
@@ -480,14 +550,15 @@ class AgencyLiteLLMCallback(_CustomLogger):
                 return data
             updated = dict(data)
             messages = proxy_request_input(updated, call_type)
+            inject_proxy_context(updated, messages, "", call_type)
+            messages = proxy_request_input(updated, call_type)
             context = await asyncio.to_thread(
                 self._routing_context,
                 model=clean(updated.get("model")),
                 messages=messages,
                 payload=updated,
             )
-            if context:
-                inject_proxy_context(updated, messages, context, call_type)
+            inject_proxy_context(updated, messages, context, call_type)
             return updated
         except Exception as exc:
             logger.warning("LiteLLM proxy hook failed: %s", type(exc).__name__)
@@ -534,7 +605,11 @@ def register_litellm_callback(
     call concurrently.  Multi-worker applications must invoke it in each worker
     process, or use :func:`litellm_proxy_callback_config`.
     """
-    cfg = config or load_config()
+    from agency_runtime.core.runtime_control import master_enabled
+
+    if not master_enabled():
+        return LiteLLMRegistration(False, False, reason="Agency Runtime master switch is off")
+    cfg = config_for_store(store, config)
     if cfg.adapters.litellm.enabled == "false":
         return LiteLLMRegistration(False, False, reason="disabled by Agency Runtime config")
     if litellm_module is None:
@@ -560,7 +635,11 @@ def register_litellm_callback(
                     callback=callback,
                 )
 
-        callback = AgencyLiteLLMCallback(store=store, config=cfg)
+        # Keep an explicitly supplied config immutable, but do not turn an
+        # omitted config into a process-lifetime snapshot. Long-lived SDK and
+        # proxy callbacks must observe atomic dashboard/CLI configuration
+        # changes through the Store-bound file-aware loader on the next event.
+        callback = AgencyLiteLLMCallback(store=store, config=config)
         callbacks.append(callback)
         try:
             litellm_module.callbacks = callbacks
@@ -580,6 +659,10 @@ def litellm_proxy_callback_config(config: AgencyConfig | None = None) -> dict[st
     raw message logging stays disabled; the callback separately implements
     bounded, redacted, opt-in content capture.
     """
+    from agency_runtime.core.runtime_control import master_enabled
+
+    if not master_enabled():
+        return {"litellm_settings": {"turn_off_message_logging": True}}
     cfg = config or load_config()
     settings: dict[str, Any] = {"turn_off_message_logging": True}
     if cfg.adapters.litellm.enabled != "false":

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import re
-import uuid
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from itertools import islice
 from pathlib import Path
@@ -28,6 +27,15 @@ _PATH_MATCH_LIMIT = 32
 _PATH_SCAN_LIMIT = _PATH_MATCH_LIMIT * 4
 _SPACED_PATH_WINDOW_CHARS = 4096
 _SPACED_PATH_CANDIDATES_PER_MATCH = 4
+MAX_WORK_UNITS = 16
+MAX_UNIT_ID_CHARS = 80
+# Leave bounded room for the unit id, absolute workdir, and lifecycle guidance
+# added by call_delegate before a command backend applies its 16 KiB task cap.
+MAX_DESCRIPTION_CHARS = 10 * 1024
+MAX_RECOMMENDED_AGENT_CHARS = 128
+MAX_FILES_PER_UNIT = 128
+MAX_DEPENDENCIES_PER_UNIT = MAX_WORK_UNITS - 1
+MAX_PATH_CHARS = 4096
 _DEP_RE = re.compile(
     r"^\s*(?:after(?:\s+that)?|then|once)\b"
     r"|\bdepends?\s+on\b"
@@ -60,18 +68,25 @@ def _path_match_is_embedded(description: str, start: int) -> bool:
     return previous.isalnum() or previous in "_./\\@+-"
 
 
+def _bounded_items(value: Iterable[Any], *, limit: int, field: str) -> list[Any]:
+    items = list(islice(value, limit + 1))
+    if len(items) > limit:
+        raise ValueError(f"{field} cannot contain more than {limit} entries")
+    return items
+
+
 def _items(work_units: Any) -> list[Any]:
     if work_units is None:
         return []
     if isinstance(work_units, Mapping):
         units = work_units.get("units")
         if isinstance(units, Iterable) and not isinstance(units, (str, bytes, Mapping)):
-            return list(units)
+            return _bounded_items(units, limit=MAX_WORK_UNITS, field="work_units")
         return [work_units]
     if isinstance(work_units, str):
         return [work_units]
     if isinstance(work_units, Iterable):
-        return list(work_units)
+        return _bounded_items(work_units, limit=MAX_WORK_UNITS, field="work_units")
     return [work_units]
 
 
@@ -87,8 +102,8 @@ def _description(item: Any) -> str:
 
 def safe_unit_id(value: str) -> str:
     """Normalize an identifier for result keys, branches, and directory names."""
-    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", value.strip()).strip("-.")[:80]
-    return safe or f"unit-{uuid.uuid4().hex[:8]}"
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", value.strip()).strip("-.")
+    return safe[:MAX_UNIT_ID_CHARS] or "unit"
 
 
 def _stable_id(index: int, description: str) -> str:
@@ -96,11 +111,55 @@ def _stable_id(index: int, description: str) -> str:
     return f"unit-{index + 1}-{digest}"
 
 
+def _validated_unit_id(value: Any, *, field: str = "work-unit id") -> str:
+    if not isinstance(value, str):
+        raise TypeError(f"{field} must be a string")
+    if not value or value != value.strip():
+        raise ValueError(f"{field} must be non-empty and cannot have surrounding whitespace")
+    if len(value) > MAX_UNIT_ID_CHARS:
+        raise ValueError(f"{field} exceeds the {MAX_UNIT_ID_CHARS}-character limit")
+    if value != safe_unit_id(value):
+        raise ValueError(f"{field} must contain only canonical id characters")
+    return value
+
+
+def _validate_unit_bounds(unit: WorkUnit) -> None:
+    _validated_unit_id(unit.id)
+    if not isinstance(unit.description, str) or not unit.description.strip():
+        raise ValueError("work-unit description must be a non-empty string")
+    if len(unit.description) > MAX_DESCRIPTION_CHARS:
+        raise ValueError(
+            f"work-unit description exceeds the {MAX_DESCRIPTION_CHARS}-character limit"
+        )
+    if "\x00" in unit.description:
+        raise ValueError("work-unit description must not contain NUL bytes")
+    if not isinstance(unit.recommended_agent, str):
+        raise TypeError("recommended_agent must be a string")
+    if len(unit.recommended_agent) > MAX_RECOMMENDED_AGENT_CHARS:
+        raise ValueError(
+            f"recommended_agent exceeds the {MAX_RECOMMENDED_AGENT_CHARS}-character limit"
+        )
+    if any(ord(character) < 32 or ord(character) == 127 for character in unit.recommended_agent):
+        raise ValueError("recommended_agent must not contain control characters")
+    if len(unit.files) > MAX_FILES_PER_UNIT:
+        raise ValueError(f"files cannot contain more than {MAX_FILES_PER_UNIT} entries")
+    for path in unit.files:
+        if len(str(path)) > MAX_PATH_CHARS:
+            raise ValueError(f"file path exceeds the {MAX_PATH_CHARS}-character limit")
+    if len(unit.depends_on) > MAX_DEPENDENCIES_PER_UNIT:
+        raise ValueError(f"depends_on cannot contain more than {MAX_DEPENDENCIES_PER_UNIT} entries")
+    for dependency in unit.depends_on:
+        _validated_unit_id(dependency, field="depends_on entry")
+
+
 def validate_unique_unit_ids(units: Sequence[WorkUnit]) -> None:
-    """Reject IDs that would make graph nodes or result entries ambiguous."""
+    """Reject non-canonical or duplicate IDs at every public lifecycle boundary."""
+    if len(units) > MAX_WORK_UNITS:
+        raise ValueError(f"work_units cannot contain more than {MAX_WORK_UNITS} entries")
     seen: set[str] = set()
     duplicates: set[str] = set()
     for unit in units:
+        _validate_unit_bounds(unit)
         if unit.id in seen:
             duplicates.add(unit.id)
         seen.add(unit.id)
@@ -133,9 +192,11 @@ def _explicit_files(item: Any) -> set[Path]:
     if not isinstance(value, Iterable) or isinstance(value, (bytes, Mapping)):
         raise TypeError("files must be a path or iterable of paths")
     paths: set[Path] = set()
-    for path in value:
+    for path in _bounded_items(value, limit=MAX_FILES_PER_UNIT, field="files"):
         if not isinstance(path, (str, Path)) or not str(path).strip():
             raise ValueError("files entries must be non-empty paths")
+        if len(str(path)) > MAX_PATH_CHARS:
+            raise ValueError(f"file path exceeds the {MAX_PATH_CHARS}-character limit")
         paths.add(Path(path).expanduser())
     return paths
 
@@ -153,10 +214,12 @@ def _explicit_dependencies(item: Any) -> set[str]:
     else:
         raise TypeError("depends_on must be a work-unit id or iterable of ids")
     normalized: set[str] = set()
-    for dependency in dependencies:
-        if not isinstance(dependency, str) or not dependency.strip():
-            raise ValueError("depends_on entries must be non-empty work-unit ids")
-        normalized.add(safe_unit_id(dependency))
+    for dependency in _bounded_items(
+        dependencies,
+        limit=MAX_DEPENDENCIES_PER_UNIT,
+        field="depends_on",
+    ):
+        normalized.add(_validated_unit_id(dependency, field="depends_on entry"))
     return normalized
 
 
@@ -184,6 +247,52 @@ def _existing_spaced_file(
     return longest, longest_end, considered
 
 
+def _unit_contract(
+    index: int,
+    item: Any,
+) -> tuple[str, str, str, Path | None] | None:
+    description = _description(item)
+    if not description:
+        return None
+    if len(description) > MAX_DESCRIPTION_CHARS:
+        raise ValueError(
+            f"work-unit description exceeds the {MAX_DESCRIPTION_CHARS}-character limit"
+        )
+    if "\x00" in description:
+        raise ValueError("work-unit description must not contain NUL bytes")
+    raw_id = _stable_id(index, description)
+    if isinstance(item, Mapping) and "id" in item:
+        raw_id = _validated_unit_id(item["id"])
+    recommended_agent = (
+        str(item.get("recommended_agent") or item.get("agent") or "").strip()
+        if isinstance(item, Mapping)
+        else ""
+    )
+    if len(recommended_agent) > MAX_RECOMMENDED_AGENT_CHARS:
+        raise ValueError(
+            f"recommended_agent exceeds the {MAX_RECOMMENDED_AGENT_CHARS}-character limit"
+        )
+    if any(ord(character) < 32 or ord(character) == 127 for character in recommended_agent):
+        raise ValueError("recommended_agent must not contain control characters")
+    raw_repo = str(item["repo_path"]) if isinstance(item, Mapping) and item.get("repo_path") else ""
+    if len(raw_repo) > MAX_PATH_CHARS:
+        raise ValueError(f"repo_path exceeds the {MAX_PATH_CHARS}-character limit")
+    repo = Path(raw_repo).expanduser().resolve() if raw_repo else None
+    return description, raw_id, recommended_agent, repo
+
+
+def _repo_fallback(
+    repo_path: str | Path | None,
+    fallback_repo: Path | None,
+) -> Path | None:
+    candidate = repo_path if repo_path is not None else fallback_repo
+    if candidate is None:
+        return None
+    if len(str(candidate)) > MAX_PATH_CHARS:
+        raise ValueError(f"repo_path exceeds the {MAX_PATH_CHARS}-character limit")
+    return Path(candidate).expanduser().resolve()
+
+
 def normalize_work_units(
     work_units: Any,
     repo_path: str | Path | None,
@@ -192,31 +301,13 @@ def normalize_work_units(
     git_root: GitRootFunc,
 ) -> list[WorkUnit]:
     """Normalize strings and mappings into stable work-unit value objects."""
-    repo_fallback = (
-        Path(repo_path).expanduser().resolve()
-        if repo_path
-        else (fallback_repo.resolve() if fallback_repo else None)
-    )
+    repo_fallback = _repo_fallback(repo_path, fallback_repo)
     normalized: list[WorkUnit] = []
     for index, item in enumerate(_items(work_units)):
-        description = _description(item)
-        if not description:
+        contract = _unit_contract(index, item)
+        if contract is None:
             continue
-        raw_id = (
-            str(item.get("id"))
-            if isinstance(item, Mapping) and item.get("id")
-            else _stable_id(index, description)
-        )
-        recommended_agent = (
-            str(item.get("recommended_agent") or item.get("agent") or "")
-            if isinstance(item, Mapping)
-            else ""
-        )
-        repo = (
-            Path(str(item["repo_path"])).expanduser().resolve()
-            if isinstance(item, Mapping) and item.get("repo_path")
-            else None
-        )
+        description, raw_id, recommended_agent, repo = contract
         files = _explicit_files(item)
         depends_on = _explicit_dependencies(item)
         consumed_until = 0
@@ -253,9 +344,11 @@ def normalize_work_units(
                 normalized_files.add(resolved.relative_to(repo) if repo else resolved)
             except ValueError:
                 normalized_files.add(absolute.resolve())
+        if len(normalized_files) > MAX_FILES_PER_UNIT:
+            raise ValueError(f"files cannot contain more than {MAX_FILES_PER_UNIT} entries")
         normalized.append(
             WorkUnit(
-                id=safe_unit_id(raw_id),
+                id=raw_id,
                 description=description,
                 recommended_agent=recommended_agent,
                 repo_path=repo,
@@ -333,6 +426,13 @@ def build_dependency_graph(units: Sequence[WorkUnit]) -> DependencyGraph:
 
 
 __all__ = [
+    "MAX_DEPENDENCIES_PER_UNIT",
+    "MAX_DESCRIPTION_CHARS",
+    "MAX_FILES_PER_UNIT",
+    "MAX_PATH_CHARS",
+    "MAX_RECOMMENDED_AGENT_CHARS",
+    "MAX_UNIT_ID_CHARS",
+    "MAX_WORK_UNITS",
     "build_dependency_graph",
     "normalize_work_units",
     "safe_unit_id",

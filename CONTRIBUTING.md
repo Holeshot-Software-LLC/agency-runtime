@@ -3,7 +3,7 @@ title: "Contributing to Agency Runtime"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-16
 tags: [contributing, development]
 related:
   - AGENTS.md
@@ -99,10 +99,16 @@ python scripts/verify_release_hygiene.py
 bandit -q -r agency_runtime -lll
 python scripts/audit_runtime_dependencies.py
 zizmor --pedantic --strict-collection --offline .
+AGENCY_RELEASE_COMMIT="$(git rev-parse --verify 'HEAD^{commit}')"
 python -m build --sdist --wheel
 python -m twine check --strict dist/*
-python scripts/verify_distribution.py dist
+python scripts/verify_distribution.py dist --expected-commit "${AGENCY_RELEASE_COMMIT}"
 ```
+
+Capture `AGENCY_RELEASE_COMMIT` from the clean reviewed checkout before the
+build. In PowerShell, set the equivalent value with
+`$env:AGENCY_RELEASE_COMMIT = git rev-parse --verify "HEAD^{commit}"` and pass
+`$env:AGENCY_RELEASE_COMMIT` to `--expected-commit`.
 
 The CI matrix runs the test suite on Ubuntu with Python 3.10 through 3.14 and on
 Windows at the 3.10/3.14 support endpoints, then installs the built wheel in

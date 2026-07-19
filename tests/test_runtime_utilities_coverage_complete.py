@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 from urllib.request import Request
@@ -20,7 +24,12 @@ from agency_runtime.core.host_control import (
 )
 from agency_runtime.core.http_safety import _is_loopback_destination, open_no_redirect
 from agency_runtime.core.policy.profiles import DEFAULT_PROFILE, get_profile
-from agency_runtime.core.process_argv import absolute_executable_path, prepare_process_argv
+from agency_runtime.core.process_argv import (
+    absolute_executable_path,
+    agency_bootstrap_path,
+    isolated_python_argv,
+    prepare_process_argv,
+)
 from agency_runtime.core.provider_validation import validate_provider
 from agency_runtime.core.receipts.host import extract_host_receipt
 from agency_runtime.core.receipts.litellm import extract_litellm_receipt_headers
@@ -91,6 +100,58 @@ def test_absolute_executable_path_rejects_invalid_values(value: str) -> None:
         absolute_executable_path(value)
 
 
+def test_isolated_bootstrap_ignores_hostile_cwd_and_supports_user_site_layout(
+    tmp_path: Path,
+) -> None:
+    import agency_runtime
+
+    user_site = tmp_path / "user-site"
+    installed_package = user_site / "agency_runtime"
+    shutil.copytree(
+        Path(agency_runtime.__file__).parent,
+        installed_package,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    hostile = tmp_path / "hostile"
+    hostile_package = hostile / "agency_runtime"
+    hostile_package.mkdir(parents=True)
+    marker = tmp_path / "shadow-loaded"
+    hostile_package.joinpath("__init__.py").write_text(
+        f"from pathlib import Path\nPath({str(marker)!r}).write_text('loaded')\n",
+        encoding="utf-8",
+    )
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = str(hostile)
+    environment["PYTHONHOME"] = str(tmp_path / "hostile-python-home")
+    bootstrap = installed_package / "_bootstrap.py"
+
+    completed = subprocess.run(
+        [sys.executable, "-I", str(bootstrap), "agency_runtime.cli", "--help"],
+        cwd=hostile,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "Agency Runtime" in completed.stdout
+    assert not marker.exists()
+
+
+def test_isolated_python_argv_binds_absolute_interpreter_and_package_bootstrap() -> None:
+    argv = isolated_python_argv("relative/python", "agency_runtime.cli", "--help")
+
+    assert Path(argv[0]).is_absolute()
+    assert argv[1:] == [
+        "-I",
+        agency_bootstrap_path(),
+        "agency_runtime.cli",
+        "--help",
+    ]
+
+
 def test_display_tokens_validate_escape_and_truncate() -> None:
     with pytest.raises(ValueError, match="positive"):
         safe_display_token("value", limit=0)
@@ -142,15 +203,17 @@ def test_process_argv_rejects_invalid_inputs_and_preserves_posix_resolution() ->
 
 def test_process_argv_wraps_a_powershell_script_on_windows(tmp_path: Path) -> None:
     script = tmp_path / "agent.ps1"
+    powershell = tmp_path / "powershell.exe"
     script.write_text("exit 0", encoding="utf-8")
+    powershell.write_bytes(b"powershell")
     result = prepare_process_argv(
         ["agent", "task"],
         platform_name="nt",
         resolver=lambda _name: str(script),
-        system_resolver=lambda name: name,
+        system_resolver=lambda _name: str(powershell),
     )
     assert result[:7] == [
-        "powershell.exe",
+        str(powershell),
         "-NoLogo",
         "-NoProfile",
         "-NonInteractive",

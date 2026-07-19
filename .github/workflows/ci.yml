@@ -22,7 +22,7 @@ jobs:
   quality:
     name: lint, coverage, performance, and dashboard UI
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -77,7 +77,7 @@ jobs:
   test:
     name: tests / ${{ matrix.os }} / py${{ matrix.python }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -149,15 +149,24 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install release tools
-        run: python -m pip install "build==1.5.1" "twine==6.2.0"
+        run: python -m pip install "build==1.5.0" "twine==6.2.0"
       - name: Check tracked release inputs
         run: python scripts/verify_release_hygiene.py
+      - name: Capture immutable reviewed commit
+        shell: bash
+        run: |
+          AGENCY_RELEASE_COMMIT="$(git rev-parse --verify HEAD^{commit})"
+          if [ "${AGENCY_RELEASE_COMMIT}" != "${GITHUB_SHA}" ]; then
+            echo "checked-out commit does not match the GitHub event commit" >&2
+            exit 1
+          fi
+          echo "AGENCY_RELEASE_COMMIT=${AGENCY_RELEASE_COMMIT}" >> "${GITHUB_ENV}"
       - name: Build wheel and source distribution
         run: python -m build --sdist --wheel
       - name: Verify metadata and artifact contents
         run: |
           python -m twine check --strict dist/*
-          python scripts/verify_distribution.py dist
+          python scripts/verify_distribution.py dist --expected-commit "${AGENCY_RELEASE_COMMIT}"
       - name: Upload distributions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -197,6 +206,7 @@ jobs:
         working-directory: ${{ runner.temp }}
         shell: bash
         run: |
+          EXPECTED_VERSION="$(python "${GITHUB_WORKSPACE}/scripts/read_release_version.py" "${GITHUB_WORKSPACE}/agency_runtime/__init__.py")"
           wheel_artifacts=(agency-dist/*.whl)
           sdist_artifacts=(agency-dist/*.tar.gz)
           if [ "${#wheel_artifacts[@]}" -ne 1 ] || [ ! -f "${wheel_artifacts[0]}" ]; then
@@ -231,7 +241,8 @@ jobs:
             export USERPROFILE="${RUNNER_TEMP}/agency-${label}-home"
             "${python}" -m pip install --no-cache-dir --only-binary=:all: "${artifact}"
             "${python}" -I -c "from importlib.metadata import version; from importlib.resources import files; import agency_runtime; from agency_runtime.core.canary import run_canary; assert callable(run_canary); assert version('agency-runtime') == agency_runtime.__version__; assert files('agency_runtime.dashboard').joinpath('index.html').is_file(); assert files('agency_runtime.core').joinpath('canary.py').is_file(); assert files('agency_runtime.core.evals.data').joinpath('routing_v1.py').is_file()"
-            "${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py"
+            "${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py" --expected-version "${EXPECTED_VERSION}"
+            "${python}" -I -c 'import subprocess, sys; result = subprocess.run([sys.argv[1], "--version"], capture_output=True, text=True, check=False); expected = f"agency {sys.argv[2]}\n"; assert (result.returncode, result.stdout, result.stderr) == (0, expected, ""), (result.returncode, result.stdout, result.stderr)' "${agency}" "${EXPECTED_VERSION}"
             "${agency}" --help
             "${agency}" host-canary --help
             "${agency}" smoke --all --json

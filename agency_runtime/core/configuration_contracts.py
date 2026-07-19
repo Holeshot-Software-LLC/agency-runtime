@@ -27,6 +27,7 @@ ENV_OVERRIDE_PATHS: tuple[tuple[str, str], ...] = (
     ("OLLAMA_BASE_URL", "ollama.base_url"),
     ("AGENCY_OLLAMA_FALLBACK_MODEL", "ollama.model"),
     ("AGENCY_DB_PATH", "store.db_path"),
+    ("AGENCY_POLICY_PATH", "companion_policy_path"),
     ("AGENCY_DASHBOARD_PORT", "dashboard.port"),
     ("AGENCY_CAPTURE_CONTENT", "observability.capture_content"),
     ("AGENCY_RETENTION_DAYS", "observability.retention_days"),

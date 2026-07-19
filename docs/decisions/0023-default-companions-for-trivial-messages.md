@@ -1,13 +1,14 @@
 ---
 title: Load default companions even for trivial messages
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-16
 tags: [routing, preflight, companions]
-related: []
+related:
+  - docs/worklog/README.md
 supersedes: [docs/decisions/0022-omit-preflight-for-trivial-messages.md]
-superseded_by: null
+superseded_by: docs/decisions/0045-turn-scoped-specialist-activation.md
 id: ADR-0023
 type: decision
 deciders: []

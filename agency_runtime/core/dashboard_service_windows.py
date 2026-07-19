@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hmac
 import os
 import subprocess
 import tempfile
+import time
 import xml.etree.ElementTree as ET
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -43,7 +46,18 @@ _WINDOWS_TASK_PROBE_SCRIPT = (
     "[Console]::Out.Write('ABSENT');exit 0};throw};"
     "[Console]::Out.Write(('PRESENT:{0}' -f [int]$t.State))"
 )
-_MAX_TASK_XML_BYTES = 1024 * 1024
+_WINDOWS_TASK_XML_SCRIPT = (
+    "$ErrorActionPreference='Stop';"
+    "$s=New-Object -ComObject Schedule.Service;$s.Connect();"
+    "$x=$s.GetFolder('\\').GetTask('Agency Runtime Dashboard').Xml;"
+    "$b=[Text.Encoding]::UTF8.GetBytes($x);"
+    "[Console]::Out.Write([Convert]::ToBase64String($b))"
+)
+_MAX_TASK_XML_BYTES = 512 * 1024
+_MAX_TASK_XML_BASE64_BYTES = 4 * ((_MAX_TASK_XML_BYTES + 2) // 3)
+_WINDOWS_TASK_FILE_ENCODING = "utf-16"
+_WINDOWS_TRANSITION_ATTEMPTS = 81
+_WINDOWS_TRANSITION_POLL_SECONDS = 0.1
 
 
 def _windows_action(argv: Sequence[str]) -> str:
@@ -79,9 +93,10 @@ def _windows_task_content(ctx: _Context) -> str:
     command = xml_escape(str(ctx.worker_argv[0]))
     arguments = xml_escape(_windows_action(ctx.worker_argv[1:]))
     current_user = xml_escape(ctx.windows_user)
+    trigger_user = xml_escape(ctx.windows_account or ctx.windows_user)
     description = xml_escape(OWNER_MARKER)
     return (
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<?xml version="1.0" encoding="UTF-16"?>\n'
         f'<Task version="1.4" xmlns="{WINDOWS_TASK_XML_NAMESPACE}">\n'
         "  <RegistrationInfo>\n"
         f"    <Description>{description}</Description>\n"
@@ -90,7 +105,7 @@ def _windows_task_content(ctx: _Context) -> str:
         "  <Triggers>\n"
         "    <LogonTrigger>\n"
         "      <Enabled>true</Enabled>\n"
-        f"      <UserId>{current_user}</UserId>\n"
+        f"      <UserId>{trigger_user}</UserId>\n"
         "    </LogonTrigger>\n"
         "  </Triggers>\n"
         "  <Principals>\n"
@@ -122,6 +137,7 @@ def _windows_task_content(ctx: _Context) -> str:
         "      <Interval>PT1M</Interval>\n"
         "      <Count>3</Count>\n"
         "    </RestartOnFailure>\n"
+        "    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>\n"
         "  </Settings>\n"
         '  <Actions Context="CurrentUser">\n'
         "    <Exec>\n"
@@ -143,6 +159,14 @@ def _xml_attribute(root: ET.Element, path: str, name: str) -> str:
     namespace = {"t": WINDOWS_TASK_XML_NAMESPACE}
     element = root.find(path, namespace)
     return element.attrib.get(name, "").strip() if element is not None else ""
+
+
+def _xml_text_or_default(root: ET.Element, path: str, default: str) -> str:
+    namespace = {"t": WINDOWS_TASK_XML_NAMESPACE}
+    element = root.find(path, namespace)
+    if element is None:
+        return default
+    return (element.text or "").strip()
 
 
 def _xml_children_match(
@@ -244,22 +268,22 @@ def _windows_task_properties(content: str) -> dict[str, str] | None:
         "MultipleInstancesPolicy",
         "DisallowStartIfOnBatteries",
         "StopIfGoingOnBatteries",
-        "AllowHardTerminate",
         "StartWhenAvailable",
-        "RunOnlyIfNetworkAvailable",
         "IdleSettings",
+        "ExecutionTimeLimit",
+        "RestartOnFailure",
+        "UseUnifiedSchedulingEngine",
+    )
+    settings_optional = (
+        "AllowHardTerminate",
+        "RunOnlyIfNetworkAvailable",
         "AllowStartOnDemand",
         "Enabled",
         "Hidden",
         "RunOnlyIfIdle",
         "WakeToRun",
-        "ExecutionTimeLimit",
         "Priority",
-        "RestartOnFailure",
-    )
-    default_false_settings = (
         "DisallowStartOnRemoteAppSession",
-        "UseUnifiedSchedulingEngine",
         "Volatile",
     )
     schema_ok = all(
@@ -276,16 +300,15 @@ def _windows_task_properties(content: str) -> dict[str, str] | None:
                 ),
             ),
             _xml_children_match(triggers, required=("LogonTrigger",)),
-            _xml_children_match(logon, required=("Enabled", "UserId")),
+            _xml_children_match(logon, required=("UserId",), optional=("Enabled",)),
             _xml_children_match(principals, required=("Principal",)),
             _xml_children_match(
                 principal,
-                required=("UserId", "LogonType", "RunLevel"),
+                required=("UserId", "LogonType"),
+                optional=("RunLevel",),
                 attributes={"id": "CurrentUser"},
             ),
-            _xml_children_match(
-                settings, required=settings_required, optional=default_false_settings
-            ),
+            _xml_children_match(settings, required=settings_required, optional=settings_optional),
             _xml_children_match(idle, required=("StopOnIdleEnd", "RestartOnIdle")),
             _xml_children_match(restart, required=("Interval", "Count")),
             _xml_children_match(actions, required=("Exec",), attributes={"Context": "CurrentUser"}),
@@ -297,28 +320,19 @@ def _windows_task_properties(content: str) -> dict[str, str] | None:
     scalar_paths = (
         "t:RegistrationInfo/t:Description",
         "t:RegistrationInfo/t:Source",
-        "t:Triggers/t:LogonTrigger/t:Enabled",
         "t:Triggers/t:LogonTrigger/t:UserId",
         "t:Principals/t:Principal/t:UserId",
         "t:Principals/t:Principal/t:LogonType",
-        "t:Principals/t:Principal/t:RunLevel",
         "t:Settings/t:MultipleInstancesPolicy",
         "t:Settings/t:DisallowStartIfOnBatteries",
         "t:Settings/t:StopIfGoingOnBatteries",
-        "t:Settings/t:AllowHardTerminate",
         "t:Settings/t:StartWhenAvailable",
-        "t:Settings/t:RunOnlyIfNetworkAvailable",
         "t:Settings/t:IdleSettings/t:StopOnIdleEnd",
         "t:Settings/t:IdleSettings/t:RestartOnIdle",
-        "t:Settings/t:AllowStartOnDemand",
-        "t:Settings/t:Enabled",
-        "t:Settings/t:Hidden",
-        "t:Settings/t:RunOnlyIfIdle",
-        "t:Settings/t:WakeToRun",
         "t:Settings/t:ExecutionTimeLimit",
-        "t:Settings/t:Priority",
         "t:Settings/t:RestartOnFailure/t:Interval",
         "t:Settings/t:RestartOnFailure/t:Count",
+        "t:Settings/t:UseUnifiedSchedulingEngine",
         "t:Actions/t:Exec/t:Command",
         "t:Actions/t:Exec/t:Arguments",
     )
@@ -326,45 +340,67 @@ def _windows_task_properties(content: str) -> dict[str, str] | None:
         return None
     for parent, nested in (
         (registration, frozenset()),
+        (logon, frozenset()),
+        (principal, frozenset()),
         (settings, frozenset({"IdleSettings", "RestartOnFailure"})),
     ):
         for child in parent:
             name = child.tag[len(namespace) :]
             if name not in nested and (child.attrib or list(child)):
                 return None
-    for name in default_false_settings:
-        node = settings.find(namespace + name)
-        if node is not None and (node.text or "").strip().casefold() != "false":
-            return None
-    return {
+    properties = {
         "description": _xml_text(root, "t:RegistrationInfo/t:Description"),
         "source": _xml_text(root, "t:RegistrationInfo/t:Source"),
-        "trigger_enabled": _xml_text(root, "t:Triggers/t:LogonTrigger/t:Enabled"),
+        "trigger_enabled": _xml_text_or_default(
+            root, "t:Triggers/t:LogonTrigger/t:Enabled", "true"
+        ),
         "trigger_user": _xml_text(root, "t:Triggers/t:LogonTrigger/t:UserId"),
         "principal_user": _xml_text(root, "t:Principals/t:Principal/t:UserId"),
         "logon_type": _xml_text(root, "t:Principals/t:Principal/t:LogonType"),
-        "run_level": _xml_text(root, "t:Principals/t:Principal/t:RunLevel"),
+        "run_level": _xml_text_or_default(
+            root, "t:Principals/t:Principal/t:RunLevel", "LeastPrivilege"
+        ),
         "multiple_instances": _xml_text(root, "t:Settings/t:MultipleInstancesPolicy"),
         "battery_start": _xml_text(root, "t:Settings/t:DisallowStartIfOnBatteries"),
         "battery_stop": _xml_text(root, "t:Settings/t:StopIfGoingOnBatteries"),
-        "hard_terminate": _xml_text(root, "t:Settings/t:AllowHardTerminate"),
+        "hard_terminate": _xml_text_or_default(root, "t:Settings/t:AllowHardTerminate", "true"),
         "start_when_available": _xml_text(root, "t:Settings/t:StartWhenAvailable"),
-        "network_required": _xml_text(root, "t:Settings/t:RunOnlyIfNetworkAvailable"),
+        "network_required": _xml_text_or_default(
+            root, "t:Settings/t:RunOnlyIfNetworkAvailable", "false"
+        ),
         "stop_on_idle_end": _xml_text(root, "t:Settings/t:IdleSettings/t:StopOnIdleEnd"),
         "restart_on_idle": _xml_text(root, "t:Settings/t:IdleSettings/t:RestartOnIdle"),
-        "start_on_demand": _xml_text(root, "t:Settings/t:AllowStartOnDemand"),
-        "enabled": _xml_text(root, "t:Settings/t:Enabled"),
-        "hidden": _xml_text(root, "t:Settings/t:Hidden"),
-        "run_only_if_idle": _xml_text(root, "t:Settings/t:RunOnlyIfIdle"),
-        "wake_to_run": _xml_text(root, "t:Settings/t:WakeToRun"),
+        "start_on_demand": _xml_text_or_default(root, "t:Settings/t:AllowStartOnDemand", "true"),
+        "enabled": _xml_text_or_default(root, "t:Settings/t:Enabled", "true"),
+        "hidden": _xml_text_or_default(root, "t:Settings/t:Hidden", "false"),
+        "run_only_if_idle": _xml_text_or_default(root, "t:Settings/t:RunOnlyIfIdle", "false"),
+        "wake_to_run": _xml_text_or_default(root, "t:Settings/t:WakeToRun", "false"),
         "execution_limit": _xml_text(root, "t:Settings/t:ExecutionTimeLimit"),
-        "priority": _xml_text(root, "t:Settings/t:Priority"),
+        "priority": _xml_text_or_default(root, "t:Settings/t:Priority", "7"),
         "restart_interval": _xml_text(root, "t:Settings/t:RestartOnFailure/t:Interval"),
         "restart_count": _xml_text(root, "t:Settings/t:RestartOnFailure/t:Count"),
+        "unified_engine": _xml_text(root, "t:Settings/t:UseUnifiedSchedulingEngine"),
+        "remote_session": _xml_text_or_default(
+            root, "t:Settings/t:DisallowStartOnRemoteAppSession", "false"
+        ),
+        "volatile": _xml_text_or_default(root, "t:Settings/t:Volatile", "false"),
         "actions_context": _xml_attribute(root, "t:Actions", "Context"),
         "command": _xml_text(root, "t:Actions/t:Exec/t:Command"),
         "arguments": _xml_text(root, "t:Actions/t:Exec/t:Arguments"),
     }
+    if any(
+        not properties[name]
+        for name in (
+            "description",
+            "source",
+            "trigger_user",
+            "principal_user",
+            "command",
+            "arguments",
+        )
+    ):
+        return None
+    return properties
 
 
 def _windows_xml_owned(content: str) -> bool:
@@ -400,7 +436,12 @@ def _register_windows_xml(
             os.fchmod(handle, 0o600)
         # Secure the empty XML file before command or argument paths are written.
         restrict_private_file(temporary)
-        with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
+        with os.fdopen(
+            handle,
+            "w",
+            encoding=_WINDOWS_TASK_FILE_ENCODING,
+            newline="\n",
+        ) as stream:
             handle = -1
             stream.write(content)
             stream.flush()
@@ -453,18 +494,58 @@ def _windows_registration_state(result: _CommandResult) -> str:
 def _query_windows_xml(
     *, command_runner: CommandRunner | None, timeout: float = 10.0
 ) -> _CommandResult:
-    return _run(
+    result = _run(
         windows_system_command(
-            "schtasks.exe",
-            "/Query",
-            "/TN",
-            WINDOWS_TASK_NAME,
-            "/XML",
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            _WINDOWS_TASK_XML_SCRIPT,
             command_runner=command_runner,
         ),
         command_runner=command_runner,
         timeout=timeout,
     )
+    if not result.ok:
+        return result
+    encoded = result.stdout.strip()
+    try:
+        encoded_bytes = encoded.encode("ascii")
+    except UnicodeEncodeError:
+        encoded_bytes = b""
+    if not encoded_bytes or len(encoded_bytes) > _MAX_TASK_XML_BASE64_BYTES:
+        return _CommandResult(
+            result.command,
+            125,
+            "",
+            "scheduled-task XML transport returned invalid bounded Base64",
+        )
+    try:
+        content_bytes = base64.b64decode(encoded_bytes, validate=True)
+    except (binascii.Error, ValueError):
+        return _CommandResult(
+            result.command,
+            125,
+            "",
+            "scheduled-task XML transport returned invalid bounded Base64",
+        )
+    if len(content_bytes) > _MAX_TASK_XML_BYTES:
+        return _CommandResult(
+            result.command,
+            125,
+            "",
+            "scheduled-task XML transport exceeded the 512 KiB limit",
+        )
+    try:
+        content = content_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        return _CommandResult(
+            result.command,
+            125,
+            "",
+            "scheduled-task XML transport was not valid UTF-8",
+        )
+    return _CommandResult(result.command, 0, content, result.stderr)
 
 
 def _query_windows_registration(
@@ -496,6 +577,33 @@ def _windows_running_state(
     if task_state in {"1", "3"}:
         return False, result
     return None, result
+
+
+def _wait_windows_running_state(
+    expected: bool,
+    *,
+    command_runner: CommandRunner | None,
+    attempts: int = _WINDOWS_TRANSITION_ATTEMPTS,
+    poll_seconds: float = _WINDOWS_TRANSITION_POLL_SECONDS,
+) -> tuple[bool, list[_CommandResult]]:
+    """Poll until Task Scheduler proves one exact running or idle state.
+
+    ``schtasks /End`` is asynchronous. A successful exit code therefore is
+    not evidence that ``IgnoreNew`` will accept the next ``/Run`` yet.
+    Unknown and queued states remain transitional until this bounded poll is
+    exhausted.
+    """
+
+    results: list[_CommandResult] = []
+    bounded_attempts = max(1, attempts)
+    for attempt in range(bounded_attempts):
+        running, result = _windows_running_state(command_runner=command_runner)
+        results.append(result)
+        if running is expected:
+            return True, results
+        if attempt + 1 < bounded_attempts:
+            time.sleep(max(0.0, poll_seconds))
+    return False, results
 
 
 def _capture_owned_windows_task(

@@ -6,8 +6,15 @@ import sys
 from importlib.resources import files
 from pathlib import Path
 
+import pytest
 import yaml
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised by the Python 3.10 matrix
+    import tomli as tomllib
+
+from scripts.read_release_version import read_release_version
 from scripts.verify_release_hygiene import SECRET_PATTERNS, generated_path_reason
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,7 +69,10 @@ def test_release_metadata_is_single_source_and_cross_platform() -> None:
     assert 'dynamic = ["version"]' in pyproject
     assert 'version = {attr = "agency_runtime.__version__"}' in pyproject
     version_match = re.search(
-        r'^__version__ = "(\d+\.\d+\.\d+(?:[a-z]+\d+)?)"$', package_init, re.MULTILINE
+        r'^__version__ = "((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)'
+        r'(?:(?:a|b|rc)(?:0|[1-9]\d*))?)"$',
+        package_init,
+        re.MULTILINE,
     )
     assert version_match, "package must expose one normalized __version__ value"
     for classifier in (
@@ -72,6 +82,33 @@ def test_release_metadata_is_single_source_and_cross_platform() -> None:
         "Programming Language :: Python :: 3.14",
     ):
         assert classifier in pyproject
+
+
+def test_release_build_tool_pin_is_non_yanked_and_matches_ci() -> None:
+    with (ROOT / "pyproject.toml").open("rb") as stream:
+        pyproject = tomllib.load(stream)
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+    install = next(
+        step
+        for step in workflow["jobs"]["artifacts"]["steps"]
+        if step["name"] == "Install release tools"
+    )
+
+    assert pyproject["project"]["optional-dependencies"]["release"] == [
+        "build==1.5.0",
+        "twine==6.2.0",
+    ]
+    assert install["run"] == 'python -m pip install "build==1.5.0" "twine==6.2.0"'
+
+
+def test_release_version_reader_is_literal_canonical_and_non_importing(tmp_path: Path) -> None:
+    assert read_release_version(ROOT / "agency_runtime" / "__init__.py") == "0.1.0"
+
+    invalid = tmp_path / "__init__.py"
+    for value in ("make_version()", '"01.2.3"', '"1.2.3preview4"', '"1.2.3rc01"'):
+        invalid.write_text(f"__version__ = {value}\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="one canonical literal"):
+            read_release_version(invalid)
 
 
 def test_tracked_release_inputs_pass_hygiene_check() -> None:
@@ -124,6 +161,17 @@ def test_release_hygiene_rejects_only_top_level_project_version_staging(
 
 def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+    artifact_steps = workflow["jobs"]["artifacts"]["steps"]
+    capture = next(
+        step for step in artifact_steps if step["name"] == "Capture immutable reviewed commit"
+    )
+    verify = next(
+        step for step in artifact_steps if step["name"] == "Verify metadata and artifact contents"
+    )
+    assert 'AGENCY_RELEASE_COMMIT="$(git rev-parse --verify HEAD^{commit})"' in capture["run"]
+    assert '"${AGENCY_RELEASE_COMMIT}" != "${GITHUB_SHA}"' in capture["run"]
+    assert '--expected-commit "${AGENCY_RELEASE_COMMIT}"' in verify["run"]
+
     job = workflow["jobs"]["artifact-smoke"]
     assert set(job["strategy"]["matrix"]["os"]) == {"ubuntu-24.04", "windows-2022"}
 
@@ -134,12 +182,15 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     assert smoke_step["working-directory"] == "${{ runner.temp }}"
     script = smoke_step["run"]
     for required in (
+        'EXPECTED_VERSION="$(python "${GITHUB_WORKSPACE}/scripts/read_release_version.py"',
         "python -m venv wheel-smoke",
         "python -m venv sdist-smoke",
         "agency-dist/*.whl",
         "agency-dist/*.tar.gz",
         "--no-cache-dir --only-binary=:all:",
-        '"${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py"',
+        '"${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py" --expected-version "${EXPECTED_VERSION}"',
+        'subprocess.run([sys.argv[1], "--version"], capture_output=True, text=True, check=False)',
+        '(result.returncode, result.stdout, result.stderr) == (0, expected, "")',
         '"${agency}" smoke --all --json',
         '"${agency}" config show',
         '"${python}" -m pip check',

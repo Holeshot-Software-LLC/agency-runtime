@@ -12,6 +12,7 @@ import pytest
 from agency_runtime.core import dashboard_runtime as runtime_module
 from agency_runtime.core.config import AgencyConfig, DashboardConfig
 from agency_runtime.core.dashboard_runtime import (
+    dashboard_runtime_instance_fingerprint,
     dashboard_runtime_path,
     dashboard_service_reachable,
     open_dashboard_service,
@@ -22,6 +23,31 @@ from agency_runtime.core.dashboard_runtime import (
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import dashboard as dashboard_module
 from agency_runtime.server.dashboard import DashboardHTTPServer
+
+
+def test_runtime_instance_fingerprint_tracks_generation_without_exposing_token(
+    tmp_path: Path,
+) -> None:
+    assert dashboard_runtime_instance_fingerprint(home_dir=tmp_path) is None
+    first_token = "first-private-token-" + ("a" * 32)
+    write_dashboard_runtime(
+        token=first_token,
+        port=7810,
+        pid=111,
+        home_dir=tmp_path,
+    )
+    first = dashboard_runtime_instance_fingerprint(home_dir=tmp_path)
+    write_dashboard_runtime(
+        token="second-private-token-" + ("b" * 32),
+        port=7810,
+        pid=111,
+        home_dir=tmp_path,
+    )
+    second = dashboard_runtime_instance_fingerprint(home_dir=tmp_path)
+
+    assert first is not None and first.startswith("sha256:")
+    assert second is not None and second != first
+    assert first_token not in first
 
 
 def test_runtime_descriptor_rotates_and_only_owner_can_remove(tmp_path: Path) -> None:
@@ -158,7 +184,9 @@ def test_runtime_descriptor_hardens_empty_temp_before_writing_token(
             path=target,
         )
 
-    assert observed_temporary_bytes == [b"\0", b""]
+    # Both the lock and descriptor temp are hardened while still empty; the
+    # lock sentinel and rotating bearer token are written only afterwards.
+    assert observed_temporary_bytes == [b"", b""]
     assert replace_calls == []
     assert target.read_bytes() == b"original-descriptor"
     assert token.encode() not in target.read_bytes()
@@ -290,9 +318,19 @@ def test_service_mode_publishes_descriptor_without_printing_token(
     class FakeServer:
         server_address = ("127.0.0.1", 8123)
 
-        def __init__(self, _store, *, auth_token, port):
+        def __init__(
+            self,
+            _store,
+            *,
+            auth_token,
+            port,
+            config_path,
+            runtime_control_home,
+        ):
             self.auth_token = auth_token
             assert port == 8123
+            assert Path(config_path).is_absolute()
+            assert runtime_control_home == tmp_path
 
         def serve_forever(self, *, poll_interval):
             assert poll_interval == 0.1
@@ -303,13 +341,26 @@ def test_service_mode_publishes_descriptor_without_printing_token(
         def shutdown(self):
             return None
 
+    class ImmediateThread:
+        def __init__(self, *, target, daemon, name=""):
+            assert daemon is True
+            self.target = target
+            self.name = name
+
+        def start(self):
+            self.target()
+
+        def join(self, *, timeout):
+            assert timeout == 0.5
+
     monkeypatch.setattr(
         dashboard_module,
         "load_config",
-        lambda: AgencyConfig(dashboard=DashboardConfig(port=8123)),
+        lambda *_args, **_kwargs: AgencyConfig(dashboard=DashboardConfig(port=8123)),
     )
     monkeypatch.setattr(dashboard_module, "Store", lambda *_args, **_kwargs: FakeStore())
     monkeypatch.setattr(dashboard_module, "DashboardHTTPServer", FakeServer)
+    monkeypatch.setattr(dashboard_module, "Thread", ImmediateThread)
     monkeypatch.setattr(
         dashboard_module,
         "write_dashboard_runtime",
@@ -333,4 +384,5 @@ def test_service_mode_publishes_descriptor_without_printing_token(
     assert published[0]["port"] == 8123
     assert len(published[0]["token"]) >= 32
     assert removed[0]["token"] == published[0]["token"]
+    assert removed[0]["pid"] == os.getpid()
     assert published[0]["token"] not in output.out

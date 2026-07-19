@@ -3,7 +3,7 @@ title: "AR-05: Complete guided provider configuration"
 status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-18
 tags: [configuration, providers]
 related:
   - docs/decisions/0006-config-first-redacted-configuration.md
@@ -17,7 +17,7 @@ issue_id: AR-05
 priority: p1
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/5"
 depends_on: []
-blocks: [AR-06, AR-07]
+blocks: [AR-06, AR-07, AR-80]
 ---
 
 # AR-05: Complete guided provider configuration

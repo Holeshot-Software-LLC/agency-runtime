@@ -5,9 +5,9 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-import tempfile
 from importlib.metadata import PackageNotFoundError, requires, version
-from pathlib import Path
+
+from agency_runtime.core.private_paths import private_temporary_directory
 
 _DISTRIBUTION = "agency-runtime"
 _REQUIREMENT_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
@@ -39,8 +39,8 @@ def installed_runtime_requirements() -> list[str]:
 
 def main() -> int:
     requirements = installed_runtime_requirements()
-    with tempfile.TemporaryDirectory(prefix="agency-runtime-audit-") as temporary:
-        requirement_file = Path(temporary) / "runtime-requirements.txt"
+    with private_temporary_directory(prefix="dependency-audit") as temporary:
+        requirement_file = temporary / "runtime-requirements.txt"
         requirement_file.write_text("\n".join(requirements) + "\n", encoding="utf-8")
         completed = subprocess.run(
             [
@@ -49,6 +49,7 @@ def main() -> int:
                 "pip_audit",
                 "--strict",
                 "--no-deps",
+                "--disable-pip",
                 "--requirement",
                 str(requirement_file),
             ],

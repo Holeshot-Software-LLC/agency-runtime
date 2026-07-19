@@ -177,7 +177,7 @@ def test_cache_and_stickiness_reject_ids_outside_current_catalog(monkeypatch) ->
     # if a future fingerprint regression or hash collision occurs.
     monkeypatch.setattr(pipeline_module, "routing_fingerprint", lambda *_args: "same")
     monkeypatch.setattr(pipeline_module, "query_judge", fake_judge)
-    monkeypatch.setattr(pipeline_module, "load_policy", lambda: {})
+    monkeypatch.setattr(pipeline_module, "load_policy", lambda *_args: {})
     config = _offline_config()
 
     first = route("session", "review authentication code", CATALOG_A, config=config)
@@ -206,10 +206,10 @@ def test_cache_and_stickiness_reject_ids_outside_current_catalog(monkeypatch) ->
     assert fourth["selected_ids"] == ["security-auditor"]
 
 
-def test_stickiness_recomputes_work_units_for_current_message(monkeypatch) -> None:
+def test_detailed_followup_recomputes_work_units_without_sticky_reuse(monkeypatch) -> None:
     clear_cache()
     clear_session_routing()
-    monkeypatch.setattr(pipeline_module, "load_policy", lambda: {})
+    monkeypatch.setattr(pipeline_module, "load_policy", lambda *_args: {})
     monkeypatch.setattr(
         pipeline_module,
         "query_judge",
@@ -240,7 +240,7 @@ def test_stickiness_recomputes_work_units_for_current_message(monkeypatch) -> No
     )
 
     assert first["work_units"]["count"] == 1
-    assert second["session_reused"] is True
+    assert second.get("session_reused") is not True
     assert second["work_units"]["count"] == 3
     assert second["work_units"]["delegate"] is True
 
@@ -461,7 +461,7 @@ def test_provider_cannot_select_candidate_omitted_from_bounded_prompt(
         config=_offline_config(providers=(provider,)),
     )
 
-    assert result["status"] == "token_fallback"
+    assert result["status"] == "degraded"
     assert f"agent-{judge_module._MAX_JUDGE_CANDIDATES:02d}" not in result["selected_ids"]
 
 
@@ -486,8 +486,9 @@ def test_malformed_provider_content_falls_back_without_crashing(monkeypatch) -> 
         config=_offline_config(providers=(provider,)),
     )
 
-    assert result["status"] == "token_fallback"
-    assert result["selected_ids"] == ["code-reviewer"]
+    assert result["status"] == "degraded"
+    assert result["selected_ids"] == []
+    assert result["deterministic_candidate_ids"] == ["code-reviewer"]
 
 
 def test_blank_candidate_identity_is_never_selected() -> None:
@@ -586,5 +587,5 @@ def test_provider_latency_is_cumulative_and_duplicate_ollama_retry_is_skipped(mo
     )
 
     assert calls == 1
-    assert result["status"] == "token_fallback"
+    assert result["status"] == "degraded"
     assert result["latency_ms"] == 250

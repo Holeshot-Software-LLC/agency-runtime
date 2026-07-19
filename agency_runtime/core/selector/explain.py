@@ -7,14 +7,30 @@ CLI, HTTP, and MCP callers.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-from agency_runtime.core.config import AgencyConfig, load_config
+from agency_runtime.core.config import AgencyConfig
+from agency_runtime.core.config_binding import config_for_store
+from agency_runtime.core.host_capabilities import (
+    HostCapabilityReceipt,
+    diagnostic_installation_capability_receipt,
+)
 from agency_runtime.core.selector.cache import cache_key, routing_fingerprint
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.domain_expansion import expand_query
 from agency_runtime.core.selector.pipeline import refine_query, route
-from agency_runtime.core.selector.policy import detect_actions, load_policy
+from agency_runtime.core.selector.policy import (
+    detect_actions,
+    detect_fallback_companions,
+    load_policy,
+    policy_path_for_config,
+)
+from agency_runtime.core.selector.receipt_projection import (
+    RECEIPT_DESCRIPTION_BYTES,
+    bounded_receipt_text,
+)
+from agency_runtime.core.turn_intent import classify_turn_intent
 
 if TYPE_CHECKING:
     from agency_runtime.core.store.sqlite import Store
@@ -24,8 +40,11 @@ _DEFAULT_LIMIT = 10
 _MAX_LIMIT = 50
 
 
-def _get_config(config: AgencyConfig | None = None) -> AgencyConfig:
-    return config or load_config()
+def _get_config(
+    config: AgencyConfig | None = None,
+    store: Store | None = None,
+) -> AgencyConfig:
+    return config_for_store(store, config)
 
 
 def _clamp_limit(limit: int | None) -> int:
@@ -50,7 +69,10 @@ def _agent_summary(
                 "slug": _agent_slug(agent),
                 "name": str(agent.get("name", "")),
                 "division": str(agent.get("division", "")),
-                "description": str(agent.get("description", "")),
+                "description": bounded_receipt_text(
+                    agent.get("description", ""),
+                    maximum_bytes=RECEIPT_DESCRIPTION_BYTES,
+                ),
             }
         )
     else:
@@ -90,6 +112,7 @@ def _selected_explanations(
     catalog: list[dict[str, Any]],
     candidate_rows: list[tuple[dict[str, Any], float]],
     companion_ids: list[str],
+    fallback_ids: list[str],
 ) -> list[dict[str, Any]]:
     catalog_by_slug = {_agent_slug(agent): agent for agent in catalog}
     score_by_slug = {_agent_slug(agent): float(score) for agent, score in candidate_rows}
@@ -100,7 +123,12 @@ def _selected_explanations(
             score=score_by_slug.get(slug),
             selected=True,
         )
-        summary["source"] = "companion_policy" if slug in companion_ids else "selector"
+        if slug in fallback_ids:
+            summary["source"] = "policy_fallback"
+        elif slug in companion_ids:
+            summary["source"] = "companion_policy"
+        else:
+            summary["source"] = "selector"
         selected.append(summary)
     return selected
 
@@ -166,6 +194,8 @@ def _explanation_signals(
             "matched_actions": matched_actions,
             "companion_ids": companion_ids,
             "selected_companion_ids": [slug for slug in selected_ids if slug in companion_ids],
+            "fallback_companion_ids": list(routing.get("fallback_companion_ids", [])),
+            "fallback_applied": bool(routing.get("fallback_applied", False)),
         },
         "domain_expansion": {
             "applied": bool(domain_terms),
@@ -183,6 +213,9 @@ def _explanation_signals(
         "stickiness": {"session_reused": session_reused},
         "selection": {
             "status": status,
+            "source": str(routing.get("source", "")),
+            "semantic_status": str(routing.get("semantic_status", status)),
+            "semantic_ids": list(routing.get("semantic_ids", [])),
             "confidence": float(routing.get("confidence", 0.0) or 0.0),
             "provider": str(routing.get("provider", "")),
             "candidate_count": int(routing.get("candidate_count", len(candidates)) or 0),
@@ -203,44 +236,92 @@ def explain_route(
     limit: int | None = None,
     store: Store | None = None,
     trace_id: str | None = None,
+    host: str = "unknown",
+    platform: str = "unknown",
+    available_tools: tuple[str, ...] | None = None,
+    capability_receipt: Mapping[str, Any] | HostCapabilityReceipt | None = None,
 ) -> dict[str, Any]:
     """Return a machine-readable explanation for one routing decision.
 
-    The only selector side effect is the single call to ``route()``, matching the
-    normal routing path. All other evidence assembly is read-only.
+    Routing explanations are diagnostic projections. They retain generated
+    trace identity in the response but never create durable turn evidence;
+    ``run_preflight`` exclusively owns that lifecycle.
     """
-    cfg = _get_config(config)
+    cfg = _get_config(config, store)
     catalog = catalog or []
     candidate_limit = _clamp_limit(limit)
 
     refined_query = refine_query(user_message, cfg)
     expanded_query = expand_query(refined_query)
-    policy = load_policy()
+    policy = load_policy(policy_path_for_config(cfg))
     active_slugs = {str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog}
     matched_actions, companion_ids = detect_actions(
         user_message,
         policy,
         active_slugs=active_slugs,
     )
-    candidates, scores = pre_narrow(expanded_query, catalog, limit=candidate_limit)
+    # DEFAULT coordinators are a policy fallback, not semantic candidates. Keep
+    # them out of the candidate receipt so an abstention cannot look like a
+    # semantic match simply because fallback prompts are installed.
+    policy_fallbacks = set(detect_fallback_companions(policy))
+    semantic_catalog = [agent for agent in catalog if _agent_slug(agent) not in policy_fallbacks]
+    turn_classification = classify_turn_intent(user_message)
+    if not turn_classification.selection_required:
+        candidates, scores = [], []
+    else:
+        candidates, scores = pre_narrow(
+            expanded_query,
+            semantic_catalog,
+            limit=candidate_limit,
+        )
     candidate_rows = list(zip(candidates, scores, strict=True))
+
+    diagnostic_receipt = None
+    if capability_receipt is not None:
+        raw_receipt = (
+            capability_receipt.as_dict()
+            if isinstance(capability_receipt, HostCapabilityReceipt)
+            else capability_receipt
+        )
+        diagnostic_receipt = diagnostic_installation_capability_receipt(
+            raw_receipt,
+            surface=host,
+            platform=platform,
+        )
+        if diagnostic_receipt is None:
+            raise ValueError("diagnostic host capability receipt is invalid or unverified")
 
     routing = route(
         session_id,
         user_message,
         catalog,
         config=cfg,
-        store=store,
         trace_id=trace_id,
+        turn_classification=turn_classification,
+        host=host,
+        platform=platform,
+        available_tools=available_tools,
+        capability_receipt=diagnostic_receipt,
+        allow_installation_diagnostic=diagnostic_receipt is not None,
     )
     selected_ids = [str(slug) for slug in routing.get("selected_ids", []) if str(slug)]
+    decision_companion_ids = [
+        str(slug) for slug in routing.get("companion_ids", companion_ids) if str(slug)
+    ]
+    fallback_ids = [str(slug) for slug in routing.get("fallback_companion_ids", []) if str(slug)]
     selected_set = set(selected_ids)
     return {
         "schema_version": _SCHEMA_VERSION,
         "session_id": str(session_id or ""),
         "task": str(user_message or ""),
         "routing": routing,
-        "selected": _selected_explanations(selected_ids, catalog, candidate_rows, companion_ids),
+        "selected": _selected_explanations(
+            selected_ids,
+            catalog,
+            candidate_rows,
+            decision_companion_ids,
+            fallback_ids,
+        ),
         "considered_candidates": _considered_explanations(candidate_rows, selected_set),
         "rejected_candidates": _rejected_explanations(
             candidate_rows,
@@ -260,7 +341,7 @@ def explain_route(
             scores=scores,
             selected_ids=selected_ids,
             matched_actions=matched_actions,
-            companion_ids=companion_ids,
+            companion_ids=decision_companion_ids,
             candidate_limit=candidate_limit,
         ),
     }

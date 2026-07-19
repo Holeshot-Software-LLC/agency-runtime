@@ -28,6 +28,14 @@ from agency_runtime.core.delegation.lifecycle import (
     normalize_work_units,
     provision_worktrees,
 )
+from agency_runtime.core.delegation.lifecycle_graph import (
+    MAX_DEPENDENCIES_PER_UNIT,
+    MAX_DESCRIPTION_CHARS,
+    MAX_FILES_PER_UNIT,
+    MAX_UNIT_ID_CHARS,
+    MAX_WORK_UNITS,
+)
+from agency_runtime.core.delegation.lifecycle_types import WorkUnit
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -82,6 +90,7 @@ def _initialize_test_repo(repo: Path) -> None:
         ("user.name", "Test User"),
         ("commit.gpgsign", "false"),
         ("core.autocrlf", "false"),
+        ("core.longpaths", "true"),
         ("core.hooksPath", str(disabled_hooks)),
     ):
         subprocess.run(
@@ -112,7 +121,7 @@ def test_normalize_work_units_preserves_contract_fields(tmp_path: Path) -> None:
     units = normalize_work_units(
         [
             {
-                "id": "A/1",
+                "id": "A-1",
                 "description": "Edit README.md",
                 "recommended_agent": "docs-agent",
             }
@@ -131,7 +140,7 @@ def test_normalize_work_units_preserves_explicit_dependencies() -> None:
         [
             {"id": "setup", "description": "Prepare inputs"},
             {
-                "id": "run/report",
+                "id": "run-report",
                 "description": "Generate report",
                 "depends_on": "setup",
             },
@@ -160,14 +169,100 @@ def test_normalize_work_units_rejects_invalid_file_lists(files: object) -> None:
         normalize_work_units([{"id": "run", "description": "Generate report", "files": files}])
 
 
-def test_normalize_work_units_rejects_duplicate_normalized_ids() -> None:
+def test_normalize_work_units_rejects_malformed_ids_before_normalizing() -> None:
+    with pytest.raises(ValueError, match="canonical id characters"):
+        normalize_work_units([{"id": "A/1", "description": "First task"}])
+
+
+def test_normalize_work_units_rejects_duplicate_explicit_ids() -> None:
     with pytest.raises(ValueError, match=r"duplicate work-unit id.*'A-1'"):
         normalize_work_units(
             [
-                {"id": "A/1", "description": "First task"},
-                {"id": "A 1", "description": "Second task"},
+                {"id": "A-1", "description": "First task"},
+                {"id": "A-1", "description": "Second task"},
             ]
         )
+
+
+def test_normalize_work_units_caps_an_arbitrary_iterable_before_materializing_it() -> None:
+    consumed: list[int] = []
+
+    def items():
+        for index in range(100):
+            consumed.append(index)
+            yield {"id": f"unit-{index}", "description": f"Task {index}"}
+
+    with pytest.raises(ValueError, match=f"more than {MAX_WORK_UNITS}"):
+        normalize_work_units(items())
+
+    assert len(consumed) == MAX_WORK_UNITS + 1
+
+
+@pytest.mark.parametrize(
+    "unit_id",
+    ["", " leading", "trailing ", "contains space", "slash/id", 7, "x" * (MAX_UNIT_ID_CHARS + 1)],
+)
+def test_normalize_work_units_rejects_invalid_explicit_ids(unit_id: object) -> None:
+    with pytest.raises((TypeError, ValueError), match="work-unit id"):
+        normalize_work_units([{"id": unit_id, "description": "Task"}])
+
+
+def test_missing_unit_ids_are_deterministic() -> None:
+    payload = [{"description": "Deterministic task"}]
+
+    first = normalize_work_units(payload)
+    second = normalize_work_units(payload)
+
+    assert first[0].id == second[0].id
+    assert first[0].id.startswith("unit-1-")
+
+
+def test_normalize_work_units_enforces_description_file_and_dependency_bounds() -> None:
+    with pytest.raises(ValueError, match="description exceeds"):
+        normalize_work_units([{"description": "x" * (MAX_DESCRIPTION_CHARS + 1)}])
+    with pytest.raises(ValueError, match=f"more than {MAX_FILES_PER_UNIT}"):
+        normalize_work_units(
+            [
+                {
+                    "id": "unit",
+                    "description": "Task",
+                    "files": (f"file-{index}.py" for index in range(MAX_FILES_PER_UNIT + 1)),
+                }
+            ]
+        )
+    with pytest.raises(ValueError, match=f"more than {MAX_DEPENDENCIES_PER_UNIT}"):
+        normalize_work_units(
+            [
+                {
+                    "id": "unit",
+                    "description": "Task",
+                    "depends_on": (
+                        f"dependency-{index}" for index in range(MAX_DEPENDENCIES_PER_UNIT + 1)
+                    ),
+                }
+            ]
+        )
+
+
+def test_normalize_work_units_rejects_unsafe_prompt_metadata() -> None:
+    with pytest.raises(ValueError, match="NUL"):
+        normalize_work_units([{"description": "unsafe\x00task"}])
+    with pytest.raises(ValueError, match="control characters"):
+        normalize_work_units(
+            [
+                {
+                    "description": "Task",
+                    "recommended_agent": "unsafe\nagent",
+                }
+            ]
+        )
+
+
+def test_public_graph_boundary_rejects_more_than_sixteen_units() -> None:
+    units = [WorkUnit(f"unit-{index}", "Task") for index in range(MAX_WORK_UNITS + 1)]
+
+    with pytest.raises(ValueError, match=f"more than {MAX_WORK_UNITS}"):
+        build_dependency_graph(units)
 
 
 def test_dependency_graph_orders_overlapping_files(tmp_path: Path) -> None:
@@ -308,9 +403,10 @@ def test_unsafe_base_ref_blocks_lifecycle_dispatch(tmp_path: Path) -> None:
 
 
 def test_provision_worktrees_pins_allocation_to_inspected_sha(
-    tmp_path: Path,
+    git_integration_root: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     repo.mkdir()
     units = normalize_work_units(
@@ -343,8 +439,9 @@ def test_provision_worktrees_pins_allocation_to_inspected_sha(
 
 
 def test_provision_worktrees_suppresses_repository_post_checkout_hook(
-    tmp_path: Path,
+    git_integration_root: Path,
 ) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     _initialize_test_repo(repo)
     hooks = repo / ".git" / "hostile-hooks"
@@ -448,6 +545,57 @@ def test_dispatch_rejects_invalid_worker_count(max_workers: object) -> None:
         )
 
 
+def test_lifecycle_validates_worker_and_delegate_contracts_before_provisioning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provisioned: list[bool] = []
+    monkeypatch.setattr(
+        lifecycle_module,
+        "provision_worktrees",
+        lambda *_args, **_kwargs: provisioned.append(True) or {},
+    )
+
+    with pytest.raises(ValueError, match="max_workers"):
+        delegate_with_lifecycle(
+            [{"id": "unit", "description": "Task"}],
+            delegate_func=lambda task: {"status": "completed"},
+            max_workers=0,
+        )
+    with pytest.raises(TypeError, match="must be callable"):
+        delegate_with_lifecycle(
+            [{"id": "unit", "description": "Task"}],
+            delegate_func=object(),  # type: ignore[arg-type]
+        )
+    with pytest.raises(TypeError, match="must accept"):
+        delegate_with_lifecycle(
+            [{"id": "unit", "description": "Task"}],
+            delegate_func=lambda *, unsupported: {"status": "completed"},
+        )
+
+    assert provisioned == []
+
+
+def test_lifecycle_resolves_default_backend_before_provisioning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provisioned: list[bool] = []
+    monkeypatch.setattr(
+        lifecycle_module,
+        "provision_worktrees",
+        lambda *_args, **_kwargs: provisioned.append(True) or {},
+    )
+    monkeypatch.setattr(
+        lifecycle_module,
+        "_resolve_delegate_func",
+        lambda _delegate: (_ for _ in ()).throw(RuntimeError("no backend")),
+    )
+
+    with pytest.raises(RuntimeError, match="no backend"):
+        delegate_with_lifecycle([{"id": "unit", "description": "Task"}])
+
+    assert provisioned == []
+
+
 def test_empty_dispatch_does_not_resolve_a_backend() -> None:
     assert dispatch_work_units([], DependencyGraph(), {}) == ({}, [], [])
 
@@ -469,7 +617,13 @@ def test_delegate_with_lifecycle_dispatches_and_records_ledger(
         **kwargs,
     ):
         calls.append({"task": task, "workdir": workdir, "recommended_agent": recommended_agent})
-        return {"ok": True, "backend": "fake-backend"}
+        return {
+            "ok": True,
+            "backend": "fake-backend",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-unit-1",
+            "native_run_id": "fake-backend:unit-1",
+        }
 
     result = delegate_with_lifecycle(
         [
@@ -503,6 +657,9 @@ def test_delegate_with_lifecycle_dispatches_and_records_ledger(
             "recommended_agent": "builder",
             "status": "completed",
             "backend": "fake-backend",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-unit-1",
+            "native_run_id": "fake-backend:unit-1",
             "skip_reason": "",
             "error": "",
         }
@@ -671,7 +828,15 @@ def test_independent_units_still_dispatch_concurrently(non_git_repo: Path) -> No
 
     def delegate_func(*, task: str, **kwargs):
         rendezvous.wait(timeout=2)
-        return {"ok": True, "task": task}
+        unit_id = task.splitlines()[0].removeprefix("Work unit ").removesuffix(":")
+        return {
+            "ok": True,
+            "task": task,
+            "backend": "test",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": f"worker-{unit_id}",
+            "native_run_id": f"test:{unit_id}",
+        }
 
     result = delegate_with_lifecycle(
         [
@@ -687,11 +852,104 @@ def test_independent_units_still_dispatch_concurrently(non_git_repo: Path) -> No
     assert all(payload["ok"] for payload in result.dispatch_results.values())
 
 
+def test_ready_successor_starts_before_an_unrelated_slow_root_finishes(
+    non_git_repo: Path,
+) -> None:
+    successor_started = threading.Event()
+    slow_root_observed_successor = threading.Event()
+
+    def delegate_func(*, task: str, **_kwargs):
+        unit_id = task.splitlines()[0].removeprefix("Work unit ").removesuffix(":")
+        if unit_id == "slow-root":
+            if successor_started.wait(timeout=2):
+                slow_root_observed_successor.set()
+            return {
+                "status": "completed",
+                "backend": "test",
+                "executed_worker_kind": "test-worker",
+                "executed_worker_id": f"worker-{unit_id}",
+                "native_run_id": f"test:{unit_id}",
+            }
+        if unit_id == "successor":
+            successor_started.set()
+        return {
+            "status": "completed",
+            "backend": "test",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": f"worker-{unit_id}",
+            "native_run_id": f"test:{unit_id}",
+        }
+
+    result = delegate_with_lifecycle(
+        [
+            {"id": "fast-root", "description": "Fast root"},
+            {"id": "slow-root", "description": "Independent slow root"},
+            {
+                "id": "successor",
+                "description": "Consumes the fast root",
+                "depends_on": ["fast-root"],
+            },
+        ],
+        repo_path=non_git_repo,
+        delegate_func=delegate_func,
+        max_workers=2,
+        merge_back=False,
+    )
+
+    assert result.batches == [["fast-root", "slow-root"], ["successor"]]
+    assert slow_root_observed_successor.is_set()
+    assert all(
+        lifecycle_module._result_completed(worker_result)
+        for worker_result in result.dispatch_results.values()
+    )
+
+
+def test_failed_unit_recursively_skips_its_dependency_chain(
+    non_git_repo: Path,
+) -> None:
+    called: list[str] = []
+
+    def delegate_func(*, task: str, **_kwargs):
+        unit_id = task.splitlines()[0].removeprefix("Work unit ").removesuffix(":")
+        called.append(unit_id)
+        return {"status": "failed", "error": "root failed"}
+
+    result = delegate_with_lifecycle(
+        [
+            {"id": "root", "description": "Root"},
+            {
+                "id": "child",
+                "description": "Child",
+                "depends_on": ["root"],
+            },
+            {
+                "id": "grandchild",
+                "description": "Grandchild",
+                "depends_on": ["child"],
+            },
+        ],
+        repo_path=non_git_repo,
+        delegate_func=delegate_func,
+        merge_back=False,
+    )
+
+    assert called == ["root"]
+    assert result.dispatch_results["child"]["blocked_by"] == ["root"]
+    assert result.dispatch_results["grandchild"]["blocked_by"] == ["child"]
+
+
 def test_delegate_with_lifecycle_supports_task_only_delegate(
     non_git_repo: Path,
 ) -> None:
     def delegate_func(*, task: str):
-        return {"backend": "task-only", "task": task, "status": "completed"}
+        return {
+            "backend": "task-only",
+            "task": task,
+            "status": "completed",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-task-only",
+            "native_run_id": "task-only:run-1",
+        }
 
     result = delegate_with_lifecycle(
         [{"id": "unit-1", "description": "Do the task"}],
@@ -707,7 +965,14 @@ def test_delegate_with_lifecycle_supports_task_only_delegate(
 def test_delegate_with_lifecycle_awaits_async_delegate(non_git_repo: Path) -> None:
     async def delegate_func(*, task: str, **_kwargs):
         await asyncio.sleep(0)
-        return {"backend": "async", "task": task, "status": "completed"}
+        return {
+            "backend": "async",
+            "task": task,
+            "status": "completed",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-async",
+            "native_run_id": "async:run-1",
+        }
 
     result = delegate_with_lifecycle(
         [{"id": "unit-1", "description": "Do the async task"}],
@@ -726,7 +991,14 @@ def test_delegate_with_lifecycle_accepts_falsey_callable(non_git_repo: Path) -> 
             return False
 
         def __call__(self, *, task: str, **_kwargs):
-            return {"task": task, "status": "completed"}
+            return {
+                "task": task,
+                "status": "completed",
+                "backend": "falsey-callable",
+                "executed_worker_kind": "test-worker",
+                "executed_worker_id": "worker-falsey",
+                "native_run_id": "falsey-callable:run-1",
+            }
 
     result = delegate_with_lifecycle(
         [{"id": "unit-1", "description": "Use the provided callable"}],
@@ -748,6 +1020,9 @@ def test_delegate_with_lifecycle_supports_legacy_goal_context_delegate(
             "context": context,
             "agent": recommended_agent,
             "status": "completed",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-legacy",
+            "native_run_id": "legacy:run-1",
         }
 
     result = delegate_with_lifecycle(
@@ -771,8 +1046,9 @@ def test_delegate_with_lifecycle_supports_legacy_goal_context_delegate(
 
 
 def test_lifecycle_provisions_worktrees_merges_back_and_removes_paths(
-    tmp_path: Path,
+    git_integration_root: Path,
 ) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     _initialize_test_repo(repo)
 
@@ -795,7 +1071,14 @@ def test_lifecycle_provisions_worktrees_merges_back_and_removes_paths(
             capture_output=True,
             text=True,
         )
-        return {"backend": "fake", "unit_id": unit_id, "status": "completed"}
+        return {
+            "backend": "fake",
+            "unit_id": unit_id,
+            "status": "completed",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": f"worker-{unit_id}",
+            "native_run_id": f"fake:{unit_id}",
+        }
 
     worktree_root = tmp_path / "worktrees"
     result = delegate_with_lifecycle(
@@ -826,7 +1109,8 @@ def test_lifecycle_provisions_worktrees_merges_back_and_removes_paths(
     assert list(worktree_root.iterdir()) == []
 
 
-def test_single_git_work_unit_is_always_isolated(tmp_path: Path) -> None:
+def test_single_git_work_unit_is_always_isolated(git_integration_root: Path) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     _initialize_test_repo(repo)
     observed_workdirs: list[Path] = []
@@ -837,7 +1121,13 @@ def test_single_git_work_unit_is_always_isolated(tmp_path: Path) -> None:
         observed_workdirs.append(isolated)
         assert isolated.resolve() != repo.resolve()
         (isolated / "single.txt").write_text("isolated\n", encoding="utf-8")
-        return {"status": "completed"}
+        return {
+            "status": "completed",
+            "backend": "test",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-single",
+            "native_run_id": "test:single",
+        }
 
     result = delegate_with_lifecycle(
         [{"id": "single", "description": "create single.txt"}],
@@ -853,8 +1143,9 @@ def test_single_git_work_unit_is_always_isolated(tmp_path: Path) -> None:
 
 
 def test_repeated_unit_ids_use_unique_owned_worktrees_and_branches(
-    tmp_path: Path,
+    git_integration_root: Path,
 ) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     _initialize_test_repo(repo)
 
@@ -882,8 +1173,9 @@ def test_repeated_unit_ids_use_unique_owned_worktrees_and_branches(
 
 
 def test_successful_uncommitted_worker_edits_are_committed_and_merged(
-    tmp_path: Path,
+    git_integration_root: Path,
 ) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     _initialize_test_repo(repo)
 
@@ -891,7 +1183,13 @@ def test_successful_uncommitted_worker_edits_are_committed_and_merged(
         assert workdir is not None
         unit_id = task.splitlines()[0].removeprefix("Work unit ").removesuffix(":")
         (Path(workdir) / f"{unit_id}.txt").write_text(f"{unit_id}\n", encoding="utf-8")
-        return {"ok": True, "backend": "fake"}
+        return {
+            "ok": True,
+            "backend": "fake",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": f"worker-{unit_id}",
+            "native_run_id": f"fake:{unit_id}",
+        }
 
     result = delegate_with_lifecycle(
         [
@@ -910,7 +1208,8 @@ def test_successful_uncommitted_worker_edits_are_committed_and_merged(
     assert all(record["removed"] for record in result.cleanup_results.values())
 
 
-def test_failed_uncommitted_worker_edits_are_preserved(tmp_path: Path) -> None:
+def test_failed_uncommitted_worker_edits_are_preserved(git_integration_root: Path) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     _initialize_test_repo(repo)
 
@@ -937,7 +1236,10 @@ def test_failed_uncommitted_worker_edits_are_preserved(tmp_path: Path) -> None:
         assert (info.path / f"{unit_id}.txt").read_text(encoding="utf-8") == "recover me\n"
 
 
-def test_dependent_worktree_sees_successful_predecessor_commit(tmp_path: Path) -> None:
+def test_dependent_worktree_sees_successful_predecessor_commit(
+    git_integration_root: Path,
+) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     _initialize_test_repo(repo)
 
@@ -959,7 +1261,14 @@ def test_dependent_worktree_sees_successful_predecessor_commit(tmp_path: Path) -
             capture_output=True,
             text=True,
         )
-        return {"ok": True, "unit_id": unit_id}
+        return {
+            "ok": True,
+            "unit_id": unit_id,
+            "backend": "fake",
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": f"worker-{unit_id}",
+            "native_run_id": f"fake:{unit_id}",
+        }
 
     result = delegate_with_lifecycle(
         [
@@ -978,7 +1287,8 @@ def test_dependent_worktree_sees_successful_predecessor_commit(tmp_path: Path) -
     assert (repo / "observed.txt").read_text(encoding="utf-8") == "consumer saw artifact\n"
 
 
-def test_failed_worktree_branch_is_not_merged_back(tmp_path: Path) -> None:
+def test_failed_worktree_branch_is_not_merged_back(git_integration_root: Path) -> None:
+    tmp_path = git_integration_root
     repo = tmp_path / "repo"
     _initialize_test_repo(repo)
 

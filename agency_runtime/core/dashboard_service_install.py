@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration import ConfigurationError
 from agency_runtime.core.dashboard_service_core import (
     OWNER_MARKER,
@@ -15,10 +16,18 @@ from agency_runtime.core.dashboard_service_core import (
     CommandRunner,
     ReadinessProbe,
     _base,
+    _cleanup_stale_dashboard_runtime,
     _Context,
     _context,
+    _dashboard_runtime_cleared,
+    _dashboard_runtime_fingerprint,
+    _fresh_dashboard_readiness,
+    _revalidate_dashboard_launcher,
     _run,
     _unsupported,
+    _validate_dashboard_launcher,
+    dashboard_service_environment_error,
+    dashboard_service_environment_overrides,
 )
 from agency_runtime.core.dashboard_service_inspection import (
     _failed,
@@ -31,13 +40,14 @@ from agency_runtime.core.dashboard_service_manifest import (
     _manifest_owned,
     _path_present,
     _read_manifest_bytes,
-    _read_service_file,
     _service_lock,
     _write_manifest,
 )
 from agency_runtime.core.dashboard_service_systemd import (
     _assert_systemd_files,
+    _read_systemd_unit,
     _restore_systemd_state,
+    _systemd_unit_root,
     _unit_content,
 )
 from agency_runtime.core.dashboard_service_windows import (
@@ -47,6 +57,7 @@ from agency_runtime.core.dashboard_service_windows import (
     _export_owned_windows_task,
     _register_windows_xml,
     _restore_windows_state,
+    _wait_windows_running_state,
     _windows_definition_matches,
     _windows_running_state,
     _windows_task_content,
@@ -74,6 +85,19 @@ def install_dashboard_service(
     if ctx is None:
         return _unsupported("install", platform_name)
     try:
+        config = load_config(ctx.config_path, reload=True)
+        environment_overrides = dashboard_service_environment_overrides(config)
+        if environment_overrides:
+            result = _failed(
+                "install",
+                ctx,
+                error=dashboard_service_environment_error(environment_overrides),
+                commands=[],
+            )
+            result["non_durable_environment_overrides"] = list(environment_overrides)
+            return result
+        ctx = _validate_dashboard_launcher(ctx)
+        _revalidate_dashboard_launcher(ctx)
         with _service_lock(ctx):
             blocked, state = _preflight(
                 "install",
@@ -81,6 +105,7 @@ def install_dashboard_service(
                 home_dir=home_dir,
                 command_runner=command_runner,
                 reachability_probe=reachability_probe,
+                config=config,
             )
             if blocked is not None:
                 return blocked
@@ -108,10 +133,11 @@ def _install_linux(
     command_runner: CommandRunner | None,
     readiness_probe: ReadinessProbe | None,
 ) -> dict[str, Any]:
+    _revalidate_dashboard_launcher(ctx)
     if ctx.unit_path is None:
         raise RuntimeError("Linux dashboard service context has no unit path")
     desired = _unit_content(ctx)
-    prior_unit = _read_service_file(ctx.unit_path) if _path_present(ctx.unit_path) else None
+    prior_unit = _read_systemd_unit(ctx) if _path_present(ctx.unit_path) else None
     prior_manifest = _read_manifest_bytes(ctx)
     expected_unit = prior_unit
     expected_manifest = prior_manifest
@@ -141,7 +167,11 @@ def _install_linux(
     commands: list[dict[str, Any]] = []
     try:
         if registration_changed:
-            _atomic_write(ctx.unit_path, desired)
+            _atomic_write(
+                ctx.unit_path,
+                desired,
+                trusted_root=_systemd_unit_root(ctx),
+            )
             expected_unit = desired.encode("utf-8")
         manifest_changed = _write_manifest(ctx)
         expected_manifest = _read_manifest_bytes(ctx)
@@ -150,6 +180,7 @@ def _install_linux(
             expected_unit=expected_unit,
             expected_manifest=expected_manifest,
         )
+        _revalidate_dashboard_launcher(ctx)
         if registration_changed:
             reload_result = _run(
                 ["systemctl", "--user", "daemon-reload"],
@@ -231,6 +262,7 @@ class _WindowsInstallTransaction:
     prior_reachable: Any
     commands: list[dict[str, Any]] = field(default_factory=list)
     prior_task: str | None = None
+    prior_runtime_fingerprint: str | None = None
     prior_active: bool = False
     state_mutated: bool = False
     created_registration: bool = False
@@ -260,6 +292,7 @@ def _capture_prior_windows_install(
     *,
     command_runner: CommandRunner | None,
 ) -> None:
+    transaction.prior_runtime_fingerprint = _dashboard_runtime_fingerprint(ctx)
     if transaction.installed:
         transaction.prior_task, ownership_query = _export_owned_windows_task(
             ctx,
@@ -361,6 +394,13 @@ def _restart_windows_install_if_needed(
     transaction.commands.append(end_result.public())
     if not end_result.ok:
         raise RuntimeError("scheduled-task stop before restart failed")
+    stopped, state_queries = _wait_windows_running_state(
+        False,
+        command_runner=command_runner,
+    )
+    transaction.commands.extend(query.public() for query in state_queries)
+    if not stopped:
+        raise RuntimeError("scheduled task did not reach the idle state before restart")
 
 
 def _activate_windows_install_if_needed(
@@ -372,6 +412,9 @@ def _activate_windows_install_if_needed(
 ) -> None:
     if not transaction.changed:
         return
+    _cleanup_stale_dashboard_runtime(ctx)
+    if not _dashboard_runtime_cleared(ctx, transaction.prior_runtime_fingerprint):
+        raise RuntimeError("old dashboard runtime remained reachable before activation")
     exact = _assert_windows_task_unchanged(ctx, current_task, command_runner=command_runner)
     transaction.commands.append(exact.public())
     transaction.state_mutated = True
@@ -388,6 +431,13 @@ def _activate_windows_install_if_needed(
     transaction.commands.append(run_result.public())
     if not run_result.ok:
         raise RuntimeError("scheduled-task start failed")
+    started, state_queries = _wait_windows_running_state(
+        True,
+        command_runner=command_runner,
+    )
+    transaction.commands.extend(query.public() for query in state_queries)
+    if not started:
+        raise RuntimeError("scheduled task did not enter the running state")
 
 
 def _verify_final_windows_install(
@@ -398,10 +448,16 @@ def _verify_final_windows_install(
     readiness_probe: ReadinessProbe | None,
 ) -> None:
     transaction.reachable = (
-        _readiness(readiness_probe) if transaction.changed else transaction.prior_reachable
+        _fresh_dashboard_readiness(
+            ctx,
+            readiness_probe,
+            transaction.prior_runtime_fingerprint,
+        )
+        if transaction.changed
+        else transaction.prior_reachable
     )
     if transaction.reachable is False:
-        raise RuntimeError("dashboard service did not become ready")
+        raise RuntimeError("dashboard service did not become ready with a fresh runtime")
     final_task, final_query = _capture_owned_windows_task(ctx, command_runner=command_runner)
     transaction.commands.append(final_query.public())
     if not _windows_definition_matches(ctx, final_task):
@@ -443,6 +499,7 @@ def _install_windows(
     command_runner: CommandRunner | None,
     readiness_probe: ReadinessProbe | None,
 ) -> dict[str, Any]:
+    _revalidate_dashboard_launcher(ctx)
     transaction = _windows_install_transaction(ctx, state)
     try:
         _capture_prior_windows_install(ctx, transaction, command_runner=command_runner)

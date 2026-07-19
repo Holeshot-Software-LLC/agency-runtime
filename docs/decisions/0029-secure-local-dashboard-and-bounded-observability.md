@@ -3,9 +3,11 @@ title: "Keep the operations dashboard local and observability bounded"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-13
+updated: 2026-07-18
 tags: [dashboard, security, privacy, retention]
 related:
+  - docs/roadmap/issue-AR-54-make-dashboard-runtime-publication-swap-safe.md
+  - docs/roadmap/issue-AR-42-make-database-metrics-sidecar-race-safe.md
   - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
@@ -13,6 +15,12 @@ related:
   - docs/roadmap/issue-AR-15-reliable-json-rejection-responses.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/roadmap/issue-AR-19-bounded-overload-responses.md
+  - docs/roadmap/issue-AR-28-reversible-agent-activation-controls.md
+  - docs/roadmap/issue-AR-32-windows-dashboard-task-xml-canonicalization.md
+  - docs/roadmap/issue-AR-38-dashboard-service-environment-durability.md
+  - docs/roadmap/issue-AR-40-dashboard-config-identity-binding.md
+  - docs/roadmap/issue-AR-71-dashboard-accessible-truthful-states.md
+  - docs/roadmap/issue-AR-96-packaged-dashboard-favicon.md
   - SECURITY.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -56,6 +64,13 @@ dashboard starts; preserve roster-governance tables.
 The dashboard displays native maturity as reported by the installer. It may not
 promote cold inventory into loaded/canary truth.
 
+On Windows, register the background dashboard from BOM-bearing UTF-16 task XML.
+Bind its principal and trigger to identities resolved from the current process
+token, inspect canonical task XML through bounded Base64-encoded UTF-8 COM
+output, and accept only the documented schema/default normalization. Ownership
+markers permit repair or removal but never execution: start and restart also
+require semantic definition equality plus an exact pre-mutation requery.
+
 ## Consequences
 
 - The installed package provides an operations UI without Node.js or a remote
@@ -69,6 +84,8 @@ promote cold inventory into loaded/canary truth.
   remains available.
 - This design is not a remote multi-user dashboard; remote access would require
   a separate threat model and decision.
+- Windows service repair remains available for an owned drifted task, but
+  start/restart fail closed until repair restores the canonical definition.
 
 ## Alternatives
 

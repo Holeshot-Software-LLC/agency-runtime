@@ -53,7 +53,7 @@ def test_doctor_returns_report():
         )
         store = Store(cfg.store.resolved_path())
         for agent in STARTER_ROSTER:
-            store.activate_agent(dict(agent))
+            store._activate_prevalidated_agent(dict(agent))
 
         report = run_doctor(cfg)
 
@@ -184,7 +184,7 @@ def test_doctor_json_serializable():
         )
         store = Store(cfg.store.resolved_path())
         for agent in STARTER_ROSTER:
-            store.activate_agent(dict(agent))
+            store._activate_prevalidated_agent(dict(agent))
 
         report = run_doctor(cfg)
         data = report.to_dict()
@@ -203,7 +203,7 @@ def test_doctor_distinguishes_host_discovery_from_native_registration(monkeypatc
         )
         store = Store(cfg.store.resolved_path())
         for agent in STARTER_ROSTER:
-            store.activate_agent(dict(agent))
+            store._activate_prevalidated_agent(dict(agent))
 
         monkeypatch.setattr(
             "agency_runtime.core.doctor.inspect_host_installations",
@@ -234,7 +234,7 @@ def test_doctor_accepts_yolo_profile():
         )
         store = Store(cfg.store.resolved_path())
         for agent in STARTER_ROSTER:
-            store.activate_agent(dict(agent))
+            store._activate_prevalidated_agent(dict(agent))
 
         report = run_doctor(cfg)
         profile_check = next(c for c in report.checks if c.name == "config_profile")
@@ -269,7 +269,7 @@ def test_provider_validation_is_parallel_and_preserves_order(monkeypatch):
     assert [result.name for result in results] == [f"provider-{index}" for index in range(8)]
 
 
-def test_smoke_all_exercises_generated_host_plugins(monkeypatch):
+def test_smoke_all_exercises_generated_host_plugins(monkeypatch, private_installer_launcher):
     """Smoke --all validates every generated host plugin without touching real HOME."""
     with tempfile.TemporaryDirectory() as tmp:
         cfg = AgencyConfig(
@@ -278,19 +278,23 @@ def test_smoke_all_exercises_generated_host_plugins(monkeypatch):
         )
         store = Store(cfg.store.resolved_path())
         for agent in STARTER_ROSTER:
-            store.activate_agent(dict(agent))
+            store._activate_prevalidated_agent(dict(agent))
         monkeypatch.setenv("AGENCY_DB_PATH", str(cfg.store.resolved_path()))
 
         from agency_runtime.core.smoke import run_smoke
 
         report = run_smoke(all_hosts=True)
 
-        assert report["passed"] is True
+        assert report["passed"] is True, [
+            check for check in report["checks"] if check["status"] != "pass"
+        ]
         check_names = {check["name"] for check in report["checks"]}
         assert {"plugin_hermes", "plugin_openclaw", "plugin_codex", "plugin_claude"} <= check_names
 
 
-def test_smoke_all_passes_with_empty_active_roster(monkeypatch, tmp_path):
+def test_smoke_all_passes_with_empty_active_roster(
+    monkeypatch, tmp_path, private_installer_launcher
+):
     """Fresh installs can smoke-test before syncing external roster sources."""
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "empty.db"))
 
@@ -298,14 +302,18 @@ def test_smoke_all_passes_with_empty_active_roster(monkeypatch, tmp_path):
 
     report = run_smoke(all_hosts=True)
 
-    assert report["passed"] is True
+    assert report["passed"] is True, [
+        check for check in report["checks"] if check["status"] != "pass"
+    ]
     roster_check = next(
         check for check in report["checks"] if check["name"] == "routing_roster_available"
     )
     assert roster_check["detail"]["source"] == "starter_roster"
 
 
-def test_openclaw_smoke_uses_static_validation_when_node_is_unavailable(monkeypatch, tmp_path):
+def test_openclaw_smoke_uses_static_validation_when_node_is_unavailable(
+    monkeypatch, tmp_path, private_installer_launcher
+):
     from agency_runtime.core import smoke
     from agency_runtime.core.installer import install_agent_adapter
 

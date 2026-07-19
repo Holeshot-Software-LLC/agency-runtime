@@ -9,16 +9,42 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core.installer_contracts import NativeCommandResult
+import agency_runtime.core.installer_registration as registration
+from agency_runtime.core.installer_contracts import (
+    OPENCLAW_REQUIRED_HOOKS,
+    NativeCommandResult,
+)
 from agency_runtime.core.installer_registration import native_registration_steps
 
 
-def _result(*, stdout: str = "", returncode: int = 0) -> dict[str, Any]:
-    return {"returncode": returncode, "stdout": stdout}
+def _result(
+    *,
+    stdout: str = "",
+    stderr: str = "",
+    returncode: int = 0,
+) -> dict[str, Any]:
+    return {"returncode": returncode, "stdout": stdout, "stderr": stderr}
 
 
 def _json_result(value: Any, *, returncode: int = 0) -> dict[str, Any]:
     return _result(stdout=json.dumps(value), returncode=returncode)
+
+
+def _openclaw_runtime_payload() -> dict[str, Any]:
+    return {
+        "plugin": {"id": "agency-preflight", "status": "loaded"},
+        "typedHooks": [
+            {
+                "name": name,
+                **(
+                    {"priority": None}
+                    if name in {"message_sending", "reply_payload_sending"}
+                    else {}
+                ),
+            }
+            for name in sorted(OPENCLAW_REQUIRED_HOOKS)
+        ],
+    }
 
 
 class _SequenceRunner:
@@ -56,6 +82,201 @@ class _FailureCase:
 
 _TARGET = Path("managed-marketplace")
 _SELECTOR = "agency-preflight@agency-runtime"
+_OPENCLAW_POLICY_RESPONSES = [
+    _json_result({}),
+    _json_result({}),
+    _result(),
+    _json_result({"blockStreamingDefault": "off"}),
+    _json_result({}),
+]
+_OPENCLAW_POLICY_COMMANDS = [
+    ["openclaw", "config", "get", "agents.defaults", "--json"],
+    ["openclaw", "config", "get", "channels", "--json"],
+    [
+        "openclaw",
+        "config",
+        "set",
+        "agents.defaults.blockStreamingDefault",
+        '"off"',
+        "--strict-json",
+    ],
+    ["openclaw", "config", "get", "agents.defaults", "--json"],
+    ["openclaw", "config", "get", "channels", "--json"],
+]
+_OPENCLAW_POLICY_STEPS = [
+    "streaming_config_before_agents",
+    "streaming_config_before_channels",
+    "streaming_config_set_1",
+    "streaming_config_after_agents",
+    "streaming_config_after_channels",
+    "final_only_delivery_policy",
+]
+_OPENCLAW_POLICY_RESTORE_RESPONSES = [
+    _json_result([]),
+    _json_result({"blockStreamingDefault": "off"}),
+    _json_result({}),
+    _result(),
+    _json_result({}),
+    _json_result({}),
+]
+_OPENCLAW_POLICY_RESTORE_STEPS = [
+    "policy_rollback_inventory_before",
+    "streaming_config_restore_before_agents",
+    "streaming_config_restore_before_channels",
+    "streaming_config_restore_1",
+    "streaming_config_restore_after_agents",
+    "streaming_config_restore_after_channels",
+    "final_only_delivery_restore",
+]
+
+
+def test_openclaw_policy_runner_redacts_native_selector_errors(tmp_path: Path) -> None:
+    secret_path = str(tmp_path / "private-profile" / "openclaw.json")
+    runner = _SequenceRunner([_result(returncode=1, stderr=f"permission denied: {secret_path}")])
+    session = registration._RegistrationSession(
+        "openclaw",
+        _TARGET,
+        home_dir=tmp_path,
+        command_runner=runner,
+    )
+
+    result = registration._openclaw_policy_runner(session)(
+        "streaming_config_before_agents",
+        ["openclaw", "config", "get", "agents.defaults", "--json"],
+    )
+
+    assert secret_path in result.stderr
+    assert secret_path not in json.dumps(session.steps)
+    assert session.steps[-1]["error"] == (
+        "OpenClaw streaming config command failed; native detail redacted"
+    )
+
+
+@pytest.mark.parametrize(
+    ("responses", "expected", "step_names"),
+    [
+        (
+            [_result(returncode=1)],
+            (False, None),
+            ["policy_rollback_inventory_before"],
+        ),
+        (
+            [_json_result([])],
+            (True, False),
+            ["policy_rollback_inventory_before"],
+        ),
+        (
+            [_json_result({"plugins": [{"id": "agency-preflight", "enabled": False}]})],
+            (True, True),
+            ["policy_rollback_inventory_before"],
+        ),
+        (
+            [
+                _json_result({"plugins": [{"id": "agency-preflight", "enabled": True}]}),
+                _result(returncode=1),
+            ],
+            (False, True),
+            ["policy_rollback_inventory_before", "policy_rollback_disable"],
+        ),
+        (
+            [
+                _json_result({"plugins": [{"id": "agency-preflight", "enabled": True}]}),
+                _result(),
+                _result(returncode=1),
+            ],
+            (False, None),
+            [
+                "policy_rollback_inventory_before",
+                "policy_rollback_disable",
+                "policy_rollback_inventory_after",
+            ],
+        ),
+        (
+            [
+                _json_result({"plugins": [{"id": "agency-preflight", "enabled": True}]}),
+                _result(),
+                _json_result([]),
+            ],
+            (True, False),
+            [
+                "policy_rollback_inventory_before",
+                "policy_rollback_disable",
+                "policy_rollback_inventory_after",
+            ],
+        ),
+        (
+            [
+                _json_result({"plugins": [{"id": "agency-preflight", "enabled": True}]}),
+                _result(),
+                _json_result({"plugins": [{"id": "agency-preflight", "enabled": False}]}),
+            ],
+            (True, True),
+            [
+                "policy_rollback_inventory_before",
+                "policy_rollback_disable",
+                "policy_rollback_inventory_after",
+            ],
+        ),
+        (
+            [
+                _json_result({"plugins": [{"id": "agency-preflight", "enabled": True}]}),
+                _result(),
+                _json_result({"plugins": [{"id": "agency-preflight", "enabled": True}]}),
+            ],
+            (False, True),
+            [
+                "policy_rollback_inventory_before",
+                "policy_rollback_disable",
+                "policy_rollback_inventory_after",
+            ],
+        ),
+    ],
+)
+def test_openclaw_policy_rollback_requires_proven_plugin_disablement(
+    responses: list[dict[str, Any]],
+    expected: tuple[bool, bool | None],
+    step_names: list[str],
+    tmp_path: Path,
+) -> None:
+    runner = _SequenceRunner(responses)
+    session = registration._RegistrationSession(
+        "openclaw",
+        _TARGET,
+        home_dir=tmp_path,
+        command_runner=runner,
+    )
+
+    assert registration._openclaw_plugin_disabled_state(session) == expected
+    assert [step["name"] for step in session.steps] == step_names
+    assert runner.exhausted
+
+
+def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
+    tmp_path: Path,
+) -> None:
+    runner = _SequenceRunner([_result(returncode=1)])
+    session = registration._RegistrationSession(
+        "openclaw",
+        _TARGET,
+        home_dir=tmp_path,
+        command_runner=runner,
+    )
+
+    steps, proven, failed_step = registration._rollback_openclaw_policy(session, "enable")
+
+    assert proven is False
+    assert failed_step == "enable"
+    assert [step["name"] for step in steps] == [
+        "policy_rollback_inventory_before",
+        "final_only_delivery_restore",
+    ]
+    restoration = steps[-1]
+    assert restoration["plugin_disabled"] is False
+    assert restoration["plugin_registered"] is None
+    assert restoration["restored"] is False
+    assert restoration["final_only_reapplied"] is True
+    assert restoration["backup_retained"] is True
+    assert runner.exhausted
 
 
 @pytest.mark.parametrize(
@@ -77,11 +298,12 @@ _SELECTOR = "agency-preflight@agency-runtime"
             host="openclaw",
             responses=[
                 _json_result({"running": False}),
+                *_OPENCLAW_POLICY_RESPONSES,
                 _result(returncode=1),
                 _result(),
                 _result(),
                 _result(),
-                _json_result({"id": "agency-preflight", "loaded": True}),
+                _json_result(_openclaw_runtime_payload()),
             ],
             commands=[
                 [
@@ -92,6 +314,7 @@ _SELECTOR = "agency-preflight@agency-runtime"
                     "--require-rpc",
                     "--json",
                 ],
+                *_OPENCLAW_POLICY_COMMANDS,
                 [
                     "openclaw",
                     "plugins",
@@ -124,6 +347,7 @@ _SELECTOR = "agency-preflight@agency-runtime"
             ],
             steps=[
                 "gateway_status",
+                *_OPENCLAW_POLICY_STEPS,
                 "inspect_existing",
                 "install",
                 "enable",
@@ -216,13 +440,14 @@ _SELECTOR = "agency-preflight@agency-runtime"
 )
 def test_registration_success_preserves_exact_commands_and_step_order(
     case: _SuccessCase,
+    tmp_path: Path,
 ) -> None:
     runner = _SequenceRunner(case.responses)
 
     steps, proven, failed_step = native_registration_steps(
         case.host,
         _TARGET,
-        home_dir=Path("isolated-home"),
+        home_dir=tmp_path,
         command_runner=runner,
     )
 
@@ -230,7 +455,7 @@ def test_registration_success_preserves_exact_commands_and_step_order(
     assert failed_step is None
     assert runner.commands == case.commands
     assert [step["name"] for step in steps] == case.steps
-    assert [step["command"] for step in steps] == case.commands
+    assert [step["command"] for step in steps if "command" in step] == case.commands
     assert runner.exhausted
 
 
@@ -269,6 +494,46 @@ def test_codex_registration_requires_explicit_enabled_inventory_proof(
         "plugin_add",
         "inventory_after",
     ]
+    assert runner.exhausted
+
+
+@pytest.mark.parametrize(
+    ("host", "responses", "failed_step"),
+    [
+        (
+            "hermes",
+            [_result(), _result(stdout="agency-preflight\n")],
+            "inventory_unproven",
+        ),
+        (
+            "claude",
+            [
+                _json_result([{"name": "agency-preflight", "enabled": True}]),
+                _json_result([{"name": "agency-runtime"}]),
+                _result(),
+                _json_result([{"name": "agency-preflight"}]),
+            ],
+            "inventory_after_unproven",
+        ),
+    ],
+)
+def test_registration_rejects_unknown_enablement(
+    host: str,
+    responses: list[dict[str, Any]],
+    failed_step: str,
+    tmp_path: Path,
+) -> None:
+    runner = _SequenceRunner(responses)
+
+    _steps, proven, actual_failed_step = native_registration_steps(
+        host,
+        _TARGET,
+        home_dir=tmp_path,
+        command_runner=runner,
+    )
+
+    assert proven is False
+    assert actual_failed_step == failed_step
     assert runner.exhausted
 
 
@@ -358,9 +623,11 @@ def test_marketplace_force_refresh_preserves_remove_then_install_order(
 def test_openclaw_existing_plugin_install_condition_is_exact(
     force_refresh: bool,
     expected_install: list[str] | None,
+    tmp_path: Path,
 ) -> None:
     responses = [
         _json_result({"running": False}),
+        *_OPENCLAW_POLICY_RESPONSES,
         _json_result({"id": "agency-preflight", "enabled": True}),
     ]
     if force_refresh:
@@ -369,7 +636,7 @@ def test_openclaw_existing_plugin_install_condition_is_exact(
         [
             _result(),
             _result(),
-            _json_result({"id": "agency-preflight", "loaded": True}),
+            _json_result(_openclaw_runtime_payload()),
         ]
     )
     runner = _SequenceRunner(responses)
@@ -377,7 +644,7 @@ def test_openclaw_existing_plugin_install_condition_is_exact(
     steps, proven, failed_step = native_registration_steps(
         "openclaw",
         _TARGET,
-        home_dir=Path("isolated-home"),
+        home_dir=tmp_path,
         command_runner=runner,
         force_refresh=force_refresh,
     )
@@ -446,35 +713,55 @@ def test_openclaw_gateway_gate_stops_before_any_mutating_command(
             host="openclaw",
             responses=[
                 _json_result({"running": False}),
+                *_OPENCLAW_POLICY_RESPONSES,
                 _result(returncode=1),
                 _result(returncode=1),
+                *_OPENCLAW_POLICY_RESTORE_RESPONSES,
             ],
-            steps=["gateway_status", "inspect_existing", "install"],
+            steps=[
+                "gateway_status",
+                *_OPENCLAW_POLICY_STEPS,
+                "inspect_existing",
+                "install",
+                *_OPENCLAW_POLICY_RESTORE_STEPS,
+            ],
             failed_step="install",
         ),
         _FailureCase(
             host="openclaw",
             responses=[
                 _json_result({"running": False}),
+                *_OPENCLAW_POLICY_RESPONSES,
                 _json_result({"id": "agency-preflight"}),
                 _result(returncode=1),
+                *_OPENCLAW_POLICY_RESTORE_RESPONSES,
             ],
-            steps=["gateway_status", "inspect_existing", "enable"],
+            steps=[
+                "gateway_status",
+                *_OPENCLAW_POLICY_STEPS,
+                "inspect_existing",
+                "enable",
+                *_OPENCLAW_POLICY_RESTORE_STEPS,
+            ],
             failed_step="enable",
         ),
         _FailureCase(
             host="openclaw",
             responses=[
                 _json_result({"running": False}),
+                *_OPENCLAW_POLICY_RESPONSES,
                 _json_result({"id": "agency-preflight"}),
                 _result(),
                 _result(returncode=1),
+                *_OPENCLAW_POLICY_RESTORE_RESPONSES,
             ],
             steps=[
                 "gateway_status",
+                *_OPENCLAW_POLICY_STEPS,
                 "inspect_existing",
                 "enable",
                 "conversation_access",
+                *_OPENCLAW_POLICY_RESTORE_STEPS,
             ],
             failed_step="conversation_access",
         ),
@@ -482,17 +769,21 @@ def test_openclaw_gateway_gate_stops_before_any_mutating_command(
             host="openclaw",
             responses=[
                 _json_result({"running": False}),
+                *_OPENCLAW_POLICY_RESPONSES,
                 _json_result({"id": "agency-preflight"}),
                 _result(),
                 _result(),
                 _json_result({"id": "agency-preflight"}),
+                *_OPENCLAW_POLICY_RESTORE_RESPONSES,
             ],
             steps=[
                 "gateway_status",
+                *_OPENCLAW_POLICY_STEPS,
                 "inspect_existing",
                 "enable",
                 "conversation_access",
                 "runtime_inspect",
+                *_OPENCLAW_POLICY_RESTORE_STEPS,
             ],
             failed_step="runtime_inspect_unproven",
         ),
@@ -598,13 +889,14 @@ def test_openclaw_gateway_gate_stops_before_any_mutating_command(
 )
 def test_registration_failure_matrix_preserves_stop_point(
     case: _FailureCase,
+    tmp_path: Path,
 ) -> None:
     runner = _SequenceRunner(case.responses)
 
     steps, proven, failed_step = native_registration_steps(
         case.host,
         _TARGET,
-        home_dir=Path("isolated-home"),
+        home_dir=tmp_path,
         command_runner=runner,
         force_refresh=case.force_refresh,
     )

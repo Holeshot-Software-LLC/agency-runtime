@@ -3,7 +3,7 @@ title: "AR-06: Implement CLI-authenticated judge providers"
 status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-18
 tags: [providers, authentication]
 related:
   - docs/decisions/0008-ordered-provider-fallback.md
@@ -16,7 +16,7 @@ issue_id: AR-06
 priority: p2
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/6"
 depends_on: [AR-05]
-blocks: [AR-07]
+blocks: [AR-07, AR-80]
 ---
 
 # AR-06: Implement CLI-authenticated judge providers

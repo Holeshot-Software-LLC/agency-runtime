@@ -10,6 +10,7 @@ import pytest
 
 from agency_runtime.core import installer
 from agency_runtime.core import installer_filesystem as filesystem
+from agency_runtime.core import installer_inventory as inventory
 from agency_runtime.core import installer_native as native
 from agency_runtime.core import installer_payloads as payloads
 from agency_runtime.core.config import AgencyConfig, OllamaConfig
@@ -132,6 +133,10 @@ def test_backup_validation_rejects_unowned_malformed_and_mismatched_inputs(
     assert "unexpected owner" in str(
         filesystem.validate_owned_backup(backup, host="codex", target=target)[1]
     )
+    _write_backup_manifest(backup, target, schema_version=3)
+    assert "unexpected schema_version" in str(
+        filesystem.validate_owned_backup(backup, host="codex", target=target)[1]
+    )
     _write_backup_manifest(backup, target, plugin_version="invalid")
     assert "invalid plugin_version" in str(
         filesystem.validate_owned_backup(backup, host="codex", target=target)[1]
@@ -157,6 +162,27 @@ def test_backup_validation_rejects_unowned_malformed_and_mismatched_inputs(
     assert "target is invalid" in str(
         filesystem.validate_owned_backup(backup, host="codex", target=target)[1]
     )
+
+
+def test_launcher_inventory_rejects_unowned_and_malformed_artifact_manifests(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document: dict[str, Any] = {
+        "owner": "attacker",
+        "host": "codex",
+        "plugin_id": PLUGIN_ID,
+        "launcher_artifacts": [],
+    }
+    monkeypatch.setattr(
+        inventory,
+        "_read_regular_file_bounded",
+        lambda *_args, **_kwargs: json.dumps(document).encode("utf-8"),
+    )
+    assert inventory._managed_launcher_artifacts_current(tmp_path, "codex") is None
+
+    document["owner"] = "agency-runtime"
+    assert inventory._managed_launcher_artifacts_current(tmp_path, "codex") is False
 
 
 def test_home_resolution_enforces_explicit_boundary_and_honors_runtime_env(
@@ -287,11 +313,12 @@ def test_starter_roster_seeding_is_idempotent() -> None:
         def __init__(self) -> None:
             self.entries: dict[str, dict[str, Any]] = {}
 
-        def get_roster_entry(self, slug: str) -> dict[str, Any] | None:
-            return self.entries.get(slug)
-
-        def upsert_roster_entry(self, entry: dict[str, Any]) -> None:
-            self.entries[entry["slug"]] = dict(entry)
+        def activate_agent_if_missing(self, entry: dict[str, Any]) -> bool:
+            slug = str(entry["slug"])
+            if slug in self.entries:
+                return False
+            self.entries[slug] = dict(entry)
+            return True
 
     store = MemoryRosterStore()
     assert installer.seed_starter_roster(store) == len(installer.STARTER_ROSTER)

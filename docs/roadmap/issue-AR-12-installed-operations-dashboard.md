@@ -3,7 +3,7 @@ title: "AR-12: Ship a secure installed operations dashboard"
 status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-18
 tags: [dashboard, operations, security]
 related:
   - docs/decisions/0010-one-command-install-and-reversible-toggle.md
@@ -19,7 +19,7 @@ issue_id: AR-12
 priority: p1
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/12"
 depends_on: [AR-10]
-blocks: [AR-07, AR-13, AR-14]
+blocks: [AR-07, AR-13, AR-14, AR-89, AR-94]
 ---
 
 # AR-12: Ship a secure installed operations dashboard

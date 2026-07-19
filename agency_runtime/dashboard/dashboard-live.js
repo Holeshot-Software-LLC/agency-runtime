@@ -14,6 +14,7 @@ export function createLiveController(core, config, renderer) {
     showNotice,
     nestedValue,
   } = core;
+  const AGENT_SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]{1,127}$/;
 
   function setConnection(connected, label) {
     document.querySelector(".rail-foot")?.classList.toggle("connected", connected);
@@ -69,6 +70,101 @@ export function createLiveController(core, config, renderer) {
     if (toggle instanceof core.HTMLInputElement && toggle.type === "checkbox") {
       toggle.checked = state.live.enabled;
     }
+  }
+
+  function syncMasterControl() {
+    const master = state.master;
+    const known = Boolean(master);
+    const enabled = known ? master.enabled === true : null;
+    const toggle = byId("master-toggle");
+    if (toggle) {
+      if (known) toggle.setAttribute("aria-pressed", String(enabled));
+      else toggle.removeAttribute("aria-pressed");
+      toggle.setAttribute(
+        "aria-label",
+        !known
+          ? "Agency master state loading"
+          : enabled
+            ? "Disable Agency Runtime globally"
+            : "Enable Agency Runtime globally",
+      );
+      toggle.dataset.state = !known ? "loading" : enabled ? "enabled" : "disabled";
+      if (toggle.getAttribute("aria-busy") !== "true") toggle.disabled = !known;
+      toggle.title = known
+        ? `Generation ${master.generation} · ${enabled ? "Agency is active" : "Agency is bypassed"}`
+        : "Loading Agency master state";
+    }
+    if (byId("master-label")) {
+      byId("master-label").textContent = !known
+        ? "Agency status"
+        : enabled
+          ? "Agency on"
+          : "Agency off";
+    }
+    if (byId("master-generation")) {
+      byId("master-generation").textContent = known ? `GEN ${master.generation}` : "LOADING";
+    }
+    if (byId("master-summary")) {
+      byId("master-summary").textContent = !known
+        ? "Loading Agency master state."
+        : enabled
+          ? "Agency routing, delegation, and evidence shaping are active."
+          : "Agency is bypassed. Dashboard status and configuration remain available.";
+    }
+    if (byId("runtime-paused-banner")) {
+      byId("runtime-paused-banner").hidden = !known || enabled;
+    }
+    const shell = document.querySelector(".shell");
+    shell?.classList.toggle("agency-paused", known && !enabled);
+    if (shell) shell.dataset.agencyState = !known ? "loading" : enabled ? "enabled" : "disabled";
+    const routeButton = byId("route-button");
+    const routeHost = byId("route-host");
+    const storeRestartRequired = config.serviceRestartRequired();
+    const routeHostAvailable = Boolean(routeHost?.value);
+    if (routeHost) {
+      routeHost.disabled = !known || !enabled || storeRestartRequired || !routeHostAvailable;
+    }
+    if (routeButton && routeButton.getAttribute("aria-busy") !== "true") {
+      routeButton.disabled = !known || !enabled || storeRestartRequired || !routeHostAvailable;
+      routeButton.setAttribute("aria-disabled", String(routeButton.disabled));
+      routeButton.title = storeRestartRequired
+        ? "Restart the dashboard service to use Route Lab."
+        : !known
+        ? "Loading Agency master state"
+        : enabled && routeHostAvailable
+          ? `Run a routing explanation for ${routeHost.value}`
+          : enabled
+            ? "A verified and enabled execution host is required"
+          : "Enable Agency Runtime to use Route Lab";
+    }
+    if (known && !enabled && byId("route-status")) {
+      byId("route-status").textContent = "BYPASSED";
+    } else if (known && enabled && byId("route-status")?.textContent === "BYPASSED") {
+      byId("route-status").textContent = "IDLE";
+    }
+  }
+
+  function applyMasterState(master) {
+    if (master === undefined || master === null) return false;
+    if (
+      typeof master !== "object"
+      || typeof master.enabled !== "boolean"
+      || !Number.isInteger(master.generation)
+      || master.generation < 0
+    ) {
+      throw new Error("Unsupported Agency master-state response.");
+    }
+    if (
+      state.master
+      && Number.isInteger(state.master.generation)
+      && master.generation < state.master.generation
+    ) return false;
+    const changed = !state.master
+      || state.master.enabled !== master.enabled
+      || state.master.generation !== master.generation;
+    state.master = { ...master };
+    syncMasterControl();
+    return changed;
   }
 
   function cancelLiveRequest() {
@@ -182,6 +278,7 @@ export function createLiveController(core, config, renderer) {
     }
     state.live.sampledAt = payload.sampled_at || new Date().toISOString();
     updateLastSync(state.live.sampledAt);
+    const masterChanged = applyMasterState(payload.master);
     if (payload.revision === state.live.revision) {
       const sampled = Date.parse(state.live.sampledAt);
       const chartWindow = Number.isFinite(sampled) ? Math.floor(sampled / 60000) : null;
@@ -190,7 +287,8 @@ export function createLiveController(core, config, renderer) {
         && state.activeView === "overview"
         && chartWindow !== state.live.chartWindow
       ) renderer.renderCharts();
-      return false;
+      if (masterChanged && render) renderer.renderActiveView();
+      return masterChanged;
     }
     state.live.revision = String(payload.revision || "");
     state.overview = { ...(state.overview || {}), ...(payload.overview || {}) };
@@ -266,6 +364,8 @@ export function createLiveController(core, config, renderer) {
       agents,
       count,
       total_count: pageInteger(payload.total_count, count),
+      enabled_count: pageInteger(payload.enabled_count, count),
+      disabled_count: pageInteger(payload.disabled_count, 0),
       limit: pageInteger(payload.limit, count, 1),
       truncated: payload.truncated === true,
       next_cursor: typeof payload.next_cursor === "string" ? payload.next_cursor : null,
@@ -273,6 +373,175 @@ export function createLiveController(core, config, renderer) {
     state.roster = agents;
     state.rosterPage = rosterPage;
     return rosterPage;
+  }
+
+  function applyGovernanceSnapshot(payload = {}) {
+    state.snapshots = Array.isArray(payload.snapshots) ? payload.snapshots : [];
+    if (payload.operations && typeof payload.operations === "object") {
+      state.rosterOperations = payload.operations;
+    }
+    if (payload.reviews && typeof payload.reviews === "object") {
+      state.rosterReview = payload.reviews;
+    }
+    return {
+      operations: state.rosterOperations,
+      reviews: state.rosterReview,
+      snapshots: state.snapshots,
+    };
+  }
+
+  function operationalFilterValues() {
+    const fields = ["query", "division", "capability", "authority", "host", "platform", "tool"];
+    return Object.fromEntries(fields.flatMap((field) => {
+      const value = String(byId(`roster-filter-${field}`)?.value || "").trim();
+      return value ? [[field, value]] : [];
+    }));
+  }
+
+  function operationalRosterPath(filters = {}) {
+    const query = new URLSearchParams({ limit: "100", ...filters });
+    return `/api/roster/operations?${query.toString()}`;
+  }
+
+  async function applyOperationalFilters(event) {
+    event?.preventDefault?.();
+    if (config.serviceRestartRequired()) {
+      showNotice("Restart the dashboard service before filtering the roster.", true);
+      return false;
+    }
+    if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+    const filters = operationalFilterValues();
+    try {
+      const payload = await api(operationalRosterPath(filters));
+      if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+      state.rosterFilters = filters;
+      state.rosterOperations = payload;
+      state.rosterFilter = "";
+      if (byId("roster-search-slug")) byId("roster-search-slug").value = "";
+      renderer.renderRoster();
+      return true;
+    } catch (error) {
+      showNotice(error.message, true);
+      return false;
+    }
+  }
+
+  function clearOperationalFilters() {
+    ["query", "division", "capability", "authority", "host", "platform", "tool"]
+      .forEach((field) => {
+        const control = byId(`roster-filter-${field}`);
+        if (control) control.value = "";
+      });
+    return applyOperationalFilters();
+  }
+
+  async function loadMoreRemediation(kind) {
+    if (!["pending", "history"].includes(kind)) {
+      throw new Error("Remediation page kind must be pending or history.");
+    }
+    if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+    const current = state.rosterReview || {};
+    const cursorField = kind === "pending"
+      ? "next_remediation_pending_cursor"
+      : "next_remediation_history_cursor";
+    const cursor = String(current[cursorField] || "");
+    if (!cursor) return false;
+    const button = byId(`review-${kind}-more`);
+    if (button) {
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+    }
+    let loaded = false;
+    try {
+      const query = new URLSearchParams({
+        limit: String(pageInteger(current.limit, 25, 1)),
+        [`${kind}_cursor`]: cursor,
+      });
+      const payload = await api(`/api/roster/reviews?${query.toString()}`);
+      if (!state.lifecycle.destroyed && !state.lifecycle.suspended) {
+        const itemField = kind === "pending" ? "remediation_attempts" : "remediation_history";
+        const existing = Array.isArray(current[itemField]) ? current[itemField] : [];
+        const incoming = Array.isArray(payload[itemField]) ? payload[itemField] : [];
+        const seen = new Set(existing.map((item) => item?.event_id).filter(Boolean));
+        const merged = [
+          ...existing,
+          ...incoming.filter((item) => !item?.event_id || !seen.has(item.event_id)),
+        ];
+        const next = {
+          ...current,
+          [itemField]: merged,
+          [cursorField]: String(payload[cursorField] || ""),
+          remediation_unvalidated_resolution_count: Number.isInteger(
+            payload.remediation_unvalidated_resolution_count,
+          )
+            ? payload.remediation_unvalidated_resolution_count
+            : current.remediation_unvalidated_resolution_count,
+        };
+        if (kind === "pending") {
+          next.remediation_pending_has_more = payload.remediation_pending_has_more === true;
+        } else {
+          next.remediation_history_has_more = payload.remediation_history_has_more === true;
+        }
+        state.rosterReview = next;
+        renderer.renderRoster();
+        loaded = true;
+      }
+    } catch (error) {
+      showNotice(error.message, true);
+    }
+    if (button) {
+      button.disabled = false;
+      button.removeAttribute("aria-busy");
+    }
+    return loaded;
+  }
+
+  function rosterRequestPath() {
+    return state.rosterFilter
+      ? `/api/agents/lookup?slug=${encodeURIComponent(state.rosterFilter)}`
+      : "/api/roster?limit=100";
+  }
+
+  function normalizeRosterFilter(value) {
+    const slug = String(value || "").trim().toLowerCase();
+    if (slug && !AGENT_SLUG_PATTERN.test(slug)) {
+      throw new Error("Agent slug must use 2-128 letters, digits, dots, underscores, or dashes.");
+    }
+    return slug;
+  }
+
+  async function applyRosterFilter(value) {
+    if (config.serviceRestartRequired()) {
+      showNotice("Restart the dashboard service before searching the roster.", true);
+      return false;
+    }
+    let slug;
+    try {
+      slug = normalizeRosterFilter(value);
+    } catch (error) {
+      showNotice(error.message, true);
+      return false;
+    }
+    if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+    const previous = state.rosterFilter;
+    state.rosterFilter = slug;
+    byId("roster-search-slug").value = slug;
+    const refreshed = await refreshAll();
+    if (!refreshed && !state.lifecycle.destroyed && !state.lifecycle.suspended) {
+      state.rosterFilter = previous;
+      byId("roster-search-slug").value = previous;
+      renderer.renderRoster();
+    }
+    return refreshed === true;
+  }
+
+  function searchRoster(event) {
+    event.preventDefault();
+    return applyRosterFilter(byId("roster-search-slug").value);
+  }
+
+  function clearRosterSearch() {
+    return applyRosterFilter("");
   }
 
   async function refreshControlPlane() {
@@ -287,18 +556,24 @@ export function createLiveController(core, config, renderer) {
     state.control.controller = controller;
     state.control.inFlight = true;
     try {
-      const [hosts, roster, snapshots, configSnapshot] = await Promise.all([
+      const configSnapshot = await api("/api/config", { signal: controller.signal });
+      if (state.control.controller !== controller || state.lifecycle.suspended) return;
+      config.applyConfigSnapshot(configSnapshot);
+      if (config.serviceRestartRequired()) {
+        renderer.renderActiveControlView();
+        return;
+      }
+      const [hosts, roster, snapshots] = await Promise.all([
         api("/api/hosts", { signal: controller.signal }),
-        api("/api/roster", { signal: controller.signal }),
+        api(rosterRequestPath(), { signal: controller.signal }),
         api("/api/snapshots", { signal: controller.signal }),
-        api("/api/config", { signal: controller.signal }),
       ]);
       if (state.control.controller !== controller || state.lifecycle.suspended) return;
       state.hosts = hosts.hosts || [];
+      applyMasterState(hosts.master);
       const rosterPage = applyRosterPage(roster);
-      state.snapshots = snapshots.snapshots || [];
-      state.overview = { ...(state.overview || {}), roster_count: rosterPage.total_count };
-      config.applyConfigSnapshot(configSnapshot);
+      applyGovernanceSnapshot(snapshots);
+      state.overview = { ...(state.overview || {}), roster_count: rosterPage.enabled_count };
       renderer.renderActiveControlView();
     } catch (error) {
       if (
@@ -328,12 +603,31 @@ export function createLiveController(core, config, renderer) {
     cancelLiveRequest();
     cancelControlRequest();
     try {
-      const [live, hosts, roster, snapshots, configSnapshot] = await Promise.all([
+      const configSnapshot = await api("/api/config", { signal: controller.signal });
+      if (
+        generation !== state.full.generation
+        || state.full.controller !== controller
+        || state.lifecycle.suspended
+      ) return false;
+      config.applyConfigSnapshot(configSnapshot);
+      if (config.serviceRestartRequired()) {
+        const live = await api("/api/live?limit=100", { signal: controller.signal });
+        if (
+          generation !== state.full.generation
+          || state.full.controller !== controller
+          || state.lifecycle.suspended
+        ) return false;
+        applyLiveSnapshot(live, { render: false });
+        setConnection(true, "Restart required");
+        setLiveStatus("Service restart required", "paused", { announce: true });
+        renderer.renderActiveView();
+        return true;
+      }
+      const [live, hosts, roster, snapshots] = await Promise.all([
         api("/api/live?limit=100", { signal: controller.signal }),
         api("/api/hosts", { signal: controller.signal }),
-        api("/api/roster", { signal: controller.signal }),
+        api(rosterRequestPath(), { signal: controller.signal }),
         api("/api/snapshots", { signal: controller.signal }),
-        api("/api/config", { signal: controller.signal }),
       ]);
       if (
         generation !== state.full.generation
@@ -341,17 +635,17 @@ export function createLiveController(core, config, renderer) {
         || state.lifecycle.suspended
       ) return false;
       state.hosts = hosts.hosts || [];
+      applyMasterState(hosts.master);
       const rosterPage = applyRosterPage(roster);
-      state.snapshots = snapshots.snapshots || [];
+      applyGovernanceSnapshot(snapshots);
       const effective = configSnapshot.effective || configSnapshot.config || {};
       state.overview = {
-        roster_count: rosterPage.total_count,
+        roster_count: rosterPage.enabled_count,
         retention_days: nestedValue(effective, "observability.retention_days"),
         capture_content: nestedValue(effective, "observability.capture_content") === true,
       };
       state.activity = {};
       state.live.revision = "";
-      config.applyConfigSnapshot(configSnapshot);
       applyLiveSnapshot(live, { render: false });
       setConnection(true, "Authenticated");
       setLiveStatus(
@@ -425,6 +719,8 @@ export function createLiveController(core, config, renderer) {
     updateLastSync,
     updateLocalClock,
     syncLiveToggle,
+    syncMasterControl,
+    applyMasterState,
     cancelLiveRequest,
     cancelControlRequest,
     cancelFullRefresh,
@@ -443,6 +739,17 @@ export function createLiveController(core, config, renderer) {
     runLivePoll,
     scheduleControlRefresh,
     applyRosterPage,
+    applyGovernanceSnapshot,
+    operationalFilterValues,
+    operationalRosterPath,
+    applyOperationalFilters,
+    clearOperationalFilters,
+    loadMoreRemediation,
+    rosterRequestPath,
+    normalizeRosterFilter,
+    applyRosterFilter,
+    searchRoster,
+    clearRosterSearch,
     refreshControlPlane,
     refreshAll,
     refreshRuntimeEvidence,

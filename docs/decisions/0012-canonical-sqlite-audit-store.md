@@ -3,10 +3,20 @@ title: Use SQLite as the canonical audit store with explicit retention
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-13
+updated: 2026-07-16
 tags: [storage, audit, retention]
 related:
+  - docs/roadmap/issue-AR-62-identity-stable-sqlite-sidecar-trust-races.md
+  - docs/roadmap/issue-AR-56-require-trusted-parents-for-sqlite-store-paths.md
+  - docs/roadmap/issue-AR-55-make-sqlite-schema-state-inspection-snapshot-consistent.md
+  - docs/roadmap/issue-AR-52-make-posix-permission-repair-swap-safe.md
+  - docs/roadmap/issue-AR-47-freeze-store-config-identity-at-construction.md
+  - docs/roadmap/issue-AR-45-bind-store-privacy-to-explicit-config.md
+  - docs/roadmap/issue-AR-44-bind-default-store-to-explicit-config.md
+  - docs/roadmap/issue-AR-41-close-store-connections-after-maintenance-failure.md
+  - docs/roadmap/issue-AR-42-make-database-metrics-sidecar-race-safe.md
   - docs/roadmap/issue-AR-22-concurrent-storage-acl-repair.md
+  - docs/roadmap/issue-AR-39-fail-closed-storage-config-identity.md
 supersedes: []
 superseded_by: null
 id: ADR-0012

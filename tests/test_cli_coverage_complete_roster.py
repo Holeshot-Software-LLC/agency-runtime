@@ -23,9 +23,16 @@ def args(**changes):
         "older_than_days": 30,
         "query": "review",
         "review": False,
+        "scan_id": "scan",
         "session_id": "session",
+        "slug": "agent",
         "snapshot_id": "snapshot",
         "task": "review",
+        "target_version": "sha256:old",
+        "expected_current_version": "sha256:new",
+        "expected_current_hash": "current-hash",
+        "history_cursor": "",
+        "pending_cursor": "",
         "trusted_for_auto_approve": False,
         "url": "source",
     }
@@ -48,6 +55,24 @@ class Store:
 
     def get_active_roster_as_catalog(self):
         return self.catalog
+
+    def get_active_roster(self):
+        return [
+            {
+                "agent_slug": item["slug"],
+                "name": item.get("name", ""),
+                "division": item.get("division", ""),
+            }
+            for item in self.catalog
+        ]
+
+    def rollback_agent_revision(self, *values, **kwargs):
+        self.calls.append(("rollback", values, kwargs))
+        return {
+            "agent_slug": values[0],
+            "version": values[1],
+            "hash": "restored-hash",
+        }
 
     def database_stats(self):
         return {
@@ -125,6 +150,19 @@ def test_sync_trust_preflight_and_completion(monkeypatch, capsys):
     assert emitted[-1]["errors"]
     assert subject._auto_approve_preflight(auto_approve=True, quarantined=[], errors=[]) == 1
     assert "no candidates" in capsys.readouterr().err
+    assert (
+        subject._auto_approve_preflight(
+            auto_approve=True,
+            quarantined=["one"],
+            errors=[],
+            outcomes=[
+                {"status": "candidate", "slug": "one"},
+                {"status": "quarantined", "slug": "unsafe"},
+            ],
+        )
+        == 2
+    )
+    assert emitted[-1]["outcomes"] == [{"status": "quarantined", "slug": "unsafe"}]
 
     actions = []
     monkeypatch.setattr(
@@ -152,6 +190,301 @@ def test_sync_trust_preflight_and_completion(monkeypatch, capsys):
     assert "Created snapshot snap" in capsys.readouterr().out
 
 
+def test_sync_inference_audit_and_failure_edges(monkeypatch):
+    policy = SimpleNamespace(required=True)
+    calls = []
+    reconciliations = []
+    monkeypatch.setattr(
+        subject,
+        "quarantine_manifest_import",
+        lambda *_args, **kwargs: (
+            calls.append(kwargs) or (["candidate"], [{"status": "candidate", "scan_id": "scan-1"}])
+        ),
+    )
+    monkeypatch.setattr(
+        subject,
+        "audit_candidates_with_policy",
+        lambda *_args: [{"candidate_id": "candidate", "verdict": "failed"}],
+    )
+    monkeypatch.setattr(
+        subject,
+        "reconcile_manifest_remediation_resolutions",
+        lambda *_args, **kwargs: reconciliations.append(kwargs),
+    )
+    candidate_ids, outcomes, ready = subject._quarantine_manifest_with_policy(
+        [{"slug": "candidate"}],
+        [object()],
+        "source",
+        object(),
+        policy,
+    )
+    assert candidate_ids == ["candidate"]
+    assert outcomes == [{"status": "candidate", "scan_id": "scan-1"}]
+    assert ready is False
+    assert calls == [{"require_inference": True}]
+    assert reconciliations == [
+        {
+            "candidate_ids": ["candidate"],
+            "audits": [{"candidate_id": "candidate", "verdict": "failed"}],
+            "scan_id": "scan-1",
+        }
+    ]
+
+    class ManifestCandidates(list):
+        outcomes = (object(),)
+
+    monkeypatch.setattr(
+        subject,
+        "download_from_source",
+        lambda _url: ManifestCandidates([{"slug": "candidate"}]),
+    )
+    monkeypatch.setattr(
+        subject,
+        "_quarantine_manifest_with_policy",
+        lambda *_args, **_kwargs: (
+            ["candidate"],
+            [{"status": "candidate"}],
+            False,
+        ),
+    )
+    quarantined, errors = subject._collect_sync_candidates(
+        [{"id": "source", "url": "source"}],
+        object(),
+        dry_run=False,
+        audit_policy=policy,
+    )
+    assert quarantined == ["candidate"]
+    assert "degraded or failed" in errors[0]["error"]
+
+    monkeypatch.setattr(subject, "download_from_source", lambda _url: [{"slug": "candidate"}])
+    monkeypatch.setattr(subject, "validate_agent", lambda _agent: (True, ""))
+    monkeypatch.setattr(
+        subject,
+        "_quarantine_agent_with_policy",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("quarantine failed")),
+    )
+    quarantined, errors = subject._collect_sync_candidates(
+        [{"id": "source", "url": "source"}],
+        object(),
+        dry_run=False,
+        audit_policy=policy,
+    )
+    assert quarantined == []
+    assert errors == [
+        {
+            "source": "source",
+            "agent": "candidate",
+            "error": "quarantine failed",
+        }
+    ]
+
+
+def test_sync_non_inference_and_manifest_collection_edges(monkeypatch):
+    monkeypatch.setattr(
+        subject,
+        "quarantine_manifest_import",
+        lambda *_args, **_kwargs: (["candidate"], [{"status": "candidate"}]),
+    )
+    assert subject._quarantine_manifest_with_policy(
+        [{"slug": "candidate"}],
+        [object()],
+        "source",
+        object(),
+        None,
+    ) == (["candidate"], [{"status": "candidate"}], True)
+
+    monkeypatch.setattr(
+        subject,
+        "quarantine_candidate",
+        lambda agent, source_id, _store, **_kwargs: f"{source_id}:{agent['slug']}",
+    )
+    assert subject._quarantine_agent_with_policy(
+        {"slug": "candidate"},
+        "source",
+        object(),
+        None,
+    ) == ("source:candidate", True)
+    policy = SimpleNamespace(required=True)
+    monkeypatch.setattr(
+        subject,
+        "audit_candidates_with_policy",
+        lambda *_args: [{"verdict": "failed"}],
+    )
+    assert subject._quarantine_agent_with_policy(
+        {"slug": "candidate"},
+        "source",
+        object(),
+        policy,
+    ) == ("source:candidate", False)
+
+    monkeypatch.setattr(subject, "download_from_source", lambda _url: [])
+    assert (
+        subject._collect_sync_candidates(
+            [{"id": "empty", "url": "empty"}],
+            object(),
+            dry_run=False,
+        )[0]
+        == []
+    )
+
+    class Outcome:
+        def public_dict(self):
+            return {"status": "candidate", "slug": "candidate"}
+
+    class ManifestCandidates(list):
+        outcomes = (Outcome(),)
+
+    manifest = ManifestCandidates([{"slug": "candidate"}])
+    sink = []
+    monkeypatch.setattr(subject, "download_from_source", lambda _url: manifest)
+    monkeypatch.setattr(subject, "validate_agent", lambda _agent: (True, ""))
+    quarantined, errors = subject._collect_sync_candidates(
+        [{"id": "source", "url": "source"}],
+        object(),
+        dry_run=True,
+        outcome_sink=sink,
+    )
+    assert quarantined == ["candidate"]
+    assert errors == []
+    assert sink == [{"status": "candidate", "slug": "candidate"}]
+
+    monkeypatch.setattr(
+        subject,
+        "_quarantine_manifest_with_policy",
+        lambda *_args, **_kwargs: (
+            ["candidate"],
+            [{"status": "candidate"}],
+            True,
+        ),
+    )
+    quarantined, errors = subject._collect_sync_candidates(
+        [{"id": "source", "url": "source"}],
+        object(),
+        dry_run=False,
+    )
+    assert quarantined == ["candidate"]
+    assert errors == []
+
+    monkeypatch.setattr(
+        subject,
+        "_quarantine_manifest_with_policy",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("manifest failed")),
+    )
+    quarantined, errors = subject._collect_sync_candidates(
+        [{"id": "source", "url": "source"}],
+        object(),
+        dry_run=False,
+    )
+    assert quarantined == []
+    assert errors[0]["error"] == "manifest failed"
+
+    monkeypatch.setattr(subject, "download_from_source", lambda _url: [{"slug": "candidate"}])
+    monkeypatch.setattr(
+        subject,
+        "_quarantine_agent_with_policy",
+        lambda *_args, **_kwargs: ("candidate", False),
+    )
+    quarantined, errors = subject._collect_sync_candidates(
+        [{"id": "source", "url": "source"}],
+        object(),
+        dry_run=False,
+    )
+    assert quarantined == ["candidate"]
+    assert "degraded or failed" in errors[0]["error"]
+
+
+def test_sync_successful_preflight_and_outcome_reporting(monkeypatch):
+    emitted = []
+    monkeypatch.setattr(subject, "_print_json", emitted.append)
+    assert (
+        subject._auto_approve_preflight(
+            auto_approve=True,
+            quarantined=["candidate"],
+            errors=[],
+        )
+        is None
+    )
+    monkeypatch.setattr(
+        subject,
+        "create_roster_diff",
+        lambda *_args, **_kwargs: {"snapshot_id": "snapshot", "diff": {}},
+    )
+    assert (
+        subject._complete_sync(
+            args(),
+            object(),
+            ["candidate"],
+            [],
+            outcomes=[{"status": "candidate"}],
+        )
+        == 0
+    )
+    assert emitted[-1] == {"outcomes": [{"status": "candidate"}]}
+
+
+def test_sync_inference_activation_rollback_and_upstream_degraded(
+    monkeypatch,
+    capsys,
+):
+    actions = []
+    emitted = []
+    monkeypatch.setattr(
+        subject,
+        "create_roster_diff",
+        lambda *_args, **_kwargs: {"snapshot_id": "snapshot", "diff": {}},
+    )
+    monkeypatch.setattr(
+        subject,
+        "approve_snapshot",
+        lambda *_args, **kwargs: actions.append(("approve", kwargs)),
+    )
+    monkeypatch.setattr(
+        subject,
+        "activate_snapshot",
+        lambda *_args, **kwargs: actions.append(("activate", kwargs)),
+    )
+    monkeypatch.setattr(subject, "_print_json", emitted.append)
+    assert (
+        subject._complete_sync(
+            args(auto_approve=True, source_revision="upstream"),
+            object(),
+            ["candidate"],
+            [],
+            require_inference=True,
+        )
+        == 0
+    )
+    assert actions == [
+        ("approve", {"require_inference": True}),
+        ("activate", {"require_inference": True}),
+    ]
+
+    store = Store()
+    monkeypatch.setattr(subject, "_store", lambda: store)
+    assert subject.cmd_roster_rollback(args(json=False)) == 0
+    assert "Rolled back agent" in capsys.readouterr().out
+
+    store.sources = [{"id": "source", "url": "https://example.invalid/roster.json"}]
+    monkeypatch.setattr(subject, "load_config", lambda: object())
+    monkeypatch.setattr(
+        subject,
+        "import_upstream_source",
+        lambda *_args, **_kwargs: {"audit_ready": False, "candidate_count": 1},
+    )
+    assert (
+        subject.cmd_roster_upstream_import(
+            args(
+                source_id="",
+                source_revision="revision",
+                dry_run=False,
+            )
+        )
+        == 2
+    )
+    assert emitted[-1]["ok"] is False
+    assert "degraded or failed" in emitted[-1]["errors"][0]["error"]
+
+
 def test_sync_command_no_sources_untrusted_dry_and_preflight(monkeypatch, capsys):
     store = Store()
     monkeypatch.setattr(subject, "_store", lambda: store)
@@ -174,6 +507,35 @@ def test_sync_command_no_sources_untrusted_dry_and_preflight(monkeypatch, capsys
     assert subject.cmd_sync(args(auto_approve=True)) == 2
 
 
+def test_sync_command_auto_approve_rejects_partial_manifest_outcomes(monkeypatch):
+    store = Store()
+    store.sources = [{"id": "source", "url": "source", "trusted_for_auto_approve": 1}]
+    emitted = []
+    monkeypatch.setattr(subject, "_store", lambda: store)
+    monkeypatch.setattr(subject, "_print_json", emitted.append)
+
+    def collect(*_args, outcome_sink, **_kwargs):
+        outcome_sink.extend(
+            [
+                {"status": "candidate", "slug": "safe"},
+                {"status": "quarantined", "slug": "unsafe"},
+            ]
+        )
+        return ["candidate-id"], []
+
+    monkeypatch.setattr(subject, "_collect_sync_candidates", collect)
+    monkeypatch.setattr(
+        subject,
+        "_complete_sync",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("partial scans must fail before snapshot activation")
+        ),
+    )
+
+    assert subject.cmd_sync(args(auto_approve=True)) == 2
+    assert emitted[-1]["outcomes"] == [{"status": "quarantined", "slug": "unsafe"}]
+
+
 def test_crud_search_and_explain_commands(monkeypatch, capsys):
     store = Store()
     store.sources = [{"url": "one"}]
@@ -192,8 +554,24 @@ def test_crud_search_and_explain_commands(monkeypatch, capsys):
     assert store.calls[-1][1][1] == "source"
     assert subject.cmd_source_list(args()) == 0
     assert emitted[-1] == store.sources
+    monkeypatch.setattr(
+        subject,
+        "_activation_rows",
+        lambda: (
+            "config",
+            [
+                {
+                    "slug": "agent",
+                    "name": "Agent",
+                    "division": "eng",
+                    "enabled": True,
+                    "protected": False,
+                }
+            ],
+        ),
+    )
     assert subject.cmd_roster_list(args()) == 0
-    assert "agent\tAgent\teng\tUseful" in capsys.readouterr().out
+    assert "agent\tAgent\teng" in capsys.readouterr().out
 
     monkeypatch.setattr(
         subject,
@@ -205,12 +583,80 @@ def test_crud_search_and_explain_commands(monkeypatch, capsys):
     assert subject.cmd_roster_diff(args()) == 0
     assert emitted[-1] == {"added": []}
     actions = []
-    monkeypatch.setattr(subject, "approve_snapshot", lambda *_args: actions.append("approve"))
-    monkeypatch.setattr(subject, "activate_snapshot", lambda *_args: actions.append("activate"))
+    monkeypatch.setattr(
+        subject,
+        "approve_snapshot",
+        lambda *_args, **_kwargs: actions.append("approve"),
+    )
+    monkeypatch.setattr(
+        subject,
+        "activate_snapshot",
+        lambda *_args, **_kwargs: actions.append("activate"),
+    )
     assert subject.cmd_roster_approve(args()) == 0
     assert subject.cmd_roster_activate(args()) == 0
     assert actions == ["approve", "activate"]
+    monkeypatch.setattr(subject, "list_source_scans", lambda *_args, **_kwargs: [{"id": "scan"}])
+    assert subject.cmd_roster_scans(args(limit=10)) == 0
+    assert emitted[-1] == [{"id": "scan"}]
+    remediation_arguments = []
+    monkeypatch.setattr(
+        subject,
+        "remediation_queue_snapshot",
+        lambda *_args, **kwargs: (
+            remediation_arguments.append(kwargs)
+            or {
+                "schema_version": "agency.roster.remediation_queue.v2",
+                "pending": [{"receipt": {"activation_eligible": False}}],
+                "pending_count": 1,
+                "history": [],
+                "history_count": 0,
+                "pending_has_more": False,
+                "history_has_more": False,
+                "next_pending_cursor": "",
+                "next_history_cursor": "",
+            }
+        ),
+    )
+    assert (
+        subject.cmd_roster_remediation_queue(
+            args(
+                limit=10,
+                pending_cursor="pending-event",
+                history_cursor="history-event",
+            )
+        )
+        == 0
+    )
+    assert remediation_arguments == [
+        {
+            "limit": 10,
+            "pending_cursor": "pending-event",
+            "history_cursor": "history-event",
+        }
+    ]
+    assert emitted[-1]["pending"] == [{"receipt": {"activation_eligible": False}}]
+    monkeypatch.setattr(
+        subject,
+        "create_retirement_diff",
+        lambda *_args, **_kwargs: {
+            "snapshot_id": "retirement",
+            "diff": {"removed": ["agent"]},
+        },
+    )
+    assert subject.cmd_roster_retire(args(json=True)) == 0
+    assert emitted[-1]["snapshot_id"] == "retirement"
+    assert subject.cmd_roster_retire(args(json=False)) == 0
+    assert "Approve with: agency roster approve retirement" in capsys.readouterr().out
+    assert subject.cmd_roster_rollback(args(json=True)) == 0
+    assert emitted[-1]["version"] == "sha256:old"
+    assert store.calls[-1][0] == "rollback"
 
+    monkeypatch.setattr(
+        subject,
+        "capture_routing_snapshot",
+        lambda _store: SimpleNamespace(catalog=store.catalog, config=object()),
+    )
     monkeypatch.setattr(subject, "pre_narrow", lambda query, catalog, limit: (catalog, [0.75]))
     assert subject._search("review", 3)[0]["score"] == 0.75
     monkeypatch.setattr(
@@ -358,3 +804,175 @@ def test_database_commands_json_human_deleted_and_empty(monkeypatch, capsys):
     }
     assert subject.cmd_db_trim(args()) == 0
     assert "No rows matched" in capsys.readouterr().out
+
+
+def test_roster_and_activation_command_failures_are_bounded_and_machine_readable(
+    monkeypatch,
+    capsys,
+):
+    emitted = []
+    rows = [
+        {
+            "slug": "disabled",
+            "name": "Disabled",
+            "division": "eng",
+            "enabled": False,
+            "protected": False,
+        },
+        {
+            "slug": "enabled",
+            "name": "Enabled",
+            "division": "eng",
+            "enabled": True,
+            "protected": False,
+        },
+    ]
+    monkeypatch.setattr(subject, "_print_json", emitted.append)
+    monkeypatch.setattr(subject, "_activation_rows", lambda *_args, **_kwargs: ("config", rows))
+
+    assert subject.cmd_roster_list(args()) == 0
+    output = capsys.readouterr().out
+    assert "enabled\tEnabled\teng" in output
+    assert "disabled\tDisabled\teng" not in output
+
+    monkeypatch.setattr(
+        subject,
+        "_activation_rows",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("state\nrefused")),
+    )
+    assert subject.cmd_agents_list(args(json=True)) == 1
+    assert emitted[-1] == {
+        "ok": False,
+        "exit_code": 1,
+        "error": "state\\u000arefused",
+        "agents": [],
+    }
+    assert subject.cmd_agents_list(args(json=False)) == 1
+    assert "state\\u000arefused" in capsys.readouterr().out
+
+    monkeypatch.setattr(
+        subject,
+        "_set_agent_enabled",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("toggle refused")),
+    )
+    assert subject.cmd_agent_enable(args(slug="agent")) == 1
+    assert subject.cmd_agent_disable(args(slug="agent")) == 1
+    assert capsys.readouterr().out.count("toggle refused") == 2
+
+
+def test_search_route_and_explain_contain_operation_failures(
+    monkeypatch,
+    capsys,
+):
+    emitted = []
+    monkeypatch.setattr(subject, "_runtime_enabled", lambda: True)
+    monkeypatch.setattr(subject, "_print_json", emitted.append)
+    monkeypatch.setattr(
+        subject,
+        "_search",
+        lambda *_args: (_ for _ in ()).throw(RuntimeError("search refused")),
+    )
+
+    assert subject.cmd_search(args(json=True)) == 1
+    assert emitted[-1]["error"] == "search refused"
+    assert emitted[-1]["agents"] == []
+    assert subject.cmd_search(args(json=False)) == 1
+    assert "search refused" in capsys.readouterr().err
+
+    monkeypatch.setattr(
+        subject,
+        "_routing_operation",
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("routing refused")),
+    )
+    assert subject.cmd_route(args(json=True)) == 1
+    assert emitted[-1]["routing"] is None
+    assert subject.cmd_route(args(json=False)) == 1
+    assert "routing refused" in capsys.readouterr().err
+    assert subject.cmd_explain(args()) == 1
+    assert emitted[-1]["signals"] == {}
+
+
+def test_route_and_explain_reject_empty_or_impossible_operations(monkeypatch):
+    emitted = []
+    monkeypatch.setattr(subject, "_runtime_enabled", lambda: True)
+    monkeypatch.setattr(subject, "_print_json", emitted.append)
+    monkeypatch.setattr(
+        subject,
+        "_routing_operation",
+        lambda **_kwargs: SimpleNamespace(
+            store=object(),
+            snapshot=SimpleNamespace(catalog=[], config=object()),
+            receipt=None,
+        ),
+    )
+
+    assert subject.cmd_route(args(json=True)) == 1
+    assert emitted[-1]["error"] == "No active agents available"
+
+    monkeypatch.setattr(
+        subject,
+        "_routing_operation",
+        lambda **_kwargs: SimpleNamespace(store=None, snapshot=None, receipt=None),
+    )
+    with pytest.raises(RuntimeError, match="no direct or brokered result"):
+        subject.cmd_route(args())
+    with pytest.raises(RuntimeError, match="no direct or brokered result"):
+        subject.cmd_explain(args())
+
+
+def test_default_policy_operation_uses_one_direct_routing_snapshot(monkeypatch):
+    runtime_store = object()
+    config = object()
+    catalog = [{"slug": "reviewer"}]
+    policy = {"actions": {}, "division_anchors": {}}
+    dependencies = subject.RosterDependencies(
+        store_factory=lambda: runtime_store,
+        emit_json=lambda _value: None,
+        policy_loader=lambda: pytest.fail("default operation must use the bound config policy"),
+    )
+    monkeypatch.setattr(subject, "DEFAULT_DEPENDENCIES", dependencies)
+    monkeypatch.setattr(
+        subject,
+        "capture_routing_snapshot",
+        lambda store: (
+            SimpleNamespace(config=config, catalog=catalog)
+            if store is runtime_store
+            else pytest.fail("unexpected Store")
+        ),
+    )
+    monkeypatch.setattr(
+        subject,
+        "policy_path_for_config",
+        lambda received: "policy.yaml" if received is config else pytest.fail("unexpected config"),
+    )
+    monkeypatch.setattr(
+        subject,
+        "load_policy",
+        lambda path: policy if path == "policy.yaml" else pytest.fail("unexpected policy path"),
+    )
+
+    assert subject._policy_operation(dependencies) == (policy, {"reviewer"})
+
+
+def test_policy_command_contains_direct_or_brokered_failures(monkeypatch, capsys):
+    emitted = []
+    monkeypatch.setattr(subject, "_print_json", emitted.append)
+
+    def fail(dependencies):
+        assert dependencies.store_factory is subject._store
+        assert dependencies.emit_json is subject._print_json
+        assert dependencies.policy_loader is subject.load_policy
+        raise RuntimeError("policy refused")
+
+    monkeypatch.setattr(subject, "_policy_operation", fail)
+    assert subject.cmd_policy(args(json=True)) == 1
+    assert emitted[-1] == {
+        "ok": False,
+        "exit_code": 1,
+        "error": "policy refused",
+        "valid": False,
+        "actions": {},
+        "division_anchors": {},
+    }
+    assert subject.cmd_policy(args(json=False)) == 1
+    assert "policy refused" in capsys.readouterr().err

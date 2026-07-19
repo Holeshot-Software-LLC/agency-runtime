@@ -3,7 +3,7 @@ title: "AR-02: Close specialist coverage gaps"
 status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-18
 tags: [roster, policy]
 related:
   - docs/decisions/0013-approval-gated-roster-activation.md
@@ -17,7 +17,7 @@ issue_id: AR-02
 priority: p2
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/2"
 depends_on: []
-blocks: []
+blocks: [AR-83, AR-86]
 ---
 
 # AR-02: Close specialist coverage gaps

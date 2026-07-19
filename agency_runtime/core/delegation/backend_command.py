@@ -26,6 +26,12 @@ from agency_runtime.core.delegation.backend_security import (
 from agency_runtime.core.delegation.backend_security import (
     MAX_TASK_CHARS as _MAX_TASK_CHARS,
 )
+from agency_runtime.core.private_paths import private_temporary_directory
+from agency_runtime.core.process_argv import (
+    PreparedProcessArgv,
+    freeze_process_argv,
+    resolve_executable_path,
+)
 
 
 def _compatibility():
@@ -84,6 +90,52 @@ def _raise_or_result(error: Any, *, check: bool) -> dict[str, Any]:
 
 def _read_process_stream(handle: Any, fallback: Any, limit: int) -> str:
     return _compatibility()._read_process_stream(handle, fallback, limit)
+
+
+def _run_backend_process(
+    *,
+    backend_name: str,
+    extra_env: dict[str, str],
+    argv: list[str],
+    cwd: str | None,
+    stdout: Any,
+    stderr: Any,
+    timeout: float,
+    input_text: str | None,
+    forbidden_roots: Sequence[str | Path] = (),
+) -> subprocess.CompletedProcess[str]:
+    """Run one delegate with an exclusive, owner-private temporary directory."""
+
+    with private_temporary_directory(prefix="delegate-process") as temp_path:
+        env = _delegation_environment(backend_name, extra_env)
+        private_temp = str(temp_path)
+        env.update({"TEMP": private_temp, "TMP": private_temp, "TMPDIR": private_temp})
+        return _run_owned_process(
+            argv,
+            cwd=cwd,
+            stdout=stdout,
+            stderr=stderr,
+            timeout=timeout,
+            env=env,
+            input_text=input_text,
+            forbidden_roots=forbidden_roots,
+        )
+
+
+def _resides_within(path: str, roots: Sequence[str | Path]) -> bool:
+    """Return whether one existing artifact is below a delegated trust boundary."""
+
+    try:
+        candidate = Path(path).resolve(strict=True)
+    except (OSError, RuntimeError, ValueError):
+        return False
+    for root in roots:
+        try:
+            candidate.relative_to(Path(root).resolve(strict=True))
+        except (OSError, RuntimeError, ValueError):
+            continue
+        return True
+    return False
 
 
 @dataclass(slots=True)
@@ -147,13 +199,18 @@ class CommandBackend:
                 (value for key, value in self.extra_env.items() if key.upper() == "PATH"),
                 None,
             )
-            if search_path is None:
-                return shutil.which(self.command[0])
-            return shutil.which(self.command[0], path=search_path)
+            return resolve_executable_path(
+                self.command[0],
+                search_path=search_path,
+            )
         except (OSError, TypeError, ValueError):
             return None
 
-    def availability(self) -> dict[str, Any]:
+    def availability(
+        self,
+        *,
+        forbidden_roots: Sequence[str | Path] = (),
+    ) -> dict[str, Any]:
         """Return a truthful, diagnostic availability record."""
         if not self.command:
             return {
@@ -167,9 +224,12 @@ class CommandBackend:
         if executable:
             try:
                 prepared = prepare_process_argv([executable, *self.command[1:]])
-                launch_executable = prepared[0]
-                if not shutil.which(launch_executable):
-                    raise FileNotFoundError(f"launch executable not found: {launch_executable}")
+                if isinstance(prepared, PreparedProcessArgv):
+                    freeze_process_argv(prepared, forbidden_roots=forbidden_roots)
+                elif not shutil.which(prepared[0]):
+                    # Compatibility for an embedding that replaces the legacy
+                    # preparation seam. Production preparation always freezes.
+                    raise FileNotFoundError(f"launch executable not found: {prepared[0]}")
             except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
                 executable = None
                 reason = f"command cannot be launched safely: {exc}"
@@ -269,6 +329,7 @@ class CommandBackend:
         stderr: str = "",
         status: str,
         error: str = "",
+        process_id: int = 0,
         sensitive: Iterable[str] = (),
     ) -> dict[str, Any]:
         bounded_stdout, stdout_truncated = _bounded(
@@ -291,6 +352,8 @@ class CommandBackend:
             "executable": executable,
             "workdir": workdir or "",
         }
+        if process_id > 0:
+            result["process_id"] = process_id
         if error:
             result["error"] = _redact_text(error, sensitive)
         return result
@@ -311,10 +374,28 @@ class CommandBackend:
         Wrappers that historically return records can use ``check=False``.
         """
         del kwargs
+        from agency_runtime.core.runtime_control import master_enabled
+
+        if not master_enabled():
+            return {
+                "backend": self.name,
+                "status": "bypassed",
+                "exit_code": 0,
+                "runtime_enabled": False,
+                "bypassed": True,
+                "command": [],
+                "executable": None,
+                "workdir": "",
+                "stdout": "",
+                "stderr": "",
+                "stdout_truncated": False,
+                "stderr_truncated": False,
+            }
         task = self._validate_task(task)
         delegation_prompt = _specialist_prompt(task, recommended_agent)
         sensitive = _sensitive_variants((delegation_prompt, task))
         cwd = self._resolve_workdir(workdir)
+        forbidden_roots: tuple[str | Path, ...] = (cwd,) if cwd is not None else ()
         if not self.command:
             result = self._result(
                 argv=[],
@@ -355,20 +436,39 @@ class CommandBackend:
                 result=result,
             )
             return _raise_or_result(error, check=check)
+        if _resides_within(executable, forbidden_roots):
+            result = self._result(
+                argv=argv,
+                executable=None,
+                workdir=cwd,
+                exit_code=127,
+                status="unavailable",
+                error=(
+                    "command cannot be launched safely: executable resides in "
+                    f"the delegated repository: {executable}"
+                ),
+                sensitive=sensitive,
+            )
+            error = BackendUnavailableError(
+                f"backend {self.name} is unavailable: {result['error']}",
+                result=result,
+            )
+            return _raise_or_result(error, check=check)
         argv[0] = executable
 
-        env = _delegation_environment(self.name, self.extra_env)
         stdout_capture = _BoundedTextCapture(self.max_output_chars)
         stderr_capture = _BoundedTextCapture(self.max_output_chars)
         try:
-            completed = _run_owned_process(
-                argv,
+            completed = _run_backend_process(
+                backend_name=self.name,
+                extra_env=self.extra_env,
+                argv=argv,
                 cwd=cwd,
                 stdout=stdout_capture,
                 stderr=stderr_capture,
                 timeout=self.timeout,
-                env=env,
                 input_text=input_text,
+                forbidden_roots=forbidden_roots,
             )
         except subprocess.TimeoutExpired as exc:
             stdout = _read_process_stream(
@@ -449,6 +549,7 @@ class CommandBackend:
             stdout=stdout,
             stderr=stderr,
             status="completed" if completed.returncode == 0 else "failed",
+            process_id=int(getattr(completed, "process_id", 0) or 0),
             sensitive=sensitive,
         )
         if completed.returncode != 0:

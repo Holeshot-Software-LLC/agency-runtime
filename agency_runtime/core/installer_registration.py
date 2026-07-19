@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -10,10 +10,15 @@ from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.installer_contracts import (
     HOSTS,
     MARKETPLACE_ID,
+    OPENCLAW_REQUIRED_HOOKS,
     PLUGIN_ID,
     BinaryResolver,
     CommandRunner,
     NativeCommandResult,
+)
+from agency_runtime.core.openclaw_streaming_policy import (
+    enforce_final_only_delivery,
+    restore_prior_delivery,
 )
 
 
@@ -43,6 +48,10 @@ def _bundle_files(*args: Any, **kwargs: Any) -> tuple[dict[str, str], str]:
 
 def _can_execute_native(*args: Any, **kwargs: Any) -> bool:
     return _dispatch("_can_execute_native", *args, **kwargs)
+
+
+def _command_environment(*args: Any, **kwargs: Any) -> dict[str, str]:
+    return _dispatch("_command_environment", *args, **kwargs)
 
 
 def _hermes_text_plugin_record(*args: Any, **kwargs: Any) -> dict[str, Any] | None:
@@ -87,6 +96,10 @@ def _resolve_install_config(*args: Any, **kwargs: Any) -> AgencyConfig:
 
 def _root_state(*args: Any, **kwargs: Any) -> tuple[bool, bool, list[str]]:
     return _dispatch("_root_state", *args, **kwargs)
+
+
+def _runtime_home(*args: Any, **kwargs: Any) -> Path:
+    return _dispatch("_runtime_home", *args, **kwargs)
 
 
 def _run_native(*args: Any, **kwargs: Any) -> NativeCommandResult:
@@ -180,6 +193,23 @@ class _RegistrationSession:
         return self.steps, proven, failed_step
 
 
+def _openclaw_policy_runner(
+    session: _RegistrationSession,
+) -> Callable[[str, Sequence[str]], NativeCommandResult]:
+    """Run config transactions without surfacing selector-bearing native errors."""
+
+    def run(name: str, command: Sequence[str]) -> NativeCommandResult:
+        result = session.run(name, command)
+        if not result.ok:
+            session.steps[-1].pop("error", None)
+            session.steps[-1]["error"] = (
+                "OpenClaw streaming config command failed; native detail redacted"
+            )
+        return result
+
+    return run
+
+
 def _register_hermes(
     session: _RegistrationSession,
     _force_refresh: bool,
@@ -192,7 +222,7 @@ def _register_hermes(
     if not enabled.ok:
         return session.result(False, "enable")
     record = _hermes_text_plugin_record(verify.stdout) if verify.ok else None
-    proven = record is not None and _bool_field(record, "enabled") is not False
+    proven = record is not None and _bool_field(record, "enabled") is True
     return session.result(proven, None if proven else "inventory_unproven")
 
 
@@ -245,14 +275,145 @@ def _verify_openclaw_runtime(session: _RegistrationSession) -> _RegistrationResu
         ],
     )
     payload = _json_output(verified)
-    record = _plugin_record(payload) or (payload if isinstance(payload, dict) else None)
+    root = payload if isinstance(payload, dict) else None
+    record = _plugin_record(payload) or root
     loaded = _bool_field(record, "loaded", "runtimeLoaded", "isLoaded") if verified.ok else None
-    session.steps[-1]["loaded"] = loaded
-    proven = verified.ok and isinstance(record, dict) and loaded is True
+    if loaded is None and isinstance(record, Mapping):
+        loaded = str(record.get("status") or "").strip().lower() == "loaded"
+    hook_entries = (
+        root.get("typedHooks", root.get("hooks", [])) if isinstance(root, Mapping) else []
+    )
+    if not hook_entries and isinstance(record, Mapping):
+        hook_entries = record.get("typedHooks", record.get("hooks", []))
+    entries = hook_entries if isinstance(hook_entries, list) else []
+    hooks = {
+        str(entry.get("name") or "").strip()
+        if isinstance(entry, Mapping)
+        else str(entry or "").strip()
+        for entry in entries
+    }
+    hooks.discard("")
+    missing_hooks = sorted(OPENCLAW_REQUIRED_HOOKS - hooks)
+    terminal_hooks = {"message_sending", "reply_payload_sending"}
+    priorities: dict[str, object] = {}
+    priority_status: dict[str, str] = {}
+    for entry in entries:
+        if not isinstance(entry, Mapping):
+            continue
+        name = str(entry.get("name") or "").strip()
+        if name not in terminal_hooks:
+            continue
+        raw_priority = entry.get("priority") if "priority" in entry else None
+        if raw_priority is None:
+            priorities[name] = None
+            priority_status[name] = "unavailable"
+        else:
+            priorities[name] = (
+                raw_priority
+                if isinstance(raw_priority, (str, int, float, bool))
+                else type(raw_priority).__name__
+            )
+            priority_status[name] = "mismatch"
+    for name in terminal_hooks:
+        priorities.setdefault(name, None)
+        priority_status.setdefault(name, "unavailable")
+    priority_mismatches = sorted(
+        name for name, status in priority_status.items() if status == "mismatch"
+    )
+    registration_proven = (
+        verified.ok and isinstance(record, dict) and loaded is True and not missing_hooks
+    )
+    session.steps[-1].update(
+        {
+            "loaded": loaded,
+            "registered_hooks": sorted(hooks),
+            "missing_required_hooks": missing_hooks,
+            "terminal_hook_priorities": dict(sorted(priorities.items())),
+            "terminal_hook_priority_status": dict(sorted(priority_status.items())),
+            "terminal_hook_priority_mismatches": priority_mismatches,
+            "registration_contract_proven": registration_proven,
+            # OpenClaw's JSON inspection serializes JavaScript -Infinity as null.
+            # Hook names prove registration, not that every channel delivery path
+            # invokes both modifying hooks or that no trusted plugin runs later.
+            "delivery_behavior_proven": False,
+            "runtime_contract_scope": "registration_only",
+        }
+    )
+    proven = registration_proven and not priority_mismatches
     return session.result(
         proven,
         None if proven else "runtime_inspect_unproven",
     )
+
+
+def _openclaw_plugin_disabled_state(
+    session: _RegistrationSession,
+) -> tuple[bool, bool | None]:
+    inventory = session.run(
+        "policy_rollback_inventory_before",
+        [session.binary, "plugins", "list", "--json"],
+    )
+    if not inventory.ok:
+        return False, None
+    record = _plugin_record(_json_output(inventory))
+    if record is None:
+        return True, False
+    if _bool_field(record, "enabled", "active", "isEnabled") is False:
+        return True, True
+    disabled = session.run(
+        "policy_rollback_disable",
+        [session.binary, "plugins", "disable", PLUGIN_ID],
+    )
+    if not disabled.ok:
+        return False, True
+    verified = session.run(
+        "policy_rollback_inventory_after",
+        [session.binary, "plugins", "list", "--json"],
+    )
+    if not verified.ok:
+        return False, None
+    record = _plugin_record(_json_output(verified))
+    if record is None:
+        return True, False
+    return (
+        _bool_field(record, "enabled", "active", "isEnabled") is False,
+        True,
+    )
+
+
+def _rollback_openclaw_policy(
+    session: _RegistrationSession,
+    failed_step: str,
+) -> _RegistrationResult:
+    plugin_disabled, plugin_registered = _openclaw_plugin_disabled_state(session)
+    if plugin_disabled:
+        restoration = restore_prior_delivery(
+            _openclaw_policy_runner(session),
+            runtime_home=_runtime_home(home_dir=session.home_dir),
+            environment=_command_environment(session.host, home_dir=session.home_dir),
+        )
+    else:
+        restoration = {
+            "ok": False,
+            "restored": False,
+            "backup_retained": True,
+            "final_only_reapplied": True,
+            "error": "Agency plugin disablement could not be proven",
+            "recovery": (
+                "Keep the gateway stopped. Disable the Agency plugin, then restore the retained "
+                "values-only streaming backup."
+            ),
+        }
+    session.steps.append(
+        {
+            "name": "final_only_delivery_restore",
+            "triggered_by": failed_step,
+            "plugin_disabled": plugin_disabled,
+            "plugin_registered": plugin_registered,
+            **restoration,
+        }
+    )
+    return session.result(False, failed_step)
 
 
 def _register_openclaw(
@@ -264,18 +425,26 @@ def _register_openclaw(
         return session.result(False, "gateway_status_unproven")
     if live:
         return session.result(False, "host_restart_consent_required")
+    policy = enforce_final_only_delivery(
+        _openclaw_policy_runner(session),
+        runtime_home=_runtime_home(home_dir=session.home_dir),
+        environment=_command_environment(session.host, home_dir=session.home_dir),
+    )
+    session.steps.append({"name": "final_only_delivery_policy", **policy})
+    if not policy["ok"]:
+        return session.result(False, "final_only_delivery_policy")
     if failed_step := _install_openclaw_plugin(
         session,
         force_refresh=force_refresh,
     ):
-        return session.result(False, failed_step)
+        return _rollback_openclaw_policy(session, failed_step)
 
     enabled = session.run(
         "enable",
         [session.binary, "plugins", "enable", PLUGIN_ID],
     )
     if not enabled.ok:
-        return session.result(False, "enable")
+        return _rollback_openclaw_policy(session, "enable")
     access = session.run(
         "conversation_access",
         [
@@ -287,8 +456,9 @@ def _register_openclaw(
         ],
     )
     if not access.ok:
-        return session.result(False, "conversation_access")
-    return _verify_openclaw_runtime(session)
+        return _rollback_openclaw_policy(session, "conversation_access")
+    result = _verify_openclaw_runtime(session)
+    return result if result[1] else _rollback_openclaw_policy(session, str(result[2]))
 
 
 def _marketplace_state(session: _RegistrationSession) -> tuple[bool, bool]:
@@ -421,7 +591,7 @@ def _register_claude(
             "active",
             "isEnabled",
         )
-        is not False
+        is True
     )
     return session.result(proven, None if proven else "inventory_after_unproven")
 
@@ -496,6 +666,35 @@ def native_command_plan(host: str, target: Path) -> list[dict[str, Any]]:
                     "--json",
                 ],
                 "kind": "safety_gate",
+            },
+            {
+                "name": "streaming_config_before_agents",
+                "argv": [
+                    binary,
+                    "config",
+                    "get",
+                    "agents.defaults",
+                    "--json",
+                ],
+                "kind": "redacted_config_inspection",
+            },
+            {
+                "name": "streaming_config_before_channels",
+                "argv": [binary, "config", "get", "channels", "--json"],
+                "kind": "redacted_config_inspection",
+            },
+            {
+                "name": "final_only_delivery_policy",
+                "argv": [
+                    binary,
+                    "config",
+                    "set|unset",
+                    "<configured streaming path>",
+                    "<final-only or rollback value>",
+                    "--strict-json",
+                ],
+                "condition": "dynamic transaction based on redacted configured channels/accounts",
+                "kind": "transactional_config_policy",
             },
             {
                 "name": "inspect_existing",

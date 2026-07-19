@@ -3,12 +3,13 @@ title: "Bind live host canary attestations to capability and installation identi
 status: accepted
 category: decisions
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-16
 tags: [hosts, canary, evidence, installation, security]
 related:
   - docs/roadmap/issue-AR-03-supported-host-integrations.md
   - docs/roadmap/issue-AR-04-runtime-controls.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
+  - docs/roadmap/issue-AR-67-require-explicit-native-enablement-proof.md
   - docs/decisions/0024-native-host-packages-and-minimal-bridges.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md

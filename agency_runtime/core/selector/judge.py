@@ -33,6 +33,10 @@ from agency_runtime.core.selector import judge_protocol as _protocol
 from agency_runtime.core.selector import judge_transport as _transport
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.intent_text import affirmative_intent
+from agency_runtime.core.selector.semantic_retrieval import (
+    CandidateUnion,
+    retrieve_candidate_union,
+)
 
 logger = logging.getLogger("agency_runtime.selector.judge")
 
@@ -127,6 +131,27 @@ def _provider_is_attemptable(provider: ProviderEntry) -> bool:
     )
 
 
+def inference_is_configured(
+    config: AgencyConfig,
+    judge_config: JudgeConfig | None = None,
+) -> bool:
+    """Return whether semantic inference is an authoritative routing dependency.
+
+    A declared typed chain is authoritative even when one of its entries is
+    currently unavailable: silently treating that configuration error as
+    heuristic success would hide the degraded state. A legacy credential
+    declaration is authoritative even when its environment variable is
+    currently absent. The bundled keyless Ollama settings remain an optional
+    accelerator; operators who require local inference declare Ollama in the
+    typed provider chain.
+    """
+
+    if config.providers:
+        return True
+    jc = judge_config or config.judge
+    return bool(jc.model and jc.base_url and (jc.api_key or jc.api_key_env))
+
+
 def _network_target_signature(base_url: str, model: str) -> tuple[str, str]:
     """Identify a concrete endpoint/model independent of protocol metadata."""
     return base_url.rstrip("/").lower(), model.strip().lower()
@@ -150,6 +175,41 @@ def _with_cumulative_latency(
     elapsed_ms = int((time.monotonic() - attempts_started) * 1000)
     result["latency_ms"] = max(int(result.get("latency_ms", 0) or 0), elapsed_ms)
     return result
+
+
+def _with_inference_evidence(
+    result: dict[str, Any],
+    state: _AttemptState,
+    *,
+    configured: bool,
+    mode: str,
+) -> dict[str, Any]:
+    """Attach bounded provider-chain truth without altering model receipts."""
+
+    enriched = dict(result)
+    attempts = [dict(receipt) for receipt in state.receipts]
+    enriched.update(
+        inference_configured=configured,
+        inference_required=configured,
+        inference_attempted=state.count > 0,
+        inference_mode=mode,
+        provider_attempts=attempts,
+        inference_failures=[
+            dict(receipt) for receipt in attempts if receipt.get("status") != "applied"
+        ],
+    )
+    return enriched
+
+
+def _with_retrieval_evidence(
+    result: dict[str, Any],
+    retrieval: CandidateUnion,
+) -> dict[str, Any]:
+    """Attach bounded full-roster recall evidence to every judge outcome."""
+
+    enriched = dict(result)
+    enriched["retrieval"] = retrieval.evidence()
+    return enriched
 
 
 # Protocol compatibility surface.  Sibling modules resolve dependencies back
@@ -234,6 +294,43 @@ def _fallback_result(
     return _with_cumulative_latency(fallback, state.started)
 
 
+def _degraded_result(
+    state: _AttemptState,
+    candidates: list[dict[str, Any]],
+    scores: list[float],
+    candidate_count: int,
+    top_score: float,
+    max_sel: int,
+) -> dict[str, Any]:
+    """Fail closed after mandatory inference exhausts its bounded chain."""
+
+    fallback = _fallback_result(
+        state,
+        candidates,
+        scores,
+        candidate_count,
+        top_score,
+        max_sel,
+    )
+    deterministic_ids = list(fallback.get("selected_ids", []))
+    fallback_status = str(fallback.get("status") or "unknown")
+    fallback.update(
+        selected_ids=[],
+        confidence=0.0,
+        status="degraded",
+        source="degraded_inference",
+        error="configured inference providers exhausted without a valid decision",
+        deterministic_fallback_status=fallback_status,
+        deterministic_candidate_ids=deterministic_ids,
+    )
+    return _with_inference_evidence(
+        fallback,
+        state,
+        configured=True,
+        mode="degraded",
+    )
+
+
 def query_judge(
     task_description: str,
     catalog: list[dict[str, Any]],
@@ -254,28 +351,59 @@ def query_judge(
     max_sel = _validated_max_selected(jc.max_selected if max_selected is None else max_selected)
     state = _AttemptState.begin(jc.timeout)
     result = _empty_judge_result()
+    configured_inference = inference_is_configured(cfg, jc)
+    retrieval = retrieve_candidate_union(
+        affirmative_intent(task_description),
+        catalog,
+        lexical_retriever=pre_narrow,
+    )
+
+    def finish(value: dict[str, Any]) -> dict[str, Any]:
+        return _with_retrieval_evidence(value, retrieval)
 
     if not catalog:
         result["status"] = "no_catalog"
         result["error"] = "agent catalog not loaded"
-        return result
+        if not configured_inference:
+            return result
+        result.update(
+            status="degraded",
+            source="degraded_inference",
+            degraded_reason="no_catalog",
+            deterministic_fallback_status="no_catalog",
+        )
+        return _with_inference_evidence(
+            result,
+            state,
+            configured=configured_inference,
+            mode="degraded",
+        )
 
     # Lexical narrowing cannot infer negation.  Exclude high-confidence opt-out
     # clauses from scoring while retaining the complete task for the judge.
-    candidates, scores = pre_narrow(affirmative_intent(task_description), catalog)
+    candidates = list(retrieval.candidates)
+    scores = list(retrieval.scores)
     candidate_count = len(candidates)
     top_score = scores[0] if scores else 0.0
 
-    bypass_result = _confidence_bypass_result(
-        candidates,
-        scores,
-        max_sel=max_sel,
-        threshold=jc.confidence_bypass_threshold,
-        candidate_count=candidate_count,
-        top_score=top_score,
-    )
-    if bypass_result is not None:
-        return bypass_result
+    if not configured_inference:
+        bypass_result = _confidence_bypass_result(
+            candidates,
+            scores,
+            max_sel=max_sel,
+            threshold=jc.confidence_bypass_threshold,
+            candidate_count=candidate_count,
+            top_score=top_score,
+        )
+        if bypass_result is not None:
+            return finish(
+                _with_inference_evidence(
+                    bypass_result,
+                    state,
+                    configured=False,
+                    mode="heuristic",
+                )
+            )
 
     provider_result = _try_provider_chain(
         state,
@@ -287,16 +415,26 @@ def query_judge(
         top_score,
     )
     if provider_result is not None:
-        return _with_cumulative_latency(provider_result, state.started)
+        applied = _with_cumulative_latency(provider_result, state.started)
+        return finish(
+            _with_inference_evidence(
+                applied,
+                state,
+                configured=configured_inference,
+                mode="inferred",
+            )
+        )
 
     if cfg.providers:
-        return _fallback_result(
-            state,
-            candidates,
-            scores,
-            candidate_count,
-            top_score,
-            max_sel,
+        return finish(
+            _degraded_result(
+                state,
+                candidates,
+                scores,
+                candidate_count,
+                top_score,
+                max_sel,
+            )
         )
 
     legacy_result = _try_legacy_fallback(
@@ -309,7 +447,15 @@ def query_judge(
         top_score,
     )
     if legacy_result is not None:
-        return _with_cumulative_latency(legacy_result, state.started)
+        applied = _with_cumulative_latency(legacy_result, state.started)
+        return finish(
+            _with_inference_evidence(
+                applied,
+                state,
+                configured=configured_inference,
+                mode="inferred",
+            )
+        )
 
     ollama_result = _try_ollama_fallback(
         state,
@@ -321,15 +467,43 @@ def query_judge(
         top_score,
     )
     if ollama_result is not None:
-        return _with_cumulative_latency(ollama_result, state.started)
+        applied = _with_cumulative_latency(ollama_result, state.started)
+        return finish(
+            _with_inference_evidence(
+                applied,
+                state,
+                configured=configured_inference,
+                mode="inferred",
+            )
+        )
 
-    return _fallback_result(
+    if configured_inference:
+        return finish(
+            _degraded_result(
+                state,
+                candidates,
+                scores,
+                candidate_count,
+                top_score,
+                max_sel,
+            )
+        )
+
+    fallback = _fallback_result(
         state,
         candidates,
         scores,
         candidate_count,
         top_score,
         max_sel,
+    )
+    return finish(
+        _with_inference_evidence(
+            fallback,
+            state,
+            configured=False,
+            mode="heuristic",
+        )
     )
 
 

@@ -72,7 +72,7 @@ def test_concurrent_legacy_store_migration_is_serialized_and_idempotent(
     finally:
         migrated.close()
     assert {"profile_scope", "host_version", "install_id", "bundle_digest"} <= columns
-    assert version == 10
+    assert version == sqlite_store._SCHEMA_VERSION
 
 
 def test_current_schema_store_opens_while_another_connection_holds_writer(
@@ -92,7 +92,10 @@ def test_current_schema_store_opens_while_another_connection_holds_writer(
         reopened = Store(path)
         reader = reopened._connect()
         try:
-            assert reader.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 10
+            assert (
+                reader.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+                == sqlite_store._SCHEMA_VERSION
+            )
         finally:
             reader.close()
     finally:
@@ -106,7 +109,10 @@ def test_newer_schema_is_refused_without_rewriting_version(tmp_path: Path) -> No
     connection = store._connect()
     try:
         connection.execute("DELETE FROM schema_version")
-        connection.execute("INSERT INTO schema_version (version) VALUES (11)")
+        connection.execute(
+            "INSERT INTO schema_version (version) VALUES (?)",
+            (sqlite_store._SCHEMA_VERSION + 1,),
+        )
         connection.commit()
     finally:
         connection.close()
@@ -116,7 +122,10 @@ def test_newer_schema_is_refused_without_rewriting_version(tmp_path: Path) -> No
 
     unchanged = sqlite3.connect(path)
     try:
-        assert unchanged.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 11
+        assert (
+            unchanged.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+            == sqlite_store._SCHEMA_VERSION + 1
+        )
     finally:
         unchanged.close()
 
@@ -128,8 +137,7 @@ def test_dashboard_activity_orders_use_global_timestamp_indexes(tmp_path: Path):
         plans = {
             "idx_runs_recent": ("SELECT id FROM runs ORDER BY started_at DESC, id DESC LIMIT 100"),
             "idx_receipts_recent": (
-                "SELECT id FROM model_receipts "
-                "ORDER BY COALESCE(ended_at, started_at) DESC, id DESC LIMIT 100"
+                "SELECT id FROM model_receipts ORDER BY recorded_at DESC, id DESC LIMIT 100"
             ),
             "idx_delegations_recent": (
                 "SELECT id FROM delegation_events "
@@ -152,7 +160,7 @@ def test_dashboard_activity_orders_use_global_timestamp_indexes(tmp_path: Path):
         connection.close()
 
 
-def test_dashboard_activity_projection_is_five_queries_without_discarded_fields(
+def test_dashboard_activity_projection_is_six_queries_without_discarded_fields(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -174,6 +182,11 @@ def test_dashboard_activity_projection_is_five_queries_without_discarded_fields(
             "work_units": {"delegate": True, "count": 1},
         },
     )
+    store.record_specialist_loaded(
+        "session",
+        "reviewer",
+        trace_id="dashboard-query-count",
+    )
     statements: list[str] = []
     original_connect = store._connect
 
@@ -189,13 +202,139 @@ def test_dashboard_activity_projection_is_five_queries_without_discarded_fields(
     selects = [
         statement for statement in statements if statement.lstrip().upper().startswith("SELECT")
     ]
-    assert len(selects) == 5
+    assert len(selects) == 6
     assert "skip_reason" not in activity["delegations"][0]
     assert "work_units" not in activity["routing"][0]
+    assert activity["specialists"][0]["slug"] == "reviewer"
     delegation_sql = next(statement for statement in selects if "delegation_events" in statement)
     routing_sql = next(statement for statement in selects if "routing_decisions" in statement)
+    specialist_sql = next(statement for statement in selects if "specialists_loaded" in statement)
     assert "skip_reason" not in delegation_sql
     assert "work_units" not in routing_sql
+    assert "agent_slug AS slug" in specialist_sql
+    assert "prompt" not in specialist_sql
+
+
+def test_specialist_activity_projection_is_bounded_metadata_with_honest_state(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.record_specialist_loaded(
+        "current-session",
+        "current-reviewer",
+        trace_id="current-trace",
+    )
+    store.record_specialist_loaded(
+        "historical-session",
+        "historical-reviewer",
+        trace_id="historical-trace",
+    )
+    assert store.close_turn_evidence("historical-session", "historical-trace") == 1
+    store.record_specialist_loaded("legacy-session", "legacy-reviewer")
+    store.record_specialist_loaded(
+        "terminal-session",
+        "terminal-reviewer",
+        trace_id="terminal-trace",
+    )
+    connection = store._connect()
+    try:
+        connection.execute("UPDATE runs SET status = 'completed' WHERE trace_id = 'terminal-trace'")
+        connection.execute(
+            "INSERT INTO specialists_loaded "
+            "(id, session_id, trace_id, agent_slug, loaded_at, expired_at) "
+            "VALUES (?, ?, ?, ?, ?, NULL)",
+            (
+                "missing-run-activation",
+                "missing-run-session",
+                "missing-run-trace",
+                "missing-run-reviewer",
+                "2026-07-14T00:00:00+00:00",
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    specialists = store.recent_dashboard_activity(limit=20)["specialists"]
+    by_slug = {row["slug"]: row for row in specialists}
+
+    assert set(by_slug) == {
+        "current-reviewer",
+        "historical-reviewer",
+        "legacy-reviewer",
+        "terminal-reviewer",
+        "missing-run-reviewer",
+    }
+    assert set(by_slug["current-reviewer"]) == {
+        "id",
+        "session_id",
+        "trace_id",
+        "slug",
+        "loaded_at",
+        "expired_at",
+        "state",
+    }
+    assert by_slug["current-reviewer"]["state"] == "current"
+    assert by_slug["current-reviewer"]["expired_at"] is None
+    assert by_slug["historical-reviewer"]["state"] == "historical"
+    assert by_slug["historical-reviewer"]["expired_at"] is not None
+    assert by_slug["legacy-reviewer"]["state"] == "historical"
+    assert by_slug["legacy-reviewer"]["trace_id"] == ""
+    assert by_slug["terminal-reviewer"]["expired_at"] is None
+    assert by_slug["terminal-reviewer"]["state"] == "historical"
+    assert by_slug["missing-run-reviewer"]["expired_at"] is None
+    assert by_slug["missing-run-reviewer"]["state"] == "historical"
+    assert len(store.recent_dashboard_activity(limit=1)["specialists"]) == 1
+
+
+def test_routing_activity_preserves_policy_fallback_provenance(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.record_routing_decision(
+        trace_id="fallback-trace",
+        session_id="fallback-session",
+        query_hash="a" * 64,
+        context_fingerprint="b" * 64,
+        decision={
+            "status": "policy_fallback",
+            "semantic_status": "abstained",
+            "source": "policy_fallback",
+            "selected_ids": ["agents-orchestrator", "chief-of-staff"],
+            "semantic_ids": [],
+            "companion_ids": ["agents-orchestrator", "chief-of-staff"],
+            "available_companion_ids": ["agents-orchestrator", "chief-of-staff"],
+            "fallback_companion_ids": ["agents-orchestrator", "chief-of-staff"],
+            "fallback_considered": True,
+            "fallback_applied": True,
+        },
+    )
+
+    connection = store._connect()
+    try:
+        persisted = connection.execute(
+            "SELECT source, decision FROM routing_decisions WHERE trace_id = ?",
+            ("fallback-trace",),
+        ).fetchone()
+    finally:
+        connection.close()
+    stored_decision = json.loads(persisted["decision"])
+    assert persisted["source"] == "policy_fallback"
+    assert stored_decision["semantic_status"] == "abstained"
+    assert stored_decision["fallback_applied"] is True
+    assert stored_decision["fallback_companion_ids"] == [
+        "agents-orchestrator",
+        "chief-of-staff",
+    ]
+
+    [routing] = store.recent_dashboard_activity(limit=20)["routing"]
+    assert routing["status"] == "policy_fallback"
+    assert routing["semantic_status"] == "abstained"
+    assert routing["source"] == "policy_fallback"
+    assert routing["fallback_applied"] is True
+    assert routing["fallback_companion_ids"] == [
+        "agents-orchestrator",
+        "chief-of-staff",
+    ]
+    assert "decision" not in routing
 
 
 def test_snapshot_listing_uses_materialized_prompt_free_summary(
@@ -297,7 +436,7 @@ def test_schema_v10_materializes_nested_snapshot_diff_once(tmp_path: Path) -> No
     finally:
         migrated.close()
     assert tuple(row) == (1, 2, 1, 1)
-    assert version == 10
+    assert version == sqlite_store._SCHEMA_VERSION
 
 
 def test_operator_activity_normalizes_invalid_json_projection_shapes(
@@ -391,7 +530,7 @@ def test_retention_query_builder_rejects_non_allowlisted_identifiers(
 def test_create_run_default_is_a_fixed_metadata_only_projection(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(
         "agency_runtime.core.store.sqlite._capture_content_enabled",
-        lambda: False,
+        lambda *_args: False,
     )
     store = Store(tmp_path / "private" / "agency.db")
 
@@ -423,7 +562,7 @@ def test_create_run_default_is_a_fixed_metadata_only_projection(tmp_path: Path, 
 def test_opt_in_run_content_is_bounded_and_redacted(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(
         "agency_runtime.core.store.sqlite._capture_content_enabled",
-        lambda: True,
+        lambda *_args: True,
     )
     store = Store(tmp_path / "agency.db")
     secret = "sk-private-123"
@@ -461,7 +600,7 @@ def test_model_receipt_strips_api_base_credentials_query_and_fragment(tmp_path: 
 def test_schema_upgrade_scrubs_legacy_private_fields(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(
         "agency_runtime.core.store.sqlite._capture_content_enabled",
-        lambda: False,
+        lambda *_args: False,
     )
     path = tmp_path / "agency.db"
     store = Store(path)
@@ -520,7 +659,7 @@ def test_delegation_details_are_projected_by_default_and_redacted_when_opted_in(
     capture = False
     monkeypatch.setattr(
         "agency_runtime.core.store.sqlite._capture_content_enabled",
-        lambda: capture,
+        lambda *_args: capture,
     )
     store = Store(tmp_path / "agency.db")
     event_id = store.record_delegation(
@@ -726,6 +865,11 @@ def test_optional_sidecar_acl_failure_retries_only_after_identity_change(
         "_metadata_is_link_or_reparse_point",
         lambda _metadata: False,
     )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_require_storage_target_trusted",
+        lambda *_args, **_kwargs: None,
+    )
     monkeypatch.setattr(store, "_storage_metadata", lambda *_args, **_kwargs: next(metadata))
 
     def replace_once(_path: Path, *, directory: bool) -> None:
@@ -792,6 +936,11 @@ def test_optional_sidecar_acl_failure_rejects_replacement_link(
         sqlite_store,
         "_metadata_is_link_or_reparse_point",
         lambda observed: observed is replacement_link,
+    )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_require_storage_target_trusted",
+        lambda *_args, **_kwargs: None,
     )
     monkeypatch.setattr(store, "_storage_metadata", lambda *_args, **_kwargs: next(metadata))
     monkeypatch.setattr(
@@ -908,9 +1057,21 @@ def test_connect_closes_connection_when_setup_fails(
     class Connection:
         row_factory = None
         closed = False
+        last_sql = ""
+
+        def create_function(self, *_args, **_kwargs) -> None:
+            return None
 
         def execute(self, _sql: str) -> Connection:
+            self.last_sql = _sql
             return self
+
+        def fetchone(self) -> tuple[int] | None:
+            return (
+                (1,)
+                if self.last_sql in {"PRAGMA recursive_triggers", "PRAGMA secure_delete=ON"}
+                else None
+            )
 
         def close(self) -> None:
             self.closed = True
@@ -934,21 +1095,21 @@ def test_agent_versions_are_immutable_and_idempotent(tmp_path: Path):
     content = "You are a production security specialist."
     content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
     agent = {
-        "slug": "security-reviewer",
+        "slug": "custom-security-reviewer",
         "name": "Security Reviewer",
         "version": "2.0.0",
         "hash": content_hash,
         "prompt_body": content,
     }
 
-    store.activate_agent(agent)
+    store._activate_prevalidated_agent(agent)
     first = _row(
         store,
         "SELECT id, hash, content, created_at FROM agent_versions "
         "WHERE agent_slug = ? AND version = ?",
         (agent["slug"], agent["version"]),
     )
-    store.activate_agent(dict(agent))
+    store._activate_prevalidated_agent(dict(agent))
     second = _row(
         store,
         "SELECT id, hash, content, created_at FROM agent_versions "
@@ -957,10 +1118,14 @@ def test_agent_versions_are_immutable_and_idempotent(tmp_path: Path):
     )
     assert dict(second) == dict(first)
 
+    changed_content = "changed content"
+    changed_hash = hashlib.sha256(changed_content.encode("utf-8")).hexdigest()
     with pytest.raises(ValueError, match="immutable agent version conflict"):
-        store.activate_agent({**agent, "prompt_body": "changed content"})
-    with pytest.raises(ValueError, match="immutable agent version conflict"):
-        store.activate_agent({**agent, "hash": "f" * 64})
+        store._activate_prevalidated_agent(
+            {**agent, "prompt_body": changed_content, "hash": changed_hash}
+        )
+    with pytest.raises(ValueError, match="digest-shaped specialist hash"):
+        store._activate_prevalidated_agent({**agent, "hash": "f" * 64})
 
     prompt = store.get_specialist_prompt(agent["slug"])
     assert prompt is not None
@@ -971,6 +1136,70 @@ def test_agent_versions_are_immutable_and_idempotent(tmp_path: Path):
         (agent["slug"], agent["version"]),
     )
     assert count[0] == 1
+
+
+def test_activate_agent_if_missing_never_replaces_operator_owned_slug(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    operator = {
+        "slug": "operator-owned-agent",
+        "name": "Operator Chief",
+        "version": "operator-v1",
+        "prompt_body": "Operator-owned instructions.",
+    }
+    store._activate_prevalidated_agent(operator)
+
+    assert (
+        store._activate_prevalidated_agent_if_missing(
+            {
+                "slug": "operator-owned-agent",
+                "name": "Bundled Chief",
+                "version": "bundled-v1",
+                "prompt_body": "Bundled fallback instructions.",
+            }
+        )
+        is False
+    )
+    active = store.get_specialist_prompt("operator-owned-agent")
+    assert active is not None
+    assert active["name"] == "Operator Chief"
+    assert active["prompt_body"] == "Operator-owned instructions."
+
+
+def test_activate_agent_if_missing_is_atomic_across_concurrent_installers(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    agent = {
+        "slug": "installer-race-agent",
+        "name": "Installer Race Agent",
+        "version": "1.0.0",
+        "prompt_body": "Coordinate specialist selection.",
+    }
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(
+            executor.map(store._activate_prevalidated_agent_if_missing, (agent, dict(agent)))
+        )
+
+    assert sorted(results) == [False, True]
+    assert (
+        _row(
+            store,
+            "SELECT COUNT(*) FROM agent_active WHERE agent_slug = ?",
+            (agent["slug"],),
+        )[0]
+        == 1
+    )
+    assert (
+        _row(
+            store,
+            "SELECT COUNT(*) FROM agent_versions WHERE agent_slug = ?",
+            (agent["slug"],),
+        )[0]
+        == 1
+    )
 
 
 def test_routing_decision_projection_excludes_raw_work_unit_text(tmp_path: Path):
@@ -1129,9 +1358,12 @@ def test_legacy_orphans_and_duplicate_runs_are_migrated(tmp_path: Path):
         assert dict(orphan_parent) == {
             "session_id": "session-a",
             "host": "codex",
-            "status": "evidence_only",
+            "status": "completed",
         }
-        assert migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 10
+        assert (
+            migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+            == sqlite_store._SCHEMA_VERSION
+        )
         recent_plan = " ".join(
             str(row["detail"])
             for row in migrated.execute(
@@ -1147,16 +1379,25 @@ def test_legacy_orphans_and_duplicate_runs_are_migrated(tmp_path: Path):
 
 def test_retention_preserves_parents_of_retained_child_evidence(tmp_path: Path):
     store = Store(tmp_path / "agency.db")
-    store.create_run(trace_id="trace-with-child", host="test")
-    store.create_run(trace_id="trace-without-child", host="test")
+    child_run = store.create_run(trace_id="trace-with-child", host="test")
+    childless_run = store.create_run(trace_id="trace-without-child", host="test")
     store.record_model_receipt(
         trace_id="trace-with-child",
         host="test",
         ended_at="2100-01-03T00:00:00+00:00",
     )
+    store.complete_run(child_run)
+    store.complete_run(childless_run)
     connection = store._connect()
     try:
-        connection.execute("UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00'")
+        connection.execute(
+            "UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00', "
+            "ended_at = '2000-01-01T00:00:01+00:00'"
+        )
+        connection.execute("UPDATE runs SET last_activity_at = '2000-01-01T00:00:01+00:00'")
+        connection.execute(
+            "UPDATE model_receipts SET status = status WHERE trace_id = 'trace-with-child'"
+        )
         connection.commit()
     finally:
         connection.close()
@@ -1176,21 +1417,25 @@ def test_retention_preserves_parents_of_retained_child_evidence(tmp_path: Path):
 
 def test_keep_last_never_orphans_newer_child_from_older_parent(tmp_path: Path):
     store = Store(tmp_path / "agency.db")
-    store.create_run(trace_id="older-parent", host="test")
-    store.create_run(trace_id="newer-parent", host="test")
+    older_run = store.create_run(trace_id="older-parent", host="test")
+    newer_run = store.create_run(trace_id="newer-parent", host="test")
     store.record_model_receipt(
         trace_id="older-parent",
         host="test",
         ended_at="2100-01-03T00:00:00+00:00",
     )
+    store.complete_run(older_run)
+    store.complete_run(newer_run)
     connection = store._connect()
     try:
         connection.execute(
-            "UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00' "
+            "UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00', "
+            "ended_at = '2000-01-01T00:00:01+00:00' "
             "WHERE trace_id = 'older-parent'"
         )
         connection.execute(
-            "UPDATE runs SET started_at = '2100-01-02T00:00:00+00:00' "
+            "UPDATE runs SET started_at = '2100-01-02T00:00:00+00:00', "
+            "ended_at = '2100-01-02T00:00:01+00:00' "
             "WHERE trace_id = 'newer-parent'"
         )
         connection.commit()
@@ -1214,8 +1459,14 @@ def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(
         "finalization": "trace-finalization",
         "routing": "trace-routing",
     }
-    for trace_id in (*traces.values(), "trace-no-child"):
-        store.create_run(trace_id=trace_id, host="test")
+    run_ids = [
+        store.create_run(
+            trace_id=trace_id,
+            session_id="session-routing" if trace_id == traces["routing"] else "",
+            host="test",
+        )
+        for trace_id in (*traces.values(), "trace-no-child")
+    ]
     store.record_model_receipt(
         trace_id=traces["receipt"],
         host="test",
@@ -1237,13 +1488,22 @@ def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(
         context_fingerprint="b" * 64,
         decision={"status": "selected", "selected_ids": ["reviewer"]},
     )
+    for run_id in run_ids:
+        store.complete_run(run_id)
     connection = store._connect()
     try:
-        connection.execute("UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00'")
+        connection.execute(
+            "UPDATE runs SET started_at = '2000-01-01T00:00:00+00:00', "
+            "ended_at = '2000-01-01T00:00:01+00:00'"
+        )
+        connection.execute("UPDATE runs SET last_activity_at = '2000-01-01T00:00:01+00:00'")
+        connection.execute("UPDATE model_receipts SET status = status")
         connection.execute(
             "UPDATE delegation_events SET started_at = '2100-01-01T00:00:00+00:00' WHERE id = ?",
             (delegation_id,),
         )
+        connection.execute("UPDATE finalization_events SET action = action")
+        connection.execute("UPDATE routing_decisions SET status = status")
         connection.commit()
     finally:
         connection.close()
@@ -1265,7 +1525,7 @@ def test_retention_preserves_old_parents_across_mixed_fresh_child_tables(
 
 def test_get_roster_entry_returns_one_normalized_active_record(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
-    store.activate_agent(
+    store._activate_prevalidated_agent(
         {
             "slug": "security-reviewer",
             "name": "Security Reviewer",
@@ -1273,6 +1533,7 @@ def test_get_roster_entry_returns_one_normalized_active_record(tmp_path: Path) -
             "categories": ["security"],
             "capabilities": ["threat-modeling"],
             "tool_affinity": ["git"],
+            "prompt_body": "Review the supplied trust boundaries.",
         }
     )
 
@@ -1287,7 +1548,7 @@ def test_get_roster_entry_returns_one_normalized_active_record(tmp_path: Path) -
 
 def test_roster_reads_normalize_corrupt_legacy_json_projections(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
-    store.activate_agent(
+    store._activate_prevalidated_agent(
         {
             "slug": "legacy-reviewer",
             "name": "Legacy Reviewer",

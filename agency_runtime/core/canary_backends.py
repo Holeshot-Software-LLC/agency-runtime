@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import stat
-import tempfile
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.bounded_io import FileSizeLimitError
+from agency_runtime.core.private_paths import private_temporary_directory
 
 
 def _facade():
@@ -39,7 +39,11 @@ def copy_bounded_auth(source: Path, destination: Path, *, host: str) -> None:
     )
 
     os_module = facade.os
-    destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    destination.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+        mode=0o777 if os_module.name == "nt" else 0o700,
+    )
     restrict_private_directory(destination.parent)
     fd = os_module.open(
         destination,
@@ -346,11 +350,7 @@ class SafeCodexCanaryBackend:
         del check
         facade = _facade()
         deadline = facade.time.monotonic() + self.timeout
-        with tempfile.TemporaryDirectory(
-            prefix="codex-home-",
-            dir=str(self.db_path.parent),
-        ) as runtime:
-            runtime_home = Path(runtime)
+        with private_temporary_directory(prefix="codex-home") as runtime_home:
             codex_home = facade._prepare_private_host_home(
                 runtime_home,
                 directory_name="codex",
@@ -403,11 +403,7 @@ class SafeClaudeCanaryBackend:
         del check
         facade = _facade()
         deadline = facade.time.monotonic() + self.timeout
-        with tempfile.TemporaryDirectory(
-            prefix="claude-home-",
-            dir=str(self.db_path.parent),
-        ) as runtime:
-            runtime_home = Path(runtime)
+        with private_temporary_directory(prefix="claude-home") as runtime_home:
             claude_home = facade._prepare_private_host_home(
                 runtime_home,
                 directory_name="claude",

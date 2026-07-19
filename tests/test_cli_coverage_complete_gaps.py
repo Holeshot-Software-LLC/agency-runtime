@@ -61,9 +61,20 @@ def test_small_helper_branch_edges(monkeypatch, capsys):
 
 
 def test_delegate_preserves_nonempty_backend_error_result(monkeypatch):
+    run = {"id": "run", "session_id": "", "status": "evidence_only"}
+
+    def record_delegation(**kwargs):
+        run["session_id"] = kwargs["session_id"]
+        return "event"
+
+    def complete_run(_run_id, status="completed"):
+        run["status"] = status
+
     store = SimpleNamespace(
-        record_delegation=lambda **_kw: "event",
+        record_delegation=record_delegation,
         update_delegation=lambda *_a, **_kw: None,
+        get_run=lambda _trace_id: dict(run),
+        complete_run=complete_run,
     )
     expected = {
         "backend": "codex",
@@ -144,8 +155,16 @@ def test_config_and_sync_remaining_paths(monkeypatch, capsys):
         "_collect_sync_candidates",
         lambda *_a, **_kw: (["candidate"], []),
     )
-    monkeypatch.setattr(roster_commands, "_complete_sync", lambda *_a: 9)
+    completed: list[tuple[tuple[object, ...], dict[str, object]]] = []
+
+    def complete_sync(*args, **kwargs):
+        completed.append((args, kwargs))
+        return 9
+
+    monkeypatch.setattr(roster_commands, "_complete_sync", complete_sync)
     assert roster_commands.cmd_sync(SimpleNamespace(auto_approve=False, dry_run=False)) == 9
+    assert completed[0][0][4] == []
+    assert completed[0][1] == {"require_inference": False}
 
 
 def _wizard_detection(*, provider=None):
@@ -432,9 +451,17 @@ def test_install_render_nonempty_targets_and_minimal_failure(capsys):
 
 
 def test_host_control_no_agent_and_restart_message(monkeypatch, capsys):
-    monkeypatch.setattr(install_commands, "_resolve_control_agent", lambda *_a, **_kw: None)
+    monkeypatch.setattr(
+        install_commands,
+        "_resolve_control_agents",
+        lambda *_a, **_kw: ([], False),
+    )
     assert install_commands._cmd_host_control(SimpleNamespace(), enabled=True) == 1
-    monkeypatch.setattr(install_commands, "_resolve_control_agent", lambda *_a, **_kw: "codex")
+    monkeypatch.setattr(
+        install_commands,
+        "_resolve_control_agents",
+        lambda *_a, **_kw: (["codex"], True),
+    )
     import agency_runtime.core.installer as installer
 
     monkeypatch.setattr(

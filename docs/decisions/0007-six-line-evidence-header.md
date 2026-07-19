@@ -1,13 +1,15 @@
 ---
 title: Enforce a six-line response evidence header
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-16
 tags: [observability, evidence, contracts]
-related: []
+related:
+  - docs/roadmap/issue-AR-25-turn-scoped-specialist-evidence.md
+  - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0045-turn-scoped-specialist-activation.md
 id: ADR-0007
 type: decision
 deciders: []

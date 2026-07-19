@@ -32,17 +32,8 @@ class CodexAdapter(BaseAdapter):
         """Check if codex CLI is installed."""
         return bool(shutil.which(self.codex_cmd))
 
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_specialists_for_session(session_id)
-
     def get_delegate_backend(self) -> str | None:
         return "codex_exec"
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
 
     def exec(
         self, task: str, workdir: str | None = None, specialist_prompt: str = ""
@@ -72,18 +63,16 @@ class CodexAdapter(BaseAdapter):
         )
         return backend.execute(task=full_prompt, workdir=workdir, check=False)
 
-    def run_preflight(self, session_id: str, user_message: str) -> dict[str, Any] | None:
-        """Run agency selector before launching codex."""
-        from agency_runtime.core.selector.pipeline import is_trivial, route_and_build_context
-
-        if is_trivial(user_message):
-            return None
-
-        catalog = self.store.get_active_roster_as_catalog()
-        context = route_and_build_context(
+    def run_preflight(
+        self,
+        session_id: str,
+        user_message: str,
+        *,
+        trace_id: str = "",
+    ) -> dict[str, Any] | None:
+        """Run the shared, trace-scoped selector preflight before Codex."""
+        return self.build_preflight_context(
             session_id,
             user_message,
-            catalog,
-            store=self.store,
+            trace_id=trace_id,
         )
-        return {"context": context} if context else None

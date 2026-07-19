@@ -28,6 +28,7 @@ from agency_runtime.core.configuration import (
 )
 from agency_runtime.core.configuration_contracts import MAX_CONFIG_BYTES
 from agency_runtime.core.detect import generate_config_from_detection
+from agency_runtime.core.display import safe_display_token
 from agency_runtime.core.doctor import format_report_human, run_doctor
 
 from ._common import (
@@ -165,13 +166,22 @@ def cmd_configure(
         recover_invalid_existing=trusted_replacement,
     )
 
-    print(f"\n✅ Config written to {config_path}")
-
     # Install starter roster
     reset_config_cache()
     cfg = dependencies.load_config(reload=True)
-    runtime_store = dependencies.store_factory(cfg)
-    count = dependencies.seed_starter_roster(runtime_store)
+    try:
+        runtime_store = dependencies.store_factory(cfg)
+        count = dependencies.seed_starter_roster(runtime_store)
+    except OSError as exc:
+        print(f"\n⚠️  Config written to {config_path}")
+        print(
+            "❌ Starter roster and SQLite initialization did not complete: "
+            f"{safe_display_token(str(exc), limit=500)}"
+        )
+        print("   Run `agency install` from a normal user shell to complete setup.")
+        return 1
+
+    print(f"\n✅ Config written to {config_path}")
     print(f"✅ Starter roster installed: {count} agents")
     print(f"✅ SQLite database initialized: {cfg.store.resolved_path()}")
     print("\nNext steps:")

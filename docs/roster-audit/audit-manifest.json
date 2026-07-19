@@ -1,0 +1,201 @@
+{
+  "schema_version": 2,
+  "audit_revision": "2",
+  "source": {
+    "repository": "https://github.com/msitarzewski/agency-agents",
+    "origin": "https://github.com/msitarzewski/agency-agents.git",
+    "revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "division_manifest": "divisions.json",
+    "division_manifest_sha256": "d145c4e2ad4fa59340d22f99d312700a8ed8d05f7e3deed26b16bdedeb31ef5c"
+  },
+  "expected": {
+    "total_agents": 263,
+    "status_counts": {
+      "approved": 263
+    },
+    "division_counts": {
+      "academic": 6,
+      "design": 9,
+      "engineering": 54,
+      "finance": 5,
+      "game-development": 20,
+      "gis": 13,
+      "healthcare": 3,
+      "marketing": 36,
+      "paid-media": 7,
+      "product": 5,
+      "project-management": 7,
+      "sales": 9,
+      "security": 12,
+      "spatial-computing": 6,
+      "specialized": 56,
+      "support": 6,
+      "testing": 9
+    },
+    "batches": {
+      "batch-a.json": {
+        "count": 59,
+        "division_counts": {
+          "academic": 6,
+          "design": 9,
+          "finance": 5,
+          "healthcare": 3,
+          "product": 5,
+          "project-management": 7,
+          "sales": 9,
+          "support": 6,
+          "testing": 9
+        },
+        "review": "batch-a-review.md",
+        "artifact_sha256": "54cc6af965982e43b47ebfba341b5bbeff56d830c6c36b29393eb7c7ad6211b7",
+        "review_sha256": "830db86d46a8d8f95205c8d4f0d2d2e9a9e624ff00d1c9584976a34b941fee9d"
+      },
+      "batch-engineering.json": {
+        "count": 54,
+        "division_counts": {
+          "engineering": 54
+        },
+        "review": "batch-engineering-review.md",
+        "artifact_sha256": "a6aa6d1bf9629cf19ad748d3411ea256c06e3869cfefa52e8bc822aae77ed891",
+        "review_sha256": "1e7b683edcdc52bb4228a91a28dd8b72259b521648fe1dee6dbd1de80cdc8483"
+      },
+      "batch-marketing-security.json": {
+        "count": 55,
+        "division_counts": {
+          "marketing": 36,
+          "paid-media": 7,
+          "security": 12
+        },
+        "review": "batch-marketing-security-review.md",
+        "artifact_sha256": "75f122543b194bf06d7275c69009974e20fe6fff1aa3f0d3604c7c0d11554c9e",
+        "review_sha256": "34b2aa8a2386874b588eca8d6f19beaf7b0150b2957f30d4123189f74fbc400c"
+      },
+      "batch-specialized.json": {
+        "count": 95,
+        "division_counts": {
+          "game-development": 20,
+          "gis": 13,
+          "spatial-computing": 6,
+          "specialized": 56
+        },
+        "review": "batch-specialized-review.md",
+        "artifact_sha256": "8e01d6bc0f6923f837545b74bc7f08bb55df031c185c2c0221f8dcf585a13247",
+        "review_sha256": "cfbf7f32c599e81c08d374680202617f54a8735670ce91ca3495f7f27220da9b"
+      }
+    }
+  },
+  "enums": {
+    "authority": [
+      "advise",
+      "approve",
+      "modify",
+      "plan",
+      "review"
+    ],
+    "context_mode": [
+      "direct_safe",
+      "isolated_only"
+    ],
+    "audit_status": [
+      "approved",
+      "quarantined",
+      "retired"
+    ],
+    "supported_hosts": [
+      "claude",
+      "codex",
+      "hermes",
+      "openclaw"
+    ],
+    "supported_platforms": [
+      "linux",
+      "windows"
+    ]
+  },
+  "nonempty_list_fields": [
+    "categories",
+    "capabilities",
+    "anti_capabilities",
+    "task_types",
+    "preferred_when",
+    "avoid_when",
+    "evidence_requirements",
+    "model_requirements",
+    "findings"
+  ],
+  "quarantines": [],
+  "remediations": [
+    {
+      "relative_path": "engineering/engineering-mobile-app-builder.md",
+      "original_hash": "1a3e043f806b0b7c071d58b2ee3ab3c58c8342e2727c1ca9e6e5175f86986caf",
+      "encoding_repaired_hash": "c67b433c23a8bc4f79c0e42917f10a3f4db03985eb4dd18ddc10fd57d487fbe9",
+      "encoding_rule": [
+        "repair-known-agency-agent-encoding",
+        "1"
+      ],
+      "projection_rule": [
+        "project-agency-governed-contract",
+        "2"
+      ],
+      "findings_original": [
+        "known_source_encoding_corruption",
+        "unsafe_control:U+0004x2",
+        "unsafe_control:U+0080x1",
+        "invalid_body_control_bytes U+0004 at byte offsets 11070 and 14825",
+        "source_encoding_corruption",
+        "app_store_iap_push_location_and_analytics_actions_need_authorization",
+        "platform_examples_are_volatile",
+        "unsupported_memory_assumption",
+        "hard_coded_platform_targets_require_version_and_measurement_evidence"
+      ],
+      "findings_resolved_by_encoding": [
+        "known_source_encoding_corruption",
+        "unsafe_control:U+0004x2",
+        "unsafe_control:U+0080x1",
+        "invalid_body_control_bytes U+0004 at byte offsets 11070 and 14825",
+        "source_encoding_corruption"
+      ],
+      "findings_resolved_by_projection": [
+        "app_store_iap_push_location_and_analytics_actions_need_authorization",
+        "platform_examples_are_volatile",
+        "unsupported_memory_assumption",
+        "hard_coded_platform_targets_require_version_and_measurement_evidence"
+      ],
+      "findings_unresolved": []
+    },
+    {
+      "relative_path": "marketing/marketing-app-store-optimizer.md",
+      "original_hash": "1987be72f8fd43ca694f9145cb0dbe37eabc5b1f04439425d7b59185db9263c9",
+      "encoding_repaired_hash": "d802fee2d7677278562d2b7b8a355363c6bcaab1b8492f620ecf0e7ffd04a0cc",
+      "encoding_rule": [
+        "repair-known-agency-agent-encoding",
+        "1"
+      ],
+      "projection_rule": [
+        "project-agency-governed-contract",
+        "2"
+      ],
+      "findings_original": [
+        "known_source_encoding_corruption",
+        "unsafe_control:U+0004x2",
+        "unsafe_control:U+0080x1",
+        "unsupported_memory_assumption",
+        "invalid_body_control_bytes U+0004 at byte offsets 6817 and 10647",
+        "time-sensitive store metrics and rules require current primary sources",
+        "source_encoding_corruption"
+      ],
+      "findings_resolved_by_encoding": [
+        "known_source_encoding_corruption",
+        "unsafe_control:U+0004x2",
+        "unsafe_control:U+0080x1",
+        "invalid_body_control_bytes U+0004 at byte offsets 6817 and 10647",
+        "source_encoding_corruption"
+      ],
+      "findings_resolved_by_projection": [
+        "unsupported_memory_assumption",
+        "time-sensitive store metrics and rules require current primary sources"
+      ],
+      "findings_unresolved": []
+    }
+  ]
+}

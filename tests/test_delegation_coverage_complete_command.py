@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -37,20 +38,24 @@ def test_command_backend_rejects_invalid_configuration(
 
 def test_executable_discovery_handles_empty_path_override_and_resolver_failure(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     assert CommandBackend([]).executable_path() is None
 
     observed: list[tuple[str, str | None]] = []
+    tool = tmp_path / "tool.exe"
+    tool.write_bytes(b"tool")
 
     def resolve(executable: str, path: str | None = None) -> str | None:
         observed.append((executable, path))
-        return "/safe/tool"
+        return str(tool)
 
     monkeypatch.setattr(backend_command.shutil, "which", resolve)
-    backend = CommandBackend(["tool"], extra_env={"Path": "/safe/bin"})
-    assert backend.executable_path() == "/safe/tool"
-    assert observed == [("tool", "/safe/bin")]
+    backend = CommandBackend(["tool"], extra_env={"Path": str(tmp_path)})
+    assert Path(backend.executable_path() or "").samefile(tool)
+    assert observed == []
 
+    tool.unlink()
     monkeypatch.setattr(
         backend_command.shutil,
         "which",
@@ -159,6 +164,91 @@ def test_execute_returns_unavailable_record_when_resolution_fails(
 
     assert result["status"] == "unavailable"
     assert result["exit_code"] == 127
+
+
+def test_execute_isolates_delegate_temporary_files(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backend = CommandBackend(["tool"])
+    observed: dict[str, Path] = {}
+    monkeypatch.setattr(CommandBackend, "executable_path", lambda _self: "/safe/tool")
+
+    def run(*_args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        paths = {Path(str(environment[name])) for name in ("TEMP", "TMP", "TMPDIR")}
+        assert len(paths) == 1
+        temp_path = paths.pop()
+        assert temp_path.is_dir()
+        observed["path"] = temp_path
+        return subprocess.CompletedProcess(["tool"], 0, stdout="done", stderr="")
+
+    monkeypatch.setattr(backend_command, "_run_owned_process", run)
+
+    result = backend.execute(task="work")
+
+    assert result["status"] == "completed"
+    assert not observed["path"].exists()
+
+
+def test_execute_rejects_ambient_repo_executable_from_outside_process_cwd(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "delegated-repo"
+    executable_dir = repository / "bin"
+    executable_dir.mkdir(parents=True)
+    outside = tmp_path / "process-cwd"
+    outside.mkdir()
+    executable_name = "codex.exe" if os.name == "nt" else "codex"
+    executable = executable_dir / executable_name
+    executable.write_bytes(b"not invoked")
+    if os.name != "nt":
+        executable.chmod(0o700)
+
+    monkeypatch.chdir(outside)
+    backend = CommandBackend(["codex"], extra_env={"PATH": str(executable_dir)})
+    monkeypatch.setattr(
+        backend_command,
+        "_run_backend_process",
+        lambda **_kwargs: pytest.fail("repository-controlled executable was invoked"),
+    )
+
+    availability = backend.availability(forbidden_roots=(repository,))
+    result = backend.execute(task="work", workdir=str(repository), check=False)
+
+    assert availability["available"] is False
+    assert "target repository" in availability["reason"]
+    assert result["status"] == "unavailable"
+    assert result["exit_code"] == 127
+    assert "delegated repository" in result["error"]
+
+
+def test_backend_process_threads_delegated_roots_to_owned_process_freeze(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    observed: dict[str, object] = {}
+
+    def run(*_args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        observed.update(kwargs)
+        return subprocess.CompletedProcess(["tool"], 0, stdout="done", stderr="")
+
+    monkeypatch.setattr(backend_command, "_run_owned_process", run)
+    result = backend_command._run_backend_process(
+        backend_name="test",
+        extra_env={},
+        argv=["tool"],
+        cwd=None,
+        stdout=None,
+        stderr=None,
+        timeout=1,
+        input_text=None,
+        forbidden_roots=(tmp_path,),
+    )
+
+    assert result.returncode == 0
+    assert observed["forbidden_roots"] == (tmp_path,)
 
 
 @pytest.mark.parametrize(

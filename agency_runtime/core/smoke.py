@@ -11,7 +11,6 @@ import importlib.util
 import os
 import shutil
 import subprocess
-import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -21,7 +20,16 @@ from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.evals.delegation import run_delegation_eval
 from agency_runtime.core.installer import HOSTS, detect_installed_agents, install_agent_adapter
+from agency_runtime.core.installer_contracts import ADAPTER_LAUNCHER_MANIFEST
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
+from agency_runtime.core.private_paths import private_temporary_directory
+from agency_runtime.core.process_argv import (
+    freeze_process_argv,
+    persistent_artifacts_from_manifest,
+    prepare_process_argv,
+    revalidate_process_argv,
+    snapshot_persistent_artifacts,
+)
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -105,11 +113,10 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     missing_tokens = sorted(token for token in required_tokens if token not in code)
     if missing_tokens:
         raise RuntimeError(f"OpenClaw plugin missing tokens: {', '.join(missing_tokens)}")
-    # The generated bridge intentionally embeds the interpreter that installed
-    # Agency Runtime as its fallback. On a system Python installation that may
-    # truthfully be /usr/bin/python3; AGENCY_RUNTIME_PYTHON remains the explicit
-    # relocation override. Synchronous child execution is the unsafe contract.
-    forbidden_tokens = {"spawnSync"}
+    # The generated bridge is bound to the installer interpreter and package
+    # bootstrap. Runtime environment substitution and synchronous child
+    # execution are both forbidden contracts.
+    forbidden_tokens = {"spawnSync", "AGENCY_RUNTIME_PYTHON"}
     present_forbidden = sorted(token for token in forbidden_tokens if token in code)
     if present_forbidden:
         raise RuntimeError(
@@ -119,9 +126,11 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     syntax_check = "skipped: node unavailable"
     node = shutil.which("node")
     if node:
+        prepared = freeze_process_argv(prepare_process_argv([node, "--check", str(plugin_path)]))
         try:
+            revalidate_process_argv(prepared)
             check = subprocess.run(
-                [node, "--check", str(plugin_path)],
+                prepared,
                 text=True,
                 capture_output=True,
                 timeout=15,
@@ -140,7 +149,15 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     }
 
 
-_CODEX_HOOK_EVENTS = ("PostToolUse", "Stop", "UserPromptSubmit")
+_CODEX_HOOK_EVENTS = (
+    "PostCompact",
+    "PostToolUse",
+    "SessionStart",
+    "Stop",
+    "SubagentStart",
+    "SubagentStop",
+    "UserPromptSubmit",
+)
 
 
 def _validate_codex_hooks(hooks: Any) -> list[str]:
@@ -191,6 +208,27 @@ def _validate_codex_hooks(hooks: Any) -> list[str]:
     return list(_CODEX_HOOK_EVENTS)
 
 
+def _installed_launcher_paths(plugin_root: Path) -> tuple[str, str]:
+    """Return one content-current launcher pair bound by the install manifest."""
+
+    manifest = _load_plugin_json(
+        plugin_root / ADAPTER_LAUNCHER_MANIFEST,
+        label="Agency Runtime launcher manifest",
+    )
+    if not isinstance(manifest, dict):
+        raise RuntimeError("Agency Runtime install manifest is invalid")
+    try:
+        frozen = persistent_artifacts_from_manifest(manifest.get("artifacts"))
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("Agency Runtime launcher identity is invalid") from exc
+    if len(frozen) != 2:
+        raise RuntimeError("Agency Runtime launcher identity must bind two artifacts")
+    observed = snapshot_persistent_artifacts([item.lexical_path for item in frozen])
+    if observed != frozen:
+        raise RuntimeError("Agency Runtime launcher artifacts changed after installation")
+    return frozen[0].lexical_path, frozen[1].lexical_path
+
+
 def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
     """Validate native Codex/Claude plugin layout and executable MCP wiring."""
     manifest = _load_plugin_json(plugin_path, label=f"{host} plugin manifest")
@@ -210,14 +248,38 @@ def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
         raise RuntimeError("Codex manifest does not declare its hooks component")
     validated_hooks = _validate_codex_hooks(hooks) if host == "codex" else sorted(hooks["hooks"])
     skill = skill_path.read_text(encoding="utf-8")
-    if "agency.host_status" not in skill or "agency.host_control" not in skill:
+    control_tokens = {
+        "agency.host_status",
+        "agency.host_control",
+        "runtime_control_generation",
+        "expected_generation",
+    }
+    if any(token not in skill for token in control_tokens):
         raise RuntimeError(f"{host} control skill is incomplete")
     server = mcp.get("mcpServers", {}).get("agency-runtime", {})
-    if server.get("args") != ["-m", "agency_runtime.server.mcp", "--stdio"]:
+    args = server.get("args")
+    try:
+        install_root = plugin_path.parents[3]
+    except IndexError as exc:
+        raise RuntimeError(f"{host} plugin path is outside its marketplace layout") from exc
+    interpreter, bootstrap = _installed_launcher_paths(install_root)
+    expected_prefix = [
+        "-I",
+        bootstrap,
+        "agency_runtime.server.mcp",
+        "--stdio",
+    ]
+    if not isinstance(args, list) or args[:4] != expected_prefix:
         raise RuntimeError(f"{host} bundle has invalid Agency Runtime MCP command")
+    if len(args) not in {4, 6} or (
+        len(args) == 6 and (args[4] != "--config" or not Path(str(args[5])).is_absolute())
+    ):
+        raise RuntimeError(f"{host} bundle has invalid Agency Runtime config binding")
     command = Path(str(server.get("command") or ""))
     if not command.is_absolute():
         raise RuntimeError(f"{host} MCP command is not an absolute interpreter path")
+    if str(command) != interpreter:
+        raise RuntimeError(f"{host} MCP command does not match its installed launcher identity")
     return {
         "host": host,
         "plugin_path": str(plugin_path),
@@ -248,7 +310,14 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
 
     ctx = _FakeHookContext()
     module.register(ctx)
-    required = {"pre_llm_call", "post_tool_call", "post_api_request", "transform_llm_output"}
+    required = {
+        "pre_llm_call",
+        "post_tool_call",
+        "post_api_request",
+        "pre_verify",
+        "transform_llm_output",
+        "on_session_end",
+    }
     missing = sorted(required - set(ctx.hooks))
     if missing:
         raise RuntimeError(f"missing hooks: {', '.join(missing)}")
@@ -256,27 +325,38 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
         raise RuntimeError("missing Hermes agency control command")
     status = ctx.commands["agency"]("status")
     if "Agency Runtime is enabled for hermes." not in status:
-        raise RuntimeError("Hermes agency status command returned an invalid response")
+        raise RuntimeError(f"Hermes agency status command returned an invalid response: {status!r}")
     ctx.hooks["post_api_request"](response={}, model="task-general", session_id=f"smoke-{host}")
-    adapter = module._get_adapter()
-    return {"host": host, "plugin_path": str(plugin_path), "adapter": adapter.__class__.__name__}
+    return {"host": host, "plugin_path": str(plugin_path), "adapter": "HermesBridge"}
 
 
 def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
     """Run local deterministic smoke checks and return a JSON-safe report."""
     hosts = sorted(HOSTS) if all_hosts else detect_installed_agents()
     checks: list[dict[str, Any]] = []
-    from agency_runtime.core.config import reset_config_cache
+    from agency_runtime.core.config import (
+        AgencyConfig,
+        StoreConfig,
+        config_to_yaml,
+        reset_config_cache,
+    )
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_home = Path(tmpdir)
+    with private_temporary_directory(prefix="smoke") as tmp_home:
         smoke_db = tmp_home / "agency.db"
-        smoke_config = tmp_home / "missing-agency.yaml"
+        smoke_config = tmp_home / ".agency-runtime" / "agency.yaml"
+        smoke_config.parent.mkdir(mode=0o700)
+        smoke_config.write_text(
+            config_to_yaml(
+                AgencyConfig(store=StoreConfig(db_path=str(smoke_db))),
+                redact=False,
+            ),
+            encoding="utf-8",
+            newline="\n",
+        )
+        smoke_config.chmod(0o600)
         with _temporary_env(
             AGENCY_DB_PATH=str(smoke_db),
             AGENCY_CONFIG_PATH=str(smoke_config),
-            HOME=str(tmp_home),
-            USERPROFILE=str(tmp_home),
         ):
             # Config is process-global. Reset on both sides so a caller that
             # previously loaded its real profile cannot leak that Store path
@@ -287,7 +367,7 @@ def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
                 checks.append(_check("sqlite_store", lambda: store.database_stats()))
 
                 def _active_or_starter_roster() -> dict[str, Any]:
-                    active_count = len(store.get_active_roster())
+                    active_count = len(store.get_enabled_roster())
                     if active_count > 0:
                         return {"agent_count": active_count, "source": "active"}
                     return {"agent_count": len(STARTER_ROSTER), "source": "starter_roster"}

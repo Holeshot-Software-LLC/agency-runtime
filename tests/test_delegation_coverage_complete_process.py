@@ -76,6 +76,11 @@ def test_windows_taskkill_launch_failure_kills_root(
         "Popen",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("missing taskkill")),
     )
+    monkeypatch.setattr(
+        backend_process,
+        "trusted_windows_system_executable",
+        lambda *_args, **_kwargs: r"C:\Windows\System32\taskkill.exe",
+    )
     monkeypatch.setattr(backend_process, "_kill_process", killed.append)
 
     backend_process._request_windows_tree_termination(process)
@@ -91,6 +96,11 @@ def test_windows_taskkill_success_leaves_helper_and_root_alone(
     terminated: list[Any] = []
     killed: list[Any] = []
     monkeypatch.setattr(backend_process.subprocess, "Popen", lambda *_args, **_kwargs: helper)
+    monkeypatch.setattr(
+        backend_process,
+        "trusted_windows_system_executable",
+        lambda *_args, **_kwargs: r"C:\Windows\System32\taskkill.exe",
+    )
     monkeypatch.setattr(backend_process, "_wait_for_process", lambda *_args: True)
     monkeypatch.setattr(backend_process, "_terminate_taskkill_helper", terminated.append)
     monkeypatch.setattr(backend_process, "_kill_process", killed.append)
@@ -99,6 +109,23 @@ def test_windows_taskkill_success_leaves_helper_and_root_alone(
 
     assert terminated == []
     assert killed == []
+
+
+def test_windows_taskkill_resolution_failure_kills_root(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = SimpleNamespace(pid=123)
+    killed: list[Any] = []
+    monkeypatch.setattr(
+        backend_process,
+        "trusted_windows_system_executable",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("unsafe taskkill")),
+    )
+    monkeypatch.setattr(backend_process, "_kill_process", killed.append)
+
+    backend_process._request_windows_tree_termination(process)
+
+    assert killed == [process]
 
 
 def test_posix_signal_uses_group_then_root_fallbacks(

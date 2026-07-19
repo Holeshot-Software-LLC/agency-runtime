@@ -41,7 +41,10 @@ def _openclaw_bundle(tmp_path: Path) -> tuple[Path, Path]:
     return home, Path(result["plugin_path"])
 
 
-def test_openclaw_smoke_rejects_missing_and_invalid_manifests(tmp_path: Path) -> None:
+def test_openclaw_smoke_rejects_missing_and_invalid_manifests(
+    tmp_path: Path,
+    private_installer_launcher,
+) -> None:
     _home, plugin = _openclaw_bundle(tmp_path / "missing")
     (plugin.parent / "package.json").unlink()
     with pytest.raises(RuntimeError, match="missing OpenClaw"):
@@ -60,7 +63,10 @@ def test_openclaw_smoke_rejects_missing_and_invalid_manifests(tmp_path: Path) ->
         smoke._smoke_openclaw_plugin("openclaw", plugin)
 
 
-def test_openclaw_smoke_rejects_missing_and_forbidden_bridge_tokens(tmp_path: Path) -> None:
+def test_openclaw_smoke_rejects_missing_and_forbidden_bridge_tokens(
+    tmp_path: Path,
+    private_installer_launcher,
+) -> None:
     _home, plugin = _openclaw_bundle(tmp_path / "tokens")
     plugin.write_text("const empty = true;", encoding="utf-8")
     with pytest.raises(RuntimeError, match="missing tokens"):
@@ -75,6 +81,7 @@ def test_openclaw_smoke_rejects_missing_and_forbidden_bridge_tokens(tmp_path: Pa
 def test_openclaw_node_probe_handles_unrunnable_and_invalid_script(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher,
 ) -> None:
     _home, plugin = _openclaw_bundle(tmp_path / "node")
     monkeypatch.setattr(smoke.shutil, "which", lambda _name: "node")
@@ -103,7 +110,84 @@ def _marketplace_bundle(tmp_path: Path, host: str = "codex") -> tuple[Path, Path
     return home, Path(result["plugin_path"])
 
 
-def test_marketplace_smoke_rejects_manifest_layout_and_hooks(tmp_path: Path) -> None:
+def test_installed_launcher_manifest_rejects_invalid_shapes_and_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher,
+) -> None:
+    frozen = smoke.snapshot_persistent_artifacts(private_installer_launcher)
+
+    monkeypatch.setattr(smoke, "_load_plugin_json", lambda *_args, **_kwargs: [])
+    with pytest.raises(RuntimeError, match="install manifest is invalid"):
+        smoke._installed_launcher_paths(tmp_path)
+
+    monkeypatch.setattr(
+        smoke,
+        "_load_plugin_json",
+        lambda *_args, **_kwargs: {"artifacts": "invalid"},
+    )
+    with pytest.raises(RuntimeError, match="launcher identity is invalid"):
+        smoke._installed_launcher_paths(tmp_path)
+
+    monkeypatch.setattr(
+        smoke,
+        "_load_plugin_json",
+        lambda *_args, **_kwargs: {"artifacts": [frozen[0].manifest()]},
+    )
+    with pytest.raises(RuntimeError, match="bind two artifacts"):
+        smoke._installed_launcher_paths(tmp_path)
+
+    monkeypatch.setattr(
+        smoke,
+        "_load_plugin_json",
+        lambda *_args, **_kwargs: {"artifacts": [item.manifest() for item in frozen]},
+    )
+    monkeypatch.setattr(smoke, "snapshot_persistent_artifacts", lambda _paths: ())
+    with pytest.raises(RuntimeError, match="changed after installation"):
+        smoke._installed_launcher_paths(tmp_path)
+
+
+def test_marketplace_smoke_reports_shallow_plugin_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plugin_root = tmp_path / "plugin-root"
+    hooks_path = plugin_root / "hooks" / "hooks.json"
+    mcp_path = plugin_root / ".mcp.json"
+    skill_path = plugin_root / "skills" / "agency" / "SKILL.md"
+    hooks_path.parent.mkdir(parents=True)
+    skill_path.parent.mkdir(parents=True)
+    hooks_path.write_text("{}", encoding="utf-8")
+    mcp_path.write_text("{}", encoding="utf-8")
+    skill_path.write_text(
+        "agency.host_status agency.host_control runtime_control_generation expected_generation",
+        encoding="utf-8",
+    )
+
+    def load(_path: object, *, label: str) -> dict[str, Any]:
+        if label.endswith("plugin manifest"):
+            return {"name": "agency-preflight"}
+        if label.endswith("hooks manifest"):
+            return {"hooks": {"UserPromptSubmit": []}}
+        return {"mcpServers": {"agency-runtime": {"args": []}}}
+
+    class ShallowParents:
+        def __getitem__(self, index: int) -> Path:
+            if index == 1:
+                return plugin_root
+            raise IndexError(index)
+
+    shallow = SimpleNamespace(parents=ShallowParents())
+    monkeypatch.setattr(smoke, "_load_plugin_json", load)
+
+    with pytest.raises(RuntimeError, match="outside its marketplace layout"):
+        smoke._smoke_marketplace_bundle("claude", shallow)  # type: ignore[arg-type]
+
+
+def test_marketplace_smoke_rejects_manifest_layout_and_hooks(
+    tmp_path: Path,
+    private_installer_launcher,
+) -> None:
     _home, manifest = _marketplace_bundle(tmp_path / "name")
     manifest.write_text('{"name":"wrong"}', encoding="utf-8")
     with pytest.raises(RuntimeError, match="manifest name"):
@@ -151,6 +235,7 @@ def test_codex_marketplace_smoke_rejects_invalid_handler_schema(
     tmp_path: Path,
     corruption: str,
     message: str,
+    private_installer_launcher,
 ) -> None:
     _home, manifest = _marketplace_bundle(tmp_path / corruption)
     path = manifest.parents[1] / "hooks" / "hooks.json"
@@ -192,7 +277,10 @@ def test_codex_marketplace_smoke_rejects_invalid_handler_schema(
         smoke._smoke_marketplace_bundle("codex", manifest)
 
 
-def test_marketplace_smoke_rejects_skill_and_mcp_contracts(tmp_path: Path) -> None:
+def test_marketplace_smoke_rejects_skill_and_mcp_contracts(
+    tmp_path: Path,
+    private_installer_launcher,
+) -> None:
     _home, manifest = _marketplace_bundle(tmp_path / "skill")
     skill = manifest.parents[1] / "skills" / "agency" / "SKILL.md"
     skill.write_text("incomplete", encoding="utf-8")
@@ -213,6 +301,14 @@ def test_marketplace_smoke_rejects_skill_and_mcp_contracts(tmp_path: Path) -> No
     data["mcpServers"]["agency-runtime"]["command"] = "python"
     mcp.write_text(json.dumps(data), encoding="utf-8")
     with pytest.raises(RuntimeError, match="absolute interpreter"):
+        smoke._smoke_marketplace_bundle("codex", manifest)
+
+    _home, manifest = _marketplace_bundle(tmp_path / "alternate-command")
+    mcp = manifest.parents[1] / ".mcp.json"
+    data = json.loads(mcp.read_text(encoding="utf-8"))
+    data["mcpServers"]["agency-runtime"]["command"] = str((tmp_path / "other-python.exe").resolve())
+    mcp.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="installed launcher identity"):
         smoke._smoke_marketplace_bundle("codex", manifest)
 
 
@@ -258,7 +354,9 @@ def test_generated_hermes_plugin_validates_runtime_contract(
                 "pre_llm_call",
                 "post_tool_call",
                 "post_api_request",
+                "pre_verify",
                 "transform_llm_output",
+                "on_session_end",
             ):
                 ctx.register_hook(name, lambda **_kwargs: None)
         if failure != "commands":
@@ -310,7 +408,7 @@ def test_run_smoke_uses_active_roster_and_records_plugin_failure(
         def database_stats(self) -> dict[str, Any]:
             return {"ok": True}
 
-        def get_active_roster(self) -> list[dict[str, str]]:
+        def get_enabled_roster(self) -> list[dict[str, str]]:
             return [{"slug": "active"}]
 
     monkeypatch.setattr(smoke, "Store", _Store)

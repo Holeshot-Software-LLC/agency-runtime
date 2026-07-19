@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import threading
 from contextlib import contextmanager
@@ -11,6 +12,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core import dashboard_runtime
 from agency_runtime.core.dashboard_service import (
     OWNER_ID,
     OWNER_MARKER,
@@ -24,6 +26,64 @@ from agency_runtime.core.dashboard_service import (
     stop_dashboard_service,
     uninstall_dashboard_service,
 )
+from agency_runtime.core.process_argv import agency_bootstrap_path
+
+
+def _test_bootstrap_path(tmp_path: Path) -> Path:
+    return tmp_path / "Private Runtime" / "_bootstrap.py"
+
+
+@pytest.fixture(autouse=True)
+def _private_dashboard_bootstrap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = _test_bootstrap_path(tmp_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(Path(agency_bootstrap_path()).read_bytes())
+    target.chmod(0o700)
+    monkeypatch.setattr(
+        "agency_runtime.core.process_argv.agency_bootstrap_path",
+        lambda: str(target),
+    )
+
+
+@pytest.mark.parametrize("platform_name", ["linux", "windows"])
+def test_dashboard_install_rejects_process_environment_before_any_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    platform_name: str,
+) -> None:
+    home = tmp_path / platform_name
+    home.mkdir()
+    config_path = home / ".agency-runtime" / "agency.yaml"
+    config_path.parent.mkdir()
+    config_path.write_text("profile: standard\n", encoding="utf-8")
+    secret = "never-persist-this-secret"
+    monkeypatch.setenv("AGENCY_DB_PATH", "process-only/agency.db")
+    monkeypatch.setenv("AGENCY_JUDGE_API_KEY", secret)
+
+    def unexpected(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("service manager must not be queried or mutated")
+
+    result = install_dashboard_service(
+        home_dir=home,
+        platform_name=platform_name,
+        config_path=config_path,
+        python_executable=Path(__file__),
+        command_runner=unexpected,
+    )
+
+    assert result["ok"] is False
+    assert result["changed"] is False
+    assert result["commands"] == []
+    assert result["non_durable_environment_overrides"] == [
+        "AGENCY_DB_PATH",
+        "AGENCY_JUDGE_API_KEY",
+    ]
+    assert secret not in json.dumps(result)
+    assert not (home / ".config" / "systemd" / "user" / "agency-runtime-dashboard.service").exists()
+    assert not (home / ".agency-runtime" / "services" / "dashboard-service.json").exists()
 
 
 def test_dashboard_health_token_is_never_forwarded_through_redirect() -> None:
@@ -187,6 +247,13 @@ class FakeTaskScheduler:
         assert argv[1:4] == ["-NoProfile", "-NonInteractive", "-Command"]
         assert len(argv) == 5
         assert "Schedule.Service" in argv[4]
+        if "ToBase64String" in argv[4]:
+            if not self.task_exists:
+                return {"returncode": 1, "stderr": "task does not exist"}
+            return {
+                "returncode": 0,
+                "stdout": base64.b64encode(self.task_xml.encode("utf-8")).decode("ascii"),
+            }
         if not self.task_exists:
             return {"returncode": 0, "stdout": "ABSENT"}
         state = "4" if self.active else "3"
@@ -208,7 +275,7 @@ class FakeTaskScheduler:
     def _create(self, argv: list[str]) -> dict[str, Any]:
         if "/XML" not in argv:
             raise AssertionError("dashboard tasks must be registered from explicit XML")
-        content = Path(argv[argv.index("/XML") + 1]).read_text(encoding="utf-8")
+        content = Path(argv[argv.index("/XML") + 1]).read_text(encoding="utf-16")
         if self.task_exists:
             self.restore_count += 1
         self.create_count += 1
@@ -264,8 +331,58 @@ class FakeTaskScheduler:
         return handler(argv)
 
 
+class AsynchronousTaskScheduler(FakeTaskScheduler):
+    """Model delayed ``/End`` completion and Task Scheduler ``IgnoreNew``."""
+
+    def __init__(self, *, runtime_home: Path) -> None:
+        super().__init__()
+        self.runtime_home = runtime_home
+        self.shutdown_polls_remaining = 0
+        self.generation = 0
+        self.run_while_active = 0
+        self.publish_runtime = True
+
+    def _powershell_status(self, argv: list[str]) -> dict[str, Any]:
+        is_state_query = "ToBase64String" not in argv[4]
+        if is_state_query and self.shutdown_polls_remaining:
+            self.shutdown_polls_remaining -= 1
+            if self.shutdown_polls_remaining == 0:
+                self.active = False
+        return super()._powershell_status(argv)
+
+    def _run(self, argv: list[str]) -> dict[str, Any]:
+        if self.active:
+            # MultipleInstancesPolicy=IgnoreNew reports a successful trigger
+            # while suppressing the requested replacement instance.
+            self.run_while_active += 1
+            return {"returncode": 0}
+        result = super()._run(argv)
+        if result["returncode"] == 0 and self.publish_runtime:
+            self.generation += 1
+            dashboard_runtime.write_dashboard_runtime(
+                home_dir=self.runtime_home,
+                token=f"generation-{self.generation}-" + ("x" * 32),
+                port=7810 + self.generation,
+                pid=10_000 + self.generation,
+            )
+        return result
+
+    def _end(self, _argv: list[str]) -> dict[str, Any]:
+        if self.fail_end_once:
+            self.fail_end_once = False
+            return {"returncode": 1, "stderr": "injected stop failure"}
+        if not self.task_exists or not self.active:
+            return {"returncode": 1, "stderr": "task is not running"}
+        self.shutdown_polls_remaining = 3
+        return {"returncode": 0}
+
+
 def _paths(tmp_path: Path) -> tuple[Path, Path]:
     python = tmp_path / "Python Runtime" / "python.exe"
+    python.parent.mkdir(parents=True, exist_ok=True)
+    if not python.exists():
+        python.write_bytes(b"test dashboard python launcher\n")
+        python.chmod(0o700)
     config = tmp_path / "config $% space" / "agency.yaml"
     return python, config
 
@@ -410,7 +527,8 @@ def test_worker_argv_is_exact_strict_and_credential_free(tmp_path: Path) -> None
 
     assert argv == [
         str(python.resolve()),
-        "-m",
+        "-I",
+        str(_test_bootstrap_path(tmp_path)),
         "agency_runtime.cli",
         "dashboard",
         "--service-mode",
@@ -575,6 +693,16 @@ def test_linux_install_is_owned_idempotent_and_json_safe(tmp_path: Path) -> None
     assert unit_before.decode().startswith(f"# {OWNER_MARKER}\n")
     manifest = json.loads(manifest_before)
     assert manifest["owner"] == OWNER_ID
+    assert manifest["worker_argv"] == [
+        str(python.resolve()),
+        "-I",
+        str(_test_bootstrap_path(tmp_path)),
+        "agency_runtime.cli",
+        "dashboard",
+        "--service-mode",
+        "--config",
+        str(config.resolve()),
+    ]
     assert manifest["worker_argv"] == first["worker_argv"]
     assert "token" not in manifest_before.decode().lower()
 
@@ -593,6 +721,43 @@ def test_linux_install_is_owned_idempotent_and_json_safe(tmp_path: Path) -> None
     assert inspected["enabled"] is True
     assert inspected["active"] is True
     assert inspected["reachable"] is True
+
+
+def test_windows_service_manifest_binds_launcher_and_blocks_start_after_drift(
+    tmp_path: Path,
+) -> None:
+    python, config = _paths(tmp_path)
+    manager = FakeTaskScheduler()
+    common = {
+        "home_dir": tmp_path,
+        "platform_name": "windows",
+        "config_path": config,
+        "python_executable": python,
+        "command_runner": manager,
+    }
+    installed = install_dashboard_service(
+        **common,
+        reachability_probe=lambda: manager.active,
+        readiness_probe=lambda: manager.active,
+    )
+    manifest = json.loads(Path(installed["manifest_path"]).read_text(encoding="utf-8"))
+
+    assert manifest["schema_version"] == 2
+    assert len(manifest["launcher_artifacts"]) == 2
+    assert inspect_dashboard_service(**common)["manifest_current"] is True
+
+    _test_bootstrap_path(tmp_path).write_text("# drifted bootstrap\n", encoding="utf-8")
+    before = len(manager.commands)
+    blocked = start_dashboard_service(
+        **common,
+        reachability_probe=lambda: False,
+        readiness_probe=lambda: True,
+    )
+
+    assert blocked["ok"] is False
+    assert blocked["changed"] is False
+    assert "launcher identity drift" in blocked["error"]
+    assert len(manager.commands) == before + 2  # read-only query + exported task XML
 
 
 def test_linux_install_refuses_unowned_unit(tmp_path: Path) -> None:
@@ -933,6 +1098,79 @@ def test_windows_owned_drift_is_repaired_but_replaced_task_is_refused(
     assert manager.task_exists is True
 
 
+@pytest.mark.parametrize("operation", ["start", "restart"])
+def test_windows_execution_refuses_owned_definition_drift(
+    tmp_path: Path,
+    operation: str,
+) -> None:
+    python, config = _paths(tmp_path)
+    manager = FakeTaskScheduler()
+    common = {
+        "home_dir": tmp_path,
+        "platform_name": "windows",
+        "config_path": config,
+        "python_executable": python,
+        "command_runner": manager,
+        "reachability_probe": lambda: False,
+        "readiness_probe": lambda: True,
+    }
+    assert install_dashboard_service(**common)["ok"] is True
+    manager.active = False
+    manager.task_xml = manager.task_xml.replace("<Command>", "<Command>calc.exe<!--").replace(
+        "</Command>", "--></Command>"
+    )
+    before = len(manager.commands)
+
+    action = start_dashboard_service if operation == "start" else restart_dashboard_service
+    result = action(**common)
+
+    assert result["ok"] is False
+    assert result["changed"] is False
+    assert "definition drift" in result["error"]
+    assert not any(command[1] in {"/Run", "/End"} for command in manager.commands[before:])
+
+
+@pytest.mark.parametrize("operation", ["start", "restart"])
+def test_windows_execution_revalidates_semantics_after_preflight(
+    tmp_path: Path,
+    operation: str,
+) -> None:
+    python, config = _paths(tmp_path)
+    manager = FakeTaskScheduler()
+    common = {
+        "home_dir": tmp_path,
+        "platform_name": "windows",
+        "config_path": config,
+        "python_executable": python,
+        "reachability_probe": lambda: False,
+        "readiness_probe": lambda: True,
+    }
+    assert install_dashboard_service(**common, command_runner=manager)["ok"] is True
+    manager.active = False
+    xml_queries = 0
+
+    def drift_after_preflight(argv: list[str], **kwargs: Any) -> dict[str, Any]:
+        nonlocal xml_queries
+        if argv[0] == "powershell.exe" and "ToBase64String" in argv[4]:
+            xml_queries += 1
+            if xml_queries == 2:
+                manager.task_xml = manager.task_xml.replace(
+                    "<ExecutionTimeLimit>PT0S</ExecutionTimeLimit>",
+                    "<ExecutionTimeLimit>PT72H</ExecutionTimeLimit>",
+                )
+        return manager(argv, **kwargs)
+
+    action = start_dashboard_service if operation == "start" else restart_dashboard_service
+    before = len(manager.commands)
+    result = action(**common, command_runner=drift_after_preflight)
+
+    assert result["ok"] is False
+    assert result["changed"] is False
+    assert "changed after preflight" in result["error"]
+    assert xml_queries == 2
+    assert not any(command[1] in {"/Run", "/End"} for command in manager.commands[before:])
+
+
 def test_windows_ownership_is_rechecked_immediately_before_mutation(
     tmp_path: Path,
 ) -> None:
@@ -957,7 +1195,7 @@ def test_windows_ownership_is_rechecked_immediately_before_mutation(
 
     def replaced_between_checks(argv: list[str], **kwargs: Any) -> dict[str, Any]:
         nonlocal query_count
-        if argv[1] == "/Query":
+        if argv[0] == "powershell.exe" and "ToBase64String" in argv[4]:
             query_count += 1
             if query_count == 2:
                 manager.task_xml = (
@@ -1055,6 +1293,127 @@ def test_windows_end_failure_requires_proven_manager_idle_state(
     assert idle_stop["status"] == "already_stopped"
     assert idle_restart["ok"] is True
     assert manager.task_exists is True
+
+
+def test_windows_restart_waits_for_async_end_and_requires_fresh_runtime(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    python, config = _paths(tmp_path)
+    manager = AsynchronousTaskScheduler(runtime_home=tmp_path)
+    common = {
+        "home_dir": tmp_path,
+        "platform_name": "windows",
+        "config_path": config,
+        "python_executable": python,
+        "command_runner": manager,
+    }
+    monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: False)
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_service_windows.time.sleep",
+        lambda _seconds: None,
+    )
+    assert (
+        install_dashboard_service(
+            **common,
+            reachability_probe=lambda: manager.active,
+            readiness_probe=lambda: manager.active,
+        )["ok"]
+        is True
+    )
+    first_generation = dashboard_runtime.dashboard_runtime_instance_fingerprint(home_dir=tmp_path)
+
+    restarted = restart_dashboard_service(
+        **common,
+        reachability_probe=lambda: False,
+        readiness_probe=lambda: manager.active,
+    )
+
+    assert restarted["ok"] is True
+    assert manager.run_while_active == 0
+    assert manager.generation == 2
+    assert manager.shutdown_polls_remaining == 0
+    assert dashboard_runtime.dashboard_runtime_instance_fingerprint(home_dir=tmp_path) not in {
+        None,
+        first_generation,
+    }
+
+
+def test_windows_restart_rejects_boolean_readiness_without_fresh_runtime(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    python, config = _paths(tmp_path)
+    manager = AsynchronousTaskScheduler(runtime_home=tmp_path)
+    common = {
+        "home_dir": tmp_path,
+        "platform_name": "windows",
+        "config_path": config,
+        "python_executable": python,
+        "command_runner": manager,
+    }
+    monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: False)
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_service_windows.time.sleep",
+        lambda _seconds: None,
+    )
+    assert (
+        install_dashboard_service(
+            **common,
+            reachability_probe=lambda: manager.active,
+            readiness_probe=lambda: manager.active,
+        )["ok"]
+        is True
+    )
+    manager.publish_runtime = False
+
+    restarted = restart_dashboard_service(
+        **common,
+        reachability_probe=lambda: False,
+        readiness_probe=lambda: manager.active,
+    )
+
+    assert restarted["ok"] is False
+    assert restarted["reachable"] is False
+    assert "fresh runtime" in restarted["error"]
+    assert manager.active is True
+    assert manager.run_while_active == 0
+    assert dashboard_runtime.dashboard_runtime_instance_fingerprint(home_dir=tmp_path) is None
+
+
+def test_windows_stop_waits_for_async_end_before_success(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    python, config = _paths(tmp_path)
+    manager = AsynchronousTaskScheduler(runtime_home=tmp_path)
+    common = {
+        "home_dir": tmp_path,
+        "platform_name": "windows",
+        "config_path": config,
+        "python_executable": python,
+        "command_runner": manager,
+    }
+    monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: False)
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_service_windows.time.sleep",
+        lambda _seconds: None,
+    )
+    assert (
+        install_dashboard_service(
+            **common,
+            reachability_probe=lambda: manager.active,
+            readiness_probe=lambda: manager.active,
+        )["ok"]
+        is True
+    )
+
+    stopped = stop_dashboard_service(**common, reachability_probe=lambda: False)
+
+    assert stopped["ok"] is True
+    assert manager.active is False
+    assert manager.shutdown_polls_remaining == 0
+    assert dashboard_runtime.dashboard_runtime_instance_fingerprint(home_dir=tmp_path) is None
 
 
 def test_successful_stop_removes_unreachable_runtime_descriptor(
@@ -1357,6 +1716,7 @@ def test_windows_xml_rejects_wrong_schema_and_extra_triggers_or_actions(
     tmp_path: Path,
 ) -> None:
     import agency_runtime.core.dashboard_service as service
+    import agency_runtime.core.dashboard_service_windows as service_windows
 
     python, config = _paths(tmp_path)
     xml = plan_dashboard_service(
@@ -1408,7 +1768,7 @@ def test_windows_xml_rejects_wrong_schema_and_extra_triggers_or_actions(
         service._windows_task_properties('<!DOCTYPE Task [<!ENTITY x "expanded">]><Task>&x;</Task>')
         is None
     )
-    assert service._windows_task_properties("x" * (1024 * 1024 + 1)) is None
+    assert service._windows_task_properties("x" * (service_windows._MAX_TASK_XML_BYTES + 1)) is None
     assert all(
         service._windows_task_properties(candidate) is None for candidate in behavior_changes
     )
@@ -1429,9 +1789,9 @@ def test_windows_returncode_one_access_denied_is_not_absence(tmp_path: Path) -> 
     python, config = _paths(tmp_path)
 
     def denied(argv: list[str], **_kwargs: Any) -> dict[str, Any]:
-        if argv[0] == "powershell.exe":
+        if argv[0] == "powershell.exe" and "ToBase64String" not in argv[4]:
             return {"returncode": 0, "stdout": "PRESENT:3"}
-        assert argv[1:2] == ["/Query"]
+        assert argv[0] == "powershell.exe" and "ToBase64String" in argv[4]
         return {"returncode": 1, "stderr": "FEHLER: Zugriff verweigert."}
 
     result = plan_dashboard_service(
@@ -1573,8 +1933,8 @@ def test_each_windows_mutation_has_an_immediate_exact_xml_requery(
         if command[1] == "/Create" and "/F" not in command:
             assert previous[0] == "powershell.exe"
         else:
-            assert previous[1] == "/Query"
-            assert "/XML" in previous
+            assert previous[0] == "powershell.exe"
+            assert "ToBase64String" in previous[4]
 
 
 def test_systemd_rollback_uses_restart_and_semantic_verification(
@@ -1780,6 +2140,31 @@ def test_service_state_directory_link_is_rejected_before_target_mutation(
     assert list(redirected.iterdir()) == []
 
 
+def test_linked_home_is_preserved_and_rejected_before_target_mutation(
+    tmp_path: Path,
+) -> None:
+    python, config = _paths(tmp_path)
+    real_home = tmp_path / "real-home"
+    real_home.mkdir()
+    linked_home = tmp_path / "linked-home"
+    try:
+        linked_home.symlink_to(real_home, target_is_directory=True)
+    except OSError:
+        pytest.skip("directory symlinks are unavailable on this Windows host")
+
+    result = install_dashboard_service(
+        home_dir=linked_home,
+        platform_name="windows",
+        config_path=config,
+        python_executable=python,
+        command_runner=FakeTaskScheduler(),
+    )
+
+    assert result["ok"] is False
+    assert "home must be a real directory" in result["error"]
+    assert not (real_home / ".agency-runtime").exists()
+
+
 def test_oversized_or_boolean_schema_manifest_never_proves_ownership(
     tmp_path: Path,
 ) -> None:
@@ -1858,7 +2243,7 @@ def test_service_files_are_private_while_empty_before_payload_write(
     lock_snapshots = snapshots[".dashboard-service.lock"]
     assert task_result.ok is True
     assert task_snapshots[0] == b""
-    assert b"<Task" in task_snapshots[-1]
+    assert "<Task" in task_snapshots[-1].decode("utf-16")
     assert restore_snapshots == [b"", b"private payload"]
     assert lock_snapshots[0] == b""
     assert lock_snapshots[-1] == b"\0"
@@ -1924,23 +2309,259 @@ def test_dashboard_service_cli_status_is_machine_readable_without_tokens(
     import agency_runtime.core.dashboard_service as service
     from agency_runtime.cli.main import main
 
+    captured: dict[str, Any] = {}
     monkeypatch.setattr(
         service,
         "inspect_dashboard_service",
-        lambda **_kwargs: {
-            "ok": True,
-            "exit_code": 0,
-            "action": "inspect",
-            "installed": True,
-            "active": True,
-            "reachable": True,
-        },
+        lambda **kwargs: (
+            captured.update(kwargs)
+            or {
+                "ok": True,
+                "exit_code": 0,
+                "action": "inspect",
+                "installed": True,
+                "active": True,
+                "reachable": True,
+            }
+        ),
     )
 
     assert main(["dashboard", "service", "status", "--json"]) == 0
     result = json.loads(capsys.readouterr().out)
     assert result["installed"] is True
     assert "token" not in json.dumps(result).lower()
+    assert captured["_validate_launcher"] is False
+
+
+def test_dashboard_service_cli_open_repairs_stale_owned_registration(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import agency_runtime.core.dashboard_service as service
+    from agency_runtime.cli.main import main
+    from agency_runtime.core import dashboard_runtime
+
+    opened = iter(
+        [
+            {"ok": False, "exit_code": 1, "error": "descriptor missing"},
+            {
+                "ok": True,
+                "exit_code": 0,
+                "reachable": True,
+                "url": "http://127.0.0.1:7810/",
+            },
+        ]
+    )
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "open_dashboard_service",
+        lambda **_kwargs: next(opened),
+    )
+    monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: False)
+    monkeypatch.setattr(
+        service,
+        "inspect_dashboard_service",
+        lambda **_kwargs: {
+            "ok": True,
+            "installed": False,
+            "owned": False,
+            "manifest_owned": True,
+            "platform": "windows",
+        },
+    )
+    recovery_calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        service,
+        "install_dashboard_service",
+        lambda **kwargs: (
+            recovery_calls.append(kwargs) or {"ok": True, "exit_code": 0, "action": "install"}
+        ),
+    )
+
+    assert main(["dashboard", "service", "open", "--no-open", "--json"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["recovery_action"] == "install"
+    assert result["reachable"] is True
+    assert len(recovery_calls) == 1
+    assert callable(recovery_calls[0]["reachability_probe"])
+    assert callable(recovery_calls[0]["readiness_probe"])
+
+
+@pytest.mark.parametrize(
+    ("state", "expected_action"),
+    [
+        (
+            {
+                "installed": True,
+                "owned": True,
+                "manifest_owned": True,
+                "manifest_current": True,
+                "definition_drift": False,
+                "platform": "windows",
+            },
+            "restart",
+        ),
+        (
+            {
+                "installed": True,
+                "owned": True,
+                "manifest_owned": True,
+                "manifest_current": True,
+                "definition_drift": False,
+                "platform": "linux",
+            },
+            "start",
+        ),
+        (
+            {
+                "installed": True,
+                "owned": True,
+                "manifest_owned": True,
+                "manifest_current": False,
+                "definition_drift": False,
+                "platform": "windows",
+            },
+            "install",
+        ),
+    ],
+)
+def test_dashboard_service_cli_open_selects_bounded_owned_recovery(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    state: dict[str, Any],
+    expected_action: str,
+) -> None:
+    import agency_runtime.core.dashboard_service as service
+    from agency_runtime.cli.main import main
+    from agency_runtime.core import dashboard_runtime
+
+    attempts = iter(
+        [
+            {"ok": False, "exit_code": 1, "error": "not reachable"},
+            {"ok": True, "exit_code": 0, "reachable": True, "url": "http://local/"},
+        ]
+    )
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "open_dashboard_service",
+        lambda **_kwargs: next(attempts),
+    )
+    monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: False)
+    monkeypatch.setattr(
+        service,
+        "inspect_dashboard_service",
+        lambda **_kwargs: {"ok": True, **state},
+    )
+    called: list[str] = []
+
+    def recover(action: str):
+        return lambda **_kwargs: (
+            called.append(action) or {"ok": True, "exit_code": 0, "action": action}
+        )
+
+    monkeypatch.setattr(service, "install_dashboard_service", recover("install"))
+    monkeypatch.setattr(service, "restart_dashboard_service", recover("restart"))
+    monkeypatch.setattr(service, "start_dashboard_service", recover("start"))
+
+    assert main(["dashboard", "service", "open", "--no-open", "--json"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["recovery_action"] == expected_action
+    assert called == [expected_action]
+
+
+@pytest.mark.parametrize(
+    ("initial", "state", "recovery", "expected_ok", "expected_error"),
+    [
+        (
+            {"ok": True, "exit_code": 0, "url": "http://local/"},
+            None,
+            None,
+            True,
+            "",
+        ),
+        (
+            {"ok": False, "exit_code": 1, "error": "missing descriptor"},
+            {"ok": False, "error": "manager unavailable"},
+            None,
+            False,
+            "missing descriptor",
+        ),
+        (
+            {"ok": False, "exit_code": 1, "error": "missing descriptor"},
+            {"ok": True, "installed": False, "manifest_owned": False},
+            None,
+            False,
+            "not installed",
+        ),
+        (
+            {"ok": False, "exit_code": 1, "error": "missing descriptor"},
+            {
+                "ok": True,
+                "installed": True,
+                "owned": False,
+                "manifest_owned": True,
+            },
+            None,
+            False,
+            "not owned",
+        ),
+        (
+            {"ok": False, "exit_code": 1, "error": "missing descriptor"},
+            {
+                "ok": True,
+                "installed": True,
+                "owned": True,
+                "manifest_owned": True,
+                "manifest_current": False,
+                "definition_drift": True,
+            },
+            {"ok": False, "exit_code": 3, "error": "repair refused"},
+            False,
+            "repair refused",
+        ),
+    ],
+)
+def test_dashboard_service_open_recovery_boundaries(
+    monkeypatch: pytest.MonkeyPatch,
+    initial: dict[str, Any],
+    state: dict[str, Any] | None,
+    recovery: dict[str, Any] | None,
+    expected_ok: bool,
+    expected_error: str,
+) -> None:
+    import agency_runtime.core.dashboard_service as service
+    from agency_runtime.cli import service_commands
+    from agency_runtime.core import dashboard_runtime
+
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "open_dashboard_service",
+        lambda **_kwargs: dict(initial),
+    )
+    monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: False)
+    if state is not None:
+        monkeypatch.setattr(
+            service,
+            "inspect_dashboard_service",
+            lambda **_kwargs: dict(state),
+        )
+    else:
+        monkeypatch.setattr(
+            service,
+            "inspect_dashboard_service",
+            lambda **_kwargs: pytest.fail("successful open must not inspect"),
+        )
+    if recovery is not None:
+        monkeypatch.setattr(
+            service,
+            "install_dashboard_service",
+            lambda **_kwargs: dict(recovery),
+        )
+
+    result = service_commands._open_dashboard_with_recovery(open_browser=False)
+    assert result["ok"] is expected_ok
+    if expected_error:
+        assert expected_error in str(result["error"])
 
 
 def test_dashboard_service_cli_passes_immediate_and_bounded_probes_separately(

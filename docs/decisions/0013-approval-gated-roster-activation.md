@@ -3,10 +3,11 @@ title: Gate roster activation through quarantine and approval
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-16
 tags: [roster, governance, security]
 related:
   - docs/roadmap/issue-AR-02-specialist-coverage-gaps.md
+  - docs/roadmap/issue-AR-28-reversible-agent-activation-controls.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

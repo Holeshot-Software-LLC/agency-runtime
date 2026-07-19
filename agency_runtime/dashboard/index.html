@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Agency Runtime — Signal Observatory</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
@@ -36,6 +37,11 @@
           <h1 id="view-title">Runtime overview</h1>
         </div>
         <div class="top-actions">
+          <button id="master-toggle" class="master-control" type="button" aria-label="Agency master state loading" aria-describedby="master-summary" data-state="loading" disabled>
+            <span class="master-orbit" aria-hidden="true"><span></span></span>
+            <span class="master-copy"><strong id="master-label">Agency status</strong><small id="master-generation">LOADING</small></span>
+          </button>
+          <span id="master-summary" class="sr-only">Loading Agency master state.</span>
           <div class="live-console" aria-label="Live dashboard controls">
             <time id="local-clock" class="local-clock">--:--:--</time>
             <button id="live-toggle" class="live-toggle" type="button" aria-pressed="true">
@@ -51,6 +57,18 @@
 
       <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       <span id="live-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></span>
+      <aside id="runtime-paused-banner" class="runtime-paused-banner" role="status" aria-live="polite" hidden>
+        <span class="pause-glyph" aria-hidden="true"><i></i><i></i></span>
+        <span><strong>Agency is bypassed</strong><small>Hosts answer without Agency routing or delegation. Control and configuration stay online.</small></span>
+      </aside>
+      <aside id="store-restart-banner" class="store-restart-banner" role="alert" aria-live="assertive" hidden>
+        <span class="restart-glyph" aria-hidden="true">↻</span>
+        <span>
+          <strong>Dashboard service restart required</strong>
+          <small>The configured evidence store changed. Routing, roster, and host controls are paused until the dashboard service restarts.</small>
+          <code id="store-restart-paths"></code>
+        </span>
+      </aside>
 
       <section id="view-overview" class="view active" data-view-panel="overview">
         <div class="observatory-intro">
@@ -109,9 +127,11 @@
         </div>
 
         <article class="panel config-panel provider-observatory">
-          <div class="panel-head"><div><p class="eyebrow">RECEIPT EVIDENCE</p><h2>Provider health</h2></div><span class="panel-tag">OBSERVED</span></div>
-          <p class="panel-copy">Health is derived from recent model receipts. It is not a live provider probe, so providers without receipts remain unknown.</p>
+          <div class="panel-head"><div><p class="eyebrow">INFERENCE AUTHORITY</p><h2>Provider chain</h2></div><span id="inference-state" class="panel-tag">UNKNOWN</span></div>
+          <p class="panel-copy">Configuration readiness and persisted receipts are shown separately; this is not a live provider probe. A router name never substitutes for the reconciled provider and model.</p>
           <div id="provider-health" class="provider-grid"></div>
+          <div class="provider-failure-head"><h3>Recent bounded failures</h3><span id="provider-failure-count" class="panel-tag">0</span></div>
+          <div id="provider-failures" class="failure-stack" aria-live="polite"></div>
         </article>
       </section>
 
@@ -122,7 +142,14 @@
             <label for="route-task">Task</label>
             <textarea id="route-task" rows="8" placeholder="Describe a real task, including independent work units when relevant."></textarea>
             <div class="form-row"><label for="route-session">Session</label><input id="route-session" value="dashboard-lab"></div>
-            <button id="route-button" class="button solid">Run explain receipt</button>
+            <div class="form-row">
+              <label for="route-host">Execution host</label>
+              <select id="route-host" aria-describedby="route-host-help" disabled>
+                <option value="">Waiting for verified host evidence</option>
+              </select>
+              <small id="route-host-help" class="field-help">Route Lab requires a current, enabled native installation receipt.</small>
+            </div>
+            <button id="route-button" class="button solid" type="button" aria-disabled="true" title="Loading Agency master state" disabled>Run explain receipt</button>
           </article>
           <article class="panel receipt-panel">
             <div class="panel-head"><div><p class="eyebrow">DECISION TRACE</p><h2>Selection receipt</h2></div><span id="route-status" class="panel-tag">IDLE</span></div>
@@ -135,26 +162,63 @@
         <article class="panel">
           <div class="panel-head"><div><p class="eyebrow">AUTHORITATIVE EVENTS</p><h2>Runtime evidence</h2></div><span class="panel-tag">CONTENT REDACTED</span></div>
           <div class="subnav" role="tablist" aria-label="Evidence types">
-            <button class="subnav-item active" role="tab" aria-selected="true" data-evidence="delegations">Delegations</button>
+            <button class="subnav-item active" role="tab" aria-selected="true" data-evidence="specialists">Specialist activations</button>
+            <button class="subnav-item" role="tab" aria-selected="false" data-evidence="delegations">Delegations</button>
             <button class="subnav-item" role="tab" aria-selected="false" data-evidence="routing">Routing decisions</button>
             <button class="subnav-item" role="tab" aria-selected="false" data-evidence="receipts">Model receipts</button>
             <button class="subnav-item" role="tab" aria-selected="false" data-evidence="runs">Runs</button>
             <button class="subnav-item" role="tab" aria-selected="false" data-evidence="finalizations">Finalization</button>
           </div>
-          <div class="table-wrap"><table><caption id="evidence-caption" class="sr-only">Delegations runtime evidence</caption><thead id="evidence-head"></thead><tbody id="evidence-body"></tbody></table></div>
+          <p id="evidence-context" class="evidence-context">Current-turn rows are unexpired, trace-correlated specialist loads. Historical rows are immutable completed or legacy activations.</p>
+          <div class="table-wrap"><table><caption id="evidence-caption" class="sr-only">Specialist activation evidence</caption><thead id="evidence-head"></thead><tbody id="evidence-body"></tbody></table></div>
         </article>
       </section>
 
       <section id="view-roster" class="view" data-view-panel="roster" hidden>
         <div class="split wide-left">
           <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">ACTIVE</p><h2>Specialist roster</h2></div><span id="roster-count" class="panel-tag">0</span></div>
+            <div class="panel-head"><div><p class="eyebrow">ROUTING AVAILABILITY</p><h2>Specialist roster</h2></div><span id="roster-count" class="panel-tag">0</span></div>
+            <p class="panel-copy">Definitions stay governed and versioned when disabled. The default chief of staff and orchestrator are protected.</p>
+            <form id="roster-search-form" class="roster-search" role="search">
+              <label for="roster-search-slug">Find an exact agent slug</label>
+              <div class="roster-search-controls">
+                <input id="roster-search-slug" name="slug" type="search" maxlength="256" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="security-reviewer" aria-describedby="roster-search-help">
+                <button id="roster-search-submit" class="button solid" type="submit">Find agent</button>
+                <button id="roster-search-clear" class="button ghost" type="button" hidden>Show first page</button>
+              </div>
+              <small id="roster-search-help" class="field-help">Case and surrounding spaces are normalized before the exact lookup.</small>
+            </form>
+            <form id="roster-operations-form" class="roster-filter-panel" aria-labelledby="roster-filter-title">
+              <div class="filter-title-row">
+                <div><p class="eyebrow">COMPLETE ROSTER</p><h3 id="roster-filter-title">Operational filters</h3></div>
+                <span class="panel-tag">BOUNDED</span>
+              </div>
+              <div class="roster-filter-grid">
+                <div class="filter-wide"><label for="roster-filter-query">Search name, slug, description, or taxonomy</label><input id="roster-filter-query" type="search" maxlength="256" autocomplete="off" placeholder="secure async API"></div>
+                <div><label for="roster-filter-division">Division</label><select id="roster-filter-division"><option value="">All divisions</option></select></div>
+                <div><label for="roster-filter-capability">Capability</label><select id="roster-filter-capability"><option value="">All capabilities</option></select></div>
+                <div><label for="roster-filter-authority">Authority</label><select id="roster-filter-authority"><option value="">All authorities</option></select></div>
+                <div><label for="roster-filter-host">Host</label><select id="roster-filter-host"><option value="">All hosts</option></select></div>
+                <div><label for="roster-filter-platform">Platform</label><select id="roster-filter-platform"><option value="">All platforms</option></select></div>
+                <div><label for="roster-filter-tool">Tool</label><select id="roster-filter-tool"><option value="">All tools</option></select></div>
+              </div>
+              <div class="filter-actions"><button id="roster-filter-apply" class="button solid" type="submit">Apply filters</button><button id="roster-filter-clear" class="button ghost" type="button">Clear filters</button></div>
+            </form>
             <p id="roster-page-status" class="panel-copy" role="status" aria-live="polite" hidden></p>
             <div id="roster-grid" class="roster-grid"></div>
           </article>
           <article class="panel">
             <div class="panel-head"><div><p class="eyebrow">GOVERNANCE</p><h2>Snapshots</h2></div></div>
             <div id="snapshot-list" class="stack-list"></div>
+            <div class="governance-divider" aria-hidden="true"></div>
+            <div class="panel-head compact-head"><div><p class="eyebrow">QUARANTINE</p><h2>Review queue</h2></div><span id="review-count" class="panel-tag">0</span></div>
+            <p id="upstream-status" class="panel-copy">Packaged roster audit status is loading.</p>
+            <div id="review-list" class="review-list"></div>
+            <p id="review-page-status" class="panel-copy" role="status" aria-live="polite"></p>
+            <div class="card-actions review-paging">
+              <button id="review-pending-more" class="button ghost" type="button" hidden>Load more pending</button>
+              <button id="review-history-more" class="button ghost" type="button" hidden>Load more repair history</button>
+            </div>
           </article>
         </div>
       </section>
@@ -217,6 +281,10 @@
             <article class="panel">
               <div class="panel-head"><div><p class="eyebrow">SELECTION</p><h2>Judge and selector</h2></div></div>
               <div class="config-grid">
+                <div><label for="config-delegation-mode">Delegation guidance</label><select id="config-delegation-mode" data-config-path="delegation.mode"><option value="observe">Observe only</option><option value="prefer">Prefer native delegation</option><option value="strong">Strongly prefer eligible delegation</option></select></div>
+                <div><label for="config-delegation-preferred-units">Preferred at work-unit count</label><input id="config-delegation-preferred-units" data-config-path="delegation.preferred_min_units" data-value-type="integer" type="number" min="2" max="16"></div>
+                <div><label for="config-delegation-strong-units">Strongly preferred at work-unit count</label><input id="config-delegation-strong-units" data-config-path="delegation.strongly_preferred_min_units" data-value-type="integer" type="number" min="2" max="16"></div>
+                <div><label for="config-delegation-confidence">Strong confidence threshold</label><input id="config-delegation-confidence" data-config-path="delegation.strongly_preferred_min_confidence" data-value-type="number" type="number" min="0" max="1" step="0.01"></div>
                 <div><label for="config-judge-model">Judge model</label><input id="config-judge-model" data-config-path="judge.model"></div>
                 <div><label for="config-judge-url">Judge base URL</label><input id="config-judge-url" data-config-path="judge.base_url" inputmode="url"></div>
                 <div><label for="config-judge-env">API key environment variable</label><input id="config-judge-env" data-config-path="judge.api_key_env" spellcheck="false"></div>
@@ -225,7 +293,6 @@
                 <div><label for="config-bypass">Confidence bypass threshold</label><input id="config-bypass" data-config-path="judge.confidence_bypass_threshold" data-value-type="number" type="number" min="0" max="100" step="0.1"></div>
                 <div><label for="config-min-confidence">Minimum candidate confidence</label><input id="config-min-confidence" data-config-path="selector.min_confidence" data-value-type="number" type="number" min="0" max="1" step="0.01"></div>
                 <div><label for="config-max-message">Maximum task length</label><input id="config-max-message" data-config-path="selector.max_user_msg_len" data-value-type="integer" type="number" min="1" max="1000000"></div>
-                <div><label for="config-trivial">Trivial-message threshold</label><input id="config-trivial" data-config-path="selector.trivial_msg_threshold" data-value-type="integer" type="number" min="0" max="10000"></div>
                 <div class="check-field"><input id="config-judge-ollama" data-config-path="judge.ollama_mode" data-value-type="boolean" type="checkbox"><label for="config-judge-ollama">Use Ollama chat protocol</label></div>
               </div>
               <details class="secret-editor">

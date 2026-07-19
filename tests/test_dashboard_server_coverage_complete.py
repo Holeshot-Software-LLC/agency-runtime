@@ -20,6 +20,17 @@ from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import dashboard as dashboard
 
 
+def _verified_codex_record() -> dict[str, object]:
+    return {
+        "host": "codex",
+        "executable_discovered": True,
+        "registered": True,
+        "enabled": True,
+        "managed_plugin_version": "test",
+        "launcher_artifacts_current": True,
+    }
+
+
 @contextmanager
 def _running_dashboard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "agency.yaml"))
@@ -31,7 +42,8 @@ def _running_dashboard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         store,
         auth_token=token,
         port=0,
-        host_inspector=lambda: [],
+        host_inspector=lambda: [_verified_codex_record()],
+        runtime_control_home=tmp_path,
     )
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -140,6 +152,113 @@ def test_dashboard_confirmation_helper_and_default_host_inspector(
     assert dashboard._inspect_one_host("codex")["registered"] is True
 
 
+def test_dashboard_route_lab_pure_projection_edge_matrix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    limit, after, filters = dashboard._roster_operations_query(
+        "/api/roster/operations?after=alpha-reviewer&query=security"
+    )
+    assert limit == dashboard.MAX_OPERATIONAL_ROSTER_RESULTS
+    assert after == "alpha-reviewer"
+    assert filters == {"query": "security"}
+
+    records, duplicates = dashboard._route_lab_native_records(
+        lambda: [
+            object(),
+            {"host": 7},
+            {"host": "browser"},
+            {"host": "codex", "registered": True},
+            {"host": "codex", "registered": False},
+        ]
+    )
+    assert records["codex"]["registered"] is True
+    assert duplicates == frozenset({"codex"})
+
+    assert (
+        dashboard._route_lab_host_failure(
+            {"effective_enabled": True},
+            None,
+        )
+        == "authoritative capability receipt is invalid"
+    )
+    assert (
+        dashboard._route_lab_host_failure(
+            {"effective_enabled": False},
+            {"status": "unavailable"},
+        )
+        == "host is not effectively enabled"
+    )
+    assert (
+        dashboard._route_lab_host_failure(
+            {"effective_enabled": None},
+            {"status": "unavailable"},
+        )
+        == "host enablement is unproven"
+    )
+    assert (
+        dashboard._route_lab_host_failure(
+            {"effective_enabled": True},
+            {"status": "unavailable", "evidence": ["executable missing"]},
+        )
+        == "executable missing"
+    )
+    assert (
+        dashboard._route_lab_host_failure(
+            {"effective_enabled": True},
+            {"status": "degraded", "evidence": []},
+        )
+        == "capability status is degraded"
+    )
+    assert (
+        dashboard._route_lab_host_failure(
+            {"effective_enabled": True},
+            {"status": "degraded", "evidence": [object(), ""]},
+        )
+        == "capability status is degraded"
+    )
+    assert (
+        dashboard._route_lab_host_failure(
+            {"effective_enabled": True},
+            {"status": "degraded"},
+        )
+        == "capability status is degraded"
+    )
+
+    monkeypatch.setattr(
+        "agency_runtime.core.host_control.inspect_host_status",
+        lambda *_args, **_kwargs: {
+            "effective_enabled": False,
+            "execution_capabilities": None,
+        },
+    )
+    with pytest.raises(ValueError, match="none is available"):
+        dashboard._route_lab_host_capability(
+            object(),  # type: ignore[arg-type]
+            lambda: [],
+            requested_host=None,
+            global_enabled=True,
+        )
+
+    projection = dashboard._route_lab_eligibility_projection(
+        {
+            "routing": {
+                "eligibility_rejections": [
+                    "opaque",
+                    {"slug": "alpha", "reason": "unsupported host"},
+                    {"slug": "", "reason": "missing slug"},
+                ]
+            }
+        },
+        {
+            "execution_host": "codex",
+            "status": "native-installation-verified",
+        },
+        catalog_size=3,
+    )
+    assert projection["eligible_count"] == 0
+    assert projection["rejections"] == [{"slug": "alpha", "reason": "unsupported host"}]
+
+
 def test_dashboard_rejects_bad_host_same_origin_mismatch_and_invalid_json(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -178,10 +297,13 @@ def test_dashboard_rejects_bad_host_same_origin_mismatch_and_invalid_json(
     ("body", "message"),
     [
         ({}, "task is required"),
-        ({"task": "x", "limit": object()}, ""),
+        (
+            {"task": "x", "limit": object()},
+            "limit must be an integer from 1 through 50",
+        ),
     ],
 )
-def test_dashboard_route_lab_validation_and_limit_fallback(
+def test_dashboard_route_lab_validation_is_strict(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     body: dict[str, Any],
@@ -191,12 +313,8 @@ def test_dashboard_route_lab_validation_and_limit_fallback(
         if body.get("limit") is not None:
             body["limit"] = {"invalid": True}
         status, payload = _request(server, "/api/route", method="POST", body=body)
-        if message:
-            assert status == 400
-            assert payload["error"] == message
-        else:
-            assert status == 200
-            assert payload["schema_version"] == "agency.selection_explain.v1"
+        assert status == 400
+        assert payload["error"] == message
 
 
 def test_dashboard_route_lab_rejects_oversized_task(
@@ -250,12 +368,12 @@ def test_dashboard_roster_actions_validate_and_dispatch_both_branches(
     monkeypatch.setattr(
         dashboard,
         "approve_snapshot",
-        lambda _store, snapshot: calls.append(("approve", snapshot)),
+        lambda _store, snapshot, **_kwargs: calls.append(("approve", snapshot)),
     )
     monkeypatch.setattr(
         dashboard,
         "activate_snapshot",
-        lambda _store, snapshot: calls.append(("activate", snapshot)),
+        lambda _store, snapshot, **_kwargs: calls.append(("activate", snapshot)),
     )
     with _running_dashboard(tmp_path, monkeypatch) as server:
         assert _request(server, "/api/roster/action", method="POST", body={})[0] == 400
@@ -292,7 +410,15 @@ def test_dashboard_host_toggle_validates_fields_and_handles_missing_native_recor
         invalid = [
             ({}, "unknown host"),
             ({"host": "codex", "enabled": "yes"}, "boolean"),
-            ({"host": "codex", "enabled": False, "confirm": "wrong"}, "confirmation"),
+            (
+                {
+                    "host": "codex",
+                    "enabled": False,
+                    "expected_generation": 0,
+                    "confirm": "wrong",
+                },
+                "confirmation",
+            ),
         ]
         for body, message in invalid:
             status, payload = _request(server, "/api/hosts/toggle", method="POST", body=body)
@@ -302,7 +428,12 @@ def test_dashboard_host_toggle_validates_fields_and_handles_missing_native_recor
             server,
             "/api/hosts/toggle",
             method="POST",
-            body={"host": "codex", "enabled": False, "confirm": "DISABLE codex"},
+            body={
+                "host": "codex",
+                "enabled": False,
+                "expected_generation": 0,
+                "confirm": "DISABLE codex",
+            },
         )
         assert status == 200
         assert payload["status"]["host"] == "codex"
@@ -448,13 +579,16 @@ def test_run_dashboard_service_lifecycle_and_browser_mode(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     events: list[tuple[str, Any]] = []
+    trim_failure = {"enabled": False}
 
     class _Store:
-        def __init__(self, path: object | None = None) -> None:
-            events.append(("store", path))
+        def __init__(self, path: object | None = None, **kwargs: Any) -> None:
+            events.append(("store", (path, kwargs)))
 
         def trim_runtime_tables(self, **kwargs: Any) -> None:
             events.append(("trim", kwargs))
+            if trim_failure["enabled"]:
+                raise RuntimeError("provider-secret-must-not-be-logged")
 
     class _Server:
         server_address = ("127.0.0.1", 8123)
@@ -475,8 +609,9 @@ def test_run_dashboard_service_lifecycle_and_browser_mode(
     config = SimpleNamespace(
         dashboard=SimpleNamespace(port=8123),
         observability=SimpleNamespace(retention_days=30),
+        store=SimpleNamespace(resolved_path=lambda: tmp_path / "default.db"),
     )
-    monkeypatch.setattr(dashboard, "load_config", lambda: config)
+    monkeypatch.setattr(dashboard, "load_config", lambda *_args, **_kwargs: config)
     monkeypatch.setattr(dashboard, "Store", _Store)
     monkeypatch.setattr(dashboard, "DashboardHTTPServer", _Server)
     monkeypatch.setattr(dashboard.secrets, "token_urlsafe", lambda _size: "token")
@@ -493,6 +628,20 @@ def test_run_dashboard_service_lifecycle_and_browser_mode(
     monkeypatch.setattr(dashboard, "current_thread", lambda: object())
     monkeypatch.setattr(dashboard, "main_thread", lambda: object())
 
+    class _RetentionThread:
+        def __init__(self, *, target: Any, daemon: bool, name: str = "") -> None:
+            assert daemon is True
+            assert name == "agency-dashboard-retention"
+            self.target = target
+
+        def start(self) -> None:
+            self.target()
+
+        def join(self, *, timeout: float) -> None:
+            assert timeout == 0.5
+
+    monkeypatch.setattr(dashboard, "Thread", _RetentionThread)
+
     dashboard.run_dashboard(
         db_path=tmp_path / "service.db",
         port=0,
@@ -502,13 +651,53 @@ def test_run_dashboard_service_lifecycle_and_browser_mode(
     )
     assert any(name == "write" for name, _value in events)
     assert any(name == "remove" for name, _value in events)
+    assert [name for name, _value in events].index("write") < [
+        name for name, _value in events
+    ].index("trim")
 
     events.clear()
     opened: list[str] = []
+    warnings: list[tuple[str, str]] = []
+    trim_failure["enabled"] = True
     monkeypatch.setattr(dashboard.webbrowser, "open", lambda url, new: opened.append(url))
+    monkeypatch.setattr(
+        dashboard.logger,
+        "warning",
+        lambda message, error_type: warnings.append((message, error_type)),
+    )
     dashboard.run_dashboard(port=0, open_browser=True)
     assert opened == ["http://127.0.0.1:8123/#token=token"]
     assert "access token is temporary" in capsys.readouterr().out
+    assert warnings == [("dashboard retention maintenance failed: %s", "RuntimeError")]
+    assert "provider-secret" not in repr(warnings)
+
+
+def test_run_dashboard_service_rejects_nondurable_environment_before_store(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = SimpleNamespace(
+        dashboard=SimpleNamespace(port=8123),
+        observability=SimpleNamespace(retention_days=30),
+        providers=(),
+        adapters=SimpleNamespace(),
+    )
+    monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "process-policy.yaml"))
+    monkeypatch.setattr(dashboard, "load_config", lambda *_args, **_kwargs: config)
+    monkeypatch.setattr(
+        dashboard,
+        "Store",
+        lambda *_args, **_kwargs: pytest.fail(
+            "service-mode override rejection opened the configured Store"
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="AGENCY_POLICY_PATH"):
+        dashboard.run_dashboard(
+            service_mode=True,
+            open_browser=False,
+            config_path=tmp_path / "agency.yaml",
+        )
 
 
 def test_run_dashboard_main_thread_signal_lifecycle_and_no_browser(
@@ -518,7 +707,7 @@ def test_run_dashboard_main_thread_signal_lifecycle_and_no_browser(
     events: list[tuple[str, Any]] = []
 
     class _Store:
-        def __init__(self, _path: object | None = None) -> None:
+        def __init__(self, _path: object | None = None, **_kwargs: Any) -> None:
             pass
 
         def trim_runtime_tables(self, **_kwargs: Any) -> None:
@@ -540,19 +729,24 @@ def test_run_dashboard_main_thread_signal_lifecycle_and_no_browser(
             events.append(("shutdown", None))
 
     class _ImmediateThread:
-        def __init__(self, *, target: Any, daemon: bool) -> None:
+        def __init__(self, *, target: Any, daemon: bool, name: str = "") -> None:
             assert daemon is True
             self.target = target
+            self.name = name
 
         def start(self) -> None:
             self.target()
 
+        def join(self, *, timeout: float) -> None:
+            assert timeout == 0.5
+
     config = SimpleNamespace(
         dashboard=SimpleNamespace(port=8124),
         observability=SimpleNamespace(retention_days=30),
+        store=SimpleNamespace(resolved_path=lambda: tmp_path / "default.db"),
     )
     sentinel = object()
-    monkeypatch.setattr(dashboard, "load_config", lambda: config)
+    monkeypatch.setattr(dashboard, "load_config", lambda *_args, **_kwargs: config)
     monkeypatch.setattr(dashboard, "Store", _Store)
     monkeypatch.setattr(dashboard, "DashboardHTTPServer", _Server)
     monkeypatch.setattr(dashboard, "current_thread", lambda: sentinel)

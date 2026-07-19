@@ -177,7 +177,9 @@ def _command_environment(host: str, *, home_dir: str | Path | None = None) -> di
         env["HOME"] = str(explicit)
         env["USERPROFILE"] = str(explicit)
         env["HERMES_HOME"] = str(explicit / ".hermes")
-        env["OPENCLAW_HOME"] = str(explicit / ".openclaw")
+        # OpenClaw treats OPENCLAW_HOME as the user-home root and derives its
+        # default state directory as <OPENCLAW_HOME>/.openclaw.
+        env["OPENCLAW_HOME"] = str(explicit)
         env["CODEX_HOME"] = str(explicit / ".codex")
         env["CLAUDE_CONFIG_DIR"] = str(explicit / ".claude")
     return env

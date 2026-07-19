@@ -1,0 +1,152 @@
+"""Truthful installation-backed host context for CLI routing diagnostics."""
+
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+import pytest
+
+from agency_runtime.cli import roster_commands
+from agency_runtime.core import host_capabilities, host_control
+
+
+def _status(
+    host: str = "codex",
+    *,
+    effective_enabled: object = True,
+    capability_status: str = "native-installation-verified",
+) -> dict[str, object]:
+    return {
+        "host": host,
+        "effective_enabled": effective_enabled,
+        "execution_capabilities": {
+            "status": capability_status,
+            "platform": "windows",
+        },
+    }
+
+
+def test_single_verified_route_host_requires_one_exact_diagnostic_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert roster_commands._single_verified_route_host(None) == {}
+
+    def unavailable(*_args: object, **_kwargs: object) -> list[dict[str, object]]:
+        raise PermissionError("blocked")
+
+    monkeypatch.setattr(host_control, "inspect_all_host_statuses", unavailable)
+    assert roster_commands._single_verified_route_host(object()) == {}
+
+    monkeypatch.setattr(
+        host_control,
+        "inspect_all_host_statuses",
+        lambda *_args, **_kwargs: [
+            _status(effective_enabled=False),
+            {
+                "host": "openclaw",
+                "effective_enabled": True,
+                "execution_capabilities": [],
+            },
+            _status("claude", capability_status="native-evidence-unproven"),
+        ],
+    )
+    assert roster_commands._single_verified_route_host(object()) == {}
+
+    monkeypatch.setattr(
+        host_control,
+        "inspect_all_host_statuses",
+        lambda *_args, **_kwargs: [_status(), _status("claude")],
+    )
+    assert roster_commands._single_verified_route_host(object()) == {}
+
+    monkeypatch.setattr(
+        host_control,
+        "inspect_all_host_statuses",
+        lambda *_args, **_kwargs: [_status()],
+    )
+    monkeypatch.setattr(
+        host_capabilities,
+        "diagnostic_installation_capability_receipt",
+        lambda *_args, **_kwargs: None,
+    )
+    assert roster_commands._single_verified_route_host(object()) == {}
+
+    receipt = SimpleNamespace(as_dict=lambda: {"status": "native-installation-verified"})
+    monkeypatch.setattr(
+        host_capabilities,
+        "diagnostic_installation_capability_receipt",
+        lambda *_args, **_kwargs: receipt,
+    )
+    assert roster_commands._single_verified_route_host(object()) == {
+        "host": "codex",
+        "platform": "windows",
+        "capability_receipt": receipt,
+    }
+
+
+def test_route_and_explain_forward_the_verified_diagnostic_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.selector import candidate_narrow, pipeline
+
+    receipt = object()
+    host_context = {
+        "host": "codex",
+        "platform": "windows",
+        "capability_receipt": receipt,
+    }
+    operation = roster_commands._RoutingOperation(
+        store=object(),
+        snapshot=SimpleNamespace(catalog=[{"slug": "agent"}], config=object()),
+        receipt=None,
+    )
+    monkeypatch.setattr(roster_commands, "_runtime_enabled", lambda: True)
+    monkeypatch.setattr(roster_commands, "_routing_operation", lambda **_kwargs: operation)
+    monkeypatch.setattr(
+        roster_commands,
+        "_single_verified_route_host",
+        lambda _store: host_context,
+    )
+    monkeypatch.setattr(
+        candidate_narrow,
+        "pre_narrow",
+        lambda *_args, **_kwargs: ([{"slug": "agent"}], [1.0]),
+    )
+    route_kwargs: dict[str, object] = {}
+
+    def fake_route(*_args: object, **kwargs: object) -> dict[str, object]:
+        route_kwargs.update(kwargs)
+        return {"selected_ids": ["agent"]}
+
+    monkeypatch.setattr(pipeline, "route", fake_route)
+    emitted: list[object] = []
+    monkeypatch.setattr(roster_commands, "_print_json", emitted.append)
+
+    assert (
+        roster_commands.cmd_route(
+            SimpleNamespace(task="review", limit=1, json=True),
+        )
+        == 0
+    )
+    assert route_kwargs["host"] == "codex"
+    assert route_kwargs["platform"] == "windows"
+    assert route_kwargs["capability_receipt"] is receipt
+    assert route_kwargs["allow_installation_diagnostic"] is True
+    assert emitted[-1]["routing"]["selected_ids"] == ["agent"]  # type: ignore[index]
+
+    explain_kwargs: dict[str, object] = {}
+
+    def fake_explain(*_args: object, **kwargs: object) -> dict[str, object]:
+        explain_kwargs.update(kwargs)
+        return {"routing": {"selected_ids": ["agent"]}}
+
+    monkeypatch.setattr(roster_commands, "explain_route", fake_explain)
+    assert (
+        roster_commands.cmd_explain(
+            SimpleNamespace(session_id="cli", task="review", limit=1),
+        )
+        == 0
+    )
+    assert explain_kwargs["host"] == "codex"
+    assert explain_kwargs["platform"] == "windows"
+    assert explain_kwargs["capability_receipt"] is receipt

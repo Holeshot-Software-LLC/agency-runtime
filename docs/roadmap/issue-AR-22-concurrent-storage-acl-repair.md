@@ -3,7 +3,7 @@ title: "AR-22: Serialize concurrent Windows storage ACL repair"
 status: done
 category: roadmap
 created: 2026-07-13
-updated: 2026-07-14
+updated: 2026-07-16
 tags: [windows, sqlite, security, concurrency, reliability]
 related:
   - docs/decisions/0012-canonical-sqlite-audit-store.md
@@ -18,7 +18,7 @@ issue_id: AR-22
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/23"
 depends_on: []
-blocks: [AR-17]
+blocks: [AR-17, AR-62]
 ---
 
 # AR-22: Serialize concurrent Windows storage ACL repair

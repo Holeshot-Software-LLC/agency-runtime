@@ -193,7 +193,13 @@ def _interactive_wizard(
         "selector": {
             "min_confidence": 0.4,
             "max_user_msg_len": 4000,
-            "trivial_msg_threshold": 12,
+            "trivial_msg_threshold": 0,
+        },
+        "delegation": {
+            "mode": "prefer",
+            "preferred_min_units": 2,
+            "strongly_preferred_min_units": 4,
+            "strongly_preferred_min_confidence": 0.8,
         },
         "store": {"db_path": "~/.agency-runtime/agency.db"},
         "server": {"host": "127.0.0.1", "port": 7800},

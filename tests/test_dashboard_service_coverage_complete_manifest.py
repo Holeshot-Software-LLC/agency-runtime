@@ -32,7 +32,7 @@ def test_runtime_fingerprint_manifest_and_current_contract(tmp_path):
     assert subject._manifest_current(ctx, value)
     for key, invalid in (
         ("schema_version", True),
-        ("schema_version", 2),
+        ("schema_version", 3),
         ("owner", "other"),
         ("service", "other"),
         ("platform", "windows"),
@@ -41,6 +41,9 @@ def test_runtime_fingerprint_manifest_and_current_contract(tmp_path):
     ):
         changed = {**value, key: invalid}
         assert not subject._manifest_owned(ctx, changed)
+    legacy = {**value, "schema_version": 1}
+    assert subject._manifest_owned(ctx, legacy)
+    assert not subject._manifest_current(ctx, legacy)
     for key, invalid in (
         ("worker_argv", []),
         ("config_path", "other"),
@@ -175,7 +178,7 @@ def test_replaceable_and_directory_chain_safety(tmp_path, monkeypatch):
         "lstat",
         lambda _path: SimpleNamespace(st_mode=stat.S_IFREG, st_file_attributes=0),
     )
-    with pytest.raises(OSError, match="directories"):
+    with pytest.raises(OSError, match="home must be a real directory"):
         subject._assert_real_directory_chain(tmp_path / "file", anchor=tmp_path)
     monkeypatch.setattr(subject.os, "lstat", real_lstat)
 

@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections.abc import Callable
+import os
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, load_config
 from agency_runtime.core.configuration import resolve_config_path
+from agency_runtime.core.dashboard_service_core import dashboard_service_environment_overrides
 from agency_runtime.core.display import safe_display_token
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.policy.profiles import get_profile
@@ -30,6 +32,87 @@ class InstallDependencies:
 
 
 DEFAULT_DEPENDENCIES = InstallDependencies()
+
+
+@dataclass(frozen=True, slots=True)
+class _BrokerStoreIdentity:
+    config_path: str
+    config_revision: str
+    store_path: str
+    environment_overrides: tuple[tuple[str, str], ...]
+
+
+def _same_absolute_path(left: str | Path, right: str | Path) -> bool:
+    return os.path.normcase(os.path.abspath(left)) == os.path.normcase(os.path.abspath(right))
+
+
+def _broker_store_identity(value: Mapping[str, Any]) -> _BrokerStoreIdentity:
+    """Validate one dashboard Store identity against this CLI environment."""
+
+    config_path = value.get("config_path")
+    revision = value.get("config_revision")
+    store_path = value.get("store_path")
+    desired_path = value.get("desired_store_path")
+    overrides = value.get("environment_overrides")
+    if (
+        not isinstance(config_path, str)
+        or not config_path
+        or len(config_path.encode("utf-8")) > 4096
+        or not Path(config_path).is_absolute()
+        or not _same_absolute_path(config_path, resolve_config_path())
+    ):
+        raise ValueError("dashboard host response config identity does not match the CLI")
+    if (
+        not isinstance(revision, str)
+        or not revision.startswith("sha256:")
+        or len(revision) != 71
+        or any(character not in "0123456789abcdef" for character in revision[7:])
+    ):
+        raise ValueError("dashboard host response has invalid config revision")
+    if (
+        not isinstance(store_path, str)
+        or not isinstance(desired_path, str)
+        or not store_path
+        or not desired_path
+        or len(store_path.encode("utf-8")) > 4096
+        or len(desired_path.encode("utf-8")) > 4096
+        or not Path(store_path).is_absolute()
+        or not Path(desired_path).is_absolute()
+        or not _same_absolute_path(store_path, desired_path)
+        or value.get("store_restart_required") is not False
+    ):
+        raise ValueError("dashboard host response has invalid active Store identity")
+    if (
+        not isinstance(overrides, Mapping)
+        or len(overrides) > 64
+        or any(
+            not isinstance(path, str)
+            or not isinstance(variable, str)
+            or not path
+            or not variable
+            or len(path.encode("utf-8")) > 256
+            or len(variable.encode("utf-8")) > 256
+            for path, variable in overrides.items()
+        )
+    ):
+        raise ValueError("dashboard host response has invalid environment identity")
+    service_db_override = overrides.get("store.db_path")
+    local_db_override = os.environ.get("AGENCY_DB_PATH", "").strip()
+    if bool(service_db_override) is not bool(local_db_override) or (
+        service_db_override and service_db_override != "AGENCY_DB_PATH"
+    ):
+        raise ValueError("dashboard host response Store override does not match the CLI")
+    if local_db_override and not _same_absolute_path(
+        store_path,
+        Path(local_db_override).expanduser(),
+    ):
+        raise ValueError("dashboard host response Store path does not match the CLI override")
+    return _BrokerStoreIdentity(
+        config_path=config_path,
+        config_revision=revision,
+        store_path=store_path,
+        environment_overrides=tuple(sorted(overrides.items())),
+    )
 
 
 def _validate_install_mode(args: argparse.Namespace) -> tuple[bool, bool, str | None]:
@@ -361,15 +444,32 @@ def _install_succeeded(
 
 
 def _seed_starter_roster(store: Store) -> int:
-    existing_slugs = {agent.get("agent_slug") for agent in store.get_active_roster()}
-    count = 0
-    for agent in STARTER_ROSTER:
-        if agent["slug"] in existing_slugs:
-            continue
-        store.activate_agent(dict(agent))
-        count += 1
+    activate_many = getattr(store, "activate_agents_if_missing", None)
+    if callable(activate_many):
+        count = int(activate_many(STARTER_ROSTER))
+    else:
+        existing_slugs = {agent.get("agent_slug") for agent in store.get_active_roster()}
+        count = 0
+        for agent in STARTER_ROSTER:
+            if agent["slug"] in existing_slugs:
+                continue
+            store.activate_agent(dict(agent))
+            count += 1
     store.record_import_event("starter_roster_installed", "", f"count={count}")
     return count
+
+
+def _materialize_install_controls(store: object, hosts: list[str]) -> None:
+    """Create durable enabled defaults before installing persistent host bindings."""
+
+    ensure_host = getattr(store, "ensure_host_control_materialized", None)
+    if not callable(ensure_host):
+        return
+    from agency_runtime.core.runtime_control import ensure_runtime_control_materialized
+
+    ensure_runtime_control_materialized(source="install")
+    for host in sorted(set(hosts)):
+        ensure_host(host, source="install")
 
 
 def cmd_install(
@@ -424,8 +524,75 @@ def cmd_install(
             dependencies=dependencies,
         )
 
-    runtime_store = dependencies.store_factory(cfg)
-    count = seed_starter_roster(runtime_store)
+    if not dashboard_opted_out and dashboard_service_environment_overrides(cfg):
+        dashboard_result = plan_dashboard_service(config_path=resolve_config_path())
+        if json_mode:
+            dependencies.emit_json(
+                {
+                    "ok": False,
+                    "complete": False,
+                    "profile": profile_name,
+                    "roster_added": 0,
+                    "hosts": [],
+                    "dashboard": dashboard_result,
+                    "error": dashboard_result.get("error", "dashboard service preflight failed"),
+                }
+            )
+        else:
+            print(f"❌ Dashboard service: {dashboard_result.get('error', 'preflight failed')}")
+            print("   No roster, host adapter, or service-manager state was changed.")
+        return 1
+
+    from agency_runtime.core.windows_acl import require_restricted_windows_token
+
+    try:
+        runtime_store = dependencies.store_factory(cfg)
+    except Exception as exc:
+        require_restricted_windows_token(exc)
+        error = safe_display_token(
+            "starter roster Store is unavailable from this restricted process; no dashboard "
+            "service or native host mutation was attempted",
+            limit=500,
+        )
+        result = {
+            "ok": False,
+            "complete": False,
+            "profile": profile_name,
+            "roster_added": 0,
+            "hosts": [],
+            "dashboard": None,
+            "error": error,
+        }
+        if json_mode:
+            dependencies.emit_json(result)
+        else:
+            print(f"❌ {error}")
+        return 1
+    try:
+        _materialize_install_controls(runtime_store, targets)
+        count = seed_starter_roster(runtime_store)
+    except Exception as exc:
+        require_restricted_windows_token(exc)
+        error = safe_display_token(
+            "starter roster initialization was interrupted by the restricted process token; "
+            "roster changes may be partial, but no dashboard service or native host mutation "
+            "was attempted",
+            limit=500,
+        )
+        result = {
+            "ok": False,
+            "complete": False,
+            "profile": profile_name,
+            "roster_added": None,
+            "hosts": [],
+            "dashboard": None,
+            "error": error,
+        }
+        if json_mode:
+            dependencies.emit_json(result)
+        else:
+            print(f"❌ {error}")
+        return 1
     dashboard_result = _install_dashboard(
         opted_out=dashboard_opted_out,
         install_dashboard_service=install_dashboard_service,
@@ -502,23 +669,368 @@ def _print_install_result(host: str, result: dict[str, Any]) -> None:
         print(f"   Backup retained: {result['backup_path']}")
 
 
-def _resolve_control_agent(args: argparse.Namespace, action: str) -> str | None:
-    """Resolve an explicit or unambiguous installed host for a control action."""
+def _resolve_control_agents(args: argparse.Namespace, action: str) -> tuple[list[str], bool]:
+    """Resolve an explicit host or every detected host in canonical order."""
+    from agency_runtime.core.host_control import SUPPORTED_HOSTS
     from agency_runtime.core.installer import detect_installed_agents
 
     agent = getattr(args, "agent", None)
-    if not agent:
-        detected = detect_installed_agents()
-        if len(detected) == 1:
-            agent = detected[0]
-        elif len(detected) == 0:
-            print(f"No agent hosts detected. Use: agency {action} --agent hermes")
-            return None
-        else:
-            print(f"Multiple hosts detected: {', '.join(detected)}")
-            print(f"Specify: agency {action} --agent <name>")
-            return None
-    return str(agent)
+    if agent:
+        return [str(agent)], True
+    detected = {
+        str(host).strip().lower() for host in detect_installed_agents() if str(host).strip()
+    }
+    if not detected:
+        print(f"No agent hosts detected. Use: agency {action} --agent hermes")
+        return [], False
+    ordered = [host for host in SUPPORTED_HOSTS if host in detected]
+    ordered.extend(sorted(detected.difference(SUPPORTED_HOSTS)))
+    return ordered, False
+
+
+def _soft_control_result(
+    runtime_store: Any,
+    agent: str,
+    *,
+    enabled: bool,
+    dry_run: bool,
+) -> dict[str, Any]:
+    """Apply or preview one persistent soft-control transition."""
+    from agency_runtime.core.host_control import (
+        get_runtime_control,
+        set_runtime_control,
+    )
+
+    previous = get_runtime_control(runtime_store, agent)
+    previous_generation = int(previous.get("generation", 0))
+    control = (
+        previous
+        if dry_run
+        else set_runtime_control(
+            runtime_store,
+            agent,
+            enabled=enabled,
+            source="cli",
+            expected_generation=previous_generation,
+        )
+    )
+    return {
+        "ok": True,
+        "exit_code": 0,
+        "host": agent,
+        "enabled": enabled,
+        "runtime_enabled": enabled if dry_run else bool(control["enabled"]),
+        "previous_runtime_enabled": bool(previous["enabled"]),
+        "generation": int(control.get("generation", previous_generation)),
+        "previous_generation": previous_generation,
+        "updated_at": control.get("updated_at"),
+        "source": control.get("source"),
+        "dry_run": dry_run,
+        "native_lifecycle": "persistent soft control",
+        "restart_required": False,
+    }
+
+
+def _broker_generation(value: Mapping[str, Any], field: str) -> int:
+    """Return one strict non-boolean host-control generation."""
+
+    generation = value.get(field)
+    if isinstance(generation, bool) or not isinstance(generation, int) or generation < 0:
+        raise ValueError(f"dashboard host response has invalid {field}")
+    return generation
+
+
+def _broker_host_status(value: Any, *, expected_host: str) -> dict[str, Any]:
+    """Validate the control-bearing portion of one dashboard host projection."""
+
+    from agency_runtime.core.host_control import SUPPORTED_HOSTS
+
+    if not isinstance(value, Mapping):
+        raise ValueError("dashboard host status must be a JSON object")
+    host = value.get("host")
+    if not isinstance(host, str) or host not in SUPPORTED_HOSTS or host != expected_host:
+        raise ValueError("dashboard host status identity is invalid")
+    runtime_enabled = value.get("runtime_enabled")
+    master_enabled = value.get("master_enabled")
+    effective_enabled = value.get("effective_enabled")
+    if not isinstance(runtime_enabled, bool) or not isinstance(master_enabled, bool):
+        raise ValueError("dashboard host status controls must be JSON booleans")
+    if effective_enabled is not None and not isinstance(effective_enabled, bool):
+        raise ValueError("dashboard effective host status must be boolean or null")
+    if effective_enabled is True and (not runtime_enabled or not master_enabled):
+        raise ValueError("dashboard effective host status is internally inconsistent")
+    _broker_generation(value, "runtime_control_generation")
+    return dict(value)
+
+
+def _dashboard_host_snapshot_with_identity(
+    agent: str | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any], _BrokerStoreIdentity]:
+    """Read and validate one complete authenticated host-control snapshot."""
+
+    from agency_runtime.core.dashboard_runtime import dashboard_api_request
+    from agency_runtime.core.host_control import SUPPORTED_HOSTS, normalize_host
+    from agency_runtime.core.runtime_control import validate_runtime_control_document
+
+    response = dashboard_api_request("/api/hosts")
+    identity = _broker_store_identity(response)
+    raw_hosts = response.get("hosts")
+    if not isinstance(raw_hosts, list) or len(raw_hosts) != len(SUPPORTED_HOSTS):
+        raise ValueError("dashboard host response must contain every supported host exactly once")
+    by_host: dict[str, dict[str, Any]] = {}
+    for raw in raw_hosts:
+        if not isinstance(raw, Mapping) or not isinstance(raw.get("host"), str):
+            raise ValueError("dashboard host response contains an invalid entry")
+        host = str(raw["host"])
+        if host in by_host:
+            raise ValueError("dashboard host response contains a duplicate host")
+        by_host[host] = _broker_host_status(raw, expected_host=host)
+    master = validate_runtime_control_document(response.get("master"))
+    master_enabled = bool(master["enabled"])
+    if any(status["master_enabled"] is not master_enabled for status in by_host.values()):
+        raise ValueError("dashboard host response disagrees with its master snapshot")
+    selected = (
+        [by_host[normalize_host(agent)]] if agent else [by_host[host] for host in SUPPORTED_HOSTS]
+    )
+    return selected, master, identity
+
+
+def _dashboard_host_snapshot(
+    agent: str | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    statuses, master, _identity = _dashboard_host_snapshot_with_identity(agent)
+    return statuses, master
+
+
+def _dashboard_soft_control_result(
+    agent: str,
+    *,
+    enabled: bool,
+    dry_run: bool,
+) -> dict[str, Any]:
+    """Apply or preview one host transition through the authenticated broker."""
+
+    from agency_runtime.core.dashboard_runtime import dashboard_api_request
+    from agency_runtime.core.host_control import normalize_host
+
+    host = normalize_host(agent)
+    statuses, _master, identity = _dashboard_host_snapshot_with_identity(host)
+    previous = statuses[0]
+    previous_generation = _broker_generation(previous, "runtime_control_generation")
+    if dry_run:
+        control_enabled = bool(previous["runtime_enabled"])
+        generation = previous_generation
+        updated_at = previous.get("runtime_control_updated_at")
+        source = previous.get("runtime_control_source")
+    else:
+        verb = "ENABLE" if enabled else "DISABLE"
+        response = dashboard_api_request(
+            "/api/hosts/toggle",
+            method="POST",
+            payload={
+                "host": host,
+                "enabled": enabled,
+                "expected_generation": previous_generation,
+                "confirm": f"{verb} {host}",
+            },
+        )
+        if response.get("ok") is not True or response.get("host") != host:
+            raise ValueError("dashboard host-control response identity is invalid")
+        if _broker_store_identity(response) != identity:
+            raise ValueError("dashboard host-control Store identity changed during mutation")
+        if not isinstance(response.get("enabled"), bool) or response["enabled"] is not enabled:
+            raise ValueError("dashboard host-control response state is invalid")
+        generation = _broker_generation(response, "generation")
+        status = _broker_host_status(response.get("status"), expected_host=host)
+        expected_generation = previous_generation + (
+            1 if previous["runtime_enabled"] is not enabled else 0
+        )
+        if (
+            status["runtime_enabled"] is not enabled
+            or _broker_generation(status, "runtime_control_generation") != generation
+            or generation != expected_generation
+        ):
+            raise ValueError("dashboard host-control response is internally inconsistent")
+        control_enabled = enabled
+        updated_at = response.get("updated_at")
+        source = response.get("source")
+        if updated_at != status.get("runtime_control_updated_at") or source != status.get(
+            "runtime_control_source"
+        ):
+            raise ValueError("dashboard host-control response provenance is inconsistent")
+    return {
+        "ok": True,
+        "exit_code": 0,
+        "host": host,
+        "enabled": enabled,
+        "runtime_enabled": enabled if dry_run else control_enabled,
+        "previous_runtime_enabled": bool(previous["runtime_enabled"]),
+        "generation": generation,
+        "previous_generation": previous_generation,
+        "updated_at": updated_at,
+        "source": source,
+        "dry_run": dry_run,
+        "transport": "dashboard",
+        "native_lifecycle": "persistent soft control",
+        "restart_required": False,
+    }
+
+
+def _restricted_aware_soft_control_result(
+    runtime_store: Any,
+    agent: str,
+    *,
+    enabled: bool,
+    dry_run: bool,
+    restricted_store: bool,
+) -> dict[str, Any]:
+    """Use the broker only for an exact restricted-token Store refusal."""
+
+    from agency_runtime.core.windows_acl import require_restricted_windows_token
+
+    if restricted_store:
+        return _dashboard_soft_control_result(agent, enabled=enabled, dry_run=dry_run)
+    try:
+        return _soft_control_result(runtime_store, agent, enabled=enabled, dry_run=dry_run)
+    except Exception as exc:
+        require_restricted_windows_token(exc)
+        return _dashboard_soft_control_result(agent, enabled=enabled, dry_run=dry_run)
+
+
+def _failed_control_result(agent: str, exc: Exception) -> dict[str, Any]:
+    """Project one host-local failure without aborting remaining targets."""
+    message = safe_display_token(str(exc).strip() or type(exc).__name__, limit=500)
+    return {
+        "ok": False,
+        "exit_code": 1,
+        "host": agent,
+        "error": message,
+        "restart_required": False,
+    }
+
+
+def _print_control_result(agent: str, result: dict[str, Any], *, enabled: bool) -> None:
+    """Render one host result while preserving the existing single-host wording."""
+    if result.get("ok"):
+        prefix = (
+            f"DRY RUN — would {'enable' if enabled else 'disable'}"
+            if result.get("dry_run")
+            else ("✅ Agency Runtime enabled" if enabled else "⏸️  Agency Runtime disabled")
+        )
+        print(
+            f"{prefix} for {agent} through "
+            f"{result.get('native_lifecycle', 'its native plugin lifecycle')}"
+        )
+        if result.get("restart_required"):
+            print(f"   Restart {agent} to take effect.")
+        return
+    print(f"❌ {agent}: {result.get('error', 'control failed')}")
+
+
+def _read_master_control_with_broker() -> tuple[dict[str, Any], str]:
+    """Read global state directly or through the authenticated local service."""
+
+    from agency_runtime.core.dashboard_runtime import dashboard_api_request
+    from agency_runtime.core.runtime_control import (
+        RuntimeControlError,
+        read_effective_runtime_control,
+        validate_runtime_control_document,
+    )
+
+    try:
+        return read_effective_runtime_control(), "direct"
+    except RuntimeControlError as direct_error:
+        try:
+            response = dashboard_api_request("/api/runtime")
+            if set(response) != {"master"}:
+                raise ValueError("dashboard master response shape is invalid")
+            return validate_runtime_control_document(response.get("master")), "dashboard"
+        except (OSError, RuntimeError, ValueError):
+            raise RuntimeError(
+                "global Agency control is inaccessible from this process and the dashboard "
+                "service could not broker it; run the command from a normal user shell or "
+                "start/install the dashboard service"
+            ) from direct_error
+
+
+def _global_control_result(
+    args: argparse.Namespace,
+    *,
+    enabled: bool,
+) -> dict[str, Any]:
+    """Apply or preview the durable cross-host master switch."""
+
+    from agency_runtime.core.dashboard_runtime import dashboard_api_request
+    from agency_runtime.core.runtime_control import (
+        RuntimeControlSecurityError,
+        set_master_enabled,
+        validate_runtime_control_document,
+    )
+
+    if bool(getattr(args, "native", False)):
+        raise ValueError("--global cannot be combined with --native")
+    current, reader = _read_master_control_with_broker()
+    dry_run = bool(getattr(args, "dry_run", False))
+    if dry_run:
+        master = current
+        writer = reader
+    else:
+        try:
+            master = set_master_enabled(
+                enabled,
+                expected_generation=int(current["generation"]),
+                source="cli",
+            )
+            writer = "direct"
+        except RuntimeControlSecurityError:
+            verb = "ENABLE" if enabled else "DISABLE"
+            response = dashboard_api_request(
+                "/api/runtime/toggle",
+                method="POST",
+                payload={
+                    "enabled": enabled,
+                    "expected_generation": int(current["generation"]),
+                    "confirm": f"{verb} AGENCY",
+                },
+            )
+            if (
+                response.get("ok") is not True
+                or not isinstance(response.get("changed"), bool)
+                or response["changed"] is not (bool(current["enabled"]) is not enabled)
+            ):
+                raise ValueError("dashboard master-control response is invalid") from None
+            master = validate_runtime_control_document(response.get("master"))
+            writer = "dashboard"
+        expected_generation = int(current["generation"]) + (
+            1 if bool(current["enabled"]) is not enabled else 0
+        )
+        if master["enabled"] is not enabled or int(master["generation"]) != expected_generation:
+            raise ValueError("master-control response is internally inconsistent")
+    return {
+        "ok": True,
+        "exit_code": 0,
+        "scope": "global",
+        "enabled": enabled if dry_run else bool(master["enabled"]),
+        "previous_enabled": bool(current["enabled"]),
+        "changed": bool(current["enabled"]) != enabled and not dry_run,
+        "dry_run": dry_run,
+        "transport": writer,
+        "master": master,
+        "fresh_session_required": not dry_run,
+    }
+
+
+def _print_global_control_result(result: dict[str, Any]) -> None:
+    if not result.get("ok"):
+        print(f"❌ global Agency control: {result.get('error', 'control failed')}")
+        return
+    desired = "enable" if result.get("enabled") else "disable"
+    if result.get("dry_run"):
+        print(f"DRY RUN — would {desired} Agency Runtime globally")
+        return
+    state = "enabled" if result.get("enabled") else "disabled"
+    print(f"✅ Agency Runtime globally {state} through {result.get('transport', 'direct')} control")
+    print("   Start a fresh host session before comparing Agency-on and Agency-off behavior.")
 
 
 def _cmd_host_control(
@@ -528,63 +1040,87 @@ def _cmd_host_control(
     dependencies: InstallDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
     """Apply persistent soft control, or explicitly request native lifecycle."""
+    if bool(getattr(args, "global_control", False)):
+        try:
+            result = _global_control_result(args, enabled=enabled)
+        except Exception as exc:
+            result = {
+                "ok": False,
+                "exit_code": 1,
+                "scope": "global",
+                "error": safe_display_token(str(exc).strip() or type(exc).__name__, limit=500),
+            }
+        if getattr(args, "json", False):
+            dependencies.emit_json(result)
+        else:
+            _print_global_control_result(result)
+        return int(result.get("exit_code", 0 if result.get("ok") else 1))
     action = "on" if enabled else "off"
-    agent = _resolve_control_agent(args, action)
-    if agent is None:
+    agents, explicit = _resolve_control_agents(args, action)
+    if not agents:
         return 1
     dry_run = bool(getattr(args, "dry_run", False))
-    if bool(getattr(args, "native", False)):
+    native = bool(getattr(args, "native", False))
+    runtime_store = None
+    restricted_store = False
+    from agency_runtime.core.windows_acl import require_restricted_windows_token
+
+    if not native:
+        try:
+            runtime_store = dependencies.store_factory(None)
+        except Exception as exc:
+            require_restricted_windows_token(exc)
+            restricted_store = True
+    results: list[dict[str, Any]] = []
+    if native:
         from agency_runtime.core.installer import toggle_agency
 
-        result = toggle_agency(agent, enabled=enabled, dry_run=dry_run)
-    else:
-        from agency_runtime.core.host_control import (
-            get_runtime_control,
-            set_runtime_control,
-        )
-
-        runtime_store = dependencies.store_factory(None)
-        previous = get_runtime_control(runtime_store, agent)
-        control = (
-            previous
-            if dry_run
-            else set_runtime_control(
-                runtime_store,
-                agent,
-                enabled=enabled,
-                source="cli",
+    for agent in agents:
+        try:
+            result = (
+                toggle_agency(agent, enabled=enabled, dry_run=dry_run)
+                if native
+                else _restricted_aware_soft_control_result(
+                    runtime_store,
+                    agent,
+                    enabled=enabled,
+                    dry_run=dry_run,
+                    restricted_store=restricted_store,
+                )
             )
-        )
-        result = {
-            "ok": True,
-            "exit_code": 0,
-            "host": agent,
-            "enabled": enabled,
-            "runtime_enabled": enabled if dry_run else bool(control["enabled"]),
-            "previous_runtime_enabled": bool(previous["enabled"]),
-            "updated_at": control.get("updated_at"),
-            "source": control.get("source"),
-            "dry_run": dry_run,
-            "native_lifecycle": "persistent soft control",
-            "restart_required": False,
-        }
+            result = dict(result)
+            result.setdefault("host", agent)
+        except Exception as exc:
+            result = _failed_control_result(agent, exc)
+        results.append(result)
+
+    if explicit:
+        result = results[0]
+        if getattr(args, "json", False):
+            dependencies.emit_json(result)
+            return int(result.get("exit_code", 0 if result.get("ok") else 1))
+        _print_control_result(agents[0], result, enabled=enabled)
+        return 0 if result.get("ok") else 1
+
+    successful = all(result.get("ok") is True for result in results)
+    aggregate = {
+        "ok": successful,
+        "complete": successful,
+        "action": action,
+        "enabled": enabled,
+        "host_count": len(results),
+        "hosts": results,
+        "exit_code": 0 if successful else 1,
+    }
     if getattr(args, "json", False):
-        dependencies.emit_json(result)
-        return int(result.get("exit_code", 0 if result.get("ok") else 1))
-    if result["ok"]:
-        prefix = (
-            f"DRY RUN — would {'enable' if enabled else 'disable'}"
-            if result.get("dry_run")
-            else ("✅ Agency Runtime enabled" if enabled else "⏸️  Agency Runtime disabled")
-        )
-        print(
-            f"{prefix} for {agent} through {result.get('native_lifecycle', 'its native plugin lifecycle')}"
-        )
-        if result.get("restart_required"):
-            print(f"   Restart {agent} to take effect.")
+        dependencies.emit_json(aggregate)
     else:
-        print(f"❌ {result['error']}")
-    return 0 if result["ok"] else 1
+        for agent, result in zip(agents, results, strict=True):
+            _print_control_result(agent, result, enabled=enabled)
+        print(
+            f"   Completed {sum(result.get('ok') is True for result in results)}/{len(results)} hosts."
+        )
+    return aggregate["exit_code"]
 
 
 def cmd_on(
@@ -592,7 +1128,7 @@ def cmd_on(
     *,
     dependencies: InstallDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
-    """Enable Agency Runtime for a specific agent host."""
+    """Enable one explicit host or every detected host."""
     return _cmd_host_control(args, enabled=True, dependencies=dependencies)
 
 
@@ -601,7 +1137,7 @@ def cmd_off(
     *,
     dependencies: InstallDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
-    """Disable Agency Runtime for a specific agent host."""
+    """Disable one explicit host or every detected host."""
     return _cmd_host_control(args, enabled=False, dependencies=dependencies)
 
 
@@ -616,16 +1152,62 @@ def cmd_status(
         inspect_host_status,
     )
 
-    runtime_store = dependencies.store_factory(None)
-    statuses = (
-        [inspect_host_status(runtime_store, args.agent)]
-        if args.agent
-        else inspect_all_host_statuses(runtime_store)
-    )
-    payload = {"hosts": statuses}
+    try:
+        master, master_transport = _read_master_control_with_broker()
+    except RuntimeError as exc:
+        from agency_runtime.core.runtime_control import master_enabled
+
+        master = {
+            "schema_version": 1,
+            "enabled": master_enabled(),
+            "generation": 0,
+            "updated_at": "",
+            "source": "fail-enabled",
+            "diagnostic_error": safe_display_token(str(exc), limit=500),
+        }
+        master_transport = "fail-enabled"
+    from agency_runtime.core.windows_acl import require_restricted_windows_token
+
+    try:
+        runtime_store = dependencies.store_factory(None)
+        statuses = (
+            [inspect_host_status(runtime_store, args.agent, global_enabled=bool(master["enabled"]))]
+            if args.agent
+            else inspect_all_host_statuses(runtime_store, global_enabled=bool(master["enabled"]))
+        )
+    except Exception as exc:
+        require_restricted_windows_token(exc)
+        try:
+            statuses, master = _dashboard_host_snapshot(args.agent)
+            master_transport = "dashboard"
+        except (OSError, RuntimeError, ValueError) as broker_error:
+            message = safe_display_token(
+                "host status is inaccessible from this restricted process and the dashboard "
+                f"service could not broker it: {broker_error}",
+                limit=500,
+            )
+            payload = {
+                "ok": False,
+                "exit_code": 1,
+                "error": message,
+                "master": master,
+                "master_transport": master_transport,
+                "hosts": [],
+            }
+            if getattr(args, "json", False):
+                dependencies.emit_json(payload)
+            else:
+                print(f"❌ {message}")
+            return 1
+    payload = {"master": master, "master_transport": master_transport, "hosts": statuses}
     if getattr(args, "json", False):
         dependencies.emit_json(payload)
         return 0
+    global_state = "on" if master["enabled"] else "off"
+    print(
+        f"global: {global_state}; generation {master.get('generation', 0)}; "
+        f"source {master.get('source', 'unknown')}"
+    )
     for status in statuses:
         runtime = "on" if status["runtime_enabled"] else "off"
         native = (

@@ -17,8 +17,10 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime import __version__ as PACKAGE_VERSION
+from agency_runtime.core.bounded_io import restrict_posix_path_permissions
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.configuration import restrict_private_file
+from agency_runtime.core.configuration_persistence import assert_config_namespace
 from agency_runtime.core.dashboard_service_core import (
     MANIFEST_SCHEMA_VERSION,
     OWNER_ID,
@@ -40,6 +42,7 @@ def _runtime_fingerprint(ctx: _Context) -> str:
             "package_version": PACKAGE_VERSION,
             "python_executable": str(ctx.python_executable),
             "worker_argv": list(ctx.worker_argv),
+            "launcher_artifacts": [item.manifest() for item in ctx.launcher_artifacts],
         },
         sort_keys=True,
         separators=(",", ":"),
@@ -56,6 +59,7 @@ def _manifest_value(ctx: _Context) -> dict[str, Any]:
         "manager": ctx.manager,
         "registration": ctx.registration,
         "worker_argv": list(ctx.worker_argv),
+        "launcher_artifacts": [item.manifest() for item in ctx.launcher_artifacts],
         "config_path": str(ctx.config_path),
         "package_version": PACKAGE_VERSION,
         "runtime_fingerprint": _runtime_fingerprint(ctx),
@@ -167,7 +171,7 @@ def _manifest_owned(ctx: _Context, value: Mapping[str, Any] | None = None) -> bo
         candidate
         and isinstance(schema_version, int)
         and not isinstance(schema_version, bool)
-        and schema_version == MANIFEST_SCHEMA_VERSION
+        and schema_version in {1, MANIFEST_SCHEMA_VERSION}
         and candidate.get("owner") == OWNER_ID
         and candidate.get("service") == SERVICE_ID
         and candidate.get("platform") == ctx.platform
@@ -181,7 +185,10 @@ def _manifest_current(ctx: _Context, value: Mapping[str, Any] | None = None) -> 
     return bool(
         _manifest_owned(ctx, candidate)
         and candidate is not None
+        and candidate.get("schema_version") == MANIFEST_SCHEMA_VERSION
         and candidate.get("worker_argv") == list(ctx.worker_argv)
+        and candidate.get("launcher_artifacts")
+        == [item.manifest() for item in ctx.launcher_artifacts]
         and candidate.get("config_path") == str(ctx.config_path)
         and candidate.get("package_version") == PACKAGE_VERSION
         and candidate.get("runtime_fingerprint") == _runtime_fingerprint(ctx)
@@ -203,6 +210,12 @@ def _assert_real_directory_chain(path: Path, *, anchor: Path) -> None:
     except ValueError as exc:
         raise OSError("dashboard service state escaped its home directory") from exc
     current = anchor
+    try:
+        anchor_stat = os.lstat(current)
+    except FileNotFoundError:
+        return
+    if _link_like(anchor_stat) or not stat.S_ISDIR(anchor_stat.st_mode):
+        raise OSError("dashboard service home must be a real directory")
     for part in relative.parts:
         current /= part
         try:
@@ -216,14 +229,20 @@ def _assert_real_directory_chain(path: Path, *, anchor: Path) -> None:
 def _prepare_private_parent(path: Path, *, trusted_root: Path | None = None) -> None:
     if trusted_root is not None:
         _assert_real_directory_chain(path.parent, anchor=trusted_root)
-    path.parent.mkdir(parents=True, exist_ok=True)
+        assert_config_namespace(path)
+        from agency_runtime.core.private_paths import ensure_private_directory
+
+        ensure_private_directory(path.parent)
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     if trusted_root is not None:
         _assert_real_directory_chain(path.parent, anchor=trusted_root)
+        assert_config_namespace(path)
     parent = os.lstat(path.parent)
     if _link_like(parent) or not stat.S_ISDIR(parent.st_mode):
         raise OSError("dashboard service state directory must be a real directory")
     if not _IS_WINDOWS:
-        path.parent.chmod(0o700)
+        restrict_posix_path_permissions(path.parent, directory=True)
 
 
 def _sync_parent(path: Path) -> None:
@@ -349,7 +368,15 @@ def _service_lock(
         handle.close()
 
 
-def _safe_unlink(path: Path, *, missing_ok: bool = False) -> bool:
+def _safe_unlink(
+    path: Path,
+    *,
+    missing_ok: bool = False,
+    trusted_root: Path | None = None,
+) -> bool:
+    if trusted_root is not None:
+        _assert_real_directory_chain(path.parent, anchor=trusted_root)
+        assert_config_namespace(path)
     try:
         current = os.lstat(path)
     except FileNotFoundError:
@@ -358,15 +385,23 @@ def _safe_unlink(path: Path, *, missing_ok: bool = False) -> bool:
         raise
     if _link_like(current) or not stat.S_ISREG(current.st_mode):
         raise OSError("refusing to remove a linked or special dashboard service file")
+    if trusted_root is not None:
+        _assert_real_directory_chain(path.parent, anchor=trusted_root)
+        assert_config_namespace(path)
     path.unlink()
     return True
 
 
-def _restore_file(path: Path, prior: bytes | None) -> None:
+def _restore_file(
+    path: Path,
+    prior: bytes | None,
+    *,
+    trusted_root: Path | None = None,
+) -> None:
     if prior is None:
-        _safe_unlink(path, missing_ok=True)
+        _safe_unlink(path, missing_ok=True, trusted_root=trusted_root)
         return
-    _prepare_private_parent(path)
+    _prepare_private_parent(path, trusted_root=trusted_root)
     _assert_replaceable(path, label="dashboard service file")
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=str(path.parent))
     temporary = Path(temporary_name)

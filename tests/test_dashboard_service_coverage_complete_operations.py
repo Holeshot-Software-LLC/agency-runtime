@@ -60,8 +60,8 @@ def test_linux_unit_path_read_and_plan_states(tmp_path, monkeypatch):
     monkeypatch.setattr(inspection, "_path_present", lambda _path: True)
     monkeypatch.setattr(
         inspection,
-        "_read_service_file",
-        lambda _path: (_ for _ in ()).throw(OSError("unreadable")),
+        "_read_systemd_unit",
+        lambda _ctx: (_ for _ in ()).throw(OSError("unreadable")),
     )
     snapshot = inspection._read_linux_unit(linux)
     assert snapshot.exists and not snapshot.readable
@@ -141,6 +141,20 @@ def test_plan_and_inspect_unsupported(tmp_path):
         inspection.plan_dashboard_service(home_dir=tmp_path, platform_name="darwin")["supported"]
         is False
     )
+
+
+def test_inspect_reports_launcher_validation_failure(tmp_path, monkeypatch):
+    ctx = context(tmp_path)
+    monkeypatch.setattr(
+        inspection,
+        "_validate_dashboard_launcher",
+        lambda _ctx: (_ for _ in ()).throw(OSError("launcher identity unavailable")),
+    )
+
+    result = inspection.inspect_dashboard_service(_ctx=ctx, _validate_launcher=True)
+
+    assert result["ok"] is False
+    assert result["error"] == "launcher identity unavailable"
     assert (
         inspection.inspect_dashboard_service(home_dir=tmp_path, platform_name="darwin")["supported"]
         is False
@@ -278,19 +292,20 @@ def test_install_public_unsupported_and_lock_error(tmp_path, monkeypatch):
 
 
 def test_install_linux_missing_unit_invalid_utf8_and_ownership(tmp_path, monkeypatch):
+    monkeypatch.setattr(install, "_revalidate_dashboard_launcher", lambda *_a: None)
     windows = context(tmp_path, "windows")
     with pytest.raises(RuntimeError, match="no unit path"):
         install._install_linux(windows, {}, command_runner=None, readiness_probe=None)
     ctx = context(tmp_path)
     assert ctx.unit_path is not None
     monkeypatch.setattr(install, "_path_present", lambda _path: True)
-    monkeypatch.setattr(install, "_read_service_file", lambda _path: b"\xff")
+    monkeypatch.setattr(install, "_read_systemd_unit", lambda _ctx: b"\xff")
     monkeypatch.setattr(install, "_read_manifest_bytes", lambda _ctx: None)
     assert (
         "valid UTF-8"
         in install._install_linux(ctx, {}, command_runner=None, readiness_probe=None)["error"]
     )
-    monkeypatch.setattr(install, "_read_service_file", lambda _path: b"unowned")
+    monkeypatch.setattr(install, "_read_systemd_unit", lambda _ctx: b"unowned")
     monkeypatch.setattr(install, "_manifest_owned", lambda _ctx: False)
     assert (
         "ownership changed"
@@ -343,7 +358,7 @@ def test_install_linux_readiness_failure_and_idempotent_success(tmp_path, monkey
     ctx = context(tmp_path)
     desired = install._unit_content(ctx).encode()
     monkeypatch.setattr(install, "_path_present", lambda _path: True)
-    monkeypatch.setattr(install, "_read_service_file", lambda _path: desired)
+    monkeypatch.setattr(install, "_read_systemd_unit", lambda _ctx: desired)
     monkeypatch.setattr(install, "_read_manifest_bytes", lambda _ctx: b"manifest")
     monkeypatch.setattr(install, "_manifest_owned", lambda _ctx: True)
     monkeypatch.setattr(install, "_write_manifest", lambda _ctx: False)
@@ -440,6 +455,24 @@ def test_windows_restart_activate_and_final_verification_failures(tmp_path, monk
         install._activate_windows_install_if_needed(
             ctx, transaction, "current", command_runner=None
         )
+    monkeypatch.setattr(install, "_run", lambda *_a, **_kw: command())
+    monkeypatch.setattr(
+        install,
+        "_wait_windows_running_state",
+        lambda *_a, **_kw: (False, [command("transition")]),
+    )
+    with pytest.raises(RuntimeError, match="idle state"):
+        install._restart_windows_install_if_needed(ctx, transaction, "current", command_runner=None)
+    monkeypatch.setattr(install, "_dashboard_runtime_cleared", lambda *_a, **_kw: False)
+    with pytest.raises(RuntimeError, match="old dashboard runtime"):
+        install._activate_windows_install_if_needed(
+            ctx, transaction, "current", command_runner=None
+        )
+    monkeypatch.setattr(install, "_dashboard_runtime_cleared", lambda *_a, **_kw: True)
+    with pytest.raises(RuntimeError, match="running state"):
+        install._activate_windows_install_if_needed(
+            ctx, transaction, "current", command_runner=None
+        )
     with pytest.raises(RuntimeError, match="did not become ready"):
         install._verify_final_windows_install(
             ctx,
@@ -487,6 +520,7 @@ def test_failed_windows_install_rolls_back_only_after_mutation(tmp_path, monkeyp
 
 
 def test_install_windows_success_and_error_wrapper(tmp_path, monkeypatch):
+    monkeypatch.setattr(install, "_revalidate_dashboard_launcher", lambda *_a: None)
     ctx = context(tmp_path, "windows")
     transaction = install._WindowsInstallTransaction(
         prior_manifest=None,

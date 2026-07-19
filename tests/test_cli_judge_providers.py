@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,11 @@ from agency_runtime.core.config import (
     ProviderEntry,
 )
 from agency_runtime.core.delegation.backends import BoundedProcessResult
+from agency_runtime.core.process_argv import PreparedProcessArgv
 from agency_runtime.core.selector import judge
+
+_TRUSTED_CLI = str(Path(getattr(sys, "_base_executable", sys.executable)).resolve())
+_TRUSTED_CLI_DIRECTORY = str(Path(_TRUSTED_CLI).parent)
 
 CATALOG = [
     {
@@ -62,9 +67,9 @@ def test_codex_status_distinguishes_installed_authenticated_and_usable() -> None
 
     status = inspect_cli_transport(
         "codex",
-        resolver=lambda _name: "/tools/codex",
+        resolver=lambda _name: _TRUSTED_CLI,
         runner=runner,
-        environ={"PATH": "/tools", "SECRET_TOKEN": "do-not-forward"},
+        environ={"PATH": _TRUSTED_CLI_DIRECTORY, "SECRET_TOKEN": "do-not-forward"},
     )
 
     assert status == CLIProviderStatus(
@@ -72,12 +77,128 @@ def test_codex_status_distinguishes_installed_authenticated_and_usable() -> None
         installed=True,
         authenticated=True,
         usable=True,
-        executable="/tools/codex",
+        executable=_TRUSTED_CLI,
     )
     assert calls == [
-        ["/tools/codex", "login", "status"],
-        ["/tools/codex", "exec", "--help"],
+        [_TRUSTED_CLI, "login", "status"],
+        [_TRUSTED_CLI, "exec", "--help"],
     ]
+
+
+def test_cli_status_reuses_one_frozen_executable_identity() -> None:
+    resolver_calls: list[str] = []
+    frozen_identities: list[tuple[object, ...]] = []
+
+    def resolver(name: str, **_kwargs: object) -> str:
+        resolver_calls.append(name)
+        return _TRUSTED_CLI
+
+    def runner(argv: list[str], **_kwargs: Any) -> BoundedProcessResult:
+        assert isinstance(argv, PreparedProcessArgv)
+        frozen_identities.append(argv.executable_identities)
+        if argv[1:3] == ["login", "status"]:
+            return _result("Logged in")
+        return _result(
+            "--json --output-schema --ephemeral --ignore-user-config "
+            "--ignore-rules --sandbox --strict-config"
+        )
+
+    status = inspect_cli_transport(
+        "codex",
+        resolver=resolver,
+        runner=runner,
+        environ={"PATH": _TRUSTED_CLI_DIRECTORY},
+    )
+
+    assert status.usable is True
+    assert resolver_calls == ["codex"]
+    assert len(frozen_identities) == 2
+    assert frozen_identities[0] is frozen_identities[1]
+
+
+@pytest.mark.parametrize("transport", ["codex", "claude"])
+def test_repo_local_cli_shadow_is_never_executed(
+    transport: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    executable = tmp_path / (f"{transport}.exe" if os.name == "nt" else transport)
+    executable.write_bytes(b"not a trusted host CLI")
+    if os.name != "nt":
+        executable.chmod(0o700)
+    monkeypatch.chdir(tmp_path)
+    observed_search_paths: list[str] = []
+    launched = False
+
+    def resolver(_name: str, *, path: str) -> str:
+        observed_search_paths.append(path)
+        return str(executable)
+
+    def runner(*_args: Any, **_kwargs: Any) -> BoundedProcessResult:
+        nonlocal launched
+        launched = True
+        return _result()
+
+    status = inspect_cli_transport(
+        transport,
+        resolver=resolver,
+        runner=runner,
+        environ={"PATH": os.pathsep.join((str(tmp_path), _TRUSTED_CLI_DIRECTORY))},
+    )
+
+    assert status.reason == "executable not found"
+    assert launched is False
+    assert observed_search_paths
+    assert str(tmp_path) not in observed_search_paths[0].split(os.pathsep)
+
+
+@pytest.mark.parametrize("shadow_kind", ["native", "npm-shim"])
+def test_nested_repo_cli_shadows_are_never_executed(
+    shadow_kind: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = tmp_path / "repo"
+    (repository / ".git").mkdir(parents=True)
+    nested_cwd = repository / "src" / "package"
+    nested_cwd.mkdir(parents=True)
+    if shadow_kind == "native":
+        shadow_directory = repository / ".venv" / ("Scripts" if os.name == "nt" else "bin")
+        executable = shadow_directory / ("codex.exe" if os.name == "nt" else "codex")
+    else:
+        shadow_directory = repository / "node_modules" / ".bin"
+        executable = shadow_directory / ("codex.cmd" if os.name == "nt" else "codex")
+    shadow_directory.mkdir(parents=True)
+    executable.write_bytes(b"repository-controlled host CLI")
+    if os.name == "nt" and shadow_kind == "npm-shim":
+        executable.with_suffix(".exe").write_bytes(b"repository-controlled npm companion")
+    if os.name != "nt":
+        executable.chmod(0o700)
+    monkeypatch.chdir(nested_cwd)
+    observed_search_paths: list[str] = []
+    launched = False
+
+    def resolver(_name: str, *, path: str) -> str:
+        observed_search_paths.append(path)
+        return str(executable)
+
+    def runner(*_args: Any, **_kwargs: Any) -> BoundedProcessResult:
+        nonlocal launched
+        launched = True
+        return _result()
+
+    status = inspect_cli_transport(
+        "codex",
+        resolver=resolver,
+        runner=runner,
+        environ={"PATH": os.pathsep.join((str(shadow_directory), _TRUSTED_CLI_DIRECTORY))},
+    )
+
+    assert status.reason == "executable not found"
+    assert launched is False
+    assert observed_search_paths
+    assert str(shadow_directory) not in observed_search_paths[0].split(os.pathsep)
+    assert _TRUSTED_CLI_DIRECTORY in observed_search_paths[0].split(os.pathsep)
 
 
 def test_cli_status_reports_missing_auth_without_exposing_output() -> None:
@@ -86,7 +207,7 @@ def test_cli_status_reports_missing_auth_without_exposing_output() -> None:
 
     status = inspect_cli_transport(
         "codex",
-        resolver=lambda _name: "codex.cmd",
+        resolver=lambda _name: _TRUSTED_CLI,
         runner=runner,
     )
 
@@ -100,7 +221,7 @@ def test_cli_status_reports_missing_auth_without_exposing_output() -> None:
 def test_cli_status_launch_failure_is_safe_and_unusable() -> None:
     status = inspect_cli_transport(
         "codex",
-        resolver=lambda _name: "codex",
+        resolver=lambda _name: _TRUSTED_CLI,
         runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("secret")),
     )
 
@@ -123,7 +244,7 @@ def test_claude_status_version_gates_fail_closed_schema_support(
 
     status = inspect_cli_transport(
         "claude",
-        resolver=lambda _name: "/tools/claude",
+        resolver=lambda _name: _TRUSTED_CLI,
         runner=runner,
     )
 
@@ -134,7 +255,7 @@ def test_claude_status_version_gates_fail_closed_schema_support(
 def test_safe_cli_environment_drops_unrelated_credentials() -> None:
     safe = safe_cli_environment(
         {
-            "PATH": "/tools",
+            "PATH": _TRUSTED_CLI_DIRECTORY,
             "HOME": "/home/user",
             "CODEX_HOME": "/home/user/.codex",
             "NODE_EXTRA_CA_CERTS": "/trust/corporate-ca.pem",
@@ -146,7 +267,7 @@ def test_safe_cli_environment_drops_unrelated_credentials() -> None:
         }
     )
 
-    assert safe["PATH"] == "/tools"
+    assert safe["PATH"] == _TRUSTED_CLI_DIRECTORY
     assert safe["CODEX_HOME"] == "/home/user/.codex"
     assert safe["NODE_EXTRA_CA_CERTS"] == "/trust/corporate-ca.pem"
     assert safe["REQUESTS_CA_BUNDLE"] == "/trust/python-ca.pem"
@@ -191,10 +312,10 @@ def test_codex_judge_uses_stdin_strict_tool_gates_and_isolated_home() -> None:
         ),
         prompt,
         timeout=4,
-        resolver=lambda _name: "C:\\tools\\codex.CMD",
+        resolver=lambda _name: _TRUSTED_CLI,
         runner=runner,
         environ={
-            "PATH": "C:\\tools",
+            "PATH": _TRUSTED_CLI_DIRECTORY,
             "USERPROFILE": "C:\\Users\\person",
             "CODEX_HOME": "C:\\Users\\person\\.codex",
             "OPENAI_API_KEY": "must-not-leak",
@@ -241,7 +362,7 @@ def test_claude_judge_disables_tools_customizations_and_persistence() -> None:
         ProviderEntry(name="claude", type="cli", transport="claude"),
         "select safely",
         timeout=3,
-        resolver=lambda _name: "/tools/claude",
+        resolver=lambda _name: _TRUSTED_CLI,
         runner=runner,
     )
 
@@ -268,7 +389,7 @@ def test_cli_judge_failures_are_not_promoted(
             ProviderEntry(name="codex", type="cli", transport="codex"),
             "select",
             timeout=1,
-            resolver=lambda _name: "/tools/codex",
+            resolver=lambda _name: _TRUSTED_CLI,
             runner=lambda *_args, **_kwargs: process_result,
         )
         is None
@@ -281,7 +402,7 @@ def test_cli_judge_launch_exception_is_not_promoted() -> None:
             ProviderEntry(name="claude", type="cli", transport="claude"),
             "select",
             timeout=1,
-            resolver=lambda _name: "/tools/claude",
+            resolver=lambda _name: _TRUSTED_CLI,
             runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("private")),
         )
         is None
@@ -367,7 +488,7 @@ def test_cli_judge_success_requires_no_agency_api_key(
     assert result["provider"] == "codex (cli:codex)"
 
 
-def test_failed_cli_falls_through_to_http_then_token(
+def test_failed_cli_falls_through_to_http_then_explicit_degradation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     order: list[str] = []
@@ -429,7 +550,12 @@ def test_failed_cli_falls_through_to_http_then_token(
         lambda *_a, **_kw: (_ for _ in ()).throw(TimeoutError()),
     )
     result = judge.query_judge("review authentication", CATALOG, config=cfg)
-    assert result["status"] == "token_fallback"
+    assert result["status"] == "degraded"
+    assert result["selected_ids"] == []
+    assert [entry["provider_name"] for entry in result["provider_attempts"]] == [
+        "codex",
+        "http",
+    ]
 
 
 def test_nonempty_cli_chain_never_calls_removed_legacy_or_ollama(
@@ -466,5 +592,6 @@ def test_nonempty_cli_chain_never_calls_removed_legacy_or_ollama(
 
     result = judge.query_judge("review authentication", CATALOG, config=cfg)
 
-    assert result["status"] == "token_fallback"
+    assert result["status"] == "degraded"
+    assert result["selected_ids"] == []
     assert calls == []

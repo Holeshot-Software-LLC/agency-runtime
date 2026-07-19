@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import socket
 import threading
 import urllib.error
@@ -16,6 +17,9 @@ from pathlib import Path
 
 import pytest
 
+from agency_runtime.core.configuration import apply_config_operations, read_config_state
+from agency_runtime.core.preflight import run_preflight
+from agency_runtime.core.roster.bundled import BundledRoster
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.http import (
     AgencyHTTPHandler,
@@ -40,37 +44,10 @@ def http_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     store = Store(db)
 
     # Seed active agents so preflight/search have a catalog to work with.
-    store.activate_agent(
-        {
-            "slug": "code-reviewer",
-            "name": "Code Reviewer",
-            "division": "engineering",
-            "description": "Reviews pull requests and source code for quality and security.",
-            "source": "test",
-            "version": "1.0",
-            "hash": "abc123",
-            "categories": ["code-review"],
-            "capabilities": ["code-review"],
-            "tool_affinity": [],
-            "prompt_path": "",
-        }
-    )
+    bundled = {agent["slug"]: dict(agent) for agent in BundledRoster()}
+    store._activate_prevalidated_agent(bundled["code-reviewer"])
     for slug in ("agents-orchestrator", "chief-of-staff"):
-        store.activate_agent(
-            {
-                "slug": slug,
-                "name": slug.replace("-", " ").title(),
-                "division": "specialized",
-                "description": f"Default companion specialist {slug}",
-                "source": "test",
-                "version": "1.0",
-                "hash": slug,
-                "categories": [],
-                "capabilities": [],
-                "tool_affinity": [],
-                "prompt_path": "",
-            }
-        )
+        store._activate_prevalidated_agent(bundled[slug])
 
     server = AgencyHTTPServer(
         store,
@@ -161,6 +138,48 @@ def test_status_returns_ok_and_roster_count(http_server):
     assert status == 200
     assert body["status"] == "ok"
     assert body["roster_count"] == 3
+
+
+def test_http_fails_closed_after_config_derived_store_target_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = tmp_path / "agency.yaml"
+    original_db = tmp_path / "original.db"
+    replacement_db = tmp_path / "replacement.db"
+    config_path.write_text(f"store:\n  db_path: {original_db}\n", encoding="utf-8")
+    monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
+    store = Store(config_path=config_path)
+    server = AgencyHTTPServer(
+        store,
+        host="127.0.0.1",
+        port=0,
+        auth_token="test-token",
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+
+    try:
+        status, body = _get(base, "/status")
+        assert status == 200
+        assert body["db_path"] == str(original_db)
+
+        state = read_config_state(config_path)
+        apply_config_operations(
+            [{"op": "set", "path": "store.db_path", "value": str(replacement_db)}],
+            expected_revision=state.revision,
+            path=config_path,
+        )
+
+        status, body = _get(base, "/status")
+        assert status == 500
+        assert body == {"error": "internal server error"}
+        assert store.db_path == original_db
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
 
 def test_responses_include_local_security_headers(http_server):
@@ -259,6 +278,30 @@ def test_roster_lists_active_agents(http_server):
     assert "chief-of-staff" in slugs
 
 
+def test_public_roster_and_search_exclude_config_disabled_agents(http_server):
+    from agency_runtime.core.config import reset_config_cache
+
+    Path(os.environ["AGENCY_CONFIG_PATH"]).write_text(
+        "agents:\n  disabled: [code-reviewer]\n",
+        encoding="utf-8",
+    )
+    reset_config_cache()
+
+    status, body = _get(http_server["base"], "/roster")
+    assert status == 200
+    assert {agent["agent_slug"] for agent in body["agents"]} == {
+        "agents-orchestrator",
+        "chief-of-staff",
+    }
+    status, body = _post(
+        http_server["base"],
+        "/search",
+        {"query": "code review", "limit": 10},
+    )
+    assert status == 200
+    assert "code-reviewer" not in {agent["slug"] for agent in body["agents"]}
+
+
 def test_roster_cursor_pages_are_stable_and_complete(http_server):
     status, first = _get(http_server["base"], "/roster?limit=2")
 
@@ -335,9 +378,18 @@ def test_preflight_detects_trivial_messages(http_server):
 
 
 def test_finalize_returns_accept_with_complete_header(http_server):
+    preflight = run_preflight(
+        http_server["store"],
+        trace_id="trace-1",
+        session_id="session-1",
+        user_message="Review this pull request for quality and security",
+        host="test",
+    )
+    assert "code-reviewer" in preflight.loaded_specialists
+    loaded = ", ".join(preflight.loaded_specialists)
     draft = "\n".join(
         [
-            "Agency/Agencies loaded: code-reviewer",
+            f"Agency/Agencies loaded: {loaded}",
             "Agency/Agencies delegated: none",
             "Skills loaded: none",
             "Actual Model selected: task-agency-router -> openai/gpt-4",
@@ -352,6 +404,7 @@ def test_finalize_returns_accept_with_complete_header(http_server):
         "/finalize",
         {
             "draft_text": draft,
+            "session_id": "session-1",
             "trace_id": "trace-1",
             "host": "test",
         },
@@ -360,6 +413,8 @@ def test_finalize_returns_accept_with_complete_header(http_server):
     assert body["action"] == "accept"
     assert body["trace_id"] == "trace-1"
     assert "Here is my review." in body["text"]
+    assert http_server["store"].get_run("trace-1")["status"] == "completed"
+    assert http_server["store"].get_active_specialists_for_trace("session-1", "trace-1") == []
 
 
 def test_finalize_rejects_missing_draft(http_server):
@@ -369,9 +424,18 @@ def test_finalize_rejects_missing_draft(http_server):
 
 
 def test_finalize_records_skills_and_delegations(http_server):
+    preflight = run_preflight(
+        http_server["store"],
+        trace_id="trace-2",
+        session_id="session-2",
+        user_message="Review this pull request for quality and security",
+        host="test",
+    )
+    assert "code-reviewer" in preflight.loaded_specialists
+    loaded = ", ".join(preflight.loaded_specialists)
     draft = "\n".join(
         [
-            "Agency/Agencies loaded: code-reviewer",
+            f"Agency/Agencies loaded: {loaded}",
             "Agency/Agencies delegated: code-reviewer via test-backend",
             "Skills loaded: finalization",
             "Actual Model selected: task-agency-router -> openai/gpt-4",
@@ -395,6 +459,10 @@ def test_finalize_records_skills_and_delegations(http_server):
                     "agent": "code-reviewer",
                     "status": "completed",
                     "backend": "test-backend",
+                    "work_unit_id": "unit-review",
+                    "executed_worker_kind": "test-worker",
+                    "executed_worker_id": "worker-review",
+                    "native_run_id": "test-backend:run-review",
                 },
             ],
         },
@@ -403,7 +471,9 @@ def test_finalize_records_skills_and_delegations(http_server):
     assert body["action"] == "accept"
     assert body["session_id"] == "session-2"
     assert "Skills loaded: finalization" in body["text"]
-    assert "Agency/Agencies delegated: code-reviewer via test-backend" in body["text"]
+    assert (
+        "Agency/Agencies delegated: none - executed worker has no validated Agency specialist"
+    ) in body["text"]
 
     store = http_server["store"]
     assert store.get_skills_for_session("session-2") == ["finalization"]
@@ -411,7 +481,69 @@ def test_finalize_records_skills_and_delegations(http_server):
     assert len(delegations) == 1
     assert delegations[0]["recommended_agent"] == "code-reviewer"
     assert delegations[0]["backend"] == "test-backend"
+    assert delegations[0]["executed_worker_kind"] == "test-worker"
+    assert delegations[0]["retrieved_specialist_slug"] == ""
     assert store.get_delegations_for_session("trace-2") == []
+
+
+def test_finalize_rejects_resident_manager_as_delegated_worker(http_server):
+    run_preflight(
+        http_server["store"],
+        trace_id="trace-resident-worker",
+        session_id="session-resident-worker",
+        user_message="Review this pull request for quality and security",
+        host="test",
+    )
+
+    status, body = _post(
+        http_server["base"],
+        "/finalize",
+        {
+            "draft_text": "draft",
+            "trace_id": "trace-resident-worker",
+            "session_id": "session-resident-worker",
+            "host": "test",
+            "delegations": [
+                {
+                    "agent": "agents-orchestrator",
+                    "status": "completed",
+                    "backend": "test-backend",
+                    "work_unit_id": "unit-review",
+                    "executed_worker_kind": "test-worker",
+                    "executed_worker_id": "worker-review",
+                    "native_run_id": "test-backend:run-review",
+                }
+            ],
+        },
+    )
+
+    assert status == 400
+    assert "parent-only" in body["error"]
+    assert http_server["store"].get_delegations("trace-resident-worker") == []
+
+
+def test_finalize_rejects_delegation_without_stable_work_unit_id(http_server):
+    status, body = _post(
+        http_server["base"],
+        "/finalize",
+        {
+            "draft_text": "draft",
+            "trace_id": "trace-missing-work-unit",
+            "session_id": "session-missing-work-unit",
+            "host": "test",
+            "delegations": [
+                {
+                    "agent": "code-reviewer",
+                    "status": "completed",
+                    "backend": "test-backend",
+                }
+            ],
+        },
+    )
+
+    assert status == 400
+    assert body == {"error": "delegations require agent, work_unit_id, and backend"}
+    assert http_server["store"].get_delegations("trace-missing-work-unit") == []
 
 
 # ── /explain ────────────────────────────────────────────────────────────
@@ -423,21 +555,24 @@ def test_explain_returns_selection_receipt(http_server):
 
     clear_cache()
     clear_session_routing()
-    status, body = _post(
-        http_server["base"],
-        "/explain",
-        {
-            "session_id": "s-explain",
-            "task": "review code quality",
-            "limit": 5,
-        },
-    )
+    for _attempt in range(2):
+        status, body = _post(
+            http_server["base"],
+            "/explain",
+            {
+                "session_id": "s-explain",
+                "task": "review code quality",
+                "limit": 5,
+            },
+        )
 
     assert status == 200
     assert body["schema_version"] == "agency.selection_explain.v1"
     assert body["task"] == "review code quality"
     assert body["selected"]
     assert body["signals"]["selection"]["roster_size"] >= 1
+    assert "decision_id" not in body["routing"]
+    assert http_server["store"].get_open_traces_for_session("s-explain") == []
 
 
 def test_explain_rejects_missing_task(http_server):

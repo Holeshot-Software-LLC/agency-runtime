@@ -5,10 +5,8 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
-import tempfile
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -20,6 +18,12 @@ from agency_runtime.core.installer_contracts import (
     PLUGIN_ID,
     PLUGIN_VERSION,
 )
+from agency_runtime.core.private_paths import (
+    allocate_private_directory,
+    ensure_private_directory,
+    remove_private_directory,
+)
+from agency_runtime.core.process_argv import PersistentArtifactIdentity
 
 _MAX_INSTALL_MANIFEST_BYTES = 64 * 1024
 
@@ -66,6 +70,7 @@ def atomic_install_tree(
     host: str,
     dry_run: bool,
     home_dir: str | Path | None,
+    launcher_artifacts: Sequence[PersistentArtifactIdentity] = (),
 ) -> dict[str, Any]:
     owned_files = sorted(files)
     backup_path: Path | None = None
@@ -80,8 +85,12 @@ def atomic_install_tree(
     if dry_run or unchanged:
         return plan
 
-    target.parent.mkdir(parents=True, exist_ok=True)
-    stage = Path(tempfile.mkdtemp(prefix=f".{target.name}.staging-", dir=str(target.parent)))
+    install_parent = ensure_private_directory(target.parent, product_owned=False)
+    stage_identity = allocate_private_directory(
+        install_parent,
+        prefix=f".{target.name}.staging",
+    )
+    stage = stage_identity.path
     stamp = _utc_stamp()
     try:
         for relative, content in files.items():
@@ -95,7 +104,7 @@ def atomic_install_tree(
             os.replace(target, backup_path)
 
         manifest = {
-            "schema_version": 1,
+            "schema_version": 2,
             "owner": "agency-runtime",
             "host": host,
             "plugin_id": PLUGIN_ID,
@@ -105,6 +114,7 @@ def atomic_install_tree(
             "target": str(target),
             "owned_files": owned_files,
             "backup_path": str(backup_path) if backup_path else None,
+            "launcher_artifacts": [item.manifest() for item in launcher_artifacts],
         }
         (stage / INSTALL_MANIFEST).write_text(
             json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n"
@@ -113,7 +123,8 @@ def atomic_install_tree(
     except Exception:
         if backup_path is not None and backup_path.exists() and not target.exists():
             os.replace(backup_path, target)
-        shutil.rmtree(stage, ignore_errors=True)
+        if stage.exists():
+            remove_private_directory(stage_identity)
         raise
 
     return {**plan, "backup_path": str(backup_path) if backup_path else None}
@@ -149,11 +160,12 @@ def validate_owned_backup(
         return False, "Backup ownership manifest must be a JSON object", None
 
     expected = {
-        "schema_version": 1,
         "owner": "agency-runtime",
         "host": host,
         "plugin_id": PLUGIN_ID,
     }
+    if manifest.get("schema_version") not in {1, 2}:
+        return False, "Backup ownership manifest has an unexpected schema_version", None
     for field, value in expected.items():
         if manifest.get(field) != value:
             return False, f"Backup ownership manifest has an unexpected {field}", None

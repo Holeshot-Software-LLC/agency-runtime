@@ -15,6 +15,8 @@ from itertools import islice
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
+from agency_runtime.core.receipts.ingress import canonicalize_provider
+
 _MAX_ID_CHARS = 256
 _MAX_HEADER_CHARS = 4096
 _MAX_HEADER_ITEMS = 64
@@ -73,8 +75,14 @@ def response_value(response_obj: Any, key: str) -> Any:
     """Read one response field from dict- or attribute-style LiteLLM objects."""
 
     if isinstance(response_obj, Mapping):
-        return response_obj.get(key)
-    return getattr(response_obj, key, None)
+        try:
+            return response_obj.get(key)
+        except Exception:
+            return None
+    try:
+        return getattr(response_obj, key, None)
+    except Exception:
+        return None
 
 
 def hidden_params(response_obj: Any) -> Mapping[str, Any]:
@@ -195,7 +203,8 @@ def provider_model(model: Any) -> tuple[str, str]:
     if "/" not in value:
         return "", value
     provider, resolved = value.split("/", 1)
-    if not provider or not resolved or provider.casefold() == "custom":
+    provider = canonicalize_provider(provider)
+    if not provider or not resolved:
         return "", ""
     return provider, resolved
 

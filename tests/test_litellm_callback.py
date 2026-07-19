@@ -226,17 +226,32 @@ def test_proxy_hook_injects_context_and_correlates_routing_with_receipt_trace(
 ) -> None:
     clear_cache()
     store = Store(tmp_path / "agency.db")
-    store.activate_agent(
+    store._activate_prevalidated_agent(
         {
             "slug": "security-reviewer",
             "name": "Security Reviewer",
             "description": "Reviews Python APIs for SQL injection vulnerabilities and security tests",
+            "prompt_body": (
+                "Review Python APIs for SQL injection vulnerabilities and "
+                "produce evidence-backed security test recommendations."
+            ),
             "division": "engineering",
             "categories": ["security", "testing"],
             "capabilities": ["python", "security review", "test automation"],
+            "authority": "review",
+            "context_mode": "direct_safe",
+            "required_tools": [],
+            "supported_hosts": ["litellm"],
         }
     )
-    callback = AgencyLiteLLMCallback(store=store, config=AgencyConfig())
+    base_config = AgencyConfig()
+    callback = AgencyLiteLLMCallback(
+        store=store,
+        config=replace(
+            base_config,
+            ollama=replace(base_config.ollama, enabled=False),
+        ),
+    )
     request = {
         "model": "task-general",
         "metadata": {
@@ -269,11 +284,14 @@ def test_proxy_hook_injects_context_and_correlates_routing_with_receipt_trace(
 def test_concurrent_pre_hooks_persist_one_routing_decision_per_trace(tmp_path: Path) -> None:
     clear_cache()
     store = Store(tmp_path / "agency.db")
-    store.activate_agent(
+    store._activate_prevalidated_agent(
         {
             "slug": "python-reviewer",
             "name": "Python Reviewer",
             "description": "Reviews Python API code and writes tests",
+            "prompt_body": (
+                "Review Python API code and produce focused regression-test recommendations."
+            ),
         }
     )
     callback = AgencyLiteLLMCallback(store=store, config=AgencyConfig())
@@ -351,11 +369,14 @@ def test_opt_in_content_capture_is_redacted_before_store(
     )
     monkeypatch.setattr("agency_runtime.core.config.load_config", lambda *args, **kwargs: cfg)
     store = Store(tmp_path / "agency.db")
-    store.activate_agent(
+    store._activate_prevalidated_agent(
         {
             "slug": "security-reviewer",
             "name": "Security Reviewer",
             "description": "Reviews security vulnerabilities",
+            "prompt_body": (
+                "Review security vulnerabilities and return bounded, evidence-backed findings."
+            ),
         }
     )
     callback = AgencyLiteLLMCallback(store=store, config=cfg)

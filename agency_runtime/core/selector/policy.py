@@ -5,15 +5,28 @@ from __future__ import annotations
 import logging
 import os
 import re
+import stat
+import threading
 import time
 from collections.abc import Collection
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from agency_runtime.core.bounded_io import read_bounded_regular_file
+from agency_runtime.core.bounded_io import (
+    FileSizeLimitError,
+    UnsafeFileError,
+    read_bounded_regular_file,
+)
 from agency_runtime.core.bounded_yaml import safe_load_bounded
+from agency_runtime.core.configuration_contracts import ConfigurationError
+from agency_runtime.core.configuration_persistence import assert_config_namespace
 from agency_runtime.core.selector.intent_text import affirmative_intent
+from agency_runtime.core.windows_acl import (
+    current_process_user_sid,
+    read_windows_sddl,
+    windows_file_prevents_untrusted_mutation,
+)
 
 logger = logging.getLogger("agency_runtime.selector.policy")
 
@@ -21,46 +34,208 @@ _DEFAULT_POLICY_PATH = Path.home() / ".agency-runtime" / "companion_policy.yaml"
 _BUNDLED_POLICY_PATH = Path(__file__).resolve().parents[1] / "companion_policy.yaml"
 _BUNDLED_COMPANION_POLICY: dict[str, Any] | None = None
 _MAX_CUSTOM_POLICY_BYTES = 1024 * 1024
+_MAX_NO_MATCH_FALLBACKS = 2
+_POLICY_LOCK = threading.RLock()
 
 
-def _read_bounded_policy(path: Path, *, maximum_bytes: int | None = None) -> Any:
+class PolicyIdentityError(ValueError):
+    """A configured policy path is linked, special, or changed during read."""
+
+
+def default_policy_path() -> Path:
+    """Return the conventional user policy path without loading configuration."""
+
+    return _DEFAULT_POLICY_PATH
+
+
+def policy_path_for_config(config: Any) -> Path:
+    """Resolve policy identity solely from an already materialized config."""
+
+    configured = getattr(config, "companion_policy_path", None)
+    if configured:
+        return Path(os.path.expanduser(str(configured)))
+    return default_policy_path()
+
+
+def _read_bounded_policy(
+    path: Path,
+    *,
+    maximum_bytes: int | None = None,
+    trusted_custom: bool = False,
+) -> Any:
     """Read and strictly parse a policy without unbounded custom-file reads."""
     limit = _MAX_CUSTOM_POLICY_BYTES if maximum_bytes is None else maximum_bytes
-    payload = read_bounded_regular_file(
-        path,
-        limit=limit,
-        label="companion policy",
-    )
+    if trusted_custom:
+        payload = _read_trusted_custom_policy(path, limit=limit)
+    else:
+        payload = read_bounded_regular_file(
+            path,
+            limit=limit,
+            label="companion policy",
+        )
     return safe_load_bounded(payload)
+
+
+def _platform_is_windows() -> bool:
+    """Return the active filesystem security model through a patchable seam."""
+
+    return os.name == "nt"
+
+
+def _metadata_identity(
+    metadata: Any,
+    *,
+    is_windows: bool | None = None,
+) -> tuple[int, ...]:
+    """Capture every stable field used to reject replacement and mutation."""
+
+    windows = _platform_is_windows() if is_windows is None else is_windows
+    return (
+        int(metadata.st_dev),
+        int(getattr(metadata, "st_ino", 0) or 0),
+        int(metadata.st_mode),
+        int(metadata.st_size),
+        int(metadata.st_mtime_ns),
+        # CPython's Windows path stat and descriptor stat can report different
+        # creation-time precision for the same file. Device/inode plus the
+        # remaining mutation fields and a fresh DACL probe provide the stable
+        # Windows binding; POSIX ctime remains a valuable in-place-write guard.
+        0 if windows else int(metadata.st_ctime_ns),
+        int(getattr(metadata, "st_nlink", 0) or 0),
+        int(getattr(metadata, "st_uid", -1)),
+    )
+
+
+def _metadata_is_link_or_reparse(metadata: Any) -> bool:
+    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
+    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse_flag)
+
+
+def _assert_trusted_policy_metadata(
+    metadata: Any,
+    *,
+    is_windows: bool,
+    effective_uid: int | None = None,
+) -> None:
+    """Require one immutable-by-other-accounts custom-policy file shape."""
+
+    if _metadata_is_link_or_reparse(metadata) or not stat.S_ISREG(metadata.st_mode):
+        raise PolicyIdentityError("companion policy must be a regular non-link file")
+    if int(getattr(metadata, "st_ino", 0) or 0) <= 0:
+        raise PolicyIdentityError("companion policy identity is unavailable")
+    if int(getattr(metadata, "st_nlink", 0) or 0) != 1:
+        raise PolicyIdentityError("companion policy must have exactly one hard link")
+    if is_windows:
+        return
+
+    uid_getter = getattr(os, "geteuid", None)
+    uid = int(uid_getter()) if effective_uid is None and callable(uid_getter) else effective_uid
+    if uid is None or int(getattr(metadata, "st_uid", -1)) != int(uid):
+        raise PolicyIdentityError("companion policy must be owned by the current user")
+    mode = stat.S_IMODE(metadata.st_mode)
+    if not mode & stat.S_IRUSR or mode & (stat.S_IWGRP | stat.S_IWOTH):
+        raise PolicyIdentityError(
+            "companion policy must be owner-readable and not group or other writable"
+        )
+
+
+def _windows_policy_file_is_trusted(path: Path) -> bool:
+    """Require the exact current-user owner and one mutation-safe DACL snapshot.
+
+    Executables may legitimately be OS-owned, so the shared DACL predicate
+    accepts a narrow SYSTEM/Administrators/TrustedInstaller owner set. Custom
+    user policy is different: its owner must exactly match the effective user.
+    The shared predicate still supplies the restricted/logon-SID handling for
+    the captured DACL; only its broader executable-owner allowance is narrowed.
+    """
+
+    try:
+        sddl = read_windows_sddl(path)
+        current_sid = str(current_process_user_sid(is_windows=True) or "")
+    except Exception:
+        return False
+    owner = ""
+    if sddl.startswith("O:"):
+        remainder = sddl[2:]
+        boundaries = [index for marker in ("G:", "D:") if (index := remainder.find(marker)) >= 0]
+        owner = remainder[: min(boundaries) if boundaries else len(remainder)]
+    if not current_sid or owner != current_sid:
+        return False
+    return windows_file_prevents_untrusted_mutation(
+        path,
+        is_windows=True,
+        sddl_reader=lambda _path: sddl,
+        current_sid_reader=lambda: current_sid,
+    )
+
+
+def _read_trusted_custom_policy(path: Path, *, limit: int) -> bytes:
+    """Read one custom policy through a stable, privacy-checked descriptor."""
+
+    expected = _policy_file_identity(path)
+    if expected is None:
+        raise PolicyIdentityError("companion policy disappeared before read")
+    flags = os.O_RDONLY | int(getattr(os, "O_BINARY", 0))
+    flags |= int(getattr(os, "O_CLOEXEC", 0))
+    flags |= int(getattr(os, "O_NOFOLLOW", 0))
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise PolicyIdentityError("companion policy could not be opened safely") from exc
+    try:
+        opened = os.fstat(descriptor)
+        _assert_trusted_policy_metadata(opened, is_windows=_platform_is_windows())
+        opened_identity = _metadata_identity(opened)
+        if opened_identity != expected or _policy_file_identity(path) != opened_identity:
+            raise PolicyIdentityError("companion policy changed during open")
+        if opened.st_size > limit:
+            raise FileSizeLimitError("companion policy exceeds the size limit")
+
+        chunks: list[bytes] = []
+        remaining = limit + 1
+        while remaining:
+            chunk = os.read(descriptor, min(remaining, 64 * 1024))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        payload = b"".join(chunks)
+        if len(payload) > limit:
+            raise FileSizeLimitError("companion policy exceeds the size limit")
+
+        after = os.fstat(descriptor)
+        _assert_trusted_policy_metadata(after, is_windows=_platform_is_windows())
+        after_identity = _metadata_identity(after)
+        if after_identity != opened_identity or _policy_file_identity(path) != after_identity:
+            raise PolicyIdentityError("companion policy changed during read")
+        return payload
+    finally:
+        os.close(descriptor)
 
 
 def _resolve_policy_path() -> Path:
     """Resolve policy path from centralized config, env, or default."""
-    env_path = os.environ.get("AGENCY_POLICY_PATH")
-    if env_path:
-        return Path(env_path)
-    try:
-        from agency_runtime.core.config import load_config
+    from agency_runtime.core.config import load_config
 
-        cfg = load_config()
-        if cfg.companion_policy_path:
-            return Path(os.path.expanduser(cfg.companion_policy_path))
-    except Exception:
-        pass
+    cfg = load_config()
+    if cfg.companion_policy_path:
+        return Path(os.path.expanduser(cfg.companion_policy_path))
     return _DEFAULT_POLICY_PATH
 
 
 def _load_bundled_policy() -> dict[str, Any]:
     """Load the packaged broad-action companion policy."""
     global _BUNDLED_COMPANION_POLICY
-    if _BUNDLED_COMPANION_POLICY is None:
-        try:
-            loaded = _read_bounded_policy(_BUNDLED_POLICY_PATH) or {}
-            _BUNDLED_COMPANION_POLICY = loaded if isinstance(loaded, dict) else {}
-        except Exception as exc:
-            logger.warning("could not load bundled companion policy: %s", exc)
-            _BUNDLED_COMPANION_POLICY = {}
-    return _BUNDLED_COMPANION_POLICY
+    with _POLICY_LOCK:
+        if _BUNDLED_COMPANION_POLICY is None:
+            try:
+                loaded = _read_bounded_policy(_BUNDLED_POLICY_PATH) or {}
+                _BUNDLED_COMPANION_POLICY = loaded if isinstance(loaded, dict) else {}
+            except Exception as exc:
+                logger.warning("could not load bundled companion policy: %s", exc)
+                _BUNDLED_COMPANION_POLICY = {}
+        return _BUNDLED_COMPANION_POLICY
 
 
 def load_bundled_policy() -> dict[str, Any]:
@@ -70,6 +245,7 @@ def load_bundled_policy() -> dict[str, Any]:
 
 _COMPANION_POLICY: dict[str, Any] | None = None
 _POLICY_MTIME: int | float = 0.0
+_POLICY_FILE_IDENTITY: tuple[int, ...] | None = None
 _POLICY_PATH: Path | None = None
 _POLICY_REQUEST_KEY = ""
 _POLICY_CHECKED_AT = 0.0
@@ -164,55 +340,133 @@ def _matches_condition(text: str, condition: Any) -> bool:
 
 
 def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
-    """Load companion policy YAML, auto-reloading on file change."""
-    global _COMPANION_POLICY, _POLICY_MTIME, _POLICY_PATH
+    """Load one policy atomically so concurrent identities cannot cross-talk."""
+
+    with _POLICY_LOCK:
+        return _load_policy_locked(policy_path)
+
+
+def _load_policy_locked(policy_path: Path | None = None) -> dict[str, Any]:
+    """Load companion policy YAML while the module cache lock is held."""
+    global _COMPANION_POLICY, _POLICY_FILE_IDENTITY, _POLICY_MTIME, _POLICY_PATH
     global _POLICY_REQUEST_KEY, _POLICY_CHECKED_AT
 
     requested = policy_path or _resolve_policy_path()
-    request_key = str(requested.expanduser())
+    path = Path(os.path.abspath(requested.expanduser()))
+    identity = _policy_file_identity(path)
+    request_key = str(path)
     now = time.monotonic()
-    if (
-        policy_path is None
-        and request_key == _POLICY_REQUEST_KEY
-        and now - _POLICY_CHECKED_AT < _POLICY_RECHECK_SECONDS
-    ):
-        return _COMPANION_POLICY or _load_bundled_policy()
-
-    path = requested.expanduser().resolve()
-    try:
-        mtime = path.stat().st_mtime_ns
-    except OSError:
+    if identity is None:
+        # No caller-controlled content exists to trust or read.  Keep probing
+        # the no-follow file identity on every call so a policy created by
+        # another process is visible immediately; only then is the namespace
+        # ACL gate required before consuming it.
+        _COMPANION_POLICY = None
+        _POLICY_FILE_IDENTITY = None
         _POLICY_PATH = path
         _POLICY_MTIME = -1
         _POLICY_REQUEST_KEY = request_key
         _POLICY_CHECKED_AT = now
         logger.debug("companion policy not found at %s", path)
         return _load_bundled_policy()
+    try:
+        assert_config_namespace(path)
+    except ConfigurationError as exc:
+        raise PolicyIdentityError(
+            "companion policy parent permits cross-account path substitution"
+        ) from exc
+    if (
+        policy_path is None
+        and request_key == _POLICY_REQUEST_KEY
+        and path == _POLICY_PATH
+        and identity == _POLICY_FILE_IDENTITY
+        and now - _POLICY_CHECKED_AT < _POLICY_RECHECK_SECONDS
+    ):
+        return _COMPANION_POLICY or _load_bundled_policy()
+    mtime = identity[4]
 
-    if _COMPANION_POLICY is None or path != _POLICY_PATH or mtime != _POLICY_MTIME:
+    if (
+        _COMPANION_POLICY is None
+        or path != _POLICY_PATH
+        or mtime != _POLICY_MTIME
+        or identity != _POLICY_FILE_IDENTITY
+    ):
         try:
             loaded = (
                 _read_bounded_policy(
                     path,
                     maximum_bytes=_MAX_CUSTOM_POLICY_BYTES,
+                    trusted_custom=True,
                 )
                 or {}
             )
+            confirmed_identity = _policy_file_identity(path)
+            if confirmed_identity != identity:
+                raise PolicyIdentityError("companion policy changed during load")
             _COMPANION_POLICY = loaded if isinstance(loaded, dict) else {}
+            _POLICY_FILE_IDENTITY = identity
             _POLICY_MTIME = mtime
             _POLICY_PATH = path
             _POLICY_REQUEST_KEY = request_key
             _POLICY_CHECKED_AT = now
             actions = _COMPANION_POLICY.get("actions", {})
             logger.info("companion policy loaded (%d actions)", len(actions))
+        except UnsafeFileError as exc:
+            raise PolicyIdentityError("companion policy must be a regular non-link file") from exc
+        except PolicyIdentityError:
+            raise
         except Exception as exc:
             logger.warning("could not load companion policy: %s", exc)
             if path != _POLICY_PATH:
+                _COMPANION_POLICY = None
+                _POLICY_FILE_IDENTITY = None
+                _POLICY_PATH = path
+                _POLICY_MTIME = -1
+                _POLICY_REQUEST_KEY = request_key
+                _POLICY_CHECKED_AT = now
                 return _load_bundled_policy()
     else:
         _POLICY_REQUEST_KEY = request_key
         _POLICY_CHECKED_AT = now
     return _COMPANION_POLICY or _load_bundled_policy()
+
+
+def _policy_file_identity(path: Path) -> tuple[int, ...] | None:
+    """Return one privacy-checked no-follow identity for a custom policy."""
+
+    candidates = (*reversed(path.parents), path)
+    for index, candidate in enumerate(candidates):  # pragma: no branch
+        try:
+            metadata = os.lstat(candidate)
+        except FileNotFoundError:
+            return None
+        except OSError as exc:
+            raise PolicyIdentityError("companion policy identity is unavailable") from exc
+        if _metadata_is_link_or_reparse(metadata):
+            raise PolicyIdentityError(
+                "companion policy path must not contain a symlink or reparse point"
+            )
+        if index < len(candidates) - 1:
+            if not stat.S_ISDIR(metadata.st_mode):
+                raise PolicyIdentityError("companion policy parent must be a directory")
+            continue
+        is_windows = _platform_is_windows()
+        _assert_trusted_policy_metadata(metadata, is_windows=is_windows)
+        identity = _metadata_identity(metadata)
+        if is_windows and not _windows_policy_file_is_trusted(path):
+            raise PolicyIdentityError(
+                "companion policy owner or Windows DACL permits untrusted mutation"
+            )
+        try:
+            confirmed = os.lstat(path)
+        except OSError as exc:
+            raise PolicyIdentityError(
+                "companion policy changed during security validation"
+            ) from exc
+        _assert_trusted_policy_metadata(confirmed, is_windows=is_windows)
+        if _metadata_identity(confirmed) != identity:
+            raise PolicyIdentityError("companion policy changed during security validation")
+        return identity
 
 
 def _append_action_routes(
@@ -485,8 +739,8 @@ def _append_action_companions(
         if not triggers:
             continue
         if action_name == "DEFAULT":
-            for companion in action_def.get("always_include", []):
-                _append_eligible_companion(companion_ids, companion.get("slug", ""), eligible)
+            # DEFAULT is a post-selection fallback, not an ordinary action.
+            # Applying it here would make its agents accompany every request.
             continue
         if not any(_matches(message, trigger) for trigger in triggers):
             continue
@@ -499,6 +753,35 @@ def _append_action_companions(
             if slug and when and _matches_condition(message, when):
                 _append_eligible_companion(companion_ids, slug, eligible)
     return matched_actions
+
+
+def detect_fallback_companions(
+    policy: dict[str, Any] | None = None,
+    *,
+    active_slugs: Collection[str] | None = None,
+) -> list[str]:
+    """Return at most two eligible DEFAULT companions in policy order.
+
+    DEFAULT is intentionally resolved separately from action matching so the
+    selector can prove that semantic and deterministic policy routing both
+    produced no active selection before applying it.
+    """
+    policy = policy if policy is not None else load_policy()
+    actions = policy.get("actions", {}) if isinstance(policy, dict) else {}
+    default = actions.get("DEFAULT", {}) if isinstance(actions, dict) else {}
+    entries = default.get("always_include", []) if isinstance(default, dict) else []
+    if not isinstance(entries, list):
+        return []
+
+    eligible = _eligible_companions(policy, active_slugs)
+    companions: list[str] = []
+    for entry in entries:
+        if len(companions) >= _MAX_NO_MATCH_FALLBACKS:
+            break
+        if not isinstance(entry, dict):
+            continue
+        _append_eligible_companion(companions, entry.get("slug", ""), eligible)
+    return companions
 
 
 def _division_companion_values(entry: Any) -> tuple[Any, Any] | None:
@@ -538,7 +821,8 @@ def detect_actions(
     """Detect which actions match the user message.
 
     Returns (action_names, companion_ids) where companion_ids is the union
-    of all always_include slugs from matched actions, PLUS DEFAULT companions.
+    of companions from matched actions and division anchors. DEFAULT companions
+    are resolved separately by :func:`detect_fallback_companions`.
     """
     policy = policy if policy is not None else load_policy()
     if not policy:
@@ -563,4 +847,10 @@ def detect_actions(
         eligible,
         companion_ids,
     )
-    return matched_actions, companion_ids
+    fallback_ids = set(
+        detect_fallback_companions(
+            policy,
+            active_slugs=active_slugs,
+        )
+    )
+    return matched_actions, [slug for slug in companion_ids if slug not in fallback_ids]

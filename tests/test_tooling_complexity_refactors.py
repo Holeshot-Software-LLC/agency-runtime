@@ -3,6 +3,7 @@ from __future__ import annotations
 from email import policy
 from email.parser import BytesParser
 
+from scripts import update_policy_availability
 from scripts.update_policy_availability import _referenced_slugs
 from scripts.verify_distribution import (
     REQUIRED_CLASSIFIERS,
@@ -11,7 +12,9 @@ from scripts.verify_distribution import (
     _junk_reason,
     _metadata_failures,
     _missing_file_failures,
+    _partition_release_payloads,
     _payload_mismatch_failures,
+    _unexpected_scoped_payload_failures,
 )
 
 
@@ -57,11 +60,91 @@ def test_referenced_slugs_ignores_malformed_collections() -> None:
     )
 
 
+def test_policy_availability_ignores_bundled_semantic_only_agents(
+    monkeypatch,
+) -> None:
+    policy_document = {
+        "actions": {
+            "TEST": {
+                "always_include": [{"slug": "static-agent"}],
+                "conditional": [{"slug": "missing-agent", "when": "missing"}],
+            }
+        }
+    }
+    monkeypatch.setattr(
+        update_policy_availability,
+        "BUNDLED",
+        ("semantic-only-agent", "static-agent"),
+    )
+
+    rendered = update_policy_availability._render(policy_document)
+
+    assert "  - static-agent" in rendered
+    assert "    - missing-agent" in rendered
+    assert "semantic-only-agent" not in rendered
+
+
+def test_policy_availability_renders_empty_collections_as_yaml_lists(
+    monkeypatch,
+) -> None:
+    policy_document = {
+        "actions": {
+            "TEST": {
+                "always_include": [{"slug": "static-agent"}],
+                "conditional": [],
+            }
+        }
+    }
+    monkeypatch.setattr(update_policy_availability, "BUNDLED", ("static-agent",))
+
+    fully_available = update_policy_availability._render(policy_document)
+    monkeypatch.setattr(update_policy_availability, "BUNDLED", ())
+    fully_gated = update_policy_availability._render(policy_document)
+
+    assert "    slugs: []" in fully_available
+    assert "  enabled: []" in fully_gated
+
+
 def test_distribution_payload_helpers_preserve_failure_order_and_wording() -> None:
     assert _missing_file_failures(set(), set(), {"package.py"}) == [
         "wheel missing required files: package.py",
         "sdist missing required files: " + ", ".join(sorted({"package.py"} | REQUIRED_SDIST_FILES)),
     ]
+
+
+def test_distribution_payload_manifest_is_commit_scoped_and_exact() -> None:
+    package, support = _partition_release_payloads(
+        {
+            "agency_runtime/current.py",
+            "scripts/release.py",
+            "tests/test_release.py",
+            "README.md",
+        }
+    )
+    assert package == {"agency_runtime/current.py"}
+    assert support == {"README.md", "scripts/release.py", "tests/test_release.py"}
+
+    assert _missing_file_failures(
+        {"agency_runtime/current.py"},
+        {"agency_runtime/current.py", "scripts/release.py"},
+        package,
+        support | {"tests/test_release.py"},
+    ) == ["sdist missing required files: README.md, tests/test_release.py"]
+    assert _unexpected_scoped_payload_failures(
+        "wheel",
+        {"agency_runtime/current.py", "agency_runtime/stale.py", "metadata/METADATA"},
+        package,
+        prefixes=("agency_runtime/",),
+    ) == ["wheel contains unexpected source payload: agency_runtime/stale.py"]
+    assert (
+        _unexpected_scoped_payload_failures(
+            "wheel",
+            {"agency_runtime/current.py"},
+            package,
+            prefixes=("agency_runtime/",),
+        )
+        == []
+    )
 
 
 def test_distribution_junk_and_mismatch_helpers_are_deterministic() -> None:
@@ -70,7 +153,7 @@ def test_distribution_junk_and_mismatch_helpers_are_deterministic() -> None:
         "(generated directory or file), z.pyc (generated/runtime suffix)"
     ]
     assert _payload_mismatch_failures(
-        {"z.py", "a.py"},
+        {"z.py", "a.py", "missing.py"},
         {"a.py": b"wheel", "z.py": b"same"},
         {"a.py": b"sdist", "z.py": b"same"},
     ) == ["wheel/sdist payload mismatch: a.py"]
@@ -93,20 +176,25 @@ def test_distribution_metadata_helper_preserves_policy_failure_order() -> None:
         metadata,
         {"other-1.0.dist-info/METADATA"},
         {},
+        expected_version="0.1.0",
+        expected_dependencies=("pyyaml<7,>=6.0",),
+        expected_license=b"",
     )
 
-    assert failures[:5] == [
-        "unexpected package name: 'other'",
-        "version is not a normalized release version: 'local'",
-        "unexpected Requires-Python: '>=3.11'",
-        "unexpected license expression: None",
+    assert failures[:7] == [
+        "wheel METADATA must contain exactly one Metadata-Version header",
+        "wheel METADATA has unexpected Name: 'other'",
+        "wheel METADATA has unexpected Version: 'local'",
+        "wheel METADATA has unexpected Requires-Python: '>=3.11'",
+        "wheel METADATA must contain exactly one License-Expression header",
+        "wheel METADATA dependency metadata does not match committed pyproject",
         f"missing classifiers: {', '.join(sorted(REQUIRED_CLASSIFIERS))}",
     ]
-    assert failures[5:] == [
-        "runtime dependency metadata does not constrain PyYAML to >=6.0,<7",
-        "wheel missing metadata file: other-1.0.dist-info/WHEEL",
-        "wheel missing metadata file: other-1.0.dist-info/RECORD",
-        "wheel missing metadata file: other-1.0.dist-info/entry_points.txt",
-        "wheel missing metadata file: other-1.0.dist-info/licenses/LICENSE",
-        "wheel is not tagged py3-none-any",
+    assert failures[7:] == [
+        "unexpected wheel metadata path: other-1.0.dist-info/METADATA",
+        "wheel missing metadata file: agency_runtime-0.1.0.dist-info/RECORD",
+        "wheel missing metadata file: agency_runtime-0.1.0.dist-info/WHEEL",
+        "wheel missing metadata file: agency_runtime-0.1.0.dist-info/entry_points.txt",
+        "wheel missing metadata file: agency_runtime-0.1.0.dist-info/licenses/LICENSE",
+        "wheel missing metadata file: agency_runtime-0.1.0.dist-info/top_level.txt",
     ]

@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from agency_runtime import AgencyRuntime
+from agency_runtime.core.roster.bundled import SOURCE_REPOSITORY
 
 
 def test_package_import_does_not_eagerly_load_runtime_heavy_modules() -> None:
@@ -60,17 +63,37 @@ def test_public_runtime_facade_exercises_routing_and_evidence(tmp_path: Path) ->
 
     assert runtime.get_roster() == []
     assert runtime.search("security") == []
-    assert runtime.route("session", "review this security patch")["selected_ids"] == []
-    context = runtime.route_with_context("session", "review this security patch")
+    assert runtime.get_roster() == []
+    trace_id = "trace"
+    routing = runtime.route(
+        "session",
+        "review this security patch",
+        trace_id="route-trace",
+    )
+    assert "code-reviewer" in routing["selected_ids"]
+    assert "decision_id" not in routing
+    assert runtime.store.get_run("route-trace") is None
+    preflight = runtime.preflight(
+        "session",
+        "review this security patch",
+        trace_id=trace_id,
+    )
+    assert preflight["trace_id"] == trace_id
+    assert "code-reviewer" in preflight["loaded_specialists"]
+    context = runtime.route_with_context(
+        "session",
+        "review this security patch",
+        trace_id=trace_id,
+    )
     assert context is not None
-    assert "status=no_catalog" in context
+    assert "code-reviewer" in context
     work = runtime.detect_work_units("1. Review the API\n2. Test the dashboard")
     assert len(work["units"]) == 2
 
-    runtime.record_skill("session", "security-review")
-    runtime.record_specialist("session", "security-reviewer")
+    runtime.record_skill("session", "security-review", trace_id=trace_id)
+    runtime.record_specialist("session", "security-reviewer", trace_id=trace_id)
     receipt_id = runtime.record_model_receipt(
-        trace_id="trace-model",
+        trace_id=trace_id,
         session_id="session",
         host="test",
         requested_model="task-general",
@@ -79,19 +102,172 @@ def test_public_runtime_facade_exercises_routing_and_evidence(tmp_path: Path) ->
         source="host",
     )
     delegation_id = runtime.record_delegation(
-        trace_id="trace-delegation",
+        trace_id=trace_id,
         session_id="session",
         host="test",
+        work_unit_id="unit-review",
         recommended_agent="security-reviewer",
         status="completed",
         backend="test-backend",
+        executed_worker_kind="test-worker",
+        executed_worker_id="worker-1",
+        native_run_id="test-backend:run-1",
     )
 
     assert receipt_id
     assert delegation_id
-    finalized = runtime.finalize_header("Finished.", session_id="session", model="task-general")
-    assert finalized.startswith("Agency/Agencies loaded: security-reviewer")
-    assert "Agency/Agencies delegated: security-reviewer via test-backend" in finalized
+    finalized = runtime.finalize_header(
+        "Finished.",
+        session_id="session",
+        model="task-general",
+        trace_id=trace_id,
+    )
+    assert finalized.splitlines()[0] == (
+        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff, "
+        "code-reviewer, security-reviewer"
+    )
+    assert (
+        "Agency/Agencies delegated: none - executed worker has no validated Agency specialist"
+        in finalized
+    )
     assert "Skills loaded: security-review" in finalized
     assert "Actual Model selected: [general] task-general -> openai/gpt-test" in finalized
     assert finalized.endswith("Finished.")
+    assert runtime.store.get_run(trace_id)["status"] == "completed"
+    assert runtime.store.get_active_specialists_for_trace("session", trace_id) == []
+
+
+def test_public_route_repairs_legacy_fallback_roster_without_opening_turns(
+    tmp_path: Path,
+) -> None:
+    runtime = AgencyRuntime(str(tmp_path / "agency.db"))
+    runtime.store._activate_prevalidated_agent(
+        {
+            "slug": "operator-specialist",
+            "name": "Operator Specialist",
+            "source": "operator",
+            "version": "1.0.0",
+            "description": "A legacy operator-owned specialist.",
+            "prompt_body": "Preserve this prompt.",
+        }
+    )
+
+    for trace_id in ("diagnostic-route-1", "diagnostic-route-2"):
+        routing = runtime.route("legacy-session", "ok", trace_id=trace_id)
+        assert routing["selected_ids"] == ["agents-orchestrator", "chief-of-staff"]
+        assert "decision_id" not in routing
+        assert runtime.store.get_run(trace_id) is None
+
+    assert runtime.store.get_open_traces_for_session("legacy-session") == []
+    assert runtime.store.get_specialist_prompt("operator-specialist")["prompt_body"] == (
+        "Preserve this prompt."
+    )
+    for slug in ("agents-orchestrator", "chief-of-staff"):
+        assert runtime.store.get_roster_entry(slug)["source"] == SOURCE_REPOSITORY
+
+
+def test_public_runtime_finalize_header_fails_closed_for_unaccepted_turn(
+    tmp_path: Path,
+) -> None:
+    runtime = AgencyRuntime(str(tmp_path / "agency.db"))
+    runtime.store.create_run(
+        trace_id="turn",
+        session_id="session",
+        metadata={"request_kind": "nontrivial"},
+    )
+
+    with pytest.raises(RuntimeError, match="did not accept"):
+        runtime.finalize_header(
+            "Finished.",
+            session_id="session",
+            trace_id="turn",
+        )
+
+    assert runtime.store.get_run("turn")["status"] == "active"
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda runtime: runtime.record_skill("session", "audit", trace_id="missing"),
+        lambda runtime: runtime.record_specialist("session", "code-reviewer", trace_id="missing"),
+        lambda runtime: runtime.record_model_receipt(
+            trace_id="missing",
+            session_id="session",
+            host="test",
+        ),
+        lambda runtime: runtime.record_delegation(
+            trace_id="missing",
+            session_id="session",
+            work_unit_id="unit-review",
+            recommended_agent="code-reviewer",
+            backend="test",
+        ),
+    ],
+)
+def test_public_evidence_mutations_cannot_manufacture_an_implicit_turn(
+    mutation: Any,
+    tmp_path: Path,
+) -> None:
+    runtime = AgencyRuntime(str(tmp_path / "agency.db"))
+
+    with pytest.raises(ValueError, match="existing active turn"):
+        mutation(runtime)
+
+    assert runtime.store.get_run("missing") is None
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda runtime: runtime.record_skill("session", "audit", trace_id="turn"),
+        lambda runtime: runtime.record_specialist("session", "code-reviewer", trace_id="turn"),
+        lambda runtime: runtime.record_model_receipt(
+            trace_id="turn",
+            session_id="session",
+            host="test",
+        ),
+        lambda runtime: runtime.record_delegation(
+            trace_id="turn",
+            session_id="session",
+            work_unit_id="unit-review",
+            recommended_agent="code-reviewer",
+            backend="test",
+        ),
+    ],
+)
+@pytest.mark.parametrize("preflight_state", ["", "reserved", "in_progress"])
+def test_public_evidence_mutations_require_preflight_ready_turn(
+    mutation: Any,
+    preflight_state: str,
+    tmp_path: Path,
+) -> None:
+    runtime = AgencyRuntime(str(tmp_path / "agency.db"))
+    if preflight_state == "":
+        runtime.store.create_run(
+            trace_id="turn",
+            session_id="session",
+            host="python",
+        )
+    elif preflight_state == "reserved":
+        runtime.store.reserve_session_turn(
+            session_id="session",
+            trace_id="turn",
+            host="codex",
+        )
+    else:
+        runtime.store.begin_preflight_attempt(
+            session_id="session",
+            trace_id="turn",
+            request_fingerprint=hashlib.sha256(b"review").hexdigest(),
+            request_kind="nontrivial",
+            host="codex",
+        )
+
+    with pytest.raises(ValueError, match="not completed preflight"):
+        mutation(runtime)
+
+    assert runtime.store.get_model_receipt("turn") is None
+    assert runtime.store.get_skills_for_trace("session", "turn") == []
+    assert runtime.store.get_specialists_for_trace("session", "turn") == []
+    assert runtime.store.get_delegations("turn") == []

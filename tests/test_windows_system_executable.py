@@ -62,6 +62,33 @@ def test_posix_and_injected_commands_preserve_portable_bare_names() -> None:
         "schtasks.exe",
         "/Query",
     ]
+    assert trusted_windows_system_executable("taskkill.exe", platform_name="posix") == (
+        "taskkill.exe"
+    )
+
+
+def test_taskkill_resolution_ignores_cwd_and_path_shadowing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    system_directory = tmp_path / "Windows" / "System32"
+    system_directory.mkdir(parents=True)
+    trusted = system_directory / "taskkill.exe"
+    trusted.write_bytes(b"trusted")
+    attacker = tmp_path / "attacker"
+    attacker.mkdir()
+    (attacker / "taskkill.exe").write_bytes(b"shadow")
+    monkeypatch.chdir(attacker)
+    monkeypatch.setenv("PATH", str(attacker))
+    monkeypatch.delenv("PROCESSOR_ARCHITEW6432", raising=False)
+
+    resolved = trusted_windows_system_executable(
+        "taskkill.exe",
+        platform_name="nt",
+        system_directory=system_directory,
+    )
+
+    assert resolved == str(trusted)
 
 
 def test_windows_resolution_ignores_cwd_and_path_shadowing(

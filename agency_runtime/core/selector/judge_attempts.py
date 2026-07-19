@@ -27,6 +27,7 @@ class AttemptState:
     deadline: float
     attempted: set[tuple[str, str, str]] = field(default_factory=set)
     attempted_targets: set[tuple[str, str]] = field(default_factory=set)
+    receipts: list[dict[str, str]] = field(default_factory=list)
     count: int = 0
 
     @classmethod
@@ -54,6 +55,47 @@ class AttemptState:
             return 0.0
         self.count += 1
         return timeout
+
+    def record(
+        self,
+        provider: ProviderEntry,
+        *,
+        status: str,
+        reason: str = "",
+    ) -> None:
+        """Record one bounded, credential-free provider-chain outcome."""
+
+        if len(self.receipts) >= _facade()._MAX_PROVIDER_ATTEMPTS:
+            return
+
+        def bounded(value: object, maximum: int = 128) -> str:
+            return " ".join(str(value or "").split())[:maximum]
+
+        provider_type = bounded(provider.type, 32).lower()
+        receipt = {
+            "provider_name": bounded(provider.name) or "unnamed",
+            "provider_type": provider_type or "unknown",
+            "requested_model": bounded(provider.model, 256),
+            "model_group": bounded(provider.model, 256) if provider_type == "litellm" else "",
+            "status": bounded(status, 32),
+            "reason": bounded(reason, 128),
+        }
+        self.receipts.append(receipt)
+
+
+def _attach_provider_identity(
+    result: dict[str, Any],
+    provider: ProviderEntry,
+) -> dict[str, Any]:
+    """Preserve provider request identity without inventing model telemetry."""
+
+    provider_type = provider.type.strip().lower() or "unknown"
+    result.setdefault("provider_name", provider.name)
+    result.setdefault("provider_type", provider_type)
+    result.setdefault("requested_model", provider.model)
+    if provider_type == "litellm":
+        result.setdefault("model_group", provider.model)
+    return result
 
 
 def provider_attempt_identity(
@@ -89,17 +131,23 @@ def try_provider_chain(
     facade = _facade()
     for provider in providers:
         signature, target = facade._provider_attempt_identity(provider)
-        if signature in state.attempted or not facade._provider_is_attemptable(provider):
+        if signature in state.attempted:
+            state.record(provider, status="skipped", reason="duplicate_provider")
+            continue
+        if not facade._provider_is_attemptable(provider):
+            state.record(provider, status="failed", reason="provider_unavailable")
             continue
         configured_timeout = facade._bounded_duration(
             provider.timeout,
             maximum=facade._MAX_JUDGE_DEADLINE_SECONDS,
         )
         if configured_timeout <= 0:
+            state.record(provider, status="failed", reason="invalid_timeout")
             continue
         timeout = state.reserve(configured_timeout)
         if timeout <= 0:
-            break
+            state.record(provider, status="failed", reason="attempt_budget_exhausted")
+            continue
         state.attempted.add(signature)
         state.attempted_targets.add(target)
         result = facade._try_provider(
@@ -112,7 +160,9 @@ def try_provider_chain(
             request_timeout=timeout,
         )
         if result is not None:
-            return result
+            state.record(provider, status="applied")
+            return _attach_provider_identity(result, provider)
+        state.record(provider, status="failed", reason="provider_call_failed")
         logger.debug("provider %s failed, trying next", provider.name)
     return None
 
@@ -133,6 +183,16 @@ def try_legacy_fallback(
         judge_config.ollama_mode,
     )
     target = facade._network_target_signature(judge_config.base_url, judge_config.model)
+    provider = ProviderEntry(
+        name="legacy-judge",
+        type="ollama" if judge_config.ollama_mode else "openai-compatible",
+        model=judge_config.model,
+        base_url=judge_config.base_url,
+        api_key=judge_config.api_key,
+        api_key_env=judge_config.api_key_env,
+        ollama_mode=judge_config.ollama_mode,
+        timeout=judge_config.timeout,
+    )
     eligible = bool(
         judge_config.model
         and judge_config.base_url
@@ -140,13 +200,16 @@ def try_legacy_fallback(
         and target not in state.attempted_targets
     )
     if not eligible:
+        if judge_config.model and judge_config.base_url:
+            state.record(provider, status="skipped", reason="duplicate_provider")
         return None
     timeout = state.reserve(judge_config.timeout)
     if timeout <= 0:
+        state.record(provider, status="failed", reason="attempt_budget_exhausted")
         return None
     state.attempted.add(signature)
     state.attempted_targets.add(target)
-    return facade._try_legacy_judge(
+    result = facade._try_legacy_judge(
         judge_config,
         task_description,
         candidates,
@@ -155,6 +218,11 @@ def try_legacy_fallback(
         top_score,
         request_timeout=timeout,
     )
+    if result is None:
+        state.record(provider, status="failed", reason="provider_call_failed")
+        return None
+    state.record(provider, status="applied")
+    return _attach_provider_identity(result, provider)
 
 
 def try_ollama_fallback(
@@ -183,12 +251,14 @@ def try_ollama_fallback(
         provider.ollama_mode,
     )
     if signature in state.attempted:
+        state.record(provider, status="skipped", reason="duplicate_provider")
         return None
     timeout = state.reserve(provider.timeout)
     if timeout <= 0:
+        state.record(provider, status="failed", reason="attempt_budget_exhausted")
         return None
     state.attempted.add(signature)
-    return facade._try_provider(
+    result = facade._try_provider(
         provider,
         task_description,
         candidates,
@@ -197,6 +267,11 @@ def try_ollama_fallback(
         top_score,
         request_timeout=timeout,
     )
+    if result is None:
+        state.record(provider, status="failed", reason="provider_call_failed")
+        return None
+    state.record(provider, status="applied")
+    return _attach_provider_identity(result, provider)
 
 
 __all__ = [

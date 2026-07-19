@@ -3,7 +3,7 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-14
+updated: 2026-07-18
 tags: [release, verification]
 related:
   - CHANGELOG.md
@@ -12,6 +12,17 @@ related:
   - CODE_OF_CONDUCT.md
   - docs/THREAT_MODEL.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
+  - docs/decisions/0053-durable-fail-enabled-master-control.md
+  - docs/decisions/0054-unit-aware-assignment-and-event-driven-dag.md
+  - docs/decisions/0055-freeze-executable-identity-before-launch.md
+  - docs/decisions/0064-classify-turn-intent-from-durable-state.md
+  - docs/decisions/0065-keep-compact-resident-manager-kernel.md
+  - docs/decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md
+  - docs/decisions/0067-require-configured-inference-for-selection.md
+  - docs/decisions/0068-select-compatible-specialist-closures-per-unit.md
+  - docs/decisions/0069-enforce-conflicts-before-prompt-composition.md
+  - docs/decisions/0070-run-child-specific-agency-activation.md
+  - docs/decisions/0071-bound-native-delegation-correction.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
 supersedes: []
@@ -61,8 +72,29 @@ or adding an index-install claim.
 - [ ] LiteLLM SDK registration and Proxy callback import are tested in supported
       LiteLLM versions, or the integration remains explicitly optional and
       contract-tested only.
+- [ ] LiteLLM success, failure, retry, alias, router-group, provider, and actual
+      model evidence reconcile without one terminal state suppressing another.
+- [ ] OpenClaw rejects unaudited versions before mutation, applies final-only
+      config transactionally, and proves exact-payload one-use dispatch sealing
+      in the generated-plugin harness. Registration-only inspection is not
+      promoted to live delivery proof.
+- [ ] Agent enable/disable works through CLI and dashboard against the same
+      explicit, environment-selected, installed-service, or default config
+      identity after restart; both protected coordinators remain enabled.
+- [ ] `agency on|off --global` and the dashboard mutate one durable master
+      generation; every host and protocol surface bypasses before Store or
+      correlation when off, and fresh-session Agency-on / Agency-off canaries
+      prove the intended A/B behavior without changing native registration.
+- [ ] Host-scoped status exposes one committed generation across CLI,
+      dashboard, MCP, and generated host commands; stale concurrent mutations
+      conflict instead of overwriting, no-ops preserve the generation, and
+      multi-host CLI failures retain every per-host result.
 - [ ] Generic CLI behavior is tested with an explicit argv command; an
       unconfigured backend remains unavailable.
+- [ ] Each native child receives a fresh bounded Agency preflight for its exact
+      assignment through the host's official lifecycle. Parent specialists and
+      resident managers do not leak into children as ordinary worker prompts,
+      and absent live hosts remain labelled contract-only.
 
 Record dated live evidence in the release notes without committing secrets or
 machine-specific credential paths.
@@ -77,16 +109,62 @@ python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/dashboard_ui.test.mjs
 agency eval delegation --json
 agency eval routing --json --no-details
+agency eval full-roster --json --no-details
+```
+
+When independently collected paired observations exist, validate them
+separately; this command does not create live-host evidence:
+
+```bash
+agency eval compare --input path/to/paired-observations.jsonl
 ```
 
 - [ ] The complete suite passes on Ubuntu CI for Python 3.10 through 3.14 and on
       Windows CI at the 3.10 and 3.14 support endpoints.
 - [ ] The versioned routing report passes every checked-in threshold.
+- [ ] Turn-classification tests cover all six exact kinds—`acknowledgement`,
+      `conversation`, `control`, `continuation`, `new_intent`, and `revision`—
+      against durable open/terminal state, unfinished work, pending questions or
+      authorization, configuration/roster revisions, and retry evidence. Only a
+      proven pure acknowledgement bypasses specialist consideration.
+- [ ] The resident `agents-orchestrator` and `chief-of-staff` contract remains
+      compact, protected, parent-only, hash-bound, and restored once after
+      compaction without accumulating complete prompt bodies.
+- [ ] `agency eval full-roster` proves every approved enabled routing card
+      participates in lexical and semantic retrieval, candidate recall is
+      `1.0`, identity-free target recall@10 is at least `0.99`, and the checked-in
+      abstention, compatibility, isolation, and turn-state cases pass. Its
+      report remains labelled offline, inference-free, contract-only, and
+      incapable of establishing task quality or superiority.
+- [ ] Every configured inference provider path is exercised. Selection-requiring
+      turns cannot bypass inference through lexical confidence; chain exhaustion
+      is visibly degraded and cannot be reported as inferred. No-provider
+      deterministic mode remains explicitly distinguishable.
+- [ ] Compatible-set tests cover requirements, hard and soft conflicts,
+      authority, context mode, independence, host, platform, tools, permissions,
+      resource overlap, implementer/reviewer isolation, and calibrated no-match.
 - [ ] Cache/stickiness tests prove roster, configuration, and policy isolation.
 - [ ] Concurrent routing and evidence tests show no cross-request contamination.
 - [ ] Delegation DAG tests cover failed prerequisites, missing results, duplicate
-      work units, independent concurrency, and successful worktree merging.
+      work units, unit-specific specialist assignment, immediate successor
+      release, independent concurrency, recursive failure skips, and successful
+      worktree merging.
+- [ ] A real restricted-Windows canary proves root and nested Codex scratch,
+      child `TEMP`/`TMP`, Store descendants, Git worktree creation, read-only Git
+      cleanup, identity-swap rollback, and exact removal without repo fallback.
 - [ ] Evidence tests reject failed, stale, ambiguous, and spoofed claims.
+- [ ] Selection remains distinct from execution: only native-started isolated
+      units require exact one-use activation plus reciprocal worker/run evidence;
+      direct loads, explicit declines, skips (including a bounded reason for a
+      host-merged unit), and bounded retry exhaustion close without fabricated
+      activation or delegation.
+- [ ] Stop/finalization tests prove current-turn correlation, monotonic terminal
+      closure, at most one strongly-preferred correction, revalidation on retry,
+      fresh-turn recovery, and no terminal-trace reuse loop.
+- [ ] Paired comparison input, when supplied, uses unique blinded run identities
+      and matching requested/actual model plus LiteLLM router identities. Reports
+      keep live-host, isolated, contract-only, and simulated evidence separate;
+      directional eligibility is not published as a superiority conclusion.
 - [ ] Measured runtime code reaches 100 percent line and branch coverage; any
       unreachable platform-only exclusion is narrow, documented, and reviewed
       rather than hidden through a broad omit rule.
@@ -109,6 +187,36 @@ zizmor --pedantic --strict-collection --offline .
 - [ ] Opt-in content paths are bounded and redacted; limitations are documented.
 - [ ] Native commands use argv execution, timeouts, bounded output, and validated
       success protocols.
+- [ ] Every upstream roster definition is accounted for as approved,
+      quarantined, or retired with content hash and provenance. Deterministic and
+      configured-inference audits, findings, active-basis checks, and lifecycle
+      transitions are append-only; degraded or stale audit evidence cannot
+      approve or activate a candidate.
+- [ ] Nightly roster synchronization processes only new or content-changed
+      definitions into quarantine under read-only repository permissions and
+      never auto-activates, deletes, retires, or replaces an approved revision.
+- [ ] Prompt-composition security tests reject instruction-priority escalation,
+      unsafe authority, encoded/suspicious content, external dependencies,
+      incompatible prompts, and full prompt bodies in inference requests or
+      persisted routing receipts.
+- [ ] Executable discovery rejects relative/current-directory search, freezes
+      every launch-critical native, interpreter, and wrapper identity, and
+      revalidates it immediately before process creation on Windows and POSIX.
+- [ ] Restricted-Windows scratch validates effective-token logon identity,
+      bounded unique host capability, owner-private ancestors, mutation access,
+      protected child DACL, file identity, ambiguity failure, and link-safe
+      cleanup without globally trusting arbitrary restricting SIDs.
+- [ ] Restricted child processes independently reattest the exact randomized,
+      thread-bound scratch allocation after `exec`; a parent process-local
+      receipt, renamed allocation, mismatched host marker, or changed root/DACL
+      is not accepted as authority.
+- [ ] Persistent host and dashboard launchers bind interpreter plus package
+      bootstrap lexical/resolved identity and content digest in managed
+      manifests; inspection, registration, start, and restart reject drift.
+- [ ] Master-control tests cover owner-private creation, strict bounded schema,
+      generation conflicts, atomic replacement, missing/corrupt fail-enabled
+      behavior, restricted Windows canonical reads, mutation-right probes, and
+      authenticated dashboard brokering.
 - [ ] Security reporting instructions and the current supported-version statement
       are accurate.
 - [ ] The threat model covers current assets, trust boundaries, controls, and
@@ -147,26 +255,75 @@ From a clean checkout:
 
 ```bash
 python -m pip install ".[dev,release,security]"
+AGENCY_RELEASE_COMMIT="$(git rev-parse --verify 'HEAD^{commit}')"
 python -m build --sdist --wheel
 python -m twine check --strict dist/*
-python scripts/verify_distribution.py dist
+python scripts/verify_distribution.py dist --expected-commit "${AGENCY_RELEASE_COMMIT}"
 ```
+
+In PowerShell, capture the same pre-build value with
+`$env:AGENCY_RELEASE_COMMIT = git rev-parse --verify "HEAD^{commit}"` and pass
+`$env:AGENCY_RELEASE_COMMIT` to `--expected-commit`.
 
 - [ ] Wheel and source distribution contain every package module and asset; the
       source distribution also contains governance docs, the threat model,
       release scripts, tests, and self-contained examples.
+- [ ] Artifact verification is pinned to the commit captured before build and
+      proves HEAD did not change; wheel and sdist filenames, metadata, roots,
+      version, dependencies, license, and every MANIFEST-governed committed
+      byte match that reviewed commit exactly.
+- [ ] Archives contain only canonical portable regular-file payloads plus the
+      explicit generated metadata allowlist, remain within member, size,
+      aggregate, and compression-ratio limits, and pass strict singleton
+      metadata, entry-point, WHEEL, and RECORD hash/size validation.
 - [ ] Windows service contract tests prove current-user Task Scheduler
       registration, owned updates, rollback-on-failure, start/stop/restart,
-      uninstall, readiness, and `--no-dashboard` without touching a real task.
+      uninstall, readiness, persistent-launcher drift refusal, and
+      `--no-dashboard` without touching a real task.
 - [ ] Linux service contract tests prove `systemd --user` registration,
       hardening, manager-unavailable truth, start/stop/restart, uninstall,
-      readiness, and `--no-dashboard` without touching a real user manager.
+      readiness, persistent-launcher drift refusal, and `--no-dashboard`
+      without touching a real user manager.
 - [ ] Dashboard configuration tests cover typed writes, redaction, write-only
       secrets, optimistic-concurrency conflicts, local-only enforcement, and
       sensitive confirmation phrases through both CLI and API.
 - [ ] Dashboard live tests cover authenticated schema and metadata boundaries,
       stable revisions, one bounded activity read, stale-response cancellation,
       visibility lifecycle, terminal authentication, and capped retry behavior.
+- [ ] Dashboard roster-operations tests cover bounded pagination and filters for
+      division, capability, authority, host, platform, and tool; prompt-free
+      routing contracts; conflict/requirement metadata; and bounded revision
+      history without exporting specialist prompts.
+- [ ] Dashboard review and inference tests cover immutable quarantine findings
+      and status history, active-versus-candidate comparison, audit-gated
+      mutations, ordered provider configuration, recent failure evidence, and
+      requested/router/actual-provider/model separation. Remote freshness and
+      provider readiness remain labelled non-probed unless separate live
+      evidence exists.
+- [ ] Dashboard master-control tests cover enabled/disabled rendering,
+      generation-checked mutation, exact confirmation, stale revisions, live
+      propagation, and the fresh-session A/B notice.
+- [ ] Dashboard host-control tests cover committed generations, atomic
+      concurrent writers, HTTP 409 conflicts, no-op stability, counter
+      exhaustion, refresh-and-retry behavior, and MCP/CLI parity.
+- [ ] Restricted Windows CLI tests prove status and host soft control broker
+      only an exact restricted-token Store refusal through the authenticated
+      dashboard; endpoint/method pairs, complete host snapshots, master state,
+      host identity, booleans, and generations are validated, and malformed,
+      unavailable, or stale results return nonzero without automatic retry.
+- [ ] Brokered master and host mutation receipts prove success, requested and
+      effective state, changed truth, and the exact legal no-op or
+      single-increment generation; opposite, jumping, overflowing, and
+      impossible effective states fail without retry.
+- [ ] Restricted Windows agent tests prove list and toggle broker only the
+      default installed identity through bounded revision-stable pages, exact
+      lookup, and one config-revision mutation. Explicit config paths are not
+      redirected, duplicate or inconsistent pages fail closed, and protected
+      coordinators remain immutable.
+- [ ] Restricted Windows selector tests prove search, route, explain, and
+      policy use one complete validated read-only catalog, while delegation,
+      setup, arbitrary Store calls, and generic config mutation fail with
+      controlled nonzero diagnostics before execution or evidence claims.
 - [ ] Dashboard browser QA covers desktop and mobile layout, live controls,
       chart summaries, keyboard naming, reduced motion, forced colors, no
       horizontal page overflow, and a clean console.
@@ -213,3 +370,11 @@ source and dependency controls passed. Pull request #18 merged into `main`, the
 required ledgers are reconciled, and the associated tracker items are closed.
 Claude Code, Hermes, and OpenClaw were absent and remain contract-only. A public
 tag and package publication remain separate authorization-gated actions.
+
+The current review branch adds turn-scoped evidence and fallback coordination,
+agent activation controls, reconciled LiteLLM router/model evidence, the durable
+master switch, unit-aware event-driven delegation, executable identity
+hardening, and the related storage and host boundary repairs. Those changes are
+not part of the prior reviewed-head evidence above until the complete matrix,
+artifact smoke, installed-host canary, tracker reconciliation, and merge gates
+pass for the new commit.

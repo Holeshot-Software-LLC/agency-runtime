@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import logging
 import os
+import re
 import secrets
 import signal
 import webbrowser
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -20,28 +22,74 @@ from time import monotonic
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from agency_runtime.core.config import load_config, reset_config_cache
+from agency_runtime.core.agent_activation import (
+    normalize_agent_slug,
+    updated_disabled_agents,
+)
+from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration import (
     ConfigConflictError,
     ConfigState,
     ConfigurationError,
     apply_config_operations,
+    config_read_lock,
     read_config_state,
+    resolve_config_path,
+)
+from agency_runtime.core.dashboard_operational import (
+    MAX_OPERATIONAL_ROSTER_RESULTS,
+    MAX_RECENT_FAILURES,
+    MAX_REVIEW_RESULTS,
+    candidate_review_snapshot,
+    inference_operational_snapshot,
+    roster_operational_page,
 )
 from agency_runtime.core.dashboard_runtime import (
     remove_dashboard_runtime,
     write_dashboard_runtime,
 )
+from agency_runtime.core.dashboard_service_core import (
+    dashboard_service_environment_error,
+    dashboard_service_environment_overrides,
+)
+from agency_runtime.core.host_capabilities import (
+    EXECUTION_HOSTS,
+    project_host_capability_receipt,
+)
+from agency_runtime.core.host_control import HostControlConflictError
+from agency_runtime.core.roster.inference import resolve_inference_audit_policy
+from agency_runtime.core.roster.selector_projection import (
+    selector_roster_projection,
+    ui_roster_projection,
+)
 from agency_runtime.core.roster.sync import activate_snapshot, approve_snapshot
+from agency_runtime.core.routing_snapshot import RoutingSnapshot, capture_routing_snapshot
+from agency_runtime.core.runtime_control import (
+    RuntimeControlConflictError,
+    read_effective_runtime_control,
+    runtime_control_path,
+    set_master_enabled,
+)
+from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
+from agency_runtime.core.selector.policy import load_policy, policy_path_for_config
+from agency_runtime.core.selector.receipt_projection import (
+    RECEIPT_DESCRIPTION_BYTES,
+    bounded_receipt_text,
+)
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.server.http import AgencyHTTPHandler, AgencyHTTPServer
+from agency_runtime.server.http import (
+    AgencyHTTPHandler,
+    AgencyHTTPServer,
+    _bounded_roster_page,
+)
 
 logger = logging.getLogger("agency_runtime.server.dashboard")
 
 _ASSETS: dict[str, tuple[str, str]] = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/index.html": ("index.html", "text/html; charset=utf-8"),
+    "/favicon.svg": ("favicon.svg", "image/svg+xml"),
     "/app.css": ("app.css", "text/css; charset=utf-8"),
     "/app.js": ("app.js", "text/javascript; charset=utf-8"),
     "/charts.js": ("charts.js", "text/javascript; charset=utf-8"),
@@ -54,6 +102,103 @@ _ASSETS: dict[str, tuple[str, str]] = {
 
 _HOST_INSPECTION_CACHE_SECONDS = 3.0
 _HOST_INSPECTION_DEADLINE_SECONDS = 2.0
+_ACTIVITY_NAMES = (
+    "runs",
+    "routing",
+    "delegations",
+    "receipts",
+    "finalizations",
+    "specialists",
+)
+_SPECIALIST_ACTIVITY_FIELDS = (
+    "id",
+    "session_id",
+    "trace_id",
+    "slug",
+    "loaded_at",
+    "expired_at",
+    "state",
+)
+_BROKER_POLICY_RESPONSE_BYTES = 2 * 1024 * 1024 - 64 * 1024
+_ROUTE_LAB_HOST_INVENTORY_LIMIT = len(EXECUTION_HOSTS) * 2
+_ROUTE_LAB_REJECTION_LIMIT = 50
+_ROUTE_LAB_REJECTION_TEXT_BYTES = 256
+_EXPECTED_CLIENT_DISCONNECT_ERRNOS = frozenset(
+    value
+    for value in (
+        getattr(errno, "ECONNABORTED", None),
+        getattr(errno, "ECONNRESET", None),
+        getattr(errno, "EPIPE", None),
+        getattr(errno, "ESHUTDOWN", None),
+        getattr(errno, "ENOTCONN", None),
+    )
+    if value is not None
+)
+_EXPECTED_CLIENT_DISCONNECT_WINERRORS = frozenset(
+    {
+        10053,  # WSAECONNABORTED
+        10054,  # WSAECONNRESET
+        10058,  # WSAESHUTDOWN
+    }
+)
+
+
+def _is_expected_client_disconnect(exc: BaseException) -> bool:
+    """Return whether response I/O failed because the client went away."""
+
+    if isinstance(exc, (BrokenPipeError, ConnectionAbortedError, ConnectionResetError)):
+        return True
+    if not isinstance(exc, OSError):
+        return False
+    return (
+        exc.errno in _EXPECTED_CLIENT_DISCONNECT_ERRNOS
+        or getattr(exc, "winerror", None) in _EXPECTED_CLIENT_DISCONNECT_WINERRORS
+    )
+
+
+class DashboardRestartRequiredError(RuntimeError):
+    """Signal that this process no longer owns the configured Store identity."""
+
+    def __init__(self, binding: dict[str, Any]) -> None:
+        super().__init__("dashboard restart required: configured store path changed")
+        self.binding = binding
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        return {
+            "error": str(self),
+            "restart_required": True,
+            **self.binding,
+        }
+
+
+class _AgentToggleNoChange(Exception):
+    """Carry the locked snapshot for a semantic no-op agent toggle."""
+
+    def __init__(self, state: ConfigState, binding: Mapping[str, Any]) -> None:
+        super().__init__("agent activation state is already current")
+        self.state = state
+        self.binding = dict(binding)
+
+
+def _agent_lookup_slug(raw_path: str) -> str:
+    """Return the one canonical slug accepted by the exact dashboard lookup."""
+
+    try:
+        query = parse_qs(
+            urlparse(raw_path).query,
+            keep_blank_values=True,
+            max_num_fields=4,
+        )
+    except ValueError as exc:
+        raise ValueError("invalid agent lookup query") from exc
+    if set(query) != {"slug"} or len(query["slug"]) != 1:
+        raise ValueError("agent lookup requires exactly one slug")
+    raw_slug = query["slug"][0]
+    slug = normalize_agent_slug(raw_slug)
+    if raw_slug != slug:
+        raise ValueError("agent lookup slug must be canonical")
+    return slug
 
 
 def _config_payload(
@@ -62,10 +207,11 @@ def _config_payload(
     changed_paths: tuple[str, ...] = (),
     restart_required_paths: tuple[str, ...] = (),
     policy_enforced: bool = False,
+    service_binding: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return a JSON-safe, credential-free configuration response."""
 
-    return {
+    payload = {
         "path": state.path,
         "persisted": state.persisted,
         "effective": state.effective,
@@ -76,6 +222,259 @@ def _config_payload(
         "restart_required_paths": list(restart_required_paths),
         "policy_enforced": policy_enforced,
     }
+    if service_binding is not None:
+        payload["service_binding"] = dict(service_binding)
+    return payload
+
+
+def _roster_revision(generation: int) -> str:
+    return hashlib.sha256(f"agency.roster.v1:{generation}".encode()).hexdigest()
+
+
+def _routing_catalog_revision(catalog: list[dict[str, Any]]) -> str:
+    """Hash the exact selector catalog used by one routing operation."""
+
+    encoder = json.JSONEncoder(
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    digest = hashlib.sha256()
+    for chunk in encoder.iterencode(catalog):
+        digest.update(chunk.encode("utf-8"))
+    return digest.hexdigest()
+
+
+def _bounded_policy_response(payload: dict[str, Any]) -> dict[str, Any]:
+    """Reject a policy projection that cannot fit the authenticated wire cap."""
+
+    encoded = json.dumps(
+        payload,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    if len(encoded) > _BROKER_POLICY_RESPONSE_BYTES:
+        raise ValueError("companion policy exceeds the broker response budget")
+    return payload
+
+
+def _absolute_runtime_path(value: object) -> Path:
+    if not isinstance(value, (str, os.PathLike)):
+        raise ConfigurationError("effective store path is invalid")
+    return Path(os.path.abspath(Path(value).expanduser()))
+
+
+def _store_service_binding(store: Store, state: ConfigState) -> dict[str, Any]:
+    """Compare the process-frozen Store path with one config-state snapshot."""
+
+    effective_store = state.effective.get("store")
+    if not isinstance(effective_store, Mapping):
+        raise ConfigurationError("effective store configuration is invalid")
+    active_path = _absolute_runtime_path(store.db_path)
+    desired_path = _absolute_runtime_path(effective_store.get("db_path"))
+    config_derived = bool(getattr(store, "_store_path_config_derived", True))
+    restart_required = config_derived and os.path.normcase(str(active_path)) != os.path.normcase(
+        str(desired_path)
+    )
+    return {
+        "store_path": str(active_path),
+        "desired_store_path": str(desired_path),
+        "store_restart_required": restart_required,
+    }
+
+
+def _require_store_service_binding(store: Store, state: ConfigState) -> dict[str, Any]:
+    binding = _store_service_binding(store, state)
+    if binding["store_restart_required"]:
+        raise DashboardRestartRequiredError(binding)
+    return binding
+
+
+def _store_response_identity(
+    state: ConfigState,
+    binding: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return the shared credential-free identity carried by Store responses."""
+
+    return {
+        "config_path": str(state.path),
+        "config_revision": state.revision,
+        "environment_overrides": state.environment_overrides,
+        **dict(binding),
+    }
+
+
+def _require_agent_toggle_precondition(
+    store: Store,
+    config_path: str | Path | None,
+    slug: str,
+    *,
+    enabled: bool,
+    confirmation: object,
+    expected_disabled: tuple[str, ...],
+) -> dict[str, Any]:
+    """Bind a toggle to the locked config and active Store roster."""
+
+    state = read_config_state(config_path)
+    binding = _require_store_service_binding(store, state)
+    if store.get_roster_entry(slug) is None:
+        raise ValueError(f"agent is not present in the active roster: {slug}")
+    verb = "ENABLE" if enabled else "DISABLE"
+    expected_confirmation = f"{verb} {slug}"
+    if confirmation != expected_confirmation:
+        raise ValueError(f"confirmation phrase must be {expected_confirmation}")
+    effective = state.effective.get("agents", {})
+    disabled = effective.get("disabled", []) if isinstance(effective, dict) else []
+    updated = updated_disabled_agents(disabled, slug, enabled=enabled)
+    if updated != expected_disabled:
+        raise ConfigConflictError("configuration changed; refresh before saving")
+    if tuple(disabled) == updated:
+        raise _AgentToggleNoChange(state, binding)
+    return binding
+
+
+def _activation_page_rows(
+    rows: list[dict[str, Any]],
+    disabled: frozenset[str],
+) -> list[dict[str, Any]]:
+    """Return the compact activation-list contract without routing taxonomy."""
+
+    return [
+        {key: projected[key] for key in ("agent_slug", "name", "division", "enabled", "protected")}
+        for agent in rows
+        for projected in (ui_roster_projection(agent, disabled),)
+    ]
+
+
+def _roster_projection_kind(raw_path: str) -> str:
+    try:
+        query = parse_qs(
+            urlparse(raw_path).query,
+            keep_blank_values=True,
+            max_num_fields=16,
+        )
+    except ValueError as exc:
+        raise ValueError("invalid roster query") from exc
+    values = query.get("projection", [])
+    allowed = {"activation"}
+    if len(values) > 1 or (values and values[0] not in allowed):
+        raise ValueError("roster projection must be activation when provided")
+    return values[0] if values else "ui"
+
+
+def _single_query_values(
+    raw_path: str,
+    *,
+    allowed: frozenset[str],
+    maximum_fields: int,
+) -> dict[str, str]:
+    """Parse one bounded, unambiguous query string for an operational API."""
+
+    try:
+        query = parse_qs(
+            urlparse(raw_path).query,
+            keep_blank_values=True,
+            max_num_fields=maximum_fields,
+        )
+    except ValueError as exc:
+        raise ValueError("invalid operational query") from exc
+    if not set(query).issubset(allowed):
+        raise ValueError("operational query contains unsupported fields")
+    if any(len(values) != 1 for values in query.values()):
+        raise ValueError("operational query fields must not be repeated")
+    return {key: values[0] for key, values in query.items()}
+
+
+def _strict_query_limit(
+    values: Mapping[str, str],
+    *,
+    default: int,
+    maximum: int,
+    label: str,
+) -> int:
+    raw = values.get("limit", str(default))
+    try:
+        parsed = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be an integer") from exc
+    if not 1 <= parsed <= maximum:
+        raise ValueError(f"{label} must be between 1 and {maximum}")
+    return parsed
+
+
+def _roster_operations_query(
+    raw_path: str,
+) -> tuple[int, str | None, dict[str, str]]:
+    filter_fields = frozenset(
+        {"query", "division", "capability", "authority", "host", "platform", "tool"}
+    )
+    values = _single_query_values(
+        raw_path,
+        allowed=filter_fields | {"limit", "after"},
+        maximum_fields=10,
+    )
+    limit = _strict_query_limit(
+        values,
+        default=MAX_OPERATIONAL_ROSTER_RESULTS,
+        maximum=MAX_OPERATIONAL_ROSTER_RESULTS,
+        label="roster result limit",
+    )
+    after = values.pop("after", None)
+    values.pop("limit", None)
+    if after is not None:
+        normalized = normalize_agent_slug(after)
+        if normalized != after:
+            raise ValueError("roster operations cursor must be canonical")
+        after = normalized
+    return limit, after, values
+
+
+_REMEDIATION_CURSOR_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,511}\Z")
+
+
+def _review_query(raw_path: str) -> tuple[int, str | None, str, str]:
+    values = _single_query_values(
+        raw_path,
+        allowed=frozenset(
+            {
+                "limit",
+                "candidate_id",
+                "pending_cursor",
+                "history_cursor",
+            }
+        ),
+        maximum_fields=5,
+    )
+    limit = _strict_query_limit(
+        values,
+        default=25,
+        maximum=MAX_REVIEW_RESULTS,
+        label="candidate result limit",
+    )
+    candidate_id = values.get("candidate_id")
+    cursors: list[str] = []
+    for field in ("pending_cursor", "history_cursor"):
+        value = values.get(field, "")
+        if value and _REMEDIATION_CURSOR_RE.fullmatch(value) is None:
+            raise ValueError(f"{field.replace('_', ' ')} is invalid")
+        cursors.append(value)
+    return limit, candidate_id or None, *cursors
+
+
+def _inference_query_limit(raw_path: str) -> int:
+    values = _single_query_values(
+        raw_path,
+        allowed=frozenset({"limit"}),
+        maximum_fields=2,
+    )
+    return _strict_query_limit(
+        values,
+        default=MAX_RECENT_FAILURES,
+        maximum=MAX_RECENT_FAILURES,
+        label="failure result limit",
+    )
 
 
 def _required_config_confirmations(operations: list[Any]) -> set[str]:
@@ -253,6 +652,178 @@ class _HostInspectionCoordinator:
 _HOST_INSPECTIONS = _HostInspectionCoordinator()
 
 
+def _route_lab_native_records(
+    inspect_hosts: Callable[[], list[dict[str, Any]]],
+) -> tuple[dict[str, dict[str, Any]], frozenset[str]]:
+    """Return one bounded native record per canonical execution host.
+
+    The dashboard inventory is trusted only as evidence input. Duplicate host
+    identities are ambiguous and therefore cannot authorize Route Lab.
+    """
+
+    raw_records = inspect_hosts()
+    if not isinstance(raw_records, list):
+        raise RuntimeError("host inspection returned an invalid inventory")
+    if len(raw_records) > _ROUTE_LAB_HOST_INVENTORY_LIMIT:
+        raise RuntimeError("host inspection exceeded the supported inventory bound")
+    records: dict[str, dict[str, Any]] = {}
+    duplicates: set[str] = set()
+    for raw_record in raw_records:
+        if not isinstance(raw_record, Mapping):
+            continue
+        raw_host = raw_record.get("host")
+        if not isinstance(raw_host, str):
+            continue
+        host = raw_host.strip().casefold()
+        if host not in EXECUTION_HOSTS:
+            continue
+        if host in records:
+            duplicates.add(host)
+            continue
+        records[host] = dict(raw_record)
+    return records, frozenset(duplicates)
+
+
+def _route_lab_host_failure(
+    status: Mapping[str, Any],
+    capability_receipt: Mapping[str, Any] | None,
+) -> str:
+    """Project a bounded, credential-free host eligibility reason."""
+
+    if capability_receipt is None:
+        return "authoritative capability receipt is invalid"
+    if status.get("effective_enabled") is False:
+        return "host is not effectively enabled"
+    if status.get("effective_enabled") is not True:
+        return "host enablement is unproven"
+    evidence = capability_receipt.get("evidence")
+    if isinstance(evidence, list):
+        bounded = [
+            bounded_receipt_text(item, maximum_bytes=_ROUTE_LAB_REJECTION_TEXT_BYTES)
+            for item in evidence[:4]
+            if isinstance(item, str) and item.strip()
+        ]
+        if bounded:
+            return ", ".join(bounded)
+    return f"capability status is {capability_receipt.get('status', 'unknown')}"
+
+
+def _route_lab_host_capability(
+    store: Store,
+    inspect_hosts: Callable[[], list[dict[str, Any]]],
+    *,
+    requested_host: object,
+    global_enabled: bool,
+) -> tuple[str, dict[str, Any]]:
+    """Resolve one verified installed execution host for Route Lab.
+
+    Callers may omit the host only when exactly one current, effectively
+    enabled native installation can be derived. User input never supplies tool
+    capabilities; the bounded installation receipt is the sole authority.
+    """
+
+    from agency_runtime.core.host_control import inspect_host_status
+
+    if requested_host is None:
+        normalized_requested = ""
+    elif not isinstance(requested_host, str):
+        raise ValueError("host must be a supported execution-host string")
+    else:
+        normalized_requested = requested_host.strip().casefold()
+        if normalized_requested not in EXECUTION_HOSTS:
+            expected = ", ".join(EXECUTION_HOSTS)
+            raise ValueError(f"host must be one of: {expected}")
+
+    records, duplicates = _route_lab_native_records(inspect_hosts)
+    statuses: dict[str, tuple[dict[str, Any], dict[str, Any] | None]] = {}
+    verified: list[str] = []
+    for host in EXECUTION_HOSTS:
+        if host in duplicates:
+            continue
+        status = inspect_host_status(
+            store,
+            host,
+            native_record=records.get(host, {"host": host}),
+            global_enabled=global_enabled,
+        )
+        capability_receipt = project_host_capability_receipt(status.get("execution_capabilities"))
+        statuses[host] = (status, capability_receipt)
+        if (
+            capability_receipt is not None
+            and capability_receipt.get("status") == "native-installation-verified"
+            and capability_receipt.get("execution_host") == host
+            and status.get("effective_enabled") is True
+        ):
+            verified.append(host)
+
+    if normalized_requested:
+        if normalized_requested in duplicates:
+            raise ValueError(
+                f"Route Lab cannot use {normalized_requested}: host inventory is ambiguous"
+            )
+        status, capability_receipt = statuses[normalized_requested]
+        if normalized_requested not in verified or capability_receipt is None:
+            reason = _route_lab_host_failure(status, capability_receipt)
+            raise ValueError(f"Route Lab cannot use {normalized_requested}: {reason}")
+        return normalized_requested, capability_receipt
+
+    if not verified:
+        expected = ", ".join(EXECUTION_HOSTS)
+        raise ValueError(
+            "Route Lab requires a verified and enabled execution host; "
+            f"none is available ({expected})"
+        )
+    if len(verified) > 1:
+        raise ValueError(
+            "host is required when multiple verified execution hosts are available: "
+            + ", ".join(verified)
+        )
+    selected_host = verified[0]
+    capability_receipt = statuses[selected_host][1]
+    if capability_receipt is None:  # pragma: no cover - guarded by ``verified``
+        raise RuntimeError("verified Route Lab host lost its capability receipt")
+    return selected_host, capability_receipt
+
+
+def _route_lab_eligibility_projection(
+    receipt: Mapping[str, Any],
+    capability_receipt: Mapping[str, Any],
+    *,
+    catalog_size: int,
+) -> dict[str, Any]:
+    """Return a bounded projection of deterministic eligibility rejections."""
+
+    routing = receipt.get("routing")
+    raw_rejections = (
+        routing.get("eligibility_rejections", []) if isinstance(routing, Mapping) else []
+    )
+    if not isinstance(raw_rejections, list):
+        raw_rejections = []
+    rejected: list[dict[str, str]] = []
+    for item in raw_rejections[:_ROUTE_LAB_REJECTION_LIMIT]:
+        if not isinstance(item, Mapping):
+            continue
+        slug = bounded_receipt_text(
+            item.get("slug"),
+            maximum_bytes=_ROUTE_LAB_REJECTION_TEXT_BYTES,
+        )
+        reason = bounded_receipt_text(
+            item.get("reason"),
+            maximum_bytes=_ROUTE_LAB_REJECTION_TEXT_BYTES,
+        )
+        if slug and reason:
+            rejected.append({"slug": slug, "reason": reason})
+    rejection_count = len(raw_rejections)
+    return {
+        "execution_host": capability_receipt["execution_host"],
+        "capability_status": capability_receipt["status"],
+        "eligible_count": max(0, catalog_size - rejection_count),
+        "rejection_count": rejection_count,
+        "rejections": rejected,
+        "truncated": rejection_count > len(rejected),
+    }
+
+
 def _provider_health(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Summarize observed model receipts without claiming a live health probe."""
     observed: dict[str, dict[str, Any]] = {}
@@ -287,10 +858,7 @@ def _provider_health(receipts: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _recent_counts(activity: dict[str, list[dict[str, Any]]]) -> dict[str, int]:
     """Return honest bounded counts for the activity included in a response."""
 
-    return {
-        name: len(activity.get(name, []))
-        for name in ("runs", "routing", "delegations", "receipts", "finalizations")
-    }
+    return {name: len(activity.get(name, [])) for name in _ACTIVITY_NAMES}
 
 
 def _dashboard_activity(
@@ -299,8 +867,13 @@ def _dashboard_activity(
     """Strip optional captured detail from dashboard activity responses."""
 
     rendered: dict[str, list[dict[str, Any]]] = {}
-    for name in ("runs", "routing", "delegations", "receipts", "finalizations"):
+    for name in _ACTIVITY_NAMES:
         rows = activity.get(name, [])
+        if name == "specialists":
+            rendered[name] = [
+                {key: row[key] for key in _SPECIALIST_ACTIVITY_FIELDS if key in row} for row in rows
+            ]
+            continue
         excluded = (
             "skip_reason" if name == "delegations" else "work_units" if name == "routing" else None
         )
@@ -387,6 +960,40 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
     def auth_token(self) -> str:
         return self.server.auth_token  # type: ignore[attr-defined]
 
+    @property
+    def config_path(self) -> Path:
+        """Return the immutable configuration identity owned by this server."""
+
+        return self.server.config_path  # type: ignore[attr-defined]
+
+    @property
+    def runtime_control_path(self) -> Path:
+        """Return the immutable master-switch identity owned by this server."""
+
+        return self.server.runtime_control_path  # type: ignore[attr-defined]
+
+    def _master_control(self) -> dict[str, Any]:
+        """Read the strict durable master state for one response boundary."""
+
+        return read_effective_runtime_control(path=self.runtime_control_path)
+
+    def _close_expected_client_disconnect(self, exc: BaseException) -> bool:
+        """Close one abandoned connection without turning it into a server fault."""
+
+        if not _is_expected_client_disconnect(exc):
+            return False
+        self.close_connection = True
+        return True
+
+    def handle_one_request(self) -> None:
+        """Keep expected response-I/O disconnects out of socketserver error logs."""
+
+        try:
+            super().handle_one_request()
+        except OSError as exc:
+            if not self._close_expected_client_disconnect(exc):
+                raise
+
     def do_OPTIONS(self) -> None:
         self._json_error(HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed")
 
@@ -401,25 +1008,37 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         if not self._authorise_api_request():
             return
         try:
-            if path == "/api/live":
-                self._handle_live()
-            elif path == "/api/overview":
-                self._handle_overview()
-            elif path == "/api/roster":
-                self._handle_roster()
-            elif path == "/api/activity":
-                self._handle_activity()
-            elif path == "/api/hosts":
-                self._handle_hosts()
-            elif path == "/api/config":
-                self._handle_config()
-            elif path == "/api/health":
-                self._json_ok({"status": "ok"})
-            elif path == "/api/snapshots":
-                self._json_ok({"snapshots": self.store.list_roster_snapshots()})
-            else:
+            handler = {
+                "/api/live": self._handle_live,
+                "/api/overview": self._handle_overview,
+                "/api/roster": self._handle_roster,
+                "/api/roster/operations": self._handle_roster_operations,
+                "/api/roster/reviews": self._handle_roster_reviews,
+                "/api/agents/lookup": self._handle_agent_lookup,
+                "/api/activity": self._handle_activity,
+                "/api/hosts": self._handle_hosts,
+                "/api/inference": self._handle_inference,
+                "/api/runtime": lambda: self._json_ok({"master": self._master_control()}),
+                "/api/config": self._handle_config,
+                "/api/health": lambda: self._json_ok({"status": "ok"}),
+                "/api/snapshots": self._handle_snapshots,
+                "/api/policy": self._handle_policy,
+            }.get(path)
+            if handler is None:
                 self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+            else:
+                handler()
+        except DashboardRestartRequiredError as exc:
+            self._send_json(HTTPStatus.CONFLICT, exc.payload)
+        except ConfigConflictError as exc:
+            self._json_error(HTTPStatus.CONFLICT, str(exc))
+        except ConfigurationError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+        except (KeyError, ValueError, RuntimeError) as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
+            if self._close_expected_client_disconnect(exc):
+                return
             logger.exception("dashboard GET failed for %s (%s)", path, type(exc).__name__)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
@@ -434,25 +1053,35 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             body = self._read_json_body()
             if body is None:
                 return
-            if path == "/api/route":
-                self._handle_route_lab(body)
-            elif path == "/api/maintenance/trim":
-                self._handle_trim(body)
-            elif path == "/api/roster/action":
-                self._handle_roster_action(body)
-            elif path == "/api/hosts/toggle":
-                self._handle_host_toggle(body)
-            elif path == "/api/config":
-                self._handle_config_update(body)
-            else:
+            handler = {
+                "/api/route": self._handle_route_lab,
+                "/api/search": self._handle_search_broker,
+                "/api/maintenance/trim": self._handle_trim,
+                "/api/roster/action": self._handle_roster_action,
+                "/api/hosts/toggle": self._handle_host_toggle,
+                "/api/agents/toggle": self._handle_agent_toggle,
+                "/api/runtime/toggle": self._handle_runtime_toggle,
+                "/api/config": self._handle_config_update,
+            }.get(path)
+            if handler is None:
                 self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+            else:
+                handler(body)
+        except DashboardRestartRequiredError as exc:
+            self._send_json(HTTPStatus.CONFLICT, exc.payload)
         except ConfigConflictError as exc:
+            self._json_error(HTTPStatus.CONFLICT, str(exc))
+        except RuntimeControlConflictError as exc:
+            self._json_error(HTTPStatus.CONFLICT, str(exc))
+        except HostControlConflictError as exc:
             self._json_error(HTTPStatus.CONFLICT, str(exc))
         except ConfigurationError as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except (KeyError, ValueError, RuntimeError) as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
+            if self._close_expected_client_disconnect(exc):
+                return
             logger.exception("dashboard POST failed for %s (%s)", path, type(exc).__name__)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
@@ -528,6 +1157,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             data = json.dumps(
                 payload,
                 allow_nan=False,
+                ensure_ascii=False,
                 separators=(",", ":"),
             ).encode("utf-8")
         except (TypeError, ValueError):
@@ -544,24 +1174,41 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
     def _handle_overview(self) -> None:
         stats = self.store.database_stats()
         activity = _dashboard_activity(self.store.recent_dashboard_activity(limit=200))
-        cfg = load_config()
+        cfg = load_config(self.config_path)
+        state = read_config_state(self.config_path)
+        binding = _store_service_binding(self.store, state)
         self._json_ok(
             {
                 **_live_overview(activity, stats),
-                "roster_count": self.store.count_active_roster(),
+                "inference": inference_operational_snapshot(cfg, activity),
+                "roster_count": self.store.count_enabled_roster(),
                 "retention_days": cfg.observability.retention_days,
                 "capture_content": cfg.observability.capture_content,
                 "counts": stats["tables"],
+                "master": self._master_control(),
+                "service_binding": binding,
+                **_store_response_identity(state, binding),
             }
         )
 
     def _handle_live(self) -> None:
+        state = read_config_state(self.config_path)
+        binding = _store_service_binding(self.store, state)
         limit = _bounded_query_limit(self.path, default=100)
         activity = _dashboard_activity(self.store.recent_dashboard_activity(limit=limit))
+        inference = inference_operational_snapshot(
+            load_config(self.config_path),
+            activity,
+            failure_limit=min(limit, MAX_RECENT_FAILURES),
+        )
         core = {
             "schema_version": 1,
-            "overview": _live_overview(activity, self.store.database_sizes()),
+            "overview": {
+                **_live_overview(activity, self.store.database_sizes()),
+                "inference": inference,
+            },
             "activity": activity,
+            "master": self._master_control(),
         }
         self._json_ok(
             {
@@ -570,25 +1217,323 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "revision": _dashboard_revision(core),
                 "overview": core["overview"],
                 "activity": core["activity"],
+                "master": core["master"],
+                "service_binding": binding,
+                **_store_response_identity(state, binding),
             }
         )
 
     def _handle_activity(self) -> None:
+        state = read_config_state(self.config_path)
+        binding = _store_service_binding(self.store, state)
         limit = _bounded_query_limit(self.path, default=50)
-        self._json_ok(_dashboard_activity(self.store.recent_dashboard_activity(limit=limit)))
+        self._json_ok(
+            {
+                **_dashboard_activity(self.store.recent_dashboard_activity(limit=limit)),
+                "service_binding": binding,
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_snapshots(self) -> None:
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        effective = state.effective.get("agents", {})
+        disabled = (
+            frozenset(effective.get("disabled", [])) if isinstance(effective, dict) else frozenset()
+        )
+        operations = roster_operational_page(
+            self.store,
+            disabled_agents=disabled,
+        )
+        reviews = candidate_review_snapshot(self.store)
+        self._json_ok(
+            {
+                "snapshots": self.store.list_roster_snapshots(),
+                "operations": operations,
+                "reviews": reviews,
+                "service_binding": binding,
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_roster_operations(self) -> None:
+        limit, after, filters = _roster_operations_query(self.path)
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        effective = state.effective.get("agents", {})
+        disabled = (
+            frozenset(effective.get("disabled", [])) if isinstance(effective, dict) else frozenset()
+        )
+        operations = roster_operational_page(
+            self.store,
+            disabled_agents=disabled,
+            filters=filters,
+            limit=limit,
+            after=after,
+        )
+        self._json_ok(
+            {
+                **operations,
+                "roster_revision": _roster_revision(operations["roster_generation"]),
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_roster_reviews(self) -> None:
+        limit, candidate_id, pending_cursor, history_cursor = _review_query(self.path)
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        self._json_ok(
+            {
+                **candidate_review_snapshot(
+                    self.store,
+                    limit=limit,
+                    candidate_id=candidate_id,
+                    pending_cursor=pending_cursor,
+                    history_cursor=history_cursor,
+                ),
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_inference(self) -> None:
+        limit = _inference_query_limit(self.path)
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        activity = _dashboard_activity(self.store.recent_dashboard_activity(limit=max(limit, 50)))
+        self._json_ok(
+            {
+                **inference_operational_snapshot(
+                    load_config(self.config_path),
+                    activity,
+                    failure_limit=limit,
+                ),
+                **_store_response_identity(state, binding),
+            }
+        )
 
     def _handle_hosts(self) -> None:
         from agency_runtime.core.host_control import inspect_host_status
 
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
         inspector = self.server.host_inspector  # type: ignore[attr-defined]
+        master = self._master_control()
+        global_enabled = bool(master["enabled"])
         hosts = [
-            inspect_host_status(self.store, str(item.get("host") or ""), native_record=item)
+            inspect_host_status(
+                self.store,
+                str(item.get("host") or ""),
+                native_record=item,
+                global_enabled=global_enabled,
+            )
             for item in inspector()
         ]
-        self._json_ok({"hosts": hosts})
+        self._json_ok(
+            {
+                "hosts": hosts,
+                "master": master,
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_runtime_toggle(self, body: dict[str, Any]) -> None:
+        """Apply the authenticated global master switch with generation CAS."""
+
+        enabled = body.get("enabled")
+        if not isinstance(enabled, bool):
+            raise ValueError("enabled must be a JSON boolean")
+        expected_generation = body.get("expected_generation")
+        if (
+            isinstance(expected_generation, bool)
+            or not isinstance(expected_generation, int)
+            or expected_generation < 0
+        ):
+            raise ValueError("expected_generation must be a non-negative integer")
+        expected_confirmation = "ENABLE AGENCY" if enabled else "DISABLE AGENCY"
+        if body.get("confirm") != expected_confirmation:
+            raise ValueError(f"confirmation phrase must be {expected_confirmation}")
+        before = self._master_control()
+        updated = set_master_enabled(
+            enabled,
+            expected_generation=expected_generation,
+            source="dashboard",
+            path=self.runtime_control_path,
+        )
+        self._json_ok(
+            {
+                "ok": True,
+                "changed": updated != before,
+                "master": updated,
+            }
+        )
+
+    def _handle_roster(self) -> None:
+        """Return preserved definitions plus reversible activation state."""
+
+        try:
+            limit, after = _bounded_roster_page(self.path)
+            projection = _roster_projection_kind(self.path)
+        except ValueError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        effective = state.effective.get("agents", {})
+        disabled = (
+            frozenset(effective.get("disabled", [])) if isinstance(effective, dict) else frozenset()
+        )
+        if projection == "activation":
+            page_limit = limit
+            snapshot = self.store.get_active_roster_activation_page_snapshot(
+                limit=page_limit,
+                after=after,
+                disabled_agents=disabled,
+            )
+        else:
+            page_limit = limit
+            snapshot = self.store.get_active_roster_ui_page_snapshot(
+                limit=page_limit,
+                after=after,
+                disabled_agents=disabled,
+            )
+        page = snapshot["rows"]
+        if projection == "activation":
+            roster = _activation_page_rows(page[:page_limit], disabled)
+        else:
+            roster = [ui_roster_projection(agent, disabled) for agent in page[:page_limit]]
+        truncated = len(page) > len(roster)
+        total_count = int(snapshot["total_count"])
+        enabled_count = int(snapshot["enabled_count"])
+        self._json_ok(
+            {
+                "agents": roster,
+                "count": len(roster),
+                "total_count": total_count,
+                "enabled_count": enabled_count,
+                "disabled_count": total_count - enabled_count,
+                "limit": page_limit,
+                "truncated": truncated,
+                "next_cursor": roster[-1]["agent_slug"] if truncated else None,
+                "config_path": str(state.path),
+                "config_revision": state.revision,
+                "environment_overrides": state.environment_overrides,
+                "roster_revision": _roster_revision(int(snapshot["generation"])),
+                "projection": projection,
+                **binding,
+            }
+        )
+
+    def _handle_agent_lookup(self) -> None:
+        """Return one governed roster definition without materializing its prompt."""
+
+        try:
+            slug = _agent_lookup_slug(self.path)
+        except ValueError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        effective = state.effective.get("agents", {})
+        disabled = (
+            frozenset(effective.get("disabled", [])) if isinstance(effective, dict) else frozenset()
+        )
+        snapshot = self.store.get_active_roster_entry_snapshot(
+            slug,
+            disabled_agents=disabled,
+        )
+        roster = [selector_roster_projection(agent, disabled) for agent in snapshot["rows"]]
+        total_count = int(snapshot["total_count"])
+        enabled_count = int(snapshot["enabled_count"])
+        self._json_ok(
+            {
+                "agents": roster,
+                "count": len(roster),
+                "total_count": total_count,
+                "enabled_count": enabled_count,
+                "disabled_count": total_count - enabled_count,
+                "limit": 1,
+                "truncated": False,
+                "next_cursor": None,
+                "filter_slug": slug,
+                "config_path": str(state.path),
+                "config_revision": state.revision,
+                "environment_overrides": state.environment_overrides,
+                "roster_revision": _roster_revision(int(snapshot["generation"])),
+                "projection": "selector",
+                **binding,
+            }
+        )
 
     def _handle_config(self) -> None:
-        self._json_ok(_config_payload(read_config_state()))
+        state = read_config_state(self.config_path)
+        self._json_ok(
+            _config_payload(
+                state,
+                service_binding=_store_service_binding(self.store, state),
+            )
+        )
+
+    def _routing_operation_snapshot(self) -> tuple[RoutingSnapshot, dict[str, Any]]:
+        """Freeze config, Store binding, and catalog identity for one operation."""
+
+        with config_read_lock(self.config_path):
+            before = read_config_state(self.config_path)
+            binding = _require_store_service_binding(self.store, before)
+            snapshot = capture_routing_snapshot(self.store)
+            after = read_config_state(self.config_path)
+            if (
+                before.path != after.path
+                or before.revision != after.revision
+                or before.environment_overrides != after.environment_overrides
+            ):
+                raise ConfigConflictError("configuration changed while routing snapshot loaded")
+            if resolve_config_path(snapshot.config.config_path) != self.config_path:
+                raise ConfigurationError("routing snapshot configuration identity is invalid")
+            agents = after.effective.get("agents")
+            disabled = agents.get("disabled") if isinstance(agents, Mapping) else None
+            if not isinstance(disabled, list) or frozenset(disabled) != frozenset(
+                snapshot.config.agents.disabled
+            ):
+                raise ConfigConflictError("routing snapshot activation policy is inconsistent")
+        return snapshot, {
+            "config_path": str(after.path),
+            "config_revision": after.revision,
+            "store_path": str(binding["store_path"]),
+            "roster_revision": _routing_catalog_revision(snapshot.catalog),
+            "environment_overrides": after.environment_overrides,
+        }
+
+    def _handle_policy(self) -> None:
+        """Return a credential-free bounded policy projection for CLI brokerage."""
+
+        snapshot, identity = self._routing_operation_snapshot()
+        policy = load_policy(policy_path_for_config(snapshot.config))
+        policy_revision = hashlib.sha256(
+            json.dumps(
+                policy,
+                allow_nan=False,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+        self._json_ok(
+            _bounded_policy_response(
+                {
+                    "schema_version": "agency.policy_snapshot.v1",
+                    "policy": policy,
+                    "active_slugs": sorted(
+                        str(agent.get("slug") or "")
+                        for agent in snapshot.catalog
+                        if str(agent.get("slug") or "")
+                    ),
+                    "operation_snapshot": identity,
+                    "policy_revision": policy_revision,
+                }
+            )
+        )
 
     def _handle_config_update(self, body: dict[str, Any]) -> None:
         operations = body.get("operations")
@@ -605,6 +1550,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         result = apply_config_operations(
             operations,
             expected_revision=body.get("expected_revision"),
+            path=self.config_path,
         )
         self._json_ok(
             _config_payload(
@@ -612,28 +1558,213 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 changed_paths=result.changed_paths,
                 restart_required_paths=result.restart_required,
                 policy_enforced=result.policy_enforced,
+                service_binding=_store_service_binding(self.store, result.state),
             )
         )
 
-    def _handle_route_lab(self, body: dict[str, Any]) -> None:
-        task = str(body.get("task") or "").strip()
-        if not task:
-            raise ValueError("task is required")
-        if len(task) > load_config().selector.max_user_msg_len:
-            raise ValueError("task exceeds the configured maximum length")
+    def _handle_agent_toggle(self, body: dict[str, Any]) -> None:
+        """Persist one quick activation toggle through the config CAS writer."""
+
+        slug = normalize_agent_slug(body.get("slug"))
+        enabled = body.get("enabled")
+        if not isinstance(enabled, bool):
+            raise ValueError("enabled must be a JSON boolean")
+        state = read_config_state(self.config_path)
+        # Fail fast on an already-stale service, then repeat this proof inside
+        # the writer lock before any toggle can be committed.
+        _require_store_service_binding(self.store, state)
+        effective = state.effective.get("agents", {})
+        disabled = effective.get("disabled", []) if isinstance(effective, dict) else []
+        updated = updated_disabled_agents(disabled, slug, enabled=enabled)
+        if body.get("expected_revision") != state.revision:
+            raise ConfigConflictError("configuration changed; refresh before saving")
+        binding: dict[str, Any] = {}
+
+        def locked_precondition() -> None:
+            binding.update(
+                _require_agent_toggle_precondition(
+                    self.store,
+                    self.config_path,
+                    slug,
+                    enabled=enabled,
+                    confirmation=body.get("confirm"),
+                    expected_disabled=updated,
+                )
+            )
+
         try:
-            limit = max(1, min(int(body.get("limit", 10)), 50))
-        except (TypeError, ValueError):
-            limit = 10
+            result = apply_config_operations(
+                [{"op": "set", "path": "agents.disabled", "value": list(updated)}],
+                expected_revision=state.revision,
+                path=self.config_path,
+                locked_precondition=locked_precondition,
+            )
+        except _AgentToggleNoChange as no_change:
+            self._json_ok(
+                {
+                    "ok": True,
+                    "slug": slug,
+                    "enabled": enabled,
+                    "changed": False,
+                    "config": _config_payload(
+                        no_change.state,
+                        service_binding=no_change.binding,
+                    ),
+                    **no_change.binding,
+                }
+            )
+            return
+        self._json_ok(
+            {
+                "ok": True,
+                "slug": slug,
+                "enabled": enabled,
+                "changed": bool(result.changed_paths),
+                "config": _config_payload(
+                    result.state,
+                    changed_paths=result.changed_paths,
+                    restart_required_paths=result.restart_required,
+                    policy_enforced=result.policy_enforced,
+                    service_binding=binding,
+                ),
+                **binding,
+            }
+        )
+
+    def _handle_route_lab(self, body: dict[str, Any]) -> None:
+        task = body.get("task")
+        if not isinstance(task, str) or not task.strip():
+            raise ValueError("task is required")
+        limit = body.get("limit", 10)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
+            raise ValueError("limit must be an integer from 1 through 50")
+        session_id = body.get("session_id", "dashboard")
+        if not isinstance(session_id, str):
+            raise ValueError("session_id must be a string")
+        master = self._master_control()
+        if not master["enabled"]:
+            self._json_ok(
+                {
+                    "schema_version": "agency.selection_explain.v1",
+                    "session_id": session_id,
+                    "task": task,
+                    "routing": {
+                        "runtime_enabled": False,
+                        "bypassed": True,
+                        "trace_id": "",
+                        "selected_ids": [],
+                        "semantic_ids": [],
+                        "confidence": 0.0,
+                        "latency_ms": 0,
+                        "status": "bypassed",
+                        "source": "master_control",
+                        "provider": "master_control",
+                    },
+                    "selected": [],
+                    "considered_candidates": [],
+                    "rejected_candidates": [],
+                    "signals": {"source": "master_control"},
+                    "delegation_graph": {"nodes": [], "edges": []},
+                    "runtime_enabled": False,
+                    "status": "disabled",
+                    "bypassed": True,
+                    "message": "Agency Runtime is disabled; Route Lab bypassed routing.",
+                    "master": master,
+                }
+            )
+            return
+        snapshot, identity = self._routing_operation_snapshot()
+        if len(task) > snapshot.config.selector.max_user_msg_len:
+            raise ValueError("task exceeds the configured maximum length")
+        requested_host = body.get("host")
+        execution_host, capability_receipt = _route_lab_host_capability(
+            self.store,
+            self.server.host_inspector,  # type: ignore[attr-defined]
+            requested_host=requested_host,
+            global_enabled=True,
+        )
         receipt = explain_route(
-            str(body.get("session_id") or "dashboard"),
+            session_id,
             task,
-            self.store.get_active_roster_as_catalog(),
+            snapshot.catalog,
+            config=snapshot.config,
             limit=limit,
             store=self.store,
+            host=execution_host,
+            platform=str(capability_receipt["platform"]),
+            available_tools=tuple(capability_receipt["capabilities"]),
+            capability_receipt=capability_receipt,
         )
+        eligibility = _route_lab_eligibility_projection(
+            receipt,
+            capability_receipt,
+            catalog_size=len(snapshot.catalog),
+        )
+        routing = receipt.get("routing")
+        if isinstance(routing, dict):
+            routing["eligibility_rejections"] = list(eligibility["rejections"])
+            routing["eligibility_rejection_count"] = eligibility["rejection_count"]
+            routing["eligibility_rejections_truncated"] = eligibility["truncated"]
+        receipt["host_capability_receipt"] = capability_receipt
+        receipt["eligibility"] = {
+            **eligibility,
+            "host_resolution": "explicit" if requested_host is not None else "derived",
+        }
         receipt["delegation_graph"] = _delegation_graph(receipt)
+        receipt["operation_snapshot"] = identity
         self._json_ok(receipt)
+
+    def _handle_search_broker(self, body: dict[str, Any]) -> None:
+        """Search full selector metadata but return only bounded result summaries."""
+
+        query = body.get("query")
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query is required")
+        limit = body.get("limit", 10)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("limit must be an integer from 1 through 100")
+        master = self._master_control()
+        if not master["enabled"]:
+            self._json_ok(
+                {
+                    "schema_version": "agency.search.v1",
+                    "query": query,
+                    "agents": [],
+                    "count": 0,
+                    "runtime_enabled": False,
+                    "status": "disabled",
+                    "bypassed": True,
+                    "message": "Agency Runtime is disabled; search was bypassed.",
+                    "master": master,
+                }
+            )
+            return
+        snapshot, identity = self._routing_operation_snapshot()
+        if len(query) > snapshot.config.selector.max_user_msg_len:
+            raise ValueError("query exceeds the configured maximum length")
+        candidates, scores = pre_narrow(query, snapshot.catalog, limit=limit)
+        agents = [
+            {
+                "slug": str(agent.get("slug") or ""),
+                "name": str(agent.get("name") or ""),
+                "division": str(agent.get("division") or ""),
+                "description": bounded_receipt_text(
+                    agent.get("description"),
+                    maximum_bytes=RECEIPT_DESCRIPTION_BYTES,
+                ),
+                "score": round(float(score), 4),
+            }
+            for agent, score in zip(candidates, scores, strict=True)
+        ]
+        self._json_ok(
+            {
+                "schema_version": "agency.search.v1",
+                "query": query,
+                "agents": agents,
+                "count": len(agents),
+                "operation_snapshot": identity,
+            }
+        )
 
     def _handle_trim(self, body: dict[str, Any]) -> None:
         if body.get("confirm") != "TRIM RUNTIME DATA":
@@ -647,12 +1778,20 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             raise ValueError("dry_run must be a JSON boolean")
         if not isinstance(vacuum, bool):
             raise ValueError("vacuum must be a JSON boolean")
-        result = self.store.trim_runtime_tables(
-            older_than_days=days,
-            dry_run=dry_run,
-            vacuum=vacuum,
+        with config_read_lock(self.config_path):
+            state = read_config_state(self.config_path)
+            binding = _require_store_service_binding(self.store, state)
+            result = self.store.trim_runtime_tables(
+                older_than_days=days,
+                dry_run=dry_run,
+                vacuum=vacuum,
+            )
+        self._json_ok(
+            {
+                **result,
+                **_store_response_identity(state, binding),
+            }
         )
-        self._json_ok(result)
 
     def _handle_roster_action(self, body: dict[str, Any]) -> None:
         action = str(body.get("action") or "").strip().lower()
@@ -662,11 +1801,34 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         expected = f"{action.upper()} {snapshot_id}"
         if body.get("confirm") != expected:
             raise ValueError(f"confirmation phrase must be {expected}")
-        if action == "approve":
-            approve_snapshot(self.store, snapshot_id)
-        else:
-            activate_snapshot(self.store, snapshot_id)
-        self._json_ok({"ok": True, "action": action, "snapshot_id": snapshot_id})
+        with config_read_lock(self.config_path):
+            state = read_config_state(self.config_path)
+            binding = _require_store_service_binding(self.store, state)
+            inference_required = resolve_inference_audit_policy(
+                load_config(self.config_path)
+            ).required
+            if action == "approve":
+                approve_snapshot(
+                    self.store,
+                    snapshot_id,
+                    require_inference=inference_required,
+                )
+            else:
+                activate_snapshot(
+                    self.store,
+                    snapshot_id,
+                    require_inference=inference_required,
+                )
+        self._json_ok(
+            {
+                "ok": True,
+                "action": action,
+                "snapshot_id": snapshot_id,
+                "config_path": str(state.path),
+                "config_revision": state.revision,
+                **binding,
+            }
+        )
 
     def _handle_host_toggle(self, body: dict[str, Any]) -> None:
         from agency_runtime.core.host_control import (
@@ -681,23 +1843,48 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         enabled = body.get("enabled")
         if not isinstance(enabled, bool):
             raise ValueError("enabled must be a JSON boolean")
+        expected_generation = body.get("expected_generation")
+        if (
+            isinstance(expected_generation, bool)
+            or not isinstance(expected_generation, int)
+            or expected_generation < 0
+        ):
+            raise ValueError("expected_generation must be a non-negative integer")
         verb = "ENABLE" if enabled else "DISABLE"
         expected = f"{verb} {host}"
         if body.get("confirm") != expected:
             raise ValueError(f"confirmation phrase must be {expected}")
-        control = set_runtime_control(
-            self.store,
-            host,
-            enabled=enabled,
-            source="dashboard",
-        )
+        with config_read_lock(self.config_path):
+            state = read_config_state(self.config_path)
+            binding = _require_store_service_binding(self.store, state)
+            control = set_runtime_control(
+                self.store,
+                host,
+                enabled=enabled,
+                source="dashboard",
+                expected_generation=expected_generation,
+            )
         inspector = self.server.host_inspector  # type: ignore[attr-defined]
         native = next(
             (item for item in inspector() if item.get("host") == host),
             {"host": host},
         )
-        result = inspect_host_status(self.store, host, native_record=native)
-        self._send_json(HTTPStatus.OK, {"ok": True, **control, "status": result})
+        master = self._master_control()
+        result = inspect_host_status(
+            self.store,
+            host,
+            native_record=native,
+            global_enabled=bool(master["enabled"]),
+        )
+        self._send_json(
+            HTTPStatus.OK,
+            {
+                "ok": True,
+                **control,
+                "status": result,
+                **_store_response_identity(state, binding),
+            },
+        )
 
 
 class DashboardHTTPServer(AgencyHTTPServer):
@@ -711,17 +1898,28 @@ class DashboardHTTPServer(AgencyHTTPServer):
         host: str = "127.0.0.1",
         port: int = 0,
         host_inspector: Callable[[], list[dict[str, Any]]] | None = None,
+        config_path: str | Path | None = None,
+        runtime_control_home: str | Path | None = None,
     ) -> None:
         if host not in {"127.0.0.1", "localhost", "::1"}:
             raise ValueError("the dashboard is loopback-only")
+        store_config_path = getattr(store, "config_path", None)
+        if store_config_path is None:
+            raise ValueError("dashboard Store must have a configuration identity")
+        selected_config_path = store_config_path if config_path is None else config_path
+        canonical_config_path = resolve_config_path(selected_config_path)
+        if resolve_config_path(store_config_path) != canonical_config_path:
+            raise ValueError("dashboard Store and configuration paths must match")
         self.auth_token = auth_token
         self.host_inspector = host_inspector or _HOST_INSPECTIONS.inspect
+        self.config_path = canonical_config_path
+        self.runtime_control_path = runtime_control_path(home_dir=runtime_control_home)
         super().__init__(
             store,
             host,
             port,
             handler_class=DashboardHTTPHandler,
-            max_body_size=load_config().server.max_body_size,
+            max_body_size=load_config(canonical_config_path).server.max_body_size,
         )
 
 
@@ -735,19 +1933,25 @@ def run_dashboard(
     home_dir: str | Path | None = None,
 ) -> None:
     """Start the local dashboard until interrupted."""
-    if config_path is not None:
-        os.environ["AGENCY_CONFIG_PATH"] = str(Path(config_path).expanduser())
-        reset_config_cache()
-    cfg = load_config()
+    canonical_config_path = resolve_config_path(config_path)
+    cfg = load_config(canonical_config_path)
+    if service_mode and (environment_names := dashboard_service_environment_overrides(cfg)):
+        raise RuntimeError(dashboard_service_environment_error(environment_names))
     if service_mode and port == 0:
         port = cfg.dashboard.port
-    store = Store(db_path) if db_path else Store()
-    store.trim_runtime_tables(
-        older_than_days=cfg.observability.retention_days,
-        vacuum=False,
+    store = (
+        Store(db_path, config_path=canonical_config_path)
+        if db_path is not None
+        else Store(config_path=canonical_config_path)
     )
     token = secrets.token_urlsafe(32)
-    server = DashboardHTTPServer(store, auth_token=token, port=port)
+    server = DashboardHTTPServer(
+        store,
+        auth_token=token,
+        port=port,
+        config_path=canonical_config_path,
+        runtime_control_home=home_dir,
+    )
     actual_port = int(server.server_address[1])
     url = f"http://127.0.0.1:{actual_port}/#token={token}"
     descriptor_written = False
@@ -764,6 +1968,25 @@ def run_dashboard(
         print("The access token is temporary and expires when this process stops.")
         if open_browser:
             webbrowser.open(url, new=2)
+
+    def maintain_retention() -> None:
+        try:
+            store.trim_runtime_tables(
+                older_than_days=cfg.observability.retention_days,
+                vacuum=False,
+            )
+        except Exception as exc:
+            logger.warning(
+                "dashboard retention maintenance failed: %s",
+                type(exc).__name__,
+            )
+
+    maintenance = Thread(
+        target=maintain_retention,
+        daemon=True,
+        name="agency-dashboard-retention",
+    )
+    maintenance.start()
 
     previous_handlers: dict[int, Any] = {}
     if current_thread() is main_thread():
@@ -783,6 +2006,7 @@ def run_dashboard(
         logger.info("dashboard shutdown requested")
     finally:
         server.server_close()
+        maintenance.join(timeout=0.5)
         for signum, previous in previous_handlers.items():
             try:
                 signal.signal(signum, previous)

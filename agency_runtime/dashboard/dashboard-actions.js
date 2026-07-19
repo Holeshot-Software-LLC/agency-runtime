@@ -15,10 +15,46 @@ export function createActionController(core, config, renderer, live) {
       && live.mutationIsCurrent(controller);
   }
 
+  function markButtonPending(id) {
+    const button = byId(id);
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+  }
+
+  function clearButtonPending(id) {
+    const button = byId(id);
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+  }
+
+  function serviceControlBlocked() {
+    if (!config.serviceRestartRequired()) return false;
+    showNotice(
+      "Restart the dashboard service before using routing, roster, or host controls.",
+      true,
+    );
+    return true;
+  }
+
   async function runRoute() {
+    if (serviceControlBlocked()) return;
+    if (state.master?.enabled === false) {
+      byId("route-status").textContent = "BYPASSED";
+      return showNotice(
+        "Agency Runtime is off. Enable the master switch to use Route Lab.",
+        true,
+      );
+    }
     const task = byId("route-task").value.trim();
     if (!task) return showNotice("Enter a task before running the routing lab.", true);
-    byId("route-button").disabled = true;
+    const host = byId("route-host").value.trim().toLowerCase();
+    if (!host) {
+      return showNotice(
+        "Route Lab needs a verified, enabled execution host. Refresh host discovery after installing or enabling one.",
+        true,
+      );
+    }
+    markButtonPending("route-button");
     byId("route-status").textContent = "RUNNING";
     const controller = live.beginMutation();
     try {
@@ -26,12 +62,19 @@ export function createActionController(core, config, renderer, live) {
         method: "POST",
         body: JSON.stringify({
           task,
+          host,
           session_id: byId("route-session").value.trim(),
           limit: 12,
         }),
         signal: controller.signal,
       });
       if (!live.mutationIsCurrent(controller)) return;
+      if (result.bypassed === true) {
+        live.applyMasterState(result.master);
+        byId("route-status").textContent = "BYPASSED";
+        showNotice(result.message || "Agency Runtime is off; routing was bypassed.", true);
+        return;
+      }
       renderer.renderReceipt(result);
       await live.reconcileRuntimeEvidence("Routing receipt completed.");
     } catch (error) {
@@ -41,7 +84,8 @@ export function createActionController(core, config, renderer, live) {
       }
     } finally {
       if (!state.lifecycle.destroyed) {
-        byId("route-button").disabled = false;
+        clearButtonPending("route-button");
+        renderer.renderRouteHosts();
         if (controller.signal.aborted) byId("route-status").textContent = "CANCELLED";
       }
       live.finishMutation(controller);
@@ -57,7 +101,7 @@ export function createActionController(core, config, renderer, live) {
     if (!Number.isInteger(days) || days < 1 || days > 3650) {
       return showNotice("Older than days must be an integer from 1 through 3650.", true);
     }
-    byId("trim-button").disabled = true;
+    markButtonPending("trim-button");
     const controller = live.beginMutation();
     try {
       const result = await api("/api/maintenance/trim", {
@@ -74,7 +118,7 @@ export function createActionController(core, config, renderer, live) {
     } catch (error) {
       if (maySurface(error, controller)) showNotice(error.message, true);
     } finally {
-      if (!state.lifecycle.destroyed) byId("trim-button").disabled = false;
+      if (!state.lifecycle.destroyed) clearButtonPending("trim-button");
       live.finishMutation(controller);
     }
   }
@@ -111,7 +155,7 @@ export function createActionController(core, config, renderer, live) {
       confirmations.push(phrase);
     }
 
-    byId("config-save-button").disabled = true;
+    markButtonPending("config-save-button");
     const controller = live.beginMutation();
     try {
       const result = await api("/api/config", {
@@ -136,7 +180,8 @@ export function createActionController(core, config, renderer, live) {
         config.updateConfigDirtyState();
       }
     } finally {
-      if (controller.signal.aborted && !state.lifecycle.destroyed) {
+      if (!state.lifecycle.destroyed) {
+        clearButtonPending("config-save-button");
         config.updateConfigDirtyState();
       }
       live.finishMutation(controller);
@@ -144,6 +189,7 @@ export function createActionController(core, config, renderer, live) {
   }
 
   async function rosterAction(action, snapshotId) {
+    if (serviceControlBlocked()) return;
     const expected = `${action.toUpperCase()} ${snapshotId}`;
     const accepted = await requestConfirmation(
       expected,
@@ -167,7 +213,11 @@ export function createActionController(core, config, renderer, live) {
     }
   }
 
-  async function toggleHost(host, enabled) {
+  async function toggleHost(host, enabled, expectedGeneration) {
+    if (serviceControlBlocked()) return;
+    if (!Number.isInteger(expectedGeneration) || expectedGeneration < 0) {
+      return showNotice("Host control state is stale. Refresh and try again.", true);
+    }
     const expected = `${enabled ? "ENABLE" : "DISABLE"} ${host}`;
     const accepted = await requestConfirmation(
       expected,
@@ -179,7 +229,12 @@ export function createActionController(core, config, renderer, live) {
     try {
       await api("/api/hosts/toggle", {
         method: "POST",
-        body: JSON.stringify({ host, enabled, confirm: expected }),
+        body: JSON.stringify({
+          host,
+          enabled,
+          confirm: expected,
+          expected_generation: expectedGeneration,
+        }),
         signal: controller.signal,
       });
       if (!live.mutationIsCurrent(controller)) return;
@@ -191,12 +246,90 @@ export function createActionController(core, config, renderer, live) {
     }
   }
 
+  async function toggleAgent(slug, enabled) {
+    if (serviceControlBlocked()) return;
+    const expected = `${enabled ? "ENABLE" : "DISABLE"} ${slug}`;
+    const accepted = await requestConfirmation(
+      expected,
+      "This changes routing and new specialist loads without deleting the governed roster definition or its history.",
+    );
+    if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
+    if (!accepted) return showNotice("Agent action cancelled.", true);
+    const controller = live.beginMutation();
+    try {
+      const result = await api("/api/agents/toggle", {
+        method: "POST",
+        body: JSON.stringify({
+          slug,
+          enabled,
+          confirm: expected,
+          expected_revision: state.controlConfigRevision
+            || state.config?.revision
+            || "missing",
+        }),
+        signal: controller.signal,
+      });
+      if (!live.mutationIsCurrent(controller)) return;
+      const committedRevision = String(result?.config?.revision || "");
+      if (committedRevision) state.controlConfigRevision = committedRevision;
+      await live.reconcileAll(`${slug} ${enabled ? "enabled" : "disabled"}.`);
+    } catch (error) {
+      if (maySurface(error, controller)) showNotice(error.message, true);
+    } finally {
+      live.finishMutation(controller);
+    }
+  }
+
+  async function toggleMaster(enabled) {
+    if (!state.master || !Number.isInteger(state.master.generation)) {
+      return showNotice("Agency master state is still loading. Refresh and try again.", true);
+    }
+    const expected = enabled ? "ENABLE AGENCY" : "DISABLE AGENCY";
+    const accepted = await requestConfirmation(
+      expected,
+      enabled
+        ? "This resumes Agency routing, delegation, and evidence shaping for every host."
+        : "This bypasses Agency routing, delegation, hooks, and evidence shaping for every host. Dashboard configuration remains available.",
+    );
+    if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
+    if (!accepted) return showNotice("Agency master action cancelled.", true);
+    markButtonPending("master-toggle");
+    const controller = live.beginMutation();
+    try {
+      const result = await api("/api/runtime/toggle", {
+        method: "POST",
+        body: JSON.stringify({
+          enabled,
+          confirm: expected,
+          expected_generation: state.master.generation,
+        }),
+        signal: controller.signal,
+      });
+      if (!live.mutationIsCurrent(controller)) return;
+      live.applyMasterState(result.master);
+      await live.reconcileAll(
+        `Agency Runtime ${enabled ? "enabled" : "disabled"} globally.`,
+      );
+    } catch (error) {
+      if (maySurface(error, controller)) showNotice(error.message, true);
+    } finally {
+      if (!state.lifecycle.destroyed) {
+        clearButtonPending("master-toggle");
+        live.syncMasterControl();
+      }
+      live.finishMutation(controller);
+    }
+  }
+
   return {
     runRoute,
     trimRuntime,
     requiredConfigConfirmations,
+    serviceControlBlocked,
     saveConfig,
     rosterAction,
+    toggleAgent,
     toggleHost,
+    toggleMaster,
   };
 }

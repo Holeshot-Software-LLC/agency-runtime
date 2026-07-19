@@ -389,8 +389,9 @@ def _ollama_judge_checks(cfg: AgencyConfig) -> list[CheckResult]:
         return [
             CheckResult(
                 "judge_provider",
-                "fail",
-                f"Ollama unreachable at {endpoint}: {message}",
+                "warn",
+                f"Legacy Ollama fallback unavailable at {endpoint}: {message}; "
+                "deterministic token routing remains available",
             )
         ]
 

@@ -70,6 +70,20 @@ class _BrokenGetter:
         raise RuntimeError("offline")
 
 
+class _BrokenTraceGetter:
+    def get_specialists_for_trace(self, *_args: str) -> list[str]:
+        raise RuntimeError("offline")
+
+    def get_delegations(self, *_args: str) -> list[dict[str, str]]:
+        raise RuntimeError("offline")
+
+    def get_skills_for_trace(self, *_args: str) -> list[str]:
+        raise RuntimeError("offline")
+
+    def get_model_receipt(self, *_args: str) -> dict[str, str]:
+        raise RuntimeError("offline")
+
+
 class _NoConnection:
     pass
 
@@ -92,19 +106,19 @@ class _FallbackSpecialists:
 def test_header_store_readers_fail_closed_and_support_legacy_connections(
     tmp_path: Path,
 ) -> None:
-    assert contract._get_loaded_specialists(None, "s") == []
-    assert contract._get_loaded_specialists(_NoConnection(), "s") == []
-    assert contract._get_loaded_specialists(_BrokenGetter(), "s") == []
-    assert contract._get_loaded_specialists(_BrokenConnection(), "s") == []
-    assert contract._get_delegations(None, "s") == []
-    assert contract._get_delegations(_NoConnection(), "s") == []
-    assert contract._get_delegations(_BrokenConnection(), "s") == []
-    assert contract._get_skills(None, "s") == []
-    assert contract._get_skills(_NoConnection(), "s") == []
-    assert contract._get_skills(_BrokenGetter(), "s") == []
-    assert contract._latest_model_receipt(None, "s") is None
-    assert contract._latest_model_receipt(_NoConnection(), "s") is None
-    assert contract._latest_model_receipt(_BrokenConnection(), "s") is None
+    assert contract._get_loaded_specialists(None, "s", "t") == []
+    assert contract._get_loaded_specialists(_NoConnection(), "s", "t") == []
+    assert contract._get_loaded_specialists(_BrokenGetter(), "s", "t") == []
+    assert contract._get_loaded_specialists(_BrokenConnection(), "s", "t") == []
+    assert contract._get_delegations(None, "s", "t") == []
+    assert contract._get_delegations(_NoConnection(), "s", "t") == []
+    assert contract._get_delegations(_BrokenConnection(), "s", "t") == []
+    assert contract._get_skills(None, "s", "t") == []
+    assert contract._get_skills(_NoConnection(), "s", "t") == []
+    assert contract._get_skills(_BrokenGetter(), "s", "t") == []
+    assert contract._latest_model_receipt(None, "s", "t") is None
+    assert contract._latest_model_receipt(_NoConnection(), "s", "t") is None
+    assert contract._latest_model_receipt(_BrokenConnection(), "s", "t") is None
 
     database = tmp_path / "legacy.db"
     connection = sqlite3.connect(database)
@@ -119,7 +133,28 @@ def test_header_store_readers_fail_closed_and_support_legacy_connections(
         connection.commit()
     finally:
         connection.close()
-    assert contract._get_loaded_specialists(_FallbackSpecialists(database), "s") == ["reviewer"]
+    # Pre-v11 session-only rows remain historical and cannot satisfy a turn.
+    assert contract._get_loaded_specialists(_FallbackSpecialists(database), "s", "t") == []
+
+
+@pytest.mark.parametrize(
+    ("reader", "broken"),
+    [
+        (contract._get_loaded_specialists, _BrokenTraceGetter()),
+        (contract._get_delegations, _BrokenTraceGetter()),
+        (contract._get_skills, _BrokenTraceGetter()),
+        (contract._latest_model_receipt, _BrokenTraceGetter()),
+    ],
+)
+def test_header_store_readers_reject_unverifiable_authoritative_evidence(
+    reader: object,
+    broken: object,
+) -> None:
+    with pytest.raises(contract.EvidenceCorrelationError, match="could not be verified"):
+        reader(broken, "s", "t", strict=True)  # type: ignore[operator]
+
+    with pytest.raises(contract.EvidenceCorrelationError, match="could not be verified"):
+        reader(_NoConnection(), "s", "t", strict=True)  # type: ignore[operator]
 
 
 def test_header_model_and_delegation_lines_cover_truthful_outcomes() -> None:
@@ -132,6 +167,32 @@ def test_header_model_and_delegation_lines_cover_truthful_outcomes() -> None:
     )
     assert "no resolved model telemetry" in contract._model_line(
         {"requested_model": "task-general", "status": "success"}, ""
+    )
+    assert (
+        contract._model_line(
+            {
+                "requested_model": "task-general",
+                "resolved_model": "unavailable",
+                "model_group": "production-router",
+                "source": "litellm",
+                "status": "success",
+            },
+            "",
+        )
+        == "[general] task-general -> unavailable - no resolved model telemetry "
+        "via LiteLLM router production-router"
+    )
+    assert (
+        contract._model_line(
+            {
+                "requested_model": "task-general",
+                "model_group": "fallback-router",
+                "source": "litellm",
+                "status": "failed",
+            },
+            "",
+        )
+        == "[general] task-general -> failed via LiteLLM router fallback-router"
     )
     assert (
         contract._model_line(
@@ -164,7 +225,7 @@ def test_header_model_and_delegation_lines_cover_truthful_outcomes() -> None:
                 }
             ]
         )
-        == "reviewer via unknown backend"
+        == "none - executed worker has no validated Agency specialist"
     )
     assert (
         contract._delegation_line(
@@ -189,8 +250,10 @@ def test_header_model_and_delegation_lines_cover_truthful_outcomes() -> None:
 def test_fill_and_finalize_header_without_store_is_complete_and_idempotent() -> None:
     filled = contract.fill_header_fields({}, "", None, "task-general")
     assert filled["agencies_loaded"] == "none"
-    assert filled["why"] == "Required for Agency Runtime auditability."
-    assert filled["how_it_shaped_outcome"].startswith("Made runtime context explicit")
+    assert filled["why"] == "unavailable - no authoritative current-turn reason codes"
+    assert filled["how_it_shaped_outcome"] == (
+        "unavailable - no authoritative current-turn effect codes"
+    )
 
     first = contract.finalize_header("\nBody", "", None, "task-general")
     second = contract.finalize_header(first, "", None, "task-general")
@@ -208,6 +271,71 @@ class _FinalizationRecorder:
             raise RuntimeError("storage offline")
         self.calls.append(kwargs)
 
+    def commit_terminal_finalization(self, **kwargs: object) -> dict[str, object]:
+        if self.fail:
+            raise RuntimeError("storage offline")
+        self.calls.append(kwargs)
+        return {
+            "outcome": "committed",
+            "authoritative": True,
+            "action": kwargs["action"],
+            "response_hash": kwargs["response_hash"],
+            "status": kwargs["status"],
+        }
+
+    def get_run(self, trace_id: str) -> dict[str, str] | None:
+        return {"session_id": "s", "status": "active"} if trace_id == "t" else None
+
+    def get_authoritative_finalization(
+        self,
+        _session_id: str,
+        _trace_id: str,
+        *,
+        action: str,
+        response_hash: str,
+    ) -> None:
+        del action, response_hash
+        return None
+
+    def get_completion_evidence_snapshot(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> dict[str, object]:
+        return {
+            "session_id": session_id,
+            "trace_id": trace_id,
+            "status": "active",
+            "request_kind": "trivial",
+            "evidence_revision": 1,
+            "run": {
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "status": "active",
+                "request_kind": "trivial",
+                "evidence_revision": 1,
+            },
+            "model_receipt": None,
+            "skills": [],
+            "specialists": [],
+            "delegations": [],
+        }
+
+    def get_specialists_for_trace(self, _session_id: str, _trace_id: str) -> list[str]:
+        return []
+
+    def get_delegations(self, _trace_id: str) -> list[dict[str, str]]:
+        return []
+
+    def get_skills_for_trace(self, _session_id: str, _trace_id: str) -> list[str]:
+        return []
+
+    def get_model_receipt(self, _trace_id: str) -> None:
+        return None
+
+    def is_nontrivial_turn(self, _session_id: str, _trace_id: str) -> bool:
+        return False
+
 
 def test_finalization_empty_body_alias_and_recording_boundaries(
     monkeypatch: pytest.MonkeyPatch,
@@ -215,17 +343,25 @@ def test_finalization_empty_body_alias_and_recording_boundaries(
     recorder = _FinalizationRecorder()
     empty = finalizer.finalize_response(
         None,  # type: ignore[arg-type]
-        trace_metadata={"trace": "t", "runtime": "codex"},
+        trace_metadata={"session": "s", "trace": "t", "runtime": "codex"},
         store=recorder,
     )
     assert empty == {"action": "continue", "text": None, "missing": ["draft_text"]}
     assert recorder.calls[0]["host"] == "codex"
 
     header_only = contract.format_header(_fields())
-    result = finalizer.finalize(header_only, {"trace_id": "t"}, recorder)
+    result = finalizer.finalize(
+        header_only,
+        {"session_id": "s", "trace_id": "t"},
+        recorder,
+    )
     assert result["action"] == "continue"
     assert result["missing"] == ["response_body"]
-    complete = finalizer.finalize_response(header_only + "\n\nBody", {"trace_id": "t"}, recorder)
+    complete = finalizer.finalize_response(
+        header_only + "\n\nBody",
+        {"session_id": "s", "trace_id": "t"},
+        recorder,
+    )
     assert complete["action"] == "accept"
     assert complete["text"].endswith("Body")
     assert finalizer._body_after_possible_header(header_only) == ""
@@ -237,7 +373,11 @@ def test_finalization_empty_body_alias_and_recording_boundaries(
     finalizer._record_finalization(_FinalizationRecorder(fail=True), "t", "host", "accept", [])
 
     monkeypatch.setattr(finalizer, "validate_header", lambda _text: (False, ["why"]))
-    rewritten = finalizer.finalize_response("Body")
+    rewritten = finalizer.finalize_response(
+        "Body",
+        {"session_id": "s", "trace_id": "t"},
+        recorder,
+    )
     assert rewritten["action"] == "rewrite"
     assert rewritten["missing"] == ["why"]
 
@@ -330,8 +470,9 @@ def test_litellm_and_host_receipts_cover_unknown_and_inferred_truth() -> None:
         },
         "alias",
     )
-    assert local["resolved_provider"] == "ollama"
-    assert local["resolved_model"] == "model"
+    assert local["resolved_provider"] == "local"
+    assert local["model_id"] == "ollama/model"
+    assert local["resolved_model"] == "unavailable"
 
     inferred = receipts.normalize_host_receipt(
         {

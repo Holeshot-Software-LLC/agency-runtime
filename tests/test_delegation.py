@@ -77,7 +77,14 @@ def test_dependency_graph_cycle_detection():
 def test_ledger_basic():
     ledger = DelegationLedger(trace_id="test-trace")
     ledger.suggest("unit-1", "code-reviewer", backend="codex_exec")
-    ledger.update("unit-1", status="completed")
+    ledger.update(
+        "unit-1",
+        status="completed",
+        backend="codex_exec",
+        executed_worker_kind="cli-process",
+        executed_worker_id="codex",
+        native_run_id="codex:process:1",
+    )
 
     d = ledger.as_dict()
     assert d["trace_id"] == "test-trace"
@@ -132,7 +139,8 @@ def test_delegate_with_lifecycle_empty():
 # ─── Backend registry ───────────────────────────────────────────────
 
 
-def test_backend_registry():
+def test_backend_registry(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(CommandBackend, "is_available", lambda _self: True)
     registry = BackendRegistry()
     backend = CommandBackend(command=[sys.executable], name="test-python")
     registry.register(backend)

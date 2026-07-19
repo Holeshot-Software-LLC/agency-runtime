@@ -125,26 +125,130 @@ def user_message(request_input: Any) -> str:
     return ""
 
 
-def _has_agency_system_context(messages: Sequence[Any]) -> bool:
-    """Only trusted system messages may suppress another context injection."""
+_AGENCY_LOADED_CAPSULE_MARKER = (
+    "[AGENCY LOADED] Complete current-turn specialist instruction capsule:"
+)
+_AGENCY_CONTEXT_PREFIXES = (
+    "[AGENCY PREFLIGHT] Default specialist routing suggestion ",
+    "[AGENCY PREFLIGHT] No high-confidence specialist match found ",
+    "[AGENCY PREFLIGHT] Specialist routing suggestion ",
+)
 
-    return any(
-        isinstance(message, Mapping)
-        and clean(message.get("role")).casefold() == "system"
-        and AGENCY_PREFLIGHT_MARKER in content_text(message.get("content"))
-        for message in messages
-    )
+
+def _agency_header_instruction() -> str:
+    """Load the canonical rendered tail lazily to keep this adapter lightweight."""
+
+    from agency_runtime.core.selector.pipeline import HEADER_INSTRUCTION
+
+    return HEADER_INSTRUCTION
+
+
+def _owned_agency_context(value: str) -> bool:
+    """Return whether ``value`` is an exact runtime-rendered context suffix."""
+
+    if not value.startswith(_AGENCY_CONTEXT_PREFIXES):
+        return False
+    header = _agency_header_instruction()
+    header_at = value.find(header)
+    if header_at < 0:
+        return False
+    tail = value[header_at + len(header) :]
+    return not tail or tail.startswith(f"\n\n{_AGENCY_LOADED_CAPSULE_MARKER}")
+
+
+def _copy_content(content: Any) -> Any:
+    """Copy mutable message content without attempting to clone opaque values."""
+
+    if not isinstance(content, Sequence) or isinstance(content, (str, bytes, bytearray)):
+        return content
+    return [dict(block) if isinstance(block, Mapping) else block for block in content]
+
+
+def _strip_agency_suffix(value: str) -> tuple[str, bool]:
+    """Remove only an exact legacy Agency-owned suffix.
+
+    A bare marker can be ordinary caller text.  Agency's rendered context has a
+    constrained first line and the complete six-line-header trailer, so both
+    are required before this boundary treats a suffix as runtime-owned.
+    """
+
+    marker = value.find(AGENCY_PREFLIGHT_MARKER)
+    while marker >= 0:
+        candidate = value[marker:]
+        if _owned_agency_context(candidate):
+            preserved = value[:marker]
+            if preserved.endswith("\n\n"):
+                preserved = preserved[:-2]
+            return preserved, True
+        marker = value.find(AGENCY_PREFLIGHT_MARKER, marker + len(AGENCY_PREFLIGHT_MARKER))
+    return value, False
+
+
+def _strip_agency_blocks(content: Sequence[Any]) -> tuple[list[Any], bool]:
+    """Remove Agency text blocks from a copied OpenAI/Anthropic content list."""
+
+    cleaned: list[Any] = []
+    found = False
+    for original in content:
+        if isinstance(original, str):
+            value, removed = _strip_agency_suffix(original)
+            found = found or removed
+            if value:
+                cleaned.append(value)
+            continue
+        if not isinstance(original, Mapping):
+            cleaned.append(original)
+            continue
+        block = dict(original)
+        block_type = clean(block.get("type")).casefold()
+        if block_type not in {"text", "input_text"}:
+            cleaned.append(block)
+            continue
+        field = "text" if "text" in block else "content"
+        text = block.get(field)
+        if not isinstance(text, str):
+            cleaned.append(block)
+            continue
+        value, removed = _strip_agency_suffix(text)
+        found = found or removed
+        if value:
+            block[field] = value
+            cleaned.append(block)
+    return cleaned, found
+
+
+def _strip_agency_system_content(content: Any) -> tuple[Any, bool]:
+    if isinstance(content, str):
+        return _strip_agency_suffix(content)
+    if isinstance(content, Sequence) and not isinstance(content, (str, bytes, bytearray)):
+        return _strip_agency_blocks(content)
+    return content, False
 
 
 def inject_message_context(messages: Any, context: str) -> list[Any]:
-    """Add one system context while preserving caller-owned message objects."""
+    """Replace stale system context in an outbound, caller-independent copy."""
 
-    copied = (
-        list(messages)
+    source = (
+        messages
         if isinstance(messages, Sequence) and not isinstance(messages, (str, bytes, bytearray))
-        else []
+        else ()
     )
-    if not context or _has_agency_system_context(copied):
+    copied: list[Any] = []
+    for original in source:
+        if not isinstance(original, Mapping):
+            copied.append(original)
+            continue
+        message = dict(original)
+        if "content" in message:
+            message["content"] = _copy_content(message["content"])
+        if clean(message.get("role")).casefold() == "system":
+            cleaned, removed = _strip_agency_system_content(message.get("content"))
+            if removed:
+                if cleaned is None or cleaned == "" or cleaned == []:
+                    continue
+                message["content"] = cleaned
+        copied.append(message)
+    if not context:
         return copied
     position = 0
     while position < len(copied):
@@ -177,9 +281,47 @@ def _append_string_context(
 ) -> None:
     existing = payload.get(field)
     if existing is None or existing == "":
-        payload[field] = context
-    elif isinstance(existing, str) and AGENCY_PREFLIGHT_MARKER not in existing:
-        payload[field] = f"{existing}\n\n{context}"
+        if context:
+            payload[field] = context
+        return
+    if not isinstance(existing, str):
+        return
+    preserved, removed = _strip_agency_suffix(existing)
+    if not removed:
+        preserved = existing
+    if context:
+        payload[field] = f"{preserved}\n\n{context}" if preserved else context
+    elif removed:
+        if preserved:
+            payload[field] = preserved
+        else:
+            payload.pop(field, None)
+
+
+def _strip_completion_context(prompt: str) -> str:
+    """Remove an Agency prefix previously injected into a legacy prompt."""
+
+    if not prompt.startswith(_AGENCY_CONTEXT_PREFIXES):
+        return prompt
+    header = _agency_header_instruction()
+    header_at = prompt.find(header)
+    if header_at < 0:
+        return prompt
+    separator = prompt.find("\n\n", header_at + len(header))
+    if separator < 0:
+        return ""
+    remainder = prompt[separator + 2 :]
+    if remainder.startswith(_AGENCY_LOADED_CAPSULE_MARKER):
+        capsule_separator = remainder.find("\n\n", len(_AGENCY_LOADED_CAPSULE_MARKER))
+        return remainder[capsule_separator + 2 :] if capsule_separator >= 0 else ""
+    return remainder
+
+
+def _with_completion_context(prompt: str, context: str) -> str:
+    preserved = _strip_completion_context(prompt)
+    if not context:
+        return preserved
+    return f"{context}\n\n{preserved}" if preserved else context
 
 
 def _inject_completion_context(
@@ -190,14 +332,11 @@ def _inject_completion_context(
 
     prompt = payload.get("prompt")
     if isinstance(prompt, str):
-        if not prompt.startswith(context):
-            payload["prompt"] = f"{context}\n\n{prompt}"
+        payload["prompt"] = _with_completion_context(prompt, context)
         return
     if isinstance(prompt, Sequence) and not isinstance(prompt, (str, bytes, bytearray)):
         payload["prompt"] = [
-            item
-            if not isinstance(item, str) or item.startswith(context)
-            else f"{context}\n\n{item}"
+            _with_completion_context(item, context) if isinstance(item, str) else item
             for item in prompt
         ]
 
@@ -228,13 +367,13 @@ def inject_proxy_context(
         _append_string_context(payload, "system", context)
         return
     if isinstance(system, Sequence) and not isinstance(system, (str, bytes, bytearray)):
-        blocks = list(system)
-        if not any(
-            isinstance(block, Mapping) and AGENCY_PREFLIGHT_MARKER in content_text([block])
-            for block in blocks
-        ):
+        blocks, _removed = _strip_agency_blocks(system)
+        if context:
             blocks.append({"type": "text", "text": context})
-        payload["system"] = blocks
+        if blocks:
+            payload["system"] = blocks
+        else:
+            payload.pop("system", None)
 
 
 __all__ = [

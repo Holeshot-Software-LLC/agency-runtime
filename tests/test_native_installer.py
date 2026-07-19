@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
+import shlex
 import subprocess
-import sys
 import threading
 import time
 from argparse import Namespace
@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core import installer_payloads
+from agency_runtime.core import installer_payloads, process_argv
 from agency_runtime.core.config import (
     AgencyConfig,
     JudgeConfig,
@@ -26,6 +26,7 @@ from agency_runtime.core.installer import (
     NativeCommandResult,
     _bundle_digest,
     _bundle_files,
+    _command_environment,
     _effective_judge_budget_seconds,
     _managed_bundle_identity,
     _owned_process_kwargs,
@@ -40,10 +41,18 @@ from agency_runtime.core.installer import (
     rollback_agent_adapter,
     toggle_agency,
 )
+from agency_runtime.core.installer_contracts import (
+    ADAPTER_LAUNCHER_MANIFEST,
+    OPENCLAW_REQUIRED_HOOKS,
+    openclaw_version_supported,
+)
 
 
 @pytest.fixture(autouse=True)
-def _no_live_dashboard_service(monkeypatch: pytest.MonkeyPatch) -> None:
+def _no_live_dashboard_service(
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher: tuple[Path, Path],
+) -> tuple[Path, Path]:
     """Installer tests must never touch the developer's real user services."""
 
     import agency_runtime.core.dashboard_service as dashboard_service
@@ -69,6 +78,16 @@ def _no_live_dashboard_service(monkeypatch: pytest.MonkeyPatch) -> None:
             "status": "installed",
         },
     )
+    return private_installer_launcher
+
+
+def test_explicit_home_uses_openclaw_home_root_without_double_state_directory(
+    tmp_path: Path,
+) -> None:
+    environment = _command_environment("openclaw", home_dir=tmp_path)
+
+    assert environment["OPENCLAW_HOME"] == str(tmp_path.resolve())
+    assert Path(environment["OPENCLAW_HOME"], ".openclaw") == tmp_path / ".openclaw"
 
 
 def _resolver(*present: str):
@@ -84,14 +103,19 @@ class FakeNativeRunner:
         gateway_live: bool = False,
         gateway_result: dict[str, Any] | None = None,
         runtime_payload: Any = None,
+        openclaw_version: str = "OpenClaw 2026.7.1",
     ) -> None:
         self.commands: list[list[str]] = []
         self.fail_token = fail_token
         self.gateway_live = gateway_live
         self.gateway_result = gateway_result
         self.runtime_payload = runtime_payload
+        self.openclaw_version = openclaw_version
         self.installed: set[str] = set()
+        self.openclaw_disabled: set[str] = set()
         self.marketplaces: set[str] = set()
+        self.openclaw_agents: dict[str, Any] = {}
+        self.openclaw_channels: dict[str, Any] = {}
 
     def _gateway_or_marketplace_result(self, joined: str) -> dict[str, Any] | None:
         if "gateway status" in joined:
@@ -139,7 +163,7 @@ class FakeNativeRunner:
                     "id": "agency-preflight",
                     "enabled": True,
                     "loaded": True,
-                    "hooks": ["before_prompt_build"],
+                    "hooks": sorted(OPENCLAW_REQUIRED_HOOKS),
                 }
             return {
                 "returncode": 0,
@@ -149,16 +173,30 @@ class FakeNativeRunner:
             found = "agency-preflight" in self.installed
             return {
                 "returncode": 0 if found else 1,
-                "stdout": json.dumps({"id": "agency-preflight", "enabled": True}) if found else "",
+                "stdout": (
+                    json.dumps(
+                        {
+                            "id": "agency-preflight",
+                            "enabled": "agency-preflight" not in self.openclaw_disabled,
+                        }
+                    )
+                    if found
+                    else ""
+                ),
             }
         if "plugins install" in joined:
             self.installed.add("agency-preflight")
+            self.openclaw_disabled.discard("agency-preflight")
             return {"returncode": 0, "stdout": "installed"}
         if "plugins enable" in joined:
             self.installed.add("agency-preflight")
+            self.openclaw_disabled.discard("agency-preflight")
             return {"returncode": 0, "stdout": "enabled"}
         if "plugins disable" in joined:
-            self.installed.discard("agency-preflight")
+            if command[0] == "openclaw":
+                self.openclaw_disabled.add("agency-preflight")
+            else:
+                self.installed.discard("agency-preflight")
             return {"returncode": 0, "stdout": "disabled"}
         if "plugins list" in joined:
             if command[0] == "openclaw":
@@ -167,7 +205,11 @@ class FakeNativeRunner:
                     "stdout": json.dumps(
                         {
                             "plugins": [
-                                {"id": name, "enabled": True} for name in sorted(self.installed)
+                                {
+                                    "id": name,
+                                    "enabled": name not in self.openclaw_disabled,
+                                }
+                                for name in sorted(self.installed)
                             ]
                         }
                     ),
@@ -178,11 +220,31 @@ class FakeNativeRunner:
             return {"returncode": 0, "stdout": "updated"}
         return None
 
+    def _openclaw_config_result(self, command: list[str]) -> dict[str, Any] | None:
+        if command[:4] == ["openclaw", "config", "get", "agents.defaults"]:
+            return {"returncode": 0, "stdout": json.dumps(self.openclaw_agents)}
+        if command[:4] == ["openclaw", "config", "get", "channels"]:
+            return {"returncode": 0, "stdout": json.dumps(self.openclaw_channels)}
+        if command[:4] == [
+            "openclaw",
+            "config",
+            "set",
+            "agents.defaults.blockStreamingDefault",
+        ]:
+            self.openclaw_agents["blockStreamingDefault"] = json.loads(command[4])
+            return {"returncode": 0, "stdout": "updated"}
+        return None
+
     def __call__(self, command: list[str], **_kwargs: Any) -> dict[str, Any]:
         self.commands.append(command)
         joined = " ".join(command)
         if self.fail_token and self.fail_token in joined:
             return {"returncode": 9, "stderr": f"forced failure: {self.fail_token}"}
+        if command == ["openclaw", "--version"]:
+            return {"returncode": 0, "stdout": self.openclaw_version}
+        result = self._openclaw_config_result(command)
+        if result is not None:
+            return result
         result = self._gateway_or_marketplace_result(joined)
         if result is not None:
             return result
@@ -258,6 +320,7 @@ def test_native_windows_hermes_payload_is_current_install_evidence(
 
 
 def test_windows_command_shims_preserve_metacharacter_arguments_without_cmd_interpolation(
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     shim_dir = tmp_path / "host & tools ^ 100%"
@@ -267,15 +330,24 @@ def test_windows_command_shims_preserve_metacharacter_arguments_without_cmd_inte
     cmd_shim.write_text("@echo off\n", encoding="utf-8")
     ps1_shim.write_text("# safe companion\n", encoding="utf-8")
     special_path = str(tmp_path / "bundle & cache | stage ^ 50% <input>")
+    powershell = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 
     def resolver(_name):
         return str(cmd_shim)
+
+    monkeypatch.setattr(
+        process_argv,
+        "resolve_executable_path",
+        lambda _name, *, platform_name=None, **_kwargs: (
+            str(cmd_shim) if platform_name == "nt" else "/usr/local/bin/codex"
+        ),
+    )
 
     windows = _prepare_process_argv(
         ["codex", "plugin", "marketplace", "add", special_path],
         platform_name="nt",
         resolver=resolver,
-        system_resolver=lambda name: name,
+        system_resolver=lambda _name: powershell,
     )
     linux = _prepare_process_argv(
         ["codex", "plugin", "list", "--json"],
@@ -284,7 +356,7 @@ def test_windows_command_shims_preserve_metacharacter_arguments_without_cmd_inte
     )
 
     assert windows[:7] == [
-        "powershell.exe",
+        powershell,
         "-NoLogo",
         "-NoProfile",
         "-NonInteractive",
@@ -299,10 +371,16 @@ def test_windows_command_shims_preserve_metacharacter_arguments_without_cmd_inte
 
 
 def test_windows_command_shim_without_safe_companion_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     cmd_shim = tmp_path / "host.cmd"
     cmd_shim.write_text("@echo off\n", encoding="utf-8")
+    monkeypatch.setattr(
+        process_argv,
+        "resolve_executable_path",
+        lambda *_args, **_kwargs: str(cmd_shim),
+    )
 
     with pytest.raises(OSError, match=r"refusing unsafe cmd\.exe shim"):
         _prepare_process_argv(
@@ -322,6 +400,7 @@ def test_windows_command_shim_without_safe_companion_fails_closed(
 def test_windows_npm_cli_uses_allowlisted_node_entry_instead_of_powershell_stdin(
     command: str,
     script_parts: tuple[str, ...],
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     shim = tmp_path / f"{command}.cmd"
@@ -334,6 +413,11 @@ def test_windows_npm_cli_uses_allowlisted_node_entry_instead_of_powershell_stdin
         script /= part
     script.parent.mkdir(parents=True, exist_ok=True)
     script.write_text("// fake\n", encoding="utf-8")
+    monkeypatch.setattr(
+        process_argv,
+        "resolve_executable_path",
+        lambda *_args, **_kwargs: str(shim),
+    )
 
     prepared = _prepare_process_argv(
         [command, "exec", "-"],
@@ -359,6 +443,7 @@ def test_native_process_group_flags_cover_windows_and_posix() -> None:
 def test_native_timeout_terminates_descendant_process_tree(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    _no_live_dashboard_service: tuple[Path, Path],
 ) -> None:
     marker = tmp_path / "orphan-child-ran.txt"
     monkeypatch.setenv("AGENCY_INSTALLER_TREE_MARKER", str(marker))
@@ -373,7 +458,7 @@ def test_native_timeout_terminates_descendant_process_tree(
     )
 
     result = _run_native(
-        [sys.executable, "-c", parent_code],
+        [str(_no_live_dashboard_service[0]), "-c", parent_code],
         host="codex",
         home_dir=tmp_path,
         timeout=0.2,
@@ -385,10 +470,12 @@ def test_native_timeout_terminates_descendant_process_tree(
     assert not marker.exists()
 
 
-def test_native_command_output_is_bounded_and_truncation_fails_closed() -> None:
+def test_native_command_output_is_bounded_and_truncation_fails_closed(
+    _no_live_dashboard_service: tuple[Path, Path],
+) -> None:
     result = _run_native(
         [
-            sys.executable,
+            str(_no_live_dashboard_service[0]),
             "-c",
             f"import sys;sys.stdout.write('x'*{MAX_NATIVE_OUTPUT_CHARS * 4})",
         ],
@@ -433,14 +520,37 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
     assert codex_handler["async"] is False
     assert "timeoutSec" not in codex_handler
     assert hook_timeout > judge_budget
+    assert {
+        "SessionStart",
+        "UserPromptSubmit",
+        "PostToolUse",
+        "SubagentStart",
+        "SubagentStop",
+        "PostCompact",
+        "Stop",
+    }.issubset(codex_hooks["hooks"])
 
     claude_files, _ = _bundle_files("claude", cfg)
     claude_hooks = json.loads(claude_files["plugins/agency-preflight/hooks/hooks.json"])
     assert claude_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"] == hook_timeout
+    assert {
+        "SessionStart",
+        "UserPromptSubmit",
+        "PreToolUse",
+        "PostToolUse",
+        "PostToolUseFailure",
+        "SubagentStart",
+        "SubagentStop",
+        "PostCompact",
+        "Stop",
+        "SessionEnd",
+    }.issubset(claude_hooks["hooks"])
+    assert claude_hooks["hooks"]["PreToolUse"][0]["matcher"] == "Agent"
 
     openclaw_files, _ = _bundle_files("openclaw", cfg)
     bridge = openclaw_files["index.js"]
-    assert f"timeout: {hook_timeout * 1000}" in bridge
+    assert f"function invokeAgency(payload, processTimeoutMs = {hook_timeout * 1000})" in bridge
+    assert f"timeoutMs: {(hook_timeout + 2) * 1000}" in bridge
     assert f"timeoutMs: {(hook_timeout + 2) * 1000}" in bridge
 
 
@@ -452,6 +562,14 @@ def test_codex_windows_hook_command_is_inert_powershell_argv(
         "executable",
         r"C:\Program Files\O'Brien & Sons\python.exe",
     )
+    monkeypatch.setattr(
+        installer_payloads,
+        "launcher_artifact_paths",
+        lambda: (
+            process_argv.absolute_executable_path(installer_payloads.sys.executable),
+            installer_payloads.agency_bootstrap_path(),
+        ),
+    )
 
     _posix, windows = installer_payloads.python_commands(
         "agency_runtime.cli",
@@ -461,9 +579,10 @@ def test_codex_windows_hook_command_is_inert_powershell_argv(
         "O'Brien",
     )
 
+    bootstrap = installer_payloads.agency_bootstrap_path().replace("'", "''")
     assert windows == (
-        "& 'C:\\Program Files\\O''Brien & Sons\\python.exe' '-m' "
-        "'agency_runtime.cli' 'hook' 'codex; Write-Output injected' "
+        "& 'C:\\Program Files\\O''Brien & Sons\\python.exe' '-I' "
+        f"'{bootstrap}' 'agency_runtime.cli' 'hook' 'codex; Write-Output injected' "
         "'$HOME' 'O''Brien'"
     )
 
@@ -512,6 +631,86 @@ def test_codex_bundle_uses_a_deterministic_content_cachebuster() -> None:
     assert slower_version != first_version
 
 
+def test_host_bundles_embed_one_absolute_config_identity_with_spaces(tmp_path: Path) -> None:
+    config_path = tmp_path / "operator config" / "agency runtime.yaml"
+    config_path.parent.mkdir()
+    config_path.write_text("{}\n", encoding="utf-8")
+    cfg = AgencyConfig(config_path=str(config_path))
+
+    codex_files, _ = _bundle_files("codex", cfg)
+    codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
+    codex_handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
+    assert shlex.split(codex_handler["command"])[-2:] == ["--config", str(config_path)]
+    assert codex_handler["commandWindows"].endswith(f" '--config' '{config_path}'")
+    codex_mcp = json.loads(codex_files["plugins/agency-preflight/.mcp.json"])
+    assert codex_mcp["mcpServers"]["agency-runtime"]["args"][-2:] == [
+        "--config",
+        str(config_path),
+    ]
+
+    claude_files, _ = _bundle_files("claude", cfg)
+    claude_hooks = json.loads(claude_files["plugins/agency-preflight/hooks/hooks.json"])
+    claude_handler = claude_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
+    assert claude_handler["args"][-2:] == ["--config", str(config_path)]
+    claude_mcp = json.loads(claude_files["plugins/agency-preflight/.mcp.json"])
+    assert claude_mcp["mcpServers"]["agency-runtime"]["args"][-2:] == [
+        "--config",
+        str(config_path),
+    ]
+
+    hermes_files, _ = _bundle_files("hermes", cfg)
+    assert f"_CONFIG_PATH = {str(config_path)!r}" in hermes_files["__init__.py"]
+
+    openclaw_files, _ = _bundle_files("openclaw", cfg)
+    expected_openclaw_args = (
+        '"agency_runtime.adapters.openclaw.node_bridge", '
+        f'"--config", {json.dumps(str(config_path))}]'
+    )
+    assert expected_openclaw_args in openclaw_files["index.js"]
+
+
+@pytest.mark.parametrize("host", ["codex", "claude", "hermes", "openclaw"])
+def test_host_bundle_fingerprint_includes_config_identity(host: str, tmp_path: Path) -> None:
+    first_path = tmp_path / "first config" / "agency.yaml"
+    second_path = tmp_path / "second config" / "agency.yaml"
+    first_path.parent.mkdir()
+    second_path.parent.mkdir()
+    first_path.write_text("{}\n", encoding="utf-8")
+    second_path.write_text("{}\n", encoding="utf-8")
+
+    first, _ = _bundle_files(host, AgencyConfig(config_path=str(first_path)))
+    repeated, _ = _bundle_files(host, AgencyConfig(config_path=str(first_path)))
+    second, _ = _bundle_files(host, AgencyConfig(config_path=str(second_path)))
+
+    assert _bundle_digest(first) == _bundle_digest(repeated)
+    assert _bundle_digest(first) != _bundle_digest(second)
+
+
+def test_programmatic_config_without_identity_omits_host_config_argument() -> None:
+    codex_files, _ = _bundle_files("codex", AgencyConfig())
+    codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
+    codex_handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
+    codex_mcp = json.loads(codex_files["plugins/agency-preflight/.mcp.json"])
+    assert "--config" not in shlex.split(codex_handler["command"])
+    assert "--config" not in codex_mcp["mcpServers"]["agency-runtime"]["args"]
+
+    claude_files, _ = _bundle_files("claude", AgencyConfig())
+    claude_hooks = json.loads(claude_files["plugins/agency-preflight/hooks/hooks.json"])
+    claude_handler = claude_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
+    claude_mcp = json.loads(claude_files["plugins/agency-preflight/.mcp.json"])
+    assert "--config" not in claude_handler["args"]
+    assert "--config" not in claude_mcp["mcpServers"]["agency-runtime"]["args"]
+
+    hermes_files, _ = _bundle_files("hermes", AgencyConfig())
+    assert "_CONFIG_PATH = ''" in hermes_files["__init__.py"]
+
+    openclaw_files, _ = _bundle_files("openclaw", AgencyConfig())
+    module_args = next(
+        line for line in openclaw_files["index.js"].splitlines() if "const MODULE_ARGS" in line
+    )
+    assert "--config" not in module_args
+
+
 def test_unchanged_codex_reinstall_is_idempotent(tmp_path: Path) -> None:
     runner = FakeNativeRunner()
     first = install_agent_adapter(
@@ -541,6 +740,39 @@ def test_unchanged_codex_reinstall_is_idempotent(tmp_path: Path) -> None:
     assert first_manifest["install_id"] == second_manifest["install_id"]
     assert not any("plugin remove" in command for command in second_commands)
     assert not any("plugin add" in command for command in second_commands)
+
+
+def test_adapter_manifest_binds_launcher_artifacts_and_inspection_rejects_drift(
+    tmp_path: Path,
+    _no_live_dashboard_service: tuple[Path, Path],
+) -> None:
+    runner = FakeNativeRunner()
+    common = {
+        "home_dir": tmp_path,
+        "binary_resolver": _resolver("codex"),
+        "command_runner": runner,
+    }
+    installed = install_agent_adapter("codex", **common)
+    manifest = json.loads(Path(installed["target"], INSTALL_MANIFEST).read_text(encoding="utf-8"))
+
+    assert manifest["schema_version"] == 2
+    assert len(manifest["launcher_artifacts"]) == 2
+    assert ADAPTER_LAUNCHER_MANIFEST in manifest["owned_files"]
+    assert inspect_host_installation("codex", **common)["launcher_artifacts_current"] is True
+
+    bootstrap = _no_live_dashboard_service[1]
+    original = bootstrap.read_bytes()
+    try:
+        bootstrap.write_text("# changed after registration\n", encoding="utf-8")
+        drifted = inspect_host_installation("codex", **common)
+    finally:
+        bootstrap.write_bytes(original)
+
+    assert drifted["launcher_artifacts_current"] is False
+    assert drifted["maturity"] == "launcher-artifact-drift"
+    assert drifted["canary"] is None
+    assert drifted["canary_attestation_status"] == "stale"
+    assert "launcher_artifacts" in drifted["canary_stale_reasons"]
 
 
 def test_changed_codex_bundle_forces_native_cache_refresh(tmp_path: Path) -> None:
@@ -1023,6 +1255,55 @@ def test_openclaw_refuses_install_that_would_silently_restart_live_gateway(
 
 
 @pytest.mark.parametrize(
+    ("version", "supported"),
+    [
+        ("OpenClaw 2026.7.1", True),
+        ("openclaw v2026.7.2+build.9", True),
+        ("OpenClaw 2026.7.999", True),
+        ("OpenClaw 2026.8.0", False),
+        ("2027.1.0", False),
+        ("OpenClaw 2026.7.1-rc.1", False),
+        ("OpenClaw 2026.7.1rc1", False),
+        ("OpenClaw 2026.7.1.1", False),
+        ("OpenClaw 2026.6.9", False),
+        ("unknown", False),
+    ],
+)
+def test_openclaw_minimum_hook_version_contract(version: str, supported: bool) -> None:
+    assert openclaw_version_supported(version) is supported
+
+
+@pytest.mark.parametrize(
+    "version",
+    [
+        "OpenClaw 2026.6.9",
+        "OpenClaw 2026.7.1-rc.1",
+        "OpenClaw 2026.8.0",
+        "OpenClaw 2027.1.0",
+        "unknown",
+    ],
+)
+def test_openclaw_unsupported_version_blocks_before_mutation(
+    version: str,
+    tmp_path: Path,
+) -> None:
+    runner = FakeNativeRunner(openclaw_version=version)
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["failed_step"] == "host_capability_unproven"
+    assert result["partial"] is False
+    assert not Path(result["target"]).exists()
+    assert runner.commands == [["openclaw", "--version"]]
+
+
+@pytest.mark.parametrize(
     "gateway_result",
     [
         {"returncode": 7, "stderr": "gateway probe failed"},
@@ -1046,9 +1327,30 @@ def test_openclaw_unknown_gateway_status_fails_closed_without_mutation(
 
     assert result["ok"] is False
     assert result["failed_step"] == "gateway_status_unproven"
-    assert result["native_steps"][0]["gateway_state"] == "unknown"
+    gateway_step = next(step for step in result["native_steps"] if step["name"] == "gateway_status")
+    assert gateway_step["gateway_state"] == "unknown"
     assert result["partial"] is False
     assert not Path(result["target"]).exists()
+    assert not any("plugins install" in " ".join(command) for command in runner.commands)
+
+
+def test_openclaw_streaming_policy_failure_stops_before_plugin_mutation(
+    tmp_path: Path,
+) -> None:
+    runner = FakeNativeRunner(fail_token="config get agents.defaults")
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["failed_step"] == "final_only_delivery_policy"
+    assert result["streaming_policy"]["ok"] is False
+    assert result["streaming_policy"]["rollback_attempted"] is False
+    assert "restoration" not in result["streaming_policy"]
     assert not any("plugins install" in " ".join(command) for command in runner.commands)
 
 
@@ -1073,10 +1375,10 @@ def test_openclaw_runtime_metadata_without_loaded_fact_stays_unverified(
     assert result["ok"] is False
     assert result["failed_step"] == "runtime_inspect_unproven"
     assert result["registered"] is True
-    assert result["enabled"] is True
-    assert result["loaded"] is None
+    assert result["enabled"] is False
+    assert result["loaded"] is False
     assert result["canary"] is None
-    assert result["maturity"] == "enabled-runtime-unverified"
+    assert result["maturity"] == "registered-disabled"
 
     record = {
         item["host"]: item
@@ -1088,10 +1390,139 @@ def test_openclaw_runtime_metadata_without_loaded_fact_stays_unverified(
         )
     }["openclaw"]
     assert record["registered"] is True
-    assert record["enabled"] is True
+    assert record["enabled"] is False
     assert record["loaded"] is None
     assert record["canary"] is None
-    assert record["maturity"] == "enabled-runtime-unverified"
+    assert record["maturity"] == "registered-disabled"
+
+
+def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: Path) -> None:
+    runner = FakeNativeRunner(
+        runtime_payload={
+            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "typedHooks": [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)],
+        }
+    )
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is True
+    runtime_step = next(
+        step for step in result["native_steps"] if step["name"] == "runtime_inspect"
+    )
+    assert runtime_step["loaded"] is True
+    assert runtime_step["missing_required_hooks"] == []
+    assert runtime_step["registration_contract_proven"] is True
+    assert runtime_step["delivery_behavior_proven"] is False
+    assert runtime_step["runtime_contract_scope"] == "registration_only"
+    assert runtime_step["terminal_hook_priority_status"] == {
+        "message_sending": "unavailable",
+        "reply_payload_sending": "unavailable",
+    }
+
+
+def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
+    tmp_path: Path,
+) -> None:
+    hooks = sorted(OPENCLAW_REQUIRED_HOOKS - {"message_sending"})
+    runner = FakeNativeRunner(
+        runtime_payload={
+            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "typedHooks": [{"name": name} for name in hooks],
+        }
+    )
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["failed_step"] == "runtime_inspect_unproven"
+    runtime_step = next(
+        step for step in result["native_steps"] if step["name"] == "runtime_inspect"
+    )
+    assert runtime_step["missing_required_hooks"] == ["message_sending"]
+    assert "agency-preflight" in runner.openclaw_disabled
+
+
+def test_openclaw_runtime_contract_rejects_explicit_nonterminal_priority(
+    tmp_path: Path,
+) -> None:
+    typed_hooks = [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)]
+    for hook in typed_hooks:
+        if hook["name"] == "message_sending":
+            hook["priority"] = -1000
+    runner = FakeNativeRunner(
+        runtime_payload={
+            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "typedHooks": typed_hooks,
+        }
+    )
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["failed_step"] == "runtime_inspect_unproven"
+    runtime_step = next(
+        step for step in result["native_steps"] if step["name"] == "runtime_inspect"
+    )
+    assert runtime_step["registration_contract_proven"] is True
+    assert runtime_step["terminal_hook_priority_mismatches"] == ["message_sending"]
+    assert runtime_step["terminal_hook_priority_status"]["message_sending"] == "mismatch"
+    assert "agency-preflight" in runner.openclaw_disabled
+
+
+@pytest.mark.parametrize(
+    ("priority", "expected_status", "expected_value", "expected_ok"),
+    [
+        ("-Infinity", "mismatch", "-Infinity", False),
+        ({"value": "lowest"}, "mismatch", "dict", False),
+    ],
+)
+def test_openclaw_runtime_priority_metadata_is_not_guessed(
+    priority: object,
+    expected_status: str,
+    expected_value: object,
+    expected_ok: bool,
+    tmp_path: Path,
+) -> None:
+    typed_hooks = [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)]
+    for hook in typed_hooks:
+        if hook["name"] == "message_sending":
+            hook["priority"] = priority
+    runner = FakeNativeRunner(
+        runtime_payload={
+            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "typedHooks": typed_hooks,
+        }
+    )
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is expected_ok
+    runtime_step = next(
+        step for step in result["native_steps"] if step["name"] == "runtime_inspect"
+    )
+    assert runtime_step["terminal_hook_priority_status"]["message_sending"] == expected_status
+    assert runtime_step["terminal_hook_priorities"]["message_sending"] == expected_value
 
 
 def test_reinstall_keeps_timestamped_backup_and_rollback_restores_it(
@@ -1400,6 +1831,64 @@ def test_install_defaults_to_user_dashboard_service(
     assert len(calls) == 1
     assert callable(calls[0]["reachability_probe"])
     assert callable(calls[0]["readiness_probe"])
+
+
+def test_install_blocks_environment_only_dashboard_settings_before_local_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import agency_runtime.core.dashboard_service as dashboard_service
+    import agency_runtime.core.installer as installer
+    from agency_runtime.cli import main as cli
+
+    secret = "never-render-this-secret"
+    monkeypatch.setenv("AGENCY_DB_PATH", "process-only.db")
+    monkeypatch.setenv("AGENCY_JUDGE_API_KEY", secret)
+    monkeypatch.setattr(cli, "load_config", lambda: AgencyConfig())
+
+    def unexpected(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("install must fail before local mutation")
+
+    monkeypatch.setattr(cli, "_store", unexpected)
+    monkeypatch.setattr(installer, "seed_starter_roster", unexpected)
+    monkeypatch.setattr(installer, "install_agent_adapter", unexpected)
+    monkeypatch.setattr(
+        dashboard_service,
+        "plan_dashboard_service",
+        lambda **_kwargs: {
+            "ok": False,
+            "exit_code": 1,
+            "changed": False,
+            "error": "non-durable: AGENCY_DB_PATH, AGENCY_JUDGE_API_KEY",
+            "non_durable_environment_overrides": [
+                "AGENCY_DB_PATH",
+                "AGENCY_JUDGE_API_KEY",
+            ],
+        },
+    )
+
+    exit_code = cli.cmd_install(
+        Namespace(
+            agent="codex",
+            all=False,
+            profile=None,
+            json=True,
+            rollback=False,
+            dry_run=False,
+            backup=None,
+            no_dashboard=False,
+        )
+    )
+    report = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert report["roster_added"] == 0
+    assert report["hosts"] == []
+    assert report["dashboard"]["non_durable_environment_overrides"] == [
+        "AGENCY_DB_PATH",
+        "AGENCY_JUDGE_API_KEY",
+    ]
+    assert secret not in json.dumps(report)
 
 
 def test_install_no_dashboard_never_queries_or_mutates_service_manager(

@@ -12,6 +12,7 @@ from typing import Any
 _SYSTEM_EXECUTABLE_PATHS = {
     "powershell.exe": Path("WindowsPowerShell") / "v1.0" / "powershell.exe",
     "schtasks.exe": Path("schtasks.exe"),
+    "taskkill.exe": Path("taskkill.exe"),
 }
 _FILE_ATTRIBUTE_REPARSE_POINT = 0x400
 _WINDOWS_PLATFORM_NAMES = frozenset({"nt", "win32", "windows"})

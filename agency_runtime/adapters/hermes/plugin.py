@@ -32,26 +32,21 @@ class HermesAdapter(BaseAdapter):
 
         return "hermes" in detect_installed_agents()
 
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_specialists_for_session(session_id)
-
     def get_delegate_backend(self) -> str | None:
         return "delegate_task"
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
 
     # BaseAdapter.post_api_request_handler records the canonical host receipt
     # for all host adapters, including honest unavailable receipts when the
     # hook lacks model telemetry.
 
-    def _suggested_delegations(self, session_id: str) -> list[dict[str, Any]]:
+    def _suggested_delegations(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> list[dict[str, Any]]:
         from agency_runtime.core.delegation.events import suggested_delegations
 
-        return suggested_delegations(self.store, session_id)
+        return suggested_delegations(self.store, session_id, trace_id=trace_id)
 
     def post_tool_call_handler(self, **kwargs: Any) -> None:
         """Record skills, specialist loads, and actual delegation tool use."""
@@ -63,6 +58,9 @@ class HermesAdapter(BaseAdapter):
         user_message: str,
         model: str = "",
         trace_id: str = "",
+        *,
+        reservation_token: str = "",
+        origin_receipt: Any | None = None,
     ) -> dict[str, Any] | None:
         """Pre-LLM call handler for Hermes plugin system.
 
@@ -75,7 +73,14 @@ class HermesAdapter(BaseAdapter):
         sees [AGENCY PREFLIGHT] suggestions and writes 'loaded: none' on
         every turn — making the entire plugin broken from the start.
         """
-        return self.build_preflight_context(session_id, user_message, model, trace_id)
+        return self.build_preflight_context(
+            session_id,
+            user_message,
+            model,
+            trace_id,
+            reservation_token=reservation_token,
+            origin_receipt=origin_receipt,
+        )
 
     def pre_verify_handler(
         self,
@@ -83,12 +88,18 @@ class HermesAdapter(BaseAdapter):
         session_id: str = "",
         model: str = "",
         attempt: int = 0,
+        trace_id: str = "",
     ) -> dict[str, Any] | None:
         """Pre-verify handler — gate response completion on agency header.
 
         Two checks:
         1. Header exists and is complete (all six fields present)
-        2. On non-trivial turns, at least one specialist was consulted
-           (agencies_loaded must not be 'none' unless the turn was trivial)
+        2. The header matches authoritative state-aware current-turn evidence
         """
-        return self.enforce_pre_verify(final_response, session_id, model, attempt)
+        return self.enforce_pre_verify(
+            final_response,
+            session_id,
+            model,
+            attempt,
+            trace_id,
+        )

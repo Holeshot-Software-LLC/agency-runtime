@@ -5,6 +5,7 @@ __pycache__/
 *.egg-link
 dist/
 build/
+/build-validation-dist/
 .eggs/
 *.so
 .tox/
@@ -32,6 +33,7 @@ venv/
 *.sqlite-shm
 *.sqlite-wal
 /.agency-runtime/
+/.codex/
 /agency.yaml
 .codegraph/
 .chunkhound/

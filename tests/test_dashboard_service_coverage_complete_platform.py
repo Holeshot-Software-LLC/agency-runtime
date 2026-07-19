@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+from pathlib import Path
+
 import pytest
 
 from agency_runtime.core import dashboard_service_core as core
@@ -44,6 +47,7 @@ def test_windows_action_create_and_task_content(tmp_path):
     assert properties is not None
     assert properties["source"] == core.OWNER_ID
     assert properties["principal_user"] == "S-1-5-test"
+    assert properties["trigger_user"] == (ctx.windows_account or "S-1-5-test")
     assert windows._windows_xml_owned(content)
     assert windows._windows_definition_matches(ctx, content)
     missing_user = core._Context(
@@ -79,11 +83,48 @@ def test_windows_task_properties_rejects_schema_injection(tmp_path):
         ),
         content.replace("<Source>", '<Source injected="true">'),
         content.replace("<Source>agency-runtime</Source>", "<Source><Nested /></Source>"),
-        content.replace("  </Settings>", "    <Volatile>true</Volatile>\n  </Settings>"),
+        content.replace("<Source>agency-runtime</Source>", "<Source></Source>"),
+        content.replace(
+            "<Arguments>",
+            "<Arguments></Arguments><Arguments>",
+            1,
+        ),
         content.replace('  <Actions Context="CurrentUser">', ""),
     ]
     for mutated in mutations:
         assert windows._windows_task_properties(mutated) is None
+
+    drifted = content.replace("  </Settings>", "    <Volatile>true</Volatile>\n  </Settings>")
+    assert windows._windows_task_properties(drifted) is not None
+    assert not windows._windows_definition_matches(context(tmp_path), drifted)
+
+
+def test_windows_task_properties_accepts_native_scheduler_canonicalization(tmp_path):
+    ctx = context(tmp_path)
+    generated = windows._windows_task_content(ctx)
+    canonical = generated.replace(
+        "  </RegistrationInfo>",
+        "    <URI>\\Agency Runtime Dashboard</URI>\n  </RegistrationInfo>",
+    )
+    for line in (
+        "      <Enabled>true</Enabled>\n",
+        "      <RunLevel>LeastPrivilege</RunLevel>\n",
+        "    <AllowHardTerminate>true</AllowHardTerminate>\n",
+        "    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>\n",
+        "    <AllowStartOnDemand>true</AllowStartOnDemand>\n",
+        "    <Enabled>true</Enabled>\n",
+        "    <Hidden>false</Hidden>\n",
+        "    <RunOnlyIfIdle>false</RunOnlyIfIdle>\n",
+        "    <WakeToRun>false</WakeToRun>\n",
+        "    <Priority>7</Priority>\n",
+    ):
+        canonical = canonical.replace(line, "")
+
+    properties = windows._windows_task_properties(canonical)
+    assert properties is not None
+    assert properties["trigger_enabled"] == "true"
+    assert properties["run_level"] == "LeastPrivilege"
+    assert windows._windows_definition_matches(ctx, canonical)
 
 
 def test_xml_helpers_missing_foreign_duplicate_and_attributes(tmp_path):
@@ -110,11 +151,21 @@ def test_xml_helpers_missing_foreign_duplicate_and_attributes(tmp_path):
 def test_register_windows_xml_success_and_cleanup_on_early_error(tmp_path, monkeypatch):
     ctx = context(tmp_path)
     observed = []
+
+    def register(argv, **_kwargs):
+        task_path = Path(argv[argv.index("/XML") + 1])
+        payload = task_path.read_bytes()
+        assert payload.startswith(b"\xff\xfe")
+        decoded = payload.decode("utf-16")
+        assert decoded.startswith('<?xml version="1.0" encoding="UTF-16"?>')
+        observed.append(argv)
+        return {"returncode": 0}
+
     result = windows._register_windows_xml(
         ctx,
         windows._windows_task_content(ctx),
         force=True,
-        command_runner=lambda argv, **_kw: observed.append(argv) or {"returncode": 0},
+        command_runner=register,
     )
     assert result.ok and observed[0][-1] == "/F"
     original = windows.restrict_private_file
@@ -157,7 +208,7 @@ def test_windows_registration_queries_and_running_states(monkeypatch):
             command(stdout="PRESENT:3"),
             command(code=1),
             command(stdout="PRESENT:3"),
-            command(stdout="<xml />"),
+            command(stdout=base64.b64encode(b"<xml />").decode("ascii")),
         ]
     )
     monkeypatch.setattr(windows, "_run", lambda *_a, **_kw: next(results))
@@ -181,6 +232,52 @@ def test_windows_registration_queries_and_running_states(monkeypatch):
             lambda stdout=stdout, **_kw: command(stdout=stdout),
         )
         assert windows._windows_running_state(command_runner=None)[0] is expected
+
+
+def test_windows_running_state_wait_is_bounded_and_observes_async_transition(
+    monkeypatch,
+):
+    transition = iter(
+        [
+            (True, command(stdout="PRESENT:4")),
+            (None, command(stdout="PRESENT:2")),
+            (False, command(stdout="PRESENT:3")),
+        ]
+    )
+    sleeps = []
+    monkeypatch.setattr(windows, "_windows_running_state", lambda **_kw: next(transition))
+    monkeypatch.setattr(windows.time, "sleep", sleeps.append)
+
+    stopped, results = windows._wait_windows_running_state(
+        False,
+        command_runner=None,
+        attempts=3,
+        poll_seconds=0.25,
+    )
+
+    assert stopped is True
+    assert [result.stdout for result in results] == [
+        "PRESENT:4",
+        "PRESENT:2",
+        "PRESENT:3",
+    ]
+    assert sleeps == [0.25, 0.25]
+
+    monkeypatch.setattr(
+        windows,
+        "_windows_running_state",
+        lambda **_kw: (None, command(stdout="PRESENT:2")),
+    )
+    sleeps.clear()
+    stopped, results = windows._wait_windows_running_state(
+        False,
+        command_runner=None,
+        attempts=0,
+        poll_seconds=-1,
+    )
+    assert stopped is False
+    assert len(results) == 1
+    assert sleeps == []
 
 
 def test_windows_owned_capture_and_exact_assertions(tmp_path, monkeypatch):
@@ -304,7 +401,7 @@ def test_systemd_restore_success_failure_and_unsafe_manifest_cleanup(tmp_path, m
     monkeypatch.setattr(
         systemd,
         "_restore_file",
-        lambda path, value: calls.append((path, value)),
+        lambda path, value, **_kwargs: calls.append((path, value)),
     )
     results = iter([command(stdout="disabled"), command(stdout="inactive")])
     monkeypatch.setattr(systemd, "_run", lambda *_a, **_kw: next(results))

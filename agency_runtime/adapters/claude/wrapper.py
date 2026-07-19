@@ -32,17 +32,8 @@ class ClaudeAdapter(BaseAdapter):
         """Check if Claude Code CLI is installed."""
         return bool(shutil.which(self.claude_cmd))
 
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_specialists_for_session(session_id)
-
     def get_delegate_backend(self) -> str | None:
         return "claude_exec"
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
 
     def exec(
         self, task: str, workdir: str | None = None, specialist_prompt: str = ""

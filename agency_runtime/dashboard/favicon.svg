@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Agency Runtime">
+  <defs>
+    <linearGradient id="surface" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#152522"/>
+      <stop offset="1" stop-color="#09110f"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="16" y1="13" x2="51" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#72ffd4"/>
+      <stop offset="1" stop-color="#34d6ad"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="15" fill="url(#surface)" stroke="#34534b" stroke-width="2"/>
+  <path d="M17 45 27 18h8l12 27h-8l-2.2-5.7H26.2L24 45Zm11.7-12.5h5.5l-2.8-7.3Z" fill="url(#signal)"/>
+  <circle cx="48" cy="17" r="3" fill="#8affdf"/>
+</svg>

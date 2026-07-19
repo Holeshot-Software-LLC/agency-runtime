@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-07-11
 tags: [routing, evaluation, performance]
 related:
+  - docs/roadmap/issue-AR-88-compare-agency-native-outcomes.md
   - docs/roadmap/issue-AR-11-routing-evaluation-and-performance.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/RELEASE_CHECKLIST.md

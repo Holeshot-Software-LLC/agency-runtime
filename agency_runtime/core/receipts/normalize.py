@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
+from .ingress import canonicalize_provider
 from .litellm import extract_litellm_receipt_headers
 
 RECEIPT_FIELDS: tuple[str, ...] = (
@@ -140,10 +141,7 @@ def _canonical_receipt(**values: Any) -> dict[str, Any]:
         receipt["host"] = "unknown"
     if not receipt["resolved_model"] or _is_custom_alias(receipt["resolved_model"]):
         receipt["resolved_model"] = "unavailable"
-    if _is_custom_alias(receipt["resolved_provider"]):
-        receipt["resolved_provider"] = ""
-    if receipt["resolved_provider"].lower() == "custom":
-        receipt["resolved_provider"] = ""
+    receipt["resolved_provider"] = canonicalize_provider(receipt["resolved_provider"])
     if not receipt["status"]:
         receipt["status"] = "unknown"
     if not receipt["started_at"]:
@@ -156,29 +154,31 @@ def _canonical_receipt(**values: Any) -> dict[str, Any]:
 def normalize_litellm_receipt(
     headers: Mapping[str, Any] | Any | None, requested_model: str
 ) -> dict[str, Any]:
-    """Normalize LiteLLM response headers into a canonical receipt."""
+    """Normalize LiteLLM response headers without treating model IDs as truth.
+
+    ``x-litellm-model-id`` is retained as opaque operational metadata. The
+    callback reconciles the actual model from the successful response and
+    StandardLoggingPayload; a deployment identifier may not be a model name.
+    """
     extracted = extract_litellm_receipt_headers(headers)
-    provider, resolved_model = _provider_model_from_model_id(extracted.get("model_id", ""))
-    if not provider:
-        provider = _provider_from_api_base(extracted.get("api_base", ""))
+    provider = _provider_from_api_base(extracted.get("api_base", ""))
 
     has_litellm_truth = any(
         extracted.get(key) not in (None, "", 0)
         for key in ("model_group", "api_base", "attempted_fallbacks", "model_id")
     )
     source = "litellm" if has_litellm_truth else "unknown"
-    status = "success" if resolved_model else "unknown"
 
     return _canonical_receipt(
         requested_model=requested_model,
         model_group=extracted.get("model_group", ""),
         resolved_provider=provider,
-        resolved_model=resolved_model or "unavailable",
+        resolved_model="unavailable",
         api_base=extracted.get("api_base", ""),
         attempted_fallbacks=extracted.get("attempted_fallbacks", 0),
         model_id=extracted.get("model_id", ""),
         source=source,
-        status=status,
+        status="unknown",
     )
 
 

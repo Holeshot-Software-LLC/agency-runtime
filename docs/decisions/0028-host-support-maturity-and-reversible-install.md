@@ -3,12 +3,13 @@ title: "Separate host contract coverage from live support maturity"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-16
 tags: [hosts, installation, operations]
 related:
   - docs/roadmap/issue-AR-03-supported-host-integrations.md
   - docs/roadmap/issue-AR-04-runtime-controls.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
+  - docs/roadmap/issue-AR-67-require-explicit-native-enablement-proof.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

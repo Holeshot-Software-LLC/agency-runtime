@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+from importlib import import_module
 from types import SimpleNamespace
 from typing import Any
 
@@ -13,36 +14,41 @@ class _AdapterStore:
     def __init__(self, *, enabled: bool = True) -> None:
         self.enabled = enabled
         self.prompts: dict[str, dict[str, Any] | None] = {}
-        self.loaded: list[tuple[str, str]] = []
+        self.loaded: list[tuple[str, str, str]] = []
+        self.closed: list[tuple[str, str]] = []
+        self.request_kinds: dict[tuple[str, str], bool | None] = {}
 
     def get_host_control(self, _host: str) -> dict[str, bool]:
         return {"enabled": self.enabled}
 
     def get_specialist_prompt(self, slug: str, *, max_chars: int) -> dict[str, Any] | None:
-        assert max_chars == 12_000
+        assert max_chars == 7_000
         return self.prompts.get(slug)
 
-    def record_specialist_loaded(self, session_id: str, slug: str) -> None:
-        self.loaded.append((session_id, slug))
+    def record_specialist_loaded(
+        self,
+        session_id: str,
+        slug: str,
+        *,
+        trace_id: str,
+    ) -> None:
+        self.loaded.append((session_id, trace_id, slug))
+
+    def close_turn_evidence(self, session_id: str, trace_id: str) -> None:
+        self.closed.append((session_id, trace_id))
+
+    def is_nontrivial_turn(self, session_id: str, trace_id: str) -> bool | None:
+        return self.request_kinds.get((session_id, trace_id))
 
 
 class _Adapter(base.BaseAdapter):
-    host_name = "test"
+    host_name = "codex"
 
     def is_available(self) -> bool:
         return True
 
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return []
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return []
-
     def get_delegate_backend(self) -> str | None:
         return None
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
 
 
 def test_base_result_and_nested_value_defensive_branches() -> None:
@@ -55,65 +61,105 @@ def test_base_result_and_nested_value_defensive_branches() -> None:
     assert base._nested_value({"result": {"id": "nested"}}, ("id",)) == "nested"
 
 
-def test_base_finalization_and_selected_prompt_limit(
+def test_base_finalization_and_shared_specialist_prompt_limit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = _AdapterStore(enabled=False)
     adapter = _Adapter(store=store)  # type: ignore[arg-type]
-    assert adapter.apply_finalization("draft", "trace") == "draft"
+    assert adapter.apply_finalization("draft", "session", trace_id="turn") == "draft"
 
-    import agency_runtime.core.header.contract as contract
+    header_finalize = import_module("agency_runtime.core.header.finalize")
 
     store.enabled = True
-    monkeypatch.setattr(contract, "finalize_header", lambda draft, **_kwargs: f"final:{draft}")
-    assert adapter.apply_finalization("draft", "trace") == "final:draft"
+    monkeypatch.setattr(
+        header_finalize,
+        "finalize_response",
+        lambda draft, **_kwargs: {
+            "action": "accept",
+            "text": f"final:{draft}",
+        },
+    )
+    assert adapter.apply_finalization("draft", "session", trace_id="turn") == "final:draft"
+    # Terminal persistence belongs to the shared finalizer; adapter wrappers
+    # must not reintroduce a split record/close transaction.
+    assert store.closed == []
+
+    from agency_runtime.core.specialist_context import (
+        MAX_SELECTED_SPECIALISTS,
+        hydrate_selected_specialist_context,
+    )
 
     catalog = [{"slug": f"agent-{index}"} for index in range(6)]
     store.prompts = {
         f"agent-{index}": {
             "agent_slug": f"agent-{index}",
             "prompt_body": f"prompt-{index}",
+            "version": "1.0",
+            "prompt_hash": f"hash-{index}",
         }
         for index in range(6)
     }
-    selected = adapter._selected_catalog_agents(
+    selected = hydrate_selected_specialist_context(
+        store,  # type: ignore[arg-type]
         catalog,
         {"selected_ids": [f"agent-{index}" for index in range(6)]},
+        session_id="session",
+        trace_id="turn",
     )
-    assert len(selected) == 5
+    assert selected.slugs == tuple(f"agent-{index}" for index in range(MAX_SELECTED_SPECIALISTS))
+    assert f"prompt-{MAX_SELECTED_SPECIALISTS - 1}" in selected.context
+    assert f"prompt-{MAX_SELECTED_SPECIALISTS}" not in selected.context
     store.prompts["missing"] = None
-    assert (
-        adapter._selected_catalog_agents([{"slug": "missing"}], {"selected_ids": ["missing"]}) == []
+    missing = hydrate_selected_specialist_context(
+        store,  # type: ignore[arg-type]
+        [{"slug": "missing"}],
+        {"selected_ids": ["missing"]},
+        session_id="session",
+        trace_id="missing-turn",
     )
+    assert missing.slugs == ()
+    assert missing.context == ""
 
 
-def test_base_trivial_preflight_empty_prompt_and_no_companion_branches(
+def test_base_preflight_projects_shared_turn_result_and_reads_persisted_request_kind(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = _AdapterStore()
-    store.get_active_roster_as_catalog = lambda: [{"slug": "writer"}]  # type: ignore[attr-defined]
     adapter = _Adapter(store=store)  # type: ignore[arg-type]
 
-    import agency_runtime.core.selector.pipeline as pipeline
-    import agency_runtime.core.selector.policy as policy
+    import agency_runtime.core.preflight as preflight
 
-    monkeypatch.setattr(pipeline, "is_trivial", lambda _message: True)
-    monkeypatch.setattr(policy, "detect_actions", lambda *_args, **_kwargs: ([], ["writer"]))
-    assert adapter.build_preflight_context("session", "hi") is None
+    trivial = preflight.PreflightResult(
+        session_id="session",
+        trace_id="trivial-turn",
+        routing={"status": "trivial"},
+        context="fallback context",
+        loaded_specialists=("agents-orchestrator", "chief-of-staff"),
+        selected_specialists=("agents-orchestrator", "chief-of-staff"),
+        trivial=True,
+        roster_size=9,
+    )
+    monkeypatch.setattr(preflight, "run_preflight", lambda *_args, **_kwargs: trivial)
+    assert adapter.build_preflight_context("session", "hi") == trivial.as_dict()
+    store.request_kinds[("session", "trivial-turn")] = False
+    assert adapter._was_nontrivial_turn("session", "trivial-turn") is False
 
-    monkeypatch.setattr(policy, "detect_actions", lambda *_args, **_kwargs: ([], []))
-    assert adapter.build_preflight_context("session", "hi") is None
-    monkeypatch.setattr(policy, "detect_actions", lambda *_args, **_kwargs: ([], ["absent"]))
-    assert adapter.build_preflight_context("session", "hi") is None
-
-    monkeypatch.setattr(pipeline, "is_trivial", lambda _message: False)
-    store.get_active_roster_as_catalog = lambda: [{"slug": "writer"}]  # type: ignore[attr-defined]
-    monkeypatch.setattr(pipeline, "route", lambda *_args, **_kwargs: {"selected_ids": []})
-    monkeypatch.setattr(pipeline, "build_routing_context", lambda _routing: "")
-    import agency_runtime.core.delegation.events as events
-
-    monkeypatch.setattr(events, "record_suggested_delegations", lambda *_args, **_kwargs: None)
-    assert adapter.build_preflight_context("", "complex") is None
+    nontrivial = preflight.PreflightResult(
+        session_id="session",
+        trace_id="complex-turn",
+        routing={"status": "selected"},
+        context="specialist context",
+        loaded_specialists=("code-reviewer",),
+        selected_specialists=("code-reviewer",),
+        trivial=False,
+        roster_size=9,
+    )
+    monkeypatch.setattr(preflight, "run_preflight", lambda *_args, **_kwargs: nontrivial)
+    assert adapter.build_preflight_context("session", "review the implementation") == (
+        nontrivial.as_dict()
+    )
+    store.request_kinds[("session", "complex-turn")] = True
+    assert adapter._was_nontrivial_turn("session", "complex-turn") is True
 
 
 @pytest.mark.parametrize(
@@ -146,6 +192,24 @@ class _HookStore:
         self.activity = activity
         self.fail_finalization = fail_finalization
         self.finalizations: list[dict[str, Any]] = []
+        self.closed: list[tuple[str, str, str]] = []
+        self.run_status: dict[str, str] = {}
+
+    def reserve_session_turn(self, **kwargs: str) -> dict[str, Any]:
+        return {
+            "trace_id": kwargs["trace_id"],
+            "created": True,
+            "abandoned": [],
+            "reservation_token": "00000000-0000-4000-9000-000000000001",
+        }
+
+    def abandon_preflight_reservation(self, **kwargs: str) -> bool:
+        self.close_turn_evidence(
+            kwargs["session_id"],
+            kwargs["trace_id"],
+            status=kwargs["status"],
+        )
+        return True
 
     def recent_runtime_activity(self, *, limit: int) -> Any:
         assert limit == 200
@@ -153,10 +217,90 @@ class _HookStore:
             raise self.activity
         return self.activity
 
-    def record_finalization(self, **kwargs: Any) -> None:
+    def get_completion_evidence_snapshot(
+        self,
+        _session_id: str,
+        _trace_id: str,
+    ) -> dict[str, Any]:
+        return {}
+
+    def record_finalization(self, **kwargs: Any) -> str:
         if self.fail_finalization:
             raise RuntimeError("database unavailable")
-        self.finalizations.append(kwargs)
+        receipt = f"00000000-0000-4000-8000-{len(self.finalizations) + 1:012d}"
+        self.finalizations.append({**kwargs, "id": receipt})
+        return receipt
+
+    def has_finalization_action(
+        self,
+        trace_id: str,
+        action: str,
+        *,
+        response_hash: str = "",
+    ) -> bool:
+        return any(
+            row.get("trace_id") == trace_id
+            and row.get("action") == action
+            and (not response_hash or row.get("response_hash") == response_hash)
+            for row in self.finalizations
+        )
+
+    def get_run(self, trace_id: str) -> dict[str, str]:
+        return {
+            "trace_id": trace_id,
+            "session_id": "session",
+            "status": self.run_status.get(trace_id, "active"),
+        }
+
+    def get_authoritative_finalization(
+        self,
+        session_id: str,
+        trace_id: str,
+        *,
+        action: str = "",
+        response_hash: str = "",
+    ) -> dict[str, str] | None:
+        if session_id != "session":
+            return None
+        for row in reversed(self.finalizations):
+            if (
+                row.get("trace_id") == trace_id
+                and row.get("action") == action
+                and row.get("response_hash") == response_hash
+                and self.run_status.get(trace_id) == "completed"
+            ):
+                return {
+                    **{key: str(value) for key, value in row.items()},
+                    "status": "completed",
+                }
+        return None
+
+    def commit_terminal_finalization(self, **kwargs: Any) -> dict[str, Any]:
+        self.record_finalization(**kwargs)
+        self.run_status[str(kwargs["trace_id"])] = str(kwargs["status"])
+        self.close_turn_evidence(
+            str(kwargs["session_id"]),
+            str(kwargs["trace_id"]),
+            status=str(kwargs["status"]),
+        )
+        return {
+            "outcome": "committed",
+            "authoritative": True,
+            "event_id": "event",
+            "action": kwargs["action"],
+            "response_hash": kwargs["response_hash"],
+            "status": kwargs["status"],
+        }
+
+    def close_turn_evidence(
+        self,
+        session_id: str,
+        trace_id: str,
+        *,
+        status: str,
+    ) -> None:
+        self.run_status[trace_id] = status
+        self.closed.append((session_id, trace_id, status))
 
 
 class _HookAdapter:
@@ -210,12 +354,11 @@ def test_hook_bridge_validation_recovery_and_noop_events() -> None:
         )
         == {}
     )
-    assert (
-        bridge.handle(
-            {"hook_event_name": "Stop", "session_id": "session", "last_assistant_message": ""}
-        )
-        == {}
+    rejected = bridge.handle(
+        {"hook_event_name": "Stop", "session_id": "session", "last_assistant_message": ""}
     )
+    assert rejected["continue"] is False
+    assert "could not verify or persist" in rejected["stopReason"]
     assert bridge.handle({"hook_event_name": "SessionStart", "session_id": "session"}) == {}
 
 
@@ -231,6 +374,7 @@ def test_hook_finalization_persistence_failure_is_fail_open() -> None:
 def test_hook_stop_accept_records_finalization() -> None:
     store = _HookStore()
     adapter = _HookAdapter()
+    adapter.verification = {"action": "accept", "evidence_revision": 1}
     bridge = hooks.HookBridge("claude", store=store, adapter=adapter)  # type: ignore[arg-type]
     assert (
         bridge.handle(
@@ -244,6 +388,7 @@ def test_hook_stop_accept_records_finalization() -> None:
         == {}
     )
     assert store.finalizations[0]["action"] == "accept"
+    assert store.closed == [("session", "trace", "completed")]
 
 
 def test_hook_output_binary_text_size_and_serialization_fallbacks(

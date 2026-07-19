@@ -95,7 +95,6 @@ class DetectionResult:
                 self.adapters.openclaw,
                 self.adapters.codex,
                 self.adapters.claude,
-                self.providers.litellm_available,
             ]
         )
 
@@ -578,7 +577,13 @@ def generate_config_from_detection(
         "selector": {
             "min_confidence": 0.4,
             "max_user_msg_len": 4000,
-            "trivial_msg_threshold": 12,
+            "trivial_msg_threshold": 0,
+        },
+        "delegation": {
+            "mode": "prefer",
+            "preferred_min_units": 2,
+            "strongly_preferred_min_units": 4,
+            "strongly_preferred_min_confidence": 0.8,
         },
         "store": {"db_path": "~/.agency-runtime/agency.db"},
         "server": {"host": "127.0.0.1", "port": 7800},
