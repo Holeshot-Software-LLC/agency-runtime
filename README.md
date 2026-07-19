@@ -965,6 +965,12 @@ Environment overrides include `AGENCY_CONFIG_PATH`, `AGENCY_DB_PATH`,
 `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `OLLAMA_BASE_URL`.
 `AGENCY_DASHBOARD_PORT` overrides the fixed user-service port.
 
+Relative `AGENCY_DB_PATH` and `AGENCY_POLICY_PATH` values resolve against the
+directory containing the effective Agency configuration file, never against a
+caller's current working directory. Absolute values remain absolute, and `~`
+is expanded for the current user. The same rules apply to persisted
+`store.db_path` and `companion_policy_path` values.
+
 The default `~/.agency-runtime` directory is an Agency Runtime-owned private
 directory. A custom config or database parent is never silently re-permissioned,
 and every existing ancestor must exclude cross-account pathname substitution.

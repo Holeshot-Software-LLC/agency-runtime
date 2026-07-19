@@ -3,7 +3,7 @@ title: "AR-46: Bind routing surfaces to the Store configuration identity"
 status: done
 category: roadmap
 created: 2026-07-15
-updated: 2026-07-17
+updated: 2026-07-19
 tags: [routing, configuration, adapters, dashboard, embedding]
 related:
   - docs/decisions/0006-config-first-redacted-configuration.md
@@ -42,9 +42,9 @@ restart.
 
 The implementation now captures one Store-bound config and disabled-agent
 snapshot for the public runtime, preflight, HTTP, MCP, dashboard, and adapter
-routing paths. The dashboard also binds each routing operation to its active
-Store and config revision. Full-suite, installed-host, and merged-package
-acceptance remain pending.
+routing paths. The dashboard binds each routing operation to its active Store
+and config revision. Omitted callback configuration refreshes from that same
+bound file, while explicitly supplied callback configuration remains immutable.
 
 ## Approach
 

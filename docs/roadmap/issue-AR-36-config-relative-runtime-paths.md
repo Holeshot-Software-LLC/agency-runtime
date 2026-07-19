@@ -3,7 +3,7 @@ title: "AR-36: Make configured file paths independent of process CWD"
 status: done
 category: roadmap
 created: 2026-07-15
-updated: 2026-07-16
+updated: 2026-07-19
 tags: [configuration, paths, portability, reboot, storage]
 related:
   - docs/decisions/0006-config-first-redacted-configuration.md
@@ -32,9 +32,10 @@ therefore use different state after reboot even though they share one config.
 
 ## Current state
 
-The config file itself has a canonical durable identity, but its path-valued
-fields are expanded only when a consumer uses them. Task Scheduler, systemd,
-terminals, and native hosts do not promise the same working directory.
+The effective config file has one canonical durable identity. Relative
+persisted and environment-overridden database and companion-policy paths are
+bound to its directory while typed configuration is loaded, so Task Scheduler,
+systemd, terminals, and native hosts select the same files regardless of CWD.
 
 ## Approach
 
