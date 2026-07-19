@@ -75,6 +75,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c8ebbfa` | 2026-07-19 | test(runtime): cover defensive control branches | [AR-100](../roadmap/issue-AR-100-wait-for-windows-dashboard-runtime-exit.md), [AR-101](../roadmap/issue-AR-101-enforce-restricted-global-master-switch.md) | [detail](2026-07-19-c8ebbfa-defensive-control-coverage.md) |
 | `3ded6a4` | 2026-07-19 | test(dashboard): cover delegation plan fallback | [AR-89](../roadmap/issue-AR-89-operational-roster-inference-parity.md) | null |
 | `164188b` | 2026-07-19 | fix(roster): reconcile legacy bundled contracts | [AR-82](../roadmap/issue-AR-82-full-roster-unit-routing.md), [AR-84](../roadmap/issue-AR-84-bounded-semantic-agent-cards.md), [AR-86](../roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md), [AR-87](../roadmap/issue-AR-87-bounded-native-delegation-plans.md), [AR-91](../roadmap/issue-AR-91-enforce-governed-roster-activation.md), [AR-92](../roadmap/issue-AR-92-redact-roster-source-credentials.md), [AR-102](../roadmap/issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | [detail](2026-07-19-164188b-legacy-bundled-contract-reconciliation.md) |
+| `664fcf1` | 2026-07-19 | test(ci): import Windows ctypes types portably | [AR-103](../roadmap/issue-AR-103-import-windows-ctypes-fixtures-portably.md) | [detail](2026-07-19-664fcf1-portable-windows-ctypes-fixtures.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

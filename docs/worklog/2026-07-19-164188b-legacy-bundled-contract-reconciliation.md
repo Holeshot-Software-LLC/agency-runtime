@@ -16,7 +16,7 @@ type: worklog
 commit: 164188bcc485ca048e17d39ff12fdfbfc35b8b37
 short: 164188b
 date: 2026-07-19
-pr: null
+pr: "https://github.com/Holeshot-Software-LLC/agency-runtime/pull/104"
 related_issues:
   - docs/roadmap/issue-AR-82-full-roster-unit-routing.md
   - docs/roadmap/issue-AR-84-bounded-semantic-agent-cards.md

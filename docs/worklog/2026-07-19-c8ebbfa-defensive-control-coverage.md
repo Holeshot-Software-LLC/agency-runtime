@@ -14,7 +14,7 @@ type: worklog
 commit: c8ebbfafb59b6a8c6f4b38d86b6cbc655beed121
 short: c8ebbfa
 date: 2026-07-19
-pr: null
+pr: "https://github.com/Holeshot-Software-LLC/agency-runtime/pull/104"
 related_issues:
   - docs/roadmap/issue-AR-100-wait-for-windows-dashboard-runtime-exit.md
   - docs/roadmap/issue-AR-101-enforce-restricted-global-master-switch.md

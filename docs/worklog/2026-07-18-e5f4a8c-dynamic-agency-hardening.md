@@ -15,7 +15,7 @@ type: worklog
 commit: e5f4a8c2ab6cc0411139b7ee96f22ad2befa7daf
 short: e5f4a8c
 date: 2026-07-18
-pr: null
+pr: "https://github.com/Holeshot-Software-LLC/agency-runtime/pull/104"
 related_issues:
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/roadmap/issue-AR-25-turn-scoped-specialist-evidence.md

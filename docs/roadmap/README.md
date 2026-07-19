@@ -232,7 +232,7 @@ not stable internal identifiers.
 | [AR-100](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0051](../decisions/0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md) |
 | [AR-101](issue-AR-101-enforce-restricted-global-master-switch.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
 | [AR-102](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | [`164188b`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md) |
-| [AR-103](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | Pending | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
+| [AR-103](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | [`664fcf1`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 
 ## Dependency summary
 

@@ -17,7 +17,7 @@ type: worklog
 commit: cbe9bc9b7760ab0191217d1091b9b6c6ee116852
 short: cbe9bc9
 date: 2026-07-18
-pr: null
+pr: "https://github.com/Holeshot-Software-LLC/agency-runtime/pull/104"
 related_issues:
   - docs/roadmap/issue-AR-89-operational-roster-inference-parity.md
   - docs/roadmap/issue-AR-100-wait-for-windows-dashboard-runtime-exit.md

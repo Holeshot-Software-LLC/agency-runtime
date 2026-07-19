@@ -15,7 +15,7 @@ type: worklog
 commit: a022b5dc2e3a32feccdeac520f2a90ae29cc0cb8
 short: a022b5d
 date: 2026-07-18
-pr: null
+pr: "https://github.com/Holeshot-Software-LLC/agency-runtime/pull/104"
 related_issues:
   - docs/roadmap/issue-AR-98-validate-dashboard-service-launcher-status.md
   - docs/roadmap/issue-AR-99-dashboard-broker-materialized-master-control.md
