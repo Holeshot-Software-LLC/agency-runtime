@@ -83,7 +83,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `07de83c` | 2026-07-19 | fix(windows): accept protected canonical ACL receipts | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | null |
 | `a1c6744` | 2026-07-19 | fix(windows): classify canonical ACL receipt failures | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | null |
 | `31516d1` | 2026-07-19 | fix(windows): scope trusted bootstrap root ownership | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-31516d1-scope-windows-bootstrap-ownership.md) |
-| `b05b180` | 2026-07-19 | fix(windows): normalize hosted private root ownership | null | null |
+| `b05b180` | 2026-07-19 | fix(windows): normalize hosted private root ownership | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-b05b180-normalize-hosted-private-root-ownership.md) |
+| `361962f` | 2026-07-19 | fix(windows): normalize private executable owner identity | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-361962f-normalize-private-executable-owner-identity.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
