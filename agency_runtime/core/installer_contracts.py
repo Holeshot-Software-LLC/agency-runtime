@@ -31,8 +31,8 @@ HOOK_TIMEOUT_BUFFER_SECONDS = 5.0
 MAX_HOOK_TIMEOUT_SECONDS = 595
 MAX_NATIVE_OUTPUT_CHARS = 256 * 1024
 CODEX_HOOK_TRUST_ACTION = (
-    "Open Codex, run `/hooks`, review and trust the three Agency Runtime "
-    "command hooks, then start a new session."
+    "Open Codex, run `/hooks`, review and trust the seven Agency Runtime "
+    "hook events, then start a new session."
 )
 _OPENCLAW_VERSION = re.compile(
     r"(?<!\d)(?P<year>\d{4})\.(?P<month>\d{1,2})\.(?P<patch>\d{1,9})"

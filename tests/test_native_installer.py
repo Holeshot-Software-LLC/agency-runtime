@@ -913,6 +913,7 @@ def test_codex_inventory_surfaces_manual_hook_trust_boundary(tmp_path: Path) -> 
     assert record["enabled"] is True
     assert record["hook_trust_status"] == "unverified"
     assert "`/hooks`" in record["hook_trust_action"]
+    assert "seven Agency Runtime hook events" in record["hook_trust_action"]
 
 
 def test_filtered_host_inspection_validates_names_and_preserves_canonical_order(

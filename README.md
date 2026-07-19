@@ -334,7 +334,7 @@ expected events, commands, and timeout schema, while native plugin inventory
 proves registration and enablement. Installation, status, and doctor
 conservatively report hook trust as `unverified` with the required action; they
 do not query or mutate Codex's live trust store. The operator must open
-`/hooks`, review and trust the three Agency hooks, and then start a new
+`/hooks`, review and trust the seven Agency hook events, and then start a new
 session. The exact-confirmed isolated canary may request Codex's explicit
 one-invocation trust bypass; that is scoped to the canary and is never persisted
 or used as installation policy.
