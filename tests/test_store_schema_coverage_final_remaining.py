@@ -226,6 +226,9 @@ def test_bounded_text_and_timestamp_reject_malformed_inputs() -> None:
     assert schema._aware_timestamp(None) is None
     assert schema._aware_timestamp("not-a-timestamp") is None
     assert schema._aware_timestamp("2026-07-18T00:00:00") is None
+    assert schema._aware_timestamp("2026-07-18T00:00:00Z") == schema._aware_timestamp(
+        "2026-07-18T00:00:00+00:00"
+    )
 
 
 @pytest.mark.parametrize(

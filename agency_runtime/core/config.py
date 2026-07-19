@@ -758,7 +758,6 @@ def _enforce_profile_constraints(cfg: AgencyConfig) -> AgencyConfig:
 _CONFIG_ENVIRONMENT_NAMES = (
     "AGENCY_BYPASS_THRESHOLD",
     "AGENCY_CAPTURE_CONTENT",
-    "AGENCY_CONFIG_PATH",
     "AGENCY_DASHBOARD_PORT",
     "AGENCY_DB_PATH",
     "AGENCY_JUDGE_API_KEY",
@@ -775,6 +774,7 @@ _CONFIG_ENVIRONMENT_NAMES = (
 )
 _config_cache_lock = threading.RLock()
 _CONFIG_CACHE_LIMIT = 32
+_CONFIG_LOAD_STABILITY_ATTEMPTS = 4
 _config_cache: OrderedDict[
     str,
     tuple[AgencyConfig, tuple[object, ...]],
@@ -814,13 +814,16 @@ def _config_file_signature(path: Path) -> tuple[object, ...]:
 
 def _config_environment_signature(
     cfg: AgencyConfig | None,
+    *,
+    environment: Mapping[str, str] | None = None,
 ) -> tuple[tuple[str, str | None], ...]:
     """Fingerprint only environment values that affect the materialized config."""
 
+    source = os.environ if environment is None else environment
     names = set(_CONFIG_ENVIRONMENT_NAMES)
     if cfg is not None and cfg.judge.api_key_env:
         names.add(cfg.judge.api_key_env)
-    return tuple((name, os.environ.get(name)) for name in sorted(names))
+    return tuple((name, source.get(name)) for name in sorted(names))
 
 
 def _config_cache_signature(path: Path, cfg: AgencyConfig | None) -> tuple[object, ...]:
@@ -846,9 +849,14 @@ def _cache_config(
         _config_cache.popitem(last=False)
 
 
-def _load_config_uncached(config_path: Path) -> AgencyConfig:
+def _load_config_uncached(
+    config_path: Path,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> AgencyConfig:
     """Materialize one configuration snapshot from defaults, file, and environment."""
 
+    environment = dict(os.environ) if environ is None else environ
     config_path = resolve_config_path(config_path, use_environment=False)
     defaults_raw = _load_yaml(_BUNDLED_DEFAULTS)
     cfg = _dict_to_config(defaults_raw, config_path=str(config_path))
@@ -881,7 +889,7 @@ def _load_config_uncached(config_path: Path) -> AgencyConfig:
                 merged[key] = {**defaults_raw[key], **override}
         cfg = _dict_to_config(merged, config_path=str(config_path))
 
-    cfg = _apply_env_overrides(cfg)
+    cfg = _apply_env_overrides(cfg, environ=environment)
     cfg = _enforce_profile_constraints(cfg)
     cfg = _enforce_credential_transport_constraints(cfg)
     return _bind_runtime_paths(cfg, config_path)
@@ -894,6 +902,9 @@ def load_config(path: str | Path | None = None, *, reload: bool = False) -> Agen
         path: Optional explicit config path (overrides AGENCY_CONFIG_PATH env).
         reload: Force a fresh load instead of returning the cached identity snapshot.
     """
+    # The selected config identity is this call's linearization point. A later
+    # AGENCY_CONFIG_PATH change applies to the next call and selects a distinct
+    # cache key; it is not a materialized setting for this already-selected file.
     config_path = resolve_config_path(path) if path is not None else _default_config_path()
     # File identity checks reject linked or changing final artifacts, while the
     # namespace check prevents another account from replacing that artifact
@@ -912,19 +923,32 @@ def load_config(path: str | Path | None = None, *, reload: bool = False) -> Agen
             _config_cache.move_to_end(cache_key)
             return cached_config
 
-        file_signature_before = current_signature[0]
-        cfg = _load_config_uncached(config_path)
-        assert_config_namespace(config_path)
-        loaded_signature = _config_cache_signature(config_path, cfg)
-        if loaded_signature[0] != file_signature_before:
-            file_signature_before = loaded_signature[0]
-            cfg = _load_config_uncached(config_path)
+        for _attempt in range(_CONFIG_LOAD_STABILITY_ATTEMPTS):
+            file_signature_before = _config_file_signature(config_path)
+            environment_before = dict(os.environ)
+            cfg = _load_config_uncached(config_path, environ=environment_before)
             assert_config_namespace(config_path)
-            loaded_signature = _config_cache_signature(config_path, cfg)
-            if loaded_signature[0] != file_signature_before:
-                raise ValueError("configuration file changed repeatedly during load")
-        _cache_config(cache_key, cfg, loaded_signature)
-        return cfg
+            file_signature_after = _config_file_signature(config_path)
+            environment_after = dict(os.environ)
+            environment_signature_before = _config_environment_signature(
+                cfg,
+                environment=environment_before,
+            )
+            environment_signature_after = _config_environment_signature(
+                cfg,
+                environment=environment_after,
+            )
+            if (
+                file_signature_after == file_signature_before
+                and environment_signature_after == environment_signature_before
+            ):
+                loaded_signature = (
+                    file_signature_after,
+                    environment_signature_after,
+                )
+                _cache_config(cache_key, cfg, loaded_signature)
+                return cfg
+        raise ValueError("configuration inputs changed repeatedly during load")
 
 
 def reset_config_cache() -> None:

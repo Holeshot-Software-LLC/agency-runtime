@@ -20,6 +20,7 @@ from typing import Any
 from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration_persistence import resolve_config_path
 from agency_runtime.core.correlation import validate_correlation_id
+from agency_runtime.core.exception_notes import add_exception_note
 from agency_runtime.core.store.delegation_activation import DelegationActivationStoreMixin
 from agency_runtime.core.store.evidence import EvidenceStoreMixin
 from agency_runtime.core.store.initialization_lock import storage_initialization_lock
@@ -574,20 +575,25 @@ class Store(
                 except FileNotFoundError:
                     continue
                 except (OSError, PermissionError) as sidecar_error:
-                    error.add_note(
-                        f"Agency Runtime could not identify a new sidecar for rollback: {sidecar_error}"
+                    add_exception_note(
+                        error,
+                        f"Agency Runtime could not identify a new sidecar for rollback: {sidecar_error}",
                     )
                     continue
                 if not _storage_file_is_trusted(path):
-                    error.add_note(
-                        f"Agency Runtime left an untrusted new sidecar for inspection: {path}"
+                    add_exception_note(
+                        error,
+                        f"Agency Runtime left an untrusted new sidecar for inspection: {path}",
                     )
                     continue
                 created_paths.append(identity)
         try:
             cleanup_created_storage_paths(created_paths, is_windows=_IS_WINDOWS)
         except Exception as cleanup_error:
-            error.add_note(f"Agency Runtime storage rollback failed: {cleanup_error}")
+            add_exception_note(
+                error,
+                f"Agency Runtime storage rollback failed: {cleanup_error}",
+            )
 
     def _ensure_private_storage_file(
         self,

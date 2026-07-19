@@ -1386,15 +1386,22 @@ def test_dashboard_control_api_handles_sizes_status_transport_and_json(monkeypat
     with pytest.raises(ValueError, match="not reachable"):
         dashboard_runtime.dashboard_api_request("/api/runtime", descriptor=descriptor)
 
+    response_body = io.BytesIO(b"denied")
+    http_error = dashboard_runtime.urllib.error.HTTPError(
+        "url",
+        403,
+        "denied",
+        None,
+        response_body,
+    )
     monkeypatch.setattr(
         dashboard_runtime,
         "open_no_redirect",
-        lambda *_args, **_kw: _raise(
-            dashboard_runtime.urllib.error.HTTPError("url", 403, "denied", None, None)
-        ),
+        lambda *_args, **_kw: _raise(http_error),
     )
     with pytest.raises(ValueError, match="HTTP 403"):
         dashboard_runtime.dashboard_api_request("/api/runtime", descriptor=descriptor)
+    assert response_body.closed is True
 
     monkeypatch.setattr(
         dashboard_runtime,

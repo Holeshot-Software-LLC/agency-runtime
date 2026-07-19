@@ -10,9 +10,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from agency_runtime.core.windows_acl import (
+    RestrictedWindowsTokenError,
     WindowsACLSafetyError,
     WindowsTokenProbeError,
+    current_process_can_mutate_path,
     current_process_logon_sid,
+    current_process_token_is_restricted,
     current_process_user_sid,
     read_windows_sddl,
 )
@@ -177,6 +180,12 @@ def _logon_private_sddl(user_sid: str, logon_sid: str, *, deny_delete: bool) -> 
     return f"O:{user_sid}D:P{deny}(A;OICI;FA;;;SY)(A;OICI;FA;;;{user_sid})(A;OICI;FA;;;{logon_sid})"
 
 
+def _owner_private_sddl(user_sid: str) -> str:
+    """Return the protected owner-only DACL for one persistent private root."""
+
+    return f"O:{user_sid}D:P(D;;SD;;;AU)(A;OICI;FA;;;{user_sid})"
+
+
 def _set_windows_file_security(path: Path, sddl: str) -> bool:
     """Replace owner and protected DACL from one bounded in-process SDDL."""
 
@@ -278,6 +287,64 @@ def _logon_private_acl_is_present(
     )
 
 
+def _owner_private_acl_is_present(
+    path: Path,
+    user_sid: str,
+) -> bool:
+    return read_windows_sddl(path) == _owner_private_sddl(user_sid)
+
+
+def create_or_validate_windows_owner_private_directory(
+    path: Path,
+    *,
+    parent_guard: WindowsDirectoryGuard,
+    is_windows: bool | None = None,
+) -> WindowsDirectoryGuard:
+    """Create or reopen one deterministic, deny-delete owner-private root.
+
+    The DACL is attached by ``CreateDirectoryW`` instead of being repaired
+    after a permissive inherited directory becomes visible. An exact existing
+    root is reusable; every other collision is left untouched and rejected.
+    """
+
+    windows = os.name == "nt" if is_windows is None else is_windows
+    if not windows or not parent_guard.is_current() or Path(path).parent != parent_guard.path:
+        raise WindowsACLSafetyError("private Windows root parent identity is unavailable")
+    user_sid = current_process_user_sid(is_windows=True)
+    if not user_sid:
+        raise WindowsTokenProbeError("private Windows root owner identity is unavailable")
+    if current_process_token_is_restricted(is_windows=True):
+        raise RestrictedWindowsTokenError(
+            "owner-only Windows ACL cannot be created from a restricted process token"
+        )
+
+    sealed = _owner_private_sddl(user_sid)
+    _create_windows_directory_with_sddl(path, sealed)
+    guard = open_windows_directory_guard(path, is_windows=True)
+    valid = bool(
+        guard is not None
+        and parent_guard.is_current()
+        and guard.is_current()
+        and _owner_private_acl_is_present(path, user_sid)
+        and current_process_can_mutate_path(
+            path,
+            directory=True,
+            is_windows=True,
+        )
+        and guard.is_current()
+        and parent_guard.is_current()
+    )
+    if valid:
+        return guard
+    if guard is not None:
+        guard.close()
+
+    # There is no safe path-based repair or rollback through the untrusted
+    # parent. Both an existing collision and a failed fresh creation remain
+    # untouched; an exact newly created object is already sealed and private.
+    raise WindowsACLSafetyError("private Windows root identity verification failed")
+
+
 def create_windows_logon_private_directory(
     path: Path,
     *,
@@ -360,6 +427,7 @@ def prepare_windows_logon_private_directory_cleanup(
 
 __all__ = [
     "WindowsDirectoryGuard",
+    "create_or_validate_windows_owner_private_directory",
     "create_windows_logon_private_directory",
     "open_windows_directory_guard",
     "prepare_windows_logon_private_directory_cleanup",

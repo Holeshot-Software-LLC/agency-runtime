@@ -626,7 +626,10 @@ def dashboard_api_request(
             if response.status != 200:
                 raise ValueError("dashboard control request was rejected")
     except urllib.error.HTTPError as exc:
-        raise ValueError(f"dashboard control request failed with HTTP {exc.code}") from exc
+        status_code = exc.code
+        with suppress(OSError):
+            exc.close()
+        raise ValueError(f"dashboard control request failed with HTTP {status_code}") from exc
     except urllib.error.URLError as exc:
         raise ValueError("dashboard service is not reachable") from exc
     try:

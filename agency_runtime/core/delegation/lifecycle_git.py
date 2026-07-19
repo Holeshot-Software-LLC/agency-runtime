@@ -23,6 +23,7 @@ from agency_runtime.core.delegation.lifecycle_types import (
     WorktreePathIdentity,
     WorkUnit,
 )
+from agency_runtime.core.exception_notes import add_exception_note
 from agency_runtime.core.private_paths import (
     PrivateDirectoryIdentity,
     allocate_host_private_directory,
@@ -203,7 +204,10 @@ def _allocate_private_run_root(private_root: Path) -> _AllocatedRunRoot:
         try:
             remove_private_directory(private_identity)
         except Exception as cleanup_error:
-            exc.add_note(f"private worktree root rollback failed: {cleanup_error}")
+            add_exception_note(
+                exc,
+                f"private worktree root rollback failed: {cleanup_error}",
+            )
         raise
     token = root_identity.path.name.removeprefix("run-").replace("-", "")
     return _AllocatedRunRoot(
@@ -304,7 +308,10 @@ def _allocate_repository_run_root(
                 try:
                     os.rmdir(root_identity.path)
                 except OSError as cleanup_error:
-                    exc.add_note(f"delegation root rollback failed: {cleanup_error}")
+                    add_exception_note(
+                        exc,
+                        f"delegation root rollback failed: {cleanup_error}",
+                    )
             raise
         return _AllocatedRunRoot(
             path=root_identity.path,
@@ -1411,7 +1418,10 @@ def _remove_empty_run_root(
             if _directory_identity_is_current(quarantine):
                 _restore_quarantined_run_root(quarantine, root, parent)
         except Exception as restore_error:
-            exc.add_note(f"delegation quarantine restore failed: {restore_error}")
+            add_exception_note(
+                exc,
+                f"delegation quarantine restore failed: {restore_error}",
+            )
         raise
     return True
 

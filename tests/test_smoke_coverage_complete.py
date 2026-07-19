@@ -88,6 +88,7 @@ def test_openclaw_node_probe_handles_unrunnable_and_invalid_script(
     node = tmp_path / ("node.exe" if os.name == "nt" else "node-bin")
     node.write_bytes(b"test node launcher")
     node.chmod(0o700)
+    monkeypatch.delenv("AGENCY_CI_NODE", raising=False)
     monkeypatch.setattr(smoke.shutil, "which", lambda _name: str(node))
     monkeypatch.setattr(
         smoke.subprocess,
@@ -104,6 +105,34 @@ def test_openclaw_node_probe_handles_unrunnable_and_invalid_script(
     )
     with pytest.raises(RuntimeError, match="syntax bad"):
         smoke._smoke_openclaw_plugin("openclaw", plugin)
+
+
+def test_openclaw_node_probe_prefers_private_ci_node(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher,
+) -> None:
+    _home, plugin = _openclaw_bundle(tmp_path / "private-node")
+    private_node = tmp_path / ("private-node.exe" if os.name == "nt" else "private-node-bin")
+    private_node.write_bytes(b"private node launcher")
+    private_node.chmod(0o700)
+    fallback = tmp_path / ("fallback.exe" if os.name == "nt" else "fallback-node")
+    fallback.write_bytes(b"fallback node launcher")
+    fallback.chmod(0o700)
+    launched: list[str] = []
+
+    def run(argv, **_kwargs):
+        launched.extend(argv)
+        return SimpleNamespace(returncode=0, stderr="", stdout="")
+
+    monkeypatch.setenv("AGENCY_CI_NODE", str(private_node))
+    monkeypatch.setattr(smoke.shutil, "which", lambda _name: str(fallback))
+    monkeypatch.setattr(smoke.subprocess, "run", run)
+
+    result = smoke._smoke_openclaw_plugin("openclaw", plugin)
+
+    assert result["syntax_check"] == "passed"
+    assert Path(launched[0]).resolve(strict=True) == private_node.resolve(strict=True)
 
 
 def _marketplace_bundle(tmp_path: Path, host: str = "codex") -> tuple[Path, Path]:

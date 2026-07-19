@@ -17,6 +17,7 @@ from itertools import islice
 from pathlib import Path
 from typing import cast
 
+from agency_runtime.core.exception_notes import add_exception_note
 from agency_runtime.core.path_authority import (
     discard_private_path_authority,
     register_private_path_authority,
@@ -40,6 +41,7 @@ from agency_runtime.core.windows_acl import (
 )
 from agency_runtime.core.windows_private_directory import (
     WindowsDirectoryGuard,
+    create_or_validate_windows_owner_private_directory,
     create_windows_logon_private_directory,
     open_windows_directory_guard,
     prepare_windows_logon_private_directory_cleanup,
@@ -497,6 +499,94 @@ def _restrict_private_directory(path: Path) -> None:
     )
 
 
+def _install_windows_bootstrap_authority(
+    identity: PrivateDirectoryIdentity,
+) -> PrivateDirectoryIdentity:
+    """Install one guarded root without leaking a concurrent duplicate guard."""
+
+    guard = identity.guard
+    if guard is None:
+        raise PermissionError("Agency Runtime protected Windows root guard is unavailable")
+    root = _absolute(identity.path)
+    with _HOST_AUTHORITIES_LOCK:
+        existing = _HOST_AUTHORITIES.get(root)
+        if existing is not None and existing.guard is not None and _identity_is_current(existing):
+            guard.close()
+            return existing
+        if existing is not None:
+            _close_identity_guards(existing)
+        _register_host_authority(identity)
+    return identity
+
+
+def bootstrap_private_directory(path: Path) -> Path:
+    """Create one private root beneath an existing real Windows parent.
+
+    The ordinary storage path remains preferred. Windows may fall back to an
+    atomic protected-DACL creation only for this exact root; its permissive
+    ancestors are never treated as trusted. A native handle/file-ID receipt
+    then provides process-local authority for validated descendants.
+    """
+
+    target = _absolute(path)
+    try:
+        return ensure_private_directory(target)
+    except PermissionError:
+        if not _IS_WINDOWS:
+            raise
+
+    # The exception is deliberately narrow: all ancestors must already exist
+    # as real directories. Only the final root can be created atomically below
+    # an otherwise untrusted namespace.
+    assert_storage_parent_chain(target, allow_missing=True)
+    assert_storage_parent_chain(target.parent, allow_missing=False)
+    parent = target.parent
+    if not storage_parent_is_trusted(
+        parent,
+        is_windows=True,
+        final_parent=False,
+    ):
+        raise PermissionError("Agency Runtime protected Windows root parent is not trusted")
+    parent_guard = open_windows_directory_guard(parent, is_windows=True)
+    if parent_guard is None:
+        raise PermissionError("Agency Runtime protected Windows root parent changed")
+    try:
+        if not parent_guard.is_current() or not storage_parent_is_trusted(
+            parent,
+            is_windows=True,
+            final_parent=False,
+        ):
+            raise PermissionError("Agency Runtime protected Windows root parent changed")
+        guard = create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent_guard,
+            is_windows=True,
+        )
+        if not parent_guard.is_current() or not storage_parent_is_trusted(
+            parent,
+            is_windows=True,
+            final_parent=False,
+        ):
+            guard.close()
+            raise PermissionError("Agency Runtime protected Windows root parent changed")
+    finally:
+        parent_guard.close()
+    identity = PrivateDirectoryIdentity(
+        target,
+        guard.device,
+        guard.inode,
+        guard=guard,
+    )
+    if not _identity_is_current(identity):
+        guard.close()
+        raise PermissionError("Agency Runtime protected Windows root changed")
+    installed = _install_windows_bootstrap_authority(identity)
+    if not _identity_is_current(installed):
+        _close_identity_guards(installed)
+        raise PermissionError("Agency Runtime protected Windows root changed")
+    return target
+
+
 def ensure_private_directory(path: Path, *, product_owned: bool = True) -> Path:
     """Create or validate one current-user directory without shared-temp trust."""
 
@@ -812,12 +902,18 @@ def _restore_cleanup_quarantine(
         real_directory = False
         parent_is_current = False
     if not real_directory or not parent_is_current or original.path.exists():
-        error.add_note("Agency Runtime cleanup quarantine could not be restored safely")
+        add_exception_note(
+            error,
+            "Agency Runtime cleanup quarantine could not be restored safely",
+        )
         return
     try:
         os.rename(quarantined.path, original.path)
     except OSError as restore_error:
-        error.add_note(f"Agency Runtime cleanup quarantine restore failed: {restore_error}")
+        add_exception_note(
+            error,
+            f"Agency Runtime cleanup quarantine restore failed: {restore_error}",
+        )
 
 
 def remove_private_directory(identity: PrivateDirectoryIdentity) -> None:
@@ -881,8 +977,8 @@ def private_temporary_directory(
             remove_private_directory(identity)
         except Exception as cleanup_error:
             if body_error is not None:
-                body_error.add_note(
-                    f"Agency Runtime private temporary cleanup failed: {cleanup_error}"
+                add_exception_note(
+                    body_error, f"Agency Runtime private temporary cleanup failed: {cleanup_error}"
                 )
             else:
                 raise PrivateDirectoryCleanupError(
@@ -895,6 +991,7 @@ __all__ = [
     "PrivateDirectoryIdentity",
     "allocate_host_private_directory",
     "allocate_private_directory",
+    "bootstrap_private_directory",
     "ensure_private_directory",
     "private_runtime_directory",
     "private_runtime_root",

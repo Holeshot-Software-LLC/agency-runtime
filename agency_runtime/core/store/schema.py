@@ -1353,7 +1353,7 @@ def _aware_timestamp(value: object, maximum: int = 128) -> datetime | None:
     if text is None:
         return None
     try:
-        parsed = datetime.fromisoformat(text)
+        parsed = datetime.fromisoformat(f"{text[:-1]}+00:00" if text.endswith("Z") else text)
     except ValueError:
         return None
     if parsed.tzinfo is None or parsed.utcoffset() is None:

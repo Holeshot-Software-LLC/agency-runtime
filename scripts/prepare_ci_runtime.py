@@ -9,9 +9,14 @@ import re
 import shutil
 import sys
 import venv
+from collections.abc import Callable
 from pathlib import Path
 
-from agency_runtime.core.private_paths import ensure_private_directory
+from agency_runtime.core.private_paths import (
+    bootstrap_private_directory,
+    ensure_private_directory,
+)
+from scripts.ci_private_node import prepare_private_node
 
 _SAFE_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}")
 
@@ -57,13 +62,14 @@ def prepare_ci_runtime(
     label: str,
     *,
     home_dir: Path | None = None,
+    node_resolver: Callable[[str], str | None] | None = None,
 ) -> dict[str, str]:
     """Build an idempotent private test runtime below the current user profile."""
 
     if not _SAFE_LABEL.fullmatch(label):
         raise ValueError("CI runtime label must be a bounded filesystem-safe identifier")
     home = (home_dir or Path.home()).expanduser().resolve(strict=True)
-    base = _private_directory(home / ".agency-runtime-ci")
+    base = bootstrap_private_directory(home / ".agency-runtime-ci")
     root = _private_directory(base / label)
     isolated_home = _private_directory(root / "home")
     temporary = _private_directory(root / "tmp")
@@ -83,12 +89,16 @@ def prepare_ci_runtime(
             python.unlink()
             shutil.copy2(Path(sys.executable).resolve(strict=True), python)
         python = _validated_environment_python(root, environment)
-    return {
+    values = {
         "AGENCY_CI_ROOT": root.as_posix(),
         "AGENCY_CI_PYTHON": python.as_posix(),
         "AGENCY_CI_HOME": isolated_home.as_posix(),
         "AGENCY_CI_TEMP": temporary.as_posix(),
     }
+    node = prepare_private_node(root, resolver=node_resolver or shutil.which)
+    if node is not None:
+        values["AGENCY_CI_NODE"] = node.as_posix()
+    return values
 
 
 def _write_github_environment(path: Path, values: dict[str, str]) -> None:

@@ -27,6 +27,410 @@ def test_private_path_components_are_strict(value: str) -> None:
         private_paths._validate_component(value, label="component")
 
 
+def _windows_guard(
+    path: Path,
+    *,
+    closed: list[int] | None = None,
+) -> private_paths.WindowsDirectoryGuard:
+    metadata = os.lstat(path)
+    inode = int(metadata.st_ino)
+    return private_paths.WindowsDirectoryGuard(
+        path,
+        int(metadata.st_dev),
+        inode,
+        73,
+        lambda _handle: inode,
+        (closed.append if closed is not None else lambda _handle: None),
+    )
+
+
+def test_bootstrap_private_directory_registers_a_guarded_windows_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "ci-root"
+    created: list[Path] = []
+    parent_closed: list[int] = []
+    parent_guard = _windows_guard(tmp_path, closed=parent_closed)
+
+    def create(
+        candidate: Path,
+        **_kwargs: object,
+    ) -> private_paths.WindowsDirectoryGuard:
+        candidate.mkdir()
+        created.append(candidate)
+        return _windows_guard(candidate)
+
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        private_paths,
+        "ensure_private_directory",
+        lambda _path: (_ for _ in ()).throw(PermissionError("untrusted profile")),
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "create_or_validate_windows_owner_private_directory",
+        create,
+    )
+    monkeypatch.setattr(private_paths, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(
+        private_paths,
+        "open_windows_directory_guard",
+        lambda *_args, **_kwargs: parent_guard,
+    )
+    monkeypatch.setattr(private_paths, "_identity_is_current", lambda _identity: True)
+
+    result = private_paths.bootstrap_private_directory(target)
+    identity = private_paths._HOST_AUTHORITIES[result]
+    try:
+        assert result == target.resolve()
+        assert created == [target.resolve()]
+        assert parent_closed == [73]
+        assert identity.path == result
+        assert identity.guard is not None and identity.parent_guard is None
+    finally:
+        private_paths._discard_host_authority(identity)
+        assert identity.guard is not None
+        identity.guard.close()
+
+
+@pytest.mark.parametrize("unsafe_parent", ["missing", "symlink"])
+def test_bootstrap_private_directory_rejects_unsafe_windows_ancestor_chains(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    unsafe_parent: str,
+) -> None:
+    parent = tmp_path / "parent"
+    if unsafe_parent == "symlink":
+        real = tmp_path / "real"
+        real.mkdir()
+        try:
+            parent.symlink_to(real, target_is_directory=True)
+        except OSError as exc:
+            pytest.skip(f"directory symlinks are unavailable: {exc}")
+    target = parent / "ci-root"
+    native_calls: list[Path] = []
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        private_paths,
+        "ensure_private_directory",
+        lambda _path: (_ for _ in ()).throw(PermissionError("untrusted profile")),
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "create_or_validate_windows_owner_private_directory",
+        lambda path, **_kwargs: native_calls.append(path),
+    )
+
+    with pytest.raises(PermissionError, match="parent"):
+        private_paths.bootstrap_private_directory(target)
+
+    assert native_calls == []
+
+
+def test_bootstrap_private_directory_does_not_bypass_non_windows_refusal(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    refusal = PermissionError("untrusted profile")
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", False)
+    monkeypatch.setattr(
+        private_paths,
+        "ensure_private_directory",
+        lambda _path: (_ for _ in ()).throw(refusal),
+    )
+
+    with pytest.raises(PermissionError, match="untrusted profile") as caught:
+        private_paths.bootstrap_private_directory(tmp_path / "ci-root")
+
+    assert caught.value is refusal
+
+
+@pytest.mark.parametrize("parent_guard_available", [False, True])
+def test_bootstrap_private_directory_requires_trusted_and_pinned_windows_ancestors(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    parent_guard_available: bool,
+) -> None:
+    target = tmp_path / "ci-root"
+    native_calls: list[Path] = []
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        private_paths,
+        "ensure_private_directory",
+        lambda _path: (_ for _ in ()).throw(PermissionError("untrusted profile")),
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "storage_parent_is_trusted",
+        lambda *_args, **_kwargs: parent_guard_available,
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "open_windows_directory_guard",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "create_or_validate_windows_owner_private_directory",
+        lambda path, **_kwargs: native_calls.append(path),
+    )
+
+    expected = "parent changed" if parent_guard_available else "parent is not trusted"
+    with pytest.raises(PermissionError, match=expected):
+        private_paths.bootstrap_private_directory(target)
+
+    assert native_calls == []
+
+
+def test_bootstrap_private_directory_rejects_an_untrusted_replaceable_parent(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "ci-root"
+    trust_checks: list[Path] = []
+    native_calls: list[Path] = []
+
+    def trust(path: Path, **_kwargs: object) -> bool:
+        trust_checks.append(path)
+        return path == target.parent.parent
+
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        private_paths,
+        "ensure_private_directory",
+        lambda _path: (_ for _ in ()).throw(PermissionError("untrusted profile")),
+    )
+    monkeypatch.setattr(private_paths, "storage_parent_is_trusted", trust)
+    monkeypatch.setattr(
+        private_paths,
+        "create_or_validate_windows_owner_private_directory",
+        lambda path, **_kwargs: native_calls.append(path),
+    )
+
+    with pytest.raises(PermissionError, match="parent is not trusted"):
+        private_paths.bootstrap_private_directory(target)
+
+    assert trust_checks == [target.parent.resolve()]
+    assert native_calls == []
+
+
+@pytest.mark.parametrize("failure_stage", ["before-create", "after-create"])
+def test_bootstrap_private_directory_rechecks_parent_trust_while_pinned(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    failure_stage: str,
+) -> None:
+    target = tmp_path / "ci-root"
+    parent_closed: list[int] = []
+    child_closed: list[int] = []
+    parent_guard = _windows_guard(tmp_path, closed=parent_closed)
+    trust_results = iter([True, False] if failure_stage == "before-create" else [True, True, False])
+    native_calls: list[Path] = []
+
+    def create(candidate: Path, **_kwargs: object) -> private_paths.WindowsDirectoryGuard:
+        native_calls.append(candidate)
+        candidate.mkdir()
+        return _windows_guard(candidate, closed=child_closed)
+
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        private_paths,
+        "ensure_private_directory",
+        lambda _path: (_ for _ in ()).throw(PermissionError("untrusted profile")),
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "storage_parent_is_trusted",
+        lambda *_args, **_kwargs: next(trust_results),
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "open_windows_directory_guard",
+        lambda *_args, **_kwargs: parent_guard,
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "create_or_validate_windows_owner_private_directory",
+        create,
+    )
+
+    with pytest.raises(PermissionError, match="parent changed"):
+        private_paths.bootstrap_private_directory(target)
+
+    expected_calls = [] if failure_stage == "before-create" else [target.resolve()]
+    assert native_calls == expected_calls
+    assert parent_closed == [73]
+    assert child_closed == ([] if failure_stage == "before-create" else [73])
+    assert target.resolve() not in private_paths._HOST_AUTHORITIES
+
+
+def test_bootstrap_private_directory_closes_a_changed_windows_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "ci-root"
+    target.mkdir()
+    closed: list[int] = []
+    guard = _windows_guard(target, closed=closed)
+    parent_guard = _windows_guard(tmp_path)
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        private_paths,
+        "ensure_private_directory",
+        lambda _path: (_ for _ in ()).throw(PermissionError("untrusted profile")),
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "create_or_validate_windows_owner_private_directory",
+        lambda *_args, **_kwargs: guard,
+    )
+    monkeypatch.setattr(private_paths, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(
+        private_paths,
+        "open_windows_directory_guard",
+        lambda *_args, **_kwargs: parent_guard,
+    )
+    monkeypatch.setattr(private_paths, "_identity_is_current", lambda _identity: False)
+
+    with pytest.raises(PermissionError, match="protected Windows root changed"):
+        private_paths.bootstrap_private_directory(target)
+
+    assert closed == [73]
+    assert target.resolve() not in private_paths._HOST_AUTHORITIES
+
+
+def test_bootstrap_authority_reuses_a_live_concurrent_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "ci-root"
+    target.mkdir()
+    original_guard = _windows_guard(target)
+    duplicate_closed: list[int] = []
+    duplicate_guard = _windows_guard(target, closed=duplicate_closed)
+    original = PrivateDirectoryIdentity(
+        target,
+        original_guard.device,
+        original_guard.inode,
+        guard=original_guard,
+    )
+    duplicate = PrivateDirectoryIdentity(
+        target,
+        duplicate_guard.device,
+        duplicate_guard.inode,
+        guard=duplicate_guard,
+    )
+    private_paths._HOST_AUTHORITIES[target.resolve()] = original
+    monkeypatch.setattr(private_paths, "_identity_is_current", lambda _identity: True)
+    try:
+        assert private_paths._install_windows_bootstrap_authority(duplicate) is original
+        assert duplicate_closed == [73]
+        assert private_paths._HOST_AUTHORITIES[target.resolve()] is original
+    finally:
+        private_paths._HOST_AUTHORITIES.pop(target.resolve(), None)
+        original_guard.close()
+
+
+def test_bootstrap_authority_requires_an_incoming_guard(tmp_path: Path) -> None:
+    target = tmp_path / "ci-root"
+    target.mkdir()
+    metadata = os.lstat(target)
+    identity = PrivateDirectoryIdentity(
+        target,
+        int(metadata.st_dev),
+        int(metadata.st_ino),
+    )
+
+    with pytest.raises(PermissionError, match="guard is unavailable"):
+        private_paths._install_windows_bootstrap_authority(identity)
+
+    assert target.resolve() not in private_paths._HOST_AUTHORITIES
+
+
+def test_bootstrap_authority_replaces_and_closes_a_stale_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "ci-root"
+    target.mkdir()
+    stale_guard_closed: list[int] = []
+    stale_parent_closed: list[int] = []
+    replacement_guard = _windows_guard(target)
+    stale = PrivateDirectoryIdentity(
+        target,
+        replacement_guard.device,
+        replacement_guard.inode,
+        guard=_windows_guard(target, closed=stale_guard_closed),
+        parent_guard=_windows_guard(tmp_path, closed=stale_parent_closed),
+    )
+    replacement = PrivateDirectoryIdentity(
+        target,
+        replacement_guard.device,
+        replacement_guard.inode,
+        guard=replacement_guard,
+    )
+    private_paths._HOST_AUTHORITIES[target.resolve()] = stale
+    monkeypatch.setattr(
+        private_paths,
+        "_identity_is_current",
+        lambda identity: identity is not stale,
+    )
+    try:
+        assert private_paths._install_windows_bootstrap_authority(replacement) is replacement
+        assert stale_guard_closed == [73]
+        assert stale_parent_closed == [73]
+        assert private_paths._HOST_AUTHORITIES[target.resolve()] is replacement
+    finally:
+        private_paths._discard_host_authority(replacement)
+        replacement_guard.close()
+
+
+def test_bootstrap_private_directory_discards_post_install_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "ci-root"
+    parent_closed: list[int] = []
+    root_closed: list[int] = []
+    parent_guard = _windows_guard(tmp_path, closed=parent_closed)
+
+    def create(candidate: Path, **_kwargs: object) -> private_paths.WindowsDirectoryGuard:
+        candidate.mkdir()
+        return _windows_guard(candidate, closed=root_closed)
+
+    identity_checks = iter([True, False])
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        private_paths,
+        "ensure_private_directory",
+        lambda _path: (_ for _ in ()).throw(PermissionError("untrusted profile")),
+    )
+    monkeypatch.setattr(private_paths, "storage_parent_is_trusted", lambda *_a, **_k: True)
+    monkeypatch.setattr(
+        private_paths,
+        "open_windows_directory_guard",
+        lambda *_args, **_kwargs: parent_guard,
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "create_or_validate_windows_owner_private_directory",
+        create,
+    )
+    monkeypatch.setattr(
+        private_paths,
+        "_identity_is_current",
+        lambda _identity: next(identity_checks),
+    )
+
+    with pytest.raises(PermissionError, match="protected Windows root changed"):
+        private_paths.bootstrap_private_directory(target)
+
+    assert parent_closed == [73]
+    assert root_closed == [73]
+    assert target.resolve() not in private_paths._HOST_AUTHORITIES
+
+
 def test_allocate_validate_and_remove_private_directory(tmp_path: Path) -> None:
     root = ensure_private_directory(tmp_path / "root")
     identity = allocate_private_directory(root, prefix="worker")

@@ -11,13 +11,32 @@ from pathlib import Path
 import pytest
 
 from agency_runtime.core.process_argv import snapshot_persistent_artifact
-from scripts import prepare_ci_runtime
+from scripts import ci_private_node, prepare_ci_runtime
 from tests import runtime_support
 
 
+def _fake_node(tmp_path: Path, payload: bytes = b"fake-node-runtime") -> Path:
+    source = tmp_path / ("source-node.exe" if os.name == "nt" else "source-node")
+    source.write_bytes(payload)
+    source.chmod(0o700)
+    return source
+
+
+def _resolver(source: Path):
+    return lambda name: str(source) if name == "node" else None
+
+
 def test_prepare_ci_runtime_is_private_real_and_idempotent(tmp_path: Path) -> None:
-    first = prepare_ci_runtime.prepare_ci_runtime("py3.10-linux", home_dir=tmp_path)
-    second = prepare_ci_runtime.prepare_ci_runtime("py3.10-linux", home_dir=tmp_path)
+    first = prepare_ci_runtime.prepare_ci_runtime(
+        "py3.10-linux",
+        home_dir=tmp_path,
+        node_resolver=lambda _name: None,
+    )
+    second = prepare_ci_runtime.prepare_ci_runtime(
+        "py3.10-linux",
+        home_dir=tmp_path,
+        node_resolver=lambda _name: None,
+    )
 
     assert first == second
     root = Path(first["AGENCY_CI_ROOT"])
@@ -43,6 +62,29 @@ def test_prepare_ci_runtime_is_private_real_and_idempotent(tmp_path: Path) -> No
     assert completed.stderr == ""
 
 
+def test_prepare_ci_runtime_bootstraps_only_its_profile_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    bootstrapped: list[Path] = []
+    original = prepare_ci_runtime.ensure_private_directory
+
+    def bootstrap(path: Path) -> Path:
+        bootstrapped.append(path)
+        return original(path)
+
+    monkeypatch.setattr(prepare_ci_runtime, "bootstrap_private_directory", bootstrap)
+
+    values = prepare_ci_runtime.prepare_ci_runtime(
+        "bootstrap-route",
+        home_dir=tmp_path,
+        node_resolver=lambda _name: None,
+    )
+
+    assert bootstrapped == [tmp_path.resolve() / ".agency-runtime-ci"]
+    assert Path(values["AGENCY_CI_ROOT"]).is_relative_to(bootstrapped[0])
+
+
 @pytest.mark.parametrize("label", ["", "../escape", "space here", "x" * 81])
 def test_prepare_ci_runtime_rejects_unsafe_labels(tmp_path: Path, label: str) -> None:
     with pytest.raises(ValueError, match="filesystem-safe"):
@@ -52,7 +94,11 @@ def test_prepare_ci_runtime_rejects_unsafe_labels(tmp_path: Path, label: str) ->
 def test_prepare_ci_runtime_rejects_tampered_interpreter_without_following_link(
     tmp_path: Path,
 ) -> None:
-    values = prepare_ci_runtime.prepare_ci_runtime("tamper-test", home_dir=tmp_path)
+    values = prepare_ci_runtime.prepare_ci_runtime(
+        "tamper-test",
+        home_dir=tmp_path,
+        node_resolver=lambda _name: None,
+    )
     python = Path(values["AGENCY_CI_PYTHON"])
     outside = tmp_path / "outside-python"
     sentinel = b"do-not-overwrite"
@@ -66,6 +112,79 @@ def test_prepare_ci_runtime_rejects_tampered_interpreter_without_following_link(
     with pytest.raises(RuntimeError, match="incomplete or unsafe"):
         prepare_ci_runtime.prepare_ci_runtime("tamper-test", home_dir=tmp_path)
     assert outside.read_bytes() == sentinel
+
+
+def test_private_node_copy_is_real_owner_only_and_idempotent(tmp_path: Path) -> None:
+    source = _fake_node(tmp_path)
+    root = prepare_ci_runtime._private_directory(tmp_path / "private-runtime")
+
+    first = ci_private_node.prepare_private_node(root, resolver=_resolver(source))
+    second = ci_private_node.prepare_private_node(root, resolver=_resolver(source))
+
+    assert first == second
+    assert first is not None
+    assert first != source
+    assert first.is_file() and not first.is_symlink()
+    assert first.read_bytes() == source.read_bytes()
+    assert first.resolve(strict=True).is_relative_to(root)
+    identity = snapshot_persistent_artifact(first, require_executable=True)
+    assert identity.resolved_path == str(first.resolve(strict=True))
+    if os.name != "nt":
+        assert stat.S_IMODE(first.stat().st_mode) == 0o700
+        assert stat.S_IMODE((first.parent / "node-copy.json").stat().st_mode) == 0o600
+
+
+def test_private_node_copy_rejects_target_tamper_and_source_change(tmp_path: Path) -> None:
+    source = _fake_node(tmp_path)
+    target_root = prepare_ci_runtime._private_directory(tmp_path / "target-runtime")
+    target = ci_private_node.prepare_private_node(target_root, resolver=_resolver(source))
+    assert target is not None
+    target.write_bytes(b"tampered-private-copy")
+    target.chmod(0o700)
+
+    with pytest.raises(RuntimeError, match="replaced or modified"):
+        ci_private_node.prepare_private_node(target_root, resolver=_resolver(source))
+
+    source_root = prepare_ci_runtime._private_directory(tmp_path / "source-runtime")
+    unchanged_target = ci_private_node.prepare_private_node(
+        source_root,
+        resolver=_resolver(source),
+    )
+    assert unchanged_target is not None
+    original_copy = unchanged_target.read_bytes()
+    source.write_bytes(b"changed-host-node-source")
+    source.chmod(0o700)
+
+    with pytest.raises(RuntimeError, match="source changed"):
+        ci_private_node.prepare_private_node(source_root, resolver=_resolver(source))
+    assert unchanged_target.read_bytes() == original_copy
+
+
+def test_private_node_copy_rejects_incomplete_collision(tmp_path: Path) -> None:
+    source = _fake_node(tmp_path)
+    root = prepare_ci_runtime._private_directory(tmp_path / "collision-runtime")
+    binary_directory = prepare_ci_runtime._private_directory(root / "bin")
+    target = binary_directory / ("node.exe" if os.name == "nt" else "node")
+    target.write_bytes(b"preexisting")
+    target.chmod(0o700)
+
+    with pytest.raises(RuntimeError, match="incomplete path collision"):
+        ci_private_node.prepare_private_node(root, resolver=_resolver(source))
+
+
+def test_prepare_ci_runtime_exports_private_node_to_github_environment(tmp_path: Path) -> None:
+    source = _fake_node(tmp_path)
+    values = prepare_ci_runtime.prepare_ci_runtime(
+        "node-environment",
+        home_dir=tmp_path,
+        node_resolver=_resolver(source),
+    )
+    target = Path(values["AGENCY_CI_NODE"])
+    assert target.read_bytes() == source.read_bytes()
+
+    github_environment = tmp_path / "github-node.env"
+    prepare_ci_runtime._write_github_environment(github_environment, values)
+    assert f"AGENCY_CI_NODE={target.as_posix()}\n" in github_environment.read_text("utf-8")
 
 
 def test_trusted_test_interpreter_prefers_private_ci_runtime(

@@ -14,6 +14,7 @@ from agency_runtime.core.bounded_io import (
     UnsafeFileError,
     restrict_posix_path_permissions,
 )
+from agency_runtime.core.exception_notes import add_exception_note
 from agency_runtime.core.path_authority import private_path_authority_covers
 from agency_runtime.core.windows_acl import (
     restrict_windows_acl as _restrict_windows_acl,
@@ -450,7 +451,10 @@ def create_private_storage_parent(
         try:
             cleanup_created_storage_paths(local_created, is_windows=is_windows)
         except Exception as cleanup_error:
-            error.add_note(f"Agency Runtime storage parent rollback failed: {cleanup_error}")
+            add_exception_note(
+                error,
+                f"Agency Runtime storage parent rollback failed: {cleanup_error}",
+            )
         _discard_created_receipts(created_paths, local_created)
         raise
 

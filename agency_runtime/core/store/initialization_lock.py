@@ -14,6 +14,7 @@ from numbers import Real
 from pathlib import Path
 from typing import BinaryIO
 
+from agency_runtime.core.exception_notes import add_exception_note
 from agency_runtime.core.store.security import (
     assert_storage_parent_chain,
     is_link_or_reparse_point,
@@ -292,11 +293,17 @@ def storage_initialization_lock(
                 if cleanup_error is None:
                     cleanup_error = exc
                 else:
-                    cleanup_error.add_note(f"SQLite initialization unlock also failed: {exc}")
+                    add_exception_note(
+                        cleanup_error,
+                        f"SQLite initialization unlock also failed: {exc}",
+                    )
         handle.close()
         if cleanup_error is not None:
             if body_error is not None:
-                body_error.add_note(f"SQLite initialization lock cleanup failed: {cleanup_error}")
+                add_exception_note(
+                    body_error,
+                    f"SQLite initialization lock cleanup failed: {cleanup_error}",
+                )
             else:
                 raise cleanup_error
 

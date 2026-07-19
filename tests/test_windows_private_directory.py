@@ -12,7 +12,11 @@ from typing import Any
 import pytest
 
 from agency_runtime.core import windows_private_directory as private
-from agency_runtime.core.windows_acl import WindowsACLSafetyError, WindowsTokenProbeError
+from agency_runtime.core.windows_acl import (
+    RestrictedWindowsTokenError,
+    WindowsACLSafetyError,
+    WindowsTokenProbeError,
+)
 
 
 class _Function:
@@ -335,6 +339,193 @@ def test_sddl_and_exact_acl_receipt(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     monkeypatch.setattr(private, "read_windows_sddl", lambda _path: without_deny)
     assert private._logon_private_acl_is_present(tmp_path, "USER", "LOGON", deny_delete=False)
     assert not private._logon_private_acl_is_present(tmp_path, "USER", "LOGON", deny_delete=True)
+
+    sealed_owner = private._owner_private_sddl("USER")
+    assert sealed_owner == "O:USERD:P(D;;SD;;;AU)(A;OICI;FA;;;USER)"
+    monkeypatch.setattr(private, "read_windows_sddl", lambda _path: sealed_owner)
+    assert private._owner_private_acl_is_present(tmp_path, "USER")
+    monkeypatch.setattr(private, "read_windows_sddl", lambda _path: "O:USERD:P")
+    assert not private._owner_private_acl_is_present(tmp_path, "USER")
+
+
+def test_owner_private_root_requires_windows_location_and_unrestricted_owner(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "private"
+    parent = _guard(tmp_path)
+    with pytest.raises(WindowsACLSafetyError, match="parent identity"):
+        private.create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent,
+            is_windows=False,
+        )
+
+    monkeypatch.setattr(private, "current_process_user_sid", lambda **_kwargs: None)
+    with pytest.raises(WindowsTokenProbeError, match="owner identity"):
+        private.create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent,
+            is_windows=True,
+        )
+
+    monkeypatch.setattr(private, "current_process_user_sid", lambda **_kwargs: "USER")
+    monkeypatch.setattr(private, "current_process_token_is_restricted", lambda **_kwargs: True)
+    with pytest.raises(RestrictedWindowsTokenError, match="restricted process token"):
+        private.create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent,
+            is_windows=True,
+        )
+
+
+@pytest.mark.parametrize("failure", ["stale", "relationship"])
+def test_owner_private_root_requires_an_exact_live_parent_guard(
+    tmp_path: Path,
+    failure: str,
+) -> None:
+    target = tmp_path / "private"
+    parent = _guard(tmp_path, current=failure != "stale")
+    if failure == "relationship":
+        target = tmp_path.parent / "private"
+
+    with pytest.raises(WindowsACLSafetyError, match="parent identity"):
+        private.create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent,
+            is_windows=True,
+        )
+
+
+@pytest.mark.parametrize("created", [True, None])
+def test_owner_private_root_creates_or_reuses_only_an_exact_sealed_identity(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    created: bool | None,
+) -> None:
+    target = tmp_path / "private"
+    target.mkdir()
+    parent = _guard(tmp_path)
+    guard = _guard(target)
+    descriptors: list[str] = []
+    monkeypatch.setattr(private, "current_process_user_sid", lambda **_kwargs: "USER")
+    monkeypatch.setattr(private, "current_process_token_is_restricted", lambda **_kwargs: False)
+    monkeypatch.setattr(
+        private,
+        "_create_windows_directory_with_sddl",
+        lambda _path, sddl: descriptors.append(sddl) or created,
+    )
+    monkeypatch.setattr(
+        private,
+        "open_windows_directory_guard",
+        lambda *_args, **_kwargs: guard,
+    )
+    monkeypatch.setattr(private, "_owner_private_acl_is_present", lambda *_a, **_k: True)
+    monkeypatch.setattr(private, "current_process_can_mutate_path", lambda *_a, **_k: True)
+
+    assert (
+        private.create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent,
+            is_windows=True,
+        )
+        is guard
+    )
+    assert descriptors == ["O:USERD:P(D;;SD;;;AU)(A;OICI;FA;;;USER)"]
+    assert not guard.closed
+
+
+@pytest.mark.parametrize("failure", ["reparse", "permissive", "unusable", "changed"])
+def test_owner_private_root_rejects_unsafe_collisions_without_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    failure: str,
+) -> None:
+    target = tmp_path / "private"
+    target.mkdir()
+    parent = _guard(tmp_path)
+    guard = None if failure == "reparse" else _guard(target, current=failure != "changed")
+    monkeypatch.setattr(private, "current_process_user_sid", lambda **_kwargs: "USER")
+    monkeypatch.setattr(private, "current_process_token_is_restricted", lambda **_kwargs: False)
+    monkeypatch.setattr(private, "_create_windows_directory_with_sddl", lambda *_args: None)
+    monkeypatch.setattr(
+        private,
+        "open_windows_directory_guard",
+        lambda *_args, **_kwargs: guard,
+    )
+    monkeypatch.setattr(
+        private,
+        "_owner_private_acl_is_present",
+        lambda *_args, **_kwargs: failure != "permissive",
+    )
+    monkeypatch.setattr(
+        private,
+        "current_process_can_mutate_path",
+        lambda *_args, **_kwargs: failure != "unusable",
+    )
+    security: list[tuple[Path, str]] = []
+    removed: list[Path] = []
+    monkeypatch.setattr(
+        private,
+        "_set_windows_file_security",
+        lambda path, sddl: security.append((path, sddl)) or True,
+    )
+    monkeypatch.setattr(private.os, "rmdir", removed.append)
+
+    with pytest.raises(WindowsACLSafetyError, match="identity verification"):
+        private.create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent,
+            is_windows=True,
+        )
+
+    assert target.is_dir()
+    assert security == []
+    assert removed == []
+    if guard is not None:
+        assert guard.closed
+
+
+@pytest.mark.parametrize("exact_acl", [False, True])
+def test_owner_private_root_never_mutates_a_failed_fresh_creation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    exact_acl: bool,
+) -> None:
+    target = tmp_path / "private"
+    target.mkdir()
+    parent = _guard(tmp_path)
+    monkeypatch.setattr(private, "current_process_user_sid", lambda **_kwargs: "USER")
+    monkeypatch.setattr(private, "current_process_token_is_restricted", lambda **_kwargs: False)
+    monkeypatch.setattr(private, "_create_windows_directory_with_sddl", lambda *_args: True)
+    monkeypatch.setattr(
+        private,
+        "open_windows_directory_guard",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        private,
+        "_owner_private_acl_is_present",
+        lambda *_args, **_kwargs: exact_acl,
+    )
+    security: list[tuple[Path, str]] = []
+    removed: list[Path] = []
+    monkeypatch.setattr(
+        private,
+        "_set_windows_file_security",
+        lambda path, sddl: security.append((path, sddl)) or True,
+    )
+    monkeypatch.setattr(private.os, "rmdir", removed.append)
+
+    with pytest.raises(WindowsACLSafetyError, match="identity verification"):
+        private.create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent,
+            is_windows=True,
+        )
+
+    assert security == []
+    assert removed == []
 
 
 @pytest.mark.parametrize("failure", ["platform", "parent", "relationship"])

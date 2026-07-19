@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import errno
 import os
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -102,20 +102,26 @@ def test_cached_config_never_commits_a_repeatedly_changing_file(
     original_load = config_module._load_config_uncached
     calls = 0
 
-    def mutating_load(config_path: Path) -> AgencyConfig:
+    def mutating_load(
+        config_path: Path,
+        *,
+        environ: Mapping[str, str] | None = None,
+    ) -> AgencyConfig:
         nonlocal calls
-        loaded = original_load(config_path)
+        loaded = original_load(config_path, environ=environ)
         calls += 1
-        next_profile = "power" if calls == 1 else "standard"
-        path.write_text(f"profile: {next_profile}\n", encoding="utf-8")
+        next_profile = "power" if calls % 2 else "standard"
+        replacement = config_path.with_name(f".{config_path.name}.{calls}.tmp")
+        replacement.write_text(f"profile: {next_profile}\n", encoding="utf-8")
+        os.replace(replacement, config_path)
         return loaded
 
     monkeypatch.setattr(config_module, "_load_config_uncached", mutating_load)
 
-    with pytest.raises(ValueError, match="changed repeatedly during load"):
+    with pytest.raises(ValueError, match="inputs changed repeatedly during load"):
         load_config(reload=True)
 
-    assert calls == 2
+    assert calls == config_module._CONFIG_LOAD_STABILITY_ATTEMPTS
 
 
 @pytest.mark.parametrize(
@@ -155,20 +161,20 @@ def test_config_signature_reports_platform_filesystem_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     target = tmp_path / "denied.yaml"
-    original_stat = Path.stat
+    original_lstat = Path.lstat
 
-    def denied_stat(path: Path, *args, **kwargs):
+    def denied_lstat(path: Path, *args, **kwargs):
         if path == target:
             raise PermissionError(errno.EACCES, "denied", str(path))
-        return original_stat(path, *args, **kwargs)
+        return original_lstat(path, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "stat", denied_stat)
+    monkeypatch.setattr(Path, "lstat", denied_lstat)
     signature = config_module._config_file_signature(target)
     assert signature[:2] == (str(target.resolve()), "unavailable")
     assert signature[2:] == ("PermissionError", errno.EACCES)
 
 
-def test_default_config_cache_reloads_an_atomic_change_during_materialization(
+def test_default_config_cache_reloads_atomic_changes_until_snapshot_is_stable(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -178,20 +184,27 @@ def test_default_config_cache_reloads_an_atomic_change_during_materialization(
     original_loader = config_module._load_config_uncached
     calls = 0
 
-    def changing_loader(config_path: Path) -> AgencyConfig:
+    def changing_loader(
+        config_path: Path,
+        *,
+        environ: Mapping[str, str] | None = None,
+    ) -> AgencyConfig:
         nonlocal calls
         calls += 1
-        loaded = original_loader(config_path)
-        if calls == 1:
-            config_path.write_text(
-                "agents:\n  disabled: [code-reviewer]\n",
-                encoding="utf-8",
-            )
+        loaded = original_loader(config_path, environ=environ)
+        replacements = (
+            "agents:\n  disabled: [code-reviewer]\n",
+            "agents:\n  disabled: [code-reviewer, security-architect]\n",
+        )
+        if calls <= len(replacements):
+            replacement = config_path.with_name(f".{config_path.name}.{calls}.tmp")
+            replacement.write_text(replacements[calls - 1], encoding="utf-8")
+            os.replace(replacement, config_path)
         return loaded
 
     monkeypatch.setattr(config_module, "_load_config_uncached", changing_loader)
-    assert load_config().agents.disabled == ("code-reviewer",)
-    assert calls == 2
+    assert load_config().agents.disabled == ("code-reviewer", "security-architect")
+    assert calls == 3
 
 
 def test_default_config_cache_invalidates_environment_overrides(
@@ -205,6 +218,138 @@ def test_default_config_cache_invalidates_environment_overrides(
     assert load_config().profile == "local-only"
 
 
+def test_config_load_retries_environment_change_during_materialization(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text("profile: standard\n", encoding="utf-8")
+    monkeypatch.setenv("AGENCY_PROFILE", "standard")
+    original_loader = config_module._load_config_uncached
+    calls = 0
+
+    def changing_loader(
+        config_path: Path,
+        *,
+        environ: Mapping[str, str] | None = None,
+    ) -> AgencyConfig:
+        nonlocal calls
+        calls += 1
+        loaded = original_loader(config_path, environ=environ)
+        if calls == 1:
+            monkeypatch.setenv("AGENCY_PROFILE", "local-only")
+        return loaded
+
+    monkeypatch.setattr(config_module, "_load_config_uncached", changing_loader)
+
+    loaded = load_config(path, reload=True)
+
+    assert calls == 2
+    assert loaded.profile == "local-only"
+    assert load_config(path) is loaded
+
+
+def test_config_load_rejects_repeated_environment_churn(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text("profile: standard\n", encoding="utf-8")
+    monkeypatch.setenv("AGENCY_PROFILE", "standard")
+    original_loader = config_module._load_config_uncached
+    calls = 0
+
+    def changing_loader(
+        config_path: Path,
+        *,
+        environ: Mapping[str, str] | None = None,
+    ) -> AgencyConfig:
+        nonlocal calls
+        calls += 1
+        loaded = original_loader(config_path, environ=environ)
+        next_profile = "local-only" if calls % 2 else "standard"
+        monkeypatch.setenv("AGENCY_PROFILE", next_profile)
+        return loaded
+
+    monkeypatch.setattr(config_module, "_load_config_uncached", changing_loader)
+
+    with pytest.raises(ValueError, match="inputs changed repeatedly during load"):
+        load_config(path, reload=True)
+
+    assert calls == config_module._CONFIG_LOAD_STABILITY_ATTEMPTS
+
+
+def test_config_materialization_uses_snapshot_during_dynamic_key_aba(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_text(
+        "judge:\n"
+        "  model: reviewed-router\n"
+        "  base_url: https://router.example/v1\n"
+        "  api_key_env: TEST_JUDGE_KEY\n"
+        "  ollama_mode: false\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("LITELLM_API_KEY", "snapshot-fallback")
+    monkeypatch.delenv("TEST_JUDGE_KEY", raising=False)
+    original_loader = config_module._load_config_uncached
+
+    def aba_loader(
+        config_path: Path,
+        *,
+        environ: Mapping[str, str] | None = None,
+    ) -> AgencyConfig:
+        monkeypatch.setenv("TEST_JUDGE_KEY", "transient-key")
+        try:
+            return original_loader(config_path, environ=environ)
+        finally:
+            monkeypatch.delenv("TEST_JUDGE_KEY", raising=False)
+
+    monkeypatch.setattr(config_module, "_load_config_uncached", aba_loader)
+
+    loaded = load_config(path, reload=True)
+
+    assert loaded.judge.api_key == "snapshot-fallback"
+    assert loaded.judge.resolve_api_key() == "snapshot-fallback"
+
+
+def test_default_config_path_change_is_linearized_per_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first_path = tmp_path / "first.yaml"
+    second_path = tmp_path / "second.yaml"
+    first_path.write_text("profile: standard\n", encoding="utf-8")
+    second_path.write_text("profile: power\n", encoding="utf-8")
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(first_path))
+    original_loader = config_module._load_config_uncached
+    loaded_paths: list[Path] = []
+
+    def changing_path_loader(
+        config_path: Path,
+        *,
+        environ: Mapping[str, str] | None = None,
+    ) -> AgencyConfig:
+        loaded_paths.append(config_path)
+        loaded = original_loader(config_path, environ=environ)
+        if len(loaded_paths) == 1:
+            monkeypatch.setenv("AGENCY_CONFIG_PATH", str(second_path))
+        return loaded
+
+    monkeypatch.setattr(config_module, "_load_config_uncached", changing_path_loader)
+
+    first = load_config(reload=True)
+    second = load_config()
+
+    assert first.profile == "standard"
+    assert first.config_path == str(first_path.resolve())
+    assert second.profile == "power"
+    assert second.config_path == str(second_path.resolve())
+    assert loaded_paths == [first_path.resolve(), second_path.resolve()]
+
+
 def test_explicit_config_cache_is_identity_scoped_and_reloadable(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -216,9 +361,13 @@ def test_explicit_config_cache_is_identity_scoped_and_reloadable(
     original_loader = config_module._load_config_uncached
     loaded_paths: list[Path] = []
 
-    def tracked_loader(path: Path) -> AgencyConfig:
+    def tracked_loader(
+        path: Path,
+        *,
+        environ: Mapping[str, str] | None = None,
+    ) -> AgencyConfig:
         loaded_paths.append(path)
-        return original_loader(path)
+        return original_loader(path, environ=environ)
 
     monkeypatch.setattr(config_module, "_load_config_uncached", tracked_loader)
 

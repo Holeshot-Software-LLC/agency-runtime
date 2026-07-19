@@ -124,7 +124,7 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
         )
 
     syntax_check = "skipped: node unavailable"
-    node = shutil.which("node")
+    node = os.environ.get("AGENCY_CI_NODE") or shutil.which("node")
     if node:
         prepared = freeze_process_argv(prepare_process_argv([node, "--check", str(plugin_path)]))
         try:
