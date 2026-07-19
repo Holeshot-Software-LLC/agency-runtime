@@ -117,6 +117,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-97` | [Reconcile required-inference remediation in one ingestion](issue-AR-97-reconcile-required-inference-remediation.md) | in_progress | p1 | roster-governance | [#98](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/98) |
 | `AR-98` | [Validate launcher identity in dashboard service status](issue-AR-98-validate-dashboard-service-launcher-status.md) | in_progress | p1 | dashboard | [#99](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/99) |
 | `AR-99` | [Keep dashboard brokerage usable after master control materializes](issue-AR-99-dashboard-broker-materialized-master-control.md) | in_progress | p0 | operations | [#100](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/100) |
+| `AR-100` | [Wait for the old Windows dashboard runtime to exit](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | in_progress | p0 | dashboard | [#101](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/101) |
+| `AR-101` | [Enforce the global master switch in restricted host consumers](issue-AR-101-enforce-restricted-global-master-switch.md) | in_progress | p0 | operations | [#102](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/102) |
 
 ## Traceability
 
@@ -225,6 +227,8 @@ not stable internal identifiers.
 | [AR-97](issue-AR-97-reconcile-required-inference-remediation.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-98](issue-AR-98-validate-dashboard-service-launcher-status.md) | [`a022b5d`](../worklog/README.md) | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-99](issue-AR-99-dashboard-broker-materialized-master-control.md) | [`a022b5d`](../worklog/README.md) | [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0061](../decisions/0061-validate-brokered-control-transition-receipts.md) |
+| [AR-100](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | Pending final implementation commit | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0051](../decisions/0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md) |
+| [AR-101](issue-AR-101-enforce-restricted-global-master-switch.md) | Pending final implementation commit | [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
 
 ## Dependency summary
 
@@ -281,7 +285,7 @@ not stable internal identifiers.
   durable state-aware classifier and independent selection, rerouting, and
   execution-decision requirements. Its final full-suite and installed-host
   evidence remains in progress.
-- `AR-86` through `AR-99` own the newly separated production gaps: governed
+- `AR-86` through `AR-101` own the newly separated production gaps: governed
   upstream deltas, bounded native delegation guidance, controlled outcome
   comparison, complete roster/inference operations parity, and legacy
   activation-receipt migration ordering, plus the activation-governance,
@@ -290,8 +294,10 @@ not stable internal identifiers.
   packaged favicon required for console-clean browser verification, and
   same-ingestion reconciliation after required inference, and truthful launcher
   identity validation in read-only dashboard service status, and durable
-  authenticated brokerage after the Windows master document materializes.
-  Tracker issues #87 through #100 are open
+  authenticated brokerage after the Windows master document materializes, a
+  bounded old-runtime shutdown wait, and authoritative global-off enforcement
+  for restricted host consumers.
+  Tracker issues #87 through #102 are open
   and linked; implementation and final evidence remain in progress.
 - `AR-17` integrates the security, modularity, browser, host-contract,
   cross-platform, packaging, performance, and live Codex evidence. Pull request

@@ -905,6 +905,9 @@ def test_dashboard_route_lab_bypasses_all_routing_while_master_is_off(
     assert payload["bypassed"] is True
     assert payload["master"]["enabled"] is False
     assert "bypassed routing" in payload["message"]
+    assert payload["delegation_plan"]["authority"] == "recommendation_only"
+    assert payload["delegation_plan"]["unit_count"] == 0
+    assert "no delegation recommendation" in payload["delegation_plan"]["evidence_contract"]
 
 
 @pytest.mark.parametrize(
@@ -2143,13 +2146,14 @@ def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server, mon
 
 
 def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
+    task = "1. Review application security design\n2. Audit threat boundaries"
     for _attempt in range(2):
         status, payload, _headers = _json_response(
             dashboard_server,
             "/api/route",
             method="POST",
             body={
-                "task": "review this application security design",
+                "task": task,
                 "session_id": "dashboard-test",
             },
             token=dashboard_server["token"],
@@ -2157,7 +2161,7 @@ def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
 
     assert status == 200
     assert payload["schema_version"] == "agency.selection_explain.v1"
-    assert payload["task"] == "review this application security design"
+    assert payload["task"] == task
     assert payload["host_capability_receipt"]["source"] == "native-installation-evidence"
     assert payload["host_capability_receipt"]["execution_host"] == "codex"
     assert payload["eligibility"] == {
@@ -2174,6 +2178,21 @@ def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
     assert [item["description"] for item in payload["delegation_graph"]["nodes"]] == payload[
         "signals"
     ]["work_units"]["units"]
+    plan = payload["delegation_plan"]
+    assert plan["schema_version"] == "agency.dashboard.delegation_plan.v1"
+    assert plan["authority"] == "recommendation_only"
+    assert plan["execution_host"] == "codex"
+    assert "spawn_agent" in plan["mechanism"]
+    assert "not execution" in plan["evidence_contract"]
+    assert plan["unit_count"] == len(plan["units"]) > 0
+    assert all(item["recommended_agent"] == "security-reviewer" for item in plan["units"])
+    assert all(item["compatible_specialists"] == ["security-reviewer"] for item in plan["units"])
+    assert all(
+        item["assignment_strength"] in {"optional", "preferred", "strongly_preferred"}
+        for item in plan["units"]
+    )
+    assert all("required_evidence" in item for item in plan["units"])
+    assert "prompt_body" not in _nested_keys(plan)
     assert "decision_id" not in payload["routing"]
     assert dashboard_server["store"].get_open_traces_for_session("dashboard-test") == []
 

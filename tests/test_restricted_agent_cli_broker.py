@@ -1013,6 +1013,50 @@ def test_restricted_read_commands_use_the_broker_without_a_split_store(
     assert emitted[-1]["roster_count"] == 1
 
 
+def test_restricted_search_honors_brokered_global_off_before_roster_access(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    emitted: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        runtime_control,
+        "read_effective_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            runtime_control.RuntimeControlSecurityError("restricted reader unavailable")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_control,
+        "_restricted_windows_control_target",
+        lambda _path: True,
+    )
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "dashboard_api_request",
+        lambda path, *, timeout: (
+            {"master": _master(False)} if path == "/api/runtime" and timeout == 0.25 else {}
+        ),
+    )
+    monkeypatch.setattr(
+        roster_commands,
+        "_search",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("disabled search touched the roster")
+        ),
+    )
+    monkeypatch.setattr(roster_commands, "_print_json", emitted.append)
+
+    assert roster_commands.cmd_search(Namespace(query="review", limit=10, json=True)) == 0
+    assert emitted == [
+        {
+            "runtime_enabled": False,
+            "bypassed": True,
+            "query": "review",
+            "agents": [],
+            "count": 0,
+        }
+    ]
+
+
 def test_restricted_default_policy_uses_one_service_owned_policy_snapshot(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

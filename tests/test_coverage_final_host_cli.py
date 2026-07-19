@@ -441,6 +441,22 @@ def test_install_control_rendering_and_failure_paths(monkeypatch, capsys) -> Non
     monkeypatch.setattr(
         "agency_runtime.core.host_control.inspect_all_host_statuses", lambda *_args, **_kw: []
     )
+    monkeypatch.setattr(
+        install_commands,
+        "_direct_inference_snapshot",
+        lambda _store, _dependencies: {
+            "schema_version": "agency.dashboard.inference_operations.v1",
+            "configured": False,
+            "required_for_eligible_turns": False,
+            "state": "not_configured",
+            "evidence": ("configuration readiness plus recent persisted routing/model receipts"),
+            "provider_chain": [],
+            "latest_model_resolution": None,
+            "recent_failures": [],
+            "failure_count": 0,
+            "failures_truncated": False,
+        },
+    )
     status_args = SimpleNamespace(agent=None, json=True)
     emitted: list[Any] = []
     dependencies = replace(dependencies, emit_json=emitted.append)
@@ -513,7 +529,12 @@ def test_install_master_control_broker_double_failure(monkeypatch) -> None:
     monkeypatch.setattr(
         runtime_control,
         "read_effective_runtime_control",
-        lambda: _raise(runtime_control.RuntimeControlError("direct unavailable")),
+        lambda: _raise(runtime_control.RuntimeControlSecurityError("direct unavailable")),
+    )
+    monkeypatch.setattr(
+        runtime_control,
+        "_restricted_windows_control_target",
+        lambda _path: True,
     )
     monkeypatch.setattr(
         dashboard_runtime,

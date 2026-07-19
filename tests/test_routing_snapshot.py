@@ -26,6 +26,7 @@ from agency_runtime.core.config import (
     load_config,
     reset_config_cache,
 )
+from agency_runtime.core.delegation.operational import empty_delegation_plan_projection
 from agency_runtime.core.routing_snapshot import (
     RoutingSnapshot,
     capture_routing_snapshot,
@@ -176,6 +177,11 @@ def test_dashboard_route_lab_passes_one_snapshot_to_selector(
         "environment_overrides": {},
     }
     monkeypatch.setattr(dashboard_module, "_delegation_graph", lambda _receipt: {"nodes": []})
+    monkeypatch.setattr(
+        dashboard_module,
+        "delegation_plan_projection",
+        lambda *_args, **_kwargs: {"units": []},
+    )
     capability_receipt = {
         "contract_version": "1",
         "surface": "codex",
@@ -230,6 +236,7 @@ def test_dashboard_route_lab_passes_one_snapshot_to_selector(
                 "truncated": False,
                 "host_resolution": "explicit",
             },
+            "delegation_plan": {"units": []},
             "delegation_graph": {"nodes": []},
             "operation_snapshot": identity,
         }
@@ -317,6 +324,7 @@ def _route_bypass(*, session_id: str = "session", task: str = "review") -> dict[
         "considered_candidates": [],
         "rejected_candidates": [],
         "signals": {"source": "master_control"},
+        "delegation_plan": empty_delegation_plan_projection(),
         "delegation_graph": {"nodes": [], "edges": []},
         "runtime_enabled": False,
         "status": "disabled",

@@ -993,7 +993,7 @@ def test_unhandled_post_errors_do_not_leak_exception_details(http_server, monkey
 
 
 def test_unhandled_get_errors_do_not_leak_exception_details(http_server, monkeypatch, caplog):
-    def boom(self):
+    def boom(self, **_kwargs):
         raise RuntimeError("secret-token")
 
     monkeypatch.setattr("agency_runtime.server.http.AgencyHTTPHandler._handle_status", boom)

@@ -38,7 +38,7 @@ def test_dashboard_runtime_generation_helpers_are_fail_closed(tmp_path, monkeypa
     assert ctx is not None
     assert subject._dashboard_runtime_fingerprint(ctx) is None
     assert subject._cleanup_stale_dashboard_runtime(ctx) is False
-    assert subject._dashboard_runtime_cleared(ctx, None) is True
+    assert subject._dashboard_runtime_cleared(ctx) is True
     assert subject._fresh_dashboard_readiness(ctx, None, None) is None
     assert subject._fresh_dashboard_readiness(ctx, None, "prior") is False
 
@@ -59,9 +59,7 @@ def test_dashboard_runtime_generation_helpers_are_fail_closed(tmp_path, monkeypa
     assert first is not None
     monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: True)
     assert subject._cleanup_stale_dashboard_runtime(ctx) is False
-    assert subject._dashboard_runtime_cleared(ctx, first) is False
-    assert subject._dashboard_runtime_cleared(ctx, first, allow_replacement=True) is False
-    assert subject._dashboard_runtime_cleared(ctx, None, allow_replacement=True) is False
+    assert subject._dashboard_runtime_cleared(ctx) is False
     assert subject._fresh_dashboard_readiness(ctx, lambda: True, first) is False
 
     dashboard_runtime.write_dashboard_runtime(
@@ -70,19 +68,138 @@ def test_dashboard_runtime_generation_helpers_are_fail_closed(tmp_path, monkeypa
         port=7810,
         pid=111,
     )
-    assert subject._dashboard_runtime_cleared(ctx, first, allow_replacement=True) is True
+    second = subject._dashboard_runtime_fingerprint(ctx)
+    assert second is not None
+    assert subject._dashboard_runtime_cleared(ctx) is False
     assert subject._fresh_dashboard_readiness(ctx, lambda: True, first) is True
 
     monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: False)
-    assert subject._cleanup_stale_dashboard_runtime(ctx) is True
-    assert subject._dashboard_runtime_cleared(ctx, first) is True
+    assert subject._cleanup_stale_dashboard_runtime(ctx, expected_fingerprint=first) is False
+    assert subject._dashboard_runtime_fingerprint(ctx) == second
+    assert subject._cleanup_stale_dashboard_runtime(ctx, expected_fingerprint=second) is True
+    assert subject._dashboard_runtime_cleared(ctx) is True
 
     runtime_path = dashboard_runtime.dashboard_runtime_path(home_dir=tmp_path)
     runtime_path.write_text("{}", encoding="utf-8")
     assert subject._dashboard_runtime_fingerprint(ctx) is None
     assert subject._cleanup_stale_dashboard_runtime(ctx) is False
-    assert subject._dashboard_runtime_cleared(ctx, first) is False
+    assert subject._dashboard_runtime_cleared(ctx) is False
     assert subject._fresh_dashboard_readiness(ctx, lambda: True, first) is False
+
+
+def test_dashboard_runtime_clearance_wait_retries_identity_safe_cleanup(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    cleanup_results = iter((False, True))
+    clearance_calls = []
+    sleeps = []
+    monkeypatch.setattr(
+        subject,
+        "_cleanup_stale_dashboard_runtime",
+        lambda _ctx, **_kwargs: next(cleanup_results),
+    )
+    monkeypatch.setattr(
+        subject,
+        "_dashboard_runtime_fingerprint",
+        lambda _ctx: "sha256:old",
+    )
+
+    def clearance(_ctx):
+        clearance_calls.append("clearance")
+        return len(clearance_calls) == 2
+
+    monkeypatch.setattr(subject, "_dashboard_runtime_cleared", clearance)
+    monkeypatch.setattr(subject.time, "sleep", sleeps.append)
+
+    outcome = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        "sha256:old",
+        timeout_seconds=1.0,
+        poll_seconds=0.0,
+    )
+    assert outcome.cleared is True
+    assert outcome.descriptor_removed is True
+    assert outcome.replacement_detected is False
+    assert clearance_calls == ["clearance", "clearance"]
+    assert sleeps == [0.0]
+
+
+def test_dashboard_runtime_clearance_wait_preserves_replacement(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(
+        subject,
+        "_dashboard_runtime_fingerprint",
+        lambda _ctx: "sha256:replacement",
+    )
+    monkeypatch.setattr(
+        subject,
+        "_cleanup_stale_dashboard_runtime",
+        lambda *_args, **_kwargs: pytest.fail("replacement cleanup must not run"),
+    )
+
+    outcome = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        "sha256:old",
+        timeout_seconds=0.0,
+    )
+    assert outcome == subject._DashboardRuntimeClearance(
+        cleared=False,
+        descriptor_removed=False,
+        replacement_detected=True,
+    )
+    no_prior = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        None,
+        timeout_seconds=0.0,
+    )
+    assert no_prior.replacement_detected is True
+
+
+def test_dashboard_runtime_clearance_wait_fails_closed_at_deadline(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(subject, "_cleanup_stale_dashboard_runtime", lambda _ctx: False)
+    monkeypatch.setattr(subject, "_dashboard_runtime_fingerprint", lambda _ctx: None)
+    monkeypatch.setattr(
+        subject,
+        "_dashboard_runtime_cleared",
+        lambda *_args, **_kwargs: False,
+    )
+
+    outcome = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        "sha256:still-live",
+        timeout_seconds=0.0,
+    )
+    assert outcome == subject._DashboardRuntimeClearance(
+        cleared=False,
+        descriptor_removed=False,
+    )
 
 
 @pytest.mark.parametrize("value", ["", "bad\x00value"])

@@ -59,6 +59,7 @@ _MAX_SOURCE_BYTES = 64
 _MAX_TIMESTAMP_BYTES = 64
 _CACHE_LIMIT = 64
 _WINDOWS_REPLACE_DELAYS = (0.002, 0.004, 0.008, 0.016, 0.032, 0.064)
+_DASHBOARD_BROKER_TIMEOUT_SECONDS = 0.25
 
 
 class RuntimeControlError(RuntimeError):
@@ -71,6 +72,10 @@ class RuntimeControlValidationError(RuntimeControlError):
 
 class RuntimeControlSecurityError(RuntimeControlError):
     """The control path does not satisfy the owner-private trust contract."""
+
+
+class RuntimeControlBrokerError(RuntimeControlSecurityError):
+    """The canonical restricted reader could not obtain owner-service state."""
 
 
 class RuntimeControlConflictError(RuntimeControlError):
@@ -695,6 +700,84 @@ def read_effective_runtime_control(
     ).as_document()
 
 
+def read_authoritative_runtime_control(
+    *,
+    path: str | Path | None = None,
+    home_dir: str | Path | None = None,
+    use_cache: bool = True,
+) -> tuple[dict[str, Any], str]:
+    """Read master state directly or through the canonical owner service.
+
+    The authenticated dashboard is a recovery boundary only for the implicit
+    per-user identity when Windows positively identifies the caller as
+    restricted. Explicit ``path`` and ``home_dir`` arguments, validation
+    failures, and lock contention are never redirected because the service
+    cannot prove that it owns those identities. The dashboard handler itself
+    deliberately uses :func:`read_runtime_control` so this fallback cannot
+    recurse through ``/api/runtime``.
+    """
+
+    direct_arguments: dict[str, Any] = {}
+    if path is not None:
+        direct_arguments["path"] = path
+    if home_dir is not None:
+        direct_arguments["home_dir"] = home_dir
+    if not use_cache:
+        direct_arguments["use_cache"] = False
+    try:
+        return (
+            read_effective_runtime_control(**direct_arguments),
+            "direct",
+        )
+    except RuntimeControlSecurityError:
+        target = _target_path(path=path, home_dir=home_dir)
+        if (
+            path is not None
+            or home_dir is not None
+            or not _restricted_windows_control_target(target)
+        ):
+            raise
+        try:
+            from agency_runtime.core.dashboard_runtime import dashboard_api_request
+
+            response = dashboard_api_request(
+                "/api/runtime",
+                timeout=_DASHBOARD_BROKER_TIMEOUT_SECONDS,
+            )
+            if not isinstance(response, Mapping) or set(response) != {"master"}:
+                raise ValueError("dashboard master response shape is invalid")
+            return validate_runtime_control_document(response.get("master")), "dashboard"
+        except (OSError, RuntimeError, ValueError) as broker_error:
+            raise RuntimeControlBrokerError(
+                "canonical runtime control is inaccessible and the authenticated "
+                "dashboard service could not broker it"
+            ) from broker_error
+
+
+def read_enforcement_runtime_control(
+    *,
+    path: str | Path | None = None,
+    home_dir: str | Path | None = None,
+    use_cache: bool = True,
+) -> tuple[dict[str, Any], str]:
+    """Return one authoritative request snapshot, failing enabled on faults."""
+
+    try:
+        return read_authoritative_runtime_control(
+            path=path,
+            home_dir=home_dir,
+            use_cache=use_cache,
+        )
+    except (RuntimeControlError, OSError, UnicodeError, ValueError):
+        return (
+            {
+                **_default_document(),
+                "source": "fail-enabled",
+            },
+            "fail-enabled",
+        )
+
+
 def master_enabled(
     *,
     path: str | Path | None = None,
@@ -702,10 +785,11 @@ def master_enabled(
 ) -> bool:
     """Return the enforcement state, defaulting safely to enabled on any fault."""
 
-    try:
-        return bool(read_effective_runtime_control(path=path, home_dir=home_dir)["enabled"])
-    except (RuntimeControlError, OSError, UnicodeError, ValueError):
-        return True
+    document, _transport = read_enforcement_runtime_control(
+        path=path,
+        home_dir=home_dir,
+    )
+    return bool(document["enabled"])
 
 
 def _validate_lock_timeout(timeout: float) -> float:
@@ -1056,6 +1140,7 @@ __all__ = [
     "DEFAULT_LOCK_TIMEOUT_SECONDS",
     "MAX_RUNTIME_CONTROL_BYTES",
     "RUNTIME_CONTROL_SCHEMA_VERSION",
+    "RuntimeControlBrokerError",
     "RuntimeControlBusyError",
     "RuntimeControlConflictError",
     "RuntimeControlError",
@@ -1065,8 +1150,10 @@ __all__ = [
     "clear_runtime_control_cache",
     "ensure_runtime_control_materialized",
     "master_enabled",
+    "read_authoritative_runtime_control",
     "read_effective_runtime_control",
     "read_effective_runtime_control_snapshot",
+    "read_enforcement_runtime_control",
     "read_runtime_control",
     "read_runtime_control_snapshot",
     "runtime_control_path",

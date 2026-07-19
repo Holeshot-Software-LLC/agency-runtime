@@ -900,6 +900,97 @@ export function createRenderer(core, config, callbacks) {
       });
     rejectionBlock.append(rejectionList);
     root.append(rejectionBlock);
+    const delegationPlan = receipt.delegation_plan || {};
+    const planUnits = Array.isArray(delegationPlan.units)
+      ? delegationPlan.units
+        .slice(0, 16)
+        .filter((unit) => unit && typeof unit === "object")
+      : [];
+    const planBlock = el("div", "receipt-block delegation-plan");
+    planBlock.append(el("span", "", "Unit → specialist delegation plan"));
+    const planAuthority = el(
+      "p",
+      "delegation-plan-authority",
+      delegationPlan.authority === "recommendation_only"
+        ? "Recommendation only · this is not proof that delegation executed"
+        : "No authoritative delegation recommendation is available",
+    );
+    planBlock.append(planAuthority);
+    if (delegationPlan.mechanism) {
+      const mechanism = el("p", "delegation-plan-mechanism");
+      mechanism.append(
+        el("strong", "", `Native ${delegationPlan.execution_host || "host"} mechanism`),
+        el("small", "", delegationPlan.mechanism),
+      );
+      planBlock.append(mechanism);
+    }
+    if (delegationPlan.evidence_contract) {
+      const contract = el("p", "delegation-plan-evidence");
+      contract.append(
+        el("strong", "", "Evidence contract"),
+        el("small", "", delegationPlan.evidence_contract),
+      );
+      planBlock.append(contract);
+    }
+    if (!planUnits.length) {
+      planBlock.append(el("p", "", "No unit-to-specialist assignments were produced."));
+    } else {
+      const planList = el("div", "delegation-plan-list");
+      planList.setAttribute("role", "list");
+      planList.setAttribute("aria-label", "Recommended unit-to-specialist assignments");
+      planUnits.forEach((unit, index) => {
+        const card = el("article", "delegation-plan-unit");
+        card.setAttribute("role", "listitem");
+        const heading = el("div", "delegation-plan-heading");
+        heading.append(
+          el("strong", "", unit.work_unit_id || `unit-${index + 1}`),
+          el(
+            "span",
+            `delegation-strength strength-${unit.assignment_strength || "unknown"}`,
+            String(unit.assignment_strength || "unknown").replaceAll("_", " "),
+          ),
+        );
+        card.append(
+          heading,
+          el("h3", "", unit.recommended_agent || "No specialist assigned"),
+          el("p", "delegation-plan-goal", unit.goal_preview || "Goal preview unavailable"),
+        );
+        const facts = el("dl", "delegation-plan-facts");
+        [
+          ["Confidence", Number.isFinite(Number(unit.confidence))
+            ? Number(unit.confidence).toFixed(2)
+            : "unavailable"],
+          ["Deliverable", unit.expected_deliverable || unit.deliverable_kind || "unspecified"],
+          ["Execution shape", `${unit.parallelization || "unspecified"} · ${unit.mutation_scope || "unspecified"}`],
+          ["Dependencies", (Array.isArray(unit.dependencies)
+            ? unit.dependencies.slice(0, 16)
+            : []).join(", ") || "none"],
+        ].forEach(([label, value]) => {
+          const fact = el("div");
+          fact.append(el("dt", "", label), el("dd", "", value));
+          facts.append(fact);
+        });
+        card.append(facts);
+        [
+          ["Compatible specialists", unit.compatible_specialists],
+          ["Required tools", unit.required_tools],
+          ["Required evidence", unit.required_evidence],
+          ["Rationale", unit.rationale_codes],
+        ].forEach(([label, values]) => {
+          const group = el("div", "delegation-plan-tokens");
+          group.append(el("small", "", label));
+          const tokens = el("div", "token-list");
+          (Array.isArray(values) && values.length ? values.slice(0, 8) : ["none"]).forEach((value) => {
+            tokens.append(el("span", "token", value));
+          });
+          group.append(tokens);
+          card.append(group);
+        });
+        planList.append(card);
+      });
+      planBlock.append(planList);
+    }
+    root.append(planBlock);
     const graph = receipt.delegation_graph || {};
     const graphNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
     const graphEdges = Array.isArray(graph.edges) ? graph.edges : [];

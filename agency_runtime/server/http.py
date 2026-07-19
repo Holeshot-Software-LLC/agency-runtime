@@ -105,13 +105,10 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             return
         path = _normalise_path(self.path)
         try:
-            from agency_runtime.core.runtime_control import (
-                master_enabled,
-                read_effective_runtime_control,
-            )
+            from agency_runtime.core.runtime_control import read_enforcement_runtime_control
 
-            if not master_enabled():
-                master = read_effective_runtime_control()
+            master, _master_transport = read_enforcement_runtime_control()
+            if not master["enabled"]:
                 if path == "/status":
                     self._json_ok(
                         {
@@ -138,7 +135,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
                 assert_store_config_binding(self.store)
             if path == "/status":
-                self._handle_status()
+                self._handle_status(master=master)
             elif path == "/roster":
                 self._handle_roster()
             else:
@@ -155,9 +152,10 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             body = self._read_json_body()
             if body is None:
                 return  # error already sent
-            from agency_runtime.core.runtime_control import master_enabled
+            from agency_runtime.core.runtime_control import read_enforcement_runtime_control
 
-            if not master_enabled():
+            master, _master_transport = read_enforcement_runtime_control()
+            if not master["enabled"]:
                 payload = {"runtime_enabled": False, "bypassed": True}
                 if path == "/finalize":
                     payload.update(
@@ -606,14 +604,17 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             }
         )
 
-    def _handle_status(self) -> None:
-        from agency_runtime.core.runtime_control import read_effective_runtime_control
+    def _handle_status(self, *, master: dict[str, Any] | None = None) -> None:
+        from agency_runtime.core.runtime_control import read_enforcement_runtime_control
+
+        if master is None:
+            master, _master_transport = read_enforcement_runtime_control()
 
         self._json_ok(
             {
                 "status": "ok",
                 "runtime_enabled": True,
-                "master": read_effective_runtime_control(),
+                "master": master,
                 "roster_count": self.store.count_enabled_roster(),
                 "db_path": str(self.store.db_path),
             }

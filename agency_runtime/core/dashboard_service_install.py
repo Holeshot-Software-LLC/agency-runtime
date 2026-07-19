@@ -16,16 +16,15 @@ from agency_runtime.core.dashboard_service_core import (
     CommandRunner,
     ReadinessProbe,
     _base,
-    _cleanup_stale_dashboard_runtime,
     _Context,
     _context,
-    _dashboard_runtime_cleared,
     _dashboard_runtime_fingerprint,
     _fresh_dashboard_readiness,
     _revalidate_dashboard_launcher,
     _run,
     _unsupported,
     _validate_dashboard_launcher,
+    _wait_dashboard_runtime_cleared,
     dashboard_service_environment_error,
     dashboard_service_environment_overrides,
 )
@@ -412,8 +411,16 @@ def _activate_windows_install_if_needed(
 ) -> None:
     if not transaction.changed:
         return
-    _cleanup_stale_dashboard_runtime(ctx)
-    if not _dashboard_runtime_cleared(ctx, transaction.prior_runtime_fingerprint):
+    clearance = _wait_dashboard_runtime_cleared(
+        ctx,
+        transaction.prior_runtime_fingerprint,
+    )
+    if not clearance.cleared:
+        if clearance.replacement_detected:
+            raise RuntimeError(
+                "dashboard runtime generation changed before activation; "
+                "the replacement was preserved"
+            )
         raise RuntimeError("old dashboard runtime remained reachable before activation")
     exact = _assert_windows_task_unchanged(ctx, current_task, command_runner=command_runner)
     transaction.commands.append(exact.public())

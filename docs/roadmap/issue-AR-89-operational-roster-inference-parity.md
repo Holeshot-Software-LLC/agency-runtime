@@ -40,8 +40,11 @@ governance projections, provider failure history, rich roster filters, and
 bounded remediation history. CLI route and explain diagnostics now bind the
 single exact verified enabled installation when one exists, so the selected
 specialists and visible candidate ranking share the same truthful host
-eligibility context. Final delegation-plan and installed-service parity gates
-remain in progress.
+eligibility context. CLI status and the authenticated dashboard now consume one
+bounded, secret-safe inference-health projection. Route Lab presents the
+complete recommendation-only unit-to-specialist plan, including assignment
+strength, native mechanism, and the evidence required to distinguish a plan
+from execution. Installed-service parity gates remain in progress.
 
 ## Approach
 
@@ -60,10 +63,10 @@ secure operational boundary.
 
 ## Acceptance
 
-- [ ] CLI and dashboard expose equivalent governance and inference-health information.
-- [ ] Roster search filters division, capability, authority, host, platform, and tool.
-- [ ] Audit queue, findings, candidate comparison, conflicts, requirements, and history are visible.
-- [ ] Provider failures and mandatory-inference degradation are authoritative and live-updating.
-- [ ] Parent/child routing, delegation plans, outcomes, and model reconciliation are visible.
+- [x] CLI and dashboard expose equivalent governance and inference-health information.
+- [x] Roster search filters division, capability, authority, host, platform, and tool.
+- [x] Audit queue, findings, candidate comparison, conflicts, requirements, and history are visible.
+- [x] Provider failures and mandatory-inference degradation are authoritative and live-updating.
+- [x] Parent/child routing, delegation plans, outcomes, and model reconciliation are visible.
 - [ ] The optional service remains durable and secure on Windows and Linux.
 - [ ] Accessibility, performance, Node coverage, Python coverage, and installed-service gates pass.

@@ -33,9 +33,11 @@ transactional reconciliation.
 
 ## Current state
 
-The independent final review reproduced the lifecycle-ordering defect. The
-post-audit reconciliation boundary and exact one-shot regression are in
-progress; final full-suite and installed-artifact evidence remain pending.
+The post-audit reconciliation boundary now rechecks only the persisted scan and
+candidate identities from the same import. Focused regressions prove a single
+authorized resolution, no stale pending entry, bounded idempotence, and
+fail-closed behavior when required inference is unavailable or unsuccessful.
+Final full-suite and installed-artifact evidence remain pending.
 
 ## Approach
 
@@ -53,8 +55,8 @@ fail-closed remediation evidence contract.
 
 ## Acceptance
 
-- [ ] Required-inference ingestion reconciles an eligible repair in the same top-level call.
-- [ ] Reconciliation is persisted-evidence-bound, atomic, idempotent, and bounded.
-- [ ] Failed or unavailable required inference leaves quarantine pending.
-- [ ] The regression proves exactly one authorized resolution and zero pending entries.
+- [x] Required-inference ingestion reconciles an eligible repair in the same top-level call.
+- [x] Reconciliation is persisted-evidence-bound, atomic, idempotent, and bounded.
+- [x] Failed or unavailable required inference leaves quarantine pending.
+- [x] The regression proves exactly one authorized resolution and zero pending entries.
 - [ ] The complete release matrix and installed-artifact smoke pass.

@@ -17,13 +17,14 @@ from agency_runtime.core.dashboard_service_core import (
     _cleanup_stale_dashboard_runtime,
     _Context,
     _context,
-    _dashboard_runtime_cleared,
     _dashboard_runtime_fingerprint,
+    _DashboardRuntimeClearance,
     _fresh_dashboard_readiness,
     _revalidate_dashboard_launcher,
     _run,
     _unsupported,
     _validate_dashboard_launcher,
+    _wait_dashboard_runtime_cleared,
 )
 from agency_runtime.core.dashboard_service_inspection import (
     _failed,
@@ -61,6 +62,64 @@ def _cleanup_stale_runtime(
     _reachability_probe: ReadinessProbe | None,
 ) -> bool:
     return _cleanup_stale_dashboard_runtime(ctx)
+
+
+def _replacement_runtime_conflict(
+    action: str,
+    ctx: _Context,
+    clearance: _DashboardRuntimeClearance,
+    *,
+    commands: list[dict[str, Any]],
+    changed: bool,
+) -> dict[str, Any]:
+    value = _failed(
+        action,
+        ctx,
+        error=(
+            "dashboard runtime generation changed during the service transition; "
+            "the replacement was preserved"
+        ),
+        commands=commands,
+    )
+    value.update(
+        {
+            "changed": changed,
+            "status": "runtime_replaced",
+            "reachable": None,
+            "replacement_runtime_preserved": True,
+            "runtime_descriptor_removed": clearance.descriptor_removed,
+        }
+    )
+    return value
+
+
+def _runtime_clearance_failure(
+    action: str,
+    ctx: _Context,
+    clearance: _DashboardRuntimeClearance,
+    *,
+    commands: list[dict[str, Any]],
+    changed: bool,
+    uncleared_error: str,
+) -> dict[str, Any] | None:
+    if clearance.replacement_detected:
+        return _replacement_runtime_conflict(
+            action,
+            ctx,
+            clearance,
+            commands=commands,
+            changed=changed,
+        )
+    if clearance.cleared:
+        return None
+    value = _failed(
+        action,
+        ctx,
+        error=uncleared_error,
+        commands=commands,
+    )
+    value["changed"] = changed
+    return value
 
 
 def _lifecycle_preflight(
@@ -215,14 +274,20 @@ def _start_dashboard_service_locked(
                 error="dashboard task is running but not reachable; restart it",
                 commands=commands,
             )
-        _cleanup_stale_runtime(ctx, reachability_probe)
-        if not _dashboard_runtime_cleared(ctx, previous_runtime):
-            return _failed(
-                "start",
-                ctx,
-                error="stale dashboard runtime remained reachable before start",
-                commands=commands,
-            )
+        clearance = _wait_dashboard_runtime_cleared(
+            ctx,
+            previous_runtime,
+        )
+        clearance_failure = _runtime_clearance_failure(
+            "start",
+            ctx,
+            clearance,
+            commands=commands,
+            changed=False,
+            uncleared_error="stale dashboard runtime remained reachable before start",
+        )
+        if clearance_failure is not None:
+            return clearance_failure
         exact = _assert_windows_task_unchanged(ctx, task_xml, command_runner=command_runner)
         commands.append(exact.public())
         command = windows_system_command(
@@ -356,18 +421,26 @@ def _stop_dashboard_service_locked(
             )
         idle = not running
     if idle:
-        descriptor_removed = _cleanup_stale_runtime(ctx, reachability_probe)
-        if ctx.platform == "windows" and not _dashboard_runtime_cleared(
-            ctx,
-            previous_runtime,
-            allow_replacement=True,
-        ):
-            return _failed(
+        if ctx.platform == "windows":
+            clearance = _wait_dashboard_runtime_cleared(
+                ctx,
+                previous_runtime,
+            )
+            descriptor_removed = clearance.descriptor_removed
+            clearance_failure = _runtime_clearance_failure(
                 "stop",
                 ctx,
-                error="scheduled task is idle but its dashboard runtime remains reachable",
+                clearance,
                 commands=commands,
+                changed=descriptor_removed,
+                uncleared_error=(
+                    "scheduled task is idle but its dashboard runtime remains reachable"
+                ),
             )
+            if clearance_failure is not None:
+                return clearance_failure
+        else:
+            descriptor_removed = _cleanup_stale_runtime(ctx, reachability_probe)
         return {
             **_base("stop", ctx),
             "ok": True,
@@ -410,25 +483,24 @@ def _stop_dashboard_service_locked(
             )
             value["changed"] = True
             return value
-    descriptor_removed = result.ok and _cleanup_stale_runtime(ctx, reachability_probe)
-    runtime_cleared = (
-        _dashboard_runtime_cleared(
+    if ctx.platform == "windows" and result.ok:
+        clearance = _wait_dashboard_runtime_cleared(
             ctx,
             previous_runtime,
-            allow_replacement=True,
         )
-        if ctx.platform == "windows" and result.ok
-        else True
-    )
-    if result.ok and not runtime_cleared:
-        value = _failed(
+        descriptor_removed = clearance.descriptor_removed
+        clearance_failure = _runtime_clearance_failure(
             "stop",
             ctx,
-            error="dashboard runtime remained reachable after scheduled task stopped",
+            clearance,
             commands=commands,
+            changed=True,
+            uncleared_error="dashboard runtime remained reachable after scheduled task stopped",
         )
-        value["changed"] = True
-        return value
+        if clearance_failure is not None:
+            return clearance_failure
+    else:
+        descriptor_removed = result.ok and _cleanup_stale_runtime(ctx, reachability_probe)
     return {
         **_base("stop", ctx),
         "ok": manager_stopped,
@@ -571,16 +643,20 @@ def _restart_dashboard_service_locked(
                 )
                 value["changed"] = True
                 return value
-        _cleanup_stale_runtime(ctx, reachability_probe)
-        if not _dashboard_runtime_cleared(ctx, previous_runtime):
-            value = _failed(
-                "restart",
-                ctx,
-                error="old dashboard runtime remained reachable before restart",
-                commands=[item.public() for item in raw_results],
-            )
-            value["changed"] = bool(running)
-            return value
+        clearance = _wait_dashboard_runtime_cleared(
+            ctx,
+            previous_runtime,
+        )
+        clearance_failure = _runtime_clearance_failure(
+            "restart",
+            ctx,
+            clearance,
+            commands=[item.public() for item in raw_results],
+            changed=bool(running),
+            uncleared_error="old dashboard runtime remained reachable before restart",
+        )
+        if clearance_failure is not None:
+            return clearance_failure
         exact = _assert_windows_task_unchanged(ctx, task_xml, command_runner=command_runner)
         raw_results.append(exact)
         run_result = _run(

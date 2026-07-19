@@ -45,8 +45,8 @@ matched/no-match disposition, optional proposal hash, and next action. The queue
 is visible through bounded CLI and dashboard projections without raw prompt
 content. Resolution claims now require a keyed, exact dependency closure before
 they can suppress pending work; unsigned duplicates remain quarantined
-anomalies. Configured-provider inference audit integration and final
-repository-wide gates remain in progress. The shared ingestion and packaged-
+anomalies. Configured-provider inference audit reconciliation is implemented;
+final repository-wide gates remain in progress. The shared ingestion and packaged-
 loader scanner now quarantines unsafe Unicode format controls and encoding
 corruption across prompt, metadata, list, and path boundaries; re-signing local
 bundle material cannot promote the unsafe content.
@@ -75,7 +75,7 @@ operator availability independently of governance state.
 - [x] Normal routing is self-contained and reads a verified installed bundle.
 - [x] Only new or content-hash-changed definitions enter nightly review.
 - [x] The prior approved version remains active until the candidate passes every gate.
-- [ ] Deterministic and configured inference-assisted audit findings are durable.
+- [x] Deterministic and configured inference-assisted audit findings are durable.
 - [x] Conflict analysis runs against the exact active roster revision.
 - [x] CLI commands cover status, dry run, import, findings, compare, approve, and reject.
 - [x] The bounded nightly workflow never approves or activates a candidate.

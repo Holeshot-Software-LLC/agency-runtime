@@ -44,6 +44,7 @@ _CONTROL_ENDPOINT_METHODS = {
     "/api/agents/toggle": "POST",
     "/api/hosts": "GET",
     "/api/hosts/toggle": "POST",
+    "/api/inference": "GET",
     "/api/policy": "GET",
     "/api/roster": "GET",
     "/api/route": "POST",

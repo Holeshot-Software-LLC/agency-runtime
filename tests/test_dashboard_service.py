@@ -2284,7 +2284,10 @@ def test_stale_runtime_cleanup_uses_descriptor_compare_and_remove(
     monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", rotate_while_probing)
     result = stop_dashboard_service(**common)
     current = dashboard_runtime.read_dashboard_runtime(home_dir=tmp_path)
-    assert result["ok"] is True
+    assert result["ok"] is False
+    assert result["status"] == "runtime_replaced"
+    assert result["reachable"] is None
+    assert result["replacement_runtime_preserved"] is True
     assert result["runtime_descriptor_removed"] is False
     assert current["token"] == "b" * 32
     assert current["pid"] == 222

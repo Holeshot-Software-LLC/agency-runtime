@@ -2184,6 +2184,89 @@ test("app.js renders independent graphs and roster control refreshes", () => {
   assert.equal(harness.node("roster-count").textContent, "1 enabled · 1 total");
 });
 
+test("app.js renders a bounded recommendation-only unit delegation plan safely", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("render-only test does not fetch");
+  });
+  const maliciousEvidence = "<img src=x onerror=alert(1)>";
+  const units = Array.from({ length: 20 }, (_, index) => ({
+    assignment_strength: index ? "preferred" : "strongly_preferred",
+    compatible_specialists: ["security-reviewer", "evidence-reviewer"],
+    confidence: 0.91,
+    dependencies: index ? ["unit-0"] : [],
+    expected_deliverable: "Prioritized findings with reproducible evidence.",
+    goal_preview: `Review boundary ${index}`,
+    mutation_scope: "read_only",
+    parallelization: "parallel",
+    rationale_codes: ["detected:clauses", "policy:prefer"],
+    recommended_agent: "security-reviewer",
+    required_evidence: [
+      maliciousEvidence,
+      ...Array.from({ length: 10 }, (_, tokenIndex) => `receipt-${tokenIndex}`),
+    ],
+    required_tools: ["repository-read"],
+    work_unit_id: `unit-${index}`,
+  }));
+  units[0].work_unit_id = "";
+  units[1].assignment_strength = "";
+  units[2].recommended_agent = "";
+  units[3].goal_preview = "";
+  units[4].confidence = "invalid";
+  units[5].expected_deliverable = "";
+  units[5].deliverable_kind = "review";
+  units[6].expected_deliverable = "";
+  units[6].deliverable_kind = "";
+  units[7].parallelization = "";
+  units[7].mutation_scope = "";
+  units[8].dependencies = "invalid";
+  units[9].compatible_specialists = [];
+  units[10].required_tools = "invalid";
+  units[14] = null;
+  units[15] = "invalid";
+
+  harness.api.renderReceipt({
+    delegation_graph: { edges: [], nodes: [] },
+    delegation_plan: {
+      authority: "recommendation_only",
+      evidence_contract: "A plan is not execution. Correlated evidence is required.",
+      execution_host: "codex",
+      mechanism: "Dispatch with Codex spawn_agent.",
+      units,
+    },
+  });
+
+  const rendered = descendants(harness.node("route-result"));
+  assert.ok(rendered.some((node) => /recommendation only.*not proof/i.test(node.textContent)));
+  assert.ok(rendered.some((node) => node.textContent === "Dispatch with Codex spawn_agent."));
+  assert.ok(rendered.some((node) => /correlated evidence is required/i.test(node.textContent)));
+  assert.ok(rendered.some((node) => node.textContent === maliciousEvidence));
+  assert.equal(rendered.some((node) => node.id === "img"), false);
+  const planList = rendered.find((node) => node.className === "delegation-plan-list");
+  assert.equal(planList.getAttribute("role"), "list");
+  assert.equal(
+    rendered.filter((node) => node.className === "delegation-plan-unit").length,
+    14,
+  );
+  const firstEvidenceGroup = rendered.find(
+    (node) => node.className === "delegation-plan-tokens"
+      && node.children[0]?.textContent === "Required evidence",
+  );
+  assert.equal(firstEvidenceGroup.children[1].children.length, 8);
+
+  harness.api.renderReceipt({
+    delegation_graph: {},
+    delegation_plan: {
+      authority: "recommendation_only",
+      evidence_contract: "No execution evidence.",
+      units: [],
+    },
+  });
+  assert.ok(
+    descendants(harness.node("route-result"))
+      .some((node) => /no unit-to-specialist assignments/i.test(node.textContent)),
+  );
+});
+
 test("app.js handles control-plane and full-refresh error classes", async () => {
   const terminal = createAppHarness(async () => jsonResponse(401, { error: "expired" }));
   await terminal.api.refreshControlPlane();

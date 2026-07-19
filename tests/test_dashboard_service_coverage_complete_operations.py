@@ -463,12 +463,33 @@ def test_windows_restart_activate_and_final_verification_failures(tmp_path, monk
     )
     with pytest.raises(RuntimeError, match="idle state"):
         install._restart_windows_install_if_needed(ctx, transaction, "current", command_runner=None)
-    monkeypatch.setattr(install, "_dashboard_runtime_cleared", lambda *_a, **_kw: False)
+    monkeypatch.setattr(
+        install,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(False, False),
+    )
     with pytest.raises(RuntimeError, match="old dashboard runtime"):
         install._activate_windows_install_if_needed(
             ctx, transaction, "current", command_runner=None
         )
-    monkeypatch.setattr(install, "_dashboard_runtime_cleared", lambda *_a, **_kw: True)
+    monkeypatch.setattr(
+        install,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(
+            False,
+            False,
+            replacement_detected=True,
+        ),
+    )
+    with pytest.raises(RuntimeError, match="generation changed"):
+        install._activate_windows_install_if_needed(
+            ctx, transaction, "current", command_runner=None
+        )
+    monkeypatch.setattr(
+        install,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(True, False),
+    )
     with pytest.raises(RuntimeError, match="running state"):
         install._activate_windows_install_if_needed(
             ctx, transaction, "current", command_runner=None
@@ -492,6 +513,66 @@ def test_windows_restart_activate_and_final_verification_failures(tmp_path, monk
         install._verify_final_windows_install(
             ctx, transaction, command_runner=None, readiness_probe=None
         )
+
+
+def test_windows_install_activation_waits_for_worker_generation_clearance(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = context(tmp_path, "windows")
+    transaction = install._WindowsInstallTransaction(
+        prior_manifest=None,
+        installed=True,
+        registration_changed=True,
+        runtime_changed=True,
+        prior_reachable=True,
+        prior_active=True,
+        changed=True,
+        prior_runtime_fingerprint="sha256:old",
+    )
+    cleanup_calls = []
+
+    def pending_cleanup(_ctx, **_kwargs):
+        cleanup_calls.append("cleanup")
+        return False
+
+    monkeypatch.setattr(
+        core,
+        "_cleanup_stale_dashboard_runtime",
+        pending_cleanup,
+    )
+    monkeypatch.setattr(
+        core,
+        "_dashboard_runtime_fingerprint",
+        lambda _ctx: "sha256:old",
+    )
+    monkeypatch.setattr(
+        core,
+        "_dashboard_runtime_cleared",
+        lambda *_args, **_kwargs: len(cleanup_calls) >= 3,
+    )
+    monkeypatch.setattr(core.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(
+        install,
+        "_assert_windows_task_unchanged",
+        lambda *_args, **_kwargs: command("exact"),
+    )
+    monkeypatch.setattr(install, "_run", lambda *_args, **_kwargs: command("run"))
+    monkeypatch.setattr(
+        install,
+        "_wait_windows_running_state",
+        lambda *_args, **_kwargs: (True, [command("state")]),
+    )
+
+    install._activate_windows_install_if_needed(
+        ctx,
+        transaction,
+        "current-task",
+        command_runner=None,
+    )
+
+    assert cleanup_calls == ["cleanup", "cleanup", "cleanup"]
+    assert [item["command"][0] for item in transaction.commands] == ["exact", "run", "state"]
 
 
 def test_failed_windows_install_rolls_back_only_after_mutation(tmp_path, monkeypatch):

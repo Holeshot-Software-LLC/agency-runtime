@@ -16,6 +16,7 @@ import platform
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from numbers import Integral, Real
@@ -45,6 +46,8 @@ WINDOWS_TASK_XML_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/t
 
 _MAX_COMMAND_TIMEOUT_SECONDS = 300.0
 _MAX_MANAGER_OUTPUT_BYTES = 1024 * 1024
+_DASHBOARD_RUNTIME_CLEAR_TIMEOUT_SECONDS = 8.0
+_DASHBOARD_RUNTIME_CLEAR_POLL_SECONDS = 0.1
 _IS_WINDOWS = os.name == "nt"
 
 CommandRunner = Callable[..., Any]
@@ -99,6 +102,13 @@ class _RollbackOutcome:
     commands: list[dict[str, Any]]
     succeeded: bool
     error: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _DashboardRuntimeClearance:
+    cleared: bool
+    descriptor_removed: bool
+    replacement_detected: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -472,7 +482,11 @@ def _dashboard_runtime_fingerprint(ctx: _Context) -> str | None:
     return dashboard_runtime_instance_fingerprint(home_dir=ctx.home)
 
 
-def _cleanup_stale_dashboard_runtime(ctx: _Context) -> bool:
+def _cleanup_stale_dashboard_runtime(
+    ctx: _Context,
+    *,
+    expected_fingerprint: str | None = None,
+) -> bool:
     """Remove only an unreachable descriptor still owned by its exact worker."""
 
     from agency_runtime.core.dashboard_runtime import (
@@ -485,6 +499,13 @@ def _cleanup_stale_dashboard_runtime(ctx: _Context) -> bool:
         descriptor = read_dashboard_runtime(home_dir=ctx.home)
     except ValueError:
         return False
+    if expected_fingerprint is not None:
+        current_fingerprint = _dashboard_runtime_fingerprint(ctx)
+        if current_fingerprint is None or not hmac.compare_digest(
+            current_fingerprint,
+            expected_fingerprint,
+        ):
+            return False
     if dashboard_service_reachable(descriptor=descriptor):
         return False
     return remove_dashboard_runtime(
@@ -496,22 +517,69 @@ def _cleanup_stale_dashboard_runtime(ctx: _Context) -> bool:
 
 def _dashboard_runtime_cleared(
     ctx: _Context,
-    previous_fingerprint: str | None,
-    *,
-    allow_replacement: bool = False,
 ) -> bool:
-    """Prove that no old descriptor remains, optionally preserving a replacement."""
+    """Prove that no dashboard runtime descriptor remains."""
 
     from agency_runtime.core.dashboard_runtime import dashboard_runtime_path
 
-    current = _dashboard_runtime_fingerprint(ctx)
-    if current is not None:
-        return bool(
-            allow_replacement
-            and previous_fingerprint is not None
-            and not hmac.compare_digest(current, previous_fingerprint)
-        )
+    if _dashboard_runtime_fingerprint(ctx) is not None:
+        return False
     return not os.path.lexists(dashboard_runtime_path(home_dir=ctx.home))
+
+
+def _wait_dashboard_runtime_cleared(
+    ctx: _Context,
+    previous_fingerprint: str | None,
+    *,
+    timeout_seconds: float = _DASHBOARD_RUNTIME_CLEAR_TIMEOUT_SECONDS,
+    poll_seconds: float = _DASHBOARD_RUNTIME_CLEAR_POLL_SECONDS,
+) -> _DashboardRuntimeClearance:
+    """Wait for one stopped worker generation to release its descriptor.
+
+    Windows Task Scheduler can report an idle task before the worker has
+    completed shutdown.  Each retry authenticates the descriptor's health and
+    removes it only through the token-and-PID compare-and-remove operation.
+    A responsive old generation therefore remains a hard failure when the
+    bounded wait expires.
+    """
+
+    deadline = time.monotonic() + max(0.0, timeout_seconds)
+    descriptor_removed = False
+    while True:
+        current_fingerprint = _dashboard_runtime_fingerprint(ctx)
+        replacement_present = bool(
+            current_fingerprint is not None
+            and (
+                previous_fingerprint is None
+                or not hmac.compare_digest(current_fingerprint, previous_fingerprint)
+            )
+        )
+        if replacement_present:
+            return _DashboardRuntimeClearance(
+                cleared=False,
+                descriptor_removed=descriptor_removed,
+                replacement_detected=True,
+            )
+        if current_fingerprint is not None:
+            descriptor_removed = (
+                _cleanup_stale_dashboard_runtime(
+                    ctx,
+                    expected_fingerprint=previous_fingerprint,
+                )
+                or descriptor_removed
+            )
+        if _dashboard_runtime_cleared(ctx):
+            return _DashboardRuntimeClearance(
+                cleared=True,
+                descriptor_removed=descriptor_removed,
+            )
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return _DashboardRuntimeClearance(
+                cleared=False,
+                descriptor_removed=descriptor_removed,
+            )
+        time.sleep(min(max(0.0, poll_seconds), remaining))
 
 
 def _fresh_dashboard_readiness(
@@ -691,6 +759,7 @@ __all__ = [
     "ReadinessProbe",
     "_CommandResult",
     "_Context",
+    "_DashboardRuntimeClearance",
     "_RollbackOutcome",
     "_base",
     "_cleanup_stale_dashboard_runtime",
@@ -703,6 +772,7 @@ __all__ = [
     "_unsupported",
     "_validate_dashboard_launcher",
     "_validate_text",
+    "_wait_dashboard_runtime_cleared",
     "build_service_worker_argv",
     "dashboard_service_environment_error",
     "dashboard_service_environment_overrides",

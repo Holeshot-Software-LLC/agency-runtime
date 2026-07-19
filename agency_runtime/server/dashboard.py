@@ -52,6 +52,10 @@ from agency_runtime.core.dashboard_service_core import (
     dashboard_service_environment_error,
     dashboard_service_environment_overrides,
 )
+from agency_runtime.core.delegation.operational import (
+    delegation_plan_projection,
+    empty_delegation_plan_projection,
+)
 from agency_runtime.core.host_capabilities import (
     EXECUTION_HOSTS,
     project_host_capability_receipt,
@@ -1671,6 +1675,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                     "considered_candidates": [],
                     "rejected_candidates": [],
                     "signals": {"source": "master_control"},
+                    "delegation_plan": empty_delegation_plan_projection(),
                     "delegation_graph": {"nodes": [], "edges": []},
                     "runtime_enabled": False,
                     "status": "disabled",
@@ -1717,6 +1722,13 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             **eligibility,
             "host_resolution": "explicit" if requested_host is not None else "derived",
         }
+        receipt["delegation_plan"] = delegation_plan_projection(
+            receipt,
+            catalog=snapshot.catalog,
+            config=snapshot.config,
+            execution_host=execution_host,
+            capability_receipt=capability_receipt,
+        )
         receipt["delegation_graph"] = _delegation_graph(receipt)
         receipt["operation_snapshot"] = identity
         self._json_ok(receipt)

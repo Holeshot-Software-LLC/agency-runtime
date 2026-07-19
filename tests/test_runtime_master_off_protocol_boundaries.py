@@ -20,6 +20,11 @@ def _unexpected(*_args: Any, **_kwargs: Any) -> Any:
 
 def _disable_master(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(runtime_control, "master_enabled", lambda: False)
+    monkeypatch.setattr(
+        runtime_control,
+        "read_enforcement_runtime_control",
+        lambda: (_disabled_master(), "test"),
+    )
 
 
 def _disabled_master() -> dict[str, Any]:

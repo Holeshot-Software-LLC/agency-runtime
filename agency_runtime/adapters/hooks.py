@@ -373,7 +373,12 @@ class HookBridge:
     """Translate one native hook event to a host adapter operation."""
 
     def __init__(
-        self, host: str, *, store: Store | None = None, adapter: Any | None = None
+        self,
+        host: str,
+        *,
+        store: Store | None = None,
+        adapter: Any | None = None,
+        _master: dict[str, Any] | None = None,
     ) -> None:
         normalized_host = host.strip().casefold()
         if normalized_host not in {"codex", "claude"}:
@@ -381,6 +386,7 @@ class HookBridge:
         self.host = normalized_host
         self._store = store
         self._adapter = adapter
+        self._master = _master
 
     @property
     def store(self) -> Store:
@@ -938,9 +944,13 @@ class HookBridge:
     def handle(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(payload, dict):
             raise HookInputError("hook input must be a JSON object")
-        from agency_runtime.core.runtime_control import master_enabled
+        from agency_runtime.core.runtime_control import read_enforcement_runtime_control
 
-        if not master_enabled():
+        master = self._master
+        self._master = None
+        if master is None:
+            master, _master_transport = read_enforcement_runtime_control()
+        if not master["enabled"]:
             return {}
         event = self._event_name(payload)
 
@@ -1664,9 +1674,10 @@ def run_hook_stdio(
     sink = output_stream or sys.stdout.buffer
     errors = error_stream or sys.stderr
 
-    from agency_runtime.core.runtime_control import master_enabled
+    from agency_runtime.core.runtime_control import read_enforcement_runtime_control
 
-    if not master_enabled():
+    master, _master_transport = read_enforcement_runtime_control()
+    if not master["enabled"]:
         # Keep the native hook a true pass-through while Agency is off. In
         # particular, malformed or oversized Stop envelopes must not reach the
         # fail-closed completion policy and block an otherwise publishable host
@@ -1696,7 +1707,7 @@ def run_hook_stdio(
             active_store = (
                 Store(db_path, config_path=config_path) if config_path else Store(db_path)
             )
-        result = HookBridge(host, store=active_store).handle(payload)
+        result = HookBridge(host, store=active_store, _master=master).handle(payload)
         if not isinstance(result, dict):
             raise RuntimeError("hook bridge returned a non-object result")
     except (

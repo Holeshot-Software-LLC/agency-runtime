@@ -62,6 +62,11 @@ def _master(enabled: bool, generation: int = 7, *, source: str = "test") -> dict
 
 def _set_master(monkeypatch: pytest.MonkeyPatch, enabled: bool) -> None:
     monkeypatch.setattr(runtime_control, "master_enabled", lambda: enabled)
+    monkeypatch.setattr(
+        runtime_control,
+        "read_enforcement_runtime_control",
+        lambda: (_master(enabled), "test"),
+    )
 
 
 def test_base_adapter_global_off_precedes_store_host_control(
@@ -132,6 +137,39 @@ def test_hook_bridge_global_off_precedes_event_and_correlation(
     assert bridge.handle({"malformed": "but framed"}) == {}
 
 
+def test_hook_bridge_honors_brokered_off_state_from_a_restricted_reader(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        runtime_control,
+        "read_effective_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            runtime_control.RuntimeControlSecurityError("restricted reader unavailable")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_control,
+        "_restricted_windows_control_target",
+        lambda _path: True,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        lambda path, *, timeout: (
+            {"master": _master(False, source="dashboard")}
+            if path == "/api/runtime" and timeout == 0.25
+            else _unexpected()
+        ),
+    )
+    bridge = hook_module.HookBridge(
+        "codex",
+        store=_BombStore(),  # type: ignore[arg-type]
+        adapter=SimpleNamespace(),
+    )
+    monkeypatch.setattr(bridge, "_event_name", _unexpected)
+
+    assert bridge.handle({"malformed": "but framed"}) == {}
+
+
 def test_hook_stdio_global_off_never_constructs_bridge(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -158,6 +196,33 @@ def test_hook_stdio_global_off_never_constructs_bridge(
         )
         == 0
     )
+    assert json.loads(sink.getvalue()) == {}
+
+
+def test_hook_stdio_threads_one_master_snapshot_through_the_bridge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reads = 0
+
+    def read_master() -> tuple[dict[str, Any], str]:
+        nonlocal reads
+        reads += 1
+        return _master(True), "dashboard"
+
+    monkeypatch.setattr(runtime_control, "read_enforcement_runtime_control", read_master)
+    source = io.BytesIO(b"{}")
+    sink = io.BytesIO()
+
+    assert (
+        hook_module.run_hook_stdio(
+            "codex",
+            input_stream=source,
+            output_stream=sink,
+            error_stream=io.StringIO(),
+        )
+        == 0
+    )
+    assert reads == 1
     assert json.loads(sink.getvalue()) == {}
 
 
@@ -272,10 +337,17 @@ def test_http_global_off_status_and_roster_never_touch_store(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _set_master(monkeypatch, False)
+    reads = 0
+
+    def read_master() -> tuple[dict[str, Any], str]:
+        nonlocal reads
+        reads += 1
+        return _master(False), "dashboard"
+
     monkeypatch.setattr(
         runtime_control,
-        "read_effective_runtime_control",
-        lambda: _master(False),
+        "read_enforcement_runtime_control",
+        read_master,
     )
 
     status_handler, status_payloads, status_errors = _bare_http_handler("/status")
@@ -301,6 +373,7 @@ def test_http_global_off_status_and_roster_never_touch_store(
             "count": 0,
         }
     ]
+    assert reads == 2
 
 
 def test_http_global_off_finalize_preserves_exact_draft_before_runtime_work(
@@ -379,6 +452,14 @@ def test_mcp_protocol_global_off_does_not_materialize_store(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _set_master(monkeypatch, False)
+    reads = 0
+
+    def read_master() -> tuple[dict[str, Any], str]:
+        nonlocal reads
+        reads += 1
+        return _master(False), "dashboard"
+
+    monkeypatch.setattr(runtime_control, "read_enforcement_runtime_control", read_master)
     server = mcp_server.MCPServer()
     server.initialize_responded = True
     server.initialized = True
@@ -399,6 +480,7 @@ def test_mcp_protocol_global_off_does_not_materialize_store(
     assert response is not None
     structured = response["result"]["structuredContent"]
     assert structured == {"runtime_enabled": False, "bypassed": True}
+    assert reads == 1
     assert server.store is None
 
 
@@ -583,16 +665,16 @@ def test_cli_global_broker_fallback_preserves_cas_and_confirmation(
     def unreadable() -> dict[str, Any]:
         raise runtime_control.RuntimeControlSecurityError("restricted token")
 
-    def unwritable(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
-        raise runtime_control.RuntimeControlSecurityError("restricted token")
-
     def broker(
         path: str,
         *,
         method: str = "GET",
         payload: dict[str, Any] | None = None,
+        timeout: float = 2.0,
     ) -> dict[str, Any]:
         calls.append((path, method, payload))
+        if path == "/api/runtime":
+            assert timeout == 0.25
         return (
             {"master": current}
             if method == "GET"
@@ -600,7 +682,12 @@ def test_cli_global_broker_fallback_preserves_cas_and_confirmation(
         )
 
     monkeypatch.setattr(runtime_control, "read_effective_runtime_control", unreadable)
-    monkeypatch.setattr(runtime_control, "set_master_enabled", unwritable)
+    monkeypatch.setattr(
+        runtime_control,
+        "_restricted_windows_control_target",
+        lambda _path: True,
+    )
+    monkeypatch.setattr(runtime_control, "set_master_enabled", _unexpected)
     monkeypatch.setattr(
         "agency_runtime.core.dashboard_runtime.dashboard_api_request",
         broker,
@@ -820,6 +907,23 @@ def test_cli_status_passes_brokered_master_state_to_host_inspection(
         }
 
     monkeypatch.setattr(host_control, "inspect_host_status", inspect)
+    inference = {
+        "schema_version": "agency.dashboard.inference_operations.v1",
+        "configured": False,
+        "required_for_eligible_turns": False,
+        "state": "not_configured",
+        "evidence": "configuration readiness plus recent persisted routing/model receipts",
+        "provider_chain": [],
+        "latest_model_resolution": None,
+        "recent_failures": [],
+        "failure_count": 0,
+        "failures_truncated": False,
+    }
+    monkeypatch.setattr(
+        install_commands,
+        "_direct_inference_snapshot",
+        lambda _store, _dependencies: inference,
+    )
     dependencies = install_commands.InstallDependencies(
         store_factory=lambda _config: store,
         emit_json=emitted.append,
@@ -844,6 +948,7 @@ def test_cli_status_passes_brokered_master_state_to_host_inspection(
                     "effective_enabled": False,
                 }
             ],
+            "inference": inference,
         }
     ]
 

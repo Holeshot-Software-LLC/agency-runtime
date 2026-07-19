@@ -246,6 +246,11 @@ changes rather than duplicating every commit.
 - The restricted-Windows dashboard broker now reads its own authoritative
   master-control document through the strict owner-side boundary, preserving
   authenticated off/on control after the document is first materialized.
+- Windows dashboard lifecycle transitions now wait a bounded time for the exact
+  prior runtime generation to exit after Task Scheduler reports idle.
+- Restricted host consumers now consult validated authenticated dashboard state
+  when local master-file integrity cannot be proven, so a deliberate global off
+  state bypasses routing and evidence work instead of silently failing enabled.
 
 - Concurrent host-control writers no longer overwrite each other. SQLite
   compares the observed generation in the publishing transaction, increments

@@ -136,6 +136,28 @@ input:focus, textarea:focus, select:focus { border-color: #477162; box-shadow: 0
 .dependency-node small { margin-top: 5px; color: #aab8c9; font-size: 10px; line-height: 1.45; }
 .dependency-edges { display: grid; gap: 5px; margin-top: 9px; }
 .dependency-edges small { color: var(--muted); font: 10px/1.5 ui-monospace, monospace; }
+.delegation-plan-authority { padding: 9px 10px; border-left: 2px solid var(--warn); background: rgba(245, 184, 82, .06); color: #e7c98f !important; }
+.delegation-plan-mechanism, .delegation-plan-evidence { padding: 10px; border: 1px solid #243341; border-radius: 8px; background: #0d141c; }
+.delegation-plan-mechanism strong, .delegation-plan-mechanism small,
+.delegation-plan-evidence strong, .delegation-plan-evidence small { display: block; }
+.delegation-plan-mechanism strong, .delegation-plan-evidence strong { color: #91a1b5; font: 700 9px var(--font-mono, ui-monospace), monospace; letter-spacing: .08em; text-transform: uppercase; }
+.delegation-plan-mechanism small, .delegation-plan-evidence small { margin-top: 6px; color: #bdc9d6; font-size: 10px; line-height: 1.55; overflow-wrap: anywhere; }
+.delegation-plan-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 10px; margin-top: 12px; }
+.delegation-plan-unit { min-width: 0; padding: 12px; border: 1px solid #253342; border-radius: 9px; background: #0c1219; }
+.delegation-plan-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.delegation-plan-heading > strong { min-width: 0; color: var(--accent-2); font: 700 10px var(--font-mono, ui-monospace), monospace; overflow-wrap: anywhere; }
+.delegation-plan-heading .delegation-strength { flex: 0 0 auto; padding: 4px 6px; border: 1px solid #344354; border-radius: 999px; color: #aab8c8; font-size: 8px; letter-spacing: .06em; }
+.delegation-plan-heading .strength-strongly_preferred { border-color: #705b32; color: #f0ca82; background: rgba(245, 184, 82, .07); }
+.delegation-plan-heading .strength-preferred { border-color: #315c50; color: #94dbc2; background: rgba(101, 232, 184, .06); }
+.delegation-plan-unit h3 { margin: 10px 0 0; color: #d7e0e9; font-size: 13px; overflow-wrap: anywhere; }
+.delegation-plan-goal { color: #aab8c8 !important; overflow-wrap: anywhere; }
+.delegation-plan-facts { display: grid; gap: 0; margin: 11px 0 0; }
+.delegation-plan-facts > div { display: grid; grid-template-columns: minmax(90px, .45fr) minmax(0, 1fr); gap: 9px; padding: 7px 0; border-top: 1px solid #1d2834; }
+.delegation-plan-facts dt { color: #718196; font: 700 8px var(--font-mono, ui-monospace), monospace; letter-spacing: .06em; text-transform: uppercase; }
+.delegation-plan-facts dd { min-width: 0; margin: 0; color: #bac6d3; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+.delegation-plan-tokens { margin-top: 10px; }
+.delegation-plan-tokens > small { display: block; color: #718196; font: 700 8px var(--font-mono, ui-monospace), monospace; letter-spacing: .06em; text-transform: uppercase; }
+.delegation-plan-tokens .token-list { margin-top: 6px; }
 .token-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
 .token { padding: 5px 7px; border-radius: 7px; background: #14202b; color: #9edfc9; font: 600 10px ui-monospace, monospace; }
 .subnav { display: flex; gap: 4px; margin-bottom: 14px; padding: 4px; width: max-content; max-width: 100%; overflow-x: auto; border: 1px solid var(--line-soft); border-radius: 9px; background: #080d14; }

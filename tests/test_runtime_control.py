@@ -1146,6 +1146,138 @@ def test_effective_restricted_reader_defaults_only_a_missing_document(
     assert control.master_enabled(path=target) is True
 
 
+def test_authoritative_default_reader_brokers_a_validated_master_document(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = _valid_document(enabled=False, generation=9, source="dashboard")
+    calls: list[str] = []
+    monkeypatch.setattr(
+        control,
+        "read_effective_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            control.RuntimeControlSecurityError("restricted reader cannot prove the ACL")
+        ),
+    )
+    monkeypatch.setattr(control, "_restricted_windows_control_target", lambda _path: True)
+
+    def broker(path: str, *, timeout: float) -> dict[str, Any]:
+        calls.append(f"{path}:{timeout}")
+        return {"master": expected}
+
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        broker,
+    )
+
+    assert control.read_authoritative_runtime_control() == (expected, "dashboard")
+    assert control.master_enabled() is False
+    assert calls == ["/api/runtime:0.25", "/api/runtime:0.25"]
+
+
+@pytest.mark.parametrize("identity", ["path", "home_dir"])
+def test_authoritative_reader_never_brokers_an_explicit_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    identity: str,
+) -> None:
+    direct_error = control.RuntimeControlSecurityError("custom identity is unreadable")
+    monkeypatch.setattr(
+        control,
+        "read_effective_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(direct_error),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("explicit runtime identity was brokered")
+        ),
+    )
+    arguments = (
+        {"path": tmp_path / "control.json"} if identity == "path" else {"home_dir": tmp_path}
+    )
+
+    with pytest.raises(control.RuntimeControlSecurityError, match="custom identity"):
+        control.read_authoritative_runtime_control(**arguments)
+    assert control.master_enabled(**arguments) is True
+
+
+@pytest.mark.parametrize(
+    "direct_error",
+    [
+        control.RuntimeControlValidationError("corrupt control document"),
+        control.RuntimeControlBusyError("control lock is busy"),
+        control.RuntimeControlSecurityError("ordinary process cannot prove the path"),
+    ],
+)
+def test_authoritative_reader_does_not_broker_normal_or_unproven_failures(
+    monkeypatch: pytest.MonkeyPatch,
+    direct_error: control.RuntimeControlError,
+) -> None:
+    restricted_checks: list[Path] = []
+    monkeypatch.setattr(
+        control,
+        "read_effective_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(direct_error),
+    )
+    monkeypatch.setattr(
+        control,
+        "_restricted_windows_control_target",
+        lambda path: restricted_checks.append(path) or False,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("ordinary runtime-control failure was brokered")
+        ),
+    )
+
+    with pytest.raises(type(direct_error), match=str(direct_error)):
+        control.read_authoritative_runtime_control()
+    assert control.master_enabled() is True
+    expected_checks = 2 if isinstance(direct_error, control.RuntimeControlSecurityError) else 0
+    assert len(restricted_checks) == expected_checks
+
+
+@pytest.mark.parametrize(
+    "broker_result",
+    [
+        {"master": _valid_document(), "extra": True},
+        {"master": {**_valid_document(), "enabled": "false"}},
+        OSError("dashboard unavailable"),
+    ],
+)
+def test_authoritative_reader_rejects_unavailable_or_malformed_brokerage(
+    monkeypatch: pytest.MonkeyPatch,
+    broker_result: object,
+) -> None:
+    monkeypatch.setattr(
+        control,
+        "read_effective_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            control.RuntimeControlSecurityError("restricted reader unavailable")
+        ),
+    )
+    monkeypatch.setattr(control, "_restricted_windows_control_target", lambda _path: True)
+
+    def broker(_path: str, *, timeout: float) -> dict[str, Any]:
+        assert timeout == 0.25
+        if isinstance(broker_result, BaseException):
+            raise broker_result
+        return broker_result  # type: ignore[return-value]
+
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        broker,
+    )
+
+    with pytest.raises(
+        control.RuntimeControlSecurityError,
+        match="authenticated dashboard service could not broker",
+    ):
+        control.read_authoritative_runtime_control()
+    assert control.master_enabled() is True
+
+
 def test_restricted_windows_reader_proves_identity_and_non_forgeability(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

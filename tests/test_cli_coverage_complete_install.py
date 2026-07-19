@@ -39,6 +39,21 @@ def config(profile="standard"):
     )
 
 
+def inference_snapshot():
+    return {
+        "schema_version": "agency.dashboard.inference_operations.v1",
+        "configured": False,
+        "required_for_eligible_turns": False,
+        "state": "not_configured",
+        "evidence": "configuration readiness plus recent persisted routing/model receipts",
+        "provider_chain": [],
+        "latest_model_resolution": None,
+        "recent_failures": [],
+        "failure_count": 0,
+        "failures_truncated": False,
+    }
+
+
 def dependencies(**changes):
     emitted = []
     values = {
@@ -760,6 +775,11 @@ def test_on_off_status_and_canary_wrappers(tmp_path, monkeypatch, capsys):
         "inspect_host_status",
         lambda _store, _host, *, global_enabled=None: statuses[0],
     )
+    monkeypatch.setattr(
+        subject,
+        "_direct_inference_snapshot",
+        lambda _store, _dependencies: inference_snapshot(),
+    )
     assert subject.cmd_status(args(), dependencies=deps) == 0
     output = capsys.readouterr().out
     assert "native registered; active" in output
@@ -769,6 +789,7 @@ def test_on_off_status_and_canary_wrappers(tmp_path, monkeypatch, capsys):
     assert "unverified; unverified" in output
     assert subject.cmd_status(args(agent="codex", json=True), dependencies=deps) == 0
     assert calls[-1]["hosts"] == [statuses[0]]
+    assert calls[-1]["inference"] == inference_snapshot()
 
     report = {"ready": True, "canary_passed": False}
     monkeypatch.setattr(canary, "run_canary", lambda *_a, **_kw: report)

@@ -515,6 +515,20 @@ def _handler(path: str) -> Any:
 
 def test_http_disabled_unknown_routes_are_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(runtime_control, "master_enabled", lambda: False)
+    monkeypatch.setattr(
+        runtime_control,
+        "read_enforcement_runtime_control",
+        lambda: (
+            {
+                "schema_version": 1,
+                "enabled": False,
+                "generation": 1,
+                "updated_at": "2026-07-16T12:00:00Z",
+                "source": "test",
+            },
+            "test",
+        ),
+    )
     get_handler = _handler("/unknown")
     get_handler.do_GET()
     assert get_handler.response[0] == http.HTTPStatus.NOT_FOUND
@@ -582,7 +596,13 @@ def test_mcp_disabled_status_fails_enabled_on_control_read_error(
         lambda: (_ for _ in ()).throw(OSError("denied")),
     )
     result = mcp._runtime_disabled_tool_result("agency.status", {})
-    assert result["master"] == {"enabled": True, "source": "fail-enabled", "generation": 0}
+    assert result["master"] == {
+        "schema_version": 1,
+        "enabled": True,
+        "generation": 0,
+        "updated_at": "1970-01-01T00:00:00Z",
+        "source": "fail-enabled",
+    }
 
 
 def test_mcp_prepare_delegation_correlation_and_active_turn_errors(

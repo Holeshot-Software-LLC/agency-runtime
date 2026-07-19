@@ -243,6 +243,8 @@ _STORE_CONTROL_PLANE_TOOLS = frozenset({"agency.host_status", "agency.host_contr
 def _runtime_disabled_tool_result(
     tool_name: str,
     arguments: dict[str, Any],
+    *,
+    master: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return a stable no-evidence result without constructing the Store."""
 
@@ -254,22 +256,29 @@ def _runtime_disabled_tool_result(
             "bypassed": True,
         }
     if tool_name == "agency.status":
-        from agency_runtime.core.runtime_control import read_effective_runtime_control
+        if master is None:
+            from agency_runtime.core.runtime_control import read_enforcement_runtime_control
 
-        try:
-            master = read_effective_runtime_control()
-        except Exception:
-            master = {"enabled": True, "source": "fail-enabled", "generation": 0}
+            master, _master_transport = read_enforcement_runtime_control()
         return {"runtime_enabled": False, "bypassed": True, "master": master}
     return {"runtime_enabled": False, "bypassed": True}
 
 
-def handle_tool_call(tool_name: str, arguments: dict[str, Any], store=None) -> dict[str, Any]:
+def handle_tool_call(
+    tool_name: str,
+    arguments: dict[str, Any],
+    store=None,
+    *,
+    _master: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Dispatch a tool call to the existing runtime core."""
-    from agency_runtime.core.runtime_control import master_enabled
+    from agency_runtime.core.runtime_control import read_enforcement_runtime_control
 
-    if not master_enabled() and tool_name not in _STORE_CONTROL_PLANE_TOOLS:
-        return _runtime_disabled_tool_result(tool_name, arguments)
+    master = _master
+    if master is None:
+        master, _master_transport = read_enforcement_runtime_control()
+    if not master["enabled"] and tool_name not in _STORE_CONTROL_PLANE_TOOLS:
+        return _runtime_disabled_tool_result(tool_name, arguments, master=master)
     if os.environ.get("AGENCY_CANARY_MODE") == "1" and tool_name in _CANARY_MUTATING_TOOLS:
         return {"error": "mutating Agency tools are disabled during a live canary"}
     from agency_runtime.core.store.sqlite import Store as _Store
@@ -483,22 +492,24 @@ class MCPServer:
         tool = _TOOLS_BY_NAME.get(name)
         if tool is None:
             return _error(request.request_id, -32602, f"Unknown tool: {name}")
-        from agency_runtime.core.runtime_control import master_enabled
+        from agency_runtime.core.runtime_control import read_enforcement_runtime_control
 
-        if not master_enabled() and name not in _STORE_CONTROL_PLANE_TOOLS:
-            payload = _runtime_disabled_tool_result(name, arguments)
+        master, _master_transport = read_enforcement_runtime_control()
+        if not master["enabled"] and name not in _STORE_CONTROL_PLANE_TOOLS:
+            payload = _runtime_disabled_tool_result(name, arguments, master=master)
             return _result(request.request_id, _call_result(payload))
         validation_error = _validate_tool_arguments(tool, arguments)
         if validation_error:
             result = _call_result({"error": validation_error}, is_error=True)
             return _result(request.request_id, result)
         try:
-            runtime_store = (
-                self._runtime_store()
-                if master_enabled() or name in _STORE_CONTROL_PLANE_TOOLS
-                else None
+            runtime_store = self._runtime_store()
+            payload = handle_tool_call(
+                name,
+                arguments,
+                store=runtime_store,
+                _master=master,
             )
-            payload = handle_tool_call(name, arguments, store=runtime_store)
         except Exception:
             logger.exception("MCP tool execution failed: %s", name)
             payload = {"error": "Agency Runtime tool execution failed safely."}

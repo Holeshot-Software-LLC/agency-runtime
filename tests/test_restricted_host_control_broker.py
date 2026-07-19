@@ -63,6 +63,25 @@ def _snapshot(*, enabled: bool = True) -> dict[str, Any]:
     }
 
 
+def _inference() -> dict[str, Any]:
+    return {
+        "schema_version": "agency.dashboard.inference_operations.v1",
+        "configured": False,
+        "required_for_eligible_turns": False,
+        "state": "not_configured",
+        "evidence": "configuration readiness plus recent persisted routing/model receipts",
+        "provider_chain": [],
+        "latest_model_resolution": None,
+        "recent_failures": [],
+        "failure_count": 0,
+        "failures_truncated": False,
+    }
+
+
+def _broker_identity() -> Any:
+    return install_commands._broker_store_identity(_identity())
+
+
 def _args(**overrides: Any) -> Namespace:
     values = {
         "agent": "codex",
@@ -84,6 +103,8 @@ def test_dashboard_control_endpoints_require_exact_method_pairs() -> None:
         dashboard_runtime.dashboard_api_request("/api/hosts/toggle")
     with pytest.raises(ValueError, match="requires GET"):
         dashboard_runtime.dashboard_api_request("/api/hosts", method="POST", payload={})
+    with pytest.raises(ValueError, match="requires GET"):
+        dashboard_runtime.dashboard_api_request("/api/inference", method="POST", payload={})
 
 
 @pytest.mark.parametrize("value", [True, None, "2", -1])
@@ -127,6 +148,28 @@ def test_dashboard_host_snapshot_returns_canonical_order_and_selected_host(
     assert [item["host"] for item in all_hosts] == list(SUPPORTED_HOSTS)
     assert selected == [_status("codex")]
     assert selected_master == master == _master()
+
+
+def test_dashboard_inference_snapshot_is_identity_bound_and_redacted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    response = {
+        **_identity(),
+        **_inference(),
+        "api_key": "must-not-cross",
+        "prompt_body": "must-not-cross",
+    }
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "dashboard_api_request",
+        lambda path: response if path == "/api/inference" else {},
+    )
+
+    inference, identity = install_commands._dashboard_inference_snapshot_with_identity()
+
+    assert inference == _inference()
+    assert identity == _broker_identity()
+    assert "must-not-cross" not in repr(inference)
 
 
 @pytest.mark.parametrize(
@@ -386,7 +429,7 @@ def test_host_control_brokers_a_restricted_store_operation_after_construction(
     assert calls == ["codex", "claude"]
 
 
-def test_restricted_cli_status_uses_one_broker_snapshot(
+def test_restricted_cli_status_correlates_host_and_inference_broker_snapshots(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     emitted: list[dict[str, Any]] = []
@@ -401,14 +444,58 @@ def test_restricted_cli_status_uses_one_broker_snapshot(
     )
     monkeypatch.setattr(
         install_commands,
-        "_dashboard_host_snapshot",
-        lambda agent: ([_status(agent or "codex", master_enabled=False)], _master(False)),
+        "_dashboard_host_snapshot_with_identity",
+        lambda agent: (
+            [_status(agent or "codex", master_enabled=False)],
+            _master(False),
+            _broker_identity(),
+        ),
+    )
+    monkeypatch.setattr(
+        install_commands,
+        "_dashboard_inference_snapshot_with_identity",
+        lambda: (_inference(), _broker_identity()),
     )
 
     assert install_commands.cmd_status(_args(), dependencies=dependencies) == 0
     assert emitted[-1]["master"] == _master(False)
     assert emitted[-1]["master_transport"] == "dashboard"
     assert emitted[-1]["hosts"][0]["master_enabled"] is False
+    assert emitted[-1]["inference"] == _inference()
+
+
+def test_restricted_cli_status_rejects_cross_snapshot_identity_drift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    emitted: list[dict[str, Any]] = []
+    dependencies = install_commands.InstallDependencies(
+        store_factory=_restricted_store,
+        emit_json=emitted.append,
+    )
+    monkeypatch.setattr(
+        install_commands,
+        "_read_master_control_with_broker",
+        lambda: (_master(), "direct"),
+    )
+    monkeypatch.setattr(
+        install_commands,
+        "_dashboard_host_snapshot_with_identity",
+        lambda _agent: ([_status("codex")], _master(), _broker_identity()),
+    )
+    changed = install_commands._BrokerStoreIdentity(
+        config_path=_broker_identity().config_path,
+        config_revision="sha256:" + ("b" * 64),
+        store_path=_broker_identity().store_path,
+        environment_overrides=_broker_identity().environment_overrides,
+    )
+    monkeypatch.setattr(
+        install_commands,
+        "_dashboard_inference_snapshot_with_identity",
+        lambda: (_inference(), changed),
+    )
+
+    assert install_commands.cmd_status(_args(), dependencies=dependencies) == 1
+    assert "changed configuration" in emitted[-1]["error"]
 
 
 @pytest.mark.parametrize("json_output", [True, False])
@@ -429,7 +516,7 @@ def test_restricted_cli_status_reports_broker_failure_without_traceback(
     )
     monkeypatch.setattr(
         install_commands,
-        "_dashboard_host_snapshot",
+        "_dashboard_host_snapshot_with_identity",
         lambda _agent: (_ for _ in ()).throw(ValueError("service absent")),
     )
 
@@ -523,7 +610,12 @@ def test_master_read_broker_rejects_extra_top_level_fields(
     monkeypatch.setattr(
         runtime_control,
         "read_effective_runtime_control",
-        lambda: (_ for _ in ()).throw(runtime_control.RuntimeControlError("restricted")),
+        lambda: (_ for _ in ()).throw(runtime_control.RuntimeControlSecurityError("restricted")),
+    )
+    monkeypatch.setattr(
+        runtime_control,
+        "_restricted_windows_control_target",
+        lambda _path: True,
     )
     monkeypatch.setattr(
         dashboard_runtime,

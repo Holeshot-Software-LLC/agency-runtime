@@ -802,6 +802,27 @@ def _dashboard_host_snapshot(
     return statuses, master
 
 
+def _dashboard_inference_snapshot_with_identity() -> tuple[dict[str, Any], _BrokerStoreIdentity]:
+    """Read one redacted inference projection from the authenticated broker."""
+
+    from agency_runtime.cli.status_projection import project_brokered_inference
+    from agency_runtime.core.dashboard_runtime import dashboard_api_request
+
+    response = dashboard_api_request("/api/inference")
+    return project_brokered_inference(response), _broker_store_identity(response)
+
+
+def _direct_inference_snapshot(
+    runtime_store: Any,
+    dependencies: InstallDependencies,
+) -> dict[str, Any]:
+    """Build the same bounded inference projection consumed by the dashboard."""
+
+    from agency_runtime.cli.status_projection import direct_inference_snapshot
+
+    return direct_inference_snapshot(runtime_store, dependencies.load_config())
+
+
 def _dashboard_soft_control_result(
     agent: str,
     *,
@@ -930,27 +951,66 @@ def _print_control_result(agent: str, result: dict[str, Any], *, enabled: bool) 
 def _read_master_control_with_broker() -> tuple[dict[str, Any], str]:
     """Read global state directly or through the authenticated local service."""
 
-    from agency_runtime.core.dashboard_runtime import dashboard_api_request
     from agency_runtime.core.runtime_control import (
+        RuntimeControlBrokerError,
         RuntimeControlError,
-        read_effective_runtime_control,
-        validate_runtime_control_document,
+        read_authoritative_runtime_control,
     )
 
     try:
-        return read_effective_runtime_control(), "direct"
+        return read_authoritative_runtime_control()
+    except RuntimeControlBrokerError as direct_error:
+        raise RuntimeError(
+            "global Agency control is inaccessible from this process and the dashboard "
+            "service could not broker it; run the command from a normal user shell or "
+            "start/install the dashboard service"
+        ) from direct_error
     except RuntimeControlError as direct_error:
-        try:
-            response = dashboard_api_request("/api/runtime")
-            if set(response) != {"master"}:
-                raise ValueError("dashboard master response shape is invalid")
-            return validate_runtime_control_document(response.get("master")), "dashboard"
-        except (OSError, RuntimeError, ValueError):
-            raise RuntimeError(
-                "global Agency control is inaccessible from this process and the dashboard "
-                "service could not broker it; run the command from a normal user shell or "
-                "start/install the dashboard service"
-            ) from direct_error
+        raise RuntimeError(
+            "global Agency control could not be read securely; dashboard brokerage is "
+            "limited to the canonical identity of a proven restricted Windows process"
+        ) from direct_error
+
+
+def _dashboard_master_control_result(
+    current: dict[str, Any],
+    *,
+    enabled: bool,
+) -> dict[str, Any]:
+    """Apply one exact generation-checked transition through the owner service."""
+
+    from agency_runtime.core.dashboard_runtime import dashboard_api_request
+    from agency_runtime.core.runtime_control import validate_runtime_control_document
+
+    verb = "ENABLE" if enabled else "DISABLE"
+    response = dashboard_api_request(
+        "/api/runtime/toggle",
+        method="POST",
+        payload={
+            "enabled": enabled,
+            "expected_generation": int(current["generation"]),
+            "confirm": f"{verb} AGENCY",
+        },
+    )
+    expected_changed = bool(current["enabled"]) is not enabled
+    if (
+        not isinstance(response, Mapping)
+        or set(response) != {"ok", "changed", "master"}
+        or response.get("ok") is not True
+        or not isinstance(response.get("changed"), bool)
+        or response["changed"] is not expected_changed
+    ):
+        raise ValueError("dashboard master-control response is invalid")
+    master = validate_runtime_control_document(response.get("master"))
+    expected_generation = int(current["generation"]) + (1 if expected_changed else 0)
+    if (
+        master["enabled"] is not enabled
+        or int(master["generation"]) != expected_generation
+        or (expected_changed and master["source"] != "dashboard")
+        or (not expected_changed and master != current)
+    ):
+        raise ValueError("dashboard master-control response is internally inconsistent")
+    return master
 
 
 def _global_control_result(
@@ -960,11 +1020,9 @@ def _global_control_result(
 ) -> dict[str, Any]:
     """Apply or preview the durable cross-host master switch."""
 
-    from agency_runtime.core.dashboard_runtime import dashboard_api_request
     from agency_runtime.core.runtime_control import (
         RuntimeControlSecurityError,
         set_master_enabled,
-        validate_runtime_control_document,
     )
 
     if bool(getattr(args, "native", False)):
@@ -974,6 +1032,9 @@ def _global_control_result(
     if dry_run:
         master = current
         writer = reader
+    elif reader == "dashboard":
+        master = _dashboard_master_control_result(current, enabled=enabled)
+        writer = "dashboard"
     else:
         try:
             master = set_master_enabled(
@@ -983,23 +1044,7 @@ def _global_control_result(
             )
             writer = "direct"
         except RuntimeControlSecurityError:
-            verb = "ENABLE" if enabled else "DISABLE"
-            response = dashboard_api_request(
-                "/api/runtime/toggle",
-                method="POST",
-                payload={
-                    "enabled": enabled,
-                    "expected_generation": int(current["generation"]),
-                    "confirm": f"{verb} AGENCY",
-                },
-            )
-            if (
-                response.get("ok") is not True
-                or not isinstance(response.get("changed"), bool)
-                or response["changed"] is not (bool(current["enabled"]) is not enabled)
-            ):
-                raise ValueError("dashboard master-control response is invalid") from None
-            master = validate_runtime_control_document(response.get("master"))
+            master = _dashboard_master_control_result(current, enabled=enabled)
             writer = "dashboard"
         expected_generation = int(current["generation"]) + (
             1 if bool(current["enabled"]) is not enabled else 0
@@ -1175,10 +1220,16 @@ def cmd_status(
             if args.agent
             else inspect_all_host_statuses(runtime_store, global_enabled=bool(master["enabled"]))
         )
+        inference = _direct_inference_snapshot(runtime_store, dependencies)
     except Exception as exc:
         require_restricted_windows_token(exc)
         try:
-            statuses, master = _dashboard_host_snapshot(args.agent)
+            statuses, master, host_identity = _dashboard_host_snapshot_with_identity(args.agent)
+            inference, inference_identity = _dashboard_inference_snapshot_with_identity()
+            if inference_identity != host_identity:
+                raise ValueError(
+                    "dashboard status changed configuration or Store identity between reads"
+                )
             master_transport = "dashboard"
         except (OSError, RuntimeError, ValueError) as broker_error:
             message = safe_display_token(
@@ -1199,7 +1250,12 @@ def cmd_status(
             else:
                 print(f"❌ {message}")
             return 1
-    payload = {"master": master, "master_transport": master_transport, "hosts": statuses}
+    payload = {
+        "master": master,
+        "master_transport": master_transport,
+        "hosts": statuses,
+        "inference": inference,
+    }
     if getattr(args, "json", False):
         dependencies.emit_json(payload)
         return 0
@@ -1207,6 +1263,11 @@ def cmd_status(
     print(
         f"global: {global_state}; generation {master.get('generation', 0)}; "
         f"source {master.get('source', 'unknown')}"
+    )
+    print(
+        f"inference: {inference['state']}; {len(inference['provider_chain'])} provider entries; "
+        f"eligible-turn inference "
+        f"{'required' if inference['required_for_eligible_turns'] else 'not required'}"
     )
     for status in statuses:
         runtime = "on" if status["runtime_enabled"] else "off"
