@@ -1174,6 +1174,22 @@ def test_authoritative_default_reader_brokers_a_validated_master_document(
     assert calls == ["/api/runtime:0.25", "/api/runtime:0.25"]
 
 
+def test_authoritative_reader_forwards_uncached_direct_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = _valid_document()
+    calls: list[dict[str, Any]] = []
+
+    def direct(**kwargs: Any) -> dict[str, Any]:
+        calls.append(kwargs)
+        return expected
+
+    monkeypatch.setattr(control, "read_effective_runtime_control", direct)
+
+    assert control.read_authoritative_runtime_control(use_cache=False) == (expected, "direct")
+    assert calls == [{"use_cache": False}]
+
+
 @pytest.mark.parametrize("identity", ["path", "home_dir"])
 def test_authoritative_reader_never_brokers_an_explicit_identity(
     tmp_path: Path,

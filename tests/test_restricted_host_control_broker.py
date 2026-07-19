@@ -625,3 +625,40 @@ def test_master_read_broker_rejects_extra_top_level_fields(
 
     with pytest.raises(RuntimeError, match="could not broker"):
         install_commands._read_master_control_with_broker()
+
+
+def test_master_read_reports_non_brokerable_control_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import runtime_control
+
+    monkeypatch.setattr(
+        runtime_control,
+        "read_authoritative_runtime_control",
+        lambda: (_ for _ in ()).throw(
+            runtime_control.RuntimeControlValidationError("corrupt custom control")
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="could not be read securely"):
+        install_commands._read_master_control_with_broker()
+
+
+def test_direct_master_write_rejects_inconsistent_transition(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import runtime_control
+
+    monkeypatch.setattr(
+        install_commands,
+        "_read_master_control_with_broker",
+        lambda: (_master(True, generation=7), "direct"),
+    )
+    monkeypatch.setattr(
+        runtime_control,
+        "set_master_enabled",
+        lambda *_args, **_kwargs: _master(True, generation=7),
+    )
+
+    with pytest.raises(ValueError, match="internally inconsistent"):
+        install_commands._global_control_result(_args(global_control=True), enabled=False)

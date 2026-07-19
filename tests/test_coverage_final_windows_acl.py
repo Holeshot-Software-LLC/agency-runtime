@@ -297,6 +297,37 @@ def test_restricted_host_boundary_handles_probe_failure_and_invalid_acls(
         assert not windows_acl.windows_restricted_host_boundary_is_trusted(Path("host"))
 
 
+def test_restricted_host_boundary_accepts_one_restricting_logon_principal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    owner = "S-1-5-21-42"
+    restricting = "S-1-5-5-1-2"
+    monkeypatch.setattr(windows_acl, "current_process_user_sid", lambda **_kwargs: owner)
+    monkeypatch.setattr(
+        windows_acl,
+        "current_process_restricted_sids",
+        lambda **_kwargs: frozenset({restricting}),
+    )
+    monkeypatch.setattr(
+        windows_acl,
+        "read_windows_sddl",
+        lambda _path: (
+            f"O:{owner}D:P"
+            f"(A;OICI;FA;;;{owner})"
+            "(A;OICI;FA;;;SY)"
+            "(A;OICI;FA;;;BA)"
+            f"(A;OICI;FA;;;{restricting})"
+        ),
+    )
+    monkeypatch.setattr(
+        windows_acl,
+        "current_process_can_mutate_path",
+        lambda *_args, **_kwargs: True,
+    )
+
+    assert windows_acl.windows_restricted_host_boundary_is_trusted(Path("host"))
+
+
 def test_owner_probe_exception_prevents_acl_mutation() -> None:
     assert not windows_acl.restrict_windows_acl(
         Path("state"),
