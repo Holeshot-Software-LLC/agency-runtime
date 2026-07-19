@@ -120,6 +120,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-100` | [Wait for the old Windows dashboard runtime to exit](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | in_progress | p0 | dashboard | [#101](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/101) |
 | `AR-101` | [Enforce the global master switch in restricted host consumers](issue-AR-101-enforce-restricted-global-master-switch.md) | in_progress | p0 | operations | [#102](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/102) |
 | `AR-102` | [Refresh legacy bundled roster contracts on upgrade](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | in_progress | p0 | roster-governance | [#103](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/103) |
+| `AR-103` | [Import Windows ctypes fixtures portably on POSIX](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | in_progress | p0 | testing | [#105](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/105) |
 
 ## Traceability
 
@@ -231,6 +232,7 @@ not stable internal identifiers.
 | [AR-100](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0051](../decisions/0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md) |
 | [AR-101](issue-AR-101-enforce-restricted-global-master-switch.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
 | [AR-102](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | [`164188b`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md) |
+| [AR-103](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | Pending | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 
 ## Dependency summary
 

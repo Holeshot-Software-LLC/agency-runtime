@@ -6,6 +6,7 @@ import ctypes
 import errno
 import hashlib
 import stat
+from ctypes import wintypes
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -413,11 +414,11 @@ class _Api:
 
 
 class _SidAndAttributes(ctypes.Structure):
-    _fields_ = [("Sid", ctypes.c_void_p), ("Attributes", ctypes.wintypes.DWORD)]
+    _fields_ = [("Sid", ctypes.c_void_p), ("Attributes", wintypes.DWORD)]
 
 
 class _TokenGroups(ctypes.Structure):
-    _fields_ = [("GroupCount", ctypes.wintypes.DWORD), ("Groups", _SidAndAttributes * 1)]
+    _fields_ = [("GroupCount", wintypes.DWORD), ("Groups", _SidAndAttributes * 1)]
 
 
 def _install_native_sid_apis(
