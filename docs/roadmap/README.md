@@ -123,6 +123,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-103` | [Import Windows ctypes fixtures portably on POSIX](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | in_progress | p0 | testing | [#105](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/105) |
 | `AR-104` | [Run hosted portability gates in trusted boundaries](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | in_progress | p0 | testing | [#106](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106) |
 | `AR-105` | [Report the current Codex hook event count](issue-AR-105-current-codex-hook-event-count.md) | done | p1 | documentation | [#107](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/107) |
+| `AR-106` | [Make Windows policy identity and POSIX simulations portable](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | in_progress | p0 | testing | [#108](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/108) |
 
 ## Traceability
 
@@ -237,6 +238,7 @@ not stable internal identifiers.
 | [AR-103](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | [`664fcf1`](../worklog/README.md), [`11a2c86`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-104](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [`11a2c86`](../worklog/README.md), [`0df5050`](../worklog/README.md), [`0c41fbd`](../worklog/README.md), [`89576f0`](../worklog/README.md), [`07de83c`](../worklog/README.md), [`a1c6744`](../worklog/README.md), [`31516d1`](../worklog/README.md), [`b05b180`](../worklog/README.md), [`361962f`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md) |
 | [AR-105](issue-AR-105-current-codex-hook-event-count.md) | [`9400f76`](../worklog/README.md) | null |
+| [AR-106](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | pending | [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 
 ## Dependency summary
 

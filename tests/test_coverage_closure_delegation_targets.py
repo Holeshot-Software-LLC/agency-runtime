@@ -386,3 +386,42 @@ def test_store_binding_rejects_incomplete_missing_and_changed_identities(
             wrong_config,
             AgencyConfig(config_path=str(tmp_path / "agency.yaml")),
         )
+
+
+def test_store_binding_covers_redundant_identity_failure_boundaries(tmp_path: Path) -> None:
+    config_path = tmp_path / "agency.yaml"
+    other_config = tmp_path / "other.yaml"
+    db_path = tmp_path / "agency.db"
+
+    def bound_store(*, public_config: object = config_path) -> SimpleNamespace:
+        return SimpleNamespace(
+            _frozen_db_path=db_path,
+            db_path=db_path,
+            _configured_config_path=config_path,
+            _configured_store_path=db_path,
+            _store_path_config_derived=False,
+            config_path=public_config,
+        )
+
+    config_binding.assert_store_requested_runtime_identity(SimpleNamespace())
+
+    with pytest.raises(config_binding.StoreConfigBindingError, match="identity changed"):
+        config_binding.assert_store_config_binding(bound_store(public_config=object()))
+
+    with pytest.raises(config_binding.StoreConfigBindingError, match="identity changed"):
+        config_binding.assert_store_config_binding(
+            bound_store(),
+            AgencyConfig(config_path=str(other_config)),
+        )
+
+    with pytest.raises(config_binding.StoreConfigBindingError, match="runtime identity changed"):
+        config_binding.assert_store_requested_runtime_identity(
+            bound_store(public_config=object()),
+            config_path=config_path,
+        )
+
+    with pytest.raises(config_binding.StoreConfigBindingError, match="runtime identity changed"):
+        config_binding.assert_store_requested_runtime_identity(
+            bound_store(public_config=other_config),
+            config_path=config_path,
+        )

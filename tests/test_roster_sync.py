@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import stat
 from collections.abc import Iterator
 from dataclasses import replace
 from pathlib import Path
@@ -1602,6 +1603,11 @@ def test_manifest_discovery_detects_root_and_manifest_mutation(monkeypatch, tmp_
         return loaded
 
     with monkeypatch.context() as context:
+        context.setattr(
+            roster_ingress,
+            "_directory_fingerprint",
+            lambda _metadata: (1, 2, stat.S_IFDIR, 0, 3),
+        )
         context.setattr(roster_ingress, "_load_json", mutate_root)
         with pytest.raises(RosterSyncError, match="changed during manifest discovery"):
             download_from_source(str(root_changed))
@@ -1622,7 +1628,7 @@ def test_manifest_discovery_detects_root_and_manifest_mutation(monkeypatch, tmp_
             download_from_source(str(manifest_changed))
 
 
-def test_loaded_manifest_detects_later_source_changes(tmp_path):
+def test_loaded_manifest_detects_later_source_changes(monkeypatch, tmp_path):
     def load_manifest(name):
         root = tmp_path / name
         root.mkdir()
@@ -1642,10 +1648,16 @@ def test_loaded_manifest_detects_later_source_changes(tmp_path):
     with pytest.raises(RosterSyncError, match="source changed during discovery"):
         roster_ingress._assert_division_manifest_unchanged(missing_root, missing_manifest)
 
-    root_changed, root_manifest = load_manifest("root")
-    (root_changed / "new-entry.txt").write_text("changed", encoding="utf-8")
-    with pytest.raises(RosterSyncError, match="roster directory changed"):
-        roster_ingress._assert_division_manifest_unchanged(root_changed, root_manifest)
+    with monkeypatch.context() as context:
+        context.setattr(
+            roster_ingress,
+            "_directory_fingerprint",
+            lambda _metadata: (1, 2, stat.S_IFDIR, 0, 3),
+        )
+        root_changed, root_manifest = load_manifest("root")
+        (root_changed / "new-entry.txt").write_text("changed", encoding="utf-8")
+        with pytest.raises(RosterSyncError, match="roster directory changed"):
+            roster_ingress._assert_division_manifest_unchanged(root_changed, root_manifest)
 
     manifest_changed, manifest_snapshot = load_manifest("manifest")
     manifest_snapshot.path.write_text(
@@ -1657,6 +1669,125 @@ def test_loaded_manifest_detects_later_source_changes(tmp_path):
             manifest_changed,
             manifest_snapshot,
         )
+
+
+@pytest.mark.parametrize("mutation", ["add", "remove", "rename", "replace"])
+def test_manifest_ingestion_rejects_nested_entry_changes_without_directory_mtime(
+    monkeypatch,
+    tmp_path,
+    mutation,
+):
+    division = tmp_path / "engineering"
+    division.mkdir()
+    agent = division / "agent.md"
+    agent.write_text("# Agent\nUseful prompt", encoding="utf-8")
+    ignored = division / "ignored.txt"
+    if mutation != "add":
+        ignored.write_text("original", encoding="utf-8")
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    original_read = roster_ingress._read_local_file
+    original_file_fingerprint = roster_ingress._file_fingerprint
+    frozen_fingerprint = (1, 2, stat.S_IFDIR, 0, 3)
+
+    monkeypatch.setattr(
+        roster_ingress,
+        "_directory_fingerprint",
+        lambda _metadata: frozen_fingerprint,
+    )
+    monkeypatch.setattr(
+        roster_ingress,
+        "_file_fingerprint",
+        lambda metadata: (
+            (*original_file_fingerprint(metadata)[:4], 0, 0)
+            if stat.S_ISDIR(metadata.st_mode)
+            else original_file_fingerprint(metadata)
+        ),
+    )
+
+    def mutate_after_read(path, *, expected_fingerprint=None):
+        result = original_read(path, expected_fingerprint=expected_fingerprint)
+        if Path(path) == agent:
+            if mutation == "add":
+                ignored.write_text("appeared", encoding="utf-8")
+            elif mutation == "remove":
+                ignored.unlink()
+            elif mutation == "rename":
+                ignored.rename(division / "renamed.txt")
+            else:
+                replacement = division / "replacement.tmp"
+                replacement.write_text("replacement", encoding="utf-8")
+                replacement.replace(ignored)
+        return result
+
+    monkeypatch.setattr(roster_ingress, "_read_local_file", mutate_after_read)
+
+    with pytest.raises(RosterSyncError, match="roster directory changed"):
+        download_from_source(str(tmp_path))
+
+
+def test_directory_files_accept_exact_source_budget_and_preserve_walk_order(
+    monkeypatch,
+    tmp_path,
+):
+    first = tmp_path / "Alpha"
+    second = tmp_path / "beta"
+    first.mkdir()
+    second.mkdir()
+    (tmp_path / "root.md").write_text("root", encoding="utf-8")
+    (first / "first.md").write_text("first", encoding="utf-8")
+    (second / "second.md").write_text("second", encoding="utf-8")
+    monkeypatch.setattr(roster_ingress, "MAX_DIRECTORY_ENTRIES", 5)
+
+    files = roster_ingress._directory_files(tmp_path)
+
+    assert [path.relative_to(tmp_path).as_posix() for path, _fingerprint in files] == [
+        "root.md",
+        "Alpha/first.md",
+        "beta/second.md",
+    ]
+
+
+def test_manifest_directory_accepts_exact_source_budget(monkeypatch, tmp_path):
+    division = tmp_path / "engineering"
+    division.mkdir()
+    (division / "agent.md").write_text("---\nname: Agent\n---\nUseful", encoding="utf-8")
+    (division / "ignored.txt").write_text("ignored", encoding="utf-8")
+    (tmp_path / "divisions.json").write_text(
+        '{"divisions":{"engineering":{}}}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(roster_ingress, "MAX_DIRECTORY_ENTRIES", 4)
+
+    files = roster_ingress._directory_source_files(tmp_path)
+
+    assert [(path.name, division_name) for path, _fingerprint, division_name in files] == [
+        ("agent.md", "engineering")
+    ]
+
+
+def test_directory_source_files_without_receipt_collector(tmp_path):
+    (tmp_path / "agent.md").write_text("agent", encoding="utf-8")
+
+    files = roster_ingress._directory_source_files(tmp_path)
+
+    assert [(path.name, division_name) for path, _fingerprint, division_name in files] == [
+        ("agent.md", None)
+    ]
+
+
+def test_directory_entry_snapshot_is_exact_ordered_and_bounded(monkeypatch, tmp_path):
+    (tmp_path / "B.md").write_text("b", encoding="utf-8")
+    (tmp_path / "a.md").write_text("a", encoding="utf-8")
+
+    snapshot = roster_ingress._directory_entry_snapshot(tmp_path)
+
+    assert [name for name, _fingerprint in snapshot] == [b"B.md", b"a.md"]
+    monkeypatch.setattr(roster_ingress, "MAX_DIRECTORY_ENTRIES", 1)
+    with pytest.raises(RosterSyncError, match="exceeds 1 entries"):
+        roster_ingress._directory_entry_snapshot(tmp_path)
 
 
 def test_directory_fingerprint_mismatch_fails_closed(tmp_path):

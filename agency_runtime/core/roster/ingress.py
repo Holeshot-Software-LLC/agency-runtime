@@ -124,7 +124,21 @@ class _DivisionManifest:
     path: Path
     fingerprint: tuple[int, int, int, int, int, int]
     root_fingerprint: tuple[int, int, int, int, int]
+    root_entries: tuple[
+        tuple[bytes, tuple[int, int, int, int, int, int]],
+        ...,
+    ]
     divisions: tuple[_DivisionRoot, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _DirectoryReceipt:
+    path: Path
+    fingerprint: tuple[int, int, int, int, int]
+    entries: tuple[
+        tuple[bytes, tuple[int, int, int, int, int, int]],
+        ...,
+    ]
 
 
 @dataclass(slots=True)
@@ -1179,12 +1193,125 @@ def _assert_expected_directory_fingerprint(
         raise RosterSyncError(f"roster directory changed during discovery: {root}")
 
 
+def _scan_directory_entries(
+    root: Path,
+    *,
+    error_root: Path | None = None,
+    maximum_entries: int | None = None,
+) -> tuple[
+    list[tuple[Path, os.stat_result]],
+    tuple[tuple[bytes, tuple[int, int, int, int, int, int]], ...],
+]:
+    """Capture one bounded, deterministic, no-follow directory snapshot."""
+
+    entries: list[tuple[Path, os.stat_result]] = []
+    snapshot: list[tuple[bytes, tuple[int, int, int, int, int, int]]] = []
+    source = error_root or root
+    entry_limit = MAX_DIRECTORY_ENTRIES if maximum_entries is None else maximum_entries
+    try:
+        for child in root.iterdir():
+            if len(entries) >= entry_limit:
+                raise RosterSyncError(
+                    f"roster directory exceeds {MAX_DIRECTORY_ENTRIES} entries: {source}"
+                )
+            encoded_name = os.fsencode(child.name)
+            if len(encoded_name) > MAX_PATH_TEXT_BYTES:
+                raise RosterSyncError(f"roster source entry name is too long: {source}")
+            metadata = os.lstat(child)
+            if _metadata_is_link_or_reparse(metadata):
+                raise RosterSyncError(
+                    f"roster sources may not use symbolic links or reparse points: {child}"
+                )
+            if not stat.S_ISDIR(metadata.st_mode) and not stat.S_ISREG(metadata.st_mode):
+                if child.suffix.lower() in _AGENT_FILE_SUFFIXES:
+                    raise RosterSyncError(
+                        f"roster source contains a non-regular agent file: {child}"
+                    )
+                raise RosterSyncError(f"roster source contains a special entry: {child}")
+            entries.append((child, metadata))
+            snapshot.append((encoded_name, _file_fingerprint(metadata)))
+    except RosterSyncError:
+        raise
+    except OSError as exc:
+        raise RosterSyncError(f"roster directory changed during discovery: {source}") from exc
+    entries.sort(key=lambda item: (item[0].name.casefold(), item[0].name))
+    snapshot.sort(key=lambda item: item[0])
+    return entries, tuple(snapshot)
+
+
+def _directory_entry_snapshot(
+    root: Path,
+    *,
+    error_root: Path | None = None,
+    maximum_entries: int | None = None,
+) -> tuple[tuple[bytes, tuple[int, int, int, int, int, int]], ...]:
+    return _scan_directory_entries(
+        root,
+        error_root=error_root,
+        maximum_entries=maximum_entries,
+    )[1]
+
+
+def _capture_directory_receipt(
+    root: Path,
+    expected_fingerprint: tuple[int, int, int, int, int],
+    *,
+    error_root: Path | None = None,
+    maximum_entries: int | None = None,
+    changed_message: str | None = None,
+) -> tuple[list[tuple[Path, os.stat_result]], _DirectoryReceipt]:
+    """Capture one directory while proving the directory identity stayed stable."""
+
+    path = _assert_real_path_chain(root)
+    message = changed_message or f"roster directory changed during discovery: {path}"
+    try:
+        before = os.lstat(path)
+    except OSError as exc:
+        raise RosterSyncError(message) from exc
+    if (
+        _metadata_is_link_or_reparse(before)
+        or not stat.S_ISDIR(before.st_mode)
+        or _directory_fingerprint(before) != expected_fingerprint
+    ):
+        raise RosterSyncError(message)
+    entries, snapshot = _scan_directory_entries(
+        path,
+        error_root=error_root,
+        maximum_entries=maximum_entries,
+    )
+    try:
+        after = os.lstat(path)
+    except OSError as exc:
+        raise RosterSyncError(message) from exc
+    if (
+        _metadata_is_link_or_reparse(after)
+        or not stat.S_ISDIR(after.st_mode)
+        or _directory_fingerprint(after) != expected_fingerprint
+    ):
+        raise RosterSyncError(message)
+    return entries, _DirectoryReceipt(path, expected_fingerprint, snapshot)
+
+
+def _assert_directory_receipts_unchanged(receipts: list[_DirectoryReceipt]) -> None:
+    entries_seen = 0
+    for receipt in receipts:
+        _entries, current = _capture_directory_receipt(
+            receipt.path,
+            receipt.fingerprint,
+            maximum_entries=MAX_DIRECTORY_ENTRIES - entries_seen,
+        )
+        entries_seen += len(current.entries)
+        if current.entries != receipt.entries:
+            raise RosterSyncError(f"roster directory changed during discovery: {receipt.path}")
+
+
 def _directory_files(
     root: Path,
     *,
     expected_root_fingerprint: tuple[int, int, int, int, int] | None = None,
     budget: _DiscoveryBudget | None = None,
     source_root: Path | None = None,
+    receipts: list[_DirectoryReceipt] | None = None,
 ) -> list[tuple[Path, tuple[int, int, int, int, int, int]]]:
     root = _assert_real_path_chain(root)
     root_metadata = os.lstat(root)
@@ -1200,32 +1327,17 @@ def _directory_files(
     discovery_budget = budget or _DiscoveryBudget()
     error_root = source_root or root
     pending: list[tuple[Path, int, tuple[int, int, int, int, int]]] = [(root, 0, root_fingerprint)]
+    discovered_receipts: list[_DirectoryReceipt] = []
     while pending:
         directory, depth, expected_fingerprint = pending.pop()
-        directory = _assert_real_path_chain(directory)
-        before = os.lstat(directory)
-        if (
-            _metadata_is_link_or_reparse(before)
-            or not stat.S_ISDIR(before.st_mode)
-            or _directory_fingerprint(before) != expected_fingerprint
-        ):
-            raise RosterSyncError(f"roster directory changed during discovery: {directory}")
-        entries: list[tuple[Path, os.stat_result]] = []
-        for child in directory.iterdir():
-            discovery_budget.entries_seen += 1
-            if discovery_budget.entries_seen > MAX_DIRECTORY_ENTRIES:
-                raise RosterSyncError(
-                    f"roster directory exceeds {MAX_DIRECTORY_ENTRIES} entries: {error_root}"
-                )
-            metadata = os.lstat(child)
-            if _metadata_is_link_or_reparse(metadata):
-                raise RosterSyncError(
-                    f"roster sources may not use symbolic links or reparse points: {child}"
-                )
-            entries.append((child, metadata))
-        if _directory_fingerprint(os.lstat(directory)) != expected_fingerprint:
-            raise RosterSyncError(f"roster directory changed during discovery: {directory}")
-        entries.sort(key=lambda item: item[0].name.casefold())
+        entries, receipt = _capture_directory_receipt(
+            directory,
+            expected_fingerprint,
+            error_root=error_root,
+            maximum_entries=MAX_DIRECTORY_ENTRIES - discovery_budget.entries_seen,
+        )
+        discovery_budget.entries_seen += len(entries)
+        discovered_receipts.append(receipt)
         child_directories: list[tuple[Path, int, tuple[int, int, int, int, int]]] = []
         for child, metadata in entries:
             if stat.S_ISDIR(metadata.st_mode):
@@ -1242,12 +1354,11 @@ def _directory_files(
                         f"roster source contains more than {MAX_SOURCE_FILES} agent files: "
                         f"{error_root}"
                     )
-            elif child.suffix.lower() in _AGENT_FILE_SUFFIXES:
-                raise RosterSyncError(f"roster source contains a non-regular agent file: {child}")
         # Reverse push preserves the case-insensitive sorted walk with a LIFO stack.
         pending.extend(reversed(child_directories))
-    if _directory_fingerprint(os.lstat(root)) != root_fingerprint:
-        raise RosterSyncError(f"roster directory changed during discovery: {root}")
+    _assert_directory_receipts_unchanged(discovered_receipts)
+    if receipts is not None:
+        receipts.extend(discovered_receipts)
     return files
 
 
@@ -1271,6 +1382,11 @@ def _load_division_manifest(
             f"division manifest is {manifest_metadata.st_size} bytes; "
             f"limit is {MAX_DIVISION_MANIFEST_BYTES} bytes: {manifest_path}"
         )
+    _root_files, root_receipt = _capture_directory_receipt(
+        root,
+        root_fingerprint,
+        changed_message=f"roster directory changed during manifest discovery: {root}",
+    )
     manifest_fingerprint = _file_fingerprint(manifest_metadata)
     content, _ = _read_local_file(
         manifest_path,
@@ -1316,35 +1432,46 @@ def _load_division_manifest(
             )
         )
 
-    if _directory_fingerprint(os.lstat(root)) != root_fingerprint:
-        raise RosterSyncError(f"roster directory changed during manifest discovery: {root}")
     if _file_fingerprint(os.lstat(manifest_path)) != manifest_fingerprint:
         raise RosterSyncError(f"division manifest changed during discovery: {manifest_path}")
+    _root_files, final_root_receipt = _capture_directory_receipt(
+        root,
+        root_fingerprint,
+        changed_message=f"roster directory changed during manifest discovery: {root}",
+    )
+    if final_root_receipt.entries != root_receipt.entries:
+        raise RosterSyncError(f"roster directory changed during manifest discovery: {root}")
     return _DivisionManifest(
         path=manifest_path,
         fingerprint=manifest_fingerprint,
         root_fingerprint=root_fingerprint,
+        root_entries=root_receipt.entries,
         divisions=tuple(sorted(divisions, key=lambda division: division.name.casefold())),
     )
 
 
 def _assert_division_manifest_unchanged(root: Path, manifest: _DivisionManifest) -> None:
     try:
-        root_metadata = os.lstat(root)
         manifest_metadata = os.lstat(manifest.path)
     except OSError as exc:
         raise RosterSyncError("division manifest source changed during discovery") from exc
-    if _directory_fingerprint(root_metadata) != manifest.root_fingerprint:
-        raise RosterSyncError(f"roster directory changed during discovery: {root}")
     if (
         _metadata_is_link_or_reparse(manifest_metadata)
         or _file_fingerprint(manifest_metadata) != manifest.fingerprint
     ):
         raise RosterSyncError(f"division manifest changed during discovery: {manifest.path}")
+    _root_files, root_receipt = _capture_directory_receipt(
+        root,
+        manifest.root_fingerprint,
+    )
+    if root_receipt.entries != manifest.root_entries:
+        raise RosterSyncError(f"roster directory changed during discovery: {root}")
 
 
 def _directory_source_files(
     root: Path,
+    *,
+    receipts: list[_DirectoryReceipt] | None = None,
 ) -> list[
     tuple[
         Path,
@@ -1358,16 +1485,28 @@ def _directory_source_files(
         raise RosterSyncError(f"roster directory must be a real directory: {root}")
     root_fingerprint = _directory_fingerprint(root_metadata)
     manifest = _load_division_manifest(root, root_fingerprint)
+    discovered_receipts: list[_DirectoryReceipt] = []
     if manifest is None:
-        return [
+        files = [
             (path, fingerprint, None)
             for path, fingerprint in _directory_files(
                 root,
                 expected_root_fingerprint=root_fingerprint,
+                receipts=discovered_receipts,
             )
         ]
+        if receipts is not None:
+            receipts.extend(discovered_receipts)
+        return files
 
-    budget = _DiscoveryBudget()
+    budget = _DiscoveryBudget(entries_seen=len(manifest.root_entries))
+    discovered_receipts.append(
+        _DirectoryReceipt(
+            path=root,
+            fingerprint=manifest.root_fingerprint,
+            entries=manifest.root_entries,
+        )
+    )
     files: list[
         tuple[
             Path,
@@ -1383,9 +1522,13 @@ def _directory_source_files(
                 expected_root_fingerprint=division.fingerprint,
                 budget=budget,
                 source_root=root,
+                receipts=discovered_receipts,
             )
         )
     _assert_division_manifest_unchanged(root, manifest)
+    _assert_directory_receipts_unchanged(discovered_receipts)
+    if receipts is not None:
+        receipts.extend(discovered_receipts)
     return files
 
 
@@ -1405,7 +1548,9 @@ def _read_url(url: str) -> Iterator[_SourceDocument]:
     metadata = os.lstat(path)
     if stat.S_ISDIR(metadata.st_mode):
         total = 0
-        for child, fingerprint, inferred_division in _directory_source_files(path):
+        receipts: list[_DirectoryReceipt] = []
+        source_files = _directory_source_files(path, receipts=receipts)
+        for child, fingerprint, inferred_division in source_files:
             content, size = _read_local_file(child, expected_fingerprint=fingerprint)
             total += size
             if total > MAX_TOTAL_SOURCE_BYTES:
@@ -1418,6 +1563,7 @@ def _read_url(url: str) -> Iterator[_SourceDocument]:
                 inferred_division,
                 child.relative_to(path).as_posix() if inferred_division is not None else None,
             )
+        _assert_directory_receipts_unchanged(receipts)
         return
     if stat.S_ISREG(metadata.st_mode):
         content, _ = _read_local_file(path)

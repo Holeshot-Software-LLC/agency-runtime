@@ -3,7 +3,7 @@ title: "Gate routing changes with versioned quantitative evaluation"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-19
 tags: [routing, evaluation, performance]
 related:
   - docs/roadmap/issue-AR-88-compare-agency-native-outcomes.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-103-import-windows-ctypes-fixtures-portably.md
   - docs/roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md
+  - docs/roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []

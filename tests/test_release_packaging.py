@@ -285,6 +285,7 @@ def test_dependency_review_has_an_enforced_private_repository_fallback() -> None
         (ROOT / ".github" / "workflows" / "dependency-review.yml").read_text("utf-8")
     )
     steps = workflow["jobs"]["dependency-review"]["steps"]
+    assert workflow["jobs"]["dependency-review"]["timeout-minutes"] == 20
 
     probe = next(step for step in steps if step["name"] == "Detect dependency review capability")
     assert "dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}" in probe["run"]
@@ -294,6 +295,15 @@ def test_dependency_review_has_an_enforced_private_repository_fallback() -> None
     native = next(step for step in steps if step["name"] == "Reject vulnerable dependency changes")
     assert native["if"].endswith("available == 'true'")
     assert native["with"]["fail-on-severity"] == "moderate"
+
+    install = next(
+        step for step in steps if step["name"] == "Install runtime and pinned fallback audit tool"
+    )
+    assert install["if"].endswith("available == 'false'")
+    assert "pip install ." in install["run"]
+    assert "pip install --no-deps ." not in install["run"]
+    assert 'pip install "pip-audit==2.10.1"' in install["run"]
+    assert ".[security]" not in install["run"]
 
     fallback = next(
         step for step in steps if step["name"] == "Audit the exact installed runtime dependency"

@@ -125,15 +125,24 @@ def test_bounded_file_detects_stream_growth_after_safe_open(
 
 def test_posix_permission_repair_rejects_identity_swap_before_fchmod(
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     intended = _Metadata(mode=stat.S_IFREG | 0o644, device=1, inode=10)
     replacement = _Metadata(mode=stat.S_IFREG | 0o644, device=1, inode=11)
     fchmod_calls: list[tuple[int, int]] = []
     closed: list[int] = []
+    monkeypatch.setattr(
+        bounded_io,
+        "os",
+        os_facade(
+            bounded_io.os,
+            name="posix",
+            fchmod=lambda *args: fchmod_calls.append(args),
+        ),
+    )
     monkeypatch.setattr(bounded_io.os, "lstat", lambda _path: intended)
     monkeypatch.setattr(bounded_io.os, "open", lambda *_args: 73)
     monkeypatch.setattr(bounded_io.os, "fstat", lambda _descriptor: replacement)
-    monkeypatch.setattr(bounded_io.os, "fchmod", lambda *args: fchmod_calls.append(args))
     monkeypatch.setattr(bounded_io.os, "close", closed.append)
 
     with pytest.raises(bounded_io.UnsafeFileError, match="changed while it was opened"):
@@ -145,16 +154,25 @@ def test_posix_permission_repair_rejects_identity_swap_before_fchmod(
 
 def test_posix_permission_repair_uses_and_revalidates_verified_descriptor(
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     before = _Metadata(mode=stat.S_IFREG | 0o644, device=2, inode=20)
     repaired = _Metadata(mode=stat.S_IFREG | 0o600, device=2, inode=20)
     lstat_values = iter((before, repaired))
     fstat_values = iter((before, repaired))
     fchmod_calls: list[tuple[int, int]] = []
+    monkeypatch.setattr(
+        bounded_io,
+        "os",
+        os_facade(
+            bounded_io.os,
+            name="posix",
+            fchmod=lambda *args: fchmod_calls.append(args),
+        ),
+    )
     monkeypatch.setattr(bounded_io.os, "lstat", lambda _path: next(lstat_values))
     monkeypatch.setattr(bounded_io.os, "open", lambda *_args: 74)
     monkeypatch.setattr(bounded_io.os, "fstat", lambda _descriptor: next(fstat_values))
-    monkeypatch.setattr(bounded_io.os, "fchmod", lambda *args: fchmod_calls.append(args))
     monkeypatch.setattr(bounded_io.os, "close", lambda _descriptor: None)
 
     bounded_io.restrict_posix_path_permissions(Path("state"), directory=False)
@@ -173,6 +191,7 @@ def test_posix_permission_repair_uses_and_revalidates_verified_descriptor(
 )
 def test_posix_permission_repair_fails_closed_at_every_mutation_boundary(
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
     stage: str,
     message: str,
 ) -> None:
@@ -182,6 +201,11 @@ def test_posix_permission_repair_fails_closed_at_every_mutation_boundary(
         inode=30,
     )
     repaired = _Metadata(mode=stat.S_IFREG | 0o644, device=3, inode=30)
+    monkeypatch.setattr(
+        bounded_io,
+        "os",
+        os_facade(bounded_io.os, name="posix", fchmod=lambda *_args: None),
+    )
     monkeypatch.setattr(bounded_io.os, "lstat", lambda _path: before)
     if stage == "open":
         monkeypatch.setattr(
@@ -196,7 +220,6 @@ def test_posix_permission_repair_fails_closed_at_every_mutation_boundary(
             "fstat",
             lambda _descriptor: before if stage == "post" else repaired,
         )
-        monkeypatch.setattr(bounded_io.os, "fchmod", lambda *_args: None)
         monkeypatch.setattr(bounded_io.os, "close", lambda _descriptor: None)
         if stage == "post":
             repaired_mode = _Metadata(mode=stat.S_IFREG | 0o600, device=3, inode=30)

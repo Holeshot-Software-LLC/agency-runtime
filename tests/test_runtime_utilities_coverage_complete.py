@@ -130,13 +130,14 @@ def test_isolated_bootstrap_ignores_hostile_cwd_and_supports_user_site_layout(
         cwd=hostile,
         env=environment,
         capture_output=True,
-        text=True,
         timeout=30,
         check=False,
     )
 
-    assert completed.returncode == 0, completed.stderr
-    assert "Agency Runtime" in completed.stdout
+    stdout = completed.stdout.decode("utf-8", errors="strict")
+    stderr = completed.stderr.decode("utf-8", errors="strict")
+    assert completed.returncode == 0, stderr
+    assert "Agency Runtime" in stdout
     assert not marker.exists()
 
 

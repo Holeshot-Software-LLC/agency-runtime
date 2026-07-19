@@ -3,7 +3,7 @@ title: Load a full companion policy with explicit precedence
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-16
+updated: 2026-07-19
 tags: [routing, policy, configuration]
 related:
   - docs/roadmap/issue-AR-49-key-policy-cache-by-path-identity.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-26-bundle-default-coordinators.md
   - docs/roadmap/issue-AR-68-require-trusted-config-and-policy-namespaces.md
   - docs/roadmap/issue-AR-73-require-private-custom-policy-files.md
+  - docs/roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md
   - docs/worklog/README.md
 supersedes: [docs/decisions/0020-partial-companion-policy-in-code.md]
 superseded_by: null

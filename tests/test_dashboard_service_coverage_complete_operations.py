@@ -136,6 +136,20 @@ def test_render_plan_includes_probe_error_and_warning(tmp_path):
     )
     assert "offline" not in str(unavailable)
     assert "unavailable" in unavailable["error"]
+    missing_probe = inspection._render_plan(
+        ctx,
+        available=False,
+        probe=None,
+        registration=registration,
+    )
+    assert missing_probe["manager_probe"] is None
+    windows_probe = inspection._render_plan(
+        context(tmp_path, "windows"),
+        available=False,
+        probe=command(code=1, stderr="scheduler offline"),
+        registration=registration,
+    )
+    assert windows_probe["manager_probe"]["error"] == "scheduler offline"
     suppressed = inspection._render_plan(ctx, available=None, probe=None, registration=registration)
     assert "warning" in suppressed
 

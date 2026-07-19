@@ -26,6 +26,7 @@ from agency_runtime.core.windows_acl import (
     current_process_user_sid,
     read_windows_sddl,
     windows_file_prevents_untrusted_mutation,
+    windows_sddl_owner_matches_sid,
 )
 
 logger = logging.getLogger("agency_runtime.selector.policy")
@@ -160,13 +161,24 @@ def _windows_policy_file_is_trusted(path: Path) -> bool:
         remainder = sddl[2:]
         boundaries = [index for marker in ("G:", "D:") if (index := remainder.find(marker)) >= 0]
         owner = remainder[: min(boundaries) if boundaries else len(remainder)]
-    if not current_sid or owner != current_sid:
+    owner_matches_current = bool(
+        current_sid
+        and owner
+        and (
+            owner == current_sid
+            or windows_sddl_owner_matches_sid(sddl, current_sid, is_windows=True)
+        )
+    )
+    if not owner_matches_current:
         return False
     return windows_file_prevents_untrusted_mutation(
         path,
         is_windows=True,
         sddl_reader=lambda _path: sddl,
         current_sid_reader=lambda: current_sid,
+        owner_sid_matcher=lambda captured, expected: (
+            captured == sddl and expected == current_sid and owner_matches_current
+        ),
     )
 
 

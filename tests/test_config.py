@@ -556,9 +556,10 @@ def test_env_overrides_timeout(tmp_path: Path):
 
 def test_env_db_path_override(tmp_path: Path):
     """AGENCY_DB_PATH overrides config."""
-    os.environ["AGENCY_DB_PATH"] = "/tmp/test-agency.db"
+    configured = tmp_path / "test-agency.db"
+    os.environ["AGENCY_DB_PATH"] = str(configured)
     cfg = load_config(path=tmp_path / "missing.yaml", reload=True)
-    expected = Path("/tmp/test-agency.db").resolve()
+    expected = configured.resolve()
     assert cfg.store.db_path == str(expected)
     assert cfg.store.resolved_path() == expected
 

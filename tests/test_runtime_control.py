@@ -923,7 +923,11 @@ def test_posix_lock_and_parent_fsync_branches(
         flock=lambda _fd, operation: calls.append(operation),
     )
     monkeypatch.setitem(sys.modules, "fcntl", fake_fcntl)
-    monkeypatch.setattr(control, "os", os_facade(control.os, name="posix"))
+    monkeypatch.setattr(
+        control,
+        "os",
+        os_facade(control.os, name="posix", fchmod=lambda *_args: None),
+    )
     monkeypatch.setattr(control, "_prepare_parent", lambda _target: ())
     monkeypatch.setattr(control, "_validate_regular_private_file", lambda *_args: None)
     monkeypatch.setattr(control, "_validate_directory_snapshot", lambda _snapshot: None)
@@ -1106,7 +1110,11 @@ def test_publish_document_posix_hardening_branch(
     os_facade,
 ) -> None:
     target = tmp_path / "control.json"
-    monkeypatch.setattr(control, "os", os_facade(control.os, name="posix"))
+    monkeypatch.setattr(
+        control,
+        "os",
+        os_facade(control.os, name="posix", fchmod=lambda *_args: None),
+    )
     monkeypatch.setattr(control, "_validate_directory_snapshot", lambda _snapshot: None)
     monkeypatch.setattr(control, "_validate_regular_private_file", lambda *_args: None)
     monkeypatch.setattr(control, "_fsync_parent", lambda _path: None)

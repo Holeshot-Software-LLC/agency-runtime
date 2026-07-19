@@ -23,7 +23,17 @@ _ALLOWED_MODULES = frozenset(
 )
 
 
+def _configure_utf8_stdio() -> None:
+    """Make host protocol text deterministic across Windows locales."""
+
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            reconfigure(encoding="utf-8", errors="strict")
+
+
 def main() -> int:
+    _configure_utf8_stdio()
     if len(sys.argv) < 2 or sys.argv[1] not in _ALLOWED_MODULES:
         print("Agency Runtime bootstrap rejected the module", file=sys.stderr)
         return 2

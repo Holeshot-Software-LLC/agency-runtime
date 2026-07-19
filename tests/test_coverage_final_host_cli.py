@@ -85,6 +85,21 @@ def test_isolated_bootstrap_rejects_bad_modules_and_dispatches(monkeypatch, caps
     assert sys.path.count(package_parent) == 1
 
 
+def test_isolated_bootstrap_configures_available_text_streams(monkeypatch) -> None:
+    calls: list[dict[str, str]] = []
+    stream = SimpleNamespace(reconfigure=lambda **kwargs: calls.append(kwargs))
+    monkeypatch.setattr(_bootstrap.sys, "stdin", SimpleNamespace())
+    monkeypatch.setattr(_bootstrap.sys, "stdout", stream)
+    monkeypatch.setattr(_bootstrap.sys, "stderr", stream)
+
+    _bootstrap._configure_utf8_stdio()
+
+    assert calls == [
+        {"encoding": "utf-8", "errors": "strict"},
+        {"encoding": "utf-8", "errors": "strict"},
+    ]
+
+
 class _Adapter(base_module.BaseAdapter):
     host_name = "test"
 
@@ -775,8 +790,13 @@ def test_atomic_config_write_closes_unpublished_descriptor(monkeypatch, tmp_path
 
 
 def test_bounded_permission_repair_normalizes_open_and_post_repair_failures(
-    monkeypatch, tmp_path
+    monkeypatch, tmp_path, os_facade
 ) -> None:
+    monkeypatch.setattr(
+        bounded_io,
+        "os",
+        os_facade(bounded_io.os, name="posix", fchmod=lambda *_args: None),
+    )
     path = tmp_path / "private"
     regular = _stat_result(stat.S_IFREG | 0o600)
     monkeypatch.setattr(bounded_io.os, "lstat", lambda _path: regular)
@@ -801,7 +821,6 @@ def test_bounded_permission_repair_normalizes_open_and_post_repair_failures(
     monkeypatch.setattr(bounded_io.os, "lstat", changing_lstat)
     monkeypatch.setattr(bounded_io.os, "open", lambda *_args: 41)
     monkeypatch.setattr(bounded_io.os, "fstat", lambda _fd: regular)
-    monkeypatch.setattr(bounded_io.os, "fchmod", lambda *_args: None)
     monkeypatch.setattr(bounded_io.os, "close", lambda _fd: None)
     with pytest.raises(bounded_io.UnsafeFileError, match="changed after repair"):
         bounded_io.restrict_posix_path_permissions(path, directory=False)
@@ -1172,7 +1191,12 @@ def test_dashboard_lock_and_temporary_descriptor_reject_unsafe_permissions(
     monkeypatch.setattr(dashboard_runtime.os, "lstat", lstat)
     monkeypatch.setattr(dashboard_runtime.os, "open", lambda *_args, **_kw: 10)
     monkeypatch.setattr(dashboard_runtime.os, "fstat", lambda _fd: next(fstat_values))
-    monkeypatch.setattr(dashboard_runtime.os, "fchmod", lambda *_args: None)
+    monkeypatch.setattr(
+        dashboard_runtime.os,
+        "fchmod",
+        lambda *_args: None,
+        raising=False,
+    )
     monkeypatch.setattr(dashboard_runtime.os, "close", lambda _fd: None)
     monkeypatch.setattr(dashboard_runtime, "_validate_directory_snapshot", lambda _snapshot: None)
     with pytest.raises(OSError, match="permissions are unsafe"):
@@ -1206,7 +1230,12 @@ def test_dashboard_temporary_descriptor_detects_post_permission_swap(
     )
     monkeypatch.setattr(dashboard_runtime.os, "fstat", lambda _fd: secure)
     monkeypatch.setattr(dashboard_runtime.os, "lstat", lambda _path: next(lstat_values))
-    monkeypatch.setattr(dashboard_runtime.os, "fchmod", lambda *_args: None)
+    monkeypatch.setattr(
+        dashboard_runtime.os,
+        "fchmod",
+        lambda *_args: None,
+        raising=False,
+    )
     with pytest.raises(OSError, match="changed before serialization"):
         dashboard_runtime._secure_temporary_descriptor(path, 11)
 

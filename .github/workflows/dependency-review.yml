@@ -14,7 +14,7 @@ jobs:
   dependency-review:
     name: dependency review
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -61,9 +61,11 @@ jobs:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - name: Install package and pinned fallback audit tool
+      - name: Install runtime and pinned fallback audit tool
         if: steps.dependency-review-capability.outputs.available == 'false'
-        run: python -m pip install ".[security]"
+        run: |
+          python -m pip install .
+          python -m pip install "pip-audit==2.10.1"
       - name: Audit the exact installed runtime dependency
         if: steps.dependency-review-capability.outputs.available == 'false'
         run: python scripts/audit_runtime_dependencies.py

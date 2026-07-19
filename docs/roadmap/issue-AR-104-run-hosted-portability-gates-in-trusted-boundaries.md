@@ -8,6 +8,7 @@ tags: [testing, portability, security, linux, windows, ci, python]
 related:
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/roadmap/issue-AR-103-import-windows-ctypes-fixtures-portably.md
+  - docs/roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - docs/decisions/0040-preserve-environment-owned-python-launchers.md
   - docs/worklog/README.md
@@ -20,6 +21,7 @@ priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106"
 depends_on:
   - AR-103
+  - AR-106
 blocks: []
 ---
 

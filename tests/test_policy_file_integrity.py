@@ -102,6 +102,34 @@ def test_windows_policy_owner_contract_accepts_only_exact_current_user(
 
     assert policy._windows_policy_file_is_trusted(Path("policy.yaml"))
     assert calls and calls[0]["is_windows"] is True
+    matcher = calls[0]["owner_sid_matcher"]
+    assert matcher(sddl, current)
+    assert not matcher(f"O:{current}D:P(A;;FR;;;BU)", current)
+    assert not matcher(sddl, "S-1-5-21-1-2-3-2002")
+
+
+def test_windows_policy_accepts_only_binary_equivalent_owner_alias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    current = "S-1-5-21-1-2-3-500"
+    sddl = "O:LAD:P(A;;FA;;;LA)(A;;FR;;;BU)"
+    comparisons: list[tuple[str, str, bool]] = []
+    monkeypatch.setattr(policy, "read_windows_sddl", lambda _path: sddl)
+    monkeypatch.setattr(policy, "current_process_user_sid", lambda **_kwargs: current)
+
+    def binary_match(value: str, expected: str, *, is_windows: bool) -> bool:
+        comparisons.append((value, expected, is_windows))
+        return value == sddl and expected == current and is_windows
+
+    monkeypatch.setattr(policy, "windows_sddl_owner_matches_sid", binary_match)
+    monkeypatch.setattr(
+        policy,
+        "windows_file_prevents_untrusted_mutation",
+        lambda _path, **kwargs: kwargs["owner_sid_matcher"](sddl, current),
+    )
+
+    assert policy._windows_policy_file_is_trusted(Path("policy.yaml"))
+    assert comparisons == [(sddl, current, True)]
 
 
 @pytest.mark.parametrize("owner", ["SY", "BA", "S-1-5-80-956008885-1"])

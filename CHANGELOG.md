@@ -187,8 +187,10 @@ changes rather than duplicating every commit.
   and one-use outbound markers on its audited release line, instead of treating
   a bounded draft-revision request as permanent denial.
 - Pull requests use GitHub's native dependency-diff review when the repository
-  exposes that capability and otherwise enforce the exact installed-runtime
-  vulnerability audit, without requiring a billable security product.
+  exposes that capability. The private-repository fallback installs the normal
+  declared runtime dependencies plus pinned `pip-audit==2.10.1`, then enforces
+  the exact installed-runtime vulnerability audit without installing unused
+  security extras or requiring a billable security product.
 - Native CodeQL analysis and upload run when repository visibility and GitHub
   Code Security licensing expose that capability. Private or internal
   repositories with a positively recognized Code Security-not-enabled response
@@ -240,6 +242,15 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Custom companion-policy ownership on Windows now compares the owner's native
+  binary SID with the effective TokenUser, accepting an SDDL alias only when it
+  proves that exact identity. Package-owned launchers also configure standard
+  streams as strict UTF-8 before CLI or host-protocol dispatch.
+- Directory roster ingestion now binds every traversed directory to bounded,
+  deterministic no-follow entry receipts, rejects links, reparse points, and
+  special entries, and revalidates exact names and identities after all file
+  reads under one source-wide budget. Add, remove, rename, and replacement races
+  therefore fail closed without depending on directory timestamp behavior.
 - Upgrades now refresh only immutable hash-proven legacy package starter rows
   to current audited bundled contracts, preserve custom and synced specialists,
   and report additions separately from migrations. Per-unit selection also
