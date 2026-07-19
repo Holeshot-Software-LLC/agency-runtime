@@ -321,28 +321,33 @@ def create_or_validate_windows_owner_private_directory(
     sealed = _owner_private_sddl(user_sid)
     _create_windows_directory_with_sddl(path, sealed)
     guard = open_windows_directory_guard(path, is_windows=True)
-    valid = bool(
-        guard is not None
-        and parent_guard.is_current()
-        and guard.is_current()
-        and _owner_private_acl_is_present(path, user_sid)
-        and current_process_can_mutate_path(
+    failure = "root handle unavailable"
+    if guard is not None:
+        if not parent_guard.is_current():
+            failure = "parent identity changed before verification"
+        elif not guard.is_current():
+            failure = "root identity changed before verification"
+        elif not _owner_private_acl_is_present(path, user_sid):
+            failure = "protected ACL receipt mismatch"
+        elif not current_process_can_mutate_path(
             path,
             directory=True,
             is_windows=True,
-        )
-        and guard.is_current()
-        and parent_guard.is_current()
-    )
-    if valid:
-        return guard
+        ):
+            failure = "current token cannot use protected root"
+        elif not guard.is_current():
+            failure = "root identity changed after verification"
+        elif not parent_guard.is_current():
+            failure = "parent identity changed after verification"
+        else:
+            return guard
     if guard is not None:
         guard.close()
 
     # There is no safe path-based repair or rollback through the untrusted
     # parent. Both an existing collision and a failed fresh creation remain
     # untouched; an exact newly created object is already sealed and private.
-    raise WindowsACLSafetyError("private Windows root identity verification failed")
+    raise WindowsACLSafetyError(f"private Windows root identity verification failed: {failure}")
 
 
 def create_windows_logon_private_directory(

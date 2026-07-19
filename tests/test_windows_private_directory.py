@@ -435,11 +435,20 @@ def test_owner_private_root_creates_or_reuses_only_an_exact_sealed_identity(
     assert not guard.closed
 
 
-@pytest.mark.parametrize("failure", ["reparse", "permissive", "unusable", "changed"])
+@pytest.mark.parametrize(
+    ("failure", "reason"),
+    [
+        ("reparse", "root handle unavailable"),
+        ("permissive", "protected ACL receipt mismatch"),
+        ("unusable", "current token cannot use protected root"),
+        ("changed", "root identity changed before verification"),
+    ],
+)
 def test_owner_private_root_rejects_unsafe_collisions_without_mutation(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     failure: str,
+    reason: str,
 ) -> None:
     target = tmp_path / "private"
     target.mkdir()
@@ -472,7 +481,7 @@ def test_owner_private_root_rejects_unsafe_collisions_without_mutation(
     )
     monkeypatch.setattr(private.os, "rmdir", removed.append)
 
-    with pytest.raises(WindowsACLSafetyError, match="identity verification"):
+    with pytest.raises(WindowsACLSafetyError, match=reason):
         private.create_or_validate_windows_owner_private_directory(
             target,
             parent_guard=parent,
@@ -484,6 +493,71 @@ def test_owner_private_root_rejects_unsafe_collisions_without_mutation(
     assert removed == []
     if guard is not None:
         assert guard.closed
+
+
+@pytest.mark.parametrize(
+    ("parent_states", "root_states", "remaining_root_states", "reason"),
+    [
+        (
+            [True, False],
+            [True],
+            [True],
+            "parent identity changed before verification",
+        ),
+        (
+            [True, True],
+            [True, False],
+            [],
+            "root identity changed after verification",
+        ),
+        (
+            [True, True, False],
+            [True, True],
+            [],
+            "parent identity changed after verification",
+        ),
+    ],
+)
+def test_owner_private_root_reports_identity_drift_stage(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    parent_states: list[bool],
+    root_states: list[bool],
+    remaining_root_states: list[bool],
+    reason: str,
+) -> None:
+    class SequencedGuard:
+        def __init__(self, path: Path, states: list[bool]) -> None:
+            self.path = path
+            self.states = states
+            self.closed = False
+
+        def is_current(self) -> bool:
+            return self.states.pop(0)
+
+        def close(self) -> None:
+            self.closed = True
+
+    target = tmp_path / "private"
+    target.mkdir()
+    parent = SequencedGuard(tmp_path, parent_states)
+    root = SequencedGuard(target, root_states)
+    monkeypatch.setattr(private, "current_process_user_sid", lambda **_kwargs: "USER")
+    monkeypatch.setattr(private, "current_process_token_is_restricted", lambda **_kwargs: False)
+    monkeypatch.setattr(private, "_create_windows_directory_with_sddl", lambda *_args: None)
+    monkeypatch.setattr(private, "open_windows_directory_guard", lambda *_args, **_kwargs: root)
+    monkeypatch.setattr(private, "_owner_private_acl_is_present", lambda *_args: True)
+    monkeypatch.setattr(private, "current_process_can_mutate_path", lambda *_args, **_kwargs: True)
+
+    with pytest.raises(WindowsACLSafetyError, match=reason):
+        private.create_or_validate_windows_owner_private_directory(
+            target,
+            parent_guard=parent,
+            is_windows=True,
+        )
+    assert root.closed
+    assert not parent_states
+    assert root_states == remaining_root_states
 
 
 @pytest.mark.parametrize("exact_acl", [False, True])
