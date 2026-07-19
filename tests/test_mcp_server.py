@@ -9,6 +9,7 @@ import secrets
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -21,7 +22,13 @@ from agency_runtime.core.process_argv import isolated_python_argv
 from agency_runtime.core.roster.bundled import BundledRoster
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import mcp_tools
-from agency_runtime.server.mcp import MAX_INPUT_BYTES, MCP_TOOLS, handle_tool_call, run_stdio
+from agency_runtime.server.mcp import (
+    MAX_INPUT_BYTES,
+    MCP_TOOLS,
+    MCPServer,
+    handle_tool_call,
+    run_stdio,
+)
 
 
 def _seed_store(tmp_path: Path) -> Store:
@@ -42,6 +49,55 @@ def _seed_store(tmp_path: Path) -> Store:
     reviewer = next(agent for agent in BundledRoster() if agent["slug"] == "code-reviewer")
     store._activate_prevalidated_agent(reviewer)
     return store
+
+
+def test_mcp_server_validates_redundant_injected_store_runtime_identity(tmp_path: Path) -> None:
+    store = _seed_store(tmp_path)
+
+    equivalent_config = store.config_path.parent / "nested" / ".." / store.config_path.name
+    equivalent_db = store.db_path.parent / "nested" / ".." / store.db_path.name
+    server = MCPServer(
+        store=store,
+        config_path=str(equivalent_config),
+        db_path=str(equivalent_db),
+    )
+    assert server._runtime_store() is store
+
+    with pytest.raises(
+        StoreConfigBindingError,
+        match="requested runtime identity does not match Store",
+    ):
+        MCPServer(store=store, config_path=str(tmp_path / "different.yaml"))
+    with pytest.raises(
+        StoreConfigBindingError,
+        match="requested runtime identity does not match Store",
+    ):
+        MCPServer(store=store, db_path=str(tmp_path / "different.db"))
+
+
+def test_mcp_server_rejects_tampered_or_unverifiable_injected_store_identity(
+    tmp_path: Path,
+) -> None:
+    store = _seed_store(tmp_path)
+    store.db_path = tmp_path / "tampered.db"
+    with pytest.raises(StoreConfigBindingError, match="database identity changed"):
+        MCPServer(store=store, db_path=str(store._frozen_db_path))
+
+    with pytest.raises(StoreConfigBindingError, match="does not expose a verifiable"):
+        MCPServer(store=object(), config_path=str(tmp_path / "config.yaml"))
+
+    partial = SimpleNamespace(
+        config_path=tmp_path / "config.yaml",
+        _configured_config_path=tmp_path / "config.yaml",
+        db_path=tmp_path / "agency.db",
+        _frozen_db_path=tmp_path / "agency.db",
+    )
+    with pytest.raises(StoreConfigBindingError, match="does not expose a verifiable"):
+        MCPServer(
+            store=partial,
+            config_path=str(partial.config_path),
+            db_path=str(partial.db_path),
+        )
 
 
 def test_mcp_exposes_explain_selection_tool() -> None:

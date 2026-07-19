@@ -3,7 +3,7 @@ title: "AR-47: Freeze Store configuration identity at construction"
 status: done
 category: roadmap
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-19
 tags: [sqlite, configuration, environment, concurrency, embedding]
 related:
   - docs/decisions/0006-config-first-redacted-configuration.md
@@ -35,9 +35,12 @@ different storage and policy identities.
 
 ## Current state
 
-Explicit config paths are bound by AR-44/AR-45. The `None` constructor path was
-retained as a compatibility mode even though a long-lived Store needs a stable
-identity for correct concurrency and embedding behavior.
+Every canonical Store resolves and freezes its configuration and database
+identities at construction. Dashboard and HTTP consumers bind to that Store,
+and MCP now compares redundant explicit configuration and database paths to an
+injected Store's frozen identities before serving. The constructor check is
+purely lexical and performs no configuration or database I/O, preserving the
+work-free global-off boundary.
 
 ## Approach
 
@@ -47,7 +50,9 @@ atomic dashboard edits take effect, but never follow a later path-selection
 environment change. Validate the bound document before creating or migrating
 any database file, and use that validated snapshot for constructor-time privacy
 decisions. Require server constructors to pass the intended identity instead of
-rebinding an already initialized Store.
+rebinding an already initialized Store. When a caller supplies both an injected
+Store and redundant path arguments, compare them to the frozen identities
+without opening either path and reject unverifiable legacy mixed forms.
 
 ## Dependencies
 

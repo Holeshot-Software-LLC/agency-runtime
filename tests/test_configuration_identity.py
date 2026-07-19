@@ -13,12 +13,14 @@ from typing import Any
 
 import pytest
 
+import agency_runtime.core.config_binding as config_binding_module
 from agency_runtime.core import configuration_identity as identity
 from agency_runtime.core import configuration_persistence as persistence
 from agency_runtime.core import process_argv
 from agency_runtime.core.config import load_config, reset_config_cache
 from agency_runtime.core.config_binding import (
     StoreConfigBindingError,
+    assert_store_config_binding,
     config_for_store,
 )
 from agency_runtime.core.configuration import apply_config_operations, read_config_state
@@ -93,6 +95,24 @@ def test_store_without_db_path_uses_its_bound_config_identity(
     assert store.db_path == custom_config.parent / "runtime" / "custom.db"
     assert store.db_path.exists()
     assert not (process_config.parent / "process.db").exists()
+
+
+def test_store_config_binding_rejects_public_path_tampering_before_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = tmp_path / "agency.yaml"
+    config_path.write_text(f"store:\n  db_path: {tmp_path / 'agency.db'}\n", encoding="utf-8")
+    store = Store(config_path=config_path)
+    store.config_path = tmp_path / "poisoned.yaml"
+    monkeypatch.setattr(
+        config_binding_module,
+        "load_config",
+        lambda *_args, **_kwargs: pytest.fail("tampered config path was read"),
+    )
+
+    with pytest.raises(StoreConfigBindingError, match="configuration identity changed"):
+        assert_store_config_binding(store)
 
 
 @pytest.mark.parametrize("drift_source", ["file", "environment"])

@@ -406,6 +406,16 @@ class MCPServer:
         db_path: str | None = None,
         config_path: str | None = None,
     ) -> None:
+        if store is not None and (db_path is not None or config_path is not None):
+            from agency_runtime.core.config_binding import (
+                assert_store_requested_runtime_identity,
+            )
+
+            assert_store_requested_runtime_identity(
+                store,
+                config_path=config_path,
+                db_path=db_path,
+            )
         self.store = store
         self._db_path = db_path
         self._config_path = config_path

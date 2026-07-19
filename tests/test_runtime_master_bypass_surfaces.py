@@ -518,6 +518,52 @@ def test_mcp_protocol_global_off_defers_explicit_store_identity(
     assert server.store is None
 
 
+def test_mcp_protocol_global_off_checks_injected_identity_without_config_io(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    import agency_runtime.core.config_binding as config_binding
+
+    _set_master(monkeypatch, False)
+    config_path = tmp_path / "agency.yaml"
+    db_path = tmp_path / "agency.db"
+    store = SimpleNamespace(
+        config_path=config_path,
+        _configured_config_path=config_path,
+        _configured_store_path=db_path,
+        _store_path_config_derived=False,
+        db_path=db_path,
+        _frozen_db_path=db_path,
+    )
+    monkeypatch.setattr(config_binding, "load_config", _unexpected)
+    server = mcp_server.MCPServer(
+        store=store,
+        db_path=str(db_path),
+        config_path=str(config_path),
+    )
+    server.initialize_responded = True
+    server.initialized = True
+
+    response = server.dispatch(
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "agency.preflight",
+                "arguments": {"session_id": "session", "user_message": "review"},
+            },
+        }
+    )
+
+    assert response is not None
+    assert response["result"]["structuredContent"] == {
+        "runtime_enabled": False,
+        "bypassed": True,
+    }
+    assert server.store is store
+
+
 def test_http_startup_global_off_defers_config_and_store(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

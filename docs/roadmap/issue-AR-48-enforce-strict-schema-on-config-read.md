@@ -3,7 +3,7 @@ title: "AR-48: Enforce the strict configuration schema on every read"
 status: done
 category: roadmap
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-19
 tags: [configuration, validation, fail-closed, security, yaml]
 related:
   - docs/decisions/0006-config-first-redacted-configuration.md
@@ -40,10 +40,12 @@ persisted-document schema.
 
 ## Approach
 
-Validate every present non-null file document with the same strict partial
-schema used by configuration writes before merging defaults. Keep empty/null as
-the documented empty document. Reject unknown fields, wrong container types,
-invalid provider entries, and unsafe values before any Store or service opens.
+Validate every present file document with the same strict partial schema used
+by configuration writes before merging defaults. Keep a missing or
+whitespace-only file as the documented empty document. Treat an explicit YAML
+`null` as a non-mapping root and reject it, along with unknown fields, wrong
+container types, invalid provider entries, and unsafe values, before any Store
+or service opens.
 
 ## Dependencies
 
@@ -54,6 +56,6 @@ all nested persisted values subject to ADR-0006's typed configuration boundary.
 
 - [x] Read and write paths share one strict partial-document schema.
 - [x] Wrong nested types, scalar provider entries, and unknown fields fail closed.
-- [x] Empty/null documents retain their documented defaults behavior.
+- [x] Missing and whitespace-only documents retain defaults; explicit YAML null fails closed.
 - [x] Invalid configuration cannot create or open a fallback Store/service.
 - [x] Full exact-coverage, Windows/Linux, package, security, and tracker gates pass.
