@@ -66,6 +66,46 @@ def test_windows_executable_file_allows_reads_but_rejects_untrusted_mutation() -
     )
 
 
+def test_windows_executable_file_resolves_owner_alias_to_exact_current_sid() -> None:
+    current = "S-1-5-21-1-2-3-1001"
+    aliased_owner = f"O:LAD:(A;;FA;;;{current})(A;;FRGX;;;BU)"
+    common = {
+        "is_windows": True,
+        "sddl_reader": lambda _path: aliased_owner,
+        "current_sid_reader": lambda: current,
+        "trusted_sid_reader": lambda: set(),
+    }
+
+    assert windows_file_prevents_untrusted_mutation(
+        Path("tool.exe"),
+        owner_sid_matcher=lambda captured, expected: (
+            captured == aliased_owner and expected == current
+        ),
+        **common,
+    )
+    assert not windows_file_prevents_untrusted_mutation(
+        Path("tool.exe"),
+        owner_sid_matcher=lambda _captured, _expected: False,
+        **common,
+    )
+
+
+def test_windows_executable_file_fails_closed_when_owner_alias_match_fails() -> None:
+    current = "S-1-5-21-1-2-3-1001"
+
+    def unavailable_matcher(_captured: str, _expected: str) -> bool:
+        raise OSError("SID comparison unavailable")
+
+    assert not windows_file_prevents_untrusted_mutation(
+        Path("tool.exe"),
+        is_windows=True,
+        sddl_reader=lambda _path: f"O:LAD:(A;;FA;;;{current})",
+        current_sid_reader=lambda: current,
+        trusted_sid_reader=lambda: set(),
+        owner_sid_matcher=unavailable_matcher,
+    )
+
+
 def test_restricted_token_is_rejected_before_acl_mutation() -> None:
     mutations: list[Path] = []
 

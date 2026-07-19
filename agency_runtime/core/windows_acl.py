@@ -1189,6 +1189,7 @@ def windows_file_prevents_untrusted_mutation(
     sddl_reader: Callable[[Path], str] | None = None,
     current_sid_reader: Callable[[], str | None] | None = None,
     trusted_sid_reader: TrustedSIDProbe | None = None,
+    owner_sid_matcher: Callable[[str, str], bool] | None = None,
 ) -> bool:
     """Return whether a current-user/OS-owned file has no untrusted write ACE.
 
@@ -1217,8 +1218,21 @@ def windows_file_prevents_untrusted_mutation(
         return False
     owner = _sddl_owner(value)
     dacl_offset = value.find("D:")
-    trusted_owners = {*_TRUSTED_WINDOWS_OWNERS, current_sid}
-    if not owner or not current_sid or owner not in trusted_owners or dacl_offset < 0:
+    matcher = owner_sid_matcher or (
+        lambda captured, expected: windows_sddl_owner_matches_sid(
+            captured,
+            expected,
+            is_windows=windows,
+        )
+    )
+    try:
+        owner_is_current = bool(
+            owner and current_sid and (owner == current_sid or matcher(value, current_sid))
+        )
+    except Exception:
+        return False
+    owner_is_trusted = owner_is_current or owner in _TRUSTED_WINDOWS_OWNERS
+    if not owner or not current_sid or not owner_is_trusted or dacl_offset < 0:
         return False
     dacl = value[dacl_offset + 2 :]
     control = dacl.split("(", 1)[0]
