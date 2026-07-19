@@ -13,6 +13,7 @@ import uuid
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
+from enum import Enum
 from itertools import islice
 from pathlib import Path
 from typing import cast
@@ -56,6 +57,13 @@ _HOST_AUTHORITIES: dict[Path, PrivateDirectoryIdentity] = {}
 _HOST_AUTHORITIES_LOCK = threading.RLock()
 
 
+class PrivateDirectoryAuthority(str, Enum):
+    """Security authority used to revalidate a private directory receipt."""
+
+    CURRENT_USER = "current-user"
+    WINDOWS_BOOTSTRAP_ROOT = "windows-bootstrap-root"
+
+
 @dataclass(frozen=True, slots=True)
 class PrivateDirectoryIdentity:
     """Stable identity captured for one private directory cleanup boundary."""
@@ -65,6 +73,7 @@ class PrivateDirectoryIdentity:
     inode: int
     guard: WindowsDirectoryGuard | None = None
     parent_guard: WindowsDirectoryGuard | None = None
+    authority: PrivateDirectoryAuthority = PrivateDirectoryAuthority.CURRENT_USER
 
 
 class PrivateDirectoryCleanupError(RuntimeError):
@@ -576,6 +585,7 @@ def bootstrap_private_directory(path: Path) -> Path:
         guard.device,
         guard.inode,
         guard=guard,
+        authority=PrivateDirectoryAuthority.WINDOWS_BOOTSTRAP_ROOT,
     )
     if not _identity_is_current(identity):
         guard.close()
@@ -769,14 +779,19 @@ def _identity_is_current(identity: PrivateDirectoryIdentity) -> bool:
     if not _filesystem_identity_is_current(identity):
         return False
     guarded = identity.guard is not None
+    bootstrap_root = identity.authority is PrivateDirectoryAuthority.WINDOWS_BOOTSTRAP_ROOT
+    if bootstrap_root and (not _IS_WINDOWS or not guarded or identity.parent_guard is not None):
+        return False
     guard_current = not guarded or identity.guard.is_current()
     parent_current = identity.parent_guard is None or identity.parent_guard.is_current()
     trusted = (
         windows_directory_prevents_untrusted_writes(
             identity.path,
             is_windows=True,
-            final_parent=True,
+            final_parent=not bootstrap_root,
+            prospective_child=bootstrap_root,
             private_access=True,
+            require_protected_dacl=bootstrap_root,
         )
         if guarded
         else (
@@ -987,6 +1002,7 @@ def private_temporary_directory(
 
 
 __all__ = [
+    "PrivateDirectoryAuthority",
     "PrivateDirectoryCleanupError",
     "PrivateDirectoryIdentity",
     "allocate_host_private_directory",

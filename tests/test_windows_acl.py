@@ -319,6 +319,67 @@ def test_windows_parent_acl_probe_is_non_windows_and_error_safe() -> None:
     assert not windows_acl._sddl_rights_can_mutate("")
 
 
+@pytest.mark.parametrize(
+    ("owner", "expected"),
+    [
+        ("BA", True),
+        ("SY", True),
+        ("S-1-5-18", True),
+        ("S-1-5-32-544", True),
+        (
+            "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464",
+            True,
+        ),
+        ("CO", False),
+        ("OW", False),
+        ("S-1-5-21-1001", False),
+        ("", False),
+    ],
+)
+def test_windows_system_owner_classifier_is_narrow(owner: str, expected: bool) -> None:
+    assert windows_acl.windows_system_owner_is_trusted(owner) is expected
+
+
+@pytest.mark.parametrize("owner", ["CO", "OW", "S-1-3-0", "S-1-3-4"])
+def test_windows_parent_acl_probe_rejects_pseudo_principal_owners(owner: str) -> None:
+    assert not windows_directory_prevents_untrusted_writes(
+        Path("state"),
+        is_windows=True,
+        sddl_reader=lambda _path: f"O:{owner}D:P(A;OICI;FA;;;S-1-5-21-1001)",
+        current_sid_reader=lambda: "S-1-5-21-1001",
+        final_parent=False,
+        prospective_child=True,
+        private_access=True,
+    )
+
+
+@pytest.mark.parametrize("control", ["", "AI", "AR", "AIAR"])
+def test_windows_bootstrap_acl_probe_requires_protection(control: str) -> None:
+    assert not windows_directory_prevents_untrusted_writes(
+        Path("state"),
+        is_windows=True,
+        sddl_reader=lambda _path: f"O:BAD:{control}(A;OICI;FA;;;SY)(A;OICI;FA;;;S-1-5-21-1001)",
+        current_sid_reader=lambda: "S-1-5-21-1001",
+        final_parent=False,
+        prospective_child=True,
+        private_access=True,
+        require_protected_dacl=True,
+    )
+
+
+def test_windows_bootstrap_acl_probe_accepts_a_protected_private_dacl() -> None:
+    assert windows_directory_prevents_untrusted_writes(
+        Path("state"),
+        is_windows=True,
+        sddl_reader=lambda _path: "O:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;S-1-5-21-1001)",
+        current_sid_reader=lambda: "S-1-5-21-1001",
+        final_parent=False,
+        prospective_child=True,
+        private_access=True,
+        require_protected_dacl=True,
+    )
+
+
 def test_unrecorded_capability_sid_is_never_implicitly_trusted() -> None:
     owner = "S-1-5-21-1001"
     capability = "S-1-15-3-123-456"

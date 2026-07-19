@@ -391,7 +391,24 @@ def test_persistent_root_acl_accepts_exact_or_canonical_private_form(
             True,
             None,
         ),
+        (
+            "O:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)",
+            True,
+            None,
+        ),
+        (
+            "O:S-1-5-18D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)",
+            True,
+            None,
+        ),
+        (
+            "O:S-1-5-32-544D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)",
+            True,
+            None,
+        ),
         ("O:OTHERD:P(A;OICI;FA;;;USER)", False, "owner mismatch"),
+        ("O:COD:P(A;OICI;FA;;;USER)", False, "owner mismatch"),
+        ("O:OWD:P(A;OICI;FA;;;USER)", False, "owner mismatch"),
         ("D:P(A;OICI;FA;;;USER)", False, "owner missing"),
         ("O:USER", False, "DACL missing"),
         ("O:USERD:AI(A;OICI;FA;;;USER)", False, "DACL not protected"),
@@ -429,6 +446,27 @@ def test_persistent_root_acl_rejects_nonprivate_canonical_forms(
 
     assert private._persistent_root_acl_is_present(tmp_path, "USER") is expected
     assert private._persistent_root_acl_failure(tmp_path, "USER") == failure
+
+
+def test_system_owned_root_uses_bootstrap_boundary_semantics(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    sddl = "O:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)"
+    semantic_calls: list[dict[str, object]] = []
+
+    def semantic(_path: Path, **kwargs: object) -> bool:
+        semantic_calls.append(kwargs)
+        return True
+
+    monkeypatch.setattr(private, "read_windows_sddl", lambda _path: sddl)
+    monkeypatch.setattr(private, "windows_directory_prevents_untrusted_writes", semantic)
+
+    assert private._persistent_root_acl_failure(tmp_path, "USER") is None
+    assert len(semantic_calls) == 1
+    assert semantic_calls[0]["final_parent"] is False
+    assert semantic_calls[0]["prospective_child"] is True
+    assert semantic_calls[0]["private_access"] is True
 
 
 def test_owner_private_root_requires_windows_location_and_unrestricted_owner(

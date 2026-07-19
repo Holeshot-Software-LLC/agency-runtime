@@ -88,6 +88,7 @@ def test_bootstrap_private_directory_registers_a_guarded_windows_root(
         assert parent_closed == [73]
         assert identity.path == result
         assert identity.guard is not None and identity.parent_guard is None
+        assert identity.authority is private_paths.PrivateDirectoryAuthority.WINDOWS_BOOTSTRAP_ROOT
     finally:
         private_paths._discard_host_authority(identity)
         assert identity.guard is not None
@@ -429,6 +430,73 @@ def test_bootstrap_private_directory_discards_post_install_drift(
     assert parent_closed == [73]
     assert root_closed == [73]
     assert target.resolve() not in private_paths._HOST_AUTHORITIES
+
+
+def test_bootstrap_authority_uses_only_system_owned_root_semantics(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "ci-root"
+    target.mkdir()
+    guard = _windows_guard(target)
+    identity = PrivateDirectoryIdentity(
+        target,
+        guard.device,
+        guard.inode,
+        guard=guard,
+        authority=private_paths.PrivateDirectoryAuthority.WINDOWS_BOOTSTRAP_ROOT,
+    )
+    semantic_calls: list[dict[str, object]] = []
+
+    def semantic(_path: Path, **kwargs: object) -> bool:
+        semantic_calls.append(kwargs)
+        return True
+
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        private_paths,
+        "windows_directory_prevents_untrusted_writes",
+        semantic,
+    )
+    try:
+        assert private_paths._identity_is_current(identity)
+        assert len(semantic_calls) == 1
+        assert semantic_calls[0]["final_parent"] is False
+        assert semantic_calls[0]["prospective_child"] is True
+        assert semantic_calls[0]["private_access"] is True
+        assert semantic_calls[0]["require_protected_dacl"] is True
+    finally:
+        guard.close()
+
+
+@pytest.mark.parametrize(("guarded", "has_parent"), [(False, False), (True, True)])
+def test_bootstrap_authority_rejects_invalid_receipt_shapes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    guarded: bool,
+    has_parent: bool,
+) -> None:
+    target = tmp_path / "ci-root"
+    target.mkdir()
+    guard = _windows_guard(target) if guarded else None
+    parent = _windows_guard(tmp_path) if has_parent else None
+    metadata = os.lstat(target)
+    identity = PrivateDirectoryIdentity(
+        target,
+        int(metadata.st_dev),
+        int(metadata.st_ino),
+        guard=guard,
+        parent_guard=parent,
+        authority=private_paths.PrivateDirectoryAuthority.WINDOWS_BOOTSTRAP_ROOT,
+    )
+    monkeypatch.setattr(private_paths, "_IS_WINDOWS", True)
+    try:
+        assert not private_paths._identity_is_current(identity)
+    finally:
+        if guard is not None:
+            guard.close()
+        if parent is not None:
+            parent.close()
 
 
 def test_allocate_validate_and_remove_private_directory(tmp_path: Path) -> None:

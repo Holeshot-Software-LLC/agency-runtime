@@ -105,6 +105,15 @@ _SDDL_DENY_TYPES = frozenset({"D", "OD", "XD", "ZD"})
 _SDDL_ALLOW_TYPES = frozenset({"A", "OA"})
 _SDDL_DACL_CONTROL = re.compile(r"^(?:(?:P|AI|AR))*$")
 _TRUSTED_INSTALLER_SID = "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464"
+_TRUSTED_WINDOWS_OWNERS = frozenset(
+    {
+        "BA",  # Builtin Administrators
+        "SY",  # Local System
+        "S-1-5-18",
+        "S-1-5-32-544",
+        _TRUSTED_INSTALLER_SID,
+    }
+)
 _TRUSTED_WINDOWS_PRINCIPALS = frozenset(
     {
         "BA",  # Builtin Administrators
@@ -118,6 +127,14 @@ _TRUSTED_WINDOWS_PRINCIPALS = frozenset(
         _TRUSTED_INSTALLER_SID,
     }
 )
+
+
+def windows_system_owner_is_trusted(value: str) -> bool:
+    """Return whether an SDDL owner is a durable Windows system authority."""
+
+    return str(value or "") in _TRUSTED_WINDOWS_OWNERS
+
+
 _BROAD_WINDOWS_SIDS = frozenset(
     {
         "S-1-1-0",  # Everyone
@@ -978,6 +995,7 @@ def windows_directory_prevents_untrusted_writes(
     prospective_child: bool = False,
     private_access: bool = False,
     allow_inheritable_read: bool = False,
+    require_protected_dacl: bool = False,
 ) -> bool:
     """Recognize a current-user/OS-owned DACL that prevents path substitution.
 
@@ -988,6 +1006,8 @@ def windows_directory_prevents_untrusted_writes(
     creation, but not an effective right that can rename, delete, or replace
     the already-validated next path component. A prospective creation boundary
     additionally rejects mutation rights that a missing child could inherit.
+    Bootstrap authorities may additionally require a protected DACL so later
+    inheritance changes cannot silently broaden a durable root.
     """
 
     windows = os.name == "nt" if is_windows is None else is_windows
@@ -1011,12 +1031,16 @@ def windows_directory_prevents_untrusted_writes(
         return False
     owner = _sddl_owner(value)
     dacl_offset = value.find("D:")
-    trusted_owners = {current_sid} if final_parent else {*_TRUSTED_WINDOWS_PRINCIPALS, current_sid}
+    trusted_owners = {current_sid} if final_parent else {*_TRUSTED_WINDOWS_OWNERS, current_sid}
     if not owner or not current_sid or owner not in trusted_owners or dacl_offset < 0:
         return False
     dacl = value[dacl_offset + 2 :]
     control = dacl.split("(", 1)[0]
-    if control == "NO_ACCESS_CONTROL" or _SDDL_DACL_CONTROL.fullmatch(control) is None:
+    if (
+        control == "NO_ACCESS_CONTROL"
+        or _SDDL_DACL_CONTROL.fullmatch(control) is None
+        or (require_protected_dacl and "P" not in control)
+    ):
         return False
     trusted = {*_TRUSTED_WINDOWS_PRINCIPALS, owner, current_sid, *process_sids}
     for encoded in _SDDL_ACE.findall(dacl):
@@ -1086,7 +1110,7 @@ def windows_file_prevents_untrusted_mutation(
         return False
     owner = _sddl_owner(value)
     dacl_offset = value.find("D:")
-    trusted_owners = {*_TRUSTED_WINDOWS_PRINCIPALS, current_sid}
+    trusted_owners = {*_TRUSTED_WINDOWS_OWNERS, current_sid}
     if not owner or not current_sid or owner not in trusted_owners or dacl_offset < 0:
         return False
     dacl = value[dacl_offset + 2 :]
@@ -1193,4 +1217,5 @@ __all__ = [
     "windows_directory_prevents_untrusted_writes",
     "windows_file_prevents_untrusted_mutation",
     "windows_restricted_host_boundary_is_trusted",
+    "windows_system_owner_is_trusted",
 ]
