@@ -2258,12 +2258,17 @@ test("app.js renders a bounded recommendation-only unit delegation plan safely",
     delegation_plan: {
       authority: "recommendation_only",
       evidence_contract: "No execution evidence.",
+      mechanism: "Use the available native delegation mechanism.",
       units: [],
     },
   });
   assert.ok(
     descendants(harness.node("route-result"))
       .some((node) => /no unit-to-specialist assignments/i.test(node.textContent)),
+  );
+  assert.ok(
+    descendants(harness.node("route-result"))
+      .some((node) => node.textContent === "Native host mechanism"),
   );
 });
 
