@@ -86,6 +86,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b05b180` | 2026-07-19 | fix(windows): normalize hosted private root ownership | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-b05b180-normalize-hosted-private-root-ownership.md) |
 | `361962f` | 2026-07-19 | fix(windows): normalize private executable owner identity | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-361962f-normalize-private-executable-owner-identity.md) |
 | `9400f76` | 2026-07-19 | fix(codex): report all installed hook events | [AR-105](../roadmap/issue-AR-105-current-codex-hook-event-count.md) | [detail](2026-07-19-9400f76-report-all-installed-hook-events.md) |
+| `3f9eb96` | 2026-07-19 | fix(dashboard): redact failed manager probe output | [AR-38](../roadmap/issue-AR-38-dashboard-service-environment-durability.md) | [detail](2026-07-19-3f9eb96-redact-failed-manager-probe-output.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

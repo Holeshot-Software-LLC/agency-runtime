@@ -169,7 +169,7 @@ not stable internal identifiers.
 | [AR-35](issue-AR-35-trusted-windows-taskkill-resolution.md) | [`e5f4a8c`](../worklog/README.md) | None; trusted system-command implementation correction |
 | [AR-36](issue-AR-36-config-relative-runtime-paths.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0006](../decisions/0006-config-first-redacted-configuration.md) |
 | [AR-37](issue-AR-37-hermes-interpreter-independent-bridge.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0024](../decisions/0024-native-host-packages-and-minimal-bridges.md) |
-| [AR-38](issue-AR-38-dashboard-service-environment-durability.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0006](../decisions/0006-config-first-redacted-configuration.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
+| [AR-38](issue-AR-38-dashboard-service-environment-durability.md) | [`e5f4a8c`](../worklog/README.md), [`3f9eb96`](../worklog/README.md) | [ADR-0006](../decisions/0006-config-first-redacted-configuration.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-39](issue-AR-39-fail-closed-storage-config-identity.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0006](../decisions/0006-config-first-redacted-configuration.md), [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
 | [AR-40](issue-AR-40-dashboard-config-identity-binding.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0006](../decisions/0006-config-first-redacted-configuration.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-41](issue-AR-41-close-store-connections-after-maintenance-failure.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
