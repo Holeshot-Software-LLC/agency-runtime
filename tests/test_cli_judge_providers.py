@@ -25,8 +25,9 @@ from agency_runtime.core.config import (
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.process_argv import PreparedProcessArgv
 from agency_runtime.core.selector import judge
+from tests.runtime_support import trusted_test_interpreter
 
-_TRUSTED_CLI = str(Path(getattr(sys, "_base_executable", sys.executable)).resolve())
+_TRUSTED_CLI = str(trusted_test_interpreter())
 _TRUSTED_CLI_DIRECTORY = str(Path(_TRUSTED_CLI).parent)
 
 CATALOG = [

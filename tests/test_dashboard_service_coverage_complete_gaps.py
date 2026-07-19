@@ -236,9 +236,13 @@ def test_atomic_and_restore_cleanup_open_handle_on_early_acl_error(tmp_path, mon
         manifest._restore_file(path, b"value")
 
 
-def test_atomic_and_restore_without_fchmod(tmp_path, monkeypatch):
+def test_atomic_and_restore_without_fchmod(tmp_path, monkeypatch, os_facade):
     path = tmp_path / "state"
-    monkeypatch.delattr(manifest.os, "fchmod", raising=False)
+    monkeypatch.setattr(
+        manifest,
+        "os",
+        os_facade(manifest.os, missing=frozenset({"fchmod"})),
+    )
     manifest._atomic_write(path, "value")
     assert path.read_text(encoding="utf-8") == "value"
     manifest._restore_file(path, b"restored")
@@ -352,7 +356,11 @@ def test_systemd_other_restore_error_skips_unsafe_cleanup(tmp_path, monkeypatch)
     assert outcome.error == "other restore error"
 
 
-def test_windows_xml_missing_element_nested_optional_and_no_fchmod(tmp_path, monkeypatch):
+def test_windows_xml_missing_element_nested_optional_and_no_fchmod(
+    tmp_path,
+    monkeypatch,
+    os_facade,
+):
     ctx = context(tmp_path, "windows")
     content = windows._windows_task_content(ctx)
     root = ET.fromstring(content)
@@ -374,7 +382,11 @@ def test_windows_xml_missing_element_nested_optional_and_no_fchmod(tmp_path, mon
     ET.SubElement(author, f"{{{core.WINDOWS_TASK_XML_NAMESPACE}}}Nested")
     assert windows._windows_task_properties(ET.tostring(root, encoding="unicode")) is None
 
-    monkeypatch.delattr(windows.os, "fchmod", raising=False)
+    monkeypatch.setattr(
+        windows,
+        "os",
+        os_facade(windows.os, missing=frozenset({"fchmod"})),
+    )
     result = windows._register_windows_xml(
         ctx,
         content,

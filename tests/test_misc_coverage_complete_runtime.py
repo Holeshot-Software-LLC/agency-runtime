@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from urllib.request import ProxyHandler, Request
 
 import pytest
 
+from agency_runtime.core import process_argv as process_argv_module
 from agency_runtime.core.host_control import inspect_all_host_statuses, inspect_host_status
 from agency_runtime.core.http_safety import _NoRedirectHandler, open_no_redirect
 from agency_runtime.core.process_argv import prepare_process_argv
@@ -52,8 +54,22 @@ def test_host_status_accepts_injected_inventory_inspectors(tmp_path: Path) -> No
     )
 
 
-def test_windows_command_shim_prefers_a_native_executable(tmp_path: Path) -> None:
+def test_windows_command_shim_prefers_a_native_executable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A native companion avoids invoking a shell when both npm shims exist."""
+    if os.name != "nt":
+        monkeypatch.setattr(
+            process_argv_module,
+            "_is_absolute_path",
+            lambda value, *, platform_name: Path(value).is_absolute(),
+        )
+        monkeypatch.setattr(
+            process_argv_module,
+            "ntpath",
+            process_argv_module.posixpath,
+        )
     command_shim = tmp_path / "agent.cmd"
     native_executable = tmp_path / "agent.exe"
     command_shim.write_text("@echo off\n", encoding="utf-8")

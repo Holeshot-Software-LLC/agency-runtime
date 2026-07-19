@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import os
 import shutil
-import sys
 import tempfile
 from collections.abc import Iterator
 from contextlib import suppress
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -19,12 +19,42 @@ from agency_runtime.core.private_paths import (
     private_runtime_directory,
     remove_private_directory,
 )
+from tests.runtime_support import trusted_test_interpreter
 
 _WINDOWS_TEMP_ANCHOR_ATTRIBUTE = "_agency_runtime_windows_temp_anchor"
 _WINDOWS_ORIGINAL_TEMPDIR_ATTRIBUTE = "_agency_runtime_windows_original_tempdir"
 _WINDOWS_PYTEST_PATHLIB_MKDIR_ATTRIBUTE = "_agency_runtime_pytest_pathlib_mkdir"
 _WINDOWS_PYTEST_TMPDIR_MKDIR_ATTRIBUTE = "_agency_runtime_pytest_tmpdir_mkdir"
 _WINDOWS_OS_MKDIR_ATTRIBUTE = "_agency_runtime_os_mkdir"
+
+
+class _OSFacade:
+    """Delegate to the real OS module while keeping test overrides local."""
+
+    def __init__(
+        self,
+        real_os: Any,
+        *,
+        missing: frozenset[str] = frozenset(),
+        **overrides: Any,
+    ) -> None:
+        self._real_os = real_os
+        self._missing = missing
+        self._overrides = overrides
+
+    def __getattr__(self, name: str) -> Any:
+        if name in self._missing:
+            raise AttributeError(name)
+        if name in self._overrides:
+            return self._overrides[name]
+        return getattr(self._real_os, name)
+
+
+@pytest.fixture
+def os_facade() -> type[_OSFacade]:
+    """Return the process-safe OS facade used by platform simulation tests."""
+
+    return _OSFacade
 
 
 @pytest.fixture(autouse=True)
@@ -98,8 +128,9 @@ def private_installer_launcher_files(
         runtime / "yaml",
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
     )
-    executable = Path(sys._base_executable)
+    executable = trusted_test_interpreter()
     bootstrap = package / "_bootstrap.py"
+    package.chmod(0o700)
     bootstrap.chmod(0o700)
     return executable, bootstrap
 

@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 from collections.abc import Mapping
 from typing import Any
 
 from agency_runtime.core.roster.remediation import (
     RemediationReceipt,
     RosterRemediationError,
+    canonical_remediation_source_hash,
     extend_with_contract_projection,
     normalize_remediation_receipt,
     remediate_source_text,
@@ -17,6 +19,7 @@ from agency_runtime.core.roster.remediation import (
 
 SOURCE_REPOSITORY = "https://github.com/msitarzewski/agency-agents"
 SOURCE_REVISION = "459dce837db3bdfdc4763d3fefd1fd854e73c8f1"
+SEMANTIC_PROJECTION_POLICY_VERSION = "source-bound-projection-v1"
 _DETERMINISTIC_ENCODING_FINDINGS = [
     "known_source_encoding_corruption",
     "unsafe_control:U+0004x2",
@@ -294,10 +297,33 @@ unclear.
 """
 
 
+SEMANTIC_PROJECTION_POLICY_HASH = hashlib.sha256(
+    json.dumps(
+        {
+            "contracts": sorted(
+                (
+                    source_hash,
+                    str(contract["slug"]),
+                    str(contract["source_revision"]),
+                    str(contract["audit_revision"]),
+                    str(contract["audit_status"]),
+                    hashlib.sha256(governed_prompt(contract).encode("utf-8")).hexdigest(),
+                )
+                for source_hash, contract in _CONTRACTS.items()
+            ),
+            "require_source_bound_remediation": True,
+            "version": SEMANTIC_PROJECTION_POLICY_VERSION,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+).hexdigest()
+
+
 def contract_for_source_hash(source_hash: str) -> dict[str, Any] | None:
     """Return a defensive copy of one exact reviewed contract overlay."""
 
-    contract = _CONTRACTS.get(str(source_hash))
+    contract = _CONTRACTS.get(canonical_remediation_source_hash(source_hash))
     return None if contract is None else copy.deepcopy(contract)
 
 
@@ -418,6 +444,8 @@ def verify_projected_remediation(
 
 
 __all__ = [
+    "SEMANTIC_PROJECTION_POLICY_HASH",
+    "SEMANTIC_PROJECTION_POLICY_VERSION",
     "SOURCE_REPOSITORY",
     "SOURCE_REVISION",
     "contract_for_projected_candidate",

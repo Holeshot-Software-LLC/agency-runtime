@@ -442,6 +442,112 @@ def test_audit_file_set_and_review_hash_are_exact(tmp_path: Path) -> None:
         subject._load_audits(tmp_path, manifest)
 
 
+def test_audit_hashes_canonicalize_lf_while_source_hashes_remain_raw(
+    tmp_path: Path,
+) -> None:
+    contract = _contract("engineering/alpha.md", "alpha")
+    manifest = _write_test_audit(tmp_path, [contract])
+    artifact = tmp_path / "batch-test.json"
+    review = tmp_path / "batch-test-review.md"
+    artifact_lf = artifact.read_bytes()
+    review_lf = review.read_bytes()
+    artifact_crlf = artifact_lf.replace(b"\n", b"\r\n")
+    review_crlf = review_lf.replace(b"\n", b"\r\n")
+    artifact.write_bytes(artifact_crlf)
+    review.write_bytes(review_crlf)
+
+    assert subject._load_audits(tmp_path, manifest) == {"engineering/alpha.md": contract}
+    assert subject._sha256(artifact_lf) != subject._sha256(artifact_crlf)
+    assert subject._sha256(review_lf) != subject._sha256(review_crlf)
+
+
+def test_source_definition_validation_preserves_raw_lf_and_crlf_identity(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source"
+    relative_path = "engineering/alpha.md"
+    definition = source / "engineering" / "alpha.md"
+    definition.parent.mkdir(parents=True)
+    lf_source = (
+        b"---\n"
+        b"name: Alpha\n"
+        b"description: Exact source identity fixture.\n"
+        b"---\n"
+        b"# Alpha\n"
+        b"Perform bounded work.\n"
+    )
+    crlf_source = lf_source.replace(b"\n", b"\r\n")
+    lf_hash = subject._sha256(lf_source)
+    crlf_hash = subject._sha256(crlf_source)
+    assert lf_hash != crlf_hash
+
+    contract = _contract(relative_path, "alpha")
+    contract["content_hash"] = lf_hash
+    candidate = {
+        "name": contract["display_name"],
+        "division": contract["division"],
+        "slug": contract["slug"],
+    }
+    outcome = SimpleNamespace(slug="alpha", status="candidate")
+    audit = {"remediations": {}, "quarantines": {}}
+
+    definition.write_bytes(lf_source)
+    assert subject._read_source_definition(source, relative_path) == lf_source
+    subject._validate_source_entry(
+        source,
+        "a" * 40,
+        audit,
+        relative_path,
+        contract,
+        candidate,
+        outcome,
+    )
+
+    definition.write_bytes(crlf_source)
+    assert subject._read_source_definition(source, relative_path) == crlf_source
+    with pytest.raises(subject.BundleBuildError, match="source hash does not match audit"):
+        subject._validate_source_entry(
+            source,
+            "a" * 40,
+            audit,
+            relative_path,
+            contract,
+            candidate,
+            outcome,
+        )
+
+    crlf_contract = {**contract, "content_hash": crlf_hash}
+    subject._validate_source_entry(
+        source,
+        "a" * 40,
+        audit,
+        relative_path,
+        crlf_contract,
+        candidate,
+        outcome,
+    )
+
+
+@pytest.mark.parametrize(
+    ("filename", "label"),
+    [
+        ("batch-test.json", "audit batch"),
+        ("batch-test-review.md", "audit review"),
+    ],
+)
+def test_audit_hashing_rejects_invalid_utf8(
+    tmp_path: Path,
+    filename: str,
+    label: str,
+) -> None:
+    contract = _contract("engineering/alpha.md", "alpha")
+    manifest = _write_test_audit(tmp_path, [contract])
+    (tmp_path / filename).write_bytes(b"\xff")
+
+    with pytest.raises(subject.BundleBuildError, match=rf"{label} is not UTF-8"):
+        subject._load_audits(tmp_path, manifest)
+
+
 @pytest.mark.parametrize(
     "value,match",
     [

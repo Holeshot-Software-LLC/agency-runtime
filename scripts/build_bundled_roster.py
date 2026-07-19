@@ -708,7 +708,12 @@ def _single_git_line(source: Path, arguments: Sequence[str], *, label: str) -> s
     return _string(lines[0], label=f"source Git {label}")
 
 
-def _canonical_lf_text_bytes(data: bytes, *, label: str) -> bytes:
+def _canonical_lf_text_bytes(
+    data: bytes,
+    *,
+    label: str,
+    maximum_bytes: int = MAX_LICENSE_BYTES,
+) -> bytes:
     """Return deterministic UTF-8/LF package bytes for a tracked text artifact."""
 
     try:
@@ -718,9 +723,21 @@ def _canonical_lf_text_bytes(data: bytes, *, label: str) -> bytes:
     if "\x00" in text:
         raise BundleBuildError(f"{label} contains a NUL byte")
     canonical = text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
-    if not canonical or len(canonical) > MAX_LICENSE_BYTES:
+    if not canonical or len(canonical) > maximum_bytes:
         raise BundleBuildError(f"{label} is empty or exceeds the package limit")
     return canonical
+
+
+def _audit_text_sha256(data: bytes, *, label: str, maximum_bytes: int) -> str:
+    """Hash one reviewed audit text artifact after canonical LF normalization."""
+
+    return _sha256(
+        _canonical_lf_text_bytes(
+            data,
+            label=label,
+            maximum_bytes=maximum_bytes,
+        )
+    )
 
 
 def _canonical_upstream_license(source: Path, revision: str) -> bytes:
@@ -819,14 +836,28 @@ def _read_audit_batch(
         maximum_bytes=MAX_AUDIT_BYTES,
         label="audit batch",
     )
-    if _sha256(artifact_bytes) != batch["artifact_sha256"]:
+    if (
+        _audit_text_sha256(
+            artifact_bytes,
+            label="audit batch",
+            maximum_bytes=MAX_AUDIT_BYTES,
+        )
+        != batch["artifact_sha256"]
+    ):
         raise BundleBuildError(f"audit batch hash does not match manifest: {filename}")
     review_bytes = _read_regular_bytes(
         audit_dir / batch["review"],
         maximum_bytes=MAX_AUDIT_REVIEW_BYTES,
         label="audit review",
     )
-    if _sha256(review_bytes) != batch["review_sha256"]:
+    if (
+        _audit_text_sha256(
+            review_bytes,
+            label="audit review",
+            maximum_bytes=MAX_AUDIT_REVIEW_BYTES,
+        )
+        != batch["review_sha256"]
+    ):
         raise BundleBuildError(f"audit review hash does not match manifest: {batch['review']}")
     parsed = _parse_json(artifact_bytes, path=artifact)
     if not isinstance(parsed, list) or not parsed:

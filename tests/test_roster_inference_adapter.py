@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 import threading
 from collections.abc import Mapping
 from pathlib import Path
@@ -32,8 +31,9 @@ from agency_runtime.core.roster.sync import (
 )
 from agency_runtime.core.store.schema import SCHEMA_VERSION
 from agency_runtime.core.store.sqlite import Store
+from tests.runtime_support import trusted_test_interpreter
 
-_TRUSTED_CLI = str(Path(getattr(sys, "_base_executable", sys.executable)).resolve())
+_TRUSTED_CLI = str(trusted_test_interpreter())
 
 
 def _candidate(prompt: str = "Perform a bounded security review.") -> dict[str, Any]:

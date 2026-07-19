@@ -222,9 +222,12 @@ def test_posix_artifact_trust_requires_verifiable_owner_and_private_mode(
     )
 
 
-def test_opened_metadata_identity_uses_full_posix_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_opened_metadata_identity_uses_full_posix_mode(
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+) -> None:
     observed = _status()
-    monkeypatch.setattr(process_argv.os, "name", "posix")
+    monkeypatch.setattr(process_argv, "os", os_facade(process_argv.os, name="posix"))
 
     assert process_argv._opened_metadata_identity(observed) == process_argv._metadata_identity(
         observed

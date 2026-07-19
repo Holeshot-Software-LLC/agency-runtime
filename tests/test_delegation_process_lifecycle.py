@@ -5,19 +5,20 @@ from __future__ import annotations
 import io
 import os
 import subprocess
-import sys
 
 import pytest
 
 from agency_runtime.core.delegation import backend_process, backends
+from tests.runtime_support import trusted_test_interpreter
 
 
 def _frozen_test_argv() -> list[str]:
     # The sandbox-owned test venv intentionally carries capability grants that
     # fail the namespace boundary. Its base interpreter is a trusted system
     # artifact and is sufficient for these pipe/process-group lifecycle tests.
-    executable = getattr(sys, "_base_executable", sys.executable)
-    return backends.freeze_process_argv(backends.prepare_process_argv([executable]))
+    return backends.freeze_process_argv(
+        backends.prepare_process_argv([str(trusted_test_interpreter())])
+    )
 
 
 class _Pipe:

@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from agency_runtime.core.evals import delegation
+from tests.runtime_support import ensure_private_test_directory
 
 
 def _private_eval_allocator(
@@ -20,7 +21,7 @@ def _private_eval_allocator(
     def allocate(*, prefix: str) -> Iterator[Path]:
         observed.append(prefix)
         candidate = root / f"{prefix}-{len(observed)}"
-        candidate.mkdir()
+        ensure_private_test_directory(candidate)
         try:
             yield candidate
         finally:

@@ -1076,11 +1076,19 @@ def test_dashboard_lock_rejects_existing_special_file_and_open_failure(monkeypat
         dashboard_runtime._open_runtime_lock(path, ())
 
 
-def test_dashboard_lock_detects_open_and_initialization_swaps(monkeypatch) -> None:
+def test_dashboard_lock_detects_open_and_initialization_swaps(
+    monkeypatch,
+    os_facade,
+) -> None:
     path = Path("C:/runtime/.dashboard.lock")
     regular = _stat_result(stat.S_IFREG | 0o600, inode=1)
     replaced = _stat_result(stat.S_IFREG | 0o600, inode=2)
     calls = 0
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "os",
+        os_facade(dashboard_runtime.os, name="nt"),
+    )
 
     def lstat_during_open(_path):
         nonlocal calls
@@ -1116,7 +1124,10 @@ def test_dashboard_lock_detects_open_and_initialization_swaps(monkeypatch) -> No
     assert closed == [9]
 
 
-def test_dashboard_lock_and_temporary_descriptor_reject_unsafe_permissions(monkeypatch) -> None:
+def test_dashboard_lock_and_temporary_descriptor_reject_unsafe_permissions(
+    monkeypatch,
+    os_facade,
+) -> None:
     path = Path("C:/runtime/.dashboard.lock")
     secure = _stat_result(stat.S_IFREG | 0o600, inode=1)
     unsafe = _stat_result(stat.S_IFREG | 0o644, inode=1)
@@ -1131,7 +1142,11 @@ def test_dashboard_lock_and_temporary_descriptor_reject_unsafe_permissions(monke
         return secure
 
     fstat_values = iter((secure, unsafe))
-    monkeypatch.setattr(dashboard_runtime.os, "name", "posix")
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "os",
+        os_facade(dashboard_runtime.os, name="posix"),
+    )
     monkeypatch.setattr(dashboard_runtime.os, "lstat", lstat)
     monkeypatch.setattr(dashboard_runtime.os, "open", lambda *_args, **_kw: 10)
     monkeypatch.setattr(dashboard_runtime.os, "fstat", lambda _fd: next(fstat_values))
@@ -1154,12 +1169,19 @@ def test_dashboard_lock_and_temporary_descriptor_reject_unsafe_permissions(monke
         dashboard_runtime._secure_temporary_descriptor(path, 11)
 
 
-def test_dashboard_temporary_descriptor_detects_post_permission_swap(monkeypatch) -> None:
+def test_dashboard_temporary_descriptor_detects_post_permission_swap(
+    monkeypatch,
+    os_facade,
+) -> None:
     path = Path("C:/runtime/temp")
     secure = _stat_result(stat.S_IFREG | 0o600, inode=1)
     replaced = _stat_result(stat.S_IFREG | 0o600, inode=2)
     lstat_values = iter((secure, replaced))
-    monkeypatch.setattr(dashboard_runtime.os, "name", "posix")
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "os",
+        os_facade(dashboard_runtime.os, name="posix"),
+    )
     monkeypatch.setattr(dashboard_runtime.os, "fstat", lambda _fd: secure)
     monkeypatch.setattr(dashboard_runtime.os, "lstat", lambda _path: next(lstat_values))
     monkeypatch.setattr(dashboard_runtime.os, "fchmod", lambda *_args: None)
@@ -1167,7 +1189,10 @@ def test_dashboard_temporary_descriptor_detects_post_permission_swap(monkeypatch
         dashboard_runtime._secure_temporary_descriptor(path, 11)
 
 
-def test_dashboard_runtime_lock_detects_swap_before_acquisition(monkeypatch) -> None:
+def test_dashboard_runtime_lock_detects_swap_before_acquisition(
+    monkeypatch,
+    os_facade,
+) -> None:
     regular = _stat_result(stat.S_IFREG | 0o600, inode=1, size=1)
     replaced = _stat_result(stat.S_IFREG | 0o600, inode=2, size=1)
 
@@ -1188,10 +1213,17 @@ def test_dashboard_runtime_lock_detects_swap_before_acquisition(monkeypatch) -> 
     monkeypatch.setattr(dashboard_runtime, "_open_runtime_lock", lambda *_args: Handle())
     monkeypatch.setattr(dashboard_runtime.os, "fstat", lambda _fd: regular)
     monkeypatch.setattr(dashboard_runtime.os, "lstat", lambda _path: replaced)
-    monkeypatch.setattr(dashboard_runtime.os, "name", "nt")
-    import msvcrt
-
-    monkeypatch.setattr(msvcrt, "locking", lambda *_args: None)
+    monkeypatch.setattr(
+        dashboard_runtime,
+        "os",
+        os_facade(dashboard_runtime.os, name="nt"),
+    )
+    fake_msvcrt = SimpleNamespace(
+        LK_NBLCK=1,
+        LK_UNLCK=2,
+        locking=lambda *_args: None,
+    )
+    monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
     with (
         pytest.raises(OSError, match="changed before acquisition"),
         dashboard_runtime._runtime_lock(Path("C:/runtime/dashboard.json")),

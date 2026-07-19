@@ -465,11 +465,12 @@ def test_publish_failure_preserves_previous_document_and_cleans_temp(
 def test_windows_privacy_probe_is_part_of_file_validation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     target = tmp_path / "control.json"
     target.write_text("{}", encoding="utf-8")
     observed: list[tuple[Path, bool]] = []
-    monkeypatch.setattr(control.os, "name", "nt")
+    monkeypatch.setattr(control, "os", os_facade(control.os, name="nt"))
     monkeypatch.setattr(
         control,
         "windows_directory_prevents_untrusted_writes",
@@ -507,14 +508,23 @@ def test_control_path_validation_is_bounded_and_text_only(
 def test_posix_owner_private_metadata_contract(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     target = tmp_path / "control.json"
     target.write_text("{}", encoding="utf-8")
     metadata = target.stat()
-    monkeypatch.setattr(control.os, "name", "posix")
-    monkeypatch.setattr(control.os, "geteuid", lambda: 7, raising=False)
+    real_os = control.os
+    monkeypatch.setattr(
+        control,
+        "os",
+        os_facade(real_os, name="posix", geteuid=lambda: 7),
+    )
     assert control._current_uid() == 7
-    monkeypatch.delattr(control.os, "geteuid")
+    monkeypatch.setattr(
+        control,
+        "os",
+        os_facade(real_os, name="posix", missing=frozenset({"geteuid"})),
+    )
     assert control._current_uid() is None
     monkeypatch.setattr(control, "_current_uid", lambda: 7)
 
@@ -835,9 +845,10 @@ def test_new_windows_lock_requires_private_acl_and_cleans_up(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     acl_result: object,
+    os_facade,
 ) -> None:
     lock_path = tmp_path / "control.lock"
-    monkeypatch.setattr(control.os, "name", "nt")
+    monkeypatch.setattr(control, "os", os_facade(control.os, name="nt"))
 
     def restrict(*_args: Any, **_kwargs: Any) -> bool:
         if isinstance(acl_result, Exception):
@@ -882,6 +893,7 @@ def test_secure_lock_detects_identity_change_before_and_after_hardening(
 def test_posix_lock_and_parent_fsync_branches(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     target = tmp_path / "control.json"
     calls: list[int] = []
@@ -892,7 +904,7 @@ def test_posix_lock_and_parent_fsync_branches(
         flock=lambda _fd, operation: calls.append(operation),
     )
     monkeypatch.setitem(sys.modules, "fcntl", fake_fcntl)
-    monkeypatch.setattr(control.os, "name", "posix")
+    monkeypatch.setattr(control, "os", os_facade(control.os, name="posix"))
     monkeypatch.setattr(control, "_prepare_parent", lambda _target: ())
     monkeypatch.setattr(control, "_validate_regular_private_file", lambda *_args: None)
     monkeypatch.setattr(control, "_validate_directory_snapshot", lambda _snapshot: None)
@@ -949,6 +961,7 @@ def test_control_lock_timeout_and_identity_loss(
 def test_serialization_and_atomic_replace_platform_branches(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     with pytest.raises(control.RuntimeControlValidationError, match="4 KiB"):
         control._serialize_document({"value": "x" * 5000})
@@ -956,11 +969,12 @@ def test_serialization_and_atomic_replace_platform_branches(
     source = tmp_path / "source"
     target = tmp_path / "target"
     source.write_text("value", encoding="utf-8")
-    monkeypatch.setattr(control.os, "name", "posix")
+    real_os = control.os
+    monkeypatch.setattr(control, "os", os_facade(real_os, name="posix"))
     control._replace_atomically(source, target)
     assert target.read_text(encoding="utf-8") == "value"
 
-    monkeypatch.setattr(control.os, "name", "nt")
+    monkeypatch.setattr(control, "os", os_facade(real_os, name="nt"))
     calls = 0
 
     def retry_replace(_source: Path, _target: Path) -> None:
@@ -983,10 +997,11 @@ def test_publish_document_fails_safely_for_security_races(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     failure: str,
+    os_facade,
 ) -> None:
     target = tmp_path / "control.json"
     snapshot = ((tmp_path, tmp_path.stat()),)
-    monkeypatch.setattr(control.os, "name", "nt")
+    monkeypatch.setattr(control, "os", os_facade(control.os, name="nt"))
     monkeypatch.setattr(control, "_validate_directory_snapshot", lambda _snapshot: None)
     monkeypatch.setattr(control, "_validate_regular_private_file", lambda *_args: None)
     monkeypatch.setattr(control, "restrict_windows_acl", lambda *_args, **_kwargs: True)
@@ -1019,9 +1034,10 @@ def test_publish_document_fails_safely_for_security_races(
 def test_publish_document_posix_hardening_branch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     target = tmp_path / "control.json"
-    monkeypatch.setattr(control.os, "name", "posix")
+    monkeypatch.setattr(control, "os", os_facade(control.os, name="posix"))
     monkeypatch.setattr(control, "_validate_directory_snapshot", lambda _snapshot: None)
     monkeypatch.setattr(control, "_validate_regular_private_file", lambda *_args: None)
     monkeypatch.setattr(control, "_fsync_parent", lambda _path: None)
@@ -1323,11 +1339,12 @@ def test_restricted_windows_reader_proves_identity_and_non_forgeability(
 
 def test_runtime_control_public_validator_and_restricted_target_probe(
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     assert control.validate_runtime_control_document(_valid_document()) == _valid_document()
 
     target = control.runtime_control_path()
-    monkeypatch.setattr(control.os, "name", "nt")
+    monkeypatch.setattr(control, "os", os_facade(control.os, name="nt"))
     monkeypatch.setattr(
         control,
         "current_process_token_is_restricted",

@@ -395,6 +395,7 @@ def test_smoke_rejects_six_argument_config_without_flag(
     home = tmp_path / "home"
     (home / ".codex").mkdir(parents=True)
     result = install_agent_adapter("codex", home_dir=home)
+    assert result["ok"] is True, json.dumps(result, sort_keys=True)
     manifest = Path(result["plugin_path"])
     mcp_path = manifest.parents[1] / ".mcp.json"
     payload = json.loads(mcp_path.read_text(encoding="utf-8"))
@@ -620,9 +621,10 @@ def test_mcp_prepare_delegation_correlation_and_active_turn_errors(
 def test_restricted_control_target_fails_closed_on_token_probe_error(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
     target = tmp_path / "control.json"
-    monkeypatch.setattr(runtime_control.os, "name", "nt")
+    monkeypatch.setattr(runtime_control, "os", os_facade(runtime_control.os, name="nt"))
     monkeypatch.setattr(runtime_control, "_cache_key", lambda _path: "same")
     monkeypatch.setattr(runtime_control, "runtime_control_path", lambda: target)
     monkeypatch.setattr(

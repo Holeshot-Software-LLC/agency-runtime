@@ -201,7 +201,21 @@ def test_process_argv_rejects_invalid_inputs_and_preserves_posix_resolution() ->
     ) == ["/usr/bin/agent", "task"]
 
 
-def test_process_argv_wraps_a_powershell_script_on_windows(tmp_path: Path) -> None:
+def test_process_argv_wraps_a_powershell_script_on_windows(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if os.name != "nt":
+        monkeypatch.setattr(
+            process_argv_module,
+            "_is_absolute_path",
+            lambda value, *, platform_name: Path(value).is_absolute(),
+        )
+        monkeypatch.setattr(
+            process_argv_module,
+            "ntpath",
+            process_argv_module.posixpath,
+        )
     script = tmp_path / "agent.ps1"
     powershell = tmp_path / "powershell.exe"
     script.write_text("exit 0", encoding="utf-8")

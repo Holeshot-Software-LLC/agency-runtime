@@ -13,6 +13,7 @@ from agency_runtime.adapters.hermes.plugin import HermesAdapter
 from agency_runtime.core.header.finalize import finalize_response, response_hash
 from agency_runtime.core.installer import install_agent_adapter
 from agency_runtime.core.store.sqlite import Store
+from tests.runtime_support import ensure_private_test_directory
 
 pytestmark = pytest.mark.usefixtures("private_installer_launcher")
 
@@ -46,7 +47,7 @@ def _suggest_delegation(store: Store, *, session_id: str, trace_id: str) -> None
 
 
 def _load_generated_hermes(tmp_path: Path) -> ModuleType:
-    (tmp_path / ".hermes" / "plugins").mkdir(parents=True)
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
     result = install_agent_adapter("hermes", home_dir=tmp_path)
     assert result["ok"] is True
     plugin_path = Path(result["plugin_path"])

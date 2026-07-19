@@ -179,6 +179,7 @@ def test_linux_install_passes_frozen_xdg_root_to_atomic_writer(
 ) -> None:
     ctx = _linux_context(tmp_path)
     writes: list[tuple[Path, Path | None]] = []
+    monkeypatch.setattr(install, "_revalidate_dashboard_launcher", lambda _value: None)
     monkeypatch.setattr(install, "_path_present", lambda _path: False)
     monkeypatch.setattr(install, "_read_manifest_bytes", lambda _ctx: b"manifest")
     monkeypatch.setattr(
@@ -232,6 +233,7 @@ def test_manager_environment_parser_returns_names_without_values() -> None:
 @pytest.mark.parametrize("operation", ["plan", "install", "inspect"])
 def test_public_service_mutation_rejects_manager_only_runtime_environment(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
     operation: str,
 ) -> None:
     home = tmp_path / operation
@@ -240,6 +242,9 @@ def test_public_service_mutation_rejects_manager_only_runtime_environment(
     config_path.parent.mkdir()
     config_path.write_text("profile: standard\n", encoding="utf-8")
     commands: list[list[str]] = []
+    monkeypatch.setattr(install, "_validate_dashboard_launcher", lambda value: value)
+    monkeypatch.setattr(install, "_revalidate_dashboard_launcher", lambda _value: None)
+    monkeypatch.setattr(inspection, "_validate_dashboard_launcher", lambda value: value)
 
     def runner(argv: list[str], **_kwargs: object) -> dict[str, object]:
         commands.append(argv)

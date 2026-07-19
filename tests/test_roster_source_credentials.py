@@ -32,6 +32,7 @@ from agency_runtime.core.store.schema import (
     remediation_authority_schema_is_current,
 )
 from agency_runtime.core.store.sqlite import Store
+from tests.runtime_support import harden_private_test_file
 
 
 def _resolution_detail(
@@ -603,6 +604,7 @@ def _create_non_affinity_legacy_database(
         return source_id
     finally:
         conn.close()
+        harden_private_test_file(path)
 
 
 @pytest.mark.parametrize(

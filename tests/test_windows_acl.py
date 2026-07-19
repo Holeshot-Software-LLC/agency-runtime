@@ -697,6 +697,11 @@ def test_configuration_restricted_token_preserves_existing_file(
     path.write_bytes(original)
     monkeypatch.setattr(configuration, "_IS_WINDOWS", True)
     monkeypatch.setattr(
+        configuration._persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
+    monkeypatch.setattr(
         configuration,
         "_restrict_windows_acl",
         lambda _path, **_kwargs: (_ for _ in ()).throw(

@@ -43,8 +43,9 @@ def test_executable_discovery_handles_empty_path_override_and_resolver_failure(
     assert CommandBackend([]).executable_path() is None
 
     observed: list[tuple[str, str | None]] = []
-    tool = tmp_path / "tool.exe"
+    tool = tmp_path / ("tool.exe" if os.name == "nt" else "tool")
     tool.write_bytes(b"tool")
+    tool.chmod(0o700)
 
     def resolve(executable: str, path: str | None = None) -> str | None:
         observed.append((executable, path))

@@ -65,7 +65,10 @@ status, rejection, activation, and superseding history.
 For every quarantine, create a non-executable remediation-attempt receipt. Apply
 repairs automatically only for an exact registered source hash and deterministic
 rule; require a reviewed semantic projection and all normal approval gates before
-activation. Unknown and ambiguous sources stay queued and quarantined.
+activation. Reviewed LF and CRLF byte identities retain distinct raw-source
+hashes while sharing the same canonical semantic contract, and a copied
+projected prompt cannot bypass its source-bound remediation receipt. Unknown
+and ambiguous sources stay queued and quarantined.
 
 ## Dependencies
 
@@ -85,5 +88,8 @@ operator availability independently of governance state.
 - [x] Every quarantine records a bounded source-hash remediation attempt and next action.
 - [x] CLI and dashboard queue projections expose no raw prompt content.
 - [x] Automatic repair is exact-rule-only; activation still requires semantic audit and approval.
+- [x] Reviewed LF and CRLF sources retain exact raw identity and resolve to one semantic contract.
+- [x] Registered projected candidates cannot activate without source-bound remediation provenance.
+- [x] That provenance rule is part of the versioned audit-policy fingerprint, so pre-upgrade passing audits are invalidated and must be rerun before approval or activation.
 - [x] Resolution authority is durable, dependency-complete, and invalidated by evidence changes.
 - [ ] Full coverage, documentation, packaging, Windows, and Linux gates pass.

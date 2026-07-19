@@ -394,8 +394,18 @@ def test_atomic_write_rejects_oversized_document(tmp_path: Path) -> None:
 def test_atomic_write_without_fchmod_remains_portable(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
-    monkeypatch.delattr(persistence.os, "fchmod", raising=False)
+    monkeypatch.setattr(
+        persistence,
+        "os",
+        os_facade(persistence.os, name="nt", missing=frozenset({"fchmod"})),
+    )
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     target = tmp_path / "portable.yaml"
     persistence.atomic_write_yaml(
         target,
@@ -412,8 +422,15 @@ def test_atomic_write_without_fchmod_remains_portable(
 def test_windows_atomic_write_retries_transient_reader_share_lock(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
     target = tmp_path / "windows-retry.yaml"
+    monkeypatch.setattr(persistence, "os", os_facade(persistence.os, name="nt"))
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     real_replace = persistence.os.replace
     attempts = 0
     delays: list[float] = []
@@ -446,9 +463,16 @@ def test_windows_atomic_write_retries_transient_reader_share_lock(
 def test_windows_atomic_write_preserves_replace_error_after_bounded_retries(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
     target = tmp_path / "windows-retry-exhausted.yaml"
     delays: list[float] = []
+    monkeypatch.setattr(persistence, "os", os_facade(persistence.os, name="nt"))
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     monkeypatch.setattr(
         persistence.os,
         "replace",
@@ -559,6 +583,7 @@ def test_config_lock_open_link_and_posix_lock_branches(
 def test_config_lock_windows_fallback_without_fchmod(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
     calls: list[tuple[int, int, int]] = []
     fake_msvcrt = SimpleNamespace(
@@ -567,9 +592,20 @@ def test_config_lock_windows_fallback_without_fchmod(
         locking=lambda descriptor, mode, count: calls.append((descriptor, mode, count)),
     )
     monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
-    monkeypatch.delattr(persistence.os, "fchmod", raising=False)
-    monkeypatch.delattr(persistence.os, "O_BINARY", raising=False)
-    monkeypatch.delattr(persistence.os, "O_NOFOLLOW", raising=False)
+    monkeypatch.setattr(
+        persistence,
+        "os",
+        os_facade(
+            persistence.os,
+            name="nt",
+            missing=frozenset({"fchmod", "O_BINARY", "O_NOFOLLOW"}),
+        ),
+    )
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     restricted: list[Path] = []
     target = tmp_path / "config.yaml"
     with persistence.config_lock(
@@ -587,6 +623,7 @@ def test_config_lock_windows_fallback_without_fchmod(
 def test_config_lock_applies_nofollow_when_the_platform_exposes_it(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
     monkeypatch.setattr(
         persistence,
@@ -595,6 +632,16 @@ def test_config_lock_applies_nofollow_when_the_platform_exposes_it(
     )
     nofollow = 0x40000000
     captured: list[int] = []
+    effective_uid = tmp_path.stat().st_uid
+    monkeypatch.setattr(
+        persistence,
+        "os",
+        os_facade(
+            persistence.os,
+            name="posix",
+            geteuid=lambda: effective_uid,
+        ),
+    )
     real_open = persistence.os.open
 
     def open_without_synthetic_flag(path: Path, flags: int, mode: int) -> int:
@@ -627,6 +674,7 @@ def test_config_lock_applies_nofollow_when_the_platform_exposes_it(
 def test_config_lock_posix_fallback_without_fchmod(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
     monkeypatch.setattr(
         persistence,
@@ -641,7 +689,16 @@ def test_config_lock_posix_fallback_without_fchmod(
         flock=lambda descriptor, operation: calls.append((descriptor, operation)),
     )
     monkeypatch.setitem(sys.modules, "fcntl", fake_fcntl)
-    monkeypatch.delattr(persistence.os, "fchmod", raising=False)
+    monkeypatch.setattr(
+        persistence,
+        "os",
+        os_facade(
+            persistence.os,
+            name="posix",
+            missing=frozenset({"fchmod"}),
+            geteuid=lambda: tmp_path.stat().st_uid,
+        ),
+    )
     target = tmp_path / "config.yaml"
     with persistence.config_lock(
         target,

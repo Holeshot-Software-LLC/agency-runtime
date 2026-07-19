@@ -136,11 +136,21 @@ def _directory_metadata(*, mode: int, uid: int = 1001) -> SimpleNamespace:
 def test_posix_parent_trust_requires_private_or_sticky_protected_chain(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
     parent = tmp_path / "private"
     chain = store_security._directory_chain(parent)
     metadata = {candidate: _directory_metadata(mode=0o755) for candidate in chain}
     metadata[parent] = _directory_metadata(mode=0o700)
+    monkeypatch.setattr(
+        store_security,
+        "os",
+        os_facade(
+            store_security.os,
+            name="posix",
+            missing=frozenset({"getxattr"}),
+        ),
+    )
     monkeypatch.setattr(store_security.os, "lstat", metadata.__getitem__)
 
     assert store_security.storage_parent_is_trusted(
@@ -760,6 +770,7 @@ def test_new_store_failure_rolls_back_database_and_sidecar_under_durable_lock(
     def fail_schema(self: Store, **_kwargs: object) -> None:
         sidecar = self.db_path.with_name(f"{self.db_path.name}-wal")
         sidecar.write_bytes(b"new sidecar")
+        sidecar.chmod(0o600)
         raise RuntimeError("schema failed")
 
     monkeypatch.setattr(Store, "_init_schema", fail_schema)
@@ -796,8 +807,10 @@ def test_created_storage_cleanup_refuses_identity_replacement(tmp_path: Path) ->
     target = tmp_path / "created"
     target.mkdir()
     identity = store_security.capture_created_storage_path(target, directory=True)
+    replacement = tmp_path / "replacement"
+    replacement.mkdir()
     target.rmdir()
-    target.mkdir()
+    replacement.rename(target)
 
     with pytest.raises(PermissionError, match="identity replacement"):
         store_security.cleanup_created_storage_paths([identity], is_windows=os.name == "nt")

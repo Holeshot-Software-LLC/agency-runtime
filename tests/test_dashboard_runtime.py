@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -23,6 +25,7 @@ from agency_runtime.core.dashboard_runtime import (
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import dashboard as dashboard_module
 from agency_runtime.server.dashboard import DashboardHTTPServer
+from tests.runtime_support import ensure_private_test_directory
 
 
 def test_runtime_instance_fingerprint_tracks_generation_without_exposing_token(
@@ -158,13 +161,24 @@ def test_runtime_descriptor_is_owner_only_on_posix(tmp_path: Path) -> None:
 def test_runtime_descriptor_hardens_empty_temp_before_writing_token(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    os_facade,
 ) -> None:
     target = dashboard_runtime_path(home_dir=tmp_path)
-    target.parent.mkdir(parents=True)
+    ensure_private_test_directory(target.parent, parents=True)
     target.write_bytes(b"original-descriptor")
     token = "never-written-dashboard-token-" + "x" * 32
     observed_temporary_bytes: list[bytes] = []
     replace_calls: list[tuple[Path, Path]] = []
+    monkeypatch.setattr(
+        runtime_module,
+        "os",
+        os_facade(runtime_module.os, name="nt"),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "msvcrt",
+        SimpleNamespace(LK_NBLCK=1, LK_UNLCK=2, locking=lambda *_args: None),
+    )
 
     def fail_hardening(candidate: str | Path) -> None:
         observed_temporary_bytes.append(Path(candidate).read_bytes())

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import stat
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,7 @@ from agency_runtime.core.private_paths import (
     remove_private_directory,
     validate_private_directory,
 )
+from tests.runtime_support import ensure_private_test_directory
 
 
 @pytest.mark.parametrize("value", ("", ".", "..", "bad/name", "bad name", "x" * 81))
@@ -38,11 +40,29 @@ def test_allocate_validate_and_remove_private_directory(tmp_path: Path) -> None:
     remove_private_directory(identity)
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX umask semantics")
+def test_test_fixture_parent_creation_is_private_under_permissive_umask(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "fixture-root"
+    target = root / "nested" / "leaf"
+    previous = os.umask(0)
+    try:
+        ensure_private_test_directory(target, parents=True)
+    finally:
+        os.umask(previous)
+
+    for directory in (root, root / "nested", target):
+        assert stat.S_IMODE(directory.stat().st_mode) == 0o700
+
+
 def test_remove_refuses_a_replaced_directory(tmp_path: Path) -> None:
     root = ensure_private_directory(tmp_path / "root")
     identity = allocate_private_directory(root, prefix="worker")
+    replacement = tmp_path / "replacement"
+    os.mkdir(replacement, 0o700)
     os.rmdir(identity.path)
-    os.mkdir(identity.path, 0o700)
+    os.rename(replacement, identity.path)
 
     with pytest.raises(PermissionError, match="replaced"):
         remove_private_directory(identity)
@@ -57,10 +77,17 @@ def test_remove_revalidates_after_quarantine_rename(
     root = ensure_private_directory(tmp_path / "root")
     identity = allocate_private_directory(root, prefix="worker")
     original_rename = private_paths.os.rename
+    replacement = ensure_private_test_directory(tmp_path / "replacement")
+    tampered = False
 
     def replace_then_rename(source: Path, destination: Path) -> None:
+        nonlocal tampered
+        if tampered:
+            original_rename(source, destination)
+            return
+        tampered = True
         os.rmdir(source)
-        os.mkdir(source, 0o700)
+        original_rename(replacement, source)
         original_rename(source, destination)
 
     monkeypatch.setattr(private_paths.os, "rename", replace_then_rename)
@@ -161,7 +188,7 @@ def test_remove_rejects_an_untrusted_parent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     path = tmp_path / "worker"
-    path.mkdir()
+    ensure_private_test_directory(path)
     metadata = os.lstat(path)
     identity = PrivateDirectoryIdentity(path, int(metadata.st_dev), int(metadata.st_ino))
     monkeypatch.setattr(

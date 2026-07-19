@@ -20,6 +20,27 @@ from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core import bounded_io, bounded_json, bounded_yaml, config, windows_acl
 
 
+@pytest.fixture(autouse=True)
+def _portable_windows_last_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Expose the Windows ctypes last-error seam on POSIX simulations."""
+
+    if hasattr(ctypes, "set_last_error") and hasattr(ctypes, "get_last_error"):
+        return
+    state = {"value": 0}
+    monkeypatch.setattr(
+        ctypes,
+        "set_last_error",
+        lambda value: state.__setitem__("value", int(value)),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        ctypes,
+        "get_last_error",
+        lambda: state["value"],
+        raising=False,
+    )
+
+
 class _Metadata:
     def __init__(
         self,

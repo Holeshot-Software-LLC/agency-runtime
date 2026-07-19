@@ -16,7 +16,7 @@ import secrets
 import time
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from types import MappingProxyType
 from typing import Any, Final
 
@@ -419,7 +419,7 @@ def _monotonic_ns() -> int:
 
 
 def _utc_now() -> str:
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _optional_correlation(value: object, *, field_name: str) -> str:

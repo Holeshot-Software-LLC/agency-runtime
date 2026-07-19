@@ -17,7 +17,8 @@ issue_id: AR-103
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/105"
 depends_on: []
-blocks: []
+blocks:
+  - AR-104
 ---
 
 # AR-103: Import Windows ctypes fixtures portably on POSIX

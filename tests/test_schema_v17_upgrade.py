@@ -12,6 +12,7 @@ import pytest
 from agency_runtime.core.store.schema import SCHEMA_V1, SCHEMA_VERSION
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.store.trace_identity import correlation_digest
+from tests.runtime_support import harden_private_test_file
 
 _LEGACY_KEY = b"k" * 32
 
@@ -67,6 +68,7 @@ def _create_v16_store(
         conn.commit()
     finally:
         conn.close()
+        harden_private_test_file(path)
 
 
 def _open_rows(path: Path) -> sqlite3.Connection:

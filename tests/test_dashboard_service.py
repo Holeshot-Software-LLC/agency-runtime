@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import threading
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -723,6 +724,7 @@ def test_linux_install_is_owned_idempotent_and_json_safe(tmp_path: Path) -> None
     assert inspected["reachable"] is True
 
 
+@pytest.mark.skipif(os.name != "nt", reason="requires native Windows launcher identity")
 def test_windows_service_manifest_binds_launcher_and_blocks_start_after_drift(
     tmp_path: Path,
 ) -> None:

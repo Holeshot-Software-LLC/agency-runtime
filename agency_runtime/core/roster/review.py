@@ -33,6 +33,7 @@ from agency_runtime.core.roster.remediation import (
 )
 from agency_runtime.core.roster.revisions import decode_revision_metadata
 from agency_runtime.core.roster.semantic_projection import (
+    SEMANTIC_PROJECTION_POLICY_HASH,
     contract_for_projected_candidate,
     verify_projected_candidate_contract,
     verify_projected_remediation,
@@ -40,7 +41,7 @@ from agency_runtime.core.roster.semantic_projection import (
 from agency_runtime.core.store.schema import BOUNDED_REMEDIATION_EVENT_DETAIL_SQL
 from agency_runtime.core.store.sqlite import Store
 
-AUDIT_POLICY_VERSION = "roster-candidate-audit-v1"
+AUDIT_POLICY_VERSION = "roster-candidate-audit-v2"
 MAX_AUDIT_FINDINGS = 128
 MAX_INFERENCE_FINDINGS = 64
 MAX_INFERENCE_ATTEMPTS = 6
@@ -181,6 +182,10 @@ def _canonical_hash(value: object) -> str:
 AUDIT_POLICY_HASH = _canonical_hash(
     {
         "remediation_policy": REMEDIATION_POLICY_REVISION,
+        "registered_projection_provenance": {
+            "policy_hash": SEMANTIC_PROJECTION_POLICY_HASH,
+            "required": True,
+        },
         "rules": [(rule.code, rule.severity, rule.expression.pattern) for rule in _RULES],
         "version": AUDIT_POLICY_VERSION,
     }
@@ -509,6 +514,10 @@ def _deterministic_review(
 ) -> tuple[list[AuditFinding], str, dict[str, Any]]:
     content = str(candidate.get("content") or "")
     remediation = _candidate_remediation_receipt(conn, candidate)
+    registered_projection = contract_for_projected_candidate(
+        str(candidate.get("slug") or ""),
+        str(candidate.get("hash") or ""),
+    )
     findings = [
         _finding(
             "deterministic",
@@ -520,6 +529,19 @@ def _deterministic_review(
         for rule in _RULES
         if (match := _actionable_match(rule, content)) is not None
     ]
+    if registered_projection is not None and remediation is None:
+        findings.append(
+            _finding(
+                "deterministic",
+                "error",
+                "registered_projection_provenance_required",
+                "A registered projected candidate requires its source-bound remediation receipt.",
+                {
+                    "candidate_id": candidate.get("id", ""),
+                    "source_content_hash": registered_projection["source_content_hash"],
+                },
+            )
+        )
     if remediation is not None and (
         remediation.rules[-1].rule_id != CONTRACT_PROJECTION_RULE_ID
         or remediation.rules[-1].kind != "semantic_projection"

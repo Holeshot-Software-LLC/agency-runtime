@@ -51,6 +51,7 @@ def test_concurrent_legacy_store_migration_is_serialized_and_idempotent(
         """
     )
     connection.close()
+    path.chmod(0o600)
 
     def open_store(_index: int) -> tuple[bool, int]:
         store = Store(path)
@@ -418,6 +419,7 @@ def test_schema_v10_materializes_nested_snapshot_diff_once(tmp_path: Path) -> No
     )
     connection.commit()
     connection.close()
+    path.chmod(0o600)
 
     store = Store(path)
     [snapshot] = store.list_roster_snapshots()
@@ -696,7 +698,7 @@ def test_delegation_details_are_projected_by_default_and_redacted_when_opted_in(
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits are not Windows ACLs")
-def test_store_preserves_preexisting_parent_mode_but_hardens_owned_files(
+def test_store_rejects_preexisting_non_private_parent_without_repermissioning_it(
     tmp_path: Path,
 ) -> None:
     parent = tmp_path / "runtime"
@@ -704,24 +706,10 @@ def test_store_preserves_preexisting_parent_mode_but_hardens_owned_files(
     parent.chmod(0o755)
     old_umask = os.umask(0o022)
     try:
-        store = Store(parent / "agency.db")
-        connection = store._connect()
-        try:
-            connection.execute(
-                "INSERT INTO skills_loaded (id, session_id, skill_name, loaded_at) "
-                "VALUES ('mode-test', 'session', 'skill', '2026-07-11T00:00:00+00:00')"
-            )
-            connection.commit()
-            store._repair_storage_permissions()
-
-            assert stat.S_IMODE(parent.stat().st_mode) == 0o755
-            assert stat.S_IMODE(store.db_path.stat().st_mode) == 0o600
-            for suffix in ("-wal", "-shm"):
-                sidecar = Path(f"{store.db_path}{suffix}")
-                assert sidecar.exists()
-                assert stat.S_IMODE(sidecar.stat().st_mode) == 0o600
-        finally:
-            connection.close()
+        with pytest.raises(PermissionError, match="storage parent"):
+            Store(parent / "agency.db")
+        assert stat.S_IMODE(parent.stat().st_mode) == 0o755
+        assert not (parent / "agency.db").exists()
     finally:
         os.umask(old_umask)
 
@@ -742,6 +730,7 @@ def test_store_never_sends_preexisting_arbitrary_parent_to_permission_repair(
 ) -> None:
     parent = tmp_path / "shared"
     parent.mkdir()
+    parent.chmod(0o700)
     calls: list[tuple[Path, bool]] = []
 
     def observe(path: Path, *, directory: bool) -> None:
@@ -830,6 +819,11 @@ def test_optional_sidecar_acl_failure_tolerates_disappearance(
         "_metadata_is_link_or_reparse_point",
         lambda _metadata: False,
     )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_require_storage_target_trusted",
+        lambda *_args, **_kwargs: None,
+    )
 
     def disappear(path: Path, *, directory: bool) -> None:
         assert directory is False
@@ -906,6 +900,11 @@ def test_acl_failure_for_stable_storage_identity_fails_closed(
         sqlite_store,
         "_metadata_is_link_or_reparse_point",
         lambda _metadata: False,
+    )
+    monkeypatch.setattr(
+        sqlite_store,
+        "_require_storage_target_trusted",
+        lambda *_args, **_kwargs: None,
     )
     monkeypatch.setattr(
         sqlite_store,
@@ -1343,6 +1342,7 @@ def test_legacy_orphans_and_duplicate_runs_are_migrated(tmp_path: Path):
     """)
     connection.commit()
     connection.close()
+    path.chmod(0o600)
 
     store = Store(path)
 

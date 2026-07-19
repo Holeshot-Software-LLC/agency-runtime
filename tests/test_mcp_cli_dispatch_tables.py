@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -11,8 +10,9 @@ import pytest
 import agency_runtime.server.mcp as mcp
 from agency_runtime.core.cli_transport import inspect_cli_transport
 from agency_runtime.core.delegation.backends import BoundedProcessResult
+from tests.runtime_support import trusted_test_interpreter
 
-_TRUSTED_CLI = str(Path(getattr(sys, "_base_executable", sys.executable)).resolve())
+_TRUSTED_CLI = str(trusted_test_interpreter())
 _TRUSTED_CLI_DIRECTORY = str(Path(_TRUSTED_CLI).parent)
 
 

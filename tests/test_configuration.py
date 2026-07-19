@@ -1000,6 +1000,11 @@ def test_environment_config_path_never_rewrites_preexisting_parent_acl(
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(target))
     calls: list[tuple[Path, bool]] = []
     monkeypatch.setattr(configuration, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        configuration._persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
 
     def allow_acl(candidate: Path, *, directory: bool = False) -> bool:
         calls.append((candidate, directory))
@@ -1061,6 +1066,11 @@ def test_private_write_fails_before_replace_when_windows_acl_cannot_be_enforced(
     observed_temporary_bytes: list[bytes] = []
     replace_calls: list[tuple[Path, Path]] = []
     monkeypatch.setattr(configuration, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        configuration._persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
 
     def deny_private_acl(candidate: Path) -> bool:
         observed_temporary_bytes.append(candidate.read_bytes())

@@ -22,6 +22,7 @@ from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core.installer import install_agent_adapter
 from agency_runtime.core.process_argv import isolated_python_argv
 from agency_runtime.core.store.sqlite import Store
+from tests.runtime_support import ensure_private_test_directory
 
 ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter]
 
@@ -223,7 +224,7 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
     private_installer_launcher: tuple[Path, Path],
 ) -> None:
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "hermes.db"))
-    (tmp_path / ".hermes" / "plugins").mkdir(parents=True)
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
 
     result = install_agent_adapter("hermes", home_dir=tmp_path)
     assert result["ok"] is True
@@ -358,7 +359,7 @@ def test_generated_hermes_plugin_loads_in_isolated_interpreter_without_agency_on
     tmp_path: Path,
     private_installer_launcher: tuple[Path, Path],
 ) -> None:
-    (tmp_path / ".hermes" / "plugins").mkdir(parents=True)
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
     result = install_agent_adapter("hermes", home_dir=tmp_path)
     plugin_path = Path(result["plugin_path"])
     probe = """
@@ -414,7 +415,7 @@ def test_generated_hermes_bridge_uses_bounded_shell_free_absolute_argv(
     monkeypatch: pytest.MonkeyPatch,
     private_installer_launcher: tuple[Path, Path],
 ) -> None:
-    (tmp_path / ".hermes" / "plugins").mkdir(parents=True)
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
     result = install_agent_adapter("hermes", home_dir=tmp_path)
     plugin_path = Path(result["plugin_path"])
     spec = importlib.util.spec_from_file_location("bounded_hermes_plugin", plugin_path)
@@ -509,7 +510,7 @@ def test_generated_hermes_session_end_closes_only_the_exact_turn(
     monkeypatch: pytest.MonkeyPatch,
     private_installer_launcher: tuple[Path, Path],
 ) -> None:
-    (tmp_path / ".hermes" / "plugins").mkdir(parents=True)
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
     result = install_agent_adapter("hermes", home_dir=tmp_path)
     plugin_path = Path(result["plugin_path"])
     spec = importlib.util.spec_from_file_location(

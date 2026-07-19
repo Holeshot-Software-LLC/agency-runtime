@@ -47,7 +47,7 @@
           "testing": 9
         },
         "review": "batch-a-review.md",
-        "artifact_sha256": "54cc6af965982e43b47ebfba341b5bbeff56d830c6c36b29393eb7c7ad6211b7",
+        "artifact_sha256": "e1f86fc949c59568bb7f6e53bc64d83b18f2e1ca6df179006b4b87f17d89ffb8",
         "review_sha256": "830db86d46a8d8f95205c8d4f0d2d2e9a9e624ff00d1c9584976a34b941fee9d"
       },
       "batch-engineering.json": {
@@ -56,7 +56,7 @@
           "engineering": 54
         },
         "review": "batch-engineering-review.md",
-        "artifact_sha256": "a6aa6d1bf9629cf19ad748d3411ea256c06e3869cfefa52e8bc822aae77ed891",
+        "artifact_sha256": "d6884d5e04f55e5b226c30f99062152b1bc5c8b01bea0dd28ad6d96be7899db1",
         "review_sha256": "1e7b683edcdc52bb4228a91a28dd8b72259b521648fe1dee6dbd1de80cdc8483"
       },
       "batch-marketing-security.json": {
@@ -67,7 +67,7 @@
           "security": 12
         },
         "review": "batch-marketing-security-review.md",
-        "artifact_sha256": "75f122543b194bf06d7275c69009974e20fe6fff1aa3f0d3604c7c0d11554c9e",
+        "artifact_sha256": "55f324c445fd5518ce2563afd6a1445af662a3d4dbf79c7df9e2478cbafd1dc2",
         "review_sha256": "34b2aa8a2386874b588eca8d6f19beaf7b0150b2957f30d4123189f74fbc400c"
       },
       "batch-specialized.json": {
@@ -79,7 +79,7 @@
           "specialized": 56
         },
         "review": "batch-specialized-review.md",
-        "artifact_sha256": "8e01d6bc0f6923f837545b74bc7f08bb55df031c185c2c0221f8dcf585a13247",
+        "artifact_sha256": "bf0706ef2d6d1ac7264cae6955f17a777b906355d4e0bd7ff07625c72d0380eb",
         "review_sha256": "cfbf7f32c599e81c08d374680202617f54a8735670ce91ca3495f7f27220da9b"
       }
     }

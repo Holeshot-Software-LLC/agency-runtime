@@ -8,6 +8,7 @@ tags: [roster, governance, security]
 related:
   - docs/roadmap/issue-AR-02-specialist-coverage-gaps.md
   - docs/roadmap/issue-AR-28-reversible-agent-activation-controls.md
+  - docs/roadmap/issue-AR-102-refresh-legacy-bundled-roster-contracts.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

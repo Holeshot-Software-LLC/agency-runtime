@@ -12,6 +12,7 @@ import pytest
 
 from agency_runtime.core.store.schema import SCHEMA_VERSION
 from agency_runtime.core.store.sqlite import Store
+from tests.runtime_support import harden_private_test_file
 
 
 def _digest(value: str) -> str:
@@ -910,6 +911,7 @@ def test_legacy_finalization_rows_migrate_unbound_and_never_authorize(
     )
     connection.commit()
     connection.close()
+    harden_private_test_file(path)
 
     store = Store(path)
 

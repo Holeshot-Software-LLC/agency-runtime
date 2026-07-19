@@ -28,6 +28,7 @@ from agency_runtime.core.store.schema import (
 )
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.mcp import handle_tool_call
+from tests.runtime_support import harden_private_test_file
 
 _DRAFT = """Agency/Agencies loaded: code-reviewer
 Agency/Agencies delegated: generic-worker via spawn_agent
@@ -913,6 +914,7 @@ def test_v18_store_migrates_receipts_and_legacy_execution_identity(tmp_path: Pat
     )
     conn.commit()
     conn.close()
+    harden_private_test_file(path)
 
     store = Store(path)
     conn = store._connect()

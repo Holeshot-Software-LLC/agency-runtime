@@ -59,7 +59,13 @@ def test_lifecycle_preflight_unsupported_and_forwarding(tmp_path, monkeypatch):
     )
     assert unsupported[0] is None and unsupported[1]["supported"] is False
     ctx = context(tmp_path)
+    validated = []
     monkeypatch.setattr(subject, "_context", lambda **_kw: ctx)
+    monkeypatch.setattr(
+        subject,
+        "_validate_dashboard_launcher",
+        lambda value: validated.append(value) or value,
+    )
     monkeypatch.setattr(subject, "_preflight", lambda *_a, **_kw: (None, {"ok": True}))
     assert subject._lifecycle_preflight(
         "start",
@@ -69,6 +75,7 @@ def test_lifecycle_preflight_unsupported_and_forwarding(tmp_path, monkeypatch):
         python_executable=None,
         command_runner=None,
     ) == (ctx, None, {"ok": True})
+    assert validated == [ctx]
 
 
 @pytest.mark.parametrize(
@@ -116,6 +123,7 @@ def test_public_lifecycle_operations_normalize_lock_errors(
 def test_start_preflight_not_installed_already_running_and_incomplete(tmp_path, monkeypatch):
     ctx = context(tmp_path)
     blocked = {"ok": False, "error": "blocked"}
+    monkeypatch.setattr(subject, "_revalidate_dashboard_launcher", lambda *_a: None)
     monkeypatch.setattr(subject, "_lifecycle_preflight", lambda *_a, **_kw: (ctx, blocked, {}))
     assert subject._start_dashboard_service_locked() is blocked
     monkeypatch.setattr(subject, "_lifecycle_preflight", lambda *_a, **_kw: (None, None, None))
@@ -171,6 +179,7 @@ def test_start_windows_refuses_indeterminate_or_unreachable_running_task(
 def test_start_linux_command_selection_failure_and_readiness(tmp_path, monkeypatch):
     ctx = context(tmp_path)
     state = {"installed": True, "reachable": False, "active": True}
+    monkeypatch.setattr(subject, "_revalidate_dashboard_launcher", lambda *_a: None)
     monkeypatch.setattr(subject, "_lifecycle_preflight", lambda *_a, **_kw: (ctx, None, state))
     commands = []
     monkeypatch.setattr(

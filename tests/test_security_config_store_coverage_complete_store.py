@@ -14,6 +14,7 @@ from agency_runtime.core.store import projections, schema, security
 from agency_runtime.core.store import sqlite as sqlite_store
 from agency_runtime.core.store.evidence import EvidenceStoreMixin
 from agency_runtime.core.store.sqlite import Store
+from tests.runtime_support import harden_private_test_file
 
 
 def test_projection_fallbacks_redact_malformed_endpoints_and_classify_details(
@@ -413,6 +414,7 @@ def test_store_private_file_races_and_link_checks_fail_closed(
         store._ensure_private_storage_file()
 
     store.db_path.write_bytes(b"database")
+    harden_private_test_file(store.db_path)
     with pytest.raises(PermissionError, match="symlink"):
         store._ensure_private_storage_file()
 
@@ -701,6 +703,7 @@ def _uninitialized_store(tmp_path: Path) -> Store:
     store = Store.__new__(Store)
     store.db_path = tmp_path / "agency.db"
     store.db_path.touch()
+    harden_private_test_file(store.db_path)
     store._journal_ready = False
     store._foreign_keys_ready = False
     store._permission_fingerprints = {}

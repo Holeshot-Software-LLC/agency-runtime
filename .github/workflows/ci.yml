@@ -44,30 +44,34 @@ jobs:
         run: |
           ruff check agency_runtime tests scripts
           ruff format --check agency_runtime tests scripts
+      - name: Prepare private test runtime
+        shell: bash
+        env:
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
       - name: Run warning-strict 100% line and branch coverage
-        env:
-          AGENCY_CONFIG_PATH: ${{ runner.temp }}/agency-runtime/agency.yaml
-          AGENCY_DB_PATH: ${{ runner.temp }}/agency-runtime/agency.db
-          HOME: ${{ runner.temp }}/agency-home
-          PYTEST_BASETEMP: ${{ runner.temp }}/pytest-coverage
-          USERPROFILE: ${{ runner.temp }}/agency-home
-        run: >-
-          python -m pytest tests -q -W error -p no:cacheprovider
-          -m "not performance"
-          --basetemp "${PYTEST_BASETEMP}"
-          --cov=agency_runtime --cov-branch --cov-report=term-missing
-          --cov-fail-under=100
+        run: |
+          export HOME="${AGENCY_CI_HOME}"
+          export USERPROFILE="${AGENCY_CI_HOME}"
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
+          "${AGENCY_CI_PYTHON}" -m pytest tests -q -W error -p no:cacheprovider \
+            -m "not performance" \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-coverage" \
+            --cov=agency_runtime --cov-branch --cov-report=term-missing \
+            --cov-fail-under=100
       - name: Run uninstrumented wall-clock performance gates
-        env:
-          AGENCY_CONFIG_PATH: ${{ runner.temp }}/agency-runtime/performance.yaml
-          AGENCY_DB_PATH: ${{ runner.temp }}/agency-runtime/performance.db
-          HOME: ${{ runner.temp }}/agency-performance-home
-          PYTEST_BASETEMP: ${{ runner.temp }}/pytest-performance
-          USERPROFILE: ${{ runner.temp }}/agency-performance-home
-        run: >-
-          python -m pytest tests -q -W error -p no:cacheprovider
-          -m performance
-          --basetemp "${PYTEST_BASETEMP}"
+        run: |
+          export HOME="${AGENCY_CI_HOME}"
+          export USERPROFILE="${AGENCY_CI_HOME}"
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
+          "${AGENCY_CI_PYTHON}" -m pytest tests -q -W error -p no:cacheprovider \
+            -m performance \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-performance"
       - name: Run dashboard UI tests with 100% coverage
         run: >-
           node --test --experimental-test-coverage
@@ -102,14 +106,24 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install test dependencies
         run: python -m pip install -e ".[dev]"
-      - name: Run tests
+      - name: Prepare private test runtime
         shell: bash
         env:
-          AGENCY_CONFIG_PATH: ${{ runner.temp }}/agency-runtime/agency.yaml
-          AGENCY_DB_PATH: ${{ runner.temp }}/agency-runtime/agency.db
-          HOME: ${{ runner.temp }}/agency-home
-          USERPROFILE: ${{ runner.temp }}/agency-home
-        run: python -m pytest tests -q -W error -p no:cacheprovider --basetemp "${RUNNER_TEMP}/pytest"
+          AGENCY_CI_MATRIX_PYTHON: ${{ matrix.python }}
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "tests-py${AGENCY_CI_MATRIX_PYTHON}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
+      - name: Run tests
+        shell: bash
+        run: |
+          export HOME="${AGENCY_CI_HOME}"
+          export USERPROFILE="${AGENCY_CI_HOME}"
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
+          "${AGENCY_CI_PYTHON}" -m pytest tests -q -W error -p no:cacheprovider \
+            --basetemp "${AGENCY_CI_TEMP}/pytest"
       - name: Check dependency consistency
         run: python -m pip check
       - name: Check patch whitespace
@@ -202,6 +216,14 @@ jobs:
         with:
           name: python-distributions
           path: ${{ runner.temp }}/agency-dist
+      - name: Prepare private artifact runtime
+        shell: bash
+        env:
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "artifact-smoke-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
       - name: Install and smoke-test the built wheel and source distribution
         working-directory: ${{ runner.temp }}
         shell: bash
@@ -216,18 +238,18 @@ jobs:
             exit 1
           fi
 
-          python -m venv wheel-smoke
-          python -m venv sdist-smoke
+          python -m venv --copies "${AGENCY_CI_TEMP}/wheel-smoke"
+          python -m venv --copies "${AGENCY_CI_TEMP}/sdist-smoke"
           if [ "${RUNNER_OS}" = "Windows" ]; then
-            WHEEL_PYTHON="./wheel-smoke/Scripts/python.exe"
-            WHEEL_AGENCY="./wheel-smoke/Scripts/agency.exe"
-            SDIST_PYTHON="./sdist-smoke/Scripts/python.exe"
-            SDIST_AGENCY="./sdist-smoke/Scripts/agency.exe"
+            WHEEL_PYTHON="${AGENCY_CI_TEMP}/wheel-smoke/Scripts/python.exe"
+            WHEEL_AGENCY="${AGENCY_CI_TEMP}/wheel-smoke/Scripts/agency.exe"
+            SDIST_PYTHON="${AGENCY_CI_TEMP}/sdist-smoke/Scripts/python.exe"
+            SDIST_AGENCY="${AGENCY_CI_TEMP}/sdist-smoke/Scripts/agency.exe"
           else
-            WHEEL_PYTHON="./wheel-smoke/bin/python"
-            WHEEL_AGENCY="./wheel-smoke/bin/agency"
-            SDIST_PYTHON="./sdist-smoke/bin/python"
-            SDIST_AGENCY="./sdist-smoke/bin/agency"
+            WHEEL_PYTHON="${AGENCY_CI_TEMP}/wheel-smoke/bin/python"
+            WHEEL_AGENCY="${AGENCY_CI_TEMP}/wheel-smoke/bin/agency"
+            SDIST_PYTHON="${AGENCY_CI_TEMP}/sdist-smoke/bin/python"
+            SDIST_AGENCY="${AGENCY_CI_TEMP}/sdist-smoke/bin/agency"
           fi
 
           smoke_distribution() {
@@ -235,10 +257,13 @@ jobs:
             local python="$2"
             local agency="$3"
             local artifact="$4"
-            export AGENCY_CONFIG_PATH="${RUNNER_TEMP}/agency-${label}/agency.yaml"
-            export AGENCY_DB_PATH="${RUNNER_TEMP}/agency-${label}/agency.db"
-            export HOME="${RUNNER_TEMP}/agency-${label}-home"
-            export USERPROFILE="${RUNNER_TEMP}/agency-${label}-home"
+            export AGENCY_CONFIG_PATH="${AGENCY_CI_TEMP}/agency-${label}/agency.yaml"
+            export AGENCY_DB_PATH="${AGENCY_CI_TEMP}/agency-${label}/agency.db"
+            export HOME="${AGENCY_CI_HOME}/${label}"
+            export USERPROFILE="${AGENCY_CI_HOME}/${label}"
+            export TMPDIR="${AGENCY_CI_TEMP}"
+            mkdir -p "${HOME}"
+            chmod 700 "${HOME}"
             "${python}" -m pip install --no-cache-dir --only-binary=:all: "${artifact}"
             "${python}" -I -c "from importlib.metadata import version; from importlib.resources import files; import agency_runtime; from agency_runtime.core.canary import run_canary; assert callable(run_canary); assert version('agency-runtime') == agency_runtime.__version__; assert files('agency_runtime.dashboard').joinpath('index.html').is_file(); assert files('agency_runtime.core').joinpath('canary.py').is_file(); assert files('agency_runtime.core.evals.data').joinpath('routing_v1.py').is_file()"
             "${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py" --expected-version "${EXPECTED_VERSION}"

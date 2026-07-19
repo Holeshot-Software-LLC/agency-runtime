@@ -121,6 +121,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-101` | [Enforce the global master switch in restricted host consumers](issue-AR-101-enforce-restricted-global-master-switch.md) | in_progress | p0 | operations | [#102](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/102) |
 | `AR-102` | [Refresh legacy bundled roster contracts on upgrade](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | in_progress | p0 | roster-governance | [#103](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/103) |
 | `AR-103` | [Import Windows ctypes fixtures portably on POSIX](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | in_progress | p0 | testing | [#105](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/105) |
+| `AR-104` | [Run hosted portability gates in trusted boundaries](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | in_progress | p0 | testing | [#106](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106) |
 
 ## Traceability
 

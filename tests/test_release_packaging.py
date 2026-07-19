@@ -178,13 +178,29 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     steps = job["steps"]
     node_step = next(step for step in steps if step["name"].startswith("Set up Node.js"))
     assert node_step["with"]["node-version"] == "24"
+    private_runtime_step = next(
+        step for step in steps if step["name"] == "Prepare private artifact runtime"
+    )
+    assert "python -m scripts.prepare_ci_runtime" in private_runtime_step["run"]
+    assert private_runtime_step["shell"] == "bash"
+    assert private_runtime_step["env"] == {
+        "AGENCY_CI_RUN_ATTEMPT": "${{ github.run_attempt }}",
+        "AGENCY_CI_RUN_ID": "${{ github.run_id }}",
+    }
+    assert (
+        '--label "artifact-smoke-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"'
+        in private_runtime_step["run"]
+    )
+    assert "${{" not in private_runtime_step["run"]
     smoke_step = next(step for step in steps if "source distribution" in step["name"])
     assert smoke_step["working-directory"] == "${{ runner.temp }}"
     script = smoke_step["run"]
     for required in (
         'EXPECTED_VERSION="$(python "${GITHUB_WORKSPACE}/scripts/read_release_version.py"',
-        "python -m venv wheel-smoke",
-        "python -m venv sdist-smoke",
+        'python -m venv --copies "${AGENCY_CI_TEMP}/wheel-smoke"',
+        'python -m venv --copies "${AGENCY_CI_TEMP}/sdist-smoke"',
+        'export HOME="${AGENCY_CI_HOME}/${label}"',
+        'export TMPDIR="${AGENCY_CI_TEMP}"',
         "agency-dist/*.whl",
         "agency-dist/*.tar.gz",
         "--no-cache-dir --only-binary=:all:",
@@ -198,6 +214,46 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         'smoke_distribution sdist "${SDIST_PYTHON}"',
     ):
         assert required in script
+
+
+def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+
+    for job_name, preparation_name in (
+        ("quality", "Prepare private test runtime"),
+        ("test", "Prepare private test runtime"),
+    ):
+        steps = workflow["jobs"][job_name]["steps"]
+        preparation = next(step for step in steps if step["name"] == preparation_name)
+        execution = next(
+            step
+            for step in steps
+            if step["name"]
+            in {
+                "Run warning-strict 100% line and branch coverage",
+                "Run tests",
+            }
+        )
+        assert "python -m scripts.prepare_ci_runtime" in preparation["run"]
+        assert preparation["shell"] == "bash"
+        assert preparation["env"]["AGENCY_CI_RUN_ID"] == "${{ github.run_id }}"
+        assert preparation["env"]["AGENCY_CI_RUN_ATTEMPT"] == "${{ github.run_attempt }}"
+        assert "${{" not in preparation["run"]
+        if job_name == "test":
+            assert preparation["env"]["AGENCY_CI_MATRIX_PYTHON"] == "${{ matrix.python }}"
+            assert (
+                "tests-py${AGENCY_CI_MATRIX_PYTHON}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
+            ) in preparation["run"]
+        else:
+            assert "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}" in preparation["run"]
+        for boundary in (
+            'export HOME="${AGENCY_CI_HOME}"',
+            'export USERPROFILE="${AGENCY_CI_HOME}"',
+            'export TMPDIR="${AGENCY_CI_TEMP}"',
+            "unset AGENCY_CONFIG_PATH AGENCY_DB_PATH",
+            '"${AGENCY_CI_PYTHON}" -m pytest',
+        ):
+            assert boundary in execution["run"]
 
 
 def test_history_derived_ledgers_use_the_complete_durable_head() -> None:

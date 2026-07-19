@@ -337,7 +337,11 @@ def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
     )
 
 
-def test_native_linux_launcher_platform_and_short_worker_fail_closed(tmp_path, monkeypatch):
+def test_native_linux_launcher_platform_and_short_worker_fail_closed(
+    tmp_path,
+    monkeypatch,
+    os_facade,
+):
     ctx = subject._context(
         home_dir=tmp_path,
         platform_name="linux",
@@ -345,7 +349,7 @@ def test_native_linux_launcher_platform_and_short_worker_fail_closed(tmp_path, m
         python_executable=tmp_path / "python",
     )
     assert ctx is not None
-    monkeypatch.setattr(subject.os, "name", "posix")
+    monkeypatch.setattr(subject, "os", os_facade(subject.os, name="posix"))
     monkeypatch.setattr(subject.platform, "system", lambda: "Linux")
     assert subject._native_launcher_platform(ctx) == "posix"
 

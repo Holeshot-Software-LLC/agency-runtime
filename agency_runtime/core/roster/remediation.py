@@ -282,6 +282,53 @@ _KNOWN_PROFILE_OFFSETS = {
         11837,
     ),
 }
+_CRLF_PROFILE_SPECS = {
+    "03361c59841f74d4384902b8fd9d0aa437bb5705a305727ac936d441d2592c05": (
+        "1a3e043f806b0b7c071d58b2ee3ab3c58c8342e2727c1ca9e6e5175f86986caf",
+        "a15d8cc533e36c20de196e3d56cdf95b0421e432cb06332cb8ac160c2cee8b64",
+        (598, 1021, 2248, 2924, 11415, 12474, 12562, 13073, 13529, 14077, 15267, 16025, 16382),
+    ),
+    "8c115d3c90307db0a2bc7e4e0644bdd638cb5f1e414474638c72ae483d05e053": (
+        "1987be72f8fd43ca694f9145cb0dbe37eabc5b1f04439425d7b59185db9263c9",
+        "bb03a63b8c1e384217daf6ad4d2c011acfc47c9b99b998247d035d99e9f504f3",
+        (636, 1057, 2338, 3035, 6985, 8059, 8156, 8708, 9142, 9794, 10917, 11724, 12135),
+    ),
+}
+
+
+def _register_reviewed_crlf_profiles() -> dict[str, str]:
+    """Register exact CRLF byte variants without weakening raw-source identity."""
+
+    canonical_hashes: dict[str, str] = {source_hash: source_hash for source_hash in _KNOWN_PROFILES}
+    for source_hash, (
+        canonical_hash,
+        transformed_hash,
+        offsets,
+    ) in _CRLF_PROFILE_SPECS.items():
+        canonical = _KNOWN_PROFILES[canonical_hash]
+        _KNOWN_PROFILES[source_hash] = _KnownProfile(
+            transformed_hash,
+            tuple(
+                _ProfileEdit(
+                    edit.match.replace("\n", "\r\n"),
+                    edit.replacement.replace("\n", "\r\n"),
+                )
+                for edit in canonical.edits
+            ),
+        )
+        _KNOWN_PROFILE_OFFSETS[source_hash] = offsets
+        canonical_hashes[source_hash] = canonical_hash
+    return canonical_hashes
+
+
+_CANONICAL_SOURCE_HASHES = _register_reviewed_crlf_profiles()
+
+
+def canonical_remediation_source_hash(source_hash: str) -> str:
+    """Resolve a reviewed byte-exact line-ending variant to its canonical contract."""
+
+    normalized = str(source_hash)
+    return _CANONICAL_SOURCE_HASHES.get(normalized, normalized)
 
 
 def _attempt_disposition(original_hash: str) -> tuple[str, str, str]:
@@ -741,6 +788,7 @@ __all__ = [
     "RemediationReceipt",
     "RemediationStep",
     "RosterRemediationError",
+    "canonical_remediation_source_hash",
     "extend_with_contract_projection",
     "is_registered_encoding_intermediate",
     "normalize_remediation_attempt",

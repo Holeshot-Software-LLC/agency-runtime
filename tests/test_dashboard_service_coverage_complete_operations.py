@@ -278,6 +278,8 @@ def test_install_public_unsupported_and_lock_error(tmp_path, monkeypatch):
     )
     ctx = context(tmp_path)
     monkeypatch.setattr(install, "_context", lambda **_kw: ctx)
+    monkeypatch.setattr(install, "_validate_dashboard_launcher", lambda value: value)
+    monkeypatch.setattr(install, "_revalidate_dashboard_launcher", lambda _value: None)
 
     class BrokenLock:
         def __enter__(self):
@@ -332,6 +334,7 @@ def test_install_linux_missing_unit_invalid_utf8_and_ownership(tmp_path, monkeyp
 )
 def test_install_linux_command_failures(tmp_path, monkeypatch, failure_command, state, expected):
     ctx = context(tmp_path)
+    monkeypatch.setattr(install, "_revalidate_dashboard_launcher", lambda _value: None)
     monkeypatch.setattr(install, "_path_present", lambda _path: False)
     monkeypatch.setattr(install, "_read_manifest_bytes", lambda _ctx: None)
     monkeypatch.setattr(install, "_atomic_write", lambda *_a, **_kw: None)
@@ -356,6 +359,7 @@ def test_install_linux_command_failures(tmp_path, monkeypatch, failure_command, 
 
 def test_install_linux_readiness_failure_and_idempotent_success(tmp_path, monkeypatch):
     ctx = context(tmp_path)
+    monkeypatch.setattr(install, "_revalidate_dashboard_launcher", lambda _value: None)
     desired = install._unit_content(ctx).encode()
     monkeypatch.setattr(install, "_path_present", lambda _path: True)
     monkeypatch.setattr(install, "_read_systemd_unit", lambda _ctx: desired)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -84,7 +85,10 @@ def test_openclaw_node_probe_handles_unrunnable_and_invalid_script(
     private_installer_launcher,
 ) -> None:
     _home, plugin = _openclaw_bundle(tmp_path / "node")
-    monkeypatch.setattr(smoke.shutil, "which", lambda _name: "node")
+    node = tmp_path / ("node.exe" if os.name == "nt" else "node-bin")
+    node.write_bytes(b"test node launcher")
+    node.chmod(0o700)
+    monkeypatch.setattr(smoke.shutil, "which", lambda _name: str(node))
     monkeypatch.setattr(
         smoke.subprocess,
         "run",

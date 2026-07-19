@@ -406,6 +406,11 @@ def test_forbidden_repository_suffix_and_inode_guards(
         freeze_process_argv(prepared, forbidden_roots=(tmp_path,))
 
     untrusted = _write_tool(tmp_path / "agent.cmd")
+    monkeypatch.setattr(
+        process_argv,
+        "_assert_executable_artifact_trusted",
+        lambda *_args, **_kwargs: None,
+    )
     with pytest.raises(OSError, match="trusted native suffix"):
         process_argv._snapshot_executable(
             str(untrusted),
@@ -447,7 +452,15 @@ def test_revalidation_requires_a_frozen_identity() -> None:
 
 def test_npm_companion_resolution_is_allowlisted_and_identity_ready(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    if os.name != "nt":
+        monkeypatch.setattr(
+            process_argv,
+            "_is_absolute_path",
+            lambda value, *, platform_name: Path(value).is_absolute(),
+        )
+        monkeypatch.setattr(process_argv, "ntpath", process_argv.posixpath)
     assert (
         process_argv._trusted_npm_companion(
             tmp_path / "other.cmd",
@@ -484,6 +497,13 @@ def test_windows_launch_rules_reject_unsafe_fallbacks(
             platform_name="nt",
             system_resolver=lambda _name: "powershell.exe",
         )
+    if os.name != "nt":
+        monkeypatch.setattr(
+            process_argv,
+            "_is_absolute_path",
+            lambda value, *, platform_name: Path(value).is_absolute(),
+        )
+        monkeypatch.setattr(process_argv, "ntpath", process_argv.posixpath)
     trusted = _write_tool(tmp_path / "powershell.exe")
     monkeypatch.setattr(
         process_argv,

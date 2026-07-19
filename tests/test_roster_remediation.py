@@ -6,6 +6,7 @@ import copy
 import gc
 import hashlib
 import json
+import os
 import tracemalloc
 import unicodedata
 from pathlib import Path
@@ -16,6 +17,7 @@ import pytest
 from agency_runtime.core.roster import bundled as bundled_subject
 from agency_runtime.core.roster import ingress as ingress_subject
 from agency_runtime.core.roster import remediation as subject
+from agency_runtime.core.roster import review as review_subject
 from agency_runtime.core.roster import semantic_projection, source_safety
 from agency_runtime.core.roster import sync as sync_subject
 from agency_runtime.core.roster.bundled import bundled_roster
@@ -29,6 +31,7 @@ from agency_runtime.core.roster.sync import (
     create_roster_diff,
     list_remediation_queue,
     list_source_scans,
+    quarantine_candidate,
     quarantine_manifest_import,
     remediation_queue_snapshot,
 )
@@ -160,6 +163,88 @@ def test_known_repair_and_projection_are_exact_idempotent_and_verifiable(known_p
         )
         == receipt
     )
+
+
+def test_reviewed_crlf_source_variant_preserves_raw_identity_and_projection(
+    monkeypatch: pytest.MonkeyPatch,
+    known_profile,
+) -> None:
+    raw = known_profile.raw.replace("\n", "\r\n")
+    repaired = known_profile.repaired.replace("\n", "\r\n")
+    raw_hash = _hash(raw)
+    canonical = subject._KNOWN_PROFILES[known_profile.raw_hash]
+    monkeypatch.setitem(
+        subject._KNOWN_PROFILES,
+        raw_hash,
+        subject._KnownProfile(
+            _hash(repaired),
+            tuple(
+                subject._ProfileEdit(
+                    edit.match.replace("\n", "\r\n"),
+                    edit.replacement.replace("\n", "\r\n"),
+                )
+                for edit in canonical.edits
+            ),
+        ),
+    )
+    monkeypatch.setitem(
+        subject._KNOWN_PROFILE_OFFSETS,
+        raw_hash,
+        tuple(
+            raw.encode("utf-8").find(edit.match.encode("utf-8"))
+            for edit in subject._KNOWN_PROFILES[raw_hash].edits
+        ),
+    )
+    monkeypatch.setitem(
+        subject._CANONICAL_SOURCE_HASHES,
+        raw_hash,
+        known_profile.raw_hash,
+    )
+
+    transformed, deterministic = subject.remediate_source_text(raw)
+
+    assert transformed == repaired
+    assert deterministic is not None
+    assert deterministic.original_hash == raw_hash
+    assert deterministic.transformed_hash == _hash(repaired)
+    projected, receipt = semantic_projection.project_known_agent(
+        {
+            "slug": "fixture-agent",
+            "name": "Fixture Agent",
+            "division": "engineering",
+            "content": repaired,
+        },
+        deterministic,
+        relative_path="engineering/fixture-agent.md",
+    )
+    assert receipt.original_hash == raw_hash
+    assert (
+        semantic_projection.verify_projected_remediation(
+            raw,
+            projected["content"],
+            receipt,
+            relative_path="engineering/fixture-agent.md",
+        )
+        == receipt
+    )
+
+
+def test_production_crlf_profiles_are_exact_reviewed_aliases() -> None:
+    expected = {
+        "03361c59841f74d4384902b8fd9d0aa437bb5705a305727ac936d441d2592c05": (
+            "1a3e043f806b0b7c071d58b2ee3ab3c58c8342e2727c1ca9e6e5175f86986caf",
+            "a15d8cc533e36c20de196e3d56cdf95b0421e432cb06332cb8ac160c2cee8b64",
+        ),
+        "8c115d3c90307db0a2bc7e4e0644bdd638cb5f1e414474638c72ae483d05e053": (
+            "1987be72f8fd43ca694f9145cb0dbe37eabc5b1f04439425d7b59185db9263c9",
+            "bb03a63b8c1e384217daf6ad4d2c011acfc47c9b99b998247d035d99e9f504f3",
+        ),
+    }
+
+    for source_hash, (canonical_hash, transformed_hash) in expected.items():
+        assert subject.canonical_remediation_source_hash(source_hash) == canonical_hash
+        assert subject._KNOWN_PROFILES[source_hash].transformed_hash == transformed_hash
+        assert semantic_projection.contract_for_source_hash(source_hash) is not None
 
 
 def test_source_safety_public_projection_and_type_boundaries() -> None:
@@ -952,6 +1037,80 @@ def test_modified_intermediate_cannot_be_approved_without_governed_contract(
     assert store.get_active_roster() == []
 
 
+def test_registered_projection_cannot_bypass_source_bound_remediation(
+    tmp_path: Path,
+) -> None:
+    projected = copy.deepcopy(
+        next(item for item in bundled_roster() if item["slug"] == "mobile-app-builder")
+    )
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source("https://example.test/roster", "untrusted-copy")
+    candidate_id = quarantine_candidate(projected, source_id, store)
+    snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
+
+    with pytest.raises(RosterSyncError, match="audit"):
+        approve_snapshot(store, snapshot["snapshot_id"])
+    conn = store._connect()
+    try:
+        finding = conn.execute(
+            "SELECT finding.code FROM agent_candidate_audits AS audit "
+            "JOIN agent_candidate_audit_findings AS finding ON finding.audit_id = audit.id "
+            "WHERE audit.candidate_id = ? AND finding.code = ? LIMIT 1",
+            (candidate_id, "registered_projection_provenance_required"),
+        ).fetchone()
+        remediation_events = conn.execute(
+            "SELECT COUNT(*) FROM agent_import_events "
+            "WHERE event_type = 'manifest_entry_remediated' AND agent_slug = ?",
+            (projected["slug"],),
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    assert finding is not None
+    assert finding["code"] == "registered_projection_provenance_required"
+    assert remediation_events == 0
+    assert store.get_active_roster() == []
+
+
+def test_legacy_passing_projection_audit_is_not_current_after_policy_upgrade(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    projected = copy.deepcopy(
+        next(item for item in bundled_roster() if item["slug"] == "mobile-app-builder")
+    )
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source("https://example.test/roster", "legacy-untrusted-copy")
+    legacy_policy_hash = _hash("roster-candidate-audit-v1-without-source-bound-provenance")
+    current_review = review_subject._deterministic_review
+
+    def legacy_review(conn, candidate):
+        findings, active_basis_hash, payload = current_review(conn, candidate)
+        return (
+            [
+                finding
+                for finding in findings
+                if finding.code != "registered_projection_provenance_required"
+            ],
+            active_basis_hash,
+            payload,
+        )
+
+    with monkeypatch.context() as legacy:
+        legacy.setattr(review_subject, "AUDIT_POLICY_HASH", legacy_policy_hash)
+        legacy.setattr(review_subject, "_deterministic_review", legacy_review)
+        candidate_id = quarantine_candidate(projected, source_id, store)
+
+    legacy_audit = review_subject.candidate_comparison(store, candidate_id)["latest_audit"]
+    assert legacy_audit["policy_hash"] == legacy_policy_hash
+    assert legacy_audit["verdict"] == "passed"
+    assert legacy_audit["findings"] == []
+
+    snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
+    with pytest.raises(RosterSyncError, match="current passing audit"):
+        approve_snapshot(store, snapshot["snapshot_id"])
+    assert store.get_active_roster() == []
+
+
 def test_direct_store_activation_rejects_registered_intermediate(
     tmp_path: Path,
     known_profile,
@@ -1224,6 +1383,9 @@ def _write_known_manifest(root: Path, raw: str) -> None:
 
 
 def _unknown_remediation_store(root: Path) -> Store:
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if os.name != "nt":
+        root.chmod(0o700)
     source = root / "source"
     division = source / "engineering"
     division.mkdir(parents=True)

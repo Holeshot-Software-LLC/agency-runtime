@@ -23,6 +23,7 @@ from agency_runtime.core.specialist_context import (
 from agency_runtime.core.store.schema import SCHEMA_VERSION
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.mcp import handle_tool_call
+from tests.runtime_support import harden_private_test_file
 
 
 def test_v11_migration_preserves_uncorrelated_rows_as_history_only(tmp_path: Path) -> None:
@@ -52,6 +53,7 @@ def test_v11_migration_preserves_uncorrelated_rows_as_history_only(tmp_path: Pat
     )
     conn.commit()
     conn.close()
+    harden_private_test_file(db_path)
 
     store = Store(db_path)
 

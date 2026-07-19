@@ -108,7 +108,7 @@ def test_windows_handle_identity_native_paths(
         return result == "success"
 
     kernel = SimpleNamespace(GetFileInformationByHandle=_Function(get_information))
-    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel)
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
 
     actual = private._windows_directory_handle_identity(41)
 
@@ -118,7 +118,7 @@ def test_windows_handle_identity_native_paths(
 def test_close_windows_handle_native_and_failure_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     closed: list[int] = []
     kernel = SimpleNamespace(CloseHandle=_Function(lambda handle: closed.append(handle) or True))
-    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel)
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
     private._close_windows_handle(41)
     assert closed == [41]
 
@@ -126,6 +126,7 @@ def test_close_windows_handle_native_and_failure_paths(monkeypatch: pytest.Monke
         ctypes,
         "WinDLL",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("unavailable")),
+        raising=False,
     )
     private._close_windows_handle(42)
 
@@ -135,7 +136,7 @@ def _patch_create_file(monkeypatch: pytest.MonkeyPatch, result: int | None) -> l
     kernel = SimpleNamespace(
         CreateFileW=_Function(lambda *_args: calls.append(1) or result),
     )
-    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel)
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
     return calls
 
 
@@ -204,6 +205,7 @@ def test_open_directory_guard_native_exception_fails_closed(
         ctypes,
         "WinDLL",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(TypeError("unavailable")),
+        raising=False,
     )
     assert private.open_windows_directory_guard(path, is_windows=True) is None
 
@@ -235,9 +237,10 @@ def _patch_security_libraries(
         ctypes,
         "WinDLL",
         lambda name, **_kwargs: advapi if name.startswith("Advapi") else kernel,
+        raising=False,
     )
-    monkeypatch.setattr(ctypes, "get_last_error", lambda: last_error)
-    monkeypatch.setattr(ctypes, "set_last_error", lambda _value: None)
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: last_error, raising=False)
+    monkeypatch.setattr(ctypes, "set_last_error", lambda _value: None, raising=False)
     return freed
 
 
@@ -266,6 +269,7 @@ def test_set_windows_file_security_native_exception_fails_closed(
         ctypes,
         "WinDLL",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("bad descriptor")),
+        raising=False,
     )
     assert not private._set_windows_file_security(tmp_path, "D:P")
 
@@ -306,6 +310,7 @@ def test_create_windows_directory_errors_are_normalized(
             ctypes,
             "WinDLL",
             lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("missing")),
+            raising=False,
         )
     else:
         _patch_security_libraries(

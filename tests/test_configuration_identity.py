@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import platform
 import stat
-import sys
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -39,6 +38,7 @@ from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.store import sqlite as sqlite_store
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.dashboard import run_dashboard
+from tests.runtime_support import trusted_test_interpreter
 
 
 @pytest.fixture(autouse=True)
@@ -64,7 +64,7 @@ def _installed_manifest(
         home_dir=home,
         platform_name=platform_name,
         config_path=config,
-        python_executable=sys._base_executable,
+        python_executable=str(trusted_test_interpreter()),
     )
     assert ctx is not None
     ctx = replace(

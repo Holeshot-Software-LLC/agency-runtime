@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -12,8 +11,9 @@ import pytest
 from agency_runtime.core import cli_transport
 from agency_runtime.core.config import ProviderEntry
 from agency_runtime.core.delegation.backends import BoundedProcessResult
+from tests.runtime_support import trusted_test_interpreter
 
-_TRUSTED_CLI = str(Path(getattr(sys, "_base_executable", sys.executable)).resolve())
+_TRUSTED_CLI = str(trusted_test_interpreter())
 
 
 def _provider(transport: str, *, model: str = "model") -> ProviderEntry:

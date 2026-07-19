@@ -22,7 +22,7 @@ from agency_runtime.core.evals.delegation import run_delegation_eval
 from agency_runtime.core.installer import HOSTS, detect_installed_agents, install_agent_adapter
 from agency_runtime.core.installer_contracts import ADAPTER_LAUNCHER_MANIFEST
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
-from agency_runtime.core.private_paths import private_temporary_directory
+from agency_runtime.core.private_paths import ensure_private_directory, private_temporary_directory
 from agency_runtime.core.process_argv import (
     freeze_process_argv,
     persistent_artifacts_from_manifest,
@@ -79,13 +79,13 @@ def _check(name: str, fn: Any) -> dict[str, Any]:
 
 def _prepare_fake_host_home(home: Path, host: str) -> None:
     if host == "hermes":
-        (home / ".hermes" / "plugins").mkdir(parents=True, exist_ok=True)
+        ensure_private_directory(home / ".hermes" / "plugins")
     elif host == "openclaw":
-        (home / ".openclaw").mkdir(parents=True, exist_ok=True)
+        ensure_private_directory(home / ".openclaw")
     elif host == "codex":
-        (home / ".codex").mkdir(parents=True, exist_ok=True)
+        ensure_private_directory(home / ".codex")
     elif host == "claude":
-        (home / ".claude").mkdir(parents=True, exist_ok=True)
+        ensure_private_directory(home / ".claude")
 
 
 def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
