@@ -234,7 +234,7 @@ not stable internal identifiers.
 | [AR-101](issue-AR-101-enforce-restricted-global-master-switch.md) | [`cbe9bc9`](../worklog/README.md), [`c8ebbfa`](../worklog/README.md) | [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
 | [AR-102](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | [`164188b`](../worklog/README.md), [`11a2c86`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md) |
 | [AR-103](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | [`664fcf1`](../worklog/README.md), [`11a2c86`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
-| [AR-104](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [`11a2c86`](../worklog/README.md), [`0df5050`](../worklog/README.md), [`0c41fbd`](../worklog/README.md), [`89576f0`](../worklog/README.md), [`07de83c`](../worklog/README.md), [`a1c6744`](../worklog/README.md), [`31516d1`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md) |
+| [AR-104](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [`11a2c86`](../worklog/README.md), [`0df5050`](../worklog/README.md), [`0c41fbd`](../worklog/README.md), [`89576f0`](../worklog/README.md), [`07de83c`](../worklog/README.md), [`a1c6744`](../worklog/README.md), [`31516d1`](../worklog/README.md), [`b05b180`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md) |
 
 ## Dependency summary
 
