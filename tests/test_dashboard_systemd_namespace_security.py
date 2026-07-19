@@ -230,6 +230,46 @@ def test_manager_environment_parser_returns_names_without_values() -> None:
     assert names == ("AGENCY_DB_PATH", "CUSTOM_JUDGE_KEY")
 
 
+def test_failed_manager_environment_probe_redacts_both_streams_from_plan(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / ".agency-runtime" / "agency.yaml"
+    config_path.parent.mkdir()
+    config_path.write_text("profile: standard\n", encoding="utf-8")
+
+    def runner(argv: list[str], **_kwargs: object) -> dict[str, object]:
+        assert argv == ["systemctl", "--user", "show-environment"]
+        return {
+            "returncode": 1,
+            "stdout": "AGENCY_DB_PATH=stdout-secret-value\nUNRELATED=also-secret\n",
+            "stderr": "LITELLM_API_KEY=stderr-secret-value\nprivate failure detail\n",
+        }
+
+    result = inspection.plan_dashboard_service(
+        home_dir=tmp_path,
+        platform_name="linux",
+        config_path=config_path,
+        python_executable=sys.executable,
+        command_runner=runner,
+    )
+
+    assert result["manager_probe"] == {
+        "command": ["systemctl", "--user", "show-environment"],
+        "returncode": 1,
+        "ok": False,
+        "error": "systemd user manager environment probe failed; output redacted",
+        "reported_environment_names": ["AGENCY_DB_PATH", "LITELLM_API_KEY"],
+    }
+    encoded = json.dumps(result)
+    for sensitive in (
+        "stdout-secret-value",
+        "stderr-secret-value",
+        "also-secret",
+        "private failure detail",
+    ):
+        assert sensitive not in encoded
+
+
 @pytest.mark.parametrize("operation", ["plan", "install", "inspect"])
 def test_public_service_mutation_rejects_manager_only_runtime_environment(
     tmp_path: Path,

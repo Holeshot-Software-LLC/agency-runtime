@@ -286,6 +286,7 @@ def _render_plan(
     available: bool | None,
     probe: _CommandResult | None,
     registration: _PlanRegistration,
+    manager_environment_names: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     disposition = _plan_disposition(
         available=available,
@@ -307,7 +308,20 @@ def _render_plan(
         "commands": registration.commands,
     }
     if disposition.include_manager_probe:
-        value["manager_probe"] = probe.public() if probe is not None else None
+        if probe is None:
+            value["manager_probe"] = None
+        else:
+            # A failed ``show-environment`` may echo environment values on
+            # either stream. Keep the fixed command and return code useful,
+            # but never serialize those streams across the public boundary.
+            public_probe = probe.public(include_failure_output=ctx.platform != "linux")
+            if ctx.platform == "linux" and not probe.ok:
+                public_probe["error"] = (
+                    "systemd user manager environment probe failed; output redacted"
+                )
+                if manager_environment_names:
+                    public_probe["reported_environment_names"] = list(manager_environment_names)
+            value["manager_probe"] = public_probe
     if disposition.error is not None:
         value["error"] = disposition.error
     if disposition.warning is not None:
@@ -347,11 +361,14 @@ def plan_dashboard_service(
     available, probe, registration_state = _manager_probe(
         ctx, home_dir=home_dir, command_runner=command_runner
     )
-    manager_overrides = (
-        dashboard_service_manager_environment_overrides(config, probe.stdout)
-        if ctx.platform == "linux" and probe is not None and probe.ok
-        else ()
-    )
+    manager_environment_names: tuple[str, ...] = ()
+    if ctx.platform == "linux" and probe is not None:
+        manager_output = probe.stdout if probe.ok else f"{probe.stdout}\n{probe.stderr}"
+        manager_environment_names = dashboard_service_manager_environment_overrides(
+            config,
+            manager_output,
+        )
+    manager_overrides = manager_environment_names if probe is not None and probe.ok else ()
     if manager_overrides:
         result = _failed(
             "plan",
@@ -373,6 +390,7 @@ def plan_dashboard_service(
         available=available,
         probe=probe,
         registration=registration,
+        manager_environment_names=manager_environment_names,
     )
 
 

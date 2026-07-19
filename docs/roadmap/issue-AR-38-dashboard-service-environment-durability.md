@@ -3,7 +3,7 @@ title: "AR-38: Reject non-durable dashboard service environment overrides"
 status: done
 category: roadmap
 created: 2026-07-15
-updated: 2026-07-16
+updated: 2026-07-19
 tags: [dashboard, service, environment, reboot, configuration]
 related:
   - docs/decisions/0006-config-first-redacted-configuration.md
@@ -35,6 +35,9 @@ but disappear after reboot, silently changing runtime identity.
 argv. Other supported runtime overrides are neither embedded nor written to the
 config. Agency now checks both the installer process and the systemd user
 manager environment, while service metadata and diagnostics expose names only.
+Failed manager probes retain their fixed command and return code but replace
+both output streams with a redacted diagnostic; allowlisted override names may
+still be reported without values.
 
 ## Approach
 
@@ -45,7 +48,9 @@ accept explicit config identity and never copy secret values into argv,
 manifests, commands, errors, or logs.
 For Linux, parse the bounded `systemctl --user show-environment` result and
 reject matching Agency or configured credential names before registration,
-without returning their values.
+without returning their values. Apply the same names-only projection to failed
+probe streams because systemd or an intermediary can echo environment values
+while reporting an error.
 
 ## Dependencies
 

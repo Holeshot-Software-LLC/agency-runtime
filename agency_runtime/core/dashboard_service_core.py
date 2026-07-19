@@ -85,14 +85,17 @@ class _CommandResult:
     def ok(self) -> bool:
         return self.returncode == 0
 
-    def public(self) -> dict[str, Any]:
+    def public(self, *, include_failure_output: bool = True) -> dict[str, Any]:
         value: dict[str, Any] = {
             "command": list(self.command),
             "returncode": self.returncode,
             "ok": self.ok,
         }
         if not self.ok:
-            detail = (self.stderr or self.stdout or "service-manager command failed").strip()
+            detail = ""
+            if include_failure_output:
+                detail = (self.stderr or self.stdout).strip()
+            detail = detail or "service-manager command failed"
             value["error"] = _terminal_safe(detail)[:500]
         return value
 

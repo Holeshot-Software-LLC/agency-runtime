@@ -131,6 +131,10 @@ def test_render_plan_includes_probe_error_and_warning(tmp_path):
         registration=registration,
     )
     assert unavailable["manager_probe"]["ok"] is False
+    assert unavailable["manager_probe"]["error"] == (
+        "systemd user manager environment probe failed; output redacted"
+    )
+    assert "offline" not in str(unavailable)
     assert "unavailable" in unavailable["error"]
     suppressed = inspection._render_plan(ctx, available=None, probe=None, registration=registration)
     assert "warning" in suppressed

@@ -23,6 +23,9 @@ def test_command_result_terminal_safety_and_public_shape():
     }
     failure = subject._CommandResult(("manager",), 2, "fallback", "bad\x00detail")
     assert failure.public()["error"] == "bad?detail"
+    assert failure.public(include_failure_output=False)["error"] == (
+        "service-manager command failed"
+    )
     assert subject._CommandResult(("manager",), 1).public()["error"] == (
         "service-manager command failed"
     )
