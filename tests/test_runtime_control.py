@@ -867,6 +867,25 @@ def test_new_windows_lock_requires_private_acl_and_cleans_up(
     assert not lock_path.exists()
 
 
+def test_new_windows_lock_accepts_a_stable_private_acl(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+) -> None:
+    lock_path = tmp_path / "control.lock"
+    monkeypatch.setattr(control, "os", os_facade(control.os, name="nt"))
+    monkeypatch.setattr(control, "restrict_windows_acl", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(control, "_same_file", lambda *_args: True)
+    monkeypatch.setattr(control, "_validate_regular_private_file", lambda *_args: None)
+    monkeypatch.setattr(control, "_validate_directory_snapshot", lambda _snapshot: None)
+
+    handle, created = control._secure_open_lock(lock_path, ())
+    try:
+        assert created is True
+    finally:
+        handle.close()
+
+
 @pytest.mark.parametrize("existing", [False, True])
 def test_secure_lock_detects_identity_change_before_and_after_hardening(
     tmp_path: Path,
@@ -951,6 +970,56 @@ def test_control_lock_timeout_and_identity_loss(
     monkeypatch.setattr(msvcrt, "locking", lambda *_args: None)
     monkeypatch.setattr(control, "_validate_regular_private_file", lambda *_args: None)
     monkeypatch.setattr(control, "_same_file", lambda *_args: False)
+    with (
+        pytest.raises(control.RuntimeControlSecurityError, match="before acquisition"),
+        control._control_lock(target, timeout=1),
+    ):
+        pytest.fail("identity loss must prevent acquisition")
+
+
+def test_windows_control_lock_portable_acquire_timeout_and_identity_loss(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+) -> None:
+    target = tmp_path / "control.json"
+    lock_path = target.with_name(f".{target.name}.lock")
+    lock_path.write_bytes(b"\0")
+    operations: list[int] = []
+    fake_msvcrt = SimpleNamespace(
+        LK_NBLCK=1,
+        LK_UNLCK=2,
+        locking=lambda _fd, operation, _length: operations.append(operation),
+    )
+    monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
+    monkeypatch.setattr(control, "os", os_facade(control.os, name="nt"))
+    monkeypatch.setattr(control, "_prepare_parent", lambda _target: ())
+    monkeypatch.setattr(control, "_validate_regular_private_file", lambda *_args: None)
+    monkeypatch.setattr(control, "_validate_directory_snapshot", lambda _snapshot: None)
+    monkeypatch.setattr(control, "_same_file", lambda *_args: True)
+
+    handle = lock_path.open("r+b")
+    monkeypatch.setattr(control, "_secure_open_lock", lambda *_args: (handle, False))
+    with control._control_lock(target, timeout=1):
+        pass
+    assert operations == [fake_msvcrt.LK_NBLCK, fake_msvcrt.LK_UNLCK]
+
+    def busy(_fd: int, _operation: int, _length: int) -> None:
+        raise OSError("busy")
+
+    fake_msvcrt.locking = busy
+    handle = lock_path.open("r+b")
+    monkeypatch.setattr(control, "_secure_open_lock", lambda *_args: (handle, False))
+    with (
+        pytest.raises(control.RuntimeControlBusyError, match="busy"),
+        control._control_lock(target, timeout=0),
+    ):
+        pytest.fail("busy lock must not be acquired")
+
+    fake_msvcrt.locking = lambda _fd, operation, _length: operations.append(operation)
+    monkeypatch.setattr(control, "_same_file", lambda *_args: False)
+    handle = lock_path.open("r+b")
+    monkeypatch.setattr(control, "_secure_open_lock", lambda *_args: (handle, False))
     with (
         pytest.raises(control.RuntimeControlSecurityError, match="before acquisition"),
         control._control_lock(target, timeout=1),

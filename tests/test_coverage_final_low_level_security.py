@@ -222,6 +222,24 @@ def test_posix_artifact_trust_requires_verifiable_owner_and_private_mode(
     )
 
 
+def test_windows_artifact_trust_accepts_an_acl_protected_file(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[tuple[Path, bool]] = []
+    monkeypatch.setattr(
+        process_argv,
+        "windows_file_prevents_untrusted_mutation",
+        lambda path, *, is_windows: observed.append((path, is_windows)) or True,
+    )
+
+    process_argv._assert_executable_artifact_trusted(
+        "C:\\trusted\\tool.exe",
+        _status(),
+        platform_name="nt",
+    )
+    assert observed == [(Path("C:\\trusted\\tool.exe"), True)]
+
+
 def test_opened_metadata_identity_uses_full_posix_mode(
     monkeypatch: pytest.MonkeyPatch,
     os_facade,
@@ -231,6 +249,25 @@ def test_opened_metadata_identity_uses_full_posix_mode(
 
     assert process_argv._opened_metadata_identity(observed) == process_argv._metadata_identity(
         observed
+    )
+
+
+def test_opened_metadata_identity_normalizes_windows_execute_bits(
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+) -> None:
+    observed = _status()
+    monkeypatch.setattr(process_argv, "os", os_facade(process_argv.os, name="nt"))
+
+    identity = process_argv._opened_metadata_identity(observed)
+
+    assert identity == (
+        observed.st_dev,
+        observed.st_ino,
+        stat.S_IFREG,
+        observed.st_size,
+        observed.st_mtime_ns,
+        observed.st_file_attributes,
     )
 
 
@@ -273,6 +310,33 @@ def test_stable_hash_applies_no_follow_and_accepts_a_stable_file(
 
     assert process_argv._stable_file_sha256("tool", expected) == hashlib.sha256(b"data").hexdigest()
     assert flags == [0x300]
+    assert closed == [7]
+
+
+def test_stable_hash_tolerates_platforms_without_no_follow(
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+) -> None:
+    expected = _status()
+    monkeypatch.setattr(
+        process_argv,
+        "os",
+        os_facade(
+            process_argv.os,
+            missing=frozenset({"O_NOFOLLOW"}),
+            O_BINARY=0x200,
+            O_RDONLY=0,
+        ),
+    )
+    flags, closed = _patch_hash_io(
+        monkeypatch,
+        statuses=[expected, expected],
+        chunks=[b"data", b""],
+        path_status=expected,
+    )
+
+    assert process_argv._stable_file_sha256("tool", expected) == hashlib.sha256(b"data").hexdigest()
+    assert flags == [0x200]
     assert closed == [7]
 
 

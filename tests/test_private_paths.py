@@ -432,7 +432,7 @@ def test_bootstrap_private_directory_discards_post_install_drift(
     assert target.resolve() not in private_paths._HOST_AUTHORITIES
 
 
-def test_bootstrap_authority_uses_only_system_owned_root_semantics(
+def test_bootstrap_authority_uses_strict_protected_current_user_semantics(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -461,8 +461,8 @@ def test_bootstrap_authority_uses_only_system_owned_root_semantics(
     try:
         assert private_paths._identity_is_current(identity)
         assert len(semantic_calls) == 1
-        assert semantic_calls[0]["final_parent"] is False
-        assert semantic_calls[0]["prospective_child"] is True
+        assert semantic_calls[0]["final_parent"] is True
+        assert "prospective_child" not in semantic_calls[0]
         assert semantic_calls[0]["private_access"] is True
         assert semantic_calls[0]["require_protected_dacl"] is True
     finally:

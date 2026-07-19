@@ -50,6 +50,103 @@ class _Result:
         return iter(self._rows)
 
 
+def test_initialization_lock_optional_windows_flags_and_native_locking(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+) -> None:
+    observed_flags: list[int] = []
+    binary_flag = 0x40000000
+
+    def fail_open(_path: Path, flags: int, *_args: Any) -> int:
+        observed_flags.append(flags)
+        raise OSError("denied")
+
+    monkeypatch.setattr(
+        initialization_lock,
+        "os",
+        os_facade(
+            initialization_lock.os,
+            missing=frozenset({"O_NOFOLLOW"}),
+            O_BINARY=binary_flag,
+            open=fail_open,
+        ),
+    )
+    with pytest.raises(
+        initialization_lock.StorageInitializationLockSecurityError,
+        match="could not be created",
+    ):
+        initialization_lock._open_lock(tmp_path / "lock")
+    assert len(observed_flags) == 1
+    assert observed_flags[0] & binary_flag
+
+    operations: list[int] = []
+    fake_msvcrt = SimpleNamespace(
+        LK_NBLCK=1,
+        LK_UNLCK=2,
+        locking=lambda _fd, operation, _length: operations.append(operation),
+    )
+    monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
+    monkeypatch.setattr(initialization_lock, "_IS_WINDOWS", True)
+    lock_path = tmp_path / "native-lock"
+    lock_path.write_bytes(b"\0")
+    with lock_path.open("r+b") as handle:
+        initialization_lock._try_acquire(handle)
+        initialization_lock._release(handle)
+    assert operations == [fake_msvcrt.LK_NBLCK, fake_msvcrt.LK_UNLCK]
+
+
+def test_windows_storage_file_trust_uses_strict_private_acl(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candidate = tmp_path / "agency.db"
+    metadata = _metadata(mode=stat.S_IFREG | 0o600)
+    observed: list[tuple[Path, dict[str, Any]]] = []
+    monkeypatch.setattr(security.os, "lstat", lambda _path: metadata)
+    monkeypatch.setattr(
+        security,
+        "windows_directory_prevents_untrusted_writes",
+        lambda path, **kwargs: observed.append((path, kwargs)) or True,
+    )
+
+    assert security.storage_file_is_trusted(candidate, is_windows=True)
+    assert observed == [
+        (
+            candidate,
+            {
+                "is_windows": True,
+                "final_parent": True,
+                "private_access": True,
+            },
+        )
+    ]
+
+
+def test_optional_sqlite_sidecar_may_disappear_after_trust_probe(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = store_sqlite.Store.__new__(store_sqlite.Store)
+    sidecar = tmp_path / "agency.db-wal"
+    metadata = _metadata(mode=stat.S_IFREG | 0o600)
+    snapshots = iter((metadata, None))
+    trusted: list[Path] = []
+    monkeypatch.setattr(
+        store,
+        "_storage_metadata",
+        lambda _path, *, optional: next(snapshots),
+    )
+    monkeypatch.setattr(
+        store_sqlite,
+        "_storage_file_is_trusted",
+        lambda path: trusted.append(path) or True,
+    )
+
+    store._require_stable_trusted_storage_file(sidecar, optional_sidecar=True)
+    assert trusted == [sidecar]
+
+
 def _metadata(*, mode: int, inode: int = 7, device: int = 3, links: int = 1) -> Any:
     return SimpleNamespace(
         st_mode=mode,

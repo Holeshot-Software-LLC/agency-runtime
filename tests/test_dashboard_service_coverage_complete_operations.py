@@ -271,6 +271,31 @@ def test_preflight_blocks_indeterminate_unowned_and_invalid_manifest(tmp_path, m
     assert returned is state and blocked is not None and not blocked["ok"]
 
 
+def test_preflight_requires_reinstall_for_launcher_identity_drift(tmp_path, monkeypatch):
+    ctx = context(tmp_path)
+    state = {
+        "manager_available": True,
+        "installed": True,
+        "enabled": True,
+        "active": True,
+        "owned": True,
+        "manifest_current": False,
+    }
+    monkeypatch.setattr(inspection, "inspect_dashboard_service", lambda **_kwargs: state)
+
+    blocked, returned = inspection._preflight(
+        "start",
+        ctx,
+        home_dir=tmp_path,
+        command_runner=lambda *_args: None,
+    )
+
+    assert returned is state
+    assert blocked is not None
+    assert blocked["commands"] == []
+    assert "reinstalling" in blocked["error"]
+
+
 def test_install_public_unsupported_and_lock_error(tmp_path, monkeypatch):
     assert (
         install.install_dashboard_service(home_dir=tmp_path, platform_name="darwin")["supported"]

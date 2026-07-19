@@ -358,6 +358,23 @@ def test_native_linux_launcher_platform_and_short_worker_fail_closed(
         subject._validate_dashboard_launcher(replace(ctx, worker_argv=("python", "-I")))
 
 
+def test_native_windows_launcher_platform_is_detected_portably(
+    tmp_path,
+    monkeypatch,
+    os_facade,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python.exe",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(subject, "os", os_facade(subject.os, name="nt"))
+
+    assert subject._native_launcher_platform(ctx) == "nt"
+
+
 def test_windows_sid_non_windows_and_library_failure(monkeypatch):
     import ctypes
 

@@ -57,9 +57,204 @@ def _native_libraries(
     return freed
 
 
+def _owner_match_libraries(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    descriptor_ok: bool = True,
+    descriptor_present: bool = True,
+    sid_ok: bool = True,
+    sid_present: bool = True,
+    owner_ok: bool = True,
+    owner_present: bool = True,
+    equal: bool = True,
+    raise_at: str | None = None,
+) -> tuple[list[int | None], list[tuple[int | None, int | None]]]:
+    freed: list[int | None] = []
+    comparisons: list[tuple[int | None, int | None]] = []
+
+    def convert_descriptor(_value: Any, _revision: Any, output: Any, _length: Any) -> bool:
+        if raise_at == "descriptor":
+            output._obj.value = 101
+            raise ctypes.ArgumentError("descriptor")
+        if descriptor_ok and descriptor_present:
+            output._obj.value = 101
+        return descriptor_ok
+
+    def convert_sid(_value: Any, output: Any) -> bool:
+        if raise_at == "sid":
+            output._obj.value = 202
+            raise ctypes.ArgumentError("sid")
+        if sid_ok and sid_present:
+            output._obj.value = 202
+        return sid_ok
+
+    def get_owner(_descriptor: Any, output: Any, _defaulted: Any) -> bool:
+        if raise_at == "owner":
+            raise ctypes.ArgumentError("owner")
+        if owner_ok and owner_present:
+            output._obj.value = 303
+        return owner_ok
+
+    def equal_sid(owner: Any, expected: Any) -> bool:
+        if raise_at == "equal":
+            raise ctypes.ArgumentError("equal")
+        comparisons.append((owner.value, expected.value))
+        return equal
+
+    advapi = SimpleNamespace(
+        ConvertStringSecurityDescriptorToSecurityDescriptorW=_Api(convert_descriptor),
+        ConvertStringSidToSidW=_Api(convert_sid),
+        GetSecurityDescriptorOwner=_Api(get_owner),
+        EqualSid=_Api(equal_sid),
+    )
+    kernel = SimpleNamespace(LocalFree=_Api(lambda value: freed.append(value.value)))
+    monkeypatch.setattr(
+        ctypes,
+        "WinDLL",
+        lambda name, **_kwargs: advapi if name.startswith("Advapi") else kernel,
+        raising=False,
+    )
+    return freed, comparisons
+
+
+@pytest.mark.parametrize(
+    ("value", "expected_sid", "is_windows"),
+    [
+        ("O:LAD:P(A;;FA;;;LA)", "S-1-5-21-42", False),
+        ("", "S-1-5-21-42", True),
+        ("O:LA", "", True),
+        ("O:LA\0D:P(A;;FA;;;LA)", "S-1-5-21-42", True),
+        ("O:LA", "LA", True),
+        ("O:LA", "S-1-5-21-42\0BAD", True),
+    ],
+)
+def test_owner_sid_matcher_rejects_unavailable_inputs_without_native_calls(
+    monkeypatch: pytest.MonkeyPatch,
+    value: str,
+    expected_sid: str,
+    is_windows: bool,
+) -> None:
+    monkeypatch.setattr(
+        ctypes,
+        "WinDLL",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("native call")),
+        raising=False,
+    )
+
+    assert not windows_acl.windows_sddl_owner_matches_sid(
+        value,
+        expected_sid,
+        is_windows=is_windows,
+    )
+
+
+@pytest.mark.parametrize(
+    ("failure", "expected_freed"),
+    [
+        ("descriptor", []),
+        ("missing_descriptor", []),
+        ("sid", [101]),
+        ("missing_sid", [101]),
+        ("owner", [202, 101]),
+        ("missing_owner", [202, 101]),
+    ],
+)
+def test_owner_sid_matcher_fails_closed_and_releases_allocations(
+    monkeypatch: pytest.MonkeyPatch,
+    failure: str,
+    expected_freed: list[int],
+) -> None:
+    freed, comparisons = _owner_match_libraries(
+        monkeypatch,
+        descriptor_ok=failure != "descriptor",
+        descriptor_present=failure != "missing_descriptor",
+        sid_ok=failure != "sid",
+        sid_present=failure != "missing_sid",
+        owner_ok=failure != "owner",
+        owner_present=failure != "missing_owner",
+    )
+
+    assert not windows_acl.windows_sddl_owner_matches_sid(
+        "O:LAD:P(A;;FA;;;LA)",
+        "S-1-5-21-42",
+        is_windows=True,
+    )
+    assert comparisons == []
+    assert freed == expected_freed
+
+
+@pytest.mark.parametrize("equal", [False, True])
+def test_owner_sid_matcher_uses_binary_sid_identity(
+    monkeypatch: pytest.MonkeyPatch,
+    equal: bool,
+) -> None:
+    freed, comparisons = _owner_match_libraries(monkeypatch, equal=equal)
+
+    assert (
+        windows_acl.windows_sddl_owner_matches_sid(
+            "O:LAD:P(A;;FA;;;LA)",
+            "S-1-5-21-42",
+            is_windows=True,
+        )
+        is equal
+    )
+    assert comparisons == [(303, 202)]
+    assert freed == [202, 101]
+
+
+def test_owner_sid_matcher_native_exceptions_fail_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        ctypes,
+        "WinDLL",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("unavailable")),
+        raising=False,
+    )
+
+    assert not windows_acl.windows_sddl_owner_matches_sid(
+        "O:LAD:P(A;;FA;;;LA)",
+        "S-1-5-21-42",
+        is_windows=True,
+    )
+
+
+@pytest.mark.parametrize(
+    ("raise_at", "expected_freed"),
+    [
+        ("descriptor", [101]),
+        ("sid", [202, 101]),
+        ("owner", [202, 101]),
+        ("equal", [202, 101]),
+    ],
+)
+def test_owner_sid_matcher_ctypes_errors_fail_closed_after_allocation(
+    monkeypatch: pytest.MonkeyPatch,
+    raise_at: str,
+    expected_freed: list[int],
+) -> None:
+    freed, comparisons = _owner_match_libraries(monkeypatch, raise_at=raise_at)
+
+    assert not windows_acl.windows_sddl_owner_matches_sid(
+        "O:LAD:P(A;;FA;;;LA)",
+        "S-1-5-21-42",
+        is_windows=True,
+    )
+    assert comparisons == []
+    assert freed == expected_freed
+
+
 def test_restricted_token_api_failures_are_not_reported_as_unrestricted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    last_error = 0
+
+    def set_last_error(value: int) -> None:
+        nonlocal last_error
+        last_error = value
+
+    monkeypatch.setattr(ctypes, "set_last_error", set_last_error, raising=False)
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: last_error, raising=False)
     advapi = SimpleNamespace(
         IsTokenRestricted=_Api(lambda _token: ctypes.set_last_error(5) or False),
         GetTokenInformation=_Api(lambda *_args: True),
@@ -142,7 +337,7 @@ def test_current_user_sid_success_releases_the_native_string(
     assert len(freed) == 1
 
 
-@pytest.mark.parametrize("failure", ("empty", "read", "null_sid", "convert"))
+@pytest.mark.parametrize("failure", ("empty", "read", "count", "null_sid", "convert"))
 def test_restricted_sid_reader_handles_empty_or_unrenderable_native_results(
     monkeypatch: pytest.MonkeyPatch,
     failure: str,
@@ -160,7 +355,7 @@ def test_restricted_sid_reader_handles_empty_or_unrenderable_native_results(
         if failure == "read":
             return False
         groups = ctypes.cast(output, ctypes.POINTER(_TokenGroups)).contents
-        groups.GroupCount = 1
+        groups.GroupCount = 0 if failure == "count" else 1
         groups.Groups[0].Sid = None if failure == "null_sid" else 101
         return True
 
@@ -226,6 +421,15 @@ def test_non_windows_native_probes_return_their_documented_sentinels() -> None:
     assert not windows_acl.current_process_can_mutate_path(
         Path("unused"), directory=True, is_windows=False
     )
+    assert (
+        windows_acl._current_process_has_requested_access(
+            Path("unused"),
+            directory=True,
+            requested_rights=(2,),
+            is_windows=False,
+        )
+        is None
+    )
 
 
 def test_native_path_probes_fail_closed_when_the_api_is_unavailable(
@@ -266,6 +470,38 @@ def test_native_mutation_probe_rejects_the_invalid_handle_sentinel(
         directory=False,
         is_windows=True,
     )
+
+
+def test_native_path_probes_close_successful_windows_handles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    closed: list[int] = []
+    last_error = 0
+
+    def set_last_error(value: int) -> None:
+        nonlocal last_error
+        last_error = value
+
+    kernel = SimpleNamespace(
+        CreateFileW=_Api(lambda *_args: 7),
+        CloseHandle=_Api(lambda handle: closed.append(handle) or True),
+    )
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: kernel, raising=False)
+    monkeypatch.setattr(ctypes, "set_last_error", set_last_error, raising=False)
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: last_error, raising=False)
+
+    assert windows_acl.current_process_can_mutate_path(
+        Path("state"),
+        directory=True,
+        is_windows=True,
+    )
+    assert windows_acl._current_process_has_requested_access(
+        Path("state"),
+        directory=False,
+        requested_rights=(2,),
+        is_windows=True,
+    )
+    assert closed == [7, 7]
 
 
 def test_restricted_host_boundary_handles_probe_failure_and_invalid_acls(

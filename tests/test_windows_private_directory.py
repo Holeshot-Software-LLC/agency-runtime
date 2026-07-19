@@ -391,20 +391,16 @@ def test_persistent_root_acl_accepts_exact_or_canonical_private_form(
             True,
             None,
         ),
-        (
-            "O:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)",
-            True,
-            None,
-        ),
+        ("O:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)", False, "owner mismatch"),
         (
             "O:S-1-5-18D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)",
-            True,
-            None,
+            False,
+            "owner mismatch",
         ),
         (
             "O:S-1-5-32-544D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)",
-            True,
-            None,
+            False,
+            "owner mismatch",
         ),
         ("O:OTHERD:P(A;OICI;FA;;;USER)", False, "owner mismatch"),
         ("O:COD:P(A;OICI;FA;;;USER)", False, "owner mismatch"),
@@ -448,11 +444,11 @@ def test_persistent_root_acl_rejects_nonprivate_canonical_forms(
     assert private._persistent_root_acl_failure(tmp_path, "USER") == failure
 
 
-def test_system_owned_root_uses_bootstrap_boundary_semantics(
+def test_aliased_current_user_root_uses_strict_private_semantics(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    sddl = "O:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)"
+    sddl = "O:LAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;USER)"
     semantic_calls: list[dict[str, object]] = []
 
     def semantic(_path: Path, **kwargs: object) -> bool:
@@ -460,12 +456,17 @@ def test_system_owned_root_uses_bootstrap_boundary_semantics(
         return True
 
     monkeypatch.setattr(private, "read_windows_sddl", lambda _path: sddl)
+    monkeypatch.setattr(
+        private,
+        "windows_sddl_owner_matches_sid",
+        lambda value, sid, **_kwargs: value == sddl and sid == "USER",
+    )
     monkeypatch.setattr(private, "windows_directory_prevents_untrusted_writes", semantic)
 
     assert private._persistent_root_acl_failure(tmp_path, "USER") is None
     assert len(semantic_calls) == 1
-    assert semantic_calls[0]["final_parent"] is False
-    assert semantic_calls[0]["prospective_child"] is True
+    assert semantic_calls[0]["final_parent"] is True
+    assert "prospective_child" not in semantic_calls[0]
     assert semantic_calls[0]["private_access"] is True
 
 

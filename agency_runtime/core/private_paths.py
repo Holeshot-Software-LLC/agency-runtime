@@ -788,8 +788,7 @@ def _identity_is_current(identity: PrivateDirectoryIdentity) -> bool:
         windows_directory_prevents_untrusted_writes(
             identity.path,
             is_windows=True,
-            final_parent=not bootstrap_root,
-            prospective_child=bootstrap_root,
+            final_parent=True,
             private_access=True,
             require_protected_dacl=bootstrap_root,
         )

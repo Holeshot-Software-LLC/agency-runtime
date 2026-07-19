@@ -310,7 +310,6 @@ def test_direct_search_skips_nonregular_candidates(tmp_path: Path) -> None:
     )
 
 
-@pytest.mark.skipif(os.name != "nt", reason="Windows PATHEXT contract")
 def test_windows_direct_search_ignores_untrusted_pathext_suffixes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -326,12 +325,37 @@ def test_windows_direct_search_ignores_untrusted_pathext_suffixes(
     )
 
     assert Path(resolved or "").samefile(trusted)
+    explicit = process_argv._search_absolute_path(
+        "codex.EXE",
+        search_path=str(tmp_path),
+        platform_name="nt",
+    )
+    assert Path(explicit or "").samefile(trusted)
 
     trusted.unlink()
     with pytest.raises(FileNotFoundError, match="executable not found"):
         process_argv.resolve_executable_path(
             "codex",
             search_path=str(tmp_path),
+            platform_name="nt",
+        )
+
+
+def test_windows_fallback_rejects_an_untrusted_com_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(process_argv, "_search_absolute_path", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        process_argv.shutil,
+        "which",
+        lambda _name, *, path: "C:\\tools\\codex.COM" if path else None,
+    )
+
+    with pytest.raises(FileNotFoundError, match="executable not found"):
+        process_argv.resolve_executable_path(
+            "codex",
+            search_path="C:\\tools",
+            platform_name="nt",
         )
 
 

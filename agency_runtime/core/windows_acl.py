@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import os
 import re
 from collections.abc import Callable
@@ -130,7 +131,13 @@ _TRUSTED_WINDOWS_PRINCIPALS = frozenset(
 
 
 def windows_system_owner_is_trusted(value: str) -> bool:
-    """Return whether an SDDL owner is a durable Windows system authority."""
+    """Classify a durable Windows system authority for compatibility.
+
+    This predicate is not sufficient authorization for a private final root;
+    those roots require exact current-user SID identity. It remains public so
+    existing integrations can classify ordinary system-owned ancestors and
+    executable artifacts without a breaking import.
+    """
 
     return str(value or "") in _TRUSTED_WINDOWS_OWNERS
 
@@ -144,6 +151,7 @@ _BROAD_WINDOWS_SIDS = frozenset(
     }
 )
 _WINDOWS_LOGON_SID = re.compile(r"^S-1-5-5-[0-9]+-[0-9]+$")
+_WINDOWS_NUMERIC_SID = re.compile(r"^S-[0-9]+(?:-[0-9]+)+$")
 _ERROR_ACCESS_DENIED = 5
 _ERROR_NO_TOKEN = 1008
 _SE_GROUP_ENABLED = 0x00000004
@@ -861,6 +869,91 @@ def read_windows_sddl(path: Path) -> str:
             kernel32.LocalFree(descriptor)
 
 
+def windows_sddl_owner_matches_sid(
+    value: str,
+    expected_sid: str,
+    *,
+    is_windows: bool | None = None,
+) -> bool:
+    """Compare a captured SDDL owner with one canonical SID by binary identity.
+
+    Windows renders well-known account owners with aliases such as ``LA`` even
+    when the creating descriptor supplied the account's full SID. Comparing
+    those strings would reject the same principal or tempt callers to trust a
+    broader group. Resolve both through native SID parsing and use ``EqualSid``.
+    """
+
+    windows = os.name == "nt" if is_windows is None else is_windows
+    if (
+        not windows
+        or not value
+        or "\0" in value
+        or _WINDOWS_NUMERIC_SID.fullmatch(expected_sid) is None
+    ):
+        return False
+    descriptor = None
+    expected = None
+    kernel32 = None
+    try:
+        from ctypes import wintypes
+
+        advapi32 = ctypes.WinDLL("Advapi32.dll", use_last_error=True)
+        kernel32 = ctypes.WinDLL("Kernel32.dll", use_last_error=True)
+        convert_descriptor = advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW
+        convert_descriptor.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            ctypes.POINTER(ctypes.c_void_p),
+            ctypes.POINTER(wintypes.ULONG),
+        ]
+        convert_descriptor.restype = wintypes.BOOL
+        convert_sid = advapi32.ConvertStringSidToSidW
+        convert_sid.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(ctypes.c_void_p)]
+        convert_sid.restype = wintypes.BOOL
+        get_owner = advapi32.GetSecurityDescriptorOwner
+        get_owner.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_void_p),
+            ctypes.POINTER(wintypes.BOOL),
+        ]
+        get_owner.restype = wintypes.BOOL
+        equal_sid = advapi32.EqualSid
+        equal_sid.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        equal_sid.restype = wintypes.BOOL
+        kernel32.LocalFree.argtypes = [ctypes.c_void_p]
+        kernel32.LocalFree.restype = ctypes.c_void_p
+
+        descriptor = ctypes.c_void_p()
+        length = wintypes.ULONG()
+        expected = ctypes.c_void_p()
+        owner = ctypes.c_void_p()
+        defaulted = wintypes.BOOL()
+        if (
+            not convert_descriptor(value, 1, ctypes.byref(descriptor), ctypes.byref(length))
+            or not descriptor
+        ):
+            return False
+        if not convert_sid(expected_sid, ctypes.byref(expected)) or not expected:
+            return False
+        if not get_owner(descriptor, ctypes.byref(owner), ctypes.byref(defaulted)) or not owner:
+            return False
+        return bool(equal_sid(owner, expected))
+    except (
+        AttributeError,
+        ctypes.ArgumentError,
+        ImportError,
+        OSError,
+        TypeError,
+        ValueError,
+    ):
+        return False
+    finally:
+        if kernel32 is not None and expected:
+            kernel32.LocalFree(expected)
+        if kernel32 is not None and descriptor:
+            kernel32.LocalFree(descriptor)
+
+
 def windows_restricted_host_boundary_is_trusted(path: Path) -> bool:
     """Recognize one owner-scoped host leaf with exactly one restricting SID.
 
@@ -991,6 +1084,7 @@ def windows_directory_prevents_untrusted_writes(
     sddl_reader: Callable[[Path], str] | None = None,
     current_sid_reader: Callable[[], str | None] | None = None,
     trusted_sid_reader: TrustedSIDProbe | None = None,
+    owner_sid_matcher: Callable[[str, str], bool] | None = None,
     final_parent: bool = True,
     prospective_child: bool = False,
     private_access: bool = False,
@@ -1031,8 +1125,21 @@ def windows_directory_prevents_untrusted_writes(
         return False
     owner = _sddl_owner(value)
     dacl_offset = value.find("D:")
-    trusted_owners = {current_sid} if final_parent else {*_TRUSTED_WINDOWS_OWNERS, current_sid}
-    if not owner or not current_sid or owner not in trusted_owners or dacl_offset < 0:
+    matcher = owner_sid_matcher or (
+        lambda captured, expected: windows_sddl_owner_matches_sid(
+            captured,
+            expected,
+            is_windows=windows,
+        )
+    )
+    try:
+        owner_is_current = bool(
+            owner and current_sid and (owner == current_sid or matcher(value, current_sid))
+        )
+    except Exception:
+        return False
+    owner_is_trusted = owner_is_current or (not final_parent and owner in _TRUSTED_WINDOWS_OWNERS)
+    if not owner_is_trusted or dacl_offset < 0:
         return False
     dacl = value[dacl_offset + 2 :]
     control = dacl.split("(", 1)[0]
@@ -1217,5 +1324,6 @@ __all__ = [
     "windows_directory_prevents_untrusted_writes",
     "windows_file_prevents_untrusted_mutation",
     "windows_restricted_host_boundary_is_trusted",
+    "windows_sddl_owner_matches_sid",
     "windows_system_owner_is_trusted",
 ]

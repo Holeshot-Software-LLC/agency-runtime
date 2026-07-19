@@ -336,7 +336,10 @@ def test_windows_parent_acl_probe_is_non_windows_and_error_safe() -> None:
         ("", False),
     ],
 )
-def test_windows_system_owner_classifier_is_narrow(owner: str, expected: bool) -> None:
+def test_windows_system_owner_classifier_remains_compatible(
+    owner: str,
+    expected: bool,
+) -> None:
     assert windows_acl.windows_system_owner_is_trusted(owner) is expected
 
 
@@ -377,6 +380,63 @@ def test_windows_bootstrap_acl_probe_accepts_a_protected_private_dacl() -> None:
         prospective_child=True,
         private_access=True,
         require_protected_dacl=True,
+    )
+
+
+def test_windows_parent_acl_probe_resolves_current_user_owner_aliases() -> None:
+    sddl = "O:LAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;S-1-5-21-1001)"
+    matches: list[tuple[str, str]] = []
+
+    assert windows_directory_prevents_untrusted_writes(
+        Path("state"),
+        is_windows=True,
+        sddl_reader=lambda _path: sddl,
+        current_sid_reader=lambda: "S-1-5-21-1001",
+        owner_sid_matcher=lambda value, sid: matches.append((value, sid)) or True,
+        final_parent=True,
+        private_access=True,
+        require_protected_dacl=True,
+    )
+    assert matches == [(sddl, "S-1-5-21-1001")]
+
+    assert not windows_directory_prevents_untrusted_writes(
+        Path("state"),
+        is_windows=True,
+        sddl_reader=lambda _path: sddl,
+        current_sid_reader=lambda: "S-1-5-21-1001",
+        owner_sid_matcher=lambda _value, _sid: False,
+        final_parent=True,
+        private_access=True,
+    )
+
+
+def test_windows_parent_acl_probe_fails_closed_when_owner_matcher_raises() -> None:
+    assert not windows_directory_prevents_untrusted_writes(
+        Path("state"),
+        is_windows=True,
+        sddl_reader=lambda _path: "O:LAD:P(A;OICI;FA;;;S-1-5-21-1001)",
+        current_sid_reader=lambda: "S-1-5-21-1001",
+        owner_sid_matcher=lambda _value, _sid: (_ for _ in ()).throw(
+            RuntimeError("matcher unavailable")
+        ),
+        final_parent=True,
+        private_access=True,
+    )
+
+
+@pytest.mark.skipif(os.name != "nt", reason="requires native Windows SID parsing")
+def test_native_owner_sid_matcher_resolves_only_the_same_windows_principal() -> None:
+    sddl = "O:SYD:P(A;;FA;;;SY)"
+
+    assert windows_acl.windows_sddl_owner_matches_sid(
+        sddl,
+        "S-1-5-18",
+        is_windows=True,
+    )
+    assert not windows_acl.windows_sddl_owner_matches_sid(
+        sddl,
+        "S-1-5-32-544",
+        is_windows=True,
     )
 
 

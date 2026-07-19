@@ -646,6 +646,28 @@ def test_configuration_namespace_acl_and_identity_failures(monkeypatch, tmp_path
     assert not subject.config_namespace_is_trusted(path, is_windows=False)
 
 
+def test_effective_posix_uid_uses_only_the_windows_simulation_fallback(
+    monkeypatch,
+    os_facade,
+) -> None:
+    subject = configuration_persistence
+    real_os = subject.os
+    metadata = SimpleNamespace(st_uid=4242)
+    monkeypatch.setattr(
+        subject,
+        "os",
+        os_facade(real_os, name="nt", missing=frozenset({"geteuid"})),
+    )
+    assert subject._effective_posix_uid(metadata) == 4242
+
+    monkeypatch.setattr(
+        subject,
+        "os",
+        os_facade(real_os, name="posix", missing=frozenset({"geteuid"})),
+    )
+    assert subject._effective_posix_uid(metadata) is None
+
+
 def test_configuration_namespace_probe_owner_and_private_file_failures(
     monkeypatch, tmp_path
 ) -> None:

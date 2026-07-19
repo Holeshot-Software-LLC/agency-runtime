@@ -19,7 +19,7 @@ from agency_runtime.core.windows_acl import (
     current_process_user_sid,
     read_windows_sddl,
     windows_directory_prevents_untrusted_writes,
-    windows_system_owner_is_trusted,
+    windows_sddl_owner_matches_sid,
 )
 
 _ERROR_ALREADY_EXISTS = 183
@@ -311,8 +311,11 @@ def _persistent_root_acl_failure(path: Path, user_sid: str) -> str | None:
         index for marker in ("G:", "D:") if (index := owner_payload.find(marker)) >= 0
     ]
     owner = owner_payload[: min(owner_boundaries)] if owner_boundaries else owner_payload
-    system_owned = owner != user_sid
-    if system_owned and not windows_system_owner_is_trusted(owner):
+    if owner != user_sid and not windows_sddl_owner_matches_sid(
+        value,
+        user_sid,
+        is_windows=True,
+    ):
         return "owner mismatch"
     dacl_offset = value.find("D:")
     if dacl_offset < 0:
@@ -325,8 +328,7 @@ def _persistent_root_acl_failure(path: Path, user_sid: str) -> str | None:
         is_windows=True,
         sddl_reader=lambda _path: value,
         current_sid_reader=lambda: user_sid,
-        final_parent=not system_owned,
-        prospective_child=system_owned,
+        final_parent=True,
         private_access=True,
     ):
         return "DACL not private or malformed"
