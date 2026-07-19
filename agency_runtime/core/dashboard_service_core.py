@@ -8,6 +8,7 @@ cohesive sibling modules.
 from __future__ import annotations
 
 import getpass
+import hmac
 import inspect
 import math
 import os
@@ -15,28 +16,62 @@ import platform
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from numbers import Integral, Real
 from pathlib import Path
 from typing import Any
 
-from agency_runtime.core.process_argv import absolute_executable_path
+from agency_runtime.core.configuration_persistence import resolve_config_path
+from agency_runtime.core.process_argv import (
+    PersistentArtifactIdentity,
+    absolute_executable_path,
+    freeze_process_argv,
+    isolated_python_argv,
+    prepare_process_argv,
+    revalidate_persistent_artifacts,
+    revalidate_process_argv,
+    snapshot_persistent_artifacts,
+)
+from agency_runtime.core.windows_acl import current_process_user_sid
 
 OWNER_ID = "agency-runtime"
 OWNER_MARKER = "Managed by Agency Runtime; owner=agency-runtime"
 SERVICE_ID = "dashboard"
 SYSTEMD_UNIT_NAME = "agency-runtime-dashboard.service"
 WINDOWS_TASK_NAME = "Agency Runtime Dashboard"
-MANIFEST_SCHEMA_VERSION = 1
+MANIFEST_SCHEMA_VERSION = 2
 WINDOWS_TASK_XML_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/task"
 
 _MAX_COMMAND_TIMEOUT_SECONDS = 300.0
 _MAX_MANAGER_OUTPUT_BYTES = 1024 * 1024
+_DASHBOARD_RUNTIME_CLEAR_TIMEOUT_SECONDS = 8.0
+_DASHBOARD_RUNTIME_CLEAR_POLL_SECONDS = 0.1
 _IS_WINDOWS = os.name == "nt"
 
 CommandRunner = Callable[..., Any]
 ReadinessProbe = Callable[[], bool]
+
+_NON_DURABLE_SERVICE_ENVIRONMENT_NAMES = frozenset(
+    {
+        "AGENCY_BYPASS_THRESHOLD",
+        "AGENCY_CAPTURE_CONTENT",
+        "AGENCY_DASHBOARD_PORT",
+        "AGENCY_DB_PATH",
+        "AGENCY_JUDGE_API_KEY",
+        "AGENCY_JUDGE_BASE_URL",
+        "AGENCY_JUDGE_MODEL",
+        "AGENCY_JUDGE_TIMEOUT",
+        "AGENCY_MAX_SELECTED",
+        "AGENCY_OLLAMA_FALLBACK_MODEL",
+        "AGENCY_POLICY_PATH",
+        "AGENCY_PROFILE",
+        "AGENCY_RETENTION_DAYS",
+        "LITELLM_API_KEY",
+        "OLLAMA_BASE_URL",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,14 +85,17 @@ class _CommandResult:
     def ok(self) -> bool:
         return self.returncode == 0
 
-    def public(self) -> dict[str, Any]:
+    def public(self, *, include_failure_output: bool = True) -> dict[str, Any]:
         value: dict[str, Any] = {
             "command": list(self.command),
             "returncode": self.returncode,
             "ok": self.ok,
         }
         if not self.ok:
-            detail = (self.stderr or self.stdout or "service-manager command failed").strip()
+            detail = ""
+            if include_failure_output:
+                detail = (self.stderr or self.stdout).strip()
+            detail = detail or "service-manager command failed"
             value["error"] = _terminal_safe(detail)[:500]
         return value
 
@@ -67,6 +105,13 @@ class _RollbackOutcome:
     commands: list[dict[str, Any]]
     succeeded: bool
     error: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _DashboardRuntimeClearance:
+    cleared: bool
+    descriptor_removed: bool
+    replacement_detected: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,6 +126,86 @@ class _Context:
     manifest_path: Path
     worker_argv: tuple[str, ...]
     windows_user: str | None
+    windows_account: str | None = None
+    unit_root: Path | None = None
+    launcher_artifacts: tuple[PersistentArtifactIdentity, ...] = ()
+
+
+def _configured_secret_environment_names(config: object | None) -> set[str]:
+    """Return configured credential variable names without reading their values."""
+
+    names: set[str] = set()
+
+    def include(entry: object | None) -> None:
+        name = str(getattr(entry, "api_key_env", "") or "").strip()
+        if name and name.isascii() and name.isidentifier() and len(name) <= 128:
+            names.add(name)
+
+    if config is None:
+        return names
+    include(getattr(config, "judge", None))
+    for provider in getattr(config, "providers", ()) or ():
+        include(provider)
+    adapters = getattr(config, "adapters", None)
+    for adapter_name in ("litellm", "hermes", "openclaw", "codex", "claude"):
+        include(getattr(adapters, adapter_name, None))
+    return names
+
+
+def dashboard_service_environment_overrides(
+    config: object | None = None,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> tuple[str, ...]:
+    """List active process-only settings that cannot survive service restart.
+
+    ``AGENCY_CONFIG_PATH`` is intentionally absent: its resolved identity is
+    embedded in the service argv.  Values are never returned or copied into a
+    unit, task, manifest, diagnostic, or command line.
+    """
+
+    environment = os.environ if environ is None else environ
+    candidates = _dashboard_service_environment_names(config)
+    return tuple(sorted(name for name in candidates if environment.get(name)))
+
+
+def _dashboard_service_environment_names(config: object | None = None) -> set[str]:
+    names = set(_NON_DURABLE_SERVICE_ENVIRONMENT_NAMES)
+    names.update(_configured_secret_environment_names(config))
+    return names
+
+
+def dashboard_service_manager_environment_overrides(
+    config: object | None,
+    manager_output: str,
+) -> tuple[str, ...]:
+    """Return names-only nondurable values exported by the systemd user manager."""
+
+    candidates = _dashboard_service_environment_names(config)
+    present: set[str] = set()
+    for line in manager_output.splitlines():
+        name, separator, _value = line.partition("=")
+        if (
+            separator
+            and name in candidates
+            and name.isascii()
+            and name.isidentifier()
+            and len(name) <= 128
+        ):
+            present.add(name)
+    return tuple(sorted(present))
+
+
+def dashboard_service_environment_error(names: Sequence[str]) -> str:
+    """Render an actionable names-only durability diagnostic."""
+
+    listed = ", ".join(sorted(set(names)))
+    return (
+        "dashboard service installation is blocked because process-local runtime "
+        f"overrides are not reboot-durable: {listed}. Unset them and persist "
+        "non-secret settings in agency.yaml before retrying; secret values are never "
+        "copied into the service definition"
+    )
 
 
 def _terminal_safe(value: str) -> str:
@@ -111,7 +236,8 @@ def _normalise_platform(value: str | None) -> str:
 
 
 def _resolved_path(value: str | Path, *, label: str) -> Path:
-    return Path(_validate_text(str(value), label=label)).expanduser().resolve()
+    validated = Path(_validate_text(str(value), label=label)).expanduser()
+    return Path(os.path.abspath(validated))
 
 
 def _executable_path(value: str | Path) -> Path:
@@ -129,16 +255,25 @@ def _config_path(
     home: Path,
     home_dir: str | Path | None,
     config_path: str | Path | None,
+    *,
+    platform_name: str | None = None,
 ) -> Path:
-    if config_path is not None:
-        return _resolved_path(config_path, label="config path")
-    if home_dir is None and os.environ.get("AGENCY_CONFIG_PATH"):
-        return _resolved_path(os.environ["AGENCY_CONFIG_PATH"], label="config path")
-    return _resolved_path(home / ".agency-runtime" / "agency.yaml", label="config path")
+    return resolve_config_path(
+        config_path,
+        home_dir=home,
+        use_environment=home_dir is None,
+        platform_name=platform_name,
+    )
 
 
 def _windows_current_user_sid() -> str | None:
     """Return the current process token SID without invoking a shell."""
+
+    return current_process_user_sid(is_windows=_IS_WINDOWS)
+
+
+def _windows_account_for_sid(sid: str) -> str | None:
+    """Resolve *sid* through Windows account lookup without trusting the environment."""
 
     if not _IS_WINDOWS:
         return None
@@ -146,57 +281,61 @@ def _windows_current_user_sid() -> str | None:
         import ctypes
         from ctypes import wintypes
 
-        class SidAndAttributes(ctypes.Structure):
-            _fields_ = [("Sid", ctypes.c_void_p), ("Attributes", wintypes.DWORD)]
-
-        class TokenUser(ctypes.Structure):
-            _fields_ = [("User", SidAndAttributes)]
-
+        sid_text = _validate_text(sid, label="Windows SID")
         advapi32 = ctypes.WinDLL("Advapi32.dll", use_last_error=True)
         kernel32 = ctypes.WinDLL("Kernel32.dll", use_last_error=True)
-        open_token = advapi32.OpenProcessToken
-        open_token.argtypes = [
-            wintypes.HANDLE,
-            wintypes.DWORD,
-            ctypes.POINTER(wintypes.HANDLE),
-        ]
-        open_token.restype = wintypes.BOOL
-        get_token = advapi32.GetTokenInformation
-        get_token.argtypes = [
-            wintypes.HANDLE,
-            ctypes.c_int,
+        convert_sid = advapi32.ConvertStringSidToSidW
+        convert_sid.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(ctypes.c_void_p)]
+        convert_sid.restype = wintypes.BOOL
+        lookup_account = advapi32.LookupAccountSidW
+        lookup_account.argtypes = [
+            wintypes.LPCWSTR,
             ctypes.c_void_p,
-            wintypes.DWORD,
+            wintypes.LPWSTR,
+            ctypes.POINTER(wintypes.DWORD),
+            wintypes.LPWSTR,
+            ctypes.POINTER(wintypes.DWORD),
             ctypes.POINTER(wintypes.DWORD),
         ]
-        get_token.restype = wintypes.BOOL
-        convert_sid = advapi32.ConvertSidToStringSidW
-        convert_sid.argtypes = [ctypes.c_void_p, ctypes.POINTER(wintypes.LPWSTR)]
-        convert_sid.restype = wintypes.BOOL
-        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
-        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        lookup_account.restype = wintypes.BOOL
         kernel32.LocalFree.argtypes = [ctypes.c_void_p]
 
-        token = wintypes.HANDLE()
-        if not open_token(kernel32.GetCurrentProcess(), 0x0008, ctypes.byref(token)):
+        sid_pointer = ctypes.c_void_p()
+        if not convert_sid(sid_text, ctypes.byref(sid_pointer)):
             return None
-        sid_string = wintypes.LPWSTR()
         try:
-            required = wintypes.DWORD()
-            get_token(token, 1, None, 0, ctypes.byref(required))
-            if required.value == 0:
+            account_size = wintypes.DWORD()
+            domain_size = wintypes.DWORD()
+            sid_type = wintypes.DWORD()
+            lookup_account(
+                None,
+                sid_pointer,
+                None,
+                ctypes.byref(account_size),
+                None,
+                ctypes.byref(domain_size),
+                ctypes.byref(sid_type),
+            )
+            if account_size.value == 0:
                 return None
-            buffer = ctypes.create_string_buffer(required.value)
-            if not get_token(token, 1, buffer, required, ctypes.byref(required)):
+            account = ctypes.create_unicode_buffer(account_size.value)
+            domain_capacity = max(domain_size.value, 1)
+            domain = ctypes.create_unicode_buffer(domain_capacity)
+            domain_size = wintypes.DWORD(domain_capacity)
+            if not lookup_account(
+                None,
+                sid_pointer,
+                account,
+                ctypes.byref(account_size),
+                domain,
+                ctypes.byref(domain_size),
+                ctypes.byref(sid_type),
+            ):
                 return None
-            token_user = ctypes.cast(buffer, ctypes.POINTER(TokenUser)).contents
-            if not convert_sid(token_user.User.Sid, ctypes.byref(sid_string)):
-                return None
-            return str(sid_string.value)
+            account_name = f"{domain.value}\\{account.value}" if domain.value else account.value
+            return _validate_text(account_name, label="Windows account")
         finally:
-            if sid_string:
-                kernel32.LocalFree(sid_string)
-            kernel32.CloseHandle(token)
+            kernel32.LocalFree(sid_pointer)
     except (AttributeError, ImportError, OSError, TypeError, ValueError):
         return None
 
@@ -214,15 +353,14 @@ def build_service_worker_argv(
         python_executable if python_executable is not None else sys.executable
     )
     config = _config_path(home, home_dir, config_path)
-    argv = [
-        str(executable),
-        "-m",
+    argv = isolated_python_argv(
+        executable,
         "agency_runtime.cli",
         "dashboard",
         "--service-mode",
         "--config",
         str(config),
-    ]
+    )
     return [_validate_text(item, label="service argument") for item in argv]
 
 
@@ -237,7 +375,7 @@ def _context(
     if target not in {"windows", "linux"}:
         return None
     home = _home(home_dir)
-    config = _config_path(home, home_dir, config_path)
+    config = _config_path(home, home_dir, config_path, platform_name=target)
     executable = _executable_path(
         python_executable if python_executable is not None else sys.executable
     )
@@ -250,28 +388,41 @@ def _context(
     )
     runtime_root = home / ".agency-runtime"
     windows_user: str | None = None
+    windows_account: str | None = None
     if target == "windows":
         manager = "schtasks"
         registration = WINDOWS_TASK_NAME
         unit_path = None
-        username = os.environ.get("USERNAME") or getpass.getuser()
-        domain = os.environ.get("USERDOMAIN")
-        account_name = f"{domain}\\{username}" if domain and domain != "." else username
-        windows_user = _validate_text(
-            _windows_current_user_sid() or account_name,
-            label="Windows user",
-        )
+        unit_root = None
+        if _IS_WINDOWS:
+            windows_user = _windows_current_user_sid()
+            windows_account = (
+                _windows_account_for_sid(windows_user) if windows_user is not None else None
+            )
+            if windows_user is None or windows_account is None:
+                raise RuntimeError("current Windows token identity could not be resolved safely")
+        else:
+            # Cross-platform planning/tests cannot access a Windows token. Keep the
+            # portable fallback out of native execution paths.
+            username = os.environ.get("USERNAME") or getpass.getuser()
+            domain = os.environ.get("USERDOMAIN")
+            account_name = f"{domain}\\{username}" if domain and domain != "." else username
+            windows_account = _validate_text(account_name, label="Windows account")
+            windows_user = _windows_current_user_sid() or windows_account
+        windows_user = _validate_text(windows_user, label="Windows user")
+        windows_account = _validate_text(windows_account, label="Windows account")
     else:
         manager = "systemd-user"
         registration = SYSTEMD_UNIT_NAME
         xdg_config = os.environ.get("XDG_CONFIG_HOME") if home_dir is None else None
         xdg_root = Path(xdg_config).expanduser() if xdg_config else None
         config_root = (
-            xdg_root.resolve()
+            Path(os.path.abspath(xdg_root))
             if xdg_root is not None and xdg_root.is_absolute()
             else home / ".config"
         )
         unit_path = config_root / "systemd" / "user" / SYSTEMD_UNIT_NAME
+        unit_root = config_root
     return _Context(
         platform=target,
         home=home,
@@ -283,7 +434,174 @@ def _context(
         manifest_path=runtime_root / "services" / "dashboard-service.json",
         worker_argv=worker,
         windows_user=windows_user,
+        windows_account=windows_account,
+        unit_root=unit_root,
     )
+
+
+def _native_launcher_platform(ctx: _Context) -> str | None:
+    if ctx.platform == "windows" and os.name == "nt":
+        return "nt"
+    if ctx.platform == "linux" and os.name != "nt" and platform.system().lower() == "linux":
+        return "posix"
+    return None
+
+
+def _validate_dashboard_launcher(ctx: _Context) -> _Context:
+    """Freeze both persistent launcher artifacts on the native target host."""
+
+    native_platform = _native_launcher_platform(ctx)
+    if native_platform is None:
+        # Foreign-platform planning and deterministic contract tests do not
+        # execute the generated registration. A native install always takes
+        # the validated branch above.
+        return replace(ctx, launcher_artifacts=())
+    if len(ctx.worker_argv) < 3:
+        raise OSError("dashboard worker argv does not identify its isolated bootstrap")
+    identities = snapshot_persistent_artifacts(
+        (ctx.worker_argv[0], ctx.worker_argv[2]),
+        platform_name=native_platform,
+    )
+    return replace(ctx, launcher_artifacts=identities)
+
+
+def _revalidate_dashboard_launcher(ctx: _Context) -> None:
+    """Recompute persistent artifact trust immediately before mutation."""
+
+    native_platform = _native_launcher_platform(ctx)
+    if native_platform is None:
+        return
+    revalidate_persistent_artifacts(
+        ctx.launcher_artifacts,
+        platform_name=native_platform,
+    )
+
+
+def _dashboard_runtime_fingerprint(ctx: _Context) -> str | None:
+    """Capture the current worker generation without exposing its token."""
+
+    from agency_runtime.core.dashboard_runtime import dashboard_runtime_instance_fingerprint
+
+    return dashboard_runtime_instance_fingerprint(home_dir=ctx.home)
+
+
+def _cleanup_stale_dashboard_runtime(
+    ctx: _Context,
+    *,
+    expected_fingerprint: str | None = None,
+) -> bool:
+    """Remove only an unreachable descriptor still owned by its exact worker."""
+
+    from agency_runtime.core.dashboard_runtime import (
+        dashboard_service_reachable,
+        read_dashboard_runtime,
+        remove_dashboard_runtime,
+    )
+
+    try:
+        descriptor = read_dashboard_runtime(home_dir=ctx.home)
+    except ValueError:
+        return False
+    if expected_fingerprint is not None:
+        current_fingerprint = _dashboard_runtime_fingerprint(ctx)
+        if current_fingerprint is None or not hmac.compare_digest(
+            current_fingerprint,
+            expected_fingerprint,
+        ):
+            return False
+    if dashboard_service_reachable(descriptor=descriptor):
+        return False
+    return remove_dashboard_runtime(
+        home_dir=ctx.home,
+        token=descriptor["token"],
+        pid=descriptor["pid"],
+    )
+
+
+def _dashboard_runtime_cleared(
+    ctx: _Context,
+) -> bool:
+    """Prove that no dashboard runtime descriptor remains."""
+
+    from agency_runtime.core.dashboard_runtime import dashboard_runtime_path
+
+    if _dashboard_runtime_fingerprint(ctx) is not None:
+        return False
+    return not os.path.lexists(dashboard_runtime_path(home_dir=ctx.home))
+
+
+def _wait_dashboard_runtime_cleared(
+    ctx: _Context,
+    previous_fingerprint: str | None,
+    *,
+    timeout_seconds: float = _DASHBOARD_RUNTIME_CLEAR_TIMEOUT_SECONDS,
+    poll_seconds: float = _DASHBOARD_RUNTIME_CLEAR_POLL_SECONDS,
+) -> _DashboardRuntimeClearance:
+    """Wait for one stopped worker generation to release its descriptor.
+
+    Windows Task Scheduler can report an idle task before the worker has
+    completed shutdown.  Each retry authenticates the descriptor's health and
+    removes it only through the token-and-PID compare-and-remove operation.
+    A responsive old generation therefore remains a hard failure when the
+    bounded wait expires.
+    """
+
+    deadline = time.monotonic() + max(0.0, timeout_seconds)
+    descriptor_removed = False
+    while True:
+        current_fingerprint = _dashboard_runtime_fingerprint(ctx)
+        replacement_present = bool(
+            current_fingerprint is not None
+            and (
+                previous_fingerprint is None
+                or not hmac.compare_digest(current_fingerprint, previous_fingerprint)
+            )
+        )
+        if replacement_present:
+            return _DashboardRuntimeClearance(
+                cleared=False,
+                descriptor_removed=descriptor_removed,
+                replacement_detected=True,
+            )
+        if current_fingerprint is not None:
+            descriptor_removed = (
+                _cleanup_stale_dashboard_runtime(
+                    ctx,
+                    expected_fingerprint=previous_fingerprint,
+                )
+                or descriptor_removed
+            )
+        if _dashboard_runtime_cleared(ctx):
+            return _DashboardRuntimeClearance(
+                cleared=True,
+                descriptor_removed=descriptor_removed,
+            )
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return _DashboardRuntimeClearance(
+                cleared=False,
+                descriptor_removed=descriptor_removed,
+            )
+        time.sleep(min(max(0.0, poll_seconds), remaining))
+
+
+def _fresh_dashboard_readiness(
+    ctx: _Context,
+    probe: ReadinessProbe | None,
+    previous_fingerprint: str | None,
+) -> bool | None:
+    """Require a reachable replacement generation after a worker transition."""
+
+    if probe is None:
+        return False if previous_fingerprint is not None else None
+    try:
+        reachable = bool(probe())
+    except Exception:
+        return False
+    if not reachable or previous_fingerprint is None:
+        return reachable
+    current = _dashboard_runtime_fingerprint(ctx)
+    return bool(current is not None and not hmac.compare_digest(current, previous_fingerprint))
 
 
 def _bounded_text(value: Any) -> tuple[str, bool]:
@@ -347,13 +665,18 @@ def _run(
     bounded_timeout = float(timeout)
     try:
         if command_runner is None:
+            prepared_argv = freeze_process_argv(prepare_process_argv(argv))
             with (
                 tempfile.TemporaryFile() as stdout_stream,
                 tempfile.TemporaryFile() as stderr_stream,
             ):
                 try:
+                    # Namespace permissions and artifact identity may change
+                    # after discovery. Keep this as the final trust operation
+                    # immediately before subprocess creates the manager child.
+                    revalidate_process_argv(prepared_argv)
                     raw = subprocess.run(
-                        list(argv),
+                        prepared_argv,
                         stdin=subprocess.DEVNULL,
                         stdout=stdout_stream,
                         stderr=stderr_stream,
@@ -439,11 +762,22 @@ __all__ = [
     "ReadinessProbe",
     "_CommandResult",
     "_Context",
+    "_DashboardRuntimeClearance",
     "_RollbackOutcome",
     "_base",
+    "_cleanup_stale_dashboard_runtime",
     "_context",
+    "_dashboard_runtime_cleared",
+    "_dashboard_runtime_fingerprint",
+    "_fresh_dashboard_readiness",
+    "_revalidate_dashboard_launcher",
     "_run",
     "_unsupported",
+    "_validate_dashboard_launcher",
     "_validate_text",
+    "_wait_dashboard_runtime_cleared",
     "build_service_worker_argv",
+    "dashboard_service_environment_error",
+    "dashboard_service_environment_overrides",
+    "dashboard_service_manager_environment_overrides",
 ]

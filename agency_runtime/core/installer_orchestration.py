@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,14 +10,23 @@ from typing import Any
 
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.installer_contracts import (
+    ADAPTER_LAUNCHER_MANIFEST,
     CODEX_HOOK_TRUST_ACTION,
     HOSTS,
     INSTALL_MANIFEST,
     MARKETPLACE_ID,
+    MINIMUM_OPENCLAW_VERSION,
     PLUGIN_ID,
     BinaryResolver,
     CommandRunner,
     NativeCommandResult,
+    openclaw_version_supported,
+)
+from agency_runtime.core.openclaw_streaming_policy import retained_backup_status
+from agency_runtime.core.process_argv import (
+    PersistentArtifactIdentity,
+    revalidate_persistent_artifacts,
+    snapshot_persistent_artifacts,
 )
 
 
@@ -48,6 +58,10 @@ def _can_execute_native(*args: Any, **kwargs: Any) -> bool:
     return _dispatch("_can_execute_native", *args, **kwargs)
 
 
+def _command_environment(*args: Any, **kwargs: Any) -> dict[str, str]:
+    return _dispatch("_command_environment", *args, **kwargs)
+
+
 def _hermes_text_plugin_record(*args: Any, **kwargs: Any) -> dict[str, Any] | None:
     return _dispatch("_hermes_text_plugin_record", *args, **kwargs)
 
@@ -62,6 +76,10 @@ def _inventory_command(*args: Any, **kwargs: Any) -> list[str]:
 
 def _json_output(*args: Any, **kwargs: Any) -> Any:
     return _dispatch("_json_output", *args, **kwargs)
+
+
+def _launcher_artifact_paths(*args: Any, **kwargs: Any) -> tuple[str, str]:
+    return _dispatch("_launcher_artifact_paths", *args, **kwargs)
 
 
 def _native_registration_steps(
@@ -136,6 +154,42 @@ def _install_gateway_guard(
         return None
     if not _can_execute_native(home_dir=home_dir, command_runner=command_runner):
         return None
+    version_probe = _run_native(
+        [str(HOSTS[host]["binary"]), "--version"],
+        host=host,
+        home_dir=home_dir,
+        command_runner=command_runner,
+        timeout=8,
+    )
+    version_step = {"name": "host_capability_version", **version_probe.to_dict()}
+    if not version_probe.ok or not openclaw_version_supported(version_probe.stdout):
+        return {
+            "ok": False,
+            "exit_code": 1,
+            "host": host,
+            "plugin_path": str(target / primary),
+            "target": str(target),
+            "backup_path": None,
+            "native_steps": [version_step],
+            "registered": None,
+            "enabled": None,
+            "loaded": None,
+            "canary": None,
+            "partial": False,
+            "status": "blocked",
+            "maturity": (
+                "staged-registration-unverified"
+                if (target / INSTALL_MANIFEST).exists()
+                else "host-discovered"
+            ),
+            "failed_step": "host_capability_unproven",
+            "error": (
+                "OpenClaw hook compatibility could not be proven. Agency Runtime requires "
+                f"OpenClaw {MINIMUM_OPENCLAW_VERSION} or newer (stable)."
+            ),
+            "recovery": "Upgrade OpenClaw to a supported stable version, then rerun install.",
+            "restart_required": False,
+        }
     gateway_live, gateway_probe = _openclaw_gateway_live(
         home_dir=home_dir,
         command_runner=command_runner,
@@ -154,11 +208,12 @@ def _install_gateway_guard(
         "target": str(target),
         "backup_path": None,
         "native_steps": [
+            version_step,
             {
                 "name": "gateway_status",
                 "gateway_state": gateway_state,
                 **gateway_probe.to_dict(),
-            }
+            },
         ],
         "registered": None,
         "enabled": None,
@@ -243,6 +298,20 @@ def _staged_install_result(
     return result
 
 
+def _freeze_adapter_launcher(
+    files: dict[str, str],
+) -> tuple[dict[str, str], tuple[PersistentArtifactIdentity, ...]]:
+    identities = snapshot_persistent_artifacts(_launcher_artifact_paths())
+    marker = {
+        "schema_version": 1,
+        "artifacts": [identity.manifest() for identity in identities],
+    }
+    return {
+        **files,
+        ADAPTER_LAUNCHER_MANIFEST: json.dumps(marker, indent=2) + "\n",
+    }, identities
+
+
 def _openclaw_failure_facts(
     steps: list[dict[str, Any]],
     failed_step: str | None,
@@ -272,6 +341,17 @@ def _openclaw_failure_facts(
         loaded = runtime.get("loaded") if runtime else None
         status = "verification_incomplete"
         maturity = "enabled-runtime-unverified"
+    restoration = next(
+        (step for step in reversed(steps) if step.get("name") == "final_only_delivery_restore"),
+        None,
+    )
+    if restoration and restoration.get("plugin_disabled") is True:
+        plugin_registered = restoration.get("plugin_registered")
+        registered = plugin_registered if isinstance(plugin_registered, bool) else registered
+        enabled = False
+        loaded = False
+        status = "partial_failure"
+        maturity = "registered-disabled" if registered else "staged-registration-incomplete"
     return status, maturity, registered, enabled, loaded
 
 
@@ -287,11 +367,21 @@ def _registration_failure_result(
         else ("partial_failure", "staged-registration-incomplete", False, None, None)
     )
     status, maturity, registered, enabled, loaded = facts
+    policy = next(
+        (step for step in reversed(steps) if step.get("name") == "final_only_delivery_policy"),
+        None,
+    )
+    restoration = next(
+        (step for step in reversed(steps) if step.get("name") == "final_only_delivery_restore"),
+        None,
+    )
     error = (
         "OpenClaw gateway is live; stop it before native installation."
         if failed_step == "host_restart_consent_required"
         else "OpenClaw gateway status could not be proven safe; native installation was not attempted."
         if failed_step == "gateway_status_unproven"
+        else str(policy.get("error"))
+        if failed_step == "final_only_delivery_policy" and policy
         else f"Native {host} registration failed at step: {failed_step}"
     )
     result.update(
@@ -307,9 +397,23 @@ def _registration_failure_result(
             "canary": None,
             "failed_step": failed_step,
             "error": error,
-            "recovery": "Fix the failed native step and rerun; filesystem staging is idempotent and the backup is retained.",
+            "recovery": (
+                str(policy.get("recovery"))
+                if failed_step == "final_only_delivery_policy" and policy
+                else str(restoration.get("recovery"))
+                if restoration and restoration.get("ok") is not True
+                else "Fix the failed native step and rerun; filesystem staging is idempotent and the backup is retained."
+            ),
         }
     )
+    if host == "openclaw" and policy:
+        result["streaming_policy"] = {key: value for key, value in policy.items() if key != "name"}
+        if restoration:
+            result["streaming_policy"]["restoration"] = {
+                key: value
+                for key, value in restoration.items()
+                if key not in {"name", "triggered_by"}
+            }
     return result
 
 
@@ -336,6 +440,19 @@ def _registration_success_result(result: dict[str, Any], host: str) -> dict[str,
                 "hook_trust_action": CODEX_HOOK_TRUST_ACTION,
             }
         )
+    elif host == "openclaw":
+        policy = next(
+            (
+                step
+                for step in reversed(result.get("native_steps", []))
+                if step.get("name") == "final_only_delivery_policy"
+            ),
+            None,
+        )
+        if policy:
+            result["streaming_policy"] = {
+                key: value for key, value in policy.items() if key != "name"
+            }
     return result
 
 
@@ -378,6 +495,17 @@ def install_agent_adapter(
             "error": f"{host} is not installed on this machine",
             "host": host,
         }
+    try:
+        files, launcher_artifacts = _freeze_adapter_launcher(files)
+    except (OSError, ValueError) as exc:
+        return {
+            "ok": False,
+            "exit_code": 1,
+            "host": host,
+            "partial": False,
+            "failed_step": "launcher_identity",
+            "error": f"{type(exc).__name__}: {exc}",
+        }
     blocked = _install_gateway_guard(
         host,
         executable,
@@ -390,12 +518,14 @@ def install_agent_adapter(
         return blocked
 
     try:
+        revalidate_persistent_artifacts(launcher_artifacts)
         filesystem = _atomic_install_tree(
             target,
             files,
             host=host,
             dry_run=False,
             home_dir=home_dir,
+            launcher_artifacts=launcher_artifacts,
         )
     except Exception as exc:
         return {
@@ -423,6 +553,24 @@ def install_agent_adapter(
     if staged is not None:
         return staged
 
+    try:
+        revalidate_persistent_artifacts(launcher_artifacts)
+    except (OSError, ValueError) as exc:
+        failed = _registration_failure_result(
+            result,
+            host,
+            [],
+            "launcher_identity",
+        )
+        failed["error"] = (
+            "Persistent launcher identity changed before native registration: "
+            f"{type(exc).__name__}: {exc}"
+        )
+        failed["recovery"] = (
+            "Restore a trusted, current interpreter and Agency Runtime bootstrap, "
+            "then rerun install. The staged bundle remains reversible."
+        )
+        return failed
     steps, native_ok, failed_step = _native_registration_steps(
         host,
         target,
@@ -861,7 +1009,7 @@ def toggle_agency(
         enabled=enabled,
     )
     error = _toggle_error(host, enabled, result, verification)
-    return {
+    response = {
         "ok": ok,
         "exit_code": 0 if ok else (result.returncode or 1),
         "host": host,
@@ -875,3 +1023,9 @@ def toggle_agency(
         "error": error,
         "restart_required": True,
     }
+    if host == "openclaw":
+        response["streaming_policy"] = retained_backup_status(
+            runtime_home=_runtime_home(home_dir=home_dir),
+            environment=_command_environment(host, home_dir=home_dir),
+        )
+    return response

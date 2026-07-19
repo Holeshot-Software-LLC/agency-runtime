@@ -39,7 +39,7 @@ dev = [
     "ruff==0.15.20",
 ]
 release = [
-    "build==1.5.1",
+    "build==1.5.0",
     "twine==6.2.0",
 ]
 security = [
@@ -75,10 +75,15 @@ agency_runtime = [
     "dashboard/*.html",
     "dashboard/*.css",
     "dashboard/*.js",
+    "dashboard/*.svg",
     "dashboard/package.json",
     "core/evals/data/*.json",
     "core/evals/data/*.yaml",
     "core/evals/data/*.yml",
+    "core/roster/data/*.json",
+    "core/roster/data/*.sha256",
+    "core/roster/data/*.txt",
+    "core/roster/data/prompts/*.txt",
 ]
 
 [tool.pytest.ini_options]

@@ -20,28 +20,29 @@ import logging
 import secrets
 import socket
 import traceback
-import uuid
+from collections.abc import Callable
 from contextlib import suppress
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from threading import BoundedSemaphore, Thread
+from threading import BoundedSemaphore, Lock, Thread
 from time import monotonic
 from typing import Any
 from urllib.parse import parse_qs, urlparse
+from uuid import uuid4
 
+from agency_runtime.core.agent_activation import normalize_agent_slug
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.config import load_config
+from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.header.finalize import finalize_response
+from agency_runtime.core.preflight import run_preflight
+from agency_runtime.core.routing_snapshot import capture_routing_snapshot
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
-from agency_runtime.core.selector.pipeline import (
-    build_routing_context,
-    is_trivial,
-    route,
-)
-from agency_runtime.core.selector.policy import detect_actions
+from agency_runtime.core.specialist_context import SpecialistPromptDeliveryError
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.turn_correlation import active_turn_error
 
 logger = logging.getLogger("agency_runtime.server.http")
 
@@ -104,8 +105,37 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             return
         path = _normalise_path(self.path)
         try:
+            from agency_runtime.core.runtime_control import read_enforcement_runtime_control
+
+            master, _master_transport = read_enforcement_runtime_control()
+            if not master["enabled"]:
+                if path == "/status":
+                    self._json_ok(
+                        {
+                            "status": "ok",
+                            "runtime_enabled": False,
+                            "bypassed": True,
+                            "master": master,
+                        }
+                    )
+                elif path == "/roster":
+                    self._json_ok(
+                        {
+                            "runtime_enabled": False,
+                            "bypassed": True,
+                            "agents": [],
+                            "count": 0,
+                        }
+                    )
+                else:
+                    self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+                return
+            if path in {"/status", "/roster"}:
+                from agency_runtime.core.config_binding import assert_store_config_binding
+
+                assert_store_config_binding(self.store)
             if path == "/status":
-                self._handle_status()
+                self._handle_status(master=master)
             elif path == "/roster":
                 self._handle_roster()
             else:
@@ -122,6 +152,27 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             body = self._read_json_body()
             if body is None:
                 return  # error already sent
+            from agency_runtime.core.runtime_control import read_enforcement_runtime_control
+
+            master, _master_transport = read_enforcement_runtime_control()
+            if not master["enabled"]:
+                payload = {"runtime_enabled": False, "bypassed": True}
+                if path == "/finalize":
+                    payload.update(
+                        {
+                            "action": "bypass",
+                            "text": str(body.get("draft_text") or ""),
+                        }
+                    )
+                if path in {"/preflight", "/explain", "/finalize", "/search"}:
+                    self._json_ok(payload)
+                else:
+                    self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+                return
+            if path in {"/preflight", "/explain", "/finalize", "/search"}:
+                from agency_runtime.core.config_binding import assert_store_config_binding
+
+                assert_store_config_binding(self.store)
             if path == "/preflight":
                 self._handle_preflight(body)
             elif path == "/explain":
@@ -231,6 +282,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             data = json.dumps(
                 payload,
                 allow_nan=False,
+                ensure_ascii=False,
                 separators=(",", ":"),
             ).encode("utf-8")
         except (TypeError, ValueError):
@@ -289,52 +341,51 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
     # ── Endpoint handlers ────────────────────────────────────────────
 
     def _handle_preflight(self, body: dict[str, Any]) -> None:
-        session_id = str(body.get("session_id", ""))
+        from agency_runtime.core.turn_origin import native_adapter_turn_origin
+
+        try:
+            session_id = validate_correlation_id(
+                body.get("session_id"),
+                field="session_id",
+            )
+        except ValueError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
         user_message = str(body.get("user_message", ""))
         requested_model = str(body.get("model", ""))
 
-        if not user_message:
-            self._json_error(HTTPStatus.BAD_REQUEST, "user_message is required")
+        if not session_id or not user_message:
+            self._json_error(
+                HTTPStatus.BAD_REQUEST,
+                "session_id and user_message are required",
+            )
             return
 
-        catalog = self.store.get_active_roster_as_catalog()
-        trivial = is_trivial(user_message)
-        trace_id = str(uuid.uuid4())
-        routing = route(
-            session_id,
-            user_message,
-            catalog,
-            store=self.store,
+        trace_id = str(uuid4())
+        origin_receipt = native_adapter_turn_origin(
+            "external_user",
+            host="http",
+            event="adapter_preflight",
+            session_id=session_id,
             trace_id=trace_id,
         )
-        context = build_routing_context(routing)
-        if trivial:
-            active_slugs = {
-                str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog
-            }
-            _matched, companion_ids = detect_actions(
-                user_message,
-                active_slugs=active_slugs,
+        try:
+            result = run_preflight(
+                self.store,
+                session_id=session_id,
+                user_message=user_message,
+                host="http",
+                trace_id=trace_id,
+                origin_receipt=origin_receipt,
             )
-            available = [slug for slug in companion_ids if slug in active_slugs]
-            context = None
-            if available:
-                context = (
-                    "[AGENCY PREFLIGHT] Default companion specialist routing "
-                    f"(deterministic, trivial message): {', '.join(available)}"
-                )
+        except ValueError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        except SpecialistPromptDeliveryError as exc:
+            self._json_error(HTTPStatus.CONFLICT, str(exc))
+            return
 
-        self._json_ok(
-            {
-                "trace_id": trace_id,
-                "session_id": session_id,
-                "model": requested_model,
-                "routing": routing,
-                "context": context,
-                "trivial": trivial,
-                "roster_size": len(catalog),
-            }
-        )
+        self._json_ok({**result.as_dict(), "model": requested_model})
 
     def _handle_explain(self, body: dict[str, Any]) -> None:
         task = str(body.get("task") or body.get("user_message") or "")
@@ -348,10 +399,22 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             limit = 10
         limit = max(1, min(limit, 100))
 
+        try:
+            session_id = validate_correlation_id(
+                body.get("session_id"),
+                field="session_id",
+                required=False,
+            )
+        except ValueError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+
+        snapshot = capture_routing_snapshot(self.store)
         payload = explain_route(
-            str(body.get("session_id", "")),
+            session_id,
             task,
-            self.store.get_active_roster_as_catalog(),
+            snapshot.catalog,
+            config=snapshot.config,
             limit=limit,
             store=self.store,
         )
@@ -359,8 +422,8 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
     def _handle_finalize(self, body: dict[str, Any]) -> None:
         draft_text = str(body.get("draft_text", ""))
-        trace_id = str(body.get("trace_id") or body.get("session_id") or "")
-        session_id = str(body.get("session_id") or trace_id)
+        raw_trace_id = body.get("trace_id")
+        raw_session_id = body.get("session_id")
         host = str(body.get("host", "unknown")) or "unknown"
         skills_loaded = body.get("skills_loaded") or []
         delegations = body.get("delegations") or []
@@ -368,7 +431,6 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         if not draft_text:
             self._json_error(HTTPStatus.BAD_REQUEST, "draft_text is required")
             return
-
         if (
             not isinstance(skills_loaded, list)
             or len(skills_loaded) > _MAX_CONTEXT_ITEMS
@@ -384,6 +446,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             "recommended_agent",
             "status",
             "backend",
+            "work_unit_id",
             "skip_reason",
             "error",
         }
@@ -406,12 +469,76 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
                 "caller-provided evidence is disabled on this server",
             )
             return
+        allowed_delegation_statuses = {
+            "delegated",
+            "completed",
+            "skipped",
+            "failed",
+        }
+        for delegation in delegations:
+            agent = str(delegation.get("agent", delegation.get("recommended_agent", ""))).strip()
+            work_unit_id = str(delegation.get("work_unit_id", "")).strip()
+            backend = str(delegation.get("backend", "")).strip()
+            status = str(delegation.get("status", "")).strip()
+            worker_kind = str(delegation.get("executed_worker_kind", "")).strip()
+            worker_id = str(delegation.get("executed_worker_id", "")).strip()
+            native_run_id = str(delegation.get("native_run_id", "")).strip()
+            if not agent or not work_unit_id or not backend:
+                self._json_error(
+                    HTTPStatus.BAD_REQUEST,
+                    "delegations require agent, work_unit_id, and backend",
+                )
+                return
+            if status in {"delegated", "completed"} and not all(
+                (worker_kind, worker_id, native_run_id)
+            ):
+                self._json_error(
+                    HTTPStatus.BAD_REQUEST,
+                    "positive delegations require executed_worker_kind, "
+                    "executed_worker_id, and native_run_id",
+                )
+                return
+            if status not in allowed_delegation_statuses:
+                self._json_error(
+                    HTTPStatus.BAD_REQUEST,
+                    "delegation status must be delegated, completed, skipped, or failed",
+                )
+                return
+        try:
+            trace_id = validate_correlation_id(
+                raw_trace_id,
+                field="trace_id",
+            )
+            session_id = validate_correlation_id(
+                raw_session_id,
+                field="session_id",
+            )
+        except ValueError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        if correlation_error := active_turn_error(self.store, session_id, trace_id):
+            self._json_error(HTTPStatus.CONFLICT, correlation_error)
+            return
+        from agency_runtime.core.resident_managers import resident_manager_boundary_error
+
+        for delegation in delegations:
+            delegated_agent = delegation.get("agent", delegation.get("recommended_agent", ""))
+            if boundary_error := resident_manager_boundary_error(
+                delegated_agent,
+                operation="be recorded as a delegated worker",
+            ):
+                self._json_error(HTTPStatus.BAD_REQUEST, boundary_error)
+                return
 
         # Only explicitly trusted internal servers may promote caller-provided
         # context into canonical storage.
         session_key = session_id
         for skill in skills_loaded:
-            self.store.record_skill_loaded(session_key, str(skill))
+            self.store.record_skill_loaded(
+                session_key,
+                str(skill),
+                trace_id=trace_id,
+            )
         for delegation in delegations:
             self.store.record_delegation(
                 trace_id=trace_id,
@@ -420,8 +547,12 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
                 recommended_agent=str(
                     delegation.get("agent", delegation.get("recommended_agent", ""))
                 ),
-                status=str(delegation.get("status", "suggested")),
+                work_unit_id=str(delegation["work_unit_id"]),
+                status=str(delegation["status"]),
                 backend=str(delegation.get("backend", "")),
+                executed_worker_kind=str(delegation.get("executed_worker_kind", "")),
+                executed_worker_id=str(delegation.get("executed_worker_id", "")),
+                native_run_id=str(delegation.get("native_run_id", "")),
                 skip_reason=str(delegation.get("skip_reason", "")),
                 error=str(delegation.get("error", "")),
             )
@@ -473,11 +604,18 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             }
         )
 
-    def _handle_status(self) -> None:
+    def _handle_status(self, *, master: dict[str, Any] | None = None) -> None:
+        from agency_runtime.core.runtime_control import read_enforcement_runtime_control
+
+        if master is None:
+            master, _master_transport = read_enforcement_runtime_control()
+
         self._json_ok(
             {
                 "status": "ok",
-                "roster_count": self.store.count_active_roster(),
+                "runtime_enabled": True,
+                "master": master,
+                "roster_count": self.store.count_enabled_roster(),
                 "db_path": str(self.store.db_path),
             }
         )
@@ -488,10 +626,15 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         except ValueError as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
             return
-        page = self.store.get_active_roster(limit=limit + 1, after=after)
+        disabled = self.store.get_disabled_agent_slugs()
+        page = self.store.get_enabled_roster(
+            limit=limit + 1,
+            after=after,
+            disabled_agents=disabled,
+        )
         truncated = len(page) > limit
         roster = page[:limit]
-        total_count = self.store.count_active_roster()
+        total_count = self.store.count_enabled_roster(disabled_agents=disabled)
         self._json_ok(
             {
                 "agents": roster,
@@ -531,7 +674,7 @@ class AgencyHTTPServer(ThreadingHTTPServer):
 
     def __init__(
         self,
-        store: Store,
+        store: Store | None,
         host: str = DEFAULT_HOST,
         port: int = DEFAULT_PORT,
         handler_class: type[AgencyHTTPHandler] = AgencyHTTPHandler,
@@ -542,10 +685,13 @@ class AgencyHTTPServer(ThreadingHTTPServer):
         max_body_size: int = _MAX_BODY,
         request_timeout: float = _DEFAULT_REQUEST_TIMEOUT,
         max_concurrent_requests: int = _DEFAULT_MAX_CONCURRENT_REQUESTS,
+        store_factory: Callable[[], Store] | None = None,
     ):
         if not allow_remote and not _is_loopback_host(host):
             raise ValueError("Agency HTTP server is loopback-only unless allow_remote is explicit")
-        self.store = store
+        self._store = store
+        self._store_factory = store_factory or Store
+        self._store_lock = Lock()
         self.allow_context_writes = allow_context_writes
         if auth_token is None:
             candidate_token = getattr(self, "auth_token", "") or secrets.token_urlsafe(32)
@@ -597,6 +743,22 @@ class AgencyHTTPServer(ThreadingHTTPServer):
             f"localhost:{actual_port}",
             f"[::1]:{actual_port}",
         }
+
+    @property
+    def store(self) -> Store:
+        """Materialize SQLite only when an enabled request needs runtime work."""
+
+        if self._store is None:
+            with self._store_lock:
+                if self._store is None:
+                    self._store = self._store_factory()
+        return self._store
+
+    @store.setter
+    def store(self, value: Store | None) -> None:
+        """Preserve the historic explicit-store injection seam."""
+
+        self._store = value
 
     def process_request(self, request: Any, client_address: Any) -> None:
         """Start one bounded request worker or reject excess concurrency."""
@@ -710,6 +872,13 @@ def _bounded_roster_page(raw_path: str) -> tuple[int, str | None]:
         raise ValueError(
             f"after cursor must be between 1 and {_MAX_ROSTER_CURSOR_BYTES} UTF-8 bytes"
         )
+    if after is not None:
+        try:
+            normalized_after = normalize_agent_slug(after)
+        except ValueError as exc:
+            raise ValueError("after cursor must be a canonical agent slug") from exc
+        if normalized_after != after:
+            raise ValueError("after cursor must be a canonical agent slug")
     return limit, after
 
 
@@ -754,19 +923,33 @@ def serve(
     db_path: str | Path | None = None,
 ) -> None:
     """Run the Agency Runtime HTTP server until interrupted."""
-    cfg = load_config()
-    host = cfg.server.host if host is None else host
-    port = cfg.server.port if port is None else port
+    from agency_runtime.core.runtime_control import master_enabled
+
+    # A disabled process must not parse normal configuration or open SQLite.
+    # If it is re-enabled while running, the first enabled request loads the
+    # configured Store lazily; restart to apply configured bind settings.
+    cfg = load_config() if master_enabled() else None
+    host = (cfg.server.host if cfg is not None else DEFAULT_HOST) if host is None else host
+    port = (cfg.server.port if cfg is not None else DEFAULT_PORT) if port is None else port
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
     )
-    store = Store(db_path) if db_path else Store()
+    max_body_size = cfg.server.max_body_size if cfg is not None else _MAX_BODY
+
+    def create_store() -> Store:
+        live_cfg = cfg or load_config()
+        config_path = getattr(live_cfg, "config_path", "") or None
+        return (
+            Store(db_path, config_path=config_path) if config_path is not None else Store(db_path)
+        )
+
     server = AgencyHTTPServer(
-        store,
+        None,
         host,
         port,
-        max_body_size=cfg.server.max_body_size,
+        max_body_size=max_body_size,
+        store_factory=create_store,
     )
     print(f"Agency Runtime HTTP bearer token: {server.auth_token}")
     actual_host, actual_port = server.server_address[:2]

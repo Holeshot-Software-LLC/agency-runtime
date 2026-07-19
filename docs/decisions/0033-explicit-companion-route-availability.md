@@ -3,10 +3,11 @@ title: "Classify every companion route against explicit availability"
 status: accepted
 category: decisions
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-16
 tags: [routing, policy, roster, governance]
 related:
   - docs/roadmap/issue-AR-02-specialist-coverage-gaps.md
+  - docs/roadmap/issue-AR-26-bundle-default-coordinators.md
   - docs/decisions/0013-approval-gated-roster-activation.md
   - docs/decisions/0021-full-companion-policy-with-precedence.md
   - docs/worklog/README.md

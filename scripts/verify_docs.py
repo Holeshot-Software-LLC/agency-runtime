@@ -38,6 +38,7 @@ DECISION_STATUSES = {
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 GITHUB_RE = re.compile(r"https?://github\.com/([^/\s]+)/([^/\s)#\"']+)", re.I)
 WORKLOG_LEDGER_PREFIX = "docs(worklog):"
+LEGAL_PROVENANCE_NAME_EXEMPTIONS = frozenset({"THIRD_PARTY_NOTICES.md"})
 
 
 @dataclass
@@ -343,6 +344,8 @@ def validate_links_and_boundaries(doc: Document, errors: list[str]) -> None:
         "Windows absolute path": re.compile(r"(?<![\w-])[A-Za-z]:\\\\"),
     }
     for label, pattern in forbidden.items():
+        if label.startswith("legacy sibling") and doc.relative in LEGAL_PROVENANCE_NAME_EXEMPTIONS:
+            continue
         if pattern.search(full_text):
             errors.append(f"{doc.relative}: contains {label}")
 

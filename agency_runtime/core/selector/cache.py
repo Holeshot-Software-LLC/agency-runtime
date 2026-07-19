@@ -18,9 +18,7 @@ _CACHE_TTL_SECONDS = float(600)
 _CACHE_MAX_ENTRIES = 128
 
 _ROUTING_CACHE: OrderedDict[str, dict[str, Any]] = OrderedDict()
-_ACTIVE_IDS_CACHE: OrderedDict[tuple[int, str], tuple[list[dict[str, Any]], frozenset[str]]] = (
-    OrderedDict()
-)
+_ACTIVE_IDS_CACHE: OrderedDict[str, _ActiveIdsEntry] = OrderedDict()
 _CACHE_LOCK = threading.RLock()
 _FINGERPRINT_MAX_ENTRIES = 32
 
@@ -43,9 +41,53 @@ class _FingerprintEntry:
     catalog_snapshot: _MutationSnapshot
     policy_snapshot: _MutationSnapshot
     fingerprint: str
+    active_ids: frozenset[str]
+
+
+@dataclass(frozen=True, slots=True)
+class _ActiveIdsEntry:
+    """Active identities plus a detached collision-defense proof."""
+
+    catalog_snapshot: _MutationSnapshot
+    active_ids: frozenset[str]
+
+
+@dataclass(frozen=True, slots=True)
+class _RecentActiveIds:
+    """One-shot active IDs proven by the immediately preceding fingerprint."""
+
+    catalog: list[dict[str, Any]]
+    active_ids: frozenset[str]
 
 
 _FINGERPRINT_CACHE: OrderedDict[tuple[int, int, int], _FingerprintEntry] = OrderedDict()
+_EQUIVALENT_FINGERPRINT_CACHE: OrderedDict[
+    tuple[int, int],
+    _FingerprintEntry,
+] = OrderedDict()
+_RECENT_FINGERPRINT_ACTIVE: OrderedDict[int, _RecentActiveIds] = OrderedDict()
+
+
+def _active_ids(catalog: list[dict[str, Any]]) -> frozenset[str]:
+    return frozenset(
+        str(agent.get("slug") or agent.get("agent_slug") or "")
+        for agent in catalog
+        if agent.get("slug") or agent.get("agent_slug")
+    )
+
+
+def _remember_fingerprint_active(
+    catalog: list[dict[str, Any]],
+    active_ids: frozenset[str],
+) -> None:
+    """Bridge the atomic fingerprint proof to its immediate active-ID read."""
+
+    key = id(catalog)
+    with _CACHE_LOCK:
+        _RECENT_FINGERPRINT_ACTIVE[key] = _RecentActiveIds(catalog, active_ids)
+        _RECENT_FINGERPRINT_ACTIVE.move_to_end(key)
+        while len(_RECENT_FINGERPRINT_ACTIVE) > _FINGERPRINT_MAX_ENTRIES:
+            _RECENT_FINGERPRINT_ACTIVE.popitem(last=False)
 
 
 def _canonicalize(value: Any) -> Any:
@@ -77,6 +119,8 @@ def _catalog_guard(catalog: list[dict[str, Any]]) -> tuple[tuple[Any, ...], ...]
             len(agent),
             agent.get("slug"),
             agent.get("agent_slug"),
+            agent.get("version"),
+            agent.get("hash"),
             agent.get("name"),
             agent.get("description"),
             agent.get("division"),
@@ -211,6 +255,7 @@ def routing_fingerprint(
     metadata, not the order in which a store happened to return the roster.
     """
     memo_key = (id(catalog), id(config), id(policy))
+    equivalent_key = (id(config), id(policy))
     with _CACHE_LOCK:
         cached = _FINGERPRINT_CACHE.get(memo_key)
     if (
@@ -234,7 +279,37 @@ def routing_fingerprint(
             # immutable entry, but only mutate LRU order when it is still live.
             if _FINGERPRINT_CACHE.get(memo_key) is cached:
                 _FINGERPRINT_CACHE.move_to_end(memo_key)
+        _remember_fingerprint_active(catalog, cached.active_ids)
         return cached.fingerprint
+
+    # Eligibility filtering intentionally returns a fresh list so callers
+    # cannot mutate the source roster through the projection. The rows remain
+    # the same immutable agent mappings, however. Reuse the fingerprint for
+    # that equivalent projection after a complete detached-value comparison;
+    # this preserves in-place mutation invalidation without canonicalizing and
+    # deep-copying a thousand-row roster on every cache hit.
+    with _CACHE_LOCK:
+        equivalent = _EQUIVALENT_FINGERPRINT_CACHE.get(equivalent_key)
+    if (
+        equivalent is not None
+        and equivalent.config is config
+        and equivalent.policy is policy
+        and _snapshot_matches(
+            catalog,
+            equivalent.catalog_snapshot,
+            lambda: _catalog_guard(catalog),
+        )
+        and _snapshot_matches(
+            policy,
+            equivalent.policy_snapshot,
+            lambda: _policy_mutation_guard(policy),
+        )
+    ):
+        with _CACHE_LOCK:
+            if _EQUIVALENT_FINGERPRINT_CACHE.get(equivalent_key) is equivalent:
+                _EQUIVALENT_FINGERPRINT_CACHE.move_to_end(equivalent_key)
+        _remember_fingerprint_active(catalog, equivalent.active_ids)
+        return equivalent.fingerprint
 
     roster = [_canonicalize(agent) for agent in catalog]
     roster.sort(key=lambda agent: json.dumps(agent, sort_keys=True, default=str))
@@ -252,12 +327,18 @@ def routing_fingerprint(
         catalog_snapshot=_mutation_snapshot(catalog, lambda: _catalog_guard(catalog)),
         policy_snapshot=_mutation_snapshot(policy, lambda: _policy_mutation_guard(policy)),
         fingerprint=fingerprint,
+        active_ids=_active_ids(catalog),
     )
     with _CACHE_LOCK:
         _FINGERPRINT_CACHE[memo_key] = entry
         _FINGERPRINT_CACHE.move_to_end(memo_key)
+        _EQUIVALENT_FINGERPRINT_CACHE[equivalent_key] = entry
+        _EQUIVALENT_FINGERPRINT_CACHE.move_to_end(equivalent_key)
         while len(_FINGERPRINT_CACHE) > _FINGERPRINT_MAX_ENTRIES:
             _FINGERPRINT_CACHE.popitem(last=False)
+        while len(_EQUIVALENT_FINGERPRINT_CACHE) > _FINGERPRINT_MAX_ENTRIES:
+            _EQUIVALENT_FINGERPRINT_CACHE.popitem(last=False)
+    _remember_fingerprint_active(catalog, entry.active_ids)
     return fingerprint
 
 
@@ -288,19 +369,28 @@ def catalog_active_ids(
     context_fingerprint: str,
 ) -> frozenset[str]:
     """Return active identities cached against a mutation-aware fingerprint."""
-    key = (id(catalog), context_fingerprint)
+    with _CACHE_LOCK:
+        recent = _RECENT_FINGERPRINT_ACTIVE.pop(id(catalog), None)
+    if recent is not None and recent.catalog is catalog:
+        return recent.active_ids
+
+    key = context_fingerprint
     with _CACHE_LOCK:
         cached = _ACTIVE_IDS_CACHE.get(key)
-        if cached is not None and cached[0] is catalog:
+        if cached is not None and _snapshot_matches(
+            catalog,
+            cached.catalog_snapshot,
+            lambda: _catalog_guard(catalog),
+        ):
             _ACTIVE_IDS_CACHE.move_to_end(key)
-            return cached[1]
-    active = frozenset(
-        str(agent.get("slug") or agent.get("agent_slug") or "")
-        for agent in catalog
-        if agent.get("slug") or agent.get("agent_slug")
+            return cached.active_ids
+    active = _active_ids(catalog)
+    entry = _ActiveIdsEntry(
+        _mutation_snapshot(catalog, lambda: _catalog_guard(catalog)),
+        active,
     )
     with _CACHE_LOCK:
-        _ACTIVE_IDS_CACHE[key] = (catalog, active)
+        _ACTIVE_IDS_CACHE[key] = entry
         _ACTIVE_IDS_CACHE.move_to_end(key)
         while len(_ACTIVE_IDS_CACHE) > _FINGERPRINT_MAX_ENTRIES:
             _ACTIVE_IDS_CACHE.popitem(last=False)
@@ -334,4 +424,6 @@ def clear_cache() -> None:
     with _CACHE_LOCK:
         _ROUTING_CACHE.clear()
         _FINGERPRINT_CACHE.clear()
+        _EQUIVALENT_FINGERPRINT_CACHE.clear()
+        _RECENT_FINGERPRINT_ACTIVE.clear()
         _ACTIVE_IDS_CACHE.clear()

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import subprocess
-import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -22,7 +21,7 @@ from agency_runtime.core.delegation.lifecycle_types import (
     WorkUnit,
 )
 
-DEFAULT_WORKTREE_ROOT = Path(tempfile.gettempdir()) / "agency-runtime-worktrees"
+DEFAULT_WORKTREE_ROOT = Path("~") / ".agency-runtime" / "worktrees"
 DEFAULT_MAX_WORKERS = min(8, max(1, os.cpu_count() or 4))
 _MISSING = _dispatch.MISSING
 
@@ -55,6 +54,12 @@ def _validate_unique_unit_ids(units: Sequence[WorkUnit]) -> None:
     _graph.validate_unique_unit_ids(units)
 
 
+def _worktree_root(value: str | Path | None) -> Path:
+    if value is None or Path(value) == DEFAULT_WORKTREE_ROOT:
+        return Path.home() / ".agency-runtime" / "worktrees"
+    return Path(value)
+
+
 def normalize_work_units(
     work_units: Any,
     repo_path: str | Path | None = None,
@@ -79,13 +84,13 @@ def provision_worktrees(
     units: Sequence[WorkUnit],
     *,
     base_branch: str | None = None,
-    worktree_root: Path = DEFAULT_WORKTREE_ROOT,
+    worktree_root: Path | None = None,
 ) -> dict[str, WorktreeInfo]:
     """Provision isolated Git worktrees without hiding invocation-time seams."""
     return _git.provision_worktrees(
         units,
         base_branch=base_branch,
-        worktree_root=worktree_root,
+        worktree_root=_worktree_root(worktree_root),
         run_git_func=_run_git,
         git_root_func=_git_root,
         current_branch_func=_current_branch,
@@ -95,6 +100,17 @@ def provision_worktrees(
 
 def _resolve_delegate_func(delegate_func: DelegateFunc | None) -> DelegateFunc:
     return _dispatch.resolve_delegate_func(delegate_func)
+
+
+def _prepare_delegate_func(delegate_func: DelegateFunc | None) -> DelegateFunc:
+    return _dispatch.prepare_delegate_func(
+        delegate_func,
+        resolve_func=_resolve_delegate_func,
+    )
+
+
+def _validate_max_workers(max_workers: int) -> None:
+    _dispatch.validate_max_workers(max_workers)
 
 
 def _call_delegate(func: DelegateFunc, unit: WorkUnit, workdir: Path | None) -> Any:
@@ -148,6 +164,10 @@ def dispatch_work_units(
     max_workers: int = DEFAULT_MAX_WORKERS,
 ) -> tuple[dict[str, Any], list[list[str]], list[str]]:
     """Dispatch ready units with bounded parallelism and prerequisite gating."""
+    from agency_runtime.core.runtime_control import master_enabled
+
+    if not master_enabled():
+        return {}, [], []
     return _dispatch.dispatch_work_units(
         units,
         graph,
@@ -215,24 +235,58 @@ def delegate_with_lifecycle(
     base_branch: str | None = None,
     *,
     delegate_func: DelegateFunc | None = None,
-    worktree_root: str | Path = DEFAULT_WORKTREE_ROOT,
+    worktree_root: str | Path | None = None,
     merge_back: bool = True,
     ledger: DelegationLedger | None = None,
     max_workers: int = DEFAULT_MAX_WORKERS,
 ) -> LifecycleResult:
     """Run the one-shot normalize, isolate, dispatch, merge, and cleanup API."""
+    from agency_runtime.core.runtime_control import master_enabled
+
+    if not master_enabled():
+        message = "Agency Runtime is globally disabled; delegation lifecycle was bypassed."
+        return LifecycleResult(
+            work_units=[],
+            dependency_graph=DependencyGraph(),
+            batches=[],
+            worktrees={},
+            dispatch_results={},
+            cleanup_results={},
+            warnings=[message],
+            errors=[],
+            summary=message,
+            ledger=ledger,
+            runtime_enabled=False,
+            bypassed=True,
+        )
+    _validate_max_workers(max_workers)
+    units = normalize_work_units(work_units, repo_path=repo_path)
+    graph = build_dependency_graph(units)
+    prepared_delegate = _prepare_delegate_func(delegate_func) if units else delegate_func
+
+    def normalized_units(
+        _work_units: Any,
+        repo_path: str | Path | None = None,
+    ) -> list[WorkUnit]:
+        del _work_units, repo_path
+        return units
+
+    def validated_graph(_units: Sequence[WorkUnit]) -> DependencyGraph:
+        del _units
+        return graph
+
     return _orchestration.delegate_with_lifecycle(
-        work_units,
+        units,
         repo_path,
         base_branch,
-        delegate_func=delegate_func,
-        worktree_root=Path(worktree_root),
+        delegate_func=prepared_delegate,
+        worktree_root=_worktree_root(worktree_root),
         merge_back=merge_back,
         ledger=ledger,
         max_workers=max_workers,
         missing=_MISSING,
-        normalize_func=normalize_work_units,
-        graph_func=build_dependency_graph,
+        normalize_func=normalized_units,
+        graph_func=validated_graph,
         provision_func=provision_worktrees,
         dispatch_func=dispatch_work_units,
         cleanup_func=cleanup_worktrees,

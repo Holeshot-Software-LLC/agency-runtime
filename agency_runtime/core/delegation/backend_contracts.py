@@ -109,4 +109,5 @@ class BackendRegistry:
             return backend.delegate(**kwargs)
 
         _delegate.backend_name = backend.name
+        _delegate._agency_backend = backend
         return _delegate

@@ -3,11 +3,14 @@ title: "Use an optional user-scoped dashboard service with one typed configurati
 status: accepted
 category: decisions
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-16
 tags: [dashboard, operations, configuration, installer, security]
 related:
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
   - docs/roadmap/issue-AR-14-live-signal-observatory.md
+  - docs/roadmap/issue-AR-66-bind-systemd-unit-to-trusted-xdg-namespace.md
+  - docs/roadmap/issue-AR-71-dashboard-accessible-truthful-states.md
+  - docs/roadmap/issue-AR-74-broker-restricted-windows-host-controls.md
   - SECURITY.md
   - docs/worklog/README.md
 supersedes: []
@@ -47,6 +50,17 @@ restart unrelated processes. Provide idempotent status, start, stop, restart,
 and uninstall operations plus write-free planning. If the native user-service
 manager is unavailable, report an explicit unsupported state and leave
 `agency dashboard` available as the foreground fallback.
+
+Honor an absolute `XDG_CONFIG_HOME` only when its real ancestor chain prevents
+cross-account path substitution. Bind unit writes, reads, rollback, and removal
+to that trusted namespace; an unsafe or changing XDG path fails closed without
+falling back to a different registration location.
+
+Treat the systemd user manager environment as a second service-start input, not
+as equivalent to the installer process environment. If its bounded
+`show-environment` output contains a supported runtime override or configured
+credential variable, block planning and mutation with a names-only diagnostic;
+never copy or return the value.
 
 Run the service through the same package entry point and preserve ADR-0029's
 loopback binding, process-scoped bearer authentication, origin checks, bounded

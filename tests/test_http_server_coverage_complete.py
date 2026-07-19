@@ -14,6 +14,10 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core.selector import pipeline
+from agency_runtime.core.specialist_context import (
+    MAX_SELECTED_SPECIALISTS,
+)
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import http
 
@@ -116,20 +120,121 @@ def test_request_boundary_rejects_host_and_accepts_matching_origin() -> None:
     assert errors == []
 
 
-def test_trivial_preflight_without_available_companion_returns_null_context(
+def test_trivial_preflight_seeds_and_selects_bundled_fallback(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    handler, _errors = _bare_handler()
-    handler.server.store = SimpleNamespace(get_active_roster_as_catalog=lambda: [])
+    handler, errors = _bare_handler()
+    store = Store(tmp_path / "fresh-http.db")
+    handler.server.store = store
     payloads: list[dict[str, Any]] = []
     handler._json_ok = payloads.append
-    monkeypatch.setattr(http, "is_trivial", lambda _message: True)
-    monkeypatch.setattr(http, "route", lambda *_args, **_kwargs: {"selected_ids": []})
-    monkeypatch.setattr(http, "build_routing_context", lambda _routing: "context")
-    monkeypatch.setattr(http, "detect_actions", lambda *_args, **_kwargs: ([], ["missing"]))
-    handler._handle_preflight({"user_message": "thanks"})
-    assert payloads[0]["trivial"] is True
-    assert payloads[0]["context"] is None
+    from agency_runtime.core.selector import pipeline
+    from agency_runtime.core.selector.policy import load_bundled_policy
+
+    monkeypatch.setattr(pipeline, "load_policy", lambda *_args: load_bundled_policy())
+    monkeypatch.setattr(
+        pipeline,
+        "query_judge",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("trivial HTTP preflight must not invoke the semantic judge")
+        ),
+    )
+
+    handler._handle_preflight({"session_id": "fresh-http", "user_message": "thanks"})
+
+    assert errors == []
+    preflight = payloads[0]
+    trace_id = preflight["trace_id"]
+    assert preflight["trivial"] is True
+    assert preflight["routing"]["selected_ids"] == [
+        "agents-orchestrator",
+        "chief-of-staff",
+    ]
+    assert preflight["routing"]["source"] == "policy_fallback"
+    assert preflight["loaded_specialists"] == []
+    assert preflight["resident_managers"] == [
+        "agents-orchestrator",
+        "chief-of-staff",
+    ]
+    assert "agents-orchestrator, chief-of-staff" in preflight["context"]
+    assert "[Agency resident-manager kernel v1]" in preflight["context"]
+    assert not any(line.startswith("[AGENCY LOADED]") for line in preflight["context"].splitlines())
+    assert store.get_active_specialists_for_trace("fresh-http", trace_id) == []
+
+    handler.server.allow_context_writes = False
+    handler._handle_finalize(
+        {
+            "session_id": "fresh-http",
+            "trace_id": trace_id,
+            "host": "http",
+            "draft_text": "The turn is complete.",
+        }
+    )
+    assert "Agency/Agencies loaded: agents-orchestrator, chief-of-staff" in payloads[1]["text"]
+
+
+def test_http_preflight_rejects_oversized_prompt_without_truncating(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    handler, errors = _bare_handler()
+    store = Store(tmp_path / "bounded-http.db")
+    handler.server.store = store
+    payloads: list[dict[str, Any]] = []
+    handler._json_ok = payloads.append
+    user_message = "Review this implementation in depth"
+    work_units = pipeline.detect_work_units(user_message)
+    slugs = [f"bounded-agent-{index}" for index in range(MAX_SELECTED_SPECIALISTS)]
+    for slug in slugs:
+        store._activate_prevalidated_agent(
+            {
+                "slug": slug,
+                "name": slug,
+                "division": "test",
+                "description": "Bounded prompt test",
+                "source": "test",
+                "version": "1.0.0",
+                "hash": slug,
+                "categories": ["test"],
+                "capabilities": ["testing"],
+                "tool_affinity": [],
+                "prompt_path": f"test://{slug}",
+                "prompt_body": "x" * 20_000,
+            }
+        )
+
+    monkeypatch.setattr(
+        pipeline,
+        "route",
+        lambda *_args, **_kwargs: {
+            "selected_ids": slugs,
+            "semantic_ids": slugs,
+            "confidence": 0.99,
+            "status": "confidence_bypass",
+            "source": "semantic",
+            "query_hash": "a" * 64,
+            "context_fingerprint": "b" * 64,
+            "source_message_hash": "c" * 64,
+            "work_units": work_units,
+        },
+    )
+    handler._handle_preflight(
+        {
+            "session_id": "bounded-http",
+            "user_message": user_message,
+        }
+    )
+
+    assert payloads == []
+    assert errors == [
+        (
+            HTTPStatus.CONFLICT,
+            "specialist prompt exceeds the exact-delivery ceiling: bounded-agent-0",
+        )
+    ]
+    assert store.get_open_traces_for_session("bounded-http") == []
+    assert store.get_specialists_for_session("bounded-http") == []
 
 
 def test_explain_and_search_use_safe_limit_fallbacks(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -165,6 +270,108 @@ def test_finalize_refuses_untrusted_caller_evidence() -> None:
         }
     )
     assert errors == [(HTTPStatus.FORBIDDEN, "caller-provided evidence is disabled on this server")]
+
+
+def test_finalize_rejects_positive_delegation_without_execution_correlation() -> None:
+    handler, errors = _bare_handler(server=SimpleNamespace(allow_context_writes=True))
+
+    handler._handle_finalize(
+        {
+            "draft_text": "answer",
+            "delegations": [
+                {
+                    "agent": "code-reviewer",
+                    "work_unit_id": "unit-review",
+                    "backend": "spawn_agent",
+                    "status": "completed",
+                }
+            ],
+        }
+    )
+
+    assert errors == [
+        (
+            HTTPStatus.BAD_REQUEST,
+            "positive delegations require executed_worker_kind, "
+            "executed_worker_id, and native_run_id",
+        )
+    ]
+
+
+def test_trusted_http_evidence_cannot_manufacture_an_implicit_turn(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    handler, errors = _bare_handler(
+        server=SimpleNamespace(
+            allow_context_writes=True,
+            store=store,
+        )
+    )
+    handler._json_ok = lambda _payload: pytest.fail("unknown correlation must not finalize")
+
+    handler._handle_finalize(
+        {
+            "draft_text": "answer",
+            "session_id": "session",
+            "trace_id": "missing-turn",
+            "skills_loaded": ["security-review"],
+            "delegations": [
+                {
+                    "agent": "code-reviewer",
+                    "status": "delegated",
+                    "backend": "spawn_agent",
+                    "work_unit_id": "unit-review",
+                    "executed_worker_kind": "generic-worker",
+                    "executed_worker_id": "worker-review",
+                    "native_run_id": "native-review",
+                }
+            ],
+        }
+    )
+
+    assert errors == [(HTTPStatus.CONFLICT, "trace_id does not identify an existing active turn")]
+    assert store.get_run("missing-turn") is None
+    assert store.get_specialists_for_session("session") == []
+    assert store.get_delegations("missing-turn") == []
+
+
+def test_trusted_http_evidence_rejects_unpromoted_reservation(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.reserve_session_turn(
+        session_id="session",
+        trace_id="reserved-turn",
+        host="http",
+    )
+    handler, errors = _bare_handler(
+        server=SimpleNamespace(
+            allow_context_writes=True,
+            store=store,
+        )
+    )
+    handler._json_ok = lambda _payload: pytest.fail("unpromoted correlation must not finalize")
+
+    handler._handle_finalize(
+        {
+            "draft_text": "answer",
+            "session_id": "session",
+            "trace_id": "reserved-turn",
+            "skills_loaded": ["security-review"],
+            "delegations": [
+                {
+                    "agent": "code-reviewer",
+                    "status": "delegated",
+                    "backend": "spawn_agent",
+                    "work_unit_id": "unit-review",
+                    "executed_worker_kind": "generic-worker",
+                    "executed_worker_id": "worker-review",
+                    "native_run_id": "native-review",
+                }
+            ],
+        }
+    )
+
+    assert errors == [(HTTPStatus.CONFLICT, "trace_id has not completed preflight")]
+    assert store.get_skills_for_trace("session", "reserved-turn") == []
+    assert store.get_delegations("reserved-turn") == []
 
 
 def test_localhost_server_path_uses_default_address_family(tmp_path: Path) -> None:

@@ -240,6 +240,7 @@ def apply_config_operations(
         tuple[dict[str, Any], set[str], bool],
     ],
     complete: Callable[..., ConfigUpdateResult],
+    locked_precondition: Callable[[], None] | None = None,
 ) -> ConfigUpdateResult:
     """Apply a typed operation batch as one locked, atomic transaction."""
 
@@ -253,6 +254,8 @@ def apply_config_operations(
         if revision(raw) != expected_revision:
             raise ConfigConflictError("configuration changed; refresh before saving")
         document = validate(document)
+        if locked_precondition is not None:
+            locked_precondition()
         original = copy.deepcopy(document)
         document, changed, policy_enforced = apply(document, operations)
         return complete(

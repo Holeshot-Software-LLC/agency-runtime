@@ -15,9 +15,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from agency_runtime.core.delegation_status import normalize_delegation_status
 from agency_runtime.core.store.sqlite import Store
 
 TERMINAL_STATUSES = {"completed", "failed", "skipped"}
+POSITIVE_STATUSES = {"started", "running", "delegated", "completed"}
 
 
 @dataclass(slots=True)
@@ -28,6 +30,9 @@ class DelegationLedgerEntry:
     recommended_agent: str = ""
     status: str = "suggested"
     backend: str = ""
+    executed_worker_kind: str = ""
+    executed_worker_id: str = ""
+    native_run_id: str = ""
     skip_reason: str = ""
     error: str = ""
     event_id: str = ""
@@ -39,6 +44,9 @@ class DelegationLedgerEntry:
             "recommended_agent": self.recommended_agent,
             "status": self.status,
             "backend": self.backend,
+            "executed_worker_kind": self.executed_worker_kind,
+            "executed_worker_id": self.executed_worker_id,
+            "native_run_id": self.native_run_id,
             "skip_reason": self.skip_reason,
             "error": self.error,
         }
@@ -103,30 +111,61 @@ class DelegationLedger:
         status: str,
         backend: str = "",
         recommended_agent: str = "",
+        executed_worker_kind: str = "",
+        executed_worker_id: str = "",
+        native_run_id: str = "",
         skip_reason: str = "",
         error: str = "",
     ) -> DelegationLedgerEntry:
         """Update a work unit status and mirror the transition to SQLite."""
-        entry = self.suggest(work_unit_id, recommended_agent=recommended_agent, backend=backend)
-        entry.status = status
-        if backend:
-            entry.backend = backend
-        if recommended_agent:
-            entry.recommended_agent = recommended_agent
-        entry.skip_reason = skip_reason
-        entry.error = error
+        status = normalize_delegation_status(status)
+        if status in POSITIVE_STATUSES:
+            missing = [
+                name
+                for name, value in (
+                    ("backend", backend),
+                    ("executed_worker_kind", executed_worker_kind),
+                    ("executed_worker_id", executed_worker_id),
+                    ("native_run_id", native_run_id),
+                )
+                if not str(value or "").strip()
+            ]
+            if missing:
+                raise ValueError(
+                    "positive delegation ledger state requires non-empty " + ", ".join(missing)
+                )
+        entry = self._entries.get(work_unit_id)
+        if entry is None:
+            entry = self.suggest(
+                work_unit_id,
+                recommended_agent=recommended_agent,
+                backend=backend,
+            )
+        next_backend = backend or entry.backend
+        next_worker_kind = executed_worker_kind or entry.executed_worker_kind
+        next_worker_id = executed_worker_id or entry.executed_worker_id
+        next_native_run_id = native_run_id or entry.native_run_id
         if self.store is not None and entry.event_id:
-            # Store.update_delegation currently updates status/backend/error.  Preserve
-            # skip_reason in the in-memory contract; the initial insert already holds
-            # explicit skipped suggestions when callers use record() directly.
             self.store.update_delegation(
                 entry.event_id,
                 status=status,
-                backend=entry.backend,
+                backend=next_backend,
                 error=error,
-                recommended_agent=entry.recommended_agent,
+                recommended_agent=recommended_agent or entry.recommended_agent,
+                executed_worker_kind=next_worker_kind,
+                executed_worker_id=next_worker_id,
+                native_run_id=next_native_run_id,
                 skip_reason=skip_reason,
             )
+        entry.status = status
+        entry.backend = next_backend
+        if recommended_agent:
+            entry.recommended_agent = recommended_agent
+        entry.executed_worker_kind = next_worker_kind
+        entry.executed_worker_id = next_worker_id
+        entry.native_run_id = next_native_run_id
+        entry.skip_reason = skip_reason
+        entry.error = error
         return entry
 
     def record(self, record: Mapping[str, Any]) -> DelegationLedgerEntry:
@@ -136,6 +175,9 @@ class DelegationLedger:
             status=str(record.get("status") or "suggested"),
             backend=str(record.get("backend") or ""),
             recommended_agent=str(record.get("recommended_agent") or ""),
+            executed_worker_kind=str(record.get("executed_worker_kind") or ""),
+            executed_worker_id=str(record.get("executed_worker_id") or ""),
+            native_run_id=str(record.get("native_run_id") or ""),
             skip_reason=str(record.get("skip_reason") or ""),
             error=str(record.get("error") or ""),
         )
@@ -165,6 +207,9 @@ class DelegationLedger:
                 recommended_agent=str(row.get("recommended_agent") or ""),
                 status=str(row.get("status") or "suggested"),
                 backend=str(row.get("backend") or ""),
+                executed_worker_kind=str(row.get("executed_worker_kind") or ""),
+                executed_worker_id=str(row.get("executed_worker_id") or ""),
+                native_run_id=str(row.get("native_run_id") or ""),
                 skip_reason=str(row.get("skip_reason") or ""),
                 error=str(row.get("error") or ""),
                 event_id=str(row.get("id") or ""),
@@ -173,4 +218,9 @@ class DelegationLedger:
         return ledger
 
 
-__all__ = ["TERMINAL_STATUSES", "DelegationLedger", "DelegationLedgerEntry"]
+__all__ = [
+    "POSITIVE_STATUSES",
+    "TERMINAL_STATUSES",
+    "DelegationLedger",
+    "DelegationLedgerEntry",
+]

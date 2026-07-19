@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -9,14 +10,52 @@ from typing import Any
 PLUGIN_ID = "agency-preflight"
 MARKETPLACE_ID = "agency-runtime"
 INSTALL_MANIFEST = ".agency-runtime-install.json"
+ADAPTER_LAUNCHER_MANIFEST = ".agency-runtime-launcher.json"
 PLUGIN_VERSION = "0.1.0"
+MINIMUM_OPENCLAW_VERSION = "2026.7.1"
+OPENCLAW_REQUIRED_HOOKS = frozenset(
+    {
+        "gateway_start",
+        "before_agent_run",
+        "before_prompt_build",
+        "model_call_ended",
+        "after_tool_call",
+        "subagent_spawned",
+        "subagent_ended",
+        "before_agent_finalize",
+        "reply_payload_sending",
+        "message_sending",
+    }
+)
 HOOK_TIMEOUT_BUFFER_SECONDS = 5.0
 MAX_HOOK_TIMEOUT_SECONDS = 595
 MAX_NATIVE_OUTPUT_CHARS = 256 * 1024
 CODEX_HOOK_TRUST_ACTION = (
-    "Open Codex, run `/hooks`, review and trust the three Agency Runtime "
-    "command hooks, then start a new session."
+    "Open Codex, run `/hooks`, review and trust the seven Agency Runtime "
+    "hook events, then start a new session."
 )
+_OPENCLAW_VERSION = re.compile(
+    r"(?<!\d)(?P<year>\d{4})\.(?P<month>\d{1,2})\.(?P<patch>\d{1,9})"
+    r"(?P<prerelease>-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"
+    r"(?![0-9A-Za-z.+-])"
+)
+
+
+def parse_openclaw_version(value: object) -> tuple[int, int, int] | None:
+    """Parse one stable date-version without accepting prerelease capability drift."""
+
+    match = _OPENCLAW_VERSION.search(str(value or ""))
+    if match is None or match.group("prerelease"):
+        return None
+    return tuple(int(match.group(name)) for name in ("year", "month", "patch"))
+
+
+def openclaw_version_supported(value: object) -> bool:
+    """Return whether the host is in the explicitly audited OpenClaw release line."""
+
+    observed = parse_openclaw_version(value)
+    minimum = tuple(int(part) for part in MINIMUM_OPENCLAW_VERSION.split("."))
+    return observed is not None and observed[:2] == minimum[:2] and observed[2] >= minimum[2]
 
 
 # ``HOSTS`` intentionally stays JSON-like because the dashboard and downstream

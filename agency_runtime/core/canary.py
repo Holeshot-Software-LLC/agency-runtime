@@ -235,8 +235,11 @@ def run_canary(
     if preparation.error:
         report["unmet_prerequisites"].append(preparation.error)
         return report
-    assert preparation.prompt is not None
-    assert preparation.expected_query_hash is not None
+    if preparation.prompt is None or preparation.expected_query_hash is None:
+        report["unmet_prerequisites"].append(
+            "safe canary preparation returned incomplete invocation state"
+        )
+        return report
     report["live_attempted"] = True
     outcome = _invoke_and_collect_evidence(
         preparation,
@@ -248,8 +251,11 @@ def run_canary(
     if outcome.error:
         report["unmet_prerequisites"].append(outcome.error)
         return report
-    assert outcome.result is not None
-    assert outcome.evidence is not None
+    if outcome.result is None or outcome.evidence is None:
+        report["unmet_prerequisites"].append(
+            "safe host invocation returned incomplete evidence state"
+        )
+        return report
     proof = _evaluate_proof(
         host,
         result=outcome.result,
@@ -273,7 +279,10 @@ def run_canary(
             )
             report["attestation_persisted"] = False
             return report
-        assert preparation.store is not None
+        if preparation.store is None:
+            report["unmet_prerequisites"].append("canary attestation store is unavailable")
+            report["attestation_persisted"] = False
+            return report
         attestation, error = _persist_attestation(
             preparation.store,
             _attestation_payload(

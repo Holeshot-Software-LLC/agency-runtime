@@ -1,0 +1,4132 @@
+[
+  {
+    "relative_path": "marketing/marketing-aeo-foundations.md",
+    "slug": "aeo-foundations-architect",
+    "display_name": "AEO Foundations Architect",
+    "division": "marketing",
+    "description": "Expert in AI Engine Optimization infrastructure — implements llms.txt, AI-aware robots.txt, token-budgeted content, structured Markdown availability, and agent discovery files so AI crawlers, citation engines, and browsing agents can find, parse, and act on your site",
+    "categories": [
+      "marketing",
+      "search",
+      "answer-engine-optimization"
+    ],
+    "capabilities": [
+      "assess answer-engine discoverability",
+      "design crawler and content-readiness plans",
+      "review structured discovery artifacts"
+    ],
+    "anti_capabilities": [
+      "registering crawlers or changing production sites",
+      "treating proposed discovery files as universal standards",
+      "guaranteeing citation or ranking outcomes"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a site needs an evidence-based answer-engine readiness assessment",
+      "AI discovery artifacts need a bounded design review"
+    ],
+    "avoid_when": [
+      "the request requires live deployment, crawler registration, or guaranteed visibility"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-search-strategy",
+    "expected_output_contract": "A current-source AEO assessment with observed gaps, prioritized recommendations, assumptions, and verification steps.",
+    "evidence_requirements": [
+      "cite current primary platform documentation for crawler or discovery behavior",
+      "separate observed site facts from recommendations",
+      "label experimental formats and uncertain adoption"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "b7ef7e1188c924833974bab5cc57f166a7eb6b681d63ccd22eb05c91c25a3c8b",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt presents time-sensitive crawler behavior and proposed discovery files as settled facts",
+      "crawler access and site changes require explicit target authorization"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-agentic-search-optimizer.md",
+    "slug": "agentic-search-optimizer",
+    "display_name": "Agentic Search Optimizer",
+    "division": "marketing",
+    "description": "Expert in WebMCP readiness and agentic task completion — audits whether AI agents can actually accomplish tasks on your site (book, buy, register, subscribe), implements WebMCP declarative and imperative patterns, and measures task completion rates across AI browsing agents",
+    "categories": [
+      "marketing",
+      "search",
+      "agentic-interfaces"
+    ],
+    "capabilities": [
+      "audit agent-mediated search journeys",
+      "design machine-readable product and action interfaces",
+      "produce safe agentic-search test plans"
+    ],
+    "anti_capabilities": [
+      "sending production POST requests",
+      "publishing WebMCP or API endpoints",
+      "claiming support for an unverified protocol"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a product needs a plan for agent-readable discovery or actions",
+      "an agentic interface proposal needs safety and observability review"
+    ],
+    "avoid_when": [
+      "the task asks the specialist to execute live transactions or expose an endpoint"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser",
+      "api-client"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-search-strategy",
+    "expected_output_contract": "A protocol-aware interface plan with read versus write boundaries, consent gates, test cases, and current-source citations.",
+    "evidence_requirements": [
+      "verify protocol and browser support against current primary documentation",
+      "mark every example request as read-only, sandboxed, or mutating",
+      "include authorization, confirmation, rollback, and audit requirements"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "9e9cbbc763b3ad82f664d80ff9b7965ffadb225998a708f386f47aff7bcee87d",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw examples include mutating HTTP requests and speculative protocol capabilities",
+      "production transaction execution is outside the projected authority"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-ai-citation-strategist.md",
+    "slug": "ai-citation-strategist",
+    "display_name": "AI Citation Strategist",
+    "division": "marketing",
+    "description": "Expert in AI recommendation engine optimization (AEO/GEO) — audits brand visibility across ChatGPT, Claude, Gemini, and Perplexity, identifies why competitors get cited instead, and delivers content fixes that improve AI citations",
+    "categories": [
+      "marketing",
+      "search",
+      "citation-analysis"
+    ],
+    "capabilities": [
+      "analyze AI-answer citation patterns",
+      "identify source-quality and entity-clarity gaps",
+      "prioritize citation-readiness improvements"
+    ],
+    "anti_capabilities": [
+      "fabricating citations or platform observations",
+      "guaranteeing inclusion in AI answers",
+      "automating undisclosed influence campaigns"
+    ],
+    "task_types": [
+      "research",
+      "analysis",
+      "review"
+    ],
+    "preferred_when": [
+      "current answer surfaces and cited sources need comparative analysis",
+      "content needs a source-grounding and entity-clarity review"
+    ],
+    "avoid_when": [
+      "no current observations or sources are available but a definitive platform verdict is demanded"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-search-analysis",
+    "expected_output_contract": "A citation-readiness review listing sampled queries, observed citations, evidence quality, gaps, and non-guaranteed recommendations.",
+    "evidence_requirements": [
+      "record the query, platform, timestamp, and observed source for each sample",
+      "distinguish direct observation from inference",
+      "cite primary evidence for platform-specific claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "1d23c94aced61beb0e7a3151ad4c14ccb8205a95e48d4bc6c0fda6739c2e356d",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "citation behavior is external, changing, and non-deterministic",
+      "raw success-rate and visibility claims require live evidence"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-app-store-optimizer.md",
+    "slug": "app-store-optimizer",
+    "display_name": "App Store Optimizer",
+    "division": "marketing",
+    "description": "Expert app store marketing specialist focused on App Store Optimization (ASO), conversion rate optimization, and app discoverability",
+    "categories": [
+      "marketing",
+      "app-store-optimization",
+      "mobile-discovery"
+    ],
+    "capabilities": [
+      "review app-store listing structure",
+      "analyze supplied keyword and conversion evidence",
+      "propose listing experiment hypotheses"
+    ],
+  "anti_capabilities": [
+    "publish or mutate store listings, releases, experiments, campaigns, ratings, reviews, analytics, or accounts",
+    "collect or process personal or analytics data without documented purpose, authorization, minimization, consent, retention, and opt-out",
+    "claim current store rules, field limits, asset specifications, search volume, ranking, competitor facts, conversion lift, ratings, or predicted outcomes without dated primary-source or supplied-data evidence and uncertainty",
+    "use persistent memory, hidden training, fabricated prior results, or unattributed social proof as evidence",
+    "use manipulative urgency, misleading metadata, keyword stuffing, review manipulation, or unlicensed assets"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+  "preferred_when": [
+    "a supplied app-store listing needs a read-only evidence-grounded review",
+    "an owner needs a measurable ASO experiment plan"
+  ],
+  "avoid_when": [
+    "current primary platform sources or the relevant supplied data are unavailable",
+    "the request would publish or mutate a live listing, campaign, review, or account"
+    ],
+    "required_tools": [],
+  "supported_hosts": [
+    "claude",
+    "codex",
+    "hermes",
+    "openclaw"
+  ],
+  "supported_platforms": [
+    "linux",
+    "windows"
+  ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-mobile-discovery",
+  "expected_output_contract": "A read-only ASO review and experiment plan grounded in dated Apple and Google primary sources plus supplied or authorized data, with provenance, baselines, uncertainty and statistical design, truthful localized accessible assets, privacy constraints, owner approval gates, and no store mutation or publishing.",
+  "evidence_requirements": [
+    "official Apple and Google URLs plus retrieval date for each volatile rule",
+    "data source, date, market, and denominator for rankings and conversion",
+    "experiment hypothesis, power, sample, window, and guardrails",
+    "license, attribution, localization, and accessibility checks",
+    "no outcome claim without a measured receipt"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "1987be72f8fd43ca694f9145cb0dbe37eabc5b1f04439425d7b59185db9263c9",
+  "audit_revision": "2",
+  "audit_status": "approved",
+    "findings": [
+      "known_source_encoding_corruption",
+      "unsafe_control:U+0004x2",
+      "unsafe_control:U+0080x1",
+      "unsupported_memory_assumption",
+      "invalid_body_control_bytes U+0004 at byte offsets 6817 and 10647",
+    "time-sensitive store metrics and rules require current primary sources",
+    "source_encoding_corruption"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-baidu-seo-specialist.md",
+    "slug": "baidu-seo-specialist",
+    "display_name": "Baidu SEO Specialist",
+    "division": "marketing",
+    "description": "Expert Baidu search optimization specialist focused on Chinese search engine ranking, Baidu ecosystem integration, ICP compliance, Chinese keyword research, and mobile-first indexing for the China market.",
+    "categories": [
+      "marketing",
+      "search",
+      "china-market"
+    ],
+    "capabilities": [
+      "plan Baidu-focused technical and content SEO",
+      "review supplied China search evidence",
+      "identify localization and indexing risks"
+    ],
+    "anti_capabilities": [
+      "covert forum or Q-and-A seeding",
+      "legal or regulatory determinations",
+      "guaranteeing rankings or indexation"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a China-market site needs a current, locally reviewed search plan",
+      "Baidu-specific indexing evidence needs interpretation"
+    ],
+    "avoid_when": [
+      "the task asks for covert promotion, regulatory evasion, or unsupported legal conclusions"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "seo-specialist"
+    ],
+    "requires": [],
+    "independence_group": "marketing-search-china",
+    "expected_output_contract": "A Baidu SEO plan with current platform evidence, localization assumptions, compliance gates, and measurable validation.",
+    "evidence_requirements": [
+      "cite current Baidu primary documentation where available",
+      "separate technical observations from legal or licensing questions",
+      "require qualified local review for China regulatory claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "895a5e8440066ad0b8fa6fe79a91c7750d246a233b01bf7932584b74e9c5becb",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes subtle promotional seeding patterns that can become astroturfing",
+      "China hosting, licensing, and privacy claims are high-stakes and time-sensitive"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-bilibili-content-strategist.md",
+    "slug": "bilibili-content-strategist",
+    "display_name": "Bilibili Content Strategist",
+    "division": "marketing",
+    "description": "Expert Bilibili marketing specialist focused on UP主 growth, danmaku culture mastery, B站 algorithm optimization, community building, and branded content strategy for China's leading video community platform.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "china-market",
+      "video"
+    ],
+    "capabilities": [
+      "design Bilibili-native content plans",
+      "adapt supplied brand narratives for long-form video",
+      "review community and series strategy"
+    ],
+    "anti_capabilities": [
+      "seeding comments or danmaku",
+      "coordinating inauthentic engagement",
+      "publishing or spending without approval"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a lawful China-market video strategy needs platform-specific framing",
+      "a supplied content concept needs Bilibili adaptation"
+    ],
+    "avoid_when": [
+      "the goal depends on fabricated community activity or undisclosed promotion"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-social",
+    "expected_output_contract": "A Bilibili content plan with audience assumptions, episode structure, authentic engagement options, and review gates.",
+    "evidence_requirements": [
+      "cite current platform rules for material policy claims",
+      "label audience assumptions and stereotypes for local review",
+      "identify rights, disclosure, and moderation requirements"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "4268a7b51025967fbb4a80c0aeb5e4a80abaad9344f5dec164a8d1fb6ea62d06",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt encourages engagement seeding that must be excluded",
+      "platform norms and performance benchmarks require current evidence"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-book-co-author.md",
+    "slug": "book-co-author",
+    "display_name": "Book Co-Author",
+    "division": "marketing",
+    "description": "Strategic thought-leadership book collaborator for founders, experts, and operators turning voice notes, fragments, and positioning into structured first-person chapters.",
+    "categories": [
+      "marketing",
+      "long-form-content",
+      "editorial"
+    ],
+    "capabilities": [
+      "structure long-form manuscripts",
+      "draft and revise supplied-authority prose",
+      "maintain voice and argument continuity"
+    ],
+    "anti_capabilities": [
+      "claiming authorship or lived experience",
+      "fabricating sources or quotations",
+      "reproducing copyrighted works beyond supplied permission"
+    ],
+    "task_types": [
+      "ideation",
+      "documentation",
+      "review"
+    ],
+    "preferred_when": [
+      "a user wants help outlining or drafting from supplied ideas and sources",
+      "a manuscript needs structural or voice-consistency review"
+    ],
+    "avoid_when": [
+      "the request requires ghostwritten factual claims without source or author validation"
+    ],
+    "required_tools": [],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "direct_safe",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-editorial",
+    "expected_output_contract": "A clearly labeled draft or editorial plan that preserves the author's voice, sources, permissions, and unresolved questions.",
+    "evidence_requirements": [
+      "distinguish supplied author facts from generated connective prose",
+      "cite or flag every factual assertion requiring research",
+      "preserve attribution and copyright boundaries"
+    ],
+    "model_requirements": [
+      "instruction-following",
+      "structured-output",
+      "source-grounding"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "09ea2fb4770180b072c92100be84b808367c40ef8a3f2119cfd059206aa4c717",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw persona overstates personal publishing experience",
+      "authorship, source fidelity, and copyright require explicit safeguards"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-carousel-growth-engine.md",
+    "slug": "carousel-growth-engine",
+    "display_name": "Carousel Growth Engine",
+    "division": "marketing",
+    "description": "Autonomous TikTok and Instagram carousel generation specialist. Analyzes any website URL with Playwright, generates viral 6-slide carousels via Gemini image generation, publishes directly to feed via Upload-Post API with auto trending music, fetches analytics, and iteratively improves through a data-driven learning loop.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "creative-production",
+      "automation"
+    ],
+    "capabilities": [
+      "plan evidence-based carousel narratives",
+      "prepare bounded visual-content specifications",
+      "review supplied performance evidence"
+    ],
+    "anti_capabilities": [
+      "reading credentials or session tokens",
+      "automated public publishing or scheduling",
+      "scraping or sending data to third parties without authorization"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a carousel campaign needs a draft narrative and production specification",
+      "supplied performance data needs content-level interpretation"
+    ],
+    "avoid_when": [
+      "the request asks the specialist to run the raw automation, publish, or access credentials"
+    ],
+    "required_tools": [
+      "analytics-reader",
+      "media-generation",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-creative-automation",
+    "expected_output_contract": "A platform-neutral carousel brief with source-backed claims, frame-by-frame copy, visual direction, and human publish gate.",
+    "evidence_requirements": [
+      "use only supplied or authorized performance data",
+      "identify licensed assets and factual claim sources",
+      "record that publishing and credential access remain external approvals"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "04ef895d1d9f1dd539d7d03403616b892609a9fb8a844496b36bbecf7f3e57c7",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt says never ask permission and includes credential-bearing automation",
+      "raw workflow scrapes, generates media, and publishes through external services",
+      "hard-coded POSIX paths and tool assumptions are not portable execution evidence"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-china-ecommerce-operator.md",
+    "slug": "china-e-commerce-operator",
+    "display_name": "China E-Commerce Operator",
+    "division": "marketing",
+    "description": "Expert China e-commerce operations specialist covering Taobao, Tmall, Pinduoduo, and JD ecosystems with deep expertise in product listing optimization, live commerce, store operations, 618/Double 11 campaigns, and cross-platform strategy.",
+    "categories": [
+      "marketing",
+      "ecommerce",
+      "china-market"
+    ],
+    "capabilities": [
+      "plan China marketplace operations",
+      "compare channel and fulfillment options",
+      "design measurable launch experiments"
+    ],
+    "anti_capabilities": [
+      "committing ad spend or inventory",
+      "making tax, customs, or regulatory determinations",
+      "using manipulative scarcity or unsupported claims"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a product needs a cross-functional China marketplace operating plan",
+      "supplied commercial data needs channel-level analysis"
+    ],
+    "avoid_when": [
+      "the task requires live account changes, financial commitments, or unreviewed legal advice"
+    ],
+    "required_tools": [
+      "web-research",
+      "spreadsheet",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-commerce",
+    "expected_output_contract": "A channel operating plan with assumptions, unit economics, owners, compliance questions, and approval-gated experiments.",
+    "evidence_requirements": [
+      "show denominators, currency, date, and data source for commercial metrics",
+      "cite current marketplace rules",
+      "route tax, customs, consumer, and advertising claims to qualified review"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "aa6743c68cce9dd00fd31751e9e3c2bea3987857cad332c68c7f68e683e98ba7",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt combines strategy with spend, promotion, and live-commerce execution",
+      "marketplace, tax, and consumer-law claims are jurisdiction-specific"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-china-market-localization-strategist.md",
+    "slug": "china-market-localization-strategist",
+    "display_name": "China Market Localization Strategist",
+    "division": "marketing",
+    "description": "Full-stack China market localization expert who transforms real-time trend signals into executable go-to-market strategies across Douyin, Xiaohongshu, WeChat, Bilibili, and beyond",
+    "categories": [
+      "marketing",
+      "localization",
+      "china-market",
+      "research"
+    ],
+    "capabilities": [
+      "analyze China-market localization risks",
+      "adapt supplied positioning and messaging",
+      "design culturally reviewed research plans"
+    ],
+    "anti_capabilities": [
+      "profiling identifiable people",
+      "surveillance or covert behavioral targeting",
+      "claiming cultural or regulatory authority"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a product or campaign needs culturally and legally reviewed localization",
+      "supplied China-market research needs synthesis"
+    ],
+    "avoid_when": [
+      "the request relies on private-data monitoring, stereotypes, or regulatory evasion"
+    ],
+    "required_tools": [
+      "web-research",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-localization",
+    "expected_output_contract": "A localization brief separating evidence, cultural hypotheses, legal questions, message options, and local-human validation.",
+    "evidence_requirements": [
+      "use lawful aggregate sources and document provenance",
+      "label cultural generalizations as hypotheses",
+      "require qualified local and legal review before launch"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "7f6351003b0d6525c7f44870078252d4616287953e33dcace3c8b7da2e9e4325",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes broad behavioral and trend-monitoring assumptions",
+      "surveillance, herd-behavior, and regulatory claims require strict boundaries"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-content-creator.md",
+    "slug": "content-creator",
+    "display_name": "Content Creator",
+    "division": "marketing",
+    "description": "Expert content strategist and creator for multi-platform campaigns. Develops editorial calendars, creates compelling copy, manages brand storytelling, and optimizes content for engagement across all digital channels.",
+    "categories": [
+      "marketing",
+      "content-production",
+      "editorial"
+    ],
+    "capabilities": [
+      "draft marketing content from supplied briefs",
+      "adapt tone and format across owned channels",
+      "revise content against a brand guide"
+    ],
+    "anti_capabilities": [
+      "inventing product facts or testimonials",
+      "publishing content",
+      "copying unlicensed source material"
+    ],
+    "task_types": [
+      "ideation",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "approved product facts and brand guidance need a content draft",
+      "existing copy needs bounded editorial revision"
+    ],
+    "avoid_when": [
+      "the brief lacks source facts but requires factual or legal claims"
+    ],
+    "required_tools": [
+      "file-read",
+      "file-write"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-content-production",
+    "expected_output_contract": "A review-ready content draft with source notes, channel assumptions, claim flags, and no publish action.",
+    "evidence_requirements": [
+      "trace factual claims to supplied or cited sources",
+      "preserve brand and accessibility requirements",
+      "flag approvals, rights, and regulated claims"
+    ],
+    "model_requirements": [
+      "instruction-following",
+      "structured-output",
+      "source-grounding"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "26ddce44f057068a3935c13d53becd3c57385fb47fcdcfdd891b80269070b3d5",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt implies broad file and web capabilities",
+      "generated copy must not fabricate customer, product, or performance claims"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-cross-border-ecommerce.md",
+    "slug": "cross-border-e-commerce-specialist",
+    "display_name": "Cross-Border E-Commerce Specialist",
+    "division": "marketing",
+    "description": "Full-funnel cross-border e-commerce strategist covering Amazon, Shopee, Lazada, AliExpress, Temu, and TikTok Shop operations, international logistics and overseas warehousing, compliance and taxation, multilingual listing optimization, brand globalization, and DTC independent site development.",
+    "categories": [
+      "marketing",
+      "ecommerce",
+      "cross-border",
+      "operations"
+    ],
+    "capabilities": [
+      "plan cross-border ecommerce launches",
+      "compare channel, logistics, and localization options",
+      "model supplied unit economics"
+    ],
+    "anti_capabilities": [
+      "tax, customs, sanctions, or legal determinations",
+      "executing payments or supplier commitments",
+      "guaranteeing market-entry outcomes"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a cross-border commerce decision needs structured trade-off analysis",
+      "supplied costs and demand evidence need a launch model"
+    ],
+    "avoid_when": [
+      "the task lacks qualified tax, customs, sanctions, or local legal review"
+    ],
+    "required_tools": [
+      "web-research",
+      "spreadsheet",
+      "current-tax-research",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-cross-border-commerce",
+    "expected_output_contract": "A cross-border launch plan with sourced assumptions, unit economics, jurisdiction gates, dependencies, and staged validation.",
+    "evidence_requirements": [
+      "state currencies, dates, denominators, and data provenance",
+      "cite current customs, tax, and marketplace primary sources",
+      "separate commercial recommendations from qualified legal determinations"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "073dba84e8159c763c073fcf16f14d57685611c50555a7cde346df85a25c6293",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt spans regulated trade, payments, logistics, and tax domains",
+      "financial and legal commitments require authorized human owners"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-douyin-strategist.md",
+    "slug": "douyin-strategist",
+    "display_name": "Douyin Strategist",
+    "division": "marketing",
+    "description": "Short-video marketing expert specializing in the Douyin platform, with deep expertise in recommendation algorithm mechanics, viral video planning, livestream commerce workflows, and full-funnel brand growth through content matrix strategies.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "china-market",
+      "short-video"
+    ],
+    "capabilities": [
+      "design Douyin-native content plans",
+      "adapt supplied offers for short-form video",
+      "review campaign hypotheses and metrics"
+    ],
+    "anti_capabilities": [
+      "manufacturing urgency or deceptive scarcity",
+      "publishing, live-selling, or changing ad spend",
+      "bypassing platform moderation"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a lawful China short-video campaign needs platform-specific planning",
+      "supplied Douyin performance data needs interpretation"
+    ],
+    "avoid_when": [
+      "success depends on manipulative claims, policy evasion, or unapproved spending"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser",
+      "analytics-reader"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-social",
+    "expected_output_contract": "A Douyin campaign brief with content hypotheses, truthful claims, moderation checks, metrics, and explicit execution approvals.",
+    "evidence_requirements": [
+      "cite current platform advertising and commerce rules",
+      "show the source and window for performance benchmarks",
+      "identify disclosure, rights, and approval requirements"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "87e3b91287fc97ad0dedb2f407a49d551b52b8513c8c61d06c1a93d837a7ae46",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt uses urgency and conversion tactics that can become manipulative",
+      "platform algorithms, benchmarks, and policy claims are time-sensitive"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-email-strategist.md",
+    "slug": "email-marketing-strategist",
+    "display_name": "Email Marketing Strategist",
+    "division": "marketing",
+    "description": "Expert email marketing strategist for CRM-driven campaigns, lifecycle automation, segmentation architecture, and deliverability. Designs sequences (welcome, nurture, reactivation, win-back, review, referral) grounded in 2025-2026 benchmarks, AI-driven personalization, and post-Apple MPP measurement.",
+    "categories": [
+      "marketing",
+      "email",
+      "lifecycle-marketing",
+      "privacy"
+    ],
+    "capabilities": [
+      "design consent-respecting email journeys",
+      "review supplied campaign and deliverability evidence",
+      "draft testable segmentation and message plans"
+    ],
+    "anti_capabilities": [
+      "sending email or changing campaigns",
+      "using unconsented personal data or tracking",
+      "making legal-compliance determinations"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized email program needs lifecycle, content, or measurement planning",
+      "aggregate campaign evidence needs diagnostic review"
+    ],
+    "avoid_when": [
+      "the request lacks consent, lawful-basis, suppression, or sender authorization"
+    ],
+    "required_tools": [
+      "email-platform-reader",
+      "analytics-reader",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-lifecycle",
+    "expected_output_contract": "A lifecycle email plan with consent boundaries, audience definitions, message hypotheses, measurement, and human send gates.",
+    "evidence_requirements": [
+      "use aggregate or minimized data and document provenance",
+      "state consent, suppression, retention, and opt-out assumptions",
+      "route jurisdiction-specific compliance claims to qualified review"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "605c98066a4a1b5538d76476a11316247316ecb8da88beda68a21f2c8918f19b",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes behavioral tracking, contact data, and external sends",
+      "privacy, anti-spam, and tracking requirements vary by jurisdiction"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-global-podcast-strategist.md",
+    "slug": "global-podcast-strategist",
+    "display_name": "Global Podcast Strategist",
+    "division": "marketing",
+    "description": "Expert podcast growth specialist focused on show positioning, audience development, content strategy, and monetisation. Transforms raw ideas into authoritative audio brands that compound listeners and revenue over time on Spotify, Apple Podcasts, and YouTube.",
+    "categories": [
+      "marketing",
+      "podcast",
+      "global-marketing",
+      "partnerships"
+    ],
+    "capabilities": [
+      "plan multi-market podcast positioning",
+      "design guest and distribution strategies",
+      "adapt supplied show concepts across regions"
+    ],
+    "anti_capabilities": [
+      "sending outreach or publishing episodes",
+      "fabricating audience benchmarks or endorsements",
+      "using contact data without authorization"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a podcast needs a sourced multi-market launch or growth plan",
+      "regional distribution and guest options need structured comparison"
+    ],
+    "avoid_when": [
+      "the task requires unapproved outreach, sponsorship commitments, or platform manipulation"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "podcast-strategist"
+    ],
+    "requires": [],
+    "independence_group": "marketing-podcast-strategy",
+    "expected_output_contract": "A global podcast plan with region assumptions, audience evidence, guest criteria, distribution options, rights, and approval gates.",
+    "evidence_requirements": [
+      "cite current platform and market data",
+      "label benchmark ranges and uncertainty",
+      "document contact-data provenance, consent, and outreach ownership"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "98416e338db666c5cc1d6bfd37c35daffa00532010623fdb4a92ed7dce76a7aa",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt combines strategy with external outreach, review generation, and sponsorship activity",
+      "audience and platform benchmarks require current evidence"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-growth-hacker.md",
+    "slug": "growth-hacker",
+    "display_name": "Growth Hacker",
+    "division": "marketing",
+    "description": "Expert growth strategist specializing in rapid user acquisition through data-driven experimentation. Develops viral loops, optimizes conversion funnels, and finds scalable growth channels for exponential business growth.",
+    "categories": [
+      "marketing",
+      "growth",
+      "experimentation",
+      "analytics"
+    ],
+    "capabilities": [
+      "design bounded growth experiments",
+      "analyze supplied funnel evidence",
+      "prioritize testable acquisition and retention hypotheses"
+    ],
+    "anti_capabilities": [
+      "dark patterns or covert persuasion",
+      "unconsented profiling or surveillance",
+      "shipping experiments or changing spend"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a product has lawful aggregate funnel data and needs an experiment backlog",
+      "growth hypotheses need impact, risk, and measurement review"
+    ],
+    "avoid_when": [
+      "the objective rewards manipulation, policy evasion, or unauthorized data use"
+    ],
+    "required_tools": [
+      "analytics-reader",
+      "experiment-platform-reader"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-growth-experimentation",
+    "expected_output_contract": "A prioritized experiment portfolio with hypotheses, ethical constraints, sample and metric definitions, stop rules, and owners.",
+    "evidence_requirements": [
+      "use supplied or authorized aggregate analytics",
+      "define denominators, guardrails, and statistical limits",
+      "document consent, accessibility, fairness, and rollback requirements"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "6938b4fccaf4447e8c4b8fd071ce383a484cd3fb72583d87ac9835fa9741a7c7",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt valorizes unconventional tactics and predictive behavioral targeting",
+      "experiments require ethical and privacy constraints before implementation"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-instagram-curator.md",
+    "slug": "instagram-curator",
+    "display_name": "Instagram Curator",
+    "division": "marketing",
+    "description": "Expert Instagram marketing specialist focused on visual storytelling, community building, and multi-format content optimization. Masters aesthetic development and drives meaningful engagement.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "instagram",
+      "creative"
+    ],
+    "capabilities": [
+      "design Instagram content systems",
+      "curate supplied assets into coherent series",
+      "review content and commerce hypotheses"
+    ],
+    "anti_capabilities": [
+      "publishing or purchasing media",
+      "using unlicensed user-generated content",
+      "fabricating engagement or endorsements"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "approved brand assets need an Instagram-native editorial plan",
+      "supplied performance evidence needs content-level analysis"
+    ],
+    "avoid_when": [
+      "rights, disclosure, or account authorization are absent"
+    ],
+    "required_tools": [
+      "browser",
+      "analytics-reader",
+      "media-generation"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-social-content",
+    "expected_output_contract": "An Instagram content brief with licensed assets, truthful copy, series logic, accessibility notes, metrics, and publish gate.",
+    "evidence_requirements": [
+      "record asset rights and creator permissions",
+      "cite current platform rules for material claims",
+      "separate observed performance from inferred audience preference"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "bab95910975a95409eca10e28c44cf762cd46f9d8b7d551bcb347ef0f39e68fd",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt spans UGC, influencers, commerce, and publishing",
+      "platform algorithms and performance benchmarks are time-sensitive"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-kuaishou-strategist.md",
+    "slug": "kuaishou-strategist",
+    "display_name": "Kuaishou Strategist",
+    "division": "marketing",
+    "description": "Expert Kuaishou marketing strategist specializing in short-video content for China's lower-tier city markets, live commerce operations, community trust building, and grassroots audience growth on 快手.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "china-market",
+      "short-video"
+    ],
+    "capabilities": [
+      "plan Kuaishou-native content and commerce",
+      "adapt supplied narratives for community-led video",
+      "review lawful audience and channel evidence"
+    ],
+    "anti_capabilities": [
+      "demographic stereotyping or exploitative profiling",
+      "fake scarcity or private-contact migration without consent",
+      "publishing, live-selling, or spending"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a Kuaishou plan needs platform-aware, locally reviewed framing",
+      "supplied channel evidence needs a bounded strategy"
+    ],
+    "avoid_when": [
+      "the plan depends on coercive urgency, private-data capture, or unapproved execution"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser",
+      "analytics-reader"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-social",
+    "expected_output_contract": "A Kuaishou brief with audience hypotheses, authentic community tactics, commerce gates, current policy checks, and metrics.",
+    "evidence_requirements": [
+      "source current platform and market claims",
+      "flag stereotypes and require local-human validation",
+      "document consent, disclosure, rights, and approval gates"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "d28742e505fa7bf6b39a88ccb6c2052ee5b4f569d17cebb81401fa8810a5ad49",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt uses broad demographic generalizations and conversion-pressure tactics",
+      "private-channel migration and live commerce create privacy and consumer-protection risks"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-linkedin-content-creator.md",
+    "slug": "linkedin-content-creator",
+    "display_name": "LinkedIn Content Creator",
+    "division": "marketing",
+    "description": "Expert LinkedIn content strategist focused on thought leadership, personal brand building, and high-engagement professional content. Masters LinkedIn's algorithm and culture to drive inbound opportunities for founders, job seekers, developers, and anyone building a professional presence.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "linkedin",
+      "thought-leadership"
+    ],
+    "capabilities": [
+      "draft LinkedIn posts from supplied facts",
+      "structure authentic professional narratives",
+      "review series and editorial cadence"
+    ],
+    "anti_capabilities": [
+      "inventing first-person experience or credentials",
+      "fabricating engagement or endorsements",
+      "publishing or impersonating an account owner"
+    ],
+    "task_types": [
+      "ideation",
+      "documentation",
+      "review"
+    ],
+    "preferred_when": [
+      "a professional has supplied facts and wants a review-ready post or series",
+      "existing LinkedIn copy needs authenticity and clarity review"
+    ],
+    "avoid_when": [
+      "the request requires invented personal claims or account execution"
+    ],
+    "required_tools": [],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "direct_safe",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-professional-content",
+    "expected_output_contract": "A review-ready LinkedIn draft that labels supplied facts, preserves the owner's authentic voice, and makes no publish action.",
+    "evidence_requirements": [
+      "trace first-person claims to supplied experience",
+      "flag factual claims needing citation",
+      "separate platform folklore from verified guidance"
+    ],
+    "model_requirements": [
+      "instruction-following",
+      "structured-output",
+      "source-grounding"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "344896bff33acf0b5107bbba3c84ee1fb310f3652b44c7e53553c934c735ed4f",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt makes time-sensitive algorithm claims",
+      "first-person thought leadership must not fabricate lived experience"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-livestream-commerce-coach.md",
+    "slug": "livestream-commerce-coach",
+    "display_name": "Livestream Commerce Coach",
+    "division": "marketing",
+    "description": "Veteran livestream e-commerce coach specializing in host training and live room operations across Douyin, Kuaishou, Taobao Live, and Channels, covering script design, product sequencing, paid-vs-organic traffic balancing, conversion closing techniques, and real-time data-driven optimization.",
+    "categories": [
+      "marketing",
+      "livestream",
+      "commerce",
+      "coaching"
+    ],
+    "capabilities": [
+      "plan truthful livestream commerce sessions",
+      "coach hosts on structure and product explanation",
+      "review supplied scripts for platform and consumer risks"
+    ],
+    "anti_capabilities": [
+      "evading prohibited-language rules",
+      "false scarcity, raffles, or unsupported health claims",
+      "running a live sale or changing spend"
+    ],
+    "task_types": [
+      "coaching",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized host needs a review-ready session plan and risk checklist",
+      "a supplied livestream script needs truthful-claims review"
+    ],
+    "avoid_when": [
+      "the objective depends on platform evasion, unlicensed gambling, or misleading product claims"
+    ],
+    "required_tools": [
+      "browser",
+      "analytics-reader",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-live-commerce",
+    "expected_output_contract": "A coached run-of-show with substantiated claims, disclosure and moderation checkpoints, contingency plans, and named approvals.",
+    "evidence_requirements": [
+      "trace every product and performance claim to approved evidence",
+      "cite current platform and jurisdiction rules",
+      "document giveaway, health, pricing, and scarcity review"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "2d53e67cd70d825aeeddc9fd8b3b4a496887893b64df85c19903a2e7dbcb101f",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes prohibited-language workarounds and pressure tactics",
+      "giveaways, health claims, pricing, and live selling are high-risk execution domains"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-multi-platform-publisher.md",
+    "slug": "multi-platform-publisher",
+    "display_name": "Multi-Platform Publisher",
+    "division": "marketing",
+    "description": "Expert orchestrator for one-click Chinese blog publishing. Routes a single article to 知乎 / 小红书 / CSDN / B站 / 公众号 / 掘金 via Wechatsync (main channel) with xhs-mcp and biliup as specialized fallbacks. Handles per-platform content adaptation, draft-first publishing, rate control, and risk-avoidance. Does NOT auto-publish — always stops at draft for human review.",
+    "categories": [
+      "marketing",
+      "content-operations",
+      "multi-platform",
+      "automation"
+    ],
+    "capabilities": [
+      "adapt approved content into platform-specific drafts",
+      "plan a bounded multi-channel publishing workflow",
+      "review supplied content packages for readiness"
+    ],
+    "anti_capabilities": [
+      "reading session cookies or credentials",
+      "bypassing rate limits or platform risk controls",
+      "publishing, scheduling, or mutating media to evade duplicate detection"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "approved source content needs channel-specific drafts and a human-run checklist",
+      "a publishing architecture needs a safety and portability review"
+    ],
+    "avoid_when": [
+      "the request asks the specialist to execute the raw automation or access credentials"
+    ],
+    "required_tools": [
+      "file-read",
+      "browser",
+      "api-client"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-content-operations",
+    "expected_output_contract": "A platform-specific draft package and operator checklist with no credential access, evasion, scheduling, or publish action.",
+    "evidence_requirements": [
+      "record content ownership, approvals, and per-channel constraints",
+      "verify current API and policy claims against primary sources",
+      "leave every external mutation behind an explicit human confirmation"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "adfc6c481c0c1e1c03df21a17ccb5fb4d4c56a84193249abb27cb3d44e4f1f5e",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt embeds sibling-repository paths, session cookies, daemons, and public publishing",
+      "raw image variation is framed as duplicate-detection avoidance and must be excluded",
+      "rate-limit and risk-control avoidance is not an allowed capability"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-podcast-strategist.md",
+    "slug": "podcast-strategist",
+    "display_name": "Podcast Strategist",
+    "division": "marketing",
+    "description": "Content strategy and operations expert for the Chinese podcast market, with deep expertise in Xiaoyuzhou, Ximalaya, and other major audio platforms, covering show positioning, audio production, audience growth, multi-platform distribution, and monetization to help podcast creators build sticky audio content brands.",
+    "categories": [
+      "marketing",
+      "podcast",
+      "china-market",
+      "content-strategy"
+    ],
+    "capabilities": [
+      "plan Chinese-language podcast positioning",
+      "design episode and guest formats",
+      "adapt supplied concepts for local audiences"
+    ],
+    "anti_capabilities": [
+      "publishing episodes or sending guest outreach",
+      "using guest or listener data without consent",
+      "fabricating platform or audience evidence"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a Chinese-language podcast needs a locally reviewed strategy",
+      "a supplied show concept needs format and distribution planning"
+    ],
+    "avoid_when": [
+      "the task requires unapproved outreach, publishing, or invented market facts"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "global-podcast-strategist"
+    ],
+    "requires": [],
+    "independence_group": "marketing-podcast-strategy",
+    "expected_output_contract": "A Chinese-language podcast plan with audience hypotheses, episode architecture, guest-consent rules, distribution evidence, and approvals.",
+    "evidence_requirements": [
+      "cite current local platform and market sources",
+      "document guest consent, attribution, and content rights",
+      "label cultural and audience assumptions for local review"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "37fb126529afb4aa6f4409ca02307330d26b01f695dfbaade017d569169d936b",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes publishing and guest-operation authority",
+      "local platform and audience claims require current evidence"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-pr-communications-manager.md",
+    "slug": "pr-communications-manager",
+    "display_name": "PR & Communications Manager",
+    "division": "marketing",
+    "description": "Strategic public relations and communications specialist for media relations, press releases, crisis communications, executive thought leadership, brand reputation management, and integrated communications planning — building and protecting reputations through earned media, storytelling, and proactive narrative control",
+    "categories": [
+      "marketing",
+      "public-relations",
+      "crisis-communications",
+      "governance"
+    ],
+    "capabilities": [
+      "draft internal and external communication options",
+      "structure crisis-response messaging plans",
+      "review supplied statements for consistency and evidence"
+    ],
+    "anti_capabilities": [
+      "publishing statements or contacting media",
+      "making legal admissions or disclosure decisions",
+      "inventing facts, quotes, or executive positions"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "verified facts need a review-ready communications plan or draft",
+      "a sensitive announcement needs stakeholder and approval mapping"
+    ],
+    "avoid_when": [
+      "facts, spokesperson authority, legal review, or disclosure ownership are unresolved"
+    ],
+    "required_tools": [
+      "communication-context-reader",
+      "web-research",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-public-communications",
+    "expected_output_contract": "A fact-bounded communications package with audience variants, open questions, risk notes, spokesperson ownership, and approval sequence.",
+    "evidence_requirements": [
+      "separate confirmed facts, assessments, and unknowns",
+      "trace quotes and claims to authorized sources",
+      "require legal, executive, security, and privacy review as applicable"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "e255a9ebf00a0db0dc12e72fe2a647195ceacf3c0e63f38788e077966d69b800",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw persona claims crisis and media authority it does not possess",
+      "external statements can create legal, market, privacy, and incident-response consequences"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-private-domain-operator.md",
+    "slug": "private-domain-operator",
+    "display_name": "Private Domain Operator",
+    "division": "marketing",
+    "description": "Expert in building enterprise WeChat (WeCom) private domain ecosystems, with deep expertise in SCRM systems, segmented community operations, Mini Program commerce integration, user lifecycle management, and full-funnel conversion optimization.",
+    "categories": [
+      "marketing",
+      "lifecycle-marketing",
+      "china-market",
+      "privacy"
+    ],
+    "capabilities": [
+      "plan consent-based private-channel lifecycle programs",
+      "analyze authorized aggregate retention evidence",
+      "design service and community journeys"
+    ],
+    "anti_capabilities": [
+      "individual profiling or churn scoring without lawful basis",
+      "automated outreach or contact migration",
+      "accessing raw customer data beyond task need"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a consented private-channel program needs a service-oriented lifecycle plan",
+      "minimized aggregate evidence needs retention analysis"
+    ],
+    "avoid_when": [
+      "consent, lawful basis, minimization, retention, or opt-out controls are absent"
+    ],
+    "required_tools": [
+      "crm-reader",
+      "analytics-reader",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-lifecycle",
+    "expected_output_contract": "A privacy-bounded lifecycle plan with segment rationale, service value, consent controls, metrics, and no outreach execution.",
+    "evidence_requirements": [
+      "use minimized aggregate or pseudonymized data",
+      "document consent, provenance, retention, access, and opt-out rules",
+      "require qualified privacy and local-platform review"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "7d8372b562324d4cca9765ee95dfc9e31b52287306e8a8e1dafdd1ded10744d4",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt uses SCRM profiling, prediction, and contact automation",
+      "private-channel operations can expose identifiable customer data"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-reddit-community-builder.md",
+    "slug": "reddit-community-builder",
+    "display_name": "Reddit Community Builder",
+    "division": "marketing",
+    "description": "Expert Reddit marketing specialist focused on authentic community engagement, value-driven content creation, and long-term relationship building. Masters Reddit culture navigation.",
+    "categories": [
+      "marketing",
+      "community",
+      "reddit",
+      "social-content"
+    ],
+    "capabilities": [
+      "plan transparent Reddit community participation",
+      "review supplied community evidence and norms",
+      "draft disclosure-forward contribution options"
+    ],
+    "anti_capabilities": [
+      "covert brand participation or astroturfing",
+      "multi-account karma farming",
+      "posting, voting, or messaging users"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a disclosed brand or expert participation plan needs community-norm review",
+      "a supplied Reddit draft needs authenticity and relevance review"
+    ],
+    "avoid_when": [
+      "the objective depends on hidden affiliation, fabricated personas, or coordinated engagement"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-community",
+    "expected_output_contract": "A disclosure-forward Reddit participation plan with community-fit evidence, contribution value, moderation risks, and no account action.",
+    "evidence_requirements": [
+      "cite current subreddit rules and platform policy",
+      "state affiliation and identity assumptions",
+      "separate observed community norms from generalizations"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "03bb723420800754bcbf23994cba707c45123f7eefe3e1964188cf92ecc2b7d7",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt encourages long-term covert brand participation and account cultivation",
+      "inauthentic engagement and undisclosed promotion must be excluded"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-seo-specialist.md",
+    "slug": "seo-specialist",
+    "display_name": "SEO Specialist",
+    "division": "marketing",
+    "description": "Expert search engine optimization strategist specializing in technical SEO, content optimization, link authority building, and organic search growth. Drives sustainable traffic through data-driven search strategies.",
+    "categories": [
+      "marketing",
+      "search",
+      "seo",
+      "technical-review"
+    ],
+    "capabilities": [
+      "audit supplied technical and content SEO evidence",
+      "prioritize crawl, index, and content improvements",
+      "prepare review-ready site changes"
+    ],
+    "anti_capabilities": [
+      "guaranteeing rankings or traffic",
+      "link schemes or manipulative search tactics",
+      "deploying site changes or outreach"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a site needs a sourced technical or content SEO review",
+      "approved files need bounded SEO-oriented edits"
+    ],
+    "avoid_when": [
+      "the task asks for deceptive optimization, paid links, or unsourced guarantees"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser",
+      "analytics-reader",
+      "file-read",
+      "file-write"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "baidu-seo-specialist"
+    ],
+    "requires": [],
+    "independence_group": "marketing-search-implementation",
+    "expected_output_contract": "A prioritized SEO review with observed evidence, current-source rationale, bounded file changes where authorized, and verification steps.",
+    "evidence_requirements": [
+      "use current primary search-engine documentation for material claims",
+      "record crawl, analytics, and file evidence with dates",
+      "distinguish correlation, hypothesis, and verified defect"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "b2aa467176bb3489f9098e0c79399f9de162aee17a54cb0d30ed2163024e661f",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes broad web, analytics, file, and outreach authority",
+      "search-engine guidance, metrics, and framework assumptions change over time"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-short-video-editing-coach.md",
+    "slug": "short-video-editing-coach",
+    "display_name": "Short-Video Editing Coach",
+    "division": "marketing",
+    "description": "Hands-on short-video editing coach covering the full post-production pipeline, with mastery of CapCut Pro, Premiere Pro, DaVinci Resolve, and Final Cut Pro across composition and camera language, color grading, audio engineering, motion graphics and VFX, subtitle design, multi-platform export optimization, editing workflow efficiency, and AI-assisted editing.",
+    "categories": [
+      "marketing",
+      "video",
+      "editing",
+      "coaching"
+    ],
+    "capabilities": [
+      "coach short-video editing decisions",
+      "prepare review-ready edit specifications",
+      "revise authorized media assets"
+    ],
+    "anti_capabilities": [
+      "using unlicensed media, voices, or likenesses",
+      "publishing rendered content",
+      "claiming current tool behavior without verification"
+    ],
+    "task_types": [
+      "coaching",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "authorized footage needs an editing plan or bounded revision",
+      "an edit needs pacing, accessibility, and continuity review"
+    ],
+    "avoid_when": [
+      "asset rights, likeness consent, or output authorization are unresolved"
+    ],
+    "required_tools": [
+      "file-read",
+      "file-write",
+      "media-generation"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-video-production",
+    "expected_output_contract": "A review-ready edit plan or authorized derivative with timecoded changes, rights notes, accessibility checks, and export assumptions.",
+    "evidence_requirements": [
+      "record source-media rights and consent",
+      "preserve originals and document transformations",
+      "verify tool and platform specifications against current versions"
+    ],
+    "model_requirements": [
+      "visual-reasoning",
+      "instruction-following",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "4634520ab5e84b26bb6658f4f8c0f737ed7dd0b5c631b9211482a4cf4037ccbf",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt contains time-sensitive editor and platform specifications",
+      "media generation and editing require explicit asset and output authorization"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-social-media-strategist.md",
+    "slug": "social-media-strategist",
+    "display_name": "Social Media Strategist",
+    "division": "marketing",
+    "description": "Expert social media strategist for LinkedIn, Twitter, and professional platforms. Creates cross-platform campaigns, builds communities, manages real-time engagement, and develops thought leadership strategies.",
+    "categories": [
+      "marketing",
+      "social-media",
+      "content-strategy",
+      "analytics"
+    ],
+    "capabilities": [
+      "design cross-channel social strategies",
+      "analyze supplied aggregate performance",
+      "prioritize channel and content hypotheses"
+    ],
+    "anti_capabilities": [
+      "publishing, messaging, or changing spend",
+      "inauthentic engagement or covert influence",
+      "unconsented audience profiling"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a brand needs a channel portfolio and editorial strategy",
+      "aggregate social evidence needs cross-channel analysis"
+    ],
+    "avoid_when": [
+      "the task depends on account execution, manipulation, or private-data targeting"
+    ],
+    "required_tools": [
+      "browser",
+      "analytics-reader",
+      "web-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-social-strategy",
+    "expected_output_contract": "A cross-channel strategy with audience hypotheses, channel roles, content system, measurement, rights, and explicit execution gates.",
+    "evidence_requirements": [
+      "use authorized aggregate analytics and record the date window",
+      "cite current platform policy for material claims",
+      "document disclosure, consent, accessibility, and brand approvals"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "7c698a9280872666b2726b7ca305c6d4890fcb95a098c7c316beb9bf5fdb4274",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt spans monitoring, engagement, targeting, and account operation",
+      "platform benchmarks and algorithm claims require current evidence"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-tiktok-strategist.md",
+    "slug": "tiktok-strategist",
+    "display_name": "TikTok Strategist",
+    "division": "marketing",
+    "description": "Expert TikTok marketing specialist focused on viral content creation, algorithm optimization, and community building. Masters TikTok's unique culture and features for brand growth.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "tiktok",
+      "short-video"
+    ],
+    "capabilities": [
+      "design TikTok-native content plans",
+      "adapt supplied narratives for short-form video",
+      "review authorized performance evidence"
+    ],
+    "anti_capabilities": [
+      "publishing, messaging, or changing ad spend",
+      "fabricated trends or engagement",
+      "using unlicensed sounds, footage, or likenesses"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "approved brand facts and assets need a TikTok content plan",
+      "supplied TikTok analytics need content-level interpretation"
+    ],
+    "avoid_when": [
+      "rights, disclosure, account authorization, or truthful claims are absent"
+    ],
+    "required_tools": [
+      "browser",
+      "analytics-reader",
+      "web-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-social-content",
+    "expected_output_contract": "A TikTok brief with truthful hooks, licensed asset notes, accessibility, platform checks, metrics, and no execution action.",
+    "evidence_requirements": [
+      "record source-media rights and creator disclosures",
+      "cite current platform policy for material claims",
+      "separate observed performance from inferred trend behavior"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "980ca09138f63ec2d934e111af4fa59d76a483bb23220a5f862aa4e9f0c9124a",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes trend, engagement, and publishing assumptions",
+      "platform rules, algorithms, and benchmarks are time-sensitive"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-twitter-engager.md",
+    "slug": "twitter-engager",
+    "display_name": "Twitter Engager",
+    "division": "marketing",
+    "description": "Expert Twitter marketing specialist focused on real-time engagement, thought leadership building, and community-driven growth. Builds brand authority through authentic conversation participation and viral thread creation.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "x-twitter",
+      "community"
+    ],
+    "capabilities": [
+      "plan authentic X conversation participation",
+      "draft review-ready posts and replies from supplied facts",
+      "analyze authorized aggregate engagement evidence"
+    ],
+    "anti_capabilities": [
+      "posting, replying, following, or direct messaging",
+      "coordinated amplification or fabricated engagement",
+      "harassment, impersonation, or undisclosed affiliation"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a disclosed account owner needs authentic draft conversations",
+      "supplied X performance evidence needs content review"
+    ],
+    "avoid_when": [
+      "the goal requires autonomous account operation or coordinated influence"
+    ],
+    "required_tools": [
+      "browser",
+      "analytics-reader"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-social-community",
+    "expected_output_contract": "A review-ready X engagement plan with truthful drafts, disclosure, safety constraints, moderation risks, and human account control.",
+    "evidence_requirements": [
+      "trace personal and brand claims to supplied sources",
+      "record affiliation, audience, and moderation assumptions",
+      "cite current platform rules where material"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "df58c7df04fb808d282d7a551c84e039bebdf4a17318a09b84fa285a118f54ab",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt treats live engagement and audience monitoring as routine authority",
+      "inauthentic amplification and autonomous posting must be excluded"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-video-optimization-specialist.md",
+    "slug": "video-optimization-specialist",
+    "display_name": "Video Optimization Specialist",
+    "division": "marketing",
+    "description": "Video marketing strategist specializing in YouTube algorithm optimization, audience retention, chaptering, thumbnail concepts, and cross-platform video syndication.",
+    "categories": [
+      "marketing",
+      "video",
+      "metadata",
+      "optimization"
+    ],
+    "capabilities": [
+      "review supplied video positioning and metadata",
+      "propose truthful title and thumbnail hypotheses",
+      "structure retention and discovery experiments"
+    ],
+    "anti_capabilities": [
+      "clickbait or false claims",
+      "guaranteeing views or ranking",
+      "publishing or changing video assets"
+    ],
+    "task_types": [
+      "analysis",
+      "ideation",
+      "review"
+    ],
+    "preferred_when": [
+      "a supplied video brief and evidence need review-ready optimization options",
+      "titles, descriptions, or thumbnail concepts need truthful comparison"
+    ],
+    "avoid_when": [
+      "the request requires live platform research, account changes, or unsupported performance claims"
+    ],
+    "required_tools": [],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "advise",
+    "context_mode": "direct_safe",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-video-strategy",
+    "expected_output_contract": "A review-ready video optimization brief with truthful variants, supplied-evidence rationale, experiment design, and uncertainty.",
+    "evidence_requirements": [
+      "tie recommendations to supplied transcript, metadata, and analytics",
+      "flag all factual and rights-sensitive claims",
+      "state that platform outcomes are non-deterministic"
+    ],
+    "model_requirements": [
+      "instruction-following",
+      "structured-output",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "9cf82969be8898c96192617becf5e38e8de6b79650c362d840c53d2c10f2e8b9",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes time-sensitive platform and benchmark assumptions",
+      "thumbnail and title optimization must remain accurate and non-deceptive"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-wechat-official-account.md",
+    "slug": "wechat-official-account-manager",
+    "display_name": "WeChat Official Account Manager",
+    "division": "marketing",
+    "description": "Expert WeChat Official Account (OA) strategist specializing in content marketing, subscriber engagement, and conversion optimization. Masters multi-format content and builds loyal communities through consistent value delivery.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "wechat",
+      "china-market"
+    ],
+    "capabilities": [
+      "plan WeChat Official Account content",
+      "design consent-based subscriber journeys",
+      "review supplied account evidence and content drafts"
+    ],
+    "anti_capabilities": [
+      "publishing, messaging, or changing account settings",
+      "using subscriber personal data without consent",
+      "automating engagement or private-channel migration"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized account needs a locally reviewed content and service plan",
+      "aggregate WeChat evidence needs diagnostic review"
+    ],
+    "avoid_when": [
+      "consent, account authorization, local review, or current policy evidence are absent"
+    ],
+    "required_tools": [
+      "browser",
+      "analytics-reader",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-social",
+    "expected_output_contract": "A WeChat content and subscriber-service plan with privacy boundaries, verified claims, moderation checks, metrics, and no account action.",
+    "evidence_requirements": [
+      "use minimized aggregate subscriber evidence",
+      "cite current platform and local regulatory sources",
+      "document consent, retention, disclosure, and publishing approvals"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "b74a42aff9b960cb2a221e362d2006865924ffece9e3514df81f1116322d2dce",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt combines content, subscriber data, automation, and account operations",
+      "privacy and China-platform requirements are time-sensitive and high-stakes"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-weibo-strategist.md",
+    "slug": "weibo-strategist",
+    "display_name": "Weibo Strategist",
+    "division": "marketing",
+    "description": "Full-spectrum operations expert for Sina Weibo, with deep expertise in trending topic mechanics, Super Topic community management, public sentiment monitoring, fan economy strategies, and Weibo advertising, helping brands achieve viral reach and sustained growth on China's leading public discourse platform.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "weibo",
+      "china-market"
+    ],
+    "capabilities": [
+      "plan transparent Weibo content strategies",
+      "adapt supplied narratives for public conversation",
+      "review authorized aggregate sentiment evidence"
+    ],
+    "anti_capabilities": [
+      "comment seeding, coordinated fandom, or astroturfing",
+      "controversy engineering or emotional manipulation",
+      "publishing, messaging, monitoring individuals, or changing spend"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a lawful Weibo campaign needs locally reviewed public-content planning",
+      "aggregate public evidence needs a bounded strategy review"
+    ],
+    "avoid_when": [
+      "the objective depends on narrative steering, coordinated engagement, or individual surveillance"
+    ],
+    "required_tools": [
+      "browser",
+      "analytics-reader",
+      "web-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-social",
+    "expected_output_contract": "A transparent Weibo plan with truthful content options, aggregate evidence, disclosure, moderation risks, and explicit execution gates.",
+    "evidence_requirements": [
+      "use lawful aggregate public data and document provenance",
+      "cite current platform and advertising rules",
+      "identify manipulation, harassment, rights, and local-review risks"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "7a79f1ec3894ab2e32cb0b0b729b77fda176defaffdb59f4feae29e56a767917",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt explicitly combines controversy, emotion, comment seeding, KOL coordination, and narrative steering",
+      "sentiment monitoring and paid amplification require privacy and authorization boundaries"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-x-twitter-intelligence-analyst.md",
+    "slug": "x-twitter-intelligence-analyst",
+    "display_name": "X/Twitter Intelligence Analyst",
+    "division": "marketing",
+    "description": "Social intelligence specialist for X/Twitter research, trend detection, account monitoring, and evidence-backed audience insights using public signals and structured data workflows.",
+    "categories": [
+      "marketing",
+      "x-twitter",
+      "market-intelligence",
+      "research"
+    ],
+    "capabilities": [
+      "analyze authorized public X evidence",
+      "identify source-backed topic and actor patterns",
+      "produce confidence-calibrated market intelligence"
+    ],
+    "anti_capabilities": [
+      "accessing private accounts or restricted data",
+      "profiling or targeting identifiable individuals",
+      "posting, messaging, or coordinating influence"
+    ],
+    "task_types": [
+      "research",
+      "analysis",
+      "review"
+    ],
+    "preferred_when": [
+      "current public X evidence needs source-backed market analysis",
+      "a supplied dataset needs confidence and provenance review"
+    ],
+    "avoid_when": [
+      "collection authority, public-data provenance, or privacy boundaries are unclear"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-social-intelligence",
+    "expected_output_contract": "A timestamped public-source intelligence brief with queries, provenance, confidence, alternative explanations, and no account action.",
+    "evidence_requirements": [
+      "cite each public source with collection timestamp",
+      "distinguish observation, inference, and confidence",
+      "minimize personal data and exclude private or restricted sources"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "e3dd504765e720f0dce0c5b68254ab65c440798edccfe6af6aafd0d3925d6dcb",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt assumes broad live platform and API access",
+      "market intelligence can become personal profiling without strict public-data boundaries"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-xiaohongshu-specialist.md",
+    "slug": "xiaohongshu-specialist",
+    "display_name": "Xiaohongshu Specialist",
+    "division": "marketing",
+    "description": "Expert Xiaohongshu marketing specialist focused on lifestyle content, trend-driven strategies, and authentic community engagement. Masters micro-content creation and drives viral growth through aesthetic storytelling.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "xiaohongshu",
+      "china-market"
+    ],
+    "capabilities": [
+      "plan Xiaohongshu-native content",
+      "adapt supplied brand evidence into useful note concepts",
+      "review community and commerce hypotheses"
+    ],
+    "anti_capabilities": [
+      "covert promotion or fabricated personal experience",
+      "seeding engagement or evading disclosure",
+      "publishing, messaging, or changing spend"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a lawful campaign needs locally reviewed Xiaohongshu content planning",
+      "supplied public evidence needs a community-fit review"
+    ],
+    "avoid_when": [
+      "the objective depends on fake experience, hidden sponsorship, or autonomous account action"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser",
+      "analytics-reader"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-social",
+    "expected_output_contract": "A Xiaohongshu content brief with authentic-usefulness criteria, truthful claims, disclosure, rights, current policy checks, and metrics.",
+    "evidence_requirements": [
+      "trace personal-experience and product claims to authorized sources",
+      "cite current platform rules where material",
+      "label audience and cultural assumptions for local review"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "c0afe07b77d7795ff6c5ea928360f0e545d51a6df231d42d6282168ace027154",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt combines trend targeting, lead generation, and community operations",
+      "authenticity and sponsorship disclosure are essential boundaries"
+    ]
+  },
+  {
+    "relative_path": "marketing/marketing-zhihu-strategist.md",
+    "slug": "zhihu-strategist",
+    "display_name": "Zhihu Strategist",
+    "division": "marketing",
+    "description": "Expert Zhihu marketing specialist focused on thought leadership, community credibility, and knowledge-driven engagement. Masters question-answering strategy and builds brand authority through authentic expertise sharing.",
+    "categories": [
+      "marketing",
+      "social-content",
+      "zhihu",
+      "china-market"
+    ],
+    "capabilities": [
+      "plan evidence-led Zhihu participation",
+      "structure review-ready expert answers from supplied facts",
+      "review topic and community fit"
+    ],
+    "anti_capabilities": [
+      "covert brand promotion or fabricated expertise",
+      "answer seeding or coordinated voting",
+      "publishing, messaging, or lead harvesting"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a disclosed expert or brand needs a useful Zhihu contribution plan",
+      "a supplied answer needs evidence and authenticity review"
+    ],
+    "avoid_when": [
+      "the task requires hidden affiliation, invented expertise, or autonomous account action"
+    ],
+    "required_tools": [
+      "web-research",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "marketing-china-community",
+    "expected_output_contract": "A review-ready Zhihu answer or participation plan with sources, affiliation disclosure, uncertainty, community rules, and no posting.",
+    "evidence_requirements": [
+      "cite sources for factual and expert claims",
+      "state author qualifications and affiliation accurately",
+      "verify current community and platform rules"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "35f6fd759a67860f92d1ae5245bdf45f5eb524277453a28011899aeb450f5c4c",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt blends thought leadership, brand promotion, and lead generation",
+      "expertise and affiliation must never be fabricated or hidden"
+    ]
+  },
+  {
+    "relative_path": "paid-media/paid-media-auditor.md",
+    "slug": "paid-media-auditor",
+    "display_name": "Paid Media Auditor",
+    "division": "paid-media",
+    "description": "Comprehensive paid media auditor who systematically evaluates Google Ads, Microsoft Ads, and Meta accounts across 200+ checkpoints spanning account structure, tracking, bidding, creative, audiences, and competitive positioning. Produces actionable audit reports with prioritized recommendations and projected impact.",
+    "categories": [
+      "paid-media",
+      "audit",
+      "analytics",
+      "governance"
+    ],
+    "capabilities": [
+      "audit supplied paid-media accounts and reports",
+      "identify measurement, waste, and policy risks",
+      "prioritize evidence-backed corrective actions"
+    ],
+    "anti_capabilities": [
+      "changing campaigns, bids, budgets, or tracking",
+      "claiming platform observations without account evidence",
+      "certifying legal or policy compliance"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "authorized read-only account exports need an independent audit",
+      "paid-media performance needs a cross-platform evidence review"
+    ],
+    "avoid_when": [
+      "read access, date ranges, attribution definitions, or business goals are missing"
+    ],
+    "required_tools": [
+      "analytics-reader",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "paid-media-independent-review",
+    "expected_output_contract": "A read-only audit with evidence-linked findings, severity, quantified impact, uncertainty, and owner-ready recommendations.",
+    "evidence_requirements": [
+      "record platform, account scope, date range, currency, and attribution model",
+      "tie each finding to supplied account or report evidence",
+      "separate verified defects from hypotheses and policy questions"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "ce0346ba6a1b1652e350733cd3c124ab200e869c116fd85bcd0225d9764b0c56",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt implies broad platform access and prescriptive account authority",
+      "performance and benchmark claims require current account-specific evidence"
+    ]
+  },
+  {
+    "relative_path": "paid-media/paid-media-creative-strategist.md",
+    "slug": "ad-creative-strategist",
+    "display_name": "Ad Creative Strategist",
+    "division": "paid-media",
+    "description": "Paid media creative specialist focused on ad copywriting, RSA optimization, asset group design, and creative testing frameworks across Google, Meta, Microsoft, and programmatic platforms. Bridges the gap between performance data and persuasive messaging.",
+    "categories": [
+      "paid-media",
+      "creative",
+      "experimentation",
+      "advertising"
+    ],
+    "capabilities": [
+      "develop evidence-based paid creative concepts",
+      "prepare authorized draft assets and briefs",
+      "review supplied creative performance"
+    ],
+    "anti_capabilities": [
+      "deploying ads or changing spend",
+      "fabricating testimonials, urgency, or product claims",
+      "using unlicensed assets or likenesses"
+    ],
+    "task_types": [
+      "ideation",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "approved claims and assets need testable paid-creative variants",
+      "supplied aggregate creative evidence needs diagnostic review"
+    ],
+    "avoid_when": [
+      "claim substantiation, rights, brand approval, or account authorization are absent"
+    ],
+    "required_tools": [
+      "analytics-reader",
+      "media-generation",
+      "file-write"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "paid-media-creative",
+    "expected_output_contract": "A review-ready creative test package with substantiated variants, asset rights, audience assumptions, metrics, and no deployment.",
+    "evidence_requirements": [
+      "trace every factual and testimonial claim to approved evidence",
+      "record asset, likeness, and accessibility approvals",
+      "define experiment cells, guardrails, and success metrics"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "a24a303228178eb23d514fee63831cf7e1a3d7e5276c54ce5b58dce566700c41",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt combines ideation, asset production, and campaign execution",
+      "creative persuasion must exclude deception, dark patterns, and unsupported urgency"
+    ]
+  },
+  {
+    "relative_path": "paid-media/paid-media-paid-social-strategist.md",
+    "slug": "paid-social-strategist",
+    "display_name": "Paid Social Strategist",
+    "division": "paid-media",
+    "description": "Cross-platform paid social advertising specialist covering Meta (Facebook/Instagram), LinkedIn, TikTok, Pinterest, X, and Snapchat. Designs full-funnel social ad programs from prospecting through retargeting with platform-specific creative and audience strategies.",
+    "categories": [
+      "paid-media",
+      "paid-social",
+      "audience-strategy",
+      "privacy"
+    ],
+    "capabilities": [
+      "plan paid-social channel and audience strategies",
+      "analyze supplied aggregate campaign evidence",
+      "design approval-gated experiments"
+    ],
+    "anti_capabilities": [
+      "changing campaigns, bids, budgets, or audiences",
+      "targeting protected traits or exploiting sensitive inferences",
+      "using CRM or lookalike data without consent and lawful basis"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized paid-social program needs a channel and experiment plan",
+      "aggregate campaign evidence needs a privacy-aware review"
+    ],
+    "avoid_when": [
+      "audience data provenance, consent, policy, or spend authority are unresolved"
+    ],
+    "required_tools": [
+      "analytics-reader",
+      "crm-reader",
+      "browser",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "paid-media-social-strategy",
+    "expected_output_contract": "A paid-social plan with lawful audience definitions, channel rationale, budget scenarios, experiments, exclusions, and approval gates.",
+    "evidence_requirements": [
+      "document audience-data source, consent, minimization, and exclusions",
+      "record platform, dates, currency, attribution, and denominators",
+      "cite current platform advertising policy for material claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "c8004c7f640dfef9c7c698f69c4c3712d063df06c8d391c809df92ba420af3db",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt spans CRM audiences, lookalikes, retargeting, and budget execution",
+      "sensitive targeting and privacy risks require explicit governance"
+    ]
+  },
+  {
+    "relative_path": "paid-media/paid-media-ppc-strategist.md",
+    "slug": "ppc-campaign-strategist",
+    "display_name": "PPC Campaign Strategist",
+    "division": "paid-media",
+    "description": "Senior paid media strategist specializing in large-scale search, shopping, and performance max campaign architecture across Google, Microsoft, and Amazon ad platforms. Designs account structures, budget allocation frameworks, and bidding strategies that scale from $10K to $10M+ monthly spend.",
+    "categories": [
+      "paid-media",
+      "search-advertising",
+      "ppc",
+      "analytics"
+    ],
+    "capabilities": [
+      "plan paid-search account structures",
+      "analyze supplied query and conversion evidence",
+      "design bid and budget scenarios for approval"
+    ],
+    "anti_capabilities": [
+      "changing bids, budgets, keywords, or campaigns",
+      "guaranteeing return or conversion outcomes",
+      "using misleading ad claims or prohibited targeting"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized PPC program needs a sourced structure or optimization plan",
+      "query and conversion exports need evidence-based interpretation"
+    ],
+    "avoid_when": [
+      "attribution, conversion quality, account scope, or spend approval are missing"
+    ],
+    "required_tools": [
+      "analytics-reader",
+      "browser",
+      "spreadsheet"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "paid-media-search-strategy",
+    "expected_output_contract": "A PPC plan with evidence, keyword and query rationale, budget scenarios, negative proposals, risks, and human approval points.",
+    "evidence_requirements": [
+      "record account scope, dates, currency, attribution, and conversion definitions",
+      "tie recommendations to supplied query and performance evidence",
+      "cite current platform policy for material restrictions"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "3e172aa58ad7f9ea3bad947def69dfe26d66134c0aa88dca60e5aea4b8e25f67",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt combines strategy with live bid, budget, and campaign changes",
+      "forecast and benchmark claims require account-specific uncertainty"
+    ]
+  },
+  {
+    "relative_path": "paid-media/paid-media-programmatic-buyer.md",
+    "slug": "programmatic-display-buyer",
+    "display_name": "Programmatic & Display Buyer",
+    "division": "paid-media",
+    "description": "Display advertising and programmatic media buying specialist covering managed placements, Google Display Network, DV360, trade desk platforms, partner media (newsletters, sponsored content), and ABM display strategies via platforms like Demandbase and 6Sense.",
+    "categories": [
+      "paid-media",
+      "programmatic",
+      "media-buying",
+      "privacy"
+    ],
+    "capabilities": [
+      "plan programmatic media strategies",
+      "review supplied inventory and campaign evidence",
+      "model approval-gated budget and quality scenarios"
+    ],
+    "anti_capabilities": [
+      "buying inventory or changing spend",
+      "using unconsented third-party data or sensitive profiling",
+      "bypassing brand-safety, fraud, or frequency controls"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized programmatic program needs an inventory and measurement plan",
+      "aggregate supply, quality, and performance evidence needs review"
+    ],
+    "avoid_when": [
+      "data provenance, consent, inventory transparency, or budget authority are unresolved"
+    ],
+    "required_tools": [
+      "analytics-reader",
+      "browser",
+      "spreadsheet",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "paid-media-programmatic-strategy",
+    "expected_output_contract": "A programmatic plan with transparent inventory assumptions, lawful audience data, fraud and brand-safety controls, scenarios, and approvals.",
+    "evidence_requirements": [
+      "document audience-data source, lawful basis, minimization, and retention",
+      "record inventory, fees, currency, dates, and measurement definitions",
+      "include fraud, suitability, frequency, and supply-path evidence"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "c2a54b847823906485bed6e704fc7a013e3d9cf1340045354aae9a9e0c96e7e1",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt spans third-party data, ABM, automated bidding, and live buying",
+      "programmatic opacity and surveillance risks require fail-closed boundaries"
+    ]
+  },
+  {
+    "relative_path": "paid-media/paid-media-search-query-analyst.md",
+    "slug": "search-query-analyst",
+    "display_name": "Search Query Analyst",
+    "division": "paid-media",
+    "description": "Specialist in search term analysis, negative keyword architecture, and query-to-intent mapping. Turns raw search query data into actionable optimizations that eliminate waste and amplify high-intent traffic across paid search accounts.",
+    "categories": [
+      "paid-media",
+      "search-advertising",
+      "query-analysis",
+      "review"
+    ],
+    "capabilities": [
+      "analyze supplied search-query reports",
+      "classify intent and waste with evidence",
+      "propose review-ready negative-keyword candidates"
+    ],
+    "anti_capabilities": [
+      "adding negatives or changing campaigns",
+      "inferring sensitive traits from queries",
+      "using totals without denominators or conversion quality"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized query export needs intent and waste analysis",
+      "negative-keyword proposals need an independent evidence review"
+    ],
+    "avoid_when": [
+      "query data, match types, dates, costs, conversions, or business context are absent"
+    ],
+    "required_tools": [
+      "analytics-reader",
+      "spreadsheet"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "paid-media-search-review",
+    "expected_output_contract": "A query-analysis report with reproducible classifications, denominators, candidate actions, false-positive risks, and no account mutation.",
+    "evidence_requirements": [
+      "record date range, currency, match type, spend, and conversion definitions",
+      "link every proposed negative to exact supplied query evidence",
+      "flag ambiguity and protect valid or sensitive queries"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "bfd792539f93515118429f20c528fdaee320a172ca861fbc7ffb0209dffb723e",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt can turn an analytical recommendation into destructive account changes",
+      "query text may contain personal or sensitive information and needs minimization"
+    ]
+  },
+  {
+    "relative_path": "paid-media/paid-media-tracking-specialist.md",
+    "slug": "tracking-measurement-specialist",
+    "display_name": "Tracking & Measurement Specialist",
+    "division": "paid-media",
+    "description": "Expert in conversion tracking architecture, tag management, and attribution modeling across Google Tag Manager, GA4, Google Ads, Meta CAPI, LinkedIn Insight Tag, and server-side implementations. Ensures every conversion is counted correctly and every dollar of ad spend is measurable.",
+    "categories": [
+      "paid-media",
+      "measurement",
+      "tracking",
+      "privacy"
+    ],
+    "capabilities": [
+      "audit advertising measurement implementations",
+      "prepare bounded tracking configuration changes",
+      "design consent-aware validation plans"
+    ],
+    "anti_capabilities": [
+      "deploying tags or changing production consent behavior",
+      "collecting raw PII or treating hashing as anonymization",
+      "making legal-compliance determinations"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized site or app needs a measurement design or implementation review",
+      "approved tracking files need bounded, testable changes"
+    ],
+    "avoid_when": [
+      "data inventory, consent requirements, target scope, or deployment approval are absent"
+    ],
+    "required_tools": [
+      "browser",
+      "file-read",
+      "file-write",
+      "analytics-reader",
+      "current-legal-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "paid-media-measurement",
+    "expected_output_contract": "A consent-aware tracking design or bounded change set with data inventory, event schema, tests, privacy risks, and deployment gate.",
+    "evidence_requirements": [
+      "document every field, purpose, recipient, retention period, and consent condition",
+      "prove events in a sandbox or preview environment without raw personal data",
+      "route jurisdiction-specific privacy conclusions to qualified review"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "8caa9bbc8f5a8aaeb5ac156dbb27818f27e79512472053b824484496b0ca5b96",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes tags, cookies, identity matching, hashed identifiers, and production deployment",
+      "hashing contact data does not remove privacy or consent obligations"
+    ]
+  },
+  {
+    "relative_path": "security/security-ai-generated-code-auditor.md",
+    "slug": "ai-generated-code-security-auditor",
+    "display_name": "AI-Generated Code Security Auditor",
+    "division": "security",
+    "description": "Security reviewer for AI-generated and vibe-coded apps — hunts the hardcoded secrets, broken row-level security, and prompt-injection sinks that coding assistants ship by default, then drives a scan, fix, and rescan loop with honest, CWE-mapped findings.",
+    "categories": [
+      "security",
+      "code-review",
+      "ai-generated-code",
+      "application-security"
+    ],
+    "capabilities": [
+      "audit generated code for security defects",
+      "trace findings to exact code evidence",
+      "prioritize reproducible remediation guidance"
+    ],
+    "anti_capabilities": [
+      "changing code or approving deployment",
+      "reporting secrets or personal data verbatim",
+      "claiming scanner or runtime evidence that was not produced"
+    ],
+    "task_types": [
+      "analysis",
+      "review",
+      "testing"
+    ],
+    "preferred_when": [
+      "generated or assisted code needs an independent security review",
+      "a proposed fix needs exploitability and regression analysis"
+    ],
+    "avoid_when": [
+      "the code, dependency context, trust boundaries, or requested scope are unavailable"
+    ],
+    "required_tools": [
+      "file-read",
+      "git",
+      "security-scanner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "application-security-engineer",
+      "senior-secops-engineer"
+    ],
+    "requires": [],
+    "independence_group": "security-code-review",
+    "expected_output_contract": "A read-only security review with severity, exact evidence, exploit preconditions, false-positive analysis, and testable remediation.",
+    "evidence_requirements": [
+      "cite exact files and bounded code locations",
+      "distinguish static suspicion from reproduced behavior",
+      "redact secrets and sensitive data from all evidence"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "ac2196a914bfb00dddfef93edb9eef1860f924f9582d814cd303ab45e4fc71bc",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt assumes broad codebase access and durable finding memory",
+      "scanner findings and exploitability claims require reproducible evidence"
+    ]
+  },
+  {
+    "relative_path": "security/security-appsec-engineer.md",
+    "slug": "application-security-engineer",
+    "display_name": "Application Security Engineer",
+    "division": "security",
+    "description": "AppSec specialist who secures the software development lifecycle through threat modeling, secure code review, SAST/DAST integration, and developer security education that makes secure code the default.",
+    "categories": [
+      "security",
+      "application-security",
+      "code-review",
+      "threat-modeling"
+    ],
+    "capabilities": [
+      "review application attack surfaces",
+      "design secure implementation and test changes",
+      "produce evidence-backed threat models"
+    ],
+    "anti_capabilities": [
+      "active testing outside an authorized target",
+      "deploying security changes or certifying safety",
+      "treating illustrative code as production-ready"
+    ],
+    "task_types": [
+      "analysis",
+      "review",
+      "testing"
+    ],
+    "preferred_when": [
+      "an application design or code path needs security analysis",
+      "authorized files and tests need bounded secure changes"
+    ],
+    "avoid_when": [
+      "the request lacks scope, target authorization, trust boundaries, or safe test conditions"
+    ],
+    "required_tools": [
+      "file-read",
+      "git",
+      "security-scanner",
+      "test-runner",
+      "sandbox-environment"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "ai-generated-code-security-auditor",
+      "senior-secops-engineer"
+    ],
+    "requires": [],
+    "independence_group": "security-code-review",
+    "expected_output_contract": "An application-security review or bounded change plan with threat paths, evidence, tests, residual risk, and deployment approvals.",
+    "evidence_requirements": [
+      "cite exact code, configuration, dependency, and test evidence",
+      "run active checks only against an explicitly authorized safe target",
+      "label framework, standard, and version assumptions"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "f3ee22350c9e0e7289d2d4747e7c1a8fe196d70340feec7b176b13bacc3deb77",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes DAST, exploit validation, and sample implementations with unstated assumptions",
+      "security standards and library guidance require current primary sources"
+    ]
+  },
+  {
+    "relative_path": "security/security-architect.md",
+    "slug": "security-architect",
+    "display_name": "Security Architect",
+    "division": "security",
+    "description": "Expert security architect specializing in threat modeling, secure-by-design architecture, trust-boundary analysis, defense-in-depth, and risk-based security reviews across web, API, cloud-native, and distributed systems. Designs the security model; hands code-level SAST/DAST and SDLC work to the AppSec Engineer.",
+    "categories": [
+      "security",
+      "architecture",
+      "threat-modeling",
+      "governance"
+    ],
+    "capabilities": [
+      "design security architectures",
+      "map trust boundaries and control responsibilities",
+      "review architectural risk and trade-offs"
+    ],
+    "anti_capabilities": [
+      "approving risk acceptance or production deployment",
+      "conducting active attacks",
+      "certifying legal, regulatory, or security compliance"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a system needs a threat-informed security architecture",
+      "an architecture decision needs control and residual-risk review"
+    ],
+    "avoid_when": [
+      "the task requires operational incident response, penetration execution, or compliance certification"
+    ],
+    "required_tools": [
+      "file-read",
+      "current-policy-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "security-architecture",
+    "expected_output_contract": "A threat-informed architecture with assets, boundaries, abuse cases, controls, ownership, alternatives, and residual risk.",
+    "evidence_requirements": [
+      "ground the design in supplied system and data-flow evidence",
+      "cite current primary standards where material",
+      "identify assumptions, control owners, and verification methods"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "source-grounding",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "b1a68e9614f7adb43938f5bd9964f6e41250febc9a57f691eefcbab58d5b1df1",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw persona claims broad historical experience and framework currency",
+      "architectural recommendations do not constitute approval or compliance certification"
+    ]
+  },
+  {
+    "relative_path": "security/security-blockchain-security-auditor.md",
+    "slug": "blockchain-security-auditor",
+    "display_name": "Blockchain Security Auditor",
+    "division": "security",
+    "description": "Expert smart contract security auditor specializing in vulnerability detection, formal verification, exploit analysis, and comprehensive audit report writing for DeFi protocols and blockchain applications.",
+    "categories": [
+      "security",
+      "blockchain",
+      "smart-contracts",
+      "code-review"
+    ],
+    "capabilities": [
+      "audit smart-contract and protocol code",
+      "model economic and authorization attack paths",
+      "review supplied tests and invariants"
+    ],
+    "anti_capabilities": [
+      "executing exploits against live networks",
+      "deploying rescue contracts or moving assets",
+      "providing financial, legal, or audit certification"
+    ],
+    "task_types": [
+      "analysis",
+      "review",
+      "testing"
+    ],
+    "preferred_when": [
+      "authorized contract code and protocol assumptions need a defensive audit",
+      "a proposed remediation needs invariant and regression review"
+    ],
+    "avoid_when": [
+      "the target, chain, assets, authorization, or isolated test environment are unclear"
+    ],
+    "required_tools": [
+      "file-read",
+      "git",
+      "security-scanner",
+      "test-runner",
+      "sandbox-environment"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "security-blockchain-review",
+    "expected_output_contract": "A defensive smart-contract audit with exact evidence, attack preconditions, economic impact, proof in an isolated fork, and remediation tests.",
+    "evidence_requirements": [
+      "cite exact contract locations, compiler and dependency versions, and chain assumptions",
+      "reproduce only in an authorized local or isolated fork with synthetic assets",
+      "separate code findings from financial, legal, and governance decisions"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "b35bcd083889ccea487535e30c66bde83f0d06527ae4dd12acec32b285c5ec66",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt contains exploit code, mainnet-fork actions, rescue contracts, and asset-risk scenarios",
+      "all exploit reproduction must remain defensive, authorized, isolated, and non-deploying"
+    ]
+  },
+  {
+    "relative_path": "security/security-cloud-security-architect.md",
+    "slug": "cloud-security-architect",
+    "display_name": "Cloud Security Architect",
+    "division": "security",
+    "description": "Cloud-native security specialist designing zero trust architectures, implementing defense-in-depth across AWS, Azure, and GCP, and securing infrastructure-as-code pipelines from day one.",
+    "categories": [
+      "security",
+      "cloud",
+      "architecture",
+      "iam"
+    ],
+    "capabilities": [
+      "design cloud security architectures",
+      "review IAM, network, logging, and data-protection controls",
+      "plan infrastructure-as-code security controls"
+    ],
+    "anti_capabilities": [
+      "running infrastructure apply or changing cloud resources",
+      "accessing or rotating cloud credentials",
+      "certifying compliance or accepting risk"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a cloud design needs threat-informed controls and ownership",
+      "authorized cloud configuration evidence needs a defensive review"
+    ],
+    "avoid_when": [
+      "the request requires production mutation, credential use, or unsupported compliance claims"
+    ],
+    "required_tools": [
+      "file-read",
+      "cloud-cli",
+      "terraform",
+      "current-policy-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "security-cloud-architecture",
+    "expected_output_contract": "A multi-cloud security design or review with evidence, trust boundaries, control owners, rollback needs, and residual risk.",
+    "evidence_requirements": [
+      "cite exact supplied configuration, policy, and architecture evidence",
+      "treat cloud CLI and infrastructure plans as read-only unless separately authorized",
+      "cite current primary cloud and standards documentation for material claims"
+    ],
+    "model_requirements": [
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "d541b4041d47c512ef5223985aba682249ce2416244e147959641fc6d193aa71",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes infrastructure-as-code execution and automated remediation patterns",
+      "cloud access, resource mutation, and credential handling require separate explicit authorization"
+    ]
+  },
+  {
+    "relative_path": "security/security-compliance-auditor.md",
+    "slug": "compliance-auditor",
+    "display_name": "Compliance Auditor",
+    "division": "security",
+    "description": "Expert technical compliance auditor specializing in SOC 2, ISO 27001, HIPAA, and PCI-DSS audits — from readiness assessment through evidence collection to certification.",
+    "categories": [
+      "security",
+      "compliance",
+      "governance",
+      "evidence"
+    ],
+    "capabilities": [
+      "assess gaps against named control frameworks",
+      "map supplied evidence to control requirements",
+      "prepare bounded evidence requests and remediation priorities"
+    ],
+    "anti_capabilities": [
+      "certifying compliance or issuing an audit opinion",
+      "providing legal or regulatory interpretation",
+      "submitting evidence or exposing personal data"
+    ],
+    "task_types": [
+      "analysis",
+      "review",
+      "planning"
+    ],
+    "preferred_when": [
+      "an authorized system needs an evidence-backed control gap assessment",
+      "control owners need a scoped remediation and evidence plan"
+    ],
+    "avoid_when": [
+      "the framework, jurisdiction, system boundary, evidence authority, or qualified reviewer is missing"
+    ],
+    "required_tools": [
+      "file-read",
+      "current-policy-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "security-compliance-review",
+    "expected_output_contract": "A scoped compliance gap assessment with control mappings, evidence status, owners, remediation priorities, and qualified-review gates.",
+    "evidence_requirements": [
+      "cite exact supplied evidence and current primary control text",
+      "label framework version, jurisdiction, scope, and interpretation assumptions",
+      "redact personal, credential, and customer data"
+    ],
+    "model_requirements": [
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "ebb550ceef8011be23fe5a6fab0a7b3f77c2433f4d6aa22617a7eb87db97274f",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "framework and regulatory requirements are time-sensitive and jurisdiction-specific",
+      "the projected role cannot certify compliance or replace qualified legal and audit review"
+    ]
+  },
+  {
+    "relative_path": "security/security-incident-responder.md",
+    "slug": "incident-responder",
+    "display_name": "Incident Responder",
+    "division": "security",
+    "description": "Digital forensics and incident response specialist who leads breach investigations, contains active threats, coordinates crisis response, and writes post-mortems that prevent recurrence.",
+    "categories": [
+      "security",
+      "incident-response",
+      "forensics",
+      "crisis-management"
+    ],
+    "capabilities": [
+      "triage supplied incident evidence",
+      "design containment, eradication, and recovery plans",
+      "prepare evidence-preserving post-incident analysis"
+    ],
+    "anti_capabilities": [
+      "isolating hosts, disabling accounts, or changing firewalls",
+      "collecting from live systems without authorization",
+      "making legal notification, attribution, or public-disclosure decisions"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an authorized incident needs rapid evidence triage and a reversible response plan",
+      "a completed incident needs an evidence-backed postmortem"
+    ],
+    "avoid_when": [
+      "scope, incident authority, evidence-preservation requirements, or escalation owners are unclear"
+    ],
+    "required_tools": [
+      "file-read",
+      "monitoring",
+      "cloud-cli"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "penetration-tester"
+    ],
+    "requires": [],
+    "independence_group": "security-incident-response",
+    "expected_output_contract": "An incident response plan with timeline, confidence, evidence handling, reversible actions, approvals, communications gates, and recovery verification.",
+    "evidence_requirements": [
+      "preserve chain of custody and distinguish facts, hypotheses, and confidence",
+      "cite exact telemetry and system evidence while redacting sensitive data",
+      "require explicit owner approval before every live containment or recovery action"
+    ],
+    "model_requirements": [
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "a648cf5a0b40d8726ccb61ea48f1dee2797691f1b52395c59af91c7a5f511278",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes privileged live containment, forensic collection, and destructive recovery commands",
+      "legal notification, public communication, and attribution require qualified owners"
+    ]
+  },
+  {
+    "relative_path": "security/security-penetration-tester.md",
+    "slug": "penetration-tester",
+    "display_name": "Penetration Tester",
+    "division": "security",
+    "description": "Offensive security specialist conducting authorized penetration tests, red team operations, and vulnerability assessments across networks, web applications, and cloud infrastructure.",
+    "categories": [
+      "security",
+      "penetration-testing",
+      "offensive-security",
+      "review"
+    ],
+    "capabilities": [
+      "design authorized penetration-test plans",
+      "review supplied security findings and exploit preconditions",
+      "reproduce defensive findings in isolated synthetic environments"
+    ],
+    "anti_capabilities": [
+      "attacking live or out-of-scope systems",
+      "credential harvesting, persistence, evasion, or social engineering",
+      "destructive exploitation or access to real data"
+    ],
+    "task_types": [
+      "analysis",
+      "review",
+      "testing"
+    ],
+    "preferred_when": [
+      "an explicitly authorized target needs a bounded defensive test plan",
+      "a suspected issue needs isolated reproduction with synthetic data"
+    ],
+    "avoid_when": [
+      "written authorization, exact target scope, safe environment, stop conditions, or evidence handling are absent"
+    ],
+    "required_tools": [
+      "browser",
+      "network-client",
+      "shell",
+      "sandbox-environment",
+      "security-scanner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "incident-responder"
+    ],
+    "requires": [],
+    "independence_group": "security-penetration-review",
+    "expected_output_contract": "An authorized defensive test report with scope, rules of engagement, exact evidence, reproduction in an isolated environment, impact, and remediation.",
+    "evidence_requirements": [
+      "record written authorization, target boundaries, timing, and stop conditions",
+      "use only isolated or explicitly designated test systems and synthetic data",
+      "do not retain credentials, establish persistence, evade monitoring, or access unrelated data"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "f52c2524309fb048250b412daa6a2ad0a906b5daff01f64f195052d024b9e1a0",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt contains highly actionable exploitation, credential, persistence, evasion, and social-engineering procedures",
+      "useful expertise is retained only for authorized defensive review and isolated reproduction"
+    ]
+  },
+  {
+    "relative_path": "security/security-secrets-credential-engineer.md",
+    "slug": "secrets-credential-hygiene-engineer",
+    "display_name": "Secrets & Credential Hygiene Engineer",
+    "division": "security",
+    "description": "Owns the full lifecycle of secrets and credentials — detection, prevention, vaulting, rotation, and leak response — so an application runs on short-lived, least-privilege credentials that are never in the code and are already rotated by the time a leak is found.",
+    "categories": [
+      "security",
+      "secrets",
+      "credentials",
+      "incident-response"
+    ],
+    "capabilities": [
+      "inventory secret-handling risks from authorized evidence",
+      "plan credential rotation and revocation",
+      "review secret storage, delivery, and detection controls"
+    ],
+    "anti_capabilities": [
+      "reading, retaining, or outputting secret values",
+      "rotating, revoking, deleting, or changing live credentials",
+      "rewriting repository history or changing cloud accounts"
+    ],
+    "task_types": [
+      "analysis",
+      "review",
+      "planning"
+    ],
+    "preferred_when": [
+      "a repository or system needs a redacted secret-risk review",
+      "authorized owners need a staged credential-response plan"
+    ],
+    "avoid_when": [
+      "credential ownership, blast radius, backups, rollback, or explicit mutation authorization are missing"
+    ],
+    "required_tools": [
+      "file-read",
+      "git",
+      "security-scanner",
+      "current-policy-research"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "security-secrets-review",
+    "expected_output_contract": "A redacted credential-risk assessment and staged response plan with owners, dependencies, rollback, verification, and incident escalation.",
+    "evidence_requirements": [
+      "never copy secret values into findings, logs, prompts, or examples",
+      "cite only redacted locations, detector evidence, and affected identities",
+      "require owner approval and rollback before rotation, revocation, deletion, or history rewriting"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "5a52e4c1045d8805c74414cfb334bb80da429fd191b987bdd8889ee60ca7561b",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes destructive credential rotation, revocation, deletion, and repository-history rewriting",
+      "credential access and state mutation require separate explicit authorization and verified backups"
+    ]
+  },
+  {
+    "relative_path": "security/security-senior-secops.md",
+    "slug": "senior-secops-engineer",
+    "display_name": "Senior SecOps Engineer",
+    "division": "security",
+    "description": "Defensive application security specialist who scans every code submission for secrets and sensitive data exposure before anything else, then implements or audits security controls following the organization's security standard — covering authentication, authorization, tokens, cookies, HTTP headers, CORS, rate limiting, CSP, secrets management, input validation, and secure logging.",
+    "categories": [
+      "security",
+      "application-security",
+      "code-review",
+      "standards"
+    ],
+    "capabilities": [
+      "review authentication, authorization, secret, and input-handling risks",
+      "map findings to the repository's actual security policy",
+      "propose evidence-backed remediation and regression tests"
+    ],
+    "anti_capabilities": [
+      "blocking delivery without evidence or owner authority",
+      "claiming an unavailable security standard is authoritative",
+      "scanning unrelated scope or modifying code without authorization"
+    ],
+    "task_types": [
+      "analysis",
+      "review",
+      "testing"
+    ],
+    "preferred_when": [
+      "authorized code needs a broad defensive security review",
+      "security findings need prioritization against actual repository policy"
+    ],
+    "avoid_when": [
+      "the source scope, governing policy, or evidence needed to reproduce findings is unavailable"
+    ],
+    "required_tools": [
+      "file-read",
+      "git",
+      "security-scanner",
+      "test-runner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "ai-generated-code-security-auditor",
+      "application-security-engineer"
+    ],
+    "requires": [],
+    "independence_group": "security-code-review",
+    "expected_output_contract": "A repository-grounded security review with exact evidence, severity rationale, remediation options, tests, and residual risk.",
+    "evidence_requirements": [
+      "cite exact code, configuration, policy, and reproducible test evidence",
+      "use the repository's current security policy rather than hard-coded persona paths",
+      "permit a verified zero-finding result and label illustrative examples"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "90b535077cff7253bf18355ec99d5205dbe09c9f3e93f5b85222183460f2b879",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt references a nonexistent internal security standard and asserts unconditional invocation priority",
+      "embedded examples and rules are illustrative and may be incomplete or stale"
+    ]
+  },
+  {
+    "relative_path": "security/security-threat-detection-engineer.md",
+    "slug": "threat-detection-engineer",
+    "display_name": "Threat Detection Engineer",
+    "division": "security",
+    "description": "Expert detection engineer specializing in SIEM rule development, MITRE ATT&CK coverage mapping, threat hunting, alert tuning, and detection-as-code pipelines for security operations teams.",
+    "categories": [
+      "security",
+      "threat-detection",
+      "siem",
+      "threat-hunting"
+    ],
+    "capabilities": [
+      "design and tune defensive detection rules",
+      "map supplied evidence to threat techniques",
+      "modify authorized detection-as-code files with tests"
+    ],
+    "anti_capabilities": [
+      "deploying rules to live SIEM or endpoint systems",
+      "running adversary emulation without authorization",
+      "using credentials, disabling detections, or changing production monitoring"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review",
+      "testing"
+    ],
+    "preferred_when": [
+      "authorized telemetry and threat hypotheses need testable detections",
+      "detection-as-code files need bounded review or modification"
+    ],
+    "avoid_when": [
+      "telemetry provenance, target environment, expected false-positive budget, or deployment owner is unclear"
+    ],
+    "required_tools": [
+      "file-read",
+      "file-write",
+      "monitoring",
+      "test-runner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "security-detection-engineering",
+    "expected_output_contract": "A tested detection package with hypothesis, data requirements, exact rule changes, fixtures, precision limits, deployment gate, and rollback plan.",
+    "evidence_requirements": [
+      "cite exact authorized telemetry, rule files, fixtures, and test output",
+      "validate sample syntax and platform assumptions before recommending use",
+      "leave live deployment, adversary emulation, and production tuning to explicitly authorized owners"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "83bfaabe485d51965ba6474de3eb6e00f67fd7f76e5b34ca1d3fb385a8fa3d97",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes live pipeline deployment, credential-bearing commands, and adversary-emulation execution",
+      "sample detection code is illustrative and requires platform-specific validation"
+    ]
+  },
+  {
+    "relative_path": "security/security-threat-intelligence-analyst.md",
+    "slug": "threat-intelligence-analyst",
+    "display_name": "Threat Intelligence Analyst",
+    "division": "security",
+    "description": "Cyber threat intelligence specialist who tracks adversary groups, maps attack campaigns to MITRE ATT&CK, produces actionable intelligence reports, and builds detection rules that catch real threats.",
+    "categories": [
+      "security",
+      "threat-intelligence",
+      "research",
+      "detection"
+    ],
+    "capabilities": [
+      "analyze authorized threat reporting and supplied artifacts",
+      "assess source confidence and map defensive implications",
+      "draft bounded indicators and detection recommendations"
+    ],
+    "anti_capabilities": [
+      "accessing or interacting with unlawful or unapproved sources",
+      "executing malware outside an isolated sandbox",
+      "exposing protected sources, victims, personal data, or offensive instructions"
+    ],
+    "task_types": [
+      "analysis",
+      "research",
+      "review"
+    ],
+    "preferred_when": [
+      "lawfully obtained threat evidence needs confidence-weighted defensive analysis",
+      "authorized defenders need time-bounded indicators and collection gaps"
+    ],
+    "avoid_when": [
+      "source authority, handling classification, legality, isolation, or disclosure rules are unclear"
+    ],
+    "required_tools": [
+      "web-research",
+      "file-read",
+      "sandbox-environment"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "security-threat-intelligence",
+    "expected_output_contract": "A defensive intelligence assessment with source provenance, confidence, time bounds, affected assets, indicators, collection gaps, and handling labels.",
+    "evidence_requirements": [
+      "cite lawful authorized sources and distinguish reporting from inference",
+      "preserve TLP, privacy, victim, and confidential-source restrictions",
+      "analyze suspicious artifacts only in an isolated sandbox and do not expose executable payloads"
+    ],
+    "model_requirements": [
+      "high-reasoning",
+      "tool-use"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "777b26397ae7aeb246259736327f9f76e435eee378a1435bed9d18699ec8d666",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_memory_assumption",
+      "raw prompt includes dark-web collection, malware analysis, and sensitive source handling",
+      "embedded indicator and detection code is illustrative and requires validation"
+    ]
+  }
+]

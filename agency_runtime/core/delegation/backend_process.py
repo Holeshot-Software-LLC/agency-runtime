@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from agency_runtime.core.delegation.backend_windows import WindowsJob as _WindowsJob
+from agency_runtime.core.process_argv import PreparedProcessArgv
+from agency_runtime.core.windows_system import trusted_windows_system_executable
 
 _DRAIN_GRACE_SECONDS = 0.5
 _ProcessRunner = Callable[..., subprocess.CompletedProcess[str]]
@@ -105,8 +107,9 @@ def _terminate_taskkill_helper(helper: subprocess.Popen[str]) -> None:
 def _request_windows_tree_termination(process: subprocess.Popen[str]) -> None:
     """Ask taskkill to terminate a Windows tree, with a bounded helper lifetime."""
     try:
+        taskkill = trusted_windows_system_executable("taskkill.exe", platform_name="nt")
         helper = subprocess.Popen(
-            ["taskkill.exe", "/PID", str(process.pid), "/T", "/F"],
+            [taskkill, "/PID", str(process.pid), "/T", "/F"],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -412,7 +415,7 @@ def run_bounded_process(
 
     if isinstance(argv, (str, bytes)) or not argv:
         raise TypeError("argv must be a non-empty sequence of strings")
-    normalized = list(argv)
+    normalized = argv if isinstance(argv, PreparedProcessArgv) else list(argv)
     if any(not isinstance(item, str) or not item or "\x00" in item for item in normalized):
         raise ValueError("argv contains an invalid item")
     if (

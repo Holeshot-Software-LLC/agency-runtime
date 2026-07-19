@@ -20,11 +20,17 @@ from agency_runtime.core.installer_contracts import (
     CODEX_HOOK_TRUST_ACTION,
     HOSTS,
     INSTALL_MANIFEST,
+    MINIMUM_OPENCLAW_VERSION,
     PLUGIN_ID,
     PLUGIN_VERSION,
     BinaryResolver,
     CommandRunner,
     NativeCommandResult,
+    openclaw_version_supported,
+)
+from agency_runtime.core.process_argv import (
+    persistent_artifacts_from_manifest,
+    snapshot_persistent_artifacts,
 )
 
 _MAX_INSPECTION_WORKERS = len(HOSTS)
@@ -54,6 +60,7 @@ class _HostInspection:
     managed_version: str | None
     install_id: str | None
     bundle_digest: str | None
+    launcher_artifacts_current: bool | None
     native_record: dict[str, Any] | None = None
     inventory_result: NativeCommandResult | None = None
     registered: bool | None = None
@@ -61,6 +68,7 @@ class _HostInspection:
     loaded: bool | None = None
     marketplace_registered: bool | None = None
     host_version: str | None = None
+    host_version_supported: bool | None = None
     evidence: list[str] = field(default_factory=list)
 
 
@@ -313,6 +321,37 @@ def _managed_bundle_identity(
     return version, install_id, digest.hexdigest()
 
 
+def _managed_launcher_artifacts_current(target: Path, host: str) -> bool | None:
+    """Verify the persisted adapter launcher against live content and trust."""
+
+    try:
+        raw_manifest = _read_regular_file_bounded(
+            target / INSTALL_MANIFEST,
+            root=target,
+            limit=_MAX_INSTALL_MANIFEST_BYTES,
+        )
+        manifest = safe_load_bounded_json(raw_manifest)
+    except (OSError, ValueError, UnicodeError, RecursionError):
+        return None
+    if not isinstance(manifest, dict) or any(
+        (
+            manifest.get("owner") != "agency-runtime",
+            manifest.get("host") != host,
+            manifest.get("plugin_id") != PLUGIN_ID,
+        )
+    ):
+        return None
+    raw_artifacts = manifest.get("launcher_artifacts")
+    if raw_artifacts is None:
+        return None
+    try:
+        expected = persistent_artifacts_from_manifest(raw_artifacts)
+        observed = snapshot_persistent_artifacts([identity.lexical_path for identity in expected])
+    except (OSError, ValueError):
+        return False
+    return observed == expected
+
+
 def _bundle_digest(files: Mapping[str, str]) -> str:
     """Return the canonical digest used for managed bundle identity checks."""
     digest = hashlib.sha256()
@@ -447,6 +486,7 @@ def _initial_inspection(
     owned_manifest = target / INSTALL_MANIFEST
     staged = owned_manifest.exists()
     managed_version, install_id, bundle_digest = _managed_bundle_identity(target, host)
+    launcher_artifacts_current = _managed_launcher_artifacts_current(target, host)
     state = _HostInspection(
         host=host,
         root=root,
@@ -460,6 +500,7 @@ def _initial_inspection(
         managed_version=managed_version,
         install_id=install_id,
         bundle_digest=bundle_digest,
+        launcher_artifacts_current=launcher_artifacts_current,
     )
     state.evidence = _filesystem_evidence(state, marker_hits)
     return state
@@ -476,6 +517,14 @@ def _filesystem_evidence(
         evidence.append(f"stale-root:{state.root}")
     if state.staged:
         evidence.append(f"owned-stage:{state.owned_manifest}")
+        launcher_state = (
+            "current"
+            if state.launcher_artifacts_current is True
+            else "drift"
+            if state.launcher_artifacts_current is False
+            else "unproven"
+        )
+        evidence.append(f"launcher-artifacts:{launcher_state}")
     return evidence
 
 
@@ -604,6 +653,18 @@ def _probe_native_host(
     state.host_version = _sanitize_host_version(version)
     proof = "proven" if state.host_version else "unproven"
     state.evidence.append(f"host-version:{proof}")
+    if state.host == "openclaw":
+        state.host_version_supported = (
+            openclaw_version_supported(state.host_version) if state.host_version else None
+        )
+        capability = (
+            "supported"
+            if state.host_version_supported is True
+            else "unsupported"
+            if state.host_version_supported is False
+            else "unproven"
+        )
+        state.evidence.append(f"host-capability:{capability}")
     inventory = _call_native(
         _inventory_command(state.host),
         host=state.host,
@@ -632,6 +693,18 @@ def _normalize_registration(state: _HostInspection, *, can_execute: bool) -> Non
 
 
 def _maturity(state: _HostInspection) -> str:
+    if state.staged and state.launcher_artifacts_current is not True:
+        return (
+            "launcher-artifact-drift"
+            if state.launcher_artifacts_current is False
+            else "launcher-artifact-unproven"
+        )
+    if state.host == "openclaw" and state.executable and state.host_version_supported is not True:
+        return (
+            "host-version-unsupported"
+            if state.host_version_supported is False
+            else "host-capability-unproven"
+        )
     if state.registered is True and state.enabled is True and state.loaded is True:
         return "runtime-verified"
     if state.registered is True and state.enabled is True:
@@ -685,9 +758,14 @@ def _serialize_inspection(
         "canary_stale_reasons": stale_reasons,
         "canary_attestation": attestation,
         "host_version": state.host_version,
+        "host_version_supported": state.host_version_supported,
+        "minimum_supported_host_version": (
+            MINIMUM_OPENCLAW_VERSION if state.host == "openclaw" else None
+        ),
         "managed_plugin_version": state.managed_version,
         "install_id": state.install_id,
         "bundle_digest": state.bundle_digest,
+        "launcher_artifacts_current": state.launcher_artifacts_current,
         "marketplace_registered": state.marketplace_registered,
         "hook_trust_status": "unverified" if codex_hooks_registered else None,
         "hook_trust_action": CODEX_HOOK_TRUST_ACTION if codex_hooks_registered else None,
@@ -732,6 +810,11 @@ def _inspect_host(
         bundle_digest=state.bundle_digest,
         allow_read=home_dir is None or "AGENCY_DB_PATH" in os.environ,
     )
+    if state.staged and state.launcher_artifacts_current is not True:
+        canary = None
+        status = "stale"
+        stale_reasons = [*stale_reasons, "launcher_artifacts"]
+        attestation = None
     if status != "absent":
         state.evidence.append(f"canary-attestation:{status}")
     return _serialize_inspection(
@@ -767,6 +850,7 @@ def _failed_inspection(host: str, exc: Exception) -> dict[str, Any]:
         "managed_plugin_version": None,
         "install_id": None,
         "bundle_digest": None,
+        "launcher_artifacts_current": None,
         "marketplace_registered": None,
         "hook_trust_status": None,
         "hook_trust_action": None,

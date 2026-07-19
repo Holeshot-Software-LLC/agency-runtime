@@ -7,7 +7,6 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 import threading
 import urllib.request
 from importlib.metadata import version
@@ -17,6 +16,11 @@ from pathlib import Path
 from agency_runtime import __version__
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import load_config, reset_config_cache
+from agency_runtime.core.private_paths import (
+    ensure_private_directory,
+    private_temporary_directory,
+)
+from agency_runtime.core.roster.bundled import bundled_manifest, bundled_roster
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.dashboard import DashboardHTTPServer
 
@@ -126,6 +130,26 @@ def _dashboard_round_trip(root: Path) -> dict[str, object]:
     return {"bind": "127.0.0.1", "health": "passed"}
 
 
+def _roster_integrity() -> dict[str, int]:
+    manifest = bundled_manifest()
+    roster = bundled_roster()
+    counts = manifest["counts"]
+    if len(roster) != counts["approved"]:
+        raise RuntimeError("installed bundled roster count does not match its manifest")
+    if counts["total"] != counts["approved"] + counts["quarantined"] + counts["retired"]:
+        raise RuntimeError("installed bundled roster status counts are incomplete")
+    slugs = {str(agent["slug"]) for agent in roster}
+    if not {"agents-orchestrator", "chief-of-staff"}.issubset(slugs):
+        raise RuntimeError("installed bundled roster is missing resident managers")
+    if any(
+        not str(agent.get("prompt_body") or "").strip()
+        or not str(agent.get("version") or "").startswith("sha256:")
+        for agent in roster
+    ):
+        raise RuntimeError("installed bundled roster contains an invalid approved prompt")
+    return {key: int(value) for key, value in counts.items()}
+
+
 def run() -> dict[str, object]:
     installed_version = version("agency-runtime")
     if installed_version != __version__:
@@ -134,15 +158,16 @@ def run() -> dict[str, object]:
     missing = [name for name in _DASHBOARD_ASSETS if not dashboard.joinpath(name).is_file()]
     if missing:
         raise RuntimeError(f"installed distribution is missing dashboard assets: {missing}")
+    roster = _roster_integrity()
 
-    with tempfile.TemporaryDirectory(prefix="agency-distribution-smoke-") as temporary:
-        root = Path(temporary)
+    with private_temporary_directory(prefix="distribution-smoke") as root:
+        isolated_home = ensure_private_directory(root / "home")
         os.environ.update(
             {
                 "AGENCY_CONFIG_PATH": str(root / "agency.yaml"),
                 "AGENCY_DB_PATH": str(root / "agency.db"),
-                "HOME": str(root / "home"),
-                "USERPROFILE": str(root / "home"),
+                "HOME": str(isolated_home),
+                "USERPROFILE": str(isolated_home),
             }
         )
         reset_config_cache()
@@ -158,6 +183,7 @@ def run() -> dict[str, object]:
         "version": installed_version,
         "assets": len(_DASHBOARD_ASSETS),
         "config": "passed",
+        "roster": roster,
         "mcp": mcp,
         "dashboard": dashboard_result,
     }

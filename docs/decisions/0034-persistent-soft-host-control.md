@@ -3,9 +3,12 @@ title: "Separate immediate host control from native plugin lifecycle"
 status: accepted
 category: decisions
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-16
 tags: [operations, hosts, controls, sqlite]
 related:
+  - docs/roadmap/issue-AR-70-generation-check-host-controls.md
+  - docs/roadmap/issue-AR-51-honor-all-host-cli-control-contract.md
+  - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
   - docs/roadmap/issue-AR-03-supported-host-integrations.md
   - docs/roadmap/issue-AR-04-runtime-controls.md
   - docs/decisions/0010-one-command-install-and-reversible-toggle.md

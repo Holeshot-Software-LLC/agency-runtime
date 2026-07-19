@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.host_capabilities import project_host_capability_receipt
 from agency_runtime.core.store.projections import project_snapshot_summary
 from agency_runtime.core.store.schema import RUNTIME_TABLE_TIMESTAMPS
 
@@ -17,12 +19,15 @@ RECENT_ACTIVITY_QUERIES: Mapping[str, str] = {
     "receipts": (
         "SELECT id, trace_id, session_id, host, requested_model, model_group, "
         "resolved_provider, resolved_model, attempted_fallbacks, model_id, "
-        "source, started_at, ended_at, status FROM model_receipts "
-        "ORDER BY COALESCE(ended_at, started_at) DESC, id DESC LIMIT ?"
+        "source, recorded_at, started_at, ended_at, status FROM model_receipts "
+        "ORDER BY recorded_at DESC, id DESC LIMIT ?"
     ),
     "delegations": (
         "SELECT id, trace_id, session_id, host, work_unit_id, recommended_agent, "
-        "status, backend, skip_reason, started_at, completed_at "
+        "status, backend, executed_worker_kind, executed_worker_id, native_run_id, "
+        "retrieved_specialist_slug, retrieved_specialist_version, "
+        "retrieved_specialist_prompt_hash, activation_receipt_id, skip_reason, "
+        "started_at, completed_at "
         "FROM delegation_events "
         "ORDER BY COALESCE(completed_at, started_at) DESC, id DESC LIMIT ?"
     ),
@@ -30,28 +35,42 @@ RECENT_ACTIVITY_QUERIES: Mapping[str, str] = {
         "SELECT id, trace_id, host, action, missing, created_at "
         "FROM finalization_events ORDER BY created_at DESC, id DESC LIMIT ?"
     ),
+    "specialists": (
+        "SELECT specialist.id, specialist.session_id, specialist.trace_id, "
+        "specialist.agent_slug AS slug, specialist.loaded_at, specialist.expired_at, "
+        "CASE WHEN specialist.trace_id <> '' AND specialist.expired_at IS NULL "
+        "AND run.status IN ('active', 'evidence_only') "
+        "THEN 'current' ELSE 'historical' END AS state "
+        "FROM specialists_loaded AS specialist LEFT JOIN runs AS run "
+        "ON run.trace_id = specialist.trace_id "
+        "AND run.session_id = specialist.session_id "
+        "ORDER BY specialist.loaded_at DESC, specialist.id DESC LIMIT ?"
+    ),
     "routing": (
         "SELECT id, trace_id, session_id, query_hash, context_fingerprint, status, "
         "source, selected_ids, semantic_ids, companion_ids, confidence, latency_ms, "
-        "provider, work_units, created_at FROM routing_decisions "
+        "provider, work_units, decision, created_at FROM routing_decisions "
         "ORDER BY created_at DESC, id DESC LIMIT ?"
     ),
 }
 
 # Dashboard responses deliberately exclude optional captured delegation detail
-# and routing work-unit metadata. Keeping that projection in SQL avoids moving,
-# decoding, copying, and then discarding those fields on every live poll.
+# and routing work-unit metadata. The only decoded routing payload is the
+# already-sanitized decision projection needed to preserve fallback provenance.
 DASHBOARD_ACTIVITY_QUERIES: Mapping[str, str] = {
     **RECENT_ACTIVITY_QUERIES,
     "delegations": (
         "SELECT id, trace_id, session_id, host, work_unit_id, recommended_agent, "
-        "status, backend, started_at, completed_at FROM delegation_events "
+        "status, backend, executed_worker_kind, executed_worker_id, native_run_id, "
+        "retrieved_specialist_slug, retrieved_specialist_version, "
+        "retrieved_specialist_prompt_hash, activation_receipt_id, "
+        "started_at, completed_at FROM delegation_events "
         "ORDER BY COALESCE(completed_at, started_at) DESC, id DESC LIMIT ?"
     ),
     "routing": (
         "SELECT id, trace_id, session_id, query_hash, context_fingerprint, status, "
         "source, selected_ids, semantic_ids, companion_ids, confidence, latency_ms, "
-        "provider, created_at FROM routing_decisions "
+        "provider, decision, created_at FROM routing_decisions "
         "ORDER BY created_at DESC, id DESC LIMIT ?"
     ),
 }
@@ -66,12 +85,19 @@ _ROUTING_JSON_FIELDS = (
 _ROUTING_DECISION_FIELDS = frozenset(
     {
         "status",
+        "semantic_status",
+        "source",
         "selected_ids",
         "semantic_ids",
         "companion_actions",
         "companion_ids",
         "available_companion_ids",
         "unavailable_companion_ids",
+        "fallback_companion_ids",
+        "available_fallback_companion_ids",
+        "unavailable_fallback_companion_ids",
+        "fallback_considered",
+        "fallback_applied",
         "confidence",
         "latency_ms",
         "provider",
@@ -79,12 +105,170 @@ _ROUTING_DECISION_FIELDS = frozenset(
         "top_score",
         "cache_hit",
         "session_reused",
+        "continuation_reused",
+        "continuation_resolution_required",
         "source_message_hash",
+        "origin_trace_id",
+        "origin_query_hash",
+        "origin_context_fingerprint",
         "trace_id",
         "context_fingerprint",
         "query_hash",
+        "execution_context",
+        "routing_receipt",
     }
 )
+
+_ROUTING_LIST_FIELDS = frozenset(
+    {
+        "selected_ids",
+        "semantic_ids",
+        "companion_actions",
+        "companion_ids",
+        "available_companion_ids",
+        "unavailable_companion_ids",
+        "fallback_companion_ids",
+        "available_fallback_companion_ids",
+        "unavailable_fallback_companion_ids",
+    }
+)
+_ROUTING_LABEL_FIELDS = frozenset({"status", "semantic_status", "source"})
+_ROUTING_BOOLEAN_FIELDS = frozenset(
+    {
+        "fallback_considered",
+        "fallback_applied",
+        "cache_hit",
+        "session_reused",
+        "continuation_reused",
+        "continuation_resolution_required",
+    }
+)
+_ROUTING_FLOAT_FIELDS = frozenset({"confidence", "top_score"})
+_ROUTING_COUNT_FIELDS = frozenset({"latency_ms", "candidate_count"})
+_ROUTING_DIGEST_FIELDS = frozenset(
+    {
+        "source_message_hash",
+        "context_fingerprint",
+        "query_hash",
+        "origin_query_hash",
+        "origin_context_fingerprint",
+    }
+)
+
+
+def _bounded_routing_list(value: object) -> list[str]:
+    if not isinstance(value, (list, tuple)):
+        return []
+    result: list[str] = []
+    for item in value[:16]:
+        normalized = str(item or "").strip()[:128]
+        if normalized and normalized not in result:
+            result.append(normalized)
+    return result
+
+
+def _bounded_routing_float(value: object) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0.0
+    return max(-1_000_000.0, min(parsed, 1_000_000.0)) if math.isfinite(parsed) else 0.0
+
+
+def _bounded_routing_count(value: object) -> int:
+    if isinstance(value, bool):
+        return 0
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+    return max(0, min(parsed, 86_400_000))
+
+
+def _routing_digest(value: object) -> str:
+    normalized = str(value or "").strip()
+    return (
+        normalized
+        if len(normalized) == 64
+        and all(character in "0123456789abcdef" for character in normalized)
+        else ""
+    )
+
+
+_OMIT_ROUTING_FIELD = object()
+
+
+def _project_routing_field(key: str, value: object) -> object:
+    if key in _ROUTING_LIST_FIELDS:
+        return _bounded_routing_list(value)
+    if key in _ROUTING_LABEL_FIELDS:
+        return str(value or "").strip()[:64]
+    if key in _ROUTING_BOOLEAN_FIELDS:
+        return bool(value)
+    if key in _ROUTING_FLOAT_FIELDS:
+        return _bounded_routing_float(value)
+    if key in _ROUTING_COUNT_FIELDS:
+        return _bounded_routing_count(value)
+    if key in _ROUTING_DIGEST_FIELDS:
+        return _routing_digest(value) or _OMIT_ROUTING_FIELD
+    if key == "provider":
+        return str(value or "").strip()[:128]
+    if key == "execution_context":
+        return project_host_capability_receipt(value) or _OMIT_ROUTING_FIELD
+    if key == "routing_receipt":
+        from agency_runtime.core.selector.receipt_projection import (
+            normalize_durable_routing_receipt,
+        )
+
+        return normalize_durable_routing_receipt(value) or _OMIT_ROUTING_FIELD
+    if key in {"trace_id", "origin_trace_id"}:
+        return str(value or "").strip()[:256]
+    return _OMIT_ROUTING_FIELD
+
+
+_OPEN_TRACE_RETENTION_GUARDS: Mapping[str, str] = {
+    "runs": "runs.status NOT IN ('active', 'evidence_only')",
+    "model_receipts": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = model_receipts.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "skills_loaded": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = skills_loaded.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "specialists_loaded": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = specialists_loaded.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "delegation_activation_receipts": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = "
+        "delegation_activation_receipts.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "delegation_events": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = delegation_events.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "worker_runs": (
+        "NOT EXISTS (SELECT 1 FROM delegation_events "
+        "JOIN runs ON runs.trace_id = delegation_events.trace_id "
+        "WHERE delegation_events.id = worker_runs.delegation_event_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "finalization_events": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = finalization_events.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "routing_decisions": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = routing_decisions.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "resident_manager_bindings": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE "
+        "runs.session_id = resident_manager_bindings.session_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+}
 
 
 def bounded_limit(value: int, *, maximum: int = 200) -> int:
@@ -125,7 +309,17 @@ def _normalize_finalizations(rows: list[dict[str, Any]]) -> None:
 
 
 def _normalize_routing(rows: list[dict[str, Any]]) -> None:
+    from agency_runtime.core.selector.receipt_projection import (
+        normalize_durable_routing_receipt,
+    )
+
     for row in rows:
+        decision = _decode_json_projection(
+            row.pop("decision", None),
+            expected_type=dict,
+            fallback={},
+            maximum_depth=32,
+        )
         for field in _ROUTING_JSON_FIELDS:
             if field not in row:
                 continue
@@ -136,6 +330,18 @@ def _normalize_routing(rows: list[dict[str, Any]]) -> None:
                 fallback={} if is_work_units else [],
                 maximum_depth=64,
             )
+        row["semantic_status"] = str(
+            decision.get("semantic_status") or row.get("status") or "unknown"
+        )
+        row["fallback_applied"] = decision.get("fallback_applied") is True
+        fallback_ids = decision.get("fallback_companion_ids")
+        row["fallback_companion_ids"] = (
+            [str(value) for value in fallback_ids if isinstance(value, str) and value]
+            if isinstance(fallback_ids, list)
+            else []
+        )
+        receipt = normalize_durable_routing_receipt(decision.get("routing_receipt"))
+        row["routing_receipt"] = receipt or {}
 
 
 def normalize_activity_rows(
@@ -170,23 +376,31 @@ def project_routing_decision(
 ) -> tuple[dict[str, Any], dict[str, Any], str]:
     """Return the metadata-only decision, work-unit projection, and source."""
 
-    safe_decision = {
-        key: value for key, value in decision.items() if key in _ROUTING_DECISION_FIELDS
-    }
+    safe_decision: dict[str, Any] = {}
+    for key in _ROUTING_DECISION_FIELDS:
+        if key not in decision:
+            continue
+        projected = _project_routing_field(key, decision[key])
+        if projected is not _OMIT_ROUTING_FIELD:
+            safe_decision[key] = projected
     raw_work_units = decision.get("work_units")
     safe_work_units: dict[str, Any] = {}
     if isinstance(raw_work_units, dict):
         safe_work_units = {
-            key: raw_work_units[key]
-            for key in ("delegate", "count", "confidence", "source")
-            if key in raw_work_units
+            "delegate": bool(raw_work_units.get("delegate", False)),
+            "count": min(_bounded_routing_count(raw_work_units.get("count", 0)), 16),
+            "confidence": str(raw_work_units.get("confidence") or "").strip()[:32],
+            "source": str(raw_work_units.get("source") or "").strip()[:64],
         }
     safe_decision["work_units"] = safe_work_units
-    source = (
-        "cache"
-        if safe_decision.get("cache_hit")
-        else ("session" if safe_decision.get("session_reused") else "computed")
-    )
+    if safe_decision.get("cache_hit"):
+        source = "cache"
+    elif safe_decision.get("session_reused"):
+        source = "session"
+    elif safe_decision.get("source") == "policy_fallback":
+        source = "policy_fallback"
+    else:
+        source = "computed"
     return safe_decision, safe_work_units, source
 
 
@@ -198,6 +412,54 @@ def retention_predicates(
     keep_last: int | None,
 ) -> tuple[str, list[Any]]:
     """Build the fixed, allowlisted retention predicate for one runtime table."""
+
+    clauses, parameters = retention_window_predicates(
+        table,
+        timestamp_expression,
+        cutoff=cutoff,
+        keep_last=keep_last,
+    )
+    clauses.append(_OPEN_TRACE_RETENTION_GUARDS[table])
+    if table == "delegation_events":
+        clauses.append(
+            "NOT EXISTS (SELECT 1 FROM worker_runs "
+            "WHERE worker_runs.delegation_event_id = delegation_events.id)"
+        )
+    elif table == "finalization_events":
+        clauses.append(
+            "NOT EXISTS (SELECT 1 FROM runs "
+            "WHERE runs.terminal_finalization_id = finalization_events.id)"
+        )
+    elif table == "runs":
+        clauses.extend(
+            [
+                "NOT EXISTS (SELECT 1 FROM model_receipts "
+                "WHERE model_receipts.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM skills_loaded "
+                "WHERE skills_loaded.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM specialists_loaded "
+                "WHERE specialists_loaded.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM delegation_activation_receipts "
+                "WHERE delegation_activation_receipts.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM delegation_events "
+                "WHERE delegation_events.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM finalization_events "
+                "WHERE finalization_events.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM routing_decisions "
+                "WHERE routing_decisions.trace_id = runs.trace_id)",
+            ]
+        )
+    return " AND ".join(f"({clause})" for clause in clauses), parameters
+
+
+def retention_window_predicates(
+    table: str,
+    timestamp_expression: str,
+    *,
+    cutoff: str | None,
+    keep_last: int | None,
+) -> tuple[list[str], list[Any]]:
+    """Build only age/count eligibility clauses for an allowlisted table."""
 
     if RUNTIME_TABLE_TIMESTAMPS.get(table) != timestamp_expression:
         raise ValueError("retention table and timestamp expression must be allowlisted")
@@ -215,22 +477,4 @@ def retention_predicates(
             ")"
         )
         parameters.append(keep_last)
-    if table == "delegation_events":
-        clauses.append(
-            "NOT EXISTS (SELECT 1 FROM worker_runs "
-            "WHERE worker_runs.delegation_event_id = delegation_events.id)"
-        )
-    elif table == "runs":
-        clauses.extend(
-            [
-                "NOT EXISTS (SELECT 1 FROM model_receipts "
-                "WHERE model_receipts.trace_id = runs.trace_id)",
-                "NOT EXISTS (SELECT 1 FROM delegation_events "
-                "WHERE delegation_events.trace_id = runs.trace_id)",
-                "NOT EXISTS (SELECT 1 FROM finalization_events "
-                "WHERE finalization_events.trace_id = runs.trace_id)",
-                "NOT EXISTS (SELECT 1 FROM routing_decisions "
-                "WHERE routing_decisions.trace_id = runs.trace_id)",
-            ]
-        )
-    return " AND ".join(f"({clause})" for clause in clauses), parameters
+    return clauses, parameters

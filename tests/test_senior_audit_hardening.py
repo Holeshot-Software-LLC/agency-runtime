@@ -19,6 +19,7 @@ from agency_runtime.core.config import (
     AdapterEntryConfig,
     AdaptersConfig,
     AgencyConfig,
+    reset_config_cache,
 )
 from agency_runtime.core.store import roster as roster_store
 from agency_runtime.core.store.sqlite import Store
@@ -38,6 +39,52 @@ class _HeaderStore:
     def get_host_control(self, _host: str) -> dict[str, bool]:
         return {"enabled": True}
 
+    def get_run(self, trace_id: str) -> dict[str, str] | None:
+        if trace_id != "trace-current":
+            return None
+        return {
+            "trace_id": trace_id,
+            "session_id": "current",
+            "status": "active",
+        }
+
+    def get_specialists_for_trace(self, _session_id: str, _trace_id: str) -> list[str]:
+        return []
+
+    def get_completion_evidence_snapshot(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> dict[str, Any]:
+        if (session_id, trace_id) != ("current", "trace-current"):
+            raise ValueError("trace_id does not identify a recorded Agency turn")
+        run = {
+            "trace_id": trace_id,
+            "session_id": session_id,
+            "status": "active",
+            "ended_at": None,
+            "terminal_finalization_id": None,
+            "evidence_revision": 1,
+            "request_kind": "nontrivial",
+        }
+        return {
+            "session_id": session_id,
+            "trace_id": trace_id,
+            "status": "active",
+            "request_kind": "nontrivial",
+            "evidence_revision": 1,
+            "run": run,
+            "model_receipt": None,
+            "skills": [],
+            "specialists": [],
+            "delegations": [],
+        }
+
+    def is_nontrivial_turn(self, session_id: str, trace_id: str) -> bool | None:
+        if (session_id, trace_id) == ("current", "trace-current"):
+            return True
+        return None
+
 
 class _TestAdapter(adapter_base.BaseAdapter):
     host_name = "test"
@@ -45,19 +92,14 @@ class _TestAdapter(adapter_base.BaseAdapter):
     def is_available(self) -> bool:
         return True
 
-    def report_skills_loaded(self, _session_id: str) -> list[str]:
-        return []
-
-    def report_specialists_loaded(self, _session_id: str) -> list[str]:
-        return []
-
     def get_delegate_backend(self) -> str | None:
         return None
 
-    def expose_model_telemetry(self, _session_id: str) -> dict[str, Any]:
-        return {}
-
-    def _suggested_delegations(self, _session_id: str) -> list[dict[str, Any]]:
+    def _suggested_delegations(
+        self,
+        _session_id: str,
+        _trace_id: str,
+    ) -> list[dict[str, Any]]:
         return []
 
 
@@ -90,35 +132,19 @@ def _isolate_doctor_inventory_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def test_nontrivial_session_evidence_is_bounded_locked_and_still_enforced(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(adapter_base, "_MAX_NONTRIVIAL_SESSIONS", 3)
+def test_nontrivial_turn_evidence_is_store_backed_and_still_enforced() -> None:
     adapter = _TestAdapter(store=_HeaderStore())  # type: ignore[arg-type]
-    adapter._remember_nontrivial_session("")
-
-    for session_id in ("one", "two", "three", "four"):
-        adapter._remember_nontrivial_session(session_id)
-
-    assert adapter._was_nontrivial_session("one") is False
-    assert adapter._was_nontrivial_session("") is False
-    assert adapter._was_nontrivial_session("four") is True
-    assert adapter._was_nontrivial_session("two") is True
-    assert adapter._was_nontrivial_session("three") is True
-    assert all(len(evidence_key) == 32 for evidence_key in adapter._nontrivial_sessions)
-    adapter._remember_nontrivial_session("four")
-
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        list(
-            executor.map(adapter._remember_nontrivial_session, (f"session-{i}" for i in range(64)))
-        )
-    assert len(adapter._nontrivial_sessions) == 3
-
-    adapter._remember_nontrivial_session("current")
-    decision = adapter.enforce_pre_verify(_valid_none_header(), session_id="current")
+    assert adapter._was_nontrivial_turn("current", "trace-current") is True
+    with pytest.raises(RuntimeError, match="could not be verified"):
+        adapter._was_nontrivial_turn("unknown", "trace-unknown")
+    decision = adapter.enforce_pre_verify(
+        _valid_none_header(),
+        session_id="current",
+        trace_id="trace-current",
+    )
     assert decision is not None
     assert decision["action"] == "continue"
-    assert "non-trivial turn" in decision["message"]
+    assert "has Agency context" in decision["message"]
 
 
 @pytest.mark.parametrize(
@@ -323,7 +349,7 @@ def test_dashboard_es_module_routes_serve_only_allowlisted_package_assets(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
-    dashboard.reset_config_cache()
+    reset_config_cache()
     server = dashboard.DashboardHTTPServer(
         Store(tmp_path / "dashboard-assets.db"),
         auth_token="test-token",
@@ -353,11 +379,11 @@ def test_dashboard_es_module_routes_serve_only_allowlisted_package_assets(
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
-        dashboard.reset_config_cache()
+        reset_config_cache()
 
 
 def _activate(store: Store, slug: str) -> None:
-    store.activate_agent(
+    store._activate_prevalidated_agent(
         {
             "slug": slug,
             "name": slug.title(),
@@ -432,10 +458,21 @@ def test_http_roster_contract_is_bounded_and_reports_truncation() -> None:
     observed: dict[str, Any] = {}
 
     class RosterStore:
-        def count_active_roster(self) -> int:
+        def get_disabled_agent_slugs(self) -> frozenset[str]:
+            return frozenset()
+
+        def count_enabled_roster(self, *, disabled_agents: object) -> int:
+            del disabled_agents
             return 3
 
-        def get_active_roster(self, *, limit: int, after: str | None) -> list[dict[str, Any]]:
+        def get_enabled_roster(
+            self,
+            *,
+            limit: int,
+            after: str | None,
+            disabled_agents: object,
+        ) -> list[dict[str, Any]]:
+            del disabled_agents
             observed["limit"] = limit
             observed["after"] = after
             return [
@@ -475,6 +512,8 @@ def test_http_roster_contract_is_bounded_and_reports_truncation() -> None:
         ("/roster?after=", "after cursor"),
         ("/roster?after=alpha&after=bravo", "at most once"),
         (f"/roster?after={'x' * 1025}", "UTF-8 bytes"),
+        ("/roster?after=%3Cscript%3E", "canonical agent slug"),
+        ("/roster?after=Alpha", "canonical agent slug"),
         ("/roster?" + "&".join(f"x{i}=1" for i in range(17)), "invalid roster query"),
     ],
 )
@@ -516,13 +555,25 @@ def test_content_length_conversion_failure_returns_bounded_bad_request(monkeypat
     assert observed == {"status": 400, "detail": "invalid or missing Content-Length"}
 
 
-def test_http_status_counts_roster_without_materializing_rows(tmp_path: Path) -> None:
+def test_http_status_counts_roster_without_materializing_rows(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import runtime_control
+
     observed: dict[str, Any] = {}
+    master = {
+        "schema_version": 1,
+        "enabled": True,
+        "generation": 7,
+        "source": "test",
+    }
+    monkeypatch.setattr(runtime_control, "read_effective_runtime_control", lambda: master)
 
     class StatusStore:
         db_path = tmp_path / "status.db"
 
-        def count_active_roster(self) -> int:
+        def count_enabled_roster(self) -> int:
             return 12_345
 
         def get_active_roster(self) -> list[dict[str, Any]]:
@@ -537,6 +588,8 @@ def test_http_status_counts_roster_without_materializing_rows(tmp_path: Path) ->
 
     assert observed["payload"] == {
         "status": "ok",
+        "runtime_enabled": True,
+        "master": master,
         "roster_count": 12_345,
         "db_path": str(tmp_path / "status.db"),
     }
@@ -546,7 +599,7 @@ def test_mcp_status_counts_roster_without_materializing_rows(tmp_path: Path) -> 
     class StatusStore:
         db_path = tmp_path / "mcp-status.db"
 
-        def count_active_roster(self) -> int:
+        def count_enabled_roster(self) -> int:
             return 54_321
 
         def get_active_roster(self) -> list[dict[str, Any]]:

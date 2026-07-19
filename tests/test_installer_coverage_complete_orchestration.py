@@ -39,6 +39,14 @@ def test_plan_facade_and_install_dry_run_delegate_without_mutation(
     assert result["kwargs"]["home_dir"] is None
 
 
+def test_openclaw_success_without_policy_evidence_does_not_invent_it() -> None:
+    result = orchestration._registration_success_result({"native_steps": []}, "openclaw")
+
+    assert result["status"] == "registered"
+    assert result["loaded"] is True
+    assert "streaming_policy" not in result
+
+
 def test_openclaw_install_guard_allows_only_proven_stopped_gateway(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -61,6 +69,16 @@ def test_openclaw_install_guard_allows_only_proven_stopped_gateway(
         orchestration,
         "_openclaw_gateway_live",
         lambda **_kwargs: (False, _native_result()),
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "_run_native",
+        lambda *_args, **_kwargs: NativeCommandResult(
+            ("openclaw", "--version"),
+            0,
+            "OpenClaw 2026.7.1",
+            "",
+        ),
     )
     assert (
         orchestration._install_gateway_guard(
@@ -95,6 +113,16 @@ def _stub_install_inputs(
     )
     monkeypatch.setattr(orchestration, "_resolve_binary", lambda *_args: executable)
     monkeypatch.setattr(orchestration, "_root_state", lambda *_args, **_kwargs: root_state)
+    monkeypatch.setattr(
+        orchestration,
+        "_freeze_adapter_launcher",
+        lambda files: (files, (object(),)),
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "revalidate_persistent_artifacts",
+        lambda _artifacts: None,
+    )
 
 
 def test_install_reports_absent_host_and_filesystem_failures(
@@ -130,6 +158,77 @@ def test_install_reports_absent_host_and_filesystem_failures(
     assert failed["failed_step"] == "filesystem"
     assert failed["partial"] is False
     assert failed["error"] == "OSError: injected staging failure"
+
+
+def test_install_reports_pre_staging_launcher_identity_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _stub_install_inputs(
+        monkeypatch,
+        tmp_path,
+        executable="codex",
+        root_state=(True, True, []),
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "_freeze_adapter_launcher",
+        lambda _files: (_ for _ in ()).throw(ValueError("invalid launcher")),
+    )
+
+    result = orchestration.install_agent_adapter("codex", home_dir=tmp_path)
+
+    assert result == {
+        "ok": False,
+        "exit_code": 1,
+        "host": "codex",
+        "partial": False,
+        "failed_step": "launcher_identity",
+        "error": "ValueError: invalid launcher",
+    }
+
+
+def test_install_reports_launcher_drift_before_native_registration(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _stub_install_inputs(
+        monkeypatch,
+        tmp_path,
+        executable="codex",
+        root_state=(True, True, []),
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "_atomic_install_tree",
+        lambda *_args, **_kwargs: {"unchanged": False, "backup_path": None},
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "_invalidate_canary_attestation",
+        lambda *_args, **_kwargs: False,
+    )
+    validations = 0
+
+    def revalidate(_artifacts: object) -> None:
+        nonlocal validations
+        validations += 1
+        if validations == 2:
+            raise OSError("injected identity drift")
+
+    monkeypatch.setattr(orchestration, "revalidate_persistent_artifacts", revalidate)
+    result = orchestration.install_agent_adapter(
+        "codex",
+        home_dir=tmp_path,
+        command_runner=lambda *_args, **_kwargs: _native_result(),
+    )
+
+    assert result["ok"] is False
+    assert result["partial"] is True
+    assert result["failed_step"] == "launcher_identity"
+    assert result["registered"] is False
+    assert "OSError: injected identity drift" in result["error"]
+    assert "staged bundle remains reversible" in result["recovery"]
 
 
 def test_rollback_backup_resolution_selects_only_owned_candidates(
@@ -402,7 +501,12 @@ def test_native_command_plans_cover_every_supported_host(tmp_path: Path) -> None
 
     openclaw = registration.native_command_plan("openclaw", tmp_path)
     assert openclaw[0]["kind"] == "safety_gate"
-    assert openclaw[3]["argv"][-1] == "--force"
+    force_install = next(
+        step for step in openclaw if step["name"] == "install" and step["argv"][-1] == "--force"
+    )
+    assert force_install["condition"] == "inspect_existing reports present"
+    policy = next(step for step in openclaw if step["name"] == "final_only_delivery_policy")
+    assert policy["kind"] == "transactional_config_policy"
 
     codex = registration.native_command_plan("codex", tmp_path)
     assert "plugin_add" in {step["name"] for step in codex}

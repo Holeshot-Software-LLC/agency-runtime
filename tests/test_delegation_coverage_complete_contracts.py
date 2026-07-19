@@ -241,9 +241,13 @@ def test_delegation_events_skip_blank_units_and_record_explicit_fallback() -> No
         mark_delegation_executed(  # type: ignore[arg-type]
             empty,
             session_id="session",
+            trace_id="trace",
             host="codex",
             backend="codex",
             goal="explicit work",
+            executed_worker_kind="cli-process",
+            executed_worker_id="codex",
+            native_run_id="codex:process:1",
         )
         == 1
     )
@@ -253,13 +257,15 @@ def test_delegation_events_skip_blank_units_and_record_explicit_fallback() -> No
         {"id": "1", "recommended_agent": "same"},
         {"id": "2", "recommended_agent": "same"},
     ]
-    assert _matching_suggestions(rows, work_unit_id="", agent="same", goal="", count=2) == rows
+    assert _matching_suggestions(rows, agent="same", count=2) == rows
+    assert _matching_suggestions(rows, agent="same", count=1) == []
 
     skipped = _EventStore()
     assert (
         mark_delegation_skipped(  # type: ignore[arg-type]
             skipped,
             session_id="session",
+            trace_id="trace",
             host="codex",
             backend="codex",
             reason="capacity unavailable",
@@ -302,6 +308,18 @@ def test_ledger_record_and_hydration_preserve_storage_contract() -> None:
     assert entry.skip_reason == "busy"
     assert hydrated.entries[0].event_id == "event-existing"
     assert hydrated.as_dict()["work_units"][0]["id"] == "unit-existing"
+
+
+def test_ledger_updates_existing_suggestion_backend_and_rejects_partial_success() -> None:
+    ledger = DelegationLedger(trace_id="trace")
+    original = ledger.suggest("unit", recommended_agent="reviewer")
+
+    updated = ledger.suggest("unit", backend="codex")
+
+    assert updated is original
+    assert updated.backend == "codex"
+    with pytest.raises(ValueError, match="backend, executed_worker_kind"):
+        ledger.update("other-unit", status="completed")
 
 
 def test_lifecycle_facade_private_compatibility_wrappers() -> None:

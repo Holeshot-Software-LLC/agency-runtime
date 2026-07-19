@@ -10,6 +10,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import urlsplit
 
+from agency_runtime.core.agent_activation import normalize_disabled_agents
 from agency_runtime.core.config import (
     MAX_PROVIDER_CHAIN_ENTRIES,
     is_safe_cli_model_id,
@@ -25,6 +26,7 @@ _PROVIDER_TYPES = frozenset(
 _CLI_TRANSPORTS = frozenset({"codex", "claude"})
 _PROFILES = frozenset({"local-only", "standard", "power", "yolo"})
 _ENABLED_VALUES = frozenset({"auto", "true", "false"})
+_DELEGATION_MODES = frozenset({"observe", "prefer", "strong"})
 
 
 def _error(path: str, message: str) -> ConfigValidationError:
@@ -330,6 +332,56 @@ def _validate_selector(value: Any) -> dict[str, Any]:
     return {name: validators[name](item) for name, item in section.items()}
 
 
+def _validate_delegation(value: Any) -> dict[str, Any]:
+    section = _mapping(value, "delegation")
+    allowed = {
+        "mode",
+        "preferred_min_units",
+        "strongly_preferred_min_units",
+        "strongly_preferred_min_confidence",
+    }
+    if set(section) - allowed:
+        raise _error("delegation", "contains unsupported fields")
+    validators: dict[str, Callable[[Any], Any]] = {
+        "mode": lambda item: _choice(item, "delegation.mode", _DELEGATION_MODES),
+        "preferred_min_units": lambda item: _integer(
+            item, "delegation.preferred_min_units", minimum=2, maximum=16
+        ),
+        "strongly_preferred_min_units": lambda item: _integer(
+            item,
+            "delegation.strongly_preferred_min_units",
+            minimum=2,
+            maximum=16,
+        ),
+        "strongly_preferred_min_confidence": lambda item: _number(
+            item,
+            "delegation.strongly_preferred_min_confidence",
+            minimum=0.0,
+            maximum=1.0,
+        ),
+    }
+    result = {name: validators[name](item) for name, item in section.items()}
+    preferred = result.get("preferred_min_units")
+    strongly_preferred = result.get("strongly_preferred_min_units")
+    if preferred is not None and strongly_preferred is not None and strongly_preferred < preferred:
+        raise _error(
+            "delegation.strongly_preferred_min_units",
+            "must be greater than or equal to preferred_min_units",
+        )
+    return result
+
+
+def _validate_agents(value: Any) -> dict[str, Any]:
+    section = _mapping(value, "agents")
+    if set(section) - {"disabled"}:
+        raise _error("agents", "contains unsupported fields")
+    try:
+        disabled = normalize_disabled_agents(section.get("disabled", []))
+    except ValueError as exc:
+        raise _error("agents.disabled", str(exc)) from exc
+    return {"disabled": list(disabled)}
+
+
 def _validate_store(value: Any) -> dict[str, Any]:
     section = _mapping(value, "store")
     if set(section) - {"db_path"}:
@@ -428,6 +480,8 @@ _TOP_LEVEL_VALIDATORS: dict[str, Callable[[Any], Any]] = {
     "judge": _validate_judge,
     "ollama": _validate_ollama,
     "selector": _validate_selector,
+    "delegation": _validate_delegation,
+    "agents": _validate_agents,
     "store": _validate_store,
     "server": _validate_server,
     "dashboard": _validate_dashboard,

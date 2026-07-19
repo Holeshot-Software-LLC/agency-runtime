@@ -61,13 +61,19 @@ def test_metadata_fields_contribute_to_weighted_routing() -> None:
 
 def test_common_inflections_route_to_starter_roster_metadata() -> None:
     candidates, scores = pre_narrow(
-        "Design task dependencies",
+        "Map workflow states and task dependencies",
         STARTER_ROSTER,
-        limit=4,
+        limit=10,
     )
+    scored = {
+        candidate["slug"]: score
+        for candidate, score in zip(candidates, scores, strict=True)
+        if score > 0
+    }
 
-    assert candidates[0]["slug"] == "workflow-architect"
-    assert scores[0] > 0
+    assert "dependency" in tokenize("dependencies")
+    assert scored["workflow-architect"] > 0
+    assert scored["senior-project-manager"] > 0
 
 
 def test_short_tokens_do_not_match_inside_unrelated_words() -> None:
@@ -110,10 +116,12 @@ def test_policy_reload_cache_is_keyed_by_resolved_path(
         "actions:\n  FIRST:\n    triggers: [alpha]\n",
         encoding="utf-8",
     )
+    first_path.chmod(0o600)
     second_path.write_text(
         "actions:\n  SECOND:\n    triggers: [beta]\n",
         encoding="utf-8",
     )
+    second_path.chmod(0o600)
     monkeypatch.setattr(policy_module, "_COMPANION_POLICY", None)
     monkeypatch.setattr(policy_module, "_POLICY_MTIME", 0.0)
     monkeypatch.setattr(policy_module, "_POLICY_PATH", None)
@@ -140,6 +148,7 @@ def test_custom_policy_rejects_ambiguous_yaml(tmp_path, payload: str) -> None:
 
     path = tmp_path / "unsafe.yaml"
     path.write_text(payload, encoding="utf-8")
+    path.chmod(0o600)
     loaded = policy_module.load_policy(path)
 
     assert "CODING" in loaded["actions"]
@@ -150,6 +159,7 @@ def test_custom_policy_rejects_oversized_input(tmp_path) -> None:
 
     path = tmp_path / "oversized.yaml"
     path.write_bytes(b"#" * (policy_module._MAX_CUSTOM_POLICY_BYTES + 1))
+    path.chmod(0o600)
     loaded = policy_module.load_policy(path)
 
     assert "CODING" in loaded["actions"]

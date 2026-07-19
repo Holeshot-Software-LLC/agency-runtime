@@ -26,7 +26,7 @@ def _request(*, source_hash: str = "current") -> _RouteRequest:
     return _RouteRequest(
         session_id="session",
         user_message="review code",
-        catalog=[{"slug": "reviewer"}],
+        catalog=[{"slug": "reviewer"}, {"slug": "companion"}],
         config=AgencyConfig(),
         policy={},
         context_fingerprint="fingerprint",
@@ -82,7 +82,7 @@ def test_computed_routing_merge_preserves_order_and_policy_projection() -> None:
 
     assert result is routing
     assert result["selected_ids"] == ["reviewer", "companion"]
-    assert result["semantic_ids"] == ["reviewer", "reviewer"]
+    assert result["semantic_ids"] == ["reviewer"]
     assert result["companion_actions"] == ["CODING"]
     assert result["policy_validation"] == {
         "valid": False,

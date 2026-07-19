@@ -57,7 +57,12 @@ from agency_runtime.core.delegation.backend_windows import (
 from agency_runtime.core.delegation.backend_windows import (
     resume_windows_process as _resume_windows_process,
 )
-from agency_runtime.core.process_argv import prepare_process_argv
+from agency_runtime.core.process_argv import (
+    PreparedProcessArgv,
+    freeze_process_argv,
+    prepare_process_argv,
+    revalidate_process_argv,
+)
 
 # Private aliases are part of the historical test/integration surface. Keep
 # them centralized here while the implementation remains in cohesive modules.
@@ -144,12 +149,17 @@ def _spawn_owned_process(
     input_text: str | None,
 ) -> subprocess.Popen[str]:
     """Launch a process in a new, initially contained process group."""
+    if not isinstance(process_argv, PreparedProcessArgv):
+        raise TypeError("owned process argv must carry a frozen executable identity")
     prefilled_fd = (
         _create_prefilled_stdin_pipe(input_text)
         if _uses_prefilled_windows_stdin(input_text)
         else None
     )
     try:
+        # This is deliberately the final operation before constructing the
+        # child. Discovery and approval are not durable across filesystem races.
+        revalidate_process_argv(process_argv)
         process = subprocess.Popen(
             process_argv,
             cwd=cwd,
@@ -289,13 +299,37 @@ def _run_owned_process(
     stderr: Any,
     timeout: float,
     input_text: str | None = None,
+    forbidden_roots: Sequence[str | os.PathLike[str]] = (),
 ) -> subprocess.CompletedProcess[str]:
     """Run argv in a killable process group, including all descendants.
 
     The orchestration stays in the facade because downstream tests and adapters
     patch its process preparation, Windows resume, and execution seams.
     """
-    process_argv = prepare_process_argv(argv)
+    if isinstance(argv, PreparedProcessArgv) and argv.executable_identities:
+        # A security-sensitive caller may freeze one executable identity once
+        # and reuse it for several bounded probes. Preserve that exact identity
+        # instead of resolving PATH again between approval and invocation.
+        revalidate_process_argv(argv)
+        if forbidden_roots:
+            verified = freeze_process_argv(
+                PreparedProcessArgv(argv, artifact_paths=argv.artifact_paths),
+                forbidden_roots=forbidden_roots,
+            )
+            if verified.executable_identities != argv.executable_identities:
+                raise OSError("pre-frozen executable identity changed")
+        process_argv = argv
+    else:
+        process_argv = prepare_process_argv(argv)
+        if not isinstance(process_argv, PreparedProcessArgv):
+            process_argv = PreparedProcessArgv(
+                process_argv,
+                artifact_paths=(process_argv[0],),
+            )
+        process_argv = freeze_process_argv(
+            process_argv,
+            forbidden_roots=forbidden_roots,
+        )
     process = _spawn_owned_process(
         process_argv,
         cwd=cwd,
@@ -321,12 +355,19 @@ def _run_owned_process(
         _wait_for_owned_process(state, timeout)
         _quiesce_owned_process(state)
         _raise_for_incomplete_process(state, timeout)
-        return subprocess.CompletedProcess(
+        completed = subprocess.CompletedProcess(
             process_argv,
             int(process.returncode or 0),
             stdout=stdout.read(),
             stderr=stderr.read(),
         )
+        # Preserve the identity of the process Agency actually launched. The
+        # completed process object is an internal transport between the owned
+        # launcher and CommandBackend; exposing the PID here lets evidence
+        # callers correlate an observed CLI execution without borrowing a
+        # requested specialist slug or fabricating a host-returned run ID.
+        completed.process_id = int(process.pid)
+        return completed
     except BaseException:
         _cleanup_owned_process(state)
         raise

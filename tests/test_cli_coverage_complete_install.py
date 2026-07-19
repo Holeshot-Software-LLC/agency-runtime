@@ -39,6 +39,21 @@ def config(profile="standard"):
     )
 
 
+def inference_snapshot():
+    return {
+        "schema_version": "agency.dashboard.inference_operations.v1",
+        "configured": False,
+        "required_for_eligible_turns": False,
+        "state": "not_configured",
+        "evidence": "configuration readiness plus recent persisted routing/model receipts",
+        "provider_chain": [],
+        "latest_model_resolution": None,
+        "recent_failures": [],
+        "failure_count": 0,
+        "failures_truncated": False,
+    }
+
+
 def dependencies(**changes):
     emitted = []
     values = {
@@ -49,6 +64,65 @@ def dependencies(**changes):
     }
     values.update(changes)
     return subject.InstallDependencies(**values), emitted
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        ({"config_path": "relative.yaml"}, "config identity"),
+        ({"config_revision": "not-a-revision"}, "config revision"),
+        ({"store_path": ""}, "active Store identity"),
+        ({"environment_overrides": []}, "environment identity"),
+        (
+            {"environment_overrides": {"store.db_path": "WRONG_VARIABLE"}},
+            "Store override",
+        ),
+    ],
+)
+def test_broker_store_identity_rejects_malformed_or_mismatched_fields(
+    tmp_path,
+    monkeypatch,
+    change,
+    message,
+):
+    config_path = (tmp_path / "agency.yaml").resolve()
+    store_path = (tmp_path / "agency.db").resolve()
+    monkeypatch.setattr(subject, "resolve_config_path", lambda: config_path)
+    monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
+    value = {
+        "config_path": str(config_path),
+        "config_revision": "sha256:" + ("a" * 64),
+        "store_path": str(store_path),
+        "desired_store_path": str(store_path),
+        "store_restart_required": False,
+        "environment_overrides": {},
+        **change,
+    }
+
+    with pytest.raises(ValueError, match=message):
+        subject._broker_store_identity(value)
+
+
+def test_broker_store_identity_rejects_store_path_different_from_cli_override(
+    tmp_path,
+    monkeypatch,
+):
+    config_path = (tmp_path / "agency.yaml").resolve()
+    store_path = (tmp_path / "agency.db").resolve()
+    override_path = (tmp_path / "override.db").resolve()
+    monkeypatch.setattr(subject, "resolve_config_path", lambda: config_path)
+    monkeypatch.setenv("AGENCY_DB_PATH", str(override_path))
+    value = {
+        "config_path": str(config_path),
+        "config_revision": "sha256:" + ("a" * 64),
+        "store_path": str(store_path),
+        "desired_store_path": str(store_path),
+        "store_restart_required": False,
+        "environment_overrides": {"store.db_path": "AGENCY_DB_PATH"},
+    }
+
+    with pytest.raises(ValueError, match="Store path"):
+        subject._broker_store_identity(value)
 
 
 def test_install_mode_profile_and_target_validation():
@@ -276,6 +350,7 @@ def test_no_hosts_dashboard_install_and_summary(monkeypatch, capsys):
             profile_name="standard",
             cfg=config(),
             roster_added=2,
+            roster_upgraded=1,
             dashboard_result=result,
             dashboard_opted_out=opted_out,
         )
@@ -328,6 +403,31 @@ def test_host_completion_install_aggregation_and_seed(capsys, monkeypatch):
     assert store.events[-1][0] == "starter_roster_installed"
 
 
+def test_install_control_materialization_is_idempotent_and_host_complete(
+    monkeypatch,
+) -> None:
+    master_calls = []
+    host_calls = []
+
+    class ControlStore:
+        def ensure_host_control_materialized(self, host, *, source):
+            host_calls.append((host, source))
+
+    monkeypatch.setattr(
+        "agency_runtime.core.runtime_control.ensure_runtime_control_materialized",
+        lambda **kwargs: master_calls.append(kwargs),
+    )
+
+    subject._materialize_install_controls(
+        ControlStore(),
+        ["codex", "claude", "codex"],
+    )
+
+    assert master_calls == [{"source": "install"}]
+    assert host_calls == [("claude", "install"), ("codex", "install")]
+    subject._materialize_install_controls(object(), ["codex"])
+
+
 def test_install_result_renderer_success_and_partial_failure(capsys):
     subject._print_install_result(
         "codex",
@@ -367,16 +467,206 @@ def test_install_result_renderer_success_and_partial_failure(capsys):
 
 @pytest.mark.parametrize(
     ("detected", "expected"),
-    [(["codex"], "codex"), ([], None), (["codex", "claude"], None)],
+    [
+        (["codex"], (["codex"], False)),
+        ([], ([], False)),
+        (["claude", "codex", "codex"], (["codex", "claude"], False)),
+    ],
 )
 def test_control_agent_discovery(monkeypatch, capsys, detected, expected):
     import agency_runtime.core.installer as installer
 
     monkeypatch.setattr(installer, "detect_installed_agents", lambda: detected)
-    assert subject._resolve_control_agent(args(), "on") == expected
-    if expected is None:
+    assert subject._resolve_control_agents(args(), "on") == expected
+    if not expected[0]:
         assert capsys.readouterr().out
-    assert subject._resolve_control_agent(args(agent="hermes"), "off") == "hermes"
+    assert subject._resolve_control_agents(args(agent="hermes"), "off") == (
+        ["hermes"],
+        True,
+    )
+
+
+def test_omitted_control_agent_applies_every_detected_host_in_canonical_order(
+    monkeypatch,
+) -> None:
+    import agency_runtime.core.host_control as host_control
+    import agency_runtime.core.installer as installer
+
+    emitted = []
+    transitions = []
+    deps, _ = dependencies(store_factory=lambda _config: object(), emit_json=emitted.append)
+    monkeypatch.setattr(
+        installer,
+        "detect_installed_agents",
+        lambda: ["claude", "codex", "codex"],
+    )
+    monkeypatch.setattr(
+        host_control,
+        "get_runtime_control",
+        lambda _store, host: {"enabled": False, "host": host},
+    )
+
+    def set_control(_store, host, **kwargs):
+        transitions.append((host, kwargs))
+        return {"enabled": True, "updated_at": "now", "source": "cli"}
+
+    monkeypatch.setattr(host_control, "set_runtime_control", set_control)
+
+    assert subject._cmd_host_control(args(json=True), enabled=True, dependencies=deps) == 0
+    assert [host for host, _kwargs in transitions] == ["codex", "claude"]
+    assert all(kwargs["expected_generation"] == 0 for _host, kwargs in transitions)
+    assert emitted == [
+        {
+            "ok": True,
+            "complete": True,
+            "action": "on",
+            "enabled": True,
+            "host_count": 2,
+            "hosts": [
+                {
+                    "ok": True,
+                    "exit_code": 0,
+                    "host": "codex",
+                    "enabled": True,
+                    "runtime_enabled": True,
+                    "previous_runtime_enabled": False,
+                    "generation": 0,
+                    "previous_generation": 0,
+                    "updated_at": "now",
+                    "source": "cli",
+                    "dry_run": False,
+                    "native_lifecycle": "persistent soft control",
+                    "restart_required": False,
+                },
+                {
+                    "ok": True,
+                    "exit_code": 0,
+                    "host": "claude",
+                    "enabled": True,
+                    "runtime_enabled": True,
+                    "previous_runtime_enabled": False,
+                    "generation": 0,
+                    "previous_generation": 0,
+                    "updated_at": "now",
+                    "source": "cli",
+                    "dry_run": False,
+                    "native_lifecycle": "persistent soft control",
+                    "restart_required": False,
+                },
+            ],
+            "exit_code": 0,
+        }
+    ]
+
+
+def test_omitted_native_control_attempts_all_hosts_and_aggregates_failure(
+    monkeypatch,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    emitted = []
+    calls = []
+    deps, _ = dependencies(
+        store_factory=lambda _config: (_ for _ in ()).throw(
+            AssertionError("native control must not open the soft-control store")
+        ),
+        emit_json=emitted.append,
+    )
+    monkeypatch.setattr(installer, "detect_installed_agents", lambda: ["claude", "codex"])
+
+    def toggle(host, **_kwargs):
+        calls.append(host)
+        if host == "codex":
+            return {"ok": False, "exit_code": 7, "error": "codex failed"}
+        return {"ok": True, "exit_code": 0, "native_lifecycle": "native"}
+
+    monkeypatch.setattr(installer, "toggle_agency", toggle)
+
+    assert (
+        subject._cmd_host_control(
+            args(native=True, json=True),
+            enabled=False,
+            dependencies=deps,
+        )
+        == 1
+    )
+    assert calls == ["codex", "claude"]
+    assert emitted[0]["ok"] is False
+    assert emitted[0]["exit_code"] == 1
+    assert [result["host"] for result in emitted[0]["hosts"]] == ["codex", "claude"]
+    assert [result["ok"] for result in emitted[0]["hosts"]] == [False, True]
+
+
+def test_omitted_control_renders_each_host_and_summary(monkeypatch, capsys) -> None:
+    import agency_runtime.core.host_control as host_control
+    import agency_runtime.core.installer as installer
+
+    deps, _ = dependencies(store_factory=lambda _config: object())
+    monkeypatch.setattr(installer, "detect_installed_agents", lambda: ["claude", "codex"])
+    monkeypatch.setattr(
+        host_control,
+        "get_runtime_control",
+        lambda _store, host: {"enabled": host == "codex"},
+    )
+
+    assert (
+        subject._cmd_host_control(
+            args(dry_run=True),
+            enabled=False,
+            dependencies=deps,
+        )
+        == 0
+    )
+    assert capsys.readouterr().out == (
+        "DRY RUN — would disable for codex through persistent soft control\n"
+        "DRY RUN — would disable for claude through persistent soft control\n"
+        "   Completed 2/2 hosts.\n"
+    )
+
+
+def test_omitted_native_control_text_names_every_partial_result(monkeypatch, capsys) -> None:
+    import agency_runtime.core.installer as installer
+
+    deps, _ = dependencies()
+    monkeypatch.setattr(installer, "detect_installed_agents", lambda: ["claude", "codex"])
+
+    def toggle(host, **_kwargs):
+        if host == "codex":
+            return {"ok": False, "exit_code": 7, "error": "native failure"}
+        return {"ok": True, "exit_code": 0, "native_lifecycle": "native"}
+
+    monkeypatch.setattr(installer, "toggle_agency", toggle)
+
+    assert (
+        subject._cmd_host_control(
+            args(native=True),
+            enabled=False,
+            dependencies=deps,
+        )
+        == 1
+    )
+    assert capsys.readouterr().out == (
+        "❌ codex: native failure\n"
+        "⏸️  Agency Runtime disabled for claude through native\n"
+        "   Completed 1/2 hosts.\n"
+    )
+
+
+def test_omitted_control_with_no_detection_preserves_nonzero_guidance(
+    monkeypatch,
+    capsys,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    deps, _ = dependencies(
+        store_factory=lambda _config: (_ for _ in ()).throw(
+            AssertionError("no-detection control must not open the store")
+        )
+    )
+    monkeypatch.setattr(installer, "detect_installed_agents", lambda: [])
+
+    assert subject._cmd_host_control(args(), enabled=True, dependencies=deps) == 1
+    assert capsys.readouterr().out == ("No agent hosts detected. Use: agency on --agent hermes\n")
 
 
 def test_host_control_soft_native_json_and_failure(monkeypatch, capsys):
@@ -476,8 +766,21 @@ def test_on_off_status_and_canary_wrappers(tmp_path, monkeypatch, capsys):
         },
         {"host": "hermes", "runtime_enabled": True, "registered": None, "effective_enabled": None},
     ]
-    monkeypatch.setattr(host_control, "inspect_all_host_statuses", lambda _store: statuses)
-    monkeypatch.setattr(host_control, "inspect_host_status", lambda _store, _host: statuses[0])
+    monkeypatch.setattr(
+        host_control,
+        "inspect_all_host_statuses",
+        lambda _store, *, global_enabled=None: statuses,
+    )
+    monkeypatch.setattr(
+        host_control,
+        "inspect_host_status",
+        lambda _store, _host, *, global_enabled=None: statuses[0],
+    )
+    monkeypatch.setattr(
+        subject,
+        "_direct_inference_snapshot",
+        lambda _store, _dependencies: inference_snapshot(),
+    )
     assert subject.cmd_status(args(), dependencies=deps) == 0
     output = capsys.readouterr().out
     assert "native registered; active" in output
@@ -487,6 +790,7 @@ def test_on_off_status_and_canary_wrappers(tmp_path, monkeypatch, capsys):
     assert "unverified; unverified" in output
     assert subject.cmd_status(args(agent="codex", json=True), dependencies=deps) == 0
     assert calls[-1]["hosts"] == [statuses[0]]
+    assert calls[-1]["inference"] == inference_snapshot()
 
     report = {"ready": True, "canary_passed": False}
     monkeypatch.setattr(canary, "run_canary", lambda *_a, **_kw: report)

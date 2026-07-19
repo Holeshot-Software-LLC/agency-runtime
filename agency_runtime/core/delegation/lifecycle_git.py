@@ -3,22 +3,49 @@
 from __future__ import annotations
 
 import os
+import secrets
+import stat
 import subprocess
-import tempfile
-import uuid
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TypedDict
 
+from agency_runtime.core.configuration_persistence import config_namespace_is_trusted
 from agency_runtime.core.delegation.backends import (
     BoundedProcessResult,
     run_bounded_process,
 )
 from agency_runtime.core.delegation.lifecycle_graph import validate_unique_unit_ids
-from agency_runtime.core.delegation.lifecycle_types import WorktreeInfo, WorkUnit
+from agency_runtime.core.delegation.lifecycle_types import (
+    WorktreeInfo,
+    WorktreePathIdentity,
+    WorkUnit,
+)
+from agency_runtime.core.exception_notes import add_exception_note
+from agency_runtime.core.private_paths import (
+    PrivateDirectoryIdentity,
+    allocate_host_private_directory,
+    allocate_private_directory,
+    ensure_private_directory,
+    private_runtime_directory,
+    remove_private_directory,
+    validate_private_directory,
+)
+from agency_runtime.core.process_argv import resolve_executable_path
+from agency_runtime.core.store.security import (
+    assert_storage_parent_chain,
+    is_link_or_reparse_point,
+    metadata_is_link_or_reparse_point,
+    restrict_path_permissions,
+    restrict_windows_acl,
+    storage_parent_is_trusted,
+)
 
 _MAX_GIT_OUTPUT_CHARS = 64 * 1024
+_MAX_WINDOWS_WORKTREE_PATH_CHARS = 240
+_IS_WINDOWS = os.name == "nt"
 _SAFE_CALLER_CONFIG = {
     "commit.gpgsign": {"false"},
     "core.hookspath": {""},
@@ -28,6 +55,7 @@ _SAFE_CALLER_CONFIG = {
 _SAFE_GIT_CONFIG = (
     "core.hooksPath=",
     "core.fsmonitor=false",
+    "core.longpaths=true",
     "core.attributesFile=",
     "core.pager=",
     "credential.interactive=never",
@@ -76,6 +104,258 @@ class RunGitFunc(Protocol):
 GitRootFunc = Callable[[Path], Path | None]
 CurrentBranchFunc = Callable[[Path], str | None]
 HeadShaFunc = Callable[[Path, str], str]
+
+
+@dataclass(frozen=True, slots=True)
+class _AllocatedRunRoot:
+    path: Path
+    token: str
+    root_identity: WorktreePathIdentity
+    parent_identity: WorktreePathIdentity
+    private_identity: PrivateDirectoryIdentity | None = None
+    repo_scoped: bool = False
+    warning: str = ""
+
+
+def _absolute(path: Path) -> Path:
+    return Path(os.path.abspath(path.expanduser()))
+
+
+def _capture_directory_identity(path: Path) -> WorktreePathIdentity:
+    target = _absolute(path)
+    metadata = os.lstat(target)
+    inode = int(getattr(metadata, "st_ino", 0) or 0)
+    if (
+        metadata_is_link_or_reparse_point(metadata)
+        or not stat.S_ISDIR(metadata.st_mode)
+        or inode <= 0
+    ):
+        raise PermissionError("delegation directory identity is unavailable")
+    return WorktreePathIdentity(target, int(metadata.st_dev), inode)
+
+
+def _directory_identity_is_current(identity: WorktreePathIdentity) -> bool:
+    try:
+        metadata = os.lstat(identity.path)
+    except OSError:
+        return False
+    return bool(
+        not metadata_is_link_or_reparse_point(metadata)
+        and stat.S_ISDIR(metadata.st_mode)
+        and int(metadata.st_dev) == identity.device
+        and int(getattr(metadata, "st_ino", 0) or 0) == identity.inode
+    )
+
+
+def _require_directory_identity(
+    identity: WorktreePathIdentity,
+    *,
+    label: str,
+) -> None:
+    if not _directory_identity_is_current(identity):
+        raise PermissionError(f"{label} was replaced during delegation")
+
+
+def _require_private_identity(identity: PrivateDirectoryIdentity | None) -> None:
+    if identity is None:
+        return
+    if identity.guard is None and identity.parent_guard is None:
+        validate_private_directory(identity.path)
+        if not _directory_identity_is_current(_identity_from_private(identity)):
+            raise PermissionError("private delegation worktree root was replaced")
+        return
+    if identity.guard is None or identity.parent_guard is None:
+        raise PermissionError("delegation worktree root guard receipt is incomplete")
+    if not identity.guard.is_current():
+        raise PermissionError("host-attested delegation worktree root was replaced")
+    if not identity.parent_guard.is_current():
+        raise PermissionError("host-attested Codex task root was replaced")
+
+
+def _windows_path_error(path: Path) -> str | None:
+    if not _IS_WINDOWS:
+        return None
+    length = len(str(_absolute(path)))
+    if length < _MAX_WINDOWS_WORKTREE_PATH_CHARS:
+        return None
+    return (
+        "worktree path is too long for portable Git on Windows "
+        f"({length} characters; limit {_MAX_WINDOWS_WORKTREE_PATH_CHARS - 1}); "
+        "configure a shorter explicit worktree_root"
+    )
+
+
+def _identity_from_private(identity: PrivateDirectoryIdentity) -> WorktreePathIdentity:
+    return WorktreePathIdentity(
+        _absolute(identity.path),
+        int(identity.device),
+        int(identity.inode),
+    )
+
+
+def _allocate_private_run_root(private_root: Path) -> _AllocatedRunRoot:
+    parent_identity = _capture_directory_identity(private_root)
+    private_identity = allocate_private_directory(private_root, prefix="run")
+    root_identity = _identity_from_private(private_identity)
+    try:
+        _require_directory_identity(parent_identity, label="private worktree parent")
+        _require_directory_identity(root_identity, label="private worktree root")
+    except BaseException as exc:
+        try:
+            remove_private_directory(private_identity)
+        except Exception as cleanup_error:
+            add_exception_note(
+                exc,
+                f"private worktree root rollback failed: {cleanup_error}",
+            )
+        raise
+    token = root_identity.path.name.removeprefix("run-").replace("-", "")
+    return _AllocatedRunRoot(
+        path=root_identity.path,
+        token=token,
+        root_identity=root_identity,
+        parent_identity=parent_identity,
+        private_identity=private_identity,
+    )
+
+
+def _allocate_host_run_root(*, fallback_error: BaseException) -> _AllocatedRunRoot:
+    """Allocate one Codex-attested Windows run root outside the repository."""
+
+    private_identity = allocate_host_private_directory(prefix="worktrees")
+    if private_identity.parent_guard is None:
+        if private_identity.guard is not None:
+            private_identity.guard.close()
+        raise PermissionError("host-attested worktree root receipt is incomplete")
+    root_identity = _identity_from_private(private_identity)
+    parent_identity = _capture_directory_identity(private_identity.parent_guard.path)
+    return _AllocatedRunRoot(
+        path=root_identity.path,
+        token=secrets.token_hex(16),
+        root_identity=root_identity,
+        parent_identity=parent_identity,
+        private_identity=private_identity,
+        warning=(
+            "private runtime worktree storage was unavailable; using the exact "
+            "host-attested Codex task root for this run "
+            f"({type(fallback_error).__name__})"
+        ),
+    )
+
+
+def _allocate_repository_run_root(
+    repo: Path,
+    *,
+    fallback_error: BaseException,
+) -> _AllocatedRunRoot:
+    """Allocate one unpredictable run root inside an explicitly scoped repository."""
+
+    repository = _absolute(repo)
+    assert_storage_parent_chain(repository, allow_missing=False)
+    if not config_namespace_is_trusted(
+        repository / ".agency-worktree-namespace-probe",
+        is_windows=_IS_WINDOWS,
+    ):
+        raise PermissionError(
+            "repository namespace permits cross-account worktree substitution; "
+            "configure an owner-controlled explicit worktree_root"
+        )
+    parent_identity = _capture_directory_identity(repository)
+    for _attempt in range(100):
+        token = secrets.token_hex(16)
+        candidate = repository / f".agency-worktrees-{token}"
+        _require_directory_identity(parent_identity, label="delegation repository")
+        length_error = _windows_path_error(candidate / f"w-{'0' * 24}")
+        if length_error is not None:
+            raise OSError(length_error)
+        try:
+            os.mkdir(candidate, 0o777 if _IS_WINDOWS else stat.S_IRWXU)
+        except FileExistsError:
+            continue
+        except OSError as exc:
+            raise PermissionError(
+                "could not allocate a repository-scoped delegation worktree root"
+            ) from exc
+
+        root_identity: WorktreePathIdentity | None = None
+        try:
+            root_identity = _capture_directory_identity(candidate)
+            restrict_path_permissions(
+                candidate,
+                directory=True,
+                is_windows=_IS_WINDOWS,
+                link_checker=is_link_or_reparse_point,
+                windows_acl=lambda path, *, directory: restrict_windows_acl(
+                    path,
+                    directory=directory,
+                    is_windows=_IS_WINDOWS,
+                ),
+            )
+            if not storage_parent_is_trusted(
+                candidate,
+                is_windows=_IS_WINDOWS,
+                final_parent=True,
+            ):
+                raise PermissionError("repository-scoped delegation worktree root is not private")
+            _require_directory_identity(parent_identity, label="delegation repository")
+            _require_directory_identity(root_identity, label="delegation worktree root")
+        except BaseException as exc:
+            if (
+                root_identity is not None
+                and _directory_identity_is_current(parent_identity)
+                and _directory_identity_is_current(root_identity)
+            ):
+                try:
+                    os.rmdir(root_identity.path)
+                except OSError as cleanup_error:
+                    add_exception_note(
+                        exc,
+                        f"delegation root rollback failed: {cleanup_error}",
+                    )
+            raise
+        return _AllocatedRunRoot(
+            path=root_identity.path,
+            token=token,
+            root_identity=root_identity,
+            parent_identity=parent_identity,
+            repo_scoped=True,
+            warning=(
+                "private runtime worktree storage was unavailable; using an exclusive "
+                "repository-scoped worktree root for this run "
+                f"({type(fallback_error).__name__})"
+            ),
+        )
+    raise RuntimeError("could not allocate a unique repository-scoped worktree root")
+
+
+def _worktree_component(allocation: _AllocatedRunRoot, unit: WorkUnit) -> str:
+    if not allocation.repo_scoped:
+        return unit.id
+    return f"w-{secrets.token_hex(12)}"
+
+
+def _base_status_args(
+    repo: Path,
+    allocation: _AllocatedRunRoot | None,
+) -> list[str]:
+    if allocation is None or not allocation.repo_scoped:
+        return ["status", "--porcelain"]
+    _require_directory_identity(allocation.parent_identity, label="delegation repository")
+    _require_directory_identity(allocation.root_identity, label="delegation worktree root")
+    try:
+        relative = allocation.path.relative_to(_absolute(repo))
+    except ValueError as exc:
+        raise PermissionError("repository-scoped worktree root escaped its repository") from exc
+    if len(relative.parts) != 1 or relative.name != allocation.path.name:
+        raise PermissionError("repository-scoped worktree root is not a direct child")
+    return [
+        "status",
+        "--porcelain",
+        "--untracked-files=normal",
+        "--",
+        ".",
+        f":(exclude){relative.as_posix()}",
+    ]
 
 
 def run_git(
@@ -138,6 +418,24 @@ def _invoke_git(
     timeout: int,
 ) -> subprocess.CompletedProcess[str]:
     argv = _safe_git_argv(args)
+    try:
+        argv[0] = resolve_executable_path(
+            "git",
+            search_path=os.environ.get("PATH", ""),
+            current_directory=repo,
+        )
+    except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
+        return _git_refusal(f"Git operation refused: trusted executable is unavailable: {exc}")
+    try:
+        Path(argv[0]).resolve(strict=True).relative_to(repo.resolve(strict=True))
+    except ValueError:
+        pass
+    except (OSError, RuntimeError) as exc:
+        return _git_refusal(f"Git operation refused: executable identity failed: {exc}")
+    else:
+        return _git_refusal(
+            "Git operation refused: executable resolved inside the target repository"
+        )
     result = run_bounded_process(
         argv,
         cwd=str(repo),
@@ -281,8 +579,21 @@ def _unavailable_worktree(
     repo: Path,
     path: Path,
     error: str,
+    *,
+    allocation: _AllocatedRunRoot | None = None,
 ) -> WorktreeInfo:
-    info = WorktreeInfo(unit.id, repo, path, "", "", "")
+    info = WorktreeInfo(
+        unit.id,
+        repo,
+        path,
+        "",
+        "",
+        "",
+        run_root_identity=allocation.root_identity if allocation else None,
+        run_parent_identity=allocation.parent_identity if allocation else None,
+        run_private_identity=allocation.private_identity if allocation else None,
+        repo_scoped_root=bool(allocation and allocation.repo_scoped),
+    )
     info.errors.append(error)
     return info
 
@@ -323,6 +634,7 @@ def _inspect_repository_for_provisioning(
     repo: Path,
     *,
     base_branch: str | None,
+    allocation: _AllocatedRunRoot | None = None,
     run_git_func: RunGitFunc,
     current_branch_func: CurrentBranchFunc,
     head_sha_func: HeadShaFunc,
@@ -332,7 +644,11 @@ def _inspect_repository_for_provisioning(
     base_sha = head_sha_func(repo, base)
     if not base_sha:
         raise RuntimeError(f"could not resolve base ref {base!r} to a commit")
-    status = run_git_func(repo, ["status", "--porcelain"], timeout=30)
+    status = run_git_func(
+        repo,
+        _base_status_args(repo, allocation),
+        timeout=30,
+    )
     dirty = status.returncode != 0 or bool(status.stdout.strip())
     warnings = ["could not prove that the base worktree is clean"] if status.returncode != 0 else []
     return base, base_sha, dirty, warnings
@@ -349,9 +665,11 @@ def _provision_unit_worktree(
     dirty: bool,
     warnings: Sequence[str],
     run_git_func: RunGitFunc,
+    allocation: _AllocatedRunRoot | None = None,
+    path_component: str | None = None,
 ) -> WorktreeInfo:
     branch = f"delegation/{unit.id}-{run_token[:12]}"
-    path = run_root / unit.id
+    path = run_root / (path_component or unit.id)
     info = WorktreeInfo(
         unit.id,
         repo,
@@ -361,8 +679,36 @@ def _provision_unit_worktree(
         base_sha,
         dirty_repo=dirty,
         warnings=list(warnings),
+        run_root_identity=allocation.root_identity if allocation else None,
+        run_parent_identity=allocation.parent_identity if allocation else None,
+        run_private_identity=allocation.private_identity if allocation else None,
+        repo_scoped_root=bool(allocation and allocation.repo_scoped),
     )
-    if path.exists():
+    if allocation and allocation.warning:
+        info.warnings.append(allocation.warning)
+    length_error = _windows_path_error(path)
+    if length_error is not None:
+        info.errors.append(length_error)
+        return info
+    if allocation is not None:
+        try:
+            _require_private_identity(allocation.private_identity)
+            _require_directory_identity(
+                allocation.parent_identity,
+                label="delegation worktree parent",
+            )
+            _require_directory_identity(
+                allocation.root_identity,
+                label="delegation worktree root",
+            )
+        except PermissionError as exc:
+            info.errors.append(str(exc))
+            return info
+    try:
+        os.lstat(path)
+    except FileNotFoundError:
+        pass
+    else:
         info.errors.append(f"unique worktree path unexpectedly exists: {path}")
         return info
     try:
@@ -381,7 +727,20 @@ def _provision_unit_worktree(
             ],
         )
         if result.returncode == 0:
-            info.created = True
+            if allocation is None:
+                info.created = True
+            else:
+                _require_private_identity(allocation.private_identity)
+                _require_directory_identity(
+                    allocation.parent_identity,
+                    label="delegation worktree parent",
+                )
+                _require_directory_identity(
+                    allocation.root_identity,
+                    label="delegation worktree root",
+                )
+                info.worktree_identity = _capture_directory_identity(path)
+                info.created = True
         else:
             info.errors.append(_git_error(result, "git worktree add failed"))
     except Exception as exc:
@@ -399,11 +758,13 @@ def _provision_repository_worktrees(
     run_git_func: RunGitFunc,
     current_branch_func: CurrentBranchFunc,
     head_sha_func: HeadShaFunc,
+    allocation: _AllocatedRunRoot | None = None,
 ) -> dict[str, WorktreeInfo]:
     try:
         base, base_sha, dirty, warnings = _inspect_repository_for_provisioning(
             repo,
             base_branch=base_branch,
+            allocation=allocation,
             run_git_func=run_git_func,
             current_branch_func=current_branch_func,
             head_sha_func=head_sha_func,
@@ -411,7 +772,13 @@ def _provision_repository_worktrees(
     except Exception as exc:
         error = f"could not inspect Git repository: {type(exc).__name__}: {exc}"
         return {
-            unit.id: _unavailable_worktree(unit, repo, run_root / unit.id, error)
+            unit.id: _unavailable_worktree(
+                unit,
+                repo,
+                run_root / unit.id,
+                error,
+                allocation=allocation,
+            )
             for unit in repo_units
         }
     return {
@@ -425,6 +792,10 @@ def _provision_repository_worktrees(
             dirty=dirty,
             warnings=warnings,
             run_git_func=run_git_func,
+            allocation=allocation,
+            path_component=(
+                _worktree_component(allocation, unit) if allocation is not None else None
+            ),
         )
         for unit in repo_units
     }
@@ -452,22 +823,85 @@ def provision_worktrees(
     if not by_repo:
         return worktrees
 
-    worktree_root.mkdir(parents=True, exist_ok=True)
-    run_root = Path(tempfile.mkdtemp(prefix="run-", dir=str(worktree_root)))
-    run_token = run_root.name.removeprefix("run-").replace("-", "")
-    run_token = run_token or uuid.uuid4().hex
+    default_root = _absolute(Path.home() / ".agency-runtime" / "worktrees")
+    lexical_root = _absolute(worktree_root)
+    shared_allocation: _AllocatedRunRoot | None = None
+    fallback_error: BaseException | None = None
+    host_fallback_error: BaseException | None = None
+    if lexical_root == default_root:
+        try:
+            shared_allocation = _allocate_private_run_root(private_runtime_directory("worktrees"))
+        except (OSError, PermissionError) as exc:
+            fallback_error = exc
+            if _IS_WINDOWS:
+                try:
+                    shared_allocation = _allocate_host_run_root(fallback_error=exc)
+                except (OSError, PermissionError, RuntimeError) as host_exc:
+                    # A restricted Windows host must use an exact host-attested
+                    # scratch root. Never fall through to an AU-writable repo.
+                    host_fallback_error = host_exc
+                    shared_allocation = None
+    else:
+        try:
+            os.lstat(lexical_root)
+        except FileNotFoundError:
+            private_root = ensure_private_directory(
+                lexical_root,
+                product_owned=False,
+            )
+        else:
+            private_root = validate_private_directory(lexical_root)
+        shared_allocation = _allocate_private_run_root(private_root)
 
     for repo, repo_units in by_repo.items():
+        allocation = shared_allocation
+        if allocation is None:
+            if fallback_error is None:
+                raise RuntimeError("private worktree allocation returned no receipt")
+            try:
+                if _IS_WINDOWS:
+                    raise PermissionError(
+                        "an exact host-attested Windows worktree root is unavailable"
+                        + (
+                            "; host allocation failed with "
+                            f"{type(host_fallback_error).__name__}: {host_fallback_error}"
+                            if host_fallback_error is not None
+                            else ""
+                        )
+                    )
+                allocation = _allocate_repository_run_root(
+                    repo,
+                    fallback_error=fallback_error,
+                )
+            except (OSError, PermissionError, RuntimeError) as exc:
+                error = (
+                    "secure worktree storage is unavailable: private runtime root failed "
+                    f"with {type(fallback_error).__name__}; secondary secure fallback "
+                    f"failed with {type(exc).__name__}: {exc}"
+                )
+                worktrees.update(
+                    {
+                        unit.id: _unavailable_worktree(
+                            unit,
+                            repo,
+                            repo / f"unavailable-{unit.id}",
+                            error,
+                        )
+                        for unit in repo_units
+                    }
+                )
+                continue
         worktrees.update(
             _provision_repository_worktrees(
                 repo,
                 repo_units,
                 base_branch=base_branch,
-                run_root=run_root,
-                run_token=run_token,
+                run_root=allocation.path,
+                run_token=allocation.token,
                 run_git_func=run_git_func,
                 current_branch_func=current_branch_func,
                 head_sha_func=head_sha_func,
+                allocation=allocation,
             )
         )
     return worktrees
@@ -475,6 +909,43 @@ def provision_worktrees(
 
 def _git_error(result: subprocess.CompletedProcess[str], fallback: str) -> str:
     return result.stderr.strip() or result.stdout.strip() or fallback
+
+
+def _allocation_for_info(info: WorktreeInfo) -> _AllocatedRunRoot | None:
+    if info.run_root_identity is None or info.run_parent_identity is None:
+        return None
+    return _AllocatedRunRoot(
+        path=info.run_root_identity.path,
+        token="",
+        root_identity=info.run_root_identity,
+        parent_identity=info.run_parent_identity,
+        private_identity=info.run_private_identity,
+        repo_scoped=info.repo_scoped_root,
+    )
+
+
+def _require_run_root_identity(info: WorktreeInfo) -> None:
+    allocation = _allocation_for_info(info)
+    if allocation is None:
+        return
+    _require_private_identity(allocation.private_identity)
+    _require_directory_identity(
+        allocation.parent_identity,
+        label="delegation worktree parent",
+    )
+    _require_directory_identity(
+        allocation.root_identity,
+        label="delegation worktree root",
+    )
+
+
+def _require_worktree_info_identity(info: WorktreeInfo) -> None:
+    _require_run_root_identity(info)
+    if info.worktree_identity is not None:
+        _require_directory_identity(
+            info.worktree_identity,
+            label="delegation worktree",
+        )
 
 
 def merge_predecessor_work(
@@ -488,12 +959,20 @@ def merge_predecessor_work(
     target = worktrees.get(unit_id)
     if target is None or not target.created:
         return None
+    try:
+        _require_worktree_info_identity(target)
+    except PermissionError as exc:
+        return str(exc)
     for predecessor_id in sorted(predecessor_ids):
         predecessor = worktrees.get(predecessor_id)
         if predecessor is None or not predecessor.created:
             continue
         if predecessor.repo_path.resolve() != target.repo_path.resolve():
             continue
+        try:
+            _require_worktree_info_identity(predecessor)
+        except PermissionError as exc:
+            return f"could not apply predecessor {predecessor_id!r}: {exc}"
         merge = run_git_func(
             target.path,
             [
@@ -521,14 +1000,26 @@ def commit_successful_worktree(
     run_git_func: RunGitFunc,
 ) -> str | None:
     """Commit successful uncommitted worker edits so they cannot be discarded."""
+    try:
+        _require_worktree_info_identity(info)
+    except PermissionError as exc:
+        return str(exc)
     status = run_git_func(info.path, ["status", "--porcelain"], timeout=30)
     if status.returncode != 0:
         return _git_error(status, "could not inspect worktree changes")
     if not status.stdout.strip():
         return None
+    try:
+        _require_worktree_info_identity(info)
+    except PermissionError as exc:
+        return str(exc)
     staged = run_git_func(info.path, ["add", "--all"], timeout=60)
     if staged.returncode != 0:
         return _git_error(staged, "could not stage worker changes")
+    try:
+        _require_worktree_info_identity(info)
+    except PermissionError as exc:
+        return str(exc)
     committed = run_git_func(
         info.path,
         [
@@ -585,9 +1076,14 @@ def _merge_safety(
     head_sha_func: HeadShaFunc,
 ) -> tuple[bool, str]:
     try:
+        _require_worktree_info_identity(info)
         current = current_branch_func(info.repo_path)
         current_head = head_sha_func(info.repo_path, "HEAD")
-        status = run_git_func(info.repo_path, ["status", "--porcelain"], timeout=30)
+        status = run_git_func(
+            info.repo_path,
+            _base_status_args(info.repo_path, _allocation_for_info(info)),
+            timeout=30,
+        )
     except Exception as exc:
         return False, f"could not inspect base worktree: {type(exc).__name__}: {exc}"
 
@@ -687,6 +1183,7 @@ def _worktree_is_clean_for_removal(
     run_git_func: RunGitFunc,
 ) -> bool:
     try:
+        _require_worktree_info_identity(info)
         dirty = run_git_func(info.path, ["status", "--porcelain"], timeout=30)
     except Exception as exc:
         record["errors"].append(
@@ -743,6 +1240,7 @@ def _remove_clean_worktree(
     run_git_func: RunGitFunc,
 ) -> None:
     try:
+        _require_worktree_info_identity(info)
         remove = run_git_func(info.repo_path, ["worktree", "remove", str(info.path)])
     except Exception as exc:
         record["errors"].append(f"worktree remove failed: {type(exc).__name__}: {exc}")
@@ -756,6 +1254,27 @@ def _remove_clean_worktree(
         _preserve_worktree(
             record,
             "worktree removal failed; path preserved for manual recovery",
+        )
+        return
+    try:
+        _require_run_root_identity(info)
+        os.lstat(info.path)
+    except FileNotFoundError:
+        pass
+    except Exception as exc:
+        record["errors"].append(
+            f"worktree removal identity check failed: {type(exc).__name__}: {exc}"
+        )
+        _preserve_worktree(
+            record,
+            "worktree cleanup could not prove the exact path was removed",
+        )
+        return
+    else:
+        record["errors"].append("worktree remove reported success but the path still exists")
+        _preserve_worktree(
+            record,
+            "worktree cleanup could not prove the exact path was removed",
         )
         return
     record["removed"] = True
@@ -822,22 +1341,151 @@ def cleanup_worktrees(
             current_branch_func=current_branch_func,
             head_sha_func=head_sha_func,
         )
-    _remove_empty_run_roots(worktrees)
+    _remove_empty_run_roots(worktrees, cleanup)
     return cleanup
 
 
-def _remove_empty_run_roots(worktrees: Mapping[str, WorktreeInfo]) -> None:
+def _directory_is_empty(path: Path) -> bool:
+    with os.scandir(path) as entries:
+        return next(entries, None) is None
+
+
+def _restore_quarantined_run_root(
+    quarantine: WorktreePathIdentity,
+    original: WorktreePathIdentity,
+    parent: WorktreePathIdentity,
+) -> None:
+    _require_directory_identity(parent, label="delegation worktree parent")
+    _require_directory_identity(quarantine, label="quarantined delegation worktree root")
+    try:
+        os.lstat(original.path)
+    except FileNotFoundError:
+        os.rename(quarantine.path, original.path)
+    else:
+        raise PermissionError("refusing to restore a replaced delegation worktree root")
+    _require_directory_identity(original, label="restored delegation worktree root")
+
+
+def _remove_empty_run_root(
+    root: WorktreePathIdentity,
+    parent: WorktreePathIdentity,
+) -> bool:
+    """Quarantine and remove one unchanged, empty run root."""
+
+    _require_directory_identity(parent, label="delegation worktree parent")
+    _require_directory_identity(root, label="delegation worktree root")
+    if not _directory_is_empty(root.path):
+        return False
+    for _attempt in range(100):
+        quarantine_path = parent.path / f".agency-cleanup-{secrets.token_hex(16)}"
+        try:
+            os.lstat(quarantine_path)
+        except FileNotFoundError:
+            pass
+        else:
+            continue
+        try:
+            os.rename(root.path, quarantine_path)
+        except FileExistsError:
+            continue
+        break
+    else:
+        raise RuntimeError("could not allocate a delegation cleanup quarantine")
+
+    quarantine = WorktreePathIdentity(
+        quarantine_path,
+        root.device,
+        root.inode,
+    )
+    try:
+        _require_directory_identity(parent, label="delegation worktree parent")
+        _require_directory_identity(
+            quarantine,
+            label="quarantined delegation worktree root",
+        )
+        if not _directory_is_empty(quarantine.path):
+            _restore_quarantined_run_root(quarantine, root, parent)
+            return False
+        os.rmdir(quarantine.path)
+        try:
+            os.lstat(root.path)
+        except FileNotFoundError:
+            pass
+        else:
+            raise PermissionError("delegation worktree root was replaced during quarantine cleanup")
+    except BaseException as exc:
+        try:
+            if _directory_identity_is_current(quarantine):
+                _restore_quarantined_run_root(quarantine, root, parent)
+        except Exception as restore_error:
+            add_exception_note(
+                exc,
+                f"delegation quarantine restore failed: {restore_error}",
+            )
+        raise
+    return True
+
+
+def _record_run_root_cleanup_error(
+    run_path: Path,
+    worktrees: Mapping[str, WorktreeInfo],
+    cleanup: dict[str, CleanupRecord],
+    error: BaseException,
+) -> None:
+    message = (
+        "delegation run root was preserved because exact cleanup failed: "
+        f"{type(error).__name__}: {error}"
+    )
+    for unit_id, info in worktrees.items():
+        if info.run_root_identity is None or info.run_root_identity.path != run_path:
+            continue
+        record = cleanup.get(unit_id)
+        if record is not None:
+            record["errors"].append(message)
+
+
+def _remove_empty_run_roots(
+    worktrees: Mapping[str, WorktreeInfo],
+    cleanup: dict[str, CleanupRecord] | None = None,
+) -> None:
     """Remove only empty lifecycle-owned run directories after cleanup."""
-    candidates = {
+    cleanup_records = cleanup or {}
+    identities = {
+        info.run_root_identity.path: (
+            info.run_root_identity,
+            info.run_parent_identity,
+            info.run_private_identity,
+        )
+        for info in worktrees.values()
+        if info.run_root_identity is not None and info.run_parent_identity is not None
+    }
+    for run_path, (root, parent, private_identity) in identities.items():
+        try:
+            if private_identity is not None:
+                if _directory_is_empty(root.path):
+                    remove_private_directory(private_identity)
+            else:
+                _remove_empty_run_root(root, parent)
+        except (OSError, PermissionError, RuntimeError) as exc:
+            _record_run_root_cleanup_error(
+                run_path,
+                worktrees,
+                cleanup_records,
+                exc,
+            )
+
+    legacy_candidates = {
         info.path.parent
         for info in worktrees.values()
-        if info.created and info.path.parent.name.startswith("run-")
+        if info.run_root_identity is None
+        and info.created
+        and info.path.parent.name.startswith("run-")
     }
-    for candidate in candidates:
+    for candidate in legacy_candidates:
         try:
+            validate_private_directory(candidate)
             candidate.rmdir()
         except OSError:
-            # A preserved/foreign path or concurrent run still owns content.
             continue
 
 

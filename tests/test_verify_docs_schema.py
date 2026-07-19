@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -283,3 +284,56 @@ def test_decision_relation_helper_reports_unknown_and_nonreciprocal_links() -> N
         f"{broken.relative}: ADR-0002 does not reciprocate supersedes=ADR-0003",
     ]
     assert graph["ADR-0003"] == {"ADR-0001"}
+
+
+def test_legal_notice_can_preserve_source_name_without_cross_repo_linkage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    path = tmp_path / "THIRD_PARTY_NOTICES.md"
+    text = "Agency-agents source provenance; maintained by msitarzewski."
+    path.write_text(text, encoding="utf-8")
+    doc = verify_docs.Document(path=path, meta={}, body=text)
+    errors: list[str] = []
+
+    verify_docs.validate_links_and_boundaries(doc, errors)
+
+    assert errors == []
+
+
+def test_legal_notice_exemption_does_not_allow_cross_repository_urls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    path = tmp_path / "THIRD_PARTY_NOTICES.md"
+    text = "https://github.com/example/agency-agents"
+    path.write_text(text, encoding="utf-8")
+    doc = verify_docs.Document(path=path, meta={}, body=text)
+    errors: list[str] = []
+
+    verify_docs.validate_links_and_boundaries(doc, errors)
+
+    assert errors == [
+        "THIRD_PARTY_NOTICES.md: cross-repository GitHub URL is not allowed (example/agency-agents)"
+    ]
+
+
+def test_legacy_source_names_remain_forbidden_outside_legal_notice(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    path = tmp_path / "README.md"
+    text = "agency-agents maintained by msitarzewski"
+    path.write_text(text, encoding="utf-8")
+    doc = verify_docs.Document(path=path, meta={}, body=text)
+    errors: list[str] = []
+
+    verify_docs.validate_links_and_boundaries(doc, errors)
+
+    assert errors == [
+        "README.md: contains legacy sibling repository name",
+        "README.md: contains legacy sibling owner",
+    ]

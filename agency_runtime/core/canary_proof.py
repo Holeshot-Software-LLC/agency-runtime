@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import hashlib
-import tempfile
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from agency_runtime.core.private_paths import private_temporary_directory
 
 
 def _facade():
@@ -251,17 +252,17 @@ def invoke_and_collect_evidence(
     prompt: str,
     expected_query_hash: str,
 ) -> InvocationOutcome:
-    assert preparation.backend is not None
-    assert preparation.store is not None
-    assert preparation.before is not None
+    if preparation.backend is None or preparation.store is None or preparation.before is None:
+        return InvocationOutcome(
+            result=None,
+            evidence=None,
+            error="safe canary invocation prerequisites are incomplete",
+        )
     try:
-        with tempfile.TemporaryDirectory(
-            prefix="canary-",
-            dir=str(path.parent),
-        ) as workdir:
+        with private_temporary_directory(prefix="canary") as workdir:
             result = preparation.backend.execute(
                 task=prompt,
-                workdir=workdir,
+                workdir=str(workdir),
                 check=False,
             )
             if not isinstance(result, dict):

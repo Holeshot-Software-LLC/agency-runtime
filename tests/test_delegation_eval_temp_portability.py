@@ -1,69 +1,73 @@
-"""Restricted-token portability for the deterministic delegation eval store."""
+"""Private-directory portability for the deterministic delegation eval store."""
 
 from __future__ import annotations
 
+import shutil
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
 
 from agency_runtime.core.evals import delegation
+from tests.runtime_support import ensure_private_test_directory
 
 
-def test_eval_temp_directory_retries_collisions_and_cleans_up(
+def _private_eval_allocator(
+    root: Path,
+    observed: list[str],
+):
+    @contextmanager
+    def allocate(*, prefix: str) -> Iterator[Path]:
+        observed.append(prefix)
+        candidate = root / f"{prefix}-{len(observed)}"
+        ensure_private_test_directory(candidate)
+        try:
+            yield candidate
+        finally:
+            shutil.rmtree(candidate)
+
+    return allocate
+
+
+def test_eval_store_uses_private_allocator_and_cleans_up(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    collision = tmp_path / "agency-delegation-eval-collision"
-    collision.mkdir()
-    tokens = iter(["collision", "unique"])
-    monkeypatch.setattr(delegation.tempfile, "gettempdir", lambda: str(tmp_path))
-    monkeypatch.setattr(delegation.secrets, "token_hex", lambda _size: next(tokens))
+    observed: list[str] = []
+    monkeypatch.setattr(
+        delegation,
+        "private_temporary_directory",
+        _private_eval_allocator(tmp_path, observed),
+    )
 
-    with delegation._temporary_eval_directory() as candidate:
-        assert candidate == tmp_path / "agency-delegation-eval-unique"
-        assert candidate.is_dir()
-        (candidate / "synthetic.db").write_bytes(b"test")
+    def inspect(store, adapter):
+        assert adapter.store is store
+        assert store.db_path.parent.name == "delegation-eval-1"
+        assert store.database_stats()["tables"]["runs"] == 0
+        return {"private": True}
 
-    assert collision.is_dir()
-    assert not (tmp_path / "agency-delegation-eval-unique").exists()
+    assert delegation._with_store(inspect) == {"private": True}
+    assert observed == ["delegation-eval"]
+    assert not (tmp_path / "delegation-eval-1").exists()
 
 
-def test_eval_temp_directory_cleans_up_after_failure(
+def test_eval_store_cleanup_preserves_callback_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(delegation.tempfile, "gettempdir", lambda: str(tmp_path))
-    monkeypatch.setattr(delegation.secrets, "token_hex", lambda _size: "failure")
-    candidate = tmp_path / "agency-delegation-eval-failure"
+    observed: list[str] = []
+    monkeypatch.setattr(
+        delegation,
+        "private_temporary_directory",
+        _private_eval_allocator(tmp_path, observed),
+    )
 
-    with (
-        pytest.raises(RuntimeError, match="expected"),
-        delegation._temporary_eval_directory() as allocated,
-    ):
-        assert allocated == candidate
+    def fail(_store, _adapter):
         raise RuntimeError("expected")
 
-    assert not candidate.exists()
+    with pytest.raises(RuntimeError, match="expected"):
+        delegation._with_store(fail)
 
-
-def test_eval_temp_directory_fails_after_bounded_collision_retries(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    collision = tmp_path / "agency-delegation-eval-collision"
-    collision.mkdir()
-    monkeypatch.setattr(delegation.tempfile, "gettempdir", lambda: str(tmp_path))
-    monkeypatch.setattr(delegation.secrets, "token_hex", lambda _size: "collision")
-
-    with (
-        pytest.raises(RuntimeError, match="unique delegation eval directory"),
-        delegation._temporary_eval_directory(),
-    ):
-        pass
-
-
-def test_synthetic_eval_store_retains_link_checks_without_acl_mutation(tmp_path: Path) -> None:
-    path = tmp_path / "synthetic.db"
-    store = delegation._SyntheticEvalStore(path)
-    assert store.database_stats()["tables"]["runs"] == 0
-    assert path.is_file()
+    assert observed == ["delegation-eval"]
+    assert not (tmp_path / "delegation-eval-1").exists()

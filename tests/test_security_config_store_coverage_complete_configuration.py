@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import stat
 import sys
 from contextlib import nullcontext
 from pathlib import Path
@@ -21,7 +20,7 @@ from agency_runtime.core import (
 from agency_runtime.core import (
     configuration_service as service,
 )
-from agency_runtime.core.bounded_io import FileSizeLimitError
+from agency_runtime.core.bounded_io import FileSizeLimitError, UnsafeFileError
 from agency_runtime.core.configuration_contracts import (
     MAX_CONFIG_BYTES,
     ConfigConflictError,
@@ -98,6 +97,8 @@ def test_schema_provider_rejects_unsupported_or_conflicting_fields(
         (schema._validate_judge, {"unsupported": True}),
         (schema._validate_ollama, {"unsupported": True}),
         (schema._validate_selector, {"unsupported": True}),
+        (schema._validate_delegation, {"unsupported": True}),
+        (schema._validate_agents, {"unsupported": True}),
         (schema._validate_store, {"unsupported": True}),
         (schema._validate_server, {"unsupported": True}),
         (schema._validate_dashboard, {"unsupported": True}),
@@ -110,6 +111,24 @@ def test_schema_provider_rejects_unsupported_or_conflicting_fields(
 def test_schema_sections_reject_unknown_fields_and_roots(validator: Any, value: Any) -> None:
     with pytest.raises(ConfigValidationError):
         validator(value)
+
+
+def test_schema_delegation_thresholds_must_be_monotonic() -> None:
+    with pytest.raises(
+        ConfigValidationError,
+        match="must be greater than or equal to preferred_min_units",
+    ):
+        schema._validate_delegation(
+            {
+                "preferred_min_units": 4,
+                "strongly_preferred_min_units": 3,
+            }
+        )
+
+
+def test_schema_agents_rejects_protected_coordinator_disablement() -> None:
+    with pytest.raises(ConfigValidationError, match="protected coordinator"):
+        schema._validate_agents({"disabled": ["chief-of-staff"]})
 
 
 def test_patch_provider_and_nested_shape_guards() -> None:
@@ -223,6 +242,8 @@ def test_patch_batch_and_operation_contract_errors() -> None:
 
 
 def test_persistence_read_and_parse_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(persistence, "assert_config_namespace", lambda _path: None)
+    monkeypatch.setattr(persistence, "_ensure_config_file_private", lambda _path: True)
     monkeypatch.setattr(
         persistence,
         "read_bounded_regular_file",
@@ -241,11 +262,6 @@ def test_persistence_read_and_parse_errors(monkeypatch: pytest.MonkeyPatch) -> N
         persistence.parse_document(b"[]")
 
 
-class _ModePath:
-    def stat(self) -> Any:
-        return SimpleNamespace(st_mode=stat.S_IRUSR)
-
-
 def test_permission_restriction_error_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(ConfigurationError, match="symlink"):
         persistence.restrict_permissions(Path("config"), path_check=lambda _path: True)
@@ -260,10 +276,14 @@ def test_permission_restriction_error_paths(monkeypatch: pytest.MonkeyPatch) -> 
             path_check=lambda _path: False,
         )
 
-    monkeypatch.setattr(persistence.os, "chmod", lambda *_args: None)
+    monkeypatch.setattr(
+        persistence,
+        "restrict_posix_path_permissions",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("failed")),
+    )
     assert (
         persistence.restrict_permissions(
-            _ModePath(),  # type: ignore[arg-type]
+            Path("config"),
             is_windows=False,
             path_check=lambda _path: False,
         )
@@ -271,14 +291,32 @@ def test_permission_restriction_error_paths(monkeypatch: pytest.MonkeyPatch) -> 
     )
     with pytest.raises(ConfigurationError, match="could not be enforced"):
         persistence.restrict_permissions(
-            _ModePath(),  # type: ignore[arg-type]
+            Path("config"),
             is_windows=False,
             required=True,
             path_check=lambda _path: False,
         )
+    monkeypatch.setattr(
+        persistence,
+        "restrict_posix_path_permissions",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            UnsafeFileError("permission target changed before mutation")
+        ),
+    )
+    with pytest.raises(ConfigurationError, match="changed before mutation"):
+        persistence.restrict_permissions(
+            Path("config"),
+            is_windows=False,
+            path_check=lambda _path: False,
+        )
+    monkeypatch.setattr(
+        persistence,
+        "restrict_posix_path_permissions",
+        lambda *_args, **_kwargs: None,
+    )
     assert (
         persistence.restrict_permissions(
-            SimpleNamespace(stat=lambda: SimpleNamespace(st_mode=stat.S_IRUSR | stat.S_IWUSR)),  # type: ignore[arg-type]
+            Path("config"),
             is_windows=False,
             path_check=lambda _path: False,
         )
@@ -290,6 +328,11 @@ def test_atomic_write_posix_fsync_and_directory_error_paths(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     target = tmp_path / "config.yaml"
     restricted: list[Path] = []
     original_open = persistence.os.open
@@ -351,8 +394,18 @@ def test_atomic_write_rejects_oversized_document(tmp_path: Path) -> None:
 def test_atomic_write_without_fchmod_remains_portable(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
-    monkeypatch.delattr(persistence.os, "fchmod", raising=False)
+    monkeypatch.setattr(
+        persistence,
+        "os",
+        os_facade(persistence.os, name="nt", missing=frozenset({"fchmod"})),
+    )
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     target = tmp_path / "portable.yaml"
     persistence.atomic_write_yaml(
         target,
@@ -366,10 +419,91 @@ def test_atomic_write_without_fchmod_remains_portable(
     assert target.exists()
 
 
+def test_windows_atomic_write_retries_transient_reader_share_lock(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    os_facade,
+) -> None:
+    target = tmp_path / "windows-retry.yaml"
+    monkeypatch.setattr(persistence, "os", os_facade(persistence.os, name="nt"))
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
+    real_replace = persistence.os.replace
+    attempts = 0
+    delays: list[float] = []
+
+    def replace(source: Path, destination: Path) -> None:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise PermissionError("simulated Windows reader share lock")
+        real_replace(source, destination)
+
+    monkeypatch.setattr(persistence.os, "replace", replace)
+    monkeypatch.setattr(persistence.time, "sleep", delays.append)
+
+    persistence.atomic_write_yaml(
+        target,
+        {"profile": "standard"},
+        ensure_parent=lambda path: path.parent.mkdir(parents=True, exist_ok=True),
+        restrict=lambda *_args, **_kwargs: True,
+        preflight=lambda _path: None,
+        path_check=lambda _path: False,
+        is_windows=True,
+    )
+
+    assert attempts == 3
+    assert delays == [0.002, 0.004]
+    assert target.exists()
+
+
+def test_windows_atomic_write_preserves_replace_error_after_bounded_retries(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    os_facade,
+) -> None:
+    target = tmp_path / "windows-retry-exhausted.yaml"
+    delays: list[float] = []
+    monkeypatch.setattr(persistence, "os", os_facade(persistence.os, name="nt"))
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        persistence.os,
+        "replace",
+        lambda *_args: (_ for _ in ()).throw(PermissionError("still locked")),
+    )
+    monkeypatch.setattr(persistence.time, "sleep", delays.append)
+
+    with pytest.raises(PermissionError, match="still locked"):
+        persistence.atomic_write_yaml(
+            target,
+            {"profile": "standard"},
+            ensure_parent=lambda path: path.parent.mkdir(parents=True, exist_ok=True),
+            restrict=lambda *_args, **_kwargs: True,
+            preflight=lambda _path: None,
+            path_check=lambda _path: False,
+            is_windows=True,
+        )
+
+    assert delays == list(persistence._WINDOWS_REPLACE_RETRY_DELAYS)
+    assert list(tmp_path.glob(".windows-retry-exhausted.yaml.*.tmp")) == []
+
+
 def test_config_lock_open_link_and_posix_lock_branches(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     target = tmp_path / "config.yaml"
     monkeypatch.setattr(
         persistence.os,
@@ -388,6 +522,11 @@ def test_config_lock_open_link_and_posix_lock_branches(
         pass
 
     monkeypatch.undo()
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     checks = iter((False, True))
     with (
         pytest.raises(ConfigLockError, match="symlink or non-regular"),
@@ -444,6 +583,7 @@ def test_config_lock_open_link_and_posix_lock_branches(
 def test_config_lock_windows_fallback_without_fchmod(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
     calls: list[tuple[int, int, int]] = []
     fake_msvcrt = SimpleNamespace(
@@ -452,9 +592,20 @@ def test_config_lock_windows_fallback_without_fchmod(
         locking=lambda descriptor, mode, count: calls.append((descriptor, mode, count)),
     )
     monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
-    monkeypatch.delattr(persistence.os, "fchmod", raising=False)
-    monkeypatch.delattr(persistence.os, "O_BINARY", raising=False)
-    monkeypatch.delattr(persistence.os, "O_NOFOLLOW", raising=False)
+    monkeypatch.setattr(
+        persistence,
+        "os",
+        os_facade(
+            persistence.os,
+            name="nt",
+            missing=frozenset({"fchmod", "O_BINARY", "O_NOFOLLOW"}),
+        ),
+    )
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     restricted: list[Path] = []
     target = tmp_path / "config.yaml"
     with persistence.config_lock(
@@ -472,9 +623,25 @@ def test_config_lock_windows_fallback_without_fchmod(
 def test_config_lock_applies_nofollow_when_the_platform_exposes_it(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     nofollow = 0x40000000
     captured: list[int] = []
+    effective_uid = tmp_path.stat().st_uid
+    monkeypatch.setattr(
+        persistence,
+        "os",
+        os_facade(
+            persistence.os,
+            name="posix",
+            geteuid=lambda: effective_uid,
+        ),
+    )
     real_open = persistence.os.open
 
     def open_without_synthetic_flag(path: Path, flags: int, mode: int) -> int:
@@ -507,7 +674,13 @@ def test_config_lock_applies_nofollow_when_the_platform_exposes_it(
 def test_config_lock_posix_fallback_without_fchmod(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    os_facade,
 ) -> None:
+    monkeypatch.setattr(
+        persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     calls: list[tuple[int, int]] = []
     fake_fcntl = SimpleNamespace(
         LOCK_EX=1,
@@ -516,7 +689,16 @@ def test_config_lock_posix_fallback_without_fchmod(
         flock=lambda descriptor, operation: calls.append((descriptor, operation)),
     )
     monkeypatch.setitem(sys.modules, "fcntl", fake_fcntl)
-    monkeypatch.delattr(persistence.os, "fchmod", raising=False)
+    monkeypatch.setattr(
+        persistence,
+        "os",
+        os_facade(
+            persistence.os,
+            name="posix",
+            missing=frozenset({"fchmod"}),
+            geteuid=lambda: tmp_path.stat().st_uid,
+        ),
+    )
     target = tmp_path / "config.yaml"
     with persistence.config_lock(
         target,

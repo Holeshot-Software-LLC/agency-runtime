@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agency_runtime.core.header.contract import (
+    fill_header_fields,
     format_header,
     parse_header,
     validate_header,
@@ -20,6 +21,7 @@ from agency_runtime.core.receipts.normalize import (
     build_unavailable_receipt,
     normalize_litellm_receipt,
 )
+from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
 from agency_runtime.core.store.sqlite import Store
 
 # ─── Header contract ────────────────────────────────────────────────
@@ -58,6 +60,11 @@ def test_validate_header_missing_fields():
 
 def test_partial_header_never_discards_answer_lines(tmp_path: Path):
     store = Store(tmp_path / "agency.db")
+    store.create_run(
+        trace_id="partial",
+        session_id="partial",
+        metadata={"request_kind": "trivial"},
+    )
     draft = "\n".join(
         [
             "Agency/Agencies loaded: code-reviewer",
@@ -83,12 +90,21 @@ def test_partial_header_never_discards_answer_lines(tmp_path: Path):
 
 def test_out_of_order_header_is_preserved_as_body(tmp_path: Path):
     store = Store(tmp_path / "agency.db")
+    store.create_run(
+        trace_id="out-of-order",
+        session_id="out-of-order",
+        metadata={"request_kind": "trivial"},
+    )
     draft = SAMPLE_HEADER.replace(
         "Agency/Agencies delegated: none\nSkills loaded: none",
         "Skills loaded: none\nAgency/Agencies delegated: none",
     )
 
-    result = finalize_response(draft, store=store)
+    result = finalize_response(
+        draft,
+        trace_metadata={"session_id": "out-of-order", "trace_id": "out-of-order"},
+        store=store,
+    )
 
     assert result["action"] == "accept"
     assert draft.strip() in result["text"]
@@ -120,7 +136,8 @@ def test_normalize_litellm_receipt():
     }
     receipt = normalize_litellm_receipt(headers, "task-general")
     assert receipt["model_group"] == "task-general"
-    assert receipt["resolved_model"] == "gpt-5.5"
+    assert receipt["model_id"] == "gpt-5.5"
+    assert receipt["resolved_model"] == "unavailable"
     assert receipt["source"] == "litellm"
 
 
@@ -176,6 +193,11 @@ def test_hermes_adapter_post_api_request_captures_dynamic_model():
         from agency_runtime.adapters.hermes.plugin import HermesAdapter
 
         adapter = HermesAdapter(store=store)
+        store.create_run(
+            trace_id="hermes-turn",
+            session_id="test-session",
+            metadata={"request_kind": "nontrivial"},
+        )
 
         # Simulate a response where LiteLLM complexity-routed to gpt-5.5-pro-extended
         adapter.post_api_request_handler(
@@ -202,6 +224,11 @@ def test_hermes_adapter_post_api_request_no_response_model():
         from agency_runtime.adapters.hermes.plugin import HermesAdapter
 
         adapter = HermesAdapter(store=store)
+        store.create_run(
+            trace_id="hermes-turn",
+            session_id="test-session",
+            metadata={"request_kind": "nontrivial"},
+        )
 
         adapter.post_api_request_handler(
             response={"choices": []},
@@ -276,26 +303,34 @@ def test_header_reflects_loaded_specialist():
     """The header fill pipeline should report specialists from specialists_loaded, not default to 'none'."""
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
-        store.record_specialist_loaded("s1", "code-reviewer")
-        store.record_specialist_loaded("s1", "codebase-onboarding-engineer")
+        store.record_specialist_loaded("s1", "code-reviewer", trace_id="trace-1")
+        store.record_specialist_loaded(
+            "s1",
+            "codebase-onboarding-engineer",
+            trace_id="trace-1",
+        )
 
         from agency_runtime.core.header.contract import fill_header_fields
 
-        filled = fill_header_fields({}, "s1", store, "task-chunk-planner")
+        filled = fill_header_fields({}, "s1", store, "task-chunk-planner", "trace-1")
         assert filled["agencies_loaded"] == "code-reviewer, codebase-onboarding-engineer"
 
 
-def test_header_replaces_bare_none_when_store_has_agency_evidence():
-    """Bare 'none' is only valid when the store has no loaded/delegated evidence."""
+def test_header_replaces_loaded_none_but_rejects_unvalidated_native_worker():
+    """A generic worker is not delegated Agency evidence without activation."""
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
-        store.record_specialist_loaded("s1", "code-reviewer")
+        store.record_specialist_loaded("s1", "code-reviewer", trace_id="trace-1")
         store.record_delegation(
             trace_id="trace-1",
             session_id="s1",
+            work_unit_id="unit-review",
             recommended_agent="code-reviewer",
             status="delegated",
             backend="delegate_task",
+            executed_worker_kind="generic-worker",
+            executed_worker_id="worker-1",
+            native_run_id="native-run-1",
         )
 
         from agency_runtime.core.header.contract import fill_header_fields
@@ -305,15 +340,19 @@ def test_header_replaces_bare_none_when_store_has_agency_evidence():
             "s1",
             store,
             "task-chunk-planner",
+            "trace-1",
         )
         assert filled["agencies_loaded"] == "code-reviewer"
-        assert filled["agencies_delegated"] == "code-reviewer via delegate_task"
+        assert (
+            filled["agencies_delegated"]
+            == "none - executed worker has no validated Agency specialist"
+        )
 
 
 def test_header_replaces_noneish_loaded_reason_when_store_has_agency_evidence():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
-        store.record_specialist_loaded("s1", "senior-developer")
+        store.record_specialist_loaded("s1", "senior-developer", trace_id="trace-1")
 
         from agency_runtime.core.header.contract import fill_header_fields
 
@@ -322,25 +361,21 @@ def test_header_replaces_noneish_loaded_reason_when_store_has_agency_evidence():
             "s1",
             store,
             "task-chunk-planner",
+            "trace-1",
         )
         assert filled["agencies_loaded"] == "senior-developer"
 
 
 def _activate_default_companions(store: Store) -> None:
+    from agency_runtime.core.roster.bundled import BundledRoster
+
+    bundled = {agent["slug"]: agent for agent in BundledRoster()}
     for slug in ("agents-orchestrator", "chief-of-staff"):
-        store.activate_agent(
-            {
-                "slug": slug,
-                "name": slug.replace("-", " ").title(),
-                "description": f"Default companion specialist {slug}",
-                "division": "specialized",
-                "source": "test",
-            }
-        )
+        store._activate_prevalidated_agent(bundled[slug])
 
 
-def test_trivial_preflight_loads_defaults_equally_for_hermes_and_openclaw():
-    """Even ping should load DEFAULT companions consistently across hosts."""
+def test_control_preflight_binds_same_kernel_with_host_specific_receipts():
+    """Ping shares one kernel identity without conflating distinct host bindings."""
     from agency_runtime.adapters.hermes.plugin import HermesAdapter
     from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 
@@ -357,16 +392,33 @@ def test_trivial_preflight_loads_defaults_equally_for_hermes_and_openclaw():
 
         assert hermes_result is not None
         assert openclaw_result is not None
-        assert hermes_result["context"] == openclaw_result["context"]
-        assert "agents-orchestrator, chief-of-staff" in hermes_result["context"]
-        assert hermes_store.get_specialists_for_session("s1") == [
-            "agents-orchestrator",
-            "chief-of-staff",
-        ]
-        assert openclaw_store.get_specialists_for_session("s1") == [
-            "agents-orchestrator",
-            "chief-of-staff",
-        ]
+        assert hermes_result["context"].startswith(RESIDENT_MANAGER_KERNEL)
+        assert openclaw_result["context"].startswith(RESIDENT_MANAGER_KERNEL)
+        assert (
+            hermes_result["resident_manager_kernel_hash"]
+            == openclaw_result["resident_manager_kernel_hash"]
+        )
+        assert hermes_result["resident_manager_binding"]["host"] == "hermes"
+        assert openclaw_result["resident_manager_binding"]["host"] == "openclaw"
+        assert (
+            hermes_result["resident_manager_binding"]["binding_id"]
+            != openclaw_result["resident_manager_binding"]["binding_id"]
+        )
+        assert hermes_store.get_specialists_for_session("s1") == []
+        assert openclaw_store.get_specialists_for_session("s1") == []
+
+        trace_id = hermes_result["trace_id"]
+        snapshot = hermes_store.get_completion_evidence_snapshot("s1", trace_id)
+        store_fields = fill_header_fields({}, "s1", hermes_store, trace_id=trace_id)
+        snapshot_fields = fill_header_fields(
+            {},
+            "s1",
+            hermes_store,
+            trace_id=trace_id,
+            evidence_snapshot=snapshot,
+        )
+        assert store_fields == snapshot_fields
+        assert store_fields["agencies_loaded"] == "agents-orchestrator, chief-of-staff"
 
 
 def test_store_delegation():
@@ -387,20 +439,21 @@ def test_store_roster_activation():
     with tempfile.TemporaryDirectory() as tmpdir:
         store = Store(Path(tmpdir) / "test.db")
         agent = {
-            "slug": "code-reviewer",
-            "name": "Code Reviewer",
+            "slug": "custom-code-reviewer",
+            "name": "Custom Code Reviewer",
             "description": "Reviews code for bugs and quality",
             "division": "engineering",
             "categories": ["software-development", "review"],
+            "prompt_body": "Review code for bugs, security risks, and maintainability.",
         }
-        store.activate_agent(agent)
+        store._activate_prevalidated_agent(agent)
         roster = store.get_active_roster()
         assert len(roster) == 1
-        assert roster[0]["agent_slug"] == "code-reviewer"
+        assert roster[0]["agent_slug"] == "custom-code-reviewer"
 
         catalog = store.get_active_roster_as_catalog()
         assert len(catalog) == 1
-        assert catalog[0]["slug"] == "code-reviewer"
+        assert catalog[0]["slug"] == "custom-code-reviewer"
 
 
 # ─── Policy profiles ────────────────────────────────────────────────

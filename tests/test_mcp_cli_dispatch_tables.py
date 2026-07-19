@@ -10,6 +10,10 @@ import pytest
 import agency_runtime.server.mcp as mcp
 from agency_runtime.core.cli_transport import inspect_cli_transport
 from agency_runtime.core.delegation.backends import BoundedProcessResult
+from tests.runtime_support import trusted_test_interpreter
+
+_TRUSTED_CLI = str(trusted_test_interpreter())
+_TRUSTED_CLI_DIRECTORY = str(Path(_TRUSTED_CLI).parent)
 
 
 class _ToolStore:
@@ -25,16 +29,40 @@ class _ToolStore:
     def get_specialist_prompt(self, _slug: str) -> None:
         return None
 
-    def record_skill_loaded(self, session_id: str, skill_name: str) -> None:
+    def record_skill_loaded(
+        self,
+        session_id: str,
+        skill_name: str,
+        *,
+        trace_id: str,
+    ) -> None:
+        assert trace_id == "turn"
         self.skills.append((session_id, skill_name))
 
-    def record_delegation(self, **values: Any) -> None:
+    def record_delegation(self, **values: Any) -> str:
         self.delegations.append(values)
+        return f"event-{len(self.delegations)}"
+
+    def get_delegations(self, trace_id: str) -> list[dict[str, Any]]:
+        return [
+            delegation for delegation in self.delegations if delegation.get("trace_id") == trace_id
+        ]
+
+    @staticmethod
+    def get_run(trace_id: str) -> dict[str, str] | None:
+        if trace_id != "turn":
+            return None
+        return {
+            "trace_id": trace_id,
+            "session_id": "session",
+            "status": "active",
+            "preflight_state": "ready",
+        }
 
     def get_active_roster(self) -> list[dict[str, Any]]:
         raise AssertionError("count-only status must not materialize the roster")
 
-    def count_active_roster(self) -> int:
+    def count_enabled_roster(self) -> int:
         return 0
 
     @staticmethod
@@ -53,21 +81,31 @@ class _ToolStore:
         ("agency.search_agents", {"query": "security"}, "agents", []),
         (
             "agency.load_specialist",
-            {"slug": "missing", "session_id": "session"},
+            {"slug": "missing", "session_id": "session", "trace_id": "turn"},
             "error",
             "active agent prompt 'missing' not found",
         ),
         (
             "agency.record_skill_loaded",
-            {"session_id": "session", "skill_name": "audit"},
+            {"session_id": "session", "trace_id": "turn", "skill_name": "audit"},
             "status",
             "recorded",
         ),
         (
             "agency.delegate",
-            {"agent": "reviewer", "task": "review", "session_id": "session"},
+            {
+                "agent": "reviewer",
+                "task": "review",
+                "session_id": "session",
+                "trace_id": "turn",
+                "backend": "test",
+                "work_unit_id": "unit-review",
+                "worker_kind": "test-worker",
+                "worker_id": "worker-1",
+                "native_run_id": "run-1",
+            },
             "trace_id",
-            "session",
+            "turn",
         ),
         ("agency.status", {}, "roster_count", 0),
         ("agency.missing", {}, "error", "unknown tool: agency.missing"),
@@ -165,7 +203,7 @@ def test_cli_transport_status_failure_table(
     def resolver(_name: str) -> str | None:
         if scenario == "resolver-error":
             raise OSError("private resolver detail")
-        return None if scenario == "missing" else f"/tools/{transport}"
+        return None if scenario == "missing" else _TRUSTED_CLI
 
     def runner(argv: list[str], **_kwargs: Any) -> BoundedProcessResult:
         is_auth = argv[1:3] in (["login", "status"], ["auth", "status"])
@@ -185,6 +223,7 @@ def test_cli_transport_status_failure_table(
         timeout=timeout,
         resolver=resolver,
         runner=runner,
+        environ={"PATH": _TRUSTED_CLI_DIRECTORY},
     )
 
     installed, authenticated, usable, reason_fragment = expected

@@ -9,14 +9,16 @@ import json
 import pytest
 
 from agency_runtime.cli import main as cli
-from agency_runtime.core.policy.defaults import STARTER_ROSTER
+from agency_runtime.core.policy.defaults import NO_MATCH_FALLBACK_SLUGS, STARTER_ROSTER
 from agency_runtime.core.selector.policy import (
     detect_actions,
+    detect_fallback_companions,
     load_bundled_policy,
     validate_policy,
 )
 
 STARTER_SLUGS = {str(item["slug"]) for item in STARTER_ROSTER}
+POLICY_ENABLED = set(load_bundled_policy()["specialist_availability"]["enabled"])
 
 
 def test_bundled_policy_classifies_every_route_against_starter_roster() -> None:
@@ -25,12 +27,16 @@ def test_bundled_policy_classifies_every_route_against_starter_roster() -> None:
     assert report["valid"] is True
     assert report["errors"] == []
     assert report["unique_policy_slugs"] == 238
-    assert report["enabled_slugs"] == sorted(STARTER_SLUGS)
-    assert report["disabled_count"] == 231
-    assert {item["reason"] for item in report["disabled_routes"]} == {
-        "No governed active definition is available; this route is enabled "
-        "only after approved roster activation."
+    assert report["enabled_slugs"] == sorted(
+        POLICY_ENABLED | {"app-store-optimizer", "mobile-app-builder"}
+    )
+    assert report["disabled_count"] == 0
+    assert {item["slug"] for item in report["disabled_routes"]} == set()
+    formerly_gated = {
+        "app-store-optimizer",
+        "mobile-app-builder",
     }
+    assert formerly_gated <= set(report["enabled_slugs"])
     assert {route["source"] for route in report["routes"]} == {
         "action",
         "division",
@@ -67,24 +73,26 @@ def test_bundled_specialist_routes_resolve(
     assert expected in companions
 
 
-def test_roster_gated_routes_are_skipped_without_an_active_roster() -> None:
+def test_default_companions_are_separate_from_ordinary_action_detection() -> None:
     _actions, companions = detect_actions("anything at all", load_bundled_policy())
 
     assert "agents-orchestrator" not in companions
     assert "chief-of-staff" not in companions
+    assert detect_fallback_companions(
+        load_bundled_policy(),
+        active_slugs=STARTER_SLUGS,
+    ) == list(NO_MATCH_FALLBACK_SLUGS)
 
 
-def test_roster_gated_route_activates_after_governed_roster_activation() -> None:
-    active = STARTER_SLUGS | {"agents-orchestrator"}
+def test_no_match_fallback_requires_an_active_bundled_prompt() -> None:
+    active = STARTER_SLUGS - {"chief-of-staff"}
 
-    _actions, companions = detect_actions(
-        "anything at all",
+    companions = detect_fallback_companions(
         load_bundled_policy(),
         active_slugs=active,
     )
 
-    assert "agents-orchestrator" in companions
-    assert "chief-of-staff" not in companions
+    assert companions == ["agents-orchestrator"]
 
 
 def test_unclassified_action_route_fails_validation() -> None:
@@ -159,7 +167,7 @@ def test_policy_cli_json_is_truthful_and_includes_division_routes(
     assert payload["valid"] is True
     assert payload["unique_policy_slugs"] == 238
     assert payload["division_count"] == 6
-    assert payload["disabled_count"] == 231
+    assert payload["disabled_count"] == 0
     assert payload["all_missing"] == []
 
 
@@ -178,7 +186,8 @@ def test_policy_cli_text_preserves_the_availability_breakdown(
     assert "\n✅ VALID:" in output
     assert "\n✅ CODING\n" in output
     assert "   always_include (" in output
-    assert "   roster-gated and disabled (" in output
+    assert "0 roster-gated and currently disabled" in output
+    assert "roster-gated conditionals" not in output
     assert "   conditional (" in output
 
 
@@ -194,7 +203,7 @@ def test_policy_cli_returns_nonzero_for_missing_enabled_specialists(
 
     assert result == 1
     assert payload["valid"] is False
-    assert payload["missing_enabled"] == sorted(STARTER_SLUGS)
+    assert payload["missing_enabled"] == sorted(POLICY_ENABLED)
 
 
 def test_policy_cli_returns_nonzero_for_malformed_policy(

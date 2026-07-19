@@ -17,7 +17,7 @@ from agency_runtime.core.selector.intent_text import (
     mask_excluded_intent,
 )
 from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, refine_query
-from agency_runtime.core.selector.policy import detect_actions
+from agency_runtime.core.selector.policy import detect_actions, detect_fallback_companions
 
 # ─── Token scoring ──────────────────────────────────────────────────
 
@@ -191,10 +191,12 @@ def test_detect_work_units_ignores_explicitly_negated_items():
 # ─── Trivial message detection ─────────────────────────────────────
 
 
-def test_is_trivial_short():
-    assert is_trivial("ok") is True
-    assert is_trivial("yes") is True
-    assert is_trivial("thanks") is True
+def test_legacy_trivial_projection_cannot_authorize_a_no_state_bypass():
+    assert is_trivial("ok") is False
+    assert is_trivial("yes") is False
+    assert is_trivial("thanks") is False
+    assert is_trivial("ok", turn_state={"state_known": True}) is True
+    assert is_trivial("thanks", turn_state={"state_known": True}) is True
 
 
 def test_is_trivial_meaningful():
@@ -202,15 +204,16 @@ def test_is_trivial_meaningful():
     assert is_trivial("Fix the authentication bug in the login flow") is False
 
 
-def test_is_trivial_short_meaningful_not_trivial(monkeypatch):
+def test_is_trivial_short_meaningful_not_trivial(monkeypatch, tmp_path):
     """Short messages that carry real intent must not be trivial."""
-    monkeypatch.setenv("AGENCY_CONFIG_PATH", "/nonexistent")
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "nonexistent.yaml"))
     from agency_runtime.core.config import load_config
 
     load_config(reload=True)
     assert is_trivial("whats next") is False
     assert is_trivial("status") is False
     assert is_trivial("how's it going") is False
+    assert is_trivial("how's it going", turn_state={"state_known": True}) is False
 
 
 def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
@@ -228,8 +231,28 @@ def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
     assert "reality-checker" not in companion_ids
 
 
-def test_bundled_companion_policy_skips_gated_default_agents(monkeypatch, tmp_path):
-    """DEFAULT agents remain disabled until they exist in an active roster."""
+def test_bundled_coding_policy_reserves_reality_checker_for_final_certification(
+    monkeypatch,
+    tmp_path,
+):
+    monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing-policy.yaml"))
+    from agency_runtime.core.selector import policy as policy_mod
+
+    policy_mod._COMPANION_POLICY = None
+    policy_mod._POLICY_MTIME = 0.0
+
+    matched_actions, companion_ids = detect_actions(
+        "Review this code for final integration certification"
+    )
+    _ordinary_actions, ordinary_companions = detect_actions("Implement the final integration code")
+
+    assert "CODING" in matched_actions
+    assert "reality-checker" in companion_ids
+    assert "reality-checker" not in ordinary_companions
+
+
+def test_bundled_companion_policy_reserves_default_agents_for_fallback(monkeypatch, tmp_path):
+    """DEFAULT agents do not appear in ordinary deterministic action results."""
     monkeypatch.setenv("AGENCY_POLICY_PATH", str(tmp_path / "missing.yaml"))
     # Force reload of cached policy
     from agency_runtime.core.selector import policy as policy_mod
@@ -240,6 +263,7 @@ def test_bundled_companion_policy_skips_gated_default_agents(monkeypatch, tmp_pa
 
     assert "agents-orchestrator" not in companion_ids
     assert "chief-of-staff" not in companion_ids
+    assert detect_fallback_companions() == ["agents-orchestrator", "chief-of-staff"]
 
 
 def test_bundled_policy_has_all_broad_actions(monkeypatch, tmp_path):

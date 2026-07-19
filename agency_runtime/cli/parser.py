@@ -5,11 +5,28 @@ from __future__ import annotations
 import argparse
 from collections.abc import Callable, Mapping
 
+from agency_runtime import __version__
 from agency_runtime.core.policy.profiles import PROFILES
+from agency_runtime.core.runtime_control_command import parse_runtime_control_command
 
 CommandHandler = Callable[[argparse.Namespace], int]
 Handlers = Mapping[str, CommandHandler]
 Subparsers = argparse._SubParsersAction
+
+_NATIVE_HOOK_EVENTS = (
+    "SessionStart",
+    "UserPromptSubmit",
+    "PreToolUse",
+    "PermissionRequest",
+    "PostToolUse",
+    "PostToolUseFailure",
+    "SubagentStart",
+    "SubagentStop",
+    "PreCompact",
+    "PostCompact",
+    "Stop",
+    "SessionEnd",
+)
 
 
 def _positive_int(value: str) -> int:
@@ -22,8 +39,24 @@ def _positive_int(value: str) -> int:
     return parsed
 
 
+def _search_limit(value: str) -> int:
+    parsed = _positive_int(value)
+    if parsed > 100:
+        raise argparse.ArgumentTypeError("must be an integer from 1 through 100")
+    return parsed
+
+
 def _bind(parser: argparse.ArgumentParser, handlers: Handlers, name: str) -> None:
     parser.set_defaults(func=handlers[name])
+
+
+def _runtime_control_action(action: str) -> str:
+    """Resolve CLI control names through the canonical exact parser."""
+
+    command = parse_runtime_control_command(f"agency {action}")
+    if command is None:  # pragma: no cover - static registration invariant
+        raise RuntimeError("CLI runtime control registration is invalid")
+    return command.action
 
 
 def _register_install(sub: Subparsers, handlers: Handlers) -> None:
@@ -74,12 +107,22 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
 
 
 def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
-    on_p = sub.add_parser("on", help="Enable Agency Runtime for a host")
-    on_p.add_argument(
+    on_p = sub.add_parser(
+        _runtime_control_action("on"),
+        help="Enable Agency Runtime for detected hosts or globally",
+    )
+    on_target = on_p.add_mutually_exclusive_group()
+    on_target.add_argument(
         "--agent",
         choices=["hermes", "openclaw", "codex", "claude"],
         default=None,
         help="Host to enable (default: every detected host)",
+    )
+    on_target.add_argument(
+        "--global",
+        dest="global_control",
+        action="store_true",
+        help="Enable Agency Runtime globally across every host",
     )
     on_p.add_argument(
         "--dry-run", action="store_true", help="Print the planned change without applying it"
@@ -92,12 +135,22 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
     on_p.add_argument("--json", action="store_true", help="Print machine-readable results")
     _bind(on_p, handlers, "cmd_on")
 
-    off_p = sub.add_parser("off", help="Disable Agency Runtime for a host")
-    off_p.add_argument(
+    off_p = sub.add_parser(
+        _runtime_control_action("off"),
+        help="Disable Agency Runtime for detected hosts or globally",
+    )
+    off_target = off_p.add_mutually_exclusive_group()
+    off_target.add_argument(
         "--agent",
         choices=["hermes", "openclaw", "codex", "claude"],
         default=None,
         help="Host to disable (default: every detected host)",
+    )
+    off_target.add_argument(
+        "--global",
+        dest="global_control",
+        action="store_true",
+        help="Disable Agency Runtime globally across every host",
     )
     off_p.add_argument(
         "--dry-run", action="store_true", help="Print the planned change without applying it"
@@ -111,7 +164,8 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
     _bind(off_p, handlers, "cmd_off")
 
     status_p = sub.add_parser(
-        "status", help="Show native and runtime control state for agent hosts"
+        _runtime_control_action("status"),
+        help="Show Agency-wide, native, and per-host runtime control state",
     )
     status_p.add_argument(
         "--agent",
@@ -247,10 +301,198 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
     roster_activate = roster_sub.add_parser("activate", help="Activate approved snapshot")
     roster_activate.add_argument("snapshot_id", help="Approved snapshot identifier to activate")
     _bind(roster_activate, handlers, "cmd_roster_activate")
+    roster_scans = roster_sub.add_parser(
+        "scans",
+        help="List complete and partial source-scan evidence",
+    )
+    roster_scans.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=50,
+        help="Maximum scan receipts to return",
+    )
+    _bind(roster_scans, handlers, "cmd_roster_scans")
+    roster_remediation = roster_sub.add_parser(
+        "remediation",
+        help="Inspect quarantined source-repair attempts",
+    )
+    remediation_sub = roster_remediation.add_subparsers(
+        dest="remediation_command",
+        required=True,
+    )
+    remediation_queue = remediation_sub.add_parser(
+        "queue",
+        help="List bounded non-executable remediation receipts",
+    )
+    remediation_queue.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=50,
+        help="Maximum pending and resolved remediation records per page",
+    )
+    remediation_queue.add_argument(
+        "--pending-cursor",
+        default="",
+        help="Continue pending attempts before this queue event identifier",
+    )
+    remediation_queue.add_argument(
+        "--history-cursor",
+        default="",
+        help="Continue resolved history before this resolution event identifier",
+    )
+    _bind(remediation_queue, handlers, "cmd_roster_remediation_queue")
+    roster_retire = roster_sub.add_parser(
+        "retire",
+        help="Create an unapproved retirement snapshot from a complete scan",
+    )
+    roster_retire.add_argument("slug", help="Active source-owned agent slug")
+    roster_retire.add_argument(
+        "--scan-id",
+        required=True,
+        help="Latest complete source scan proving the agent is absent",
+    )
+    roster_retire.add_argument(
+        "--json",
+        action="store_true",
+        help="Print machine-readable snapshot details",
+    )
+    _bind(roster_retire, handlers, "cmd_roster_retire")
+    roster_rollback = roster_sub.add_parser(
+        "rollback",
+        help="Restore one immutable revision under an exact current-state check",
+    )
+    roster_rollback.add_argument("slug", help="Active agent slug")
+    roster_rollback.add_argument("target_version", help="Immutable revision to restore")
+    roster_rollback.add_argument(
+        "--expected-current-version",
+        required=True,
+        help="Current version observed before requesting rollback",
+    )
+    roster_rollback.add_argument(
+        "--expected-current-hash",
+        required=True,
+        help="Current prompt hash observed before requesting rollback",
+    )
+    roster_rollback.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the restored active record as JSON",
+    )
+    _bind(roster_rollback, handlers, "cmd_roster_rollback")
+
+    roster_upstream = roster_sub.add_parser(
+        "upstream",
+        help="Inspect or quarantine deltas from the audited upstream baseline",
+    )
+    upstream_sub = roster_upstream.add_subparsers(dest="upstream_command", required=True)
+    upstream_status = upstream_sub.add_parser(
+        "status",
+        help="Compare configured sources without persistence",
+    )
+    upstream_status.add_argument("--source-id", default="", help="Inspect one enabled source")
+    upstream_status.add_argument(
+        "--source-revision",
+        default="",
+        help="Immutable source revision (defaults to packaged baseline revision)",
+    )
+    _bind(upstream_status, handlers, "cmd_roster_upstream_status")
+    upstream_import = upstream_sub.add_parser(
+        "import",
+        help="Quarantine only new or content-changed definitions",
+    )
+    upstream_import.add_argument("--source-id", default="", help="Import one enabled source")
+    upstream_import.add_argument(
+        "--source-revision",
+        default="",
+        help="Immutable source revision (defaults to packaged baseline revision)",
+    )
+    upstream_import.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Compare and validate without writing quarantine evidence",
+    )
+    _bind(upstream_import, handlers, "cmd_roster_upstream_import")
+
+    roster_candidate = roster_sub.add_parser(
+        "candidate",
+        help="Audit, inspect, compare, or reject quarantined candidates",
+    )
+    candidate_sub = roster_candidate.add_subparsers(dest="candidate_command", required=True)
+    candidate_audit = candidate_sub.add_parser(
+        "audit",
+        help="Run deterministic review plus configured inference",
+    )
+    candidate_audit.add_argument("candidate_id", help="Quarantined candidate identifier")
+    candidate_audit.add_argument(
+        "--require-inference",
+        action="store_true",
+        help="Fail closed unless an inference audit assistant is available",
+    )
+    _bind(candidate_audit, handlers, "cmd_roster_candidate_audit")
+    candidate_findings = candidate_sub.add_parser(
+        "findings",
+        help="Show immutable audit history and findings",
+    )
+    candidate_findings.add_argument("candidate_id", help="Candidate identifier")
+    candidate_findings.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=50,
+        help="Maximum immutable audit records to return",
+    )
+    _bind(candidate_findings, handlers, "cmd_roster_candidate_findings")
+    candidate_reject = candidate_sub.add_parser(
+        "reject",
+        help="Reject a candidate without changing the active revision",
+    )
+    candidate_reject.add_argument("candidate_id", help="Candidate identifier")
+    candidate_reject.add_argument("--reason", required=True, help="Bounded review reason")
+    _bind(candidate_reject, handlers, "cmd_roster_candidate_reject")
+    candidate_compare = candidate_sub.add_parser(
+        "compare",
+        help="Compare active and candidate metadata",
+    )
+    candidate_compare.add_argument("candidate_id", help="Candidate identifier")
+    _bind(candidate_compare, handlers, "cmd_roster_candidate_compare")
+
+    agents = sub.add_parser(
+        "agents",
+        help="List or toggle reversible per-agent routing availability",
+    )
+    agents_sub = agents.add_subparsers(dest="agents_command", required=True)
+    agents_list = agents_sub.add_parser("list", help="List enabled, disabled, and protected agents")
+    agents_list.add_argument("--json", action="store_true", help="Print machine-readable results")
+    agents_list.add_argument(
+        "--config",
+        default=None,
+        help="Configuration file (defaults to env, installed service identity, or user config)",
+    )
+    _bind(agents_list, handlers, "cmd_agents_list")
+    agent_enable = agents_sub.add_parser(
+        "enable", help="Enable an agent without changing roster data"
+    )
+    agent_enable.add_argument("slug", help="Governed agent slug")
+    agent_enable.add_argument(
+        "--config",
+        default=None,
+        help="Configuration file (defaults to env, installed service identity, or user config)",
+    )
+    _bind(agent_enable, handlers, "cmd_agent_enable")
+    agent_disable = agents_sub.add_parser(
+        "disable",
+        help="Disable a non-coordinator agent without deleting roster data",
+    )
+    agent_disable.add_argument("slug", help="Governed agent slug")
+    agent_disable.add_argument(
+        "--config",
+        default=None,
+        help="Configuration file (defaults to env, installed service identity, or user config)",
+    )
+    _bind(agent_disable, handlers, "cmd_agent_disable")
 
     search = sub.add_parser("search", help="Search active roster")
     search.add_argument("query", help="Capability or specialist search text")
-    search.add_argument("--limit", type=_positive_int, default=10, help="Maximum results")
+    search.add_argument("--limit", type=_search_limit, default=10, help="Maximum results (1-100)")
     search.add_argument("--json", action="store_true", help="Print machine-readable results")
     _bind(search, handlers, "cmd_search")
 
@@ -333,6 +575,35 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         help="Omit per-case details from the report",
     )
     _bind(eval_routing, handlers, "cmd_eval_routing")
+    eval_full_roster = eval_sub.add_parser(
+        "full-roster",
+        help="Evaluate complete packaged-roster retrieval and compatibility contracts",
+    )
+    eval_full_roster.add_argument(
+        "--candidate-limit",
+        type=_positive_int,
+        default=40,
+        help="Bounded candidate-union size (supported range: 8 through 80)",
+    )
+    eval_full_roster.add_argument(
+        "--json", action="store_true", help="Print machine-readable results"
+    )
+    eval_full_roster.add_argument(
+        "--no-details",
+        action="store_true",
+        help="Omit per-case details from the report",
+    )
+    _bind(eval_full_roster, handlers, "cmd_eval_full_roster")
+    eval_compare = eval_sub.add_parser(
+        "compare",
+        help="Validate and summarize bounded paired native/Agency outcome evidence",
+    )
+    eval_compare.add_argument(
+        "--input",
+        required=True,
+        help="UTF-8 JSONL file containing blinded comparative observations",
+    )
+    _bind(eval_compare, handlers, "cmd_eval_compare")
 
     smoke = sub.add_parser("smoke", help="Run deterministic local smoke checks")
     smoke.add_argument(
@@ -376,11 +647,19 @@ def _register_database(sub: Subparsers, handlers: Handlers) -> None:
 def _register_native_protocols(sub: Subparsers, handlers: Handlers) -> None:
     mcp = sub.add_parser("mcp", help="Serve MCP over stdin/stdout")
     mcp.add_argument("--db", default=None, help="SQLite database path")
+    mcp.add_argument("--config", default=None, help="Agency YAML configuration path")
     _bind(mcp, handlers, "cmd_mcp")
 
     hook = sub.add_parser("hook", help="Handle one native host hook event")
     hook.add_argument("host", choices=["codex", "claude"], help="Native hook protocol")
+    hook.add_argument(
+        "--event",
+        choices=_NATIVE_HOOK_EVENTS,
+        default="",
+        help="Installer-bound native event discriminator",
+    )
     hook.add_argument("--db", default=None, help="SQLite database path")
+    hook.add_argument("--config", default=None, help="Agency YAML configuration path")
     _bind(hook, handlers, "cmd_hook")
 
 
@@ -460,6 +739,12 @@ def _register_passthrough_commands(sub: Subparsers, handlers: Handlers) -> None:
 def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     """Build the command tree with callbacks supplied by the public facade."""
     parser = argparse.ArgumentParser(prog="agency", description="Agency Runtime Control Plane")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show the installed Agency Runtime version and exit",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
     _register_install(sub, handlers)
     _register_host_control(sub, handlers)

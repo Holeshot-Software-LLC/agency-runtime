@@ -14,10 +14,17 @@ from agency_runtime.core.dashboard_service_core import (
     CommandRunner,
     ReadinessProbe,
     _base,
+    _cleanup_stale_dashboard_runtime,
     _Context,
     _context,
+    _dashboard_runtime_fingerprint,
+    _DashboardRuntimeClearance,
+    _fresh_dashboard_readiness,
+    _revalidate_dashboard_launcher,
     _run,
     _unsupported,
+    _validate_dashboard_launcher,
+    _wait_dashboard_runtime_cleared,
 )
 from agency_runtime.core.dashboard_service_inspection import (
     _failed,
@@ -28,20 +35,23 @@ from agency_runtime.core.dashboard_service_manifest import (
     _decode_service_file,
     _manifest_owned,
     _read_manifest_bytes,
-    _read_service_file,
     _safe_unlink,
     _service_lock,
     _sync_parent,
 )
 from agency_runtime.core.dashboard_service_systemd import (
     _assert_systemd_files,
+    _read_systemd_unit,
     _restore_systemd_state,
+    _systemd_unit_root,
 )
 from agency_runtime.core.dashboard_service_windows import (
     _assert_windows_task_absent,
     _assert_windows_task_unchanged,
     _export_owned_windows_task,
     _restore_windows_state,
+    _wait_windows_running_state,
+    _windows_definition_matches,
     _windows_running_state,
 )
 from agency_runtime.core.windows_system import windows_system_command
@@ -51,23 +61,65 @@ def _cleanup_stale_runtime(
     ctx: _Context,
     _reachability_probe: ReadinessProbe | None,
 ) -> bool:
-    from agency_runtime.core.dashboard_runtime import (
-        dashboard_service_reachable,
-        read_dashboard_runtime,
-        remove_dashboard_runtime,
-    )
+    return _cleanup_stale_dashboard_runtime(ctx)
 
-    try:
-        descriptor = read_dashboard_runtime(home_dir=ctx.home)
-    except ValueError:
-        return False
-    if dashboard_service_reachable(descriptor=descriptor):
-        return False
-    return remove_dashboard_runtime(
-        home_dir=ctx.home,
-        token=descriptor["token"],
-        pid=descriptor["pid"],
+
+def _replacement_runtime_conflict(
+    action: str,
+    ctx: _Context,
+    clearance: _DashboardRuntimeClearance,
+    *,
+    commands: list[dict[str, Any]],
+    changed: bool,
+) -> dict[str, Any]:
+    value = _failed(
+        action,
+        ctx,
+        error=(
+            "dashboard runtime generation changed during the service transition; "
+            "the replacement was preserved"
+        ),
+        commands=commands,
     )
+    value.update(
+        {
+            "changed": changed,
+            "status": "runtime_replaced",
+            "reachable": None,
+            "replacement_runtime_preserved": True,
+            "runtime_descriptor_removed": clearance.descriptor_removed,
+        }
+    )
+    return value
+
+
+def _runtime_clearance_failure(
+    action: str,
+    ctx: _Context,
+    clearance: _DashboardRuntimeClearance,
+    *,
+    commands: list[dict[str, Any]],
+    changed: bool,
+    uncleared_error: str,
+) -> dict[str, Any] | None:
+    if clearance.replacement_detected:
+        return _replacement_runtime_conflict(
+            action,
+            ctx,
+            clearance,
+            commands=commands,
+            changed=changed,
+        )
+    if clearance.cleared:
+        return None
+    value = _failed(
+        action,
+        ctx,
+        error=uncleared_error,
+        commands=commands,
+    )
+    value["changed"] = changed
+    return value
 
 
 def _lifecycle_preflight(
@@ -88,6 +140,8 @@ def _lifecycle_preflight(
     )
     if ctx is None:
         return None, _unsupported(action, platform_name), None
+    if action in {"start", "restart"}:
+        ctx = _validate_dashboard_launcher(ctx)
     blocked, state = _preflight(
         action,
         ctx,
@@ -96,6 +150,21 @@ def _lifecycle_preflight(
         reachability_probe=reachability_probe,
     )
     return ctx, blocked, state
+
+
+def _definition_drift_block(
+    action: str, ctx: _Context, state: dict[str, Any]
+) -> dict[str, Any] | None:
+    if ctx.platform != "windows" or state.get("definition_drift") is False:
+        return None
+    return {
+        **_base(action, ctx),
+        "ok": False,
+        "exit_code": 1,
+        "changed": False,
+        "error": "scheduled-task definition drift must be repaired by reinstalling the service",
+        "commands": [],
+    }
 
 
 def start_dashboard_service(
@@ -162,6 +231,10 @@ def _start_dashboard_service_locked(
             "changed": False,
             "error": "dashboard service is not installed",
         }
+    definition_block = _definition_drift_block("start", ctx, state)
+    if definition_block is not None:
+        return definition_block
+    _revalidate_dashboard_launcher(ctx)
     if state.get("reachable") is True:
         return {
             **_base("start", ctx),
@@ -173,9 +246,18 @@ def _start_dashboard_service_locked(
             "commands": [],
         }
     commands: list[dict[str, Any]] = []
+    previous_runtime: str | None = None
     if ctx.platform == "windows":
+        previous_runtime = _dashboard_runtime_fingerprint(ctx)
         task_xml, capture = _export_owned_windows_task(ctx, command_runner=command_runner)
         commands.append(capture.public())
+        if not _windows_definition_matches(ctx, task_xml):
+            return _failed(
+                "start",
+                ctx,
+                error="scheduled-task definition changed after preflight; reinstall the service",
+                commands=commands,
+            )
         running, status_query = _windows_running_state(command_runner=command_runner)
         commands.append(status_query.public())
         if running is None:
@@ -192,6 +274,20 @@ def _start_dashboard_service_locked(
                 error="dashboard task is running but not reachable; restart it",
                 commands=commands,
             )
+        clearance = _wait_dashboard_runtime_cleared(
+            ctx,
+            previous_runtime,
+        )
+        clearance_failure = _runtime_clearance_failure(
+            "start",
+            ctx,
+            clearance,
+            commands=commands,
+            changed=False,
+            uncleared_error="stale dashboard runtime remained reachable before start",
+        )
+        if clearance_failure is not None:
+            return clearance_failure
         exact = _assert_windows_task_unchanged(ctx, task_xml, command_runner=command_runner)
         commands.append(exact.public())
         command = windows_system_command(
@@ -210,8 +306,21 @@ def _start_dashboard_service_locked(
         ]
     result = _run(command, command_runner=command_runner)
     commands.append(result.public())
-    reachable = _readiness(readiness_probe) if result.ok else None
-    ok = result.ok and reachable is not False
+    manager_ready = result.ok
+    if ctx.platform == "windows" and result.ok:
+        manager_ready, state_queries = _wait_windows_running_state(
+            True,
+            command_runner=command_runner,
+        )
+        commands.extend(query.public() for query in state_queries)
+    reachable = (
+        _fresh_dashboard_readiness(ctx, readiness_probe, previous_runtime)
+        if manager_ready and ctx.platform == "windows"
+        else _readiness(readiness_probe)
+        if manager_ready
+        else None
+    )
+    ok = manager_ready and reachable is not False
     value: dict[str, Any] = {
         **_base("start", ctx),
         "ok": ok,
@@ -220,8 +329,14 @@ def _start_dashboard_service_locked(
         "reachable": reachable,
         "commands": commands,
     }
-    if result.ok and reachable is False:
-        value["error"] = "dashboard service did not become ready"
+    if result.ok and not manager_ready:
+        value["error"] = "scheduled task did not enter the running state"
+    elif manager_ready and reachable is False:
+        value["error"] = (
+            "dashboard service did not become ready with a fresh runtime"
+            if ctx.platform == "windows"
+            else "dashboard service did not become ready"
+        )
     return value
 
 
@@ -290,7 +405,9 @@ def _stop_dashboard_service_locked(
     commands: list[dict[str, Any]] = []
     idle = ctx.platform == "linux" and state.get("active") is False
     task_xml: str | None = None
+    previous_runtime: str | None = None
     if ctx.platform == "windows":
+        previous_runtime = _dashboard_runtime_fingerprint(ctx)
         task_xml, capture = _export_owned_windows_task(ctx, command_runner=command_runner)
         commands.append(capture.public())
         running, status_query = _windows_running_state(command_runner=command_runner)
@@ -304,7 +421,26 @@ def _stop_dashboard_service_locked(
             )
         idle = not running
     if idle:
-        descriptor_removed = _cleanup_stale_runtime(ctx, reachability_probe)
+        if ctx.platform == "windows":
+            clearance = _wait_dashboard_runtime_cleared(
+                ctx,
+                previous_runtime,
+            )
+            descriptor_removed = clearance.descriptor_removed
+            clearance_failure = _runtime_clearance_failure(
+                "stop",
+                ctx,
+                clearance,
+                commands=commands,
+                changed=descriptor_removed,
+                uncleared_error=(
+                    "scheduled task is idle but its dashboard runtime remains reachable"
+                ),
+            )
+            if clearance_failure is not None:
+                return clearance_failure
+        else:
+            descriptor_removed = _cleanup_stale_runtime(ctx, reachability_probe)
         return {
             **_base("stop", ctx),
             "ok": True,
@@ -331,13 +467,46 @@ def _stop_dashboard_service_locked(
         command = ["systemctl", "--user", "stop", SYSTEMD_UNIT_NAME]
     result = _run(command, command_runner=command_runner)
     commands.append(result.public())
-    descriptor_removed = result.ok and _cleanup_stale_runtime(ctx, reachability_probe)
+    manager_stopped = result.ok
+    if ctx.platform == "windows" and result.ok:
+        manager_stopped, state_queries = _wait_windows_running_state(
+            False,
+            command_runner=command_runner,
+        )
+        commands.extend(query.public() for query in state_queries)
+        if not manager_stopped:
+            value = _failed(
+                "stop",
+                ctx,
+                error="scheduled task did not reach the idle state after stop",
+                commands=commands,
+            )
+            value["changed"] = True
+            return value
+    if ctx.platform == "windows" and result.ok:
+        clearance = _wait_dashboard_runtime_cleared(
+            ctx,
+            previous_runtime,
+        )
+        descriptor_removed = clearance.descriptor_removed
+        clearance_failure = _runtime_clearance_failure(
+            "stop",
+            ctx,
+            clearance,
+            commands=commands,
+            changed=True,
+            uncleared_error="dashboard runtime remained reachable after scheduled task stopped",
+        )
+        if clearance_failure is not None:
+            return clearance_failure
+    else:
+        descriptor_removed = result.ok and _cleanup_stale_runtime(ctx, reachability_probe)
     return {
         **_base("stop", ctx),
-        "ok": result.ok,
-        "exit_code": 0 if result.ok else 1,
+        "ok": manager_stopped,
+        "exit_code": 0 if manager_stopped else 1,
         "changed": result.ok or descriptor_removed,
-        "status": "stopped" if result.ok else "stop_failed",
+        "status": "stopped" if manager_stopped else "stop_failed",
         "runtime_descriptor_removed": descriptor_removed,
         "commands": commands,
     }
@@ -407,6 +576,11 @@ def _restart_dashboard_service_locked(
             "changed": False,
             "error": "dashboard service is not installed",
         }
+    definition_block = _definition_drift_block("restart", ctx, state)
+    if definition_block is not None:
+        return definition_block
+    _revalidate_dashboard_launcher(ctx)
+    previous_runtime: str | None = None
     if ctx.platform == "linux":
         raw_results = [
             _run(
@@ -416,7 +590,15 @@ def _restart_dashboard_service_locked(
         ]
         command_ok = raw_results[0].ok
     else:
+        previous_runtime = _dashboard_runtime_fingerprint(ctx)
         task_xml, capture = _export_owned_windows_task(ctx, command_runner=command_runner)
+        if not _windows_definition_matches(ctx, task_xml):
+            return _failed(
+                "restart",
+                ctx,
+                error="scheduled-task definition changed after preflight; reinstall the service",
+                commands=[capture.public()],
+            )
         running, status_query = _windows_running_state(command_runner=command_runner)
         raw_results = [capture, status_query]
         if running is None:
@@ -447,6 +629,34 @@ def _restart_dashboard_service_locked(
                     error="scheduled-task stop before restart failed",
                     commands=[item.public() for item in raw_results],
                 )
+            stopped, state_queries = _wait_windows_running_state(
+                False,
+                command_runner=command_runner,
+            )
+            raw_results.extend(state_queries)
+            if not stopped:
+                value = _failed(
+                    "restart",
+                    ctx,
+                    error="scheduled task did not reach the idle state before restart",
+                    commands=[item.public() for item in raw_results],
+                )
+                value["changed"] = True
+                return value
+        clearance = _wait_dashboard_runtime_cleared(
+            ctx,
+            previous_runtime,
+        )
+        clearance_failure = _runtime_clearance_failure(
+            "restart",
+            ctx,
+            clearance,
+            commands=[item.public() for item in raw_results],
+            changed=bool(running),
+            uncleared_error="old dashboard runtime remained reachable before restart",
+        )
+        if clearance_failure is not None:
+            return clearance_failure
         exact = _assert_windows_task_unchanged(ctx, task_xml, command_runner=command_runner)
         raw_results.append(exact)
         run_result = _run(
@@ -461,7 +671,19 @@ def _restart_dashboard_service_locked(
         )
         raw_results.append(run_result)
         command_ok = run_result.ok
-    reachable = _readiness(readiness_probe) if command_ok else None
+        if run_result.ok:
+            command_ok, state_queries = _wait_windows_running_state(
+                True,
+                command_runner=command_runner,
+            )
+            raw_results.extend(state_queries)
+    reachable = (
+        _fresh_dashboard_readiness(ctx, readiness_probe, previous_runtime)
+        if command_ok and ctx.platform == "windows"
+        else _readiness(readiness_probe)
+        if command_ok
+        else None
+    )
     ok = command_ok and reachable is not False
     value: dict[str, Any] = {
         **_base("restart", ctx),
@@ -471,8 +693,14 @@ def _restart_dashboard_service_locked(
         "reachable": reachable,
         "commands": [item.public() for item in raw_results],
     }
-    if command_ok and reachable is False:
-        value["error"] = "dashboard service did not become ready"
+    if ctx.platform == "windows" and raw_results[-1].ok and not command_ok:
+        value["error"] = "scheduled task did not enter the running state"
+    elif command_ok and reachable is False:
+        value["error"] = (
+            "dashboard service did not become ready with a fresh runtime"
+            if ctx.platform == "windows"
+            else "dashboard service did not become ready"
+        )
     return value
 
 
@@ -553,7 +781,7 @@ def _systemd_uninstall_transaction(
 ) -> _SystemdUninstallTransaction:
     if ctx.unit_path is None:
         raise RuntimeError("Linux dashboard service context has no unit path")
-    prior_unit = _read_service_file(ctx.unit_path)
+    prior_unit = _read_systemd_unit(ctx)
     prior_manifest = _read_manifest_bytes(ctx)
     return _SystemdUninstallTransaction(
         prior_unit=prior_unit,
@@ -595,7 +823,7 @@ def _perform_systemd_uninstall(
         expected_unit=transaction.expected_unit,
         expected_manifest=transaction.expected_manifest,
     )
-    _safe_unlink(ctx.unit_path)
+    _safe_unlink(ctx.unit_path, trusted_root=_systemd_unit_root(ctx))
     transaction.expected_unit = None
     _safe_unlink(ctx.manifest_path)
     transaction.expected_manifest = None

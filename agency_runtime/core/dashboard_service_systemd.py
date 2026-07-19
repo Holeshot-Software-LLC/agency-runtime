@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from agency_runtime.core.configuration import ConfigurationError
+from agency_runtime.core.configuration_persistence import assert_config_namespace
 from agency_runtime.core.dashboard_service_core import (
     OWNER_MARKER,
     SYSTEMD_UNIT_NAME,
@@ -15,8 +19,41 @@ from agency_runtime.core.dashboard_service_core import (
 )
 from agency_runtime.core.dashboard_service_manifest import (
     _file_matches,
+    _read_service_file,
     _restore_file,
 )
+
+
+def _systemd_unit_root(ctx: _Context) -> Path:
+    if ctx.unit_path is None:
+        raise RuntimeError("Linux dashboard service context has no unit path")
+    root = Path(os.path.abspath(ctx.unit_root or ctx.unit_path.parent))
+    unit = Path(os.path.abspath(ctx.unit_path))
+    try:
+        unit.relative_to(root)
+    except ValueError as exc:
+        raise ConfigurationError("systemd unit escaped its configured XDG namespace") from exc
+    return root
+
+
+def _assert_systemd_unit_namespace(ctx: _Context) -> None:
+    """Require a mutation-safe XDG namespace before unit reads or writes."""
+
+    if ctx.unit_path is None:
+        raise RuntimeError("Linux dashboard service context has no unit path")
+    _systemd_unit_root(ctx)
+    assert_config_namespace(ctx.unit_path)
+
+
+def _read_systemd_unit(ctx: _Context) -> bytes:
+    """Read one unit between trusted-namespace checks."""
+
+    if ctx.unit_path is None:
+        raise RuntimeError("Linux dashboard service context has no unit path")
+    _assert_systemd_unit_namespace(ctx)
+    payload = _read_service_file(ctx.unit_path)
+    _assert_systemd_unit_namespace(ctx)
+    return payload
 
 
 def _systemd_quote(value: str) -> str:
@@ -72,12 +109,14 @@ def _assert_systemd_files(
 ) -> None:
     """Fail closed if registration state changed outside the held service lock."""
 
-    if ctx.unit_path is None:
+    _assert_systemd_unit_namespace(ctx)
+    if ctx.unit_path is None:  # pragma: no cover - narrowed above
         raise RuntimeError("Linux dashboard service context has no unit path")
     if not _file_matches(ctx.unit_path, expected_unit) or not _file_matches(
         ctx.manifest_path, expected_manifest
     ):
         raise RuntimeError("systemd service files changed before mutation")
+    _assert_systemd_unit_namespace(ctx)
 
 
 def _restore_systemd_state(
@@ -116,8 +155,12 @@ def _restore_systemd_state(
             expected_unit=expected_unit,
             expected_manifest=expected_manifest,
         )
-        _restore_file(ctx.unit_path, prior_unit)
-        _restore_file(ctx.manifest_path, prior_manifest)
+        _restore_file(
+            ctx.unit_path,
+            prior_unit,
+            trusted_root=_systemd_unit_root(ctx),
+        )
+        _restore_file(ctx.manifest_path, prior_manifest, trusted_root=ctx.home)
         mutation_results.append(
             _run(
                 ["systemctl", "--user", "daemon-reload"],
@@ -153,7 +196,7 @@ def _restore_systemd_state(
             ctx.manifest_path, expected_manifest
         ):
             try:
-                _restore_file(ctx.manifest_path, None)
+                _restore_file(ctx.manifest_path, None, trusted_root=ctx.home)
                 restore_error = (
                     "unsafe systemd rollback refused: service files changed; "
                     "ownership manifest removed"
@@ -194,8 +237,11 @@ def _restore_systemd_state(
 
 __all__ = [
     "_assert_systemd_files",
+    "_assert_systemd_unit_namespace",
+    "_read_systemd_unit",
     "_restore_systemd_state",
     "_systemd_active_state",
     "_systemd_enabled_state",
+    "_systemd_unit_root",
     "_unit_content",
 ]

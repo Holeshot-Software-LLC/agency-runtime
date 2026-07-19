@@ -13,6 +13,7 @@ export function createDashboard(runtime = globalThis) {
   let actions;
   const renderer = createRenderer(core, config, {
     rosterAction: (...args) => actions.rosterAction(...args),
+    toggleAgent: (...args) => actions.toggleAgent(...args),
     toggleHost: (...args) => actions.toggleHost(...args),
   });
   const live = createLiveController(core, config, renderer);
@@ -120,7 +121,24 @@ export function createDashboard(runtime = globalThis) {
     renderer.configureEvidenceTabs();
     listen(byId("refresh-button"), "click", live.refreshAll);
     listen(byId("route-button"), "click", actions.runRoute);
+    listen(byId("route-host"), "change", renderer.renderRouteHosts);
     listen(byId("trim-button"), "click", actions.trimRuntime);
+    listen(byId("roster-search-form"), "submit", live.searchRoster);
+    listen(byId("roster-search-clear"), "click", live.clearRosterSearch);
+    const operationalFilters = byId("roster-operations-form");
+    if (operationalFilters) listen(operationalFilters, "submit", live.applyOperationalFilters);
+    const clearOperationalFilters = byId("roster-filter-clear");
+    if (clearOperationalFilters) {
+      listen(clearOperationalFilters, "click", live.clearOperationalFilters);
+    }
+    const pendingRemediation = byId("review-pending-more");
+    if (pendingRemediation) {
+      listen(pendingRemediation, "click", () => live.loadMoreRemediation("pending"));
+    }
+    const remediationHistory = byId("review-history-more");
+    if (remediationHistory) {
+      listen(remediationHistory, "click", () => live.loadMoreRemediation("history"));
+    }
     listen(byId("trim-days"), "input", () => {
       byId("trim-days").dataset.dirty = "true";
     });
@@ -148,6 +166,10 @@ export function createDashboard(runtime = globalThis) {
       state.live.enabled = liveToggle.getAttribute("aria-pressed") !== "false";
       live.syncLiveToggle();
       listen(liveToggle, "click", () => setLiveEnabled(!state.live.enabled));
+    }
+    const masterToggle = byId("master-toggle");
+    if (masterToggle) {
+      listen(masterToggle, "click", () => actions.toggleMaster(state.master?.enabled === false));
     }
     listen(document, "visibilitychange", handleVisibilityChange);
     listen(window, "pagehide", handlePageHide);

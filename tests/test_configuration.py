@@ -22,12 +22,13 @@ from agency_runtime.core.configuration import (
     replace_config_document,
     resolve_config_path,
 )
+from tests.runtime_support import is_agency_product_environment_key
 
 
 @pytest.fixture(autouse=True)
 def _isolated_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in tuple(os.environ):
-        if name.startswith("AGENCY_") or name in {
+        if is_agency_product_environment_key(name) or name in {
             "LITELLM_API_KEY",
             "OLLAMA_BASE_URL",
         }:
@@ -66,6 +67,36 @@ def test_resolve_config_path_defaults_to_user_runtime_home(
     monkeypatch.setattr(persistence.Path, "home", classmethod(lambda _cls: tmp_path))
 
     assert resolve_config_path() == tmp_path / ".agency-runtime" / "agency.yaml"
+
+
+@pytest.mark.parametrize("content", [b"null\n", b"~\n", b"---\n", b"# comment only\n"])
+def test_state_rejects_nonempty_null_yaml_document(
+    tmp_path: Path,
+    content: bytes,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_bytes(content)
+
+    with pytest.raises(
+        ConfigValidationError,
+        match="configuration root must be a mapping",
+    ):
+        read_config_state(path)
+
+
+@pytest.mark.parametrize("content", [b"", b" \n\t\r\n"])
+def test_state_accepts_only_empty_or_whitespace_yaml_document(
+    tmp_path: Path,
+    content: bytes,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    path.write_bytes(content)
+
+    state = read_config_state(path)
+
+    assert state.persisted == {}
+    assert state.effective["profile"] == "standard"
+    assert path.read_bytes() == content
 
 
 def test_state_separates_redacted_persisted_and_effective_values(
@@ -122,6 +153,22 @@ def test_dashboard_port_environment_override_is_explicit(
     assert state.effective["dashboard"]["port"] == 7911
     assert state.environment_overrides["dashboard.port"] == "AGENCY_DASHBOARD_PORT"
     assert "dashboard.port" in state.restart_required_paths
+
+
+def test_companion_policy_environment_override_is_part_of_config_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    policy_path = tmp_path / "process-policy.yaml"
+    _write(path, {"companion_policy_path": "persisted-policy.yaml"})
+    monkeypatch.setenv("AGENCY_POLICY_PATH", str(policy_path))
+
+    state = read_config_state(path)
+
+    assert state.persisted["companion_policy_path"] == "persisted-policy.yaml"
+    assert state.effective["companion_policy_path"] == str(policy_path)
+    assert state.environment_overrides["companion_policy_path"] == "AGENCY_POLICY_PATH"
 
 
 @pytest.mark.parametrize("invalid", ["abc", "70000"])
@@ -346,6 +393,43 @@ def test_stale_revision_is_rejected_without_lost_update(tmp_path: Path) -> None:
 
     assert read_config_state(path).revision == first.state.revision
     assert yaml.safe_load(path.read_text(encoding="utf-8"))["observability"]["retention_days"] == 45
+
+
+def test_locked_precondition_runs_after_revision_check_and_before_write(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    initial = read_config_state(path)
+    calls: list[str] = []
+
+    def refuse() -> None:
+        calls.append("checked")
+        raise RuntimeError("Store identity changed")
+
+    with pytest.raises(RuntimeError, match="Store identity changed"):
+        apply_config_operations(
+            [{"op": "set", "path": "observability.retention_days", "value": 45}],
+            expected_revision=initial.revision,
+            path=path,
+            locked_precondition=refuse,
+        )
+    assert calls == ["checked"]
+    assert read_config_state(path).revision == initial.revision
+
+    changed = apply_config_operations(
+        [{"op": "set", "path": "observability.retention_days", "value": 45}],
+        expected_revision=initial.revision,
+        path=path,
+    )
+    with pytest.raises(ConfigConflictError, match="refresh before saving"):
+        apply_config_operations(
+            [{"op": "set", "path": "observability.retention_days", "value": 90}],
+            expected_revision=initial.revision,
+            path=path,
+            locked_precondition=lambda: calls.append("stale"),
+        )
+    assert calls == ["checked"]
+    assert read_config_state(path).revision == changed.state.revision
 
 
 @pytest.mark.parametrize(
@@ -917,6 +1001,11 @@ def test_environment_config_path_never_rewrites_preexisting_parent_acl(
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(target))
     calls: list[tuple[Path, bool]] = []
     monkeypatch.setattr(configuration, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        configuration._persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
 
     def allow_acl(candidate: Path, *, directory: bool = False) -> bool:
         calls.append((candidate, directory))
@@ -951,6 +1040,16 @@ def test_config_hardens_a_newly_created_target_directory(
         calls.append((candidate, directory))
         return True
 
+    # Exercise the generic creation boundary. On Windows, Codex can register
+    # an identity-pinned private-path authority whose own hardening seam owns
+    # this directory; the POSIX branch keeps this test focused on the generic
+    # persistence callback on every test host.
+    monkeypatch.setattr(configuration, "_IS_WINDOWS", False)
+    monkeypatch.setattr(
+        configuration._persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
     monkeypatch.setattr(configuration, "_restrict_permissions", observe)
 
     configuration._atomic_write_yaml(target, {"profile": "standard"})
@@ -968,6 +1067,11 @@ def test_private_write_fails_before_replace_when_windows_acl_cannot_be_enforced(
     observed_temporary_bytes: list[bytes] = []
     replace_calls: list[tuple[Path, Path]] = []
     monkeypatch.setattr(configuration, "_IS_WINDOWS", True)
+    monkeypatch.setattr(
+        configuration._persistence,
+        "assert_config_namespace",
+        lambda _path, **_kwargs: None,
+    )
 
     def deny_private_acl(candidate: Path) -> bool:
         observed_temporary_bytes.append(candidate.read_bytes())
@@ -986,7 +1090,9 @@ def test_private_write_fails_before_replace_when_windows_acl_cannot_be_enforced(
             {"judge": {"api_key": "never-written-config-secret"}},
         )
 
-    assert observed_temporary_bytes == [b""]
+    # Existing config privacy is now verified before even allocating a
+    # candidate, so a denied ACL hardening attempt observes only the old bytes.
+    assert observed_temporary_bytes == [before]
     assert replace_calls == []
     assert path.read_bytes() == before
     assert b"never-written-config-secret" not in path.read_bytes()

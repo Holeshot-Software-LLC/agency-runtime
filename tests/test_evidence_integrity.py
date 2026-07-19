@@ -95,7 +95,7 @@ def test_delegate_correlates_by_task_instead_of_first_suggestion(tmp_path: Path)
     adapter.post_tool_call_handler(
         tool_name="delegate_task",
         args={"task": tasks[1]},
-        result={"success": True},
+        result={"success": True, "agent_id": "worker-1", "run_id": "native-run-1"},
         session_id="session-1",
     )
 
@@ -119,7 +119,7 @@ def test_delegate_correlates_by_unique_agent(tmp_path: Path) -> None:
     adapter.post_tool_call_handler(
         tool_name="delegate_async",
         args={"agent": "software-architect"},
-        result={"ok": True},
+        result={"ok": True, "agent_id": "worker-1", "run_id": "native-run-1"},
         session_id="session-1",
     )
 
@@ -143,7 +143,7 @@ def test_ambiguous_delegate_does_not_mutate_arbitrary_suggestion(tmp_path: Path)
     adapter.post_tool_call_handler(
         tool_name="delegate_task",
         args={"agent": "software-architect"},
-        result={"success": True},
+        result={"success": True, "agent_id": "worker-1", "run_id": "native-run-1"},
         session_id="session-1",
     )
 
@@ -181,6 +181,10 @@ def test_delegation_queries_preserve_insertion_order_when_timestamps_tie(
             work_unit_id=work_unit_id,
             recommended_agent=agent,
             status=status,
+            backend="test-backend" if status == "delegated" else "",
+            executed_worker_kind="generic-worker" if status == "delegated" else "",
+            executed_worker_id="worker-1" if status == "delegated" else "",
+            native_run_id="native-run-1" if status == "delegated" else "",
         )
 
     expected = [work_unit_id for work_unit_id, _status, _agent in events]
@@ -196,15 +200,15 @@ def test_delegation_queries_preserve_insertion_order_when_timestamps_tie(
         )
     ] == expected[:2]
     assert (
-        fill_header_fields({}, "session-1", store)["agencies_delegated"]
-        == "technical-writer via unknown backend, senior-developer via unknown backend"
+        fill_header_fields({}, "session-1", store, trace_id="trace-1")["agencies_delegated"]
+        == "none - executed worker has no validated Agency specialist"
     )
 
 
 def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
-    store.record_specialist_loaded("session-1", "code-reviewer")
-    store.record_skill_loaded("session-1", "repo-audit")
+    store.record_specialist_loaded("session-1", "code-reviewer", trace_id="trace-1")
+    store.record_skill_loaded("session-1", "repo-audit", trace_id="trace-1")
     store.record_delegation(
         trace_id="trace-1",
         session_id="session-1",
@@ -212,6 +216,9 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
         recommended_agent="code-reviewer",
         status="delegated",
         backend="delegate_task",
+        executed_worker_kind="generic-worker",
+        executed_worker_id="worker-1",
+        native_run_id="native-run-1",
     )
     store.record_model_receipt(
         trace_id="trace-1",
@@ -232,17 +239,33 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
         "how_it_shaped_outcome": "test",
     }
 
-    filled = fill_header_fields(spoofed, "session-1", store, "task-general")
+    filled = fill_header_fields(
+        spoofed,
+        "session-1",
+        store,
+        "task-general",
+        "trace-1",
+    )
     assert filled["agencies_loaded"] == "code-reviewer"
-    assert filled["agencies_delegated"] == "code-reviewer via delegate_task"
+    assert (
+        filled["agencies_delegated"] == "none - executed worker has no validated Agency specialist"
+    )
     assert filled["skills_loaded"] == "repo-audit"
     assert (
         filled["actual_model_selected"] == "[general] task-general -> provider/actual-model (host)"
     )
 
-    finalized = finalize_header(_response(spoofed), "session-1", store, "task-general")
+    finalized = finalize_header(
+        _response(spoofed),
+        "session-1",
+        store,
+        "task-general",
+        "trace-1",
+    )
     assert "Agency/Agencies loaded: code-reviewer\n" in finalized
-    assert "Agency/Agencies delegated: code-reviewer via delegate_task\n" in finalized
+    assert (
+        "Agency/Agencies delegated: none - executed worker has no validated Agency specialist\n"
+    ) in finalized
     assert "Skills loaded: repo-audit\n" in finalized
     assert (
         "Actual Model selected: [general] task-general -> provider/actual-model (host)\n"
@@ -255,8 +278,14 @@ def test_header_fill_and_finalization_overwrite_spoofed_evidence(tmp_path: Path)
 
 def test_pre_verify_rejects_spoofed_evidence_on_later_attempt(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
-    store.record_specialist_loaded("session-1", "code-reviewer")
-    store.record_skill_loaded("session-1", "repo-audit")
+    store.create_run(
+        trace_id="trace-1",
+        session_id="session-1",
+        host="hermes",
+        metadata={"request_kind": "nontrivial"},
+    )
+    store.record_specialist_loaded("session-1", "code-reviewer", trace_id="trace-1")
+    store.record_skill_loaded("session-1", "repo-audit", trace_id="trace-1")
     adapter = HermesAdapter(store=store)
     spoofed = {
         "agencies_loaded": "code-reviewer, invented-agent",
@@ -272,6 +301,7 @@ def test_pre_verify_rejects_spoofed_evidence_on_later_attempt(tmp_path: Path) ->
         session_id="session-1",
         model="task-general",
         attempt=2,
+        trace_id="trace-1",
     )
 
     assert result is not None
@@ -284,7 +314,13 @@ def test_pre_verify_rejects_spoofed_evidence_on_later_attempt(tmp_path: Path) ->
 
 def test_pre_verify_accepts_exact_authoritative_evidence_on_later_attempt(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
-    store.record_specialist_loaded("session-1", "code-reviewer")
+    store.create_run(
+        trace_id="trace-1",
+        session_id="session-1",
+        host="hermes",
+        metadata={"request_kind": "nontrivial"},
+    )
+    store.record_specialist_loaded("session-1", "code-reviewer", trace_id="trace-1")
     adapter = HermesAdapter(store=store)
     fields = fill_header_fields(
         {
@@ -295,6 +331,7 @@ def test_pre_verify_accepts_exact_authoritative_evidence_on_later_attempt(tmp_pa
         "session-1",
         store,
         "task-general",
+        "trace-1",
     )
 
     result = adapter.pre_verify_handler(
@@ -302,6 +339,34 @@ def test_pre_verify_accepts_exact_authoritative_evidence_on_later_attempt(tmp_pa
         session_id="session-1",
         model="task-general",
         attempt=3,
+        trace_id="trace-1",
     )
 
     assert result is None
+
+
+def test_delegation_identifiers_are_bounded_at_store_ingress(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    event_id = store.record_delegation(
+        trace_id="turn",
+        session_id="session",
+        host="h" * 1_000,
+        work_unit_id="unit-" + ("w" * 1_000),
+        recommended_agent="🔥" * 20_000,
+        backend="b" * 1_000,
+        status="completed",
+        executed_worker_kind="k" * 1_000,
+        executed_worker_id="i" * 1_000,
+        native_run_id="n" * 1_000,
+    )
+
+    row = next(item for item in store.get_delegations("turn") if item["id"] == event_id)
+    assert len(row["host"]) == 64
+    assert len(row["work_unit_id"]) == 160
+    assert len(row["recommended_agent"]) == 128
+    assert len(row["backend"]) == 128
+    assert len(row["executed_worker_kind"]) == 64
+    assert len(row["executed_worker_id"]) == 256
+    assert len(row["native_run_id"]) == 256
+    with pytest.raises(ValueError, match="unsupported delegation status"):
+        store.update_delegation(event_id, status="model-controlled-status")

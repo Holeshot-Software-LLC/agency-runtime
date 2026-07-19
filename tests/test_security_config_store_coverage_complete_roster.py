@@ -344,6 +344,123 @@ def test_path_chain_and_directory_discovery_change_branches(
     assert ingress._directory_files(tmp_path) == []
 
 
+def test_directory_entry_receipts_fail_closed_at_bounded_scan_boundaries(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    long_name = tmp_path / "long.txt"
+    long_name.write_text("ignored", encoding="utf-8")
+    monkeypatch.setattr(ingress, "MAX_PATH_TEXT_BYTES", 1)
+    with pytest.raises(ingress.RosterSyncError, match="name is too long"):
+        ingress._directory_entry_snapshot(tmp_path)
+
+    monkeypatch.undo()
+    special = tmp_path / "special.txt"
+    special_metadata = SimpleNamespace(st_mode=stat.S_IFIFO, st_file_attributes=0)
+    monkeypatch.setattr(Path, "iterdir", lambda _path: iter((special,)))
+    monkeypatch.setattr(ingress.os, "lstat", lambda _path: special_metadata)
+    with pytest.raises(ingress.RosterSyncError, match="special entry"):
+        ingress._directory_entry_snapshot(tmp_path)
+
+    monkeypatch.undo()
+    monkeypatch.setattr(
+        Path,
+        "iterdir",
+        lambda _path: (_ for _ in ()).throw(PermissionError("blocked")),
+    )
+    with pytest.raises(ingress.RosterSyncError, match="changed during discovery"):
+        ingress._directory_entry_snapshot(tmp_path)
+
+    monkeypatch.undo()
+    receipt = ingress._DirectoryReceipt(
+        path=tmp_path,
+        fingerprint=ingress._directory_fingerprint(ingress.os.lstat(tmp_path)),
+        entries=(),
+    )
+    monkeypatch.setattr(ingress, "_assert_real_path_chain", lambda path: path)
+    monkeypatch.setattr(
+        ingress.os,
+        "lstat",
+        lambda _path: (_ for _ in ()).throw(PermissionError("blocked")),
+    )
+    with pytest.raises(ingress.RosterSyncError, match="changed during discovery"):
+        ingress._assert_directory_receipts_unchanged([receipt])
+
+
+def test_directory_entry_budget_is_source_wide_across_nested_directories(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    for name in ("one", "two"):
+        directory = tmp_path / name
+        directory.mkdir()
+        (directory / "ignored.txt").write_text("ignored", encoding="utf-8")
+    monkeypatch.setattr(ingress, "MAX_DIRECTORY_ENTRIES", 2)
+
+    with pytest.raises(ingress.RosterSyncError, match="exceeds 2 entries"):
+        ingress._directory_files(tmp_path)
+
+
+def test_directory_receipt_verification_budget_is_source_wide(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    for name in ("one", "two"):
+        directory = tmp_path / name
+        directory.mkdir()
+        (directory / "ignored.txt").write_text("ignored", encoding="utf-8")
+    receipts: list[ingress._DirectoryReceipt] = []
+    ingress._directory_files(tmp_path, receipts=receipts)
+    monkeypatch.setattr(ingress, "MAX_DIRECTORY_ENTRIES", 3)
+
+    with pytest.raises(ingress.RosterSyncError, match="exceeds 3 entries"):
+        ingress._assert_directory_receipts_unchanged(receipts)
+
+
+def test_directory_receipt_rejects_identity_swap_after_entry_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    os_facade,
+) -> None:
+    real_os = ingress.os
+    before = real_os.lstat(tmp_path)
+    replaced = SimpleNamespace(
+        st_dev=before.st_dev,
+        st_ino=int(before.st_ino) + 1,
+        st_mode=before.st_mode,
+        st_file_attributes=int(getattr(before, "st_file_attributes", 0) or 0),
+        st_mtime=before.st_mtime,
+        st_mtime_ns=getattr(before, "st_mtime_ns", None),
+    )
+    monkeypatch.setattr(ingress, "os", os_facade(real_os))
+    monkeypatch.setattr(ingress, "_assert_real_path_chain", lambda path: path)
+    monkeypatch.setattr(ingress, "_scan_directory_entries", lambda *_args, **_kw: ([], ()))
+    metadata = iter((before, replaced))
+    monkeypatch.setattr(ingress.os, "lstat", lambda _path: next(metadata))
+
+    with pytest.raises(ingress.RosterSyncError, match="changed during discovery"):
+        ingress._capture_directory_receipt(
+            tmp_path,
+            ingress._directory_fingerprint(before),
+        )
+
+    calls = 0
+
+    def vanish_after_snapshot(_path: Path) -> object:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return before
+        raise PermissionError("replaced")
+
+    monkeypatch.setattr(ingress.os, "lstat", vanish_after_snapshot)
+    with pytest.raises(ingress.RosterSyncError, match="changed during discovery"):
+        ingress._capture_directory_receipt(
+            tmp_path,
+            ingress._directory_fingerprint(before),
+        )
+
+
 def test_read_and_download_source_shape_limits(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ingress, "_validate_source_spec", lambda _url: ("http", "url"))
     monkeypatch.setattr(ingress, "_read_http_source", lambda _url: "<html>bad</html>")
@@ -715,6 +832,7 @@ def test_approve_already_approved_snapshot_commits_without_rewrite(
     manifest = {"approved": True, "candidates": [_agent()]}
     monkeypatch.setattr(sync, "_snapshot_from_connection", lambda *_args: (manifest, False))
     monkeypatch.setattr(sync, "_assert_candidate_records", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(sync, "assert_candidate_audits_current", lambda *_args, **_kwargs: None)
     sync.approve_snapshot(store, "s")  # type: ignore[arg-type]
     assert connection.committed is True
     assert connection.closed is True

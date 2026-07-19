@@ -59,7 +59,13 @@ def test_lifecycle_preflight_unsupported_and_forwarding(tmp_path, monkeypatch):
     )
     assert unsupported[0] is None and unsupported[1]["supported"] is False
     ctx = context(tmp_path)
+    validated = []
     monkeypatch.setattr(subject, "_context", lambda **_kw: ctx)
+    monkeypatch.setattr(
+        subject,
+        "_validate_dashboard_launcher",
+        lambda value: validated.append(value) or value,
+    )
     monkeypatch.setattr(subject, "_preflight", lambda *_a, **_kw: (None, {"ok": True}))
     assert subject._lifecycle_preflight(
         "start",
@@ -69,6 +75,7 @@ def test_lifecycle_preflight_unsupported_and_forwarding(tmp_path, monkeypatch):
         python_executable=None,
         command_runner=None,
     ) == (ctx, None, {"ok": True})
+    assert validated == [ctx]
 
 
 @pytest.mark.parametrize(
@@ -116,6 +123,7 @@ def test_public_lifecycle_operations_normalize_lock_errors(
 def test_start_preflight_not_installed_already_running_and_incomplete(tmp_path, monkeypatch):
     ctx = context(tmp_path)
     blocked = {"ok": False, "error": "blocked"}
+    monkeypatch.setattr(subject, "_revalidate_dashboard_launcher", lambda *_a: None)
     monkeypatch.setattr(subject, "_lifecycle_preflight", lambda *_a, **_kw: (ctx, blocked, {}))
     assert subject._start_dashboard_service_locked() is blocked
     monkeypatch.setattr(subject, "_lifecycle_preflight", lambda *_a, **_kw: (None, None, None))
@@ -143,16 +151,22 @@ def test_start_windows_refuses_indeterminate_or_unreachable_running_task(
     tmp_path, monkeypatch, running, message
 ):
     ctx = context(tmp_path, "windows")
+    monkeypatch.setattr(subject, "_revalidate_dashboard_launcher", lambda *_a: None)
     monkeypatch.setattr(
         subject,
         "_lifecycle_preflight",
-        lambda *_a, **_kw: (ctx, None, {"installed": True, "reachable": False}),
+        lambda *_a, **_kw: (
+            ctx,
+            None,
+            {"installed": True, "reachable": False, "definition_drift": False},
+        ),
     )
     monkeypatch.setattr(
         subject,
         "_export_owned_windows_task",
         lambda *_a, **_kw: ("xml", command("capture")),
     )
+    monkeypatch.setattr(subject, "_windows_definition_matches", lambda *_a: True)
     monkeypatch.setattr(
         subject,
         "_windows_running_state",
@@ -165,6 +179,7 @@ def test_start_windows_refuses_indeterminate_or_unreachable_running_task(
 def test_start_linux_command_selection_failure_and_readiness(tmp_path, monkeypatch):
     ctx = context(tmp_path)
     state = {"installed": True, "reachable": False, "active": True}
+    monkeypatch.setattr(subject, "_revalidate_dashboard_launcher", lambda *_a: None)
     monkeypatch.setattr(subject, "_lifecycle_preflight", lambda *_a, **_kw: (ctx, None, state))
     commands = []
     monkeypatch.setattr(
@@ -237,6 +252,11 @@ def test_stop_windows_indeterminate_missing_capture_and_command_results(tmp_path
     )
     monkeypatch.setattr(subject, "_assert_windows_task_unchanged", lambda *_a, **_kw: command())
     monkeypatch.setattr(subject, "_cleanup_stale_runtime", lambda *_a: True)
+    monkeypatch.setattr(
+        subject,
+        "_wait_windows_running_state",
+        lambda *_a, **_kw: (True, [command("transition")]),
+    )
     monkeypatch.setattr(subject, "_run", lambda *_a, **_kw: command(code=0))
     assert subject._stop_dashboard_service_locked()["status"] == "stopped"
     monkeypatch.setattr(subject, "_run", lambda *_a, **_kw: command(code=1))
@@ -244,6 +264,7 @@ def test_stop_windows_indeterminate_missing_capture_and_command_results(tmp_path
 
 
 def test_restart_preflight_linux_and_windows_failures(tmp_path, monkeypatch):
+    monkeypatch.setattr(subject, "_revalidate_dashboard_launcher", lambda *_a: None)
     linux = context(tmp_path)
     blocked = {"ok": False}
     monkeypatch.setattr(subject, "_lifecycle_preflight", lambda *_a, **_kw: (linux, blocked, {}))
@@ -270,13 +291,18 @@ def test_restart_preflight_linux_and_windows_failures(tmp_path, monkeypatch):
     monkeypatch.setattr(
         subject,
         "_lifecycle_preflight",
-        lambda *_a, **_kw: (windows, None, {"installed": True}),
+        lambda *_a, **_kw: (
+            windows,
+            None,
+            {"installed": True, "definition_drift": False},
+        ),
     )
     monkeypatch.setattr(
         subject,
         "_export_owned_windows_task",
         lambda *_a, **_kw: ("xml", command("capture")),
     )
+    monkeypatch.setattr(subject, "_windows_definition_matches", lambda *_a: True)
     monkeypatch.setattr(
         subject,
         "_windows_running_state",
@@ -291,6 +317,150 @@ def test_restart_preflight_linux_and_windows_failures(tmp_path, monkeypatch):
     monkeypatch.setattr(subject, "_assert_windows_task_unchanged", lambda *_a, **_kw: command())
     monkeypatch.setattr(subject, "_run", lambda *_a, **_kw: command(code=1))
     assert "stop before restart failed" in subject._restart_dashboard_service_locked()["error"]
+
+
+def test_windows_lifecycle_transition_and_generation_failures(tmp_path, monkeypatch):
+    ctx = context(tmp_path, "windows")
+    state = {"installed": True, "reachable": False, "definition_drift": False}
+    monkeypatch.setattr(subject, "_lifecycle_preflight", lambda *_a, **_kw: (ctx, None, state))
+    monkeypatch.setattr(subject, "_revalidate_dashboard_launcher", lambda *_a: None)
+    monkeypatch.setattr(
+        subject,
+        "_export_owned_windows_task",
+        lambda *_a, **_kw: ("xml", command("capture")),
+    )
+    monkeypatch.setattr(subject, "_windows_definition_matches", lambda *_a: True)
+    monkeypatch.setattr(subject, "_assert_windows_task_unchanged", lambda *_a, **_kw: command())
+    monkeypatch.setattr(subject, "_dashboard_runtime_fingerprint", lambda *_a: "prior")
+    monkeypatch.setattr(subject, "_cleanup_stale_runtime", lambda *_a: False)
+    monkeypatch.setattr(subject, "_run", lambda *_a, **_kw: command())
+
+    monkeypatch.setattr(subject, "_windows_running_state", lambda **_kw: (False, command()))
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(False, False),
+    )
+    assert "remained reachable before start" in subject._start_dashboard_service_locked()["error"]
+
+    replacement = core._DashboardRuntimeClearance(
+        False,
+        False,
+        replacement_detected=True,
+    )
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: replacement,
+    )
+    start_conflict = subject._start_dashboard_service_locked()
+    assert start_conflict["status"] == "runtime_replaced"
+    assert start_conflict["reachable"] is None
+    assert start_conflict["replacement_runtime_preserved"] is True
+
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(True, False),
+    )
+    monkeypatch.setattr(
+        subject,
+        "_wait_windows_running_state",
+        lambda *_a, **_kw: (False, [command("transition")]),
+    )
+    assert "did not enter the running state" in subject._start_dashboard_service_locked()["error"]
+
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(False, False),
+    )
+    assert "runtime remains reachable" in subject._stop_dashboard_service_locked()["error"]
+
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: replacement,
+    )
+    idle_conflict = subject._stop_dashboard_service_locked()
+    assert idle_conflict["status"] == "runtime_replaced"
+    assert idle_conflict["ok"] is False
+    assert idle_conflict["changed"] is False
+    assert idle_conflict["reachable"] is None
+    assert idle_conflict["replacement_runtime_preserved"] is True
+
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(False, False),
+    )
+    monkeypatch.setattr(subject, "_windows_running_state", lambda **_kw: (True, command()))
+    stopped = subject._stop_dashboard_service_locked()
+    assert "did not reach the idle state" in stopped["error"] and stopped["changed"]
+
+    monkeypatch.setattr(
+        subject,
+        "_wait_windows_running_state",
+        lambda *_a, **_kw: (True, [command("transition")]),
+    )
+    stopped = subject._stop_dashboard_service_locked()
+    assert "runtime remained reachable" in stopped["error"] and stopped["changed"]
+
+    replaced_after_end = core._DashboardRuntimeClearance(
+        False,
+        True,
+        replacement_detected=True,
+    )
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: replaced_after_end,
+    )
+    running_conflict = subject._stop_dashboard_service_locked()
+    assert running_conflict["status"] == "runtime_replaced"
+    assert running_conflict["ok"] is False
+    assert running_conflict["changed"] is True
+    assert running_conflict["reachable"] is None
+    assert running_conflict["runtime_descriptor_removed"] is True
+
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(False, False),
+    )
+    monkeypatch.setattr(
+        subject,
+        "_wait_windows_running_state",
+        lambda *_a, **_kw: (False, [command("transition")]),
+    )
+    restarted = subject._restart_dashboard_service_locked()
+    assert "did not reach the idle state" in restarted["error"] and restarted["changed"]
+
+    monkeypatch.setattr(subject, "_windows_running_state", lambda **_kw: (False, command()))
+    restarted = subject._restart_dashboard_service_locked()
+    assert "old dashboard runtime remained" in restarted["error"]
+    assert restarted["changed"] is False
+
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: replacement,
+    )
+    restart_conflict = subject._restart_dashboard_service_locked()
+    assert restart_conflict["status"] == "runtime_replaced"
+    assert restart_conflict["changed"] is False
+
+    monkeypatch.setattr(
+        subject,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_a, **_kw: core._DashboardRuntimeClearance(True, False),
+    )
+    restarted = subject._restart_dashboard_service_locked()
+    assert "did not enter the running state" in restarted["error"]
+
+    monkeypatch.setattr(subject, "_run", lambda *_a, **_kw: command(code=1))
+    restarted = subject._restart_dashboard_service_locked()
+    assert restarted["ok"] is False
 
 
 def test_not_installed_uninstall_manifest_and_descriptor(tmp_path, monkeypatch):

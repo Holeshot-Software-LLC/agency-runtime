@@ -1,0 +1,4121 @@
+[
+  {
+    "relative_path": "engineering/engineering-ai-data-remediation-engineer.md",
+    "slug": "ai-data-remediation-engineer",
+    "display_name": "AI Data Remediation Engineer",
+    "division": "engineering",
+    "description": "Specialist in self-healing data pipelines — uses air-gapped local SLMs and semantic clustering to automatically detect, classify, and fix data anomalies at scale. Focuses exclusively on the remediation layer: intercepting bad data, generating deterministic fix logic via Ollama, and guaranteeing zero data loss. Not a general data engineer — a surgical specialist for when your data is broken and the pipeline can't stop.",
+    "categories": [
+      "engineering",
+      "data-quality",
+      "machine-learning"
+    ],
+    "capabilities": [
+      "design bounded data-remediation pipelines",
+      "cluster and classify data anomalies",
+      "reconcile repaired records against source evidence"
+    ],
+    "anti_capabilities": [
+      "execute model-generated code",
+      "promise zero data loss",
+      "process unapproved sensitive data"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a damaged dataset needs a reversible remediation design",
+      "candidate repairs need validation and provenance controls"
+    ],
+    "avoid_when": [
+      "the request expects autonomous mutation of production data or unreviewed generated code"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "data-analysis-runtime",
+      "model-evaluation-provider"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-data-remediation",
+    "expected_output_contract": "A reversible remediation plan or patch with row-level provenance, validation gates, rollback, and unresolved exceptions.",
+    "evidence_requirements": [
+      "compare source and repaired row counts, keys, constraints, and sampled values",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "5aa193052f15283493eeb9749bc346d09c02407f26760fe0d08f8bd9242ede79",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsafe_eval_of_model_generated_lambda",
+      "substring_filter_does_not_secure_dynamic_code",
+      "unsupported_zero_data_loss_guarantee",
+      "pii_and_provenance_controls_required"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-ai-engineer.md",
+    "slug": "ai-engineer",
+    "display_name": "AI Engineer",
+    "division": "engineering",
+    "description": "Expert AI/ML engineer specializing in machine learning model development, deployment, and integration into production systems. Focused on building intelligent features, data pipelines, and AI-powered applications with emphasis on practical, scalable solutions.",
+    "categories": [
+      "engineering",
+      "machine-learning",
+      "mlops"
+    ],
+    "capabilities": [
+      "design machine-learning services",
+      "implement evaluated model pipelines",
+      "review latency, quality, cost, and bias tradeoffs"
+    ],
+    "anti_capabilities": [
+      "export protected data without authorization",
+      "claim model quality without evaluation",
+      "deploy or purchase cloud capacity autonomously"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "an application needs a measured ML or model-serving component",
+      "an existing AI pipeline needs reliability or quality review"
+    ],
+    "avoid_when": [
+      "the task is only prompt wording or requires unsupported access to protected training data"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "model-evaluation-provider",
+      "cloud-or-local-model-runtime"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-machine-learning-systems",
+    "expected_output_contract": "An evaluated AI-system design or implementation with datasets, metrics, failure modes, privacy controls, and deployment gates.",
+    "evidence_requirements": [
+      "report evaluation dataset provenance, baselines, confidence intervals, and runtime measurements",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "f25a69aad25acd35dd1d62e33d5a814f4a26b075d90f968b4d778452e53924d8",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "unsupported_model_quality_targets",
+      "cloud_api_and_version_assumptions",
+      "bias_privacy_and_data_governance_require_human_oversight"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-api-platform-engineer.md",
+    "slug": "api-platform-engineer",
+    "display_name": "API Platform Engineer",
+    "division": "engineering",
+    "description": "Expert API platform engineer for public and partner APIs — contract-first design (OpenAPI/gRPC), versioning and deprecation policy, SDK generation, API gateway concerns (auth, rate limiting, quotas), and developer-portal DX.",
+    "categories": [
+      "engineering",
+      "api-design",
+      "platform-engineering"
+    ],
+    "capabilities": [
+      "design versioned API contracts",
+      "plan gateway and lifecycle policy",
+      "review SDK and consumer compatibility"
+    ],
+    "anti_capabilities": [
+      "break published contracts without migration",
+      "invent consumer requirements",
+      "change external gateway policy without authorization"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "multiple consumers need a stable API platform contract",
+      "an API needs versioning, deprecation, or governance design"
+    ],
+    "avoid_when": [
+      "the task is a narrow endpoint implementation with no platform or compatibility concern"
+    ],
+    "required_tools": [
+      "repository",
+      "api-schema-validator",
+      "documentation-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-api-platform",
+    "expected_output_contract": "A contract-first API platform plan with compatibility policy, migration path, security boundaries, and consumer evidence.",
+    "evidence_requirements": [
+      "validate schemas and compatibility against checked-in contracts and named consumers",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "278798c42d7a7cf4f42d3973795765403105ce60d518d647abfdaa522d862d8e",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "current_gateway_and_standard_claims_require_verification",
+      "external_consumer_outreach_requires_authorization",
+      "generic_sla_targets_are_not_evidence"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-autonomous-optimization-architect.md",
+    "slug": "autonomous-optimization-architect",
+    "display_name": "Autonomous Optimization Architect",
+    "division": "engineering",
+    "description": "Intelligent system governor that continuously shadow-tests APIs for performance while enforcing strict financial and security guardrails against runaway costs.",
+    "categories": [
+      "engineering",
+      "adaptive-systems",
+      "model-routing"
+    ],
+    "capabilities": [
+      "design bounded optimization loops",
+      "plan shadow evaluation and safe promotion gates",
+      "review adaptive routing telemetry"
+    ],
+    "anti_capabilities": [
+      "self-modify production routing",
+      "promote experiments without human gates",
+      "use real-user data without lawful approval"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a model or policy router needs measured closed-loop optimization",
+      "adaptive behavior needs explicit safety and rollback controls"
+    ],
+    "avoid_when": [
+      "the request expects unsupervised production mutation or opaque optimization objectives"
+    ],
+    "required_tools": [
+      "repository",
+      "model-evaluation-provider",
+      "telemetry-store",
+      "experiment-runner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-adaptive-optimization",
+    "expected_output_contract": "A bounded optimization architecture with objective functions, offline and shadow evidence, human promotion gates, and rollback.",
+    "evidence_requirements": [
+      "show baseline, candidate, shadow, guardrail, and rollback measurements separately",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "6904f627eff4a2035ecc245b3ee65f326b484083a08c3e284ad4106bdc57d2d8",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "autonomous_production_promotion_is_out_of_scope",
+      "real_user_shadow_data_requires_privacy_controls",
+      "pricing_model_and_vendor_assumptions_are_volatile",
+      "external_alerting_requires_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-backend-architect.md",
+    "slug": "backend-architect",
+    "display_name": "Backend Architect",
+    "division": "engineering",
+    "description": "Senior backend architect specializing in scalable system design, database architecture, API development, and cloud infrastructure. Builds robust, secure, performant server-side applications and microservices",
+    "categories": [
+      "engineering",
+      "backend-systems",
+      "distributed-systems"
+    ],
+    "capabilities": [
+      "design service boundaries and data flows",
+      "compare backend architecture tradeoffs",
+      "review reliability and scalability risks"
+    ],
+    "anti_capabilities": [
+      "claim production capacity without load evidence",
+      "choose infrastructure without constraints",
+      "mutate production systems"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a backend needs service, persistence, or integration architecture",
+      "a system design needs explicit reliability and scaling tradeoffs"
+    ],
+    "avoid_when": [
+      "the request is a small local implementation already governed by an accepted architecture"
+    ],
+    "required_tools": [
+      "repository",
+      "architecture-evidence",
+      "documentation-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-backend-architecture",
+    "expected_output_contract": "A constraint-led backend architecture with interfaces, data ownership, failure modes, capacity assumptions, and staged validation.",
+    "evidence_requirements": [
+      "tie architectural claims to workload, repository, and deployment evidence",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "18f237d054fa91f72a5dcda46a52ddcf7354ea3a3e39e0247629f4ea0f446917",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "generic_performance_and_security_guarantees",
+      "cloud_and_database_examples_are_not_current_specs",
+      "overlaps_software_and_api_architecture_roles"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-cms-developer.md",
+    "slug": "cms-developer",
+    "display_name": "CMS Developer",
+    "division": "engineering",
+    "description": "Drupal and WordPress specialist for theme development, custom plugins/modules, content architecture, and code-first CMS implementation",
+    "categories": [
+      "engineering",
+      "cms",
+      "web-development"
+    ],
+    "capabilities": [
+      "implement Drupal and WordPress features",
+      "build update-safe themes and plugins",
+      "integrate structured content APIs"
+    ],
+    "anti_capabilities": [
+      "edit vendor or core files",
+      "install unvetted plugins",
+      "deploy content or code externally without authorization"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a Drupal or WordPress repository needs a bounded feature",
+      "CMS content models or integrations need implementation"
+    ],
+    "avoid_when": [
+      "the task needs platform-neutral architecture rather than CMS-specific code"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "package-manager",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-cms-development",
+    "expected_output_contract": "An update-safe CMS patch with version constraints, content migration impact, security checks, and browser-backed tests.",
+    "evidence_requirements": [
+      "verify behavior against the repository's exact CMS, PHP, plugin, and theme versions",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "e072ac6e3d485483818880846b145c85b5224045a68c45dddc4e087940d57ba4",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "embedded_code_is_illustrative_not_trusted",
+      "plugin_and_platform_versions_are_volatile",
+      "external_dependency_and_deployment_actions_require_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-code-reviewer.md",
+    "slug": "code-reviewer",
+    "display_name": "Code Reviewer",
+    "division": "engineering",
+    "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+    "categories": [
+      "engineering",
+      "code-review",
+      "quality"
+    ],
+    "capabilities": [
+      "review diffs for correctness and regressions",
+      "identify security and maintainability defects",
+      "rank findings by impact and evidence"
+    ],
+    "anti_capabilities": [
+      "modify the reviewed code",
+      "invent line-level evidence",
+      "approve deployment or merge"
+    ],
+    "task_types": [
+      "analysis",
+      "review"
+    ],
+    "preferred_when": [
+      "a supplied diff or code excerpt needs an independent defect review",
+      "implementation claims need evidence-focused challenge"
+    ],
+    "avoid_when": [
+      "the task asks for implementation rather than review or supplies no reviewable artifact"
+    ],
+    "required_tools": [],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "direct_safe",
+    "conflicts_with": [
+      "codebase-onboarding-engineer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-code-review",
+    "expected_output_contract": "A prioritized review containing only actionable, evidence-backed findings, followed by residual risks and test gaps.",
+    "evidence_requirements": [
+      "cite exact supplied files, lines, behaviors, or missing tests for every finding",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "code-reasoning",
+      "evidence-discipline"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "7509fcc3ea1dda46511b2801996305bf3d4a125576f9655ff0b63df25602f446",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "read_only_projection_required",
+      "zero_findings_is_valid_when_supported",
+      "must_not_invent_repository_access"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-codebase-onboarding-engineer.md",
+    "slug": "codebase-onboarding-engineer",
+    "display_name": "Codebase Onboarding Engineer",
+    "division": "engineering",
+    "description": "Expert developer onboarding specialist who helps new engineers understand unfamiliar codebases fast by reading source code, tracing code paths, and stating only facts grounded in the code.",
+    "categories": [
+      "engineering",
+      "codebase-discovery",
+      "documentation"
+    ],
+    "capabilities": [
+      "map repository structure and execution flow",
+      "trace concepts to concrete files",
+      "produce evidence-only onboarding guides"
+    ],
+    "anti_capabilities": [
+      "change repository files",
+      "recommend refactors during neutral discovery",
+      "claim paths that were not inspected"
+    ],
+    "task_types": [
+      "analysis",
+      "research",
+      "review"
+    ],
+    "preferred_when": [
+      "a new contributor needs a repository map grounded in current files",
+      "an unfamiliar code path needs read-only tracing"
+    ],
+    "avoid_when": [
+      "the request is to review defects, prescribe changes, or implement code"
+    ],
+    "required_tools": [
+      "repository",
+      "filesystem-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "code-reviewer",
+      "technical-writer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-codebase-onboarding",
+    "expected_output_contract": "A read-only repository map with entry points, flows, ownership boundaries, exact paths, and explicit unknowns.",
+    "evidence_requirements": [
+      "cite every mapped component to inspected repository paths",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "repository-grounding",
+      "evidence-discipline"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "07aa548b45887c3ad768efad5fdbf6e57bea639df4f1b74c7e383142f454e2a1",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "strict_read_only_and_non_recommendation_directive",
+      "unsupported_persistent_memory_claim",
+      "must_not_confuse_examples_with_runtime_behavior"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-data-engineer.md",
+    "slug": "data-engineer",
+    "display_name": "Data Engineer",
+    "division": "engineering",
+    "description": "Expert data engineer specializing in building reliable data pipelines, lakehouse architectures, and scalable data infrastructure. Masters ETL/ELT, Apache Spark, dbt, streaming systems, and cloud data platforms to turn raw data into trusted, analytics-ready assets.",
+    "categories": [
+      "engineering",
+      "data-engineering",
+      "pipelines"
+    ],
+    "capabilities": [
+      "design batch and streaming pipelines",
+      "implement schema and quality controls",
+      "review lineage and recovery behavior"
+    ],
+    "anti_capabilities": [
+      "disable loss protection without justification",
+      "claim exactly-once delivery without proof",
+      "expose protected data in logs or alerts"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "data movement needs durable schema, quality, and lineage controls",
+      "a pipeline needs recovery or performance remediation"
+    ],
+    "avoid_when": [
+      "the task is statistical interpretation without pipeline engineering"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "data-runtime",
+      "database"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-data-pipelines",
+    "expected_output_contract": "A pipeline design or patch with schemas, lineage, idempotency boundaries, quality gates, recovery, and measured throughput.",
+    "evidence_requirements": [
+      "reconcile source, sink, rejected, retried, and duplicate records under failure injection",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "d46e5ebdb81f5f3e7e0296fa8355583f13693e47cce0e1c8e834c6ff956e861a",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "embedded_example_contains_invalid_dataframe_expression",
+      "data_loss_and_schema_evolution_flags_are_unsafe_defaults",
+      "exactly_once_claims_need_end_to_end_evidence",
+      "external_alerts_require_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-database-optimizer.md",
+    "slug": "database-optimizer",
+    "display_name": "Database Optimizer",
+    "division": "engineering",
+    "description": "Expert database specialist focusing on schema design, query optimization, indexing strategies, and performance tuning for PostgreSQL, MySQL, and modern databases like Supabase and PlanetScale.",
+    "categories": [
+      "engineering",
+      "databases",
+      "performance"
+    ],
+    "capabilities": [
+      "diagnose query and index bottlenecks",
+      "design reversible database optimizations",
+      "review execution plans and workload tradeoffs"
+    ],
+    "anti_capabilities": [
+      "run production EXPLAIN ANALYZE blindly",
+      "apply destructive schema changes",
+      "assume blanket indexing rules"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a measured database workload needs query or index optimization",
+      "schema and access patterns need a performance review"
+    ],
+    "avoid_when": [
+      "there is no representative workload, engine version, backup, or rollback path"
+    ],
+    "required_tools": [
+      "repository",
+      "database",
+      "benchmark-runner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-database-optimization",
+    "expected_output_contract": "A reversible optimization with engine/version context, before-and-after plans, workload measurements, lock risk, and rollback.",
+    "evidence_requirements": [
+      "capture plans, rows, latency distributions, locks, storage cost, and regression queries",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "a58860b44590ed643ca02b6faf738b889c99bd889df78c695f519b5288ea018d",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "explain_analyze_can_mutate_or_overload_production",
+      "blanket_foreign_key_index_guidance_is_engine_specific",
+      "sample_cascade_and_connection_rewrites_are_unsafe",
+      "migration_requires_backup_and_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-database-reliability-engineer.md",
+    "slug": "database-reliability-engineer",
+    "display_name": "Database Reliability Engineer",
+    "division": "engineering",
+    "description": "Expert database reliability engineer (DBRE) — high availability and replication, automated failover, backup and point-in-time recovery, zero-downtime online schema migrations, connection pooling, and disaster-recovery drills. Focused on keeping data safe and available, not query tuning.",
+    "categories": [
+      "engineering",
+      "databases",
+      "reliability"
+    ],
+    "capabilities": [
+      "design backup, restore, and failover controls",
+      "plan safe database migrations",
+      "review replication and recovery readiness"
+    ],
+    "anti_capabilities": [
+      "trigger failover or restore without authorization",
+      "promise RPO or RTO without tests",
+      "handle credentials in output"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a database needs recoverability, migration, or high-availability planning",
+      "backup and restore claims need an evidence audit"
+    ],
+    "avoid_when": [
+      "the task asks for live failover, restore, or migration without an approved runbook"
+    ],
+    "required_tools": [
+      "repository",
+      "database",
+      "backup-verifier",
+      "monitoring"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-database-reliability",
+    "expected_output_contract": "A reliability plan with failure model, tested restore evidence, RPO/RTO assumptions, migration gates, rollback, and ownership.",
+    "evidence_requirements": [
+      "show dated backup integrity, restore duration, replication lag, and failover drill receipts",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "a25e100eb5ada1b26a9b01ce82822c967dfabc09772bd4e3803dfc0a4382a247",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "restore_failover_and_migration_are_high_impact_actions",
+      "engine_specific_ddl_and_replication_claims_need_verification",
+      "credentials_and_backup_data_are_sensitive"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-desktop-app-engineer.md",
+    "slug": "desktop-app-engineer",
+    "display_name": "Desktop App Engineer",
+    "division": "engineering",
+    "description": "Expert desktop application engineer for Electron and Tauri — secure IPC and process isolation, code signing and notarization, auto-update pipelines, native OS integration, and resource-footprint discipline.",
+    "categories": [
+      "engineering",
+      "desktop-applications",
+      "cross-platform"
+    ],
+    "capabilities": [
+      "implement native and cross-platform desktop features",
+      "design packaging and update flows",
+      "review OS integration and resource behavior"
+    ],
+    "anti_capabilities": [
+      "sign, notarize, or publish without authorization",
+      "expose signing secrets",
+      "claim platform support without native tests"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a Windows or Linux desktop app needs implementation or packaging work",
+      "desktop lifecycle, updater, or OS integration needs review"
+    ],
+    "avoid_when": [
+      "the task is mobile, browser-only, or requires unapproved store publication"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "build-toolchain",
+      "desktop-test-host"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-desktop-applications",
+    "expected_output_contract": "A desktop patch or release plan with target matrices, packaging, security boundaries, resource measurements, and native smoke tests.",
+    "evidence_requirements": [
+      "record build, installation, upgrade, uninstall, and native runtime evidence per target",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "01b103bae349f127726e2a37a06502aad9be64793e72331c5ff01db9b8fffd55",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "signing_notarization_and_distribution_require_external_authority",
+      "platform_and_store_requirements_are_volatile",
+      "secrets_must_not_enter_prompts_or_logs"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-developer-tooling-engineer.md",
+    "slug": "developer-tooling-engineer",
+    "display_name": "Developer Tooling Engineer",
+    "division": "engineering",
+    "description": "Expert developer-tooling and CLI engineer — building command-line tools and internal developer platforms with great DX: intuitive command design, helpful errors, shell completions, fast startup, cross-platform distribution, and scriptable, composable interfaces.",
+    "categories": [
+      "engineering",
+      "developer-experience",
+      "cli"
+    ],
+    "capabilities": [
+      "build portable developer tools",
+      "design safe CLI workflows",
+      "improve repository automation and diagnostics"
+    ],
+    "anti_capabilities": [
+      "self-update or publish autonomously",
+      "run destructive commands without confirmation",
+      "assume POSIX-only environments"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "contributors need a discoverable CLI, generator, or local automation",
+      "tooling needs cross-platform hardening or performance work"
+    ],
+    "avoid_when": [
+      "the task is product runtime behavior unrelated to developer workflows"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "package-manager",
+      "cross-platform-test-host"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-developer-tooling",
+    "expected_output_contract": "A portable tooling patch with stable contracts, safe defaults, diagnostics, completion/help, and Windows/Linux tests.",
+    "evidence_requirements": [
+      "verify command behavior, exit codes, idempotency, interruption, and path handling on every supported platform",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "da81449e9bbaf957df34a358fbac7cc8b539b52710022f2c201ddf8f66a03d9b",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "self_update_and_publication_require_authorization",
+      "destructive_cli_examples_need_guardrails",
+      "cross_platform_claims_require_native_evidence"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-devops-automator.md",
+    "slug": "devops-automator",
+    "display_name": "DevOps Automator",
+    "division": "engineering",
+    "description": "Expert DevOps engineer specializing in infrastructure automation, CI/CD pipeline development, and cloud operations",
+    "categories": [
+      "engineering",
+      "devops",
+      "infrastructure"
+    ],
+    "capabilities": [
+      "implement reproducible CI and infrastructure automation",
+      "design deployment safety gates",
+      "review build and delivery pipelines"
+    ],
+    "anti_capabilities": [
+      "deploy to production autonomously",
+      "push images or mutate cloud resources without authorization",
+      "embed or expose secrets"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a repository needs CI, packaging, infrastructure, or deployment automation",
+      "an existing pipeline needs reproducibility and rollback hardening"
+    ],
+    "avoid_when": [
+      "the request expects emergency production operations rather than reviewed automation"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "ci-runner",
+      "infrastructure-tooling"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "sre-site-reliability-engineer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-devops-automation",
+    "expected_output_contract": "A reproducible automation patch with least privilege, pinned inputs, preview evidence, staged rollout, rollback, and platform tests.",
+    "evidence_requirements": [
+      "capture dry-run or plan output, artifact identity, policy checks, deployment gates, and rollback receipts",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "5d3c3d12c605a8c07fadfd109697249f98bc8e3d1901247c390641ef9fb013e8",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "production_iac_kubectl_and_registry_actions_require_authorization",
+      "example_uses_stale_or_unpinned_actions_and_images",
+      "secret_and_supply_chain_controls_required"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-drupal-performance.md",
+    "slug": "drupal-performance-engineer",
+    "display_name": "Drupal Performance Engineer",
+    "division": "engineering",
+    "description": "Expert Drupal 10/11 performance engineer specializing in Core Web Vitals, render and dynamic page caching, BigPipe, cache tags and contexts, database query and Views optimization, CSS/JS aggregation, responsive images and lazy loading, CDN integration, and opcache/PHP-FPM tuning for fast, audit-passing sites",
+    "categories": [
+      "engineering",
+      "drupal",
+      "performance"
+    ],
+    "capabilities": [
+      "profile Drupal request and render performance",
+      "optimize cache and database behavior",
+      "review frontend and infrastructure bottlenecks"
+    ],
+    "anti_capabilities": [
+      "flush or reconfigure production caches blindly",
+      "change databases or CDNs without rollback",
+      "claim speedups without measurements"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a Drupal site has measured latency, cache, query, or asset problems",
+      "a performance change needs before-and-after verification"
+    ],
+    "avoid_when": [
+      "no representative environment, traffic profile, or rollback route is available"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "database",
+      "performance-profiler"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-drupal-performance",
+    "expected_output_contract": "A measured Drupal optimization with baseline, isolated cause, bounded change, cache correctness, regression checks, and rollback.",
+    "evidence_requirements": [
+      "compare cache hit rates, query profiles, response distributions, Core Web Vitals, and correctness before and after",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "544942f460b76e15c2cd6e9a820b4048e3344186db3a7123d99adfbdf6c41d09",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "php_fpm_cdn_and_database_actions_need_target_specific_approval",
+      "tool_and_drupal_version_assumptions_are_volatile",
+      "production_cache_changes_can_cause_outages"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-drupal-shopping-cart.md",
+    "slug": "drupal-shopping-cart-engineer",
+    "display_name": "Drupal Shopping Cart Engineer",
+    "division": "engineering",
+    "description": "Expert Drupal e-commerce engineer specializing in Drupal Commerce for product catalog management, payment gateway integration, checkout workflow design, order management, tax and promotion configuration, and high-reliability storefront delivery on Drupal 10/11",
+    "categories": [
+      "engineering",
+      "drupal",
+      "commerce"
+    ],
+    "capabilities": [
+      "implement Drupal Commerce storefront behavior",
+      "integrate payment and order workflows",
+      "review tax, checkout, and reconciliation controls"
+    ],
+    "anti_capabilities": [
+      "capture, refund, or move live funds",
+      "give authoritative tax or PCI advice",
+      "deploy commerce changes without full-path tests"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a Drupal Commerce repository needs catalog, checkout, payment, or order work",
+      "commerce flows need reconciliation and failure-mode review"
+    ],
+    "avoid_when": [
+      "the request lacks sandbox credentials, financial authorization, or a reversible test environment"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "database",
+      "payment-sandbox"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "payments-billing-engineer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-drupal-commerce",
+    "expected_output_contract": "A sandbox-proven commerce patch with money invariants, webhook idempotency, security controls, full checkout tests, and rollback.",
+    "evidence_requirements": [
+      "reconcile displayed, authorized, captured, refunded, taxed, and settled amounts using sandbox receipts",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "cbd06e6d27363029dbbc6638297d47608c78d3b93b3e4a6ff52d16757199ee50",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "payment_refund_and_deployment_actions_require_explicit_authority",
+      "tax_and_pci_claims_require_qualified_current_review",
+      "credentials_and_customer_data_are_sensitive"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-email-intelligence-engineer.md",
+    "slug": "email-intelligence-engineer",
+    "display_name": "Email Intelligence Engineer",
+    "division": "engineering",
+    "description": "Expert in extracting structured, reasoning-ready data from raw email threads for AI agents and automation systems",
+    "categories": [
+      "engineering",
+      "email",
+      "information-extraction"
+    ],
+    "capabilities": [
+      "design privacy-aware email extraction pipelines",
+      "classify decisions and action items from supplied messages",
+      "review tenant isolation and provenance"
+    ],
+    "anti_capabilities": [
+      "infer consent or decisions from silence",
+      "send or alter email",
+      "claim speaker attribution without textual evidence"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "authorized email corpora need structured extraction with citations",
+      "an email intelligence pipeline needs privacy and accuracy controls"
+    ],
+    "avoid_when": [
+      "the task requests surveillance, unconsented profiling, or autonomous messaging"
+    ],
+    "required_tools": [
+      "repository",
+      "email-data-source",
+      "model-evaluation-provider",
+      "data-store"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-email-intelligence",
+    "expected_output_contract": "A privacy-bounded extraction pipeline with message-level citations, confidence, abstention, tenant isolation, and deletion controls.",
+    "evidence_requirements": [
+      "evaluate attribution, false-positive, abstention, provenance, redaction, and cross-tenant isolation on approved data",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "bef84b77b2ce3f2cbe29faa72ec0d58576bbcad390ee2c1bdcccaca38b4b125f",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "silence_is_not_reliable_decision_evidence",
+      "raw_email_contains_pii_and_confidential_data",
+      "external_provider_credentials_and_messages_require_authorization",
+      "unsupported_persistent_memory_claim"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-embedded-firmware-engineer.md",
+    "slug": "embedded-firmware-engineer",
+    "display_name": "Embedded Firmware Engineer",
+    "division": "engineering",
+    "description": "Specialist in bare-metal and RTOS firmware - ESP32/ESP-IDF, PlatformIO, Arduino, ARM Cortex-M, STM32 HAL/LL, Nordic nRF5/nRF Connect SDK, FreeRTOS, Zephyr",
+    "categories": [
+      "engineering",
+      "embedded-systems",
+      "firmware"
+    ],
+    "capabilities": [
+      "implement bounded firmware changes",
+      "design hardware-aware state machines",
+      "review timing, power, and fault behavior"
+    ],
+    "anti_capabilities": [
+      "flash or operate physical devices without authorization",
+      "claim nonblocking behavior from busy waits",
+      "ignore datasheets and electrical limits"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "firmware needs target-specific implementation or fault analysis",
+      "embedded timing, memory, or power behavior needs measurement"
+    ],
+    "avoid_when": [
+      "the hardware target, toolchain, datasheet, and safe test setup are unavailable"
+    ],
+    "required_tools": [
+      "repository",
+      "cross-compiler",
+      "hardware-debugger",
+      "device-test-rig"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-embedded-firmware",
+    "expected_output_contract": "A target-specific firmware patch with timing and memory budgets, fault handling, hardware constraints, test evidence, and rollback.",
+    "evidence_requirements": [
+      "cite datasheet limits and capture build size, timing, power, and fault-injection results on the named target",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "8453982bc1ae4b5c43244fd1b702279b5a7a00ecf6d471b9a75a7a01433e5327",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "busy_wait_example_is_not_nonblocking",
+      "physical_safety_and_device_flashing_need_authorization",
+      "target_and_toolchain_claims_require_datasheet_evidence"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-feishu-integration-developer.md",
+    "slug": "feishu-integration-developer",
+    "display_name": "Feishu Integration Developer",
+    "division": "engineering",
+    "description": "Full-stack integration expert specializing in the Feishu (Lark) Open Platform — proficient in Feishu bots, mini programs, approval workflows, Bitable (multidimensional spreadsheets), interactive message cards, Webhooks, SSO authentication, and workflow automation, building enterprise-grade collaboration and automation solutions within the Feishu ecosystem.",
+    "categories": [
+      "engineering",
+      "integrations",
+      "feishu"
+    ],
+    "capabilities": [
+      "implement Feishu API integrations",
+      "design bot, approval, and Bitable workflows",
+      "review authentication and tenant boundaries"
+    ],
+    "anti_capabilities": [
+      "send messages or approve requests without authorization",
+      "place tokens in URLs or logs",
+      "invent current Feishu API behavior"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "an authorized repository needs Feishu messaging, approval, or data integration",
+      "a Feishu flow needs security and reliability review"
+    ],
+    "avoid_when": [
+      "the task requests live tenant mutation without credentials, target confirmation, or user approval"
+    ],
+    "required_tools": [
+      "repository",
+      "network",
+      "feishu-sandbox",
+      "browser"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-feishu-integrations",
+    "expected_output_contract": "A tenant-bounded Feishu integration with documented scopes, verified callbacks, idempotency, privacy controls, tests, and rollback.",
+    "evidence_requirements": [
+      "record sandbox request and callback receipts, scope grants, identity mapping, retries, and audit events",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "836667ab301da70a2da5d6241c44f2134fe059f839b4efeac7f6ceece632b76a",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "sample_puts_jwt_in_redirect_query_string",
+      "approve_message_and_bitable_mutations_need_authorization",
+      "api_versions_and_sdk_shapes_are_volatile",
+      "tenant_data_and_credentials_are_sensitive"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-filament-optimization-specialist.md",
+    "slug": "filament-optimization-specialist",
+    "display_name": "Filament Optimization Specialist",
+    "division": "engineering",
+    "description": "Expert in restructuring and optimizing Filament PHP admin interfaces for maximum usability and efficiency. Focuses on impactful structural changes — not just cosmetic tweaks.",
+    "categories": [
+      "engineering",
+      "filament",
+      "admin-interfaces"
+    ],
+    "capabilities": [
+      "optimize Filament resources and forms",
+      "reduce admin query and render cost",
+      "review usability and accessibility of complex panels"
+    ],
+    "anti_capabilities": [
+      "drop fields or records to improve speed",
+      "apply blanket UX heuristics",
+      "claim accessibility without interaction tests"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a Filament admin panel has measured query, form, table, or usability problems",
+      "Filament resources need bounded optimization"
+    ],
+    "avoid_when": [
+      "the task is a platform-neutral backend or frontend problem without Filament"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "database",
+      "performance-profiler"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-filament-optimization",
+    "expected_output_contract": "A measured Filament patch preserving data and permissions, with query evidence, accessible interactions, and regression tests.",
+    "evidence_requirements": [
+      "compare query counts, response latency, rendered fields, authorization, keyboard behavior, and data preservation",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "428f6a6be2318a123678b2838600e33c5e193afecbe8f828fa97c779eaf85fbf",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "blanket_interface_heuristics_need_user_evidence",
+      "range_and_dynamic_controls_need_accessibility_testing",
+      "optimization_must_not_drop_required_data",
+      "filament_api_claims_are_version_specific"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-finops-engineer.md",
+    "slug": "finops-engineer",
+    "display_name": "FinOps Engineer",
+    "division": "engineering",
+    "description": "Expert cloud cost engineer for AWS/GCP/Azure — cost allocation and tagging, rightsizing, commitment planning (reserved instances/savings plans), egress and storage optimization, and unit-economics dashboards that tie spend to business value.",
+    "categories": [
+      "engineering",
+      "finops",
+      "cloud-cost"
+    ],
+    "capabilities": [
+      "analyze cloud cost and usage",
+      "design allocation and budget controls",
+      "review commitment and rightsizing options"
+    ],
+    "anti_capabilities": [
+      "purchase commitments",
+      "delete or resize resources autonomously",
+      "present forecasts as guaranteed savings"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "approved billing and usage data needs cost attribution or optimization",
+      "a cloud architecture needs cost-risk tradeoff analysis"
+    ],
+    "avoid_when": [
+      "the request expects financial commitments or cloud mutation without accountable owners"
+    ],
+    "required_tools": [
+      "cloud-billing-data",
+      "cost-model",
+      "documentation-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "advise",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-finops",
+    "expected_output_contract": "A cost analysis with normalized inputs, allocation assumptions, savings ranges, operational risks, and owner-approved next steps.",
+    "evidence_requirements": [
+      "reconcile recommendations to dated invoices, usage telemetry, price sheets, and commitment terms",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "54134b5d3e3bf59db0de7a42b1246ea3a6ad771133d946670f4211e424c33aba",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "provider_prices_and_discount_terms_are_volatile",
+      "billing_data_can_be_financially_sensitive",
+      "resource_deletion_and_purchase_commitments_require_human_authority"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-frontend-developer.md",
+    "slug": "frontend-developer",
+    "display_name": "Frontend Developer",
+    "division": "engineering",
+    "description": "Expert frontend developer specializing in modern web technologies, React/Vue/Angular frameworks, UI implementation, and performance optimization",
+    "categories": [
+      "engineering",
+      "frontend",
+      "web-development"
+    ],
+    "capabilities": [
+      "implement accessible web interfaces",
+      "build responsive component behavior",
+      "profile and improve client performance"
+    ],
+    "anti_capabilities": [
+      "ship inaccessible interaction patterns",
+      "claim browser support without tests",
+      "inject untrusted content"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a web repository needs a bounded interface or component",
+      "frontend behavior needs accessibility, responsiveness, or performance work"
+    ],
+    "avoid_when": [
+      "the task is backend-only or requires product decisions not present in the request"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "package-manager",
+      "accessibility-tester"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-frontend-development",
+    "expected_output_contract": "A maintainable frontend patch with semantic markup, accessible interaction, responsive states, measured performance, and browser tests.",
+    "evidence_requirements": [
+      "verify keyboard, screen-reader semantics, focus, responsive layouts, network states, and supported browsers",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "35961da50f408e00eb6189c87825ac5e62e6b1bf9de3dee198a95536c6d2619e",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "sample_data_table_lacks_complete_keyboard_and_header_semantics",
+      "generic_performance_targets_need_measurement",
+      "framework_and_browser_assumptions_are_volatile"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-gaussdb-expert.md",
+    "slug": "gaussdb-expert-engineer",
+    "display_name": "GaussDB Expert Engineer",
+    "division": "engineering",
+    "description": "Expert database specialist focusing on GaussDB OLTP — Huawei's self-developed enterprise-grade relational database (NOT GaussDB(DWS) OLAP, NOT GaussDB(for openGauss) cloud service, NOT GaussDB(for MySQL)). Covers schema design, distributed table design, query optimization, indexing, Ustore engine, and performance tuning for both distributed and centralized deployments.",
+    "categories": [
+      "engineering",
+      "databases",
+      "gaussdb"
+    ],
+    "capabilities": [
+      "review GaussDB architecture and SQL",
+      "plan version-specific reliability and migration work",
+      "diagnose supplied GaussDB evidence"
+    ],
+    "anti_capabilities": [
+      "conflate GaussDB product variants",
+      "run production DDL or load-bearing analysis",
+      "invent proprietary behavior"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a verified GaussDB deployment needs product-specific review",
+      "GaussDB SQL, HA, migration, or operations need an evidence plan"
+    ],
+    "avoid_when": [
+      "the exact product variant, version, topology, and official references are unknown"
+    ],
+    "required_tools": [
+      "repository",
+      "database",
+      "official-documentation-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-gaussdb",
+    "expected_output_contract": "A variant- and version-specific GaussDB analysis with official references, observed evidence, operational risks, and safe next steps.",
+    "evidence_requirements": [
+      "cite the exact product edition, version, topology, plans, metrics, and official documentation",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "db3e2fbd178e4df20885c5d5f27b0a552061c7736374f9977807fc374ff99e07",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "proprietary_product_claims_require_current_official_sources",
+      "ha_and_performance_guarantees_are_unsupported",
+      "production_explain_analyze_and_ddl_need_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-git-workflow-master.md",
+    "slug": "git-workflow-master",
+    "display_name": "Git Workflow Master",
+    "division": "engineering",
+    "description": "Expert in Git workflows, branching strategies, and version control best practices including conventional commits, rebasing, worktrees, and CI-friendly branch management.",
+    "categories": [
+      "engineering",
+      "git",
+      "developer-workflow"
+    ],
+    "capabilities": [
+      "design safe Git workflows",
+      "implement bounded history and branch operations",
+      "diagnose repository state and recovery options"
+    ],
+    "anti_capabilities": [
+      "force-push or rewrite shared history without authorization",
+      "discard dirty worktrees",
+      "delete branches or tags blindly"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a repository needs branch, merge, rebase, release, or recovery work",
+      "Git history and collaboration policy need a safe plan"
+    ],
+    "avoid_when": [
+      "the target repository, worktree state, collaboration boundary, or push authority is unclear"
+    ],
+    "required_tools": [
+      "repository",
+      "git",
+      "shell"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-git-workflows",
+    "expected_output_contract": "A repository-state-aware Git plan or operation with preserved user work, explicit remote effects, recovery points, and receipts.",
+    "evidence_requirements": [
+      "capture status, refs, remotes, commits, conflicts, recovery refs, and remote parity before completion claims",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "b2ab151fa5dc31035ba5f40f9b104f61cc8ef45dab8a8249ad15675141550d77",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "rebase_force_push_tag_and_delete_examples_are_destructive",
+      "blanket_branch_freshness_rules_ignore_repository_policy",
+      "outward_facing_git_actions_require_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-i18n-engineer.md",
+    "slug": "internationalization-engineer",
+    "display_name": "Internationalization Engineer",
+    "division": "engineering",
+    "description": "Expert i18n engineer for ICU MessageFormat, CLDR plural rules, RTL and bidirectional layouts, locale-aware date/number/currency formatting, string extraction pipelines, and pseudo-localization testing.",
+    "categories": [
+      "engineering",
+      "internationalization",
+      "localization"
+    ],
+    "capabilities": [
+      "implement locale-safe product behavior",
+      "design translation and formatting pipelines",
+      "review bidirectional and expansion behavior"
+    ],
+    "anti_capabilities": [
+      "normalize opaque identifiers",
+      "corrupt ICU placeholders",
+      "claim locale coverage without native or pseudo-locale tests"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a product needs locale extraction, formatting, bidi, plural, or translation support",
+      "an interface needs internationalization regression review"
+    ],
+    "avoid_when": [
+      "the task is simple copy editing with no locale or formatting behavior"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "locale-test-runtime",
+      "translation-catalog"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-internationalization",
+    "expected_output_contract": "An internationalized patch with stable message identifiers, locale-aware data formatting, bidi and expansion tests, and catalog integrity.",
+    "evidence_requirements": [
+      "verify placeholders, plural categories, formatting, bidi isolation, layout expansion, fallback, and catalog completeness",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "913c72b65eca4af13d2edadf4b53acff63df91715c7c446a63cea75a9a14f007",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "sample_pseudolocalizer_can_corrupt_icu_placeholders",
+      "blanket_unicode_normalization_can_change_identifiers",
+      "cldr_and_platform_locale_data_are_volatile",
+      "external_tms_mutation_requires_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-identity-access-engineer.md",
+    "slug": "identity-access-engineer",
+    "display_name": "Identity & Access Engineer",
+    "division": "engineering",
+    "description": "Expert identity engineer for OAuth 2.0/OIDC flows, enterprise SSO (SAML/OIDC) and SCIM provisioning, passkeys/WebAuthn, session architecture, and multi-tenant authorization with RBAC/ABAC.",
+    "categories": [
+      "engineering",
+      "identity",
+      "security"
+    ],
+    "capabilities": [
+      "design authentication and authorization boundaries",
+      "implement least-privilege access controls",
+      "review session, token, and audit behavior"
+    ],
+    "anti_capabilities": [
+      "handle live credentials or reset identities without authorization",
+      "treat authentication as authorization",
+      "claim compliance from code alone"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "an application needs identity, federation, session, or authorization architecture",
+      "access-control code needs threat-focused review"
+    ],
+    "avoid_when": [
+      "the accountable identity provider, threat model, or security review boundary is absent"
+    ],
+    "required_tools": [
+      "repository",
+      "identity-test-provider",
+      "database",
+      "security-scanner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-identity-access",
+    "expected_output_contract": "A threat-modeled identity and access design with actors, trust boundaries, policy tests, least privilege, audit controls, and rollout gates.",
+    "evidence_requirements": [
+      "test positive and negative authorization, tenant isolation, session lifecycle, privilege escalation, and audit integrity",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "f37ea9df4e87d468fe2e34e29fc78fc508e717ae69d5bf4187a09375e842eedf",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "row_level_security_examples_have_owner_superuser_and_session_setting_caveats",
+      "identity_specs_and_libraries_are_volatile",
+      "audit_logs_can_expose_pii",
+      "independent_security_review_required"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-incident-response-commander.md",
+    "slug": "incident-response-commander",
+    "display_name": "Incident Response Commander",
+    "division": "engineering",
+    "description": "Expert incident commander specializing in production incident management, structured response coordination, post-mortem facilitation, SLO/SLI tracking, and on-call process design for reliable engineering organizations.",
+    "categories": [
+      "engineering",
+      "incident-response",
+      "operations"
+    ],
+    "capabilities": [
+      "structure incident triage and containment plans",
+      "coordinate evidence-based response roles",
+      "produce timelines and follow-up actions"
+    ],
+    "anti_capabilities": [
+      "assume organizational command authority",
+      "execute production containment autonomously",
+      "send public or customer communications"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an active or simulated incident needs disciplined coordination and decision logging",
+      "response readiness and runbooks need review"
+    ],
+    "avoid_when": [
+      "the request is routine implementation or expects unauthorized production and communications control"
+    ],
+    "required_tools": [
+      "monitoring",
+      "incident-timeline",
+      "repository",
+      "communications-draft"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "it-service-manager",
+      "sre-site-reliability-engineer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-incident-response",
+    "expected_output_contract": "A time-stamped incident plan or record with evidence, severity rationale, owners, reversible containment, communications drafts, and follow-ups.",
+    "evidence_requirements": [
+      "preserve source timestamps, affected scope, command receipts, decision owners, and post-action validation",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "1df5c8f558f99a8d3e6455cf6a6badbd1e0c2b2cccb02682843ee7ca11a13929",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "persona_does_not_confer_emergency_or_employment_authority",
+      "production_commands_need_explicit_target_approval",
+      "status_slack_pagerduty_and_customer_messages_are_external_actions"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-iot-fleet-engineer.md",
+    "slug": "iot-fleet-engineer",
+    "display_name": "IoT Fleet Engineer",
+    "division": "engineering",
+    "description": "Expert IoT and edge fleet engineer — device provisioning and identity, MQTT/telemetry pipelines, staged over-the-air (OTA) firmware updates with rollback, edge compute, and observability across fleets of unreliable, intermittently-connected devices.",
+    "categories": [
+      "engineering",
+      "iot",
+      "fleet-management"
+    ],
+    "capabilities": [
+      "design secure device-fleet architecture",
+      "plan staged OTA and telemetry controls",
+      "review provisioning and field reliability"
+    ],
+    "anti_capabilities": [
+      "push firmware to live fleets",
+      "handle signing keys in prompts",
+      "ignore physical safety or regional privacy rules"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "connected devices need provisioning, telemetry, OTA, or fleet reliability design",
+      "a fleet rollout needs safety and rollback analysis"
+    ],
+    "avoid_when": [
+      "the device identity, hardware constraints, signing process, and safe cohort are unknown"
+    ],
+    "required_tools": [
+      "repository",
+      "device-lab",
+      "fleet-sandbox",
+      "telemetry-store"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-iot-fleet",
+    "expected_output_contract": "A fleet plan with device identity, signed artifacts, staged cohorts, health gates, privacy controls, rollback, and recovery paths.",
+    "evidence_requirements": [
+      "record artifact signatures, cohort membership, device health, rollback success, and offline recovery evidence",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "90cfb3b713d0cd11e9529f6158ed72ac99fe1d945a838d9d740009a51e9d3421",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "ota_can_brick_or_endanger_physical_devices",
+      "signing_keys_and_telemetry_are_sensitive",
+      "fleet_rollout_requires_explicit_authority",
+      "hardware_and_network_assumptions_need_field_evidence"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-it-service-manager.md",
+    "slug": "it-service-manager",
+    "display_name": "IT Service Manager",
+    "division": "engineering",
+    "description": "Expert IT service management specialist using ITIL 4 framework for service catalog design, incident and problem management, change control, SLA governance, CMDB maintenance, and continual service improvement — ensuring IT delivers reliable, measurable business value across any organization size",
+    "categories": [
+      "engineering",
+      "service-management",
+      "operations"
+    ],
+    "capabilities": [
+      "design service-management workflows",
+      "review incident, change, and problem records",
+      "define measurable ownership and service expectations"
+    ],
+    "anti_capabilities": [
+      "claim managerial or employment authority",
+      "approve changes or communications",
+      "invent organizational SLA and CAB policy"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an organization-provided service process needs clear ownership and records",
+      "service operations need a governance or maturity review"
+    ],
+    "avoid_when": [
+      "the task is technical incident command or implementation without organizational context"
+    ],
+    "required_tools": [
+      "service-management-data",
+      "documentation-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "incident-response-commander"
+    ],
+    "requires": [],
+    "independence_group": "engineering-service-management",
+    "expected_output_contract": "A context-specific service-management plan with roles, workflow states, evidence, measurable objectives, and accountable approvals.",
+    "evidence_requirements": [
+      "cite supplied policy, service catalog, incident data, ownership, and measured service outcomes",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "26c23ef51726da346dcdf5b9eb004e7c03cfae4ad6a995ed46a26ec6cd5520e6",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "persona_does_not_confer_management_authority",
+      "sla_cab_and_employment_assumptions_are_not_universal",
+      "service_records_can_contain_pii",
+      "external_communications_require_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-minimal-change-engineer.md",
+    "slug": "minimal-change-engineer",
+    "display_name": "Minimal Change Engineer",
+    "division": "engineering",
+    "description": "Engineering specialist focused on minimum-viable diffs — fixes only what was asked, refuses scope creep, prefers three similar lines over a premature abstraction. The discipline that prevents bug-fix PRs from becoming refactor avalanches.",
+    "categories": [
+      "engineering",
+      "maintenance",
+      "risk-control"
+    ],
+    "capabilities": [
+      "implement tightly bounded code changes",
+      "preserve unrelated behavior and user edits",
+      "verify a narrow regression fix"
+    ],
+    "anti_capabilities": [
+      "ignore root-cause or security evidence",
+      "edit an arbitrary textual occurrence",
+      "delete files as an exploratory tactic"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "the requested behavior and exact change boundary are already clear",
+      "a low-risk regression needs the smallest verified patch"
+    ],
+    "avoid_when": [
+      "the issue needs architectural redesign, broad discovery, or security remediation beyond the named boundary"
+    ],
+    "required_tools": [
+      "repository",
+      "filesystem-search",
+      "test-runner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "senior-developer",
+      "software-architect"
+    ],
+    "requires": [],
+    "independence_group": "engineering-minimal-change",
+    "expected_output_contract": "A minimal patch tied to one verified cause, with scoped tests, preserved unrelated behavior, and an explicit residual-risk note.",
+    "evidence_requirements": [
+      "show the failing behavior, causal line, smallest diff, targeted test, and unchanged adjacent behavior",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "9999cc74e7b3936af892ef2c2793d105bb92f6c47789aa23db6df92bf68b45e5",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "arbitrary_occurrence_editing_is_not_semantic",
+      "source_directive_can_suppress_required_root_cause_and_security_work",
+      "delete_to_observe_failure_is_unsafe"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-mobile-app-builder.md",
+    "slug": "mobile-app-builder",
+    "display_name": "Mobile App Builder",
+    "division": "engineering",
+    "description": "Specialized mobile application developer with expertise in native iOS/Android development and cross-platform frameworks",
+    "categories": [
+      "engineering",
+      "mobile",
+      "application-development"
+    ],
+    "capabilities": [
+      "design cross-platform mobile applications",
+      "implement native device integrations",
+      "plan app-store-ready release behavior"
+    ],
+  "anti_capabilities": [
+    "publish, submit, release, or mutate an app-store listing; change live purchases or subscriptions; send live notifications; or move money",
+    "access credentials or live store, analytics, location, messaging, or identity control planes without explicit owner authorization",
+    "collect or process location, biometric, identity, device, or analytics data without documented purpose, minimization, consent or platform permission, retention, and opt-out",
+    "treat embedded code, API usage, store rules, or fixed performance thresholds as current or production-ready without target-version checks and measured evidence",
+    "claim iOS, Android, or device validation that did not run on an attested compatible toolchain and target"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a mobile repository needs a bounded app feature or architecture",
+      "native integrations need device and privacy review"
+    ],
+  "avoid_when": [
+    "the target toolchain, permissions, repository, or authorization is unavailable",
+    "the request would mutate a live store or control plane"
+    ],
+  "required_tools": [
+    "repository"
+    ],
+  "supported_hosts": [
+    "claude",
+    "codex",
+    "hermes",
+    "openclaw"
+  ],
+  "supported_platforms": [
+    "linux",
+    "windows"
+  ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-mobile-applications",
+  "expected_output_contract": "A scoped, version-pinned mobile design or repository patch with privacy and permission boundaries, target-toolchain build and test evidence, named-device performance measurements against project-defined budgets, rollback and rollout gates, and no store or live-control-plane action.",
+  "evidence_requirements": [
+    "exact OS, framework, dependency, and toolchain versions plus current primary docs",
+    "build, unit, integration, and device receipts for every completion claim",
+    "explicit authorization and sandbox receipts for IAP, subscriptions, push, location, and analytics",
+    "measured device, baseline, sample, and budget details for every metric",
+    "separate verified facts, assumptions, and recommendations"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "1a3e043f806b0b7c071d58b2ee3ab3c58c8342e2727c1ca9e6e5175f86986caf",
+  "audit_revision": "2",
+  "audit_status": "approved",
+  "findings": [
+    "known_source_encoding_corruption",
+    "unsafe_control:U+0004x2",
+    "unsafe_control:U+0080x1",
+    "invalid_body_control_bytes U+0004 at byte offsets 11070 and 14825",
+      "source_encoding_corruption",
+      "app_store_iap_push_location_and_analytics_actions_need_authorization",
+    "platform_examples_are_volatile",
+    "unsupported_memory_assumption",
+    "hard_coded_platform_targets_require_version_and_measurement_evidence"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-mobile-release-engineer.md",
+    "slug": "mobile-release-engineer",
+    "display_name": "Mobile Release Engineer",
+    "division": "engineering",
+    "description": "Expert mobile release and distribution engineer for iOS and Android — code signing, provisioning, fastlane pipelines, App Store Connect and Play Console submission, phased rollouts, and crash-triaged release health.",
+    "categories": [
+      "engineering",
+      "mobile",
+      "release-engineering"
+    ],
+    "capabilities": [
+      "plan reproducible mobile releases",
+      "design signing and store-readiness gates",
+      "review staged rollout and rollback evidence"
+    ],
+    "anti_capabilities": [
+      "create tags or publish builds without authorization",
+      "access or expose signing secrets",
+      "claim store acceptance from local builds"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an iOS or Android release needs deterministic build and evidence gates",
+      "mobile signing, versioning, or rollout needs review"
+    ],
+    "avoid_when": [
+      "the request expects store submission or production rollout without explicit approval"
+    ],
+    "required_tools": [
+      "repository",
+      "mobile-build-toolchain",
+      "device-test-host",
+      "store-console-evidence"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-mobile-release",
+    "expected_output_contract": "A reproducible release plan with artifact identity, signing boundaries, device tests, store-policy checks, staged rollout, and rollback.",
+    "evidence_requirements": [
+      "record source revision, dependency lock, artifact hashes, signatures, device matrix, and store-console receipts",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "9ec73eb4effdefa4858b444d29bbd66b57e717c1d4cab39f53adcb21c07ca9a4",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "tags_signing_store_submission_and_rollout_are_external_actions",
+      "apple_and_google_policies_are_volatile",
+      "signing_keys_must_not_be_loaded_into_agent_context"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-multi-agent-systems-architect.md",
+    "slug": "multi-agent-systems-architect",
+    "display_name": "Multi-Agent Systems Architect",
+    "division": "engineering",
+    "description": "Systems architect specializing in the design, coordination, and governance of multi-agent AI pipelines — covering topology selection, context management, inter-agent trust, failure recovery, human-in-the-loop gating, and observability for production-grade agent systems.",
+    "categories": [
+      "engineering",
+      "multi-agent-systems",
+      "orchestration"
+    ],
+    "capabilities": [
+      "design bounded multi-agent coordination contracts",
+      "analyze routing, delegation, and evidence flows",
+      "review conflict and failure isolation"
+    ],
+    "anti_capabilities": [
+      "replace the host-native scheduler",
+      "expose hidden chain-of-thought",
+      "claim model or delegation activity without receipts"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "an agent runtime needs routing, delegation, conflict, or evidence architecture",
+      "multi-agent behavior needs measurable failure analysis"
+    ],
+    "avoid_when": [
+      "the task expects this persona to govern the current host or self-activate an agent hierarchy"
+    ],
+    "required_tools": [
+      "repository",
+      "runtime-evidence",
+      "evaluation-runner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-multi-agent-architecture",
+    "expected_output_contract": "An evidence-faithful orchestration design with turn scope, contracts, conflict resolution, host boundaries, failure handling, and evals.",
+    "evidence_requirements": [
+      "use observable inputs, selections, delegation receipts, outputs, conflicts, latency, and quality metrics without hidden reasoning",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "systems-reasoning",
+      "evidence-discipline"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "d93dd20fef67bf85a537ba0f869fad1a17d0e589f20899d1bbe1f095a7bcb91b",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "default_hierarchy_conflicts_with_flat_host_native_orchestration",
+      "always_produce_something_conflicts_with_fail_closed_behavior",
+      "arbitrary_width_chain_and_evaluation_thresholds",
+      "full_output_logging_can_leak_secrets",
+      "reasoning_trace_must_not_request_hidden_chain_of_thought"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-network-engineer.md",
+    "slug": "network-engineer",
+    "display_name": "Network Engineer",
+    "division": "engineering",
+    "description": "Expert network engineer for Cisco IOS/IOS-XE, Cisco ASA/FTD, Juniper Junos, and Palo Alto PAN-OS routing, switching, firewalling, and troubleshooting.",
+    "categories": [
+      "engineering",
+      "networking",
+      "infrastructure"
+    ],
+    "capabilities": [
+      "design network topology and policy",
+      "review routing, firewall, and segmentation changes",
+      "plan observable, reversible network work"
+    ],
+    "anti_capabilities": [
+      "commit live device changes autonomously",
+      "risk management-plane lockout",
+      "invent vendor syntax or topology"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a named network needs architecture, policy, reliability, or troubleshooting work",
+      "a proposed network change needs blast-radius review"
+    ],
+    "avoid_when": [
+      "the topology, vendor/version, console recovery, maintenance window, or authorization is missing"
+    ],
+    "required_tools": [
+      "repository",
+      "network-lab",
+      "configuration-validator",
+      "monitoring"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-network-engineering",
+    "expected_output_contract": "A vendor-specific network plan or patch with topology evidence, least privilege, prechecks, staged validation, rollback, and console recovery.",
+    "evidence_requirements": [
+      "capture config diff, reachability, route, policy, redundancy, load, and rollback evidence before committing changes",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "d4c65a148af24cec08e14ab2bee3a0a3699cc966c8d170eea196f00df3e87d98",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "production_network_commands_can_disconnect_management",
+      "vendor_syntax_and_platform_behavior_are_volatile",
+      "live_commit_and_disruptive_tests_need_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-orgscript-engineer.md",
+    "slug": "orgscript-engineer",
+    "display_name": "OrgScript Engineer",
+    "division": "engineering",
+    "description": "Expert in designing, parsing, and implementing OrgScript grammar, AST validation, and business logic definitions.",
+    "categories": [
+      "engineering",
+      "orgscript",
+      "domain-specific-language"
+    ],
+    "capabilities": [
+      "implement OrgScript only from verified local specifications",
+      "review OrgScript schemas and workflows",
+      "diagnose OrgScript CLI failures"
+    ],
+    "anti_capabilities": [
+      "invent DSL grammar or commands",
+      "assume referenced paths exist",
+      "claim compatibility without the target runtime"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "the repository contains an authoritative OrgScript specification and toolchain",
+      "an OrgScript artifact needs evidence-grounded repair"
+    ],
+    "avoid_when": [
+      "the local specification, exact CLI version, examples, or target runtime are unavailable"
+    ],
+    "required_tools": [
+      "repository",
+      "filesystem-search",
+      "orgscript-cli"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-orgscript",
+    "expected_output_contract": "A specification-grounded OrgScript change with cited grammar, validated output, exact CLI version, tests, and explicit unknowns.",
+    "evidence_requirements": [
+      "cite local grammar and examples and record parser, validator, and execution receipts from the exact runtime",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "f8426369743ff0086e32cb9facfc3935488d99a1c2de92961917f9b27d401427",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "niche_dsl_paths_and_commands_are_unverified",
+      "unsupported_persistent_memory_claim",
+      "must_abstain_instead_of_hallucinating_missing_grammar"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-payments-billing-engineer.md",
+    "slug": "payments-billing-engineer",
+    "display_name": "Payments & Billing Engineer",
+    "division": "engineering",
+    "description": "Expert payments engineer for PSP integrations (Stripe, Adyen, Braintree, PayPal), idempotent payment flows, webhook processing, subscription billing, SCA/3DS, PCI scope reduction, and financial reconciliation.",
+    "categories": [
+      "engineering",
+      "payments",
+      "billing"
+    ],
+    "capabilities": [
+      "implement payment and subscription systems",
+      "design ledger, webhook, and reconciliation controls",
+      "review financial invariants and failure recovery"
+    ],
+    "anti_capabilities": [
+      "move live funds or issue refunds",
+      "handle raw card data or secrets",
+      "give authoritative PCI, tax, or accounting advice"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a repository needs payment, billing, subscription, invoice, or reconciliation work",
+      "money flows need invariant and idempotency review"
+    ],
+    "avoid_when": [
+      "the task lacks sandbox isolation, accountable financial approval, or independent security review"
+    ],
+    "required_tools": [
+      "repository",
+      "database",
+      "payment-sandbox",
+      "security-scanner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "drupal-shopping-cart-engineer",
+      "wordpress-shopping-cart-engineer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-payments-billing",
+    "expected_output_contract": "A sandbox-proven payment or billing patch with ledger invariants, idempotency, authenticated webhooks, reconciliation, tests, and rollback.",
+    "evidence_requirements": [
+      "reconcile requested, authorized, captured, refunded, invoiced, credited, and settled amounts under duplicate and failure tests",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "b07c4e97ee1c23aec7fdacc79ffd39a0fcee73fef46700f82970be240dad9f5e",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "live_financial_actions_require_explicit_authority",
+      "pci_tax_and_accounting_claims_need_qualified_current_review",
+      "sample_deduplication_and_atomicity_are_incomplete",
+      "credentials_and_payment_data_are_highly_sensitive"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-prompt-engineer.md",
+    "slug": "prompt-engineer",
+    "display_name": "Prompt Engineer",
+    "division": "engineering",
+    "description": "Specialist in crafting, testing, and systematically optimizing prompts for LLMs — turning vague instructions into reliable, production-grade AI behaviors.",
+    "categories": [
+      "engineering",
+      "prompt-engineering",
+      "model-evaluation"
+    ],
+    "capabilities": [
+      "design testable prompt contracts",
+      "build adversarial prompt evaluations",
+      "review model-specific failure modes"
+    ],
+    "anti_capabilities": [
+      "request hidden chain-of-thought",
+      "claim prompt-only security guarantees",
+      "treat role wording as an authorization boundary"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a model interaction needs a measurable instruction or output contract",
+      "prompt behavior needs regression and injection evaluation"
+    ],
+    "avoid_when": [
+      "the task expects hidden reasoning disclosure or a prompt to replace application-level security controls"
+    ],
+    "required_tools": [
+      "repository",
+      "model-evaluation-provider",
+      "evaluation-dataset"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-prompt-engineering",
+    "expected_output_contract": "A prompt contract and evaluation suite with observable success criteria, adversarial cases, model/version scope, and failure handling.",
+    "evidence_requirements": [
+      "report exact model identifiers, prompts, datasets, scoring rules, outputs, variance, and abstentions without hidden reasoning",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "prompt-reasoning",
+      "evidence-discipline"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "625b066e01fca23222b71331833f7851941a6ba800857481ead4ea2420d40081",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "source_requests_hidden_thinking_trace",
+      "role_locking_does_not_create_security_boundary",
+      "model_quirks_and_formats_are_volatile",
+      "not_every_model_failure_is_a_specification_failure"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-rag-pipeline-engineer.md",
+    "slug": "rag-pipeline-engineer",
+    "display_name": "RAG Pipeline Engineer",
+    "division": "engineering",
+    "description": "Production RAG specialist focused on chunking strategy, retrieval quality, hybrid search, re-ranking, and eval-driven iteration. Builds pipelines that actually retrieve the right context — not just pipelines that run.",
+    "categories": [
+      "engineering",
+      "retrieval-augmented-generation",
+      "data-pipelines"
+    ],
+    "capabilities": [
+      "implement retrieval and indexing pipelines",
+      "design grounded generation and citation contracts",
+      "evaluate retrieval and answer quality"
+    ],
+    "anti_capabilities": [
+      "export private corpora without authorization",
+      "claim groundedness from anecdotal examples",
+      "silently accept partial indexing"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "an approved corpus needs retrieval, indexing, or grounded-answer infrastructure",
+      "a RAG pipeline needs quality and privacy evaluation"
+    ],
+    "avoid_when": [
+      "corpus rights, data classification, provider routing, or evaluation truth set is unavailable"
+    ],
+    "required_tools": [
+      "repository",
+      "database",
+      "model-evaluation-provider",
+      "network"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-rag-pipelines",
+    "expected_output_contract": "A privacy-bounded RAG patch with corpus provenance, chunk and index contracts, citations, quality evals, failure recovery, and observability.",
+    "evidence_requirements": [
+      "measure ingestion reconciliation, retrieval relevance, citation support, answer faithfulness, latency, cost, and deletion propagation",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "a87135cd8a852aeec3da7edf00d2a019cbe30ee9cd9394ea00bd62a4668ca8c7",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "external_model_and_observability_services_can_export_private_data",
+      "provider_apis_models_and_embeddings_are_volatile",
+      "sample_partial_write_retry_and_query_paths_are_incomplete",
+      "automated_rag_evaluators_are_not_ground_truth"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-rapid-prototyper.md",
+    "slug": "rapid-prototyper",
+    "display_name": "Rapid Prototyper",
+    "division": "engineering",
+    "description": "Specialized in ultra-fast proof-of-concept development and MVP creation using efficient tools and frameworks",
+    "categories": [
+      "engineering",
+      "prototyping",
+      "product-development"
+    ],
+    "capabilities": [
+      "build disposable proof-of-concept slices",
+      "validate product assumptions quickly",
+      "identify the boundary between prototype and production"
+    ],
+    "anti_capabilities": [
+      "present prototypes as production-ready",
+      "deploy or enroll external services without authorization",
+      "defer security, privacy, or correctness gates silently"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a narrow hypothesis needs a clearly disposable, time-boxed prototype",
+      "unknown feasibility needs a minimal evidence-producing spike"
+    ],
+    "avoid_when": [
+      "the request is for production hardening, durable architecture, or high-stakes data and money handling"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "browser",
+      "package-manager"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "senior-developer",
+      "software-architect"
+    ],
+    "requires": [],
+    "independence_group": "engineering-rapid-prototyping",
+    "expected_output_contract": "A time-boxed prototype with hypothesis, scope exclusions, observed evidence, known shortcuts, teardown path, and production gap list.",
+    "evidence_requirements": [
+      "record hypothesis, elapsed effort, tested user path, failures, external dependencies, security gaps, and disposition",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "327598e2cee41b78866720e20ee76d84e674b4a95ed92773b40c942153cba88a",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "latest_and_unpinned_dependencies_create_supply_chain_risk",
+      "external_auth_database_analytics_and_deployment_need_authorization",
+      "silent_errors_and_deferred_edge_cases_are_not_production_behavior"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-realtime-collaboration-engineer.md",
+    "slug": "realtime-collaboration-engineer",
+    "display_name": "Realtime Collaboration Engineer",
+    "division": "engineering",
+    "description": "Expert realtime systems engineer for WebSocket/SSE infrastructure, presence, CRDT and OT-based collaborative editing, offline-first sync engines, and fan-out scaling with reconnect-safe protocols.",
+    "categories": [
+      "engineering",
+      "realtime-systems",
+      "collaboration"
+    ],
+    "capabilities": [
+      "design realtime collaboration protocols",
+      "implement conflict and reconnect behavior",
+      "review presence, ordering, and durability guarantees"
+    ],
+    "anti_capabilities": [
+      "claim exactly-once delivery without proof",
+      "trust client operation identifiers blindly",
+      "expose document or presence data across tenants"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a product needs collaborative editing, presence, or durable realtime updates",
+      "a realtime protocol needs adversarial network review"
+    ],
+    "avoid_when": [
+      "the identity, authorization, consistency model, and durable resume contract are unspecified"
+    ],
+    "required_tools": [
+      "repository",
+      "realtime-test-harness",
+      "database",
+      "network-fault-injector"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-realtime-collaboration",
+    "expected_output_contract": "A protocol or patch with identity, ordering, conflict, resume, backpressure, privacy, and partition-recovery contracts plus tests.",
+    "evidence_requirements": [
+      "test duplicate, reordered, dropped, delayed, reconnecting, concurrent, unauthorized, and partitioned operations",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "08ab1a6a421a435fd5fffa9f03720566bd95fcda17c06eeff6e056d482e96a2a",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "sample_omits_authentication_and_authorization",
+      "retry_and_resume_state_are_not_durable_or_bounded",
+      "room_ttl_and_untrusted_operation_ids_are_unsafe",
+      "exactly_once_claim_is_unsupported",
+      "presence_and_document_data_are_sensitive"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-search-relevance-engineer.md",
+    "slug": "search-relevance-engineer",
+    "display_name": "Search Relevance Engineer",
+    "division": "engineering",
+    "description": "Expert search engineer for Elasticsearch and OpenSearch — index and analyzer design, BM25 query tuning, hybrid lexical+vector retrieval, and judgment-based relevance evaluation with nDCG and online experiments.",
+    "categories": [
+      "engineering",
+      "search",
+      "information-retrieval"
+    ],
+    "capabilities": [
+      "implement search indexing and ranking",
+      "design relevance evaluation and experimentation",
+      "review query, mapping, and retrieval tradeoffs"
+    ],
+    "anti_capabilities": [
+      "expose raw query logs",
+      "flip production aliases without authorization",
+      "claim relevance gains without representative judgments"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a search product needs indexing, ranking, evaluation, or query understanding work",
+      "relevance regressions need measured diagnosis"
+    ],
+    "avoid_when": [
+      "the corpus, query privacy basis, engine/version, or representative judgment set is absent"
+    ],
+    "required_tools": [
+      "repository",
+      "search-sandbox",
+      "evaluation-dataset",
+      "analytics-store"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-search-relevance",
+    "expected_output_contract": "A search patch with corpus and query provenance, versioned mappings, offline relevance metrics, latency, privacy controls, and rollout gates.",
+    "evidence_requirements": [
+      "report judgment provenance, query segments, relevance metrics, latency distributions, index reconciliation, and experiment uncertainty",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "5562f37cbb561dce6dac47b1dd4e75cb7bde6c0c48045198db346ba7d6d790af",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "query_logs_can_contain_sensitive_intent_and_identity",
+      "elasticsearch_opensearch_apis_mappings_and_licenses_are_volatile",
+      "alias_flips_and_live_experiments_require_authorization",
+      "offline_metrics_do_not_guarantee_user_outcomes"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-section-508-specialist.md",
+    "slug": "section-508-accessibility-specialist",
+    "display_name": "Section 508 Accessibility Specialist",
+    "division": "engineering",
+    "description": "Expert U.S. federal Section 508 accessibility engineer (the 508 legal baseline is WCAG 2.0 Level AA; WCAG 2.1/2.2 AA are recommended best practice, and ADA Title II requires WCAG 2.1 AA for state/local government) specializing in accessible web development, ARIA implementation, screen reader testing (JAWS/NVDA/VoiceOver), keyboard navigation, color contrast, accessible forms and PDFs, VPAT/ACR authoring, automated and manual auditing (axe/WAVE/Lighthouse), and remediation for government and enterprise sites",
+    "categories": [
+      "engineering",
+      "accessibility",
+      "section-508"
+    ],
+    "capabilities": [
+      "review ICT against applicable Section 508 criteria",
+      "design evidence-based accessibility test plans",
+      "map defects to standards and remediation"
+    ],
+    "anti_capabilities": [
+      "give legal conclusions",
+      "declare conformance from automated scans alone",
+      "use stale statutory deadlines or standards mappings"
+    ],
+    "task_types": [
+      "analysis",
+      "research",
+      "review"
+    ],
+    "preferred_when": [
+      "federal ICT needs a Section 508-oriented technical review",
+      "an accessibility claim needs standards mapping and assistive-technology evidence"
+    ],
+    "avoid_when": [
+      "the accountable legal scope, applicable procurement context, or current authoritative sources are absent"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "accessibility-tester",
+      "assistive-technology-test-host",
+      "official-documentation-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "uswds-developer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-section-508-accessibility",
+    "expected_output_contract": "A technical accessibility review mapping observed evidence to applicable criteria, test methods, severity, remediation, and legal-review questions.",
+    "evidence_requirements": [
+      "cite current U.S. Access Board sources and record automated, keyboard, screen-reader, zoom, contrast, and document test evidence",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "d4fb7139c69e270fd626cfc1410b7412bd864d010903b459f9eb90c8359809f9",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "source_ada_title_ii_april_24_2026_deadline_is_stale_after_2026_interim_final_rule",
+      "section_508_incorporates_wcag_2_0_a_and_aa_not_a_blanket_wcag_2_1_baseline",
+      "scanner_detection_percentages_are_unsupported",
+      "technical_review_is_not_legal_advice"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-senior-developer.md",
+    "slug": "senior-developer",
+    "display_name": "Senior Developer",
+    "division": "engineering",
+    "description": "Premium implementation specialist - Masters Laravel/Livewire/FluxUI, advanced CSS, Three.js integration",
+    "categories": [
+      "engineering",
+      "laravel",
+      "full-stack-development"
+    ],
+    "capabilities": [
+      "implement maintainable Laravel and Livewire features",
+      "review full-stack code and interaction design",
+      "integrate repository-specific component systems"
+    ],
+    "anti_capabilities": [
+      "assume absent cross-repo style guides",
+      "force animation or visual effects over accessibility",
+      "claim framework behavior without version evidence"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a Laravel, Livewire, or FluxUI repository needs a substantive product feature",
+      "a full-stack change needs experienced implementation and review"
+    ],
+    "avoid_when": [
+      "the task is deliberately minimal, disposable, or lacks the assumed stack and local design artifacts"
+    ],
+    "required_tools": [
+      "repository",
+      "shell",
+      "browser",
+      "package-manager"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "minimal-change-engineer",
+      "rapid-prototyper"
+    ],
+    "requires": [],
+    "independence_group": "engineering-senior-full-stack-development",
+    "expected_output_contract": "A repository-aligned full-stack patch with clear design, authorization, accessibility, performance, tests, and migration notes.",
+    "evidence_requirements": [
+      "verify framework versions, local design contracts, authorization, data migration, responsive interaction, reduced motion, and tests",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "63b8da6c12b95f54bbdbcd0666abeb9519a98b35395233e1b1d8e5c102c82599",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "referenced_ai_system_paths_are_absent_and_cross_repo_assumptions_are_forbidden",
+      "unsupported_persistent_memory_claim",
+      "forced_animation_magnetic_and_3d_effects_can_harm_accessibility_and_performance",
+      "external_flux_documentation_is_version_specific"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-software-architect.md",
+    "slug": "software-architect",
+    "display_name": "Software Architect",
+    "division": "engineering",
+    "description": "Expert software architect specializing in system design, domain-driven design, architectural patterns, and technical decision-making for scalable, maintainable systems.",
+    "categories": [
+      "engineering",
+      "software-architecture",
+      "technical-strategy"
+    ],
+    "capabilities": [
+      "design software boundaries and interfaces",
+      "compare architectural alternatives",
+      "produce durable decision records and migration paths"
+    ],
+    "anti_capabilities": [
+      "implement or deploy the design",
+      "override explicit product constraints",
+      "claim scalability without workload evidence"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a supplied system context needs durable architecture and tradeoff decisions",
+      "an architectural change needs alternatives and migration analysis"
+    ],
+    "avoid_when": [
+      "the task is a narrow implementation, disposable prototype, or lacks enough system constraints for architecture"
+    ],
+    "required_tools": [],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "direct_safe",
+    "conflicts_with": [
+      "minimal-change-engineer",
+      "rapid-prototyper"
+    ],
+    "requires": [],
+    "independence_group": "engineering-software-architecture",
+    "expected_output_contract": "A constraint-led architecture decision with context, alternatives, decision, consequences, migration, validation, and unresolved risks.",
+    "evidence_requirements": [
+      "tie every decision to supplied constraints, interfaces, workload assumptions, and explicit validation gates",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "systems-reasoning",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "b85121691776147bacde26673e68fbbacd6a7f0816d1ca8e203c264d25ce1d30",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "architecture_is_advisory_without_repository_or_runtime_access",
+      "capacity_and_reliability_claims_require_evidence",
+      "must_preserve_product_and_host_authority_boundaries"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-solidity-smart-contract-engineer.md",
+    "slug": "solidity-smart-contract-engineer",
+    "display_name": "Solidity Smart Contract Engineer",
+    "division": "engineering",
+    "description": "Expert Solidity developer specializing in EVM smart contract architecture, gas optimization, upgradeable proxy patterns, DeFi protocol development, and security-first contract design across Ethereum and L2 chains.",
+    "categories": [
+      "engineering",
+      "blockchain",
+      "smart-contracts"
+    ],
+    "capabilities": [
+      "implement Solidity contracts and tests",
+      "review contract invariants and upgrade risks",
+      "design adversarial blockchain test plans"
+    ],
+    "anti_capabilities": [
+      "deploy to mainnet or move value",
+      "claim a contract is secure from unit tests",
+      "handle private keys or signing authority"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing",
+      "review"
+    ],
+    "preferred_when": [
+      "a Solidity repository needs bounded implementation or security-focused review",
+      "contract invariants need adversarial and fuzz testing"
+    ],
+    "avoid_when": [
+      "the task lacks a threat model, exact chain and compiler versions, independent audit, or safe local/testnet environment"
+    ],
+    "required_tools": [
+      "repository",
+      "solidity-toolchain",
+      "local-chain",
+      "security-analyzer"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-smart-contracts",
+    "expected_output_contract": "A contract patch with explicit invariants, access and upgrade model, unit/fuzz/invariant tests, gas evidence, and independent-audit gates.",
+    "evidence_requirements": [
+      "test accounting conservation, authorization, reentrancy, truncation, token edge cases, upgrade controls, and chain-specific behavior",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "9e6f96fb29cc71faf2638bce3a5aa06ff15b4c674ca4ec039e5e4515a7844839",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "sample_uint256_to_uint128_cast_can_truncate_stake_accounting",
+      "fee_on_transfer_and_rebasing_tokens_break_balance_assumptions",
+      "upgrade_and_admin_controls_are_high_risk",
+      "mainnet_deploy_verification_and_value_actions_require_authorization",
+      "independent_security_audit_required"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-sre.md",
+    "slug": "sre-site-reliability-engineer",
+    "display_name": "SRE (Site Reliability Engineer)",
+    "division": "engineering",
+    "description": "Expert site reliability engineer specializing in SLOs, error budgets, observability, chaos engineering, and toil reduction for production systems at scale.",
+    "categories": [
+      "engineering",
+      "site-reliability",
+      "operations"
+    ],
+    "capabilities": [
+      "design service reliability controls",
+      "analyze incidents and operational risk",
+      "plan observable rollouts and resilience tests"
+    ],
+    "anti_capabilities": [
+      "operate production autonomously",
+      "run chaos experiments without authorization",
+      "claim SLO compliance without telemetry"
+    ],
+    "task_types": [
+      "analysis",
+      "planning",
+      "review"
+    ],
+    "preferred_when": [
+      "a service needs SLO, observability, capacity, incident, or resilience design",
+      "operational changes need failure and rollback review"
+    ],
+    "avoid_when": [
+      "the request is an active production command sequence without explicit targets, owners, and authorization"
+    ],
+    "required_tools": [
+      "repository",
+      "monitoring",
+      "incident-data",
+      "test-environment"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "plan",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "devops-automator",
+      "incident-response-commander"
+    ],
+    "requires": [],
+    "independence_group": "engineering-site-reliability",
+    "expected_output_contract": "A reliability plan with service indicators, error budgets, failure modes, telemetry, staged experiments, rollback, and ownership.",
+    "evidence_requirements": [
+      "cite dated telemetry, SLO windows, dependency health, incident evidence, experiment scope, and rollback validation",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "85b305e495506913f50c7cb28de42444a85fbc4898cd3ad4e1dc9b358b4ab5e8",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "production_rollouts_chaos_and_containment_need_authorization",
+      "generic_cost_and_reliability_targets_are_unsupported",
+      "persona_does_not_confer_on_call_or_incident_authority"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-technical-writer.md",
+    "slug": "technical-writer",
+    "display_name": "Technical Writer",
+    "division": "engineering",
+    "description": "Expert technical writer specializing in developer documentation, API references, README files, and tutorials. Transforms complex engineering concepts into clear, accurate, and engaging docs that developers actually read and use.",
+    "categories": [
+      "engineering",
+      "technical-writing",
+      "documentation"
+    ],
+    "capabilities": [
+      "create repository-grounded technical documentation",
+      "structure tutorials, references, and operational guides",
+      "review docs for accuracy and discoverability"
+    ],
+    "anti_capabilities": [
+      "invent commands, paths, or links",
+      "publish externally without authorization",
+      "claim untested examples work"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a repository needs accurate user, developer, API, or operations documentation",
+      "existing documentation needs structural and technical review"
+    ],
+    "avoid_when": [
+      "the request is neutral codebase discovery that forbids recommendations or content changes"
+    ],
+    "required_tools": [
+      "repository",
+      "filesystem-search",
+      "documentation-test-runner"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "codebase-onboarding-engineer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-technical-writing",
+    "expected_output_contract": "A repository-contained documentation patch with audience, tested examples, valid links, version scope, and maintainable navigation.",
+    "evidence_requirements": [
+      "execute documented commands where safe, validate links and paths, and cite source code or authoritative behavior",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "70c8a29cddf7de486b41185693b4961af3fcccbc632b8df13ec43572859edc43",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "examples_must_be_tested_not_assumed",
+      "external_links_and_analytics_need_validation_and_consent",
+      "documentation_must_not_depend_on_sibling_repositories"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-uswds-developer.md",
+    "slug": "uswds-developer",
+    "display_name": "USWDS Developer",
+    "division": "engineering",
+    "description": "Expert U.S. Web Design System frontend developer specializing in USWDS components and design tokens, accessible-by-default patterns, responsive government UI, Sass settings/theming, the federal design language, integration into CMS platforms (Drupal/WordPress), and compliance with 21st Century IDEA and the Federal Website Standards",
+    "categories": [
+      "engineering",
+      "uswds",
+      "accessibility"
+    ],
+    "capabilities": [
+      "implement USWDS-based federal interfaces",
+      "apply accessible component patterns",
+      "review design-system integration and theming"
+    ],
+    "anti_capabilities": [
+      "claim legal conformance from component use",
+      "conflate WCAG baselines",
+      "override product needs with absolute style rules"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a repository uses USWDS and needs a bounded interface feature",
+      "a USWDS integration needs accessibility and upgrade review"
+    ],
+    "avoid_when": [
+      "the task needs an independent legal conformance determination or the repository does not use USWDS"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "accessibility-tester",
+      "package-manager",
+      "official-documentation-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "section-508-accessibility-specialist"
+    ],
+    "requires": [],
+    "independence_group": "engineering-uswds-development",
+    "expected_output_contract": "A version-specific USWDS patch with semantic structure, accessible interactions, theme constraints, browser tests, and standards caveats.",
+    "evidence_requirements": [
+      "verify exact USWDS version, component guidance, keyboard and assistive-technology behavior, responsive states, and application-level accessibility",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "d3c46e2340d50a97cec536edd985abd2fe6b5f012c3c02e5e9187cd061b27ca7",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "source_conflates_section_508_wcag_2_0_with_wcag_2_1",
+      "uswds_components_do_not_guarantee_end_product_conformance",
+      "21st_century_idea_and_required_element_claims_need_current_scope_review",
+      "never_override_is_overbroad"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-video-streaming-engineer.md",
+    "slug": "video-streaming-engineer",
+    "display_name": "Video Streaming Engineer",
+    "division": "engineering",
+    "description": "Expert video streaming engineer for adaptive bitrate delivery — HLS/DASH packaging, ffmpeg transcode ladders, CMAF low-latency, DRM, CDN delivery, and QoE-driven player tuning.",
+    "categories": [
+      "engineering",
+      "video",
+      "streaming-media"
+    ],
+    "capabilities": [
+      "design adaptive video pipelines",
+      "implement packaging and playback workflows",
+      "review codec, CDN, and DRM tradeoffs"
+    ],
+    "anti_capabilities": [
+      "upload protected media or keys without authorization",
+      "claim device support without playback tests",
+      "treat malformed examples as production commands"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a media system needs encoding, packaging, delivery, or playback engineering",
+      "streaming quality and cost need evidence-driven review"
+    ],
+    "avoid_when": [
+      "media rights, target devices, codec constraints, DRM authority, or safe test assets are unavailable"
+    ],
+    "required_tools": [
+      "repository",
+      "ffmpeg",
+      "media-packager",
+      "browser",
+      "network-test-harness"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-video-streaming",
+    "expected_output_contract": "A reproducible streaming pipeline with source rights, encoding ladder, manifests, player behavior, quality metrics, device tests, and key boundaries.",
+    "evidence_requirements": [
+      "record source properties, command receipts, artifact hashes, bitrate and quality metrics, manifest validation, and device playback evidence",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "a07dca52d7882ac55af9128fffd66c8a753d4c44170da19abffc51710dea9a11",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "embedded_ffmpeg_and_packager_example_is_incomplete_and_malformed",
+      "codec_device_drm_and_tool_support_are_volatile",
+      "drm_keys_media_rights_and_cdn_mutations_need_explicit_authority"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-voice-ai-integration-engineer.md",
+    "slug": "voice-ai-integration-engineer",
+    "display_name": "Voice AI Integration Engineer",
+    "division": "engineering",
+    "description": "Expert in building end-to-end speech transcription pipelines using Whisper-style models and cloud ASR services — from raw audio ingestion through preprocessing, transcript cleanup, subtitle generation, speaker diarization, and structured downstream integration into apps, APIs, and CMS platforms.",
+    "categories": [
+      "engineering",
+      "speech-processing",
+      "machine-learning"
+    ],
+    "capabilities": [
+      "implement speech transcription pipelines",
+      "design diarization and structured transcript outputs",
+      "evaluate audio, privacy, and quality tradeoffs"
+    ],
+    "anti_capabilities": [
+      "export audio or transcripts without authorization",
+      "persist speaker biometrics without consent",
+      "promise WER, diarization, or tenant-isolation targets without tests"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "authorized audio needs transcription, diarization, subtitles, or structured integration",
+      "a voice pipeline needs privacy and quality hardening"
+    ],
+    "avoid_when": [
+      "audio rights, data classification, provider routing, human-review policy, or representative reference transcripts are absent"
+    ],
+    "required_tools": [
+      "repository",
+      "ffmpeg",
+      "speech-model-runtime",
+      "audio-evaluation-set",
+      "network"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-voice-ai-integration",
+    "expected_output_contract": "A privacy-bounded speech pipeline with validated media, timestamp and speaker provenance, quality evals, human-review flags, retention, and recovery.",
+    "evidence_requirements": [
+      "measure WER and attribution on representative references and reconcile chunks, timestamps, redaction, retention, and delivery receipts",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "de80469db772d96f3d6d55d3e040360e3a19b45197b2dbd446cb3fcd5a4645f6",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "extension_check_contradicts_content_based_format_claim",
+      "provider_model_and_benchmark_claims_are_volatile",
+      "cross_recording_speaker_identity_is_sensitive_biometric_processing",
+      "local_only_medical_audio_claim_is_overbroad",
+      "success_metrics_are_unsupported_without_domain_evaluation"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-webassembly-engineer.md",
+    "slug": "webassembly-engineer",
+    "display_name": "WebAssembly Engineer",
+    "division": "engineering",
+    "description": "Expert WebAssembly engineer — compiling Rust/C++/Go to Wasm, JS interop and the boundary marshalling cost, WASI and server-side runtimes (Wasmtime/Wasmer), the component model, and near-native performance tuning.",
+    "categories": [
+      "engineering",
+      "webassembly",
+      "performance"
+    ],
+    "capabilities": [
+      "implement browser and WASI modules",
+      "design efficient host-module boundaries",
+      "benchmark portability, size, and runtime behavior"
+    ],
+    "anti_capabilities": [
+      "run untrusted modules without resource limits",
+      "claim sandbox immunity",
+      "port workloads without baseline evidence"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a compute-heavy or plugin workload may benefit from WebAssembly",
+      "Wasm boundary, binary size, sandbox, or runtime behavior needs review"
+    ],
+    "avoid_when": [
+      "the workload is DOM-heavy, benchmark-free, or the target runtimes and capability model are unspecified"
+    ],
+    "required_tools": [
+      "repository",
+      "wasm-toolchain",
+      "benchmark-runner",
+      "browser",
+      "wasi-runtime"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-webassembly",
+    "expected_output_contract": "A benchmark-gated Wasm patch with boundary and memory contracts, resource limits, binary-size evidence, feature detection, fallbacks, and tests.",
+    "evidence_requirements": [
+      "compare non-Wasm and Wasm end-to-end latency, boundary copies, memory growth, module size, startup, fallbacks, and sandbox escape surface",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "013afbdab6688dfd278815e0ded8f2ce38580de2ee7e3b09d5974ca2f72c0b44",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "sample_js_and_rust_signatures_do_not_match_and_output_pointer_is_undefined",
+      "wasi_example_omits_fuel_epoch_memory_and_host_import_limits",
+      "sandbox_cannot_guarantee_zero_escapes",
+      "wasmtime_component_and_browser_feature_apis_are_volatile"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-wechat-mini-program-developer.md",
+    "slug": "wechat-mini-program-developer",
+    "display_name": "WeChat Mini Program Developer",
+    "division": "engineering",
+    "description": "Expert WeChat Mini Program developer specializing in 小程序 development with WXML/WXSS/WXS, WeChat API integration, payment systems, subscription messaging, and the full WeChat ecosystem.",
+    "categories": [
+      "engineering",
+      "wechat",
+      "mini-programs"
+    ],
+    "capabilities": [
+      "implement WeChat Mini Program features",
+      "integrate login, payment, and platform APIs",
+      "review performance, privacy, and submission readiness"
+    ],
+    "anti_capabilities": [
+      "submit or publish without authorization",
+      "treat client payment success as settlement",
+      "collect location, identity, or analytics without consent"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a Mini Program repository needs a bounded WeChat-specific feature",
+      "WeChat platform integration needs reliability and compliance review"
+    ],
+    "avoid_when": [
+      "the task lacks current official policy, sandbox accounts, target base-library versions, or financial authorization"
+    ],
+    "required_tools": [
+      "repository",
+      "wechat-devtools",
+      "device-test-host",
+      "wechat-sandbox",
+      "official-documentation-search"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-wechat-mini-programs",
+    "expected_output_contract": "A version-scoped Mini Program patch with server-verified identity and payments, privacy controls, device tests, policy checks, and rollout gates.",
+    "evidence_requirements": [
+      "record exact base-library version, API and policy sources, sandbox callbacks, server reconciliation, privacy consent, and device evidence",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "dcda22b2d93c1bbfb5d29a78bba031ad40552af54713d89c49ece2d70d08a02c",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "sample_login_destructures_a_nonexistent_data_wrapper",
+      "refresh_retry_function_is_missing_and_401_retry_is_unbounded",
+      "client_payment_callback_is_not_payment_settlement",
+      "package_limits_platform_apis_and_review_policy_are_volatile",
+      "pipl_payment_messaging_location_and_analytics_are_high_stakes"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-wordpress-performance.md",
+    "slug": "wordpress-performance-engineer",
+    "display_name": "WordPress Performance Engineer",
+    "division": "engineering",
+    "description": "Expert WordPress performance engineer specializing in Core Web Vitals, object caching (Redis/Memcached), page caching, database and WP_Query optimization, the Transients API, asset minification/deferral/critical CSS, image optimization and lazy loading, CDN integration, plugin performance auditing, and PHP-FPM/opcache tuning for fast, audit-passing sites",
+    "categories": [
+      "engineering",
+      "wordpress",
+      "performance"
+    ],
+    "capabilities": [
+      "profile WordPress request and frontend performance",
+      "optimize cache, query, and asset behavior",
+      "review infrastructure and privacy-safe caching"
+    ],
+    "anti_capabilities": [
+      "cache private commerce or account pages",
+      "apply blanket indexes or Redis policy",
+      "claim Core Web Vitals improvement without field and lab evidence"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "review"
+    ],
+    "preferred_when": [
+      "a WordPress site has measured query, cache, asset, or runtime bottlenecks",
+      "a performance change needs correctness and privacy review"
+    ],
+    "avoid_when": [
+      "representative traffic, safe profiling access, cache topology, or rollback is unavailable"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "database",
+      "performance-profiler",
+      "cache-test-host"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-wordpress-performance",
+    "expected_output_contract": "A measured WordPress optimization with baseline, isolated cause, cache-safety tests, before-and-after metrics, and rollback.",
+    "evidence_requirements": [
+      "compare queries, response distributions, cache keys and hit rates, private-page isolation, Core Web Vitals, and interactions before and after",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "58ed429ace903aac3a2c9e190ecae5b61966b7330e9e51ea66aa03eb4112854f",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "transient_and_autoload_behavior_is_oversimplified",
+      "blanket_meta_index_guidance_can_be_unsafe",
+      "opcache_timestamp_and_redis_eviction_settings_require_topology_specific_review",
+      "production_cache_database_cdn_and_php_fpm_changes_need_authorization"
+    ]
+  },
+  {
+    "relative_path": "engineering/engineering-wordpress-shopping-cart.md",
+    "slug": "wordpress-shopping-cart-engineer",
+    "display_name": "WordPress Shopping Cart Engineer",
+    "division": "engineering",
+    "description": "Expert WordPress e-commerce engineer specializing in WooCommerce for product catalog management, payment gateway integration, checkout customization, order management, tax and coupon configuration, and conversion-optimized storefront delivery on WordPress",
+    "categories": [
+      "engineering",
+      "wordpress",
+      "woocommerce"
+    ],
+    "capabilities": [
+      "implement WooCommerce catalog and checkout behavior",
+      "integrate payment and order workflows",
+      "review tax, stock, and reconciliation controls"
+    ],
+    "anti_capabilities": [
+      "capture or refund live funds",
+      "give authoritative tax or PCI advice",
+      "delete financial records or publish storefront changes without authorization"
+    ],
+    "task_types": [
+      "analysis",
+      "implementation",
+      "testing"
+    ],
+    "preferred_when": [
+      "a WooCommerce repository needs product, checkout, payment, or order work",
+      "commerce flows need money, stock, and webhook invariant review"
+    ],
+    "avoid_when": [
+      "the request lacks sandbox isolation, accountable financial approval, current plugin versions, or full-path test access"
+    ],
+    "required_tools": [
+      "repository",
+      "browser",
+      "database",
+      "payment-sandbox",
+      "woocommerce-test-host"
+    ],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "modify",
+    "context_mode": "isolated_only",
+    "conflicts_with": [
+      "payments-billing-engineer"
+    ],
+    "requires": [],
+    "independence_group": "engineering-woocommerce",
+    "expected_output_contract": "A sandbox-proven WooCommerce patch with price and stock invariants, authenticated idempotent webhooks, reconciliation, mobile tests, and rollback.",
+    "evidence_requirements": [
+      "reconcile displayed, authorized, captured, refunded, taxed, stocked, ordered, and settled state under duplicate and failure tests",
+      "separate verified facts from assumptions and recommendations",
+      "cite tool receipts, tests, or authoritative sources for completion claims"
+    ],
+    "model_requirements": [
+      "strong-analysis",
+      "instruction-adherence",
+      "uncertainty-calibration"
+    ],
+    "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+    "content_hash": "a2ef45cebe1cf03175b16ef48a2a01acdd2b7e8eda289114f568ebe0f1ae4112",
+    "audit_revision": "1",
+    "audit_status": "approved",
+    "findings": [
+      "credential_storage_rule_is_overbroad_and_environment_storage_is_not_inherently_secure",
+      "webhook_logs_can_leak_payment_or_customer_data",
+      "record_retention_and_deletion_need_legal_policy_not_absolute_persona_rules",
+      "live_charge_refund_tax_and_payout_actions_are_high_stakes",
+      "success_rate_guarantees_are_unsupported"
+    ]
+  }
+]

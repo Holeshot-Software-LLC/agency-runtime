@@ -9,6 +9,16 @@ import subprocess
 import pytest
 
 from agency_runtime.core.delegation import backend_process, backends
+from tests.runtime_support import trusted_test_interpreter
+
+
+def _frozen_test_argv() -> list[str]:
+    # The sandbox-owned test venv intentionally carries capability grants that
+    # fail the namespace boundary. Its base interpreter is a trusted system
+    # artifact and is sufficient for these pipe/process-group lifecycle tests.
+    return backends.freeze_process_argv(
+        backends.prepare_process_argv([str(trusted_test_interpreter())])
+    )
 
 
 class _Pipe:
@@ -103,6 +113,11 @@ def _configure_lifecycle(
     monkeypatch.setattr(backends, "prepare_process_argv", lambda argv: list(argv))
     monkeypatch.setattr(
         backends,
+        "freeze_process_argv",
+        lambda argv, **_kwargs: argv,
+    )
+    monkeypatch.setattr(
+        backends,
         "_spawn_owned_process",
         lambda _argv, **_kwargs: process,
     )
@@ -153,7 +168,7 @@ def test_spawn_uses_an_explicitly_closed_pipe_for_no_input(
     monkeypatch.setattr(backends, "_is_windows", lambda: False)
 
     result = backends._spawn_owned_process(
-        ["agent"],
+        _frozen_test_argv(),
         cwd=None,
         env={"PATH": "test"},
         input_text=None,
@@ -190,7 +205,7 @@ def test_windows_bounded_stdin_is_complete_before_child_creation(
     monkeypatch.setattr(backends.subprocess, "Popen", fake_popen)
 
     result = backends._spawn_owned_process(
-        ["agent"],
+        _frozen_test_argv(),
         cwd=None,
         env={"PATH": "test"},
         input_text=input_text,
@@ -213,7 +228,7 @@ def test_windows_large_stdin_remains_asynchronous(
     )
 
     result = backends._spawn_owned_process(
-        ["agent"],
+        _frozen_test_argv(),
         cwd=None,
         env={"PATH": "test"},
         input_text="x" * (backends._WINDOWS_PREFILLED_STDIN_BYTES + 1),
@@ -279,7 +294,7 @@ def test_windows_prefilled_stdin_cleans_child_when_parent_read_close_fails(
 
     with pytest.raises(OSError, match="reader close failed"):
         backends._spawn_owned_process(
-            ["agent"],
+            _frozen_test_argv(),
             cwd=None,
             env={"PATH": "test"},
             input_text="payload",
@@ -304,7 +319,7 @@ def test_windows_prefilled_stdin_closes_parent_fd_when_spawn_fails(
 
     with pytest.raises(RuntimeError, match="spawn failed"):
         backends._spawn_owned_process(
-            ["agent"],
+            _frozen_test_argv(),
             cwd=None,
             env={"PATH": "test"},
             input_text="payload",
@@ -330,7 +345,7 @@ def test_spawn_failure_without_prefilled_stdin_has_no_fd_cleanup(
 
     with pytest.raises(RuntimeError, match="spawn failed"):
         backends._spawn_owned_process(
-            ["agent"],
+            _frozen_test_argv(),
             cwd=None,
             env={"PATH": "test"},
             input_text="payload",
@@ -525,13 +540,18 @@ def test_failed_taskkill_helper_is_killed_and_reaped(
 
     monkeypatch.setattr(backend_process.subprocess, "Popen", popen)
     monkeypatch.setattr(backend_process, "_owned_process_kwargs", lambda **_kwargs: {})
+    monkeypatch.setattr(
+        backend_process,
+        "trusted_windows_system_executable",
+        lambda *_args, **_kwargs: r"C:\Windows\System32\taskkill.exe",
+    )
 
     backend_process._terminate_owned_process_tree(
         target,  # type: ignore[arg-type]
         platform_name="nt",
     )
 
-    assert launched == [["taskkill.exe", "/PID", "111", "/T", "/F"]]
+    assert launched == [[r"C:\Windows\System32\taskkill.exe", "/PID", "111", "/T", "/F"]]
     assert helper.kill_count == 1
     assert helper.wait_timeouts == [5, 2]
     assert target.kill_count == 1

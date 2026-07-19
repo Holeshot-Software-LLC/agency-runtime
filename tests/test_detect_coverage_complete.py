@@ -35,6 +35,12 @@ def test_detection_compatibility_properties_and_aggregate_flags() -> None:
     result.adapters.codex = True
     assert result.has_any_adapter is True
 
+    inference_only = detect.DetectionResult(
+        providers=detect.ProviderDetection(litellm_available=True)
+    )
+    assert inference_only.has_any_provider is True
+    assert inference_only.has_any_adapter is False
+
     cli_only = detect.DetectionResult(
         cli_providers={
             "codex": CLIProviderStatus(

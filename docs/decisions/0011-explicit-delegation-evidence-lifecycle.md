@@ -3,9 +3,14 @@ title: Model delegation as an explicit evidence lifecycle
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-16
 tags: [delegation, evidence, state-machine]
-related: []
+related:
+  - docs/roadmap/issue-AR-27-authoritative-delegation-stop-enforcement.md
+  - docs/roadmap/issue-AR-58-unit-aware-delegation-assignment.md
+  - docs/roadmap/issue-AR-59-event-driven-delegation-scheduler.md
+  - docs/roadmap/issue-AR-69-require-correlation-complete-cli-delegation-evidence.md
+  - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 id: ADR-0011

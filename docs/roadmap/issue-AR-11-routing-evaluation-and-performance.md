@@ -3,7 +3,7 @@ title: "AR-11: Establish routing accuracy and performance gates"
 status: done
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-18
 tags: [routing, evaluation, performance]
 related:
   - docs/decisions/0001-layered-specialist-routing.md
@@ -18,7 +18,7 @@ issue_id: AR-11
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/11"
 depends_on: []
-blocks: [AR-07]
+blocks: [AR-07, AR-84, AR-88]
 ---
 
 # AR-11: Establish routing accuracy and performance gates

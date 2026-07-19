@@ -13,7 +13,7 @@
 #   AGENCY_JUDGE_MODEL, AGENCY_JUDGE_BASE_URL, AGENCY_JUDGE_API_KEY,
 #   AGENCY_JUDGE_TIMEOUT, AGENCY_MAX_SELECTED, AGENCY_BYPASS_THRESHOLD,
 #   OLLAMA_BASE_URL, AGENCY_OLLAMA_FALLBACK_MODEL,
-#   LITELLM_BASE_URL, LITELLM_API_KEY,
+#   LITELLM_API_KEY,
 #   AGENCY_CONFIG_PATH, AGENCY_DB_PATH, AGENCY_DASHBOARD_PORT
 
 # Provider fallback chain — empty by default, populated by `agency configure`
@@ -37,7 +37,22 @@ ollama:
 selector:
   min_confidence: 0.4
   max_user_msg_len: 4000
-  trivial_msg_threshold: 5
+  # Deprecated compatibility value; state-aware turn intent owns bypass policy.
+  trivial_msg_threshold: 0
+
+# Native hosts remain the scheduler. Observe emits optional plans without a
+# Stop correction; prefer applies the bounded strength thresholds below;
+# strong marks every eligible multi-unit plan strongly preferred.
+delegation:
+  mode: prefer
+  preferred_min_units: 2
+  strongly_preferred_min_units: 4
+  strongly_preferred_min_confidence: 0.8
+
+# Reversible selection policy. Definitions and version history remain in the
+# roster while listed specialists are unavailable to routing and new loads.
+agents:
+  disabled: []
 
 store:
   db_path: ~/.agency-runtime/agency.db

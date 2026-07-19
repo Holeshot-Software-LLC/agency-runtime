@@ -10,7 +10,7 @@ cache, or filesystem seams retains its original effect.
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -145,6 +145,7 @@ _validate_providers = _schema._validate_providers
 _validate_judge = _schema._validate_judge
 _validate_ollama = _schema._validate_ollama
 _validate_selector = _schema._validate_selector
+_validate_agents = _schema._validate_agents
 _validate_store = _schema._validate_store
 _validate_server = _schema._validate_server
 _validate_dashboard = _schema._validate_dashboard
@@ -197,6 +198,7 @@ def apply_config_operations(
     *,
     expected_revision: str,
     path: str | Path | None = None,
+    locked_precondition: Callable[[], None] | None = None,
 ) -> ConfigUpdateResult:
     """Apply a typed operation batch as one locked, atomic transaction."""
 
@@ -212,6 +214,7 @@ def apply_config_operations(
         validate=validate_config_document,
         apply=_patch.apply_operations,
         complete=_complete_update,
+        locked_precondition=locked_precondition,
     )
 
 
@@ -274,6 +277,7 @@ def _ensure_config_parent(path: Path) -> None:
         path,
         restrict=_restrict_permissions,
         path_check=_is_link_or_reparse_point,
+        is_windows=_IS_WINDOWS,
     )
 
 
@@ -325,6 +329,19 @@ def _config_lock(path: Path, *, timeout: float = _LOCK_TIMEOUT_SECONDS) -> Itera
         yield
 
 
+@contextmanager
+def config_read_lock(
+    path: str | Path | None = None,
+    *,
+    timeout: float = _LOCK_TIMEOUT_SECONDS,
+) -> Iterator[Path]:
+    """Serialize a config-bound Store operation with configuration writers."""
+
+    target = resolve_config_path(path)
+    with _config_lock(target, timeout=timeout):
+        yield target
+
+
 __all__ = [
     "ConfigConflictError",
     "ConfigLockError",
@@ -333,6 +350,7 @@ __all__ = [
     "ConfigValidationError",
     "ConfigurationError",
     "apply_config_operations",
+    "config_read_lock",
     "read_config_revision",
     "read_config_state",
     "replace_config_document",

@@ -39,6 +39,23 @@ from agency_runtime.core.store.sqlite import Store
 _WINDOWS_POWERSHELL_INTEGRATION_TIMEOUT_SECONDS = 60
 
 
+@pytest.fixture(autouse=True)
+def _use_trusted_test_python(
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher_files: tuple[Path, Path],
+) -> None:
+    """Keep real subprocess tests behind the production executable trust gate.
+
+    A repository-local virtual-environment executable is intentionally rejected
+    on Windows when its inherited ACL permits cross-account mutation.  The
+    suite's private launcher fixture exposes the same trusted system Python used
+    by installed launchers, while every fake script remains isolated per test.
+    """
+
+    executable, _bootstrap = private_installer_launcher_files
+    monkeypatch.setattr(sys, "executable", str(executable))
+
+
 def _fake_cli(tmp_path: Path) -> Path:
     script = tmp_path / "fake_agent.py"
     script.write_text(

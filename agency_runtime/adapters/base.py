@@ -2,22 +2,35 @@
 
 from __future__ import annotations
 
+import os
 from abc import ABC, abstractmethod
-from collections import OrderedDict
-from hashlib import sha256
-from threading import RLock
 from typing import Any
+from uuid import uuid4
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.store.sqlite import Store
 
 _MAX_EMBEDDED_RESULT_BYTES = 256 * 1024
-_MAX_NONTRIVIAL_SESSIONS = 4096
+_MAX_NATIVE_DELEGATION_TASKS = 16
+_NATIVE_DELEGATION_TASK_KEYS = (
+    "goal",
+    "task",
+    "prompt",
+    "description",
+    "work_unit_id",
+    "workUnitId",
+    "unit_id",
+    "task_id",
+    "backend",
+)
 
 
-def _session_evidence_key(session_id: str) -> bytes:
-    """Return a fixed-width digest key so raw session IDs are not retained."""
-    return sha256(session_id.encode("utf-8", errors="surrogatepass")).digest()
+class AdapterFinalizationRejected(RuntimeError):
+    """Carry the exact non-accepted candidate without exposing it in the error."""
+
+    def __init__(self, result: dict[str, Any]) -> None:
+        super().__init__("Agency Runtime finalization did not accept the correlated response")
+        self.finalization_result = dict(result)
 
 
 def _clean(value: Any, default: str = "") -> str:
@@ -26,28 +39,13 @@ def _clean(value: Any, default: str = "") -> str:
     return str(value).strip()
 
 
-def _is_noneish_agency_line(value: str) -> bool:
-    text = value.strip().lower().rstrip(".!")
-    return text == "none" or text.startswith(("none ", "none-", "none--"))
-
-
-def _is_non_actionable_delegation_none(value: str) -> bool:
-    """Return True for a none-delegation line that lacks a real blocker."""
-    text = value.strip().lower().rstrip(".!")
-    if text == "none":
-        return True
-    return text in {
-        "none - no delegation executed",
-        "none - delegation suggested but not executed",
-    }
-
-
 _FAILURE_STATUSES = {
     "cancelled",
     "canceled",
     "error",
     "failed",
     "failure",
+    "interrupted",
     "rejected",
     "skipped",
     "timed_out",
@@ -66,7 +64,7 @@ _NESTED_RESULT_KEYS = ("result", "output", "data", "content", "text")
 
 
 def _failure_message(payload: dict[str, Any], default: str = "tool call failed") -> str:
-    for key in ("message", "error", "reason", "detail", "stderr"):
+    for key in ("message", "error", "reason", "detail", "stderr", "exit_reason"):
         value = payload.get(key)
         if value not in (None, "", False):
             if isinstance(value, dict):
@@ -168,6 +166,114 @@ def _tool_result(kwargs: dict[str, Any]) -> Any:
     return None
 
 
+def _native_delegation_batch(
+    tool_name: str,
+    args: dict[str, Any],
+    result: Any,
+) -> list[tuple[dict[str, Any], Any]] | None:
+    """Project an official bounded Hermes ``delegate_task`` batch by task identity."""
+
+    if tool_name != "delegate_task":
+        return None
+    tasks = args.get("tasks")
+    if not isinstance(tasks, (list, tuple)):
+        return None
+    bounded_tasks = list(tasks[:_MAX_NATIVE_DELEGATION_TASKS])
+    structured_result = result
+    if isinstance(result, str):
+        try:
+            structured_result = safe_load_bounded_json(
+                result,
+                maximum_bytes=_MAX_EMBEDDED_RESULT_BYTES,
+                maximum_depth=32,
+                maximum_nodes=5_000,
+            )
+        except Exception:
+            structured_result = result
+    raw_results = structured_result.get("results") if isinstance(structured_result, dict) else None
+    batch_native_run_id = (
+        _clean(
+            _nested_value(
+                structured_result,
+                ("delegation_id", "delegationId", "run_id", "runId"),
+            )
+        )
+        if isinstance(structured_result, dict)
+        else ""
+    )
+    indexed_results: dict[int, Any] = {}
+    if isinstance(raw_results, (list, tuple)):
+        for position, item in enumerate(raw_results[:_MAX_NATIVE_DELEGATION_TASKS]):
+            task_index = item.get("task_index") if isinstance(item, dict) else position
+            if (
+                isinstance(task_index, bool)
+                or not isinstance(task_index, int)
+                or not 0 <= task_index < len(bounded_tasks)
+            ):
+                task_index = position
+            if 0 <= task_index < len(bounded_tasks):
+                indexed_results.setdefault(task_index, item)
+    global_failure = _tool_failure_reason(structured_result)
+    projected: list[tuple[dict[str, Any], Any]] = []
+    for index, task in enumerate(bounded_tasks):
+        if not isinstance(task, dict):
+            continue
+        task_args = {key: task[key] for key in _NATIVE_DELEGATION_TASK_KEYS if key in task}
+        task_result = indexed_results.get(index)
+        if task_result is None and global_failure:
+            task_result = {"status": "failed", "error": global_failure}
+        if batch_native_run_id:
+            task_result = {
+                **(task_result if isinstance(task_result, dict) else {}),
+                "native_run_id": batch_native_run_id,
+            }
+        projected.append((task_args, task_result))
+    return projected
+
+
+def _record_native_delegation_observation(
+    store: Store,
+    *,
+    session_id: str,
+    host: str,
+    agent: str,
+    backend: str,
+    goal: str,
+    work_unit_id: str,
+    trace_id: str,
+    failure_reason: str,
+    executed_worker_kind: str,
+    executed_worker_id: str,
+    native_run_id: str,
+) -> None:
+    """Persist failure or identity-complete native execution, never inference."""
+
+    from agency_runtime.core.delegation.events import (
+        mark_delegation_executed,
+        mark_delegation_skipped,
+    )
+
+    arguments = {
+        "store": store,
+        "session_id": session_id,
+        "host": host,
+        "agent": agent,
+        "backend": backend,
+        "goal": goal,
+        "work_unit_id": work_unit_id,
+        "trace_id": trace_id,
+        "executed_worker_kind": executed_worker_kind,
+        "executed_worker_id": executed_worker_id,
+        "native_run_id": native_run_id,
+    }
+    if failure_reason:
+        mark_delegation_skipped(**arguments, reason=failure_reason)
+        return
+    if not executed_worker_id or not native_run_id:
+        return
+    mark_delegation_executed(**arguments)
+
+
 def _tool_call_failure_reason(kwargs: dict[str, Any]) -> str:
     for key in ("result", "tool_result", "output", "response"):
         if key in kwargs:
@@ -241,35 +347,66 @@ class BaseAdapter(ABC):
     host_name: str = "unknown"
 
     def __init__(self, store: Store | None = None):
-        self.store = store or Store()
-        self._nontrivial_sessions: OrderedDict[bytes, None] = OrderedDict()
-        self._nontrivial_sessions_lock = RLock()
+        self._store = store
 
-    def _remember_nontrivial_session(self, session_id: str) -> None:
-        """Retain bounded, thread-safe evidence that a session required routing."""
-        if not session_id:
-            return
-        evidence_key = _session_evidence_key(session_id)
-        with self._nontrivial_sessions_lock:
-            self._nontrivial_sessions[evidence_key] = None
-            self._nontrivial_sessions.move_to_end(evidence_key)
-            while len(self._nontrivial_sessions) > _MAX_NONTRIVIAL_SESSIONS:
-                self._nontrivial_sessions.popitem(last=False)
+    @property
+    def store(self) -> Store:
+        """Materialize storage only after the global master gate permits work."""
 
-    def _was_nontrivial_session(self, session_id: str) -> bool:
-        """Return recent routing evidence without racing concurrent host callbacks."""
-        if not session_id:
-            return False
-        evidence_key = _session_evidence_key(session_id)
-        with self._nontrivial_sessions_lock:
-            if evidence_key not in self._nontrivial_sessions:
-                return False
-            self._nontrivial_sessions.move_to_end(evidence_key)
-            return True
+        if self._store is None:
+            self._store = Store()
+        return self._store
+
+    @store.setter
+    def store(self, value: Store) -> None:
+        self._store = value
+
+    def _uses_explicit_config(self) -> bool:
+        """Return whether the adapter owns a caller-supplied immutable config."""
+
+        return False
+
+    def _was_nontrivial_turn(self, session_id: str, trace_id: str) -> bool:
+        """Read authoritative request-kind evidence for exactly one turn.
+
+        None is deliberately distinct from False in the Store API: unknown,
+        corrupt, or mismatched evidence cannot silently downgrade a non-trivial
+        turn to a trivial one at the completion boundary.
+        """
+        getter = getattr(self.store, "is_nontrivial_turn", None)
+        if not callable(getter):
+            raise RuntimeError("evidence store cannot verify turn request kind")
+        result = getter(session_id, trace_id)
+        if not isinstance(result, bool):
+            raise RuntimeError("turn request kind could not be verified")
+        return result
 
     def runtime_enabled(self) -> bool:
         """Return the current persistent soft-control state for this host."""
-        return bool(self.store.get_host_control(self.host_name).get("enabled", True))
+        from agency_runtime.core.runtime_control import master_enabled
+
+        if not master_enabled():
+            return False
+        from agency_runtime.core.config_binding import assert_store_config_binding
+
+        runtime_store = self.store
+        if not self._uses_explicit_config():
+            assert_store_config_binding(runtime_store)
+        return bool(runtime_store.get_host_control(self.host_name).get("enabled", True))
+
+    def resolve_turn_trace(self, session_id: str, trace_id: str = "") -> str:
+        """Return an explicit trace or one unambiguous active trace."""
+        explicit = _clean(trace_id)
+        if explicit:
+            return explicit
+        getter = getattr(self.store, "get_open_traces_for_session", None)
+        if not callable(getter) or not session_id:
+            return ""
+        try:
+            candidates = list(getter(session_id))
+        except Exception:
+            return ""
+        return str(candidates[0]) if len(candidates) == 1 else ""
 
     @abstractmethod
     def is_available(self) -> bool:
@@ -277,78 +414,127 @@ class BaseAdapter(ABC):
         ...
 
     @abstractmethod
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        """Return skills loaded in the current host session."""
-        ...
-
-    @abstractmethod
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        """Return specialists loaded in the current host session."""
-        ...
-
-    @abstractmethod
     def get_delegate_backend(self) -> str | None:
         """Return the delegate backend name this adapter provides, or None."""
         ...
 
-    @abstractmethod
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        """Return model telemetry from the host, if available."""
-        ...
-
-    def apply_finalization(self, draft_text: str, trace_id: str, model: str = "") -> str:
+    def apply_finalization(
+        self,
+        draft_text: str,
+        session_id: str,
+        model: str = "",
+        *,
+        trace_id: str = "",
+    ) -> str:
         """Apply header/finalization to the final visible reply."""
         if not self.runtime_enabled():
             return draft_text
-        from agency_runtime.core.header.contract import finalize_header
+        from agency_runtime.core.header.finalize import finalize_response
 
-        return finalize_header(
+        trace_id = self.resolve_turn_trace(session_id, trace_id)
+        result = finalize_response(
             draft_text,
-            session_id=trace_id,
+            trace_metadata={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "host": self.host_name,
+            },
             store=self.store,
             model=model,
         )
+        if result["action"] != "accept":
+            raise AdapterFinalizationRejected(result)
+        return result["text"]
 
-    def _suggested_delegations(self, session_id: str) -> list[dict[str, Any]]:
+    def _suggested_delegations(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> list[dict[str, Any]]:
         from agency_runtime.core.delegation.events import suggested_delegations
 
-        return suggested_delegations(self.store, session_id)
+        return suggested_delegations(self.store, session_id, trace_id=trace_id)
 
     def record_tool_call(self, **kwargs: Any) -> None:
         """Record skills, specialist loads, and actual delegation tool use."""
         if not self.runtime_enabled():
             return
-        from agency_runtime.core.delegation.events import (
-            mark_delegation_executed,
-            mark_delegation_skipped,
-        )
+        from agency_runtime.core.resident_managers import is_resident_manager_slug
 
         tool_name = kwargs.get("tool_name") or ""
         args = kwargs.get("args") if isinstance(kwargs.get("args"), dict) else {}
         session_id = _clean(kwargs.get("session_id"))
-        trace_id = _clean(kwargs.get("trace_id"))
+        trace_id = self.resolve_turn_trace(session_id, _clean(kwargs.get("trace_id")))
         result = _tool_result(kwargs)
         failure_reason = _tool_call_failure_reason(kwargs)
 
         if tool_name == "skill_view":
             skill_name = args.get("name") or ""
             if skill_name and not failure_reason:
-                self.store.record_skill_loaded(session_id, skill_name)
+                self.store.record_skill_loaded(
+                    session_id,
+                    skill_name,
+                    trace_id=trace_id,
+                )
 
         elif tool_name in ("agency_agents_load", "agency_agents_inspect"):
             agent = args.get("agent") or args.get("slug") or ""
-            if agent and not failure_reason:
-                self.store.record_specialist_loaded(session_id, agent)
+            if agent and not failure_reason and not is_resident_manager_slug(agent):
+                self.store.record_specialist_loaded(
+                    session_id,
+                    agent,
+                    trace_id=trace_id,
+                )
 
-        elif tool_name in ("agency_agents_delegate", "delegate_task", "delegate_async"):
-            agent = _clean(
-                _first_value(
+        elif tool_name in (
+            "agency.delegate",
+            "agency_agents_delegate",
+            "delegate_task",
+            "delegate_async",
+            "spawn_agent",
+            "followup_task",
+            "sessions_spawn",
+        ):
+            if not session_id or not trace_id:
+                return
+            native_batch = _native_delegation_batch(tool_name, args, result)
+            if native_batch is not None:
+                for task_args, task_result in native_batch:
+                    self.record_tool_call(
+                        tool_name=tool_name,
+                        args=task_args,
+                        result=task_result,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                    )
+                return
+            # Keep the caller's requested role only as a correlation hint and
+            # immutable recommendation.  It is not proof of which native
+            # worker executed the work unit; headers use executed_worker_kind.
+            agency_agent_values = (
+                (
                     args.get("agent"),
                     args.get("slug"),
                     args.get("recommended_agent"),
                     kwargs.get("agent"),
                     kwargs.get("recommended_agent"),
+                    _nested_value(result, ("recommended_agent", "slug")),
+                )
+                if tool_name == "sessions_spawn"
+                else (
+                    args.get("agent"),
+                    args.get("agentId"),
+                    args.get("agent_id"),
+                    args.get("slug"),
+                    args.get("recommended_agent"),
+                    kwargs.get("agent"),
+                    kwargs.get("recommended_agent"),
                     _nested_value(result, ("agent", "slug", "recommended_agent")),
+                )
+            )
+            agent = _clean(
+                _first_value(
+                    *agency_agent_values,
                 )
             )
             goal = _clean(
@@ -362,45 +548,123 @@ class BaseAdapter(ABC):
                     _nested_value(result, ("goal", "task", "prompt", "description")),
                 )
             )
+            native_unit_values = (
+                (args.get("taskName"), args.get("task_name"))
+                if tool_name == "sessions_spawn"
+                else ()
+            )
             work_unit_id = _clean(
                 _first_value(
                     args.get("work_unit_id"),
                     args.get("workUnitId"),
                     args.get("unit_id"),
                     args.get("task_id"),
+                    *native_unit_values,
                     kwargs.get("work_unit_id"),
                     kwargs.get("workUnitId"),
-                    _nested_value(result, ("work_unit_id", "workUnitId", "unit_id", "task_id")),
+                    _nested_value(
+                        result,
+                        (
+                            "work_unit_id",
+                            "workUnitId",
+                            "unit_id",
+                            "task_id",
+                            "taskId",
+                        ),
+                    ),
                 )
+            )
+            executed_worker_kind = "generic-worker"
+            worker_identity_keys = (
+                (
+                    "child_session_key",
+                    "childSessionKey",
+                    "session_id",
+                    "sessionId",
+                    "worker_id",
+                    "workerId",
+                    "agent_id",
+                    "agentId",
+                )
+                if tool_name == "sessions_spawn"
+                else (
+                    "agent_id",
+                    "agentId",
+                    "child_session_key",
+                    "childSessionKey",
+                    "session_id",
+                    "sessionId",
+                    "worker_id",
+                    "workerId",
+                )
+            )
+            executed_worker_id = _clean(
+                _first_value(
+                    _nested_value(result, worker_identity_keys),
+                    kwargs.get("agent_id"),
+                    kwargs.get("worker_id"),
+                )
+            )
+            native_run_id = _clean(
+                _nested_value(
+                    result,
+                    (
+                        "native_run_id",
+                        "nativeRunId",
+                        "delegation_id",
+                        "delegationId",
+                        "run_id",
+                        "runId",
+                    ),
+                ),
+                kwargs.get("tool_use_id"),
             )
             backend = (
-                "agency_agents_delegate" if tool_name == "agency_agents_delegate" else tool_name
+                _clean(args.get("backend")) or "agency.delegate"
+                if tool_name == "agency.delegate"
+                else tool_name
             )
-            if failure_reason:
-                mark_delegation_skipped(
-                    self.store,
-                    session_id=session_id,
-                    host=self.host_name,
-                    agent=agent,
-                    backend=backend,
-                    goal=goal,
-                    work_unit_id=work_unit_id,
-                    trace_id=trace_id,
-                    reason=failure_reason,
-                )
-            else:
-                if agent:
-                    self.store.record_specialist_loaded(session_id, agent)
-                mark_delegation_executed(
-                    self.store,
-                    session_id=session_id,
-                    host=self.host_name,
-                    agent=agent,
-                    backend=backend,
-                    goal=goal,
-                    work_unit_id=work_unit_id,
-                    trace_id=trace_id,
-                )
+            _record_native_delegation_observation(
+                self.store,
+                session_id=session_id,
+                host=self.host_name,
+                agent=agent,
+                backend=backend,
+                goal=goal,
+                work_unit_id=work_unit_id,
+                trace_id=trace_id,
+                failure_reason=failure_reason,
+                executed_worker_kind=executed_worker_kind,
+                executed_worker_id=executed_worker_id,
+                native_run_id=native_run_id,
+            )
+            has_child_identity = bool(executed_worker_id and native_run_id)
+            if tool_name == "sessions_spawn" and has_child_identity:
+                child_recorder = getattr(self.store, "record_native_child_started", None)
+                if callable(child_recorder):
+                    child_recorder(
+                        host=self.host_name,
+                        backend=backend,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        work_unit_id=work_unit_id,
+                        worker_id=executed_worker_id,
+                        native_run_id=native_run_id,
+                    )
+            elif self.host_name == "claude" and tool_name == "delegate_task" and has_child_identity:
+                child_recorder = getattr(self.store, "record_native_child_ended", None)
+                if callable(child_recorder):
+                    child_recorder(
+                        host=self.host_name,
+                        backend=backend,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        work_unit_id=work_unit_id,
+                        worker_id=executed_worker_id,
+                        native_run_id=native_run_id,
+                        outcome="error" if failure_reason else "ok",
+                        error=failure_reason,
+                    )
 
     def post_tool_call_handler(self, **kwargs: Any) -> None:
         """Host hook alias for tool-call evidence capture."""
@@ -417,17 +681,43 @@ class BaseAdapter(ABC):
         if not self.runtime_enabled():
             return
 
-        import uuid
-
         from agency_runtime.core.receipts.normalize import normalize_host_receipt
 
         response = kwargs.get("response") if isinstance(kwargs.get("response"), dict) else {}
         requested_model = _clean(kwargs.get("model") or kwargs.get("requested_model"))
         session_id = _clean(kwargs.get("session_id"))
+        trace_id = self.resolve_turn_trace(session_id, _clean(kwargs.get("trace_id")))
+        if not session_id or not trace_id:
+            return
+        run_getter = getattr(self.store, "get_run", None)
+        if not callable(run_getter):
+            return
+        try:
+            run = run_getter(trace_id)
+        except Exception:
+            return
+        if (
+            not isinstance(run, dict)
+            or _clean(run.get("session_id")) != session_id
+            or _clean(run.get("status")) not in {"active", "evidence_only"}
+        ):
+            return
         resolved_model = _clean(
             kwargs.get("response_model") or kwargs.get("resolved_model") or response.get("model")
         )
         resolved_provider = _clean(kwargs.get("resolved_provider"))
+        receipt_source = _clean(kwargs.get("source")) or "host"
+        model_group = _clean(kwargs.get("model_group")) or requested_model
+        router_backed = resolved_provider.casefold() == "litellm" or (
+            "litellm" in receipt_source.casefold() and not resolved_provider
+        )
+        if router_backed:
+            # A host-level callback can prove which LiteLLM route was
+            # requested, but only the LiteLLM callback can reconcile the
+            # provider/model that actually served it. Never promote an alias
+            # echo into actual-model evidence.
+            resolved_provider = ""
+            resolved_model = ""
         actual_model = resolved_model
         if "/" in resolved_model:
             detected_provider, detected_model = resolved_model.split("/", 1)
@@ -439,13 +729,13 @@ class BaseAdapter(ABC):
             "host": self.host_name,
             "session_id": session_id,
             "requested_model": requested_model,
-            "model_group": _clean(kwargs.get("model_group")) or requested_model,
+            "model_group": model_group,
             "resolved_provider": resolved_provider,
             "resolved_model": actual_model,
             "api_base": _clean(kwargs.get("api_base")),
             "attempted_fallbacks": kwargs.get("attempted_fallbacks", 0),
             "model_id": _clean(kwargs.get("model_id")),
-            "source": _clean(kwargs.get("source")) or "host",
+            "source": receipt_source,
             "started_at": _clean(kwargs.get("started_at")),
             "ended_at": _clean(kwargs.get("ended_at")),
             "status": _clean(kwargs.get("status")) or "success",
@@ -462,7 +752,7 @@ class BaseAdapter(ABC):
 
         receipt = normalize_host_receipt(receipt_metadata)
         self.store.record_model_receipt(
-            trace_id=_clean(kwargs.get("trace_id")) or str(uuid.uuid4()),
+            trace_id=trace_id,
             session_id=session_id,
             host=self.host_name,
             requested_model=requested_model,
@@ -478,133 +768,62 @@ class BaseAdapter(ABC):
             status=receipt.get("status", "success"),
         )
 
-    def _selected_catalog_agents(
-        self, catalog: list[dict[str, Any]], routing: dict[str, Any]
-    ) -> list[dict[str, Any]]:
-        """Return routed active specialists with versioned, bounded prompts."""
-        selected_ids = [str(agent_id) for agent_id in routing.get("selected_ids", []) if agent_id]
-        if not selected_ids:
-            return []
-        max_selected = 5
-        active_slugs = {str(agent.get("slug") or "") for agent in catalog}
-        selected: list[dict[str, Any]] = []
-        for agent_id in selected_ids:
-            if agent_id not in active_slugs:
-                continue
-            agent = self.store.get_specialist_prompt(agent_id, max_chars=12_000)
-            if agent and agent.get("prompt_body") and agent not in selected:
-                selected.append(agent)
-            if len(selected) >= max_selected:
-                break
-        return selected
-
-    def _format_loaded_specialists(self, agents: list[dict[str, Any]]) -> str:
-        """Render approved versioned specialist prompts as injected context."""
-        lines = ["[AGENCY LOADED] Approved specialist instructions loaded for this turn:"]
-        for agent in agents:
-            capabilities = (
-                agent.get("capabilities") if isinstance(agent.get("capabilities"), list) else []
-            )
-            capability_text = (
-                f" Capabilities: {', '.join(str(item) for item in capabilities[:4])}."
-                if capabilities
-                else ""
-            )
-            lines.append(
-                "- "
-                + str(agent.get("agent_slug") or agent.get("slug") or "")
-                + ": "
-                + str(agent.get("description") or agent.get("name") or "")
-                + capability_text
-            )
-            lines.append("  Instructions: " + str(agent.get("prompt_body") or ""))
-        return "\n".join(lines)
-
     def build_preflight_context(
         self,
         session_id: str,
         user_message: str,
         model: str = "",
         trace_id: str = "",
+        *,
+        config: Any | None = None,
+        persisted_user_message: str | None = None,
+        reservation_token: str = "",
+        capabilities_restricted: bool = False,
+        origin_receipt: Any | None = None,
     ) -> dict[str, Any] | None:
         """Run selector preflight and persist suggested delegations."""
         if not self.runtime_enabled():
             return None
         del model
-        from agency_runtime.core.delegation.events import record_suggested_delegations
-        from agency_runtime.core.selector.pipeline import (
-            build_routing_context,
-            is_trivial,
-            route,
+        from agency_runtime.core.host_capabilities import (
+            EXECUTION_HOSTS,
+            native_adapter_capability_receipt,
         )
-        from agency_runtime.core.selector.policy import detect_actions
+        from agency_runtime.core.preflight import run_preflight
+        from agency_runtime.core.turn_origin import native_adapter_turn_origin
 
-        trivial = is_trivial(user_message)
-
-        if not trivial:
-            if session_id:
-                self._remember_nontrivial_session(session_id)
-            catalog = self.store.get_active_roster_as_catalog()
-            if not catalog:
-                from agency_runtime.core.installer import seed_starter_roster
-
-                seed_starter_roster(self.store)
-                catalog = self.store.get_active_roster_as_catalog()
-            routing = route(
-                session_id,
-                user_message,
-                catalog,
-                store=self.store,
-                trace_id=trace_id or None,
+        current_trace_id = trace_id or str(uuid4())
+        if origin_receipt is None:
+            origin_receipt = native_adapter_turn_origin(
+                "external_user",
+                host=self.host_name,
+                event="adapter_preflight",
+                session_id=session_id,
+                trace_id=current_trace_id,
             )
-            record_suggested_delegations(
-                self.store, session_id=session_id, host=self.host_name, routing=routing
+        capability_receipt = None
+        if self.host_name in EXECUTION_HOSTS:
+            capability_receipt = native_adapter_capability_receipt(
+                self.host_name,
+                platform="windows" if os.name == "nt" else "linux",
+                session_id=session_id,
+                trace_id=current_trace_id,
+                restricted=capabilities_restricted,
             )
-            context = build_routing_context(routing)
-            selected = self._selected_catalog_agents(catalog, routing)
-            if selected:
-                for agent in selected:
-                    self.store.record_specialist_loaded(
-                        session_id,
-                        str(agent.get("agent_slug") or agent.get("slug") or ""),
-                    )
-                context = context + "\n\n" + self._format_loaded_specialists(selected)
-            return {"context": context} if context else None
 
-        # Trivial message: still inject DEFAULT companions so the header
-        # never shows "loaded: none" when DEFAULT policy says otherwise.
-        catalog = self.store.get_active_roster_as_catalog()
-        active_slugs = {
-            str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog
-        }
-        _matched, companion_ids = detect_actions(
-            user_message,
-            active_slugs=active_slugs,
+        result = run_preflight(
+            self.store,
+            session_id=session_id,
+            user_message=user_message,
+            host=self.host_name,
+            trace_id=current_trace_id,
+            config=config,
+            persisted_user_message=persisted_user_message,
+            reservation_token=reservation_token,
+            capability_receipt=capability_receipt,
+            origin_receipt=origin_receipt,
         )
-        default_companions = [c for c in companion_ids if c]
-        if default_companions:
-            available = [slug for slug in default_companions if slug in active_slugs]
-            if available:
-                loaded_agents = [
-                    prompt
-                    for slug in available
-                    if (prompt := self.store.get_specialist_prompt(slug, max_chars=12_000))
-                    and prompt.get("prompt_body")
-                ]
-                loaded_slugs = [str(agent.get("agent_slug") or "") for agent in loaded_agents]
-                for slug in loaded_slugs:
-                    self.store.record_specialist_loaded(session_id, slug)
-                if not loaded_agents:
-                    return None
-                agents_text = ", ".join(loaded_slugs)
-                context = (
-                    f"[AGENCY PREFLIGHT] Default companion specialist routing "
-                    f"(deterministic, trivial message): {agents_text}\n\n"
-                    + self._format_loaded_specialists(loaded_agents)
-                )
-                return {"context": context}
-
-        return None
+        return result.as_dict()
 
     def pre_llm_call_handler(
         self,
@@ -612,6 +831,9 @@ class BaseAdapter(ABC):
         user_message: str,
         model: str = "",
         trace_id: str = "",
+        *,
+        reservation_token: str = "",
+        origin_receipt: Any | None = None,
     ) -> dict[str, Any] | None:
         """Host hook alias for pre-LLM routing context."""
         return self.build_preflight_context(
@@ -619,6 +841,8 @@ class BaseAdapter(ABC):
             user_message,
             model,
             trace_id,
+            reservation_token=reservation_token,
+            origin_receipt=origin_receipt,
         )
 
     def enforce_pre_verify(
@@ -627,87 +851,53 @@ class BaseAdapter(ABC):
         session_id: str = "",
         model: str = "",
         attempt: int = 0,
+        trace_id: str = "",
     ) -> dict[str, Any] | None:
         """Gate response completion on header, specialist, and delegation evidence."""
-        if not self.runtime_enabled():
-            return None
         del attempt
 
-        from agency_runtime.core.header.contract import (
-            fill_header_fields,
-            parse_header,
-            validate_header,
+        decision = self.evaluate_completion_policy(
+            final_response,
+            session_id=session_id,
+            model=model,
+            trace_id=trace_id,
         )
-
-        valid, missing = validate_header(final_response)
-        if not valid:
+        if decision.get("action") == "continue":
             return {
                 "action": "continue",
-                "message": (
-                    "Your response is missing or has malformed Agency header fields: "
-                    + ", ".join(missing)
-                    + ". Rewrite the response starting with the exact six-line Agency header."
+                "message": str(
+                    decision.get("message")
+                    or "Agency Runtime evidence verification requires another pass."
                 ),
             }
-
-        parsed = parse_header(final_response)
-        loaded = parsed.get("agencies_loaded", "")
-        delegated = parsed.get("agencies_delegated", "")
-
-        specialists = self.report_specialists_loaded(session_id)
-        open_delegations = self._suggested_delegations(session_id)
-        requires_agency_evidence = bool(
-            session_id and (self._was_nontrivial_session(session_id) or specialists)
-        ) or bool(open_delegations)
-        if requires_agency_evidence and _is_noneish_agency_line(loaded):
-            actual = ", ".join(specialists) if specialists else "the actual loaded specialist"
-            return {
-                "action": "continue",
-                "message": (
-                    "AGENCY HEADER INVALID: This was a non-trivial turn but "
-                    "Agency/Agencies loaded starts with 'none'. "
-                    f"Rewrite the header with {actual}. If no specialist context is loaded, "
-                    "call agency_agents_search and agency_agents_load first."
-                ),
-            }
-
-        # `none - <concrete blocker>` is acceptable; generated/no-evidence
-        # explanations still need a real delegation or a concrete blocker.
-        if open_delegations and _is_non_actionable_delegation_none(delegated):
-            return {
-                "action": "continue",
-                "message": (
-                    "DELEGATION OPPORTUNITY WAS DETECTED but agencies_delegated has no executed delegation or concrete blocker. "
-                    "Dispatch at least one independent work unit via delegate_task, delegate_async, "
-                    "or agency_agents_delegate, then report the executed delegation in the Agency header. "
-                    "If delegation is impossible, state the concrete blocker instead of writing bare 'none'."
-                ),
-            }
-
-        authoritative = fill_header_fields(parsed, session_id, self.store, model)
-        evidence_fields = (
-            ("agencies_loaded", "Agency/Agencies loaded"),
-            ("agencies_delegated", "Agency/Agencies delegated"),
-            ("skills_loaded", "Skills loaded"),
-            ("actual_model_selected", "Actual Model selected"),
-        )
-        mismatches = [
-            (label, authoritative[key])
-            for key, label in evidence_fields
-            if _clean(parsed.get(key)) != _clean(authoritative[key])
-        ]
-        if mismatches:
-            corrections = "; ".join(f"{label}: {value}" for label, value in mismatches)
-            return {
-                "action": "continue",
-                "message": (
-                    "AGENCY HEADER DOES NOT MATCH RECORDED EVIDENCE. "
-                    "Do not claim unrecorded specialist, delegation, or model activity. "
-                    f"Rewrite these fields exactly: {corrections}"
-                ),
-            }
-
         return None
+
+    def evaluate_completion_policy(
+        self,
+        final_response: str,
+        *,
+        session_id: str = "",
+        model: str = "",
+        trace_id: str = "",
+    ) -> dict[str, Any]:
+        """Return an internal decision bound to one atomic evidence revision."""
+
+        if not self.runtime_enabled():
+            return {"action": "accept", "runtime_disabled": True}
+        from agency_runtime.core.header.contract import (
+            evaluate_completion_policy as evaluate_contract,
+        )
+
+        trace_id = self.resolve_turn_trace(session_id, trace_id)
+        return dict(
+            evaluate_contract(
+                final_response,
+                session_id=session_id,
+                trace_id=trace_id,
+                store=self.store,
+                model=model,
+            )
+        )
 
     def pre_verify_handler(
         self,
@@ -715,6 +905,13 @@ class BaseAdapter(ABC):
         session_id: str = "",
         model: str = "",
         attempt: int = 0,
+        trace_id: str = "",
     ) -> dict[str, Any] | None:
         """Host hook alias for final-response verification."""
-        return self.enforce_pre_verify(final_response, session_id, model, attempt)
+        return self.enforce_pre_verify(
+            final_response,
+            session_id,
+            model,
+            attempt,
+            trace_id,
+        )

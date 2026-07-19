@@ -108,7 +108,8 @@ class CodexExecBackend(CommandBackend):
 
     def parse_stdout(self, stdout: str) -> tuple[Any, dict[str, Any]]:
         events, metadata = CommandBackend.parse_stdout(self, stdout)
-        assert isinstance(events, list)
+        if not isinstance(events, list):
+            raise ValueError("Codex JSONL parser returned an invalid event stream")
         event_types = {str(event.get("type") or "") for event in events if isinstance(event, dict)}
         failure = next(
             (

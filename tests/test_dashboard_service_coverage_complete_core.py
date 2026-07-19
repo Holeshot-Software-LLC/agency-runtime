@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import io
 import subprocess
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
 
+from agency_runtime.core import dashboard_runtime
 from agency_runtime.core import dashboard_service_core as subject
+from agency_runtime.core.process_argv import agency_bootstrap_path
 
 
 def test_command_result_terminal_safety_and_public_shape():
@@ -20,8 +23,185 @@ def test_command_result_terminal_safety_and_public_shape():
     }
     failure = subject._CommandResult(("manager",), 2, "fallback", "bad\x00detail")
     assert failure.public()["error"] == "bad?detail"
+    assert failure.public(include_failure_output=False)["error"] == (
+        "service-manager command failed"
+    )
     assert subject._CommandResult(("manager",), 1).public()["error"] == (
         "service-manager command failed"
+    )
+
+
+def test_dashboard_runtime_generation_helpers_are_fail_closed(tmp_path, monkeypatch):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="linux",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    assert subject._dashboard_runtime_fingerprint(ctx) is None
+    assert subject._cleanup_stale_dashboard_runtime(ctx) is False
+    assert subject._dashboard_runtime_cleared(ctx) is True
+    assert subject._fresh_dashboard_readiness(ctx, None, None) is None
+    assert subject._fresh_dashboard_readiness(ctx, None, "prior") is False
+
+    def failed_probe():
+        raise RuntimeError("probe failed")
+
+    assert subject._fresh_dashboard_readiness(ctx, failed_probe, None) is False
+    assert subject._fresh_dashboard_readiness(ctx, lambda: False, None) is False
+    assert subject._fresh_dashboard_readiness(ctx, lambda: True, None) is True
+
+    dashboard_runtime.write_dashboard_runtime(
+        home_dir=tmp_path,
+        token="first-generation-" + ("a" * 32),
+        port=7810,
+        pid=111,
+    )
+    first = subject._dashboard_runtime_fingerprint(ctx)
+    assert first is not None
+    monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: True)
+    assert subject._cleanup_stale_dashboard_runtime(ctx) is False
+    assert subject._dashboard_runtime_cleared(ctx) is False
+    assert subject._fresh_dashboard_readiness(ctx, lambda: True, first) is False
+
+    dashboard_runtime.write_dashboard_runtime(
+        home_dir=tmp_path,
+        token="second-generation-" + ("b" * 32),
+        port=7810,
+        pid=111,
+    )
+    second = subject._dashboard_runtime_fingerprint(ctx)
+    assert second is not None
+    assert subject._dashboard_runtime_cleared(ctx) is False
+    assert subject._fresh_dashboard_readiness(ctx, lambda: True, first) is True
+
+    monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: False)
+    assert subject._cleanup_stale_dashboard_runtime(ctx, expected_fingerprint=first) is False
+    assert subject._dashboard_runtime_fingerprint(ctx) == second
+    assert subject._cleanup_stale_dashboard_runtime(ctx, expected_fingerprint=second) is True
+    assert subject._dashboard_runtime_cleared(ctx) is True
+
+    runtime_path = dashboard_runtime.dashboard_runtime_path(home_dir=tmp_path)
+    runtime_path.write_text("{}", encoding="utf-8")
+    assert subject._dashboard_runtime_fingerprint(ctx) is None
+    assert subject._cleanup_stale_dashboard_runtime(ctx) is False
+    assert subject._dashboard_runtime_cleared(ctx) is False
+    assert subject._fresh_dashboard_readiness(ctx, lambda: True, first) is False
+
+
+def test_dashboard_runtime_clearance_wait_retries_identity_safe_cleanup(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    cleanup_results = iter((False, True))
+    clearance_calls = []
+    sleeps = []
+    monkeypatch.setattr(
+        subject,
+        "_cleanup_stale_dashboard_runtime",
+        lambda _ctx, **_kwargs: next(cleanup_results),
+    )
+    monkeypatch.setattr(
+        subject,
+        "_dashboard_runtime_fingerprint",
+        lambda _ctx: "sha256:old",
+    )
+
+    def clearance(_ctx):
+        clearance_calls.append("clearance")
+        return len(clearance_calls) == 2
+
+    monkeypatch.setattr(subject, "_dashboard_runtime_cleared", clearance)
+    monkeypatch.setattr(subject.time, "sleep", sleeps.append)
+
+    outcome = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        "sha256:old",
+        timeout_seconds=1.0,
+        poll_seconds=0.0,
+    )
+    assert outcome.cleared is True
+    assert outcome.descriptor_removed is True
+    assert outcome.replacement_detected is False
+    assert clearance_calls == ["clearance", "clearance"]
+    assert sleeps == [0.0]
+
+
+def test_dashboard_runtime_clearance_wait_preserves_replacement(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(
+        subject,
+        "_dashboard_runtime_fingerprint",
+        lambda _ctx: "sha256:replacement",
+    )
+    monkeypatch.setattr(
+        subject,
+        "_cleanup_stale_dashboard_runtime",
+        lambda *_args, **_kwargs: pytest.fail("replacement cleanup must not run"),
+    )
+
+    outcome = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        "sha256:old",
+        timeout_seconds=0.0,
+    )
+    assert outcome == subject._DashboardRuntimeClearance(
+        cleared=False,
+        descriptor_removed=False,
+        replacement_detected=True,
+    )
+    no_prior = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        None,
+        timeout_seconds=0.0,
+    )
+    assert no_prior.replacement_detected is True
+
+
+def test_dashboard_runtime_clearance_wait_fails_closed_at_deadline(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(subject, "_cleanup_stale_dashboard_runtime", lambda _ctx: False)
+    monkeypatch.setattr(subject, "_dashboard_runtime_fingerprint", lambda _ctx: None)
+    monkeypatch.setattr(
+        subject,
+        "_dashboard_runtime_cleared",
+        lambda *_args, **_kwargs: False,
+    )
+
+    outcome = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        "sha256:still-live",
+        timeout_seconds=0.0,
+    )
+    assert outcome == subject._DashboardRuntimeClearance(
+        cleared=False,
+        descriptor_removed=False,
     )
 
 
@@ -63,13 +243,44 @@ def test_config_path_precedence_and_worker_argv(tmp_path, monkeypatch):
     )
     assert argv == [
         str((tmp_path / "python").resolve()),
-        "-m",
+        "-I",
+        agency_bootstrap_path(),
         "agency_runtime.cli",
         "dashboard",
         "--service-mode",
         "--config",
         str(explicit.resolve()),
     ]
+
+
+def test_service_environment_override_detection_is_names_only_and_allows_config_path():
+    config = SimpleNamespace(
+        judge=SimpleNamespace(api_key_env="CUSTOM_JUDGE_KEY"),
+        providers=(SimpleNamespace(api_key_env="CUSTOM_PROVIDER_KEY"),),
+        adapters=SimpleNamespace(
+            litellm=SimpleNamespace(api_key_env="LITELLM_API_KEY"),
+            hermes=SimpleNamespace(api_key_env=""),
+            openclaw=SimpleNamespace(api_key_env=""),
+            codex=SimpleNamespace(api_key_env=""),
+            claude=SimpleNamespace(api_key_env=""),
+        ),
+    )
+    environment = {
+        "AGENCY_CONFIG_PATH": "durable/config.yaml",
+        "AGENCY_DB_PATH": "process-only.db",
+        "AGENCY_JUDGE_API_KEY": "top-secret-value",
+        "CUSTOM_JUDGE_KEY": "another-secret-value",
+        "CUSTOM_PROVIDER_KEY": "",
+    }
+
+    names = subject.dashboard_service_environment_overrides(config, environ=environment)
+    diagnostic = subject.dashboard_service_environment_error(names)
+
+    assert names == ("AGENCY_DB_PATH", "AGENCY_JUDGE_API_KEY", "CUSTOM_JUDGE_KEY")
+    assert "AGENCY_CONFIG_PATH" not in names
+    assert "top-secret-value" not in diagnostic
+    assert "another-secret-value" not in diagnostic
+    assert all(name in diagnostic for name in names)
 
 
 def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
@@ -82,7 +293,9 @@ def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
         )
         is None
     )
+    monkeypatch.setattr(subject, "_IS_WINDOWS", True)
     monkeypatch.setattr(subject, "_windows_current_user_sid", lambda: "S-1-5-test")
+    monkeypatch.setattr(subject, "_windows_account_for_sid", lambda _sid: "DOMAIN\\user")
     windows = subject._context(
         home_dir=tmp_path,
         platform_name="windows",
@@ -91,6 +304,8 @@ def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
     )
     assert windows is not None
     assert windows.manager == "schtasks" and windows.windows_user == "S-1-5-test"
+    assert windows.windows_account == "DOMAIN\\user"
+    monkeypatch.setattr(subject, "_IS_WINDOWS", False)
     monkeypatch.setattr(subject, "_windows_current_user_sid", lambda: None)
     monkeypatch.setenv("USERNAME", "user")
     monkeypatch.setenv("USERDOMAIN", "DOMAIN")
@@ -101,6 +316,7 @@ def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
         python_executable=tmp_path / "python",
     )
     assert windows is not None and windows.windows_user == "DOMAIN\\user"
+    assert windows.windows_account == "DOMAIN\\user"
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     linux = subject._context(
         home_dir=None,
@@ -124,6 +340,44 @@ def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
     )
 
 
+def test_native_linux_launcher_platform_and_short_worker_fail_closed(
+    tmp_path,
+    monkeypatch,
+    os_facade,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="linux",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(subject, "os", os_facade(subject.os, name="posix"))
+    monkeypatch.setattr(subject.platform, "system", lambda: "Linux")
+    assert subject._native_launcher_platform(ctx) == "posix"
+
+    monkeypatch.setattr(subject, "_native_launcher_platform", lambda _ctx: "posix")
+    with pytest.raises(OSError, match="isolated bootstrap"):
+        subject._validate_dashboard_launcher(replace(ctx, worker_argv=("python", "-I")))
+
+
+def test_native_windows_launcher_platform_is_detected_portably(
+    tmp_path,
+    monkeypatch,
+    os_facade,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python.exe",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(subject, "os", os_facade(subject.os, name="nt"))
+
+    assert subject._native_launcher_platform(ctx) == "nt"
+
+
 def test_windows_sid_non_windows_and_library_failure(monkeypatch):
     import ctypes
 
@@ -138,6 +392,45 @@ def test_windows_sid_non_windows_and_library_failure(monkeypatch):
         raising=False,
     )
     assert subject._windows_current_user_sid() is None
+    assert subject._windows_account_for_sid("S-1-5-test") is None
+
+
+def test_native_windows_context_requires_token_bound_account(tmp_path, monkeypatch):
+    monkeypatch.setattr(subject, "_IS_WINDOWS", True)
+    monkeypatch.setattr(subject, "_windows_current_user_sid", lambda: None)
+    with pytest.raises(RuntimeError, match="token identity"):
+        subject._context(
+            home_dir=tmp_path,
+            platform_name="windows",
+            config_path=None,
+            python_executable=tmp_path / "python",
+        )
+
+    monkeypatch.delenv("USERNAME", raising=False)
+    monkeypatch.delenv("USERDOMAIN", raising=False)
+    monkeypatch.setattr(
+        subject.getpass,
+        "getuser",
+        lambda: (_ for _ in ()).throw(RuntimeError("environment unavailable")),
+    )
+    monkeypatch.setattr(subject, "_windows_current_user_sid", lambda: "S-1-5-test")
+    monkeypatch.setattr(subject, "_windows_account_for_sid", lambda _sid: "DOMAIN\\user")
+    native = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=None,
+        python_executable=tmp_path / "python",
+    )
+    assert native is not None and native.windows_account == "DOMAIN\\user"
+
+    monkeypatch.setattr(subject, "_windows_account_for_sid", lambda _sid: None)
+    with pytest.raises(RuntimeError, match="token identity"):
+        subject._context(
+            home_dir=tmp_path,
+            platform_name="windows",
+            config_path=None,
+            python_executable=tmp_path / "python",
+        )
 
 
 def test_service_worker_preserves_virtualenv_python_symlink(tmp_path):
@@ -264,6 +557,10 @@ def test_run_rejects_async_runner_and_closes_coroutine():
 
 
 def test_run_real_subprocess_success_and_inner_timeout(monkeypatch):
+    monkeypatch.setattr(subject, "prepare_process_argv", lambda argv: list(argv))
+    monkeypatch.setattr(subject, "freeze_process_argv", lambda argv: argv)
+    monkeypatch.setattr(subject, "revalidate_process_argv", lambda _argv: None)
+
     def success(_argv, *, stdout, stderr, **_kwargs):
         stdout.write(b"out")
         stderr.write(b"err")

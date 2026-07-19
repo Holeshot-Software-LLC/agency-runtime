@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import heapq
 import inspect
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -21,33 +22,19 @@ from agency_runtime.core.delegation.lifecycle_types import (
 DelegateFunc = Callable[..., Any]
 MISSING = object()
 
-_NOT_COMPLETED_RESULT_STATUSES = {
+_LEGACY_COMPLETION_FLAGS = ("ok", "success", "completed")
+_NEGATIVE_COMPLETION_FLAGS = ("ok", "success", "completed")
+_FAILURE_FIELDS = ("error", "errors", "exception", "failure")
+_FAILURE_FLAGS = (
     "blocked",
     "cancelled",
     "canceled",
-    "error",
     "failed",
-    "failure",
-    "incomplete",
-    "not_completed",
     "partial",
-    "pending",
-    "queued",
-    "running",
     "skipped",
-    "started",
-    "suggested",
     "timed_out",
-    "timeout",
-}
-_COMPLETED_RESULT_STATUSES = {
-    "completed",
-    "delegated",
-    "done",
-    "ok",
-    "succeeded",
-    "success",
-}
+)
+_EXIT_CODE_FIELDS = ("exit_code", "returncode", "return_code", "exitCode", "process_exit_code")
 
 
 class MergePredecessorsFunc(Protocol):
@@ -77,6 +64,54 @@ def resolve_delegate_func(delegate_func: DelegateFunc | None) -> DelegateFunc:
     from agency_runtime.core.delegation.backends import get_delegate_func
 
     return get_delegate_func()
+
+
+def validate_max_workers(max_workers: int) -> None:
+    """Reject invalid executor contracts before any provisioning can occur."""
+    if isinstance(max_workers, bool) or not isinstance(max_workers, int) or max_workers < 1:
+        raise ValueError("max_workers must be a positive integer")
+
+
+def _validate_delegate_contract(func: Any) -> DelegateFunc:
+    if not callable(func):
+        raise TypeError("delegate_func or resolved delegation backend must be callable")
+    try:
+        signature = inspect.signature(func)
+    except (TypeError, ValueError):
+        return func
+    modern = {
+        "task": "task",
+        "workdir": "workdir",
+        "recommended_agent": "agent",
+    }
+    legacy = {
+        "goal": "goal",
+        "context": "context",
+        "recommended_agent": "agent",
+    }
+    if any(
+        signature_accepts(signature, *args, **kwargs)
+        for args, kwargs in (
+            ((), modern),
+            ((), legacy),
+            ((), {"task": "task"}),
+            (("task",), {}),
+        )
+    ):
+        return func
+    raise TypeError(
+        "delegate_func must accept the modern task/workdir contract, "
+        "the legacy goal/context contract, task=, or one positional task"
+    )
+
+
+def prepare_delegate_func(
+    delegate_func: DelegateFunc | None,
+    *,
+    resolve_func: ResolveDelegateFunc = resolve_delegate_func,
+) -> DelegateFunc:
+    """Resolve and validate a delegation backend without invoking it."""
+    return _validate_delegate_contract(resolve_func(delegate_func))
 
 
 async def _await_result(awaitable: Awaitable[Any]) -> Any:
@@ -141,37 +176,74 @@ def backend_name(result: Any, func: DelegateFunc) -> str:
     return str(getattr(func, "backend_name", "callable"))
 
 
+def _owned_command_backend(func: DelegateFunc) -> bool:
+    """Return whether a delegate is bound to a package-owned command backend."""
+
+    from agency_runtime.core.delegation.backend_command import CommandBackend
+
+    owner = getattr(func, "__self__", None)
+    if not isinstance(owner, CommandBackend):
+        owner = getattr(func, "_agency_backend", None)
+    return isinstance(owner, CommandBackend)
+
+
+def _execution_identity(
+    result: Any,
+    func: DelegateFunc,
+    *,
+    backend: str,
+) -> tuple[str, str, str]:
+    """Extract one complete worker receipt without combining partial identities."""
+
+    if not isinstance(result, Mapping):
+        return "", "", ""
+    explicit = tuple(
+        str(result.get(field) or "").strip() if isinstance(result.get(field), str) else ""
+        for field in ("executed_worker_kind", "executed_worker_id", "native_run_id")
+    )
+    if all(explicit):
+        return explicit
+    if not _owned_command_backend(func):
+        return "", "", ""
+    executable = result.get("executable")
+    process_id = result.get("process_id")
+    if (
+        not isinstance(executable, str)
+        or not executable.strip()
+        or isinstance(process_id, bool)
+        or not isinstance(process_id, int)
+        or process_id <= 0
+    ):
+        return "", "", ""
+    return "cli-process", executable.strip(), f"{backend}:process:{process_id}"
+
+
 def _normalized_status(result: Mapping[Any, Any]) -> str:
     return str(result.get("status") or "").strip().lower().replace("-", "_").replace(" ", "_")
 
 
 def result_completed(result: Any = MISSING) -> bool:
-    """Return whether a worker produced an affirmative completion result."""
-    if result is MISSING or result is None or result is False:
-        return False
+    """Require canonical completion or an affirmative legacy boolean receipt."""
     if not isinstance(result, Mapping):
-        if isinstance(result, (str, bytes, list, tuple)):
-            return bool(result)
         return False
-    if result.get("error"):
+    if any(result.get(field) for field in _FAILURE_FIELDS):
         return False
-    if any(result.get(flag) is False for flag in ("ok", "success", "completed", "delegated")):
+    if any(result.get(flag) is True for flag in _FAILURE_FLAGS):
         return False
-    for code_key in ("exit_code", "returncode"):
+    if any(result.get(flag) is False for flag in _NEGATIVE_COMPLETION_FLAGS):
+        return False
+    for code_key in _EXIT_CODE_FIELDS:
         code = result.get(code_key)
         if code is not None and code != 0:
             return False
-    if result.get("timed_out") is True:
-        return False
-    status = _normalized_status(result)
-    if status in _NOT_COMPLETED_RESULT_STATUSES:
-        return False
-    if status in _COMPLETED_RESULT_STATUSES:
-        return True
-    if any(result.get(flag) is True for flag in ("ok", "success", "completed", "delegated")):
-        return True
-    output = result.get("output")
-    return isinstance(output, (str, bytes, list, tuple, dict)) and bool(output)
+    if "status" in result:
+        raw_status = result.get("status")
+        if not isinstance(raw_status, str) or not raw_status.strip():
+            return False
+        status = _normalized_status(result)
+        # "delegated" proves dispatch, not successful execution.
+        return status == "completed"
+    return any(result.get(flag) is True for flag in _LEGACY_COMPLETION_FLAGS)
 
 
 def result_failure_reason(result: Any = MISSING) -> str:
@@ -179,19 +251,25 @@ def result_failure_reason(result: Any = MISSING) -> str:
     if result is MISSING:
         return "no dispatch result was recorded"
     if isinstance(result, Mapping):
-        for key in ("error", "skip_reason", "message"):
+        for field in _FAILURE_FIELDS:
+            if result.get(field):
+                return str(result[field])
+        for key in ("skip_reason", "message"):
             value = result.get(key)
             if value:
                 return str(value)
-        for flag in ("ok", "success", "completed", "delegated"):
+        if result.get("timed_out") is True:
+            return "worker timed out"
+        for failure_flag in _FAILURE_FLAGS:
+            if result.get(failure_flag) is True:
+                return f"worker reported {failure_flag}=true"
+        for flag in _NEGATIVE_COMPLETION_FLAGS:
             if result.get(flag) is False:
                 return f"worker reported {flag}=false"
-        for code_key in ("exit_code", "returncode"):
+        for code_key in _EXIT_CODE_FIELDS:
             code = result.get(code_key)
             if code is not None and code != 0:
                 return f"worker reported {code_key}={code}"
-        if result.get("timed_out") is True:
-            return "worker timed out"
         status = str(result.get("status") or "").strip()
         if status:
             return f"worker reported status {status!r}"
@@ -289,6 +367,29 @@ def _record_dispatch_result(
             )
         return
 
+    worker_kind, worker_id, native_run_id = _execution_identity(
+        result,
+        func,
+        backend=backend,
+    )
+    if not all((worker_kind, worker_id, native_run_id)):
+        reason = "delegation reported success without complete execution correlation"
+        results[unit.id] = {
+            "status": "failed",
+            "error": reason,
+            "worker_result": result,
+        }
+        warnings.append(f"delegate for {unit.id} failed: {reason}")
+        if ledger:
+            ledger.update(
+                unit.id,
+                status="failed",
+                backend=backend,
+                recommended_agent=unit.recommended_agent,
+                error=reason,
+            )
+        return
+
     info = worktrees.get(unit.id)
     commit_error = (
         commit_worktree_func(info, unit.id) if info is not None and info.created else None
@@ -316,6 +417,9 @@ def _record_dispatch_result(
             status="completed",
             backend=backend,
             recommended_agent=unit.recommended_agent,
+            executed_worker_kind=worker_kind,
+            executed_worker_id=worker_id,
+            native_run_id=native_run_id,
         )
 
 
@@ -416,12 +520,6 @@ def _schedule_unit(
         return None
 
     workdir = info.path if info and info.created else unit.repo_path
-    if runtime.ledger:
-        runtime.ledger.update(
-            unit.id,
-            status="running",
-            recommended_agent=unit.recommended_agent,
-        )
     return runtime.executor.submit(
         runtime.call_delegate_func,
         runtime.func,
@@ -462,6 +560,32 @@ def _collect_dispatch_result(
             )
 
 
+def _skip_descendants(
+    failed_unit_id: str,
+    *,
+    graph: DependencyGraph,
+    by_id: Mapping[str, WorkUnit],
+    runtime: _DispatchRuntime,
+) -> None:
+    """Recursively terminalize every dependent of a failed work unit."""
+    pending_sources = [failed_unit_id]
+    while pending_sources:
+        source = heapq.heappop(pending_sources)
+        for child_id in sorted(graph.edges.get(source, set())):
+            if child_id in runtime.results:
+                continue
+            reason = f"dependency did not complete successfully: {source}"
+            _record_skip(
+                by_id[child_id],
+                reason=reason,
+                blocked_by=[source],
+                results=runtime.results,
+                warnings=runtime.warnings,
+                ledger=runtime.ledger,
+            )
+            heapq.heappush(pending_sources, child_id)
+
+
 def dispatch_work_units(
     units: Sequence[WorkUnit],
     graph: DependencyGraph,
@@ -479,14 +603,13 @@ def dispatch_work_units(
     commit_worktree_func: CommitWorktreeFunc,
 ) -> tuple[dict[str, Any], list[list[str]], list[str]]:
     """Dispatch ready units concurrently and block failed dependency chains."""
-    if isinstance(max_workers, bool) or not isinstance(max_workers, int) or max_workers < 1:
-        raise ValueError("max_workers must be a positive integer")
+    validate_max_workers(max_workers)
     by_id = _validate_graph_nodes(units, graph)
     batches = graph.topological_batches()
     if not units:
         return {}, batches, []
 
-    func = resolve_delegate_func(delegate_func)
+    func = prepare_delegate_func(delegate_func, resolve_func=resolve_delegate_func)
     predecessors = graph.predecessors()
     results: dict[str, Any] = {}
     warnings: list[str] = []
@@ -494,7 +617,7 @@ def dispatch_work_units(
         if ledger:
             ledger.suggest(unit.id, unit.recommended_agent)
 
-    pool_size = min(max_workers, max(len(batch) for batch in batches))
+    pool_size = min(max_workers, len(units))
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=pool_size,
         thread_name_prefix="agency-delegate",
@@ -514,16 +637,50 @@ def dispatch_work_units(
             merge_predecessors_func=merge_predecessors_func,
             commit_worktree_func=commit_worktree_func,
         )
-        for batch in batches:
-            future_to_unit: dict[concurrent.futures.Future[Any], WorkUnit] = {}
-            for unit_id in batch:
+        remaining = {unit_id: len(incoming) for unit_id, incoming in predecessors.items()}
+        ready = sorted(unit_id for unit_id, count in remaining.items() if count == 0)
+        heapq.heapify(ready)
+        future_to_unit: dict[concurrent.futures.Future[Any], WorkUnit] = {}
+        while ready or future_to_unit:
+            while ready and len(future_to_unit) < pool_size:
+                unit_id = heapq.heappop(ready)
+                if unit_id in results:
+                    continue
                 unit = by_id[unit_id]
                 future = _schedule_unit(unit, runtime)
-                if future is not None:
-                    future_to_unit[future] = unit
+                if future is None:
+                    _skip_descendants(
+                        unit_id,
+                        graph=graph,
+                        by_id=by_id,
+                        runtime=runtime,
+                    )
+                    continue
+                future_to_unit[future] = unit
 
-            for future in concurrent.futures.as_completed(future_to_unit):
-                _collect_dispatch_result(future, future_to_unit[future], runtime)
+            if not future_to_unit:
+                continue
+            completed, _pending = concurrent.futures.wait(
+                future_to_unit,
+                return_when=concurrent.futures.FIRST_COMPLETED,
+            )
+            for future in sorted(completed, key=lambda item: future_to_unit[item].id):
+                unit = future_to_unit.pop(future)
+                _collect_dispatch_result(future, unit, runtime)
+                if not result_completed_func(results.get(unit.id, MISSING)):
+                    _skip_descendants(
+                        unit.id,
+                        graph=graph,
+                        by_id=by_id,
+                        runtime=runtime,
+                    )
+                    continue
+                for child_id in sorted(graph.edges.get(unit.id, set())):
+                    if child_id in results:
+                        continue
+                    remaining[child_id] -= 1
+                    if remaining[child_id] == 0:
+                        heapq.heappush(ready, child_id)
     return results, batches, warnings
 
 
@@ -533,8 +690,10 @@ __all__ = [
     "backend_name",
     "call_delegate",
     "dispatch_work_units",
+    "prepare_delegate_func",
     "resolve_delegate_func",
     "result_completed",
     "result_failure_reason",
     "signature_accepts",
+    "validate_max_workers",
 ]

@@ -26,17 +26,8 @@ class OpenClawAdapter(BaseAdapter):
 
         return "openclaw" in detect_installed_agents()
 
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_specialists_for_session(session_id)
-
     def get_delegate_backend(self) -> str | None:
         return "sessions_spawn"
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
 
     def on_message_received(
         self,
@@ -48,6 +39,18 @@ class OpenClawAdapter(BaseAdapter):
         """Typed plugin hook: message received, run preflight."""
         return self.build_preflight_context(session_id, user_message, model, trace_id)
 
-    def on_response_finalizing(self, draft_text: str, session_id: str = "", model: str = "") -> str:
+    def on_response_finalizing(
+        self,
+        draft_text: str,
+        session_id: str = "",
+        model: str = "",
+        *,
+        trace_id: str = "",
+    ) -> str:
         """Typed plugin hook: apply header finalization before response sent."""
-        return self.apply_finalization(draft_text, session_id, model)
+        return self.apply_finalization(
+            draft_text,
+            session_id,
+            model,
+            trace_id=trace_id,
+        )

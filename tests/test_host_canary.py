@@ -846,6 +846,7 @@ def test_concurrent_same_trace_evidence_with_wrong_nonce_hash_cannot_pass(
 def test_inspection_uses_only_current_matching_canary_attestation(
     tmp_path: Path,
     monkeypatch,
+    private_installer_launcher,
 ) -> None:
     db_path = tmp_path / "agency.db"
     monkeypatch.setenv("AGENCY_DB_PATH", str(db_path))

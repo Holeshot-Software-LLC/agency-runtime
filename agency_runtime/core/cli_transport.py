@@ -13,8 +13,7 @@ import math
 import os
 import re
 import shutil
-import tempfile
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -25,9 +24,18 @@ from agency_runtime.core.delegation.backends import (
     BoundedProcessResult,
     run_bounded_process,
 )
+from agency_runtime.core.private_paths import private_temporary_directory
+from agency_runtime.core.process_argv import (
+    PreparedProcessArgv,
+    freeze_process_argv,
+    prepare_process_argv,
+    resolve_executable_path,
+    sanitized_executable_search_path,
+)
 
 SUPPORTED_CLI_TRANSPORTS = frozenset({"codex", "claude"})
 _MAX_CLI_OUTPUT_CHARS = 64 * 1024
+_MAX_CLI_PROMPT_BYTES = 1_280 * 1024
 _STATUS_OUTPUT_CHARS = 32 * 1024
 _CLAUDE_MINIMUM_VERSION = (2, 1, 205)
 _CODEX_REQUIRED_FLAGS = (
@@ -108,10 +116,37 @@ class CLIProviderStatus:
 
 
 ProcessRunner = Callable[..., BoundedProcessResult]
-BinaryResolver = Callable[[str], str | None]
+BinaryResolver = Callable[..., str | None]
+_REPOSITORY_MARKERS = (".git", ".hg", ".svn")
+
+
+def _repository_forbidden_roots(current_directory: Path) -> tuple[Path, ...]:
+    """Discover workspace ancestors without importing or executing repository code."""
+
+    current = current_directory.resolve(strict=True)
+    roots = [current]
+    for candidate in (current, *current.parents):
+        marker_found = False
+        for marker_name in _REPOSITORY_MARKERS:
+            try:
+                (candidate / marker_name).lstat()
+            except (FileNotFoundError, NotADirectoryError):
+                continue
+            except OSError:
+                # An unreadable marker cannot be safely disproved.
+                marker_found = True
+                break
+            else:
+                marker_found = True
+                break
+        if marker_found:
+            roots.append(candidate)
+    return tuple(dict.fromkeys(roots))
 
 
 def _valid_timeout(value: float) -> bool:
+    if isinstance(value, bool):
+        return False
     try:
         timeout = float(value)
     except (TypeError, ValueError, OverflowError):
@@ -121,6 +156,9 @@ def _valid_timeout(value: float) -> bool:
 
 def safe_cli_environment(
     environ: Mapping[str, str] | None = None,
+    *,
+    current_directory: str | Path | None = None,
+    forbidden_roots: Sequence[str | Path] = (),
 ) -> dict[str, str]:
     """Return only platform, proxy, and CLI-home variables required to launch."""
 
@@ -130,6 +168,12 @@ def safe_cli_environment(
         for key, value in source.items()
         if key.upper() in _SAFE_ENVIRONMENT_NAMES and isinstance(value, str)
     }
+    if "PATH" in safe:
+        safe["PATH"] = sanitized_executable_search_path(
+            safe["PATH"],
+            current_directory=current_directory,
+            forbidden_roots=forbidden_roots,
+        )
     safe["NO_COLOR"] = "1"
     return safe
 
@@ -142,7 +186,12 @@ def _isolated_invocation_environment(
     """Keep auth roots while redirecting general user/config roots to temp."""
 
     source = os.environ if environ is None else environ
-    safe = safe_cli_environment(source)
+    current_directory = Path.cwd()
+    safe = safe_cli_environment(
+        source,
+        current_directory=current_directory,
+        forbidden_roots=_repository_forbidden_roots(current_directory),
+    )
     original_home = source.get("USERPROFILE") or source.get("HOME") or str(Path.home())
     if transport == "codex":
         safe["CODEX_HOME"] = source.get("CODEX_HOME", str(Path(original_home) / ".codex"))
@@ -182,7 +231,7 @@ def _version_tuple(value: str) -> tuple[int, int, int] | None:
 
 def _run_status(
     runner: ProcessRunner,
-    argv: list[str],
+    argv: Sequence[str],
     *,
     timeout: float,
     environ: Mapping[str, str] | None,
@@ -215,26 +264,72 @@ def _unusable_status(
     )
 
 
+def _prepared_cli_command(
+    executable: PreparedProcessArgv,
+    *arguments: str,
+) -> PreparedProcessArgv:
+    command = PreparedProcessArgv(
+        [*executable, *arguments],
+        artifact_paths=executable.artifact_paths,
+    )
+    command.executable_identities = executable.executable_identities
+    command.frozen_platform = executable.frozen_platform
+    return command
+
+
+def _display_cli_executable(executable: PreparedProcessArgv | str) -> str:
+    return (
+        executable.artifact_paths[-1]
+        if isinstance(executable, PreparedProcessArgv)
+        else str(executable)
+    )
+
+
 def _resolve_cli_executable(
     transport: str,
     resolver: BinaryResolver,
-) -> str | None:
+    *,
+    environ: Mapping[str, str] | None,
+) -> PreparedProcessArgv | None:
+    source = os.environ if environ is None else environ
+    current_directory = Path.cwd()
     try:
-        return resolver(transport)
+        forbidden_roots = _repository_forbidden_roots(current_directory)
+        safe_path = sanitized_executable_search_path(
+            source.get("PATH", ""),
+            current_directory=current_directory,
+            forbidden_roots=forbidden_roots,
+        )
+        resolved = resolve_executable_path(
+            transport,
+            search_path=safe_path,
+            resolver=resolver,
+            current_directory=current_directory,
+        )
+        prepared = prepare_process_argv(
+            [resolved],
+            resolver=lambda name: shutil.which(name, path=safe_path),
+        )
+        return freeze_process_argv(
+            prepared,
+            forbidden_roots=forbidden_roots,
+        )
     except Exception:
         return None
 
 
 def _authentication_failure(
     transport: str,
-    executable: str,
+    executable: PreparedProcessArgv,
     *,
     timeout: float,
     runner: ProcessRunner,
     environ: Mapping[str, str] | None,
 ) -> CLIProviderStatus | None:
     command = (
-        [executable, "login", "status"] if transport == "codex" else [executable, "auth", "status"]
+        _prepared_cli_command(executable, "login", "status")
+        if transport == "codex"
+        else _prepared_cli_command(executable, "auth", "status")
     )
     try:
         result = _run_status(runner, command, timeout=timeout, environ=environ)
@@ -243,27 +338,27 @@ def _authentication_failure(
             transport,
             "authentication status command failed",
             installed=True,
-            executable=executable,
+            executable=_display_cli_executable(executable),
         )
     if result.timed_out:
         return _unusable_status(
             transport,
             "authentication status timed out",
             installed=True,
-            executable=executable,
+            executable=_display_cli_executable(executable),
         )
     if result.returncode != 0:
         return _unusable_status(
             transport,
             "authenticated session not available",
             installed=True,
-            executable=executable,
+            executable=_display_cli_executable(executable),
         )
     return None
 
 
 def _inspect_codex_capability(
-    executable: str,
+    executable: PreparedProcessArgv,
     *,
     timeout: float,
     runner: ProcessRunner,
@@ -272,7 +367,7 @@ def _inspect_codex_capability(
     try:
         result = _run_status(
             runner,
-            [executable, "exec", "--help"],
+            _prepared_cli_command(executable, "exec", "--help"),
             timeout=timeout,
             environ=environ,
         )
@@ -289,19 +384,19 @@ def _inspect_codex_capability(
             "installed Codex lacks required non-interactive controls",
             installed=True,
             authenticated=True,
-            executable=executable,
+            executable=_display_cli_executable(executable),
         )
     return CLIProviderStatus(
         transport="codex",
         installed=True,
         authenticated=True,
         usable=True,
-        executable=executable,
+        executable=_display_cli_executable(executable),
     )
 
 
 def _inspect_claude_capability(
-    executable: str,
+    executable: PreparedProcessArgv,
     *,
     timeout: float,
     runner: ProcessRunner,
@@ -310,7 +405,7 @@ def _inspect_claude_capability(
     try:
         result = _run_status(
             runner,
-            [executable, "--version"],
+            _prepared_cli_command(executable, "--version"),
             timeout=timeout,
             environ=environ,
         )
@@ -330,7 +425,7 @@ def _inspect_claude_capability(
             "installed Claude lacks required structured-output guarantees",
             installed=True,
             authenticated=True,
-            executable=executable,
+            executable=_display_cli_executable(executable),
             version=rendered_version,
         )
     return CLIProviderStatus(
@@ -338,7 +433,7 @@ def _inspect_claude_capability(
         installed=True,
         authenticated=True,
         usable=True,
-        executable=executable,
+        executable=_display_cli_executable(executable),
         version=rendered_version,
     )
 
@@ -362,7 +457,11 @@ def inspect_cli_transport(
             "CLI inspection timeout is outside the supported range",
         )
     timeout = float(timeout)
-    executable = _resolve_cli_executable(normalized, resolver)
+    executable = _resolve_cli_executable(
+        normalized,
+        resolver,
+        environ=environ,
+    )
     if not executable:
         return _unusable_status(
             normalized,
@@ -462,16 +561,17 @@ def _parse_claude(stdout: str) -> dict[str, Any] | None:
     return result if isinstance(result, dict) else None
 
 
-def invoke_cli_judge(
+def invoke_cli_structured(
     provider: ProviderEntry,
     prompt: str,
+    schema: Mapping[str, Any],
     *,
     timeout: float,
     resolver: BinaryResolver = shutil.which,
     runner: ProcessRunner = run_bounded_process,
     environ: Mapping[str, str] | None = None,
 ) -> dict[str, Any] | None:
-    """Invoke one supported CLI judge; return only a parsed selection object."""
+    """Invoke one supported CLI provider with an explicit bounded JSON schema."""
 
     transport = provider.transport.strip().lower()
     if (
@@ -479,25 +579,48 @@ def invoke_cli_judge(
         or transport not in SUPPORTED_CLI_TRANSPORTS
         or not is_safe_cli_model_id(provider.model)
         or not _valid_timeout(timeout)
+        or not isinstance(schema, Mapping)
     ):
         return None
     timeout = float(timeout)
+    if not isinstance(prompt, str):
+        return None
     try:
-        executable = resolver(transport)
-    except Exception:
-        executable = None
-    if not executable or not isinstance(prompt, str) or not prompt.strip() or "\x00" in prompt:
+        invalid_prompt = (
+            not prompt.strip()
+            or "\x00" in prompt
+            or len(prompt.encode("utf-8")) > _MAX_CLI_PROMPT_BYTES
+        )
+    except UnicodeError:
+        return None
+    if invalid_prompt:
         return None
 
-    schema_json = json.dumps(_SELECTION_SCHEMA, separators=(",", ":"), sort_keys=True)
     try:
-        with tempfile.TemporaryDirectory(prefix="agency-cli-judge-") as temporary:
-            cwd = str(Path(temporary).resolve())
+        schema_json = json.dumps(
+            dict(schema),
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        )
+    except (TypeError, ValueError, RecursionError, UnicodeError):
+        return None
+    if len(schema_json.encode("utf-8")) > 64 * 1024:
+        return None
+    executable = _resolve_cli_executable(
+        transport,
+        resolver,
+        environ=environ,
+    )
+    if not executable:
+        return None
+    try:
+        with private_temporary_directory(prefix="cli-judge") as temporary:
+            cwd = str(temporary)
             if transport == "codex":
                 schema_path = Path(temporary) / "selection.schema.json"
                 schema_path.write_text(schema_json, encoding="utf-8")
-                argv = [
-                    executable,
+                arguments = [
                     "exec",
                     "--json",
                     "--color",
@@ -523,11 +646,10 @@ def invoke_cli_judge(
                     str(schema_path),
                 ]
                 if provider.model:
-                    argv.extend(["--model", provider.model])
-                argv.append("-")
+                    arguments.extend(["--model", provider.model])
+                arguments.append("-")
             else:
-                argv = [
-                    executable,
+                arguments = [
                     "--safe-mode",
                     "-p",
                     "--output-format",
@@ -546,7 +668,9 @@ def invoke_cli_judge(
                     "dontAsk",
                 ]
                 if provider.model:
-                    argv.extend(["--model", provider.model])
+                    arguments.extend(["--model", provider.model])
+
+            argv = _prepared_cli_command(executable, *arguments)
 
             result = runner(
                 argv,
@@ -568,10 +692,33 @@ def invoke_cli_judge(
     return _parse_codex(result.stdout) if transport == "codex" else _parse_claude(result.stdout)
 
 
+def invoke_cli_judge(
+    provider: ProviderEntry,
+    prompt: str,
+    *,
+    timeout: float,
+    resolver: BinaryResolver = shutil.which,
+    runner: ProcessRunner = run_bounded_process,
+    environ: Mapping[str, str] | None = None,
+) -> dict[str, Any] | None:
+    """Invoke one supported CLI judge; return only a parsed selection object."""
+
+    return invoke_cli_structured(
+        provider,
+        prompt,
+        _SELECTION_SCHEMA,
+        timeout=timeout,
+        resolver=resolver,
+        runner=runner,
+        environ=environ,
+    )
+
+
 __all__ = [
     "SUPPORTED_CLI_TRANSPORTS",
     "CLIProviderStatus",
     "inspect_cli_transport",
     "invoke_cli_judge",
+    "invoke_cli_structured",
     "safe_cli_environment",
 ]

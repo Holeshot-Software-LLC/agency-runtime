@@ -184,8 +184,11 @@ def test_judge_caps_provider_attempts_and_falls_back_deterministically(
     result = judge.query_judge("review authentication security", CATALOG, config=cfg)
 
     assert len(calls) == judge._MAX_PROVIDER_ATTEMPTS
-    assert result["status"] == "token_fallback"
-    assert result["selected_ids"] == ["security-reviewer"]
+    assert result["status"] == "degraded"
+    assert result["inference_mode"] == "degraded"
+    assert result["selected_ids"] == []
+    assert result["deterministic_candidate_ids"] == ["security-reviewer"]
+    assert len(result["provider_attempts"]) == judge._MAX_PROVIDER_ATTEMPTS
 
 
 def test_judge_uses_only_remaining_end_to_end_deadline(
@@ -212,7 +215,8 @@ def test_judge_uses_only_remaining_end_to_end_deadline(
     result = judge.query_judge("review authentication security", CATALOG, config=cfg)
 
     assert timeouts == pytest.approx([10.0, 4.0])
-    assert result["status"] == "token_fallback"
+    assert result["status"] == "degraded"
+    assert result["inference_attempted"] is True
     assert result["latency_ms"] == 10_000
 
 
@@ -248,7 +252,17 @@ def test_typed_provider_failure_does_not_retry_as_wrong_legacy_protocol(
     result = judge.query_judge("review authentication security", CATALOG, config=cfg)
 
     assert calls == ["https://api.anthropic.invalid/v1/messages"]
-    assert result["status"] == "token_fallback"
+    assert result["status"] == "degraded"
+    assert result["provider_attempts"] == [
+        {
+            "provider_name": "anthropic",
+            "provider_type": "anthropic",
+            "requested_model": "claude-test",
+            "model_group": "",
+            "status": "failed",
+            "reason": "provider_call_failed",
+        }
+    ]
 
 
 def test_judge_rejects_oversized_provider_response(

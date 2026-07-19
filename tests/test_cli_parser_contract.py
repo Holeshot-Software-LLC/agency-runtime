@@ -10,9 +10,13 @@ from typing import Any
 
 import pytest
 
+from agency_runtime import __version__
 from agency_runtime.cli import parser as parser_module
 
 HANDLER_NAMES = (
+    "cmd_agent_disable",
+    "cmd_agent_enable",
+    "cmd_agents_list",
     "cmd_codex_exec",
     "cmd_config_get",
     "cmd_config_path",
@@ -27,7 +31,9 @@ HANDLER_NAMES = (
     "cmd_db_trim",
     "cmd_delegate",
     "cmd_doctor",
+    "cmd_eval_compare",
     "cmd_eval_delegation",
+    "cmd_eval_full_roster",
     "cmd_eval_routing",
     "cmd_explain",
     "cmd_hook",
@@ -41,6 +47,16 @@ HANDLER_NAMES = (
     "cmd_roster_approve",
     "cmd_roster_diff",
     "cmd_roster_list",
+    "cmd_roster_remediation_queue",
+    "cmd_roster_retire",
+    "cmd_roster_rollback",
+    "cmd_roster_scans",
+    "cmd_roster_upstream_status",
+    "cmd_roster_upstream_import",
+    "cmd_roster_candidate_audit",
+    "cmd_roster_candidate_findings",
+    "cmd_roster_candidate_reject",
+    "cmd_roster_candidate_compare",
     "cmd_route",
     "cmd_run",
     "cmd_search",
@@ -53,6 +69,10 @@ HANDLER_NAMES = (
 )
 EXPECTED_PATHS = (
     "agency",
+    "agency agents",
+    "agency agents disable",
+    "agency agents enable",
+    "agency agents list",
     "agency codex",
     "agency codex exec",
     "agency config",
@@ -78,7 +98,9 @@ EXPECTED_PATHS = (
     "agency delegate",
     "agency doctor",
     "agency eval",
+    "agency eval compare",
     "agency eval delegation",
+    "agency eval full-roster",
     "agency eval routing",
     "agency explain",
     "agency hook",
@@ -91,8 +113,21 @@ EXPECTED_PATHS = (
     "agency roster",
     "agency roster activate",
     "agency roster approve",
+    "agency roster candidate",
+    "agency roster candidate audit",
+    "agency roster candidate compare",
+    "agency roster candidate findings",
+    "agency roster candidate reject",
     "agency roster diff",
     "agency roster list",
+    "agency roster remediation",
+    "agency roster remediation queue",
+    "agency roster retire",
+    "agency roster rollback",
+    "agency roster scans",
+    "agency roster upstream",
+    "agency roster upstream import",
+    "agency roster upstream status",
     "agency route",
     "agency run",
     "agency search",
@@ -105,6 +140,9 @@ EXPECTED_PATHS = (
     "agency sync",
 )
 EXPECTED_BINDINGS = {
+    "agency agents disable": "cmd_agent_disable",
+    "agency agents enable": "cmd_agent_enable",
+    "agency agents list": "cmd_agents_list",
     "agency codex exec": "cmd_codex_exec",
     "agency config get": "cmd_config_get",
     "agency config path": "cmd_config_path",
@@ -125,7 +163,9 @@ EXPECTED_BINDINGS = {
     "agency db trim": "cmd_db_trim",
     "agency delegate": "cmd_delegate",
     "agency doctor": "cmd_doctor",
+    "agency eval compare": "cmd_eval_compare",
     "agency eval delegation": "cmd_eval_delegation",
+    "agency eval full-roster": "cmd_eval_full_roster",
     "agency eval routing": "cmd_eval_routing",
     "agency explain": "cmd_explain",
     "agency hook": "cmd_hook",
@@ -137,8 +177,18 @@ EXPECTED_BINDINGS = {
     "agency policy": "cmd_policy",
     "agency roster activate": "cmd_roster_activate",
     "agency roster approve": "cmd_roster_approve",
+    "agency roster candidate audit": "cmd_roster_candidate_audit",
+    "agency roster candidate compare": "cmd_roster_candidate_compare",
+    "agency roster candidate findings": "cmd_roster_candidate_findings",
+    "agency roster candidate reject": "cmd_roster_candidate_reject",
     "agency roster diff": "cmd_roster_diff",
     "agency roster list": "cmd_roster_list",
+    "agency roster remediation queue": "cmd_roster_remediation_queue",
+    "agency roster retire": "cmd_roster_retire",
+    "agency roster rollback": "cmd_roster_rollback",
+    "agency roster scans": "cmd_roster_scans",
+    "agency roster upstream import": "cmd_roster_upstream_import",
+    "agency roster upstream status": "cmd_roster_upstream_status",
     "agency route": "cmd_route",
     "agency run": "cmd_run",
     "agency search": "cmd_search",
@@ -149,7 +199,7 @@ EXPECTED_BINDINGS = {
     "agency status": "cmd_status",
     "agency sync": "cmd_sync",
 }
-EXPECTED_MANIFEST_SHA256 = "e97e05526a9d4e9506dcaac14d2ee3ede465cf6bb825be529bc2cd54a0cf86bf"
+EXPECTED_MANIFEST_SHA256 = "638e86eb27771a28a93a6d6e1d04f8327bfb5f771131daa6267069fbbb694a18"
 
 
 def _handler(name: str):
@@ -245,6 +295,50 @@ def test_complete_cli_parser_manifest_matches_golden_contract() -> None:
 
     assert tuple(path for path, _parser in tree) == EXPECTED_PATHS
     assert hashlib.sha256(payload, usedforsecurity=False).hexdigest() == EXPECTED_MANIFEST_SHA256
+
+
+def test_global_version_reports_the_canonical_package_version(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as raised:
+        _parser().parse_args(["--version"])
+
+    assert raised.value.code == 0
+    assert capsys.readouterr().out == f"agency {__version__}\n"
+
+
+def test_remediation_queue_parser_exposes_independent_cursor_paging() -> None:
+    parsed = _parser().parse_args(
+        [
+            "roster",
+            "remediation",
+            "queue",
+            "--limit",
+            "17",
+            "--pending-cursor",
+            "pending-event",
+            "--history-cursor",
+            "history-event",
+        ]
+    )
+
+    assert parsed.limit == 17
+    assert parsed.pending_cursor == "pending-event"
+    assert parsed.history_cursor == "history-event"
+    assert parsed.func.__name__ == "cmd_roster_remediation_queue"
+
+
+@pytest.mark.parametrize(
+    "event",
+    ["PreToolUse", "SubagentStart", "SubagentStop"],
+)
+def test_claude_native_child_hook_events_reach_the_installer_bound_handler(
+    event: str,
+) -> None:
+    parsed = _parser().parse_args(["hook", "claude", "--event", event])
+
+    assert parsed.event == event
+    assert parsed.func.__name__ == "cmd_hook"
 
 
 def test_every_public_cli_argument_explains_itself() -> None:
@@ -359,3 +453,13 @@ def test_positive_integer_parser_accepts_supported_values(value: str, expected: 
 def test_positive_integer_parser_rejects_invalid_values(value: str) -> None:
     with pytest.raises(argparse.ArgumentTypeError, match="must be a positive integer"):
         parser_module._positive_int(value)
+
+
+@pytest.mark.parametrize(("value", "expected"), [("1", 1), ("100", 100)])
+def test_search_limit_accepts_bounded_values(value: str, expected: int) -> None:
+    assert parser_module._search_limit(value) == expected
+
+
+def test_search_limit_rejects_values_above_the_wire_contract() -> None:
+    with pytest.raises(argparse.ArgumentTypeError, match="1 through 100"):
+        parser_module._search_limit("101")

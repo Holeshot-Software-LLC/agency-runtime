@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+import os
 import stat
 from pathlib import Path
 from types import SimpleNamespace
@@ -62,6 +63,33 @@ def test_posix_and_injected_commands_preserve_portable_bare_names() -> None:
         "schtasks.exe",
         "/Query",
     ]
+    assert trusted_windows_system_executable("taskkill.exe", platform_name="posix") == (
+        "taskkill.exe"
+    )
+
+
+def test_taskkill_resolution_ignores_cwd_and_path_shadowing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    system_directory = tmp_path / "Windows" / "System32"
+    system_directory.mkdir(parents=True)
+    trusted = system_directory / "taskkill.exe"
+    trusted.write_bytes(b"trusted")
+    attacker = tmp_path / "attacker"
+    attacker.mkdir()
+    (attacker / "taskkill.exe").write_bytes(b"shadow")
+    monkeypatch.chdir(attacker)
+    monkeypatch.setenv("PATH", str(attacker))
+    monkeypatch.delenv("PROCESSOR_ARCHITEW6432", raising=False)
+
+    resolved = trusted_windows_system_executable(
+        "taskkill.exe",
+        platform_name="nt",
+        system_directory=system_directory,
+    )
+
+    assert resolved == str(trusted)
 
 
 def test_windows_resolution_ignores_cwd_and_path_shadowing(
@@ -237,6 +265,13 @@ def test_process_argv_system_resolver_is_fail_closed_and_optional(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    if os.name != "nt":
+        monkeypatch.setattr(
+            process_argv,
+            "_is_absolute_path",
+            lambda value, *, platform_name: Path(value).is_absolute(),
+        )
+        monkeypatch.setattr(process_argv, "ntpath", process_argv.posixpath)
     script = tmp_path / "agent.ps1"
     script.write_text("exit 0", encoding="utf-8")
 
@@ -270,7 +305,15 @@ def test_process_argv_system_resolver_is_fail_closed_and_optional(
 
 def test_process_argv_prefers_native_executables_over_windows_shims(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    if os.name != "nt":
+        monkeypatch.setattr(
+            process_argv,
+            "_is_absolute_path",
+            lambda value, *, platform_name: Path(value).is_absolute(),
+        )
+        monkeypatch.setattr(process_argv, "ntpath", process_argv.posixpath)
     shim = tmp_path / "agent.cmd"
     shim.write_text("@echo off\n", encoding="utf-8")
     native = shim.with_suffix(".exe")
@@ -283,7 +326,17 @@ def test_process_argv_prefers_native_executables_over_windows_shims(
     ) == [str(native), "--version"]
 
 
-def test_codex_npm_shim_prefers_packaged_native_executable(tmp_path: Path) -> None:
+def test_codex_npm_shim_prefers_packaged_native_executable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if os.name != "nt":
+        monkeypatch.setattr(
+            process_argv,
+            "_is_absolute_path",
+            lambda value, *, platform_name: Path(value).is_absolute(),
+        )
+        monkeypatch.setattr(process_argv, "ntpath", process_argv.posixpath)
     shim = tmp_path / "codex.cmd"
     shim.write_text("@echo off\n", encoding="utf-8")
     native = (

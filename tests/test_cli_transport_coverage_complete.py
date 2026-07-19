@@ -11,6 +11,9 @@ import pytest
 from agency_runtime.core import cli_transport
 from agency_runtime.core.config import ProviderEntry
 from agency_runtime.core.delegation.backends import BoundedProcessResult
+from tests.runtime_support import trusted_test_interpreter
+
+_TRUSTED_CLI = str(trusted_test_interpreter())
 
 
 def _provider(transport: str, *, model: str = "model") -> ProviderEntry:
@@ -20,6 +23,28 @@ def _provider(transport: str, *, model: str = "model") -> ProviderEntry:
         transport=transport,
         model=model,
     )
+
+
+def test_repository_marker_probe_fails_closed_when_marker_is_unreadable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = tmp_path / "repo"
+    nested = repository / "src"
+    nested.mkdir(parents=True)
+    original_lstat = Path.lstat
+
+    def guarded_lstat(path: Path):
+        if path == repository / ".git":
+            raise PermissionError("marker is unreadable")
+        return original_lstat(path)
+
+    monkeypatch.setattr(Path, "lstat", guarded_lstat)
+
+    roots = cli_transport._repository_forbidden_roots(nested)
+
+    assert nested.resolve() in roots
+    assert repository.resolve() in roots
 
 
 def test_timeout_and_version_parsers_fail_closed_on_invalid_values() -> None:
@@ -118,6 +143,15 @@ def test_cli_judge_handles_resolver_exception_and_invalid_prompt() -> None:
         is None
     )
     assert (
+        cli_transport.invoke_cli_structured(
+            _provider("codex"),
+            None,  # type: ignore[arg-type]
+            {},
+            timeout=1,
+        )
+        is None
+    )
+    assert (
         cli_transport.invoke_cli_judge(
             _provider("codex"),
             "\x00",
@@ -155,7 +189,7 @@ def test_claude_judge_passes_explicit_model_and_parses_structured_output(
         _provider("claude", model="claude-test"),
         "review security",
         timeout=1,
-        resolver=lambda _name: "claude",
+        resolver=lambda _name: _TRUSTED_CLI,
         runner=run,
         environ={"HOME": str(Path.home())},
     )

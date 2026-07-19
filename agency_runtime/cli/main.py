@@ -15,6 +15,7 @@ from typing import Any
 
 from agency_runtime.core.config import load_config
 from agency_runtime.core.detect import ProviderDetection, detect_all
+from agency_runtime.core.display import safe_display_token
 from agency_runtime.core.http_safety import open_no_redirect
 from agency_runtime.core.provider_validation import validate_provider
 from agency_runtime.core.selector.policy import load_policy
@@ -23,6 +24,7 @@ from . import _common
 from . import config_commands as _config
 from . import config_wizard as _wizard
 from . import delegation_commands as _delegation
+from . import eval_commands as _evals
 from . import install_commands as _install
 from . import parser as _parser
 from . import roster_commands as _roster
@@ -155,7 +157,7 @@ _prompt_choice = _wizard._prompt_choice
 
 _seed_starter_roster = _install._seed_starter_roster
 _print_install_result = _install._print_install_result
-_resolve_control_agent = _install._resolve_control_agent
+_resolve_control_agents = _install._resolve_control_agents
 
 
 def _install_dependencies() -> _install.InstallDependencies:
@@ -258,12 +260,27 @@ cmd_roster_list = _roster.cmd_roster_list
 cmd_roster_diff = _roster.cmd_roster_diff
 cmd_roster_approve = _roster.cmd_roster_approve
 cmd_roster_activate = _roster.cmd_roster_activate
+cmd_roster_scans = _roster.cmd_roster_scans
+cmd_roster_remediation_queue = _roster.cmd_roster_remediation_queue
+cmd_roster_retire = _roster.cmd_roster_retire
+cmd_roster_rollback = _roster.cmd_roster_rollback
+cmd_roster_upstream_status = _roster.cmd_roster_upstream_status
+cmd_roster_upstream_import = _roster.cmd_roster_upstream_import
+cmd_roster_candidate_audit = _roster.cmd_roster_candidate_audit
+cmd_roster_candidate_findings = _roster.cmd_roster_candidate_findings
+cmd_roster_candidate_reject = _roster.cmd_roster_candidate_reject
+cmd_roster_candidate_compare = _roster.cmd_roster_candidate_compare
+cmd_agents_list = _roster.cmd_agents_list
+cmd_agent_enable = _roster.cmd_agent_enable
+cmd_agent_disable = _roster.cmd_agent_disable
 _search = _roster._search
 cmd_search = _roster.cmd_search
 cmd_route = _roster.cmd_route
 cmd_explain = _roster.cmd_explain
 cmd_eval_delegation = _roster.cmd_eval_delegation
 cmd_eval_routing = _roster.cmd_eval_routing
+cmd_eval_compare = _evals.cmd_eval_compare
+cmd_eval_full_roster = _evals.cmd_eval_full_roster
 cmd_smoke = _roster.cmd_smoke
 cmd_db_stats = _roster.cmd_db_stats
 cmd_db_trim = _roster.cmd_db_trim
@@ -294,6 +311,9 @@ cmd_dashboard_service = _services.cmd_dashboard_service
 _positive_int = _parser._positive_int
 
 _COMMAND_NAMES = (
+    "cmd_agent_disable",
+    "cmd_agent_enable",
+    "cmd_agents_list",
     "cmd_codex_exec",
     "cmd_config_get",
     "cmd_config_path",
@@ -308,7 +328,9 @@ _COMMAND_NAMES = (
     "cmd_db_trim",
     "cmd_delegate",
     "cmd_doctor",
+    "cmd_eval_compare",
     "cmd_eval_delegation",
+    "cmd_eval_full_roster",
     "cmd_eval_routing",
     "cmd_explain",
     "cmd_hook",
@@ -322,6 +344,16 @@ _COMMAND_NAMES = (
     "cmd_roster_approve",
     "cmd_roster_diff",
     "cmd_roster_list",
+    "cmd_roster_remediation_queue",
+    "cmd_roster_retire",
+    "cmd_roster_rollback",
+    "cmd_roster_scans",
+    "cmd_roster_upstream_status",
+    "cmd_roster_upstream_import",
+    "cmd_roster_candidate_audit",
+    "cmd_roster_candidate_findings",
+    "cmd_roster_candidate_reject",
+    "cmd_roster_candidate_compare",
     "cmd_route",
     "cmd_run",
     "cmd_search",
@@ -347,8 +379,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         return int(args.func(args))
-    except (KeyError, ValueError, RuntimeError) as exc:
-        print(f"agency: error: {exc}", file=sys.stderr)
+    except (KeyError, OSError, ValueError, RuntimeError) as exc:
+        print(f"agency: error: {safe_display_token(str(exc), limit=500)}", file=sys.stderr)
         return 1
 
 

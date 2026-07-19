@@ -29,7 +29,11 @@ from agency_runtime.core.roster.ingress import (
     RosterSyncError,
     _validate_source_spec,
 )
-from agency_runtime.core.selector.policy import _policy_routes, detect_actions
+from agency_runtime.core.selector.policy import (
+    _policy_routes,
+    detect_actions,
+    detect_fallback_companions,
+)
 
 
 @pytest.mark.parametrize(
@@ -121,7 +125,7 @@ def _read_attribute(value: Any, dotted_path: str) -> Any:
         ),
         ({"AGENCY_CAPTURE_CONTENT": "yes"}, "observability.capture_content", True),
         ({"AGENCY_CAPTURE_CONTENT": "off"}, "observability.capture_content", False),
-        ({"AGENCY_RETENTION_DAYS": "-5"}, "observability.retention_days", 1),
+        ({"AGENCY_RETENTION_DAYS": "5"}, "observability.retention_days", 5),
         ({"AGENCY_DASHBOARD_PORT": "7900"}, "dashboard.port", 7900),
         ({"AGENCY_PROFILE": "  power  "}, "profile", "power"),
     ],
@@ -144,22 +148,21 @@ def test_environment_override_branch_table(
     assert _read_attribute(updated, path) == expected
 
 
-def test_invalid_numeric_environment_values_preserve_section_identity() -> None:
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("AGENCY_JUDGE_TIMEOUT", "invalid"),
+        ("AGENCY_MAX_SELECTED", "0"),
+        ("AGENCY_BYPASS_THRESHOLD", "nan"),
+        ("AGENCY_RETENTION_DAYS", "-1"),
+        ("AGENCY_DASHBOARD_PORT", "70000"),
+    ],
+)
+def test_invalid_numeric_environment_values_fail_closed(name: str, value: str) -> None:
     config = AgencyConfig()
-    updated = _apply_env_overrides(
-        config,
-        environ={
-            "AGENCY_JUDGE_TIMEOUT": "invalid",
-            "AGENCY_MAX_SELECTED": "invalid",
-            "AGENCY_BYPASS_THRESHOLD": "invalid",
-            "AGENCY_RETENTION_DAYS": "invalid",
-            "AGENCY_DASHBOARD_PORT": "invalid",
-        },
-    )
 
-    assert updated.judge is config.judge
-    assert updated.observability is config.observability
-    assert updated.dashboard is config.dashboard
+    with pytest.raises(ValueError, match=rf"{name}: environment override is invalid"):
+        _apply_env_overrides(config, environ={name: value})
 
 
 @pytest.mark.parametrize(
@@ -454,14 +457,14 @@ def _detection_policy() -> dict[str, Any]:
             "build authentication api deploy",
             None,
             ["BUILD"],
-            ["base", "builder", "security", "architect", "release"],
+            ["builder", "security", "architect", "release"],
         ),
-        ("unrelated", None, [], ["base"]),
+        ("unrelated", None, [], []),
         (
             "build authentication api deploy",
             {"enabled": ["base", "builder", "architect"]},
             ["BUILD"],
-            ["base", "builder", "architect"],
+            ["builder", "architect"],
         ),
     ],
 )
@@ -479,6 +482,13 @@ def test_action_detection_branch_table(
         expected_actions,
         expected_companions,
     )
+
+
+def test_default_companion_detection_is_separate_and_bounded() -> None:
+    policy = _detection_policy()
+    policy["actions"]["DEFAULT"]["always_include"].extend([{"slug": "second"}, {"slug": "ignored"}])
+
+    assert detect_fallback_companions(policy) == ["base", "second"]
 
 
 @pytest.mark.parametrize("policy", [{}, {"actions": {}}])

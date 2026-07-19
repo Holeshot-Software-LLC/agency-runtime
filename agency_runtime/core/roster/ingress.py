@@ -11,6 +11,8 @@ import stat
 import urllib.error
 import urllib.request
 from collections.abc import Iterator, Mapping
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from pathlib import Path
 from time import monotonic
 from typing import Any
@@ -19,6 +21,26 @@ from urllib.parse import unquote, urlsplit, urlunsplit
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.bounded_yaml import BoundedYAMLError, safe_load_bounded
 from agency_runtime.core.http_safety import open_no_redirect
+from agency_runtime.core.roster.remediation import (
+    RemediationAttemptReceipt,
+    RemediationReceipt,
+    RosterRemediationError,
+    is_registered_encoding_intermediate,
+    remediate_source_text,
+    remediation_attempt,
+)
+from agency_runtime.core.roster.revisions import (
+    immutable_revision_version,
+    source_version,
+)
+from agency_runtime.core.roster.semantic_projection import project_known_agent
+from agency_runtime.core.roster.source_safety import (
+    SUSPICIOUS_ENCODING_FINDING,
+    SourceSafetyScan,
+    contains_unsafe_source_control,
+    format_unsafe_control_finding,
+    scan_source_text,
+)
 
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{1,127}$")
 _WORD_RE = re.compile(r"[a-z0-9][a-z0-9+.#_-]*", re.IGNORECASE)
@@ -28,7 +50,7 @@ _METADATA_FIELDS = (
     "division",
     "description",
     "source",
-    "version",
+    "source_version",
     "prompt_path",
     "capabilities",
     "tool_affinity",
@@ -39,6 +61,7 @@ _METADATA_FIELDS = (
 # host before quarantine/review has a chance to run.
 MAX_HTTP_SOURCE_BYTES = 8 * 1024 * 1024
 MAX_LOCAL_FILE_BYTES = 8 * 1024 * 1024
+MAX_DIVISION_MANIFEST_BYTES = 256 * 1024
 MAX_TOTAL_SOURCE_BYTES = 16 * 1024 * 1024
 MAX_AGENT_CONTENT_BYTES = 512 * 1024
 MAX_AGENT_PROMPT_BYTES = 256 * 1024
@@ -59,9 +82,9 @@ HTTP_READ_CHUNK_BYTES = 64 * 1024
 HTTP_TIMEOUT_SECONDS = 30
 HTTP_TOTAL_DEADLINE_SECONDS = 60
 _AGENT_FILE_SUFFIXES = frozenset({".md", ".json", ".yaml", ".yml"})
-_CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
-_UNSAFE_TEXT_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_CONTROL_RE = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 _WINDOWS_DRIVE_RE = re.compile(r"^[A-Za-z]:[\\/]")
+_FLAT_FRONT_MATTER_KEY_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
 _HTTP_MEDIA_TYPES = frozenset(
     {
         "application/json",
@@ -74,6 +97,97 @@ _HTTP_MEDIA_TYPES = frozenset(
 
 class RosterSyncError(RuntimeError):
     """Raised when roster sync cannot safely continue."""
+
+
+@dataclass(frozen=True, slots=True)
+class _SourceDocument:
+    origin: str
+    content: str
+    inferred_division: str | None = None
+    relative_path: str | None = None
+
+    def __iter__(self) -> Iterator[str]:
+        # Preserve the historical two-item internal iteration contract.
+        yield self.origin
+        yield self.content
+
+
+@dataclass(frozen=True, slots=True)
+class _DivisionRoot:
+    name: str
+    path: Path
+    fingerprint: tuple[int, int, int, int, int]
+
+
+@dataclass(frozen=True, slots=True)
+class _DivisionManifest:
+    path: Path
+    fingerprint: tuple[int, int, int, int, int, int]
+    root_fingerprint: tuple[int, int, int, int, int]
+    root_entries: tuple[
+        tuple[bytes, tuple[int, int, int, int, int, int]],
+        ...,
+    ]
+    divisions: tuple[_DivisionRoot, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _DirectoryReceipt:
+    path: Path
+    fingerprint: tuple[int, int, int, int, int]
+    entries: tuple[
+        tuple[bytes, tuple[int, int, int, int, int, int]],
+        ...,
+    ]
+
+
+@dataclass(slots=True)
+class _DiscoveryBudget:
+    entries_seen: int = 0
+    files_seen: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class ManifestImportOutcome:
+    """One deterministic result for a manifest-backed source entry."""
+
+    status: str
+    origin: str
+    relative_path: str
+    slug: str
+    content_hash: str
+    finding: str
+    content: str = ""
+    source_content: str = ""
+    remediation: RemediationReceipt | None = None
+    remediation_attempt: RemediationAttemptReceipt | None = None
+
+    def public_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "status": self.status,
+            "origin": self.origin,
+            "relative_path": self.relative_path,
+            "slug": self.slug,
+            "hash": self.content_hash,
+            "finding": self.finding,
+        }
+        if self.remediation is not None:
+            result["remediation"] = self.remediation.public_dict()
+        if self.remediation_attempt is not None:
+            result["remediation_attempt"] = self.remediation_attempt.public_dict()
+        return result
+
+
+class RosterDownload(list[dict[str, Any]]):
+    """List-compatible candidate result with explicit manifest entry outcomes."""
+
+    def __init__(
+        self,
+        candidates: list[dict[str, Any]],
+        outcomes: list[ManifestImportOutcome],
+    ) -> None:
+        super().__init__(candidates)
+        self.outcomes = tuple(outcomes)
 
 
 def _hash_text(text: str) -> str:
@@ -96,7 +210,7 @@ def _require_bounded_text(value: Any, limit: int, label: str) -> str:
     size = _utf8_size(text)
     if size > limit:
         raise RosterSyncError(f"{label} is {size} bytes; limit is {limit} bytes")
-    if _UNSAFE_TEXT_CONTROL_RE.search(text):
+    if contains_unsafe_source_control(text):
         raise RosterSyncError(f"{label} contains an unsafe control character")
     return text
 
@@ -171,6 +285,38 @@ def _load_yaml(text: str, label: str) -> Any:
     return value
 
 
+def _load_flat_front_matter(text: str, label: str) -> dict[str, str]:
+    """Parse the bounded flat scalar format used by manifest-backed catalogs."""
+
+    lines = text.splitlines()
+    if len(lines) > MAX_LIST_ITEMS:
+        raise RosterSyncError(f"{label} contains more than {MAX_LIST_ITEMS} fields")
+    loaded: dict[str, str] = {}
+    for line in lines:
+        if not line.strip():
+            continue
+        key, separator, raw_value = line.partition(":")
+        value = raw_value.strip()
+        if (
+            not separator
+            or line != line.lstrip()
+            or not _FLAT_FRONT_MATTER_KEY_RE.fullmatch(key)
+            or not value
+            or value.startswith(("&", "*", "!", "[", "{", "|", ">"))
+        ):
+            raise RosterSyncError(f"{label} is not a bounded flat mapping")
+        if key in loaded:
+            raise RosterSyncError(f"{label} contains duplicate key {key!r}")
+        loaded[key] = _require_bounded_text(
+            value,
+            MAX_METADATA_TEXT_BYTES,
+            f"{label} field {key}",
+        )
+    if not loaded:
+        raise RosterSyncError(f"{label} must not be empty")
+    return loaded
+
+
 def _json_list(value: Any, *, label: str = "list field") -> list[str]:
     if value is None:
         return []
@@ -200,21 +346,405 @@ def _json_list(value: Any, *, label: str = "list field") -> list[str]:
     return result
 
 
-def _normalize_agent(agent: dict[str, Any]) -> dict[str, Any]:
+def _slugify_name(name: str) -> str:
+    """Match the upstream roster convention for name-derived agent slugs."""
+
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]", "-", name.lower())).strip("-")
+
+
+def _manifest_slug_hint(content: str, relative_path: str) -> str:
+    match = re.match(
+        r"\A---(?:\r?\n)(.*?)(?:\r?\n)---(?:\r?\n|\Z)",
+        content,
+        re.DOTALL,
+    )
+    name = ""
+    if match is not None:
+        for line in match.group(1).splitlines():
+            key, separator, value = line.partition(":")
+            if separator and key == "name":
+                name = value.strip().strip("'\"")
+                break
+    slug = _slugify_name(name)
+    if slug:
+        return slug
+    fallback = _slugify_name(Path(relative_path).stem)
+    return fallback or f"invalid-agent-{_hash_text(relative_path)[:12]}"
+
+
+def _manifest_finding(
+    content: str,
+    error: Exception,
+    *,
+    safety_scan: SourceSafetyScan | None = None,
+) -> str:
+    if is_registered_encoding_intermediate(content) or "registered encoding repair" in str(error):
+        return "unreceipted_known_encoding_repair"
+    scan = safety_scan if safety_scan is not None else scan_source_text(content)
+    if scan.controls:
+        return format_unsafe_control_finding(scan)
+    if scan.suspicious_encoding:
+        return SUSPICIOUS_ENCODING_FINDING
+    message = _require_bounded_text(
+        str(error),
+        MAX_METADATA_TEXT_BYTES,
+        "manifest import finding",
+    )
+    return f"invalid_agent:{type(error).__name__}:{message}"
+
+
+def _manifest_outcome(
+    document: _SourceDocument,
+    *,
+    status: str,
+    slug: str,
+    finding: str,
+    preserve_content: bool = False,
+) -> ManifestImportOutcome:
+    relative_path = document.relative_path or Path(document.origin).name
+    attempt = remediation_attempt(document.content, finding) if status == "quarantined" else None
+    return ManifestImportOutcome(
+        status=status,
+        origin=document.origin,
+        relative_path=relative_path,
+        slug=slug,
+        content_hash=_hash_text(document.content),
+        finding=finding,
+        content=document.content if preserve_content else "",
+        remediation_attempt=attempt,
+    )
+
+
+@dataclass(slots=True)
+class _DownloadAccumulator:
+    source_reference: str
+    candidates: list[dict[str, Any]] = dataclass_field(default_factory=list)
+    outcomes: list[ManifestImportOutcome] = dataclass_field(default_factory=list)
+    slug_origins: dict[str, str] = dataclass_field(default_factory=dict)
+
+    @staticmethod
+    def _is_manifest_document(document: _SourceDocument) -> bool:
+        return document.inferred_division is not None
+
+    def _quarantine(
+        self,
+        document: _SourceDocument,
+        error: Exception,
+        *,
+        safety_scan: SourceSafetyScan | None = None,
+    ) -> None:
+        relative_path = document.relative_path or Path(document.origin).name
+        identity = (relative_path, _hash_text(document.content))
+        if any(
+            outcome.status == "quarantined"
+            and (outcome.relative_path, outcome.content_hash) == identity
+            for outcome in self.outcomes
+        ):
+            return
+        self.outcomes.append(
+            _manifest_outcome(
+                document,
+                status="quarantined",
+                slug=_manifest_slug_hint(document.content, relative_path),
+                finding=_manifest_finding(
+                    document.content,
+                    error,
+                    safety_scan=safety_scan,
+                ),
+                preserve_content=True,
+            )
+        )
+
+    def _append(
+        self,
+        candidate: dict[str, Any],
+        document: _SourceDocument,
+        *,
+        remediation: RemediationReceipt | None = None,
+    ) -> None:
+        slug = str(candidate.get("slug") or "").casefold()
+        previous_origin = self.slug_origins.get(slug)
+        if previous_origin is not None:
+            raise RosterSyncError(
+                f"roster source contains duplicate agent slug {slug!r}: "
+                f"{previous_origin} and {document.origin}"
+            )
+        if self._is_manifest_document(document):
+            ok, reason = validate_agent(candidate)
+            if not ok:
+                self.outcomes.append(
+                    _manifest_outcome(
+                        document,
+                        status="quarantined",
+                        slug=slug
+                        or _manifest_slug_hint(
+                            document.content,
+                            document.relative_path or Path(document.origin).name,
+                        ),
+                        finding=f"invalid_agent:{reason}",
+                        preserve_content=True,
+                    )
+                )
+                return
+        self.slug_origins[slug] = document.origin
+        if remediation is not None:
+            candidate["source_content_hash"] = remediation.original_hash
+        self.candidates.append(candidate)
+        if self._is_manifest_document(document):
+            outcome = _manifest_outcome(
+                document,
+                status="candidate",
+                slug=slug,
+                finding=(
+                    "candidate_ready_after_remediation"
+                    if remediation is not None
+                    else "candidate_ready"
+                ),
+            )
+            if remediation is not None:
+                outcome = ManifestImportOutcome(
+                    status=outcome.status,
+                    origin=outcome.origin,
+                    relative_path=outcome.relative_path,
+                    slug=outcome.slug,
+                    content_hash=outcome.content_hash,
+                    finding=outcome.finding,
+                    source_content=document.content,
+                    remediation=remediation,
+                )
+            self.outcomes.append(outcome)
+
+    def _json_item(
+        self,
+        raw_item: Any,
+        document: _SourceDocument,
+    ) -> dict[str, Any]:
+        if not isinstance(raw_item, dict):
+            raise ValueError(f"JSON roster item at {document.origin} is not an object")
+        item = dict(raw_item)
+        item.setdefault(
+            "content",
+            _require_bounded_text(
+                json.dumps(item, sort_keys=True, separators=(",", ":")),
+                MAX_AGENT_CONTENT_BYTES,
+                f"agent content at {document.origin}",
+            ),
+        )
+        item["source"] = self.source_reference
+        item["prompt_path"] = document.origin
+        if document.inferred_division and not str(item.get("division") or "").strip():
+            item["division"] = document.inferred_division
+        return _normalize_agent(item)
+
+    def _ingest_json(
+        self,
+        document: _SourceDocument,
+        stripped: str,
+        *,
+        safety_scan: SourceSafetyScan | None = None,
+    ) -> None:
+        try:
+            loaded = _load_json(stripped, f"JSON roster at {document.origin}")
+            if not isinstance(loaded, list):
+                raise ValueError(f"JSON roster at {document.origin} must be a list")
+        except (RosterSyncError, ValueError) as exc:
+            if not self._is_manifest_document(document):
+                raise
+            self._quarantine(document, exc, safety_scan=safety_scan)
+            return
+        if len(self.candidates) + len(loaded) > MAX_SOURCE_CANDIDATES:
+            raise RosterSyncError(
+                f"roster source contains more than {MAX_SOURCE_CANDIDATES} candidates: "
+                f"{self.source_reference}"
+            )
+        for raw_item in loaded:
+            try:
+                candidate = self._json_item(raw_item, document)
+            except (RosterSyncError, ValueError) as exc:
+                if not self._is_manifest_document(document):
+                    raise
+                self._quarantine(document, exc, safety_scan=safety_scan)
+                continue
+            self._append(candidate, document)
+
+    def _ingest_agent(
+        self,
+        document: _SourceDocument,
+        *,
+        source_document: _SourceDocument | None = None,
+        remediation: RemediationReceipt | None = None,
+        safety_scan: SourceSafetyScan | None = None,
+    ) -> None:
+        if len(self.candidates) >= MAX_SOURCE_CANDIDATES:
+            raise RosterSyncError(
+                f"roster source contains more than {MAX_SOURCE_CANDIDATES} candidates: "
+                f"{self.source_reference}"
+            )
+        try:
+            agent = parse_agent_file(
+                document.content,
+                inferred_division=document.inferred_division,
+                _remediation_receipt_present=remediation is not None,
+            )
+        except (RosterSyncError, ValueError) as exc:
+            if not self._is_manifest_document(document):
+                raise
+            self._quarantine(
+                source_document or document,
+                exc,
+                safety_scan=safety_scan,
+            )
+            return
+        if remediation is not None:
+            try:
+                agent, remediation = project_known_agent(
+                    agent,
+                    remediation,
+                    relative_path=document.relative_path or Path(document.origin).name,
+                )
+            except RosterRemediationError as exc:
+                self._quarantine(
+                    source_document or document,
+                    exc,
+                    safety_scan=safety_scan,
+                )
+                return
+        agent["source"] = self.source_reference
+        agent["prompt_path"] = document.origin
+        self._append(
+            _normalize_agent(agent),
+            source_document or document,
+            remediation=remediation,
+        )
+
+    def ingest(self, document: _SourceDocument) -> None:
+        safety_scan = scan_source_text(document.content)
+        stripped = document.content.strip()
+        if (
+            self._is_manifest_document(document)
+            and Path(document.origin).suffix.casefold() == ".md"
+            and not stripped.startswith("---")
+        ):
+            self.outcomes.append(
+                _manifest_outcome(
+                    document,
+                    status="ignored",
+                    slug="",
+                    finding="not_agent_definition:missing_front_matter",
+                )
+            )
+            return
+        remediated_content, remediation = remediate_source_text(document.content)
+        if remediation is None and is_registered_encoding_intermediate(document.content):
+            error = RosterSyncError(
+                "registered encoding repair requires its original-source receipt"
+            )
+            if not self._is_manifest_document(document):
+                raise error
+            self._quarantine(document, error, safety_scan=safety_scan)
+            return
+        if remediation is None and safety_scan.controls:
+            error = RosterSyncError("source contains an unsafe control character")
+            if not self._is_manifest_document(document):
+                raise error
+            self._quarantine(document, error, safety_scan=safety_scan)
+            return
+        if remediation is None and safety_scan.suspicious_encoding:
+            self._quarantine(
+                document,
+                RosterSyncError("source contains suspicious Markdown heading encoding"),
+                safety_scan=safety_scan,
+            )
+            return
+        effective = document
+        if remediation is not None:
+            effective = _SourceDocument(
+                document.origin,
+                remediated_content,
+                document.inferred_division,
+                document.relative_path,
+            )
+            stripped = remediated_content.strip()
+        if stripped.startswith("["):
+            if remediation is not None:
+                # A remediated manifest file must map to one source identity so
+                # its immutable raw-byte receipt cannot ambiguously cover
+                # several candidates.
+                try:
+                    loaded = _load_json(stripped, f"JSON roster at {document.origin}")
+                except RosterSyncError as exc:
+                    self._quarantine(document, exc, safety_scan=safety_scan)
+                    return
+                if not isinstance(loaded, list) or len(loaded) != 1:
+                    self._quarantine(
+                        document,
+                        RosterSyncError(
+                            "remediated JSON roster must contain exactly one candidate"
+                        ),
+                        safety_scan=safety_scan,
+                    )
+                    return
+                try:
+                    candidate = self._json_item(loaded[0], effective)
+                    candidate, remediation = project_known_agent(
+                        candidate,
+                        remediation,
+                        relative_path=document.relative_path or Path(document.origin).name,
+                    )
+                    candidate["source"] = self.source_reference
+                    candidate["prompt_path"] = document.origin
+                    candidate = _normalize_agent(
+                        candidate,
+                        _remediation_receipt_present=True,
+                    )
+                except (RosterRemediationError, RosterSyncError, ValueError) as exc:
+                    self._quarantine(document, exc, safety_scan=safety_scan)
+                    return
+                self._append(candidate, document, remediation=remediation)
+                return
+            self._ingest_json(document, stripped, safety_scan=safety_scan)
+        else:
+            self._ingest_agent(
+                effective,
+                source_document=document,
+                remediation=remediation,
+                safety_scan=safety_scan,
+            )
+
+
+def _normalize_agent(
+    agent: dict[str, Any],
+    *,
+    _remediation_receipt_present: bool = False,
+) -> dict[str, Any]:
     if not isinstance(agent, dict):
         raise RosterSyncError("agent must be a mapping")
     _validate_structure(agent, "agent")
+    if not _remediation_receipt_present and any(
+        isinstance(agent.get(field), str) and is_registered_encoding_intermediate(str(agent[field]))
+        for field in ("prompt_body", "prompt", "body", "content")
+    ):
+        raise RosterSyncError(
+            "registered encoding repair requires semantic projection from original evidence"
+        )
     normalized = dict(agent)
+    raw_name = _require_bounded_text(
+        normalized.get("name") or "",
+        MAX_SHORT_TEXT_BYTES,
+        "agent name",
+    )
     raw_slug = _require_bounded_text(
         normalized.get("slug") or normalized.get("id") or "",
         MAX_SHORT_TEXT_BYTES,
         "agent slug",
     )
-    slug = raw_slug.strip().lower()
-    slug = re.sub(r"[^a-z0-9._-]+", "-", slug).strip("-._")
+    if raw_slug.strip():
+        slug = re.sub(r"[^a-z0-9._-]+", "-", raw_slug.strip().lower()).strip("-._")
+    else:
+        slug = _slugify_name(raw_name)
     normalized["slug"] = slug
     normalized["name"] = _require_bounded_text(
-        normalized.get("name") or (slug.replace("-", " ").title() if slug else ""),
+        raw_name or (slug.replace("-", " ").title() if slug else ""),
         MAX_SHORT_TEXT_BYTES,
         f"agent {slug or '<missing>'} name",
     )
@@ -228,10 +758,10 @@ def _normalize_agent(agent: dict[str, Any]) -> dict[str, Any]:
         MAX_SHORT_TEXT_BYTES,
         f"agent {slug or '<missing>'} division",
     )
-    normalized["version"] = _require_bounded_text(
-        normalized.get("version") or "1.0.0",
+    normalized["source_version"] = _require_bounded_text(
+        source_version(normalized),
         MAX_SHORT_TEXT_BYTES,
-        f"agent {slug or '<missing>'} version",
+        f"agent {slug or '<missing>'} source version",
     )
     normalized["source"] = _require_bounded_text(
         normalized.get("source") or "",
@@ -271,7 +801,8 @@ def _normalize_agent(agent: dict[str, Any]) -> dict[str, Any]:
         f"agent {slug or '<missing>'} content",
     )
     normalized["hash"] = _hash_text(normalized["content"])
-    for field in ("id", "download_id", "status"):
+    normalized["version"] = immutable_revision_version(normalized)
+    for field in ("id", "download_id", "source_id", "status"):
         if field in normalized:
             normalized[field] = _require_bounded_text(
                 normalized[field], MAX_SHORT_TEXT_BYTES, f"agent {field}"
@@ -279,10 +810,19 @@ def _normalize_agent(agent: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def parse_agent_file(content: str) -> dict[str, Any]:
+def parse_agent_file(
+    content: str,
+    *,
+    inferred_division: str | None = None,
+    _remediation_receipt_present: bool = False,
+) -> dict[str, Any]:
     """Parse a JSON/YAML/Markdown agent file into a normalized dict."""
 
     _require_bounded_text(content, MAX_AGENT_CONTENT_BYTES, "agent file")
+    if is_registered_encoding_intermediate(content) and not _remediation_receipt_present:
+        raise RosterSyncError(
+            "registered encoding repair requires semantic projection from original evidence"
+        )
     text = content.strip()
     if not text:
         raise ValueError("empty agent file")
@@ -299,7 +839,18 @@ def parse_agent_file(content: str) -> dict[str, Any]:
         match = re.match(r"\A---(?:\r?\n)(.*?)(?:\r?\n)---(?:\r?\n|\Z)(.*)\Z", text, re.DOTALL)
         if match is None:
             raise ValueError("unterminated YAML front matter")
-        loaded = _load_yaml(match.group(1), "agent YAML front matter") or {}
+        try:
+            loaded = _load_yaml(match.group(1), "agent YAML front matter") or {}
+        except RosterSyncError as yaml_error:
+            if inferred_division is None:
+                raise
+            try:
+                loaded = _load_flat_front_matter(
+                    match.group(1),
+                    "agent front matter",
+                )
+            except RosterSyncError:
+                raise yaml_error from None
         if not isinstance(loaded, dict):
             raise ValueError("front matter must be a mapping")
         data = loaded
@@ -324,9 +875,14 @@ def parse_agent_file(content: str) -> dict[str, Any]:
         body = text
 
     data = dict(data)
+    if inferred_division and not str(data.get("division") or "").strip():
+        data["division"] = inferred_division
     data["content"] = content
     data.setdefault("prompt_body", body)
-    return _normalize_agent(data)
+    return _normalize_agent(
+        data,
+        _remediation_receipt_present=_remediation_receipt_present,
+    )
 
 
 def _decode_source(data: bytes, origin: str) -> str:
@@ -628,43 +1184,160 @@ def _read_local_file(
     return _decode_source(data, str(path)), len(data)
 
 
+def _assert_expected_directory_fingerprint(
+    root: Path,
+    actual: tuple[int, int, int, int, int],
+    expected: tuple[int, int, int, int, int] | None,
+) -> None:
+    if expected is not None and actual != expected:
+        raise RosterSyncError(f"roster directory changed during discovery: {root}")
+
+
+def _scan_directory_entries(
+    root: Path,
+    *,
+    error_root: Path | None = None,
+    maximum_entries: int | None = None,
+) -> tuple[
+    list[tuple[Path, os.stat_result]],
+    tuple[tuple[bytes, tuple[int, int, int, int, int, int]], ...],
+]:
+    """Capture one bounded, deterministic, no-follow directory snapshot."""
+
+    entries: list[tuple[Path, os.stat_result]] = []
+    snapshot: list[tuple[bytes, tuple[int, int, int, int, int, int]]] = []
+    source = error_root or root
+    entry_limit = MAX_DIRECTORY_ENTRIES if maximum_entries is None else maximum_entries
+    try:
+        for child in root.iterdir():
+            if len(entries) >= entry_limit:
+                raise RosterSyncError(
+                    f"roster directory exceeds {MAX_DIRECTORY_ENTRIES} entries: {source}"
+                )
+            encoded_name = os.fsencode(child.name)
+            if len(encoded_name) > MAX_PATH_TEXT_BYTES:
+                raise RosterSyncError(f"roster source entry name is too long: {source}")
+            metadata = os.lstat(child)
+            if _metadata_is_link_or_reparse(metadata):
+                raise RosterSyncError(
+                    f"roster sources may not use symbolic links or reparse points: {child}"
+                )
+            if not stat.S_ISDIR(metadata.st_mode) and not stat.S_ISREG(metadata.st_mode):
+                if child.suffix.lower() in _AGENT_FILE_SUFFIXES:
+                    raise RosterSyncError(
+                        f"roster source contains a non-regular agent file: {child}"
+                    )
+                raise RosterSyncError(f"roster source contains a special entry: {child}")
+            entries.append((child, metadata))
+            snapshot.append((encoded_name, _file_fingerprint(metadata)))
+    except RosterSyncError:
+        raise
+    except OSError as exc:
+        raise RosterSyncError(f"roster directory changed during discovery: {source}") from exc
+    entries.sort(key=lambda item: (item[0].name.casefold(), item[0].name))
+    snapshot.sort(key=lambda item: item[0])
+    return entries, tuple(snapshot)
+
+
+def _directory_entry_snapshot(
+    root: Path,
+    *,
+    error_root: Path | None = None,
+    maximum_entries: int | None = None,
+) -> tuple[tuple[bytes, tuple[int, int, int, int, int, int]], ...]:
+    return _scan_directory_entries(
+        root,
+        error_root=error_root,
+        maximum_entries=maximum_entries,
+    )[1]
+
+
+def _capture_directory_receipt(
+    root: Path,
+    expected_fingerprint: tuple[int, int, int, int, int],
+    *,
+    error_root: Path | None = None,
+    maximum_entries: int | None = None,
+    changed_message: str | None = None,
+) -> tuple[list[tuple[Path, os.stat_result]], _DirectoryReceipt]:
+    """Capture one directory while proving the directory identity stayed stable."""
+
+    path = _assert_real_path_chain(root)
+    message = changed_message or f"roster directory changed during discovery: {path}"
+    try:
+        before = os.lstat(path)
+    except OSError as exc:
+        raise RosterSyncError(message) from exc
+    if (
+        _metadata_is_link_or_reparse(before)
+        or not stat.S_ISDIR(before.st_mode)
+        or _directory_fingerprint(before) != expected_fingerprint
+    ):
+        raise RosterSyncError(message)
+    entries, snapshot = _scan_directory_entries(
+        path,
+        error_root=error_root,
+        maximum_entries=maximum_entries,
+    )
+    try:
+        after = os.lstat(path)
+    except OSError as exc:
+        raise RosterSyncError(message) from exc
+    if (
+        _metadata_is_link_or_reparse(after)
+        or not stat.S_ISDIR(after.st_mode)
+        or _directory_fingerprint(after) != expected_fingerprint
+    ):
+        raise RosterSyncError(message)
+    return entries, _DirectoryReceipt(path, expected_fingerprint, snapshot)
+
+
+def _assert_directory_receipts_unchanged(receipts: list[_DirectoryReceipt]) -> None:
+    entries_seen = 0
+    for receipt in receipts:
+        _entries, current = _capture_directory_receipt(
+            receipt.path,
+            receipt.fingerprint,
+            maximum_entries=MAX_DIRECTORY_ENTRIES - entries_seen,
+        )
+        entries_seen += len(current.entries)
+        if current.entries != receipt.entries:
+            raise RosterSyncError(f"roster directory changed during discovery: {receipt.path}")
+
+
 def _directory_files(
     root: Path,
+    *,
+    expected_root_fingerprint: tuple[int, int, int, int, int] | None = None,
+    budget: _DiscoveryBudget | None = None,
+    source_root: Path | None = None,
+    receipts: list[_DirectoryReceipt] | None = None,
 ) -> list[tuple[Path, tuple[int, int, int, int, int, int]]]:
     root = _assert_real_path_chain(root)
     root_metadata = os.lstat(root)
     if _metadata_is_link_or_reparse(root_metadata) or not stat.S_ISDIR(root_metadata.st_mode):
         raise RosterSyncError(f"roster directory must be a real directory: {root}")
     root_fingerprint = _directory_fingerprint(root_metadata)
+    _assert_expected_directory_fingerprint(
+        root,
+        root_fingerprint,
+        expected_root_fingerprint,
+    )
     files: list[tuple[Path, tuple[int, int, int, int, int, int]]] = []
-    entries_seen = 0
+    discovery_budget = budget or _DiscoveryBudget()
+    error_root = source_root or root
     pending: list[tuple[Path, int, tuple[int, int, int, int, int]]] = [(root, 0, root_fingerprint)]
+    discovered_receipts: list[_DirectoryReceipt] = []
     while pending:
         directory, depth, expected_fingerprint = pending.pop()
-        directory = _assert_real_path_chain(directory)
-        before = os.lstat(directory)
-        if (
-            _metadata_is_link_or_reparse(before)
-            or not stat.S_ISDIR(before.st_mode)
-            or _directory_fingerprint(before) != expected_fingerprint
-        ):
-            raise RosterSyncError(f"roster directory changed during discovery: {directory}")
-        entries: list[tuple[Path, os.stat_result]] = []
-        for child in directory.iterdir():
-            entries_seen += 1
-            if entries_seen > MAX_DIRECTORY_ENTRIES:
-                raise RosterSyncError(
-                    f"roster directory exceeds {MAX_DIRECTORY_ENTRIES} entries: {root}"
-                )
-            metadata = os.lstat(child)
-            if _metadata_is_link_or_reparse(metadata):
-                raise RosterSyncError(
-                    f"roster sources may not use symbolic links or reparse points: {child}"
-                )
-            entries.append((child, metadata))
-        if _directory_fingerprint(os.lstat(directory)) != expected_fingerprint:
-            raise RosterSyncError(f"roster directory changed during discovery: {directory}")
-        entries.sort(key=lambda item: item[0].name.casefold())
+        entries, receipt = _capture_directory_receipt(
+            directory,
+            expected_fingerprint,
+            error_root=error_root,
+            maximum_entries=MAX_DIRECTORY_ENTRIES - discovery_budget.entries_seen,
+        )
+        discovery_budget.entries_seen += len(entries)
+        discovered_receipts.append(receipt)
         child_directories: list[tuple[Path, int, tuple[int, int, int, int, int]]] = []
         for child, metadata in entries:
             if stat.S_ISDIR(metadata.st_mode):
@@ -675,20 +1348,191 @@ def _directory_files(
                 child_directories.append((child, depth + 1, _directory_fingerprint(metadata)))
             elif stat.S_ISREG(metadata.st_mode) and child.suffix.lower() in _AGENT_FILE_SUFFIXES:
                 files.append((child, _file_fingerprint(metadata)))
-                if len(files) > MAX_SOURCE_FILES:
+                discovery_budget.files_seen += 1
+                if discovery_budget.files_seen > MAX_SOURCE_FILES:
                     raise RosterSyncError(
-                        f"roster source contains more than {MAX_SOURCE_FILES} agent files: {root}"
+                        f"roster source contains more than {MAX_SOURCE_FILES} agent files: "
+                        f"{error_root}"
                     )
-            elif child.suffix.lower() in _AGENT_FILE_SUFFIXES:
-                raise RosterSyncError(f"roster source contains a non-regular agent file: {child}")
         # Reverse push preserves the case-insensitive sorted walk with a LIFO stack.
         pending.extend(reversed(child_directories))
-    if _directory_fingerprint(os.lstat(root)) != root_fingerprint:
-        raise RosterSyncError(f"roster directory changed during discovery: {root}")
+    _assert_directory_receipts_unchanged(discovered_receipts)
+    if receipts is not None:
+        receipts.extend(discovered_receipts)
     return files
 
 
-def _read_url(url: str) -> Iterator[tuple[str, str]]:
+def _load_division_manifest(
+    root: Path,
+    root_fingerprint: tuple[int, int, int, int, int],
+) -> _DivisionManifest | None:
+    manifest_path = root / "divisions.json"
+    try:
+        manifest_metadata = os.lstat(manifest_path)
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise RosterSyncError(f"division manifest is unavailable: {manifest_path}") from exc
+    if _metadata_is_link_or_reparse(manifest_metadata) or not stat.S_ISREG(
+        manifest_metadata.st_mode
+    ):
+        raise RosterSyncError(f"division manifest must be a regular file: {manifest_path}")
+    if manifest_metadata.st_size > MAX_DIVISION_MANIFEST_BYTES:
+        raise RosterSyncError(
+            f"division manifest is {manifest_metadata.st_size} bytes; "
+            f"limit is {MAX_DIVISION_MANIFEST_BYTES} bytes: {manifest_path}"
+        )
+    _root_files, root_receipt = _capture_directory_receipt(
+        root,
+        root_fingerprint,
+        changed_message=f"roster directory changed during manifest discovery: {root}",
+    )
+    manifest_fingerprint = _file_fingerprint(manifest_metadata)
+    content, _ = _read_local_file(
+        manifest_path,
+        expected_fingerprint=manifest_fingerprint,
+    )
+    loaded = _load_json(content, f"division manifest at {manifest_path}")
+    if not isinstance(loaded, dict):
+        raise RosterSyncError(f"division manifest must be an object: {manifest_path}")
+    raw_divisions = loaded.get("divisions")
+    if not isinstance(raw_divisions, dict) or not raw_divisions:
+        raise RosterSyncError(
+            f"division manifest must declare a non-empty divisions object: {manifest_path}"
+        )
+    if len(raw_divisions) > MAX_LIST_ITEMS:
+        raise RosterSyncError(
+            f"division manifest declares more than {MAX_LIST_ITEMS} divisions: {manifest_path}"
+        )
+
+    divisions: list[_DivisionRoot] = []
+    for raw_name, descriptor in raw_divisions.items():
+        name = _require_bounded_text(
+            raw_name,
+            MAX_SHORT_TEXT_BYTES,
+            "division manifest name",
+        )
+        if not name or name != name.strip() or _slugify_name(name) != name:
+            raise RosterSyncError(
+                f"division manifest contains an unsafe division name: {manifest_path}"
+            )
+        if not isinstance(descriptor, dict):
+            raise RosterSyncError(f"division manifest entry must be an object: {name}")
+        division_path = _assert_real_path_chain(root / name)
+        division_metadata = os.lstat(division_path)
+        if _metadata_is_link_or_reparse(division_metadata) or not stat.S_ISDIR(
+            division_metadata.st_mode
+        ):
+            raise RosterSyncError(f"declared division must be a real directory: {division_path}")
+        divisions.append(
+            _DivisionRoot(
+                name=name,
+                path=division_path,
+                fingerprint=_directory_fingerprint(division_metadata),
+            )
+        )
+
+    if _file_fingerprint(os.lstat(manifest_path)) != manifest_fingerprint:
+        raise RosterSyncError(f"division manifest changed during discovery: {manifest_path}")
+    _root_files, final_root_receipt = _capture_directory_receipt(
+        root,
+        root_fingerprint,
+        changed_message=f"roster directory changed during manifest discovery: {root}",
+    )
+    if final_root_receipt.entries != root_receipt.entries:
+        raise RosterSyncError(f"roster directory changed during manifest discovery: {root}")
+    return _DivisionManifest(
+        path=manifest_path,
+        fingerprint=manifest_fingerprint,
+        root_fingerprint=root_fingerprint,
+        root_entries=root_receipt.entries,
+        divisions=tuple(sorted(divisions, key=lambda division: division.name.casefold())),
+    )
+
+
+def _assert_division_manifest_unchanged(root: Path, manifest: _DivisionManifest) -> None:
+    try:
+        manifest_metadata = os.lstat(manifest.path)
+    except OSError as exc:
+        raise RosterSyncError("division manifest source changed during discovery") from exc
+    if (
+        _metadata_is_link_or_reparse(manifest_metadata)
+        or _file_fingerprint(manifest_metadata) != manifest.fingerprint
+    ):
+        raise RosterSyncError(f"division manifest changed during discovery: {manifest.path}")
+    _root_files, root_receipt = _capture_directory_receipt(
+        root,
+        manifest.root_fingerprint,
+    )
+    if root_receipt.entries != manifest.root_entries:
+        raise RosterSyncError(f"roster directory changed during discovery: {root}")
+
+
+def _directory_source_files(
+    root: Path,
+    *,
+    receipts: list[_DirectoryReceipt] | None = None,
+) -> list[
+    tuple[
+        Path,
+        tuple[int, int, int, int, int, int],
+        str | None,
+    ]
+]:
+    root = _assert_real_path_chain(root)
+    root_metadata = os.lstat(root)
+    if _metadata_is_link_or_reparse(root_metadata) or not stat.S_ISDIR(root_metadata.st_mode):
+        raise RosterSyncError(f"roster directory must be a real directory: {root}")
+    root_fingerprint = _directory_fingerprint(root_metadata)
+    manifest = _load_division_manifest(root, root_fingerprint)
+    discovered_receipts: list[_DirectoryReceipt] = []
+    if manifest is None:
+        files = [
+            (path, fingerprint, None)
+            for path, fingerprint in _directory_files(
+                root,
+                expected_root_fingerprint=root_fingerprint,
+                receipts=discovered_receipts,
+            )
+        ]
+        if receipts is not None:
+            receipts.extend(discovered_receipts)
+        return files
+
+    budget = _DiscoveryBudget(entries_seen=len(manifest.root_entries))
+    discovered_receipts.append(
+        _DirectoryReceipt(
+            path=root,
+            fingerprint=manifest.root_fingerprint,
+            entries=manifest.root_entries,
+        )
+    )
+    files: list[
+        tuple[
+            Path,
+            tuple[int, int, int, int, int, int],
+            str | None,
+        ]
+    ] = []
+    for division in manifest.divisions:
+        files.extend(
+            (path, fingerprint, division.name)
+            for path, fingerprint in _directory_files(
+                division.path,
+                expected_root_fingerprint=division.fingerprint,
+                budget=budget,
+                source_root=root,
+                receipts=discovered_receipts,
+            )
+        )
+    _assert_division_manifest_unchanged(root, manifest)
+    _assert_directory_receipts_unchanged(discovered_receipts)
+    if receipts is not None:
+        receipts.extend(discovered_receipts)
+    return files
+
+
+def _read_url(url: str) -> Iterator[_SourceDocument]:
     kind, target = _validate_source_spec(url)
     if kind == "http":
         target_url = str(target)
@@ -697,72 +1541,53 @@ def _read_url(url: str) -> Iterator[tuple[str, str]]:
             raise RosterSyncError(
                 "roster source returned HTML; use a raw file, local directory, or generated agents.json"
             )
-        yield _source_label(target_url), data
+        yield _SourceDocument(_source_label(target_url), data)
         return
 
     path = _assert_real_path_chain(Path(target))
     metadata = os.lstat(path)
     if stat.S_ISDIR(metadata.st_mode):
         total = 0
-        for child, fingerprint in _directory_files(path):
+        receipts: list[_DirectoryReceipt] = []
+        source_files = _directory_source_files(path, receipts=receipts)
+        for child, fingerprint, inferred_division in source_files:
             content, size = _read_local_file(child, expected_fingerprint=fingerprint)
             total += size
             if total > MAX_TOTAL_SOURCE_BYTES:
                 raise RosterSyncError(
                     f"roster source exceeds total limit of {MAX_TOTAL_SOURCE_BYTES} bytes: {path}"
                 )
-            yield str(child), content
+            yield _SourceDocument(
+                str(child),
+                content,
+                inferred_division,
+                child.relative_to(path).as_posix() if inferred_division is not None else None,
+            )
+        _assert_directory_receipts_unchanged(receipts)
         return
     if stat.S_ISREG(metadata.st_mode):
         content, _ = _read_local_file(path)
-        yield str(path), content
+        yield _SourceDocument(str(path), content)
         return
     raise RosterSyncError(f"roster source must be a regular file or directory: {path}")
 
 
-def download_from_source(url: str) -> list[dict[str, Any]]:
+def download_from_source(url: str) -> RosterDownload:
     """Download and parse candidates from an HTTP(S), file, or directory source."""
 
     if isinstance(url, str) and url.casefold().startswith(("http://", "https://")):
         source_reference = _source_label(url)
     else:
         source_reference = url
-    candidates: list[dict[str, Any]] = []
-    for origin, content in _read_url(url):
-        stripped = content.strip()
-        if stripped.startswith("["):
-            loaded = _load_json(stripped, f"JSON roster at {origin}")
-            if not isinstance(loaded, list):
-                raise ValueError(f"JSON roster at {origin} must be a list")
-            if len(candidates) + len(loaded) > MAX_SOURCE_CANDIDATES:
-                raise RosterSyncError(
-                    f"roster source contains more than {MAX_SOURCE_CANDIDATES} candidates: {source_reference}"
-                )
-            for raw_item in loaded:
-                if not isinstance(raw_item, dict):
-                    raise ValueError(f"JSON roster item at {origin} is not an object")
-                item = dict(raw_item)
-                item.setdefault(
-                    "content",
-                    _require_bounded_text(
-                        json.dumps(item, sort_keys=True, separators=(",", ":")),
-                        MAX_AGENT_CONTENT_BYTES,
-                        f"agent content at {origin}",
-                    ),
-                )
-                item["source"] = source_reference
-                item["prompt_path"] = origin
-                candidates.append(_normalize_agent(item))
+    accumulator = _DownloadAccumulator(source_reference=source_reference)
+    for raw_document in _read_url(url):
+        if isinstance(raw_document, _SourceDocument):
+            document = raw_document
         else:
-            if len(candidates) >= MAX_SOURCE_CANDIDATES:
-                raise RosterSyncError(
-                    f"roster source contains more than {MAX_SOURCE_CANDIDATES} candidates: {source_reference}"
-                )
-            agent = parse_agent_file(content)
-            agent["source"] = source_reference
-            agent["prompt_path"] = origin
-            candidates.append(_normalize_agent(agent))
-    return candidates
+            origin, content = raw_document
+            document = _SourceDocument(origin, content)
+        accumulator.ingest(document)
+    return RosterDownload(accumulator.candidates, accumulator.outcomes)
 
 
 def validate_agent(agent_dict: dict[str, Any]) -> tuple[bool, str]:

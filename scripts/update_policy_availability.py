@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Regenerate the explicit companion-policy availability registry.
+"""Regenerate the explicit static companion-route availability registry.
 
-The broad policy intentionally contains more routes than the small bundled
-roster. Every referenced slug is classified as either a required bundled
-specialist or a roster-gated specialist. The generated block makes additions
-fail validation until this script is run and the resulting classification is
-reviewed.
+The complete bundled roster is reachable through hybrid retrieval.  This
+registry classifies only specialists explicitly referenced by the older static
+companion policy: an available referenced slug is enabled and a missing one is
+roster-gated.  Bundled semantic-only specialists are intentionally absent from
+this block and remain eligible through the primary selector.
 """
 
 from __future__ import annotations
@@ -17,6 +17,8 @@ from typing import Any
 
 import yaml
 
+from agency_runtime.core.policy.defaults import STARTER_ROSTER
+
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "agency_runtime" / "core" / "companion_policy.yaml"
 BEGIN = "# BEGIN GENERATED SPECIALIST AVAILABILITY"
@@ -25,15 +27,7 @@ DISABLED_REASON = (
     "No governed active definition is available; this route is enabled only "
     "after approved roster activation."
 )
-ENABLED = (
-    "code-reviewer",
-    "internationalization-engineer",
-    "payments-billing-engineer",
-    "senior-developer",
-    "technical-writer",
-    "test-automation-engineer",
-    "workflow-architect",
-)
+BUNDLED = tuple(sorted(str(agent["slug"]) for agent in STARTER_ROSTER))
 
 
 def _action_slugs(actions: Any) -> set[str]:
@@ -92,20 +86,18 @@ def _without_generated_block(text: str) -> str:
 
 def _render(policy: dict[str, Any]) -> str:
     referenced = _referenced_slugs(policy)
-    enabled = set(ENABLED)
-    missing = sorted(enabled - referenced)
-    if missing:
-        raise ValueError(f"enabled specialists are not referenced by policy: {missing}")
-    gated = sorted(referenced - enabled)
+    bundled = set(BUNDLED)
+    enabled = sorted(referenced & bundled)
+    gated = sorted(referenced - bundled)
     lines = [
         BEGIN,
         "specialist_availability:",
         "  schema_version: 1",
-        "  enabled:",
-        *[f"  - {slug}" for slug in sorted(enabled)],
+        "  enabled:" if enabled else "  enabled: []",
+        *[f"  - {slug}" for slug in enabled],
         "  roster_gated:",
         f"    reason: {json.dumps(DISABLED_REASON)}",
-        "    slugs:",
+        "    slugs:" if gated else "    slugs: []",
         *[f"    - {slug}" for slug in gated],
         END,
     ]

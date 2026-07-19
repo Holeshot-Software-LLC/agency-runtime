@@ -3,11 +3,13 @@ title: "Refuse executable Git configuration during delegated mutations"
 status: accepted
 category: decisions
 created: 2026-07-12
-updated: 2026-07-12
+updated: 2026-07-16
 tags: [security, delegation, git, portability]
 related:
   - docs/THREAT_MODEL.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
+  - docs/roadmap/issue-AR-60-frozen-executable-identity.md
+  - docs/roadmap/issue-AR-65-reject-cross-account-executable-namespaces.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

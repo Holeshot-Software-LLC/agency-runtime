@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import stat
 import sys
 import xml.etree.ElementTree as ET
@@ -46,52 +47,68 @@ class _Function:
         return self.callback(*args)
 
 
+@pytest.mark.parametrize("observed", [None, "S-1-5-test"])
+def test_windows_sid_probe_delegates_to_shared_token_boundary(monkeypatch, observed):
+    calls = []
+
+    def probe(*, is_windows):
+        calls.append(is_windows)
+        return observed
+
+    monkeypatch.setattr(core, "_IS_WINDOWS", True)
+    monkeypatch.setattr(core, "current_process_user_sid", probe)
+
+    assert core._windows_current_user_sid() == observed
+    assert calls == [True]
+
+
 @pytest.mark.parametrize(
     ("scenario", "expected"),
     [
-        ("open-fail", None),
-        ("required-zero", None),
-        ("get-fail", None),
         ("convert-fail", None),
-        ("success", "S-1-5-test"),
+        ("size-zero", None),
+        ("lookup-fail", None),
+        ("success", "DOMAIN\\user"),
+        ("success-no-domain", "user"),
     ],
 )
-def test_windows_sid_api_failure_and_success_paths(monkeypatch, scenario, expected):
+def test_windows_sid_account_resolution_paths(monkeypatch, scenario, expected):
     import ctypes
 
-    closed = []
     freed = []
-
-    def open_token(_process, _access, token_pointer):
-        if scenario == "open-fail":
-            return 0
-        token_pointer._obj.value = 1
-        return 1
-
-    def get_token(_token, _kind, buffer, _size, required_pointer):
-        if scenario == "required-zero":
-            return 0
-        required_pointer._obj.value = 64
-        if buffer is None:
-            return 0
-        return 0 if scenario == "get-fail" else 1
 
     def convert_sid(_sid, sid_pointer):
         if scenario == "convert-fail":
             return 0
-        sid_pointer._obj.value = "S-1-5-test"
+        sid_pointer._obj.value = 7
+        return 1
+
+    def lookup_account(
+        _system,
+        _sid,
+        account,
+        account_size,
+        domain,
+        domain_size,
+        _sid_type,
+    ):
+        if account is None:
+            if scenario == "size-zero":
+                return 0
+            account_size._obj.value = 8
+            domain_size._obj.value = 1 if scenario == "success-no-domain" else 7
+            return 0
+        if scenario == "lookup-fail":
+            return 0
+        account.value = "user"
+        domain.value = "" if scenario == "success-no-domain" else "DOMAIN"
         return 1
 
     advapi = SimpleNamespace(
-        OpenProcessToken=_Function(open_token),
-        GetTokenInformation=_Function(get_token),
-        ConvertSidToStringSidW=_Function(convert_sid),
+        ConvertStringSidToSidW=_Function(convert_sid),
+        LookupAccountSidW=_Function(lookup_account),
     )
-    kernel = SimpleNamespace(
-        GetCurrentProcess=_Function(lambda: 1),
-        CloseHandle=_Function(lambda token: closed.append(token) or 1),
-        LocalFree=_Function(lambda value: freed.append(value) or None),
-    )
+    kernel = SimpleNamespace(LocalFree=_Function(lambda value: freed.append(value) or None))
     monkeypatch.setattr(
         ctypes,
         "WinDLL",
@@ -99,10 +116,47 @@ def test_windows_sid_api_failure_and_success_paths(monkeypatch, scenario, expect
         raising=False,
     )
     monkeypatch.setattr(core, "_IS_WINDOWS", True)
-    assert core._windows_current_user_sid() == expected
-    if scenario != "open-fail":
-        assert closed
-    assert bool(freed) is (scenario == "success")
+
+    assert core._windows_account_for_sid("S-1-5-test") == expected
+    assert bool(freed) is (scenario != "convert-fail")
+
+
+def test_windows_sid_account_resolution_non_windows_and_invalid(monkeypatch):
+    monkeypatch.setattr(core, "_IS_WINDOWS", False)
+    assert core._windows_account_for_sid("S-1-5-test") is None
+    monkeypatch.setattr(core, "_IS_WINDOWS", True)
+    assert core._windows_account_for_sid("bad\x00sid") is None
+
+
+def test_windows_xml_transport_is_bounded_utf8_base64(monkeypatch):
+    content = '<?xml version="1.0"?><Task><Description>smart “quote”</Description></Task>'
+
+    def result(stdout="", *, returncode=0, stderr=""):
+        return core._CommandResult(("powershell.exe",), returncode, stdout, stderr)
+
+    monkeypatch.setattr(windows, "windows_system_command", lambda *args, **_kw: list(args))
+    monkeypatch.setattr(
+        windows,
+        "_run",
+        lambda *_a, **_kw: result(base64.b64encode(content.encode()).decode()),
+    )
+    decoded = windows._query_windows_xml(command_runner=None)
+    assert decoded.ok and decoded.stdout == content
+    assert "ToBase64String" in windows._WINDOWS_TASK_XML_SCRIPT
+
+    failures = [
+        result(returncode=1, stderr="denied"),
+        result(""),
+        result("é"),
+        result("not-base64"),
+        result("A" * (windows._MAX_TASK_XML_BASE64_BYTES + 1)),
+        result(base64.b64encode(b"x" * (windows._MAX_TASK_XML_BYTES + 1)).decode()),
+        result(base64.b64encode(b"\xff").decode()),
+    ]
+    expected_codes = [1, 125, 125, 125, 125, 125, 125]
+    for failure, expected_code in zip(failures, expected_codes, strict=True):
+        monkeypatch.setattr(windows, "_run", lambda *_a, value=failure, **_kw: value)
+        assert windows._query_windows_xml(command_runner=None).returncode == expected_code
 
 
 def test_noncoroutine_awaitable_runner_is_rejected():
@@ -147,12 +201,12 @@ def test_prepare_parent_rejects_special_and_posix_chmods(tmp_path, monkeypatch):
     monkeypatch.setattr(manifest, "_IS_WINDOWS", False)
     modes = []
     monkeypatch.setattr(
-        type(path.parent),
-        "chmod",
-        lambda self, mode: modes.append((self, mode)),
+        manifest,
+        "restrict_posix_path_permissions",
+        lambda target, *, directory: modes.append((target, directory)),
     )
     manifest._prepare_private_parent(path)
-    assert modes == [(path.parent, 0o700)]
+    assert modes == [(path.parent, True)]
 
 
 def test_sync_parent_posix_and_windows_paths(tmp_path, monkeypatch):
@@ -182,9 +236,13 @@ def test_atomic_and_restore_cleanup_open_handle_on_early_acl_error(tmp_path, mon
         manifest._restore_file(path, b"value")
 
 
-def test_atomic_and_restore_without_fchmod(tmp_path, monkeypatch):
+def test_atomic_and_restore_without_fchmod(tmp_path, monkeypatch, os_facade):
     path = tmp_path / "state"
-    monkeypatch.delattr(manifest.os, "fchmod", raising=False)
+    monkeypatch.setattr(
+        manifest,
+        "os",
+        os_facade(manifest.os, missing=frozenset({"fchmod"})),
+    )
     manifest._atomic_write(path, "value")
     assert path.read_text(encoding="utf-8") == "value"
     manifest._restore_file(path, b"restored")
@@ -203,6 +261,11 @@ def test_service_lock_posix_success_and_busy(tmp_path, monkeypatch):
     monkeypatch.setitem(sys.modules, "fcntl", fake)
     monkeypatch.setattr(manifest, "_IS_WINDOWS", False)
     monkeypatch.setattr(manifest.os, "O_NOFOLLOW", 0, raising=False)
+    monkeypatch.setattr(
+        manifest,
+        "restrict_posix_path_permissions",
+        lambda *_args, **_kwargs: None,
+    )
     with manifest._service_lock(ctx, timeout=1):
         pass
     assert calls == [3, 4]
@@ -244,7 +307,7 @@ def test_systemd_unsafe_cleanup_failure_is_reported(tmp_path, monkeypatch):
     monkeypatch.setattr(
         systemd,
         "_restore_file",
-        lambda *_a: (_ for _ in ()).throw(OSError("cleanup failed")),
+        lambda *_a, **_kw: (_ for _ in ()).throw(OSError("cleanup failed")),
     )
     results = iter(
         [
@@ -293,7 +356,11 @@ def test_systemd_other_restore_error_skips_unsafe_cleanup(tmp_path, monkeypatch)
     assert outcome.error == "other restore error"
 
 
-def test_windows_xml_missing_element_nested_optional_and_no_fchmod(tmp_path, monkeypatch):
+def test_windows_xml_missing_element_nested_optional_and_no_fchmod(
+    tmp_path,
+    monkeypatch,
+    os_facade,
+):
     ctx = context(tmp_path, "windows")
     content = windows._windows_task_content(ctx)
     root = ET.fromstring(content)
@@ -315,7 +382,11 @@ def test_windows_xml_missing_element_nested_optional_and_no_fchmod(tmp_path, mon
     ET.SubElement(author, f"{{{core.WINDOWS_TASK_XML_NAMESPACE}}}Nested")
     assert windows._windows_task_properties(ET.tostring(root, encoding="unicode")) is None
 
-    monkeypatch.delattr(windows.os, "fchmod", raising=False)
+    monkeypatch.setattr(
+        windows,
+        "os",
+        os_facade(windows.os, missing=frozenset({"fchmod"})),
+    )
     result = windows._register_windows_xml(
         ctx,
         content,

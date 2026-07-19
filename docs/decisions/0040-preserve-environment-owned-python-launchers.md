@@ -3,10 +3,12 @@ title: "Preserve environment-owned Python launchers"
 status: accepted
 category: decisions
 created: 2026-07-12
-updated: 2026-07-12
+updated: 2026-07-16
 tags: [portability, packaging, python, host-integrations]
 related:
+  - docs/decisions/0050-isolate-installed-python-module-resolution.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
+  - docs/roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []

@@ -29,7 +29,13 @@ SECRET_KEY_PARTS = {
 def store(config: AgencyConfig | None = None) -> Store:
     """Open the configured store, or the environment-selected default store."""
     if config:
-        return Store(config.store.resolved_path())
+        config_path = getattr(config, "config_path", "") or None
+        if config_path is None:
+            return Store(config.store.resolved_path())
+        return Store(
+            config.store.resolved_path(),
+            config_path=config_path,
+        )
     return Store()
 
 

@@ -20,6 +20,27 @@ from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core import bounded_io, bounded_json, bounded_yaml, config, windows_acl
 
 
+@pytest.fixture(autouse=True)
+def _portable_windows_last_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Expose the Windows ctypes last-error seam on POSIX simulations."""
+
+    if hasattr(ctypes, "set_last_error") and hasattr(ctypes, "get_last_error"):
+        return
+    state = {"value": 0}
+    monkeypatch.setattr(
+        ctypes,
+        "set_last_error",
+        lambda value: state.__setitem__("value", int(value)),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        ctypes,
+        "get_last_error",
+        lambda: state["value"],
+        raising=False,
+    )
+
+
 class _Metadata:
     def __init__(
         self,
@@ -102,6 +123,131 @@ def test_bounded_file_detects_stream_growth_after_safe_open(
         )
 
 
+def test_posix_permission_repair_rejects_identity_swap_before_fchmod(
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+) -> None:
+    intended = _Metadata(mode=stat.S_IFREG | 0o644, device=1, inode=10)
+    replacement = _Metadata(mode=stat.S_IFREG | 0o644, device=1, inode=11)
+    fchmod_calls: list[tuple[int, int]] = []
+    closed: list[int] = []
+    monkeypatch.setattr(
+        bounded_io,
+        "os",
+        os_facade(
+            bounded_io.os,
+            name="posix",
+            fchmod=lambda *args: fchmod_calls.append(args),
+        ),
+    )
+    monkeypatch.setattr(bounded_io.os, "lstat", lambda _path: intended)
+    monkeypatch.setattr(bounded_io.os, "open", lambda *_args: 73)
+    monkeypatch.setattr(bounded_io.os, "fstat", lambda _descriptor: replacement)
+    monkeypatch.setattr(bounded_io.os, "close", closed.append)
+
+    with pytest.raises(bounded_io.UnsafeFileError, match="changed while it was opened"):
+        bounded_io.restrict_posix_path_permissions(Path("state"), directory=False)
+
+    assert fchmod_calls == []
+    assert closed == [73]
+
+
+def test_posix_permission_repair_uses_and_revalidates_verified_descriptor(
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+) -> None:
+    before = _Metadata(mode=stat.S_IFREG | 0o644, device=2, inode=20)
+    repaired = _Metadata(mode=stat.S_IFREG | 0o600, device=2, inode=20)
+    lstat_values = iter((before, repaired))
+    fstat_values = iter((before, repaired))
+    fchmod_calls: list[tuple[int, int]] = []
+    monkeypatch.setattr(
+        bounded_io,
+        "os",
+        os_facade(
+            bounded_io.os,
+            name="posix",
+            fchmod=lambda *args: fchmod_calls.append(args),
+        ),
+    )
+    monkeypatch.setattr(bounded_io.os, "lstat", lambda _path: next(lstat_values))
+    monkeypatch.setattr(bounded_io.os, "open", lambda *_args: 74)
+    monkeypatch.setattr(bounded_io.os, "fstat", lambda _descriptor: next(fstat_values))
+    monkeypatch.setattr(bounded_io.os, "close", lambda _descriptor: None)
+
+    bounded_io.restrict_posix_path_permissions(Path("state"), directory=False)
+
+    assert fchmod_calls == [(74, 0o600)]
+
+
+@pytest.mark.parametrize(
+    ("stage", "message"),
+    [
+        ("kind", "real regular file"),
+        ("open", "opened safely"),
+        ("mode", "could not be enforced"),
+        ("post", "changed after repair"),
+    ],
+)
+def test_posix_permission_repair_fails_closed_at_every_mutation_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    os_facade,
+    stage: str,
+    message: str,
+) -> None:
+    before = _Metadata(
+        mode=(stat.S_IFDIR | 0o700) if stage == "kind" else (stat.S_IFREG | 0o644),
+        device=3,
+        inode=30,
+    )
+    repaired = _Metadata(mode=stat.S_IFREG | 0o644, device=3, inode=30)
+    monkeypatch.setattr(
+        bounded_io,
+        "os",
+        os_facade(bounded_io.os, name="posix", fchmod=lambda *_args: None),
+    )
+    monkeypatch.setattr(bounded_io.os, "lstat", lambda _path: before)
+    if stage == "open":
+        monkeypatch.setattr(
+            bounded_io.os,
+            "open",
+            lambda *_args: (_ for _ in ()).throw(OSError("swapped")),
+        )
+    else:
+        monkeypatch.setattr(bounded_io.os, "open", lambda *_args: 75)
+        monkeypatch.setattr(
+            bounded_io.os,
+            "fstat",
+            lambda _descriptor: before if stage == "post" else repaired,
+        )
+        monkeypatch.setattr(bounded_io.os, "close", lambda _descriptor: None)
+        if stage == "post":
+            repaired_mode = _Metadata(mode=stat.S_IFREG | 0o600, device=3, inode=30)
+            values = iter((before, repaired_mode))
+            monkeypatch.setattr(
+                bounded_io.os,
+                "fstat",
+                lambda _descriptor: next(values),
+            )
+            lstat_calls = 0
+
+            def lstat_then_vanish(_path: Path) -> _Metadata:
+                nonlocal lstat_calls
+                lstat_calls += 1
+                if lstat_calls == 1:
+                    return before
+                raise OSError("vanished")
+
+            monkeypatch.setattr(
+                bounded_io.os,
+                "lstat",
+                lstat_then_vanish,
+            )
+
+    with pytest.raises(bounded_io.UnsafeFileError, match=message):
+        bounded_io.restrict_posix_path_permissions(Path("state"), directory=False)
+
+
 def test_bounded_json_defensive_validation_branches(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -178,12 +324,33 @@ class _Callable:
         return self.function(*args)
 
 
-def _token_libraries(*, opens: bool, restricted: bool, closed: list[Any]) -> tuple[Any, Any]:
+def _token_libraries(
+    *,
+    opens: bool,
+    restricted: bool,
+    closed: list[Any],
+    filtered: bool = False,
+    app_container: bool = False,
+) -> tuple[Any, Any]:
+    def get_token(
+        _token: Any,
+        information_class: int,
+        output: Any,
+        _size: int,
+        returned: Any,
+    ) -> bool:
+        output._obj.value = int(filtered if information_class == 21 else app_container)
+        returned._obj.value = ctypes.sizeof(ctypes.wintypes.DWORD)
+        return True
+
     advapi = SimpleNamespace(
+        OpenThreadToken=_Callable(lambda *_args: ctypes.set_last_error(1008) or False),
         OpenProcessToken=_Callable(lambda *_args: opens),
         IsTokenRestricted=_Callable(lambda _token: restricted),
+        GetTokenInformation=_Callable(get_token),
     )
     kernel = SimpleNamespace(
+        GetCurrentThread=_Callable(lambda: 456),
         GetCurrentProcess=_Callable(lambda: 123),
         CloseHandle=_Callable(lambda token: closed.append(token) or True),
     )
@@ -229,6 +396,48 @@ def test_windows_token_probe_failure_is_distinct_from_unrestricted(
         lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("missing API")),
         raising=False,
     )
+    with pytest.raises(windows_acl.WindowsTokenProbeError):
+        windows_acl.current_process_token_is_restricted(is_windows=True)
+
+
+@pytest.mark.parametrize(
+    ("filtered", "app_container"),
+    [(True, False), (False, True)],
+)
+def test_windows_filtered_and_appcontainer_tokens_are_restricted(
+    monkeypatch: pytest.MonkeyPatch,
+    filtered: bool,
+    app_container: bool,
+) -> None:
+    advapi, kernel = _token_libraries(
+        opens=True,
+        restricted=False,
+        closed=[],
+        filtered=filtered,
+        app_container=app_container,
+    )
+    monkeypatch.setattr(
+        ctypes,
+        "WinDLL",
+        lambda name, **_kwargs: advapi if name.startswith("Advapi") else kernel,
+        raising=False,
+    )
+
+    assert windows_acl.current_process_token_is_restricted(is_windows=True)
+
+
+def test_windows_token_probe_false_with_last_error_is_unknown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    advapi, kernel = _token_libraries(opens=True, restricted=False, closed=[])
+    monkeypatch.setattr(
+        ctypes,
+        "WinDLL",
+        lambda name, **_kwargs: advapi if name.startswith("Advapi") else kernel,
+        raising=False,
+    )
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: 5, raising=False)
+
     with pytest.raises(windows_acl.WindowsTokenProbeError):
         windows_acl.current_process_token_is_restricted(is_windows=True)
 
@@ -347,7 +556,7 @@ def test_windows_sddl_read_result_paths(
         raising=False,
     )
 
-    assert windows_acl._read_windows_sddl(Path("state")) == expected
+    assert windows_acl.read_windows_sddl(Path("state")) == expected
     assert len(freed) == free_count
     assert buffer.value == "owner-only"
 
@@ -359,7 +568,7 @@ def test_windows_sddl_read_native_exception_is_empty(monkeypatch: pytest.MonkeyP
         lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("unavailable")),
         raising=False,
     )
-    assert windows_acl._read_windows_sddl(Path("state")) == ""
+    assert windows_acl.read_windows_sddl(Path("state")) == ""
 
 
 def test_config_low_level_error_and_transport_branches(
@@ -408,12 +617,6 @@ def test_config_low_level_error_and_transport_branches(
 
 
 class _StoreStub:
-    def get_skills_for_session(self, session_id: str) -> list[str]:
-        return [f"skill:{session_id}"]
-
-    def get_specialists_for_session(self, session_id: str) -> list[str]:
-        return [f"specialist:{session_id}"]
-
     def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
         return []
 
@@ -446,31 +649,31 @@ def test_cli_adapter_wrappers_cover_availability_prompts_and_preflight(
     codex = codex_wrapper.CodexAdapter(store=store)  # type: ignore[arg-type]
     generic = generic_wrapper.GenericAdapter(store=store, cli_cmd="generic")  # type: ignore[arg-type]
     assert claude.is_available() and codex.is_available() and generic.is_available()
-    assert claude.report_skills_loaded("s") == ["skill:s"]
-    assert claude.report_specialists_loaded("s") == ["specialist:s"]
     assert claude.get_delegate_backend() == "claude_exec"
-    assert claude.expose_model_telemetry("s") == {}
-    assert codex.report_skills_loaded("s") == ["skill:s"]
-    assert codex.report_specialists_loaded("s") == ["specialist:s"]
     assert codex.get_delegate_backend() == "codex_exec"
-    assert codex.expose_model_telemetry("s") == {}
-    assert generic.report_skills_loaded("s") == ["skill:s"]
-    assert generic.report_specialists_loaded("s") == ["specialist:s"]
     assert generic.get_delegate_backend() == "generic_command"
-    assert generic.expose_model_telemetry("s") == {}
     assert generic_wrapper.GenericAdapter(store=store).is_available() is False  # type: ignore[arg-type]
     assert claude.exec("task", str(tmp_path), "specialist")["status"] == "ok"
     assert codex.exec("task", str(tmp_path), "specialist")["status"] == "ok"
     assert generic.exec("task", ["--safe"], str(tmp_path))["status"] == "ok"
 
-    import agency_runtime.core.selector.pipeline as pipeline
-
-    monkeypatch.setattr(pipeline, "is_trivial", lambda _message: True)
-    assert codex.run_preflight("s", "hi") is None
-    monkeypatch.setattr(pipeline, "is_trivial", lambda _message: False)
-    monkeypatch.setattr(pipeline, "route_and_build_context", lambda *_args, **_kwargs: "ctx")
+    monkeypatch.setattr(
+        codex,
+        "build_preflight_context",
+        lambda *_args, **_kwargs: {"context": "fallback"},
+    )
+    assert codex.run_preflight("s", "hi") == {"context": "fallback"}
+    monkeypatch.setattr(
+        codex,
+        "build_preflight_context",
+        lambda *_args, **_kwargs: {"context": "ctx"},
+    )
     assert codex.run_preflight("s", "complex") == {"context": "ctx"}
-    monkeypatch.setattr(pipeline, "route_and_build_context", lambda *_args, **_kwargs: "")
+    monkeypatch.setattr(
+        codex,
+        "build_preflight_context",
+        lambda *_args, **_kwargs: None,
+    )
     assert codex.run_preflight("s", "complex") is None
 
     _BackendStub.result = {"status": "unavailable"}
@@ -486,9 +689,7 @@ def test_plugin_import_surfaces_and_store_reports() -> None:
         HermesAdapter(store=store),  # type: ignore[arg-type]
         OpenClawAdapter(store=store),  # type: ignore[arg-type]
     ):
-        assert adapter.report_skills_loaded("s") == ["skill:s"]
-        assert adapter.report_specialists_loaded("s") == ["specialist:s"]
-        assert adapter.expose_model_telemetry("s") == {}
+        assert adapter.store is store
     assert HermesAdapter(store=store).get_delegate_backend() == "delegate_task"  # type: ignore[arg-type]
     assert OpenClawAdapter(store=store).get_delegate_backend() == "sessions_spawn"  # type: ignore[arg-type]
     openclaw = OpenClawAdapter(store=store)  # type: ignore[arg-type]
@@ -537,17 +738,22 @@ def test_openclaw_bridge_hostile_payload_and_finalization_branches(
 
     monkeypatch.setattr(node_bridge, "OpenClawAdapter", Adapter)
     assert node_bridge.handle({"action": "preflight", "userMessage": "   "}) == {}
-    assert node_bridge.handle({"action": "pre_verify", "finalResponse": ""}) == {}
-    assert node_bridge.handle(
+    empty = node_bridge.handle({"action": "pre_verify", "finalResponse": ""})
+    assert empty["action"] == "continue"
+    assert "VERIFICATION UNAVAILABLE" in empty["message"]
+    exhausted = node_bridge.handle(
         {
             "action": "pre_verify",
             "finalResponse": "answer",
             "traceId": "trace",
             "attempt": "2",
         }
-    ) == {"action": "continue"}
-    assert node_bridge.handle({"action": "pre_verify", "finalResponse": "answer"}) == {
-        "action": "continue"
-    }
+    )
+    assert exhausted["action"] == "terminal"
+    assert exhausted["terminalStatus"] == "verification_failed"
+    assert "VERIFICATION UNAVAILABLE" in exhausted["message"]
+    uncorrelated = node_bridge.handle({"action": "pre_verify", "finalResponse": "answer"})
+    assert uncorrelated["action"] == "continue"
+    assert "VERIFICATION UNAVAILABLE" in uncorrelated["message"]
     assert node_bridge.handle({"action": "post_tool_call", "toolInput": "invalid"}) == {}
     assert node_bridge.handle({"action": "unknown"}) == {"error": "unknown action: unknown"}

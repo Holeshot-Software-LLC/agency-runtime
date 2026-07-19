@@ -1,13 +1,14 @@
 ---
 title: Centralize finalization and correlate evidence by session
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-16
 tags: [finalization, sessions, evidence]
-related: []
+related:
+  - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0045-turn-scoped-specialist-activation.md
 id: ADR-0016
 type: decision
 deciders: []

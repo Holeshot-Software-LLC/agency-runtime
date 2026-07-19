@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import socket
 import subprocess
@@ -18,6 +19,14 @@ from pathlib import Path
 import pytest
 import yaml
 
+from agency_runtime.core.dashboard_runtime import (
+    dashboard_api_request,
+    remove_dashboard_runtime,
+    write_dashboard_runtime,
+)
+from agency_runtime.core.roster.bundled import bundled_roster
+from agency_runtime.core.roster.ingress import MAX_LIST_ITEMS
+from agency_runtime.core.roster.sync import quarantine_candidate
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import dashboard as dashboard_module
 from agency_runtime.server.dashboard import (
@@ -27,15 +36,36 @@ from agency_runtime.server.dashboard import (
 )
 
 
+def _verified_codex_record() -> dict[str, object]:
+    return {
+        "host": "codex",
+        "executable_discovered": True,
+        "registered": True,
+        "enabled": True,
+        "managed_plugin_version": "test",
+        "launcher_artifacts_current": True,
+    }
+
+
 @pytest.fixture()
 def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
     monkeypatch.setenv("AGENCY_JUDGE_TIMEOUT", "0.05")
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "dashboard.db"))
+    for name in (
+        "AGENCY_JUDGE_MODEL",
+        "AGENCY_JUDGE_BASE_URL",
+        "AGENCY_JUDGE_API_KEY",
+        "LITELLM_API_KEY",
+        "OLLAMA_BASE_URL",
+        "AGENCY_OLLAMA_FALLBACK_MODEL",
+    ):
+        monkeypatch.delenv(name, raising=False)
     from agency_runtime.core.config import reset_config_cache
 
     reset_config_cache()
-    store = Store(tmp_path / "dashboard.db")
-    store.activate_agent(
+    store = Store()
+    store._activate_prevalidated_agent(
         {
             "slug": "security-reviewer",
             "name": "Security Reviewer",
@@ -48,6 +78,7 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
             "capabilities": ["security-review", "threat-modeling"],
             "tool_affinity": ["git"],
             "prompt_path": "",
+            "prompt_body": "Review application security and threat boundaries.",
         }
     )
     store.record_delegation(
@@ -58,9 +89,18 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         recommended_agent="security-reviewer",
         status="completed",
         backend="test",
+        executed_worker_kind="test-worker",
+        executed_worker_id="dashboard-worker",
+        native_run_id="dashboard-native-run",
     )
-    token = "test-dashboard-token"
-    server = DashboardHTTPServer(store, auth_token=token, port=0, host_inspector=lambda: [])
+    token = "test-dashboard-token-32-characters"
+    server = DashboardHTTPServer(
+        store,
+        auth_token=token,
+        port=0,
+        host_inspector=lambda: [_verified_codex_record()],
+        runtime_control_home=tmp_path,
+    )
     thread = threading.Thread(
         target=server.serve_forever,
         kwargs={"poll_interval": 0.01},
@@ -74,6 +114,7 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
             "port": port,
             "token": token,
             "store": store,
+            "home": tmp_path,
         }
     finally:
         server.shutdown()
@@ -141,6 +182,337 @@ def _nested_keys(value: object) -> set[str]:
     return set()
 
 
+@pytest.mark.parametrize("mutation", ["trim", "roster-approve", "host-toggle"])
+def test_store_mutations_hold_config_identity_lock_against_store_path_changes(
+    dashboard_server: dict,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    """A config writer cannot retarget the Store after a binding preflight."""
+
+    from contextlib import contextmanager
+
+    from agency_runtime.core import configuration
+    from agency_runtime.core.config import reset_config_cache
+    from agency_runtime.core.configuration import apply_config_operations, read_config_state
+
+    config_path = Path(dashboard_server["store"].config_path)
+    store_path = Path(dashboard_server["store"].db_path)
+    initial = read_config_state(config_path)
+    apply_config_operations(
+        [{"op": "set", "path": "store.db_path", "value": str(store_path)}],
+        expected_revision=initial.revision,
+        path=config_path,
+    )
+    monkeypatch.delenv("AGENCY_DB_PATH")
+    reset_config_cache()
+    before = read_config_state(config_path)
+    assert Path(before.effective["store"]["db_path"]) == store_path
+
+    mutation_entered = threading.Event()
+    release_mutation = threading.Event()
+    writer_lock_attempted = threading.Event()
+    writer_done = threading.Event()
+    original_lock = configuration._config_lock
+
+    @contextmanager
+    def observed_lock(*args, **kwargs):
+        if threading.current_thread().name == "config-writer":
+            writer_lock_attempted.set()
+        with original_lock(*args, **kwargs):
+            yield
+
+    monkeypatch.setattr(configuration, "_config_lock", observed_lock)
+
+    def pause_mutation() -> None:
+        mutation_entered.set()
+        if not release_mutation.wait(timeout=3):
+            raise TimeoutError("test did not release the Store mutation")
+
+    if mutation == "trim":
+        original_trim = Store.trim_runtime_tables
+
+        def paused_trim(store, *args, **kwargs):
+            pause_mutation()
+            return original_trim(store, *args, **kwargs)
+
+        monkeypatch.setattr(Store, "trim_runtime_tables", paused_trim)
+        endpoint = "/api/maintenance/trim"
+        body = {
+            "confirm": "TRIM RUNTIME DATA",
+            "older_than_days": 30,
+            "dry_run": False,
+            "vacuum": False,
+        }
+    elif mutation == "roster-approve":
+
+        def paused_approve(_store, _snapshot_id, **_kwargs):
+            pause_mutation()
+
+        monkeypatch.setattr(dashboard_module, "approve_snapshot", paused_approve)
+        endpoint = "/api/roster/action"
+        body = {
+            "action": "approve",
+            "snapshot_id": "race-snapshot",
+            "confirm": "APPROVE race-snapshot",
+        }
+    else:
+        from agency_runtime.core import host_control
+
+        original_set_runtime_control = host_control.set_runtime_control
+
+        def paused_set_runtime_control(*args, **kwargs):
+            pause_mutation()
+            return original_set_runtime_control(*args, **kwargs)
+
+        monkeypatch.setattr(host_control, "set_runtime_control", paused_set_runtime_control)
+        endpoint = "/api/hosts/toggle"
+        body = {
+            "host": "codex",
+            "enabled": False,
+            "expected_generation": 0,
+            "confirm": "DISABLE codex",
+        }
+
+    request_result: list[tuple[int, dict, dict[str, str]]] = []
+    request_errors: list[BaseException] = []
+
+    def request_mutation() -> None:
+        try:
+            request_result.append(
+                _json_response(
+                    dashboard_server,
+                    endpoint,
+                    method="POST",
+                    body=body,
+                    token=dashboard_server["token"],
+                )
+            )
+        except BaseException as exc:  # preserve the worker failure for the test thread
+            request_errors.append(exc)
+
+    writer_result: list[object] = []
+    writer_errors: list[BaseException] = []
+
+    def change_store_path() -> None:
+        try:
+            writer_result.append(
+                apply_config_operations(
+                    [
+                        {
+                            "op": "set",
+                            "path": "store.db_path",
+                            "value": str(dashboard_server["home"] / "replacement.db"),
+                        }
+                    ],
+                    expected_revision=before.revision,
+                    path=config_path,
+                )
+            )
+        except BaseException as exc:  # preserve the worker failure for the test thread
+            writer_errors.append(exc)
+        finally:
+            writer_done.set()
+
+    request_thread = threading.Thread(target=request_mutation, name="store-mutation")
+    writer_thread = threading.Thread(target=change_store_path, name="config-writer")
+    request_thread.start()
+    try:
+        assert mutation_entered.wait(timeout=3)
+        writer_thread.start()
+        assert writer_lock_attempted.wait(timeout=3)
+        assert not writer_done.wait(timeout=0.1)
+    finally:
+        release_mutation.set()
+    request_thread.join(timeout=5)
+    writer_thread.join(timeout=5)
+
+    assert not request_thread.is_alive()
+    assert not writer_thread.is_alive()
+    assert request_errors == []
+    assert writer_errors == []
+    assert len(writer_result) == 1
+    assert len(request_result) == 1
+    status, payload, _headers = request_result[0]
+    assert status == 200
+    assert payload["config_revision"] == before.revision
+    after = read_config_state(config_path)
+    assert after.revision != before.revision
+    assert Path(after.effective["store"]["db_path"]) == dashboard_server["home"] / "replacement.db"
+
+
+def test_agent_toggle_checks_roster_while_holding_config_writer_lock(
+    dashboard_server: dict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A Store retarget cannot pass between roster membership and toggle CAS."""
+
+    from contextlib import contextmanager
+
+    from agency_runtime.core import configuration
+    from agency_runtime.core.config import reset_config_cache
+    from agency_runtime.core.configuration import (
+        ConfigConflictError,
+        apply_config_operations,
+        read_config_state,
+    )
+
+    config_path = Path(dashboard_server["store"].config_path)
+    store_path = Path(dashboard_server["store"].db_path)
+    initial = read_config_state(config_path)
+    apply_config_operations(
+        [{"op": "set", "path": "store.db_path", "value": str(store_path)}],
+        expected_revision=initial.revision,
+        path=config_path,
+    )
+    monkeypatch.delenv("AGENCY_DB_PATH")
+    reset_config_cache()
+    before = read_config_state(config_path)
+
+    membership_entered = threading.Event()
+    release_membership = threading.Event()
+    writer_lock_attempted = threading.Event()
+    writer_done = threading.Event()
+    original_lock = configuration._config_lock
+    original_get_roster_entry = Store.get_roster_entry
+
+    @contextmanager
+    def observed_lock(*args, **kwargs):
+        if threading.current_thread().name == "config-writer":
+            writer_lock_attempted.set()
+        with original_lock(*args, **kwargs):
+            yield
+
+    def paused_get_roster_entry(store, slug):
+        membership_entered.set()
+        if not release_membership.wait(timeout=3):
+            raise TimeoutError("test did not release the roster membership check")
+        return original_get_roster_entry(store, slug)
+
+    monkeypatch.setattr(configuration, "_config_lock", observed_lock)
+    monkeypatch.setattr(Store, "get_roster_entry", paused_get_roster_entry)
+
+    request_result: list[tuple[int, dict, dict[str, str]]] = []
+    request_errors: list[BaseException] = []
+
+    def toggle_agent() -> None:
+        try:
+            request_result.append(
+                _json_response(
+                    dashboard_server,
+                    "/api/agents/toggle",
+                    method="POST",
+                    body={
+                        "slug": "security-reviewer",
+                        "enabled": False,
+                        "expected_revision": before.revision,
+                        "confirm": "DISABLE security-reviewer",
+                    },
+                    token=dashboard_server["token"],
+                )
+            )
+        except BaseException as exc:  # preserve the worker failure for the test thread
+            request_errors.append(exc)
+
+    writer_result: list[object] = []
+    writer_errors: list[BaseException] = []
+
+    def change_store_path() -> None:
+        try:
+            writer_result.append(
+                apply_config_operations(
+                    [
+                        {
+                            "op": "set",
+                            "path": "store.db_path",
+                            "value": str(dashboard_server["home"] / "replacement.db"),
+                        }
+                    ],
+                    expected_revision=before.revision,
+                    path=config_path,
+                )
+            )
+        except BaseException as exc:  # preserve the worker failure for the test thread
+            writer_errors.append(exc)
+        finally:
+            writer_done.set()
+
+    request_thread = threading.Thread(target=toggle_agent, name="agent-toggle")
+    writer_thread = threading.Thread(target=change_store_path, name="config-writer")
+    request_thread.start()
+    try:
+        assert membership_entered.wait(timeout=3)
+        writer_thread.start()
+        assert writer_lock_attempted.wait(timeout=3)
+        assert not writer_done.wait(timeout=0.1)
+    finally:
+        release_membership.set()
+    request_thread.join(timeout=5)
+    writer_thread.join(timeout=5)
+
+    assert not request_thread.is_alive()
+    assert not writer_thread.is_alive()
+    assert request_errors == []
+    assert len(request_result) == 1
+    status, payload, _headers = request_result[0]
+    assert status == 200
+    assert payload["changed"] is True
+    assert payload["config"]["effective"]["agents"]["disabled"] == ["security-reviewer"]
+    assert writer_result == []
+    assert len(writer_errors) == 1
+    assert isinstance(writer_errors[0], ConfigConflictError)
+    after = read_config_state(config_path)
+    assert Path(after.effective["store"]["db_path"]) == store_path
+
+
+@pytest.mark.parametrize(
+    "persisted_document",
+    [None, {"agents": {"disabled": []}}],
+    ids=["absent-agents-key", "explicit-empty-disabled-list"],
+)
+def test_agent_toggle_semantic_noop_preserves_persisted_config(
+    dashboard_server: dict,
+    persisted_document: dict | None,
+) -> None:
+    """A locked no-op toggle neither rewrites nor normalizes the config."""
+
+    from agency_runtime.core.config import reset_config_cache
+
+    config_path = Path(dashboard_server["store"].config_path)
+    if persisted_document is not None:
+        config_path.write_text(
+            yaml.safe_dump(persisted_document, sort_keys=True),
+            encoding="utf-8",
+        )
+    reset_config_cache()
+    before_raw = config_path.read_bytes() if config_path.exists() else None
+    status, initial, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/toggle",
+        method="POST",
+        body={
+            "slug": "security-reviewer",
+            "enabled": True,
+            "expected_revision": initial["revision"],
+            "confirm": "ENABLE security-reviewer",
+        },
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["changed"] is False
+    assert payload["config"]["revision"] == initial["revision"]
+    after_raw = config_path.read_bytes() if config_path.exists() else None
+    assert after_raw == before_raw
+
+
 def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     status, raw, headers = _request(dashboard_server, "/")
 
@@ -160,6 +532,12 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"bucketActivity" in charts
     assert b"outcomeCounts" in charts
     assert b"retryDelay" in charts
+
+    status, favicon, favicon_headers = _request(dashboard_server, "/favicon.svg")
+    assert status == 200
+    assert favicon_headers["Content-Type"] == "image/svg+xml"
+    assert b"<svg" in favicon
+    assert b"Agency Runtime" in favicon
 
     status, app_entry, _headers = _request(dashboard_server, "/app.js")
     assert status == 200
@@ -192,6 +570,7 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"collectConfigChanges" in script
     assert b"total_count" in script
     assert b"next_cursor" in script
+    assert b"/api/agents/lookup?slug=" in script
     assert b"/api/config" in script
     assert b"SAVE SENSITIVE CONFIG" in script
     assert b"APPLY LOCAL-ONLY PROFILE" in script
@@ -222,6 +601,10 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
 
     assert b'class="skip-link"' in raw
     assert b'href="#main-content"' in raw
+    assert b'<link rel="icon" href="/favicon.svg" type="image/svg+xml">' in raw
+    assert b'id="roster-search-form"' in raw
+    assert b'role="search"' in raw
+    assert b'for="roster-search-slug"' in raw
     assert b'id="main-content"' in raw
     assert b'id="live-toggle"' in raw
     assert b'id="live-status"' in raw
@@ -233,6 +616,9 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b'id="outcome-chart-summary"' in raw
     assert b'id="outcome-success"' in raw
     assert b'id="evidence-caption"' in raw
+    assert b'data-evidence="specialists">Specialist activations' in raw
+    assert b'id="evidence-context"' in raw
+    assert b"activation-current" in stylesheet
     assert b'aria-controls="view-overview"' in raw
     assert b'id="view-routing" class="view" data-view-panel="routing" hidden' in raw
     assert raw.index(b'<script src="/charts.js"') < raw.index(
@@ -293,7 +679,7 @@ def test_dashboard_javascript_parses_when_node_is_available() -> None:
         assert completed.returncode == 0, completed.stderr
 
     completed = subprocess.run(
-        [node, "--test", str(root / "tests" / "dashboard_ui.test.mjs")],
+        [node, str(root / "tests" / "dashboard_ui.test.mjs")],
         check=False,
         capture_output=True,
         text=True,
@@ -328,6 +714,14 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
         "revision",
         "overview",
         "activity",
+        "master",
+        "config_path",
+        "config_revision",
+        "environment_overrides",
+        "store_path",
+        "desired_store_path",
+        "store_restart_required",
+        "service_binding",
     }
     assert first["schema_version"] == 1
     assert isinstance(first["sampled_at"], str)
@@ -340,6 +734,7 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
         "db_size_bytes",
         "wal_size_bytes",
         "provider_health",
+        "inference",
         "recent",
     }
     assert set(first["activity"]) == {
@@ -348,6 +743,7 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
         "delegations",
         "receipts",
         "finalizations",
+        "specialists",
     }
     assert headers["Cache-Control"] == "no-store"
     assert headers["X-Frame-Options"] == "DENY"
@@ -372,6 +768,9 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
         recommended_agent="security-reviewer",
         status="completed",
         backend="test",
+        executed_worker_kind="test-worker",
+        executed_worker_id="dashboard-live-worker",
+        native_run_id="dashboard-live-native-run",
     )
     status, changed, _headers = _json_response(
         dashboard_server,
@@ -380,6 +779,174 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
     )
     assert status == 200
     assert changed["revision"] != first["revision"]
+
+
+def test_dashboard_runtime_master_api_is_authenticated_atomic_and_live(
+    dashboard_server,
+) -> None:
+    status, payload, _headers = _json_response(dashboard_server, "/api/runtime")
+    assert status == 401
+    assert payload == {"error": "authentication required"}
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert payload["master"]["enabled"] is True
+    assert payload["master"]["generation"] == 0
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime/toggle",
+        method="POST",
+        body={
+            "enabled": False,
+            "confirm": "DISABLE AGENCY",
+            "expected_generation": 0,
+        },
+    )
+    assert status == 401
+    assert payload == {"error": "authentication required"}
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime/toggle",
+        method="POST",
+        body={
+            "enabled": False,
+            "confirm": "DISABLE AGENCY",
+            "expected_generation": 0,
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert payload["ok"] is True
+    assert payload["changed"] is True
+    assert payload["master"]["enabled"] is False
+    assert payload["master"]["generation"] == 1
+    assert payload["master"]["source"] == "dashboard"
+
+    status, unchanged, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime/toggle",
+        method="POST",
+        body={
+            "enabled": False,
+            "confirm": "DISABLE AGENCY",
+            "expected_generation": 1,
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert unchanged["changed"] is False
+    assert unchanged["master"]["generation"] == 1
+
+    status, stale, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime/toggle",
+        method="POST",
+        body={
+            "enabled": True,
+            "confirm": "ENABLE AGENCY",
+            "expected_generation": 0,
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 409
+    assert "expected 0, found 1" in stale["error"]
+
+    for path in ("/api/live", "/api/overview", "/api/hosts"):
+        status, current, _headers = _json_response(
+            dashboard_server,
+            path,
+            token=dashboard_server["token"],
+        )
+        assert status == 200
+        assert current["master"]["enabled"] is False
+        assert current["master"]["generation"] == 1
+
+
+def test_dashboard_route_lab_bypasses_all_routing_while_master_is_off(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    status, _payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime/toggle",
+        method="POST",
+        body={
+            "enabled": False,
+            "confirm": "DISABLE AGENCY",
+            "expected_generation": 0,
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("disabled Route Lab must not enter the routing path")
+
+    monkeypatch.setattr(dashboard_module, "explain_route", forbidden)
+    monkeypatch.setattr(dashboard_module, "load_config", forbidden)
+    monkeypatch.setattr(Store, "get_active_roster_as_catalog", forbidden)
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/route",
+        method="POST",
+        body={"task": "Route this task"},
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["status"] == "disabled"
+    assert payload["bypassed"] is True
+    assert payload["master"]["enabled"] is False
+    assert "bypassed routing" in payload["message"]
+    assert payload["delegation_plan"]["authority"] == "recommendation_only"
+    assert payload["delegation_plan"]["unit_count"] == 0
+    assert "no delegation recommendation" in payload["delegation_plan"]["evidence_contract"]
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ({}, "enabled must be a JSON boolean"),
+        (
+            {"enabled": False, "expected_generation": True},
+            "expected_generation must be a non-negative integer",
+        ),
+        (
+            {"enabled": False, "expected_generation": -1},
+            "expected_generation must be a non-negative integer",
+        ),
+        (
+            {"enabled": False, "expected_generation": 0, "confirm": "disable agency"},
+            "confirmation phrase must be DISABLE AGENCY",
+        ),
+        (
+            {"enabled": True, "expected_generation": 0, "confirm": "enable agency"},
+            "confirmation phrase must be ENABLE AGENCY",
+        ),
+    ],
+)
+def test_dashboard_runtime_toggle_rejects_malformed_or_unconfirmed_updates(
+    dashboard_server,
+    body: dict[str, object],
+    message: str,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime/toggle",
+        method="POST",
+        body=body,
+        token=dashboard_server["token"],
+    )
+
+    assert status == 400
+    assert payload == {"error": message}
 
 
 def test_dashboard_live_snapshot_is_metadata_only_and_never_leaks_credentials(
@@ -413,6 +980,18 @@ def test_dashboard_live_snapshot_is_metadata_only_and_never_leaks_credentials(
                 "work_units": {"task": secret},
             }
         )
+        activity["specialists"].append(
+            {
+                "id": "captured-specialist",
+                "session_id": "session-secret",
+                "trace_id": "trace-secret",
+                "slug": "security-reviewer",
+                "loaded_at": "2026-07-11T12:00:00Z",
+                "expired_at": None,
+                "state": "current",
+                "prompt": secret,
+            }
+        )
         return activity
 
     monkeypatch.setattr(Store, "recent_dashboard_activity", captured_detail)
@@ -429,6 +1008,7 @@ def test_dashboard_live_snapshot_is_metadata_only_and_never_leaks_credentials(
     assert dashboard_server["token"] not in encoded
     assert all("skip_reason" not in row for row in payload["activity"]["delegations"])
     assert all("work_units" not in row for row in payload["activity"]["routing"])
+    assert all("prompt" not in row for row in payload["activity"]["specialists"])
     assert _nested_keys(payload).isdisjoint(
         {
             "api_key",
@@ -519,7 +1099,7 @@ def test_dashboard_rejects_unbounded_numeric_content_length_without_conversion(
 
 def test_dashboard_roster_cursor_pages_are_stable_and_complete(dashboard_server):
     for slug in ("alpha-reviewer", "zulu-reviewer"):
-        dashboard_server["store"].activate_agent(
+        dashboard_server["store"]._activate_prevalidated_agent(
             {
                 "slug": slug,
                 "name": slug,
@@ -557,6 +1137,482 @@ def test_dashboard_roster_cursor_pages_are_stable_and_complete(dashboard_server)
     assert second["next_cursor"] is None
 
 
+def test_dashboard_operational_roster_review_and_inference_apis_are_bounded(
+    dashboard_server,
+):
+    for path in (
+        "/api/roster/operations",
+        "/api/roster/reviews",
+        "/api/inference",
+    ):
+        assert _json_response(dashboard_server, path)[0] == 401
+
+    source_id = dashboard_server["store"].add_agent_source("fixtures/dashboard", "fixture")
+    candidate_id = quarantine_candidate(
+        {
+            "slug": "dashboard-candidate",
+            "name": "Dashboard Candidate",
+            "division": "engineering",
+            "description": "Candidate for bounded review.",
+            "source": "fixture",
+            "source_version": "candidate-source-revision",
+            "version": "1.0.0",
+            "content": "Perform bounded review work.",
+        },
+        source_id,
+        dashboard_server["store"],
+    )
+
+    status, operations, _headers = _json_response(
+        dashboard_server,
+        "/api/roster/operations?limit=10&division=engineering&tool=git",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert operations["schema_version"] == "agency.dashboard.roster_operations.v1"
+    assert operations["filters"] == {"division": "engineering", "tool": "git"}
+    assert operations["agents"][0]["agent_slug"] == "security-reviewer"
+    assert "revision_history" in operations["agents"][0]
+    assert "prompt_body" not in repr(operations)
+    assert len(operations["roster_revision"]) == 64
+
+    status, reviews, _headers = _json_response(
+        dashboard_server,
+        "/api/roster/reviews?limit=10",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert reviews["queue_count"] == 1
+    assert reviews["candidates"][0]["candidate"]["id"] == candidate_id
+    assert "message" not in _nested_keys(reviews)
+
+    status, detail, _headers = _json_response(
+        dashboard_server,
+        f"/api/roster/reviews?candidate_id={candidate_id}",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert detail["candidate_id"] == candidate_id
+
+    status, inference, _headers = _json_response(
+        dashboard_server,
+        "/api/inference?limit=5",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert inference["schema_version"] == "agency.dashboard.inference_operations.v1"
+    assert inference["configured"] is False
+    assert inference["required_for_eligible_turns"] is False
+    assert inference["state"] == "not_configured"
+    assert [provider["name"] for provider in inference["provider_chain"]] == [
+        "legacy-judge",
+        "ollama-fallback",
+    ]
+    assert all(provider["configuration_ready"] for provider in inference["provider_chain"])
+
+    status, governance, _headers = _json_response(
+        dashboard_server,
+        "/api/snapshots",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert governance["operations"]["total_count"] == 1
+    assert governance["reviews"]["queue_count"] == 1
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/roster/operations?unknown=value",
+        "/api/roster/operations?query=a&query=b",
+        "/api/roster/operations?limit=invalid",
+        "/api/roster/operations?limit=0",
+        "/api/roster/operations?after=Not-Canonical",
+        "/api/roster/operations?a=1&b=2&c=3&d=4&e=5&f=6&g=7&h=8&i=9&j=10&k=11",
+        "/api/roster/reviews?limit=0",
+        "/api/roster/reviews?pending_cursor=..%2Fcursor",
+        "/api/roster/reviews?history_cursor=bad%20cursor",
+        "/api/roster/reviews?candidate_id=..%2Fcandidate",
+        "/api/roster/reviews?candidate_id=missing",
+        "/api/inference?limit=0",
+        "/api/inference?unknown=value",
+    ],
+)
+def test_dashboard_operational_queries_fail_closed(dashboard_server, path):
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        path,
+        token=dashboard_server["token"],
+    )
+    assert status == 400
+    assert payload["error"]
+
+
+def test_dashboard_roster_activation_projection_omits_routing_taxonomy(
+    dashboard_server,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/roster?limit=1&projection=activation",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload["projection"] == "activation"
+    assert payload["store_path"] == str(dashboard_server["store"].db_path)
+    assert len(payload["agents"]) == 1
+    assert set(payload["agents"][0]) == {
+        "agent_slug",
+        "name",
+        "division",
+        "enabled",
+        "protected",
+    }
+
+
+def test_dashboard_rejects_bulk_selector_roster_projection(dashboard_server) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/roster?projection=selector",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 400
+    assert payload["error"] == "roster projection must be activation when provided"
+
+
+def test_exact_lookup_preserves_maximum_unicode_selector_metadata(
+    dashboard_server,
+) -> None:
+    categories = [f"{index:03d}-" + ("🧪" * 126) for index in range(MAX_LIST_ITEMS)]
+    capabilities = [f"{index:03d}-" + ("🛡" * 126) for index in range(MAX_LIST_ITEMS)]
+    for index in range(4):
+        dashboard_server["store"]._activate_prevalidated_agent(
+            {
+                "slug": f"max-unicode-{index:02d}",
+                "name": "😀" * 128,
+                "division": "🧭" * 128,
+                "description": "🔐" * 4_096,
+                "version": "1.0.0",
+                "content": f"Unicode specialist {index}",
+                "categories": categories,
+                "capabilities": capabilities,
+            }
+        )
+    descriptor = write_dashboard_runtime(
+        token=dashboard_server["token"],
+        port=dashboard_server["port"],
+        pid=os.getpid(),
+        home_dir=dashboard_server["home"],
+    )
+    try:
+        slugs = [*(f"max-unicode-{index:02d}" for index in range(4)), "security-reviewer"]
+        responses = [
+            dashboard_api_request(
+                f"/api/agents/lookup?slug={slug}",
+                descriptor=descriptor,
+            )
+            for slug in slugs
+        ]
+    finally:
+        remove_dashboard_runtime(
+            token=dashboard_server["token"],
+            pid=os.getpid(),
+            home_dir=dashboard_server["home"],
+        )
+
+    assert all(response["count"] == 1 for response in responses)
+    assert all(response["limit"] == 1 for response in responses)
+    assert all(response["truncated"] is False for response in responses)
+    assert all(response["projection"] == "selector" for response in responses)
+    assert [response["filter_slug"] for response in responses] == slugs
+    agents = [response["agents"][0] for response in responses]
+    assert [agent["agent_slug"] for agent in agents] == slugs
+    for agent in agents[:-1]:
+        assert agent["description"] == "🔐" * 4_096
+        assert agent["categories"] == categories
+        assert agent["capabilities"] == capabilities
+
+
+def test_roster_broker_endpoints_fail_closed_when_store_restart_is_required(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    status, config, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    replacement = dashboard_server["home"] / "replacement.db"
+    status, saved, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+        method="POST",
+        body={
+            "operations": [
+                {
+                    "op": "set",
+                    "path": "store.db_path",
+                    "value": str(replacement),
+                }
+            ],
+            "expected_revision": config["revision"],
+            "confirmations": ["SAVE CONFIG"],
+        },
+    )
+    assert status == 200
+    assert saved["service_binding"]["store_restart_required"] is False
+
+    monkeypatch.delenv("AGENCY_DB_PATH")
+    from agency_runtime.core.config import reset_config_cache
+
+    reset_config_cache()
+    status, refreshed, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert refreshed["service_binding"] == {
+        "store_path": str(dashboard_server["store"].db_path),
+        "desired_store_path": str(replacement),
+        "store_restart_required": True,
+    }
+
+    requests = [
+        ("/api/roster?limit=1&projection=activation", "GET", None),
+        ("/api/agents/lookup?slug=security-reviewer", "GET", None),
+        ("/api/hosts", "GET", None),
+        (
+            "/api/agents/toggle",
+            "POST",
+            {
+                "slug": "security-reviewer",
+                "enabled": False,
+                "expected_revision": refreshed["revision"],
+                "confirm": "DISABLE security-reviewer",
+            },
+        ),
+        (
+            "/api/roster/action",
+            "POST",
+            {
+                "action": "approve",
+                "snapshot_id": "pending",
+                "confirm": "APPROVE pending",
+            },
+        ),
+        (
+            "/api/hosts/toggle",
+            "POST",
+            {
+                "host": "codex",
+                "enabled": False,
+                "expected_generation": 0,
+                "confirm": "DISABLE codex",
+            },
+        ),
+        (
+            "/api/maintenance/trim",
+            "POST",
+            {"confirm": "TRIM RUNTIME DATA"},
+        ),
+    ]
+    for path, method, body in requests:
+        status, payload, _headers = _json_response(
+            dashboard_server,
+            path,
+            token=dashboard_server["token"],
+            method=method,
+            body=body,
+        )
+        assert status == 409
+        assert payload["restart_required"] is True
+        assert payload["store_path"] == str(dashboard_server["store"].db_path)
+        assert payload["desired_store_path"] == str(replacement)
+
+
+def test_dashboard_exact_lookup_reaches_and_toggles_agent_beyond_first_thousand(
+    dashboard_server,
+):
+    store = dashboard_server["store"]
+    activated_at = "2026-07-14T12:00:00+00:00"
+    rows = [
+        (
+            f"bulk-{index}",
+            f"agent-{index:04d}",
+            f"Agent {index:04d}",
+            "test",
+            "bulk lookup regression",
+            "test",
+            "1.0.0",
+            f"hash-{index}",
+            "[]",
+            "[]",
+            "[]",
+            "",
+            activated_at,
+        )
+        for index in range(1001)
+    ]
+    versions = [
+        (
+            f"bulk-version-{index}",
+            f"agent-{index:04d}",
+            "1.0.0",
+            "1.0.0",
+            "test",
+            f"hash-{index}",
+            "",
+            "{}",
+            activated_at,
+        )
+        for index in range(1001)
+    ]
+    conn = store._connect()
+    try:
+        conn.executemany(
+            "INSERT INTO agent_versions "
+            "(id, agent_slug, version, source_version, source_id, hash, content, metadata, "
+            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            versions,
+        )
+        conn.executemany(
+            "INSERT INTO agent_active "
+            "(id, agent_slug, name, division, description, source, version, hash, "
+            "categories, capabilities, tool_affinity, prompt_path, activated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            rows,
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    status, first, _headers = _json_response(
+        dashboard_server,
+        "/api/roster",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert first["count"] == 1000
+    assert first["next_cursor"] == "agent-0999"
+    assert all(agent["agent_slug"] != "agent-1000" for agent in first["agents"])
+
+    assert (
+        _json_response(
+            dashboard_server,
+            "/api/agents/lookup?slug=agent-1000",
+        )[0]
+        == 401
+    )
+    status, lookup, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/lookup?slug=agent-1000",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert [agent["agent_slug"] for agent in lookup["agents"]] == ["agent-1000"]
+    assert lookup["agents"][0]["enabled"] is True
+    assert lookup["total_count"] == 1002
+    assert lookup["filter_slug"] == "agent-1000"
+
+    status, config, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    status, toggled, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/toggle",
+        method="POST",
+        body={
+            "slug": "agent-1000",
+            "enabled": False,
+            "confirm": "DISABLE agent-1000",
+            "expected_revision": config["revision"],
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 200, toggled
+    assert toggled["changed"] is True
+
+    status, lookup, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/lookup?slug=agent-1000",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert lookup["agents"][0]["enabled"] is False
+    assert lookup["disabled_count"] == 1
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/roster?after=%3Cscript%3E",
+        "/api/roster?after=Security-Reviewer",
+        "/api/roster?after=alpha&after=bravo",
+    ],
+)
+def test_dashboard_roster_rejects_hostile_or_ambiguous_cursors(dashboard_server, path):
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        path,
+        token=dashboard_server["token"],
+    )
+    assert status == 400
+    assert "cursor" in payload["error"]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/agents/lookup",
+        "/api/agents/lookup?slug=alpha&slug=bravo",
+        "/api/agents/lookup?slug=Security-Reviewer",
+        "/api/agents/lookup?slug=%3Cscript%3E",
+        "/api/agents/lookup?slug=alpha&one=1&two=2&three=3&four=4",
+    ],
+)
+def test_dashboard_exact_lookup_rejects_noncanonical_queries(dashboard_server, path):
+    status, _payload, _headers = _json_response(
+        dashboard_server,
+        path,
+        token=dashboard_server["token"],
+    )
+    assert status == 400
+
+
+def test_dashboard_exact_lookup_returns_empty_result_without_leaking_prompt(dashboard_server):
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/lookup?slug=missing-agent",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert payload["agents"] == []
+    assert payload["count"] == 0
+    assert payload["filter_slug"] == "missing-agent"
+    assert "content" not in _nested_keys(payload)
+
+
+def test_dashboard_exact_lookup_preserves_protected_coordinator_state(dashboard_server):
+    dashboard_server["store"]._activate_prevalidated_agent(
+        next(agent for agent in bundled_roster() if agent["slug"] == "chief-of-staff")
+    )
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/lookup?slug=chief-of-staff",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert payload["agents"][0]["enabled"] is True
+    assert payload["agents"][0]["protected"] is True
+
+
 def test_dashboard_config_get_reports_redacted_revision_and_target(dashboard_server):
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -570,6 +1626,131 @@ def test_dashboard_config_get_reports_redacted_revision_and_target(dashboard_ser
     assert payload["effective"]["dashboard"]["port"] == 7810
     assert payload["environment_overrides"]["judge.timeout"] == "AGENCY_JUDGE_TIMEOUT"
     assert all(isinstance(value, bool) for value in payload["secret_presence"].values())
+
+
+def test_dashboard_agent_toggle_is_authenticated_reversible_and_protected(dashboard_server):
+    status, initial, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["token"],
+    )
+    request = {
+        "slug": "security-reviewer",
+        "enabled": False,
+        "confirm": "DISABLE security-reviewer",
+        "expected_revision": initial["revision"],
+    }
+    assert (
+        _json_response(
+            dashboard_server,
+            "/api/agents/toggle",
+            method="POST",
+            body=request,
+        )[0]
+        == 401
+    )
+
+    status, unchanged, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/toggle",
+        method="POST",
+        body={
+            **request,
+            "enabled": True,
+            "confirm": "ENABLE security-reviewer",
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert unchanged["changed"] is False
+
+    status, disabled, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/toggle",
+        method="POST",
+        body=request,
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert disabled["changed"] is True
+    assert disabled["config"]["effective"]["agents"]["disabled"] == ["security-reviewer"]
+    status, roster, _headers = _json_response(
+        dashboard_server,
+        "/api/roster",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert roster["agents"][0]["enabled"] is False
+    assert roster["agents"][0]["protected"] is False
+    assert roster["total_count"] == 1
+    assert roster["enabled_count"] == 0
+    assert roster["disabled_count"] == 1
+    assert dashboard_server["store"].get_roster_entry("security-reviewer") is not None
+
+    status, conflict, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/toggle",
+        method="POST",
+        body={**request, "expected_revision": initial["revision"]},
+        token=dashboard_server["token"],
+    )
+    assert status == 409
+    assert "configuration changed" in conflict["error"]
+
+    request.update(
+        {
+            "enabled": True,
+            "confirm": "ENABLE security-reviewer",
+            "expected_revision": disabled["config"]["revision"],
+        }
+    )
+    status, enabled, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/toggle",
+        method="POST",
+        body=request,
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert enabled["config"]["effective"]["agents"]["disabled"] == []
+
+    dashboard_server["store"]._activate_prevalidated_agent(
+        next(agent for agent in bundled_roster() if agent["slug"] == "chief-of-staff")
+    )
+    status, rejected, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/toggle",
+        method="POST",
+        body={
+            "slug": "chief-of-staff",
+            "enabled": False,
+            "confirm": "DISABLE chief-of-staff",
+            "expected_revision": enabled["config"]["revision"],
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 400
+    assert "protected coordinator" in rejected["error"]
+
+    current_request = {
+        **request,
+        "expected_revision": enabled["config"]["revision"],
+    }
+    for invalid_body, expected_error in (
+        ({**current_request, "slug": "not valid"}, "lowercase letters"),
+        ({**current_request, "enabled": "false"}, "JSON boolean"),
+        ({**current_request, "slug": "missing-agent"}, "not present"),
+        ({**current_request, "confirm": "wrong"}, "confirmation phrase"),
+    ):
+        status, rejected, _headers = _json_response(
+            dashboard_server,
+            "/api/agents/toggle",
+            method="POST",
+            body=invalid_body,
+            token=dashboard_server["token"],
+        )
+        assert status == 400
+        assert expected_error in rejected["error"]
 
 
 def test_dashboard_config_write_requires_confirmation_and_is_atomic(dashboard_server):
@@ -614,6 +1795,117 @@ def test_dashboard_config_write_requires_confirmation_and_is_atomic(dashboard_se
     assert yaml.safe_load(Path(initial["path"]).read_text(encoding="utf-8")) == {
         "observability": {"retention_days": 45}
     }
+
+
+def test_concurrent_dashboards_keep_custom_config_reads_and_writes_isolated(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    poison_path = tmp_path / "process-default.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(poison_path))
+    paths = [tmp_path / "first.yaml", tmp_path / "second.yaml"]
+    tokens = ["first-token", "second-token"]
+    servers: list[DashboardHTTPServer] = []
+    threads: list[threading.Thread] = []
+    clients: list[dict[str, object]] = []
+    try:
+        for index, (path, token) in enumerate(zip(paths, tokens, strict=True)):
+            store = Store(tmp_path / f"dashboard-{index}.db", config_path=path)
+            server = DashboardHTTPServer(
+                store,
+                auth_token=token,
+                port=0,
+                host_inspector=lambda: [],
+                config_path=path,
+            )
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            servers.append(server)
+            threads.append(thread)
+            clients.append(
+                {
+                    "base": f"http://127.0.0.1:{server.server_address[1]}",
+                    "token": token,
+                }
+            )
+
+        def update(index: int) -> tuple[int, dict]:
+            client = clients[index]
+            token = str(client["token"])
+            status, initial, _headers = _json_response(
+                client,
+                "/api/config",
+                token=token,
+            )
+            assert status == 200
+            status, payload, _headers = _json_response(
+                client,
+                "/api/config",
+                method="POST",
+                body={
+                    "expected_revision": initial["revision"],
+                    "operations": [
+                        {
+                            "op": "set",
+                            "path": "observability.retention_days",
+                            "value": 41 + index,
+                        }
+                    ],
+                    "confirmations": ["SAVE CONFIG"],
+                },
+                token=token,
+            )
+            return status, payload
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(update, range(2)))
+
+        assert [status for status, _payload in results] == [200, 200]
+        assert [
+            payload["effective"]["observability"]["retention_days"] for _status, payload in results
+        ] == [41, 42]
+        assert [yaml.safe_load(path.read_text(encoding="utf-8")) for path in paths] == [
+            {"observability": {"retention_days": 41}},
+            {"observability": {"retention_days": 42}},
+        ]
+        assert not poison_path.exists()
+    finally:
+        for server in servers:
+            server.shutdown()
+            server.server_close()
+        for thread in threads:
+            thread.join(timeout=2)
+
+
+def test_dashboard_server_rejects_store_config_identity_mismatch(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db", config_path=tmp_path / "store.yaml")
+
+    with pytest.raises(ValueError, match="Store and configuration paths must match"):
+        DashboardHTTPServer(
+            store,
+            auth_token="token",
+            config_path=tmp_path / "server.yaml",
+        )
+
+
+def test_dashboard_server_inherits_an_existing_store_config_identity(tmp_path: Path) -> None:
+    config_path = tmp_path / "store.yaml"
+    store = Store(tmp_path / "agency.db", config_path=config_path)
+
+    server = DashboardHTTPServer(store, auth_token="token")
+    try:
+        assert server.config_path == config_path.resolve()
+        assert store.config_path == server.config_path
+    finally:
+        server.server_close()
+
+
+def test_dashboard_server_rejects_a_store_without_config_identity(tmp_path: Path) -> None:
+    store = Store.__new__(Store)
+    store.config_path = None
+
+    with pytest.raises(ValueError, match="must have a configuration identity"):
+        DashboardHTTPServer(store, auth_token="token")
 
 
 def test_dashboard_config_stale_revision_returns_conflict(dashboard_server):
@@ -812,6 +2104,12 @@ def test_dashboard_config_sensitive_policy_changes_require_specific_phrase(
 
 
 def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server, monkeypatch):
+    dashboard_server["store"].record_specialist_loaded(
+        "session-dashboard",
+        "security-reviewer",
+        trace_id="trace-dashboard",
+    )
+
     def fail_if_materialized(*_args, **_kwargs):
         raise AssertionError("overview must not materialize roster rows")
 
@@ -834,30 +2132,215 @@ def test_dashboard_overview_and_activity_are_metadata_only(dashboard_server, mon
     )
     assert status == 200
     assert activity["delegations"][0]["recommended_agent"] == "security-reviewer"
+    assert activity["specialists"][0] == {
+        "id": activity["specialists"][0]["id"],
+        "session_id": "session-dashboard",
+        "trace_id": "trace-dashboard",
+        "slug": "security-reviewer",
+        "loaded_at": activity["specialists"][0]["loaded_at"],
+        "expired_at": None,
+        "state": "current",
+    }
     assert all("user_message" not in row for row in activity["runs"])
     assert all("stdout" not in row and "stderr" not in row for row in activity.get("workers", []))
 
 
 def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
-    status, payload, _headers = _json_response(
-        dashboard_server,
-        "/api/route",
-        method="POST",
-        body={
-            "task": "review this application security design",
-            "session_id": "dashboard-test",
-        },
-        token=dashboard_server["token"],
-    )
+    task = "1. Review application security design\n2. Audit threat boundaries"
+    for _attempt in range(2):
+        status, payload, _headers = _json_response(
+            dashboard_server,
+            "/api/route",
+            method="POST",
+            body={
+                "task": task,
+                "session_id": "dashboard-test",
+            },
+            token=dashboard_server["token"],
+        )
 
     assert status == 200
     assert payload["schema_version"] == "agency.selection_explain.v1"
-    assert payload["task"] == "review this application security design"
-    assert payload["selected"]
+    assert payload["task"] == task
+    assert payload["host_capability_receipt"]["source"] == "native-installation-evidence"
+    assert payload["host_capability_receipt"]["execution_host"] == "codex"
+    assert payload["eligibility"] == {
+        "execution_host": "codex",
+        "capability_status": "native-installation-verified",
+        "eligible_count": 1,
+        "rejection_count": 0,
+        "rejections": [],
+        "truncated": False,
+        "host_resolution": "derived",
+    }
+    assert payload["routing"]["execution_context"]["execution_host"] == "codex"
     assert payload["delegation_graph"]["nodes"]
     assert [item["description"] for item in payload["delegation_graph"]["nodes"]] == payload[
         "signals"
     ]["work_units"]["units"]
+    plan = payload["delegation_plan"]
+    assert plan["schema_version"] == "agency.dashboard.delegation_plan.v1"
+    assert plan["authority"] == "recommendation_only"
+    assert plan["execution_host"] == "codex"
+    assert "spawn_agent" in plan["mechanism"]
+    assert "not execution" in plan["evidence_contract"]
+    assert plan["unit_count"] == len(plan["units"]) > 0
+    assert all(item["recommended_agent"] == "security-reviewer" for item in plan["units"])
+    assert all(item["compatible_specialists"] == ["security-reviewer"] for item in plan["units"])
+    assert all(
+        item["assignment_strength"] in {"optional", "preferred", "strongly_preferred"}
+        for item in plan["units"]
+    )
+    assert all("required_evidence" in item for item in plan["units"])
+    assert "prompt_body" not in _nested_keys(plan)
+    assert "decision_id" not in payload["routing"]
+    assert dashboard_server["store"].get_open_traces_for_session("dashboard-test") == []
+
+
+def test_route_lab_host_capability_is_derived_only_from_verified_inventory(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "route-host.db")
+    codex = _verified_codex_record()
+
+    host, receipt = dashboard_module._route_lab_host_capability(
+        store,
+        lambda: [codex],
+        requested_host=None,
+        global_enabled=True,
+    )
+
+    assert host == "codex"
+    assert receipt["source"] == "native-installation-evidence"
+    assert receipt["status"] == "native-installation-verified"
+    assert receipt["execution_host"] == "codex"
+    assert receipt["capabilities"]
+
+    claude = {**codex, "host": "claude"}
+    with pytest.raises(ValueError, match="multiple verified execution hosts"):
+        dashboard_module._route_lab_host_capability(
+            store,
+            lambda: [codex, claude],
+            requested_host=None,
+            global_enabled=True,
+        )
+    selected, selected_receipt = dashboard_module._route_lab_host_capability(
+        store,
+        lambda: [codex, claude],
+        requested_host=" CLAUDE ",
+        global_enabled=True,
+    )
+    assert selected == "claude"
+    assert selected_receipt["execution_host"] == "claude"
+
+
+@pytest.mark.parametrize("requested_host", [True, "attacker", ""])
+def test_route_lab_host_capability_rejects_invalid_host_input(
+    tmp_path: Path,
+    requested_host: object,
+) -> None:
+    store = Store(tmp_path / f"invalid-route-host-{requested_host!s}.db")
+    with pytest.raises(ValueError, match="host must be"):
+        dashboard_module._route_lab_host_capability(
+            store,
+            lambda: [_verified_codex_record()],
+            requested_host=requested_host,
+            global_enabled=True,
+        )
+
+
+def test_route_lab_host_capability_rejects_unproven_duplicate_and_unbounded_inventory(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "unproven-route-host.db")
+    incomplete = {
+        "host": "codex",
+        "executable_discovered": True,
+        "registered": True,
+        "enabled": True,
+    }
+    with pytest.raises(ValueError, match="unproven:managed_bundle"):
+        dashboard_module._route_lab_host_capability(
+            store,
+            lambda: [incomplete],
+            requested_host="codex",
+            global_enabled=True,
+        )
+    with pytest.raises(ValueError, match="inventory is ambiguous"):
+        dashboard_module._route_lab_host_capability(
+            store,
+            lambda: [_verified_codex_record(), _verified_codex_record()],
+            requested_host="codex",
+            global_enabled=True,
+        )
+    with pytest.raises(RuntimeError, match="invalid inventory"):
+        dashboard_module._route_lab_host_capability(
+            store,
+            lambda: (),  # type: ignore[arg-type,return-value]
+            requested_host=None,
+            global_enabled=True,
+        )
+    with pytest.raises(RuntimeError, match="inventory bound"):
+        dashboard_module._route_lab_host_capability(
+            store,
+            lambda: [
+                {"host": f"unknown-{index}"}
+                for index in range(dashboard_module._ROUTE_LAB_HOST_INVENTORY_LIMIT + 1)
+            ],
+            requested_host=None,
+            global_enabled=True,
+        )
+
+
+def test_route_lab_eligibility_projection_is_bounded_and_content_safe() -> None:
+    raw = [
+        {"slug": f"agent-{index}", "reason": f"missing-capability-{index}"}
+        for index in range(dashboard_module._ROUTE_LAB_REJECTION_LIMIT + 2)
+    ]
+    projection = dashboard_module._route_lab_eligibility_projection(
+        {"routing": {"eligibility_rejections": raw}},
+        {
+            "execution_host": "codex",
+            "status": "native-installation-verified",
+        },
+        catalog_size=100,
+    )
+
+    assert projection["execution_host"] == "codex"
+    assert projection["eligible_count"] == 48
+    assert projection["rejection_count"] == 52
+    assert len(projection["rejections"]) == dashboard_module._ROUTE_LAB_REJECTION_LIMIT
+    assert projection["truncated"] is True
+
+    assert (
+        dashboard_module._route_lab_eligibility_projection(
+            {"routing": {"eligibility_rejections": "invalid"}},
+            {"execution_host": "codex", "status": "native-installation-verified"},
+            catalog_size=1,
+        )["rejections"]
+        == []
+    )
+
+
+@pytest.mark.parametrize(
+    ("host", "message"),
+    [("attacker", "host must be one of"), ("claude", "cannot use claude")],
+)
+def test_dashboard_route_lab_rejects_unsupported_or_unproven_host(
+    dashboard_server,
+    host: str,
+    message: str,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/route",
+        method="POST",
+        body={"task": "review this design", "host": host},
+        token=dashboard_server["token"],
+    )
+
+    assert status == 400
+    assert message in payload["error"]
 
 
 def test_dashboard_route_lab_uses_authoritative_dependency_graph(dashboard_server):
@@ -1003,6 +2486,7 @@ def test_dashboard_host_api_preserves_unknown_boolean_states(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "dashboard.db"))
     store = Store(tmp_path / "dashboard.db")
     token = "token"
     unknown = {
@@ -1017,6 +2501,7 @@ def test_dashboard_host_api_preserves_unknown_boolean_states(
         auth_token=token,
         port=0,
         host_inspector=lambda: [unknown],
+        runtime_control_home=tmp_path,
     )
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -1033,13 +2518,116 @@ def test_dashboard_host_api_preserves_unknown_boolean_states(
     assert payload["hosts"][0]["enabled"] is None
 
 
+def test_dashboard_host_snapshot_reads_one_master_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    import agency_runtime.core.host_control as host_control
+
+    master = {
+        "schema_version": 1,
+        "enabled": False,
+        "generation": 9,
+        "updated_at": "2026-07-16T12:00:00Z",
+        "source": "test",
+    }
+    reads = 0
+    observed: list[tuple[str, bool | None]] = []
+
+    def read_master() -> dict:
+        nonlocal reads
+        reads += 1
+        return master
+
+    def inspect(_store, host: str, *, native_record, global_enabled=None):
+        assert native_record["host"] == host
+        observed.append((host, global_enabled))
+        return {"host": host, "master_enabled": global_enabled}
+
+    store_path = (Path.cwd() / "host-snapshot.db").resolve()
+    config_path = (Path.cwd() / "host-snapshot.yaml").resolve()
+    state = SimpleNamespace(
+        path=str(config_path),
+        revision="sha256:" + ("a" * 64),
+        effective={"store": {"db_path": str(store_path)}},
+        environment_overrides={},
+    )
+    monkeypatch.setattr(host_control, "inspect_host_status", inspect)
+    monkeypatch.setattr(dashboard_module, "read_config_state", lambda _path: state)
+    handler = object.__new__(dashboard_module.DashboardHTTPHandler)
+    handler.server = SimpleNamespace(
+        store=SimpleNamespace(db_path=store_path),
+        config_path=config_path,
+        host_inspector=lambda: [{"host": "codex"}, {"host": "claude"}],
+    )
+    handler._master_control = read_master
+    payloads: list[dict] = []
+    handler._json_ok = payloads.append
+
+    handler._handle_hosts()
+
+    assert reads == 1
+    assert observed == [("codex", False), ("claude", False)]
+    assert payloads == [
+        {
+            "hosts": [
+                {"host": "codex", "master_enabled": False},
+                {"host": "claude", "master_enabled": False},
+            ],
+            "master": master,
+            "config_path": str(config_path),
+            "config_revision": state.revision,
+            "environment_overrides": {},
+            "store_path": str(store_path),
+            "desired_store_path": str(store_path),
+            "store_restart_required": False,
+        }
+    ]
+
+
+def test_dashboard_master_control_uses_strict_service_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The authenticated broker must not enter the sandbox-only reader path."""
+
+    from types import SimpleNamespace
+
+    target = tmp_path / "control.json"
+    expected = {
+        "schema_version": 1,
+        "enabled": True,
+        "generation": 7,
+        "updated_at": "2026-07-18T00:00:00Z",
+        "source": "dashboard",
+    }
+    calls: list[Path] = []
+
+    def strict_reader(*, path: Path) -> dict[str, object]:
+        calls.append(path)
+        return expected
+
+    monkeypatch.setattr(dashboard_module, "read_runtime_control", strict_reader)
+    handler = object.__new__(dashboard_module.DashboardHTTPHandler)
+    handler.server = SimpleNamespace(runtime_control_path=target)
+
+    assert handler._master_control() == expected
+    assert calls == [target]
+
+
 @pytest.mark.parametrize("enabled", [None, 0, 1, "false", [], {}])
 def test_dashboard_host_toggle_requires_json_boolean(dashboard_server, enabled):
     status, payload, _headers = _json_response(
         dashboard_server,
         "/api/hosts/toggle",
         method="POST",
-        body={"host": "codex", "enabled": enabled, "confirm": "DISABLE codex"},
+        body={
+            "host": "codex",
+            "enabled": enabled,
+            "expected_generation": 0,
+            "confirm": "DISABLE codex",
+        },
         token=dashboard_server["token"],
     )
 
@@ -1062,7 +2650,12 @@ def test_dashboard_host_toggle_validates_host_before_confirmation(
         dashboard_server,
         "/api/hosts/toggle",
         method="POST",
-        body={"host": "attacker", "enabled": True, "confirm": "ENABLE attacker"},
+        body={
+            "host": "attacker",
+            "enabled": True,
+            "expected_generation": 0,
+            "confirm": "ENABLE attacker",
+        },
         token=dashboard_server["token"],
     )
 
@@ -1086,7 +2679,12 @@ def test_dashboard_host_toggle_persists_soft_control_without_native_mutation(
         dashboard_server,
         "/api/hosts/toggle",
         method="POST",
-        body={"host": "codex", "enabled": False, "confirm": "DISABLE codex"},
+        body={
+            "host": "codex",
+            "enabled": False,
+            "expected_generation": 0,
+            "confirm": "DISABLE codex",
+        },
         token=dashboard_server["token"],
     )
 
@@ -1095,6 +2693,137 @@ def test_dashboard_host_toggle_persists_soft_control_without_native_mutation(
     assert payload["enabled"] is False
     assert dashboard_server["store"].get_host_control("codex")["enabled"] is False
     assert invalidated == []
+
+
+def test_dashboard_host_toggle_rejects_a_stale_client_generation(dashboard_server) -> None:
+    first_status, first, _headers = _json_response(
+        dashboard_server,
+        "/api/hosts/toggle",
+        method="POST",
+        body={
+            "host": "codex",
+            "enabled": False,
+            "expected_generation": 0,
+            "confirm": "DISABLE codex",
+        },
+        token=dashboard_server["token"],
+    )
+    assert first_status == 200
+    assert first["generation"] == 1
+
+    stale_status, stale, _headers = _json_response(
+        dashboard_server,
+        "/api/hosts/toggle",
+        method="POST",
+        body={
+            "host": "codex",
+            "enabled": True,
+            "expected_generation": 0,
+            "confirm": "ENABLE codex",
+        },
+        token=dashboard_server["token"],
+    )
+    assert stale_status == 409
+    assert "expected 0, found 1" in stale["error"]
+    assert dashboard_server["store"].get_host_control("codex")["enabled"] is False
+
+    fresh_status, fresh, _headers = _json_response(
+        dashboard_server,
+        "/api/hosts/toggle",
+        method="POST",
+        body={
+            "host": "codex",
+            "enabled": True,
+            "expected_generation": 1,
+            "confirm": "ENABLE codex",
+        },
+        token=dashboard_server["token"],
+    )
+    assert fresh_status == 200
+    assert fresh["generation"] == 2
+
+
+@pytest.mark.parametrize("generation", [None, True, -1, "0"])
+def test_dashboard_host_toggle_requires_a_non_negative_generation(
+    dashboard_server,
+    generation,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/hosts/toggle",
+        method="POST",
+        body={
+            "host": "codex",
+            "enabled": False,
+            "expected_generation": generation,
+            "confirm": "DISABLE codex",
+        },
+        token=dashboard_server["token"],
+    )
+    assert status == 400
+    assert payload == {"error": "expected_generation must be a non-negative integer"}
+
+
+def test_dashboard_host_toggle_projects_the_server_bound_master_state(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from types import SimpleNamespace
+
+    from agency_runtime.core import host_control
+
+    observed: list[bool | None] = []
+
+    def inspect(_store, host: str, *, native_record, global_enabled=None):
+        observed.append(global_enabled)
+        return {
+            "host": host,
+            "master_enabled": global_enabled,
+            "effective_enabled": bool(global_enabled),
+        }
+
+    store_path = (tmp_path / "host-toggle.db").resolve()
+    config_path = (tmp_path / "host-toggle.yaml").resolve()
+    state = SimpleNamespace(
+        path=str(config_path),
+        revision="sha256:" + ("b" * 64),
+        effective={"store": {"db_path": str(store_path)}},
+        environment_overrides={},
+    )
+    monkeypatch.setattr(host_control, "inspect_host_status", inspect)
+    monkeypatch.setattr(dashboard_module, "read_config_state", lambda _path: state)
+    monkeypatch.setattr(
+        host_control,
+        "set_runtime_control",
+        lambda *_args, **_kwargs: {"enabled": True, "source": "dashboard"},
+    )
+    handler = object.__new__(dashboard_module.DashboardHTTPHandler)
+    handler.server = SimpleNamespace(
+        store=SimpleNamespace(db_path=store_path),
+        config_path=config_path,
+        host_inspector=lambda: [{"host": "codex", "registered": True, "enabled": True}],
+    )
+    handler._master_control = lambda: {
+        "enabled": False,
+        "generation": 7,
+        "source": "custom-runtime-control-home",
+    }
+    payloads: list[tuple[int, dict]] = []
+    handler._send_json = lambda status, payload: payloads.append((status, payload))
+
+    handler._handle_host_toggle(
+        {
+            "host": "codex",
+            "enabled": True,
+            "expected_generation": 0,
+            "confirm": "ENABLE codex",
+        }
+    )
+
+    assert observed == [False]
+    assert payloads[0][1]["status"]["effective_enabled"] is False
+    assert payloads[0][1]["config_path"] == str(config_path)
+    assert payloads[0][1]["store_path"] == str(store_path)
 
 
 def test_host_inspection_is_parallel_and_returns_partial_unknowns_at_deadline():
@@ -1212,7 +2941,10 @@ def test_provider_health_is_explicitly_receipt_based():
 
 @pytest.mark.skipif(not socket.has_ipv6, reason="Python runtime has no IPv6 support")
 def test_dashboard_serves_authenticated_requests_on_ipv6_loopback(tmp_path: Path):
-    store = Store(tmp_path / "dashboard.db")
+    store = Store(
+        tmp_path / "dashboard.db",
+        config_path=tmp_path / "agency.yaml",
+    )
     try:
         server = DashboardHTTPServer(
             store,
@@ -1220,6 +2952,7 @@ def test_dashboard_serves_authenticated_requests_on_ipv6_loopback(tmp_path: Path
             host="::1",
             port=0,
             host_inspector=lambda: [],
+            runtime_control_home=tmp_path,
         )
     except OSError as exc:
         pytest.skip(f"IPv6 loopback is unavailable: {exc}")

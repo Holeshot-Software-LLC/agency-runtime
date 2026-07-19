@@ -34,9 +34,11 @@ _CANARY_MUTATING_TOOLS = frozenset(
     {
         "agency.preflight",
         "agency.explain_selection",
+        "agency.prepare_delegation",
         "agency.load_specialist",
         "agency.record_skill_loaded",
         "agency.delegate",
+        "agency.decline_delegation",
         "agency.finalize",
         "agency.host_control",
     }
@@ -64,9 +66,13 @@ MCP_TOOLS = [
             {
                 "session_id": {"type": "string", "maxLength": 512},
                 "trace_id": {"type": "string", "maxLength": 512},
+                "host": {
+                    "type": "string",
+                    "enum": ["codex", "claude", "openclaw", "hermes"],
+                },
                 "user_message": {"type": "string", "maxLength": 262_144},
             },
-            ["user_message"],
+            ["session_id", "host", "user_message"],
         ),
     },
     {
@@ -88,15 +94,36 @@ MCP_TOOLS = [
         ),
     },
     {
+        "name": "agency.prepare_delegation",
+        "description": (
+            "Issue a one-use work-unit grant for an exact selected specialist version."
+        ),
+        "inputSchema": _schema(
+            {
+                "slug": {"type": "string", "maxLength": 128},
+                "session_id": {"type": "string", "maxLength": 512},
+                "trace_id": {"type": "string", "maxLength": 512},
+                "work_unit_id": {"type": "string", "maxLength": 160},
+                "worker_kind": {"type": "string", "maxLength": 64},
+                "worker_id": {"type": "string", "maxLength": 256},
+            },
+            ["slug", "session_id", "trace_id", "work_unit_id"],
+        ),
+    },
+    {
         "name": "agency.load_specialist",
-        "description": "Load a specialist agent prompt.",
+        "description": "Consume an isolated activation grant or load a direct specialist prompt.",
         "inputSchema": _schema(
             {
                 "slug": {"type": "string", "maxLength": 256},
                 "session_id": {"type": "string", "maxLength": 512},
                 "trace_id": {"type": "string", "maxLength": 512},
+                "activation_token": {"type": "string", "maxLength": 256},
+                "work_unit_id": {"type": "string", "maxLength": 160},
+                "worker_id": {"type": "string", "maxLength": 256},
+                "native_run_id": {"type": "string", "maxLength": 256},
             },
-            ["slug", "session_id"],
+            ["slug", "session_id", "trace_id"],
         ),
     },
     {
@@ -105,14 +132,15 @@ MCP_TOOLS = [
         "inputSchema": _schema(
             {
                 "session_id": {"type": "string", "maxLength": 512},
+                "trace_id": {"type": "string", "maxLength": 512},
                 "skill_name": {"type": "string", "maxLength": 512},
             },
-            ["skill_name"],
+            ["session_id", "trace_id", "skill_name"],
         ),
     },
     {
         "name": "agency.delegate",
-        "description": "Record a delegated work unit and its backend correlation.",
+        "description": "Record an observed delegation executed by a named backend.",
         "inputSchema": _schema(
             {
                 "agent": {"type": "string", "maxLength": 512},
@@ -121,8 +149,38 @@ MCP_TOOLS = [
                 "trace_id": {"type": "string", "maxLength": 512},
                 "session_id": {"type": "string", "maxLength": 512},
                 "work_unit_id": {"type": "string", "maxLength": 512},
+                "worker_kind": {"type": "string", "maxLength": 64},
+                "worker_id": {"type": "string", "maxLength": 256},
+                "native_run_id": {"type": "string", "maxLength": 256},
             },
-            ["agent", "task"],
+            [
+                "agent",
+                "task",
+                "backend",
+                "session_id",
+                "trace_id",
+                "work_unit_id",
+                "worker_kind",
+                "worker_id",
+                "native_run_id",
+            ],
+        ),
+    },
+    {
+        "name": "agency.decline_delegation",
+        "description": (
+            "Record an explicit native-host decision not to execute one exact suggested "
+            "delegation. This never launches a worker."
+        ),
+        "inputSchema": _schema(
+            {
+                "agent": {"type": "string", "maxLength": 128},
+                "reason": {"type": "string", "minLength": 1, "maxLength": 512},
+                "trace_id": {"type": "string", "maxLength": 512},
+                "session_id": {"type": "string", "maxLength": 512},
+                "work_unit_id": {"type": "string", "maxLength": 160},
+            },
+            ["agent", "reason", "session_id", "trace_id", "work_unit_id"],
         ),
     },
     {
@@ -136,7 +194,7 @@ MCP_TOOLS = [
                 "host": {"type": "string", "maxLength": 128},
                 "model": {"type": "string", "maxLength": 512},
             },
-            ["draft_text"],
+            ["draft_text", "session_id", "trace_id"],
         ),
     },
     {
@@ -169,25 +227,67 @@ MCP_TOOLS = [
                     "enum": ["hermes", "openclaw", "codex", "claude"],
                 },
                 "enabled": {"type": "boolean"},
+                "expected_generation": {"type": "integer", "minimum": 0},
                 "confirm": {"type": "string", "maxLength": 128},
             },
-            ["host", "enabled", "confirm"],
+            ["host", "enabled", "expected_generation", "confirm"],
         ),
         "annotations": {"idempotentHint": True},
     },
 ]
 
 _TOOLS_BY_NAME = {tool["name"]: tool for tool in MCP_TOOLS}
+_STORE_CONTROL_PLANE_TOOLS = frozenset({"agency.host_status", "agency.host_control"})
 
 
-def handle_tool_call(tool_name: str, arguments: dict[str, Any], store=None) -> dict[str, Any]:
+def _runtime_disabled_tool_result(
+    tool_name: str,
+    arguments: dict[str, Any],
+    *,
+    master: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return a stable no-evidence result without constructing the Store."""
+
+    if tool_name == "agency.finalize":
+        return {
+            "action": "bypass",
+            "text": str(arguments.get("draft_text") or ""),
+            "runtime_enabled": False,
+            "bypassed": True,
+        }
+    if tool_name == "agency.status":
+        if master is None:
+            from agency_runtime.core.runtime_control import read_enforcement_runtime_control
+
+            master, _master_transport = read_enforcement_runtime_control()
+        return {"runtime_enabled": False, "bypassed": True, "master": master}
+    return {"runtime_enabled": False, "bypassed": True}
+
+
+def handle_tool_call(
+    tool_name: str,
+    arguments: dict[str, Any],
+    store=None,
+    *,
+    _master: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Dispatch a tool call to the existing runtime core."""
+    from agency_runtime.core.runtime_control import read_enforcement_runtime_control
+
+    master = _master
+    if master is None:
+        master, _master_transport = read_enforcement_runtime_control()
+    if not master["enabled"] and tool_name not in _STORE_CONTROL_PLANE_TOOLS:
+        return _runtime_disabled_tool_result(tool_name, arguments, master=master)
     if os.environ.get("AGENCY_CANARY_MODE") == "1" and tool_name in _CANARY_MUTATING_TOOLS:
         return {"error": "mutating Agency tools are disabled during a live canary"}
     from agency_runtime.core.store.sqlite import Store as _Store
     from agency_runtime.server.mcp_tools import dispatch_tool_call
 
     s = store if store is not None else _Store()
+    from agency_runtime.core.config_binding import assert_store_config_binding
+
+    assert_store_config_binding(s)
     return dispatch_tool_call(tool_name, arguments, s)
 
 
@@ -299,8 +399,26 @@ _INITIALIZED_REQUEST_HANDLERS = {
 class MCPServer:
     """Small stateful JSON-RPC dispatcher for the MCP stdio lifecycle."""
 
-    def __init__(self, *, store=None) -> None:
+    def __init__(
+        self,
+        *,
+        store=None,
+        db_path: str | None = None,
+        config_path: str | None = None,
+    ) -> None:
+        if store is not None and (db_path is not None or config_path is not None):
+            from agency_runtime.core.config_binding import (
+                assert_store_requested_runtime_identity,
+            )
+
+            assert_store_requested_runtime_identity(
+                store,
+                config_path=config_path,
+                db_path=db_path,
+            )
         self.store = store
+        self._db_path = db_path
+        self._config_path = config_path
         self.initialize_responded = False
         self.initialized = False
         self.protocol_version = LATEST_PROTOCOL_VERSION
@@ -310,7 +428,11 @@ class MCPServer:
         if self.store is None:
             from agency_runtime.core.store.sqlite import Store
 
-            self.store = Store()
+            self.store = (
+                Store(self._db_path, config_path=self._config_path)
+                if self._config_path
+                else Store(self._db_path)
+            )
         return self.store
 
     def _dispatch_initialize(
@@ -380,12 +502,24 @@ class MCPServer:
         tool = _TOOLS_BY_NAME.get(name)
         if tool is None:
             return _error(request.request_id, -32602, f"Unknown tool: {name}")
+        from agency_runtime.core.runtime_control import read_enforcement_runtime_control
+
+        master, _master_transport = read_enforcement_runtime_control()
+        if not master["enabled"] and name not in _STORE_CONTROL_PLANE_TOOLS:
+            payload = _runtime_disabled_tool_result(name, arguments, master=master)
+            return _result(request.request_id, _call_result(payload))
         validation_error = _validate_tool_arguments(tool, arguments)
         if validation_error:
             result = _call_result({"error": validation_error}, is_error=True)
             return _result(request.request_id, result)
         try:
-            payload = handle_tool_call(name, arguments, store=self._runtime_store())
+            runtime_store = self._runtime_store()
+            payload = handle_tool_call(
+                name,
+                arguments,
+                store=runtime_store,
+                _master=master,
+            )
         except Exception:
             logger.exception("MCP tool execution failed: %s", name)
             payload = {"error": "Agency Runtime tool execution failed safely."}
@@ -466,13 +600,19 @@ def _write_json(stream: BinaryIO | TextIO, payload: Any) -> bool:
 def run_stdio(
     *,
     store=None,
+    db_path: str | None = None,
+    config_path: str | None = None,
     input_stream: BinaryIO | TextIO | None = None,
     output_stream: BinaryIO | TextIO | None = None,
 ) -> int:
     """Serve newline-delimited MCP JSON-RPC until stdin closes."""
     source = input_stream or sys.stdin.buffer
     sink = output_stream or sys.stdout.buffer
-    server = MCPServer(store=store)
+    server = MCPServer(
+        store=store,
+        db_path=db_path,
+        config_path=config_path,
+    )
 
     while True:
         raw = source.readline(MAX_INPUT_BYTES + 1)
@@ -502,18 +642,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Serve MCP over stdin/stdout (default transport)",
     )
     parser.add_argument("--db", default=None, help="SQLite database path")
+    parser.add_argument("--config", default=None, help="Agency YAML configuration path")
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     del args.stdio  # stdio is the only supported transport today.
-    store = None
-    if args.db:
-        from agency_runtime.core.store.sqlite import Store
-
-        store = Store(args.db)
-    return run_stdio(store=store)
+    return run_stdio(db_path=args.db, config_path=args.config)
 
 
 if __name__ == "__main__":  # pragma: no cover - exercised as a subprocess

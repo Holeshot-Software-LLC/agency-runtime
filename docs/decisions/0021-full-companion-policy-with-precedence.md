@@ -3,10 +3,15 @@ title: Load a full companion policy with explicit precedence
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-10
+updated: 2026-07-19
 tags: [routing, policy, configuration]
 related:
+  - docs/roadmap/issue-AR-49-key-policy-cache-by-path-identity.md
   - docs/roadmap/issue-AR-02-specialist-coverage-gaps.md
+  - docs/roadmap/issue-AR-26-bundle-default-coordinators.md
+  - docs/roadmap/issue-AR-68-require-trusted-config-and-policy-namespaces.md
+  - docs/roadmap/issue-AR-73-require-private-custom-policy-files.md
+  - docs/roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md
   - docs/worklog/README.md
 supersedes: [docs/decisions/0020-partial-companion-policy-in-code.md]
 superseded_by: null
@@ -24,6 +29,10 @@ The deterministic routing layer grew beyond a few hardcoded actions. Operators n
 ## Decision
 
 Store the complete broad-action companion policy as bundled package data. Resolve policy in this order: an explicit environment path, the user configuration path, then the bundled policy.
+
+Treat every selected policy path as executable routing configuration: its real
+parent chain must prevent cross-account mutation before bounded parsing, and
+the file identity must remain stable across the read.
 
 Validate and inspect the policy through a CLI surface. Expose matched actions and companion identifiers in route output. Before merging companion selections into a routing result, filter them against the active roster and report unavailable policy entries through validation rather than selecting nonexistent specialists.
 

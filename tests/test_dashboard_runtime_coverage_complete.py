@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -116,25 +118,139 @@ def test_runtime_lock_and_publish_posix_paths_without_platform_dependency(
     )
     monkeypatch.setitem(sys.modules, "fcntl", fake_fcntl)
     real_os = runtime.os
-    chmods: list[tuple[Path, int]] = []
+    repairs: list[tuple[Path, bool]] = []
+    repaired_descriptors: set[int] = set()
 
     class _PosixOS:
         name = "posix"
 
-        def chmod(self, path: str | Path, mode: int) -> None:
-            chmods.append((Path(path), mode))
+        def fchmod(self, descriptor: int, mode: int) -> None:
+            assert mode == 0o600
+            repaired_descriptors.add(descriptor)
+
+        def fstat(self, descriptor: int) -> os.stat_result:
+            metadata = real_os.fstat(descriptor)
+            if descriptor not in repaired_descriptors:
+                return metadata
+            values = list(metadata)
+            values[0] = (metadata.st_mode & ~0o777) | 0o600
+            return os.stat_result(values)
 
         def __getattr__(self, name: str) -> Any:
             return getattr(real_os, name)
 
     monkeypatch.setattr(runtime, "os", _PosixOS())
+    monkeypatch.setattr(
+        runtime,
+        "restrict_posix_path_permissions",
+        lambda path, *, directory: repairs.append((Path(path), directory)),
+    )
     target = tmp_path / "dashboard.json"
     with runtime._runtime_lock(target):
         pass
     runtime._publish_dashboard_runtime(target, _descriptor())
     assert operations == [fake_fcntl.LOCK_EX | fake_fcntl.LOCK_NB, fake_fcntl.LOCK_UN]
-    assert chmods == [(tmp_path, 0o700), (tmp_path, 0o700)]
+    assert repairs == [(tmp_path, True), (tmp_path, True)]
     assert runtime.read_dashboard_runtime(path=target) == _descriptor()
+
+
+@pytest.mark.parametrize("timeout", [True, -1, math.nan, math.inf, 301])
+def test_runtime_lock_rejects_invalid_timeouts(tmp_path: Path, timeout: object) -> None:
+    with (
+        pytest.raises(ValueError, match="finite"),
+        runtime._runtime_lock(tmp_path / "dashboard.json", timeout=timeout),  # type: ignore[arg-type]
+    ):
+        pass
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX symlink semantics")
+def test_runtime_lock_rejects_symlink_without_mutating_target(tmp_path: Path) -> None:
+    target = tmp_path / "dashboard.json"
+    victim = tmp_path / "victim"
+    victim.write_bytes(b"do-not-touch")
+    target.with_name(".dashboard.json.lock").symlink_to(victim)
+
+    with pytest.raises(OSError, match="regular non-link"), runtime._runtime_lock(target):
+        pass
+
+    assert victim.read_bytes() == b"do-not-touch"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX symlink semantics")
+def test_runtime_lock_detects_symlink_swap_before_open(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "dashboard.json"
+    lock_path = target.with_name(".dashboard.json.lock")
+    lock_path.write_bytes(b"original-lock")
+    victim = tmp_path / "victim"
+    victim.write_bytes(b"do-not-touch")
+    real_open = runtime.os.open
+    swapped = False
+
+    def swap_then_open(path: str | Path, flags: int, *args: Any, **kwargs: Any) -> int:
+        nonlocal swapped
+        if Path(path) == lock_path and not swapped:
+            swapped = True
+            lock_path.unlink()
+            lock_path.symlink_to(victim)
+        return real_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(runtime.os, "open", swap_then_open)
+    with pytest.raises(OSError, match="opened safely"), runtime._runtime_lock(target):
+        pass
+
+    assert victim.read_bytes() == b"do-not-touch"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX symlink semantics")
+def test_runtime_publish_rejects_linked_parent_before_token_write(tmp_path: Path) -> None:
+    real_parent = tmp_path / "real"
+    real_parent.mkdir()
+    linked_parent = tmp_path / "linked"
+    linked_parent.symlink_to(real_parent, target_is_directory=True)
+    token = "must-not-leak-" + "x" * 32
+
+    with pytest.raises(OSError, match="real directories"):
+        runtime._publish_dashboard_runtime(
+            linked_parent / "dashboard.json",
+            _descriptor(token=token),
+        )
+
+    assert token.encode() not in b"".join(
+        path.read_bytes() for path in real_parent.iterdir() if path.is_file()
+    )
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX directory substitution semantics")
+def test_runtime_publish_detects_parent_swap_before_serialization(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent = tmp_path / "state"
+    parent.mkdir()
+    original_parent = tmp_path / "state-original"
+    target = parent / "dashboard.json"
+    token = "must-not-leak-" + "y" * 32
+    real_mkstemp = runtime.tempfile.mkstemp
+
+    def swapped_mkstemp(*args: Any, **kwargs: Any) -> tuple[int, str]:
+        parent.rename(original_parent)
+        parent.mkdir()
+        return real_mkstemp(*args, **kwargs)
+
+    monkeypatch.setattr(runtime.tempfile, "mkstemp", swapped_mkstemp)
+    with pytest.raises(OSError, match="directory changed"):
+        runtime._publish_dashboard_runtime(target, _descriptor(token=token))
+
+    payloads = [
+        path.read_bytes()
+        for root in (parent, original_parent)
+        for path in root.iterdir()
+        if path.is_file()
+    ]
+    assert all(token.encode() not in payload for payload in payloads)
 
 
 def test_runtime_publish_supports_platforms_without_fchmod(

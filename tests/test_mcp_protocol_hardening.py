@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 import agency_runtime.server.mcp as mcp
+from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -228,17 +229,34 @@ def test_argument_validator_supports_permissive_and_in_range_schemas() -> None:
 @pytest.mark.parametrize(
     "name,arguments,fragment",
     [
-        ("agency.preflight", {}, "missing required argument"),
+        (
+            "agency.preflight",
+            {"session_id": "s", "user_message": "route this"},
+            "missing required argument: host",
+        ),
         ("agency.status", {"extra": 1}, "unexpected argument"),
-        ("agency.preflight", {"user_message": 1}, "must be a string"),
+        (
+            "agency.preflight",
+            {"session_id": "s", "host": "codex", "user_message": 1},
+            "must be a string",
+        ),
         ("agency.explain_selection", {"task": "x", "limit": True}, "must be an integer"),
         (
             "agency.host_control",
-            {"host": "codex", "enabled": "yes", "confirm": "ENABLE codex"},
+            {
+                "host": "codex",
+                "enabled": "yes",
+                "expected_generation": 0,
+                "confirm": "ENABLE codex",
+            },
             "must be a boolean",
         ),
         ("agency.host_status", {"host": "missing"}, "must be one of"),
-        ("agency.preflight", {"user_message": "x" * 262_145}, "maximum length"),
+        (
+            "agency.preflight",
+            {"session_id": "s", "host": "codex", "user_message": "x" * 262_145},
+            "maximum length",
+        ),
         ("agency.explain_selection", {"task": "x", "limit": 0}, "below its minimum"),
         ("agency.explain_selection", {"task": "x", "limit": 101}, "exceeds its maximum"),
     ],
@@ -454,17 +472,31 @@ def test_stdio_notification_only_input_emits_no_output() -> None:
 def test_direct_tool_handlers_cover_status_search_record_and_errors(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
 
+    status = mcp.handle_tool_call("agency.status", {}, store)
+    assert status["roster_count"] == 0
+    assert set(status["hosts"]) == {"hermes", "openclaw", "codex", "claude"}
     assert (
         mcp.handle_tool_call("agency.search_agents", {"query": "security"}, store)["agents"] == []
+    )
+    run_preflight(
+        store,
+        session_id="s",
+        trace_id="turn",
+        user_message="Review this code for quality and security",
+        host="mcp",
     )
     assert (
         "not found"
         in mcp.handle_tool_call(
-            "agency.load_specialist", {"slug": "missing", "session_id": "s"}, store
+            "agency.load_specialist",
+            {"slug": "missing", "session_id": "s", "trace_id": "turn"},
+            store,
         )["error"]
     )
     assert mcp.handle_tool_call(
-        "agency.record_skill_loaded", {"session_id": "s", "skill_name": "audit"}, store
+        "agency.record_skill_loaded",
+        {"session_id": "s", "trace_id": "turn", "skill_name": "audit"},
+        store,
     ) == {"status": "recorded"}
     delegated = mcp.handle_tool_call(
         "agency.delegate",
@@ -472,33 +504,33 @@ def test_direct_tool_handlers_cover_status_search_record_and_errors(tmp_path: Pa
             "agent": "reviewer",
             "task": "review",
             "session_id": "s",
+            "trace_id": "turn",
             "work_unit_id": "u1",
             "backend": "test",
+            "worker_kind": "test-worker",
+            "worker_id": "worker-1",
+            "native_run_id": "test:run-1",
         },
         store,
     )
-    assert delegated["trace_id"] == "s"
+    assert delegated["trace_id"] == "turn"
     assert delegated["work_unit_id"] == "u1"
-    status = mcp.handle_tool_call("agency.status", {}, store)
-    assert status["roster_count"] == 0
-    assert set(status["hosts"]) == {"hermes", "openclaw", "codex", "claude"}
     assert "unknown tool" in mcp.handle_tool_call("agency.missing", {}, store)["error"]
 
 
-def test_main_builds_explicit_store_and_runs_stdio(
+def test_main_defers_explicit_store_and_runs_stdio(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     observed: dict[str, object] = {}
 
-    def fake_stdio(*, store: Store | None = None, **_kwargs: object) -> int:
-        observed["store"] = store
+    def fake_stdio(**kwargs: object) -> int:
+        observed.update(kwargs)
         return 23
 
     monkeypatch.setattr(mcp, "run_stdio", fake_stdio)
 
     assert mcp.main(["--stdio", "--db", str(tmp_path / "mcp.db")]) == 23
-    assert isinstance(observed["store"], Store)
-    assert observed["store"].db_path == (tmp_path / "mcp.db").resolve()  # type: ignore[union-attr]
+    assert observed == {"db_path": str(tmp_path / "mcp.db"), "config_path": None}
 
 
 def test_main_uses_lazy_default_store_when_db_is_omitted(
@@ -506,11 +538,33 @@ def test_main_uses_lazy_default_store_when_db_is_omitted(
 ) -> None:
     observed: dict[str, object] = {}
 
-    def fake_stdio(*, store: Store | None = None, **_kwargs: object) -> int:
-        observed["store"] = store
+    def fake_stdio(**kwargs: object) -> int:
+        observed.update(kwargs)
         return 0
 
     monkeypatch.setattr(mcp, "run_stdio", fake_stdio)
 
     assert mcp.main([]) == 0
-    assert observed["store"] is None
+    assert observed == {"db_path": None, "config_path": None}
+
+
+def test_main_defers_store_from_explicit_config_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+    config_path = tmp_path / "operator config" / "agency runtime.yaml"
+    config_path.parent.mkdir()
+    config_path.write_text(
+        'store:\n  db_path: "runtime data/mcp.db"\n',
+        encoding="utf-8",
+    )
+
+    def fake_stdio(**kwargs: object) -> int:
+        observed.update(kwargs)
+        return 19
+
+    monkeypatch.setattr(mcp, "run_stdio", fake_stdio)
+
+    assert mcp.main(["--stdio", "--config", str(config_path)]) == 19
+    assert observed == {"db_path": None, "config_path": str(config_path)}

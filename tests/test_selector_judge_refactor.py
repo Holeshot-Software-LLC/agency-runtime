@@ -92,6 +92,12 @@ def test_validated_decision_rejects_malformed_and_unknown_selections() -> None:
         1,
     ) == (["security-reviewer"], 1.0)
 
+    assert judge._validated_decision(
+        {"selected_ids": [], "confidence": 0.91},
+        CATALOG,
+        2,
+    ) == ([], 0.91)
+
 
 def test_legacy_success_preserves_request_and_result_contract(
     monkeypatch: pytest.MonkeyPatch,
@@ -328,4 +334,7 @@ def test_typed_provider_failure_never_enters_hidden_fallbacks(
     )
 
     assert attempted == ["configured"]
-    assert result["status"] == "token_fallback"
+    assert result["status"] == "degraded"
+    assert result["inference_mode"] == "degraded"
+    assert result["inference_required"] is True
+    assert result["selected_ids"] == []

@@ -76,6 +76,53 @@ def test_result_completed_rejects_process_failure_evidence(result: dict[str, Any
 
 
 @pytest.mark.parametrize(
+    "result",
+    [
+        {"status": "completed"},
+        {"completed": True},
+        {
+            "ok": True,
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-1",
+            "native_run_id": "fake:run-1",
+        },
+        {"success": True},
+        {"status": "completed", "exit_code": 0},
+    ],
+)
+def test_result_completed_accepts_only_explicit_completion_receipts(
+    result: dict[str, Any],
+) -> None:
+    assert lifecycle_dispatch.result_completed(result) is True
+
+
+@pytest.mark.parametrize(
+    "result",
+    [
+        True,
+        "completed",
+        {"status": "delegated"},
+        {"delegated": True},
+        {"status": "done"},
+        {"output": "looks successful"},
+        {"status": "completed", "error": "worker failed"},
+        {"status": "completed", "failure": True},
+        {"status": "completed", "failed": True},
+        {"status": "completed", "cancelled": True},
+        {"status": "completed", "returncode": 1},
+        {"status": "completed", "exitCode": 1},
+        {"status": "completed", "ok": False},
+        {"status": "", "ok": True},
+        {"status": 0, "ok": True},
+    ],
+)
+def test_result_completed_rejects_ambiguous_or_contradictory_receipts(
+    result: object,
+) -> None:
+    assert lifecycle_dispatch.result_completed(result) is False
+
+
+@pytest.mark.parametrize(
     ("result", "reason"),
     [
         ({"ok": False}, "worker reported ok=false"),
@@ -94,6 +141,14 @@ def test_result_failure_reason_preserves_specific_worker_evidence(
 
 def test_result_failure_reason_reports_missing_dispatch_result() -> None:
     assert lifecycle_dispatch.result_failure_reason() == "no dispatch result was recorded"
+
+
+def test_execution_identity_rejects_non_mapping_results() -> None:
+    assert lifecycle_dispatch._execution_identity(
+        "completed",
+        lambda: None,
+        backend="test",
+    ) == ("", "", "")
 
 
 def test_graph_node_validation_reports_missing_and_extra_nodes() -> None:
@@ -172,7 +227,12 @@ def test_dispatch_result_records_worker_and_commit_failures_with_ledger(
     )
     lifecycle_dispatch._record_dispatch_result(
         unit,
-        {"ok": True},
+        {
+            "ok": True,
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-1",
+            "native_run_id": "fake:run-1",
+        },
         worktrees={"unit": info},
         func=backend,
         results=results,
@@ -188,7 +248,12 @@ def test_dispatch_result_records_worker_and_commit_failures_with_ledger(
 
     lifecycle_dispatch._record_dispatch_result(
         unit,
-        {"ok": True},
+        {
+            "ok": True,
+            "executed_worker_kind": "test-worker",
+            "executed_worker_id": "worker-2",
+            "native_run_id": "fake:run-2",
+        },
         worktrees={"unit": info},
         func=backend,
         results=results,

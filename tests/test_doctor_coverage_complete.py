@@ -234,6 +234,14 @@ def test_ollama_model_and_provider_branches(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setattr(doctor, "_http_get_json", lambda *_args, **_kwargs: None)
     assert len(doctor._ollama_judge_checks(cfg)) == 1
 
+    monkeypatch.setattr(doctor, "_http_check", lambda *_args, **_kwargs: (False, "offline"))
+    unavailable = doctor._ollama_judge_checks(cfg)
+    assert unavailable[0].status == "warn"
+    assert "deterministic token routing remains available" in unavailable[0].message
+    report = DoctorReport(unavailable)
+    assert report.overall_status == "DEGRADED"
+    assert report.exit_code == 2
+
 
 def test_judge_checks_legacy_and_unconfigured_branches(
     monkeypatch: pytest.MonkeyPatch,

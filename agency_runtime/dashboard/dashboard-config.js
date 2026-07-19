@@ -51,6 +51,94 @@ export function createConfigController(core) {
     return [...document.querySelectorAll("[data-config-path]")];
   }
 
+  function serviceRestartRequired() {
+    return state.serviceBinding?.store_restart_required === true;
+  }
+
+  function applyServiceBinding(snapshot = {}) {
+    const value = snapshot.service_binding;
+    const binding = value && typeof value === "object" ? {
+      store_path: typeof value.store_path === "string" ? value.store_path : "",
+      desired_store_path: typeof value.desired_store_path === "string"
+        ? value.desired_store_path
+        : "",
+      store_restart_required: value.store_restart_required === true,
+    } : {
+      store_path: "",
+      desired_store_path: "",
+      store_restart_required: false,
+    };
+    state.serviceBinding = binding;
+    const blocked = binding.store_restart_required;
+    const banner = byId("store-restart-banner");
+    if (banner) banner.hidden = !blocked;
+    const paths = byId("store-restart-paths");
+    if (paths) {
+      paths.textContent = blocked
+        ? `Active: ${binding.store_path || "unknown"} · Configured: ${binding.desired_store_path || "unknown"}`
+        : "";
+    }
+    document.querySelector(".shell")?.classList.toggle("store-restart-required", blocked);
+    [
+      "roster-search-slug",
+      "roster-search-submit",
+      "roster-search-clear",
+      "roster-filter-query",
+      "roster-filter-division",
+      "roster-filter-capability",
+      "roster-filter-authority",
+      "roster-filter-host",
+      "roster-filter-platform",
+      "roster-filter-tool",
+      "roster-filter-apply",
+      "roster-filter-clear",
+    ].forEach((id) => {
+      const control = byId(id);
+      if (!control) return;
+      control.disabled = blocked;
+      control.title = blocked
+        ? "Restart the dashboard service to use roster controls."
+        : "";
+    });
+    const routeHost = byId("route-host");
+    const routeHostAvailable = Boolean(routeHost?.value);
+    if (routeHost) {
+      routeHost.disabled = blocked || state.master?.enabled !== true || !routeHostAvailable;
+    }
+    const route = byId("route-button");
+    if (route && route.getAttribute("aria-busy") !== "true") {
+      route.disabled = blocked || state.master?.enabled !== true || !routeHostAvailable;
+      route.setAttribute("aria-disabled", String(route.disabled));
+      if (blocked) {
+        route.title = "Restart the dashboard service to use Route Lab.";
+      } else if (!routeHostAvailable) {
+        route.title = "A verified and enabled execution host is required";
+      }
+    }
+    return blocked;
+  }
+
+  function projectConfigSummary(snapshot) {
+    const effective = snapshot?.effective || snapshot?.config || {};
+    const retentionDays = nestedValue(effective, "observability.retention_days");
+    const captureContent = nestedValue(effective, "observability.capture_content");
+    if (retentionDays === undefined && captureContent === undefined) return;
+    state.overview = state.overview || {};
+    if (retentionDays !== undefined) {
+      state.overview.retention_days = retentionDays;
+      const retention = byId("setting-retention");
+      if (retention) retention.textContent = `${retentionDays} days`;
+    }
+    if (captureContent !== undefined) {
+      const enabled = captureContent === true;
+      state.overview.capture_content = enabled;
+      const capture = byId("setting-capture");
+      if (capture) capture.textContent = enabled ? "Opt-in enabled" : "Disabled";
+      const privacy = byId("privacy-chip");
+      if (privacy) privacy.textContent = enabled ? "Redacted content" : "Metadata only";
+    }
+  }
+
   function appendSecretOperation(operations, path, value, clear) {
     if (value && clear) {
       throw new Error(`Choose either a new value or clear for ${path}, not both.`);
@@ -158,8 +246,11 @@ export function createConfigController(core) {
   }
 
   function renderConfig(snapshot) {
+    applyServiceBinding(snapshot);
     const effective = snapshot.effective || snapshot.config || {};
+    projectConfigSummary(snapshot);
     state.config = snapshot;
+    state.controlConfigRevision = String(snapshot.revision || "missing");
     state.pendingConfig = null;
     configControls().forEach((node) => {
       writeConfigControl(node, nestedValue(effective, node.dataset.configPath));
@@ -190,9 +281,20 @@ export function createConfigController(core) {
 
   function applyConfigSnapshot(snapshot, { force = false } = {}) {
     if (!snapshot) return false;
+    applyServiceBinding(snapshot);
+    // The summary describes the effective runtime, not the editor baseline. It
+    // must advance even while dirty fields retain their older CAS revision.
+    projectConfigSummary(snapshot);
     const currentRevision = String(state.config?.revision || "missing");
     const nextRevision = String(snapshot.revision || "missing");
+    // Quick card controls may safely advance their own CAS token while the
+    // settings editor keeps its older baseline and revision for conflict-safe
+    // saves. Never rewrite dirty inputs merely to unblock an unrelated toggle.
+    state.controlConfigRevision = nextRevision;
     if (!force && state.activeView !== "settings" && !state.configDirty) {
+      // Quick controls need the latest CAS token even while settings inputs are
+      // off-screen. Keep the pending snapshot for deferred field rendering.
+      state.config = snapshot;
       state.pendingConfig = snapshot;
       return false;
     }
@@ -222,6 +324,8 @@ export function createConfigController(core) {
     appendSecretOperation,
     syncProviderSecretOptions,
     updateConfigDirtyState,
+    serviceRestartRequired,
+    applyServiceBinding,
     renderConfig,
     applyConfigSnapshot,
   };
