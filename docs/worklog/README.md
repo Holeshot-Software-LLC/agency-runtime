@@ -87,6 +87,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `361962f` | 2026-07-19 | fix(windows): normalize private executable owner identity | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [detail](2026-07-19-361962f-normalize-private-executable-owner-identity.md) |
 | `9400f76` | 2026-07-19 | fix(codex): report all installed hook events | [AR-105](../roadmap/issue-AR-105-current-codex-hook-event-count.md) | [detail](2026-07-19-9400f76-report-all-installed-hook-events.md) |
 | `3f9eb96` | 2026-07-19 | fix(dashboard): redact failed manager probe output | [AR-38](../roadmap/issue-AR-38-dashboard-service-environment-durability.md) | [detail](2026-07-19-3f9eb96-redact-failed-manager-probe-output.md) |
+| `22434e8` | 2026-07-19 | fix(mcp): validate injected Store identities | [AR-47](../roadmap/issue-AR-47-freeze-store-config-identity-at-construction.md), [AR-48](../roadmap/issue-AR-48-enforce-strict-schema-on-config-read.md) | [detail](2026-07-19-22434e8-validate-injected-store-identities.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
