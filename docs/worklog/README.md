@@ -95,6 +95,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bb8ce93` | 2026-07-20 | fix(portability): harden hosted release proofs | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md), [AR-108](../roadmap/issue-AR-108-atomic-owned-process-containment.md) | [detail](2026-07-20-bb8ce93-hosted-release-portability.md) |
 | `9f98db3` | 2026-07-20 | fix(release): canonicalize generated metadata | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [detail](2026-07-20-9f98db3-generated-metadata-canonicalization.md) |
 | `3515d4e` | 2026-07-20 | fix(release): verify backend manifest order | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [detail](2026-07-20-3515d4e-backend-manifest-order.md) |
+| `9843025` | 2026-07-20 | test(portability): make process fixtures race-free | [AR-109](../roadmap/issue-AR-109-hosted-process-security-test-fidelity.md) | [detail](2026-07-20-9843025-process-fixture-fidelity.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

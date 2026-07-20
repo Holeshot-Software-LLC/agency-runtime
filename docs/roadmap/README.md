@@ -244,7 +244,7 @@ not stable internal identifiers.
 | [AR-106](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | [`987c32a`](../worklog/README.md) | [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-107](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md), [`9f98db3`](../worklog/README.md), [`3515d4e`](../worklog/README.md) | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-108](issue-AR-108-atomic-owned-process-containment.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md) | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md), [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
-| [AR-109](issue-AR-109-hosted-process-security-test-fidelity.md) | pending | [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
+| [AR-109](issue-AR-109-hosted-process-security-test-fidelity.md) | [`9843025`](../worklog/README.md) | [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
 
 ## Dependency summary
 
