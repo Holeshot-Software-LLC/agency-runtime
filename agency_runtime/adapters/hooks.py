@@ -1664,6 +1664,7 @@ def run_hook_stdio(
     store: Store | None = None,
     db_path: str | None = None,
     config_path: str | None = None,
+    runtime_control_path: str | None = None,
     expected_event: str = "",
     input_stream: BinaryIO | TextIO | None = None,
     output_stream: BinaryIO | TextIO | None = None,
@@ -1674,9 +1675,16 @@ def run_hook_stdio(
     sink = output_stream or sys.stdout.buffer
     errors = error_stream or sys.stderr
 
-    from agency_runtime.core.runtime_control import read_enforcement_runtime_control
+    from agency_runtime.core.runtime_control import (
+        read_bound_enforcement_runtime_control,
+        read_enforcement_runtime_control,
+    )
 
-    master, _master_transport = read_enforcement_runtime_control()
+    master, _master_transport = (
+        read_bound_enforcement_runtime_control(runtime_control_path)
+        if runtime_control_path
+        else read_enforcement_runtime_control()
+    )
     if not master["enabled"]:
         # Keep the native hook a true pass-through while Agency is off. In
         # particular, malformed or oversized Stop envelopes must not reach the

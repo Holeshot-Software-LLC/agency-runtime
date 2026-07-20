@@ -44,6 +44,7 @@ def cmd_hook(args: argparse.Namespace) -> int:
         args.host,
         db_path=getattr(args, "db", None),
         config_path=getattr(args, "config", None),
+        runtime_control_path=getattr(args, "runtime_control", None),
         expected_event=getattr(args, "event", ""),
     )
 

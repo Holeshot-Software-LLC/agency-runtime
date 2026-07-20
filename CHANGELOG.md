@@ -274,7 +274,9 @@ changes rather than duplicating every commit.
   Agency mode instead of defaulting a temporary home back to enabled. Explicit
   `agency` and `native-only` modes enforce opposite header/evidence contracts,
   reject control drift, and keep native-only observations out of Agency
-  attestation history.
+  attestation history. Managed hook commands bind the canonical master-control
+  identity explicitly, with authenticated dashboard recovery limited to
+  positively identified restricted Windows hook processes.
 - Custom companion-policy ownership on Windows now compares the owner's native
   binary SID with the effective TokenUser, accepting an SDDL alias only when it
   proves that exact identity. Package-owned launchers also configure standard

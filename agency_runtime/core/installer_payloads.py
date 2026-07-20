@@ -166,6 +166,10 @@ def _config_args(config_path: str) -> tuple[str, ...]:
     return ("--config", config_path) if config_path else ()
 
 
+def _runtime_control_args(control_path: str) -> tuple[str, ...]:
+    return ("--runtime-control", control_path) if control_path else ()
+
+
 def mcp_config(config_path: str = "") -> dict[str, Any]:
     argv = runtime_python_argv(
         "agency_runtime.server.mcp",
@@ -182,7 +186,11 @@ def mcp_config(config_path: str = "") -> dict[str, Any]:
     }
 
 
-def codex_hooks(timeout_seconds: int, config_path: str = "") -> dict[str, Any]:
+def codex_hooks(
+    timeout_seconds: int,
+    config_path: str = "",
+    runtime_control_path_value: str = "",
+) -> dict[str, Any]:
     def handler(event: str, status_message: str) -> dict[str, Any]:
         command, command_windows = _python_commands(
             "agency_runtime.cli",
@@ -191,6 +199,7 @@ def codex_hooks(timeout_seconds: int, config_path: str = "") -> dict[str, Any]:
             "--event",
             event,
             *_config_args(config_path),
+            *_runtime_control_args(runtime_control_path_value),
         )
         return {
             "type": "command",
@@ -229,7 +238,11 @@ def codex_hooks(timeout_seconds: int, config_path: str = "") -> dict[str, Any]:
     }
 
 
-def claude_hooks(timeout_seconds: int, config_path: str = "") -> dict[str, Any]:
+def claude_hooks(
+    timeout_seconds: int,
+    config_path: str = "",
+    runtime_control_path_value: str = "",
+) -> dict[str, Any]:
     base_argv = runtime_python_argv("agency_runtime.cli")
 
     def handler(event: str) -> dict[str, Any]:
@@ -243,6 +256,7 @@ def claude_hooks(timeout_seconds: int, config_path: str = "") -> dict[str, Any]:
                 "--event",
                 event,
                 *_config_args(config_path),
+                *_runtime_control_args(runtime_control_path_value),
             ],
             "timeout": timeout_seconds,
         }
@@ -331,7 +345,12 @@ def codex_plugin_version(
     )
 
 
-def bundle_files(host: str, cfg: AgencyConfig | None = None) -> tuple[dict[str, str], str]:
+def bundle_files(
+    host: str,
+    cfg: AgencyConfig | None = None,
+    *,
+    runtime_control_path_value: str = "",
+) -> tuple[dict[str, str], str]:
     effective_cfg = cfg or AgencyConfig()
     config_path = _bound_config_path(effective_cfg)
     if config_path and effective_cfg.config_path != config_path:
@@ -350,8 +369,8 @@ def bundle_files(host: str, cfg: AgencyConfig | None = None) -> tuple[dict[str, 
 
     if host == "codex":
         hooks = (
-            _codex_hooks(timeout_seconds, config_path)
-            if config_path
+            _codex_hooks(timeout_seconds, config_path, runtime_control_path_value)
+            if config_path or runtime_control_path_value
             else _codex_hooks(timeout_seconds)
         )
         mcp = _mcp_config(config_path) if config_path else _mcp_config()
@@ -363,8 +382,8 @@ def bundle_files(host: str, cfg: AgencyConfig | None = None) -> tuple[dict[str, 
         )
 
     hooks = (
-        _claude_hooks(timeout_seconds, config_path)
-        if config_path
+        _claude_hooks(timeout_seconds, config_path, runtime_control_path_value)
+        if config_path or runtime_control_path_value
         else _claude_hooks(timeout_seconds)
     )
     mcp = _mcp_config(config_path) if config_path else _mcp_config()

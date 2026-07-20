@@ -428,6 +428,14 @@ changed flag, and the exact legal no-op or single-increment generation before
 the CLI reports success. `--global` cannot be combined with `--agent` or
 `--native`.
 
+Generated Codex and Claude hook commands bind both the canonical configuration
+path and the canonical master-control path explicitly. This keeps hook behavior
+stable when a host replaces `HOME` or launches hooks under a restricted Windows
+token. Direct control-file validation remains primary; only that positively
+identified restricted-token case may read the complete validated master state
+through the authenticated local dashboard. An invalid identity or broker result
+fails enabled.
+
 Turning Agency off globally preserves plugins, config, roster, and history but
 bypasses new routing, prompt activation, delegation, model receipts, and
 finalization at the earliest supported host boundary. Start a fresh host session
@@ -488,9 +496,11 @@ attestation. Agency mode requires the authoritative global switch to be on and
 projects that exact state into the isolated home. `--mode native-only` requires
 the global switch to be off, then proves a nonempty native response with the
 isolated plugin still registered, no valid Agency header, and zero new Agency
-runtime evidence. Control read failures or changes during either run fail
-closed. Native-only success never writes an Agency canary attestation. Always
-restore the global switch in cleanup after an A/B trial.
+runtime evidence. Installed hooks also carry the real canonical control identity
+explicitly, so a host that drops the canary environment still honors the global
+switch. Control read failures or changes during either run fail closed.
+Native-only success never writes an Agency canary attestation. Always restore
+the global switch in cleanup after an A/B trial.
 
 The canary's explicit one-invocation trust bypass did not trust the
 real profile or establish Linux Codex maturity: operators still review the

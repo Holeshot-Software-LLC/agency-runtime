@@ -1660,6 +1660,42 @@ def test_hook_boundary_fails_open_with_valid_json_for_bad_input(tmp_path: Path) 
     assert "host operation continues" in completed.stderr
 
 
+def test_hook_boundary_honors_installer_bound_disabled_control(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters import hooks as hooks_module
+    from agency_runtime.core import runtime_control
+
+    target = tmp_path / ".agency-runtime" / "run" / "control.json"
+    calls: list[Path] = []
+    monkeypatch.setattr(
+        runtime_control,
+        "read_bound_enforcement_runtime_control",
+        lambda path: calls.append(Path(path)) or ({"enabled": False}, "dashboard"),
+    )
+    monkeypatch.setattr(
+        hooks_module,
+        "HookBridge",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("disabled hook constructed a bridge")
+        ),
+    )
+    sink = io.BytesIO()
+
+    assert (
+        run_hook_stdio(
+            "codex",
+            runtime_control_path=str(target),
+            input_stream=io.BytesIO(b"{not-json"),
+            output_stream=sink,
+        )
+        == 0
+    )
+    assert calls == [target]
+    assert json.loads(sink.getvalue()) == {}
+
+
 def test_hook_boundary_fails_closed_on_oversized_input() -> None:
     source = io.BytesIO(
         json.dumps(

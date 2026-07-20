@@ -12,7 +12,6 @@ related:
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0053-durable-fail-enabled-master-control.md
   - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
-  - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []
@@ -53,6 +52,10 @@ confirmation phrase. Agency mode requires correlated header/evidence and may
 persist an Agency attestation. Native-only mode requires a completed nonempty
 host response, unchanged isolated plugin registration, no Agency header, and
 zero new Agency evidence; it never writes an Agency-loading attestation.
+Generated Codex and Claude hooks bind the installer-owned canonical control path
+explicitly. Restricted Windows hooks may recover that exact master document only
+through the authenticated local dashboard; every invalid or unavailable path
+fails enabled.
 
 ## Dependencies
 

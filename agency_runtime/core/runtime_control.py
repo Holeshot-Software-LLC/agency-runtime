@@ -793,6 +793,39 @@ def read_enforcement_runtime_control(
         )
 
 
+def read_bound_enforcement_runtime_control(
+    path: str | Path,
+) -> tuple[dict[str, Any], str]:
+    """Read an installer-bound control identity with restricted-host recovery."""
+
+    try:
+        if not Path(path).is_absolute():
+            raise RuntimeControlValidationError("bound runtime control path must be absolute")
+        target = _absolute_path(path)
+        expected_suffix = Path(".agency-runtime") / "run" / "control.json"
+        if target.parts[-3:] != expected_suffix.parts:
+            raise RuntimeControlValidationError("bound runtime control path is not canonical")
+        return read_authoritative_runtime_control(path=target, use_cache=False)
+    except RuntimeControlSecurityError:
+        try:
+            if os.name != "nt" or not current_process_token_is_restricted(is_windows=True):
+                raise RuntimeControlSecurityError("bound runtime control broker is unavailable")
+            from agency_runtime.core.dashboard_runtime import dashboard_api_request
+
+            response = dashboard_api_request(
+                "/api/runtime",
+                timeout=_DASHBOARD_BROKER_TIMEOUT_SECONDS,
+            )
+            if not isinstance(response, Mapping) or set(response) != {"master"}:
+                raise ValueError("dashboard master response shape is invalid")
+            return validate_runtime_control_document(response.get("master")), "dashboard"
+        except (OSError, RuntimeControlError, UnicodeError, ValueError):
+            pass
+    except (OSError, RuntimeControlError, UnicodeError, ValueError):
+        pass
+    return ({**_default_document(), "source": "fail-enabled"}, "fail-enabled")
+
+
 def master_enabled(
     *,
     path: str | Path | None = None,
@@ -1166,6 +1199,7 @@ __all__ = [
     "ensure_runtime_control_materialized",
     "master_enabled",
     "read_authoritative_runtime_control",
+    "read_bound_enforcement_runtime_control",
     "read_effective_runtime_control",
     "read_effective_runtime_control_snapshot",
     "read_enforcement_runtime_control",

@@ -1430,6 +1430,106 @@ def test_authoritative_reader_rejects_unavailable_or_malformed_brokerage(
     assert control.master_enabled() is True
 
 
+def test_bound_enforcement_reader_uses_exact_uncached_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = _control_path(tmp_path).resolve()
+    expected = _valid_document(enabled=False, generation=12)
+    calls: list[dict[str, Any]] = []
+
+    def direct(**kwargs: Any) -> tuple[dict[str, Any], str]:
+        calls.append(kwargs)
+        return expected, "direct"
+
+    monkeypatch.setattr(control, "read_authoritative_runtime_control", direct)
+
+    assert control.read_bound_enforcement_runtime_control(target) == (expected, "direct")
+    assert calls == [{"path": target, "use_cache": False}]
+
+
+@pytest.mark.parametrize(
+    "invalid_path",
+    [".agency-runtime/run/control.json", "C:/tmp/not-control.json"],
+)
+def test_bound_enforcement_reader_rejects_untrusted_identity(
+    invalid_path: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        control,
+        "read_authoritative_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("invalid identity reached the authoritative reader")
+        ),
+    )
+
+    document, transport = control.read_bound_enforcement_runtime_control(invalid_path)
+
+    assert document["enabled"] is True
+    assert document["source"] == "fail-enabled"
+    assert transport == "fail-enabled"
+
+
+def test_bound_enforcement_reader_brokers_restricted_windows_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = _control_path(tmp_path).resolve()
+    expected = _valid_document(enabled=False, generation=13, source="dashboard")
+    monkeypatch.setattr(
+        control,
+        "read_authoritative_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            control.RuntimeControlSecurityError("restricted token cannot inspect ACL")
+        ),
+    )
+    monkeypatch.setattr(control.os, "name", "nt")
+    monkeypatch.setattr(control, "current_process_token_is_restricted", lambda **_kwargs: True)
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        lambda path, *, timeout: (
+            {"master": expected}
+            if path == "/api/runtime" and timeout == 0.25
+            else (_ for _ in ()).throw(AssertionError("unexpected broker request"))
+        ),
+    )
+
+    assert control.read_bound_enforcement_runtime_control(target) == (expected, "dashboard")
+
+
+@pytest.mark.parametrize("restricted", [False, True])
+def test_bound_enforcement_reader_fails_enabled_without_valid_brokerage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    restricted: bool,
+) -> None:
+    target = _control_path(tmp_path).resolve()
+    monkeypatch.setattr(
+        control,
+        "read_authoritative_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            control.RuntimeControlSecurityError("direct read unavailable")
+        ),
+    )
+    monkeypatch.setattr(control.os, "name", "nt")
+    monkeypatch.setattr(
+        control,
+        "current_process_token_is_restricted",
+        lambda **_kwargs: restricted,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        lambda *_args, **_kwargs: {"master": {**_valid_document(), "enabled": "false"}},
+    )
+
+    document, transport = control.read_bound_enforcement_runtime_control(target)
+
+    assert document["enabled"] is True
+    assert document["source"] == "fail-enabled"
+    assert transport == "fail-enabled"
+
+
 def test_restricted_windows_reader_proves_identity_and_non_forgeability(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -278,6 +278,13 @@ no valid Agency header, and zero new Agency evidence. Restore Agency with
 `agency on --global` in cleanup. A mode mismatch, unreadable control, or control
 generation change is a failed observation, not a native-only result.
 
+Current Codex and Claude managed hook manifests must include both `--config` and
+`--runtime-control` absolute paths. If an older bundle omits the latter, run
+`agency install --refresh` before retrying. Restricted Windows hooks use the
+authenticated dashboard only when direct validation of that bound control file
+is impossible; confirm the dashboard service is running if the hook safely
+falls back to enabled.
+
 A Codex or Claude result is scoped to the temporary profile in which the
 managed plugin was explicitly requested. It does not prove that the real host
 profile is registered or enabled. The inspector therefore reports an

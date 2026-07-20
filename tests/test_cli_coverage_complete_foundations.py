@@ -215,12 +215,22 @@ def test_service_entrypoints_forward_process_boundaries(monkeypatch):
         (
             "hook",
             "codex",
-            {"db_path": "two.db", "config_path": None, "expected_event": ""},
+            {
+                "db_path": "two.db",
+                "config_path": None,
+                "runtime_control_path": None,
+                "expected_event": "",
+            },
         ),
         (
             "hook",
             "claude",
-            {"db_path": None, "config_path": None, "expected_event": ""},
+            {
+                "db_path": None,
+                "config_path": None,
+                "runtime_control_path": None,
+                "expected_event": "",
+            },
         ),
         (
             "dashboard",

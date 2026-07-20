@@ -666,6 +666,11 @@ def _register_native_protocols(sub: Subparsers, handlers: Handlers) -> None:
     )
     hook.add_argument("--db", default=None, help="SQLite database path")
     hook.add_argument("--config", default=None, help="Agency YAML configuration path")
+    hook.add_argument(
+        "--runtime-control",
+        default=None,
+        help="Installer-bound Agency master-control path",
+    )
     _bind(hook, handlers, "cmd_hook")
 
 

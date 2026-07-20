@@ -44,9 +44,21 @@ uses a distinct exact confirmation phrase. Before host execution, read the real
 profile's authoritative master-control document without the enforcement
 fail-enabled fallback. Require its enabled state to match the requested mode,
 then materialize and re-read that state in the owner-private isolated home.
-Bind hook subprocesses to that exact canonical absolute control path through a
-canary-only environment capability; explicit API paths and home arguments keep
-precedence, and normal runtime processes ignore the capability.
+Project the snapshot into the isolated home for host processes that preserve the
+canary environment. Generated Codex and Claude hook commands additionally bind
+the real canonical master-control identity as an explicit absolute
+`--runtime-control` argument, alongside the already bound configuration identity.
+That installer-owned argument takes precedence over the isolated environment so
+restricted hook subprocesses cannot silently default the temporary home back to
+enabled.
+
+Direct owner-private reads remain primary. When Windows positively identifies a
+hook as a restricted token that cannot validate the bound file ACL, only the
+authenticated loopback dashboard may return the complete validated master
+document. An invalid bound path, ordinary access failure, unavailable broker, or
+malformed response fails enabled. The hook then bypasses Store construction and
+all routing/finalization work before it parses host input when the validated
+master state is disabled.
 
 Re-read the real authoritative document after invocation and immediately before
 success. Any read failure or document drift fails the canary closed.
@@ -65,6 +77,8 @@ native-only success never creates an Agency canary attestation.
   ambiguous evidence.
 - Native-only proves bypass behavior without weakening or uninstalling the
   native integration.
+- Generated hook manifests carry explicit configuration and master-control
+  identities on Windows and Linux; shell quoting remains argument-array based.
 - Operators must intentionally toggle the global switch and use the matching
   confirmation phrase for each half of an A/B comparison.
 
@@ -72,8 +86,9 @@ native-only success never creates an Agency canary attestation.
 
 - **Copy the control file as an opaque artifact.** Rejected because the isolated
   namespace must apply its own owner/path validation and durable publication.
-- **Pass only an environment override.** Rejected because host hooks enforce the
-  canonical durable control boundary, not an untrusted process-local hint.
+- **Pass only an environment override.** Rejected because some native hosts do
+  not preserve it for hook subprocesses and an untrusted process-local hint is
+  not a durable enforcement identity.
 - **Infer native-only from a missing header.** Rejected because a broken hook,
   empty response, emitted evidence, or control race could look identical.
 - **Uninstall the plugin for native-only trials.** Rejected because that tests a
