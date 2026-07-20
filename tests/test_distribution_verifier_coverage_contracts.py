@@ -325,7 +325,24 @@ def test_generated_metadata_parsers_reject_malformed_payloads() -> None:
     assert subject._sources_manifest_failures(
         b"agency_runtime.egg-info/SOURCES.txt\n",
         {"agency_runtime.egg-info/SOURCES.txt": b"placeholder"},
-    ) == ["sdist generated SOURCES.txt does not match the exact sorted LF payload manifest"]
+    ) == ["sdist generated SOURCES.txt does not match the exact backend-order LF manifest"]
+    backend_order_payloads = {
+        "pyproject.toml": b"project",
+        "agency_runtime/__init__.py": b"package",
+        "agency_runtime.egg-info/SOURCES.txt": b"placeholder",
+    }
+    assert (
+        subject._sources_manifest_failures(
+            (b"pyproject.toml\nagency_runtime/__init__.py\nagency_runtime.egg-info/SOURCES.txt"),
+            backend_order_payloads,
+        )
+        == []
+    )
+    assert subject._sources_manifest_order_key("pyproject.toml") == ("", "pyproject.toml")
+    assert subject._sources_manifest_order_key("package/module.py") == (
+        "package",
+        "module.py",
+    )
     assert subject._generated_lf_failures("generated", b"line\r\n") == [
         "generated must use canonical LF line endings"
     ]

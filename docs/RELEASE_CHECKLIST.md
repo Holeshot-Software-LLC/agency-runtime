@@ -339,8 +339,9 @@ account to replace the launcher or a newly created child.
       explicit generated metadata allowlist, remain within member, size,
       aggregate, and compression-ratio limits, and pass strict singleton
       metadata, entry-point, WHEEL, and RECORD hash/size validation. Generated
-      text uses canonical LF, `SOURCES.txt` has the backend's exact sorted
-      no-final-newline form, and core-metadata bodies decode as strict raw UTF-8.
+      text uses canonical LF, `SOURCES.txt` has the backend's exact
+      parent-directory/basename ordering and no-final-newline form, and
+      core-metadata bodies decode as strict raw UTF-8.
 - [ ] The wheel has one contiguous ZIP layout with no prefix, gaps, orphan local
       records, comments, extras, directory entries, encryption, unsupported
       flags, data descriptors, compression, or trailing bytes; every stored

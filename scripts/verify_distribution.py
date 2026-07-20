@@ -2425,10 +2425,17 @@ def _sources_manifest_failures(payload: bytes, sdist_payloads: dict[str, bytes])
     except (UnicodeDecodeError, ValueError):
         return ["sdist generated SOURCES.txt is malformed or duplicated"]
     expected = set(sdist_payloads) - {"PKG-INFO", "setup.cfg"}
-    expected_payload = "\n".join(sorted(expected)).encode("utf-8")
+    expected_payload = "\n".join(sorted(expected, key=_sources_manifest_order_key)).encode("utf-8")
     if observed == expected and payload == expected_payload:
         return []
-    return ["sdist generated SOURCES.txt does not match the exact sorted LF payload manifest"]
+    return ["sdist generated SOURCES.txt does not match the exact backend-order LF manifest"]
+
+
+def _sources_manifest_order_key(name: str) -> tuple[str, str]:
+    """Reproduce the pinned backend's platform-neutral parent/name ordering."""
+
+    parent, separator, basename = name.rpartition("/")
+    return (parent if separator else "", basename)
 
 
 def _requires_txt_dependencies(payload: bytes) -> tuple[str, ...]:

@@ -273,7 +273,15 @@ def _sdist_generated(
     )
     sources_name = "agency_runtime.egg-info/SOURCES.txt"
     sources = (set(result) | {sources_name}) - {"PKG-INFO", "setup.cfg"}
-    result[sources_name] = "\n".join(sorted(sources)).encode()
+    result[sources_name] = "\n".join(
+        sorted(
+            sources,
+            key=lambda name: (
+                name.rpartition("/")[0] if "/" in name else "",
+                name.rpartition("/")[2],
+            ),
+        )
+    ).encode()
     return result
 
 
@@ -466,7 +474,7 @@ def test_full_artifacts_reject_noncanonical_record_and_sources_bytes(
         )
         failures = _verify(monkeypatch, dist, repository)
         assert any(
-            "SOURCES.txt does not match the exact sorted LF payload manifest" in failure
+            "SOURCES.txt does not match the exact backend-order LF manifest" in failure
             for failure in failures
         )
 
@@ -897,7 +905,7 @@ def test_generated_sdist_metadata_is_semantically_validated(
         extra={"agency_runtime.egg-info/SOURCES.txt": b"pyproject.toml\n"},
     )
     assert (
-        "sdist generated SOURCES.txt does not match the exact sorted LF payload manifest"
+        "sdist generated SOURCES.txt does not match the exact backend-order LF manifest"
         in _verify(monkeypatch, dist, repository)
     )
 
