@@ -14,7 +14,7 @@ type: worklog
 commit: 55c4dfe
 short: 55c4dfe
 date: 2026-07-20
-pr: null
+pr: "https://github.com/Holeshot-Software-LLC/agency-runtime/pull/116"
 related_issues:
   - docs/roadmap/issue-AR-79-installed-isolated-header-proof.md
   - docs/roadmap/issue-AR-80-optional-ollama-degraded.md
