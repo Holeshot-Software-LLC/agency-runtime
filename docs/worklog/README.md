@@ -92,6 +92,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `987c32a` | 2026-07-19 | fix(portability): close Windows ingestion and CI gaps | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md), [AR-106](../roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md) | [detail](2026-07-19-987c32a-windows-ingestion-portability.md) |
 | `be4b3ff` | 2026-07-19 | Merge pull request #104 from Holeshot-Software-LLC/codex/turn-scoped-agency-lifecycle | null | null |
 | `46f203a` | 2026-07-20 | fix(release): build artifacts from canonical Git blobs | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md), [AR-108](../roadmap/issue-AR-108-atomic-owned-process-containment.md) | [detail](2026-07-20-46f203a-canonical-release-source.md) |
+| `bb8ce93` | 2026-07-20 | fix(portability): harden hosted release proofs | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md), [AR-108](../roadmap/issue-AR-108-atomic-owned-process-containment.md) | [detail](2026-07-20-bb8ce93-hosted-release-portability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
