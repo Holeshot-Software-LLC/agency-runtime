@@ -101,6 +101,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0f374b4` | 2026-07-20 | fix(dashboard): preserve WSL systemd config trust | [AR-110](../roadmap/issue-AR-110-preserve-wsl-systemd-service-trust.md) | [detail](2026-07-20-0f374b4-wsl-systemd-config-trust.md) |
 | `615d88c` | 2026-07-20 | fix(canary): bind isolated runs to global mode | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md), [AR-88](../roadmap/issue-AR-88-compare-agency-native-outcomes.md) | [detail](2026-07-20-615d88c-isolated-canary-modes.md) |
 | `f5fe972` | 2026-07-20 | fix(canary): bind hook control capability | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-f5fe972-hook-control-capability.md) |
+| `b8f80bd` | 2026-07-20 | fix(hooks): bind authoritative master control | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-b8f80bd-authoritative-hook-control.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
