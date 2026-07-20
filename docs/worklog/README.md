@@ -104,6 +104,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b8f80bd` | 2026-07-20 | fix(hooks): bind authoritative master control | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-b8f80bd-authoritative-hook-control.md) |
 | `cb17e0d` | 2026-07-20 | test(portability): normalize hook control contracts | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-cb17e0d-portable-hook-control-tests.md) |
 | `123910a` | 2026-07-20 | test(coverage): exercise hook control rejection paths | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-123910a-hook-control-coverage.md) |
+| `edb922c` | 2026-07-20 | docs(roadmap): complete isolated canary control | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-edb922c-complete-isolated-canary-control.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
