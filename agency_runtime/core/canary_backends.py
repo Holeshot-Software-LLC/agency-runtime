@@ -117,6 +117,39 @@ def isolated_canary_environment(
     return env
 
 
+def project_isolated_runtime_control(
+    runtime_home: Path,
+    *,
+    enabled: bool,
+) -> dict[str, Any]:
+    """Materialize and verify one explicit master state in the isolated home."""
+    from agency_runtime.core.runtime_control import (
+        ensure_runtime_control_materialized,
+        read_authoritative_runtime_control,
+        set_master_enabled,
+    )
+
+    isolated_home = runtime_home / "home"
+    current = ensure_runtime_control_materialized(
+        source="canary",
+        home_dir=isolated_home,
+    )
+    if bool(current["enabled"]) is not enabled:
+        current = set_master_enabled(
+            enabled,
+            expected_generation=int(current["generation"]),
+            source="canary",
+            home_dir=isolated_home,
+        )
+    verified, transport = read_authoritative_runtime_control(
+        home_dir=isolated_home,
+        use_cache=False,
+    )
+    if transport != "direct" or bool(verified["enabled"]) is not enabled:
+        raise RuntimeError("isolated canary runtime control projection failed")
+    return verified
+
+
 def prepare_private_host_home(
     runtime_home: Path,
     *,
@@ -246,6 +279,7 @@ class SafeCodexCanaryBackend:
     auth_source: Path
     process_runner: Callable[..., Any]
     source_env: Mapping[str, str]
+    master_enabled: bool = True
 
     def _install_plugin(
         self,
@@ -363,6 +397,11 @@ class SafeCodexCanaryBackend:
                 runtime_home,
                 self.db_path,
             )
+            projected = facade._project_isolated_runtime_control(
+                runtime_home,
+                enabled=self.master_enabled,
+            )
+            env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if projected["enabled"] else "0"
             env["CODEX_HOME"] = str(codex_home)
             failure = self._install_plugin(workdir=workdir, env=env, deadline=deadline)
             if failure is None:
@@ -392,6 +431,7 @@ class SafeClaudeCanaryBackend:
     auth_source: Path
     process_runner: Callable[..., Any]
     source_env: Mapping[str, str]
+    master_enabled: bool = True
 
     def execute(
         self,
@@ -416,6 +456,11 @@ class SafeClaudeCanaryBackend:
                 runtime_home,
                 self.db_path,
             )
+            projected = facade._project_isolated_runtime_control(
+                runtime_home,
+                enabled=self.master_enabled,
+            )
+            env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if projected["enabled"] else "0"
             env["CLAUDE_CONFIG_DIR"] = str(claude_home)
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
@@ -489,6 +534,7 @@ def backend(
     resolver: Callable[[str], str | None],
     runner: Callable[..., Any] | None,
     environ: Mapping[str, str] | None,
+    master_enabled: bool = True,
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -512,6 +558,7 @@ def backend(
             auth_source=original_home / "auth.json",
             process_runner=process_runner,
             source_env=source_env,
+            master_enabled=master_enabled,
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()
@@ -523,6 +570,7 @@ def backend(
         auth_source=original_home / ".credentials.json",
         process_runner=process_runner,
         source_env=source_env,
+        master_enabled=master_enabled,
     )
 
 
@@ -541,6 +589,7 @@ __all__ = [
     "managed_target",
     "prepare_private_host_home",
     "process_succeeded",
+    "project_isolated_runtime_control",
     "remaining_timeout",
     "source_home",
 ]

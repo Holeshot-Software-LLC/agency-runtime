@@ -174,18 +174,27 @@ def assess_readiness(
     )
 
 
-def readiness_report(host: str, assessment: ReadinessAssessment) -> dict[str, Any]:
+def readiness_report(
+    host: str,
+    assessment: ReadinessAssessment,
+    *,
+    mode: str = "agency",
+) -> dict[str, Any]:
+    confirmation = (
+        f"RUN LIVE {host} CANARY" if mode == "agency" else f"RUN LIVE {host} NATIVE-ONLY CANARY"
+    )
     return {
         "schema_version": "agency.host_canary.v1",
         "sampled_at": _facade()._utc_now(),
         "host": host,
+        "mode": mode,
         "profile_scope": assessment.profile_scope,
         "platform": assessment.platform,
         "native": assessment.native,
         "real_profile_native": assessment.native,
         "runtime_control": assessment.control,
         "ready": not assessment.unmet,
-        "execute_confirmation": f"RUN LIVE {host} CANARY",
+        "execute_confirmation": confirmation,
         "live_attempted": False,
         "canary_passed": False,
         "unmet_prerequisites": list(assessment.unmet),
@@ -199,6 +208,8 @@ def prepare_live_invocation(
     timeout: float,
     native: Mapping[str, Any],
     backend_factory: Callable[..., Any],
+    master_enabled: bool = True,
+    mode: str = "agency",
 ) -> LivePreparation:
     facade = _facade()
     try:
@@ -214,7 +225,8 @@ def prepare_live_invocation(
             error="runtime evidence store is unavailable",
         )
     nonce = facade.secrets.token_hex(16)
-    prompt = f"{facade.CANARY_PROMPT}\n\nCanary nonce: {nonce}"
+    base_prompt = facade.CANARY_PROMPT if mode == "agency" else facade.NATIVE_ONLY_CANARY_PROMPT
+    prompt = f"{base_prompt}\n\nCanary nonce: {nonce}"
     expected_query_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
     try:
         if backend_factory is facade._backend:
@@ -223,6 +235,7 @@ def prepare_live_invocation(
                 db_path=path,
                 timeout=timeout,
                 native=native,
+                master_enabled=master_enabled,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)
@@ -329,20 +342,30 @@ def proof_failures(
     profile_proven: bool,
     header_valid: bool,
     evidence: Mapping[str, Any],
+    mode: str = "agency",
+    response_nonempty: bool = True,
 ) -> tuple[str, ...]:
     failures: list[str] = []
     if not process_ok:
         failures.append("host invocation did not complete successfully")
     if not profile_proven:
         failures.append("canary profile plugin registration and enablement were not proven")
-    if not header_valid:
-        failures.append("final response header was not proven")
-    if not evidence["correlated_trace_ids"]:
-        failures.append("correlated routing and finalization evidence was not proven")
-    elif evidence["receipt_required"] and not evidence["receipt_proven"]:
-        failures.append(
-            "the host exposes response telemetry but a correlated receipt was not proven"
-        )
+    if not response_nonempty:
+        failures.append("host invocation did not return a nonempty response")
+    if mode == "native-only":
+        if header_valid:
+            failures.append("Agency response header was present in native-only mode")
+        if any(int(count) for count in evidence["counts"].values()):
+            failures.append("Agency runtime evidence was emitted in native-only mode")
+    else:
+        if not header_valid:
+            failures.append("final response header was not proven")
+        if not evidence["correlated_trace_ids"]:
+            failures.append("correlated routing and finalization evidence was not proven")
+        elif evidence["receipt_required"] and not evidence["receipt_proven"]:
+            failures.append(
+                "the host exposes response telemetry but a correlated receipt was not proven"
+            )
     return tuple(failures)
 
 
@@ -352,11 +375,13 @@ def evaluate_proof(
     result: dict[str, Any],
     evidence: dict[str, Any],
     default_profile_scope: str,
+    mode: str = "agency",
 ) -> CanaryProof:
     from agency_runtime.core.header.contract import validate_header
 
     facade = _facade()
     response = facade._response_text(result.get("output"))
+    response_nonempty = bool(response.strip())
     header_valid, header_missing = validate_header(response)
     process_ok = result.get("status") == "completed" and result.get("exit_code") == 0
     result_scope = str(result.get("profile_scope") or default_profile_scope)
@@ -364,16 +389,33 @@ def evaluate_proof(
         result.get("isolated_plugin") if isinstance(result.get("isolated_plugin"), dict) else None
     )
     plugin_invoked = bool(evidence["correlated_trace_ids"])
-    profile_proven = facade._profile_is_proven(
-        host,
-        result_scope,
-        isolated_plugin,
-        plugin_invoked=plugin_invoked,
-    )
-    evidence_passed = bool(
-        evidence["correlated_trace_ids"]
-        and (not evidence["receipt_required"] or evidence["receipt_proven"])
-    )
+    if mode == "native-only":
+        profile_proven = bool(
+            result_scope == "isolated-profile"
+            and isolated_plugin is not None
+            and (
+                (
+                    host == "codex"
+                    and isolated_plugin.get("registered") is True
+                    and isolated_plugin.get("enabled") is True
+                )
+                or (host == "claude" and isolated_plugin.get("load_requested") is True)
+            )
+        )
+        evidence_passed = not any(int(count) for count in evidence["counts"].values())
+        header_passed = not header_valid
+    else:
+        profile_proven = facade._profile_is_proven(
+            host,
+            result_scope,
+            isolated_plugin,
+            plugin_invoked=plugin_invoked,
+        )
+        evidence_passed = bool(
+            evidence["correlated_trace_ids"]
+            and (not evidence["receipt_required"] or evidence["receipt_proven"])
+        )
+        header_passed = header_valid
     return CanaryProof(
         invocation={
             "backend": result.get("backend", host),
@@ -392,12 +434,20 @@ def evaluate_proof(
             ),
         },
         result_scope=result_scope,
-        passed=bool(process_ok and header_valid and evidence_passed and profile_proven),
+        passed=bool(
+            process_ok
+            and response_nonempty
+            and header_passed
+            and evidence_passed
+            and profile_proven
+        ),
         failures=facade._proof_failures(
             process_ok=process_ok,
             profile_proven=profile_proven,
             header_valid=header_valid,
             evidence=evidence,
+            mode=mode,
+            response_nonempty=response_nonempty,
         ),
     )
 

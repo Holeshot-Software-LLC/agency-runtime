@@ -138,6 +138,7 @@ Status meanings:
 | [ADR-0073](0073-own-subprocess-trees-atomically.md) | Own subprocess trees atomically across Windows and Linux | Accepted |
 | [ADR-0074](0074-build-byte-deterministic-release-artifacts.md) | Build byte-deterministic release artifacts from canonical Git blobs | Accepted |
 | [ADR-0075](0075-preserve-config-trust-under-wsl-systemd.md) | Preserve configuration trust while adapting systemd hardening on WSL | Accepted |
+| [ADR-0076](0076-bind-isolated-canaries-to-explicit-agency-modes.md) | Bind isolated canaries to explicit Agency modes | Accepted |
 
 ## Documentation governance
 

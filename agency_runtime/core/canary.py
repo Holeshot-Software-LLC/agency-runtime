@@ -44,9 +44,15 @@ CANARY_PROMPT = (
     "and obey the installed Agency Runtime routing and final-response contract. "
     "Do not modify files, call external services, or expose secrets."
 )
+NATIVE_ONLY_CANARY_PROMPT = (
+    "Agency Runtime native-only installation canary. Reply with a concise plain "
+    "confirmation. Do not emit an Agency header, modify files, call external "
+    "services, use tools, or expose secrets."
+)
 RECEIPT_CAPABLE_HOSTS = frozenset({"hermes"})
 SAFE_CANARY_HOSTS = frozenset({"codex", "claude"})
 ISOLATED_CANARY_HOSTS = SAFE_CANARY_HOSTS
+CANARY_MODES = frozenset({"agency", "native-only"})
 MAX_CANARY_TIMEOUT_SECONDS = 600.0
 CODEX_CANARY_EXEC_OPTIONS = (
     "--json",
@@ -144,6 +150,7 @@ _SafeClaudeCanaryBackend = _backends.SafeClaudeCanaryBackend
 _copy_bounded_auth = _backends.copy_bounded_auth
 _codex_isolated_plugin_enabled = _backends.codex_isolated_plugin_enabled
 _isolated_canary_environment = _backends.isolated_canary_environment
+_project_isolated_runtime_control = _backends.project_isolated_runtime_control
 _prepare_private_host_home = _backends.prepare_private_host_home
 _process_succeeded = _backends.process_succeeded
 _codex_output = _backends.codex_output
@@ -165,6 +172,7 @@ def _backend(
     resolver: Callable[[str], str | None] = shutil.which,
     runner: Callable[..., Any] | None = None,
     environ: Mapping[str, str] | None = None,
+    master_enabled: bool = True,
 ):
     return _backends.backend(
         host,
@@ -174,7 +182,15 @@ def _backend(
         resolver=resolver,
         runner=runner,
         environ=environ,
+        master_enabled=master_enabled,
     )
+
+
+def _read_canary_master_control() -> tuple[dict[str, Any], str]:
+    """Read the real profile's master switch without fail-enabled fallback."""
+    from agency_runtime.core.runtime_control import read_authoritative_runtime_control
+
+    return read_authoritative_runtime_control(use_cache=False)
 
 
 # Readiness and durable-proof compatibility surface.
@@ -199,6 +215,112 @@ _attestation_identity_is_current = _proof.attestation_identity_is_current
 _persist_attestation = _proof.persist_attestation
 
 
+def _attach_master_readiness(
+    report: dict[str, Any],
+    *,
+    mode: str,
+) -> dict[str, Any] | None:
+    expected_enabled = mode == "agency"
+    try:
+        document, transport = _read_canary_master_control()
+    except Exception:
+        report["master_control"] = {"expected_enabled": expected_enabled}
+        report["unmet_prerequisites"].append(
+            "authoritative Agency master control could not be read"
+        )
+        report["ready"] = False
+        return None
+    report["master_control"] = {
+        "enabled": bool(document["enabled"]),
+        "generation": int(document["generation"]),
+        "source": str(document["source"]),
+        "transport": transport,
+        "expected_enabled": expected_enabled,
+    }
+    if bool(document["enabled"]) is not expected_enabled:
+        required = "enabled" if expected_enabled else "disabled"
+        report["unmet_prerequisites"].append(
+            f"Agency master control must be {required} for {mode} mode"
+        )
+    report["ready"] = not report["unmet_prerequisites"]
+    return document
+
+
+def _master_control_is_unchanged(
+    report: dict[str, Any],
+    expected: Mapping[str, Any],
+    *,
+    read_failure: str,
+    drift_failure: str,
+) -> bool:
+    try:
+        current, _transport = _read_canary_master_control()
+    except Exception:
+        report["unmet_prerequisites"].append(read_failure)
+        return False
+    if current != expected:
+        report["unmet_prerequisites"].append(drift_failure)
+        return False
+    return True
+
+
+def _complete_successful_canary(
+    report: dict[str, Any],
+    *,
+    host: str,
+    mode: str,
+    path: Path,
+    inspector: Callable[[str], dict[str, Any]],
+    assessment: Any,
+    master_before: Mapping[str, Any],
+    preparation: Any,
+    proof: Any,
+    evidence: Mapping[str, Any],
+) -> None:
+    current = _assess_readiness(host, path, inspector)
+    if not _attestation_identity_is_current(assessment, current):
+        report["unmet_prerequisites"].append(
+            "native host or managed bundle identity changed or became unverified during canary"
+        )
+        report["attestation_persisted"] = False
+        return
+    if not _master_control_is_unchanged(
+        report,
+        master_before,
+        read_failure=(
+            "authoritative Agency master control could not be verified before completion"
+        ),
+        drift_failure="Agency master control changed before canary completion",
+    ):
+        report["attestation_persisted"] = False
+        return
+    if mode == "native-only":
+        report["attestation_persisted"] = False
+        report["canary_passed"] = True
+        return
+    if preparation.store is None:
+        report["unmet_prerequisites"].append("canary attestation store is unavailable")
+        report["attestation_persisted"] = False
+        return
+    attestation, error = _persist_attestation(
+        preparation.store,
+        _attestation_payload(
+            host,
+            proof=proof,
+            evidence=evidence,
+            assessment=current,
+            passed_at=report["sampled_at"],
+        ),
+    )
+    if error:
+        report["unmet_prerequisites"].append(error)
+        report["attestation_persisted"] = False
+        return
+    report["attestation_persisted"] = True
+    report["attestation"] = attestation
+    report["canary_passed"] = True
+
+
 def run_canary(
     host: str,
     *,
@@ -206,24 +328,30 @@ def run_canary(
     confirm: str = "",
     db_path: str | Path | None = None,
     timeout: float = 120,
+    mode: str = "agency",
     inspector: Callable[[str], dict[str, Any]] = _default_inspector,
     backend_factory: Callable[..., Any] = _backend,
 ) -> dict[str, Any]:
     """Build a nonmutating readiness report or run an exact-confirmed canary."""
     if host not in SUPPORTED_HOSTS:
         raise ValueError(f"unsupported host: {host}")
+    if mode not in CANARY_MODES:
+        raise ValueError(f"unsupported canary mode: {mode}")
     timeout = _validated_timeout(timeout)
     path = Path(db_path).expanduser() if db_path else _default_db_path()
     assessment = _assess_readiness(host, path, inspector)
-    report = _readiness_report(host, assessment)
+    report = _readiness_report(host, assessment, mode=mode)
+    master_before = _attach_master_readiness(report, mode=mode)
+    if master_before is None:
+        return report
     if not execute:
         return report
 
-    expected = f"RUN LIVE {host} CANARY"
+    expected = str(report["execute_confirmation"])
     if confirm != expected:
         report["unmet_prerequisites"].append(f"confirmation must exactly match: {expected}")
         return report
-    if assessment.unmet:
+    if report["unmet_prerequisites"]:
         return report
     preparation = _prepare_live_invocation(
         host,
@@ -231,6 +359,8 @@ def run_canary(
         timeout=timeout,
         native=assessment.native,
         backend_factory=backend_factory,
+        master_enabled=mode == "agency",
+        mode=mode,
     )
     if preparation.error:
         report["unmet_prerequisites"].append(preparation.error)
@@ -256,11 +386,19 @@ def run_canary(
             "safe host invocation returned incomplete evidence state"
         )
         return report
+    if not _master_control_is_unchanged(
+        report,
+        master_before,
+        read_failure=("authoritative Agency master control could not be re-read after invocation"),
+        drift_failure="Agency master control changed during the canary invocation",
+    ):
+        return report
     proof = _evaluate_proof(
         host,
         result=outcome.result,
         evidence=outcome.evidence,
         default_profile_scope=assessment.profile_scope,
+        mode=mode,
     )
     report.update(
         {
@@ -272,34 +410,18 @@ def run_canary(
     )
     report["unmet_prerequisites"].extend(proof.failures)
     if proof.passed:
-        current = _assess_readiness(host, path, inspector)
-        if not _attestation_identity_is_current(assessment, current):
-            report["unmet_prerequisites"].append(
-                "native host or managed bundle identity changed or became unverified during canary"
-            )
-            report["attestation_persisted"] = False
-            return report
-        if preparation.store is None:
-            report["unmet_prerequisites"].append("canary attestation store is unavailable")
-            report["attestation_persisted"] = False
-            return report
-        attestation, error = _persist_attestation(
-            preparation.store,
-            _attestation_payload(
-                host,
-                proof=proof,
-                evidence=outcome.evidence,
-                assessment=current,
-                passed_at=report["sampled_at"],
-            ),
+        _complete_successful_canary(
+            report,
+            host=host,
+            mode=mode,
+            path=path,
+            inspector=inspector,
+            assessment=assessment,
+            master_before=master_before,
+            preparation=preparation,
+            proof=proof,
+            evidence=outcome.evidence,
         )
-        if error:
-            report["unmet_prerequisites"].append(error)
-            report["attestation_persisted"] = False
-        else:
-            report["attestation_persisted"] = True
-            report["attestation"] = attestation
-            report["canary_passed"] = True
     return report
 
 
@@ -309,6 +431,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("host", choices=SUPPORTED_HOSTS)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--mode", choices=sorted(CANARY_MODES), default="agency")
     parser.add_argument("--confirm", default="")
     parser.add_argument("--db", default=None)
     parser.add_argument("--timeout", type=_validated_timeout, default=120.0)
@@ -324,6 +447,7 @@ def main(argv: list[str] | None = None) -> int:
         confirm=args.confirm,
         db_path=args.db,
         timeout=args.timeout,
+        mode=args.mode,
     )
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.output:

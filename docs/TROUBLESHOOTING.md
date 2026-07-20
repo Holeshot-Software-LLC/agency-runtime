@@ -269,6 +269,15 @@ execution because a proven read-only, no-tools noninteractive mode is not
 available. Codex and Claude require the exact
 `RUN LIVE <host> CANARY` confirmation before invoking the host.
 
+For an Agency-off comparison, leave the plugin installed, run
+`agency off --global`, and execute `agency host-canary <host> --mode
+native-only --execute --confirm "RUN LIVE <host> NATIVE-ONLY CANARY"`. The
+isolated profile receives the authoritative disabled state and the result passes
+only with a nonempty host response, unchanged plugin registration/load request,
+no valid Agency header, and zero new Agency evidence. Restore Agency with
+`agency on --global` in cleanup. A mode mismatch, unreadable control, or control
+generation change is a failed observation, not a native-only result.
+
 A Codex or Claude result is scoped to the temporary profile in which the
 managed plugin was explicitly requested. It does not prove that the real host
 profile is registered or enabled. The inspector therefore reports an

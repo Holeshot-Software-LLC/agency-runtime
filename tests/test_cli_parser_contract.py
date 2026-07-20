@@ -199,7 +199,7 @@ EXPECTED_BINDINGS = {
     "agency status": "cmd_status",
     "agency sync": "cmd_sync",
 }
-EXPECTED_MANIFEST_SHA256 = "638e86eb27771a28a93a6d6e1d04f8327bfb5f771131daa6267069fbbb694a18"
+EXPECTED_MANIFEST_SHA256 = "649f2f3b1e9f4d619b4770a910ad3fc4fd614a5b419857856b5dde2edd324e11"
 
 
 def _handler(name: str):

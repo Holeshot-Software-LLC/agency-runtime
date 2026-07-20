@@ -189,6 +189,12 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         help="Run the isolated live invocation after readiness inspection",
     )
     canary_p.add_argument(
+        "--mode",
+        choices=["agency", "native-only"],
+        default="agency",
+        help="Require Agency evidence or prove a clean native-only bypass",
+    )
+    canary_p.add_argument(
         "--confirm",
         default="",
         help="Exact confirmation phrase printed by the readiness report",

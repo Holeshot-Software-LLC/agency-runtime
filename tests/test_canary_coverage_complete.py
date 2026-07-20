@@ -352,9 +352,14 @@ def test_prepare_live_invocation_uses_default_backend_contract(
         timeout=2,
         native=_native(),
         backend_factory=factory,
+        master_enabled=False,
+        mode="native-only",
     )
     assert prepared.error is None
     assert calls[0]["native"] == _native()
+    assert calls[0]["master_enabled"] is False
+    assert prepared.prompt is not None
+    assert prepared.prompt.startswith(canary.NATIVE_ONLY_CANARY_PROMPT)
 
 
 def test_profile_and_proof_helpers_cover_current_and_receipt_failure() -> None:

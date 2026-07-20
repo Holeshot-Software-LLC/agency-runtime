@@ -3,9 +3,10 @@ title: "AR-57: Add a durable Agency-wide master switch"
 status: done
 category: roadmap
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-20
 tags: [operations, control-plane, cli, dashboard, windows, security]
 related:
+  - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
   - docs/decisions/0053-durable-fail-enabled-master-control.md
   - docs/decisions/0034-persistent-soft-host-control.md
   - docs/THREAT_MODEL.md
