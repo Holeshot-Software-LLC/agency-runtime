@@ -1,6 +1,6 @@
 ---
 title: "AR-83: Import manifest-backed upstream agent rosters into quarantine"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-17
 updated: 2026-07-18
@@ -33,8 +33,9 @@ either misses useful metadata or trusts undeclared directories too broadly.
 A manifest-aware local import path now validates declared divisions and feeds
 every accepted definition into the bounded quarantine and immutable review
 path. Imported definitions remain quarantined until explicit approval and
-activation. AR-86 owns official-upstream delta synchronization; final merged
-verification remains in progress.
+activation. AR-86 owns official-upstream delta synchronization. The merged
+roster contains 263 approved agents, zero quarantined agents, and passes the
+full-roster participation and recall gates.
 
 ## Approach
 
@@ -53,4 +54,4 @@ AR-02 owns coverage-gap discovery and AR-28 owns reversible activation controls.
 - [x] Missing slugs and divisions derive from bounded trusted metadata.
 - [x] Undeclared directories, duplicates, malformed manifests, and path escapes fail closed.
 - [x] Every imported prompt remains quarantined until explicit activation.
-- [ ] Full branch and merged-install gates pass.
+- [x] Full branch and merged-install gates pass.

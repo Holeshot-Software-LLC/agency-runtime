@@ -1,6 +1,6 @@
 ---
 title: "AR-109: Make hosted process-security tests race-free and platform-honest"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-20
 updated: 2026-07-20
@@ -68,5 +68,9 @@ containment and descendant cleanup.
 - [x] Preflight lease and activity timestamps share one store clock sample.
 - [x] The exact Windows Python 3.14 clock regression and full affected file set pass.
 - [x] Affected Windows and native Linux tests pass warning-strict.
-- [ ] The complete hosted Python matrix passes on PR #111.
+- [x] The complete hosted Python matrix passes on PR #111.
 - [x] Documentation, worklog, and tracker mapping remain synchronized.
+
+PR #111 completed successfully across Ubuntu Python 3.10-3.14, Windows Python
+3.10 and 3.14, portability contracts, exact coverage, artifact verification,
+dependency review, and CodeQL before merge.

@@ -1,6 +1,6 @@
 ---
 title: "AR-110: Preserve dashboard service trust under WSL systemd namespace remapping"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-20
 updated: 2026-07-20
@@ -64,5 +64,9 @@ XDG namespace and fail-closed service boundary.
 - [x] Missing or unreadable kernel evidence fails secure and retains `PrivateTmp`.
 - [x] Configuration namespace trust remains unchanged and fail-closed.
 - [x] Focused service and security tests pass with exact line and branch coverage.
-- [ ] An exact built wheel installs, starts, reports healthy, and uninstalls through real WSL `systemd --user`.
-- [ ] Documentation, worklog, and tracker mapping remain synchronized.
+- [x] An exact built wheel installs, starts, reports healthy, and uninstalls through real WSL `systemd --user`.
+- [x] Documentation, worklog, and tracker mapping remain synchronized.
+
+The exact committed wheel passed install, start, healthy-status, stop, and
+uninstall against real WSL `systemd --user`. PR #114 then passed the complete
+hosted Windows/Linux matrix and merged the policy unchanged.

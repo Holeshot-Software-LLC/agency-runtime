@@ -96,17 +96,17 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-76` | [Make restricted Windows CLI read-capable and fail-safe](issue-AR-76-restricted-windows-cli-read-and-fail-safe.md) | done | p0 | operations | [#77](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/77) |
 | `AR-77` | [Validate brokered control transition receipts exactly](issue-AR-77-validate-brokered-control-transition-receipts.md) | done | p0 | security | [#78](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/78) |
 | `AR-78` | [Preserve the LiteLLM router when the actual model is unavailable](issue-AR-78-preserve-litellm-router-when-model-is-unavailable.md) | done | p0 | observability | [#79](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/79) |
-| `AR-79` | [Prove exact Agency headers in the installed isolated Codex canary](issue-AR-79-installed-isolated-header-proof.md) | in_progress | p0 | host-integrations | [#84](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/84) |
-| `AR-80` | [Treat an unavailable optional Ollama fallback as degraded](issue-AR-80-optional-ollama-degraded.md) | in_progress | p1 | provider-configuration | [#83](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/83) |
-| `AR-81` | [Prevent incompatible specialists from sharing a direct context](issue-AR-81-conflict-safe-direct-context.md) | in_progress | p0 | routing | [#81](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/81) |
-| `AR-82` | [Route each delegated work unit against the full active roster](issue-AR-82-full-roster-unit-routing.md) | in_progress | p0 | routing | [#82](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/82) |
-| `AR-83` | [Import manifest-backed upstream agent rosters into quarantine](issue-AR-83-manifest-roster-import.md) | in_progress | p1 | roster-governance | [#85](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/85) |
-| `AR-84` | [Give the semantic judge bounded full agent cards](issue-AR-84-bounded-semantic-agent-cards.md) | in_progress | p1 | routing | [#80](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/80) |
-| `AR-85` | [Replace generic triviality with state-aware turn classification](issue-AR-85-state-aware-turn-classification.md) | in_progress | p0 | routing | [#86](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/86) |
+| `AR-79` | [Prove exact Agency headers in the installed isolated Codex canary](issue-AR-79-installed-isolated-header-proof.md) | done | p0 | host-integrations | [#84](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/84) |
+| `AR-80` | [Treat an unavailable optional Ollama fallback as degraded](issue-AR-80-optional-ollama-degraded.md) | done | p1 | provider-configuration | [#83](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/83) |
+| `AR-81` | [Prevent incompatible specialists from sharing a direct context](issue-AR-81-conflict-safe-direct-context.md) | done | p0 | routing | [#81](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/81) |
+| `AR-82` | [Route each delegated work unit against the full active roster](issue-AR-82-full-roster-unit-routing.md) | done | p0 | routing | [#82](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/82) |
+| `AR-83` | [Import manifest-backed upstream agent rosters into quarantine](issue-AR-83-manifest-roster-import.md) | done | p1 | roster-governance | [#85](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/85) |
+| `AR-84` | [Give the semantic judge bounded full agent cards](issue-AR-84-bounded-semantic-agent-cards.md) | done | p1 | routing | [#80](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/80) |
+| `AR-85` | [Replace generic triviality with state-aware turn classification](issue-AR-85-state-aware-turn-classification.md) | done | p0 | routing | [#86](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/86) |
 | `AR-86` | [Govern the complete upstream roster lifecycle](issue-AR-86-govern-complete-upstream-roster-lifecycle.md) | done | p0 | roster-governance | [#87](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/87) |
 | `AR-87` | [Produce bounded native delegation plans and correction](issue-AR-87-bounded-native-delegation-plans.md) | done | p0 | routing | [#88](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/88) |
-| `AR-88` | [Compare Agency modes against native host outcomes](issue-AR-88-compare-agency-native-outcomes.md) | in_progress | p0 | testing | [#89](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/89) |
-| `AR-89` | [Expose roster governance and inference health operationally](issue-AR-89-operational-roster-inference-parity.md) | in_progress | p1 | operations | [#90](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/90) |
+| `AR-88` | [Compare Agency modes against native host outcomes](issue-AR-88-compare-agency-native-outcomes.md) | done | p0 | testing | [#89](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/89) |
+| `AR-89` | [Expose roster governance and inference health operationally](issue-AR-89-operational-roster-inference-parity.md) | done | p1 | operations | [#90](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/90) |
 | `AR-90` | [Migrate legacy activation receipts before current indexes](issue-AR-90-migrate-legacy-activation-receipts-before-indexes.md) | done | p0 | operations | [#91](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/91) |
 | `AR-91` | [Enforce governed roster activation at every public store boundary](issue-AR-91-enforce-governed-roster-activation.md) | done | p0 | roster-governance | [#92](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/92) |
 | `AR-92` | [Redact roster source credentials from persistence and output](issue-AR-92-redact-roster-source-credentials.md) | done | p0 | security | [#93](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/93) |
@@ -124,11 +124,12 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-104` | [Run hosted portability gates in trusted boundaries](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | done | p0 | testing | [#106](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106) |
 | `AR-105` | [Report the current Codex hook event count](issue-AR-105-current-codex-hook-event-count.md) | done | p1 | documentation | [#107](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/107) |
 | `AR-106` | [Make Windows policy identity and POSIX simulations portable](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | done | p0 | testing | [#108](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/108) |
-| `AR-107` | [Build release artifacts from canonical Git blobs](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | in_progress | p0 | release | [#109](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/109) |
+| `AR-107` | [Build release artifacts from canonical Git blobs](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | done | p0 | release | [#109](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/109) |
 | `AR-108` | [Make owned process containment atomic and session-escape resistant](issue-AR-108-atomic-owned-process-containment.md) | done | p0 | security | [#110](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/110) |
-| `AR-109` | [Make hosted process-security tests race-free and platform-honest](issue-AR-109-hosted-process-security-test-fidelity.md) | in_progress | p0 | testing | [#112](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/112) |
-| `AR-110` | [Preserve dashboard service trust under WSL systemd namespace remapping](issue-AR-110-preserve-wsl-systemd-service-trust.md) | in_progress | p0 | operations | [#113](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/113) |
+| `AR-109` | [Make hosted process-security tests race-free and platform-honest](issue-AR-109-hosted-process-security-test-fidelity.md) | done | p0 | testing | [#112](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/112) |
+| `AR-110` | [Preserve dashboard service trust under WSL systemd namespace remapping](issue-AR-110-preserve-wsl-systemd-service-trust.md) | done | p0 | operations | [#113](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/113) |
 | `AR-111` | [Honor global Agency mode in isolated host canaries](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | done | p0 | testing | [#115](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/115) |
+| `AR-112` | [Rewrite the README for public users](issue-AR-112-public-user-readme.md) | done | p1 | documentation | [#117](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/117) |
 
 ## Traceability
 
@@ -216,17 +217,17 @@ not stable internal identifiers.
 | [AR-76](issue-AR-76-restricted-windows-cli-read-and-fail-safe.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0059](../decisions/0059-broker-restricted-windows-agent-controls.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
 | [AR-77](issue-AR-77-validate-brokered-control-transition-receipts.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0057](../decisions/0057-generation-checked-host-control-mutations.md), [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0061](../decisions/0061-validate-brokered-control-transition-receipts.md) |
 | [AR-78](issue-AR-78-preserve-litellm-router-when-model-is-unavailable.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0003](../decisions/0003-response-telemetry-is-model-truth.md), [ADR-0047](../decisions/0047-reconcile-litellm-model-and-router-evidence.md) |
-| [AR-79](issue-AR-79-installed-isolated-header-proof.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0045](../decisions/0045-turn-scoped-specialist-activation.md) |
-| [AR-80](issue-AR-80-optional-ollama-degraded.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0008](../decisions/0008-ordered-provider-fallback.md), [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md) |
-| [AR-81](issue-AR-81-conflict-safe-direct-context.md) | [`e5f4a8c`](../worklog/README.md), [`fdaad17`](../worklog/README.md) | [ADR-0045](../decisions/0045-turn-scoped-specialist-activation.md), [ADR-0062](../decisions/0062-isolate-directives-and-route-units-first.md), [ADR-0065](../decisions/0065-keep-compact-resident-manager-kernel.md) |
-| [AR-82](issue-AR-82-full-roster-unit-routing.md) | [`e5f4a8c`](../worklog/README.md), [`164188b`](../worklog/README.md) | [ADR-0054](../decisions/0054-unit-aware-assignment-and-event-driven-dag.md), [ADR-0062](../decisions/0062-isolate-directives-and-route-units-first.md) |
-| [AR-83](issue-AR-83-manifest-roster-import.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md), [ADR-0063](../decisions/0063-import-external-rosters-through-declared-manifests.md) |
-| [AR-84](issue-AR-84-bounded-semantic-agent-cards.md) | [`e5f4a8c`](../worklog/README.md), [`164188b`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0062](../decisions/0062-isolate-directives-and-route-units-first.md) |
-| [AR-85](issue-AR-85-state-aware-turn-classification.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0045](../decisions/0045-turn-scoped-specialist-activation.md), [ADR-0064](../decisions/0064-classify-turn-intent-from-durable-state.md) |
+| [AR-79](issue-AR-79-installed-isolated-header-proof.md) | [`e5f4a8c`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0045](../decisions/0045-turn-scoped-specialist-activation.md) |
+| [AR-80](issue-AR-80-optional-ollama-degraded.md) | [`e5f4a8c`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0008](../decisions/0008-ordered-provider-fallback.md), [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md) |
+| [AR-81](issue-AR-81-conflict-safe-direct-context.md) | [`e5f4a8c`](../worklog/README.md), [`fdaad17`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0045](../decisions/0045-turn-scoped-specialist-activation.md), [ADR-0062](../decisions/0062-isolate-directives-and-route-units-first.md), [ADR-0065](../decisions/0065-keep-compact-resident-manager-kernel.md) |
+| [AR-82](issue-AR-82-full-roster-unit-routing.md) | [`e5f4a8c`](../worklog/README.md), [`164188b`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0054](../decisions/0054-unit-aware-assignment-and-event-driven-dag.md), [ADR-0062](../decisions/0062-isolate-directives-and-route-units-first.md) |
+| [AR-83](issue-AR-83-manifest-roster-import.md) | [`e5f4a8c`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md), [ADR-0063](../decisions/0063-import-external-rosters-through-declared-manifests.md) |
+| [AR-84](issue-AR-84-bounded-semantic-agent-cards.md) | [`e5f4a8c`](../worklog/README.md), [`164188b`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0062](../decisions/0062-isolate-directives-and-route-units-first.md) |
+| [AR-85](issue-AR-85-state-aware-turn-classification.md) | [`e5f4a8c`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0045](../decisions/0045-turn-scoped-specialist-activation.md), [ADR-0064](../decisions/0064-classify-turn-intent-from-durable-state.md) |
 | [AR-86](issue-AR-86-govern-complete-upstream-roster-lifecycle.md) | [`e5f4a8c`](../worklog/README.md), [`164188b`](../worklog/README.md), [`11a2c86`](../worklog/README.md) | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-87](issue-AR-87-bounded-native-delegation-plans.md) | [`e5f4a8c`](../worklog/README.md), [`164188b`](../worklog/README.md) | [ADR-0071](../decisions/0071-bound-native-delegation-correction.md) |
-| [AR-88](issue-AR-88-compare-agency-native-outcomes.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0072](../decisions/0072-compare-task-outcomes-with-paired-trials.md) |
-| [AR-89](issue-AR-89-operational-roster-inference-parity.md) | [`e5f4a8c`](../worklog/README.md), [`cbe9bc9`](../worklog/README.md), [`3ded6a4`](../worklog/README.md) | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
+| [AR-88](issue-AR-88-compare-agency-native-outcomes.md) | [`e5f4a8c`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0072](../decisions/0072-compare-task-outcomes-with-paired-trials.md) |
+| [AR-89](issue-AR-89-operational-roster-inference-parity.md) | [`e5f4a8c`](../worklog/README.md), [`cbe9bc9`](../worklog/README.md), [`3ded6a4`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
 | [AR-90](issue-AR-90-migrate-legacy-activation-receipts-before-indexes.md) | [`e5f4a8c`](../worklog/README.md) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
 | [AR-91](issue-AR-91-enforce-governed-roster-activation.md) | [`e5f4a8c`](../worklog/README.md), [`164188b`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-92](issue-AR-92-redact-roster-source-credentials.md) | [`e5f4a8c`](../worklog/README.md), [`164188b`](../worklog/README.md) | [ADR-0063](../decisions/0063-import-external-rosters-through-declared-manifests.md) |
@@ -244,11 +245,12 @@ not stable internal identifiers.
 | [AR-104](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [`11a2c86`](../worklog/README.md), [`0df5050`](../worklog/README.md), [`0c41fbd`](../worklog/README.md), [`89576f0`](../worklog/README.md), [`07de83c`](../worklog/README.md), [`a1c6744`](../worklog/README.md), [`31516d1`](../worklog/README.md), [`b05b180`](../worklog/README.md), [`361962f`](../worklog/README.md), [`987c32a`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md) |
 | [AR-105](issue-AR-105-current-codex-hook-event-count.md) | [`9400f76`](../worklog/README.md) | null |
 | [AR-106](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | [`987c32a`](../worklog/README.md) | [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
-| [AR-107](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md), [`9f98db3`](../worklog/README.md), [`3515d4e`](../worklog/README.md) | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-107](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md), [`9f98db3`](../worklog/README.md), [`3515d4e`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-108](issue-AR-108-atomic-owned-process-containment.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md) | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md), [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
-| [AR-109](issue-AR-109-hosted-process-security-test-fidelity.md) | [`9843025`](../worklog/README.md), [`4dccae7`](../worklog/README.md) | [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
-| [AR-110](issue-AR-110-preserve-wsl-systemd-service-trust.md) | [`0f374b4`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0075](../decisions/0075-preserve-config-trust-under-wsl-systemd.md) |
+| [AR-109](issue-AR-109-hosted-process-security-test-fidelity.md) | [`9843025`](../worklog/README.md), [`4dccae7`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
+| [AR-110](issue-AR-110-preserve-wsl-systemd-service-trust.md) | [`0f374b4`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0075](../decisions/0075-preserve-config-trust-under-wsl-systemd.md) |
 | [AR-111](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [`615d88c`](../worklog/README.md), [`f5fe972`](../worklog/README.md), [`b8f80bd`](../worklog/README.md), [`cb17e0d`](../worklog/README.md), [`123910a`](../worklog/README.md), [`edb922c`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0076](../decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md) |
+| [AR-112](issue-AR-112-public-user-readme.md) | [`4635a0b`](../worklog/README.md), [`de875f6`](../worklog/README.md) | None |
 
 ## Dependency summary
 
@@ -298,8 +300,8 @@ not stable internal identifiers.
 - `AR-79` through `AR-85` cover installed-header evidence, degraded optional
   inference, conflict-safe direct hydration, full-roster unit routing,
   manifest-backed quarantine, bounded semantic cards, and state-aware turn
-  classification. Implementation is present; their final merged-artifact and
-  installed-host reconciliation remains in progress.
+  classification. Their implementation, hosted matrix, exact merged artifact,
+  installed-host, ledger, and tracker gates are complete.
 - `AR-86` through `AR-106` own the newly separated production gaps: governed
   upstream deltas, bounded native delegation guidance, controlled outcome
   comparison, complete roster/inference operations parity, and legacy
@@ -314,13 +316,13 @@ not stable internal identifiers.
   for restricted host consumers, legacy bundle refresh, portable Windows
   fixtures, trusted hosted portability gates, current Codex hook counting, and
   portable policy simulations. `AR-86`, `AR-87`, and `AR-90` through `AR-106`
-  are done and tracker-closed. `AR-88` and `AR-89` retain their final live
-  comparison and operational-parity evidence gates.
+  are done and tracker-closed. `AR-88` and `AR-89` now also have final installed
+  comparison and cross-platform operational-parity evidence.
 - `AR-107` builds byte-deterministic release artifacts from canonical Git
   blobs and requires hosted Windows/Linux byte parity. `AR-108` supplies its
   atomic owned-process boundary, including the two-phase Linux GO protocol.
-  Their implementation is under final review; traceability is filled by the
-  immediately following ledger commit and tracker closure follows the merge.
+  Their implementation, hosted Windows/Linux byte parity, canonical checkout
+  proof, merge, and tracker gates are complete.
 - `AR-17` integrates the security, modularity, browser, host-contract,
   cross-platform, packaging, performance, and live Codex evidence. Pull request
   #18 passed review and the hosted gates, merged into `main`, and is connected

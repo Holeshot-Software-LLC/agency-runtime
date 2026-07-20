@@ -1,9 +1,9 @@
 ---
 title: "AR-80: Treat an unavailable optional Ollama fallback as degraded"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-17
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [doctor, ollama, providers, fallback, operations]
 related:
   - docs/decisions/0008-ordered-provider-fallback.md
@@ -32,7 +32,9 @@ That made a functional starter installation look unusable.
 
 The optional legacy fallback now produces a degraded warning and exit code 2.
 Explicitly configured provider-chain failures retain their existing hard-fail
-semantics. Final branch and merged-install verification remain in progress.
+semantics. The exact merged installation's verbose doctor run reports the
+unavailable optional Ollama path as degraded while confirming deterministic
+routing remains available.
 
 ## Approach
 
@@ -50,4 +52,4 @@ AR-05 and AR-06 define provider configuration and authenticated judge paths.
 - [x] An unavailable optional Ollama fallback reports `DEGRADED`.
 - [x] The warning states that deterministic token routing remains available.
 - [x] Explicit configured-provider failures remain hard failures.
-- [ ] Full branch and merged-install doctor gates pass.
+- [x] Full branch and merged-install doctor gates pass.

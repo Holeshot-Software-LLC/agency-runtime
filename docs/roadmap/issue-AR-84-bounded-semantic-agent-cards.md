@@ -1,6 +1,6 @@
 ---
 title: "AR-84: Give the semantic judge bounded full agent cards"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-17
 updated: 2026-07-19
@@ -32,8 +32,9 @@ division, capabilities, categories, or tool affinity.
 
 Judge cards now carry the complete approved routing projection under
 deterministic per-field and aggregate bounds. Raw prompt bodies remain excluded,
-and existing provider and candidate-validation schemas remain compatible.
-Merged-install verification remains.
+and existing provider and candidate-validation schemas remain compatible. The
+exact merged installation passes routing, delegation, full-roster, and latency
+gates with complete semantic participation and recall.
 
 ## Approach
 
@@ -53,4 +54,4 @@ ceiling before semantic reranking.
 - [x] Field and total prompt sizes remain deterministically bounded.
 - [x] Raw prompt bodies are never included in the judge request.
 - [x] Existing provider and candidate-validation contracts remain compatible.
-- [ ] Full routing, performance, and merged-install gates pass.
+- [x] Full routing, performance, and merged-install gates pass.

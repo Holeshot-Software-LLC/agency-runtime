@@ -1,9 +1,9 @@
 ---
 title: "AR-85: Replace generic triviality with state-aware turn classification"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [routing, lifecycle, correlation, inference, compatibility]
 related:
   - docs/decisions/0064-classify-turn-intent-from-durable-state.md
@@ -97,4 +97,9 @@ boundary.
 - [x] `trivial_msg_threshold` is not an authority boundary and every default source agrees on zero.
 - [x] Legacy trivial/nontrivial fields are compatibility projections only.
 - [x] HTTP preflight exposes the bounded typed and resident-manager projection.
-- [ ] Full Python, dashboard, routing, documentation, installed-host, and tracker gates pass on the final tree.
+- [x] Full Python, dashboard, routing, documentation, installed-host, and tracker gates pass on the final tree.
+
+The final PR #114 tree passed exact line and branch coverage, every hosted
+Python cell, dashboard UI tests, routing/delegation/full-roster evaluation,
+artifact smoke and parity, documentation validation, and both installed Codex
+control modes. Tracker reconciliation is completed with this final ledger PR.
