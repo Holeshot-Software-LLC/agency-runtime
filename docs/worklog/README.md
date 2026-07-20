@@ -105,6 +105,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cb17e0d` | 2026-07-20 | test(portability): normalize hook control contracts | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-cb17e0d-portable-hook-control-tests.md) |
 | `123910a` | 2026-07-20 | test(coverage): exercise hook control rejection paths | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-123910a-hook-control-coverage.md) |
 | `edb922c` | 2026-07-20 | docs(roadmap): complete isolated canary control | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-edb922c-complete-isolated-canary-control.md) |
+| `a869e51` | 2026-07-20 | Merge pull request #114 from Holeshot-Software-LLC/codex/wsl-private-tmp-namespace | [AR-79 through AR-85, AR-88, AR-89, AR-107, AR-109 through AR-111](../roadmap/README.md) | [detail](2026-07-20-a869e51-pr-114-merge.md) |
+| `55c4dfe` | 2026-07-20 | docs(roadmap): close merged readiness gates | [AR-79 through AR-85, AR-88, AR-89, AR-107, AR-109, AR-110](../roadmap/README.md) | [detail](2026-07-20-55c4dfe-final-readiness-reconciliation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
