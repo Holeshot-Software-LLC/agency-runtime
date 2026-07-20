@@ -56,4 +56,5 @@ files and `git diff --check` passed.
 
 ## Follow-ups
 
-Complete the corrected hosted matrix and then mark AR-113 done.
+None. PR #121 passed the complete corrected hosted matrix without changing the
+dedicated performance thresholds.

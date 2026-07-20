@@ -1,6 +1,6 @@
 ---
 title: "AR-113: Isolate wall-clock performance gates from the compatibility matrix"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-20
 updated: 2026-07-20
@@ -54,5 +54,12 @@ trusted hosted portability matrix.
 - [x] Every Python compatibility cell excludes performance-marked tests.
 - [x] The dedicated uninstrumented performance step remains required.
 - [x] A workflow contract test protects the separation.
-- [ ] The corrected complete hosted matrix passes.
-- [ ] Documentation, worklog, and tracker mappings remain synchronized.
+- [x] The corrected complete hosted matrix passes.
+- [x] Documentation, worklog, and tracker mappings remain synchronized.
+
+PR #121 passed the complete corrected matrix: Ubuntu Python 3.10-3.14,
+Windows Python 3.10 and 3.14, exact line and branch coverage, the unchanged
+dedicated routing/delegation performance tests, dashboard UI coverage,
+portability contracts, deterministic source audit, Windows/Linux artifact
+build, byte parity and smoke, dependency review, and CodeQL. The previously
+failing Ubuntu Python 3.12 cell passed in 7m46s without running wall-clock tests.
