@@ -179,6 +179,10 @@ def test_distribution_metadata_helper_preserves_policy_failure_order() -> None:
         expected_version="0.1.0",
         expected_dependencies=("pyyaml<7,>=6.0",),
         expected_license=b"",
+        expected_core_metadata=(
+            tuple(sorted((name.casefold(), str(value)) for name, value in metadata.items())),
+            "",
+        ),
     )
 
     assert failures[:7] == [

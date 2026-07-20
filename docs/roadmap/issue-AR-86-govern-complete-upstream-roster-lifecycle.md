@@ -1,9 +1,9 @@
 ---
 title: "AR-86: Govern the complete upstream roster lifecycle"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [roster, upstream, audit, quarantine, synchronization]
 related:
   - docs/roadmap/issue-AR-83-manifest-roster-import.md
@@ -92,4 +92,4 @@ operator availability independently of governance state.
 - [x] Registered projected candidates cannot activate without source-bound remediation provenance.
 - [x] That provenance rule is part of the versioned audit-policy fingerprint, so pre-upgrade passing audits are invalidated and must be rerun before approval or activation.
 - [x] Resolution authority is durable, dependency-complete, and invalidated by evidence changes.
-- [ ] Full coverage, documentation, packaging, Windows, and Linux gates pass.
+- [x] Full coverage, documentation, packaging, Windows, and Linux gates pass.

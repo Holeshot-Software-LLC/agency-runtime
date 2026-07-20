@@ -33,6 +33,7 @@ venv/
 *.sqlite-shm
 *.sqlite-wal
 /.agency-runtime/
+.agency-release-*/
 /.codex/
 /agency.yaml
 .codegraph/

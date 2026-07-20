@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core import owned_process_capture
 from agency_runtime.core.delegation import backend_process
 
 
@@ -471,6 +472,8 @@ def test_stream_normalization_and_tiny_output_boundaries() -> None:
         ({"argv": []}, TypeError),
         ({"argv": [""]}, ValueError),
         ({"argv": ["tool"], "timeout": True}, ValueError),
+        ({"argv": ["tool"], "max_input_bytes": 0}, ValueError),
+        ({"argv": ["tool"], "max_input_bytes": True}, ValueError),
         ({"argv": ["tool"], "max_output_chars": 0}, ValueError),
         ({"argv": ["tool"], "input_text": "bad\x00input"}, ValueError),
     ],
@@ -487,6 +490,43 @@ def test_bounded_runner_rejects_invalid_contracts(
     parameters.update(kwargs)
     with pytest.raises(error):
         backend_process.run_bounded_process(**parameters)
+
+
+def test_bounded_text_input_uses_an_explicit_utf8_byte_limit() -> None:
+    observed: list[str | None] = []
+
+    def run(_argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        observed.append(kwargs["input_text"])
+        return subprocess.CompletedProcess(["tool"], 0)
+
+    result = backend_process.run_bounded_process(
+        ["tool"],
+        process_runner=run,
+        timeout=1,
+        input_text="éé",
+        max_input_bytes=4,
+    )
+
+    assert result.returncode == 0
+    assert observed == ["éé"]
+    with pytest.raises(ValueError, match="exceeds max_input_bytes"):
+        backend_process.run_bounded_process(
+            ["tool"],
+            process_runner=run,
+            timeout=1,
+            input_text="ééa",
+            max_input_bytes=4,
+        )
+    with pytest.raises(ValueError, match="without NUL"):
+        owned_process_capture._validate_text_input(
+            "before\x00after",
+            max_input_bytes=64,
+        )
+    with pytest.raises(ValueError, match="without NUL"):
+        owned_process_capture._validate_text_input(  # type: ignore[arg-type]
+            b"bytes",
+            max_input_bytes=64,
+        )
 
 
 @pytest.mark.parametrize(

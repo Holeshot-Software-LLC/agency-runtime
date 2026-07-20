@@ -3,7 +3,7 @@ title: "Use layered pinned supply-chain gates"
 status: accepted
 category: decisions
 created: 2026-07-12
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [security, supply-chain, ci, release]
 related:
   - docs/roadmap/issue-AR-63-replace-yanked-release-build-dependency.md
@@ -17,6 +17,8 @@ related:
   - docs/roadmap/issue-AR-20-full-history-ledger-ci.md
   - docs/roadmap/issue-AR-72-align-release-tooling-and-artifact-contract.md
   - docs/roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md
+  - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
+  - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

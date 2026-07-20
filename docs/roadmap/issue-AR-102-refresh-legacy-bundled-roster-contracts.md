@@ -1,9 +1,9 @@
 ---
 title: "AR-102: Refresh legacy bundled roster contracts on upgrade"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-19
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [roster-governance, upgrade, routing, compatibility, installation]
 related:
   - docs/roadmap/issue-AR-02-specialist-coverage-gaps.md
@@ -73,4 +73,4 @@ evidence.
 - [x] Current bundled rows remain idempotent no-ops.
 - [x] Synced, approved-candidate, and operator-owned rows are never overwritten.
 - [x] Upgraded routing selects relevant security, implementation, and documentation specialists for the reproduced task.
-- [ ] Fresh install, upgrade, full-suite, and hosted Windows/Linux gates pass.
+- [x] Fresh install, upgrade, full-suite, and hosted Windows/Linux gates pass.

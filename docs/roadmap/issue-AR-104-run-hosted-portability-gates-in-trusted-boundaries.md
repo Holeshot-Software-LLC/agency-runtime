@@ -1,9 +1,9 @@
 ---
 title: "AR-104: Run hosted portability gates in trusted boundaries"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-19
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [testing, portability, security, linux, windows, ci, python]
 related:
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
@@ -22,7 +22,8 @@ tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106
 depends_on:
   - AR-103
   - AR-106
-blocks: []
+blocks:
+  - AR-109
 ---
 
 # AR-104: Run hosted portability gates in trusted boundaries
@@ -71,9 +72,9 @@ test-only execution boundary.
 
 ## Acceptance
 
-- [ ] The package imports and artifact smoke passes on Python 3.10.
-- [ ] Linux tests run from a current-user-owned, non-writable launcher namespace.
-- [ ] Tests receive isolated home/runtime state without global config or database overrides.
-- [ ] Windows API and path simulations pass on both Windows and POSIX.
-- [ ] Roster-audit integrity is invariant across LF and CRLF working trees.
-- [ ] Warning-strict tests, exact coverage, performance, dashboard, artifact, Windows, and Linux hosted gates pass.
+- [x] The package imports and artifact smoke passes on Python 3.10.
+- [x] Linux tests run from a current-user-owned, non-writable launcher namespace.
+- [x] Tests receive isolated home/runtime state without global config or database overrides.
+- [x] Windows API and path simulations pass on both Windows and POSIX.
+- [x] Roster-audit integrity is invariant across LF and CRLF working trees.
+- [x] Warning-strict tests, exact coverage, performance, dashboard, artifact, Windows, and Linux hosted gates pass.

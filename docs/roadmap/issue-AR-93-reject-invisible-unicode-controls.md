@@ -1,9 +1,9 @@
 ---
 title: "AR-93: Reject invisible Unicode controls at roster ingestion boundaries"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [roster, unicode, security, ingestion]
 related:
   - docs/roadmap/issue-AR-83-manifest-roster-import.md
@@ -62,4 +62,4 @@ lifecycle and remediation queue.
 - [x] Findings name codepoints and exact byte offsets without rendering unsafe source text.
 - [x] JSON, YAML, and Markdown wrappers cannot bypass the scan.
 - [x] Normal visible internationalized text and line or tab controls remain supported.
-- [ ] Full coverage, documentation, packaging, Windows, and Linux gates pass.
+- [x] Full coverage, documentation, packaging, Windows, and Linux gates pass.

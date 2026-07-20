@@ -1154,11 +1154,9 @@ def test_store_clock_lease_exceeds_generated_hook_budget_by_write_margin(
         str(row["preflight_lease_expires_at"]).replace("Z", "+00:00")
     )
     assert started["lease_expires_at"] == row["preflight_lease_expires_at"]
-    # SQLite evaluates the insert and activity trigger clocks separately; allow
-    # their millisecond timestamp boundary while proving the full configured margin.
-    assert (expires_at - active_at).total_seconds() >= (
-        hook_budget + HOOK_TIMEOUT_BUFFER_SECONDS - 0.01
-    )
+    # The lease and activity timestamp share one store-clock sample, so database
+    # write duration cannot consume any part of the configured safety margin.
+    assert (expires_at - active_at).total_seconds() == (hook_budget + HOOK_TIMEOUT_BUFFER_SECONDS)
 
 
 def test_detector_bounds_large_input_dedupes_units_and_finishes_quickly() -> None:

@@ -1,9 +1,9 @@
 ---
 title: "AR-92: Redact roster source credentials from persistence and output"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [roster, credentials, privacy, security]
 related:
   - docs/roadmap/issue-AR-83-manifest-roster-import.md
@@ -55,4 +55,4 @@ source ingestion.
 - [x] Query-authenticated fetching is confined to the content-free transient fetch boundary.
 - [x] Credential-free canonical source matching remains deterministic.
 - [x] Common token, key, API-key, and signature query names plus arbitrary values are covered.
-- [ ] Full coverage, documentation, packaging, Windows, and Linux gates pass.
+- [x] Full coverage, documentation, packaging, Windows, and Linux gates pass.

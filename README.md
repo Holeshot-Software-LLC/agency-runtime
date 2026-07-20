@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [agents, routing, operations]
 related:
   - CODE_OF_CONDUCT.md
@@ -47,19 +47,21 @@ Windows and Ubuntu/WSL. All four have deterministic v1 host-contract coverage.
 That does not by itself mean all four were live-tested on this machine or on
 both operating systems.
 
-### Prior reviewed-head verification snapshot
+### Current source-tree verification snapshot
 
-The last merged release-readiness head was inspected on 2026-07-15. These are
-dated results for that prior head, not evidence for the current review branch
-and not a substitute for the final hosted release matrix:
+The current source tree was inspected on 2026-07-20 before hosted review. These
+receipts describe the exact local tree and explicitly identified live canaries;
+they do not substitute for hosted artifact parity, reviewed merge evidence, or
+the final merged-artifact installation:
 
-| Environment / host | Contract evidence | Live evidence in this checkout |
+| Environment / host | Evidence boundary | Dated receipt |
 |---|---|---|
-| Windows / Python | Warning-strict suite and exact line/branch coverage | `2787 passed`, `5 skipped`, and `2` performance tests deselected. All `20,476` statements and `6,498` branches were covered with zero missing lines or partial branches (`100.00%`). |
-| Ubuntu 24.04 WSL / Python 3.12 | Native ext4 full-suite and performance execution | `2774 passed`, `18` expected platform/host skips, and `2` performance tests deselected at the same exact `20,476` statements and `6,498` branches (`100.00%`). The separate performance run passed both tests. No Linux host was installed, so no live Linux host maturity is claimed. |
-| Routing and delegation | Versioned offline routing, policy, delegation-detection, DAG, concurrency, and latency gates | All `25` routing gates passed: precision@3 `0.9744`, required recall/top-1/top-k `1.0`, and policy macro F1 `0.9958`. Delegation passed `12/12`; the final Windows 1,000-agent benchmark measured p95 `6.098 ms`, cache p95 `0.410 ms`, `167.19` calls/second, and overlap `8`. The same Linux gates passed at p95 `11.094 ms`, cache p95 `0.442 ms`, `139.27` calls/second, and overlap `8`. |
-| Dashboard | Authenticated server, lifecycle, configuration, accessibility, and modular browser contracts | All `86/86` JavaScript tests passed at `100.00%` line, branch, and function coverage. Authenticated browser QA covered desktop and mobile layout, current-versus-historical evidence, agent controls, configuration, the route lab, and a clean application console. |
-| Codex on native Windows | Deterministic bundle, hook, MCP, lifecycle, `.CMD` launch, rollback, and isolated-canary contracts | Codex CLI `0.144.3` is currently installed. The dated exact-confirmed canary remains the earlier `0.144.1` isolated-profile run: it exited `0`, produced a valid six-line header with no missing fields, recorded one correlated routing event and one finalization, and persisted the attestation for trace `019f5bdd-612d-70c0-b369-2b038faa3d02`; it recorded no model receipt. A live keyless judge selection used `codex-cli (cli:codex)` with confidence `0.87` in `6880 ms`; the installed `$agency status` skill loaded and called `agency.host_status`; live CLI `off`/`on` succeeded and ended enabled. Real-profile command-hook trust remains a manual `/hooks` review, is reported as `unverified`, and is not promoted to `runtime-verified` by the isolated result. |
+| Windows / Python 3.13 | Warning-strict full suite and exact line/branch coverage | `6873 passed`, `35` expected skips, and `3` performance tests deselected. All `44,046` statements and `14,986` branches were covered with zero misses or partial branches (`100.00%`). The separate uninstrumented performance run passed `3/3`. |
+| Ubuntu 24.04 WSL / Python 3.12 | Live native owned-process lifecycle proof | `12/12` Linux lifecycle regressions passed, including two-phase execution gating, pre/post-commit interruption, session-escaping descendants, unrelated-sibling preservation, supervisor resource protections, own-child operations, terminal receipts, and native signal restoration. The complete hosted Linux matrix remains a CI gate; no Linux agent host is installed, so no live Linux host maturity is claimed. |
+| Routing and delegation | Versioned offline routing, policy, delegation-detection, DAG, concurrency, and latency gates | All `25` routing gates passed: precision@3 `0.9744`, required recall/top-1/top-k `1.0`, policy macro F1 `0.9958`, and every delegation metric `1.0`. Delegation contracts passed `12/12`; the Windows 1,000-agent benchmark measured p95 `2.369 ms`, cache p95 `0.852 ms`, `112.02` calls/second, and overlap `8`. |
+| Complete roster | Contract-only full-roster participation, retrieval, compatibility, and turn-state evaluation | All `263` approved and enabled agents participated in lexical and semantic retrieval; candidate and top-10 recall, curated accuracy, abstention, compatibility, and turn-state accuracy were `1.0`. Identity leakage and preferred-sentence copying were `0.0`. This does not claim live task quality or superiority. |
+| Dashboard | Authenticated server, lifecycle, configuration, accessibility, and modular browser contracts | All `88/88` JavaScript tests passed at `100.00%` line, branch, and function coverage across all seven dashboard modules. |
+| Codex on native Windows | Deterministic bundle, hook, MCP, lifecycle, `.CMD` launch, rollback, and isolated-canary contracts | Codex CLI `0.144.3` is currently installed. The last exact-confirmed isolated-profile header canary remains the dated `0.144.1` run: it exited `0`, produced the complete six-line header, recorded one correlated routing event and one finalization, and persisted trace `019f5bdd-612d-70c0-b369-2b038faa3d02` without a model receipt. The final `0.144.3` canary is rerun only after installing the merged artifact. Real-profile command-hook trust remains a manual `/hooks` review and is not promoted by an isolated result. |
 | Claude Code on native Windows | Deterministic bundle, hook, MCP, lifecycle, and rollback tests | Host absent |
 | Hermes on native Windows | Deterministic native plugin, lifecycle, delegation, and rollback tests | Host absent |
 | OpenClaw on native Windows | Deterministic JavaScript bundle, JSON bridge, lifecycle, runtime-inspection, and rollback tests | Host absent |
@@ -676,11 +678,14 @@ over standard input, are capped at 16 KiB, and are redacted recursively from
 results and errors. Executions use isolated home/temp roots, a minimal
 allowlisted environment plus only the selected host's authentication root, and
 bounded output. Project customizations and tools are disabled through the CLI
-controls the installed version exposes. Windows uses a kill-on-close Job Object;
-POSIX uses an owned process group. A delegation fails if descendants outlive a
-nominally successful parent. On Windows, `.cmd` and `.bat` shims never receive
-user-controlled arguments; a sibling native or PowerShell entry point is used,
-or the provider fails closed.
+controls the installed version exposes. Windows assigns a kill-on-close Job
+Object atomically at process creation; Linux uses a dedicated subreaper with
+a pre-opened `/proc` children descriptor and pidfd signaling so even `setsid`
+and double-fork descendants remain owned without reopening an attacker-swappable
+discovery path. A delegation fails if strong containment is unavailable or
+descendants outlive a nominally successful parent. On Windows, `.cmd` and `.bat`
+shims never receive user-controlled arguments; a sibling native or PowerShell
+entry point is used, or the provider fails closed.
 
 Credentialed remote provider URLs require HTTPS; literal loopback HTTP is the
 only exception. Provider URLs reject embedded user information, query strings,

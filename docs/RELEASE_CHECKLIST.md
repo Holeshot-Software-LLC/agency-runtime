@@ -3,7 +3,7 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [release, verification]
 related:
   - CHANGELOG.md
@@ -23,6 +23,8 @@ related:
   - docs/decisions/0069-enforce-conflicts-before-prompt-composition.md
   - docs/decisions/0070-run-child-specific-agency-activation.md
   - docs/decisions/0071-bound-native-delegation-correction.md
+  - docs/decisions/0073-own-subprocess-trees-atomically.md
+  - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
 supersedes: []
@@ -104,7 +106,15 @@ machine-specific credential paths.
 ```bash
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest tests -q -W error -p no:cacheprovider -m "not performance" --cov=agency_runtime --cov-branch --cov-report=term-missing --cov-fail-under=100
+python -m pytest tests -q -W error -p no:cacheprovider -m "not performance" \
+  --cov=agency_runtime \
+  --cov=scripts.build_distributions \
+  --cov=scripts.canonicalize_distributions \
+  --cov=scripts.prove_autocrlf_checkout \
+  --cov=scripts.release_contract \
+  --cov=scripts.release_git \
+  --cov=scripts.verify_distribution \
+  --cov-branch --cov-report=term-missing --cov-fail-under=100
 python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/dashboard_ui.test.mjs
 agency eval delegation --json
@@ -120,7 +130,9 @@ agency eval compare --input path/to/paired-observations.jsonl
 ```
 
 - [ ] The complete suite passes on Ubuntu CI for Python 3.10 through 3.14 and on
-      Windows CI at the 3.10 and 3.14 support endpoints.
+      Windows CI at the 3.10 and 3.14 support endpoints; focused native Windows
+      canonical-archive golden and atomic-process coverage also passes on Python
+      3.11, 3.12, and 3.13.
 - [ ] The versioned routing report passes every checked-in threshold.
 - [ ] Turn-classification tests cover all six exact kinds—`acknowledgement`,
       `conversation`, `control`, `continuation`, `new_intent`, and `revision`—
@@ -173,7 +185,7 @@ agency eval compare --input path/to/paired-observations.jsonl
 
 ```bash
 python scripts/verify_release_hygiene.py
-python -m bandit -q -r agency_runtime -lll
+python -m bandit -q -r agency_runtime scripts -lll
 python scripts/audit_runtime_dependencies.py
 zizmor --pedantic --strict-collection --offline .
 ```
@@ -185,8 +197,9 @@ zizmor --pedantic --strict-collection --offline .
       response headers.
 - [ ] Metadata-only capture and 30-day runtime retention remain the defaults.
 - [ ] Opt-in content paths are bounded and redacted; limitations are documented.
-- [ ] Native commands use argv execution, timeouts, bounded output, and validated
-      success protocols.
+- [ ] Native commands use argv execution, timeouts, bounded output, atomic
+      Windows/Linux tree ownership, the exact Linux GO handoff, and validated
+      terminal completion receipts from ADR-0073.
 - [ ] Every upstream roster definition is accounted for as approved,
       quarantined, or retired with content hash and provenance. Deterministic and
       configured-inference audits, findings, active-basis checks, and lifecycle
@@ -256,14 +269,50 @@ From a clean checkout:
 ```bash
 python -m pip install ".[dev,release,security]"
 AGENCY_RELEASE_COMMIT="$(git rev-parse --verify 'HEAD^{commit}')"
-python -m build --sdist --wheel
-python -m twine check --strict dist/*
-python scripts/verify_distribution.py dist --expected-commit "${AGENCY_RELEASE_COMMIT}"
+AGENCY_DIST_DIR="${HOME}/.agency-runtime/release-artifacts/dist-${AGENCY_RELEASE_COMMIT}"
+python -m scripts.build_distributions "${AGENCY_DIST_DIR}" --create-private-parent \
+  --expected-commit "${AGENCY_RELEASE_COMMIT}"
+python -m twine check --strict "${AGENCY_DIST_DIR}"/*
+python -m scripts.verify_distribution "${AGENCY_DIST_DIR}" \
+  --expected-commit "${AGENCY_RELEASE_COMMIT}"
 ```
 
-In PowerShell, capture the same pre-build value with
-`$env:AGENCY_RELEASE_COMMIT = git rev-parse --verify "HEAD^{commit}"` and pass
-`$env:AGENCY_RELEASE_COMMIT` to `--expected-commit`.
+In PowerShell, capture the same pre-build value and use an owner-private output
+parent outside the checkout:
+
+```powershell
+$env:AGENCY_RELEASE_COMMIT = git rev-parse --verify "HEAD^{commit}"
+$env:AGENCY_DIST_DIR = Join-Path $HOME `
+  ".agency-runtime\release-artifacts\dist-$env:AGENCY_RELEASE_COMMIT"
+python -m scripts.build_distributions $env:AGENCY_DIST_DIR `
+  --create-private-parent --expected-commit $env:AGENCY_RELEASE_COMMIT
+$artifacts = Get-ChildItem -LiteralPath $env:AGENCY_DIST_DIR -File |
+  Select-Object -ExpandProperty FullName
+python -m twine check --strict $artifacts
+python -m scripts.verify_distribution $env:AGENCY_DIST_DIR `
+  --expected-commit $env:AGENCY_RELEASE_COMMIT
+```
+
+The builder requires an absent destination, validates or creates its private
+parent, materializes the exact bounded release payload from reviewed Git blobs,
+and publishes the wheel/source pair only after a successful isolated build and
+pre-publication checkout revalidation. This avoids trusting physical worktree
+line endings or broadly inherited workspace ACLs while preserving the
+independently implemented and invoked Twine and distribution-verifier gates.
+Before publication, a bounded normalizer preserves every source-derived payload
+byte, canonicalizes LF only for the shared finite generated-metadata allowlist,
+rebuilds wheel `RECORD` from the normalized payload set, and rewrites
+backend-created ZIP, gzip, tar, ownership, mode, and timestamp container metadata
+to one Windows/Linux policy. It explicitly writes stored ZIP members and a
+canonical RFC 1951 stored-block gzip stream, so output bytes do not depend on
+host-zlib heuristics. Release-scoped Git inputs must all be regular non-executable
+(`100644`) blobs, and archive regular files must remain non-executable.
+
+Use a trusted release Python environment and output parent outside any
+cross-account-writable checkout namespace. The builder freezes and revalidates
+the interpreter before launch; an ordinary repository-local Windows virtual
+environment or `dist` parent may be rejected when inherited ACLs permit another
+account to replace the launcher or a newly created child.
 
 - [ ] Wheel and source distribution contain every package module and asset; the
       source distribution also contains governance docs, the threat model,
@@ -272,10 +321,39 @@ In PowerShell, capture the same pre-build value with
       proves HEAD did not change; wheel and sdist filenames, metadata, roots,
       version, dependencies, license, and every MANIFEST-governed committed
       byte match that reviewed commit exactly.
+- [ ] The build source was materialized from canonical reviewed Git blobs, not
+      line-ending-filtered working-tree bytes; unsafe paths, links, special
+      entries, aliasing, size-bound violations, and partial output fail closed.
+- [ ] On both hosted Ubuntu and Windows, the artifact job binds
+      command-scoped `core.autocrlf=true` without persistent Git configuration,
+      proves the fixed `LICENSE` source is physically CRLF while Git reports a
+      clean exact reviewed `HEAD` with an LF blob, and only then invokes the
+      canonical builder and independent verifier.
+- [ ] The release input contains no executable Git entries; both the builder and
+      independent verifier reject any release-scoped mode other than `100644`.
+- [ ] Hosted Ubuntu and Windows jobs each build and strictly verify the canonical
+      wheel/source pair, then a dependent parity gate proves both filenames and
+      artifact bytes are identical; only the reviewed Ubuntu pair proceeds as
+      the install or publication candidate.
 - [ ] Archives contain only canonical portable regular-file payloads plus the
       explicit generated metadata allowlist, remain within member, size,
       aggregate, and compression-ratio limits, and pass strict singleton
-      metadata, entry-point, WHEEL, and RECORD hash/size validation.
+      metadata, entry-point, WHEEL, and RECORD hash/size validation. Generated
+      text uses canonical LF, `SOURCES.txt` has the backend's exact
+      parent-directory/basename ordering and no-final-newline form, and
+      core-metadata bodies decode as strict raw UTF-8.
+- [ ] The wheel has one contiguous ZIP layout with no prefix, gaps, orphan local
+      records, comments, extras, directory entries, encryption, unsupported
+      flags, data descriptors, compression, or trailing bytes; every stored
+      member's physical size equals its payload size. The sdist has one bounded
+      gzip member with the exact canonical RFC 1951 stored-block segmentation,
+      only canonical bounded `mtime`/`path` PAX records, exact required parent
+      directories, zero alignment padding, and one minimally padded tar end
+      marker.
+- [ ] ZIP creator/extractor versions, system, flags, attributes, method, and DOS
+      time plus gzip and tar ownership, modes, and times match the single
+      platform-independent container policy; wheel `METADATA` and sdist
+      `PKG-INFO` agree semantically.
 - [ ] Windows service contract tests prove current-user Task Scheduler
       registration, owned updates, rollback-on-failure, start/stop/restart,
       uninstall, readiness, persistent-launcher drift refusal, and

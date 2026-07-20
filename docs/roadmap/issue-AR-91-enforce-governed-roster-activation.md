@@ -1,9 +1,9 @@
 ---
 title: "AR-91: Enforce governed roster activation at every public store boundary"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [roster, activation, governance, security]
 related:
   - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
@@ -57,4 +57,4 @@ owns the complete upstream lifecycle.
 - [x] Approved candidate activation remains the only path for imported or changed definitions.
 - [x] Direct upsert aliases cannot bypass the same checks.
 - [x] Refusal leaves no active, version, or category residue.
-- [ ] Full coverage, documentation, packaging, Windows, and Linux gates pass.
+- [x] Full coverage, documentation, packaging, Windows, and Linux gates pass.

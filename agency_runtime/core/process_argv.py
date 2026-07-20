@@ -12,6 +12,7 @@ import shutil
 import stat
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from itertools import pairwise
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from agency_runtime.core.executable_namespace import assert_executable_namespace
@@ -104,13 +105,127 @@ class PersistentArtifactIdentity:
 class PreparedProcessArgv(list[str]):
     """An argv carrying the artifacts and identities approved for one launch."""
 
-    __slots__ = ("artifact_paths", "executable_identities", "frozen_platform")
+    __slots__ = (
+        "argument_offset",
+        "artifact_paths",
+        "executable_identities",
+        "frozen_launcher",
+        "frozen_platform",
+        "persistent_artifact_identities",
+    )
 
     def __init__(self, values: Sequence[str], *, artifact_paths: Sequence[str]) -> None:
+        if isinstance(values, (str, bytes)) or not values:
+            raise TypeError("argv must be a non-empty sequence of strings")
+        if any(not isinstance(value, str) for value in values):
+            raise TypeError("argv must be a non-empty sequence of strings")
+        if any("\x00" in value for value in values):
+            raise ValueError("argv contains an invalid item")
+        if isinstance(artifact_paths, (str, bytes)) or not artifact_paths:
+            raise TypeError("artifact paths must be a non-empty sequence of strings")
+        if any(not isinstance(path, str) for path in artifact_paths):
+            raise TypeError("artifact paths must be a non-empty sequence of strings")
+        if any(not path or "\x00" in path for path in artifact_paths):
+            raise ValueError("artifact paths contain an invalid item")
         super().__init__(values)
         self.artifact_paths = tuple(artifact_paths)
+        self.argument_offset = self._infer_argument_offset()
         self.executable_identities: tuple[ExecutableIdentity, ...] = ()
+        self.persistent_artifact_identities: tuple[PersistentArtifactIdentity, ...] = ()
+        self.frozen_launcher: tuple[str, ...] | None = None
         self.frozen_platform: str | None = None
+
+    def _infer_argument_offset(self) -> int:
+        """Return the end of the launcher prefix represented by artifact paths."""
+
+        if not self or any(not isinstance(value, str) or "\x00" in value for value in self):
+            raise ValueError("argv contains an invalid item")
+        if (
+            not isinstance(self.artifact_paths, tuple)
+            or not self.artifact_paths
+            or any(
+                not isinstance(path, str) or not path or "\x00" in path
+                for path in self.artifact_paths
+            )
+        ):
+            raise ValueError("artifact paths contain an invalid item")
+        if self[0] != self.artifact_paths[0]:
+            raise ValueError("first executable artifact must be argv[0]")
+        positions: list[int] = []
+        for artifact in self.artifact_paths:
+            matches = [index for index, value in enumerate(self) if value == artifact]
+            if len(matches) != 1:
+                raise ValueError(
+                    f"each executable artifact must occur exactly once in argv: {artifact}"
+                )
+            positions.append(matches[0])
+        if any(right <= left for left, right in pairwise(positions)):
+            raise ValueError(
+                "executable artifacts must appear in strictly increasing argv positions"
+            )
+        return positions[-1] + 1
+
+    def _validate_argument_offset(self) -> None:
+        """Reject mutable receipt drift before identity work or launch."""
+
+        inferred = self._infer_argument_offset()
+        if self.argument_offset != inferred:
+            raise ValueError("process argv executable artifact boundary is invalid")
+
+    def with_arguments(self, arguments: Sequence[str]) -> PreparedProcessArgv:
+        """Return a receipt-preserving argv with a replacement argument suffix."""
+
+        if isinstance(arguments, (str, bytes)):
+            raise TypeError("arguments must be a sequence of strings")
+        values = list(arguments)
+        if any(not isinstance(item, str) for item in values):
+            raise TypeError("arguments must be a sequence of strings")
+        if any(not item or "\x00" in item for item in values):
+            raise ValueError("arguments contain an invalid item")
+        launcher = (
+            list(self.frozen_launcher)
+            if self.frozen_launcher is not None
+            else list(self[: self.argument_offset])
+        )
+        bound = PreparedProcessArgv(
+            [*launcher, *values],
+            artifact_paths=self.artifact_paths,
+        )
+        bound.argument_offset = len(launcher)
+        bound.executable_identities = self.executable_identities
+        bound.persistent_artifact_identities = self.persistent_artifact_identities
+        bound.frozen_launcher = self.frozen_launcher
+        bound.frozen_platform = self.frozen_platform
+        return bound
+
+    def bind(self, *arguments: str | Sequence[str]) -> PreparedProcessArgv:
+        """Convenience alias accepting either positional or one sequence argument."""
+
+        values: Sequence[str]
+        if len(arguments) == 1 and not isinstance(arguments[0], str):
+            values = arguments[0]
+        else:
+            values = arguments  # type: ignore[assignment]
+        return self.with_arguments(values)
+
+    def freeze_persistent(
+        self,
+        *,
+        platform_name: str | None = None,
+        forbidden_roots: Sequence[str | Path] = (),
+    ) -> PreparedProcessArgv:
+        """Freeze durable lexical launcher identities without resolving argv spelling."""
+
+        return freeze_persistent_process_argv(
+            self,
+            platform_name=platform_name,
+            forbidden_roots=forbidden_roots,
+        )
+
+    def revalidate(self) -> None:
+        """Revalidate this argv's frozen receipt immediately before launch."""
+
+        revalidate_process_argv(self)
 
 
 def _is_absolute_path(value: str, *, platform_name: str) -> bool:
@@ -577,6 +692,43 @@ def _is_within(path: str, root: str | Path) -> bool:
     return True
 
 
+def _absolute_lexical_path(
+    value: str | Path,
+    *,
+    platform_name: str,
+) -> str:
+    """Return an absolute normalized spelling without dereferencing links."""
+
+    path_module = ntpath if platform_name == "nt" else posixpath
+    spelling = os.fspath(value)
+    if path_module.isabs(spelling):
+        return path_module.normpath(spelling)
+    if platform_name != os.name:
+        raise ValueError("relative paths require the native platform")
+    return path_module.normpath(path_module.abspath(spelling))
+
+
+def _assert_artifact_outside_forbidden_roots(
+    lexical_path: str | Path,
+    resolved_path: str,
+    *,
+    platform_name: str,
+    forbidden_roots: Sequence[str | Path],
+) -> None:
+    """Reject launch artifacts inside a forbidden root by spelling or target."""
+
+    lexical = _absolute_lexical_path(lexical_path, platform_name=platform_name)
+    for root in forbidden_roots:
+        lexical_root = _absolute_lexical_path(root, platform_name=platform_name)
+        if _is_lexically_within(lexical, lexical_root, platform_name=platform_name) or _is_within(
+            resolved_path,
+            root,
+        ):
+            raise OSError(
+                f"executable artifact must not reside in the target repository: {lexical_path}"
+            )
+
+
 def _snapshot_executable(
     path: str,
     *,
@@ -586,8 +738,12 @@ def _snapshot_executable(
 ) -> ExecutableIdentity:
     canonical, status = _canonical_regular_file(path, platform_name=platform_name)
     _assert_executable_artifact_trusted(canonical, status, platform_name=platform_name)
-    if any(_is_within(canonical, root) for root in forbidden_roots):
-        raise OSError(f"executable artifact must not reside in the target repository: {canonical}")
+    _assert_artifact_outside_forbidden_roots(
+        path,
+        canonical,
+        platform_name=platform_name,
+        forbidden_roots=forbidden_roots,
+    )
     if (
         platform_name == "nt"
         and require_native_suffix
@@ -616,6 +772,7 @@ def freeze_process_argv(
 ) -> PreparedProcessArgv:
     """Freeze the real filesystem identity of every launch-critical artifact."""
 
+    argv._validate_argument_offset()
     platform = platform_name or os.name
     identities = tuple(
         _snapshot_executable(
@@ -633,7 +790,38 @@ def freeze_process_argv(
         if value in replacements:
             argv[index] = replacements[value]
     argv.artifact_paths = tuple(item.path for item in identities)
+    argv._validate_argument_offset()
     argv.executable_identities = identities
+    argv.persistent_artifact_identities = ()
+    argv.frozen_launcher = tuple(argv[: argv.argument_offset])
+    argv.frozen_platform = platform
+    return argv
+
+
+def freeze_persistent_process_argv(
+    argv: PreparedProcessArgv,
+    *,
+    platform_name: str | None = None,
+    forbidden_roots: Sequence[str | Path] = (),
+) -> PreparedProcessArgv:
+    """Freeze lexical launch artifacts for reuse without dereferencing argv[0]."""
+
+    argv._validate_argument_offset()
+    platform = platform_name or os.name
+    identities = snapshot_persistent_artifacts(
+        argv.artifact_paths,
+        platform_name=platform,
+    )
+    for identity in identities:
+        _assert_artifact_outside_forbidden_roots(
+            identity.lexical_path,
+            identity.resolved_path,
+            platform_name=platform,
+            forbidden_roots=forbidden_roots,
+        )
+    argv.executable_identities = ()
+    argv.persistent_artifact_identities = identities
+    argv.frozen_launcher = tuple(argv[: argv.argument_offset])
     argv.frozen_platform = platform
     return argv
 
@@ -641,10 +829,33 @@ def freeze_process_argv(
 def revalidate_process_argv(argv: PreparedProcessArgv) -> None:
     """Fail when any frozen artifact changed between approval and process creation."""
 
-    if not argv.executable_identities:
+    try:
+        argv._validate_argument_offset()
+    except (TypeError, ValueError) as exc:
+        raise OSError("process argv launcher changed after identity freeze") from exc
+    if argv.executable_identities and argv.persistent_artifact_identities:
+        raise OSError("process argv has conflicting frozen executable identities")
+    if not argv.executable_identities and not argv.persistent_artifact_identities:
         raise OSError("process argv has no frozen executable identity")
     if argv.frozen_platform is None:
         raise OSError("process argv has no frozen executable platform")
+    if argv.frozen_launcher is None:
+        raise OSError("process argv has no frozen launcher prefix")
+    if tuple(argv[: argv.argument_offset]) != argv.frozen_launcher:
+        raise OSError("process argv launcher changed after identity freeze")
+    if argv.persistent_artifact_identities:
+        if (
+            tuple(identity.lexical_path for identity in argv.persistent_artifact_identities)
+            != argv.artifact_paths
+        ):
+            raise OSError("persistent executable identities do not cover argv artifacts")
+        revalidate_persistent_artifacts(
+            argv.persistent_artifact_identities,
+            platform_name=argv.frozen_platform,
+        )
+        return
+    if tuple(identity.path for identity in argv.executable_identities) != argv.artifact_paths:
+        raise OSError("executable identities do not cover argv artifacts")
     for expected in argv.executable_identities:
         canonical, current = _canonical_regular_file(
             expected.path, platform_name=argv.frozen_platform
@@ -888,6 +1099,7 @@ __all__ = [
     "PreparedProcessArgv",
     "absolute_executable_path",
     "agency_bootstrap_path",
+    "freeze_persistent_process_argv",
     "freeze_process_argv",
     "isolated_python_argv",
     "persistent_artifacts_from_manifest",

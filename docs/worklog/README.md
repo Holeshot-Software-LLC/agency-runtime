@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-19
+updated: 2026-07-20
 tags: []
 related: []
 supersedes: []
@@ -90,6 +90,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `22434e8` | 2026-07-19 | fix(mcp): validate injected Store identities | [AR-47](../roadmap/issue-AR-47-freeze-store-config-identity-at-construction.md), [AR-48](../roadmap/issue-AR-48-enforce-strict-schema-on-config-read.md) | [detail](2026-07-19-22434e8-validate-injected-store-identities.md) |
 | `fdaad17` | 2026-07-19 | docs: reconcile runtime identity and routing contracts | [AR-36](../roadmap/issue-AR-36-config-relative-runtime-paths.md), [AR-46](../roadmap/issue-AR-46-bind-routing-to-store-config-identity.md), [AR-58](../roadmap/issue-AR-58-unit-aware-delegation-assignment.md), [AR-81](../roadmap/issue-AR-81-conflict-safe-direct-context.md) | [detail](2026-07-19-fdaad17-reconcile-runtime-identity-routing-contracts.md) |
 | `987c32a` | 2026-07-19 | fix(portability): close Windows ingestion and CI gaps | [AR-104](../roadmap/issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md), [AR-106](../roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md) | [detail](2026-07-19-987c32a-windows-ingestion-portability.md) |
+| `be4b3ff` | 2026-07-19 | Merge pull request #104 from Holeshot-Software-LLC/codex/turn-scoped-agency-lifecycle | null | null |
+| `46f203a` | 2026-07-20 | fix(release): build artifacts from canonical Git blobs | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md), [AR-108](../roadmap/issue-AR-108-atomic-owned-process-containment.md) | [detail](2026-07-20-46f203a-canonical-release-source.md) |
+| `bb8ce93` | 2026-07-20 | fix(portability): harden hosted release proofs | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md), [AR-108](../roadmap/issue-AR-108-atomic-owned-process-containment.md) | [detail](2026-07-20-bb8ce93-hosted-release-portability.md) |
+| `9f98db3` | 2026-07-20 | fix(release): canonicalize generated metadata | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [detail](2026-07-20-9f98db3-generated-metadata-canonicalization.md) |
+| `3515d4e` | 2026-07-20 | fix(release): verify backend manifest order | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [detail](2026-07-20-3515d4e-backend-manifest-order.md) |
+| `9843025` | 2026-07-20 | test(portability): make process fixtures race-free | [AR-109](../roadmap/issue-AR-109-hosted-process-security-test-fidelity.md) | [detail](2026-07-20-9843025-process-fixture-fidelity.md) |
+| `4dccae7` | 2026-07-20 | fix(preflight): preserve lease safety margin | [AR-109](../roadmap/issue-AR-109-hosted-process-security-test-fidelity.md) | [detail](2026-07-20-4dccae7-store-clock-portability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

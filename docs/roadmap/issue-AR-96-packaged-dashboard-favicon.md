@@ -1,9 +1,9 @@
 ---
 title: "AR-96: Serve a packaged dashboard favicon without console noise"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [dashboard, browser, packaging, quality]
 related:
   - docs/roadmap/issue-AR-71-dashboard-accessible-truthful-states.md
@@ -55,4 +55,4 @@ local-only dashboard security boundary.
 - [x] The server returns the icon with the correct media type and hardened headers.
 - [x] Wheel and source-distribution manifests include the asset.
 - [x] Focused static-server and packaging regressions pass.
-- [ ] Browser QA is console-clean and the complete release matrix passes.
+- [x] Browser QA is console-clean and the complete release matrix passes.

@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -34,7 +34,7 @@ Status meanings:
 - ADR-0022 Omit Preflight Context for Trivial Messages → ADR-0023 Load Default Companions Even for Trivial Messages
 - ADR-0016 Centralize Finalization and Correlate Evidence by Session → ADR-0045 Use Turn-Scoped Specialist Activation with Immutable Session History
 - ADR-0023 Load Default Companions Even for Trivial Messages → ADR-0045 Use Turn-Scoped Specialist Activation with Immutable Session History
-- ADR-0043 Prime Bounded Stdin Before Resuming Windows Children → ADR-0044 Preclose Bounded Windows Child Stdin and Own One Suspension
+- ADR-0043 Prime Bounded Stdin Before Resuming Windows Children → ADR-0044 Preclose Bounded Windows Child Stdin and Own One Suspension → ADR-0073 Own Subprocess Trees Atomically Across Windows and Linux
 - ADR-0008 Use Ordered Provider Fallback Ending in Deterministic Scoring → ADR-0067 Require Configured Inference for Every Specialist-Selection Decision
 - ADR-0054 Use Unit-Aware Specialist Assignment and Event-Driven DAG Scheduling → ADR-0068 Select Compatible Specialist Closures per Work Unit
 - ADR-0062 Isolate Directive Specialists and Route Each Work Unit Before Hydration → ADR-0069 Enforce Specialist Conflicts Before Prompt Composition
@@ -124,7 +124,7 @@ Status meanings:
 | [ADR-0041](0041-bounded-asynchronous-overload-responses.md) | Use bounded asynchronous overload responses | Accepted |
 | [ADR-0042](0042-local-only-bounded-work-file-inference.md) | Keep automatic work-file inference local and bounded | Accepted |
 | [ADR-0043](0043-prime-stdin-before-windows-child-resume.md) | Prime bounded stdin before resuming Windows children | Superseded |
-| [ADR-0044](0044-preclose-bounded-windows-child-stdin.md) | Preclose bounded Windows child stdin and own one suspension | Accepted |
+| [ADR-0044](0044-preclose-bounded-windows-child-stdin.md) | Preclose bounded Windows child stdin and own one suspension | Superseded |
 | [ADR-0051](0051-bind-dashboard-runtime-publication-to-validated-filesystem-identities.md) | Bind dashboard runtime publication to validated filesystem identities | Accepted |
 | [ADR-0052](0052-require-trusted-parents-for-sqlite-store-paths.md) | Require trusted parents for SQLite Store paths | Accepted |
 | [ADR-0053](0053-durable-fail-enabled-master-control.md) | Use a durable fail-enabled master control before every host boundary | Accepted |
@@ -135,6 +135,8 @@ Status meanings:
 | [ADR-0059](0059-broker-restricted-windows-agent-controls.md) | Broker restricted Windows agent controls through narrow dashboard operations | Accepted |
 | [ADR-0060](0060-restricted-windows-cli-read-and-fail-safe.md) | Broker restricted CLI reads narrowly and fail unsafe operations before execution | Accepted |
 | [ADR-0061](0061-validate-brokered-control-transition-receipts.md) | Validate brokered control transition receipts against deterministic CAS semantics | Accepted |
+| [ADR-0073](0073-own-subprocess-trees-atomically.md) | Own subprocess trees atomically across Windows and Linux | Accepted |
+| [ADR-0074](0074-build-byte-deterministic-release-artifacts.md) | Build byte-deterministic release artifacts from canonical Git blobs | Accepted |
 
 ## Documentation governance
 

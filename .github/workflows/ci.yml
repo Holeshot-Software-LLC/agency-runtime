@@ -61,7 +61,14 @@ jobs:
           "${AGENCY_CI_PYTHON}" -m pytest tests -q -W error -p no:cacheprovider \
             -m "not performance" \
             --basetemp "${AGENCY_CI_TEMP}/pytest-coverage" \
-            --cov=agency_runtime --cov-branch --cov-report=term-missing \
+            --cov=agency_runtime \
+            --cov=scripts.build_distributions \
+            --cov=scripts.canonicalize_distributions \
+            --cov=scripts.prove_autocrlf_checkout \
+            --cov=scripts.release_contract \
+            --cov=scripts.release_git \
+            --cov=scripts.verify_distribution \
+            --cov-branch --cov-report=term-missing \
             --cov-fail-under=100
       - name: Run uninstrumented wall-clock performance gates
         run: |
@@ -81,7 +88,7 @@ jobs:
   test:
     name: tests / ${{ matrix.os }} / py${{ matrix.python }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -147,10 +154,63 @@ jobs:
           python scripts/update_worklog.py --check
           python scripts/verify_docs.py --require-tracker
 
+  windows-portability-contract:
+    name: portability contract / windows / py${{ matrix.python }}
+    runs-on: windows-2022
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Prepare private test runtime
+        shell: bash
+        env:
+          AGENCY_CI_MATRIX_PYTHON: ${{ matrix.python }}
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "portability-py${AGENCY_CI_MATRIX_PYTHON}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
+      - name: Exercise canonical archives and atomic Windows processes
+        shell: bash
+        run: |
+          export HOME="${AGENCY_CI_HOME}"
+          export USERPROFILE="${AGENCY_CI_HOME}"
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
+          "${AGENCY_CI_PYTHON}" -m pytest \
+            tests/test_canonicalize_distributions.py \
+            tests/test_owned_binary_process.py \
+            tests/test_owned_process_core_hardening.py \
+            tests/test_owned_process_windows_atomic.py \
+            -q -W error -p no:cacheprovider \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-portability"
+
   artifacts:
-    name: build and verify distributions
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    name: build and verify distributions / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-24.04}
+          - {os: windows-2022}
+    env:
+      AGENCY_RELEASE_COMMIT: ${{ github.sha }}
     steps:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -164,34 +224,83 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install release tools
         run: python -m pip install "build==1.5.0" "twine==6.2.0"
+      - name: Smoke release modules without installing the project
+        run: |
+          python -m scripts.build_distributions --help
+          python -m scripts.verify_distribution --help
+      - name: Prepare private release runtime
+        shell: bash
+        env:
+          AGENCY_CI_MATRIX_OS: ${{ matrix.os }}
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "artifacts-${AGENCY_CI_MATRIX_OS}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
+      - name: Bind private release output
+        id: release-output
+        shell: bash
+        run: printf 'path=%s\n' "${AGENCY_CI_TEMP}/dist" >> "${GITHUB_OUTPUT}"
       - name: Check tracked release inputs
         run: python scripts/verify_release_hygiene.py
-      - name: Capture immutable reviewed commit
+      - name: Prove clean CRLF checkout uses canonical Git blobs
+        shell: bash
+        run: >-
+          "${AGENCY_CI_PYTHON}" -m scripts.prove_autocrlf_checkout
+          --expected-commit "${AGENCY_RELEASE_COMMIT}"
+      - name: Build wheel and source distribution
+        shell: bash
+        run: >-
+          "${AGENCY_CI_PYTHON}" -m scripts.build_distributions "${AGENCY_CI_TEMP}/dist"
+          --expected-commit "${AGENCY_RELEASE_COMMIT}"
+      - name: Verify metadata and artifact contents
         shell: bash
         run: |
-          AGENCY_RELEASE_COMMIT="$(git rev-parse --verify HEAD^{commit})"
-          if [ "${AGENCY_RELEASE_COMMIT}" != "${GITHUB_SHA}" ]; then
-            echo "checked-out commit does not match the GitHub event commit" >&2
-            exit 1
-          fi
-          echo "AGENCY_RELEASE_COMMIT=${AGENCY_RELEASE_COMMIT}" >> "${GITHUB_ENV}"
-      - name: Build wheel and source distribution
-        run: python -m build --sdist --wheel
-      - name: Verify metadata and artifact contents
+          "${AGENCY_CI_PYTHON}" -m twine check --strict "${AGENCY_CI_TEMP}"/dist/*
+          "${AGENCY_CI_PYTHON}" -m scripts.verify_distribution "${AGENCY_CI_TEMP}/dist" \
+            --expected-commit "${AGENCY_RELEASE_COMMIT}"
+      - name: Upload platform distributions for byte-parity verification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-distributions-${{ matrix.os }}
+          path: ${{ steps.release-output.outputs.path }}/*
+          if-no-files-found: error
+          retention-days: 7
+  artifact-parity:
+    name: artifact byte parity / windows and linux
+    needs: artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Download Linux distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-distributions-ubuntu-24.04
+          path: ${{ runner.temp }}/agency-dist-linux
+      - name: Download Windows distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-distributions-windows-2022
+          path: ${{ runner.temp }}/agency-dist-windows
+      - name: Require one byte-identical cross-platform artifact pair
+        shell: bash
         run: |
-          python -m twine check --strict dist/*
-          python scripts/verify_distribution.py dist --expected-commit "${AGENCY_RELEASE_COMMIT}"
-      - name: Upload distributions
+          test "$(find "${RUNNER_TEMP}/agency-dist-linux" -maxdepth 1 -type f | wc -l)" -eq 2
+          test "$(find "${RUNNER_TEMP}/agency-dist-windows" -maxdepth 1 -type f | wc -l)" -eq 2
+          diff --brief --recursive \
+            "${RUNNER_TEMP}/agency-dist-linux" \
+            "${RUNNER_TEMP}/agency-dist-windows"
+      - name: Publish verified canonical distributions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: python-distributions
-          path: dist/*
+          path: ${{ runner.temp }}/agency-dist-linux/*
           if-no-files-found: error
           retention-days: 7
 
   artifact-smoke:
     name: artifact smoke / ${{ matrix.os }}
-    needs: artifacts
+    needs: [artifacts, artifact-parity]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -298,7 +407,7 @@ jobs:
       - name: Check tracked files and high-severity source findings
         run: |
           python scripts/verify_release_hygiene.py
-          python -m bandit -q -r agency_runtime -lll
+          python -m bandit -q -r agency_runtime scripts -lll
           zizmor --pedantic --strict-collection --offline .
       - name: Audit the exact installed runtime dependency
         run: python scripts/audit_runtime_dependencies.py

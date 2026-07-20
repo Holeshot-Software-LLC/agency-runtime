@@ -1,9 +1,9 @@
 ---
 title: "AR-103: Import Windows ctypes fixtures portably on POSIX"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-19
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [testing, portability, windows, linux, ci]
 related:
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
@@ -54,4 +54,4 @@ runtime dependency.
 - [x] Both fixture modules import the Windows type definitions explicitly.
 - [x] Windows ACL fixture behavior remains unchanged locally.
 - [x] Ruff and focused warning-strict tests pass.
-- [ ] PR #104 hosted Windows/Linux matrix passes.
+- [x] PR #104 hosted Windows/Linux matrix passes.

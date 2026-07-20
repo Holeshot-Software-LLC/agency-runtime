@@ -1,9 +1,9 @@
 ---
 title: "AR-100: Wait for the old Windows dashboard runtime to exit"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [dashboard, windows, service, lifecycle, reliability]
 related:
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
@@ -62,4 +62,4 @@ independently.
 - [x] Replacement generations remain protected and cannot be mistaken for stale state.
 - [x] A genuinely live old runtime still fails closed and rolls back.
 - [x] Focused simulated regressions and the real Windows reinstall pass.
-- [ ] The full suite and hosted Windows/Linux gates pass.
+- [x] The full suite and hosted Windows/Linux gates pass.

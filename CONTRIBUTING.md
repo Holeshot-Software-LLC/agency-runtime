@@ -3,7 +3,7 @@ title: "Contributing to Agency Runtime"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-16
+updated: 2026-07-20
 tags: [contributing, development]
 related:
   - AGENTS.md
@@ -96,24 +96,62 @@ For packaging or release-facing changes also run:
 
 ```bash
 python scripts/verify_release_hygiene.py
-bandit -q -r agency_runtime -lll
+bandit -q -r agency_runtime scripts -lll
 python scripts/audit_runtime_dependencies.py
 zizmor --pedantic --strict-collection --offline .
 AGENCY_RELEASE_COMMIT="$(git rev-parse --verify 'HEAD^{commit}')"
-python -m build --sdist --wheel
-python -m twine check --strict dist/*
-python scripts/verify_distribution.py dist --expected-commit "${AGENCY_RELEASE_COMMIT}"
+AGENCY_DIST_DIR="${HOME}/.agency-runtime/release-artifacts/dist-${AGENCY_RELEASE_COMMIT}"
+python -m scripts.build_distributions "${AGENCY_DIST_DIR}" --create-private-parent \
+  --expected-commit "${AGENCY_RELEASE_COMMIT}"
+python -m twine check --strict "${AGENCY_DIST_DIR}"/*
+python -m scripts.verify_distribution "${AGENCY_DIST_DIR}" \
+  --expected-commit "${AGENCY_RELEASE_COMMIT}"
 ```
 
 Capture `AGENCY_RELEASE_COMMIT` from the clean reviewed checkout before the
-build. In PowerShell, set the equivalent value with
-`$env:AGENCY_RELEASE_COMMIT = git rev-parse --verify "HEAD^{commit}"` and pass
-`$env:AGENCY_RELEASE_COMMIT` to `--expected-commit`.
+build. The canonical builder reads exact committed Git blobs rather than
+line-ending-filtered worktree bytes and refuses to replace an existing output
+directory. The output parent is owner-private and outside the checkout so an
+unsafe inherited workspace ACL cannot race staging or publication. Its bounded
+normalization step preserves source-derived payload bytes, canonicalizes LF only
+for the shared explicit generated-metadata allowlist, rebuilds wheel `RECORD`,
+and gives Windows and Linux builds the same explicitly encoded stored-ZIP,
+RFC 1951 stored-block gzip, tar, ownership, mode, and timestamp container policy
+without relying on host zlib output.
 
-The CI matrix runs the test suite on Ubuntu with Python 3.10 through 3.14 and on
-Windows at the 3.10/3.14 support endpoints, then installs the built wheel in
-isolated Windows and Ubuntu jobs. A green contract suite does not replace a live
-host canary when the public claim says a host is runtime-verified.
+In PowerShell, use the same external boundary:
+
+```powershell
+$env:AGENCY_RELEASE_COMMIT = git rev-parse --verify "HEAD^{commit}"
+$env:AGENCY_DIST_DIR = Join-Path $HOME `
+  ".agency-runtime\release-artifacts\dist-$env:AGENCY_RELEASE_COMMIT"
+python -m scripts.build_distributions $env:AGENCY_DIST_DIR `
+  --create-private-parent --expected-commit $env:AGENCY_RELEASE_COMMIT
+$artifacts = Get-ChildItem -LiteralPath $env:AGENCY_DIST_DIR -File |
+  Select-Object -ExpandProperty FullName
+python -m twine check --strict $artifacts
+python -m scripts.verify_distribution $env:AGENCY_DIST_DIR `
+  --expected-commit $env:AGENCY_RELEASE_COMMIT
+```
+
+Keep Twine and the distribution verifier as independent post-build gates.
+Release-scoped Git inputs and archive regular files must be non-executable;
+tracked inputs are exactly `100644`. Run the command from a trusted Python
+environment whose executable namespace cannot be modified by another OS
+account. On Windows, that normally means a private virtual environment outside
+a broadly writable checkout; the builder deliberately rejects an untrusted
+repository-local launcher or output parent.
+
+The CI matrix runs the complete test suite on Ubuntu with Python 3.10 through
+3.14 and on Windows at the 3.10/3.14 support endpoints. A focused native Windows
+suite exercises canonical archive golden digests and atomic Job-at-creation
+process ownership on Python 3.11, 3.12, and 3.13 as well. Both Ubuntu and Windows
+build and strictly verify the canonical distributions. CI uploads both
+platform pairs to a short-lived parity gate and requires their filenames and
+bytes to match exactly; only the Ubuntu pair is also retained as the candidate
+for isolated Windows and Ubuntu artifact-smoke installs. A green contract suite
+does not replace a live host canary when the public claim says a host is
+runtime-verified.
 
 ## Commit and documentation records
 
