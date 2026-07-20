@@ -30,6 +30,27 @@ CANONICAL_ZIP_VERSION = 20
 CANONICAL_ZIP_METHOD = zipfile.ZIP_STORED
 CANONICAL_WHEEL_MODE = stat.S_IFREG | 0o644
 CANONICAL_RECORD_MODE = stat.S_IFREG | 0o664
+CANONICAL_LF_WHEEL_GENERATED_FILES = frozenset(
+    {
+        "METADATA",
+        "RECORD",
+        "WHEEL",
+        "entry_points.txt",
+        "top_level.txt",
+    }
+)
+CANONICAL_LF_SDIST_GENERATED_FILES = frozenset(
+    {
+        "PKG-INFO",
+        "agency_runtime.egg-info/PKG-INFO",
+        "agency_runtime.egg-info/SOURCES.txt",
+        "agency_runtime.egg-info/dependency_links.txt",
+        "agency_runtime.egg-info/entry_points.txt",
+        "agency_runtime.egg-info/requires.txt",
+        "agency_runtime.egg-info/top_level.txt",
+        "setup.cfg",
+    }
+)
 
 WINDOWS_RESERVED_BASENAMES = frozenset(
     {

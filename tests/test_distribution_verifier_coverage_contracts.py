@@ -315,6 +315,21 @@ def test_generated_metadata_parsers_reject_malformed_payloads() -> None:
     assert subject._sources_manifest_failures(b"\xff", {}) == [
         "sdist generated SOURCES.txt is malformed or duplicated"
     ]
+    assert (
+        subject._sources_manifest_failures(
+            b"agency_runtime.egg-info/SOURCES.txt",
+            {"agency_runtime.egg-info/SOURCES.txt": b"placeholder"},
+        )
+        == []
+    )
+    assert subject._sources_manifest_failures(
+        b"agency_runtime.egg-info/SOURCES.txt\n",
+        {"agency_runtime.egg-info/SOURCES.txt": b"placeholder"},
+    ) == ["sdist generated SOURCES.txt does not match the exact sorted LF payload manifest"]
+    assert subject._generated_lf_failures("generated", b"line\r\n") == [
+        "generated must use canonical LF line endings"
+    ]
+    assert subject._generated_lf_failures("generated", b"line\n") == []
     with pytest.raises(ValueError, match="not UTF-8"):
         subject._requires_txt_dependencies(b"\xff")
     with pytest.raises(ValueError, match="invalid extra section"):
@@ -1203,6 +1218,20 @@ def test_core_metadata_parity_ignores_only_presentation_differences() -> None:
 
     assert subject._metadata_parity_failures(wheel, sdist) == []
     assert subject._metadata_parity_failures(wheel, {}) == []
+
+
+def test_core_metadata_projection_decodes_the_raw_utf8_body_without_replacement() -> None:
+    metadata = _parsed_core_metadata(
+        b"Metadata-Version: 2.4\r\n\r\nproduction-ready \xe2\x80\x94 without replacement\r\n"
+    )
+
+    _headers, body = subject._canonical_project_metadata_projection(metadata)
+
+    assert body == "production-ready \u2014 without replacement\n"
+
+    invalid = _parsed_core_metadata(b"Metadata-Version: 2.4\n\n\xff\n")
+    with pytest.raises(ValueError, match="body is not UTF-8"):
+        subject._canonical_project_metadata_projection(invalid)
 
 
 def test_core_metadata_parity_rejects_header_and_body_differences() -> None:

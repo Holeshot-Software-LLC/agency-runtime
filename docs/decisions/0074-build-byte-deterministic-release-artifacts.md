@@ -31,8 +31,8 @@ deciders: [maintainers]
 A clean Git status compares filtered content and does not prove that physical
 working-tree bytes equal the reviewed blobs. On Windows, line-ending filters can
 therefore feed CRLF bytes to a build backend even when the reviewed commit stores
-LF. A backend also emits platform-dependent ZIP, gzip, tar, ownership, mode, and
-timestamp metadata.
+LF. A backend also emits platform-dependent generated-text line endings plus
+ZIP, gzip, tar, ownership, mode, and timestamp metadata.
 
 Normalizing those headers with the host's ZIP and gzip compressors is
 insufficient for byte reproducibility. Different supported Python or zlib
@@ -56,20 +56,24 @@ not import the independent distribution verifier, and the contract must not
 import the Git transport, builder, writer, or verifier.
 
 Treat the backend output as bounded source material, not as the release
-container. Accept only a finite reviewed Windows/Linux source-header policy and
-preserve every payload byte. Emit the canonical wheel with an owned ZIP32 writer
+container. Accept only a finite reviewed Windows/Linux source-header policy.
+Preserve every source-derived payload byte, canonicalize LF only for the shared
+finite generated-metadata allowlist, and rebuild wheel `RECORD` from the
+normalized payload set. Emit the canonical wheel with an owned ZIP32 writer
 using contiguous stored members, explicit local and central headers, and no
 extras, comments, descriptors, ZIP64, prefixes, gaps, or trailing bytes. Emit
 the canonical source distribution with one fixed gzip header, deterministic
-RFC 1951 stored-block segmentation, exact CRC32 and ISIZE, and canonical
-PAX-tar headers, ownership, modes, times, padding, and end marker. Do not use
-host-zlib output for canonical artifacts.
+RFC 1951 stored-block segmentation, exact CRC32 and ISIZE, and canonical PAX-tar
+headers, ownership, modes, times, padding, and end marker. Do not use host-zlib
+output for canonical artifacts.
 
 Verify the published pair independently. The verifier binds artifact and parent
 directory identities, parses physical ZIP, gzip, and tar layouts itself before
 high-level archive access, enforces the same declarative format policy without
-calling the writer, compares generated metadata and shared payloads, and
-requires every committed release byte to match the reviewed Git blob. Commit
+calling the writer, rejects noncanonical generated-text line endings, decodes
+core-metadata bodies from strict raw UTF-8 bytes, compares shared source payloads
+exactly, and requires every committed release byte to match the reviewed Git
+blob. Commit
 fixed golden fixture digests and run them across every supported Python and
 Windows/Linux CI cell.
 
@@ -80,6 +84,7 @@ identities remain unchanged.
 ## Consequences
 
 - Clean-checkout line-ending filters cannot change a release payload.
+- Backend line-ending defaults cannot change generated metadata or `RECORD`.
 - Canonical archive bytes do not depend on platform ZIP defaults or zlib
   heuristics.
 - Stored members make artifacts larger than ordinary compressed output, but the

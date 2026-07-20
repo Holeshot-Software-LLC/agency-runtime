@@ -220,6 +220,82 @@ def test_windows_and_linux_sources_produce_identical_canonical_bytes() -> None:
     assert windows_sdist == linux_sdist
 
 
+def test_generated_metadata_eol_variants_converge_without_mutating_source_payloads() -> None:
+    record_name = "package-1.dist-info/RECORD"
+    source_payload = b"source CRLF is reviewed and remains exact\r\n"
+
+    def wheel_entries(eol: bytes) -> dict[str, bytes]:
+        return {
+            "package/module.py": source_payload,
+            "package-1.dist-info/METADATA": b"Metadata-Version: 2.4" + eol + eol,
+            "package-1.dist-info/WHEEL": b"Wheel-Version: 1.0" + eol,
+            "package-1.dist-info/entry_points.txt": b"[console_scripts]" + eol,
+            "package-1.dist-info/top_level.txt": b"package" + eol,
+            record_name: b"backend-specific record" + eol,
+        }
+
+    windows_wheel = subject.canonicalize_wheel_bytes(
+        _source_wheel(wheel_entries(b"\r\n"), system=0),
+        timestamp=TIMESTAMP,
+    )
+    linux_wheel = subject.canonicalize_wheel_bytes(
+        _source_wheel(wheel_entries(b"\n"), system=3),
+        timestamp=TIMESTAMP,
+    )
+    assert windows_wheel == linux_wheel
+    with zipfile.ZipFile(io.BytesIO(windows_wheel)) as archive:
+        wheel_payloads = {item.filename: archive.read(item) for item in archive.infolist()}
+    assert wheel_payloads["package/module.py"] == source_payload
+    assert b"\r" not in wheel_payloads["package-1.dist-info/METADATA"]
+    assert wheel_payloads[record_name] == subject._canonical_wheel_record_payload(
+        record_name,
+        wheel_payloads,
+    )
+
+    def sdist_entries(eol: bytes) -> dict[str, bytes | None]:
+        return {
+            "package-1": None,
+            "package-1/agency_runtime.egg-info": None,
+            "package-1/README.md": source_payload,
+            "package-1/PKG-INFO": b"Metadata-Version: 2.4" + eol + eol,
+            "package-1/agency_runtime.egg-info/PKG-INFO": (b"Metadata-Version: 2.4" + eol + eol),
+            "package-1/agency_runtime.egg-info/SOURCES.txt": (b"README.md" + eol + b"setup.cfg"),
+            "package-1/setup.cfg": b"[egg_info]" + eol + b"tag_date = 0" + eol,
+        }
+
+    windows_sdist = subject.canonicalize_sdist_bytes(
+        _source_sdist(sdist_entries(b"\r\n"), windows=True),
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+    linux_sdist = subject.canonicalize_sdist_bytes(
+        _source_sdist(sdist_entries(b"\n"), windows=False),
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+    assert windows_sdist == linux_sdist
+    with tarfile.open(fileobj=io.BytesIO(windows_sdist), mode="r:gz") as archive:
+        sdist_payloads = {
+            item.name: archive.extractfile(item).read() for item in archive if item.isfile()
+        }
+    assert sdist_payloads["package-1/README.md"] == source_payload
+    assert b"\r" not in sdist_payloads["package-1/PKG-INFO"]
+    assert not sdist_payloads["package-1/agency_runtime.egg-info/SOURCES.txt"].endswith(b"\n")
+
+
+def test_wheel_generated_metadata_contract_rejects_multiple_record_roots() -> None:
+    assert subject._canonical_wheel_entries([("package/module.py", b"source")]) == [
+        ("package/module.py", b"source")
+    ]
+    with pytest.raises(ValueError, match="more than one generated RECORD"):
+        subject._canonical_wheel_entries(
+            [
+                ("one.dist-info/RECORD", b"one"),
+                ("two.dist-info/RECORD", b"two"),
+            ]
+        )
+
+
 def test_sdist_accepts_pax_writer_nearest_even_mtime_header() -> None:
     source = _source_sdist(
         {
@@ -284,9 +360,9 @@ def test_canonical_fixed_fixtures_match_owned_byte_contract_goldens() -> None:
         expected_filename="package-1.tar.gz",
     )
 
-    assert len(wheel) == 273
+    assert len(wheel) == 367
     assert hashlib.sha256(wheel).hexdigest() == (
-        "ba21f58b649f1aff2c49270ce703cf5e3330b782eb9deaf4b68bec10a0e0e4a5"
+        "f0e9396721d662ebd986af8e32e62f2e4b7aaf92b3a202f22db20881383ff701"
     )
     assert len(sdist) == 10_277
     assert hashlib.sha256(sdist).hexdigest() == (

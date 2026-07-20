@@ -273,7 +273,7 @@ def _sdist_generated(
     )
     sources_name = "agency_runtime.egg-info/SOURCES.txt"
     sources = (set(result) | {sources_name}) - {"PKG-INFO", "setup.cfg"}
-    result[sources_name] = ("\n".join(sorted(sources)) + "\n").encode()
+    result[sources_name] = "\n".join(sorted(sources)).encode()
     return result
 
 

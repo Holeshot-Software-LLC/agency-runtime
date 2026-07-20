@@ -299,13 +299,14 @@ and publishes the wheel/source pair only after a successful isolated build and
 pre-publication checkout revalidation. This avoids trusting physical worktree
 line endings or broadly inherited workspace ACLs while preserving the
 independently implemented and invoked Twine and distribution-verifier gates.
-Before publication, a bounded normalizer preserves every payload byte while
-rewriting only backend-created ZIP, gzip, tar, ownership, mode, and timestamp
-container metadata to one Windows/Linux policy. It explicitly writes stored ZIP
-members and a canonical RFC 1951 stored-block gzip stream, so output bytes do
-not depend on host-zlib heuristics. Release-scoped Git inputs must all be regular
-non-executable (`100644`) blobs, and archive regular files must remain
-non-executable.
+Before publication, a bounded normalizer preserves every source-derived payload
+byte, canonicalizes LF only for the shared finite generated-metadata allowlist,
+rebuilds wheel `RECORD` from the normalized payload set, and rewrites
+backend-created ZIP, gzip, tar, ownership, mode, and timestamp container metadata
+to one Windows/Linux policy. It explicitly writes stored ZIP members and a
+canonical RFC 1951 stored-block gzip stream, so output bytes do not depend on
+host-zlib heuristics. Release-scoped Git inputs must all be regular non-executable
+(`100644`) blobs, and archive regular files must remain non-executable.
 
 Use a trusted release Python environment and output parent outside any
 cross-account-writable checkout namespace. The builder freezes and revalidates
@@ -337,7 +338,9 @@ account to replace the launcher or a newly created child.
 - [ ] Archives contain only canonical portable regular-file payloads plus the
       explicit generated metadata allowlist, remain within member, size,
       aggregate, and compression-ratio limits, and pass strict singleton
-      metadata, entry-point, WHEEL, and RECORD hash/size validation.
+      metadata, entry-point, WHEEL, and RECORD hash/size validation. Generated
+      text uses canonical LF, `SOURCES.txt` has the backend's exact sorted
+      no-final-newline form, and core-metadata bodies decode as strict raw UTF-8.
 - [ ] The wheel has one contiguous ZIP layout with no prefix, gaps, orphan local
       records, comments, extras, directory entries, encryption, unsupported
       flags, data descriptors, compression, or trailing bytes; every stored

@@ -113,10 +113,11 @@ build. The canonical builder reads exact committed Git blobs rather than
 line-ending-filtered worktree bytes and refuses to replace an existing output
 directory. The output parent is owner-private and outside the checkout so an
 unsafe inherited workspace ACL cannot race staging or publication. Its bounded
-normalization step preserves payload bytes while giving Windows and Linux builds
-the same explicitly encoded stored-ZIP, RFC 1951 stored-block gzip, tar,
-ownership, mode, and timestamp container policy without relying on host zlib
-output.
+normalization step preserves source-derived payload bytes, canonicalizes LF only
+for the shared explicit generated-metadata allowlist, rebuilds wheel `RECORD`,
+and gives Windows and Linux builds the same explicitly encoded stored-ZIP,
+RFC 1951 stored-block gzip, tar, ownership, mode, and timestamp container policy
+without relying on host zlib output.
 
 In PowerShell, use the same external boundary:
 

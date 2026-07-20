@@ -34,6 +34,8 @@ from packaging.utils import canonicalize_name
 
 try:  # Support both ``python -m scripts...`` and direct script execution.
     from scripts.release_contract import (
+        CANONICAL_LF_SDIST_GENERATED_FILES,
+        CANONICAL_LF_WHEEL_GENERATED_FILES,
         CANONICAL_RECORD_MODE,
         CANONICAL_WHEEL_MODE,
         CANONICAL_ZIP_METHOD,
@@ -63,6 +65,8 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibi
     if exc.name != "scripts":
         raise
     from release_contract import (  # type: ignore[no-redef]
+        CANONICAL_LF_SDIST_GENERATED_FILES,
+        CANONICAL_LF_WHEEL_GENERATED_FILES,
         CANONICAL_RECORD_MODE,
         CANONICAL_WHEEL_MODE,
         CANONICAL_ZIP_METHOD,
@@ -171,16 +175,7 @@ VERSION_PATTERN = re.compile(
 MAX_PAX_HEADER_BYTES = 64 * 1_024
 EXPECTED_DISTRIBUTION_ARTIFACT_COUNT = 2
 READ_CHUNK_BYTES = 64 * 1024
-SDIST_GENERATED_METADATA_FILES = {
-    "PKG-INFO",
-    "agency_runtime.egg-info/PKG-INFO",
-    "agency_runtime.egg-info/SOURCES.txt",
-    "agency_runtime.egg-info/dependency_links.txt",
-    "agency_runtime.egg-info/entry_points.txt",
-    "agency_runtime.egg-info/requires.txt",
-    "agency_runtime.egg-info/top_level.txt",
-    "setup.cfg",
-}
+SDIST_GENERATED_METADATA_FILES = CANONICAL_LF_SDIST_GENERATED_FILES
 
 
 @dataclass(frozen=True, slots=True)
@@ -786,6 +781,33 @@ def _normalized_dependencies(
 
 def _normalized_metadata_body(body: str) -> str:
     return body.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _metadata_body_text(metadata: Message) -> str:
+    payload = metadata.get_payload(decode=True)
+    if not isinstance(payload, bytes):
+        raise ValueError("distribution core metadata body is not plain text")
+    try:
+        return payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("distribution core metadata body is not UTF-8") from exc
+
+
+def _generated_lf_failures(label: str, payload: bytes) -> list[str]:
+    if b"\r" not in payload:
+        return []
+    return [f"{label} must use canonical LF line endings"]
+
+
+def _generated_payloads_lf_failures(
+    artifact: str,
+    payloads: dict[str, bytes],
+    generated_names: frozenset[str],
+) -> list[str]:
+    failures: list[str] = []
+    for name in sorted(generated_names & set(payloads)):
+        failures.extend(_generated_lf_failures(f"{artifact} generated {name}", payloads[name]))
+    return failures
 
 
 def _expected_core_metadata_projection(
@@ -2251,18 +2273,12 @@ def _canonical_project_metadata_projection(metadata: Message) -> _CoreMetadataPr
         elif normalized_name == "provides-extra":
             normalized_value = canonicalize_name(normalized_value)
         headers.append((normalized_name, normalized_value))
-    body = metadata.get_payload()
-    if not isinstance(body, str):
-        raise ValueError("distribution core metadata body is not plain text")
-    return tuple(sorted(headers)), _normalized_metadata_body(body)
+    return tuple(sorted(headers)), _normalized_metadata_body(_metadata_body_text(metadata))
 
 
 def _core_metadata_projection(metadata: Message) -> tuple[Counter[tuple[str, str]], str]:
     headers = Counter((name.casefold(), str(value)) for name, value in metadata.items())
-    body = metadata.get_payload()
-    if not isinstance(body, str):
-        raise ValueError("distribution core metadata body is not plain text")
-    return headers, _normalized_metadata_body(body)
+    return headers, _normalized_metadata_body(_metadata_body_text(metadata))
 
 
 def _metadata_parity_failures(
@@ -2409,7 +2425,7 @@ def _sources_manifest_failures(payload: bytes, sdist_payloads: dict[str, bytes])
     except (UnicodeDecodeError, ValueError):
         return ["sdist generated SOURCES.txt is malformed or duplicated"]
     expected = set(sdist_payloads) - {"PKG-INFO", "setup.cfg"}
-    expected_payload = ("\n".join(sorted(expected)) + "\n").encode("utf-8")
+    expected_payload = "\n".join(sorted(expected)).encode("utf-8")
     if observed == expected and payload == expected_payload:
         return []
     return ["sdist generated SOURCES.txt does not match the exact sorted LF payload manifest"]
@@ -2456,6 +2472,13 @@ def _sdist_generated_metadata_failures(
     missing = sorted(SDIST_GENERATED_METADATA_FILES - set(payloads))
     if missing:
         failures.append(f"sdist missing generated metadata files: {', '.join(missing)}")
+    failures.extend(
+        _generated_payloads_lf_failures(
+            "sdist",
+            payloads,
+            SDIST_GENERATED_METADATA_FILES,
+        )
+    )
 
     package_info_names = ("PKG-INFO", "agency_runtime.egg-info/PKG-INFO")
     for name in package_info_names:
@@ -2538,6 +2561,11 @@ def _metadata_failures(
         name = f"{expected_dist_info}/{required}"
         if name not in wheel_names:
             failures.append(f"wheel missing metadata file: {name}")
+
+    for relative in sorted(CANONICAL_LF_WHEEL_GENERATED_FILES):
+        payload = wheel_payloads.get(f"{expected_dist_info}/{relative}")
+        if payload is not None:
+            failures.extend(_generated_lf_failures(f"wheel generated {relative}", payload))
 
     license_payload = wheel_payloads.get(f"{expected_dist_info}/licenses/LICENSE")
     if license_payload is not None and license_payload != expected_license:

@@ -63,9 +63,10 @@ private temporary directory, and validates every extracted regular file and
 mode against `git ls-tree` blob identities. Reject unsafe names, aliases, links,
 special entries, missing files, transformed content, and output collisions
 before invoking the build backend. Validate the bounded backend output against a
-finite Windows/Linux source-header allowlist, then repack it with an explicit
-stored-ZIP writer, an owned canonical RFC 1951 stored-block gzip encoder, and one
-PAX-tar container policy while preserving every payload byte.
+finite Windows/Linux source-header allowlist, preserve every source-derived
+payload byte, canonicalize LF only for the explicit generated-metadata allowlist,
+rebuild wheel `RECORD`, then repack with an explicit stored-ZIP writer, an owned
+canonical RFC 1951 stored-block gzip encoder, and one PAX-tar container policy.
 Revalidate live `HEAD`, checkout cleanliness, artifact identities, and bounded
 content before atomically publishing exactly one wheel and one source
 distribution. Use that helper in CI and in every documented release command
@@ -91,7 +92,7 @@ gap discovered while building the exact merge commit from PR #104 on Windows.
 - [x] The builder requires one full canonical reviewed commit and a clean matching live `HEAD` before and after construction.
 - [x] Release source bytes and file modes come from the reviewed Git tree, independent of checkout line-ending filters.
 - [x] Unsafe, aliasing, linked, special, missing, transformed, or over-budget archive entries fail before the build backend runs.
-- [x] Bounded backend outputs normalize to one byte-deterministic cross-platform container policy without changing payload bytes or depending on host-zlib output.
+- [x] Bounded backend outputs preserve source-derived payload bytes while normalizing only finite generated metadata and container policy to one byte-deterministic cross-platform result without host-zlib output.
 - [ ] Hosted Windows and Linux builds produce byte-identical wheel/source pairs before the reviewed Linux pair can become an install or publication candidate.
 - [x] The destination cannot overwrite prior artifacts, and failed builds do not publish a partial destination.
 - [x] A successful build publishes exactly one wheel and one source distribution for independent strict verification.

@@ -110,8 +110,10 @@ changes rather than duplicating every commit.
   in the reviewed Git commit instead of physical worktree bytes. This keeps clean
   Windows checkouts with line-ending filters from producing noncanonical wheels
   or source archives; unsafe sources and partial destinations fail closed while
-  a bounded post-build pass preserves all payload bytes and normalizes only ZIP,
-  gzip, tar, ownership, mode, and timestamp container metadata to one
+  a bounded post-build pass preserves every source-derived payload byte,
+  normalizes line endings only for an explicit generated-metadata allowlist,
+  rebuilds wheel `RECORD` from those normalized bytes, and normalizes ZIP, gzip,
+  tar, ownership, mode, and timestamp container metadata to one
   platform-independent policy. Canonical wheels use explicitly encoded stored
   ZIP members, and canonical source distributions use an owned RFC 1951
   stored-block gzip stream rather than host-zlib output, making the physical
@@ -119,7 +121,8 @@ changes rather than duplicating every commit.
   independently implemented and invoked byte-strict distribution verifier now
   also holds stable artifact identities, enforces physical and manifest bounds,
   validates backend-source DEFLATE consumption, independently parses the
-  canonical stored output, checks wheel/sdist metadata parity, and rejects
+  canonical stored output, decodes core-metadata bodies from strict raw UTF-8
+  bytes, checks wheel/sdist metadata parity, and rejects
   noncanonical ZIP, gzip, tar, comment, extra-field, PAX, padding, gap, and
   trailing-byte layouts.
 - The warning-strict 100% line-and-branch gate now includes the canonical

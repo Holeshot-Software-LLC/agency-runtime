@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+import csv
+import hashlib
 import io
 import os
 import re
@@ -19,6 +22,8 @@ from pathlib import Path, PurePosixPath
 
 try:  # Support both ``python -m scripts...`` and direct script execution.
     from scripts.release_contract import (
+        CANONICAL_LF_SDIST_GENERATED_FILES,
+        CANONICAL_LF_WHEEL_GENERATED_FILES,
         CANONICAL_RECORD_MODE,
         CANONICAL_WHEEL_MODE,
         CANONICAL_ZIP_METHOD,
@@ -37,6 +42,8 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibi
     if exc.name != "scripts":
         raise
     from release_contract import (  # type: ignore[no-redef]
+        CANONICAL_LF_SDIST_GENERATED_FILES,
+        CANONICAL_LF_WHEEL_GENERATED_FILES,
         CANONICAL_RECORD_MODE,
         CANONICAL_WHEEL_MODE,
         CANONICAL_ZIP_METHOD,
@@ -635,6 +642,48 @@ def _canonical_wheel_payload(
     )
 
 
+def _wheel_generated_relative(name: str) -> str | None:
+    parts = PurePosixPath(name).parts
+    if len(parts) == 2 and parts[0].endswith(".dist-info"):
+        return parts[1]
+    return None
+
+
+def _canonical_lf_text(payload: bytes) -> bytes:
+    return payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def _canonical_wheel_record_payload(
+    record_name: str,
+    payloads: dict[str, bytes],
+) -> bytes:
+    output = io.StringIO(newline="")
+    writer = csv.writer(output, lineterminator="\n")
+    for name in sorted(set(payloads) - {record_name}):
+        digest = base64.urlsafe_b64encode(hashlib.sha256(payloads[name]).digest()).rstrip(b"=")
+        writer.writerow((name, f"sha256={digest.decode('ascii')}", str(len(payloads[name]))))
+    writer.writerow((record_name, "", ""))
+    return output.getvalue().encode("utf-8")
+
+
+def _canonical_wheel_entries(entries: list[tuple[str, bytes]]) -> list[tuple[str, bytes]]:
+    payloads = {
+        name: (
+            _canonical_lf_text(payload)
+            if _wheel_generated_relative(name) in CANONICAL_LF_WHEEL_GENERATED_FILES
+            else payload
+        )
+        for name, payload in entries
+    }
+    record_names = sorted(name for name in payloads if _wheel_generated_relative(name) == "RECORD")
+    if len(record_names) > 1:
+        raise ValueError("wheel source contains more than one generated RECORD")
+    if record_names:
+        record_name = record_names[0]
+        payloads[record_name] = _canonical_wheel_record_payload(record_name, payloads)
+    return sorted(payloads.items())
+
+
 def canonicalize_wheel_bytes(raw: bytes, *, timestamp: int) -> bytes:
     """Return one deterministic wheel container after bounded source validation."""
 
@@ -668,7 +717,10 @@ def canonicalize_wheel_bytes(raw: bytes, *, timestamp: int) -> bytes:
     except (NotImplementedError, RuntimeError, zipfile.BadZipFile, zlib.error) as exc:
         raise ValueError("wheel source container is invalid") from exc
 
-    canonical = _canonical_wheel_payload(entries, timestamp=expected_timestamp)
+    canonical = _canonical_wheel_payload(
+        _canonical_wheel_entries(entries),
+        timestamp=expected_timestamp,
+    )
     if len(canonical) > MAX_ARTIFACT_BYTES:
         raise ValueError("canonical wheel exceeds the artifact size limit")
     canonical_offset, canonical_eocd, canonical_members = _zip_directory_contract(canonical)
@@ -1076,7 +1128,19 @@ def _source_tar_entries(payload: bytes) -> list[_TarEntry]:
     }
     if len(roots) != 1 or directories != required_directories:
         raise ValueError("sdist source directory topology is noncanonical")
-    return entries
+    normalized: list[_TarEntry] = []
+    for entry in entries:
+        parts = PurePosixPath(entry.name).parts
+        relative = PurePosixPath(*parts[1:]).as_posix()
+        if (
+            not entry.is_directory
+            and relative in CANONICAL_LF_SDIST_GENERATED_FILES
+            and entry.payload is not None
+        ):
+            normalized.append(_TarEntry(entry.name, _canonical_lf_text(entry.payload)))
+        else:
+            normalized.append(entry)
+    return normalized
 
 
 def _tar_octal(value: int, width: int) -> bytes:

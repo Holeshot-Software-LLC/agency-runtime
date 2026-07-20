@@ -84,6 +84,27 @@ def test_release_modules_share_only_the_declarative_contract() -> None:
     assert "pyproject.toml" in release_contract.SDIST_ROOT_SOURCE_FILES
 
 
+def test_generated_text_allowlists_are_shared_as_declarative_policy() -> None:
+    assert not hasattr(release_contract, "canonical_wheel_record_payload")
+    assert {
+        "METADATA",
+        "RECORD",
+        "WHEEL",
+        "entry_points.txt",
+        "top_level.txt",
+    } == release_contract.CANONICAL_LF_WHEEL_GENERATED_FILES
+    assert {
+        "PKG-INFO",
+        "agency_runtime.egg-info/PKG-INFO",
+        "agency_runtime.egg-info/SOURCES.txt",
+        "agency_runtime.egg-info/dependency_links.txt",
+        "agency_runtime.egg-info/entry_points.txt",
+        "agency_runtime.egg-info/requires.txt",
+        "agency_runtime.egg-info/top_level.txt",
+        "setup.cfg",
+    } == release_contract.CANONICAL_LF_SDIST_GENERATED_FILES
+
+
 @pytest.mark.parametrize(
     "name",
     [
