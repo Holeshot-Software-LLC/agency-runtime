@@ -14,6 +14,7 @@ from collections.abc import Sequence
 from contextlib import suppress
 from typing import Any
 
+from agency_runtime.core.exception_notes import add_exception_note
 from agency_runtime.core.process_argv import (
     PreparedProcessArgv,
     freeze_process_argv,
@@ -125,9 +126,7 @@ def _write_process_descriptor(
         try:
             _close_process_descriptor(process, attribute)
         except BaseException as close_error:
-            add_note = getattr(exc, "add_note", None)
-            if callable(add_note):  # pragma: no branch - Python 3.10 compatibility
-                add_note(f"descriptor close failed: {close_error}")
+            add_exception_note(exc, f"descriptor close failed: {close_error}")
         raise
     else:
         _close_process_descriptor(process, attribute)
@@ -955,7 +954,13 @@ def supervisor_command(
 ) -> PreparedProcessArgv:
     """Freeze the trusted interpreter used by the dedicated Linux subreaper."""
 
-    interpreter = str(getattr(sys, "_base_executable", "") or sys.executable)
+    # Preserve the executable identity selected by the caller.  In a virtual
+    # environment this may be an owner-private real copy while
+    # ``_base_executable`` points back to a shared system or hosted-toolcache
+    # interpreter.  Preferring the base executable would silently cross that
+    # trust boundary and can also make the otherwise-private runtime unusable
+    # when the shared executable is group- or other-writable.
+    interpreter = str(sys.executable or getattr(sys, "_base_executable", ""))
     prepared = prepare_process_argv([interpreter])
     if not isinstance(prepared, PreparedProcessArgv):
         prepared = PreparedProcessArgv(prepared, artifact_paths=(prepared[0],))

@@ -345,6 +345,27 @@ def test_config_inspection_grammar_is_private_and_exact() -> None:
     assert release_git._validate_arguments(
         ("ls-tree", "-r", "-l", "-z", object_id, "--", "agency_runtime")
     ) == ("ls-tree", "-r", "-l", "-z", object_id, "--", "agency_runtime")
+    assert release_git._validate_arguments(
+        (
+            "ls-tree",
+            "-r",
+            "-l",
+            "-z",
+            "--full-tree",
+            object_id,
+            "--",
+            "agency_runtime",
+        )
+    ) == (
+        "ls-tree",
+        "-r",
+        "-l",
+        "-z",
+        "--full-tree",
+        object_id,
+        "--",
+        "agency_runtime",
+    )
     with pytest.raises(ValueError, match="not allowed"):
         release_git._validate_arguments(
             ("ls-tree", "--name-only", object_id, "--", "agency_runtime")
@@ -353,12 +374,164 @@ def test_config_inspection_grammar_is_private_and_exact() -> None:
         release_git._validate_arguments(("ls-tree", "-r", "-l", "-z", object_id, "--"))
 
 
+@pytest.mark.parametrize(
+    "arguments",
+    (
+        ("config", "--get-all", "core.autocrlf"),
+        ("rev-parse", "--verify", "HEAD^{commit}"),
+        (
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--ignore-submodules=none",
+        ),
+        (
+            "ls-tree",
+            "-r",
+            "-l",
+            "-z",
+            "--full-tree",
+            "a" * 40,
+            "--",
+            release_git.AUTOCRLF_PROOF_PATH,
+        ),
+        (
+            "ls-tree",
+            "-r",
+            "-l",
+            "-z",
+            "--full-tree",
+            "b" * 64,
+            "--",
+            release_git.AUTOCRLF_PROOF_PATH,
+        ),
+        ("cat-file", "blob", "a" * 40),
+        ("cat-file", "blob", "b" * 64),
+        ("add", "--", release_git.AUTOCRLF_PROOF_PATH),
+    ),
+)
+def test_autocrlf_proof_grammar_accepts_only_its_fixed_commands(
+    arguments: tuple[str, ...],
+) -> None:
+    assert release_git._validate_autocrlf_proof_arguments(arguments) == arguments
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    (
+        ("config", "--get-all", "core.eol"),
+        ("rev-parse", "--verify", "HEAD"),
+        ("status", "--porcelain=v1", "-z", "--untracked-files=all"),
+        (
+            "ls-tree",
+            "-r",
+            "-l",
+            "-z",
+            "--full-tree",
+            "a" * 39,
+            "--",
+            release_git.AUTOCRLF_PROOF_PATH,
+        ),
+        (
+            "ls-tree",
+            "-r",
+            "-l",
+            "-z",
+            "--full-tree",
+            "a" * 40,
+            "--",
+            "README.md",
+        ),
+        ("cat-file", "commit", "a" * 40),
+        ("cat-file", "blob", "a" * 39),
+        ("add", "--", "README.md"),
+        ("reset", "--hard"),
+    ),
+)
+def test_autocrlf_proof_grammar_rejects_every_near_miss(
+    arguments: tuple[str, ...],
+) -> None:
+    with pytest.raises(ValueError, match=r"autocrlf proof .* arguments are not allowed"):
+        release_git._validate_autocrlf_proof_arguments(arguments)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    (
+        ("config", "--get-all", "core.autocrlf"),
+        ("add", "--", release_git.AUTOCRLF_PROOF_PATH),
+        ("-c", "core.autocrlf=true", "status", "--porcelain=v1"),
+    ),
+)
+def test_standard_session_does_not_inherit_the_autocrlf_proof_surface(
+    arguments: tuple[str, ...],
+) -> None:
+    with pytest.raises(ValueError, match=r"not allowed|explicit non-option"):
+        release_git._validate_arguments(arguments)
+
+
+def test_autocrlf_public_api_injects_one_exact_command_scope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path)
+    session = release_git.ReleaseGit.discover(repository)
+    captured: list[tuple[object, dict[str, object]]] = []
+
+    def run(argv, **kwargs):
+        captured.append((argv, kwargs))
+        return _completed(stdout=b"true\n")
+
+    monkeypatch.setattr(release_git, "run_bounded_binary_process", run)
+
+    assert (
+        session.run_autocrlf_proof_bytes(
+            ("config", "--get-all", "core.autocrlf"),
+            max_stdout_bytes=123,
+            max_stderr_bytes=45,
+            timeout=6,
+        )
+        == b"true\n"
+    )
+
+    argv, invocation = captured[-1]
+    rendered = tuple(argv)
+    assert rendered.count("-c") == len(release_git._SAFE_GIT_CONFIG) + 3
+    assert rendered.count("core.autocrlf=true") == 1
+    config_index = rendered.index("config")
+    assert rendered[config_index - 2 : config_index] == ("-c", "core.autocrlf=true")
+    assert invocation["cwd"] == str(session.process_cwd)
+    assert invocation["env"] == dict(session.environment)
+    assert invocation["input_bytes"] is None
+    assert invocation["max_stdout_bytes"] == 123
+    assert invocation["max_stderr_bytes"] == 45
+    assert invocation["timeout"] == 6
+
+
 def test_ignore_probe_rejects_git_pathspec_magic_before_launch(tmp_path: Path) -> None:
     repository = _repository(tmp_path)
     session = release_git.ReleaseGit.discover(repository)
 
     with pytest.raises(ValueError, match="not allowed"):
         session.is_ignored(":(top)unignored-release")
+
+
+def test_ignore_probe_accepts_both_git_outcomes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path)
+    session = release_git.ReleaseGit.discover(repository)
+    results = iter((_completed(returncode=0), _completed(returncode=1)))
+    monkeypatch.setattr(
+        release_git.ReleaseGit,
+        "_run_result",
+        lambda *_args, **_kwargs: next(results),
+    )
+
+    assert session.is_ignored("dist/release") is True
+    assert session.is_ignored("dist/release") is False
 
 
 def test_path_and_directory_identity_fail_closed(
@@ -439,7 +612,18 @@ def test_environment_requires_a_complete_repository_binding(tmp_path: Path) -> N
                 stdout=b"",
                 stderr=b"",
             ),
-            "command failed",
+            "failed with exit code 2",
+        ),
+        (
+            SimpleNamespace(
+                timed_out=False,
+                stdout_truncated=False,
+                stderr_truncated=False,
+                returncode=-9,
+                stdout=b"",
+                stderr=b"",
+            ),
+            "terminated by signal 9",
         ),
     ),
 )

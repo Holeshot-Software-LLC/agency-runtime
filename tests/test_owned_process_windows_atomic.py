@@ -203,8 +203,13 @@ def test_native_platform_guard_and_error_messages(
     with pytest.raises(OSError, match="unavailable"):
         atomic._native_api()
 
-    monkeypatch.setattr(atomic.ctypes, "get_last_error", lambda: 5)
-    monkeypatch.setattr(atomic.ctypes, "FormatError", lambda _error: " access denied ")
+    monkeypatch.setattr(atomic.ctypes, "get_last_error", lambda: 5, raising=False)
+    monkeypatch.setattr(
+        atomic.ctypes,
+        "FormatError",
+        lambda _error: " access denied ",
+        raising=False,
+    )
     error = atomic._native_error("operation failed")
     assert error.errno == 5
     assert "operation failed: access denied" in str(error)

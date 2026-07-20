@@ -574,7 +574,17 @@ def test_windows_launch_rules_reject_unsafe_fallbacks(
 
 def test_windows_cmd_preparation_prefers_native_then_allowlisted_npm_companion(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # Keep the fixture on the host filesystem while exercising Windows suffix
+    # and companion selection. Pure Windows paths cannot name Linux test files.
+    if os.name != "nt":
+        monkeypatch.setattr(
+            process_argv,
+            "_is_absolute_path",
+            lambda value, *, platform_name: Path(value).is_absolute(),
+        )
+        monkeypatch.setattr(process_argv, "ntpath", process_argv.posixpath)
     native_shim = _write_tool(tmp_path / "native.cmd")
     native = _write_tool(tmp_path / "native.exe")
     prepared = prepare_process_argv(

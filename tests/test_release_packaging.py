@@ -18,6 +18,14 @@ from scripts.read_release_version import read_release_version
 from scripts.verify_release_hygiene import SECRET_PATTERNS, generated_path_reason
 
 ROOT = Path(__file__).resolve().parents[1]
+RELEASE_COVERAGE_MODULES = (
+    "build_distributions",
+    "canonicalize_distributions",
+    "prove_autocrlf_checkout",
+    "release_contract",
+    "release_git",
+    "verify_distribution",
+)
 
 
 def test_release_resources_are_addressable() -> None:
@@ -166,6 +174,11 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     build = next(
         step for step in artifact_steps if step["name"] == "Build wheel and source distribution"
     )
+    autocrlf = next(
+        step
+        for step in artifact_steps
+        if step["name"] == "Prove clean CRLF checkout uses canonical Git blobs"
+    )
     verify = next(
         step for step in artifact_steps if step["name"] == "Verify metadata and artifact contents"
     )
@@ -175,6 +188,15 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         {"os": "ubuntu-24.04"},
         {"os": "windows-2022"},
     ]
+    assert artifact_steps.index(autocrlf) + 1 == artifact_steps.index(build)
+    assert autocrlf == {
+        "name": "Prove clean CRLF checkout uses canonical Git blobs",
+        "shell": "bash",
+        "run": (
+            '"${AGENCY_CI_PYTHON}" -m scripts.prove_autocrlf_checkout '
+            '--expected-commit "${AGENCY_RELEASE_COMMIT}"'
+        ),
+    }
     assert build["run"] == (
         '"${AGENCY_CI_PYTHON}" -m scripts.build_distributions "${AGENCY_CI_TEMP}/dist" '
         '--expected-commit "${AGENCY_RELEASE_COMMIT}"'
@@ -329,12 +351,17 @@ def test_maintained_release_instructions_require_canonical_git_blob_builder() ->
     from scripts.verify_distribution import REQUIRED_SDIST_FILES
 
     assert "scripts/build_distributions.py" in REQUIRED_SDIST_FILES
+    assert "scripts/prove_autocrlf_checkout.py" in REQUIRED_SDIST_FILES
     assert "scripts/release_contract.py" in REQUIRED_SDIST_FILES
     assert "scripts/release_git.py" in REQUIRED_SDIST_FILES
+    checklist = (ROOT / "docs/RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
+    for module in RELEASE_COVERAGE_MODULES:
+        assert f"--cov=scripts.{module}" in checklist
 
 
 def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+    assert workflow["jobs"]["test"]["timeout-minutes"] == 45
 
     for job_name, preparation_name in (
         ("quality", "Prepare private test runtime"),
@@ -363,13 +390,7 @@ def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
             ) in preparation["run"]
         else:
             assert "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}" in preparation["run"]
-            for module in (
-                "build_distributions",
-                "canonicalize_distributions",
-                "release_contract",
-                "release_git",
-                "verify_distribution",
-            ):
+            for module in RELEASE_COVERAGE_MODULES:
                 assert f"--cov=scripts.{module}" in execution["run"]
         for boundary in (
             'export HOME="${AGENCY_CI_HOME}"',

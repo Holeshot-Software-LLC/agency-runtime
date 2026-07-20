@@ -123,8 +123,9 @@ changes rather than duplicating every commit.
   noncanonical ZIP, gzip, tar, comment, extra-field, PAX, padding, gap, and
   trailing-byte layouts.
 - The warning-strict 100% line-and-branch gate now includes the canonical
-  builder, bounded container normalizer, shared declarative release contract,
-  trusted Git transport, and independent distribution verifier.
+  builder, bounded container normalizer, command-scoped clean-checkout probe,
+  shared declarative release contract, trusted Git transport, and independent
+  distribution verifier.
 - Hosted Windows and Ubuntu builds now exchange their canonical wheel/source
   pairs through a dependent byte-parity gate; only the byte-matched Ubuntu pair
   proceeds to cross-platform installation smoke tests.

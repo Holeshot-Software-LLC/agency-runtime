@@ -14,7 +14,7 @@ import unicodedata
 import zipfile
 import zlib
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 from pathlib import Path, PurePosixPath
 
 try:  # Support both ``python -m scripts...`` and direct script execution.
@@ -926,7 +926,14 @@ def _validate_source_pax_records(
     ):
         raise ValueError("sdist source PAX mtime is noncanonical")
     pax_mtime = Decimal(encoded_mtime)
-    if int(pax_mtime) != raw_mtime:
+    # ``tarfile.PAX_FORMAT`` preserves a float mtime in the extended
+    # header, but writes its nearest-even integer into the adjacent USTAR
+    # header.  Directory mtimes created during a Windows build commonly have
+    # sub-second values above .5, so truncation rejects valid setuptools
+    # output.  Decimal keeps this source-container check exact and independent
+    # of the host float implementation.
+    header_mtime = int(pax_mtime.to_integral_value(rounding=ROUND_HALF_EVEN))
+    if header_mtime != raw_mtime:
         raise ValueError("sdist source PAX mtime differs from its tar header")
 
 

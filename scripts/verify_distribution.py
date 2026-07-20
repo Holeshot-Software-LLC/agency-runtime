@@ -128,6 +128,7 @@ REQUIRED_SDIST_FILES = {
     "scripts/verify_distribution.py",
     "scripts/build_distributions.py",
     "scripts/canonicalize_distributions.py",
+    "scripts/prove_autocrlf_checkout.py",
     "scripts/release_contract.py",
     "scripts/release_git.py",
     "tests/dashboard_ui.test.mjs",

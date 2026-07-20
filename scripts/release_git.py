@@ -23,8 +23,10 @@ from agency_runtime.core.process_argv import (
 DEFAULT_STDOUT_BYTES = 64 * 1024
 DEFAULT_STDERR_BYTES = 64 * 1024
 GIT_TIMEOUT_SECONDS = 120
+AUTOCRLF_PROOF_PATH = "LICENSE"
 _MAX_IDENTITY_OUTPUT_BYTES = 96 * 1024
 _WINDOWS_REPARSE_POINT = 0x400
+_AUTOCRLF_PROOF_CONFIG = "core.autocrlf=true"
 
 _SAFE_GIT_CONFIG = (
     "core.hooksPath=",
@@ -261,11 +263,7 @@ def _validate_command_grammar(
         raise ValueError(f"release Git {command} arguments are not allowed")
 
 
-def _validate_arguments(
-    arguments: Sequence[str],
-    *,
-    allow_config_inspection: bool = False,
-) -> tuple[str, ...]:
+def _normalize_arguments(arguments: Sequence[str]) -> tuple[str, ...]:
     if isinstance(arguments, (str, bytes)) or not arguments:
         raise TypeError("release Git arguments must be a non-empty sequence")
     normalized = tuple(arguments)
@@ -279,10 +277,57 @@ def _validate_arguments(
         raise ValueError("release Git arguments contain an invalid item")
     if normalized[0].startswith("-"):
         raise ValueError("release Git command must be an explicit non-option name")
+    return normalized
+
+
+def _validate_arguments(
+    arguments: Sequence[str],
+    *,
+    allow_config_inspection: bool = False,
+) -> tuple[str, ...]:
+    normalized = _normalize_arguments(arguments)
     _validate_command_grammar(
         normalized,
         allow_config_inspection=allow_config_inspection,
     )
+    return normalized
+
+
+def _validate_autocrlf_proof_arguments(arguments: Sequence[str]) -> tuple[str, ...]:
+    """Validate the fixed command surface used by the autocrlf release proof."""
+
+    normalized = _normalize_arguments(arguments)
+    command = normalized[0]
+    suffix = normalized[1:]
+    valid = False
+    if command == "config":
+        valid = suffix == ("--get-all", "core.autocrlf")
+    elif command == "rev-parse":
+        valid = suffix == ("--verify", "HEAD^{commit}")
+    elif command == "status":
+        valid = suffix == (
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--ignore-submodules=none",
+        )
+    elif command == "ls-tree":
+        valid = bool(
+            len(suffix) == 7
+            and suffix[:4] == ("-r", "-l", "-z", "--full-tree")
+            and _FULL_OBJECT_ID.fullmatch(suffix[4]) is not None
+            and suffix[5:] == ("--", AUTOCRLF_PROOF_PATH)
+        )
+    elif command == "cat-file":
+        valid = bool(
+            len(suffix) == 2
+            and suffix[0] == "blob"
+            and _FULL_OBJECT_ID.fullmatch(suffix[1]) is not None
+        )
+    elif command == "add":
+        valid = suffix == ("--", AUTOCRLF_PROOF_PATH)
+    if not valid:
+        raise ValueError(f"release Git autocrlf proof {command} arguments are not allowed")
     return normalized
 
 
@@ -332,7 +377,13 @@ def _checked_output(result: Any, *, accepted: frozenset[int]) -> bytes:
         raise ReleaseGitError("release Git command exceeded its output limit")
     if result.returncode not in accepted:
         detail = result.stderr.decode("utf-8", errors="replace").strip()
-        raise ReleaseGitError(detail or "release Git command failed")
+        if not detail:
+            detail = (
+                f"release Git command was terminated by signal {-result.returncode}"
+                if result.returncode < 0
+                else f"release Git command failed with exit code {result.returncode}"
+            )
+        raise ReleaseGitError(detail)
     return result.stdout
 
 
@@ -577,6 +628,16 @@ class ReleaseGit:
             )
         )
 
+    def _autocrlf_proof_argv(self, arguments: Sequence[str]) -> PreparedProcessArgv:
+        normalized = _validate_autocrlf_proof_arguments(arguments)
+        return self.launcher.bind(
+            *_hardened_arguments(
+                self.root,
+                ("-c", _AUTOCRLF_PROOF_CONFIG, *normalized),
+                bind_worktree=True,
+            )
+        )
+
     def run_bytes(
         self,
         arguments: Sequence[str],
@@ -612,10 +673,27 @@ class ReleaseGit:
         max_stderr_bytes: int = DEFAULT_STDERR_BYTES,
         timeout: float = GIT_TIMEOUT_SECONDS,
     ) -> Any:
+        return self._run_prepared_result(
+            self._argv(arguments),
+            input_bytes=input_bytes,
+            max_stdout_bytes=max_stdout_bytes,
+            max_stderr_bytes=max_stderr_bytes,
+            timeout=timeout,
+        )
+
+    def _run_prepared_result(
+        self,
+        argv: PreparedProcessArgv,
+        *,
+        input_bytes: bytes | None = None,
+        max_stdout_bytes: int = DEFAULT_STDOUT_BYTES,
+        max_stderr_bytes: int = DEFAULT_STDERR_BYTES,
+        timeout: float = GIT_TIMEOUT_SECONDS,
+    ) -> Any:
         _require_identities(self._identities)
         try:
             return run_bounded_binary_process(
-                self._argv(arguments),
+                argv,
                 cwd=str(self.process_cwd),
                 env=dict(self.environment),
                 input_bytes=input_bytes,
@@ -625,6 +703,24 @@ class ReleaseGit:
             )
         finally:
             _require_identities(self._identities)
+
+    def run_autocrlf_proof_bytes(
+        self,
+        arguments: Sequence[str],
+        *,
+        max_stdout_bytes: int = DEFAULT_STDOUT_BYTES,
+        max_stderr_bytes: int = DEFAULT_STDERR_BYTES,
+        timeout: float = GIT_TIMEOUT_SECONDS,
+    ) -> bytes:
+        """Run one allowlisted command with command-scoped ``core.autocrlf=true``."""
+
+        result = self._run_prepared_result(
+            self._autocrlf_proof_argv(arguments),
+            max_stdout_bytes=max_stdout_bytes,
+            max_stderr_bytes=max_stderr_bytes,
+            timeout=timeout,
+        )
+        return _checked_output(result, accepted=frozenset({0}))
 
     def is_ignored(self, relative_path: str) -> bool:
         """Return whether one repository-relative sentinel is ignored."""
@@ -636,4 +732,4 @@ class ReleaseGit:
         return result.returncode == 0
 
 
-__all__ = ["ReleaseGit", "ReleaseGitError"]
+__all__ = ["AUTOCRLF_PROOF_PATH", "ReleaseGit", "ReleaseGitError"]

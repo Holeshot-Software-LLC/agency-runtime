@@ -110,6 +110,7 @@ python -m pytest tests -q -W error -p no:cacheprovider -m "not performance" \
   --cov=agency_runtime \
   --cov=scripts.build_distributions \
   --cov=scripts.canonicalize_distributions \
+  --cov=scripts.prove_autocrlf_checkout \
   --cov=scripts.release_contract \
   --cov=scripts.release_git \
   --cov=scripts.verify_distribution \
@@ -322,6 +323,11 @@ account to replace the launcher or a newly created child.
 - [ ] The build source was materialized from canonical reviewed Git blobs, not
       line-ending-filtered working-tree bytes; unsafe paths, links, special
       entries, aliasing, size-bound violations, and partial output fail closed.
+- [ ] On both hosted Ubuntu and Windows, the artifact job binds
+      command-scoped `core.autocrlf=true` without persistent Git configuration,
+      proves the fixed `LICENSE` source is physically CRLF while Git reports a
+      clean exact reviewed `HEAD` with an LF blob, and only then invokes the
+      canonical builder and independent verifier.
 - [ ] The release input contains no executable Git entries; both the builder and
       independent verifier reject any release-scoped mode other than `100644`.
 - [ ] Hosted Ubuntu and Windows jobs each build and strictly verify the canonical

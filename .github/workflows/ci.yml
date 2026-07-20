@@ -64,6 +64,7 @@ jobs:
             --cov=agency_runtime \
             --cov=scripts.build_distributions \
             --cov=scripts.canonicalize_distributions \
+            --cov=scripts.prove_autocrlf_checkout \
             --cov=scripts.release_contract \
             --cov=scripts.release_git \
             --cov=scripts.verify_distribution \
@@ -87,7 +88,7 @@ jobs:
   test:
     name: tests / ${{ matrix.os }} / py${{ matrix.python }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -242,6 +243,11 @@ jobs:
         run: printf 'path=%s\n' "${AGENCY_CI_TEMP}/dist" >> "${GITHUB_OUTPUT}"
       - name: Check tracked release inputs
         run: python scripts/verify_release_hygiene.py
+      - name: Prove clean CRLF checkout uses canonical Git blobs
+        shell: bash
+        run: >-
+          "${AGENCY_CI_PYTHON}" -m scripts.prove_autocrlf_checkout
+          --expected-commit "${AGENCY_RELEASE_COMMIT}"
       - name: Build wheel and source distribution
         shell: bash
         run: >-

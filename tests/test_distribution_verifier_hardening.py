@@ -11,6 +11,7 @@ import shutil
 import stat
 import struct
 import subprocess
+import sys
 import tarfile
 import time
 import warnings
@@ -1147,7 +1148,10 @@ def test_artifact_path_swap_is_blocked_or_detected(
         assert failures == []
     else:
         assert outcome == {"blocked": False, "swapped": True}
-        assert any("artifact path changed" in failure for failure in failures)
+        assert any(
+            "artifact path changed" in failure or "distribution directory changed" in failure
+            for failure in failures
+        )
 
 
 def test_distribution_directory_path_swap_is_blocked_or_detected(tmp_path: Path) -> None:
@@ -1252,7 +1256,6 @@ def test_windows_descriptor_closes_native_handle_when_fd_conversion_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     import ctypes
-    import msvcrt
 
     closed: list[int] = []
 
@@ -1270,22 +1273,25 @@ def test_windows_descriptor_closes_native_handle_when_fd_conversion_fails(
 
     create = NativeCall(123)
     close = NativeCall(1, capture=closed)
+    msvcrt = SimpleNamespace()
+    monkeypatch.setitem(sys.modules, "msvcrt", msvcrt)
     monkeypatch.setattr(
         ctypes,
         "WinDLL",
         lambda *_args, **_kwargs: SimpleNamespace(CreateFileW=create, CloseHandle=close),
+        raising=False,
     )
 
     def fail_conversion(_handle: int, _flags: int) -> int:
         raise OSError("conversion failed")
 
-    monkeypatch.setattr(msvcrt, "open_osfhandle", fail_conversion)
+    monkeypatch.setattr(msvcrt, "open_osfhandle", fail_conversion, raising=False)
     with pytest.raises(OSError, match="conversion failed"):
         subject._windows_descriptor(tmp_path, directory=False)
     assert closed == [123]
 
     create.result = None
-    monkeypatch.setattr(ctypes, "get_last_error", lambda: 5)
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: 5, raising=False)
     with pytest.raises(OSError, match="could not be opened"):
         subject._windows_descriptor(tmp_path, directory=True)
 

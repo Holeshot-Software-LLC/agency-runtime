@@ -9,6 +9,7 @@ related:
   - .github/workflows/ci.yml
   - scripts/build_distributions.py
   - scripts/canonicalize_distributions.py
+  - scripts/prove_autocrlf_checkout.py
   - scripts/release_contract.py
   - scripts/release_git.py
   - scripts/verify_distribution.py
@@ -71,7 +72,13 @@ distribution. Use that helper in CI and in every documented release command
 while keeping the distribution verifier independently implemented, invoked, and
 semantically strict. Require the hosted Windows and Linux builds to exchange
 their complete pairs and prove filename and byte equality before either pair can
-feed an installation or publication workflow.
+feed an installation or publication workflow. Immediately before each hosted
+platform build, bind `core.autocrlf=true` to every proof-only Git command without
+mutating local or shared Git configuration, make the fixed `LICENSE` probe
+physically CRLF, refresh only that worktree's index entry to the same normalized
+blob, and prove that the checkout remains clean at the exact reviewed HEAD while
+the authenticated Git blob remains LF. The canonical builder and independent
+verifier must then succeed from that deliberately divergent working-tree state.
 
 ## Dependencies
 

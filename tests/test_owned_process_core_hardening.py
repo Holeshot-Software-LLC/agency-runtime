@@ -417,12 +417,12 @@ def test_capture_remaining_branches() -> None:
     assert capture.read_process_stream(io.StringIO(), "fallback", 2) == "fallback"
 
 
-def test_supervisor_command_wraps_plain_preparation_and_base_fallback(
+def test_supervisor_command_wraps_plain_preparation_and_prefers_active_interpreter(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     observed: dict[str, Any] = {}
-    monkeypatch.setattr(linux.sys, "_base_executable", "", raising=False)
     monkeypatch.setattr(linux.sys, "executable", "/trusted/python")
+    monkeypatch.setattr(linux.sys, "_base_executable", "/shared/python", raising=False)
     monkeypatch.setattr(linux, "prepare_process_argv", lambda argv: list(argv))
 
     def freeze(argv: PreparedProcessArgv, **kwargs: Any) -> PreparedProcessArgv:
@@ -443,6 +443,47 @@ def test_supervisor_command_wraps_plain_preparation_and_base_fallback(
     assert result[:5] == ["/trusted/python", "-I", "-S", "-c", linux.SUPERVISOR_SOURCE]
     assert json.loads(base64.urlsafe_b64decode(result[5])) == target
     assert result.executable_identities
+
+
+def test_supervisor_command_falls_back_when_active_interpreter_is_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[str] = []
+    monkeypatch.setattr(linux.sys, "executable", "")
+    monkeypatch.setattr(linux.sys, "_base_executable", "/trusted/base-python", raising=False)
+    monkeypatch.setattr(
+        linux,
+        "prepare_process_argv",
+        lambda argv: observed.extend(argv) or _prepared(),
+    )
+    monkeypatch.setattr(linux, "freeze_process_argv", lambda value, **_kwargs: value)
+
+    linux.supervisor_command(_prepared("--version"), forbidden_roots=())
+
+    assert observed == ["/trusted/base-python"]
+
+
+def test_supervisor_command_never_falls_back_from_an_untrusted_active_interpreter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[str] = []
+    monkeypatch.setattr(linux.sys, "executable", "/untrusted/active-python")
+    monkeypatch.setattr(linux.sys, "_base_executable", "/trusted/base-python", raising=False)
+    monkeypatch.setattr(
+        linux,
+        "prepare_process_argv",
+        lambda argv: observed.extend(argv) or _prepared(),
+    )
+
+    def reject_active(_value: PreparedProcessArgv, **_kwargs: Any) -> PreparedProcessArgv:
+        raise PermissionError("active interpreter is not trusted")
+
+    monkeypatch.setattr(linux, "freeze_process_argv", reject_active)
+
+    with pytest.raises(PermissionError, match="active interpreter is not trusted"):
+        linux.supervisor_command(_prepared("--version"), forbidden_roots=())
+
+    assert observed == ["/untrusted/active-python"]
 
 
 def test_supervisor_command_preserves_prepared_interpreter_receipt(
@@ -847,6 +888,10 @@ def test_linux_supervisor_fd_transfer_interruption_closes_every_end_once(
     boundary: str,
     after_store: bool,
 ) -> None:
+    # Drain finalizers from preceding fault-injection cases before replacing
+    # os.close with this test's descriptor ledger.
+    gc.collect()
+
     class _TransferAbort(BaseException):
         pass
 

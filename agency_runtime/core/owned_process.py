@@ -22,6 +22,7 @@ from typing import Any
 
 from agency_runtime.core import owned_process_capture as _capture
 from agency_runtime.core import owned_process_linux as _linux
+from agency_runtime.core.exception_notes import add_exception_note as _add_exception_note
 from agency_runtime.core.owned_process_capture import (
     BoundedBinaryProcessResult,
     BoundedProcessResult,
@@ -195,12 +196,6 @@ def _descriptor_owner_number(value: object) -> int:
     if descriptor is None:
         raise OSError("owned descriptor is unavailable")
     return descriptor
-
-
-def _add_exception_note(error: BaseException, note: str) -> None:
-    add_note = getattr(error, "add_note", None)
-    if callable(add_note):  # pragma: no branch - Python 3.10 compatibility
-        add_note(note)
 
 
 def _posix_process_group_active(process: subprocess.Popen[str]) -> bool:

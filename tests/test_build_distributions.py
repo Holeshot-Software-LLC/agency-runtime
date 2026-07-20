@@ -131,6 +131,8 @@ def test_release_tree_rejects_executable_and_linked_inputs_before_build(tmp_path
     repo, _commit = _repository(tmp_path)
     script = repo / "agency_runtime" / "tool.py"
     script.write_bytes(b"print('ok')\n")
+    if os.name != "nt":
+        script.chmod(script.stat().st_mode | stat.S_IXUSR)
     _git(repo, "add", "agency_runtime/tool.py")
     _git(repo, "update-index", "--chmod=+x", "agency_runtime/tool.py")
     _git(repo, "commit", "-m", "executable")
@@ -1402,6 +1404,7 @@ def _artifact_metadata(metadata, **changes):
         "st_mode": metadata.st_mode,
         "st_size": metadata.st_size,
         "st_mtime_ns": metadata.st_mtime_ns,
+        "st_ctime_ns": getattr(metadata, "st_ctime_ns", 0),
         "st_file_attributes": int(getattr(metadata, "st_file_attributes", 0) or 0),
         "st_nlink": metadata.st_nlink,
     }
@@ -1562,8 +1565,14 @@ def test_windows_atomic_publication_maps_native_outcomes(
         subject.ctypes,
         "WinDLL",
         lambda *_args, **_kwargs: SimpleNamespace(MoveFileExW=move),
+        raising=False,
     )
-    monkeypatch.setattr(subject.ctypes, "get_last_error", lambda: native_error)
+    monkeypatch.setattr(
+        subject.ctypes,
+        "get_last_error",
+        lambda: native_error,
+        raising=False,
+    )
 
     if exception is None:
         subject._windows_move_no_replace(tmp_path / "source", tmp_path / "destination")

@@ -10,6 +10,7 @@ related:
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - scripts/build_distributions.py
   - scripts/canonicalize_distributions.py
+  - scripts/prove_autocrlf_checkout.py
   - scripts/release_contract.py
   - scripts/release_git.py
   - scripts/verify_distribution.py

@@ -17,13 +17,8 @@ from contextlib import suppress
 from typing import Any
 
 from agency_runtime.core import owned_process_linux as _linux
+from agency_runtime.core.exception_notes import add_exception_note as _add_exception_note
 from agency_runtime.core.process_argv import PreparedProcessArgv
-
-
-def _add_exception_note(error: BaseException, note: str) -> None:
-    add_note = getattr(error, "add_note", None)
-    if callable(add_note):  # pragma: no branch - Python 3.10 compatibility
-        add_note(note)
 
 
 def uses_prefilled_windows_stdin(api: Any, input_text: str | None) -> bool:

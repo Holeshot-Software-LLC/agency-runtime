@@ -63,6 +63,7 @@ def _source_sdist(
     windows: bool = False,
     timestamp: int = TIMESTAMP,
     fractional_pax: bool = False,
+    rounded_fractional_mtime: bool = False,
     filename: str = "package-1.tar",
 ) -> bytes:
     tar_payload = io.BytesIO()
@@ -78,7 +79,7 @@ def _source_sdist(
             item.gid = 0 if windows else 1000
             item.uname = "" if windows else "builder"
             item.gname = "" if windows else "builder"
-            item.mtime = timestamp
+            item.mtime = timestamp + 0.75 if rounded_fractional_mtime else timestamp
             if fractional_pax:
                 item.pax_headers = {"mtime": f"{timestamp}.25"}
             item.size = 0 if directory else len(payload or b"")
@@ -217,6 +218,62 @@ def test_windows_and_linux_sources_produce_identical_canonical_bytes() -> None:
 
     assert windows_wheel == linux_wheel
     assert windows_sdist == linux_sdist
+
+
+def test_sdist_accepts_pax_writer_nearest_even_mtime_header() -> None:
+    source = _source_sdist(
+        {
+            "package-1": None,
+            "package-1/package": None,
+            "package-1/package/module.py": b"payload",
+        },
+        rounded_fractional_mtime=True,
+    )
+    tar_payload = gzip.decompress(source)
+    pax_size = subject._canonical_octal(tar_payload[124:136], label="size")
+    member_offset = (
+        tarfile.BLOCKSIZE
+        + ((pax_size + tarfile.BLOCKSIZE - 1) // tarfile.BLOCKSIZE) * tarfile.BLOCKSIZE
+    )
+
+    assert subject._parse_pax_payload(
+        tar_payload[tarfile.BLOCKSIZE : tarfile.BLOCKSIZE + pax_size]
+    ) == {"mtime": f"{TIMESTAMP}.75"}
+    assert (
+        subject._canonical_octal(
+            tar_payload[member_offset + 136 : member_offset + 148],
+            label="mtime",
+        )
+        == TIMESTAMP + 1
+    )
+
+    canonical = subject.canonicalize_sdist_bytes(
+        source,
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+
+    assert verifier._sdist_payload(
+        io.BytesIO(canonical),
+        expected_root="package-1",
+        expected_timestamp=TIMESTAMP,
+    )
+
+
+@pytest.mark.parametrize(
+    ("encoded", "header"),
+    (
+        (f"{TIMESTAMP}.25", TIMESTAMP),
+        (f"{TIMESTAMP}.5", TIMESTAMP),
+        (f"{TIMESTAMP + 1}.5", TIMESTAMP + 2),
+        (f"{TIMESTAMP}.75", TIMESTAMP + 1),
+    ),
+)
+def test_pax_mtime_validation_uses_exact_nearest_even_rounding(
+    encoded: str,
+    header: int,
+) -> None:
+    subject._validate_source_pax_records({"mtime": encoded}, raw_mtime=header)
 
 
 def test_canonical_fixed_fixtures_match_owned_byte_contract_goldens() -> None:
@@ -1180,6 +1237,17 @@ def test_raw_tar_header_and_pax_metadata_faults_are_rejected() -> None:
         subject._validate_source_pax_records({}, raw_mtime=TIMESTAMP)
     with pytest.raises(ValueError, match="PAX mtime is noncanonical"):
         subject._validate_source_pax_records({"mtime": "01"}, raw_mtime=TIMESTAMP)
+    with pytest.raises(ValueError, match="PAX mtime is noncanonical"):
+        subject._validate_source_pax_records({"mtime": "-1.5"}, raw_mtime=-2)
+    subject._validate_source_pax_records(
+        {"mtime": f"{TIMESTAMP}.75"},
+        raw_mtime=TIMESTAMP + 1,
+    )
+    with pytest.raises(ValueError, match="differs from its tar header"):
+        subject._validate_source_pax_records(
+            {"mtime": f"{TIMESTAMP}.75"},
+            raw_mtime=TIMESTAMP,
+        )
     with pytest.raises(ValueError, match="differs from its tar header"):
         subject._validate_source_pax_records({"mtime": "2"}, raw_mtime=1)
 

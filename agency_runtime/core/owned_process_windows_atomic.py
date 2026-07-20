@@ -18,6 +18,7 @@ from ctypes import wintypes
 from dataclasses import dataclass
 from typing import Any, cast
 
+from agency_runtime.core.exception_notes import add_exception_note as _add_exception_note
 from agency_runtime.core.owned_process_windows import WindowsJob
 
 _IS_WINDOWS = os.name == "nt"
@@ -304,12 +305,6 @@ def _native_error(message: str) -> OSError:
     return OSError(error, f"{message}: {detail or 'Windows error'}")
 
 
-def _add_exception_note(error: BaseException, note: str) -> None:
-    add_note = getattr(error, "add_note", None)
-    if callable(add_note):  # pragma: no branch - Python 3.10 compatibility
-        add_note(note)
-
-
 def _close_pipe_fds_preserving_primary(
     process: Any,
     descriptors: tuple[Any, Any, Any, Any, Any, Any],
@@ -539,12 +534,12 @@ def _process_handle_type(
 
     class _SharedProcessHandle(_SUBPROCESS_HANDLE_TYPE):
         def Close(self) -> None:
-            if not self.closed:
+            if not getattr(self, "closed", False):
                 self.closed = True
                 information.close_process()
 
         def Detach(self) -> int:
-            if self.closed:
+            if getattr(self, "closed", False):
                 raise ValueError("already closed")
             handle = information.process_handle
             if not handle:
