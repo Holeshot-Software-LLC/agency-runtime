@@ -100,6 +100,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e6e1b25` | 2026-07-20 | Merge pull request #111 from Holeshot-Software-LLC/codex/canonical-release-source | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | null |
 | `0f374b4` | 2026-07-20 | fix(dashboard): preserve WSL systemd config trust | [AR-110](../roadmap/issue-AR-110-preserve-wsl-systemd-service-trust.md) | [detail](2026-07-20-0f374b4-wsl-systemd-config-trust.md) |
 | `615d88c` | 2026-07-20 | fix(canary): bind isolated runs to global mode | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md), [AR-88](../roadmap/issue-AR-88-compare-agency-native-outcomes.md) | [detail](2026-07-20-615d88c-isolated-canary-modes.md) |
+| `f5fe972` | 2026-07-20 | fix(canary): bind hook control capability | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-f5fe972-hook-control-capability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
