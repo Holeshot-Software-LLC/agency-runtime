@@ -16,7 +16,7 @@ type: worklog
 commit: 9d4e55b
 short: 9d4e55b
 date: 2026-07-20
-pr: "https://github.com/Holeshot-Software-LLC/agency-runtime/pull/120"
+pr: "https://github.com/Holeshot-Software-LLC/agency-runtime/pull/121"
 related_issues:
   - docs/roadmap/issue-AR-113-isolate-performance-gates.md
 ---
