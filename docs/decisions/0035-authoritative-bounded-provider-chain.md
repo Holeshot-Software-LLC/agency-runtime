@@ -3,15 +3,17 @@ title: "Use an authoritative bounded provider chain with allowlisted CLI transpo
 status: accepted
 category: decisions
 created: 2026-07-11
-updated: 2026-07-13
+updated: 2026-07-20
 tags: [providers, routing, authentication, subprocess, security]
 related:
   - docs/roadmap/issue-AR-05-guided-provider-configuration.md
   - docs/roadmap/issue-AR-06-cli-authenticated-judge-providers.md
   - docs/roadmap/issue-AR-21-fully-resume-windows-children.md
+  - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
   - docs/decisions/0006-config-first-redacted-configuration.md
   - docs/decisions/0008-ordered-provider-fallback.md
   - docs/decisions/0019-bounded-machine-readable-cli-delegation.md
+  - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -54,6 +56,12 @@ redact them from commands, output, structured metadata, and errors. Use a
 kill-on-close Job Object with suspended assignment on Windows and an owned
 process group on POSIX. A parent that exits while descendants remain is cleaned
 up and treated as a failed delegation.
+
+The containment mechanism in the preceding paragraph is retained as historical
+context and is replaced by [ADR-0073](0073-own-subprocess-trees-atomically.md):
+current execution uses atomic-at-creation Windows Job membership or the
+two-phase Linux subreaper contract, not post-creation assignment or
+process-group-only cleanup.
 
 Resolve Windows process entry points without passing user-controlled arguments
 through `.cmd` or `.bat`. Prefer a sibling native executable, use a sibling

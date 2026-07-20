@@ -8,6 +8,7 @@ import subprocess
 
 import pytest
 
+from agency_runtime.core import owned_process
 from agency_runtime.core.delegation import backend_process, backends
 from tests.runtime_support import trusted_test_interpreter
 
@@ -19,6 +20,13 @@ def _frozen_test_argv() -> list[str]:
     return backends.freeze_process_argv(
         backends.prepare_process_argv([str(trusted_test_interpreter())])
     )
+
+
+def _owned_pipe_pair(read_descriptor: int, write_descriptor: int) -> object:
+    pair = owned_process._OwnedPipePair()
+    pair._storage[0] = read_descriptor
+    pair._storage[1] = write_descriptor
+    return pair
 
 
 class _Pipe:
@@ -136,8 +144,26 @@ def _configure_lifecycle(
         "_terminate_owned_process_tree",
         lambda owned, *, windows_job=None: terminations.append((owned, windows_job)),
     )
-    monkeypatch.setattr(backends, "_create_windows_job", lambda _process: job)
-    monkeypatch.setattr(backends, "_resume_windows_process", lambda _pid: True)
+    monkeypatch.setattr(
+        backends._process,
+        "_is_atomic_windows_process",
+        lambda candidate: windows and candidate is process,
+    )
+    monkeypatch.setattr(
+        backends._process,
+        "_claim_atomic_windows_job",
+        lambda candidate: job if candidate is process else None,
+    )
+    monkeypatch.setattr(
+        backends._process,
+        "_resume_atomic_windows_process",
+        lambda candidate: candidate is process,
+    )
+    monkeypatch.setattr(
+        backends._process,
+        "_close_atomic_windows_process_resources",
+        lambda _process: None,
+    )
     return terminations
 
 
@@ -153,29 +179,37 @@ def _run() -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_spawn_uses_an_explicitly_closed_pipe_for_no_input(
+def test_facade_spawn_routes_text_launch_to_the_central_posix_policy(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     observed: dict[str, object] = {}
     sentinel = object()
 
-    def fake_popen(*args: object, **kwargs: object) -> object:
-        observed["args"] = args
+    def fake_supervisor(target, **kwargs: object) -> object:
+        observed["target"] = target
         observed.update(kwargs)
         return sentinel
 
-    monkeypatch.setattr(backends.subprocess, "Popen", fake_popen)
-    monkeypatch.setattr(backends, "_is_windows", lambda: False)
+    monkeypatch.setattr(backends._process, "revalidate_process_argv", lambda _argv: None)
+    monkeypatch.setattr(backends._process, "_is_windows", lambda: False)
+    monkeypatch.setattr(backends._process, "_spawn_linux_supervisor", fake_supervisor)
 
+    argv = _frozen_test_argv()
     result = backends._spawn_owned_process(
-        _frozen_test_argv(),
+        argv,
         cwd=None,
         env={"PATH": "test"},
         input_text=None,
     )
 
     assert result is sentinel
-    assert observed["stdin"] is subprocess.PIPE
+    assert observed == {
+        "target": argv,
+        "cwd": None,
+        "env": {"PATH": "test"},
+        "text": True,
+        "forbidden_roots": (),
+    }
 
 
 @pytest.mark.parametrize(
@@ -201,8 +235,9 @@ def test_windows_bounded_stdin_is_complete_before_child_creation(
         observed["payload"] = os.read(stdin_fd, 8192)
         return sentinel
 
-    monkeypatch.setattr(backends, "_is_windows", lambda: True)
-    monkeypatch.setattr(backends.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(backends._process, "_is_windows", lambda: True)
+    monkeypatch.setattr(backends._process, "revalidate_process_argv", lambda _argv: None)
+    monkeypatch.setattr(backends._process, "_spawn_atomic_windows_process", fake_popen)
 
     result = backends._spawn_owned_process(
         _frozen_test_argv(),
@@ -220,10 +255,11 @@ def test_windows_large_stdin_remains_asynchronous(
 ) -> None:
     observed: dict[str, object] = {}
     sentinel = object()
-    monkeypatch.setattr(backends, "_is_windows", lambda: True)
+    monkeypatch.setattr(backends._process, "_is_windows", lambda: True)
+    monkeypatch.setattr(backends._process, "revalidate_process_argv", lambda _argv: None)
     monkeypatch.setattr(
-        backends.subprocess,
-        "Popen",
+        backends._process,
+        "_spawn_atomic_windows_process",
         lambda *_args, **kwargs: observed.update(kwargs) or sentinel,
     )
 
@@ -242,7 +278,11 @@ def test_windows_prefilled_stdin_fails_closed_on_partial_write(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     closed: list[int] = []
-    monkeypatch.setattr(backends.os, "pipe", lambda: (10, 11))
+    monkeypatch.setattr(
+        owned_process._OwnedPipePair,
+        "create",
+        classmethod(lambda _cls: _owned_pipe_pair(10, 11)),
+    )
     monkeypatch.setattr(backends.os, "write", lambda _fd, _payload: 1)
     monkeypatch.setattr(backends.os, "close", lambda fd: closed.append(fd))
 
@@ -256,7 +296,11 @@ def test_windows_prefilled_stdin_requires_confirmed_writer_close(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     closed: list[int] = []
-    monkeypatch.setattr(backends.os, "pipe", lambda: (10, 11))
+    monkeypatch.setattr(
+        owned_process._OwnedPipePair,
+        "create",
+        classmethod(lambda _cls: _owned_pipe_pair(10, 11)),
+    )
 
     def close(fd: int) -> None:
         if fd == 11:
@@ -277,11 +321,17 @@ def test_windows_prefilled_stdin_cleans_child_when_parent_read_close_fails(
     process = object()
     reaped: list[object] = []
     pipes_closed: list[object] = []
-    monkeypatch.setattr(backends, "_is_windows", lambda: True)
-    monkeypatch.setattr(backends, "_create_prefilled_stdin_pipe", lambda _input: 10)
-    monkeypatch.setattr(backends.subprocess, "Popen", lambda *_args, **_kwargs: process)
+    atomic_resources_closed: list[object] = []
+    monkeypatch.setattr(backends._process, "_is_windows", lambda: True)
+    monkeypatch.setattr(backends._process, "revalidate_process_argv", lambda _argv: None)
+    monkeypatch.setattr(backends._process, "_create_prefilled_stdin_pipe", lambda _input: 10)
     monkeypatch.setattr(
-        backends.os,
+        backends._process,
+        "_spawn_atomic_windows_process",
+        lambda *_args, **_kwargs: process,
+    )
+    monkeypatch.setattr(
+        backends._process.os,
         "close",
         lambda _fd: (_ for _ in ()).throw(OSError("reader close failed")),
     )
@@ -290,7 +340,12 @@ def test_windows_prefilled_stdin_cleans_child_when_parent_read_close_fails(
         "_kill_and_reap_process",
         lambda owned: reaped.append(owned),
     )
-    monkeypatch.setattr(backends, "_close_process_pipes", pipes_closed.append)
+    monkeypatch.setattr(backends._process, "_close_process_pipes", pipes_closed.append)
+    monkeypatch.setattr(
+        backends._process,
+        "_close_atomic_windows_process_resources",
+        atomic_resources_closed.append,
+    )
 
     with pytest.raises(OSError, match="reader close failed"):
         backends._spawn_owned_process(
@@ -302,20 +357,22 @@ def test_windows_prefilled_stdin_cleans_child_when_parent_read_close_fails(
 
     assert reaped == [process]
     assert pipes_closed == [process]
+    assert atomic_resources_closed == [process]
 
 
 def test_windows_prefilled_stdin_closes_parent_fd_when_spawn_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     closed: list[int] = []
-    monkeypatch.setattr(backends, "_is_windows", lambda: True)
-    monkeypatch.setattr(backends, "_create_prefilled_stdin_pipe", lambda _input: 10)
+    monkeypatch.setattr(backends._process, "_is_windows", lambda: True)
+    monkeypatch.setattr(backends._process, "revalidate_process_argv", lambda _argv: None)
+    monkeypatch.setattr(backends._process, "_create_prefilled_stdin_pipe", lambda _input: 10)
     monkeypatch.setattr(
-        backends.subprocess,
-        "Popen",
+        backends._process,
+        "_spawn_atomic_windows_process",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("spawn failed")),
     )
-    monkeypatch.setattr(backends.os, "close", closed.append)
+    monkeypatch.setattr(backends._process.os, "close", closed.append)
 
     with pytest.raises(RuntimeError, match="spawn failed"):
         backends._spawn_owned_process(
@@ -331,14 +388,15 @@ def test_windows_prefilled_stdin_closes_parent_fd_when_spawn_fails(
 def test_spawn_failure_without_prefilled_stdin_has_no_fd_cleanup(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(backends, "_is_windows", lambda: False)
+    monkeypatch.setattr(backends._process, "_is_windows", lambda: False)
+    monkeypatch.setattr(backends._process, "revalidate_process_argv", lambda _argv: None)
     monkeypatch.setattr(
-        backends.subprocess,
-        "Popen",
+        backends._process,
+        "_spawn_linux_supervisor",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("spawn failed")),
     )
     monkeypatch.setattr(
-        backends.os,
+        backends._process.os,
         "close",
         lambda _fd: pytest.fail("ordinary pipe ownership belongs to Popen"),
     )
@@ -382,9 +440,9 @@ def test_windows_io_starts_before_suspended_process_resumes(
         lambda *_args, **kwargs: events.append(("io", kwargs["input_text"] is None)) or threads,
     )
     monkeypatch.setattr(
-        backends,
-        "_resume_windows_process",
-        lambda _pid: not events.append(("resume", True)),
+        backends._process,
+        "_resume_atomic_windows_process",
+        lambda _process: not events.append(("resume", True)),
     )
 
     result = _run()
@@ -402,7 +460,7 @@ def test_containment_setup_cancellation_cleans_the_just_spawned_process(
     def interrupted(_process: _Process) -> _Job:
         raise KeyboardInterrupt
 
-    monkeypatch.setattr(backends, "_create_windows_job", interrupted)
+    monkeypatch.setattr(backends._process, "_claim_atomic_windows_job", interrupted)
 
     with pytest.raises(KeyboardInterrupt):
         _run()
@@ -424,7 +482,11 @@ def test_resume_failure_terminates_then_closes_the_windows_job(
         windows=True,
         job=job,
     )
-    monkeypatch.setattr(backends, "_resume_windows_process", lambda _pid: False)
+    monkeypatch.setattr(
+        backends._process,
+        "_resume_atomic_windows_process",
+        lambda _process: False,
+    )
 
     with pytest.raises(OSError, match="contained Windows"):
         _run()

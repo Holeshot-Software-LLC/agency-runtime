@@ -3,13 +3,15 @@ title: "Freeze every launch-critical executable identity before process creation
 status: accepted
 category: decisions
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-20
 tags: [security, processes, executables, delegation, portability]
 related:
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md
   - docs/roadmap/issue-AR-65-reject-cross-account-executable-namespaces.md
+  - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
   - docs/decisions/0038-refuse-executable-git-configuration-during-delegation.md
   - docs/decisions/0040-preserve-environment-owned-python-launchers.md
+  - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
   - docs/worklog/README.md

@@ -53,6 +53,7 @@ def test_timeout_and_version_parsers_fail_closed_on_invalid_values() -> None:
             raise OverflowError
 
     assert cli_transport._valid_timeout(_NoFloat()) is False  # type: ignore[arg-type]
+    assert cli_transport._valid_timeout(True) is False
     assert cli_transport._version_tuple("Claude unknown") is None
     assert cli_transport._version_tuple("Claude 2.1.205") == (2, 1, 205)
 
@@ -157,6 +158,65 @@ def test_cli_judge_handles_resolver_exception_and_invalid_prompt() -> None:
             "\x00",
             timeout=1,
             resolver=lambda _name: "codex",
+        )
+        is None
+    )
+
+
+def test_cli_status_rejects_unsupported_timeout_and_authentication_timeout() -> None:
+    assert cli_transport.inspect_cli_transport("unsupported").reason == "unsupported CLI transport"
+    assert (
+        cli_transport.inspect_cli_transport("claude", timeout=0).reason
+        == "CLI inspection timeout is outside the supported range"
+    )
+    executable = cli_transport._resolve_cli_executable(
+        "claude",
+        lambda _name: _TRUSTED_CLI,
+        environ={"HOME": str(Path.home())},
+    )
+    assert executable is not None
+    status = cli_transport._authentication_failure(
+        "claude",
+        executable,
+        timeout=1,
+        runner=lambda *_args, **_kwargs: BoundedProcessResult(
+            0,
+            "",
+            "",
+            timed_out=True,
+        ),
+        environ={},
+    )
+    assert status is not None
+    assert status.reason == "authentication status timed out"
+
+
+def test_cli_structured_rejects_unencodable_or_oversized_inputs() -> None:
+    provider = _provider("claude")
+    assert (
+        cli_transport.invoke_cli_structured(
+            provider,
+            "\ud800",
+            {},
+            timeout=1,
+        )
+        is None
+    )
+    assert (
+        cli_transport.invoke_cli_structured(
+            provider,
+            "prompt",
+            {"invalid": object()},
+            timeout=1,
+        )
+        is None
+    )
+    assert (
+        cli_transport.invoke_cli_structured(
+            provider,
+            "prompt",
+            {"oversized": "x" * (64 * 1024)},
+            timeout=1,
         )
         is None
     )

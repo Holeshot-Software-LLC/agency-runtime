@@ -172,6 +172,15 @@ def test_persistent_artifact_manifest_rejects_each_invalid_value_class() -> None
     with pytest.raises(ValueError, match="lexical_device"):
         process_argv.PersistentArtifactIdentity.from_manifest(manifest)
 
+    manifest = _artifact_identity().manifest()
+    manifest["sha256"] = "not-a-digest"
+    with pytest.raises(ValueError, match="sha256"):
+        process_argv.PersistentArtifactIdentity.from_manifest(manifest)
+
+    for value in (None, [], [_artifact_identity().manifest()] * 9):
+        with pytest.raises(ValueError, match="artifact list"):
+            process_argv.persistent_artifacts_from_manifest(value)
+
 
 def test_posix_access_acl_probe_distinguishes_absence_from_probe_failure(
     monkeypatch: pytest.MonkeyPatch,

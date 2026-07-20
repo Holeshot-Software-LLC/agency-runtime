@@ -1,9 +1,9 @@
 ---
 title: "AR-106: Make Windows policy identity and POSIX simulations portable"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-19
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [testing, windows, portability, security]
 related:
   - .github/workflows/ci.yml
@@ -70,13 +70,13 @@ None. This issue blocks the final hosted portability gate in AR-104.
 
 ## Acceptance
 
-- [ ] An SDDL owner alias is accepted only when native binary comparison proves it is the current TokenUser SID.
-- [ ] Foreign and broader trusted-system owners remain rejected for custom policy files.
-- [ ] Configuration path tests use native absolute paths on Windows and POSIX.
-- [ ] POSIX security-branch simulations pass on Windows without changing the process-wide `os` module.
-- [ ] Package-owned isolated launchers emit deterministic UTF-8 on every supported Python version.
-- [ ] Roster ingestion detects added, removed, renamed, or replaced entries without relying on directory `mtime` behavior.
-- [ ] Roster directory discovery rejects links, reparse points, and special entries, and revalidates bounded source-wide receipts after all file reads.
-- [ ] The dependency-review fallback installs and audits the exact runtime dependency set within its hosted timeout.
-- [ ] Hosted Windows Python 3.10 and 3.14 jobs pass with warning-strict tests.
-- [ ] Documentation, lint, coverage, and tracker validation pass.
+- [x] An SDDL owner alias is accepted only when native binary comparison proves it is the current TokenUser SID.
+- [x] Foreign and broader trusted-system owners remain rejected for custom policy files.
+- [x] Configuration path tests use native absolute paths on Windows and POSIX.
+- [x] POSIX security-branch simulations pass on Windows without changing the process-wide `os` module.
+- [x] Package-owned isolated launchers emit deterministic UTF-8 on every supported Python version.
+- [x] Roster ingestion detects added, removed, renamed, or replaced entries without relying on directory `mtime` behavior.
+- [x] Roster directory discovery rejects links, reparse points, and special entries, and revalidates bounded source-wide receipts after all file reads.
+- [x] The dependency-review fallback installs and audits the exact runtime dependency set within its hosted timeout.
+- [x] Hosted Windows Python 3.10 and 3.14 jobs pass with warning-strict tests.
+- [x] Documentation, lint, coverage, and tracker validation pass.

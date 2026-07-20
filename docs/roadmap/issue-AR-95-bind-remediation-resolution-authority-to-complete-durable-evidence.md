@@ -1,9 +1,9 @@
 ---
 title: "AR-95: Bind remediation resolution authority to complete durable evidence"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [roster, remediation, security, sqlite, provenance]
 related:
   - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
@@ -78,4 +78,4 @@ findings and exact bytes enter quarantine evidence.
 - [x] Ambiguous exact-detail duplicates cause a fresh canonical resolution rather than order-based reuse.
 - [x] Event order survives `VACUUM`, and JSON lookups are bounded and expression-indexed.
 - [x] CLI and dashboard projections report unvalidated resolution anomalies without raw prompt content.
-- [ ] Full coverage, documentation, packaging, Windows, and Linux gates pass.
+- [x] Full coverage, documentation, packaging, Windows, and Linux gates pass.

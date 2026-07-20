@@ -1,9 +1,9 @@
 ---
 title: "AR-97: Reconcile required-inference remediation in one ingestion"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [roster, quarantine, remediation, inference]
 related:
   - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
@@ -60,4 +60,4 @@ fail-closed remediation evidence contract.
 - [x] Reconciliation is persisted-evidence-bound, atomic, idempotent, and bounded.
 - [x] Failed or unavailable required inference leaves quarantine pending.
 - [x] The regression proves exactly one authorized resolution and zero pending entries.
-- [ ] The complete release matrix and installed-artifact smoke pass.
+- [x] The complete release matrix and installed-artifact smoke pass.

@@ -1,18 +1,20 @@
 ---
 title: "Preclose bounded Windows child stdin and own one suspension"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-20
 tags: [delegation, windows, subprocess, portability, reliability, security]
 related:
   - docs/roadmap/issue-AR-16-linux-python-delegation-compatibility.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/roadmap/issue-AR-21-fully-resume-windows-children.md
+  - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
+  - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/worklog/README.md
 supersedes:
   - docs/decisions/0043-prime-stdin-before-windows-child-resume.md
-superseded_by: null
+superseded_by: docs/decisions/0073-own-subprocess-trees-atomically.md
 id: ADR-0044
 type: decision
 deciders: [maintainers]

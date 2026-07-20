@@ -273,6 +273,8 @@ def _prepared_cli_command(
         artifact_paths=executable.artifact_paths,
     )
     command.executable_identities = executable.executable_identities
+    command.persistent_artifact_identities = executable.persistent_artifact_identities
+    command.frozen_launcher = executable.frozen_launcher
     command.frozen_platform = executable.frozen_platform
     return command
 

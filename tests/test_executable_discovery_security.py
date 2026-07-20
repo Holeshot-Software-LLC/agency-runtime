@@ -466,9 +466,10 @@ def test_forbidden_repository_suffix_and_inode_guards(
 
 
 def test_revalidation_requires_a_frozen_identity() -> None:
+    executable = str(Path.cwd() / _tool_name("codex"))
     prepared = process_argv.PreparedProcessArgv(
-        [str(Path.cwd() / _tool_name("codex"))],
-        artifact_paths=(),
+        [executable],
+        artifact_paths=(executable,),
     )
     with pytest.raises(OSError, match="no frozen executable identity"):
         revalidate_process_argv(prepared)
@@ -495,6 +496,23 @@ def test_npm_companion_resolution_is_allowlisted_and_identity_ready(
     claude = tmp_path / "claude.cmd"
     assert process_argv._trusted_npm_companion(claude, lambda _name: None) is None
 
+    codex = tmp_path / "codex.cmd"
+    native = (
+        tmp_path
+        / "node_modules"
+        / "@openai"
+        / "codex"
+        / "node_modules"
+        / "@openai"
+        / "codex-win32-x64"
+        / "vendor"
+        / "x86_64-pc-windows-msvc"
+        / "bin"
+        / "codex.exe"
+    )
+    _write_tool(native)
+    assert process_argv._trusted_npm_companion(codex, lambda _name: None) == [str(native)]
+
     script = tmp_path / "node_modules" / "@anthropic-ai" / "claude-code" / "cli.js"
     script.parent.mkdir(parents=True)
     script.write_text("process.exit(0)", encoding="utf-8")
@@ -516,6 +534,11 @@ def test_windows_launch_rules_reject_unsafe_fallbacks(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    with pytest.raises(FileNotFoundError, match="unavailable"):
+        process_argv._trusted_powershell(
+            platform_name="nt",
+            system_resolver=lambda _name: None,
+        )
     with pytest.raises(OSError, match="non-absolute"):
         process_argv._trusted_powershell(
             platform_name="nt",
@@ -547,6 +570,33 @@ def test_windows_launch_rules_reject_unsafe_fallbacks(
             resolver=lambda _name: str(cmd),
             system_resolver=lambda _name: str(trusted),
         )
+
+
+def test_windows_cmd_preparation_prefers_native_then_allowlisted_npm_companion(
+    tmp_path: Path,
+) -> None:
+    native_shim = _write_tool(tmp_path / "native.cmd")
+    native = _write_tool(tmp_path / "native.exe")
+    prepared = prepare_process_argv(
+        [str(native_shim), "--version"],
+        platform_name="nt",
+        resolver=lambda _name: str(native_shim),
+    )
+    assert prepared == [str(native), "--version"]
+    assert prepared.artifact_paths == (str(native),)
+
+    claude = _write_tool(tmp_path / "claude.cmd")
+    script = tmp_path / "node_modules" / "@anthropic-ai" / "claude-code" / "cli.js"
+    script.parent.mkdir(parents=True)
+    script.write_text("process.exit(0)", encoding="utf-8")
+    node = _write_tool(tmp_path / "node.exe")
+    prepared = prepare_process_argv(
+        [str(claude), "--version"],
+        platform_name="nt",
+        resolver=lambda _name: str(claude),
+    )
+    assert prepared == [str(node), str(script), "--version"]
+    assert prepared.artifact_paths == (str(node), str(script))
     untrusted = _write_tool(tmp_path / "unsafe.vbs")
     with pytest.raises(OSError, match="untrusted suffix"):
         prepare_process_argv(

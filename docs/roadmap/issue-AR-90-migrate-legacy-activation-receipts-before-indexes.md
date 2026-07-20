@@ -1,9 +1,9 @@
 ---
 title: "AR-90: Migrate legacy activation receipts before current indexes"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [storage, migration, activation, integrity, bug]
 related:
   - docs/roadmap/issue-AR-31-migrate-legacy-tombstones-before-v17-indexes.md
@@ -70,4 +70,4 @@ AR-79's installed Codex proof until the durable profile can open safely.
 - [x] Legacy import events receive deterministic positive sequences before provenance indexes run.
 - [x] The real durable profile upgrades and starts the dashboard without an index-order failure.
 - [x] The refreshed installed Codex canary emits the exact six-line current-turn header with correlated routing and finalization evidence.
-- [ ] Full coverage, documentation, packaging, and Windows/Linux gates pass.
+- [x] Full coverage, documentation, packaging, and Windows/Linux gates pass.

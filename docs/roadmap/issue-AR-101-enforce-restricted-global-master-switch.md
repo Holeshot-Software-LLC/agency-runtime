@@ -1,9 +1,9 @@
 ---
 title: "AR-101: Enforce the global master switch in restricted host consumers"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [operations, windows, security, runtime-control, routing]
 related:
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
@@ -66,4 +66,4 @@ correction can be verified independently.
 - [x] Restricted global mutation uses the dashboard after a brokered authoritative read.
 - [x] Off bypasses search, route, preflight, delegation, model, and finalization work.
 - [x] On restores normal behavior and the installed restricted Codex smoke passes.
-- [ ] The full suite and hosted Windows/Linux gates pass.
+- [x] The full suite and hosted Windows/Linux gates pass.

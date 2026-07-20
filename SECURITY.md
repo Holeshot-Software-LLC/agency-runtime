@@ -3,7 +3,7 @@ title: "Security Policy"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-20
 tags: [security, reporting, privacy]
 related:
   - README.md
@@ -96,7 +96,7 @@ configuration with `agency config show`. Run:
 
 ```bash
 python scripts/verify_release_hygiene.py
-python -m bandit -q -r agency_runtime -lll
+python -m bandit -q -r agency_runtime scripts -lll
 python -m pip_audit . --strict
 ```
 

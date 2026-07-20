@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -103,27 +103,29 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-83` | [Import manifest-backed upstream agent rosters into quarantine](issue-AR-83-manifest-roster-import.md) | in_progress | p1 | roster-governance | [#85](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/85) |
 | `AR-84` | [Give the semantic judge bounded full agent cards](issue-AR-84-bounded-semantic-agent-cards.md) | in_progress | p1 | routing | [#80](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/80) |
 | `AR-85` | [Replace generic triviality with state-aware turn classification](issue-AR-85-state-aware-turn-classification.md) | in_progress | p0 | routing | [#86](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/86) |
-| `AR-86` | [Govern the complete upstream roster lifecycle](issue-AR-86-govern-complete-upstream-roster-lifecycle.md) | in_progress | p0 | roster-governance | [#87](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/87) |
-| `AR-87` | [Produce bounded native delegation plans and correction](issue-AR-87-bounded-native-delegation-plans.md) | in_progress | p0 | routing | [#88](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/88) |
+| `AR-86` | [Govern the complete upstream roster lifecycle](issue-AR-86-govern-complete-upstream-roster-lifecycle.md) | done | p0 | roster-governance | [#87](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/87) |
+| `AR-87` | [Produce bounded native delegation plans and correction](issue-AR-87-bounded-native-delegation-plans.md) | done | p0 | routing | [#88](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/88) |
 | `AR-88` | [Compare Agency modes against native host outcomes](issue-AR-88-compare-agency-native-outcomes.md) | in_progress | p0 | testing | [#89](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/89) |
 | `AR-89` | [Expose roster governance and inference health operationally](issue-AR-89-operational-roster-inference-parity.md) | in_progress | p1 | operations | [#90](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/90) |
-| `AR-90` | [Migrate legacy activation receipts before current indexes](issue-AR-90-migrate-legacy-activation-receipts-before-indexes.md) | in_progress | p0 | operations | [#91](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/91) |
-| `AR-91` | [Enforce governed roster activation at every public store boundary](issue-AR-91-enforce-governed-roster-activation.md) | in_progress | p0 | roster-governance | [#92](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/92) |
-| `AR-92` | [Redact roster source credentials from persistence and output](issue-AR-92-redact-roster-source-credentials.md) | in_progress | p0 | security | [#93](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/93) |
-| `AR-93` | [Reject invisible Unicode controls at roster ingestion boundaries](issue-AR-93-reject-invisible-unicode-controls.md) | in_progress | p0 | security | [#94](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/94) |
+| `AR-90` | [Migrate legacy activation receipts before current indexes](issue-AR-90-migrate-legacy-activation-receipts-before-indexes.md) | done | p0 | operations | [#91](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/91) |
+| `AR-91` | [Enforce governed roster activation at every public store boundary](issue-AR-91-enforce-governed-roster-activation.md) | done | p0 | roster-governance | [#92](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/92) |
+| `AR-92` | [Redact roster source credentials from persistence and output](issue-AR-92-redact-roster-source-credentials.md) | done | p0 | security | [#93](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/93) |
+| `AR-93` | [Reject invisible Unicode controls at roster ingestion boundaries](issue-AR-93-reject-invisible-unicode-controls.md) | done | p0 | security | [#94](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/94) |
 | `AR-94` | [Treat dashboard client disconnects as quiet transport completion](issue-AR-94-quiet-dashboard-client-disconnects.md) | done | p1 | dashboard | [#95](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/95) |
-| `AR-95` | [Bind remediation resolution authority to complete durable evidence](issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md) | in_progress | p0 | security | [#96](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/96) |
-| `AR-96` | [Serve a packaged dashboard favicon without console noise](issue-AR-96-packaged-dashboard-favicon.md) | in_progress | p1 | dashboard | [#97](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/97) |
-| `AR-97` | [Reconcile required-inference remediation in one ingestion](issue-AR-97-reconcile-required-inference-remediation.md) | in_progress | p1 | roster-governance | [#98](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/98) |
+| `AR-95` | [Bind remediation resolution authority to complete durable evidence](issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md) | done | p0 | security | [#96](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/96) |
+| `AR-96` | [Serve a packaged dashboard favicon without console noise](issue-AR-96-packaged-dashboard-favicon.md) | done | p1 | dashboard | [#97](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/97) |
+| `AR-97` | [Reconcile required-inference remediation in one ingestion](issue-AR-97-reconcile-required-inference-remediation.md) | done | p1 | roster-governance | [#98](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/98) |
 | `AR-98` | [Validate launcher identity in dashboard service status](issue-AR-98-validate-dashboard-service-launcher-status.md) | done | p1 | dashboard | [#99](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/99) |
 | `AR-99` | [Keep dashboard brokerage usable after master control materializes](issue-AR-99-dashboard-broker-materialized-master-control.md) | done | p0 | operations | [#100](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/100) |
-| `AR-100` | [Wait for the old Windows dashboard runtime to exit](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | in_progress | p0 | dashboard | [#101](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/101) |
-| `AR-101` | [Enforce the global master switch in restricted host consumers](issue-AR-101-enforce-restricted-global-master-switch.md) | in_progress | p0 | operations | [#102](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/102) |
-| `AR-102` | [Refresh legacy bundled roster contracts on upgrade](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | in_progress | p0 | roster-governance | [#103](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/103) |
-| `AR-103` | [Import Windows ctypes fixtures portably on POSIX](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | in_progress | p0 | testing | [#105](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/105) |
-| `AR-104` | [Run hosted portability gates in trusted boundaries](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | in_progress | p0 | testing | [#106](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106) |
+| `AR-100` | [Wait for the old Windows dashboard runtime to exit](issue-AR-100-wait-for-windows-dashboard-runtime-exit.md) | done | p0 | dashboard | [#101](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/101) |
+| `AR-101` | [Enforce the global master switch in restricted host consumers](issue-AR-101-enforce-restricted-global-master-switch.md) | done | p0 | operations | [#102](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/102) |
+| `AR-102` | [Refresh legacy bundled roster contracts on upgrade](issue-AR-102-refresh-legacy-bundled-roster-contracts.md) | done | p0 | roster-governance | [#103](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/103) |
+| `AR-103` | [Import Windows ctypes fixtures portably on POSIX](issue-AR-103-import-windows-ctypes-fixtures-portably.md) | done | p0 | testing | [#105](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/105) |
+| `AR-104` | [Run hosted portability gates in trusted boundaries](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | done | p0 | testing | [#106](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106) |
 | `AR-105` | [Report the current Codex hook event count](issue-AR-105-current-codex-hook-event-count.md) | done | p1 | documentation | [#107](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/107) |
-| `AR-106` | [Make Windows policy identity and POSIX simulations portable](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | in_progress | p0 | testing | [#108](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/108) |
+| `AR-106` | [Make Windows policy identity and POSIX simulations portable](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | done | p0 | testing | [#108](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/108) |
+| `AR-107` | [Build release artifacts from canonical Git blobs](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | in_progress | p0 | release | [#109](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/109) |
+| `AR-108` | [Make owned process containment atomic and session-escape resistant](issue-AR-108-atomic-owned-process-containment.md) | done | p0 | security | [#110](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/110) |
 
 ## Traceability
 
@@ -239,6 +241,8 @@ not stable internal identifiers.
 | [AR-104](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | [`11a2c86`](../worklog/README.md), [`0df5050`](../worklog/README.md), [`0c41fbd`](../worklog/README.md), [`89576f0`](../worklog/README.md), [`07de83c`](../worklog/README.md), [`a1c6744`](../worklog/README.md), [`31516d1`](../worklog/README.md), [`b05b180`](../worklog/README.md), [`361962f`](../worklog/README.md), [`987c32a`](../worklog/README.md) | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md) |
 | [AR-105](issue-AR-105-current-codex-hook-event-count.md) | [`9400f76`](../worklog/README.md) | null |
 | [AR-106](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | [`987c32a`](../worklog/README.md) | [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
+| [AR-107](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | pending | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-108](issue-AR-108-atomic-owned-process-containment.md) | pending | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md), [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
 
 ## Dependency summary
 
@@ -268,7 +272,7 @@ not stable internal identifiers.
   resolution, and trusted SQLite parent namespaces. Their implementation and
   acceptance gates are complete on this branch; immutable commit, merge, and
   tracker evidence follows the repository's ledger and reviewed-merge sequence.
-- `AR-57` through `AR-84` add the durable cross-host master switch, per-unit
+- `AR-57` through `AR-78` add the durable cross-host master switch, per-unit
   specialist assignment, event-driven dependency scheduling, and frozen
   executable identity, plus capability-bound restricted-Windows scratch and
   fail-closed rejection of unproven LiteLLM router-alias echoes and
@@ -283,19 +287,14 @@ not stable internal identifiers.
   generic mutations fail before privilege expansion, and brokered control
   receipts must prove the exact deterministic state and generation transition.
   LiteLLM keeps a verified router name even when no actual-model receipt exists.
-  Installed Codex canaries now prove the exact header contract, optional legacy
-  Ollama loss is degraded rather than fatal, direct hosts hydrate one directive
-  specialist, delegated units route against the full active roster, external
-  manifest rosters enter quarantine, and semantic judges receive richer bounded
-  metadata cards without raw prompt bodies.
-  Their implementation and acceptance gates are complete on this branch;
-  immutable commit, merge, and tracker evidence follows the ledger and
-  reviewed-merge sequence.
-- `AR-85` replaces the generic trivial/nontrivial authority boundary with a
-  durable state-aware classifier and independent selection, rerouting, and
-  execution-decision requirements. Its final full-suite and installed-host
-  evidence remains in progress.
-- `AR-86` through `AR-101` own the newly separated production gaps: governed
+  Their implementation, acceptance, ledger, merge, and tracker gates are
+  complete.
+- `AR-79` through `AR-85` cover installed-header evidence, degraded optional
+  inference, conflict-safe direct hydration, full-roster unit routing,
+  manifest-backed quarantine, bounded semantic cards, and state-aware turn
+  classification. Implementation is present; their final merged-artifact and
+  installed-host reconciliation remains in progress.
+- `AR-86` through `AR-106` own the newly separated production gaps: governed
   upstream deltas, bounded native delegation guidance, controlled outcome
   comparison, complete roster/inference operations parity, and legacy
   activation-receipt migration ordering, plus the activation-governance,
@@ -306,9 +305,16 @@ not stable internal identifiers.
   identity validation in read-only dashboard service status, and durable
   authenticated brokerage after the Windows master document materializes, a
   bounded old-runtime shutdown wait, and authoritative global-off enforcement
-  for restricted host consumers.
-  Tracker issues #87 through #102 are open
-  and linked; implementation and final evidence remain in progress.
+  for restricted host consumers, legacy bundle refresh, portable Windows
+  fixtures, trusted hosted portability gates, current Codex hook counting, and
+  portable policy simulations. `AR-86`, `AR-87`, and `AR-90` through `AR-106`
+  are done and tracker-closed. `AR-88` and `AR-89` retain their final live
+  comparison and operational-parity evidence gates.
+- `AR-107` builds byte-deterministic release artifacts from canonical Git
+  blobs and requires hosted Windows/Linux byte parity. `AR-108` supplies its
+  atomic owned-process boundary, including the two-phase Linux GO protocol.
+  Their implementation is under final review; traceability is filled by the
+  immediately following ledger commit and tracker closure follows the merge.
 - `AR-17` integrates the security, modularity, browser, host-contract,
   cross-platform, packaging, performance, and live Codex evidence. Pull request
   #18 passed review and the hosted gates, merged into `main`, and is connected

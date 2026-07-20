@@ -3,7 +3,7 @@ title: "Troubleshooting Agency Runtime"
 status: active
 category: operations
 created: 2026-07-10
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [operations, troubleshooting]
 related:
   - README.md
@@ -13,9 +13,11 @@ related:
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md
   - docs/roadmap/issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md
+  - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
+  - docs/decisions/0073-own-subprocess-trees-atomically.md
 supersedes: []
 superseded_by: null
 ---
@@ -463,9 +465,14 @@ Remove embedded credentials, query strings, and fragments from `base_url`; use
 the typed key or environment-key fields instead.
 
 If delegation reports that owned descendants outlived the parent, the runtime
-terminated the entire Windows Job Object or POSIX process group and rejected
-the result. Fix the backend command so it waits for its children and closes
-inherited standard-output and standard-error handles before exiting.
+terminated the entire Windows Job Object or Linux subreaper-owned tree and
+rejected the result. Fix the backend command so it waits for its children and
+closes inherited standard-output and standard-error handles before exiting.
+
+Linux delegation also fails closed when `/proc`, the pre-opened children
+descriptor, `prctl` subreaper support, `pidfd_open`, or pidfd signaling is
+unavailable. Use a supported native Linux kernel with `/proc` mounted; do not
+replace the containment failure with an unowned process-group fallback.
 
 ## The remediation queue reports unvalidated resolution records
 

@@ -161,21 +161,121 @@ def test_release_hygiene_rejects_only_top_level_project_version_staging(
 
 def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
-    artifact_steps = workflow["jobs"]["artifacts"]["steps"]
-    capture = next(
-        step for step in artifact_steps if step["name"] == "Capture immutable reviewed commit"
+    artifact_job = workflow["jobs"]["artifacts"]
+    artifact_steps = artifact_job["steps"]
+    build = next(
+        step for step in artifact_steps if step["name"] == "Build wheel and source distribution"
     )
     verify = next(
         step for step in artifact_steps if step["name"] == "Verify metadata and artifact contents"
     )
-    assert 'AGENCY_RELEASE_COMMIT="$(git rev-parse --verify HEAD^{commit})"' in capture["run"]
-    assert '"${AGENCY_RELEASE_COMMIT}" != "${GITHUB_SHA}"' in capture["run"]
+    assert artifact_job["env"]["AGENCY_RELEASE_COMMIT"] == "${{ github.sha }}"
+    assert artifact_job["runs-on"] == "${{ matrix.os }}"
+    assert artifact_job["strategy"]["matrix"]["include"] == [
+        {"os": "ubuntu-24.04"},
+        {"os": "windows-2022"},
+    ]
+    assert build["run"] == (
+        '"${AGENCY_CI_PYTHON}" -m scripts.build_distributions "${AGENCY_CI_TEMP}/dist" '
+        '--expected-commit "${AGENCY_RELEASE_COMMIT}"'
+    )
+    assert build["shell"] == "bash"
+    assert "python -m build" not in build["run"]
     assert '--expected-commit "${AGENCY_RELEASE_COMMIT}"' in verify["run"]
+    assert "-m scripts.verify_distribution" in verify["run"]
+    assert '"${AGENCY_CI_TEMP}/dist"' in verify["run"]
+    assert verify["shell"] == "bash"
+    release_smoke = next(
+        step
+        for step in artifact_steps
+        if step["name"] == "Smoke release modules without installing the project"
+    )
+    assert "python -m scripts.build_distributions --help" in release_smoke["run"]
+    assert "python -m scripts.verify_distribution --help" in release_smoke["run"]
+    private_release = next(
+        step for step in artifact_steps if step["name"] == "Prepare private release runtime"
+    )
+    assert "python -m scripts.prepare_ci_runtime" in private_release["run"]
+    assert private_release["shell"] == "bash"
+    output = next(step for step in artifact_steps if step["name"] == "Bind private release output")
+    assert output["id"] == "release-output"
+    assert output["shell"] == "bash"
+    assert output["run"] == ('printf \'path=%s\\n\' "${AGENCY_CI_TEMP}/dist" >> "${GITHUB_OUTPUT}"')
+    artifact_uploads = [
+        step for step in artifact_steps if "upload-artifact@" in step.get("uses", "")
+    ]
+    assert len(artifact_uploads) == 1
+    assert artifact_uploads[0]["with"]["name"] == "python-distributions-${{ matrix.os }}"
+
+    parity_job = workflow["jobs"]["artifact-parity"]
+    assert parity_job["needs"] == "artifacts"
+    parity_steps = parity_job["steps"]
+    linux_download = next(
+        step for step in parity_steps if step["name"] == "Download Linux distributions"
+    )
+    windows_download = next(
+        step for step in parity_steps if step["name"] == "Download Windows distributions"
+    )
+    assert linux_download["with"] == {
+        "name": "python-distributions-ubuntu-24.04",
+        "path": "${{ runner.temp }}/agency-dist-linux",
+    }
+    assert windows_download["with"] == {
+        "name": "python-distributions-windows-2022",
+        "path": "${{ runner.temp }}/agency-dist-windows",
+    }
+    compare_index = next(
+        index
+        for index, step in enumerate(parity_steps)
+        if step["name"] == "Require one byte-identical cross-platform artifact pair"
+    )
+    publish_index = next(
+        index
+        for index, step in enumerate(parity_steps)
+        if step["name"] == "Publish verified canonical distributions"
+    )
+    assert publish_index > compare_index
+    compare = parity_steps[compare_index]
+    assert compare["shell"] == "bash"
+    assert "if" not in compare
+    assert "continue-on-error" not in compare
+    for required in (
+        'test "$(find "${RUNNER_TEMP}/agency-dist-linux" -maxdepth 1 -type f | wc -l)" -eq 2',
+        'test "$(find "${RUNNER_TEMP}/agency-dist-windows" -maxdepth 1 -type f | wc -l)" -eq 2',
+        "diff --brief --recursive",
+        '"${RUNNER_TEMP}/agency-dist-linux"',
+        '"${RUNNER_TEMP}/agency-dist-windows"',
+    ):
+        assert required in compare["run"]
+    publish = parity_steps[publish_index]
+    assert publish["uses"] == ("actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a")
+    assert "if" not in publish
+    assert "continue-on-error" not in publish
+    assert publish["with"] == {
+        "name": "python-distributions",
+        "path": "${{ runner.temp }}/agency-dist-linux/*",
+        "if-no-files-found": "error",
+        "retention-days": 7,
+    }
+    canonical_uploads = [
+        step
+        for candidate_job in workflow["jobs"].values()
+        for step in candidate_job.get("steps", ())
+        if "upload-artifact@" in step.get("uses", "")
+        and step.get("with", {}).get("name") == "python-distributions"
+    ]
+    assert canonical_uploads == [publish]
 
     job = workflow["jobs"]["artifact-smoke"]
+    assert set(job["needs"]) == {"artifacts", "artifact-parity"}
     assert set(job["strategy"]["matrix"]["os"]) == {"ubuntu-24.04", "windows-2022"}
 
     steps = job["steps"]
+    canonical_download = next(step for step in steps if step["name"] == "Download distributions")
+    assert canonical_download["with"] == {
+        "name": "python-distributions",
+        "path": "${{ runner.temp }}/agency-dist",
+    }
     node_step = next(step for step in steps if step["name"].startswith("Set up Node.js"))
     assert node_step["with"]["node-version"] == "24"
     private_runtime_step = next(
@@ -216,6 +316,23 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         assert required in script
 
 
+def test_maintained_release_instructions_require_canonical_git_blob_builder() -> None:
+    for relative in ("CONTRIBUTING.md", "docs/RELEASE_CHECKLIST.md"):
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        assert (
+            'python -m scripts.build_distributions "${AGENCY_DIST_DIR}" --create-private-parent'
+        ) in text
+        assert "python -m scripts.verify_distribution" in text
+        assert 'AGENCY_DIST_DIR="${HOME}/.agency-runtime/release-artifacts/' in text
+        assert "python -m build --sdist --wheel" not in text
+
+    from scripts.verify_distribution import REQUIRED_SDIST_FILES
+
+    assert "scripts/build_distributions.py" in REQUIRED_SDIST_FILES
+    assert "scripts/release_contract.py" in REQUIRED_SDIST_FILES
+    assert "scripts/release_git.py" in REQUIRED_SDIST_FILES
+
+
 def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
 
@@ -246,6 +363,14 @@ def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
             ) in preparation["run"]
         else:
             assert "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}" in preparation["run"]
+            for module in (
+                "build_distributions",
+                "canonicalize_distributions",
+                "release_contract",
+                "release_git",
+                "verify_distribution",
+            ):
+                assert f"--cov=scripts.{module}" in execution["run"]
         for boundary in (
             'export HOME="${AGENCY_CI_HOME}"',
             'export USERPROFILE="${AGENCY_CI_HOME}"',

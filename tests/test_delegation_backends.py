@@ -369,8 +369,8 @@ def test_windows_resume_failure_kills_suspended_root_before_execution(
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "agency_runtime.core.delegation.backends._resume_windows_process",
-        lambda _process_id: False,
+        "agency_runtime.core.owned_process._resume_atomic_windows_process",
+        lambda _process: False,
     )
     backend = CommandBackend(
         command=(sys.executable, str(script), str(marker)),
@@ -379,7 +379,7 @@ def test_windows_resume_failure_kills_suspended_root_before_execution(
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always", ResourceWarning)
-        with pytest.raises(BackendExecutionError, match="contained Windows"):
+        with pytest.raises(BackendExecutionError, match="atomically contained Windows"):
             backend.delegate(task="ignored")
         gc.collect()
 

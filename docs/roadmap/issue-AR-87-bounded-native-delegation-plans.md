@@ -1,9 +1,9 @@
 ---
 title: "AR-87: Produce bounded native delegation plans and correction"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [delegation, routing, native-hosts, stop, evidence]
 related:
   - docs/roadmap/issue-AR-27-authoritative-delegation-stop-enforcement.md
@@ -60,4 +60,4 @@ unit-specific full-roster assignment.
 - [x] Preferred plans may be declined with a durable bounded reason.
 - [x] Strongly preferred plans receive at most one evidence-checked correction.
 - [x] The second Stop terminalizes without opening a new trace or claiming execution.
-- [ ] Cross-host lifecycle, full coverage, and portability gates pass.
+- [x] Cross-host lifecycle, full coverage, and portability gates pass.
