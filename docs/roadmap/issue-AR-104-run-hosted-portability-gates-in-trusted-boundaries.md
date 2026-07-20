@@ -22,7 +22,8 @@ tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106
 depends_on:
   - AR-103
   - AR-106
-blocks: []
+blocks:
+  - AR-109
 ---
 
 # AR-104: Run hosted portability gates in trusted boundaries

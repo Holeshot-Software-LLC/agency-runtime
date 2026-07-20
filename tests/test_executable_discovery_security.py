@@ -435,9 +435,15 @@ def test_forbidden_repository_suffix_and_inode_guards(
         "_assert_executable_artifact_trusted",
         lambda *_args, **_kwargs: None,
     )
+    untrusted_status = untrusted.stat()
+    monkeypatch.setattr(
+        process_argv,
+        "_canonical_regular_file",
+        lambda *_args, **_kwargs: (r"C:\trusted\agent.cmd", untrusted_status),
+    )
     with pytest.raises(OSError, match="trusted native suffix"):
         process_argv._snapshot_executable(
-            str(untrusted),
+            r"C:\trusted\agent.cmd",
             platform_name="nt",
             forbidden_roots=(),
             require_native_suffix=True,

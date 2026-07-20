@@ -91,6 +91,18 @@ def _wait_for_runner_evidence(
     raise AssertionError("timed out waiting for Linux owned-process evidence")
 
 
+def _pid_files_ready(*paths: Path) -> bool:
+    """Return only after every PID file contains one complete positive integer."""
+
+    for path in paths:
+        try:
+            if int(path.read_text(encoding="ascii")) <= 0:
+                return False
+        except (OSError, UnicodeError, ValueError):
+            return False
+    return True
+
+
 def _linux_pidfds_are_gone(descriptors: list[int]) -> bool:
     for descriptor in descriptors:
         try:
@@ -981,11 +993,12 @@ def test_linux_post_go_interrupt_reaps_execed_double_fork_and_preserves_sibling(
         if descriptor != go_descriptor:
             return
         deadline = time.monotonic() + 5
-        while time.monotonic() < deadline and not (
-            direct_pid_file.is_file() and escaped_pid_file.is_file()
+        while time.monotonic() < deadline and not _pid_files_ready(
+            direct_pid_file,
+            escaped_pid_file,
         ):
             time.sleep(0.01)
-        assert direct_pid_file.is_file() and escaped_pid_file.is_file()
+        assert _pid_files_ready(direct_pid_file, escaped_pid_file)
         owned_pidfds.extend(
             os.pidfd_open(int(path.read_text(encoding="ascii")), 0)
             for path in (direct_pid_file, escaped_pid_file)
@@ -1318,10 +1331,10 @@ os._exit(0)
     try:
         _wait_for_runner_evidence(
             runner,
-            lambda: (
-                direct_pid_file.is_file()
-                and supervisor_pid_file.is_file()
-                and escaped_pid_file.is_file()
+            lambda: _pid_files_ready(
+                direct_pid_file,
+                supervisor_pid_file,
+                escaped_pid_file,
             ),
         )
         supervisor_pid = int(supervisor_pid_file.read_text(encoding="ascii"))
@@ -1418,7 +1431,7 @@ def test_linux_launcher_sigkill_terminates_supervisor_target_and_escaped_descend
             if len(children) != 1:
                 return False
             supervisor_pid = next(iter(children))
-            return direct_pid_file.is_file() and escaped_pid_file.is_file()
+            return _pid_files_ready(direct_pid_file, escaped_pid_file)
 
         _wait_for_runner_evidence(runner, supervisor_ready)
         direct_pid = int(direct_pid_file.read_text(encoding="utf-8"))
@@ -1472,7 +1485,7 @@ def test_linux_abnormal_supervisor_exit_rejects_missing_terminal_receipt(
     owned_process._release_owned_process(state)
     target_pidfd = -1
     try:
-        _wait_for_runner_evidence(process, target_pid_file.is_file)
+        _wait_for_runner_evidence(process, lambda: _pid_files_ready(target_pid_file))
         target_pid = int(target_pid_file.read_text(encoding="ascii"))
         target_pidfd = os.pidfd_open(target_pid, 0)
 
@@ -1581,7 +1594,7 @@ def test_linux_supervisor_pinned_children_fd_survives_persistent_proc_path_failu
     try:
         _wait_for_runner_evidence(
             process,
-            lambda: direct_pid_file.is_file() and escaped_pid_file.is_file(),
+            lambda: _pid_files_ready(direct_pid_file, escaped_pid_file),
         )
         direct_pid = int(direct_pid_file.read_text(encoding="utf-8"))
         escaped_pid = int(escaped_pid_file.read_text(encoding="utf-8"))
@@ -1648,7 +1661,7 @@ def test_windows_launcher_death_kills_child_during_atomic_creation_window(
     process_handle = None
     kernel32 = None
     try:
-        _wait_for_runner_evidence(runner, ready_file.is_file)
+        _wait_for_runner_evidence(runner, lambda: _pid_files_ready(ready_file))
         child_pid = int(ready_file.read_text(encoding="utf-8"))
 
         import ctypes
@@ -1729,7 +1742,7 @@ def test_windows_launcher_death_kills_resumed_target_and_descendant(
     try:
         _wait_for_runner_evidence(
             runner,
-            lambda: direct_pid_file.is_file() and descendant_pid_file.is_file(),
+            lambda: _pid_files_ready(direct_pid_file, descendant_pid_file),
         )
 
         import ctypes

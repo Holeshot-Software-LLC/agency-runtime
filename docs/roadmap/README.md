@@ -126,6 +126,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-106` | [Make Windows policy identity and POSIX simulations portable](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | done | p0 | testing | [#108](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/108) |
 | `AR-107` | [Build release artifacts from canonical Git blobs](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | in_progress | p0 | release | [#109](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/109) |
 | `AR-108` | [Make owned process containment atomic and session-escape resistant](issue-AR-108-atomic-owned-process-containment.md) | done | p0 | security | [#110](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/110) |
+| `AR-109` | [Make hosted process-security tests race-free and platform-honest](issue-AR-109-hosted-process-security-test-fidelity.md) | in_progress | p0 | testing | [#112](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/112) |
 
 ## Traceability
 
@@ -243,6 +244,7 @@ not stable internal identifiers.
 | [AR-106](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | [`987c32a`](../worklog/README.md) | [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-107](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md), [`9f98db3`](../worklog/README.md), [`3515d4e`](../worklog/README.md) | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-108](issue-AR-108-atomic-owned-process-containment.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md) | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md), [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
+| [AR-109](issue-AR-109-hosted-process-security-test-fidelity.md) | pending | [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
 
 ## Dependency summary
 

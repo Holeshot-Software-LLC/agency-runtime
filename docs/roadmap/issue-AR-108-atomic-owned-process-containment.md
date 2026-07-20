@@ -30,6 +30,7 @@ tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/110
 depends_on: []
 blocks:
   - AR-107
+  - AR-109
 ---
 
 # AR-108: Make owned process containment atomic and session-escape resistant
