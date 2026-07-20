@@ -1,6 +1,6 @@
 ---
 title: "AR-107: Build release artifacts from canonical Git blobs"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-19
 updated: 2026-07-20
@@ -94,9 +94,14 @@ gap discovered while building the exact merge commit from PR #104 on Windows.
 - [x] Release source bytes and file modes come from the reviewed Git tree, independent of checkout line-ending filters.
 - [x] Unsafe, aliasing, linked, special, missing, transformed, or over-budget archive entries fail before the build backend runs.
 - [x] Bounded backend outputs preserve source-derived payload bytes while normalizing only finite generated metadata and container policy to one byte-deterministic cross-platform result without host-zlib output.
-- [ ] Hosted Windows and Linux builds produce byte-identical wheel/source pairs before the reviewed Linux pair can become an install or publication candidate.
+- [x] Hosted Windows and Linux builds produce byte-identical wheel/source pairs before the reviewed Linux pair can become an install or publication candidate.
 - [x] The destination cannot overwrite prior artifacts, and failed builds do not publish a partial destination.
 - [x] A successful build publishes exactly one wheel and one source distribution for independent strict verification.
-- [ ] A regression with `core.autocrlf=true` proves canonical LF blobs survive materialization on every platform.
+- [x] A regression with `core.autocrlf=true` proves canonical LF blobs survive materialization on every platform.
 - [x] CI, contributor guidance, and the release checklist use the canonical builder.
 - [x] Focused tests, warning-strict coverage, Ruff, documentation, and distribution verification pass.
+
+PR #111 and PR #114 both passed the hosted artifact byte-parity gate and the
+command-scoped `core.autocrlf=true` canonical-blob proof. The exact merged
+commit was rebuilt and independently verified before installation; publication
+remains a separate authorization-gated action.

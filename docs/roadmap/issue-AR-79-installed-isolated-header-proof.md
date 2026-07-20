@@ -1,6 +1,6 @@
 ---
 title: "AR-79: Prove exact Agency headers in the installed isolated Codex canary"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-17
 updated: 2026-07-20
@@ -34,8 +34,10 @@ required evidence header.
 
 The isolated activation context now supplies the exact field labels, the replay
 policy version invalidates stale recipes, and an installed Codex 0.144.3 canary
-has persisted a passing header-valid attestation. Final branch and merged-build
-verification remain in progress.
+has persisted a passing header-valid attestation. PR #114 passed the complete
+hosted, artifact, coverage, and security matrix. The exact merged wheel then
+passed a fresh installed Codex canary with all six labels and correlated route
+and finalization evidence.
 
 ## Approach
 
@@ -55,4 +57,4 @@ AR-43 owns installed-module isolation.
 - [x] Replay-policy versions invalidate older ambiguous activation recipes.
 - [x] An installed Codex canary proves a complete correlated header.
 - [x] The attestation remains explicit about isolated-profile scope.
-- [ ] Full branch, artifact, and merged-install gates pass.
+- [x] Full branch, artifact, and merged-install gates pass.

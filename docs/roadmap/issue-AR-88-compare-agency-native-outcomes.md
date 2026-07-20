@@ -1,6 +1,6 @@
 ---
 title: "AR-88: Compare Agency modes against native host outcomes"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
 updated: 2026-07-20
@@ -60,5 +60,11 @@ Codex evidence, and AR-87 owns the delegation variants being compared.
 - [x] The evaluator reports outcome deltas and delegation regret without claiming superiority.
 - [x] Full-roster direct, ambiguous, short, revised, adversarial, conflict, and abstention cases exist.
 - [x] Provider failure, parent/child routing, authorization, decline, and Stop correction are covered.
-- [ ] Installed hosts run fresh-session Agency-on and native-only trials where available.
+- [x] Installed hosts run fresh-session Agency-on and native-only trials where available.
 - [x] Documentation labels every result by evidence maturity.
+
+The exact merged Codex bundle passed paired fresh isolated-profile trials. The
+Agency-on trial produced a valid six-field header with correlated routing and
+finalization evidence; native-only produced no Agency header, route, run,
+finalization, delegation, receipt, specialist, or attestation write. This is
+installed-isolated evidence, not a claim that Agency outperforms native Codex.

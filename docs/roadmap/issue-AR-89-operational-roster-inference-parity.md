@@ -1,6 +1,6 @@
 ---
 title: "AR-89: Expose roster governance and inference health operationally"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-18
 updated: 2026-07-19
@@ -69,5 +69,11 @@ secure operational boundary.
 - [x] Audit queue, findings, candidate comparison, conflicts, requirements, and history are visible.
 - [x] Provider failures and mandatory-inference degradation are authoritative and live-updating.
 - [x] Parent/child routing, delegation plans, outcomes, and model reconciliation are visible.
-- [ ] The optional service remains durable and secure on Windows and Linux.
+- [x] The optional service remains durable and secure on Windows and Linux.
 - [x] Accessibility, performance, Node coverage, Python coverage, and installed-service gates pass.
+
+The exact wheel passed the owned Windows service lifecycle and reported a
+current, enabled, active, reachable dashboard without definition drift. Native
+WSL `systemd --user` install, start, health, and uninstall proof passed while
+retaining the fail-closed configuration boundary and WSL-specific namespace
+policy.

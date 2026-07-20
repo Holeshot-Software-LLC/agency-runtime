@@ -1,6 +1,6 @@
 ---
 title: "AR-81: Prevent incompatible specialists from sharing a direct context"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-17
 updated: 2026-07-19
@@ -43,7 +43,9 @@ Treat a worker context as a single-directive authority boundary. Preserve other
 selected identities as routing and delegation suggestions without concatenating
 their raw prompts. Keep the resident managers in one bounded management kernel,
 and run reviewers and other independent roles in separate DAG nodes on hosts
-that can isolate children.
+that can isolate children. PR #114 passed the complete Windows/Linux host and
+artifact matrix, and the exact merged installation passed routing, delegation,
+and installed Codex isolation canaries.
 
 ## Dependencies
 
@@ -56,4 +58,4 @@ AR-58 defines unit-aware specialist assignment.
 - [x] The governed no-match coordinator pair remains available together.
 - [x] Isolated hosts can prepare separate specialist activations.
 - [x] Regression tests exercise both allowed and rejected composition.
-- [ ] Full cross-host and merged-install gates pass.
+- [x] Full cross-host and merged-install gates pass.

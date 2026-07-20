@@ -96,17 +96,17 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-76` | [Make restricted Windows CLI read-capable and fail-safe](issue-AR-76-restricted-windows-cli-read-and-fail-safe.md) | done | p0 | operations | [#77](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/77) |
 | `AR-77` | [Validate brokered control transition receipts exactly](issue-AR-77-validate-brokered-control-transition-receipts.md) | done | p0 | security | [#78](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/78) |
 | `AR-78` | [Preserve the LiteLLM router when the actual model is unavailable](issue-AR-78-preserve-litellm-router-when-model-is-unavailable.md) | done | p0 | observability | [#79](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/79) |
-| `AR-79` | [Prove exact Agency headers in the installed isolated Codex canary](issue-AR-79-installed-isolated-header-proof.md) | in_progress | p0 | host-integrations | [#84](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/84) |
-| `AR-80` | [Treat an unavailable optional Ollama fallback as degraded](issue-AR-80-optional-ollama-degraded.md) | in_progress | p1 | provider-configuration | [#83](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/83) |
-| `AR-81` | [Prevent incompatible specialists from sharing a direct context](issue-AR-81-conflict-safe-direct-context.md) | in_progress | p0 | routing | [#81](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/81) |
-| `AR-82` | [Route each delegated work unit against the full active roster](issue-AR-82-full-roster-unit-routing.md) | in_progress | p0 | routing | [#82](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/82) |
-| `AR-83` | [Import manifest-backed upstream agent rosters into quarantine](issue-AR-83-manifest-roster-import.md) | in_progress | p1 | roster-governance | [#85](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/85) |
-| `AR-84` | [Give the semantic judge bounded full agent cards](issue-AR-84-bounded-semantic-agent-cards.md) | in_progress | p1 | routing | [#80](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/80) |
-| `AR-85` | [Replace generic triviality with state-aware turn classification](issue-AR-85-state-aware-turn-classification.md) | in_progress | p0 | routing | [#86](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/86) |
+| `AR-79` | [Prove exact Agency headers in the installed isolated Codex canary](issue-AR-79-installed-isolated-header-proof.md) | done | p0 | host-integrations | [#84](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/84) |
+| `AR-80` | [Treat an unavailable optional Ollama fallback as degraded](issue-AR-80-optional-ollama-degraded.md) | done | p1 | provider-configuration | [#83](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/83) |
+| `AR-81` | [Prevent incompatible specialists from sharing a direct context](issue-AR-81-conflict-safe-direct-context.md) | done | p0 | routing | [#81](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/81) |
+| `AR-82` | [Route each delegated work unit against the full active roster](issue-AR-82-full-roster-unit-routing.md) | done | p0 | routing | [#82](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/82) |
+| `AR-83` | [Import manifest-backed upstream agent rosters into quarantine](issue-AR-83-manifest-roster-import.md) | done | p1 | roster-governance | [#85](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/85) |
+| `AR-84` | [Give the semantic judge bounded full agent cards](issue-AR-84-bounded-semantic-agent-cards.md) | done | p1 | routing | [#80](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/80) |
+| `AR-85` | [Replace generic triviality with state-aware turn classification](issue-AR-85-state-aware-turn-classification.md) | done | p0 | routing | [#86](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/86) |
 | `AR-86` | [Govern the complete upstream roster lifecycle](issue-AR-86-govern-complete-upstream-roster-lifecycle.md) | done | p0 | roster-governance | [#87](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/87) |
 | `AR-87` | [Produce bounded native delegation plans and correction](issue-AR-87-bounded-native-delegation-plans.md) | done | p0 | routing | [#88](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/88) |
-| `AR-88` | [Compare Agency modes against native host outcomes](issue-AR-88-compare-agency-native-outcomes.md) | in_progress | p0 | testing | [#89](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/89) |
-| `AR-89` | [Expose roster governance and inference health operationally](issue-AR-89-operational-roster-inference-parity.md) | in_progress | p1 | operations | [#90](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/90) |
+| `AR-88` | [Compare Agency modes against native host outcomes](issue-AR-88-compare-agency-native-outcomes.md) | done | p0 | testing | [#89](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/89) |
+| `AR-89` | [Expose roster governance and inference health operationally](issue-AR-89-operational-roster-inference-parity.md) | done | p1 | operations | [#90](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/90) |
 | `AR-90` | [Migrate legacy activation receipts before current indexes](issue-AR-90-migrate-legacy-activation-receipts-before-indexes.md) | done | p0 | operations | [#91](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/91) |
 | `AR-91` | [Enforce governed roster activation at every public store boundary](issue-AR-91-enforce-governed-roster-activation.md) | done | p0 | roster-governance | [#92](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/92) |
 | `AR-92` | [Redact roster source credentials from persistence and output](issue-AR-92-redact-roster-source-credentials.md) | done | p0 | security | [#93](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/93) |
@@ -124,10 +124,10 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-104` | [Run hosted portability gates in trusted boundaries](issue-AR-104-run-hosted-portability-gates-in-trusted-boundaries.md) | done | p0 | testing | [#106](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/106) |
 | `AR-105` | [Report the current Codex hook event count](issue-AR-105-current-codex-hook-event-count.md) | done | p1 | documentation | [#107](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/107) |
 | `AR-106` | [Make Windows policy identity and POSIX simulations portable](issue-AR-106-portable-windows-policy-and-posix-simulations.md) | done | p0 | testing | [#108](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/108) |
-| `AR-107` | [Build release artifacts from canonical Git blobs](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | in_progress | p0 | release | [#109](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/109) |
+| `AR-107` | [Build release artifacts from canonical Git blobs](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | done | p0 | release | [#109](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/109) |
 | `AR-108` | [Make owned process containment atomic and session-escape resistant](issue-AR-108-atomic-owned-process-containment.md) | done | p0 | security | [#110](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/110) |
-| `AR-109` | [Make hosted process-security tests race-free and platform-honest](issue-AR-109-hosted-process-security-test-fidelity.md) | in_progress | p0 | testing | [#112](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/112) |
-| `AR-110` | [Preserve dashboard service trust under WSL systemd namespace remapping](issue-AR-110-preserve-wsl-systemd-service-trust.md) | in_progress | p0 | operations | [#113](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/113) |
+| `AR-109` | [Make hosted process-security tests race-free and platform-honest](issue-AR-109-hosted-process-security-test-fidelity.md) | done | p0 | testing | [#112](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/112) |
+| `AR-110` | [Preserve dashboard service trust under WSL systemd namespace remapping](issue-AR-110-preserve-wsl-systemd-service-trust.md) | done | p0 | operations | [#113](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/113) |
 | `AR-111` | [Honor global Agency mode in isolated host canaries](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | done | p0 | testing | [#115](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/115) |
 
 ## Traceability
@@ -298,8 +298,8 @@ not stable internal identifiers.
 - `AR-79` through `AR-85` cover installed-header evidence, degraded optional
   inference, conflict-safe direct hydration, full-roster unit routing,
   manifest-backed quarantine, bounded semantic cards, and state-aware turn
-  classification. Implementation is present; their final merged-artifact and
-  installed-host reconciliation remains in progress.
+  classification. Their implementation, hosted matrix, exact merged artifact,
+  installed-host, ledger, and tracker gates are complete.
 - `AR-86` through `AR-106` own the newly separated production gaps: governed
   upstream deltas, bounded native delegation guidance, controlled outcome
   comparison, complete roster/inference operations parity, and legacy
@@ -314,13 +314,13 @@ not stable internal identifiers.
   for restricted host consumers, legacy bundle refresh, portable Windows
   fixtures, trusted hosted portability gates, current Codex hook counting, and
   portable policy simulations. `AR-86`, `AR-87`, and `AR-90` through `AR-106`
-  are done and tracker-closed. `AR-88` and `AR-89` retain their final live
-  comparison and operational-parity evidence gates.
+  are done and tracker-closed. `AR-88` and `AR-89` now also have final installed
+  comparison and cross-platform operational-parity evidence.
 - `AR-107` builds byte-deterministic release artifacts from canonical Git
   blobs and requires hosted Windows/Linux byte parity. `AR-108` supplies its
   atomic owned-process boundary, including the two-phase Linux GO protocol.
-  Their implementation is under final review; traceability is filled by the
-  immediately following ledger commit and tracker closure follows the merge.
+  Their implementation, hosted Windows/Linux byte parity, canonical checkout
+  proof, merge, and tracker gates are complete.
 - `AR-17` integrates the security, modularity, browser, host-contract,
   cross-platform, packaging, performance, and live Codex evidence. Pull request
   #18 passed review and the hosted gates, merged into `main`, and is connected
