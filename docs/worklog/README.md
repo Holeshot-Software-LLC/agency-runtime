@@ -107,6 +107,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `edb922c` | 2026-07-20 | docs(roadmap): complete isolated canary control | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-edb922c-complete-isolated-canary-control.md) |
 | `a869e51` | 2026-07-20 | Merge pull request #114 from Holeshot-Software-LLC/codex/wsl-private-tmp-namespace | [AR-79 through AR-85, AR-88, AR-89, AR-107, AR-109 through AR-111](../roadmap/README.md) | [detail](2026-07-20-a869e51-pr-114-merge.md) |
 | `55c4dfe` | 2026-07-20 | docs(roadmap): close merged readiness gates | [AR-79 through AR-85, AR-88, AR-89, AR-107, AR-109, AR-110](../roadmap/README.md) | [detail](2026-07-20-55c4dfe-final-readiness-reconciliation.md) |
+| `4635a0b` | 2026-07-20 | docs: rewrite README for public users | [AR-112](../roadmap/issue-AR-112-public-user-readme.md) | [detail](2026-07-20-4635a0b-public-readme.md) |
+| `de875f6` | 2026-07-20 | docs(roadmap): track public README rewrite | [AR-112](../roadmap/issue-AR-112-public-user-readme.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
