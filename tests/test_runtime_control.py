@@ -1484,7 +1484,6 @@ def test_bound_enforcement_reader_brokers_restricted_windows_identity(
             control.RuntimeControlSecurityError("restricted token cannot inspect ACL")
         ),
     )
-    monkeypatch.setattr(control.os, "name", "nt")
     monkeypatch.setattr(control, "current_process_token_is_restricted", lambda **_kwargs: True)
     monkeypatch.setattr(
         "agency_runtime.core.dashboard_runtime.dashboard_api_request",
@@ -1512,7 +1511,6 @@ def test_bound_enforcement_reader_fails_enabled_without_valid_brokerage(
             control.RuntimeControlSecurityError("direct read unavailable")
         ),
     )
-    monkeypatch.setattr(control.os, "name", "nt")
     monkeypatch.setattr(
         control,
         "current_process_token_is_restricted",

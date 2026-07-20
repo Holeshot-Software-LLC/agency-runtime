@@ -808,7 +808,7 @@ def read_bound_enforcement_runtime_control(
         return read_authoritative_runtime_control(path=target, use_cache=False)
     except RuntimeControlSecurityError:
         try:
-            if os.name != "nt" or not current_process_token_is_restricted(is_windows=True):
+            if not current_process_token_is_restricted(is_windows=os.name == "nt"):
                 raise RuntimeControlSecurityError("bound runtime control broker is unavailable")
             from agency_runtime.core.dashboard_runtime import dashboard_api_request
 
