@@ -246,7 +246,7 @@ not stable internal identifiers.
 | [AR-107](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md), [`9f98db3`](../worklog/README.md), [`3515d4e`](../worklog/README.md) | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-108](issue-AR-108-atomic-owned-process-containment.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md) | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md), [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
 | [AR-109](issue-AR-109-hosted-process-security-test-fidelity.md) | [`9843025`](../worklog/README.md), [`4dccae7`](../worklog/README.md) | [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
-| [AR-110](issue-AR-110-preserve-wsl-systemd-service-trust.md) | pending | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0075](../decisions/0075-preserve-config-trust-under-wsl-systemd.md) |
+| [AR-110](issue-AR-110-preserve-wsl-systemd-service-trust.md) | [`0f374b4`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0075](../decisions/0075-preserve-config-trust-under-wsl-systemd.md) |
 
 ## Dependency summary
 
