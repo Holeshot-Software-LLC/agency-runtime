@@ -109,6 +109,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `55c4dfe` | 2026-07-20 | docs(roadmap): close merged readiness gates | [AR-79 through AR-85, AR-88, AR-89, AR-107, AR-109, AR-110](../roadmap/README.md) | [detail](2026-07-20-55c4dfe-final-readiness-reconciliation.md) |
 | `4635a0b` | 2026-07-20 | docs: rewrite README for public users | [AR-112](../roadmap/issue-AR-112-public-user-readme.md) | [detail](2026-07-20-4635a0b-public-readme.md) |
 | `de875f6` | 2026-07-20 | docs(roadmap): track public README rewrite | [AR-112](../roadmap/issue-AR-112-public-user-readme.md) | null |
+| `280b0b7` | 2026-07-20 | Merge pull request #116 from Holeshot-Software-LLC/codex/pr114-merge-ledger | [AR-79 through AR-85, AR-88, AR-89, AR-107, AR-109, AR-110, AR-112](../roadmap/README.md) | [detail](2026-07-20-280b0b7-pr-116-merge.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
