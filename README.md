@@ -511,6 +511,10 @@ It binds only to loopback and creates a new high-entropy access token for each
 process. Foreground mode prints the one-time URL. Service mode writes the
 rotating token only to an owner-restricted runtime descriptor; the systemd unit,
 scheduled task, process arguments, status output, and logs never contain it.
+Normal Linux units also use `PrivateTmp=true`. Positively identified WSL omits
+only that directive because WSL's private-tmp namespace can rewrite trusted
+ancestor identities; configuration namespace validation and every other unit,
+filesystem, loopback, and authentication control remain enabled.
 `agency dashboard service open` reads that descriptor and verifies the
 authenticated health endpoint before opening a token-fragment URL. The browser
 moves the token to session storage. The server validates `Host` and same-origin

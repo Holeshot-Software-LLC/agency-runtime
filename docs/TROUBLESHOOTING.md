@@ -348,6 +348,14 @@ installations without a working systemd user manager should use foreground mode
 or rerun installation with `--no-dashboard`. Do not work around the error by
 installing a system-wide or administrator-owned service.
 
+On WSL with a working systemd user manager, Agency positively identifies the
+WSL kernel and omits only `PrivateTmp` from the generated user unit. WSL's
+private-tmp mount namespace can expose root-owned configuration ancestors as
+overflow UID `65534`, which the worker correctly rejects. Agency does not relax
+that path-trust check: `NoNewPrivileges`, `UMask=0077`, restricted address
+families, loopback binding, authentication, and owner-private runtime paths stay
+enabled. Normal Linux and unknown environments retain `PrivateTmp=true`.
+
 If the diagnostic lists non-durable manager environment names, remove them from
 the systemd user manager with `systemctl --user unset-environment NAME` and
 persist non-secret settings in `agency.yaml`. Values are intentionally never

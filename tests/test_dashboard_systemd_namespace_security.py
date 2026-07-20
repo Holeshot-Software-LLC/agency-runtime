@@ -96,6 +96,65 @@ def test_systemd_namespace_uses_shared_config_mutation_predicate(
     assert checked == [ctx.unit_path]
 
 
+@pytest.mark.parametrize(
+    "release",
+    (
+        "5.15.153.1-microsoft-standard-WSL2",
+        "4.4.0-19041-Microsoft",
+    ),
+)
+def test_wsl_detection_accepts_bounded_kernel_markers(release: str) -> None:
+    assert systemd._is_wsl_kernel(release_reader=lambda: release)
+
+
+@pytest.mark.parametrize(
+    "release",
+    (
+        "6.8.0-1024-generic",
+        "",
+        "x" * 4097,
+        None,
+    ),
+)
+def test_wsl_detection_fails_secure_without_bounded_kernel_evidence(
+    release: object,
+) -> None:
+    assert not systemd._is_wsl_kernel(release_reader=lambda: release)  # type: ignore[return-value]
+
+
+@pytest.mark.parametrize("error", (OSError("blocked"), RuntimeError("failed"), ValueError("bad")))
+def test_wsl_detection_fails_secure_when_kernel_evidence_is_unreadable(
+    error: Exception,
+) -> None:
+    def fail() -> str:
+        raise error
+
+    assert not systemd._is_wsl_kernel(release_reader=fail)
+
+
+def test_wsl_systemd_unit_omits_only_private_tmp(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(systemd, "_is_wsl_kernel", lambda: True)
+
+    content = systemd._unit_content(_linux_context(tmp_path))
+
+    assert "PrivateTmp=" not in content
+    assert "NoNewPrivileges=true" in content
+    assert "UMask=0077" in content
+    assert "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6" in content
+
+
+def test_normal_linux_systemd_unit_retains_private_tmp(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(systemd, "_is_wsl_kernel", lambda: False)
+
+    assert "PrivateTmp=true" in systemd._unit_content(_linux_context(tmp_path))
+
+
 def test_trusted_parent_creation_rejects_namespace_before_mutation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -137,6 +137,7 @@ Status meanings:
 | [ADR-0061](0061-validate-brokered-control-transition-receipts.md) | Validate brokered control transition receipts against deterministic CAS semantics | Accepted |
 | [ADR-0073](0073-own-subprocess-trees-atomically.md) | Own subprocess trees atomically across Windows and Linux | Accepted |
 | [ADR-0074](0074-build-byte-deterministic-release-artifacts.md) | Build byte-deterministic release artifacts from canonical Git blobs | Accepted |
+| [ADR-0075](0075-preserve-config-trust-under-wsl-systemd.md) | Preserve configuration trust while adapting systemd hardening on WSL | Accepted |
 
 ## Documentation governance
 

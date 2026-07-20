@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import platform
+from collections.abc import Callable
 from pathlib import Path
 
 from agency_runtime.core.configuration import ConfigurationError
@@ -62,8 +64,27 @@ def _systemd_quote(value: str) -> str:
     return f'"{escaped}"'
 
 
+_MAX_KERNEL_RELEASE_CHARS = 4096
+
+
+def _is_wsl_kernel(*, release_reader: Callable[[], str] | None = None) -> bool:
+    """Return true only for bounded kernel evidence that identifies WSL."""
+
+    reader = release_reader or platform.release
+    try:
+        release = reader()
+    except (OSError, RuntimeError, ValueError):
+        return False
+    if not isinstance(release, str):
+        return False
+    if not release or len(release) > _MAX_KERNEL_RELEASE_CHARS:
+        return False
+    return "microsoft" in release.casefold()
+
+
 def _unit_content(ctx: _Context) -> str:
     exec_start = " ".join(_systemd_quote(item) for item in ctx.worker_argv)
+    private_tmp = "" if _is_wsl_kernel() else "PrivateTmp=true\n"
     return (
         f"# {OWNER_MARKER}\n"
         "[Unit]\n"
@@ -76,7 +97,7 @@ def _unit_content(ctx: _Context) -> str:
         "RestartSec=3s\n"
         "UMask=0077\n"
         "NoNewPrivileges=true\n"
-        "PrivateTmp=true\n"
+        f"{private_tmp}"
         "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6\n\n"
         "[Install]\n"
         "WantedBy=default.target\n"
@@ -238,6 +259,7 @@ def _restore_systemd_state(
 __all__ = [
     "_assert_systemd_files",
     "_assert_systemd_unit_namespace",
+    "_is_wsl_kernel",
     "_read_systemd_unit",
     "_restore_systemd_state",
     "_systemd_active_state",
