@@ -786,7 +786,13 @@ def plan_agent_adapter(
         return {"ok": False, "exit_code": 2, "error": f"Unknown host: {host}"}
     target = _plugin_target(host, home_dir=home_dir)
     effective_cfg = _resolve_install_config(cfg, home_dir=home_dir)
-    files, primary = _bundle_files(host, effective_cfg)
+    from agency_runtime.core.runtime_control import runtime_control_path
+
+    files, primary = _bundle_files(
+        host,
+        effective_cfg,
+        runtime_control_path_value=str(runtime_control_path(home_dir=home_dir)),
+    )
     executable = _resolve_binary(host, binary_resolver)
     root_exists, current_root, markers = _root_state(host, home_dir=home_dir)
     fs_plan = _atomic_install_tree(target, files, host=host, dry_run=True, home_dir=home_dir)

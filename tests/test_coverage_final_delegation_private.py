@@ -1003,7 +1003,9 @@ def test_bundle_files_rebinds_a_normalized_config_path(
     monkeypatch.setattr(installer_payloads, "_bound_config_path", lambda _cfg: "absolute.yaml")
     monkeypatch.setattr(installer_payloads, "_hook_timeout_seconds", lambda observed: 7)
     monkeypatch.setattr(
-        installer_payloads, "_codex_hooks", lambda timeout, path: {"hooks": (timeout, path)}
+        installer_payloads,
+        "_codex_hooks",
+        lambda timeout, path, control_path="": {"hooks": (timeout, path, control_path)},
     )
     monkeypatch.setattr(installer_payloads, "_mcp_config", lambda path="": {"path": path})
     monkeypatch.setattr(installer_payloads, "_agency_control_skill", lambda host: host)

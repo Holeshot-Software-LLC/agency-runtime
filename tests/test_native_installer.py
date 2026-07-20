@@ -636,22 +636,33 @@ def test_host_bundles_embed_one_absolute_config_identity_with_spaces(tmp_path: P
     config_path.parent.mkdir()
     config_path.write_text("{}\n", encoding="utf-8")
     cfg = AgencyConfig(config_path=str(config_path))
+    control_path = tmp_path / ".agency-runtime" / "run" / "control.json"
 
-    codex_files, _ = _bundle_files("codex", cfg)
+    codex_files, _ = _bundle_files("codex", cfg, runtime_control_path_value=str(control_path))
     codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
     codex_handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
-    assert shlex.split(codex_handler["command"])[-2:] == ["--config", str(config_path)]
-    assert codex_handler["commandWindows"].endswith(f" '--config' '{config_path}'")
+    assert shlex.split(codex_handler["command"])[-4:] == [
+        "--config",
+        str(config_path),
+        "--runtime-control",
+        str(control_path),
+    ]
+    assert codex_handler["commandWindows"].endswith(f" '--runtime-control' '{control_path}'")
     codex_mcp = json.loads(codex_files["plugins/agency-preflight/.mcp.json"])
     assert codex_mcp["mcpServers"]["agency-runtime"]["args"][-2:] == [
         "--config",
         str(config_path),
     ]
 
-    claude_files, _ = _bundle_files("claude", cfg)
+    claude_files, _ = _bundle_files("claude", cfg, runtime_control_path_value=str(control_path))
     claude_hooks = json.loads(claude_files["plugins/agency-preflight/hooks/hooks.json"])
     claude_handler = claude_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
-    assert claude_handler["args"][-2:] == ["--config", str(config_path)]
+    assert claude_handler["args"][-4:] == [
+        "--config",
+        str(config_path),
+        "--runtime-control",
+        str(control_path),
+    ]
     claude_mcp = json.loads(claude_files["plugins/agency-preflight/.mcp.json"])
     assert claude_mcp["mcpServers"]["agency-runtime"]["args"][-2:] == [
         "--config",

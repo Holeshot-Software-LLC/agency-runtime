@@ -56,6 +56,10 @@ or adding an index-install claim.
       discovery, registration, enablement, loading, and canary evidence.
 - [ ] Every host called `runtime-verified` has a dated reproducible native
       canary on each operating system claimed by the release.
+    - When claiming Agency-on/native-only comparison behavior, run both explicit
+      host-canary modes against the same installed artifact. Require the global
+      master state to match each mode, zero Agency evidence in native-only mode,
+      no native-only attestation, and guaranteed restoration of Agency-on state.
 - [ ] Codex, Claude Code, Hermes, and OpenClaw install, disable, enable, rollback,
       preflight, evidence, and finalization paths have been exercised for the v1
       matrix or clearly marked below that maturity.

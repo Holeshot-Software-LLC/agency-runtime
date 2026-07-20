@@ -428,6 +428,14 @@ changed flag, and the exact legal no-op or single-increment generation before
 the CLI reports success. `--global` cannot be combined with `--agent` or
 `--native`.
 
+Generated Codex and Claude hook commands bind both the canonical configuration
+path and the canonical master-control path explicitly. This keeps hook behavior
+stable when a host replaces `HOME` or launches hooks under a restricted Windows
+token. Direct control-file validation remains primary; only that positively
+identified restricted-token case may read the complete validated master state
+through the authenticated local dashboard. An invalid identity or broker result
+fails enabled.
+
 Turning Agency off globally preserves plugins, config, roster, and history but
 bypasses new routing, prompt activation, delegation, model receipts, and
 finalization at the earliest supported host boundary. Start a fresh host session
@@ -451,6 +459,10 @@ both control mutations.
 ```bash
 agency host-canary codex
 agency host-canary codex --execute --confirm "RUN LIVE codex CANARY"
+agency off --global
+agency host-canary codex --mode native-only --execute \
+  --confirm "RUN LIVE codex NATIVE-ONLY CANARY"
+agency on --global
 ```
 
 The default command is a read-only readiness report and never creates a
@@ -480,7 +492,17 @@ Upgrade, reinstall, rollback, bundle drift, or a non-current profile makes it
 stale. On 2026-07-12, the exact-confirmed Codex 0.144.1 isolated-profile canary
 completed with exit code `0`, a valid six-line header, one nonce-bound routing
 event, one correlated finalization, no model receipt, and a persisted
-attestation. The canary's explicit one-invocation trust bypass did not trust the
+attestation. Agency mode requires the authoritative global switch to be on and
+projects that exact state into the isolated home. `--mode native-only` requires
+the global switch to be off, then proves a nonempty native response with the
+isolated plugin still registered, no valid Agency header, and zero new Agency
+runtime evidence. Installed hooks also carry the real canonical control identity
+explicitly, so a host that drops the canary environment still honors the global
+switch. Control read failures or changes during either run fail closed.
+Native-only success never writes an Agency canary attestation. Always restore
+the global switch in cleanup after an A/B trial.
+
+The canary's explicit one-invocation trust bypass did not trust the
 real profile or establish Linux Codex maturity: operators still review the
 installed hooks through `/hooks` and start a new session.
 
@@ -511,6 +533,10 @@ It binds only to loopback and creates a new high-entropy access token for each
 process. Foreground mode prints the one-time URL. Service mode writes the
 rotating token only to an owner-restricted runtime descriptor; the systemd unit,
 scheduled task, process arguments, status output, and logs never contain it.
+Normal Linux units also use `PrivateTmp=true`. Positively identified WSL omits
+only that directive because WSL's private-tmp namespace can rewrite trusted
+ancestor identities; configuration namespace validation and every other unit,
+filesystem, loopback, and authentication control remain enabled.
 `agency dashboard service open` reads that descriptor and verifies the
 authenticated health endpoint before opening a token-fragment URL. The browser
 moves the token to session storage. The server validates `Host` and same-origin

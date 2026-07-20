@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-66-bind-systemd-unit-to-trusted-xdg-namespace.md
   - docs/roadmap/issue-AR-71-dashboard-accessible-truthful-states.md
   - docs/roadmap/issue-AR-74-broker-restricted-windows-host-controls.md
+  - docs/roadmap/issue-AR-110-preserve-wsl-systemd-service-trust.md
   - SECURITY.md
   - docs/worklog/README.md
 supersedes: []

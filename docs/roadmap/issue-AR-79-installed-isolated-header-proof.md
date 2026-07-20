@@ -3,9 +3,10 @@ title: "AR-79: Prove exact Agency headers in the installed isolated Codex canary
 status: in_progress
 category: roadmap
 created: 2026-07-17
-updated: 2026-07-18
+updated: 2026-07-20
 tags: [codex, canary, headers, evidence, installation]
 related:
+  - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/worklog/README.md

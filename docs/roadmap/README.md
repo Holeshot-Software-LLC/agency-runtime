@@ -127,6 +127,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-107` | [Build release artifacts from canonical Git blobs](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | in_progress | p0 | release | [#109](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/109) |
 | `AR-108` | [Make owned process containment atomic and session-escape resistant](issue-AR-108-atomic-owned-process-containment.md) | done | p0 | security | [#110](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/110) |
 | `AR-109` | [Make hosted process-security tests race-free and platform-honest](issue-AR-109-hosted-process-security-test-fidelity.md) | in_progress | p0 | testing | [#112](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/112) |
+| `AR-110` | [Preserve dashboard service trust under WSL systemd namespace remapping](issue-AR-110-preserve-wsl-systemd-service-trust.md) | in_progress | p0 | operations | [#113](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/113) |
+| `AR-111` | [Honor global Agency mode in isolated host canaries](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | done | p0 | testing | [#115](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/115) |
 
 ## Traceability
 
@@ -245,6 +247,8 @@ not stable internal identifiers.
 | [AR-107](issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md), [`9f98db3`](../worklog/README.md), [`3515d4e`](../worklog/README.md) | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-108](issue-AR-108-atomic-owned-process-containment.md) | [`46f203a`](../worklog/README.md), [`bb8ce93`](../worklog/README.md) | [ADR-0035](../decisions/0035-authoritative-bounded-provider-chain.md), [ADR-0044](../decisions/0044-preclose-bounded-windows-child-stdin.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md), [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
 | [AR-109](issue-AR-109-hosted-process-security-test-fidelity.md) | [`9843025`](../worklog/README.md), [`4dccae7`](../worklog/README.md) | [ADR-0073](../decisions/0073-own-subprocess-trees-atomically.md) |
+| [AR-110](issue-AR-110-preserve-wsl-systemd-service-trust.md) | [`0f374b4`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0075](../decisions/0075-preserve-config-trust-under-wsl-systemd.md) |
+| [AR-111](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [`615d88c`](../worklog/README.md), [`f5fe972`](../worklog/README.md), [`b8f80bd`](../worklog/README.md), [`cb17e0d`](../worklog/README.md), [`123910a`](../worklog/README.md), [`edb922c`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0076](../decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md) |
 
 ## Dependency summary
 

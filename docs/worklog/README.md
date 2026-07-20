@@ -97,6 +97,14 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3515d4e` | 2026-07-20 | fix(release): verify backend manifest order | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | [detail](2026-07-20-3515d4e-backend-manifest-order.md) |
 | `9843025` | 2026-07-20 | test(portability): make process fixtures race-free | [AR-109](../roadmap/issue-AR-109-hosted-process-security-test-fidelity.md) | [detail](2026-07-20-9843025-process-fixture-fidelity.md) |
 | `4dccae7` | 2026-07-20 | fix(preflight): preserve lease safety margin | [AR-109](../roadmap/issue-AR-109-hosted-process-security-test-fidelity.md) | [detail](2026-07-20-4dccae7-store-clock-portability.md) |
+| `e6e1b25` | 2026-07-20 | Merge pull request #111 from Holeshot-Software-LLC/codex/canonical-release-source | [AR-107](../roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md) | null |
+| `0f374b4` | 2026-07-20 | fix(dashboard): preserve WSL systemd config trust | [AR-110](../roadmap/issue-AR-110-preserve-wsl-systemd-service-trust.md) | [detail](2026-07-20-0f374b4-wsl-systemd-config-trust.md) |
+| `615d88c` | 2026-07-20 | fix(canary): bind isolated runs to global mode | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md), [AR-88](../roadmap/issue-AR-88-compare-agency-native-outcomes.md) | [detail](2026-07-20-615d88c-isolated-canary-modes.md) |
+| `f5fe972` | 2026-07-20 | fix(canary): bind hook control capability | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-f5fe972-hook-control-capability.md) |
+| `b8f80bd` | 2026-07-20 | fix(hooks): bind authoritative master control | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-b8f80bd-authoritative-hook-control.md) |
+| `cb17e0d` | 2026-07-20 | test(portability): normalize hook control contracts | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-cb17e0d-portable-hook-control-tests.md) |
+| `123910a` | 2026-07-20 | test(coverage): exercise hook control rejection paths | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-123910a-hook-control-coverage.md) |
+| `edb922c` | 2026-07-20 | docs(roadmap): complete isolated canary control | [AR-111](../roadmap/issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [detail](2026-07-20-edb922c-complete-isolated-canary-control.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

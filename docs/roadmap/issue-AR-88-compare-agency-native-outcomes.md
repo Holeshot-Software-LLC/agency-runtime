@@ -3,9 +3,10 @@ title: "AR-88: Compare Agency modes against native host outcomes"
 status: in_progress
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-20
 tags: [evaluation, outcomes, delegation, comparison, evidence]
 related:
+  - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
   - docs/roadmap/issue-AR-11-routing-evaluation-and-performance.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - docs/decisions/0072-compare-task-outcomes-with-paired-trials.md

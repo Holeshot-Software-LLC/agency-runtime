@@ -20,6 +20,7 @@ def args(**changes):
         "dry_run": False,
         "execute": False,
         "json": False,
+        "mode": "agency",
         "native": False,
         "no_dashboard": False,
         "output": None,

@@ -189,6 +189,12 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         help="Run the isolated live invocation after readiness inspection",
     )
     canary_p.add_argument(
+        "--mode",
+        choices=["agency", "native-only"],
+        default="agency",
+        help="Require Agency evidence or prove a clean native-only bypass",
+    )
+    canary_p.add_argument(
         "--confirm",
         default="",
         help="Exact confirmation phrase printed by the readiness report",
@@ -660,6 +666,11 @@ def _register_native_protocols(sub: Subparsers, handlers: Handlers) -> None:
     )
     hook.add_argument("--db", default=None, help="SQLite database path")
     hook.add_argument("--config", default=None, help="Agency YAML configuration path")
+    hook.add_argument(
+        "--runtime-control",
+        default=None,
+        help="Installer-bound Agency master-control path",
+    )
     _bind(hook, handlers, "cmd_hook")
 
 

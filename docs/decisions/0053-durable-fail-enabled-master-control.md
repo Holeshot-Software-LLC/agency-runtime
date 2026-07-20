@@ -3,7 +3,7 @@ title: "Use a durable fail-enabled master control before every host boundary"
 status: accepted
 category: decisions
 created: 2026-07-16
-updated: 2026-07-16
+updated: 2026-07-20
 tags: [operations, control-plane, security, cli, dashboard, windows]
 related:
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-77-validate-brokered-control-transition-receipts.md
   - docs/decisions/0034-persistent-soft-host-control.md
   - docs/decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md
+  - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
   - docs/worklog/README.md

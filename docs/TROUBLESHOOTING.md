@@ -269,6 +269,22 @@ execution because a proven read-only, no-tools noninteractive mode is not
 available. Codex and Claude require the exact
 `RUN LIVE <host> CANARY` confirmation before invoking the host.
 
+For an Agency-off comparison, leave the plugin installed, run
+`agency off --global`, and execute `agency host-canary <host> --mode
+native-only --execute --confirm "RUN LIVE <host> NATIVE-ONLY CANARY"`. The
+isolated profile receives the authoritative disabled state and the result passes
+only with a nonempty host response, unchanged plugin registration/load request,
+no valid Agency header, and zero new Agency evidence. Restore Agency with
+`agency on --global` in cleanup. A mode mismatch, unreadable control, or control
+generation change is a failed observation, not a native-only result.
+
+Current Codex and Claude managed hook manifests must include both `--config` and
+`--runtime-control` absolute paths. If an older bundle omits the latter, run
+`agency install --refresh` before retrying. Restricted Windows hooks use the
+authenticated dashboard only when direct validation of that bound control file
+is impossible; confirm the dashboard service is running if the hook safely
+falls back to enabled.
+
 A Codex or Claude result is scoped to the temporary profile in which the
 managed plugin was explicitly requested. It does not prove that the real host
 profile is registered or enabled. The inspector therefore reports an
@@ -347,6 +363,14 @@ silently install cron jobs, shell-profile launchers, or enable lingering. WSL
 installations without a working systemd user manager should use foreground mode
 or rerun installation with `--no-dashboard`. Do not work around the error by
 installing a system-wide or administrator-owned service.
+
+On WSL with a working systemd user manager, Agency positively identifies the
+WSL kernel and omits only `PrivateTmp` from the generated user unit. WSL's
+private-tmp mount namespace can expose root-owned configuration ancestors as
+overflow UID `65534`, which the worker correctly rejects. Agency does not relax
+that path-trust check: `NoNewPrivileges`, `UMask=0077`, restricted address
+families, loopback binding, authentication, and owner-private runtime paths stay
+enabled. Normal Linux and unknown environments retain `PrivateTmp=true`.
 
 If the diagnostic lists non-durable manager environment names, remove them from
 the systemd user manager with `systemctl --user unset-environment NAME` and

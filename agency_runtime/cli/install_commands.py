@@ -1314,6 +1314,7 @@ def cmd_host_canary(
         confirm=str(args.confirm or ""),
         db_path=args.db,
         timeout=float(args.timeout),
+        mode=str(args.mode),
     )
     if args.output:
         Path(args.output).expanduser().write_text(

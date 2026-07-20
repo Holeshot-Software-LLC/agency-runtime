@@ -658,6 +658,7 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
     mcp = json.loads((plugin_root / ".mcp.json").read_text(encoding="utf-8"))
     skill = (plugin_root / "skills" / "agency" / "SKILL.md").read_text(encoding="utf-8")
     expected_config_path = str(tmp_path / ".agency-runtime" / "agency.yaml")
+    expected_control_path = str(tmp_path / ".agency-runtime" / "run" / "control.json")
 
     assert manifest["name"] == "agency-preflight"
     if host == "codex":
@@ -667,21 +668,27 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
     for event, registrations in hooks["hooks"].items():
         command = registrations[0]["hooks"][0]
         if host == "codex":
-            assert shlex.split(command["command"])[-4:] == [
+            assert shlex.split(command["command"])[-6:] == [
                 "--event",
                 event,
                 "--config",
                 expected_config_path,
+                "--runtime-control",
+                expected_control_path,
             ]
             assert "--event" in command["commandWindows"]
             assert event in command["commandWindows"]
-            assert command["commandWindows"].endswith(f" '--config' '{expected_config_path}'")
+            assert command["commandWindows"].endswith(
+                f" '--runtime-control' '{expected_control_path}'"
+            )
         else:
-            assert command["args"][-4:] == [
+            assert command["args"][-6:] == [
                 "--event",
                 event,
                 "--config",
                 expected_config_path,
+                "--runtime-control",
+                expected_control_path,
             ]
     assert mcp["mcpServers"]["agency-runtime"]["args"] == [
         "-I",

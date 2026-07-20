@@ -620,6 +620,7 @@ def test_codex_safe_backend_isolates_auth_plugins_config_and_secrets(
         native={"managed_target": str(marketplace)},
         resolver=lambda _name: "C:/tools/codex.exe",
         runner=runner,
+        master_enabled=False,
         environ={
             "HOME": str(injected_home),
             "PATH": "C:/tools",
@@ -643,6 +644,12 @@ def test_codex_safe_backend_isolates_auth_plugins_config_and_secrets(
     assert secret not in json.dumps(result)
     assert "OPENAI_API_KEY" not in calls[-1]["env"]
     assert calls[-1]["env"]["AGENCY_CANARY_MODE"] == "1"
+    assert calls[-1]["env"]["AGENCY_CANARY_MASTER_ENABLED"] == "0"
+    assert Path(calls[-1]["env"]["AGENCY_CANARY_CONTROL_PATH"]).parts[-3:] == (
+        ".agency-runtime",
+        "run",
+        "control.json",
+    )
     assert calls[-1]["env"]["CODEX_HOME"] != str(real_home)
     assert not Path(calls[-1]["env"]["CODEX_HOME"]).exists()
     assert "features.shell_tool=false" in calls[-1]["argv"]
@@ -735,6 +742,12 @@ def test_claude_canary_loads_managed_plugin_without_safe_mode_or_profile_setting
     assert "--no-session-persistence" in argv
     assert "ANTHROPIC_API_KEY" not in calls[0]["env"]
     assert calls[0]["env"]["AGENCY_CANARY_MODE"] == "1"
+    assert calls[0]["env"]["AGENCY_CANARY_MASTER_ENABLED"] == "1"
+    assert Path(calls[0]["env"]["AGENCY_CANARY_CONTROL_PATH"]).parts[-3:] == (
+        ".agency-runtime",
+        "run",
+        "control.json",
+    )
     assert not Path(calls[0]["env"]["CLAUDE_CONFIG_DIR"]).exists()
     assert settings.read_text(encoding="utf-8") == json.dumps({"hooks": {"unsafe-user-hook": []}})
     assert secret not in json.dumps(result)
