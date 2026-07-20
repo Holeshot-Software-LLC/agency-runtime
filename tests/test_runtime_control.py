@@ -1471,6 +1471,26 @@ def test_bound_enforcement_reader_rejects_untrusted_identity(
     assert transport == "fail-enabled"
 
 
+def test_bound_enforcement_reader_rejects_absolute_noncanonical_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = (tmp_path / "not-control.json").resolve()
+    monkeypatch.setattr(
+        control,
+        "read_authoritative_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("noncanonical identity reached the authoritative reader")
+        ),
+    )
+
+    document, transport = control.read_bound_enforcement_runtime_control(target)
+
+    assert document["enabled"] is True
+    assert document["source"] == "fail-enabled"
+    assert transport == "fail-enabled"
+
+
 def test_bound_enforcement_reader_brokers_restricted_windows_identity(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1495,6 +1515,31 @@ def test_bound_enforcement_reader_brokers_restricted_windows_identity(
     )
 
     assert control.read_bound_enforcement_runtime_control(target) == (expected, "dashboard")
+
+
+def test_bound_enforcement_reader_rejects_malformed_broker_shape(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = _control_path(tmp_path).resolve()
+    monkeypatch.setattr(
+        control,
+        "read_authoritative_runtime_control",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            control.RuntimeControlSecurityError("direct read unavailable")
+        ),
+    )
+    monkeypatch.setattr(control, "current_process_token_is_restricted", lambda **_kwargs: True)
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        lambda *_args, **_kwargs: {"master": _valid_document(), "extra": True},
+    )
+
+    document, transport = control.read_bound_enforcement_runtime_control(target)
+
+    assert document["enabled"] is True
+    assert document["source"] == "fail-enabled"
+    assert transport == "fail-enabled"
 
 
 @pytest.mark.parametrize("restricted", [False, True])
