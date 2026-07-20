@@ -130,6 +130,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-110` | [Preserve dashboard service trust under WSL systemd namespace remapping](issue-AR-110-preserve-wsl-systemd-service-trust.md) | done | p0 | operations | [#113](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/113) |
 | `AR-111` | [Honor global Agency mode in isolated host canaries](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | done | p0 | testing | [#115](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/115) |
 | `AR-112` | [Rewrite the README for public users](issue-AR-112-public-user-readme.md) | done | p1 | documentation | [#117](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/117) |
+| `AR-113` | [Isolate wall-clock performance gates from the compatibility matrix](issue-AR-113-isolate-performance-gates.md) | in_progress | p0 | testing | [#119](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/119) |
 
 ## Traceability
 
@@ -251,6 +252,7 @@ not stable internal identifiers.
 | [AR-110](issue-AR-110-preserve-wsl-systemd-service-trust.md) | [`0f374b4`](../worklog/README.md), [`a869e51`](../worklog/README.md), [`55c4dfe`](../worklog/README.md), [`280b0b7`](../worklog/README.md) | [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0075](../decisions/0075-preserve-config-trust-under-wsl-systemd.md) |
 | [AR-111](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [`615d88c`](../worklog/README.md), [`f5fe972`](../worklog/README.md), [`b8f80bd`](../worklog/README.md), [`cb17e0d`](../worklog/README.md), [`123910a`](../worklog/README.md), [`edb922c`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0076](../decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md) |
 | [AR-112](issue-AR-112-public-user-readme.md) | [`4635a0b`](../worklog/README.md), [`de875f6`](../worklog/README.md), [`280b0b7`](../worklog/README.md) | None |
+| [AR-113](issue-AR-113-isolate-performance-gates.md) | Pending | None |
 
 ## Dependency summary
 
