@@ -128,7 +128,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-108` | [Make owned process containment atomic and session-escape resistant](issue-AR-108-atomic-owned-process-containment.md) | done | p0 | security | [#110](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/110) |
 | `AR-109` | [Make hosted process-security tests race-free and platform-honest](issue-AR-109-hosted-process-security-test-fidelity.md) | in_progress | p0 | testing | [#112](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/112) |
 | `AR-110` | [Preserve dashboard service trust under WSL systemd namespace remapping](issue-AR-110-preserve-wsl-systemd-service-trust.md) | in_progress | p0 | operations | [#113](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/113) |
-| `AR-111` | [Honor global Agency mode in isolated host canaries](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | in_progress | p0 | testing | [#115](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/115) |
+| `AR-111` | [Honor global Agency mode in isolated host canaries](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | done | p0 | testing | [#115](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/115) |
 
 ## Traceability
 

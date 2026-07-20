@@ -1,6 +1,6 @@
 ---
 title: "AR-111: Honor global Agency mode in isolated host canaries"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-20
 updated: 2026-07-20
@@ -38,10 +38,26 @@ Agency-on path.
 
 ## Current state
 
-A real Codex 0.144.3 control reproduced the defect: the global switch committed
-disabled and was restored in a guaranteed cleanup block, but the isolated
-invocation still produced a valid Agency header, one routing event, and two
-finalizations. No native-only result is claimed from that run.
+The original Codex 0.144.3 control reproduced the defect: the global switch
+committed disabled and was restored in a guaranteed cleanup block, but the
+isolated invocation still produced a valid Agency header, one routing event,
+and two finalizations. That observation is retained as failure evidence, not a
+native-only result.
+
+The exact installed post-fix candidate then passed both guarded modes with
+managed bundle digest
+`ebff397c0ce2d6a6c703cea0151eb71f5455038a0f94431b0b2d995148c80bbe`.
+Agency mode at global generation 16 produced a valid six-line header, one
+routing event, one run, two finalizations, and persisted trace
+`019f8112-0f85-76a3-87c3-c56c2ecf8943`. Native-only mode at generation 17
+completed with the plugin registered, no valid Agency header, zero rows in all
+six evidence categories, and no attestation write. Guaranteed cleanup restored
+Agency-on at generation 18.
+
+The hosted candidate matrix passed full Ubuntu Python 3.10 through 3.14 and
+Windows Python 3.10/3.14 suites, exact 100% line/branch coverage, routing and
+delegation performance, dashboard UI, artifact build/smoke/byte parity on both
+operating systems, dependency review, and static analysis.
 
 ## Approach
 
@@ -64,11 +80,11 @@ isolated canary evidence. AR-88 consumes honest paired mode observations.
 
 ## Acceptance
 
-- [ ] The isolated profile materializes the authoritative current master state.
-- [ ] Agency mode refuses execution while the authoritative master is disabled.
-- [ ] Native-only mode refuses execution while the authoritative master is enabled.
-- [ ] Native-only success requires a completed nonempty response, registered plugin, no Agency header, and zero new Agency evidence.
-- [ ] Native-only success does not create an Agency canary attestation.
-- [ ] Control read/materialization errors and state drift fail closed.
-- [ ] Focused line/branch, full suite, hosted matrix, and exact installed Codex A/B canaries pass.
-- [ ] Documentation, worklog, and tracker mappings remain synchronized.
+- [x] The isolated profile materializes the authoritative current master state.
+- [x] Agency mode refuses execution while the authoritative master is disabled.
+- [x] Native-only mode refuses execution while the authoritative master is enabled.
+- [x] Native-only success requires a completed nonempty response, registered plugin, no Agency header, and zero new Agency evidence.
+- [x] Native-only success does not create an Agency canary attestation.
+- [x] Control read/materialization errors and state drift fail closed.
+- [x] Focused line/branch, full suite, hosted matrix, and exact installed Codex A/B canaries pass.
+- [x] Documentation, worklog, and tracker mappings remain synchronized.
