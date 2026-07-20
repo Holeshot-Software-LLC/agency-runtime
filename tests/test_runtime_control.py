@@ -62,6 +62,49 @@ def test_canonical_path_and_absent_state_default_to_enabled(tmp_path: Path) -> N
     assert not expected.exists()
 
 
+def test_canary_control_path_override_is_narrow_and_explicit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    override = _control_path(tmp_path)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_CONTROL_PATH", str(override))
+
+    assert control._target_path(path=None, home_dir=None) == override
+    explicit_home = tmp_path / "explicit"
+    assert control._target_path(path=None, home_dir=explicit_home) == _control_path(explicit_home)
+    explicit_path = tmp_path / "explicit-control.json"
+    assert control._target_path(path=explicit_path, home_dir=None) == explicit_path
+
+
+def test_canary_control_path_override_rejects_noncanonical_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_CONTROL_PATH", str(tmp_path / "control.json"))
+
+    with pytest.raises(control.RuntimeControlValidationError, match="not canonical"):
+        control._target_path(path=None, home_dir=None)
+
+    monkeypatch.setenv(
+        "AGENCY_CANARY_CONTROL_PATH",
+        str(Path(".agency-runtime") / "run" / "control.json"),
+    )
+    with pytest.raises(control.RuntimeControlValidationError, match="must be absolute"):
+        control._target_path(path=None, home_dir=None)
+
+
+def test_canary_control_path_override_is_ignored_outside_canary_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "0")
+    monkeypatch.setenv("AGENCY_CANARY_CONTROL_PATH", str(_control_path(tmp_path)))
+
+    assert control._target_path(path=None, home_dir=None) == control.runtime_control_path()
+
+
 def test_control_snapshot_distinguishes_absent_default_from_materialized_state(
     tmp_path: Path,
 ) -> None:

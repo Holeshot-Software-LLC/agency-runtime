@@ -93,6 +93,7 @@ def isolated_canary_environment(
     db_path: Path,
 ) -> dict[str, str]:
     from agency_runtime.core.cli_transport import safe_cli_environment
+    from agency_runtime.core.runtime_control import runtime_control_path
 
     env = safe_cli_environment(source_env)
     isolated_home = runtime_home / "home"
@@ -114,6 +115,7 @@ def isolated_canary_environment(
         env[name] = str(isolated_temp)
     env["AGENCY_DB_PATH"] = str(db_path.resolve())
     env["AGENCY_CANARY_MODE"] = "1"
+    env["AGENCY_CANARY_CONTROL_PATH"] = str(runtime_control_path(home_dir=isolated_home))
     return env
 
 

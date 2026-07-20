@@ -60,6 +60,7 @@ _MAX_TIMESTAMP_BYTES = 64
 _CACHE_LIMIT = 64
 _WINDOWS_REPLACE_DELAYS = (0.002, 0.004, 0.008, 0.016, 0.032, 0.064)
 _DASHBOARD_BROKER_TIMEOUT_SECONDS = 0.25
+_CANARY_CONTROL_PATH_ENV = "AGENCY_CANARY_CONTROL_PATH"
 
 
 class RuntimeControlError(RuntimeError):
@@ -179,7 +180,21 @@ def _target_path(
     path: str | Path | None,
     home_dir: str | Path | None,
 ) -> Path:
-    return _absolute_path(path) if path is not None else runtime_control_path(home_dir=home_dir)
+    if path is not None:
+        return _absolute_path(path)
+    if home_dir is not None:
+        return runtime_control_path(home_dir=home_dir)
+    if os.environ.get("AGENCY_CANARY_MODE") == "1":
+        canary_path = os.environ.get(_CANARY_CONTROL_PATH_ENV, "").strip()
+        if canary_path:
+            if not Path(canary_path).is_absolute():
+                raise RuntimeControlValidationError("canary runtime control path must be absolute")
+            target = _absolute_path(canary_path)
+            expected_suffix = Path(".agency-runtime") / "run" / "control.json"
+            if target.parts[-3:] != expected_suffix.parts:
+                raise RuntimeControlValidationError("canary runtime control path is not canonical")
+            return target
+    return runtime_control_path()
 
 
 def _metadata_identity(metadata: os.stat_result) -> tuple[int, ...]:

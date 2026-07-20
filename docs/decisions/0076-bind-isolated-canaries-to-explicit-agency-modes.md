@@ -44,6 +44,9 @@ uses a distinct exact confirmation phrase. Before host execution, read the real
 profile's authoritative master-control document without the enforcement
 fail-enabled fallback. Require its enabled state to match the requested mode,
 then materialize and re-read that state in the owner-private isolated home.
+Bind hook subprocesses to that exact canonical absolute control path through a
+canary-only environment capability; explicit API paths and home arguments keep
+precedence, and normal runtime processes ignore the capability.
 
 Re-read the real authoritative document after invocation and immediately before
 success. Any read failure or document drift fails the canary closed.
