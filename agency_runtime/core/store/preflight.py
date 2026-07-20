@@ -1013,6 +1013,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         conn: Any,
         request: _PreflightRequest,
         *,
+        now_value: str,
         lease_expires_at: str,
     ) -> dict[str, str]:
         if request.reservation_token:
@@ -1029,13 +1030,15 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             "preflight_state, preflight_lease_expires_at, "
             "preflight_request_fingerprint, preflight_request_kind, "
             "preflight_result) "
-            f"VALUES (?, ?, ?, ?, {STORE_CLOCK_SQL}, {STORE_CLOCK_SQL}, "  # nosec B608
+            "VALUES (?, ?, ?, ?, ?, ?, "
             "'active', ?, ?, ?, 'in_progress', ?, ?, ?, '')",
             (
                 self._uuid(),
                 request.trace_id,
                 request.session_id,
                 request.host,
+                now_value,
+                now_value,
                 request.user_message,
                 request.metadata,
                 attempt_token,
@@ -1059,6 +1062,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         *,
         state: str,
         stored_reservation: str,
+        now_value: str,
         lease_expires_at: str,
     ) -> dict[str, str]:
         if state != "reserved" or not stored_reservation:
@@ -1072,8 +1076,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             "metadata = ?, preflight_attempt_token = ?, "
             "preflight_state = 'in_progress', preflight_lease_expires_at = ?, "
             "preflight_request_fingerprint = ?, preflight_request_kind = ?, "
-            "preflight_result = '', "
-            f"last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
+            "preflight_result = '', last_activity_at = ? "
             "WHERE id = ? AND status = 'evidence_only' "
             "AND preflight_state = 'reserved' AND reservation_token = ?",
             (
@@ -1084,6 +1087,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 lease_expires_at,
                 request.fingerprint,
                 request.request_kind,
+                now_value,
                 run["id"],
                 stored_reservation,
             ),
@@ -1105,6 +1109,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         *,
         stored_fingerprint: str,
         stored_kind: str,
+        now_value: str,
         lease_expires_at: str,
     ) -> dict[str, str]:
         if (stored_fingerprint and stored_fingerprint != request.fingerprint) or (
@@ -1119,8 +1124,8 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             "UPDATE runs SET host = ?, user_message = ?, metadata = ?, "
             "preflight_attempt_token = ?, preflight_state = 'in_progress', "
             "preflight_lease_expires_at = ?, preflight_request_fingerprint = ?, "
-            "preflight_request_kind = ?, preflight_result = '', "
-            f"last_activity_at = {STORE_CLOCK_SQL} WHERE id = ?",  # nosec B608
+            "preflight_request_kind = ?, preflight_result = '', last_activity_at = ? "
+            "WHERE id = ?",
             (
                 request.host,
                 request.user_message,
@@ -1129,6 +1134,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 lease_expires_at,
                 request.fingerprint,
                 request.request_kind,
+                now_value,
                 run["id"],
             ),
         )
@@ -1171,13 +1177,13 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         recovered = conn.execute(
             "UPDATE runs SET preflight_attempt_token = ?, "
             "preflight_state = 'in_progress', preflight_lease_expires_at = ?, "
-            "preflight_result = '', "
-            f"last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
+            "preflight_result = '', last_activity_at = ? "
             "WHERE id = ? AND status = 'active' AND preflight_state = 'in_progress' "
             "AND preflight_attempt_token = ? AND preflight_lease_expires_at < ?",
             (
                 recovered_token,
                 lease_expires_at,
+                now_value,
                 run["id"],
                 prior_attempt_token,
                 now_value,
@@ -1214,6 +1220,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 request,
                 stored_fingerprint=stored_fingerprint,
                 stored_kind=stored_kind,
+                now_value=now_value,
                 lease_expires_at=lease_expires_at,
             )
         if stored_fingerprint != request.fingerprint or stored_kind != request.request_kind:
@@ -1299,6 +1306,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 request,
                 state=state,
                 stored_reservation=stored_reservation,
+                now_value=now_value,
                 lease_expires_at=lease_expires_at,
             )
         return self._reuse_active_preflight(
@@ -1391,6 +1399,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                 result = self._insert_preflight_attempt(
                     conn,
                     request,
+                    now_value=now_value,
                     lease_expires_at=lease_expires_at,
                 )
             else:

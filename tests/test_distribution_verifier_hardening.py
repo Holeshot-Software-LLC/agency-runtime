@@ -1342,6 +1342,36 @@ def test_posix_descriptor_paths_are_constructed_without_link_following(
     assert stat_calls == [("artifact", 17, False)]
 
 
+def test_descriptor_helpers_use_bound_windows_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "artifact"
+    descriptor_calls: list[tuple[Path, bool]] = []
+    lstat_calls: list[Path] = []
+
+    def descriptor(target: Path, *, directory: bool) -> int:
+        descriptor_calls.append((target, directory))
+        return 41
+
+    def lstat(target: Path) -> os.stat_result:
+        lstat_calls.append(target)
+        return _fake_stat()  # type: ignore[return-value]
+
+    monkeypatch.setattr(subject.os, "name", "nt")
+    monkeypatch.setattr(subject, "_windows_descriptor", descriptor)
+    monkeypatch.setattr(subject.os, "lstat", lstat)
+
+    assert subject._open_descriptor(path, directory=True) == 41
+    assert subject._open_child_descriptor(tmp_path, 17, "artifact") == 41
+    assert subject._child_lstat(tmp_path, 17, "artifact").st_ino == 7
+    assert descriptor_calls == [
+        (path, True),
+        (tmp_path / "artifact", False),
+    ]
+    assert lstat_calls == [tmp_path / "artifact"]
+
+
 def test_distribution_directory_fault_injection_covers_open_and_identity_races(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

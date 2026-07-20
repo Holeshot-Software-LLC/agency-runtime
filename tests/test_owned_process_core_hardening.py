@@ -1365,6 +1365,7 @@ def test_cleanup_preserves_keyboard_interrupt_and_attempts_every_owner(
         "_close_atomic_windows_process_resources",
         lambda *_args: (_ for _ in ()).throw(SystemExit(3)),
     )
+    state.windows_job = SimpleNamespace(close=lambda: failure("job-close"))
 
     with pytest.raises(KeyboardInterrupt) as caught:
         owned_process._complete_owned_process(
@@ -1375,6 +1376,7 @@ def test_cleanup_preserves_keyboard_interrupt_and_attempts_every_owner(
             start_io=lambda: (_ for _ in ()).throw(KeyboardInterrupt()),
         )
     assert any("cleanup failed: cleanup" in note for note in caught.value.__notes__)
+    assert events[-1] == "job-close"
 
 
 @pytest.mark.parametrize("binary", [False, True], ids=["text", "binary"])

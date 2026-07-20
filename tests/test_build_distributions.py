@@ -1072,6 +1072,19 @@ def test_timestamp_rejects_links_and_supports_posix_no_follow(
         "follow_symlinks": False,
     }
 
+    observed.clear()
+    monkeypatch.setattr(subject.os, "name", "nt")
+    monkeypatch.setattr(
+        subject.os,
+        "utime",
+        lambda path, times: observed.update(path=path, times=times),
+    )
+    subject._set_timestamp(target, 8)
+    assert observed == {
+        "path": target,
+        "times": (8, 8),
+    }
+
 
 def test_canonical_tree_rejects_file_identity_mutation(
     tmp_path: Path,

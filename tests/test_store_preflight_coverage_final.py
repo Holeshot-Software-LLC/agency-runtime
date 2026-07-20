@@ -387,6 +387,7 @@ def test_preflight_helper_conflicts_and_atomicity_guards(tmp_path: Path) -> None
     stale = store._insert_preflight_attempt(
         _ZeroRowConnection(),
         _request(reservation_token="token"),
+        now_value="now",
         lease_expires_at="later",
     )
     assert stale["outcome"] == "stale_reservation"
@@ -396,6 +397,7 @@ def test_preflight_helper_conflicts_and_atomicity_guards(tmp_path: Path) -> None
         _request(),
         state="",
         stored_reservation="",
+        now_value="now",
         lease_expires_at="later",
     )
     assert promoted["outcome"] == "stale_reservation"
@@ -406,6 +408,7 @@ def test_preflight_helper_conflicts_and_atomicity_guards(tmp_path: Path) -> None
             _request(reservation_token="token"),
             state="reserved",
             stored_reservation="token",
+            now_value="now",
             lease_expires_at="later",
         )
     with pytest.raises(RuntimeError, match="recovery lost atomicity"):

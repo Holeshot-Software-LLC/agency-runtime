@@ -218,6 +218,44 @@ def test_native_platform_guard_and_error_messages(
     assert "Windows error" in str(atomic._native_error("operation failed"))
 
 
+def test_native_api_configures_the_complete_kernel_contract(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    function_names = (
+        "CreateJobObjectW",
+        "SetInformationJobObject",
+        "QueryInformationJobObject",
+        "TerminateJobObject",
+        "InitializeProcThreadAttributeList",
+        "UpdateProcThreadAttribute",
+        "DeleteProcThreadAttributeList",
+        "CreateProcessW",
+        "ResumeThread",
+        "CloseHandle",
+    )
+    kernel = SimpleNamespace(
+        **{name: SimpleNamespace() for name in function_names},
+    )
+    observed: dict[str, Any] = {}
+
+    def load_library(name: str, *, use_last_error: bool) -> Any:
+        observed.update(name=name, use_last_error=use_last_error)
+        return kernel
+
+    monkeypatch.setattr(atomic, "_IS_WINDOWS", True)
+    monkeypatch.setattr(atomic.ctypes, "WinDLL", load_library, raising=False)
+
+    api = atomic._native_api()
+
+    assert api.kernel32 is kernel
+    assert observed == {"name": "kernel32", "use_last_error": True}
+    assert kernel.CreateJobObjectW.restype._kernel32 is kernel
+    for name in function_names:
+        function = getattr(kernel, name)
+        assert hasattr(function, "argtypes")
+        assert hasattr(function, "restype")
+
+
 def test_create_job_fails_closed_and_releases_partial_handle(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
