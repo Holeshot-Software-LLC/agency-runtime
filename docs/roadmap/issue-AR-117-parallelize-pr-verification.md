@@ -43,6 +43,9 @@ dashboard coverage. Partition Python test files deterministically into four
 size-balanced coverage jobs, upload each data file, combine them, and enforce
 the unchanged 100% line-and-branch threshold. Run uninstrumented performance in
 its own parallel job. Keep the complete compatibility and artifact matrices.
+The seven-cell full compatibility matrix runs on `main` and by manual dispatch
+instead of repeating for every PR edit; strict docs and tracker validation runs
+in the fast PR lane.
 
 ## Dependencies
 
@@ -56,4 +59,5 @@ uninstrumented gate.
 - [x] Combined coverage still requires 100% line and branch coverage.
 - [x] Lint, workflow/docs contracts, dashboard coverage, and performance run independently.
 - [x] Workflow contract tests protect sharding, recombination, and the performance boundary.
+- [x] The full compatibility matrix runs on `main` and manual dispatch, not every PR edit.
 - [ ] Hosted CI proves the parallel workflow and merge completes.

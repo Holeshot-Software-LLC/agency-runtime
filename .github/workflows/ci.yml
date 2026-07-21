@@ -28,6 +28,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
@@ -49,6 +50,8 @@ jobs:
         run: |
           python scripts/docs_metadata.py --check
           python scripts/update_policy_availability.py --check
+          python scripts/update_worklog.py --check
+          python scripts/verify_docs.py --require-tracker
           python -m pytest tests/test_ci_sharding.py tests/test_release_packaging.py -q -W error
       - name: Run dashboard UI tests with 100% coverage
         run: >-
@@ -188,6 +191,7 @@ jobs:
 
   test:
     name: tests / ${{ matrix.os }} / py${{ matrix.python }}
+    if: github.event_name != 'pull_request'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:

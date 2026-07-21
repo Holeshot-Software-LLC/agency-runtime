@@ -432,6 +432,16 @@ def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> No
     quality_steps = {step["name"] for step in jobs["quality"]["steps"]}
     assert "Verify fast workflow and documentation contracts" in quality_steps
     assert "Run dashboard UI tests with 100% coverage" in quality_steps
+    quality_checkout = jobs["quality"]["steps"][0]
+    assert quality_checkout["with"]["fetch-depth"] == 0
+    quality_contracts = next(
+        step
+        for step in jobs["quality"]["steps"]
+        if step["name"] == "Verify fast workflow and documentation contracts"
+    )["run"]
+    assert "update_worklog.py --check" in quality_contracts
+    assert "verify_docs.py --require-tracker" in quality_contracts
+    assert jobs["test"]["if"] == "github.event_name != 'pull_request'"
 
 
 def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
