@@ -120,6 +120,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5467026` | 2026-07-21 | docs(roadmap): record verified Codex hook activation | null | null |
 | `0d892e8` | 2026-07-21 | Merge pull request #126 from Holeshot-Software-LLC/codex/ar-114-activation-proof | null | null |
 | `673988d` | 2026-07-21 | feat(routing): bound native child inference and expose account models | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | [detail](2026-07-21-673988d-bound-native-child-routing.md) |
+| `49e8f99` | 2026-07-21 | fix(routing): bound child inference and parallelize CI | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | [detail](2026-07-21-49e8f99-review-fixes-and-parallel-ci.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
