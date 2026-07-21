@@ -182,3 +182,30 @@ def test_discovery_validates_inputs_uses_cache_and_cleans_singleflight(monkeypat
     with pytest.raises(RuntimeError, match="boom"):
         discover_cli_models("codex", refresh=True)
     assert "codex" not in cli_transport._MODEL_CATALOG_IN_FLIGHT
+
+
+def test_discovery_reuses_cache_filled_while_waiting(monkeypatch) -> None:
+    value = CLIModelCatalog(
+        "codex", (CLIModelInfo("shared", "Shared", "", 1, "low"),), "test", "now"
+    )
+
+    class FillingCondition:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        @staticmethod
+        def wait(*, timeout):
+            assert timeout > 0
+            cli_transport._MODEL_CATALOG_CACHE["codex"] = (time.monotonic() + 60, value)
+            cli_transport._MODEL_CATALOG_IN_FLIGHT.discard("codex")
+
+    monkeypatch.setattr(cli_transport, "_MODEL_CATALOG_CONDITION", FillingCondition())
+    cli_transport._MODEL_CATALOG_CACHE.clear()
+    cli_transport._MODEL_CATALOG_IN_FLIGHT.clear()
+    cli_transport._MODEL_CATALOG_IN_FLIGHT.add("codex")
+    catalog = discover_cli_models("codex", refresh=True, timeout=1)
+    assert catalog.cache_hit is True
+    assert catalog.models[0].slug == "shared"
