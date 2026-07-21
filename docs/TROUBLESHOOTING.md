@@ -106,9 +106,16 @@ This means the plugin files are installed and registered, but Agency has not
 proved that your normal Codex profile will run the hooks. Complete the secure
 activation flow:
 
-1. Open Codex and run `/hooks`.
-2. Review and trust all seven Agency Runtime hook events.
+1. Open a terminal and run `codex` to start the Codex terminal UI.
+2. Choose **Trust all and continue** when its startup hook review appears. If
+   it does not appear, run `/hooks` inside that terminal UI and trust all seven
+   Agency Runtime hook events.
 3. Run `agency install --agent codex --verify-activation`.
+
+Codex Desktop's `/hooks` screen can show connector setup such as Zoom or
+Twilio. That is a different surface and does not review local command hooks.
+Agency does not reproduce Codex's private trust hashes or edit them directly;
+Codex currently exposes no supported non-interactive trust-grant API.
 
 The verification command uses the normal Codex profile and does not pass
 `--dangerously-bypass-hook-trust`. If approval is missing, changed, or rejected,

@@ -554,7 +554,10 @@ def _codex_hook_trust_check(
     if configured == "false" or not host or host.get("registered") is not True:
         return None
     trust_status = str(host.get("hook_trust_status") or "unverified").strip().lower()
-    action = str(host.get("hook_trust_action") or "Run `/hooks` in Codex to review the hooks.")
+    action = str(
+        host.get("hook_trust_action")
+        or "Run `codex` in a terminal and use its hook-review prompt or `/hooks` TUI."
+    )
     if trust_status == "trusted":
         return CheckResult(
             "adapter_codex_hook_trust",

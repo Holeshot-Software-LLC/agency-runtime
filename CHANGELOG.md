@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-20
+updated: 2026-07-21
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -24,6 +24,12 @@ Faithful commit history and reasoning-rich implementation notes remain in the
 changes rather than duplicating every commit.
 
 ## Unreleased
+
+### Fixed
+
+- Corrected Codex activation guidance to use the terminal TUI hook-review
+  surface, distinguish Codex Desktop connector setup, and expose the approval
+  surface and launch command in structured installer evidence.
 
 ### Added
 

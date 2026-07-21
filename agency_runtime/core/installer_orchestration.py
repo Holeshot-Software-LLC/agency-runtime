@@ -12,6 +12,8 @@ from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.installer_contracts import (
     ADAPTER_LAUNCHER_MANIFEST,
     CODEX_HOOK_TRUST_ACTION,
+    CODEX_HOOK_TRUST_COMMAND,
+    CODEX_HOOK_TRUST_SURFACE,
     HOSTS,
     INSTALL_MANIFEST,
     MARKETPLACE_ID,
@@ -438,6 +440,8 @@ def _registration_success_result(result: dict[str, Any], host: str) -> dict[str,
             {
                 "hook_trust_status": "unverified",
                 "hook_trust_action": CODEX_HOOK_TRUST_ACTION,
+                "hook_trust_surface": CODEX_HOOK_TRUST_SURFACE,
+                "hook_trust_command": CODEX_HOOK_TRUST_COMMAND,
             }
         )
     elif host == "openclaw":

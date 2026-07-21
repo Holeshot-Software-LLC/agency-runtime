@@ -111,9 +111,13 @@ The installer discovers supported hosts and registers only the ones it can
 identify. It does not restart a host automatically.
 
 Codex requires you to approve command hooks. Agency will install the plugin,
-report `activation_required`, and give you the exact next step. In Codex, run
-`/hooks` and trust the seven Agency Runtime events. Then finish the same install
-flow with:
+report `activation_required`, and give you the exact next step. Open a terminal,
+run `codex`, and choose **Trust all and continue** when the Codex terminal UI
+shows its startup hook review. If that review does not appear, run `/hooks`
+inside the terminal UI and trust the seven Agency Runtime events. Codex
+Desktop's `/hooks` screen may show connector setup such as Zoom or Twilio; that
+is not the local command-hook trust screen. Then finish the same install flow
+with:
 
 ```bash
 agency install --agent codex --verify-activation
