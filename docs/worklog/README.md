@@ -130,6 +130,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `795deef` | 2026-07-21 | fix(routing): enforce safe selection and child evidence | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md), [AR-118](../roadmap/issue-AR-118-reconcile-native-child-activation-evidence.md) | null |
 | `0b21bdb` | 2026-07-21 | test(routing): cover recovery edge paths | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | null |
 | `78afe96` | 2026-07-21 | fix(routing): preserve current child and provider evidence | [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md), [AR-118](../roadmap/issue-AR-118-reconcile-native-child-activation-evidence.md) | null |
+| `2c404f4` | 2026-07-21 | fix(routing): validate policy before host filtering | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
