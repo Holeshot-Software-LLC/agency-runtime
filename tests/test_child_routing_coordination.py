@@ -355,6 +355,55 @@ def test_child_coalescing_waits_for_cache_and_uses_longest_timeout(monkeypatch) 
     assert reservation["lease_seconds"] == 45.0
 
 
+def test_child_coalescing_timeout_abstains_without_duplicate_inference(monkeypatch) -> None:
+    class SharedStore:
+        @staticmethod
+        def reserve_child_routing(**_kwargs):
+            return {"status": "coalescing"}
+
+        @staticmethod
+        def read_child_routing_cache(_key):
+            return None
+
+    class DeterministicPipeline:
+        @staticmethod
+        def route(*_args, **_kwargs):
+            return {"selected_ids": ["code-reviewer"]}
+
+    clocks = iter((0.0, 0.0, 21.0))
+    monkeypatch.setattr("agency_runtime.core.preflight.time.monotonic", lambda: next(clocks))
+    monkeypatch.setattr("agency_runtime.core.preflight.time.sleep", lambda _seconds: None)
+    classification = classify_turn_intent(
+        "Review this patch",
+        TurnState(state_known=True, state_status="ready"),
+    )
+    routing, _, _ = _resolve_preflight_routing(
+        SharedStore(),
+        session_id="child",
+        trace_id="child-trace",
+        user_message="Review this patch",
+        host="codex",
+        platform="windows",
+        available_tools=(),
+        capability_receipt=SimpleNamespace(),
+        catalog=[],
+        config=AgencyConfig(
+            providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
+        ),
+        classification=classification,
+        routing_fingerprint="routing",
+        policy_fingerprint="policy",
+        roster_generation=1,
+        pipeline=DeterministicPipeline,
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+    )
+    assert routing["status"] == "child_budget_abstained"
+    assert routing["child_routing_source"] == "coalescing"
+    assert routing["selected_ids"] == []
+    assert routing["deterministic_candidate_ids"] == ["code-reviewer"]
+
+
 def test_child_owner_failure_aborts_and_unconfigured_child_is_deterministic() -> None:
     aborted = []
 
