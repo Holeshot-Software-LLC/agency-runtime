@@ -152,7 +152,7 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
         "host": "codex",
         "platform": "windows",
         "available_tools": (),
-        "capability_receipt": SimpleNamespace(),
+        "capability_receipt": SimpleNamespace(as_dict=lambda: {}),
         "catalog": [],
         "config": config,
         "classification": classification,
@@ -375,7 +375,7 @@ def test_child_coalescing_waits_for_cache_and_uses_longest_timeout(monkeypatch) 
         host="codex",
         platform="windows",
         available_tools=(),
-        capability_receipt=SimpleNamespace(),
+        capability_receipt=SimpleNamespace(as_dict=lambda: {}),
         catalog=[],
         config=config,
         classification=classification,
@@ -403,6 +403,7 @@ def test_cached_multi_unit_child_route_restores_units_from_the_same_message() ->
         "work_units": detect_work_units(message),
     }
     decision = _content_free_routing_recipe(source, trace_id="owner-trace")
+    current_receipt = {"session_id": "child", "trace_id": "child-trace"}
 
     class SharedStore:
         @staticmethod
@@ -421,7 +422,7 @@ def test_cached_multi_unit_child_route_restores_units_from_the_same_message() ->
         host="codex",
         platform="windows",
         available_tools=(),
-        capability_receipt=SimpleNamespace(),
+        capability_receipt=SimpleNamespace(as_dict=lambda: current_receipt),
         catalog=[],
         config=AgencyConfig(
             providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
@@ -437,6 +438,7 @@ def test_cached_multi_unit_child_route_restores_units_from_the_same_message() ->
 
     assert routing["status"] == "child_cache_reused"
     assert routing["work_units"]["units"] == source["work_units"]["units"]
+    assert routing["execution_context"] == current_receipt
 
 
 def test_child_coalescing_timeout_abstains_without_duplicate_inference(monkeypatch) -> None:

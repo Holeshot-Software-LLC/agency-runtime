@@ -382,6 +382,7 @@ def _resolve_preflight_routing(
             session_reused=False,
             child_routing_source="shared_cache",
         )
+        cached["execution_context"] = capability_receipt.as_dict()
         cached["work_units"] = _verified_work_units(cached, user_message)
         return cached, None, classification
     if reservation["status"] == "owner":

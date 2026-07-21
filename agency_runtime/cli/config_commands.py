@@ -457,6 +457,7 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
         raise ValueError("--type is required when adding a provider")
     existing_type = str(existing.get("type") or "").strip().casefold()
     provider_type_changed = bool(args.type is not None and provider_type != existing_type)
+    cli_provider = provider_type == "cli"
     updated = {
         "name": target_name,
         "type": provider_type,
@@ -464,10 +465,14 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
             args.transport if args.transport is not None else existing.get("transport") or ""
         ).strip(),
         "model": str(args.model if args.model is not None else existing.get("model") or "").strip(),
-        "base_url": str(
+        "base_url": ""
+        if cli_provider
+        else str(
             args.base_url if args.base_url is not None else existing.get("base_url") or ""
         ).strip(),
-        "api_key_env": str(
+        "api_key_env": ""
+        if cli_provider
+        else str(
             args.api_key_env if args.api_key_env is not None else existing.get("api_key_env") or ""
         ).strip(),
         "ollama_mode": provider_type == "ollama"
@@ -483,8 +488,17 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
         index = len(providers) - 1
     else:
         providers[index] = updated
+    operations: list[dict[str, Any]] = [{"op": "set", "path": "providers", "value": providers}]
+    if cli_provider:
+        operations.append(
+            {
+                "op": "secret",
+                "path": f"providers.{index}.api_key",
+                "action": "clear",
+            }
+        )
     result = apply_config_operations(
-        [{"op": "set", "path": "providers", "value": providers}],
+        operations,
         expected_revision=state.revision,
     )
     notes = _config_set_notes("providers", result)

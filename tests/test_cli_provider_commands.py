@@ -131,6 +131,31 @@ def test_provider_set_update_remove_and_main_facade(monkeypatch, capsys) -> None
         == 0
     )
     assert operations[-1][0][0]["value"][0]["ollama_mode"] is False
+    assert operations[-1][0][0]["value"][0]["base_url"] == ""
+    assert operations[-1][0][0]["value"][0]["api_key_env"] == ""
+    assert operations[-1][0][1] == {
+        "op": "secret",
+        "path": "providers.0.api_key",
+        "action": "clear",
+    }
+
+    current.persisted["providers"] = [
+        {
+            "name": "remote",
+            "type": "litellm",
+            "model": "task-router",
+            "base_url": "https://router.invalid/v1",
+            "api_key_env": "LITELLM_API_KEY",
+        }
+    ]
+    assert (
+        config_commands.cmd_config_provider_set(_args(name="remote", type="cli", transport="codex"))
+        == 0
+    )
+    converted = operations[-1][0][0]["value"][0]
+    assert converted["base_url"] == ""
+    assert converted["api_key_env"] == ""
+    assert operations[-1][0][1]["action"] == "clear"
 
     current.persisted["providers"] = primary_providers
     with pytest.raises(ValueError, match="provider not found"):
