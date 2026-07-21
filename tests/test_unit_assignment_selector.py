@@ -180,9 +180,11 @@ def test_configured_inference_is_attempted_for_every_exact_work_unit(
         ),
     )
 
-    assert [task for task, _slugs in calls] == list(units)
-    assert set(calls[0][1]) == {item["slug"] for item in catalog}
-    assert calls[1][1] == ("technical-writer",)
+    calls_by_task = dict(calls)
+    assert set(calls_by_task) == set(units)
+    assert len(calls) == len(units)
+    assert set(calls_by_task[units[0]]) == {item["slug"] for item in catalog}
+    assert calls_by_task[units[1]] == ("technical-writer",)
     assert [item["slug"] for item in snapshot] == [
         "security-reviewer",
         "technical-writer",
