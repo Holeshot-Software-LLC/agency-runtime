@@ -259,8 +259,8 @@ not stable internal identifiers.
 | [AR-113](issue-AR-113-isolate-performance-gates.md) | [`9d4e55b`](../worklog/README.md), [`c994882`](../worklog/README.md), [`a751046`](../worklog/README.md) | None |
 | [AR-114](issue-AR-114-guided-codex-hook-activation.md) | [`58026a5`](../worklog/README.md), [`7e24323`](../worklog/README.md), [`5467026`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
 | [AR-115](issue-AR-115-live-routing-trust.md) | `673988d`, `49e8f99` | [ADR-0001](../decisions/0001-layered-specialist-routing.md), [ADR-0011](../decisions/0011-explicit-delegation-evidence-lifecycle.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0078](../decisions/0078-present-human-routing-evidence-and-abstain-on-noise.md) |
-| [AR-116](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | `673988d`, `49e8f99`, `e0870fa` | [ADR-0067](../decisions/0067-require-configured-inference-for-selection.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md), [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
-| [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
+| [AR-116](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | `673988d`, `49e8f99`, `e0870fa`, `1b28e89` | [ADR-0067](../decisions/0067-require-configured-inference-for-selection.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md), [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
+| [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 
 ## Dependency summary
 
