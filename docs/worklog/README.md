@@ -115,6 +115,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a751046` | 2026-07-20 | Merge pull request #121 from Holeshot-Software-LLC/codex/performance-gate-isolation | [AR-113](../roadmap/issue-AR-113-isolate-performance-gates.md) | [detail](2026-07-20-a751046-pr-121-merge.md) |
 | `58026a5` | 2026-07-20 | fix(installer): require verified Codex hook activation | null | null |
 | `527659d` | 2026-07-20 | Merge pull request #124 from Holeshot-Software-LLC/codex/ar-114-guided-codex-activation | null | null |
+| `7e24323` | 2026-07-21 | fix(installer): identify Codex terminal hook review | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
