@@ -100,6 +100,22 @@ cold-inventory states, not failures hidden behind success language. Restart the
 host when required, exercise a harmless preflight, and inspect again. Only a
 native runtime surface can promote `loaded` or `canary`; file existence cannot.
 
+## Codex says `activation_required`
+
+This means the plugin files are installed and registered, but Agency has not
+proved that your normal Codex profile will run the hooks. Complete the secure
+activation flow:
+
+1. Open Codex and run `/hooks`.
+2. Review and trust all seven Agency Runtime hook events.
+3. Run `agency install --agent codex --verify-activation`.
+
+The verification command uses the normal Codex profile and does not pass
+`--dangerously-bypass-hook-trust`. If approval is missing, changed, or rejected,
+installation remains incomplete and prints the same resumable steps. An
+isolated-profile canary is useful for package testing but cannot establish your
+normal-profile readiness.
+
 ## `agency off` did not unregister the plugin
 
 That is expected unless `--native` was requested. The default command is an

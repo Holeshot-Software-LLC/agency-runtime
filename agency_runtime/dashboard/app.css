@@ -109,7 +109,9 @@ tr:last-child td { border-bottom: 0; }
 .host-state { flex: 0 1 auto; color: var(--warn); font: 700 9px ui-monospace, monospace; letter-spacing: .08em; overflow-wrap: anywhere; text-align: right; text-transform: uppercase; }
 .host-state.detected, .host-state.verified { color: var(--accent); }
 .host-state.runtime-verified, .host-state.enabled-runtime-unverified { color: var(--accent); }
+.host-state.activation-required { color: var(--warn); }
 .host-state.absent, .host-state.stale-config, .host-state.registered-disabled, .host-state.runtime-disabled { color: var(--danger); }
+.host-action { margin: 10px 0 0; color: var(--warn); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
 .card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; margin-top: 12px; }
 .provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 9px; margin-top: 16px; }
 .provider-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px; border: 1px solid var(--line-soft); border-radius: 10px; background: #0a0f16; }
@@ -1304,6 +1306,10 @@ tbody tr:hover td {
 .host-state.runtime-verified,
 .host-state.enabled-runtime-unverified {
   color: var(--accent);
+}
+
+.host-state.activation-required {
+  color: var(--warn);
 }
 
 .provider-grid {

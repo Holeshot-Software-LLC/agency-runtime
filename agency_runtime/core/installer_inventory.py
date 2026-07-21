@@ -739,6 +739,8 @@ def _serialize_inspection(
     attestation: dict[str, Any] | None,
 ) -> dict[str, Any]:
     codex_hooks_registered = state.host == "codex" and state.registered is True
+    codex_activation_verified = codex_hooks_registered and canary is True
+    native_maturity = _maturity(state)
     return {
         "host": state.host,
         "executable": state.executable,
@@ -767,9 +769,25 @@ def _serialize_inspection(
         "bundle_digest": state.bundle_digest,
         "launcher_artifacts_current": state.launcher_artifacts_current,
         "marketplace_registered": state.marketplace_registered,
-        "hook_trust_status": "unverified" if codex_hooks_registered else None,
-        "hook_trust_action": CODEX_HOOK_TRUST_ACTION if codex_hooks_registered else None,
-        "maturity": _maturity(state),
+        "hook_trust_status": ("trusted" if codex_activation_verified else "unverified")
+        if codex_hooks_registered
+        else None,
+        "hook_trust_action": (
+            None
+            if codex_activation_verified
+            else CODEX_HOOK_TRUST_ACTION
+            if codex_hooks_registered
+            else None
+        ),
+        "maturity": (
+            "runtime-verified"
+            if codex_activation_verified
+            else "activation-required"
+            if codex_hooks_registered
+            and state.enabled is True
+            and native_maturity == "enabled-runtime-unverified"
+            else native_maturity
+        ),
         "native_lifecycle": HOSTS[state.host]["native_lifecycle"],
         "evidence": state.evidence,
         "inventory_error": _inventory_error(state.inventory_result),

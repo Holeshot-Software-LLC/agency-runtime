@@ -298,6 +298,9 @@ export function createRenderer(core, config, callbacks) {
       tags.append(el("span", "token", truthLabel(host.effective_enabled, "effective", "inactive", "effective state unverified")));
       tags.append(el("span", "token", host.maturity || "unverified"));
       card.append(tags);
+      if (host.hook_trust_action) {
+        card.append(el("p", "host-action", host.hook_trust_action));
+      }
       if (host.executable_discovered === true) {
         const actions = el("div", "card-actions");
         const inspectionCurrent = !host.inspection_status || host.inspection_status === "complete";

@@ -355,6 +355,7 @@ def test_custom_endpoint_short_list_selection_and_empty_model_data(monkeypatch):
 
 def _install_args(**changes):
     values = {
+        "activation_timeout": 180.0,
         "agent": None,
         "all": False,
         "backup": None,
@@ -363,6 +364,7 @@ def _install_args(**changes):
         "no_dashboard": False,
         "profile": None,
         "rollback": False,
+        "verify_activation": False,
     }
     values.update(changes)
     return SimpleNamespace(**values)
@@ -383,6 +385,12 @@ def test_cmd_install_all_modes(monkeypatch, capsys):
         store_factory=lambda _cfg: object(),
         emit_json=emitted.append,
         readiness_probe=lambda: True,
+        host_inspector=lambda _host: {
+            "canary": True,
+            "canary_attestation_status": "verified",
+            "canary_attestation": {"profile_scope": "current-profile"},
+        },
+        canary_runner=lambda *_args, **_kwargs: {"canary_passed": True},
     )
     monkeypatch.setattr(
         installer,

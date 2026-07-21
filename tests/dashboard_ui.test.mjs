@@ -578,11 +578,16 @@ test("host views disclose empty inventories and unknown runtime controls truthfu
     /install or register a host, then refresh/i,
   );
 
-  harness.api.state.hosts = [{ host: "codex", maturity: "unverified" }];
+  harness.api.state.hosts = [{
+    hook_trust_action: "Run /hooks, then verify activation.",
+    host: "codex",
+    maturity: "activation-required",
+  }];
   harness.api.renderHosts();
   const labels = descendants(harness.node("host-grid")).map((node) => node.textContent);
   assert.ok(labels.includes("runtime state unknown"));
   assert.equal(labels.includes("runtime on"), false);
+  assert.ok(labels.includes("Run /hooks, then verify activation."));
 });
 
 test("Route Lab offers only verified enabled execution hosts and preserves explicit choice", () => {

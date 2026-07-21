@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -29,6 +30,8 @@ class InstallDependencies:
     store_factory: Callable[[AgencyConfig | None], Any] = store
     emit_json: Callable[[Any], None] = print_json
     readiness_probe: Callable[[], bool] | None = None
+    canary_runner: Callable[..., dict[str, Any]] | None = None
+    host_inspector: Callable[[str], dict[str, Any]] | None = None
 
 
 DEFAULT_DEPENDENCIES = InstallDependencies()
@@ -120,10 +123,17 @@ def _validate_install_mode(args: argparse.Namespace) -> tuple[bool, bool, str | 
     rollback_mode = bool(getattr(args, "rollback", False))
     dry_run = bool(getattr(args, "dry_run", False))
     backup = getattr(args, "backup", None)
+    verify_activation = bool(getattr(args, "verify_activation", False))
     if rollback_mode and dry_run:
         raise ValueError("install --rollback and --dry-run are mutually exclusive")
     if backup and not rollback_mode:
         raise ValueError("install --backup requires --rollback")
+    if verify_activation and not (getattr(args, "agent", None) == "codex" or args.all):
+        raise ValueError("install --verify-activation requires --agent codex or --all")
+    if verify_activation:
+        activation_timeout = float(getattr(args, "activation_timeout", 180.0))
+        if not math.isfinite(activation_timeout) or not 0 < activation_timeout <= 600:
+            raise ValueError("install --activation-timeout must be greater than 0 and at most 600")
     return rollback_mode, dry_run, backup
 
 
@@ -399,6 +409,97 @@ def _mark_all_host_completion(result: dict[str, Any]) -> None:
         )
 
 
+def _codex_activation_required() -> dict[str, Any]:
+    """Return the resumable, user-approved activation contract for Codex."""
+
+    return {
+        "state": "activation_required",
+        "complete": False,
+        "trust_bypass_used": False,
+        "action": (
+            "Open Codex, run `/hooks`, review and trust all seven Agency Runtime "
+            "hook events, then rerun with `--verify-activation`."
+        ),
+        "verification_command": "agency install --agent codex --verify-activation",
+    }
+
+
+def _codex_activation_state(
+    result: dict[str, Any],
+    *,
+    verify: bool,
+    timeout: float,
+    inspector: Callable[[str], dict[str, Any]],
+    canary_runner: Callable[..., dict[str, Any]],
+) -> None:
+    """Attach current-profile readiness without mutating Codex trust state."""
+
+    if not result.get("ok") or result.get("registered") is not True:
+        return
+    verification: dict[str, Any] | None = None
+    if verify:
+        try:
+            verification = canary_runner(
+                "codex",
+                execute=True,
+                confirm="RUN LIVE codex CURRENT-PROFILE CANARY",
+                timeout=timeout,
+                mode="agency",
+                profile_scope="current-profile",
+            )
+        except Exception:
+            verification = {
+                "canary_passed": False,
+                "profile_scope": "current-profile",
+                "unmet_prerequisites": ["current-profile verification could not run safely"],
+            }
+    try:
+        inspected = inspector("codex")
+    except Exception:
+        inspected = {}
+    attestation = inspected.get("canary_attestation")
+    ready = bool(
+        inspected.get("canary") is True
+        and inspected.get("canary_attestation_status") == "verified"
+        and isinstance(attestation, Mapping)
+        and attestation.get("profile_scope") == "current-profile"
+    )
+    if ready:
+        result.update(
+            {
+                "complete": True,
+                "maturity": "runtime-verified",
+                "canary": True,
+                "hook_trust_status": "trusted",
+                "hook_trust_action": None,
+                "activation": {
+                    "state": "ready",
+                    "complete": True,
+                    "trust_bypass_used": False,
+                    "profile_scope": "current-profile",
+                },
+            }
+        )
+        if verification is not None:
+            result["activation"]["verification"] = verification
+        return
+    activation = _codex_activation_required()
+    if verification is not None:
+        activation["state"] = "verification_failed"
+        activation["verification"] = verification
+    result.update(
+        {
+            "complete": False,
+            "maturity": "activation-required",
+            "canary": False,
+            "hook_trust_status": inspected.get("hook_trust_status") or "unverified",
+            "hook_trust_action": activation["action"],
+            "activation": activation,
+            "warning": "Codex files are installed, but Agency is not active in normal sessions.",
+        }
+    )
+
+
 def _install_hosts(
     targets: list[str],
     cfg: AgencyConfig,
@@ -406,12 +507,24 @@ def _install_hosts(
     all_hosts: bool,
     json_mode: bool,
     install_agent_adapter: Callable[[str, AgencyConfig], dict[str, Any]],
+    verify_activation: bool = False,
+    activation_timeout: float = 180.0,
+    host_inspector: Callable[[str], dict[str, Any]] | None = None,
+    canary_runner: Callable[..., dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Install selected host adapters and preserve partial-failure evidence."""
     results: list[dict[str, Any]] = []
     for host in targets:
         result = install_agent_adapter(host, cfg)
-        if all_hosts:
+        if host == "codex" and host_inspector is not None and canary_runner is not None:
+            _codex_activation_state(
+                result,
+                verify=verify_activation,
+                timeout=activation_timeout,
+                inspector=host_inspector,
+                canary_runner=canary_runner,
+            )
+        elif all_hosts:
             _mark_all_host_completion(result)
         results.append(result)
         if not json_mode:
@@ -439,11 +552,9 @@ def _install_succeeded(
     successful = bool(dashboard_result.get("ok")) and all(
         result.get("ok") for result in host_results
     )
-    if not all_hosts:
-        return successful
-    return (
-        bool(host_results) and successful and all(result.get("complete") for result in host_results)
-    )
+    if not host_results:
+        return successful and not all_hosts
+    return successful and all(result.get("complete", result.get("ok")) for result in host_results)
 
 
 def _seed_starter_roster(store: Store) -> int:
@@ -479,12 +590,14 @@ def cmd_install(
     dependencies: InstallDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
     """Install, preview, or roll back host-native Agency Runtime bundles."""
+    from agency_runtime.core.canary import run_canary
     from agency_runtime.core.dashboard_service import (
         install_dashboard_service,
         plan_dashboard_service,
     )
     from agency_runtime.core.installer import (
         detect_installed_agents,
+        inspect_host_installation,
         install_agent_adapter,
         plan_agent_adapter,
         rollback_agent_adapter,
@@ -622,6 +735,10 @@ def cmd_install(
         all_hosts=args.all,
         json_mode=json_mode,
         install_agent_adapter=install_agent_adapter,
+        verify_activation=bool(getattr(args, "verify_activation", False)),
+        activation_timeout=float(getattr(args, "activation_timeout", 180.0)),
+        host_inspector=dependencies.host_inspector or inspect_host_installation,
+        canary_runner=dependencies.canary_runner or run_canary,
     )
 
     if not targets and not json_mode:
@@ -1315,6 +1432,7 @@ def cmd_host_canary(
         db_path=args.db,
         timeout=float(args.timeout),
         mode=str(args.mode),
+        profile_scope=str(getattr(args, "profile_scope", "isolated-profile")),
     )
     if args.output:
         Path(args.output).expanduser().write_text(

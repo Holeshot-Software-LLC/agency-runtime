@@ -106,6 +106,11 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Codex installation now remains `activation-required` after native
+  registration until the user approves Agency hooks through `/hooks` and
+  `agency install --agent codex --verify-activation` proves routing,
+  finalization, and the response header in the normal profile without using
+  Codex's hook-trust bypass.
 - Release artifacts are now built from the canonical bounded regular-file payload
   in the reviewed Git commit instead of physical worktree bytes. This keeps clean
   Windows checkouts with line-ending filters from producing noncanonical wheels

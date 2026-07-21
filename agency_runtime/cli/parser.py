@@ -92,6 +92,11 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         action="store_true",
         help="Restore the latest retained backup for --agent",
     )
+    install_action.add_argument(
+        "--verify-activation",
+        action="store_true",
+        help="After installation, verify Codex in the normal user profile without bypassing hook trust",
+    )
     install.add_argument(
         "--backup",
         default=None,
@@ -101,6 +106,12 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         "--no-dashboard",
         action="store_true",
         help="Do not register or start the optional per-user dashboard service",
+    )
+    install.add_argument(
+        "--activation-timeout",
+        type=float,
+        default=180.0,
+        help="Maximum current-profile Codex activation check time in seconds",
     )
     install.add_argument("--json", action="store_true", help="Print machine-readable results")
     _bind(install, handlers, "cmd_install")
@@ -193,6 +204,12 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         choices=["agency", "native-only"],
         default="agency",
         help="Require Agency evidence or prove a clean native-only bypass",
+    )
+    canary_p.add_argument(
+        "--profile-scope",
+        choices=["isolated-profile", "current-profile"],
+        default="isolated-profile",
+        help="Use a disposable profile or verify the user's normal Codex profile",
     )
     canary_p.add_argument(
         "--confirm",

@@ -14,6 +14,7 @@ def args(**changes):
     values = {
         "agent": None,
         "all": False,
+        "activation_timeout": 180.0,
         "backup": None,
         "confirm": "",
         "db": None,
@@ -25,8 +26,10 @@ def args(**changes):
         "no_dashboard": False,
         "output": None,
         "profile": None,
+        "profile_scope": "isolated-profile",
         "rollback": False,
         "timeout": 5.0,
+        "verify_activation": False,
     }
     values.update(changes)
     return SimpleNamespace(**values)
@@ -65,6 +68,22 @@ def dependencies(**changes):
     }
     values.update(changes)
     return subject.InstallDependencies(**values), emitted
+
+
+@pytest.mark.parametrize("timeout", [0, 601, float("nan")])
+def test_verify_activation_rejects_invalid_timeout_before_install(timeout):
+    with pytest.raises(ValueError, match="activation-timeout"):
+        subject._validate_install_mode(
+            args(agent="codex", verify_activation=True, activation_timeout=timeout)
+        )
+
+
+def test_verify_activation_requires_codex_target_and_accepts_all():
+    with pytest.raises(ValueError, match="requires --agent codex or --all"):
+        subject._validate_install_mode(args(agent="claude", verify_activation=True))
+    assert subject._validate_install_mode(
+        args(all=True, verify_activation=True, activation_timeout=1)
+    ) == (False, False, None)
 
 
 @pytest.mark.parametrize(
@@ -402,6 +421,173 @@ def test_host_completion_install_aggregation_and_seed(capsys, monkeypatch):
     store = RosterStore()
     assert subject._seed_starter_roster(store) == len(subject.STARTER_ROSTER) - 1
     assert store.events[-1][0] == "starter_roster_installed"
+
+
+def test_codex_install_requires_current_profile_activation(capsys):
+    inspected = {
+        "canary": None,
+        "canary_attestation_status": "absent",
+        "canary_attestation": None,
+        "hook_trust_status": "unverified",
+    }
+    results = subject._install_hosts(
+        ["codex"],
+        config(),
+        all_hosts=False,
+        json_mode=False,
+        install_agent_adapter=lambda _host, _cfg: {
+            "host": "codex",
+            "ok": True,
+            "status": "registered",
+            "registered": True,
+        },
+        host_inspector=lambda _host: inspected,
+        canary_runner=lambda *_args, **_kwargs: pytest.fail("canary should not run"),
+    )
+
+    result = results[0]
+    assert result["ok"] is True
+    assert result["complete"] is False
+    assert result["maturity"] == "activation-required"
+    assert result["activation"]["verification_command"].endswith("--verify-activation")
+    assert result["activation"]["trust_bypass_used"] is False
+    assert subject._install_succeeded({"ok": True}, results, all_hosts=False) is False
+    assert "Agency is not active in normal sessions" in capsys.readouterr().out
+
+
+def test_codex_install_verifies_activation_with_current_profile_canary():
+    calls = []
+
+    def canary_runner(*args, **kwargs):
+        calls.append((args, kwargs))
+        return {"canary_passed": True, "profile_scope": "current-profile"}
+
+    results = subject._install_hosts(
+        ["codex"],
+        config(),
+        all_hosts=False,
+        json_mode=True,
+        install_agent_adapter=lambda _host, _cfg: {
+            "host": "codex",
+            "ok": True,
+            "status": "registered",
+            "registered": True,
+        },
+        verify_activation=True,
+        activation_timeout=42,
+        host_inspector=lambda _host: {
+            "canary": True,
+            "canary_attestation_status": "verified",
+            "canary_attestation": {"profile_scope": "current-profile"},
+            "hook_trust_status": "trusted",
+        },
+        canary_runner=canary_runner,
+    )
+
+    result = results[0]
+    assert result["complete"] is True
+    assert result["maturity"] == "runtime-verified"
+    assert result["activation"]["state"] == "ready"
+    assert calls == [
+        (
+            ("codex",),
+            {
+                "execute": True,
+                "confirm": "RUN LIVE codex CURRENT-PROFILE CANARY",
+                "timeout": 42,
+                "mode": "agency",
+                "profile_scope": "current-profile",
+            },
+        )
+    ]
+
+
+def test_codex_activation_failure_is_resumable_and_sanitized():
+    result = {"host": "codex", "ok": True, "registered": True}
+
+    def unavailable_canary(*_args, **_kwargs):
+        raise RuntimeError("private provider detail")
+
+    subject._codex_activation_state(
+        result,
+        verify=True,
+        timeout=1,
+        inspector=lambda _host: (_ for _ in ()).throw(RuntimeError("private profile detail")),
+        canary_runner=unavailable_canary,
+    )
+
+    assert result["complete"] is False
+    assert result["activation"]["state"] == "verification_failed"
+    assert result["activation"]["verification"]["unmet_prerequisites"] == [
+        "current-profile verification could not run safely"
+    ]
+    assert "private" not in json.dumps(result)
+
+
+def test_codex_activation_ignores_failed_registration_and_records_failed_proof():
+    untouched = {"host": "codex", "ok": False, "registered": False}
+    subject._codex_activation_state(
+        untouched,
+        verify=True,
+        timeout=1,
+        inspector=lambda _host: pytest.fail("inspection must not run"),
+        canary_runner=lambda *_args, **_kwargs: pytest.fail("canary must not run"),
+    )
+    assert "activation" not in untouched
+
+    pending = {"host": "codex", "ok": True, "registered": True}
+    subject._codex_activation_state(
+        pending,
+        verify=True,
+        timeout=1,
+        inspector=lambda _host: {
+            "canary": None,
+            "canary_attestation_status": "absent",
+            "canary_attestation": None,
+        },
+        canary_runner=lambda *_args, **_kwargs: {
+            "canary_passed": False,
+            "profile_scope": "current-profile",
+        },
+    )
+    assert pending["activation"]["state"] == "verification_failed"
+
+
+def test_codex_activation_accepts_existing_current_profile_attestation_without_new_call():
+    result = {"host": "codex", "ok": True, "registered": True}
+    subject._codex_activation_state(
+        result,
+        verify=False,
+        timeout=1,
+        inspector=lambda _host: {
+            "canary": True,
+            "canary_attestation_status": "verified",
+            "canary_attestation": {"profile_scope": "current-profile"},
+        },
+        canary_runner=lambda *_args, **_kwargs: pytest.fail("canary must not run"),
+    )
+    assert result["activation"] == {
+        "state": "ready",
+        "complete": True,
+        "trust_bypass_used": False,
+        "profile_scope": "current-profile",
+    }
+
+
+def test_single_host_install_without_activation_dependencies_preserves_compatibility():
+    results = subject._install_hosts(
+        ["codex"],
+        config(),
+        all_hosts=False,
+        json_mode=True,
+        install_agent_adapter=lambda _host, _cfg: {
+            "host": "codex",
+            "ok": True,
+            "status": "registered",
+            "registered": True,
+        },
+    )
+    assert "complete" not in results[0]
 
 
 def test_install_control_materialization_is_idempotent_and_host_complete(
