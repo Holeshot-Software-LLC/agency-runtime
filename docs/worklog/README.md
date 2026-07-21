@@ -126,6 +126,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e2cb50d` | 2026-07-21 | test(routing): cover child coalescing timeout | [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
 | `6f97dcc` | 2026-07-21 | ci: defer full compatibility matrix to main | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
 | `aefeb28` | 2026-07-21 | ci: validate PR ledgers at canonical head | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
+| `afd7199` | 2026-07-21 | style(ci): format workflow contract assertion | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
