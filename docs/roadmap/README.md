@@ -254,7 +254,7 @@ not stable internal identifiers.
 | [AR-111](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [`615d88c`](../worklog/README.md), [`f5fe972`](../worklog/README.md), [`b8f80bd`](../worklog/README.md), [`cb17e0d`](../worklog/README.md), [`123910a`](../worklog/README.md), [`edb922c`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0076](../decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md) |
 | [AR-112](issue-AR-112-public-user-readme.md) | [`4635a0b`](../worklog/README.md), [`de875f6`](../worklog/README.md), [`280b0b7`](../worklog/README.md) | None |
 | [AR-113](issue-AR-113-isolate-performance-gates.md) | [`9d4e55b`](../worklog/README.md), [`c994882`](../worklog/README.md), [`a751046`](../worklog/README.md) | None |
-| [AR-114](issue-AR-114-guided-codex-hook-activation.md) | [`58026a5`](../worklog/README.md), [`7e24323`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
+| [AR-114](issue-AR-114-guided-codex-hook-activation.md) | [`58026a5`](../worklog/README.md), [`7e24323`](../worklog/README.md), [`5467026`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
 
 ## Dependency summary
 
