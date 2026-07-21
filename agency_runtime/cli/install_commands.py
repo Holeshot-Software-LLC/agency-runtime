@@ -15,6 +15,11 @@ from agency_runtime.core.config import AgencyConfig, load_config
 from agency_runtime.core.configuration import resolve_config_path
 from agency_runtime.core.dashboard_service_core import dashboard_service_environment_overrides
 from agency_runtime.core.display import safe_display_token
+from agency_runtime.core.installer_contracts import (
+    CODEX_HOOK_TRUST_ACTION,
+    CODEX_HOOK_TRUST_COMMAND,
+    CODEX_HOOK_TRUST_SURFACE,
+)
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.policy.profiles import get_profile
 from agency_runtime.core.store.sqlite import Store
@@ -416,10 +421,10 @@ def _codex_activation_required() -> dict[str, Any]:
         "state": "activation_required",
         "complete": False,
         "trust_bypass_used": False,
-        "action": (
-            "Open Codex, run `/hooks`, review and trust all seven Agency Runtime "
-            "hook events, then rerun with `--verify-activation`."
-        ),
+        "approval_surface": CODEX_HOOK_TRUST_SURFACE,
+        "approval_launch_command": CODEX_HOOK_TRUST_COMMAND,
+        "desktop_slash_hooks_is_trust_ui": False,
+        "action": CODEX_HOOK_TRUST_ACTION,
         "verification_command": "agency install --agent codex --verify-activation",
     }
 

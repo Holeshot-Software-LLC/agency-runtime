@@ -451,6 +451,10 @@ def test_codex_install_requires_current_profile_activation(capsys):
     assert result["maturity"] == "activation-required"
     assert result["activation"]["verification_command"].endswith("--verify-activation")
     assert result["activation"]["trust_bypass_used"] is False
+    assert result["activation"]["approval_surface"] == "codex-terminal-tui"
+    assert result["activation"]["approval_launch_command"] == "codex"
+    assert result["activation"]["desktop_slash_hooks_is_trust_ui"] is False
+    assert "Codex Desktop" in result["activation"]["action"]
     assert subject._install_succeeded({"ok": True}, results, all_hosts=False) is False
     assert "Agency is not active in normal sessions" in capsys.readouterr().out
 

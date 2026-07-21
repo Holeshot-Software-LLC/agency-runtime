@@ -3,7 +3,7 @@ title: "Prove Codex hook activation behaviorally without bypassing trust"
 status: accepted
 category: decisions
 created: 2026-07-20
-updated: 2026-07-20
+updated: 2026-07-21
 tags: [codex, installation, hooks, trust, canary, security]
 related:
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
@@ -39,8 +39,10 @@ Treat Codex registration and activation as separate installation phases. A
 registered and enabled plugin without current-profile evidence has maturity
 `activation-required`, and the top-level install remains incomplete.
 
-The user approves all Agency hook events through Codex's `/hooks` interface.
-Agency never writes the Codex trust store. The resumable
+The user approves all Agency hook events through the Codex terminal TUI's
+startup hook review or `/hooks` interface. Codex Desktop's similarly named
+`/hooks` screen may manage connector setup and is not equivalent. Agency never
+writes the Codex trust store or reproduces its private trust hashes. The resumable
 `agency install --agent codex --verify-activation` phase starts a bounded,
 read-only, ephemeral Codex execution in the normal user profile. It retains the
 canary's tool, app, web, output, timeout, and evidence limits but deliberately

@@ -30,9 +30,15 @@ OPENCLAW_REQUIRED_HOOKS = frozenset(
 HOOK_TIMEOUT_BUFFER_SECONDS = 5.0
 MAX_HOOK_TIMEOUT_SECONDS = 595
 MAX_NATIVE_OUTPUT_CHARS = 256 * 1024
+CODEX_HOOK_TRUST_SURFACE = "codex-terminal-tui"
+CODEX_HOOK_TRUST_COMMAND = "codex"
 CODEX_HOOK_TRUST_ACTION = (
-    "Open Codex, run `/hooks`, review and trust the seven Agency Runtime "
-    "hook events, then start a new session."
+    "Open a terminal and run `codex`. In the Codex terminal TUI, choose "
+    "`Trust all and continue` when the startup review lists the seven Agency "
+    "Runtime hook events; if it does not appear, run `/hooks` inside that "
+    "terminal TUI. Codex Desktop's `/hooks` screen manages connector setup and "
+    "is not the local command-hook trust screen. Then start a new session and "
+    "run `agency install --agent codex --verify-activation`."
 )
 _OPENCLAW_VERSION = re.compile(
     r"(?<!\d)(?P<year>\d{4})\.(?P<month>\d{1,2})\.(?P<patch>\d{1,9})"

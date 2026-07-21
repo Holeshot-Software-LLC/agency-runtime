@@ -3,7 +3,7 @@ title: "AR-114: Make Codex hook activation part of installation"
 status: in_progress
 category: roadmap
 created: 2026-07-20
-updated: 2026-07-20
+updated: 2026-07-21
 tags: [installation, codex, hooks, trust, canary]
 related:
   - README.md
@@ -36,10 +36,12 @@ without receiving Agency headers or specialist routing.
 
 ## Current state
 
-The CLI prints a manual `/hooks` instruction and the isolated canary bypasses
-hook trust inside a disposable profile. That proves the packaged hooks, not the
-user's normal Codex profile. Status can distinguish the unverified maturity but
-the top-level install result still overstates completion.
+The CLI formerly printed an ambiguous manual `/hooks` instruction. In Codex
+Desktop 26.715, that command opens connector setup and shows services such as
+Zoom and Twilio rather than local command-hook trust. The actual review surface
+for Codex CLI 0.144 is the terminal TUI's startup hook review or its own
+`/hooks` command. The isolated canary bypasses hook trust inside a disposable
+profile; that proves the packaged hooks, not the user's normal Codex profile.
 
 ## Approach
 
@@ -48,9 +50,11 @@ security boundary: never edit its trust store or silently use the dangerous
 trust bypass for a real profile. Report registration and activation separately,
 provide a resumable verification command, and accept readiness only from a
 normal-profile canary that runs without the bypass and records current-profile
-evidence. Interactive installation should guide the user through `/hooks` and
+evidence. Interactive installation should identify the Codex terminal TUI,
+distinguish it from Codex Desktop's connector-oriented `/hooks` screen, and
 then run that proof; non-interactive and JSON modes should return structured
-`activation_required` state and the exact next command.
+`activation_required` state, approval surface, launch command, and exact
+verification command.
 
 ## Dependencies
 
@@ -61,7 +65,7 @@ installed Codex header proof. ADR-0036 governs host-canary attestations.
 
 - [ ] Codex installation never claims ready while hook approval is unverified.
 - [ ] The installer clearly separates installed, activation-required, and ready states.
-- [ ] A guided path incorporates `/hooks` approval without modifying Codex trust state.
+- [ ] A guided path identifies the terminal TUI hook review without confusing it with Codex Desktop connector setup or modifying Codex trust state.
 - [ ] A current-profile Codex canary runs without `--dangerously-bypass-hook-trust`.
 - [ ] Only current-profile routing, load, finalization, and valid-header evidence establishes readiness.
 - [ ] JSON, human CLI, status, doctor, dashboard, and public documentation agree.

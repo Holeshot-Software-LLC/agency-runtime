@@ -925,6 +925,8 @@ def test_codex_inventory_surfaces_manual_hook_trust_boundary(tmp_path: Path) -> 
     assert record["hook_trust_status"] == "unverified"
     assert "`/hooks`" in record["hook_trust_action"]
     assert "seven Agency Runtime hook events" in record["hook_trust_action"]
+    assert record["hook_trust_surface"] == "codex-terminal-tui"
+    assert record["hook_trust_command"] == "codex"
 
 
 def test_filtered_host_inspection_validates_names_and_preserves_canonical_order(
@@ -1220,6 +1222,9 @@ def test_native_installers_register_and_enable_with_host_lifecycle(
     if host == "codex":
         assert result["hook_trust_status"] == "unverified"
         assert "`/hooks`" in result["hook_trust_action"]
+        assert "Codex Desktop" in result["hook_trust_action"]
+        assert result["hook_trust_surface"] == "codex-terminal-tui"
+        assert result["hook_trust_command"] == "codex"
     if host == "openclaw":
         assert any("plugins install" in command for command in commands)
         assert any(

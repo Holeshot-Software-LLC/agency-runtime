@@ -18,6 +18,8 @@ from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.installer_contracts import (
     CODEX_HOOK_TRUST_ACTION,
+    CODEX_HOOK_TRUST_COMMAND,
+    CODEX_HOOK_TRUST_SURFACE,
     HOSTS,
     INSTALL_MANIFEST,
     MINIMUM_OPENCLAW_VERSION,
@@ -779,6 +781,8 @@ def _serialize_inspection(
             if codex_hooks_registered
             else None
         ),
+        "hook_trust_surface": CODEX_HOOK_TRUST_SURFACE if codex_hooks_registered else None,
+        "hook_trust_command": CODEX_HOOK_TRUST_COMMAND if codex_hooks_registered else None,
         "maturity": (
             "runtime-verified"
             if codex_activation_verified
@@ -872,6 +876,8 @@ def _failed_inspection(host: str, exc: Exception) -> dict[str, Any]:
         "marketplace_registered": None,
         "hook_trust_status": None,
         "hook_trust_action": None,
+        "hook_trust_surface": None,
+        "hook_trust_command": None,
         "maturity": "host-registration-unverified",
         "native_lifecycle": HOSTS[host]["native_lifecycle"],
         "evidence": [f"inspection:error:{type(exc).__name__}"],
