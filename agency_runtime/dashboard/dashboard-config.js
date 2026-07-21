@@ -274,9 +274,10 @@ export function createConfigController(core) {
     try {
       const suffix = refresh ? "&refresh=true" : "";
       const catalog = await api(`/api/providers/models?transport=${encodeURIComponent(transport)}${suffix}`);
-      const models = Array.isArray(catalog?.models) ? catalog.models : [];
+      const models = Array.isArray(catalog?.models)
+        ? catalog.models.filter((model) => model && typeof model.slug === "string" && model.slug)
+        : [];
       models.forEach((model) => {
-        if (!model || typeof model.slug !== "string" || !model.slug) return;
         const option = el("option", "", model.display_name || model.slug);
         option.value = model.slug;
         option.title = model.description || model.slug;

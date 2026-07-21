@@ -32,7 +32,7 @@ class ChildRoutingStoreMixin:
         cache_key: str,
         budget: int,
         concurrency: int,
-        lease_seconds: float = 30.0,
+        lease_seconds: float = 65.0,
     ) -> dict[str, Any]:
         session = validate_correlation_id(parent_session_id, field="parent_session_id")
         trace = validate_correlation_id(parent_trace_id, field="parent_trace_id")

@@ -539,13 +539,14 @@ def _token_only_fallback(
     ]
     bounded_candidates = [candidate for candidate, _score in deterministic]
     bounded_scores = [score for _candidate, score in deterministic]
+    bounded_top_score = bounded_scores[0] if bounded_scores else 0.0
     selected_ids = (
         _scored_selection(
             bounded_candidates,
             bounded_scores,
             min(max_sel, _MAX_TOKEN_FALLBACK_SELECTED),
         )
-        if top_score >= _MIN_TOKEN_FALLBACK_SCORE
+        if bounded_top_score >= _MIN_TOKEN_FALLBACK_SCORE
         else []
     )
     has_signal = bool(selected_ids)

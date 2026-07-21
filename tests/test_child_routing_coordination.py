@@ -5,8 +5,16 @@ from contextlib import closing
 from hashlib import sha256
 from types import SimpleNamespace
 
+import pytest
+
 from agency_runtime.core.config import AgencyConfig, DelegationConfig, ProviderEntry
-from agency_runtime.core.preflight import _resolve_preflight_routing
+from agency_runtime.core.preflight import (
+    _assignment_recipe,
+    _child_route_timeout,
+    _normalize_parent_correlation,
+    _resolve_preflight_routing,
+)
+from agency_runtime.core.selector.judge import _scored_selection, _token_only_fallback
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.turn_intent import TurnState, classify_turn_intent
 
@@ -173,3 +181,263 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
     assert abstained["selected_ids"] == []
     assert abstained["deterministic_candidate_ids"] == ["code-reviewer"]
     assert abstained["status"] == "child_budget_abstained"
+
+
+def test_child_store_rejects_invalid_keys_limits_and_documents(tmp_path) -> None:
+    store = Store(tmp_path / "agency.db")
+    valid = _key("valid")
+    common = {
+        "parent_session_id": "parent-session",
+        "parent_trace_id": "parent-trace",
+        "cache_key": valid,
+        "budget": 1,
+        "concurrency": 1,
+    }
+    for invalid in ("short", "g" * 64):
+        with pytest.raises(ValueError, match="SHA-256"):
+            store.reserve_child_routing(**{**common, "cache_key": invalid})
+    for budget in (True, -1, 257):
+        with pytest.raises(ValueError, match="budget"):
+            store.reserve_child_routing(**{**common, "budget": budget})
+    for concurrency in (True, 0, 33):
+        with pytest.raises(ValueError, match="concurrency"):
+            store.reserve_child_routing(**{**common, "concurrency": concurrency})
+
+    owner = store.reserve_child_routing(**common)
+    with pytest.raises(ValueError, match="cache limit"):
+        store.complete_child_routing(
+            cache_key=valid,
+            owner_token=owner["owner_token"],
+            decision={"large": "x" * 300_000},
+            ttl_seconds=1,
+        )
+    assert not store.complete_child_routing(
+        cache_key=valid,
+        owner_token="wrong-token",
+        decision={},
+        ttl_seconds=1,
+    )
+    assert store.complete_child_routing(
+        cache_key=valid,
+        owner_token=owner["owner_token"],
+        decision={},
+        ttl_seconds=0,
+    )
+    assert store.read_child_routing_cache(valid) is None
+
+
+@pytest.mark.parametrize("document", ["not-json", "[]"])
+def test_child_store_recovers_from_unusable_cached_documents(tmp_path, document) -> None:
+    store = Store(tmp_path / "agency.db")
+    key = _key(document)
+    with closing(sqlite3.connect(tmp_path / "agency.db")) as connection:
+        connection.execute(
+            "INSERT INTO child_routing_cache (cache_key, decision, expires_at, created_at) "
+            "VALUES (?, ?, ?, '2026-07-21T00:00:00Z')",
+            (key, document, 4_102_444_800.0),
+        )
+        connection.commit()
+    assert store.read_child_routing_cache(key) is None
+    reserved = store.reserve_child_routing(
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+        cache_key=key,
+        budget=1,
+        concurrency=1,
+    )
+    assert reserved["status"] == "owner"
+
+
+def test_child_store_updates_existing_cache_and_bounds_long_ttl(tmp_path) -> None:
+    store = Store(tmp_path / "agency.db")
+    key = _key("upsert")
+    owner = store.reserve_child_routing(
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+        cache_key=key,
+        budget=2,
+        concurrency=1,
+    )
+    assert store.complete_child_routing(
+        cache_key=key,
+        owner_token=owner["owner_token"],
+        decision={"version": 1},
+        ttl_seconds=90_000,
+    )
+    with closing(sqlite3.connect(tmp_path / "agency.db")) as connection:
+        connection.execute(
+            "INSERT INTO child_routing_leases "
+            "(cache_key, parent_trace_id, owner_token, expires_at, created_at) "
+            "VALUES (?, 'parent-trace', 'replacement-token', ?, '2026-07-21T00:00:00Z')",
+            (key, 4_102_444_800.0),
+        )
+        connection.commit()
+    assert store.complete_child_routing(
+        cache_key=key,
+        owner_token="replacement-token",
+        decision={"version": 2},
+        ttl_seconds=60,
+    )
+    assert store.read_child_routing_cache(key) == {"version": 2}
+
+
+def test_parent_correlation_timeout_and_score_boundaries() -> None:
+    assert _normalize_parent_correlation("", "") == ("", "")
+    assert _normalize_parent_correlation("parent-session", "parent-trace") == (
+        "parent-session",
+        "parent-trace",
+    )
+    with pytest.raises(ValueError, match="supplied together"):
+        _normalize_parent_correlation("parent-session", "")
+
+    config = AgencyConfig(
+        providers=(ProviderEntry(name="slow", timeout=90),),
+    )
+    assert _child_route_timeout(config) == 60.0
+    assert _scored_selection([], [], 2) == []
+    fallback = _token_only_fallback(
+        [{"slug": "semantic"}, {"slug": "weak-lexical"}],
+        [9.0, 1.0],
+        2,
+        9.0,
+        2,
+        lexical_ids=("weak-lexical",),
+    )
+    assert fallback["selected_ids"] == []
+    assert fallback["status"] == "abstained"
+
+
+def test_child_coalescing_waits_for_cache_and_uses_longest_timeout(monkeypatch) -> None:
+    reads = iter((None, {"selected_ids": ["code-reviewer"], "work_units": {}}))
+    reservation = {}
+
+    class SharedStore:
+        def reserve_child_routing(self, **kwargs):
+            reservation.update(kwargs)
+            return {"status": "coalescing"}
+
+        def read_child_routing_cache(self, _key):
+            return next(reads)
+
+    class Pipeline:
+        @staticmethod
+        def route(*_args, **_kwargs):
+            raise AssertionError("coalesced route must not run inference")
+
+    monkeypatch.setattr("agency_runtime.core.preflight.time.sleep", lambda _seconds: None)
+    config = AgencyConfig(
+        providers=(ProviderEntry(name="slow", type="cli", transport="codex", timeout=40),),
+    )
+    classification = classify_turn_intent(
+        "Review this patch",
+        TurnState(state_known=True, state_status="ready"),
+    )
+    routing, _, _ = _resolve_preflight_routing(
+        SharedStore(),
+        session_id="child",
+        trace_id="child-trace",
+        user_message="Review this patch",
+        host="codex",
+        platform="windows",
+        available_tools=(),
+        capability_receipt=SimpleNamespace(),
+        catalog=[],
+        config=config,
+        classification=classification,
+        routing_fingerprint="routing",
+        policy_fingerprint="policy",
+        roster_generation=1,
+        pipeline=Pipeline,
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+    )
+    assert routing["status"] == "child_cache_reused"
+    assert reservation["lease_seconds"] == 45.0
+
+
+def test_child_owner_failure_aborts_and_unconfigured_child_is_deterministic() -> None:
+    aborted = []
+
+    class OwnerStore:
+        def reserve_child_routing(self, **_kwargs):
+            return {"status": "owner", "owner_token": "owner-token"}
+
+        def abort_child_routing(self, **kwargs):
+            aborted.append(kwargs)
+
+    class FailingPipeline:
+        @staticmethod
+        def route(*_args, **_kwargs):
+            raise RuntimeError("provider failed")
+
+    classification = classify_turn_intent(
+        "Review this patch",
+        TurnState(state_known=True, state_status="ready"),
+    )
+    configured = AgencyConfig(
+        providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
+    )
+    with pytest.raises(RuntimeError, match="provider failed"):
+        _resolve_preflight_routing(
+            OwnerStore(),
+            session_id="child",
+            trace_id="child-trace",
+            user_message="Review this patch",
+            host="codex",
+            platform="windows",
+            available_tools=(),
+            capability_receipt=SimpleNamespace(),
+            catalog=[],
+            config=configured,
+            classification=classification,
+            routing_fingerprint="routing",
+            policy_fingerprint="policy",
+            roster_generation=1,
+            pipeline=FailingPipeline,
+            parent_session_id="parent-session",
+            parent_trace_id="parent-trace",
+        )
+    assert aborted and aborted[0]["owner_token"] == "owner-token"
+
+    class DeterministicPipeline:
+        @staticmethod
+        def route(*_args, **_kwargs):
+            return {"selected_ids": ["code-reviewer"]}
+
+    routing, _, _ = _resolve_preflight_routing(
+        SimpleNamespace(),
+        session_id="child",
+        trace_id="child-trace",
+        user_message="Review this patch",
+        host="codex",
+        platform="windows",
+        available_tools=(),
+        capability_receipt=SimpleNamespace(),
+        catalog=[],
+        config=AgencyConfig(providers=()),
+        classification=classification,
+        routing_fingerprint="routing",
+        policy_fingerprint="policy",
+        roster_generation=1,
+        pipeline=DeterministicPipeline,
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+    )
+    assert routing["child_routing_source"] == "deterministic_unconfigured"
+
+
+def test_budget_abstention_never_runs_exact_unit_routing() -> None:
+    agents, plan = _assignment_recipe(
+        [],
+        {"status": "child_budget_abstained", "work_units": {"delegate": True}},
+        None,
+        AgencyConfig(),
+        session_id="child",
+        trace_id="child-trace",
+        host="codex",
+        platform="windows",
+        available_tools=(),
+        capability_receipt=SimpleNamespace(),
+    )
+    assert agents == []
+    assert plan == []

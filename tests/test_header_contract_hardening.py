@@ -284,6 +284,16 @@ def test_header_explanations_humanize_live_routing_receipt_codes() -> None:
         ]
     )
 
+    assert contract.humanize_reason_codes(["custom_family:some_value"]) == (
+        "Custom family was some value."
+    )
+    assert (
+        contract.humanize_reason_codes(
+            ["requested_question_task_or_output", "requested_question_task_or_output", ""]
+        )
+        == "The request asked for a substantive answer or action."
+    )
+
     assert "substantive answer or action" in why
     assert "default coordinator policy" in why
     assert "required capabilities" in why

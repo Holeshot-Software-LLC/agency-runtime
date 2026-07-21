@@ -218,6 +218,8 @@ function serializeBridgePayload(payload) {{
     command: boundedUtf8(payload?.command, 256),
     sessionId: boundedCorrelation(payload?.sessionId),
     traceId: boundedCorrelation(payload?.traceId),
+    parentSessionId: boundedCorrelation(payload?.parentSessionId),
+    parentTraceId: boundedCorrelation(payload?.parentTraceId),
     userMessage: boundedUtf8(payload?.userMessage, MAX_BRIDGE_TEXT_BYTES),
     finalResponse: boundedUtf8(payload?.finalResponse, MAX_BRIDGE_TEXT_BYTES),
     outboundPayload: boundedUtf8(payload?.outboundPayload, MAX_OUTBOUND_PAYLOAD_BYTES),

@@ -515,6 +515,205 @@ test("provider builder discovers signed-in Codex models and keeps manual fallbac
   assert.equal(harness.node("provider-builder-model").hidden, false);
 });
 
+test("provider builder validates, updates, removes, and reports discovery fallbacks", async () => {
+  const harness = createAppHarness(async () => jsonResponse(200, {
+    transport: "codex",
+    models: [null, { slug: 7 }, { slug: "" }],
+    error: "No account models",
+  }));
+  const providers = new FakeNode("config-providers");
+  providers.dataset.configPath = "providers";
+  providers.dataset.valueType = "json";
+  providers.labels = [{ textContent: "Providers" }];
+  providers.value = JSON.stringify([{ name: "existing", timeout: 1 }]);
+  harness.nodes.set("config-providers", providers);
+  harness.select("[data-config-path]", [providers]);
+  harness.api.state.configBaseline = new Map([["providers", providers.value]]);
+
+  const builder = (values) => {
+    harness.node("provider-builder-name").value = values.name ?? "provider";
+    harness.node("provider-builder-type").value = values.type ?? "http";
+    harness.node("provider-builder-model").value = values.model ?? "model";
+    harness.node("provider-builder-model-select").value = "__manual__";
+    harness.node("provider-builder-transport").value = values.transport ?? "";
+    harness.node("provider-builder-timeout").value = values.timeout ?? "15";
+  };
+  builder({ timeout: "0" });
+  assert.throws(() => harness.api.providerBuilderDraft(), /between 0.05 and 60/i);
+  builder({ type: "cli", transport: "other" });
+  assert.throws(() => harness.api.providerBuilderDraft(), /Codex or Claude/i);
+  builder({ type: "litellm", model: "" });
+  assert.throws(() => harness.api.providerBuilderDraft(), /model or router alias/i);
+
+  harness.node("provider-builder-type").value = "litellm";
+  assert.equal(await harness.api.loadProviderModels(), false);
+  assert.match(harness.node("provider-builder-model-status").textContent, /LiteLLM router/i);
+  harness.node("provider-builder-type").value = "http";
+  assert.equal(await harness.api.loadProviderModels(), false);
+  assert.match(harness.node("provider-builder-model-status").textContent, /CLI subscription/i);
+  harness.node("provider-builder-type").value = "cli";
+  harness.node("provider-builder-transport").value = "codex";
+  assert.equal(await harness.api.loadProviderModels(), false);
+  assert.equal(harness.node("provider-builder-model-status").textContent, "No account models");
+
+  builder({ name: "existing", type: "http", timeout: "12" });
+  harness.api.upsertProviderDraft();
+  assert.equal(JSON.parse(providers.value)[0].timeout, 12);
+  harness.api.syncProviderSecretOptions();
+  harness.node("config-provider-secret-index").value = "0";
+  harness.api.removeSelectedProvider();
+  assert.deepEqual(JSON.parse(providers.value), []);
+  harness.node("config-provider-secret-index").value = "";
+  assert.throws(() => harness.api.removeSelectedProvider(), /select a provider/i);
+
+  const failed = createAppHarness(async () => jsonResponse(500, { error: "catalog offline" }));
+  failed.node("provider-builder-type").value = "cli";
+  failed.node("provider-builder-transport").value = "codex";
+  assert.equal(await failed.api.loadProviderModels(), false);
+  assert.match(failed.node("provider-builder-model-status").textContent, /catalog offline/i);
+});
+
+test("bound provider staging controls report successful and rejected edits", async () => {
+  const harness = createAppHarness(() => { throw new Error("no fetch expected"); });
+  const providers = new FakeNode("config-providers");
+  providers.dataset.configPath = "providers";
+  providers.dataset.valueType = "json";
+  providers.labels = [{ textContent: "Providers" }];
+  providers.value = "[]";
+  harness.nodes.set("config-providers", providers);
+  harness.select("[data-config-path]", [providers]);
+  harness.api.state.configBaseline = new Map([["providers", "[]"]]);
+  harness.node("provider-builder-name").value = "primary";
+  harness.node("provider-builder-type").value = "http";
+  harness.node("provider-builder-timeout").value = "15";
+  harness.api.bindEvents();
+
+  harness.node("provider-builder-save").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /Provider primary staged/i);
+  harness.node("provider-builder-name").value = "";
+  harness.node("provider-builder-save").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /name is required/i);
+
+  harness.api.syncProviderSecretOptions();
+  harness.node("config-provider-secret-index").value = "0";
+  harness.node("provider-builder-remove").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /removal staged/i);
+  harness.node("config-provider-secret-index").value = "";
+  harness.node("provider-builder-remove").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /select a provider/i);
+  harness.node("provider-builder-type").listeners.get("change")[0]();
+  harness.node("provider-builder-transport").listeners.get("change")[0]();
+  harness.node("provider-builder-model-select").listeners.get("change")[0]();
+  harness.node("provider-builder-model-refresh").listeners.get("click")[0]();
+  await Promise.resolve();
+});
+
+test("provider configuration defensive branches stay bounded", async () => {
+  const missingName = createAppHarness(() => { throw new Error("no fetch"); });
+  missingName.missing("provider-builder-name");
+  assert.throws(() => missingName.api.providerBuilderDraft(), /name is required/i);
+  const missingType = createAppHarness(() => { throw new Error("no fetch"); });
+  missingType.node("provider-builder-name").value = "provider";
+  missingType.missing("provider-builder-type");
+  assert.throws(() => missingType.api.providerBuilderDraft(), /type is required/i);
+
+  const sparse = createAppHarness(() => { throw new Error("no fetch"); });
+  sparse.node("provider-builder-name").value = "sparse";
+  sparse.node("provider-builder-type").value = "ollama";
+  for (const id of [
+    "provider-builder-model-select",
+    "provider-builder-model",
+    "provider-builder-transport",
+    "provider-builder-url",
+    "provider-builder-env",
+    "provider-builder-timeout",
+  ]) sparse.missing(id);
+  const sparseDraft = sparse.api.providerBuilderDraft();
+  assert.equal(sparseDraft.model, "");
+  assert.equal(sparseDraft.timeout, 15);
+  assert.equal(sparseDraft.ollama_mode, true);
+
+  const selected = createAppHarness(() => { throw new Error("no fetch"); });
+  selected.node("provider-builder-name").value = "selected";
+  selected.node("provider-builder-type").value = "cli";
+  selected.node("provider-builder-transport").value = "claude";
+  selected.node("provider-builder-model-select").value = "account-model";
+  selected.node("provider-builder-timeout").value = "61";
+  assert.throws(() => selected.api.providerBuilderDraft(), /between 0.05 and 60/i);
+  selected.node("provider-builder-timeout").value = "not-a-number";
+  assert.throws(() => selected.api.providerBuilderDraft(), /between 0.05 and 60/i);
+  selected.node("provider-builder-timeout").value = "10";
+  assert.equal(selected.api.providerBuilderDraft().model, "account-model");
+
+  for (const id of [
+    "provider-builder-model-select",
+    "provider-builder-model-status",
+    "provider-builder-model",
+  ]) {
+    const absent = createAppHarness(() => { throw new Error("no fetch"); });
+    absent.missing(id);
+    assert.equal(await absent.api.loadProviderModels(), false);
+  }
+  const noTransport = createAppHarness(() => { throw new Error("no fetch"); });
+  noTransport.node("provider-builder-type").value = "cli";
+  noTransport.missing("provider-builder-transport");
+  assert.equal(await noTransport.api.loadProviderModels(), false);
+
+  const emptyCatalog = createAppHarness(async () => jsonResponse(200, null));
+  emptyCatalog.node("provider-builder-type").value = "cli";
+  emptyCatalog.node("provider-builder-transport").value = "codex";
+  assert.equal(await emptyCatalog.api.loadProviderModels(), false);
+  assert.match(emptyCatalog.node("provider-builder-model-status").textContent, /No visible/i);
+
+  const singular = createAppHarness(async () => jsonResponse(200, {
+    models: [{ slug: "solo" }],
+  }));
+  singular.node("provider-builder-type").value = "cli";
+  singular.node("provider-builder-transport").value = "codex";
+  assert.equal(await singular.api.loadProviderModels(), true);
+  assert.match(singular.node("provider-builder-model-status").textContent, /1 account model from codex/i);
+  assert.equal(singular.node("provider-builder-model-select").options[1].title, "solo");
+
+  const broken = createAppHarness(async () => { throw new Error(""); });
+  broken.node("provider-builder-type").value = "cli";
+  broken.node("provider-builder-transport").value = "codex";
+  assert.equal(await broken.api.loadProviderModels(), false);
+  assert.equal(broken.node("provider-builder-model-status").textContent, "Model discovery failed.");
+
+  const invalidProviders = createAppHarness(() => { throw new Error("no fetch"); });
+  invalidProviders.node("provider-builder-name").value = "provider";
+  invalidProviders.node("provider-builder-type").value = "http";
+  invalidProviders.node("config-providers").value = "{}";
+  assert.throws(() => invalidProviders.api.upsertProviderDraft(), /JSON list/i);
+  invalidProviders.node("config-provider-secret-index").value = "0";
+  assert.throws(() => invalidProviders.api.removeSelectedProvider(), /JSON list/i);
+
+  const emptyProviders = createAppHarness(() => { throw new Error("no fetch"); });
+  emptyProviders.node("provider-builder-name").value = "provider";
+  emptyProviders.node("provider-builder-type").value = "http";
+  emptyProviders.node("config-providers").value = "";
+  assert.equal(emptyProviders.api.upsertProviderDraft().name, "provider");
+  emptyProviders.node("config-providers").value = JSON.stringify([{}]);
+  emptyProviders.node("provider-builder-name").value = "different";
+  emptyProviders.api.upsertProviderDraft();
+  assert.equal(JSON.parse(emptyProviders.node("config-providers").value).length, 2);
+
+  const missingSelect = createAppHarness(() => { throw new Error("no fetch"); });
+  missingSelect.missing("config-provider-secret-index");
+  assert.throws(() => missingSelect.api.removeSelectedProvider(), /select a provider/i);
+  const emptyRemove = createAppHarness(() => { throw new Error("no fetch"); });
+  emptyRemove.node("config-provider-secret-index").value = "0";
+  emptyRemove.node("config-providers").value = "";
+  emptyRemove.api.removeSelectedProvider();
+  assert.equal(emptyRemove.node("config-providers").value, "[]");
+  const missingModelSelect = createAppHarness(() => { throw new Error("no fetch"); });
+  missingModelSelect.missing("provider-builder-model-select");
+  missingModelSelect.api.syncProviderModelInput();
+  const missingManual = createAppHarness(() => { throw new Error("no fetch"); });
+  missingManual.missing("provider-builder-model");
+  missingManual.api.syncProviderModelInput();
+});
+
 test("app.js config controls normalize typed values and preserve dirty edits on refresh", () => {
   const harness = createAppHarness(() => {
     throw new Error("this test does not fetch");

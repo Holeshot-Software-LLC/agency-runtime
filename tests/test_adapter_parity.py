@@ -17,6 +17,7 @@ import pytest
 from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
 from agency_runtime.adapters.codex.wrapper import CodexAdapter
 from agency_runtime.adapters.generic.wrapper import GenericAdapter
+from agency_runtime.adapters.hermes import bridge as hermes_bridge
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
 from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core.installer import install_agent_adapter
@@ -25,6 +26,32 @@ from agency_runtime.core.store.sqlite import Store
 from tests.runtime_support import ensure_private_test_directory
 
 ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter]
+
+
+def test_hermes_bridge_forwards_complete_parent_correlation() -> None:
+    captured: dict[str, Any] = {}
+
+    class Adapter:
+        store = object()
+
+        @staticmethod
+        def pre_llm_call_handler(**kwargs):
+            captured.update(kwargs)
+            return {"context": "routed"}
+
+    result = hermes_bridge._pre_llm_call(
+        Adapter(),
+        {
+            "user_message": "Review this",
+            "parent_session_id": "parent-session",
+            "parent_trace_id": "parent-trace",
+        },
+        session_id="child-session",
+        trace_id="child-trace",
+    )
+    assert result == {"context": "routed"}
+    assert captured["parent_session_id"] == "parent-session"
+    assert captured["parent_trace_id"] == "parent-trace"
 
 
 class FakeHookContext:

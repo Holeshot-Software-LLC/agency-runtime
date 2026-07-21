@@ -49,6 +49,8 @@ from agency_runtime.core.turn_origin import TurnOriginReceipt, current_turn_orig
 from agency_runtime.core.unit_assignment import assignment_agents_from_catalog
 
 MAX_PREFLIGHT_CONTEXT_CHARS = _MAX_PREFLIGHT_CONTEXT_CHARS
+_MAX_CHILD_ROUTE_TIMEOUT_SECONDS = 60.0
+_CHILD_ROUTE_LEASE_MARGIN_SECONDS = 5.0
 
 
 def _normalize_parent_correlation(
@@ -65,6 +67,14 @@ def _normalize_parent_correlation(
         validate_correlation_id(parent_session_id, field="parent_session_id"),
         validate_correlation_id(parent_trace_id, field="parent_trace_id"),
     )
+
+
+def _child_route_timeout(config: AgencyConfig) -> float:
+    """Cover the longest configured inference attempt within the judge deadline."""
+
+    configured = [float(config.judge.timeout)]
+    configured.extend(float(provider.timeout) for provider in config.providers)
+    return min(_MAX_CHILD_ROUTE_TIMEOUT_SECONDS, max(1.0, *configured))
 
 
 def _suggested_specialist_slugs(suggestions: list[dict[str, Any]]) -> list[str]:
@@ -339,15 +349,17 @@ def _resolve_preflight_routing(
         )
     )
     child_cache_key = sha256(cache_material.encode("utf-8")).hexdigest()
+    route_timeout = _child_route_timeout(config)
     reservation = store.reserve_child_routing(
         parent_session_id=parent_session_id,
         parent_trace_id=parent_trace_id,
         cache_key=child_cache_key,
         budget=config.delegation.child_inference_budget,
         concurrency=config.delegation.child_inference_concurrency,
+        lease_seconds=route_timeout + _CHILD_ROUTE_LEASE_MARGIN_SECONDS,
     )
     if reservation["status"] == "coalescing":
-        deadline = time.monotonic() + min(2.0, config.judge.timeout)
+        deadline = time.monotonic() + route_timeout + _CHILD_ROUTE_LEASE_MARGIN_SECONDS
         while time.monotonic() < deadline:
             cached = store.read_child_routing_cache(child_cache_key)
             if cached is not None:
@@ -427,6 +439,8 @@ def _assignment_recipe(
     available_tools: tuple[str, ...],
     capability_receipt: HostCapabilityReceipt,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if routing.get("status") == "child_budget_abstained":
+        return [], []
     if continuation_snapshot is not None:
         source = continuation_snapshot["recipe"]
         return list(source.get("unit_assignment_agents", [])), list(
