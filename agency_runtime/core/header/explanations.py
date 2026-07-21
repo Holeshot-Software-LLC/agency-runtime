@@ -31,6 +31,9 @@ _PREFIX_TEXT = {
     ),
     "routing_status:confidence_bypass": "deterministic matching was already confident",
     "routing_status:abstained": "Agency found no defensible specialist match",
+    "routing_status:abstained_low_confidence": (
+        "Agency rejected a specialist proposal that was not confident enough"
+    ),
     "routing_status:degraded": (
         "configured inference was unavailable, so specialist selection stopped"
     ),

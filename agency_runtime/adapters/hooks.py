@@ -734,23 +734,31 @@ class HookBridge:
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
             )
-        context = "\n".join(
-            [
-                _CLAUDE_CHILD_IDENTITY_MARKER,
-                "This identity belongs only to the current native child. It does not "
-                "load, select, or inherit an Agency specialist.",
-                f"worker_kind={json.dumps(identity.worker_kind)}",
-                f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
-                f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
-                "Use these exact values only when this child's prompt contains an "
-                "[AGENCY CHILD PREFLIGHT v1] recipe. Otherwise make no Agency "
-                "specialist claim until independently calling agency.preflight with the "
-                "complete delegated assignment. Pass "
+        context_lines = [
+            _CLAUDE_CHILD_IDENTITY_MARKER,
+            "This identity belongs only to the current native child. It does not "
+            "load, select, or inherit an Agency specialist.",
+            f"worker_kind={json.dumps(identity.worker_kind)}",
+            f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
+            f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
+            "Use these exact values only when this child's prompt contains an "
+            "[AGENCY CHILD PREFLIGHT v1] recipe. Otherwise make no Agency "
+            "specialist claim until independently calling agency.preflight with the "
+            "complete delegated assignment.",
+        ]
+        if session_id and trace_id:
+            context_lines.append(
+                "Pass "
                 f"parent_session_id={json.dumps(session_id, ensure_ascii=True)} and "
                 f"parent_trace_id={json.dumps(trace_id, ensure_ascii=True)} so the shared "
-                "parent budget, cache, and singleflight controls apply.",
-            ]
-        )
+                "parent budget, cache, and singleflight controls apply."
+            )
+        else:
+            context_lines.append(
+                "Parent correlation is unavailable; omit both parent_session_id and "
+                "parent_trace_id from the child preflight."
+            )
+        context = "\n".join(context_lines)
         return {
             "hookSpecificOutput": {
                 "hookEventName": "SubagentStart",
@@ -801,28 +809,37 @@ class HookBridge:
                 native_run_id=identity.native_run_id,
             )
         child_session_id = f"codex-child:{identity.worker_id}"
-        context = "\n".join(
-            [
-                _CLAUDE_CHILD_IDENTITY_MARKER,
-                "This identity belongs only to the current native Codex child. It "
-                "does not load, select, or inherit an Agency specialist.",
-                f"worker_kind={json.dumps(identity.worker_kind)}",
-                f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
-                f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
-                "If this child's task contains an [AGENCY CHILD PREFLIGHT v1] recipe, "
-                "follow only that exact current recipe and consume its one-use activation "
-                "inside this child.",
-                "If no current recipe is present, independently call agency.preflight "
-                "before substantive work using the complete delegated assignment as "
-                "user_message and "
-                f"session_id={json.dumps(child_session_id, ensure_ascii=True)}, "
+        context_lines = [
+            _CLAUDE_CHILD_IDENTITY_MARKER,
+            "This identity belongs only to the current native Codex child. It "
+            "does not load, select, or inherit an Agency specialist.",
+            f"worker_kind={json.dumps(identity.worker_kind)}",
+            f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
+            f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
+            "If this child's task contains an [AGENCY CHILD PREFLIGHT v1] recipe, "
+            "follow only that exact current recipe and consume its one-use activation "
+            "inside this child.",
+            "If no current recipe is present, independently call agency.preflight "
+            "before substantive work using the complete delegated assignment as "
+            "user_message and "
+            f"session_id={json.dumps(child_session_id, ensure_ascii=True)}.",
+        ]
+        if session_id and trace_id:
+            context_lines.append(
+                "Pass "
                 f"parent_session_id={json.dumps(session_id, ensure_ascii=True)} and "
-                f"parent_trace_id={json.dumps(trace_id, ensure_ascii=True)} in that same "
-                "call. Apply only "
-                "the returned child-turn context. Do not claim parent Agency delegation "
-                "without an authoritative activation receipt.",
-            ]
+                f"parent_trace_id={json.dumps(trace_id, ensure_ascii=True)} in that same call."
+            )
+        else:
+            context_lines.append(
+                "Parent correlation is unavailable; omit both parent_session_id and "
+                "parent_trace_id from the child preflight."
+            )
+        context_lines.append(
+            "Apply only the returned child-turn context. Do not claim parent Agency "
+            "delegation without an authoritative activation receipt."
         )
+        context = "\n".join(context_lines)
         return {
             "hookSpecificOutput": {
                 "hookEventName": "SubagentStart",

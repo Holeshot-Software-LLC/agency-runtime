@@ -10,6 +10,7 @@ related:
   - agency_runtime/core/store/child_routing.py
   - agency_runtime/core/cli_transport.py
   - docs/decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md
+  - docs/roadmap/issue-AR-118-reconcile-native-child-activation-evidence.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -18,7 +19,7 @@ issue_id: AR-116
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/128
 depends_on: [AR-115]
-blocks: []
+blocks: [AR-118]
 ---
 
 # AR-116: Bound native-child routing and add account-aware model selection
@@ -66,5 +67,5 @@ inference authoritative for specialist selections.
 - [x] Codex account-visible models are available from the CLI and dashboard.
 - [x] The guided CLI offers discovered subscription models and a manual fallback.
 - [x] LiteLLM router aliases remain first-class manual configuration values.
+- [ ] Consumed child activation and parent delegation evidence reconcile without a Stop-hook retry loop.
 - [ ] Full repository, hosted CI, merge, reinstall, and live Codex smoke gates pass.
-

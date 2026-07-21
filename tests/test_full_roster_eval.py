@@ -17,6 +17,7 @@ from agency_runtime.core.evals.full_roster import (
     _routing_cards,
     run_full_roster_selection_eval,
 )
+from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.selector.pipeline import route
 
 
@@ -191,6 +192,12 @@ def test_full_roster_eval_gates_are_deterministic(report: dict[str, Any]) -> Non
 
 def test_real_agency_runtime_prompt_has_safe_offline_specialists() -> None:
     _manifest, cards = _routing_cards()
+    capability_receipt = native_adapter_capability_receipt(
+        "codex",
+        platform="windows",
+        session_id="offline-agency-runtime-regression",
+        trace_id="offline-agency-runtime-trace",
+    )
     decision = route(
         "offline-agency-runtime-regression",
         (
@@ -209,21 +216,14 @@ def test_real_agency_runtime_prompt_has_safe_offline_specialists() -> None:
         ),
         host="codex",
         platform="windows",
-        available_tools=(
-            "code-execution",
-            "native-delegation",
-            "package-management",
-            "repository-read",
-            "repository-write",
-            "shell-execution",
-            "source-control",
-            "test-execution",
-        ),
-        allow_installation_diagnostic=True,
+        capability_receipt=capability_receipt,
+        capability_session_id="offline-agency-runtime-regression",
+        capability_trace_id="offline-agency-runtime-trace",
+        trace_id="offline-agency-runtime-trace",
     )
 
     selected = set(decision["semantic_ids"])
-    assert selected == {"operations-manager", "automation-governance-architect"}
+    assert selected == {"multi-agent-systems-architect"}
     assert selected.isdisjoint({"clinical-evidence-agent", "geographer", "language-translator"})
 
 

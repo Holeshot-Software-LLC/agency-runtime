@@ -72,6 +72,38 @@ _MAX_DELEGATION_NATIVE_RUN_ID_CHARS = 256
 _EXECUTED_DELEGATION_STATUSES = frozenset({"started", "running", "delegated", "completed"})
 
 
+def _matches_consumed_activation_lineage(
+    conn: Any,
+    existing: Any,
+    *,
+    worker_kind: str,
+    worker_id: str,
+    native_run_id: str,
+) -> bool:
+    """Allow correction only to lineage proven by a consumed one-use grant."""
+
+    if str(existing["activation_receipt_id"] or ""):
+        return False
+    row = conn.execute(
+        "SELECT consumption.worker_kind, consumption.worker_id, "
+        "consumption.native_run_id FROM delegation_activation_consumptions AS consumption "
+        "WHERE consumption.session_id = ? AND consumption.trace_id = ? "
+        "AND consumption.work_unit_id = ? "
+        "AND consumption.specialist_slug = ? LIMIT 1",
+        (
+            str(existing["session_id"] or ""),
+            str(existing["trace_id"] or ""),
+            str(existing["work_unit_id"] or ""),
+            str(existing["recommended_agent"] or ""),
+        ),
+    ).fetchone()
+    return row is not None and (
+        str(row["worker_kind"] or ""),
+        str(row["worker_id"] or ""),
+        str(row["native_run_id"] or ""),
+    ) == (worker_kind, worker_id, native_run_id)
+
+
 def _bounded_metadata(value: object) -> dict[str, Any]:
     """Decode only the small content-free run metadata projection."""
 
@@ -1448,10 +1480,18 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             worker_id=safe_worker_id,
             native_run_id=safe_native_run_id,
         )
+        authoritative_lineage_correction = _matches_consumed_activation_lineage(
+            conn,
+            existing,
+            worker_kind=safe_worker_kind,
+            worker_id=safe_worker_id,
+            native_run_id=safe_native_run_id,
+        )
         if (
             current_status in _EXECUTED_DELEGATION_STATUSES
             and normalized_status in _EXECUTED_DELEGATION_STATUSES
             and incoming_receipt != existing_receipt
+            and not authoritative_lineage_correction
         ):
             raise ValueError("executed delegation correlation conflicts with existing receipt")
         effective_status = _dominant_delegation_status(current_status, normalized_status)

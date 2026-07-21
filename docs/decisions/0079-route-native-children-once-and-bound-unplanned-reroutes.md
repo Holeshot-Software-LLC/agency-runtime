@@ -49,6 +49,12 @@ is authoritative while allowing resident managers and the native host to keep
 working. When inference is not configured, the normal deterministic path
 remains available.
 
+A consumed one-use activation is authoritative for its child worker kind,
+worker ID, native run ID, specialist version, and work unit. Public delegation
+recording derives lineage from that receipt when available. An earlier unlinked
+event may be corrected only to the exact consumed lineage; arbitrary executed
+delegation correlation remains immutable and conflicting corrections fail.
+
 ## Consequences
 
 - A host can fan out many children without creating an unbounded inference fan-out.
@@ -56,6 +62,7 @@ remains available.
 - Planned children remain faster because they do not reroute work the parent already classified.
 - Native scheduling remains owned by each host.
 - Operators can tune the budget, concurrency, and cache lifetime from the same configuration used by the CLI and dashboard.
+- A host task label cannot strand an already-consumed specialist activation or create a permanent Stop-hook loop.
 - Over-budget unplanned children may receive no specialist rather than an unverified one.
 
 ## Alternatives
@@ -64,4 +71,3 @@ remains available.
 - **Disable Agency in native children.** Rejected because assignment-specific expertise is one of the central product goals.
 - **Create an Agency-owned worker pool.** Rejected because it would compete with native host scheduling and lifecycle evidence.
 - **Use only an in-process semaphore and cache.** Rejected because host hooks and services do not share process memory.
-

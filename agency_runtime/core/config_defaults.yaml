@@ -35,7 +35,7 @@ ollama:
   model: qwen3.5:2b
 
 selector:
-  min_confidence: 0.4
+  min_confidence: 0.8
   max_user_msg_len: 4000
   # Deprecated compatibility value; state-aware turn intent owns bypass policy.
   trivial_msg_threshold: 0

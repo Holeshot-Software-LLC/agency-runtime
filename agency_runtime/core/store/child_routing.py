@@ -12,6 +12,7 @@ from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 
 _MAX_CACHE_DOCUMENT_BYTES = 256 * 1024
+_ZERO_TTL_COALESCING_GRACE_SECONDS = 1.0
 
 
 def _cache_key(value: object) -> str:
@@ -132,14 +133,19 @@ class ChildRoutingStoreMixin:
             ).fetchone()
             if lease is None:
                 return False
-            if int(ttl_seconds) > 0:
-                conn.execute(
-                    "INSERT INTO child_routing_cache (cache_key, decision, expires_at, created_at) "
-                    f"VALUES (?, ?, ?, {STORE_CLOCK_SQL}) ON CONFLICT(cache_key) DO UPDATE SET "
-                    "decision = excluded.decision, expires_at = excluded.expires_at, "
-                    "created_at = excluded.created_at",
-                    (key, document, time.time() + min(int(ttl_seconds), 86400)),
-                )
+            configured_ttl = int(ttl_seconds)
+            effective_ttl = (
+                min(configured_ttl, 86400)
+                if configured_ttl > 0
+                else _ZERO_TTL_COALESCING_GRACE_SECONDS
+            )
+            conn.execute(
+                "INSERT INTO child_routing_cache (cache_key, decision, expires_at, created_at) "
+                f"VALUES (?, ?, ?, {STORE_CLOCK_SQL}) ON CONFLICT(cache_key) DO UPDATE SET "
+                "decision = excluded.decision, expires_at = excluded.expires_at, "
+                "created_at = excluded.created_at",
+                (key, document, time.time() + effective_ttl),
+            )
             conn.execute(
                 "DELETE FROM child_routing_leases WHERE cache_key = ? AND owner_token = ?",
                 (key, token),

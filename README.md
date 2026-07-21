@@ -248,6 +248,22 @@ provider attempts, compatibility decisions, and eligibility exclusions. Use
 the activity stream afterward to distinguish a recommendation from a specialist
 that was actually loaded or delegated.
 
+To exercise the unsafe-selection regression directly, submit this exact task in
+Route Lab:
+
+```text
+The Agency response header exposes unreadable reason codes and effect codes.
+Explain how to test agent selection live and how to open the dashboard.
+```
+
+With deterministic routing, the specialist result must be
+`multi-agent-systems-architect`; a weak prompt such as `Please help me with
+this.` must abstain. Neither case may select a clinical, geography, translation,
+or generic business-operations specialist. Repeat the first task with the
+configured inference provider enabled and confirm that the provider attempt,
+requested model or router alias, reconciled model, confidence, and compatibility
+decisions appear in the same Route Lab result.
+
 Or run it in the foreground on Windows or Linux:
 
 ```bash
@@ -356,6 +372,13 @@ The default canary command is read-only:
 ```bash
 agency host-canary codex
 ```
+
+Maintainers also test this exact selection pair from the built wheel and source
+archive, outside the checkout, on Windows and Linux. That artifact smoke fails
+if the runtime/dashboard prompt selects anything except
+`multi-agent-systems-architect`, if the ambiguous prompt does not abstain, or if
+any forbidden specialist appears. It complements the live canary; it does not
+replace a fresh normal-profile task after installation and restart.
 
 Run an isolated live Codex canary only with its exact confirmation:
 

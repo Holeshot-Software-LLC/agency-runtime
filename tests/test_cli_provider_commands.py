@@ -102,7 +102,37 @@ def test_provider_set_update_remove_and_main_facade(monkeypatch, capsys) -> None
     monkeypatch.setattr(config_commands, "_config_set_notes", lambda *_a: [])
     assert config_commands.cmd_config_provider_set(_args(model="gpt-updated", timeout=None)) == 0
     assert operations[-1][0][0]["value"][0]["timeout"] == 7.0
+    primary_providers = operations[-1][0][0]["value"]
 
+    current.persisted["providers"] = [
+        {
+            "name": "legacy-ollama",
+            "type": "http",
+            "model": "old-model",
+            "base_url": "http://localhost:11434",
+            "api_key_env": "",
+            "ollama_mode": True,
+            "timeout": 15,
+        }
+    ]
+    assert (
+        config_commands.cmd_config_provider_set(
+            _args(name="legacy-ollama", model="new-model", transport=None)
+        )
+        == 0
+    )
+    assert operations[-1][0][0]["value"][0]["ollama_mode"] is True
+
+    current.persisted["providers"] = operations[-1][0][0]["value"]
+    assert (
+        config_commands.cmd_config_provider_set(
+            _args(name="legacy-ollama", type="cli", transport="codex", base_url="")
+        )
+        == 0
+    )
+    assert operations[-1][0][0]["value"][0]["ollama_mode"] is False
+
+    current.persisted["providers"] = primary_providers
     with pytest.raises(ValueError, match="provider not found"):
         config_commands.cmd_config_provider_remove(_args(name="missing"))
     assert config_commands.cmd_config_provider_remove(_args(name="PRIMARY")) == 0

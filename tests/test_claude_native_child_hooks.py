@@ -163,6 +163,24 @@ def test_subagent_start_injects_only_current_child_lineage() -> None:
     assert "shared parent budget, cache, and singleflight" in context
 
 
+def test_subagent_start_omits_both_parent_ids_when_trace_is_ambiguous() -> None:
+    store = _PlanStore(open_traces=("trace-a", "trace-b"))
+    payload = {
+        "hook_event_name": "SubagentStart",
+        "session_id": "session",
+        "agent_id": "agent-42",
+        "agent_type": "general-purpose",
+    }
+
+    for host in ("claude", "codex"):
+        context = HookBridge(host, store=store).handle(payload)["hookSpecificOutput"][
+            "additionalContext"
+        ]
+        assert "Parent correlation is unavailable" in context
+        assert "parent_session_id=" not in context
+        assert "parent_trace_id=" not in context
+
+
 def test_subagent_stop_does_not_guess_parent_work_unit_correlation() -> None:
     store = _PlanStore()
     result = HookBridge("claude", store=store).handle(  # type: ignore[arg-type]

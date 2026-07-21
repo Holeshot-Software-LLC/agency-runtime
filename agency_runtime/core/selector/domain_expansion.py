@@ -22,8 +22,15 @@ _DOMAIN_EXPANSIONS: dict[str, list[str]] = {
         "response telemetry",
     ],
     "dashboard": [
-        "operations interface",
+        "runtime dashboard",
+        "configuration interface",
         "runtime controls",
+    ],
+    "auth": [
+        "application security",
+        "authentication",
+        "authorization",
+        "identity access management",
     ],
     "conveyor": [
         "ci cd pipeline",

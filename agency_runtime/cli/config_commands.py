@@ -455,6 +455,8 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
     provider_type = str(args.type or existing.get("type") or "").strip().casefold()
     if not provider_type:
         raise ValueError("--type is required when adding a provider")
+    existing_type = str(existing.get("type") or "").strip().casefold()
+    provider_type_changed = bool(args.type is not None and provider_type != existing_type)
     updated = {
         "name": target_name,
         "type": provider_type,
@@ -468,7 +470,8 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
         "api_key_env": str(
             args.api_key_env if args.api_key_env is not None else existing.get("api_key_env") or ""
         ).strip(),
-        "ollama_mode": provider_type == "ollama",
+        "ollama_mode": provider_type == "ollama"
+        or (not provider_type_changed and bool(existing.get("ollama_mode", False))),
         "timeout": (
             float(args.timeout)
             if args.timeout is not None

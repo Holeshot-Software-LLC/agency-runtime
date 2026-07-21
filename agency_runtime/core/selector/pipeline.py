@@ -724,6 +724,36 @@ def _merge_computed_routing(
     return routing
 
 
+def _apply_selection_confidence_floor(
+    routing: dict[str, Any],
+    *,
+    minimum: float,
+) -> dict[str, Any]:
+    """Turn an uncertain proposal into a real abstention before hydration.
+
+    The confidence threshold used to affect only explanatory text. That made a
+    low-confidence candidate look optional to the parent while the preflight
+    recipe still loaded its prompt. Selection safety must be decided before
+    policy fallback, caching, durable references, or specialist activation.
+    """
+
+    selected = _bounded_unique_strings(routing.get("selected_ids"))
+    try:
+        confidence = float(routing.get("confidence", 0.0))
+    except (TypeError, ValueError, OverflowError):
+        confidence = 0.0
+    confidence = confidence if math.isfinite(confidence) else 0.0
+    if not selected or confidence >= max(0.0, min(float(minimum), 1.0)):
+        return routing
+    return {
+        **routing,
+        "selected_ids": [],
+        "semantic_ids": [],
+        "status": "abstained_low_confidence",
+        "error": "selection confidence below configured minimum",
+    }
+
+
 def _apply_compatible_selection(
     routing: dict[str, Any],
     catalog: list[dict[str, Any]],
@@ -917,6 +947,10 @@ def route(
         request.routing_query,
         semantic_catalog,
         config=cfg,
+    )
+    routing = _apply_selection_confidence_floor(
+        routing,
+        minimum=cfg.selector.min_confidence,
     )
     routing = _merge_computed_routing(routing, request, signals)
     _remember_routing(routing, request)

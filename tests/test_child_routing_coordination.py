@@ -14,6 +14,8 @@ from agency_runtime.core.preflight import (
     _normalize_parent_correlation,
     _resolve_preflight_routing,
 )
+from agency_runtime.core.preflight_recipe import _content_free_routing_recipe
+from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.selector.judge import _scored_selection, _token_only_fallback
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.turn_intent import TurnState, classify_turn_intent
@@ -130,7 +132,7 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
                 "latency_ms": 5,
                 "status": "selected",
                 "source": "inference",
-                "work_units": [],
+                "work_units": detect_work_units(message),
             }
 
     config = AgencyConfig(
@@ -223,7 +225,28 @@ def test_child_store_rejects_invalid_keys_limits_and_documents(tmp_path) -> None
         decision={},
         ttl_seconds=0,
     )
-    assert store.read_child_routing_cache(valid) is None
+    assert store.read_child_routing_cache(valid) == {}
+
+
+def test_zero_ttl_still_shares_the_completed_singleflight_result(tmp_path) -> None:
+    store = Store(tmp_path / "agency.db")
+    key = _key("zero-ttl-coalescing")
+    owner = store.reserve_child_routing(
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+        cache_key=key,
+        budget=1,
+        concurrency=1,
+    )
+
+    decision = {"selected_ids": ["code-reviewer"]}
+    assert store.complete_child_routing(
+        cache_key=key,
+        owner_token=owner["owner_token"],
+        decision=decision,
+        ttl_seconds=0,
+    )
+    assert store.read_child_routing_cache(key) == decision
 
 
 @pytest.mark.parametrize("document", ["not-json", "[]"])
@@ -308,7 +331,18 @@ def test_parent_correlation_timeout_and_score_boundaries() -> None:
 
 
 def test_child_coalescing_waits_for_cache_and_uses_longest_timeout(monkeypatch) -> None:
-    reads = iter((None, {"selected_ids": ["code-reviewer"], "work_units": {}}))
+    reads = iter(
+        (
+            None,
+            {
+                "selected_ids": ["code-reviewer"],
+                "work_units": _content_free_routing_recipe(
+                    {"work_units": detect_work_units("Review this patch")},
+                    trace_id="owner-trace",
+                )["work_units"],
+            },
+        )
+    )
     reservation = {}
 
     class SharedStore:
@@ -353,6 +387,55 @@ def test_child_coalescing_waits_for_cache_and_uses_longest_timeout(monkeypatch) 
     )
     assert routing["status"] == "child_cache_reused"
     assert reservation["lease_seconds"] == 45.0
+
+
+def test_cached_multi_unit_child_route_restores_units_from_the_same_message() -> None:
+    message = "1. Review the implementation\n2. Audit the security controls"
+    source = {
+        "selected_ids": ["code-reviewer"],
+        "semantic_ids": ["code-reviewer"],
+        "companion_ids": [],
+        "confidence": 0.9,
+        "latency_ms": 5,
+        "status": "selected",
+        "source": "inference",
+        "work_units": detect_work_units(message),
+    }
+    decision = _content_free_routing_recipe(source, trace_id="owner-trace")
+
+    class SharedStore:
+        @staticmethod
+        def reserve_child_routing(**_kwargs):
+            return {"status": "cached", "decision": decision}
+
+    classification = classify_turn_intent(
+        message,
+        TurnState(state_known=True, state_status="ready"),
+    )
+    routing, _, _ = _resolve_preflight_routing(
+        SharedStore(),
+        session_id="child",
+        trace_id="child-trace",
+        user_message=message,
+        host="codex",
+        platform="windows",
+        available_tools=(),
+        capability_receipt=SimpleNamespace(),
+        catalog=[],
+        config=AgencyConfig(
+            providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
+        ),
+        classification=classification,
+        routing_fingerprint="routing",
+        policy_fingerprint="policy",
+        roster_generation=1,
+        pipeline=SimpleNamespace(),
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+    )
+
+    assert routing["status"] == "child_cache_reused"
+    assert routing["work_units"]["units"] == source["work_units"]["units"]
 
 
 def test_child_coalescing_timeout_abstains_without_duplicate_inference(monkeypatch) -> None:

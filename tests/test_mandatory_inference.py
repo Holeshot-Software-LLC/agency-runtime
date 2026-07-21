@@ -624,7 +624,10 @@ def test_rerouted_intent_requires_fresh_selection_without_an_inference_provider(
         ),
     )
 
-    assert calls == ["fix auth"]
+    assert calls == [
+        "fix auth [domain context: application security, authentication, "
+        "authorization, identity access management]"
+    ]
     assert result["selected_ids"] == ["code-reviewer"]
     assert result["inference_mode"] == "heuristic"
 

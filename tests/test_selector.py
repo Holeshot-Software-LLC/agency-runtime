@@ -134,7 +134,8 @@ def test_expand_query_routes_agency_runtime_language_to_agent_system_domains():
 
     assert "agent orchestration" in expanded
     assert "specialist routing" in expanded
-    assert "operations interface" in expanded
+    assert "runtime dashboard" in expanded
+    assert "configuration interface" in expanded
     assert "response telemetry" in expanded
 
 

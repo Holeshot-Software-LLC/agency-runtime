@@ -254,6 +254,18 @@ def _delegate(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     worker_kind = str(arguments.get("worker_kind") or "").strip()
     worker_id = str(arguments.get("worker_id") or "").strip()
     native_run_id = str(arguments.get("native_run_id") or "").strip()
+    lineage_reader = getattr(store, "get_consumed_delegation_lineage", None)
+    if callable(lineage_reader) and agent and work_unit_id:
+        consumed_lineage = lineage_reader(
+            session_id=session_id,
+            trace_id=trace_id,
+            specialist_slug=agent,
+            work_unit_id=work_unit_id,
+        )
+        if consumed_lineage is not None:
+            worker_kind = consumed_lineage["worker_kind"]
+            worker_id = consumed_lineage["worker_id"]
+            native_run_id = consumed_lineage["native_run_id"]
     missing = [
         name
         for name, value in (

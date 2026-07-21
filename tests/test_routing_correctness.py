@@ -99,7 +99,7 @@ def test_routing_fingerprint_covers_roster_config_and_policy() -> None:
     changed_config = AgencyConfig(
         judge=base_config.judge,
         ollama=base_config.ollama,
-        selector=SelectorConfig(min_confidence=0.8),
+        selector=SelectorConfig(min_confidence=0.7),
     )
     policy_a = {"actions": {"DEFAULT": {"always_include": []}}}
     policy_b = {"actions": {"DEFAULT": {"always_include": [{"slug": "x"}]}}}
@@ -154,6 +154,23 @@ def test_pipeline_excludes_negated_terms_before_domain_expansion(monkeypatch) ->
     assert "Slack" not in observed[0]
     assert "real-time communication" not in observed[0]
     assert "implement Python retry backoff" in observed[0]
+
+
+def test_selection_confidence_floor_is_a_real_abstention() -> None:
+    rejected = pipeline_module._apply_selection_confidence_floor(
+        {
+            "selected_ids": ["minimal-change-engineer"],
+            "semantic_ids": ["minimal-change-engineer"],
+            "confidence": 0.76,
+            "status": "applied",
+        },
+        minimum=0.8,
+    )
+
+    assert rejected["selected_ids"] == []
+    assert rejected["semantic_ids"] == []
+    assert rejected["status"] == "abstained_low_confidence"
+    assert rejected["error"] == "selection confidence below configured minimum"
 
 
 def test_cache_and_stickiness_reject_ids_outside_current_catalog(monkeypatch) -> None:

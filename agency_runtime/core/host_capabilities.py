@@ -281,6 +281,7 @@ _NATIVE_HOST_CAPABILITIES: Final[Mapping[str, tuple[str, ...]]] = MappingProxyTy
             "package-management",
             "repository-read",
             "repository-write",
+            "runtime-evidence",
             "shell-execution",
             "source-control",
             "test-execution",

@@ -31,6 +31,7 @@ from agency_runtime.core.preflight_recipe import (
     _resident_manager_context,
     _result_from_recipe,
     _suggestion_recipe,
+    _verified_work_units,
     preflight_delivery_policy,
 )
 from agency_runtime.core.resident_managers import is_resident_manager_slug
@@ -381,6 +382,7 @@ def _resolve_preflight_routing(
             session_reused=False,
             child_routing_source="shared_cache",
         )
+        cached["work_units"] = _verified_work_units(cached, user_message)
         return cached, None, classification
     if reservation["status"] == "owner":
         owner_token = str(reservation["owner_token"])

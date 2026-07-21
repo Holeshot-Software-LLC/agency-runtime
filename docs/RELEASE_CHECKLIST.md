@@ -103,6 +103,11 @@ or adding an index-install claim.
       assignment through the host's official lifecycle. Parent specialists and
       resident managers do not leak into children as ordinary worker prompts,
       and absent live hosts remain labelled contract-only.
+- [ ] Clean wheel and source-archive installs on Windows and Linux run the
+      Agency runtime/dashboard selection regression against the complete roster:
+      `multi-agent-systems-architect` is the only result, ambiguous input
+      abstains, and clinical, geography, translation, and generic operations
+      specialists remain forbidden.
 
 Record dated live evidence in the release notes without committing secrets or
 machine-specific credential paths.

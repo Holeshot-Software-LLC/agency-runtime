@@ -202,7 +202,7 @@ class OllamaConfig:
 
 @dataclass(frozen=True, slots=True)
 class SelectorConfig:
-    min_confidence: float = 0.4
+    min_confidence: float = 0.8
     max_user_msg_len: int = 4000
     # Deprecated compatibility field. Turn classification is state-aware and
     # never uses character count as an authority boundary.
@@ -449,7 +449,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
         ),
         providers=_build_providers(providers_raw),
         selector=SelectorConfig(
-            min_confidence=float(selector_raw.get("min_confidence", 0.4)),
+            min_confidence=float(selector_raw.get("min_confidence", 0.8)),
             max_user_msg_len=int(selector_raw.get("max_user_msg_len", 4000)),
             trivial_msg_threshold=int(selector_raw.get("trivial_msg_threshold", 0)),
         ),

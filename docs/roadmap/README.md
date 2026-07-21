@@ -135,6 +135,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-115` | [Make live routing and Agency headers trustworthy](issue-AR-115-live-routing-trust.md) | open | p0 | routing | [#127](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/127) |
 | `AR-116` | [Bound native-child routing and add account-aware model selection](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | open | p0 | routing | [#128](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/128) |
 | `AR-117` | [Parallelize PR verification without weakening coverage](issue-AR-117-parallelize-pr-verification.md) | in_progress | p1 | testing | [#130](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/130) |
+| `AR-118` | [Reconcile native-child activation evidence](issue-AR-118-reconcile-native-child-activation-evidence.md) | open | p0 | routing | [#131](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/131) |
 
 ## Traceability
 
@@ -261,6 +262,7 @@ not stable internal identifiers.
 | [AR-115](issue-AR-115-live-routing-trust.md) | `673988d`, `49e8f99` | [ADR-0001](../decisions/0001-layered-specialist-routing.md), [ADR-0011](../decisions/0011-explicit-delegation-evidence-lifecycle.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0078](../decisions/0078-present-human-routing-evidence-and-abstain-on-noise.md) |
 | [AR-116](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | `673988d`, `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d` | [ADR-0067](../decisions/0067-require-configured-inference-for-selection.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md), [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
+| [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | Pending | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
 ## Dependency summary
 

@@ -38,9 +38,11 @@ new evidence remains visible without allowing authored prose to override it.
 
 Heuristic token fallback must meet an absolute minimum signal as well as its
 existing relative-score test. Below that floor it abstains, allowing the
-always-resident orchestrator and chief of staff to handle the request. An
-inference-provider decision remains authoritative when inference is configured
-and successfully applied.
+always-resident orchestrator and chief of staff to handle the request. The
+deterministic path selects at most two compatible specialists and only when
+each survives the relative floor. An inference-provider result remains the
+semantic proposal when inference is configured, but it must meet the configured
+confidence floor before caching, prompt hydration, or activation.
 
 ## Consequences
 
@@ -48,6 +50,8 @@ and successfully applied.
 - Completion validation still compares all six fields with current-turn facts.
 - Low-signal prompts prefer a transparent coordinator fallback over a
   domain-irrelevant specialist.
+- A model-selected candidate below the operator's confidence floor is a real
+  abstention, not a prompt that is quietly loaded behind advisory wording.
 - Evaluation must include forbidden specialists and real prompt regressions,
   not only aggregate scores over a synthetic catalog.
 

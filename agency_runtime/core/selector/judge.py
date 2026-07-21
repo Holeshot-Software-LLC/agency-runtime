@@ -47,7 +47,10 @@ _MAX_JUDGE_CANDIDATES = 20
 _MAX_SELECTED = 50
 _MAX_TOKEN_FALLBACK_SELECTED = 2
 _MIN_RELATIVE_FALLBACK_SCORE = 0.30
-_MIN_TOKEN_FALLBACK_SCORE = 2.0
+_MIN_TOKEN_FALLBACK_SCORE = 3.0
+_MIN_TOKEN_FALLBACK_CONFIDENCE = 0.8
+_MAX_TOKEN_FALLBACK_CONFIDENCE = 0.95
+_TOKEN_FALLBACK_CONFIDENCE_SCORE_SPAN = 15.0
 
 
 def _agent_id(agent: dict[str, Any]) -> str:
@@ -550,12 +553,27 @@ def _token_only_fallback(
         else []
     )
     has_signal = bool(selected_ids)
+    confidence = (
+        round(
+            min(
+                _MAX_TOKEN_FALLBACK_CONFIDENCE,
+                _MIN_TOKEN_FALLBACK_CONFIDENCE
+                + (
+                    max(0.0, bounded_top_score - _MIN_TOKEN_FALLBACK_SCORE)
+                    / _TOKEN_FALLBACK_CONFIDENCE_SCORE_SPAN
+                ),
+            ),
+            4,
+        )
+        if has_signal
+        else 0.0
+    )
     return {
         "selected_ids": selected_ids,
-        "confidence": 0.3 if has_signal else 0.0,
+        "confidence": confidence,
         "latency_ms": 0,
         "status": "token_fallback" if has_signal else "abstained",
         "error": "" if has_signal else "no positive routing signal",
         "candidate_count": candidate_count,
-        "top_score": top_score,
+        "top_score": bounded_top_score,
     }

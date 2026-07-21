@@ -27,6 +27,18 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Unsafe deterministic and inferred selection candidates now have to clear the
+  configured confidence floor before caching, prompt hydration, or activation.
+  Agency runtime/dashboard questions prefer the purpose-built multi-agent
+  systems specialist, while ambiguous input abstains instead of accepting a
+  weak semantic collision.
+- Native-child delegation events now reconcile to the exact consumed activation
+  receipt, so task labels cannot strand valid child evidence in a repeated Stop
+  retry. Shared child routes also preserve multi-unit plans, zero-TTL
+  singleflight results, complete parent correlation, and provider protocol
+  settings across edits.
+- Dashboard CLI-provider staging now removes stale HTTP credentials before
+  validation.
 - Corrected Codex activation guidance to use the terminal TUI hook-review
   surface, distinguish Codex Desktop connector setup, and expose the approval
   surface and launch command in structured installer evidence.

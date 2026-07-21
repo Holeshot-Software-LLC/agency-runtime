@@ -46,6 +46,10 @@ Keep raw reason and effect codes in the signed durable receipt and render a
 deterministic plain-English projection in the six-line response header. Require
 a minimum signal before heuristic fallback may select a specialist; otherwise
 abstain and let the resident orchestrator and chief of staff handle the turn.
+Treat configured inference as a proposal that must still meet the operator's
+confidence floor before any specialist prompt is hydrated. Make the native
+Agency evidence capability visible to eligibility filtering, and avoid generic
+domain expansions that outrank the purpose-built runtime specialists.
 Normalize supported native-host worker labels to generic-worker at the MCP
 boundary while continuing to reject arbitrary specialist-like attribution.
 Add the observed prompt and explicit forbidden specialists to regression and
@@ -62,7 +66,11 @@ quantitative routing gates.
 - [x] User-facing Why and How lines are readable prose.
 - [x] Raw reason and effect codes remain in durable routing receipts.
 - [x] Weak heuristic collisions abstain instead of selecting unrelated specialists.
+- [x] Low-confidence inferred candidates are removed before caching, hydration, or activation.
+- [x] The native capability contract makes the audited runtime-evidence specialist eligible.
+- [x] Deterministic fallback selects only strongly grounded compatible specialists.
 - [x] Supported Codex native worker labels normalize to generic-worker attribution.
-- [ ] The observed prompt is verified against the installed runtime with forbidden-specialist checks.
-- [ ] Dashboard and public documentation explain the live test workflow.
+- [ ] The observed prompt selects multi-agent-systems-architect or safely abstains in the installed runtime, with clinical, geography, translation, and generic operations specialists forbidden.
+- [ ] Both configured-inference and no-inference installed cases pass the forbidden-specialist assertions.
+- [x] Dashboard and public documentation explain the live test workflow.
 - [ ] Full repository, hosted CI, merge, reinstall, and Codex smoke gates pass.

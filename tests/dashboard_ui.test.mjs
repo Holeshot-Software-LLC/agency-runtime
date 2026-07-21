@@ -542,6 +542,12 @@ test("provider builder validates, updates, removes, and reports discovery fallba
   assert.throws(() => harness.api.providerBuilderDraft(), /between 0.05 and 60/i);
   builder({ type: "cli", transport: "other" });
   assert.throws(() => harness.api.providerBuilderDraft(), /Codex or Claude/i);
+  builder({ type: "cli", transport: "codex" });
+  harness.node("provider-builder-url").value = "https://stale.example.test";
+  harness.node("provider-builder-env").value = "STALE_API_KEY";
+  const cliDraft = harness.api.providerBuilderDraft();
+  assert.equal(cliDraft.base_url, "");
+  assert.equal(cliDraft.api_key_env, "");
   builder({ type: "litellm", model: "" });
   assert.throws(() => harness.api.providerBuilderDraft(), /model or router alias/i);
 

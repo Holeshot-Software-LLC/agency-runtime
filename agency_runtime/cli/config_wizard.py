@@ -193,7 +193,7 @@ def _interactive_wizard(
             "base_url": p.ollama_base_url,
         },
         "selector": {
-            "min_confidence": 0.4,
+            "min_confidence": 0.8,
             "max_user_msg_len": 4000,
             "trivial_msg_threshold": 0,
         },

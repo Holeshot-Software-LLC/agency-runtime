@@ -575,7 +575,7 @@ def generate_config_from_detection(
         "judge": judge_cfg,
         "ollama": ollama_cfg,
         "selector": {
-            "min_confidence": 0.4,
+            "min_confidence": 0.8,
             "max_user_msg_len": 4000,
             "trivial_msg_threshold": 0,
         },

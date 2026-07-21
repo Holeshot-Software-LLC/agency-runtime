@@ -406,7 +406,7 @@ def test_coverage_and_matrix_jobs_use_private_runtime_state_boundaries() -> None
 def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
     jobs = workflow["jobs"]
-    assert "needs" not in jobs["quality"]
+    assert "needs" not in jobs["quality-contracts"]
     assert "needs" not in jobs["coverage"]
     assert "needs" not in jobs["performance"]
     assert jobs["coverage"]["strategy"]["matrix"]["include"] == [
@@ -429,22 +429,34 @@ def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> No
     assert "coverage report --fail-under=100" in combined_run
     performance_run = jobs["performance"]["steps"][-1]["run"]
     assert "-m performance" in performance_run
-    quality_steps = {step["name"] for step in jobs["quality"]["steps"]}
+    quality_steps = {step["name"] for step in jobs["quality-contracts"]["steps"]}
     assert "Verify fast workflow and documentation contracts" in quality_steps
     assert "Run dashboard UI tests with 100% coverage" in quality_steps
-    quality_checkout = jobs["quality"]["steps"][0]
+    quality_checkout = jobs["quality-contracts"]["steps"][0]
     assert quality_checkout["with"]["fetch-depth"] == 0
     assert (
         quality_checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha || github.sha }}"
     )
     quality_contracts = next(
         step
-        for step in jobs["quality"]["steps"]
+        for step in jobs["quality-contracts"]["steps"]
         if step["name"] == "Verify fast workflow and documentation contracts"
     )["run"]
     assert "update_worklog.py --check" in quality_contracts
     assert "verify_docs.py --require-tracker" in quality_contracts
-    assert jobs["test"]["if"] == "github.event_name != 'pull_request'"
+    assert "if" not in jobs["test"]
+    assert jobs["quality"]["if"] == "always()"
+    assert set(jobs["quality"]["needs"]) == {
+        "quality-contracts",
+        "coverage-complete",
+        "performance",
+        "test",
+        "windows-portability-contract",
+        "artifact-smoke",
+        "security",
+    }
+    aggregate_run = jobs["quality"]["steps"][0]["run"]
+    assert 'detail.get("result") != "success"' in aggregate_run
 
 
 def test_history_derived_ledgers_use_the_complete_durable_head() -> None:

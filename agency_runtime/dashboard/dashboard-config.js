@@ -244,8 +244,8 @@ export function createConfigController(core) {
       type,
       transport: type === "cli" ? transport : "",
       model,
-      base_url: baseUrl,
-      api_key_env: apiKeyEnv,
+      base_url: type === "cli" ? "" : baseUrl,
+      api_key_env: type === "cli" ? "" : apiKeyEnv,
       ollama_mode: type === "ollama",
       timeout,
     };

@@ -19,9 +19,8 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 jobs:
-  quality:
-    # Preserve the established check name until repository branch protection is migrated.
-    name: lint, coverage, performance, and dashboard UI
+  quality-contracts:
+    name: static quality, documentation, and dashboard UI
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -192,7 +191,6 @@ jobs:
 
   test:
     name: tests / ${{ matrix.os }} / py${{ matrix.python }}
-    if: github.event_name != 'pull_request'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
@@ -518,3 +516,36 @@ jobs:
           zizmor --pedantic --strict-collection --offline .
       - name: Audit the exact installed runtime dependency
         run: python scripts/audit_runtime_dependencies.py
+
+  quality:
+    # Preserve the established branch-protection check name as an aggregate gate.
+    name: lint, coverage, performance, and dashboard UI
+    if: always()
+    needs:
+      - quality-contracts
+      - coverage-complete
+      - performance
+      - test
+      - windows-portability-contract
+      - artifact-smoke
+      - security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every production gate
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          failed = {
+              name: detail.get("result")
+              for name, detail in needs.items()
+              if detail.get("result") != "success"
+          }
+          if failed:
+              raise SystemExit(f"production gates did not pass: {failed}")
+          PY
