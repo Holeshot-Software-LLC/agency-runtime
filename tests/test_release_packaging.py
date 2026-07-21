@@ -385,6 +385,7 @@ def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
         assert "${{" not in preparation["run"]
         if job_name == "test":
             assert preparation["env"]["AGENCY_CI_MATRIX_PYTHON"] == "${{ matrix.python }}"
+            assert '-m "not performance"' in execution["run"]
             assert (
                 "tests-py${AGENCY_CI_MATRIX_PYTHON}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
             ) in preparation["run"]

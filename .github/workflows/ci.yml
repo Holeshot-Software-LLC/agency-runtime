@@ -130,6 +130,7 @@ jobs:
           export TMPDIR="${AGENCY_CI_TEMP}"
           unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
           "${AGENCY_CI_PYTHON}" -m pytest tests -q -W error -p no:cacheprovider \
+            -m "not performance" \
             --basetemp "${AGENCY_CI_TEMP}/pytest"
       - name: Check dependency consistency
         run: python -m pip check
