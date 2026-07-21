@@ -344,11 +344,10 @@ def test_ready_receipt_persists_once_and_drives_all_six_header_fields(
         "ready-receipt",
         evidence_snapshot=snapshot,
     )
-    assert fields["why"].startswith("reason_codes=")
-    assert "requested_question_task_or_output" in fields["why"]
-    assert fields["how_it_shaped_outcome"].startswith("effect_codes=")
-    assert "inference_attempted" in fields["how_it_shaped_outcome"]
-    assert "eligibility_exclusions_applied" in fields["how_it_shaped_outcome"]
+    assert "substantive answer or action" in fields["why"]
+    assert "required capabilities" in fields["why"]
+    assert "Agency attempted inference" in fields["how_it_shaped_outcome"]
+    assert "eligibility exclusions were applied" in fields["how_it_shaped_outcome"]
 
     first = finalize_header(
         "Body",
@@ -475,9 +474,9 @@ def test_legacy_ready_recipe_without_receipt_remains_readable_but_reports_unavai
         "legacy-receipt",
         evidence_snapshot=snapshot,
     )
-    assert fields["why"].startswith("reason_codes=")
+    assert "substantive answer or action" in fields["why"]
     assert fields["how_it_shaped_outcome"] == (
-        "unavailable - no authoritative current-turn effect codes"
+        "Unavailable - no authoritative routing effect was recorded for this turn."
     )
 
 

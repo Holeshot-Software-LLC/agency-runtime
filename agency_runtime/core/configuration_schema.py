@@ -339,6 +339,9 @@ def _validate_delegation(value: Any) -> dict[str, Any]:
         "preferred_min_units",
         "strongly_preferred_min_units",
         "strongly_preferred_min_confidence",
+        "child_inference_budget",
+        "child_inference_concurrency",
+        "child_cache_ttl_seconds",
     }
     if set(section) - allowed:
         raise _error("delegation", "contains unsupported fields")
@@ -358,6 +361,15 @@ def _validate_delegation(value: Any) -> dict[str, Any]:
             "delegation.strongly_preferred_min_confidence",
             minimum=0.0,
             maximum=1.0,
+        ),
+        "child_inference_budget": lambda item: _integer(
+            item, "delegation.child_inference_budget", minimum=0, maximum=256
+        ),
+        "child_inference_concurrency": lambda item: _integer(
+            item, "delegation.child_inference_concurrency", minimum=1, maximum=32
+        ),
+        "child_cache_ttl_seconds": lambda item: _integer(
+            item, "delegation.child_cache_ttl_seconds", minimum=0, maximum=86400
         ),
     }
     result = {name: validators[name](item) for name, item in section.items()}

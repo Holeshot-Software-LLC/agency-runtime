@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-07-20
+updated: 2026-07-21
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -52,7 +52,9 @@ Imagine your main agent has a company directory of 263 specialists.
 5. Small focused work can be loaded into the current turn. Larger or independent
    work is recommended for native delegation by Codex, Claude, Hermes, or
    OpenClaw.
-6. A delegated child runs its own selection for its exact assignment.
+6. A planned child receives the specialist chosen for its exact assignment and
+   does not repeat the routing call. If the host creates an unplanned child,
+   Agency routes it through a shared parent budget and cache.
 7. Agency records what really loaded, delegated, and returned model evidence.
 8. The final response shows that evidence in a compact header. On the next
    request, the specialists return to the pool.
@@ -68,8 +70,12 @@ flowchart LR
     R --> C["Choose a compatible team"]
     C --> L["Load focused help"]
     C --> D["Suggest native delegation"]
+    D --> B["Bind one-use specialist activation"]
+    B --> N["Native child runs without rerouting"]
+    D --> U2["Unplanned child uses shared budget + cache"]
     L --> E["Record actual evidence"]
-    D --> E
+    N --> E
+    U2 --> E
     E --> H["Add the response header"]
     H --> P["Return specialists to the pool"]
 ```
@@ -168,6 +174,25 @@ agency route "review this authentication design"
 agency explain "review this authentication design" --session-id demo
 ```
 
+For a live selection check, use a real task and inspect both the positive and
+negative result:
+
+```bash
+agency route --json "Review this authentication design and propose tests"
+agency explain "Review this authentication design and propose tests"
+agency eval routing --json --no-details
+agency eval full-roster --json --no-details
+agency eval delegation --json
+```
+
+The route should name specialists that fit the work, omit unrelated domains,
+and show whether inference or deterministic matching made the decision. A low
+signal should produce an abstention and leave the request with the resident
+orchestrator and chief of staff; it should not manufacture a niche match.
+Aggregate evals are regression gates, not proof for every prompt, so important
+real prompts should also be kept as golden cases with both required and
+forbidden specialists.
+
 Enable or disable Agency for one host:
 
 ```bash
@@ -216,6 +241,13 @@ agency dashboard service uninstall
 agency dashboard service install
 ```
 
+`agency dashboard service open` is the normal way to get to it; it opens the
+authenticated local address in your browser. In **Route Lab**, choose a verified
+host, enter the exact task, and inspect the selected specialists, confidence,
+provider attempts, compatibility decisions, and eligibility exclusions. Use
+the activity stream afterward to distinguish a recommendation from a specialist
+that was actually loaded or delegated.
+
 Or run it in the foreground on Windows or Linux:
 
 ```bash
@@ -239,6 +271,7 @@ agency configure
 agency config show
 agency config validate
 agency config path
+agency config provider models codex
 ```
 
 Agency works with deterministic routing alone. When an inference provider is
@@ -246,6 +279,10 @@ configured, semantic selection uses it whenever the turn requires an inference
 decision. Supported local CLI providers can reuse an authenticated Codex or
 Claude session. OpenAI-compatible endpoints and ordered fallback chains are also
 supported.
+
+The guided setup and dashboard can list models visible to the signed-in Codex
+account. You can still type a model ID manually. LiteLLM users enter the router
+or model-group alias exactly, for example `task-agency-router`.
 
 Example provider chain:
 
@@ -269,6 +306,11 @@ Set a model or enter a secret without placing it on the command line:
 agency config set judge.model qwen3.5:2b
 agency config set judge.api_key --prompt
 agency config set judge.api_key --clear
+agency config provider set codex-subscription --type cli --transport codex --model gpt-5.6-luna
+agency config provider set office-router --type litellm --model task-agency-router --base-url http://127.0.0.1:4000/v1
+agency config set delegation.child_inference_budget 4
+agency config set delegation.child_inference_concurrency 2
+agency config set delegation.child_cache_ttl_seconds 900
 ```
 
 If a configured inference chain is unavailable, Agency reports that selection
@@ -297,10 +339,12 @@ Why: The request needed a focused code review.
 How it shaped outcome: The review emphasized correctness and regression risk.
 ```
 
-The header is built from the current turn's receipts. A recommendation is not
-reported as a delegation, and a requested model is not reported as the actual
-model unless the host or router provides matching evidence. With LiteLLM, the
-verified router name is kept alongside the reconciled provider/model result.
+The header is built from the current turn's receipts. Why and How are plain
+English projections; the raw reason and effect codes remain in the durable
+receipt and dashboard diagnostics. A recommendation is not reported as a
+delegation, and a requested model is not reported as the actual model unless
+the host or router provides matching evidence. With LiteLLM, the verified
+router name is kept alongside the reconciled provider/model result.
 
 When Agency is globally off, the host runs normally without Agency routing or
 the Agency header. This makes clean A/B testing possible.

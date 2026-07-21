@@ -158,7 +158,9 @@ def test_subagent_start_injects_only_current_child_lineage() -> None:
     assert 'native_run_id="claude-agent:agent-42"' in context
     assert "code-reviewer" not in context
     assert "activation_token" not in context
-    assert "trace" not in context
+    assert 'parent_session_id="claude-session"' in context
+    assert 'parent_trace_id="trace"' in context
+    assert "shared parent budget, cache, and singleflight" in context
 
 
 def test_subagent_stop_does_not_guess_parent_work_unit_correlation() -> None:

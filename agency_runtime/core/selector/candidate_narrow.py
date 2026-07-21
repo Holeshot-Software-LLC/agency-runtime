@@ -44,6 +44,8 @@ _STOPWORDS = frozenset(
         "to",
         "with",
         "work",
+        "agent",
+        "agents",
         "specialist",
         "specialists",
         "help",

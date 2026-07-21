@@ -155,6 +155,11 @@ def test_config_and_sync_remaining_paths(monkeypatch, capsys):
         "_collect_sync_candidates",
         lambda *_a, **_kw: (["candidate"], []),
     )
+    monkeypatch.setattr(
+        roster_commands,
+        "resolve_inference_audit_policy",
+        lambda _config: SimpleNamespace(required=False),
+    )
     completed: list[tuple[tuple[object, ...], dict[str, object]]] = []
 
     def complete_sync(*args, **kwargs):

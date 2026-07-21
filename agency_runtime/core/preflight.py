@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import os
+import time
 import uuid
 from collections.abc import Mapping
+from dataclasses import replace
 from hashlib import sha256
 from inspect import signature
 from typing import Any
@@ -47,6 +49,22 @@ from agency_runtime.core.turn_origin import TurnOriginReceipt, current_turn_orig
 from agency_runtime.core.unit_assignment import assignment_agents_from_catalog
 
 MAX_PREFLIGHT_CONTEXT_CHARS = _MAX_PREFLIGHT_CONTEXT_CHARS
+
+
+def _normalize_parent_correlation(
+    parent_session_id: object,
+    parent_trace_id: object,
+) -> tuple[str, str]:
+    """Validate optional native-child parent correlation as one atomic pair."""
+
+    if bool(parent_session_id) != bool(parent_trace_id):
+        raise ValueError("parent_session_id and parent_trace_id must be supplied together")
+    if not parent_session_id:
+        return "", ""
+    return (
+        validate_correlation_id(parent_session_id, field="parent_session_id"),
+        validate_correlation_id(parent_trace_id, field="parent_trace_id"),
+    )
 
 
 def _suggested_specialist_slugs(suggestions: list[dict[str, Any]]) -> list[str]:
@@ -248,6 +266,8 @@ def _resolve_preflight_routing(
     policy_fingerprint: str,
     roster_generation: int,
     pipeline: Any,
+    parent_session_id: str = "",
+    parent_trace_id: str = "",
 ) -> tuple[dict[str, Any], dict[str, Any] | None, TurnClassification]:
     """Reuse one validated source recipe or produce a safe current route."""
 
@@ -282,23 +302,116 @@ def _resolve_preflight_routing(
             classification,
             "continuation_guard_invalid",
         )
-    return (
-        pipeline.route(
-            session_id,
-            user_message,
-            catalog,
-            config=config,
-            store=None,
-            trace_id=trace_id,
-            turn_classification=classification,
-            host=host,
-            platform=platform,
-            available_tools=available_tools,
-            capability_receipt=capability_receipt,
-        ),
-        None,
-        classification,
+    route_arguments = {
+        "config": config,
+        "store": None,
+        "trace_id": trace_id,
+        "turn_classification": classification,
+        "host": host,
+        "platform": platform,
+        "available_tools": available_tools,
+        "capability_receipt": capability_receipt,
+    }
+    if not parent_trace_id:
+        return (
+            pipeline.route(session_id, user_message, catalog, **route_arguments),
+            None,
+            classification,
+        )
+
+    from agency_runtime.core.selector.judge import inference_is_configured
+
+    if not inference_is_configured(config):
+        routing = pipeline.route(session_id, user_message, catalog, **route_arguments)
+        routing["child_routing_source"] = "deterministic_unconfigured"
+        return routing, None, classification
+
+    cache_material = "\0".join(
+        (
+            "agency-child-route-v1",
+            sha256(user_message.encode("utf-8", errors="surrogatepass")).hexdigest(),
+            routing_fingerprint,
+            policy_fingerprint,
+            str(roster_generation),
+            host,
+            platform,
+            "\x1f".join(available_tools),
+        )
     )
+    child_cache_key = sha256(cache_material.encode("utf-8")).hexdigest()
+    reservation = store.reserve_child_routing(
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        cache_key=child_cache_key,
+        budget=config.delegation.child_inference_budget,
+        concurrency=config.delegation.child_inference_concurrency,
+    )
+    if reservation["status"] == "coalescing":
+        deadline = time.monotonic() + min(2.0, config.judge.timeout)
+        while time.monotonic() < deadline:
+            cached = store.read_child_routing_cache(child_cache_key)
+            if cached is not None:
+                reservation = {"status": "cached", "decision": cached}
+                break
+            time.sleep(0.05)
+    if reservation["status"] == "cached":
+        cached = dict(reservation["decision"])
+        current_hash = sha256(user_message.encode("utf-8", errors="surrogatepass")).hexdigest()
+        cached.update(
+            trace_id=trace_id,
+            query_hash=current_hash,
+            source_message_hash=current_hash,
+            context_fingerprint=routing_fingerprint,
+            source="durable_child_cache",
+            status="child_cache_reused",
+            latency_ms=0,
+            cache_hit=True,
+            session_reused=False,
+            child_routing_source="shared_cache",
+        )
+        return cached, None, classification
+    if reservation["status"] == "owner":
+        owner_token = str(reservation["owner_token"])
+        try:
+            routing = pipeline.route(session_id, user_message, catalog, **route_arguments)
+            store.complete_child_routing(
+                cache_key=child_cache_key,
+                owner_token=owner_token,
+                decision=_content_free_routing_recipe(routing, trace_id=trace_id),
+                ttl_seconds=config.delegation.child_cache_ttl_seconds,
+            )
+        except BaseException:
+            store.abort_child_routing(cache_key=child_cache_key, owner_token=owner_token)
+            raise
+        routing["child_routing_source"] = "parent_budgeted_inference"
+        return routing, None, classification
+
+    deterministic_config = replace(
+        config,
+        providers=(),
+        judge=replace(
+            config.judge,
+            model="",
+            base_url="",
+            api_key="",
+            api_key_env="",
+            ollama_mode=False,
+        ),
+        ollama=replace(config.ollama, enabled=False),
+    )
+    route_arguments["config"] = deterministic_config
+    routing = pipeline.route(session_id, user_message, catalog, **route_arguments)
+    deterministic_candidates = list(routing.get("selected_ids", []))
+    routing.update(
+        selected_ids=[],
+        confidence=0.0,
+        status="child_budget_abstained",
+        source="child_budget_policy",
+        deterministic_candidate_ids=deterministic_candidates,
+        child_routing_source=str(reservation["status"]),
+        child_inference_budget_exhausted=reservation["status"] == "budget_exhausted",
+    )
+    return routing, None, classification
 
 
 def _assignment_recipe(
@@ -473,6 +586,8 @@ def _prepare_preflight_evidence(
     resident_binding: Any,
     resident_context: str,
     pipeline: Any,
+    parent_session_id: str = "",
+    parent_trace_id: str = "",
 ) -> tuple[
     dict[str, Any],
     dict[str, Any],
@@ -503,6 +618,8 @@ def _prepare_preflight_evidence(
         policy_fingerprint=policy_fingerprint,
         roster_generation=roster_generation,
         pipeline=pipeline,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
     )
     routing = dict(routing)
     routing["trace_id"] = trace_id
@@ -636,9 +753,15 @@ def run_preflight(
     reservation_token: str = "",
     capability_receipt: HostCapabilityReceipt | None = None,
     origin_receipt: TurnOriginReceipt | None = None,
+    parent_session_id: str = "",
+    parent_trace_id: str = "",
 ) -> PreflightResult:
     """Create one turn, route it, hydrate prompts, and persist exact evidence."""
     normalized_session = validate_correlation_id(session_id, field="session_id")
+    normalized_parent_session, normalized_parent_trace = _normalize_parent_correlation(
+        parent_session_id,
+        parent_trace_id,
+    )
     if not str(user_message or "").strip():
         raise ValueError("user_message is required for Agency preflight routing")
 
@@ -795,6 +918,8 @@ def run_preflight(
             "resident_binding": resident_binding,
             "resident_context": resident_context,
             "pipeline": pipeline,
+            "parent_session_id": normalized_parent_session,
+            "parent_trace_id": normalized_parent_trace,
         }
         recipe, routing_recipe, suggestions, specialist_refs, classification = (
             _prepare_with_bounded_continuation_reroute(
@@ -842,6 +967,8 @@ def run_preflight(
                     resident_binding=resident_binding,
                     resident_context=resident_context,
                     pipeline=pipeline,
+                    parent_session_id=normalized_parent_session,
+                    parent_trace_id=normalized_parent_trace,
                 )
             )
             ready = _mark_ready_with_binding_replan(

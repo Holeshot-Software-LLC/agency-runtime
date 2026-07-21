@@ -45,6 +45,7 @@ const terminalRejections = new Map();
 const finalizeAttempts = new Map();
 const outboundAuthorizations = new Map();
 const controlAuthorizations = new Map();
+const nativeChildParents = new Map();
 const DISPATCH_MARKER_START = "\u2063";
 const DISPATCH_MARKER_ZERO = "\u200b";
 const DISPATCH_MARKER_ONE = "\u200c";
@@ -819,12 +820,15 @@ export default definePluginEntry({{
 
     api.on("before_prompt_build", async (event, ctx) => {{
       const stateEpoch = ++runtimeStateEpoch;
+      const childParent = nativeChildParents.get(sessionId(event, ctx));
       const result = await invokeAgency({{
         action: "preflight",
         sessionId: sessionId(event, ctx),
         traceId: traceId(event, ctx),
         userMessage: String(event?.prompt || ""),
         model: modelId(ctx),
+        parentSessionId: String(childParent?.sessionId || ""),
+        parentTraceId: String(childParent?.traceId || ""),
       }});
       const stateApplied = observeRuntimeState(result, stateEpoch);
       if (!stateApplied && !runtimeEnabled) return undefined;
@@ -838,6 +842,13 @@ export default definePluginEntry({{
 
     api.on("subagent_spawned", async (event, ctx) => {{
       if (!runtimeEnabled) return;
+      const childSession = String(event?.childSessionKey || "");
+      const parentSession = sessionId(event, ctx);
+      const parentTrace = String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || "");
+      if (childSession && parentSession && parentTrace) {{
+        nativeChildParents.set(childSession, {{ sessionId: parentSession, traceId: parentTrace }});
+        if (nativeChildParents.size > 512) nativeChildParents.delete(nativeChildParents.keys().next().value);
+      }}
       await invokeAgency({{
         action: "native_child_started",
         sessionId: sessionId(event, ctx),
@@ -850,6 +861,7 @@ export default definePluginEntry({{
 
     api.on("subagent_ended", async (event, ctx) => {{
       if (!runtimeEnabled) return;
+      nativeChildParents.delete(String(event?.targetSessionKey || ""));
       await invokeAgency({{
         action: "native_child_ended",
         sessionId: sessionId(event, ctx),

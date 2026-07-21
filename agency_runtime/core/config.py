@@ -220,6 +220,9 @@ class DelegationConfig:
     preferred_min_units: int = 2
     strongly_preferred_min_units: int = 4
     strongly_preferred_min_confidence: float = 0.8
+    child_inference_budget: int = 4
+    child_inference_concurrency: int = 2
+    child_cache_ttl_seconds: int = 900
 
 
 @dataclass(frozen=True, slots=True)
@@ -457,6 +460,9 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             strongly_preferred_min_confidence=float(
                 delegation_raw.get("strongly_preferred_min_confidence", 0.8)
             ),
+            child_inference_budget=int(delegation_raw.get("child_inference_budget", 4)),
+            child_inference_concurrency=int(delegation_raw.get("child_inference_concurrency", 2)),
+            child_cache_ttl_seconds=int(delegation_raw.get("child_cache_ttl_seconds", 900)),
         ),
         agents=AgentActivationConfig(
             disabled=normalize_disabled_agents(agents_raw.get("disabled", [])),
@@ -1004,6 +1010,9 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "preferred_min_units": cfg.delegation.preferred_min_units,
             "strongly_preferred_min_units": cfg.delegation.strongly_preferred_min_units,
             "strongly_preferred_min_confidence": (cfg.delegation.strongly_preferred_min_confidence),
+            "child_inference_budget": cfg.delegation.child_inference_budget,
+            "child_inference_concurrency": cfg.delegation.child_inference_concurrency,
+            "child_cache_ttl_seconds": cfg.delegation.child_cache_ttl_seconds,
         },
         "agents": {"disabled": list(cfg.agents.disabled)},
         "store": {"db_path": cfg.store.db_path},

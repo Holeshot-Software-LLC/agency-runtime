@@ -250,15 +250,47 @@ def test_header_model_and_delegation_lines_cover_truthful_outcomes() -> None:
 def test_fill_and_finalize_header_without_store_is_complete_and_idempotent() -> None:
     filled = contract.fill_header_fields({}, "", None, "task-general")
     assert filled["agencies_loaded"] == "none"
-    assert filled["why"] == "unavailable - no authoritative current-turn reason codes"
+    assert filled["why"] == (
+        "Unavailable - no authoritative explanation was recorded for this turn."
+    )
     assert filled["how_it_shaped_outcome"] == (
-        "unavailable - no authoritative current-turn effect codes"
+        "Unavailable - no authoritative routing effect was recorded for this turn."
     )
 
     first = contract.finalize_header("\nBody", "", None, "task-general")
     second = contract.finalize_header(first, "", None, "task-general")
     assert second == first
     assert first.endswith("Body")
+
+
+def test_header_explanations_humanize_live_routing_receipt_codes() -> None:
+    why = contract.humanize_reason_codes(
+        [
+            "requested_question_task_or_output",
+            "turn_kind:new_intent",
+            "routing_status:policy_fallback",
+            "inference_mode:heuristic",
+            "eligibility:missing_capabilities",
+            "eligibility:unsupported_tool_platform",
+        ]
+    )
+    effect = contract.humanize_effect_codes(
+        [
+            "inference_attempted",
+            "eligibility_exclusions_applied",
+            "compatibility_constraints_applied",
+            "specialists_selected",
+            "policy_fallback_applied",
+        ]
+    )
+
+    assert "substantive answer or action" in why
+    assert "default coordinator policy" in why
+    assert "required capabilities" in why
+    assert "reason_codes=" not in why
+    assert "Agency attempted inference" in effect
+    assert "default coordinators" in effect
+    assert "effect_codes=" not in effect
 
 
 class _FinalizationRecorder:

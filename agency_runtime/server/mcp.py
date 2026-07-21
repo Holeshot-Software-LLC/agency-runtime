@@ -66,6 +66,8 @@ MCP_TOOLS = [
             {
                 "session_id": {"type": "string", "maxLength": 512},
                 "trace_id": {"type": "string", "maxLength": 512},
+                "parent_session_id": {"type": "string", "maxLength": 512},
+                "parent_trace_id": {"type": "string", "maxLength": 512},
                 "host": {
                     "type": "string",
                     "enum": ["codex", "claude", "openclaw", "hermes"],

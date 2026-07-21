@@ -26,6 +26,7 @@ from agency_runtime.core.agent_activation import (
     normalize_agent_slug,
     updated_disabled_agents,
 )
+from agency_runtime.core.cli_transport import discover_cli_models
 from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration import (
     ConfigConflictError,
@@ -1031,6 +1032,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/inference": self._handle_inference,
                 "/api/runtime": lambda: self._json_ok({"master": self._master_control()}),
                 "/api/config": self._handle_config,
+                "/api/providers/models": self._handle_provider_models,
                 "/api/health": lambda: self._json_ok({"status": "ok"}),
                 "/api/snapshots": self._handle_snapshots,
                 "/api/policy": self._handle_policy,
@@ -1485,6 +1487,15 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 service_binding=_store_service_binding(self.store, state),
             )
         )
+
+    def _handle_provider_models(self) -> None:
+        query = parse_qs(urlparse(self.path).query, keep_blank_values=False)
+        transport = str((query.get("transport") or ["codex"])[0]).strip().casefold()
+        refresh = str((query.get("refresh") or [""])[0]).strip().casefold() in {
+            "1",
+            "true",
+        }
+        self._json_ok(discover_cli_models(transport, refresh=refresh).as_dict())
 
     def _routing_operation_snapshot(self) -> tuple[RoutingSnapshot, dict[str, Any]]:
         """Freeze config, Store binding, and catalog identity for one operation."""

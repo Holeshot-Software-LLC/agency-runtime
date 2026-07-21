@@ -263,6 +263,24 @@ _OPEN_TRACE_RETENTION_GUARDS: Mapping[str, str] = {
         "NOT EXISTS (SELECT 1 FROM runs WHERE runs.trace_id = routing_decisions.trace_id "
         "AND runs.status IN ('active', 'evidence_only'))"
     ),
+    # A completed cache entry is independent. While its singleflight lease is
+    # still open, however, keep both rows with the active parent turn.
+    "child_routing_cache": (
+        "NOT EXISTS (SELECT 1 FROM child_routing_leases "
+        "JOIN runs ON runs.trace_id = child_routing_leases.parent_trace_id "
+        "WHERE child_routing_leases.cache_key = child_routing_cache.cache_key "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "child_routing_usage": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE "
+        "runs.trace_id = child_routing_usage.parent_trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
+    "child_routing_leases": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE "
+        "runs.trace_id = child_routing_leases.parent_trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
     "resident_manager_bindings": (
         "NOT EXISTS (SELECT 1 FROM runs WHERE "
         "runs.session_id = resident_manager_bindings.session_id "

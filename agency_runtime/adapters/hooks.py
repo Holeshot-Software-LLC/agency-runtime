@@ -744,7 +744,11 @@ class HookBridge:
                 f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
                 "Use these exact values only when this child's prompt contains an "
                 "[AGENCY CHILD PREFLIGHT v1] recipe. Otherwise make no Agency "
-                "specialist claim.",
+                "specialist claim until independently calling agency.preflight with the "
+                "complete delegated assignment. Pass "
+                f"parent_session_id={json.dumps(session_id, ensure_ascii=True)} and "
+                f"parent_trace_id={json.dumps(trace_id, ensure_ascii=True)} so the shared "
+                "parent budget, cache, and singleflight controls apply.",
             ]
         )
         return {
@@ -811,7 +815,10 @@ class HookBridge:
                 "If no current recipe is present, independently call agency.preflight "
                 "before substantive work using the complete delegated assignment as "
                 "user_message and "
-                f"session_id={json.dumps(child_session_id, ensure_ascii=True)}. Apply only "
+                f"session_id={json.dumps(child_session_id, ensure_ascii=True)}, "
+                f"parent_session_id={json.dumps(session_id, ensure_ascii=True)} and "
+                f"parent_trace_id={json.dumps(trace_id, ensure_ascii=True)} in that same "
+                "call. Apply only "
                 "the returned child-turn context. Do not claim parent Agency delegation "
                 "without an authoritative activation receipt.",
             ]

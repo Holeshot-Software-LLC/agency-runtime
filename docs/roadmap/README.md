@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-20
+updated: 2026-07-21
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -132,6 +132,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-112` | [Rewrite the README for public users](issue-AR-112-public-user-readme.md) | done | p1 | documentation | [#117](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/117) |
 | `AR-113` | [Isolate wall-clock performance gates from the compatibility matrix](issue-AR-113-isolate-performance-gates.md) | done | p0 | testing | [#119](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/119) |
 | `AR-114` | [Make Codex hook activation part of installation](issue-AR-114-guided-codex-hook-activation.md) | done | p0 | host-integrations | [#123](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/123) |
+| `AR-115` | [Make live routing and Agency headers trustworthy](issue-AR-115-live-routing-trust.md) | open | p0 | routing | [#127](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/127) |
+| `AR-116` | [Bound native-child routing and add account-aware model selection](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | open | p0 | routing | [#128](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/128) |
 
 ## Traceability
 
@@ -255,6 +257,8 @@ not stable internal identifiers.
 | [AR-112](issue-AR-112-public-user-readme.md) | [`4635a0b`](../worklog/README.md), [`de875f6`](../worklog/README.md), [`280b0b7`](../worklog/README.md) | None |
 | [AR-113](issue-AR-113-isolate-performance-gates.md) | [`9d4e55b`](../worklog/README.md), [`c994882`](../worklog/README.md), [`a751046`](../worklog/README.md) | None |
 | [AR-114](issue-AR-114-guided-codex-hook-activation.md) | [`58026a5`](../worklog/README.md), [`7e24323`](../worklog/README.md), [`5467026`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
+| [AR-115](issue-AR-115-live-routing-trust.md) | Pending | [ADR-0001](../decisions/0001-layered-specialist-routing.md), [ADR-0011](../decisions/0011-explicit-delegation-evidence-lifecycle.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0078](../decisions/0078-present-human-routing-evidence-and-abstain-on-noise.md) |
+| [AR-116](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | Pending | [ADR-0067](../decisions/0067-require-configured-inference-for-selection.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md), [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
 ## Dependency summary
 

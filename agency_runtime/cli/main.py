@@ -239,6 +239,22 @@ def cmd_config_set(args: argparse.Namespace) -> int:
     return _config.cmd_config_set(args, dependencies=_configuration_dependencies())
 
 
+def cmd_config_provider_list(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_list(args)
+
+
+def cmd_config_provider_models(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_models(args)
+
+
+def cmd_config_provider_set(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_set(args)
+
+
+def cmd_config_provider_remove(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_remove(args)
+
+
 def cmd_config_validate(args: argparse.Namespace) -> int:
     return _config.cmd_config_validate(
         args,
@@ -317,6 +333,10 @@ _COMMAND_NAMES = (
     "cmd_codex_exec",
     "cmd_config_get",
     "cmd_config_path",
+    "cmd_config_provider_list",
+    "cmd_config_provider_models",
+    "cmd_config_provider_remove",
+    "cmd_config_provider_set",
     "cmd_config_reset",
     "cmd_config_set",
     "cmd_config_show",

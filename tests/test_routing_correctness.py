@@ -282,6 +282,27 @@ def test_zero_signal_token_fallback_abstains() -> None:
     assert result["status"] == "abstained"
 
 
+def test_low_signal_token_fallback_abstains_instead_of_loading_noise() -> None:
+    result = query_judge(
+        "explain a runtime header and dashboard",
+        [
+            {
+                "slug": "clinical-evidence-agent",
+                "description": "Review clinical evidence and medical literature",
+            },
+            {
+                "slug": "geographer",
+                "description": "Analyze physical and human geography",
+            },
+        ],
+        config=_offline_config(),
+    )
+
+    assert result["top_score"] < 2.0
+    assert result["selected_ids"] == []
+    assert result["status"] == "abstained"
+
+
 def test_token_fallback_does_not_pad_with_zero_score_candidates() -> None:
     catalog = [
         {
@@ -327,6 +348,14 @@ def test_token_fallback_excludes_weak_incidental_matches() -> None:
     )
 
     assert result["selected_ids"] == ["performance-benchmarker"]
+
+
+def test_token_fallback_rejects_candidates_below_the_relative_floor() -> None:
+    assert judge_module._scored_selection(
+        [{"slug": "relevant"}, {"slug": "incidental"}],
+        [10.0, 2.9],
+        2,
+    ) == ["relevant"]
 
 
 def test_token_fallback_retains_comparable_multi_domain_matches() -> None:

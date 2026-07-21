@@ -2958,7 +2958,10 @@ def test_dashboard_serves_authenticated_requests_on_ipv6_loopback(tmp_path: Path
         pytest.skip(f"IPv6 loopback is unavailable: {exc}")
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    connection = HTTPConnection("::1", int(server.server_address[1]), timeout=2)
+    # The full Windows suite can briefly delay this new server thread while
+    # releasing memory from earlier process-heavy tests. Keep the bound finite
+    # without turning scheduler contention into a false IPv6 failure.
+    connection = HTTPConnection("::1", int(server.server_address[1]), timeout=5)
     try:
         connection.request(
             "GET",

@@ -313,6 +313,7 @@ class CandidateUnion:
 
     candidates: tuple[dict[str, Any], ...]
     scores: tuple[float, ...]
+    lexical_ids: tuple[str, ...]
     full_roster_count: int
     lexical_count: int
     semantic_count: int
@@ -373,7 +374,7 @@ def retrieve_candidate_union(
     """Combine positive lexical and embedding recall without zero-score padding."""
 
     if limit <= 0 or not catalog:
-        return CandidateUnion((), (), len(catalog), 0, 0, 0)
+        return CandidateUnion((), (), (), len(catalog), 0, 0, 0)
     bounded_catalog = list(catalog)
     lexical_agents, lexical_scores = lexical_retriever(query, bounded_catalog, limit)
     lexical = [
@@ -381,6 +382,7 @@ def retrieve_candidate_union(
         for agent, score in zip(lexical_agents, lexical_scores, strict=True)
         if score > 0
     ]
+    lexical_ids = tuple(slug for agent, _score in lexical if (slug := _agent_id(agent)))
     semantic_agents, semantic_scores = semantic_retrieve(query, bounded_catalog, limit=limit)
     combined: dict[str, tuple[dict[str, Any], float, bool, bool]] = {}
     for agent, score in lexical:
@@ -432,6 +434,7 @@ def retrieve_candidate_union(
     return CandidateUnion(
         tuple(candidates),
         tuple(scores),
+        lexical_ids,
         len(bounded_catalog),
         len(lexical),
         len(semantic_agents),

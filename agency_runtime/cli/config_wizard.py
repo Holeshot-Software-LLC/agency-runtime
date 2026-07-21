@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.cli_transport import CLIModelCatalog, discover_cli_models
 from agency_runtime.core.config import (
     MAX_PROVIDER_CHAIN_ENTRIES,
     ProviderEntry,
@@ -41,6 +42,7 @@ class WizardDependencies:
     open_url: Callable[..., Any] = open_no_redirect
     provider_validator: Callable[..., Any] = validate_provider
     model_fetcher: Callable[[str, str | None], list[str]] | None = None
+    cli_model_discoverer: Callable[[str], CLIModelCatalog] = discover_cli_models
 
 
 DEFAULT_DEPENDENCIES = WizardDependencies()
@@ -200,6 +202,9 @@ def _interactive_wizard(
             "preferred_min_units": 2,
             "strongly_preferred_min_units": 4,
             "strongly_preferred_min_confidence": 0.8,
+            "child_inference_budget": 4,
+            "child_inference_concurrency": 2,
+            "child_cache_ttl_seconds": 900,
         },
         "store": {"db_path": "~/.agency-runtime/agency.db"},
         "server": {"host": "127.0.0.1", "port": 7800},
@@ -262,6 +267,32 @@ def _provider_entry(
     }
 
 
+def _pick_cli_model(
+    transport: str,
+    dependencies: WizardDependencies,
+) -> str:
+    """Offer account-visible CLI models and retain a bounded manual fallback."""
+
+    catalog = dependencies.cli_model_discoverer(transport)
+    if not catalog.models:
+        if catalog.error:
+            print(f"  Account model discovery unavailable: {catalog.error}")
+        return input(f"Model override for {transport} (blank uses CLI default): ").strip()
+    print(f"\nVisible {transport.title()} subscription models:")
+    print("  [1] CLI default")
+    for index, item in enumerate(catalog.models, start=2):
+        detail = f" — {item.description}" if item.description else ""
+        print(f"  [{index}] {item.display_name} ({item.slug}){detail}")
+    custom_index = len(catalog.models) + 2
+    print(f"  [{custom_index}] Enter another model ID")
+    chosen = _prompt_choice(custom_index, default=1)
+    if 2 <= chosen < custom_index:
+        return catalog.models[chosen - 2].slug
+    if chosen == custom_index:
+        return input("Model ID: ").strip()
+    return ""
+
+
 def _new_provider_entry(
     detection,
     profile: str,
@@ -320,11 +351,10 @@ def _new_provider_entry(
         )
     if provider_key.startswith("cli:"):
         transport = provider_key.split(":", 1)[1]
-        model = input(f"Model override for {transport} (blank uses CLI default): ").strip()
         return _provider_entry(
             f"{transport}-cli",
             "cli",
-            {"model": model},
+            {"model": _pick_cli_model(transport, dependencies)},
             transport=transport,
         )
     custom = _pick_custom_endpoint(dependencies=dependencies)

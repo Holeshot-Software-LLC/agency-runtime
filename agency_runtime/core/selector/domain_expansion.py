@@ -6,6 +6,25 @@ import re
 from functools import lru_cache
 
 _DOMAIN_EXPANSIONS: dict[str, list[str]] = {
+    "agency": [
+        "multi-agent system",
+        "agent orchestration",
+        "specialist routing",
+        "native delegation",
+    ],
+    "agent selection": [
+        "specialist routing",
+        "agent orchestration",
+        "compatibility analysis",
+    ],
+    "response header": [
+        "developer experience",
+        "response telemetry",
+    ],
+    "dashboard": [
+        "operations interface",
+        "runtime controls",
+    ],
     "conveyor": [
         "ci cd pipeline",
         "workflow automation",

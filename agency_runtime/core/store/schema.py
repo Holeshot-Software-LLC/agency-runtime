@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 31
+SCHEMA_VERSION = 32
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 _MAX_REMEDIATION_AUTHORITY_ID_BYTES = 512
@@ -1174,6 +1174,31 @@ CREATE TABLE IF NOT EXISTS host_canary_attestations (
     trace_id TEXT NOT NULL
 );
 
+-- Cross-process routing protection for native children. Assignment text is
+-- represented only by a keyed hash; cache values contain content-free routing
+-- projections and expire automatically.
+CREATE TABLE IF NOT EXISTS child_routing_cache (
+    cache_key TEXT PRIMARY KEY,
+    decision TEXT NOT NULL,
+    expires_at REAL NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS child_routing_usage (
+    parent_trace_id TEXT PRIMARY KEY,
+    parent_session_id TEXT NOT NULL,
+    inference_calls INTEGER NOT NULL CHECK (inference_calls >= 0),
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS child_routing_leases (
+    cache_key TEXT PRIMARY KEY,
+    parent_trace_id TEXT NOT NULL,
+    owner_token TEXT NOT NULL UNIQUE,
+    expires_at REAL NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 -- Read-path indexes used by hooks, the dashboard, and retention jobs.
 CREATE INDEX IF NOT EXISTS idx_runs_trace_id ON runs(trace_id);
 CREATE INDEX IF NOT EXISTS idx_runs_session_started ON runs(session_id, started_at DESC);
@@ -1203,6 +1228,9 @@ CREATE INDEX IF NOT EXISTS idx_routing_trace_created ON routing_decisions(trace_
 CREATE INDEX IF NOT EXISTS idx_routing_session_created ON routing_decisions(session_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_routing_recent ON routing_decisions(created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_trace_tombstones_retired ON trace_tombstones(retired_at);
+CREATE INDEX IF NOT EXISTS idx_child_routing_cache_expiry ON child_routing_cache(expires_at);
+CREATE INDEX IF NOT EXISTS idx_child_routing_leases_parent
+ON child_routing_leases(parent_trace_id, expires_at);
 CREATE INDEX IF NOT EXISTS idx_agent_source_scans_source_created
 ON agent_source_scans(source_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_source_scan_entries_slug
@@ -1244,6 +1272,9 @@ ALL_TABLES: tuple[str, ...] = (
     "trace_tombstones",
     "host_controls",
     "host_canary_attestations",
+    "child_routing_cache",
+    "child_routing_usage",
+    "child_routing_leases",
     "agent_sources",
     "agent_downloads",
     "agent_candidates",
@@ -1303,6 +1334,9 @@ RUNTIME_TABLE_TIMESTAMPS: dict[str, str] = {
         "COALESCE((SELECT activity.last_activity_at FROM runs AS activity "
         "WHERE activity.trace_id = routing_decisions.trace_id), '')"
     ),
+    "child_routing_cache": "child_routing_cache.created_at",
+    "child_routing_usage": "child_routing_usage.updated_at",
+    "child_routing_leases": "child_routing_leases.created_at",
     "resident_manager_bindings": "resident_manager_bindings.updated_at",
 }
 
@@ -1314,6 +1348,9 @@ RUNTIME_DELETE_ORDER: tuple[str, ...] = (
     "skills_loaded",
     "specialists_loaded",
     "resident_manager_bindings",
+    "child_routing_leases",
+    "child_routing_cache",
+    "child_routing_usage",
     "routing_decisions",
     "finalization_events",
     "runs",

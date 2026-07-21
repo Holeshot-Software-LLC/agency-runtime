@@ -14,6 +14,16 @@ from agency_runtime.core.turn_correlation import active_turn_error
 
 ToolHandler = Callable[[dict[str, Any], Any], dict[str, Any]]
 
+_NATIVE_GENERIC_WORKER_KINDS = frozenset(
+    {
+        "generic-worker",
+        "codex-native-subagent",
+        "claude-native-subagent",
+        "hermes-native-subagent",
+        "openclaw-native-subagent",
+    }
+)
+
 
 def _correlation(arguments: dict[str, Any]) -> tuple[str, str] | None:
     session_id = str(arguments.get("session_id") or "").strip()
@@ -49,6 +59,8 @@ def _preflight(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
             user_message=arguments["user_message"],
             trace_id=trace_id,
             origin_receipt=origin_receipt,
+            parent_session_id=str(arguments.get("parent_session_id") or "").strip(),
+            parent_trace_id=str(arguments.get("parent_trace_id") or "").strip(),
         )
     except ValueError as exc:
         return {"error": str(exc)}
@@ -187,13 +199,19 @@ def _prepare_delegation(arguments: dict[str, Any], store: Any) -> dict[str, Any]
         operation="receive ordinary delegation activation",
     ):
         return {"error": error}
+    requested_worker_kind = str(arguments.get("worker_kind") or "generic-worker").strip()
+    if requested_worker_kind not in _NATIVE_GENERIC_WORKER_KINDS:
+        return {"error": "delegated specialist retrieval uses generic-worker attribution"}
     try:
         return store.prepare_delegation_activation(
             session_id=session_id,
             trace_id=trace_id,
             specialist_slug=slug,
             work_unit_id=str(arguments.get("work_unit_id") or ""),
-            worker_kind=str(arguments.get("worker_kind") or "generic-worker"),
+            # Native hosts use different names for their ordinary worker. The
+            # durable Agency contract intentionally records all of them as a
+            # generic worker so it cannot be mistaken for specialist identity.
+            worker_kind="generic-worker",
             worker_id=str(arguments.get("worker_id") or ""),
         )
     except ValueError as exc:

@@ -752,6 +752,8 @@ def diagnostic_installation_capability_receipt(
 ) -> HostCapabilityReceipt | None:
     """Rehydrate verified inventory evidence for non-executing diagnostics only."""
 
+    if isinstance(value, HostCapabilityReceipt):
+        value = value.as_dict()
     projected = project_host_capability_receipt(value)
     normalized_surface = _token(surface)
     normalized_platform = _token(platform)

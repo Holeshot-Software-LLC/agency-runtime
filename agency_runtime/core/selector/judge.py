@@ -45,7 +45,9 @@ _MAX_PROVIDER_ATTEMPTS = MAX_PROVIDER_CHAIN_ENTRIES
 _MAX_JUDGE_DEADLINE_SECONDS = 60.0
 _MAX_JUDGE_CANDIDATES = 20
 _MAX_SELECTED = 50
+_MAX_TOKEN_FALLBACK_SELECTED = 2
 _MIN_RELATIVE_FALLBACK_SCORE = 0.30
+_MIN_TOKEN_FALLBACK_SCORE = 2.0
 
 
 def _agent_id(agent: dict[str, Any]) -> str:
@@ -283,6 +285,7 @@ def _fallback_result(
     candidate_count: int,
     top_score: float,
     max_sel: int,
+    lexical_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     fallback = _token_only_fallback(
         candidates,
@@ -290,6 +293,7 @@ def _fallback_result(
         candidate_count,
         top_score,
         max_sel,
+        lexical_ids=lexical_ids,
     )
     return _with_cumulative_latency(fallback, state.started)
 
@@ -301,6 +305,7 @@ def _degraded_result(
     candidate_count: int,
     top_score: float,
     max_sel: int,
+    lexical_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """Fail closed after mandatory inference exhausts its bounded chain."""
 
@@ -311,6 +316,7 @@ def _degraded_result(
         candidate_count,
         top_score,
         max_sel,
+        lexical_ids,
     )
     deterministic_ids = list(fallback.get("selected_ids", []))
     fallback_status = str(fallback.get("status") or "unknown")
@@ -434,6 +440,7 @@ def query_judge(
                 candidate_count,
                 top_score,
                 max_sel,
+                retrieval.lexical_ids,
             )
         )
 
@@ -486,6 +493,7 @@ def query_judge(
                 candidate_count,
                 top_score,
                 max_sel,
+                retrieval.lexical_ids,
             )
         )
 
@@ -496,6 +504,7 @@ def query_judge(
         candidate_count,
         top_score,
         max_sel,
+        retrieval.lexical_ids,
     )
     return finish(
         _with_inference_evidence(
@@ -513,9 +522,32 @@ def _token_only_fallback(
     candidate_count: int,
     top_score: float,
     max_sel: int,
+    *,
+    lexical_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """Return bounded token-scored candidates without an LLM call."""
-    selected_ids = _scored_selection(candidates, scores, max_sel)
+    """Return bounded token-scored candidates without an LLM call.
+
+    Very low deterministic embedding scores are collision noise, not a
+    defensible specialist match.  Abstaining lets the resident coordinators
+    handle the request instead of confidently loading an unrelated domain.
+    """
+    lexical = set(lexical_ids)
+    deterministic = [
+        (candidate, score)
+        for candidate, score in zip(candidates, scores, strict=True)
+        if not lexical or _agent_id(candidate) in lexical
+    ]
+    bounded_candidates = [candidate for candidate, _score in deterministic]
+    bounded_scores = [score for _candidate, score in deterministic]
+    selected_ids = (
+        _scored_selection(
+            bounded_candidates,
+            bounded_scores,
+            min(max_sel, _MAX_TOKEN_FALLBACK_SELECTED),
+        )
+        if top_score >= _MIN_TOKEN_FALLBACK_SCORE
+        else []
+    )
     has_signal = bool(selected_ids)
     return {
         "selected_ids": selected_ids,

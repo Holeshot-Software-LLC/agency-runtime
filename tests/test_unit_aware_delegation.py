@@ -1131,8 +1131,8 @@ def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
         evidence_snapshot=snapshot,
     )
     assert fields["agencies_delegated"] == (f"technical-writer via generic-worker/{backend}")
-    assert fields["why"].startswith("reason_codes=")
-    assert fields["how_it_shaped_outcome"].startswith("effect_codes=")
+    assert fields["why"].endswith(".")
+    assert "specialist instructions were loaded" in fields["how_it_shaped_outcome"]
     authoritative_draft = format_header(fields) + "\n\nDone."
     assert (
         validate_completion_policy(

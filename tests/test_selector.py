@@ -129,6 +129,15 @@ def test_expand_query_requires_complete_domain_terms():
     assert "real-time communication" in expand_query("Configure Slack alerts")
 
 
+def test_expand_query_routes_agency_runtime_language_to_agent_system_domains():
+    expanded = expand_query("Explain the Agency response header, dashboard, and agent selection")
+
+    assert "agent orchestration" in expanded
+    assert "specialist routing" in expanded
+    assert "operations interface" in expanded
+    assert "response telemetry" in expanded
+
+
 def test_affirmative_intent_masks_only_explicit_exclusions():
     message = (
         "Do not redesign the dashboard UI; fix authentication security. The login is not working."

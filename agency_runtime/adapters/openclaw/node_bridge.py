@@ -1205,6 +1205,8 @@ def handle(
                 model=model,
                 trace_id=trace_id,
                 origin_receipt=origin_receipt,
+                parent_session_id=_bounded_string(payload, "parentSessionId", limit=512),
+                parent_trace_id=_bounded_string(payload, "parentTraceId", limit=512),
             )
             or {}
         )

@@ -145,6 +145,40 @@ export function createDashboard(runtime = globalThis) {
     listen(byId("config-form"), "submit", actions.saveConfig);
     listen(byId("config-form"), "input", config.updateConfigDirtyState);
     listen(byId("config-form"), "change", config.updateConfigDirtyState);
+    const providerSave = byId("provider-builder-save");
+    if (providerSave) {
+      listen(providerSave, "click", () => {
+        try {
+          const provider = config.upsertProviderDraft();
+          core.showNotice(
+            `Provider ${provider.name} staged with model/router ${provider.model || "default"}.`,
+          );
+        } catch (error) {
+          core.showNotice(error.message, true);
+        }
+      });
+    }
+    const providerType = byId("provider-builder-type");
+    const providerTransport = byId("provider-builder-transport");
+    const providerModelSelect = byId("provider-builder-model-select");
+    const providerModelRefresh = byId("provider-builder-model-refresh");
+    if (providerType) listen(providerType, "change", () => { void config.loadProviderModels(); });
+    if (providerTransport) listen(providerTransport, "change", () => { void config.loadProviderModels(); });
+    if (providerModelSelect) listen(providerModelSelect, "change", config.syncProviderModelInput);
+    if (providerModelRefresh) {
+      listen(providerModelRefresh, "click", () => { void config.loadProviderModels({ refresh: true }); });
+    }
+    const providerRemove = byId("provider-builder-remove");
+    if (providerRemove) {
+      listen(providerRemove, "click", () => {
+        try {
+          config.removeSelectedProvider();
+          core.showNotice("Provider removal staged.");
+        } catch (error) {
+          core.showNotice(error.message, true);
+        }
+      });
+    }
     listen(byId("config-reset-button"), "click", () => {
       const snapshot = state.pendingConfig || state.config;
       if (snapshot) config.renderConfig(snapshot);

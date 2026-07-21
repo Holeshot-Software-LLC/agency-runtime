@@ -89,6 +89,36 @@ def _request(
             return exc.code, json.loads(exc.read())
 
 
+def test_dashboard_exposes_authenticated_account_model_catalog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, bool]] = []
+
+    class Catalog:
+        def as_dict(self) -> dict[str, Any]:
+            return {
+                "transport": "codex",
+                "models": [{"slug": "gpt-cheap", "display_name": "Cheap"}],
+                "source": "codex-cli",
+                "error": "",
+            }
+
+    monkeypatch.setattr(
+        dashboard,
+        "discover_cli_models",
+        lambda transport, *, refresh=False: calls.append((transport, refresh)) or Catalog(),
+    )
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        status, payload = _request(
+            server,
+            "/api/providers/models?transport=codex&refresh=true",
+        )
+        assert status == 200
+        assert payload["models"][0]["slug"] == "gpt-cheap"
+        assert calls == [("codex", True)]
+
+
 def test_dashboard_miscellaneous_get_post_and_options_routes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

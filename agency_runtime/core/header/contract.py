@@ -10,6 +10,10 @@ import re
 from collections.abc import Mapping
 from typing import Any, TypedDict
 
+from agency_runtime.core.header.explanations import (
+    humanize_effect_codes,
+    humanize_reason_codes,
+)
 from agency_runtime.core.host_guidance import (
     NATIVE_DELEGATION_GUIDANCE,
     native_delegation_instruction,
@@ -838,12 +842,6 @@ def _header_effect_codes(
     return _bounded_evidence_codes(values)
 
 
-def _evidence_code_line(codes: list[str], *, kind: str) -> str:
-    if not codes:
-        return f"unavailable - no authoritative current-turn {kind} codes"
-    return f"{kind}_codes=" + ",".join(codes)
-
-
 def _noneish_agency_line(value: str) -> bool:
     text = _clean(value).lower().rstrip(".!")
     return text == "none" or text.startswith(("none ", "none-", "none--"))
@@ -1259,13 +1257,9 @@ def fill_header_fields(
     filled["agencies_delegated"] = _delegation_line(delegations)
     filled["skills_loaded"] = ", ".join(skills) if skills else "none"
     filled["actual_model_selected"] = _model_line(model_receipt, model)
-    filled["why"] = _evidence_code_line(
-        _header_reason_codes(snapshot, routing_receipt),
-        kind="reason",
-    )
-    filled["how_it_shaped_outcome"] = _evidence_code_line(
-        _header_effect_codes(snapshot, routing_receipt),
-        kind="effect",
+    filled["why"] = humanize_reason_codes(_header_reason_codes(snapshot, routing_receipt))
+    filled["how_it_shaped_outcome"] = humanize_effect_codes(
+        _header_effect_codes(snapshot, routing_receipt)
     )
 
     return filled
@@ -1281,7 +1275,8 @@ def finalize_header(
     """Ensure response_text starts with a complete Agency header.
 
     Every field is overwritten from current-turn SQLite evidence. Explanatory
-    lines expose only bounded reason/effect codes.
+    lines humanize bounded reason/effect codes without changing the durable
+    machine-readable receipt.
     """
     valid, _ = validate_header(response_text)
     has_header = _starts_with_header(response_text)

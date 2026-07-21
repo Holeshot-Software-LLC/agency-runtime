@@ -275,6 +275,62 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
     config_input.add_argument("--clear", action="store_true", help="Clear a stored secret")
     _bind(config_set, handlers, "cmd_config_set")
 
+    config_provider = config_sub.add_parser(
+        "provider",
+        help="Configure the ordered inference provider chain",
+    )
+    provider_sub = config_provider.add_subparsers(
+        dest="config_provider_command",
+        required=True,
+    )
+    provider_list = provider_sub.add_parser("list", help="List configured providers")
+    provider_list.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(provider_list, handlers, "cmd_config_provider_list")
+    provider_models = provider_sub.add_parser(
+        "models",
+        help="Discover account-visible models for an authenticated CLI provider",
+    )
+    provider_models.add_argument(
+        "transport",
+        choices=["codex", "claude"],
+        help="Authenticated CLI transport to inspect",
+    )
+    provider_models.add_argument("--refresh", action="store_true", help="Bypass the short cache")
+    provider_models.add_argument("--json", action="store_true", help="Print JSON")
+    provider_models.add_argument(
+        "--timeout",
+        type=float,
+        default=15.0,
+        help="Discovery timeout in seconds",
+    )
+    _bind(provider_models, handlers, "cmd_config_provider_models")
+    provider_set = provider_sub.add_parser("set", help="Add or update a named provider")
+    provider_set.add_argument("name", help="Stable provider name")
+    provider_set.add_argument(
+        "--type",
+        choices=["openai", "openai-compatible", "anthropic", "ollama", "litellm", "cli"],
+        default=None,
+        help="Provider protocol (required when adding)",
+    )
+    provider_set.add_argument("--model", default=None, help="Model or LiteLLM router alias")
+    provider_set.add_argument(
+        "--transport",
+        choices=["codex", "claude"],
+        default=None,
+        help="Authenticated CLI transport",
+    )
+    provider_set.add_argument("--base-url", default=None, help="Provider base URL")
+    provider_set.add_argument(
+        "--api-key-env",
+        default=None,
+        help="Environment variable containing the provider key",
+    )
+    provider_set.add_argument("--timeout", type=float, default=None, help="Timeout in seconds")
+    _bind(provider_set, handlers, "cmd_config_provider_set")
+    provider_remove = provider_sub.add_parser("remove", help="Remove a named provider")
+    provider_remove.add_argument("name", help="Provider name")
+    _bind(provider_remove, handlers, "cmd_config_provider_remove")
+
     config_validate = config_sub.add_parser("validate", help="Validate config + reachability")
     _bind(config_validate, handlers, "cmd_config_validate")
 

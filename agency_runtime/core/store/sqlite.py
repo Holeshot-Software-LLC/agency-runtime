@@ -21,6 +21,7 @@ from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration_persistence import resolve_config_path
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.exception_notes import add_exception_note
+from agency_runtime.core.store.child_routing import ChildRoutingStoreMixin
 from agency_runtime.core.store.delegation_activation import DelegationActivationStoreMixin
 from agency_runtime.core.store.evidence import EvidenceStoreMixin
 from agency_runtime.core.store.initialization_lock import storage_initialization_lock
@@ -435,6 +436,7 @@ _RUNTIME_DELETE_ORDER = RUNTIME_DELETE_ORDER
 
 
 class Store(
+    ChildRoutingStoreMixin,
     DelegationActivationStoreMixin,
     NativeChildStoreMixin,
     EvidenceStoreMixin,

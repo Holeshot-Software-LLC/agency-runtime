@@ -452,6 +452,69 @@ test("app.js renders provider configuration without reflecting stored API keys",
   );
 });
 
+test("provider builder exposes and stages a LiteLLM router alias", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("this test does not fetch");
+  });
+  const providers = new FakeNode("config-providers");
+  providers.dataset.configPath = "providers";
+  providers.dataset.valueType = "json";
+  providers.labels = [{ textContent: "Providers" }];
+  providers.value = "[]";
+  harness.nodes.set("config-providers", providers);
+  harness.select("[data-config-path]", [providers]);
+  harness.api.state.configBaseline = new Map([["providers", JSON.stringify([])]]);
+
+  harness.node("provider-builder-name").value = "agency-router";
+  harness.node("provider-builder-type").value = "litellm";
+  harness.node("provider-builder-model").value = "task-agency-router";
+  harness.node("provider-builder-transport").value = "";
+  harness.node("provider-builder-url").value = "http://127.0.0.1:4000/v1";
+  harness.node("provider-builder-env").value = "LITELLM_API_KEY";
+  harness.node("provider-builder-timeout").value = "15";
+
+  const provider = harness.api.upsertProviderDraft();
+
+  assert.equal(provider.model, "task-agency-router");
+  assert.deepEqual(JSON.parse(providers.value), [{
+    name: "agency-router",
+    type: "litellm",
+    transport: "",
+    model: "task-agency-router",
+    base_url: "http://127.0.0.1:4000/v1",
+    api_key_env: "LITELLM_API_KEY",
+    ollama_mode: false,
+    timeout: 15,
+  }]);
+  assert.equal(harness.node("config-provider-secret-index").value, "0");
+  assert.equal(harness.node("config-save-button").disabled, false);
+});
+
+test("provider builder discovers signed-in Codex models and keeps manual fallback", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    return jsonResponse(200, {
+      transport: "codex",
+      source: "codex-cli",
+      models: [
+        { slug: "gpt-cheap", display_name: "Cheap", description: "Low cost" },
+        { slug: "gpt-frontier", display_name: "Frontier", description: "Deep work" },
+      ],
+    });
+  });
+  harness.node("provider-builder-type").value = "cli";
+  harness.node("provider-builder-transport").value = "codex";
+  assert.equal(await harness.api.loadProviderModels({ refresh: true }), true);
+  assert.equal(calls[0], "/api/providers/models?transport=codex&refresh=true");
+  assert.equal(harness.node("provider-builder-model-select").value, "gpt-cheap");
+  assert.equal(harness.node("provider-builder-model").hidden, true);
+  assert.match(harness.node("provider-builder-model-status").textContent, /2 account models/);
+  harness.node("provider-builder-model-select").value = "__manual__";
+  harness.api.syncProviderModelInput();
+  assert.equal(harness.node("provider-builder-model").hidden, false);
+});
+
 test("app.js config controls normalize typed values and preserve dirty edits on refresh", () => {
   const harness = createAppHarness(() => {
     throw new Error("this test does not fetch");

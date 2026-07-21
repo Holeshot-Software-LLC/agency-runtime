@@ -9,6 +9,7 @@ export function createConfigController(core) {
     showNotice,
     nestedValue,
     comparable,
+    api,
   } = core;
 
   function readConfigControl(node) {
@@ -216,6 +217,120 @@ export function createConfigController(core) {
       : "0";
   }
 
+  function providerBuilderDraft() {
+    const name = byId("provider-builder-name")?.value.trim() || "";
+    const type = byId("provider-builder-type")?.value.trim() || "";
+    const selectedModel = byId("provider-builder-model-select")?.value || "__manual__";
+    const model = selectedModel === "__manual__"
+      ? byId("provider-builder-model")?.value.trim() || ""
+      : selectedModel;
+    const transport = byId("provider-builder-transport")?.value.trim() || "";
+    const baseUrl = byId("provider-builder-url")?.value.trim() || "";
+    const apiKeyEnv = byId("provider-builder-env")?.value.trim() || "";
+    const timeout = Number(byId("provider-builder-timeout")?.value || 15);
+    if (!name) throw new Error("Provider name is required.");
+    if (!type) throw new Error("Provider type is required.");
+    if (!Number.isFinite(timeout) || timeout < 0.05 || timeout > 60) {
+      throw new Error("Provider timeout must be between 0.05 and 60 seconds.");
+    }
+    if (type === "cli" && !["codex", "claude"].includes(transport)) {
+      throw new Error("CLI providers require a Codex or Claude transport.");
+    }
+    if (type === "litellm" && !model) {
+      throw new Error("LiteLLM providers require a model or router alias.");
+    }
+    return {
+      name,
+      type,
+      transport: type === "cli" ? transport : "",
+      model,
+      base_url: baseUrl,
+      api_key_env: apiKeyEnv,
+      ollama_mode: type === "ollama",
+      timeout,
+    };
+  }
+
+  async function loadProviderModels({ refresh = false } = {}) {
+    const type = byId("provider-builder-type")?.value || "";
+    const transport = byId("provider-builder-transport")?.value || "";
+    const select = byId("provider-builder-model-select");
+    const status = byId("provider-builder-model-status");
+    const manual = byId("provider-builder-model");
+    if (!select || !status || !manual) return false;
+    select.replaceChildren();
+    const manualOption = el("option", "", "Enter a model or router alias");
+    manualOption.value = "__manual__";
+    select.append(manualOption);
+    select.value = "__manual__";
+    manual.hidden = false;
+    if (type !== "cli" || !transport) {
+      status.textContent = type === "litellm"
+        ? "Enter the LiteLLM router or model-group alias below."
+        : "Choose a CLI subscription transport to discover account models.";
+      return false;
+    }
+    status.textContent = `Discovering ${transport} account models…`;
+    try {
+      const suffix = refresh ? "&refresh=true" : "";
+      const catalog = await api(`/api/providers/models?transport=${encodeURIComponent(transport)}${suffix}`);
+      const models = Array.isArray(catalog?.models) ? catalog.models : [];
+      models.forEach((model) => {
+        if (!model || typeof model.slug !== "string" || !model.slug) return;
+        const option = el("option", "", model.display_name || model.slug);
+        option.value = model.slug;
+        option.title = model.description || model.slug;
+        select.append(option);
+      });
+      if (models.length) {
+        select.value = models[0].slug;
+        manual.hidden = true;
+        status.textContent = `${models.length} account model${models.length === 1 ? "" : "s"} from ${catalog.source || transport}.`;
+        return true;
+      }
+      status.textContent = catalog?.error || `No visible ${transport} models were found.`;
+      return false;
+    } catch (error) {
+      status.textContent = error.message || "Model discovery failed.";
+      return false;
+    }
+  }
+
+  function syncProviderModelInput() {
+    const select = byId("provider-builder-model-select");
+    const manual = byId("provider-builder-model");
+    if (!select || !manual) return;
+    manual.hidden = select.value !== "__manual__";
+  }
+
+  function upsertProviderDraft() {
+    const draft = providerBuilderDraft();
+    const control = byId("config-providers");
+    const providers = JSON.parse(control.value || "[]");
+    if (!Array.isArray(providers)) throw new Error("Provider array must be a JSON list.");
+    const index = providers.findIndex(
+      (provider) => String(provider?.name || "").toLowerCase() === draft.name.toLowerCase(),
+    );
+    if (index < 0) providers.push(draft);
+    else providers[index] = { ...providers[index], ...draft };
+    control.value = JSON.stringify(providers, null, 2);
+    syncProviderSecretOptions();
+    updateConfigDirtyState();
+    return draft;
+  }
+
+  function removeSelectedProvider() {
+    const select = byId("config-provider-secret-index");
+    if (!select || select.value === "") throw new Error("Select a provider to remove.");
+    const control = byId("config-providers");
+    const providers = JSON.parse(control.value || "[]");
+    if (!Array.isArray(providers)) throw new Error("Provider array must be a JSON list.");
+    providers.splice(Number(select.value), 1);
+    control.value = JSON.stringify(providers, null, 2);
+    syncProviderSecretOptions();
+    updateConfigDirtyState();
+  }
+
   function updateConfigDirtyState() {
     syncProviderSecretOptions();
     configControls().forEach((node) => {
@@ -323,6 +438,11 @@ export function createConfigController(core) {
     collectConfigChanges,
     appendSecretOperation,
     syncProviderSecretOptions,
+    providerBuilderDraft,
+    loadProviderModels,
+    syncProviderModelInput,
+    upsertProviderDraft,
+    removeSelectedProvider,
     updateConfigDirtyState,
     serviceRestartRequired,
     applyServiceBinding,

@@ -400,6 +400,9 @@ def _context_policy_fingerprint(
             "strongly_preferred_min_confidence": (
                 config.delegation.strongly_preferred_min_confidence
             ),
+            "child_inference_budget": config.delegation.child_inference_budget,
+            "child_inference_concurrency": config.delegation.child_inference_concurrency,
+            "child_cache_ttl_seconds": config.delegation.child_cache_ttl_seconds,
         }
     encoded = json.dumps(policy, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return sha256(encoded).hexdigest()

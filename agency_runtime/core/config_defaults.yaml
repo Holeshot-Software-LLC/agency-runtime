@@ -48,6 +48,10 @@ delegation:
   preferred_min_units: 2
   strongly_preferred_min_units: 4
   strongly_preferred_min_confidence: 0.8
+  # Parent-scoped protection for native children that were not pre-planned.
+  child_inference_budget: 4
+  child_inference_concurrency: 2
+  child_cache_ttl_seconds: 900
 
 # Reversible selection policy. Definitions and version history remain in the
 # roster while listed specialists are unavailable to routing and new loads.

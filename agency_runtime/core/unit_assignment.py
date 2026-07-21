@@ -548,7 +548,13 @@ def _compatible_unit_selection(
             limit=len(selected),
         )
         selected = list(compatibility["selected_ids"])
-    elif inference_mode == "heuristic" and unit_routing.get("status") == "token_fallback":
+    elif inference_mode == "heuristic" and unit_routing.get("status") in {
+        "token_fallback",
+        "abstained",
+    }:
+        # A broad route should abstain when lexical evidence is weak. An exact
+        # delegated unit has a narrower contract: choose one reviewed,
+        # deliverable-compatible specialist from the host-eligible catalog.
         selected = _deterministic_unit_selection(unit, eligible_catalog)
         compatibility = enforce_compatible_set(
             selected,

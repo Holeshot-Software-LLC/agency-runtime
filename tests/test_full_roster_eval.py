@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
 from agency_runtime.core.evals.full_roster import (
     DEFAULT_CANDIDATE_LIMIT,
     SCHEMA,
@@ -13,8 +14,10 @@ from agency_runtime.core.evals.full_roster import (
     VERSION,
     _gap_groups,
     _probe_queries,
+    _routing_cards,
     run_full_roster_selection_eval,
 )
+from agency_runtime.core.selector.pipeline import route
 
 
 @pytest.fixture(scope="module")
@@ -184,6 +187,44 @@ def test_full_roster_eval_gates_are_deterministic(report: dict[str, Any]) -> Non
     assert [gate["metric"] for gate in report["gates"]] == list(THRESHOLDS)
     assert all(gate["passed"] for gate in report["gates"])
     assert report["passed"] is True
+
+
+def test_real_agency_runtime_prompt_has_safe_offline_specialists() -> None:
+    _manifest, cards = _routing_cards()
+    decision = route(
+        "offline-agency-runtime-regression",
+        (
+            "The Agency response header exposes unreadable reason codes and effect codes. "
+            "Explain how to test agent selection live and how to open the dashboard."
+        ),
+        cards,
+        config=AgencyConfig(
+            providers=(),
+            judge=JudgeConfig(
+                model="",
+                base_url="",
+                confidence_bypass_threshold=999.0,
+            ),
+            ollama=OllamaConfig(enabled=False, model=""),
+        ),
+        host="codex",
+        platform="windows",
+        available_tools=(
+            "code-execution",
+            "native-delegation",
+            "package-management",
+            "repository-read",
+            "repository-write",
+            "shell-execution",
+            "source-control",
+            "test-execution",
+        ),
+        allow_installation_diagnostic=True,
+    )
+
+    selected = set(decision["semantic_ids"])
+    assert selected == {"operations-manager", "automation-governance-architect"}
+    assert selected.isdisjoint({"clinical-evidence-agent", "geographer", "language-translator"})
 
 
 @pytest.mark.parametrize("candidate_limit", [True, 7, 81, 40.0, "40"])

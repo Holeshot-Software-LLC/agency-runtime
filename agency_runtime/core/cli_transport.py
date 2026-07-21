@@ -13,8 +13,11 @@ import math
 import os
 import re
 import shutil
+import threading
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +51,9 @@ _CODEX_REQUIRED_FLAGS = (
     "--strict-config",
 )
 _MAX_CLI_TIMEOUT_SECONDS = 600.0
+_MAX_MODEL_CATALOG_OUTPUT_CHARS = 1_048_576
+_MAX_MODEL_CATALOG_ENTRIES = 64
+_MODEL_CATALOG_CACHE_SECONDS = 60.0
 _VERSION_PATTERN = re.compile(r"(?<!\d)(\d+)\.(\d+)\.(\d+)(?!\d)")
 _SAFE_ENVIRONMENT_NAMES = frozenset(
     {
@@ -113,6 +119,55 @@ class CLIProviderStatus:
     executable: str | None = None
     version: str = ""
     reason: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class CLIModelInfo:
+    """Bounded public metadata for one account-visible CLI model."""
+
+    slug: str
+    display_name: str
+    description: str
+    priority: int
+    default_reasoning_level: str
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "slug": self.slug,
+            "display_name": self.display_name,
+            "description": self.description,
+            "priority": self.priority,
+            "default_reasoning_level": self.default_reasoning_level,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class CLIModelCatalog:
+    """One projected model inventory without raw host instructions or account data."""
+
+    transport: str
+    models: tuple[CLIModelInfo, ...]
+    source: str
+    observed_at: str
+    stale: bool = False
+    error: str = ""
+    cache_hit: bool = False
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "transport": self.transport,
+            "models": [model.as_dict() for model in self.models],
+            "source": self.source,
+            "observed_at": self.observed_at,
+            "stale": self.stale,
+            "error": self.error,
+            "cache_hit": self.cache_hit,
+        }
+
+
+_MODEL_CATALOG_CONDITION = threading.Condition()
+_MODEL_CATALOG_CACHE: dict[str, tuple[float, CLIModelCatalog]] = {}
+_MODEL_CATALOG_IN_FLIGHT: set[str] = set()
 
 
 ProcessRunner = Callable[..., BoundedProcessResult]
@@ -487,6 +542,166 @@ def inspect_cli_transport(
     )
 
 
+def _model_catalog_error(transport: str, reason: str) -> CLIModelCatalog:
+    return CLIModelCatalog(
+        transport=transport,
+        models=(),
+        source="unavailable",
+        observed_at=datetime.now(timezone.utc).isoformat(),
+        error=reason[:256],
+    )
+
+
+def _parse_codex_model_catalog(stdout: str) -> CLIModelCatalog:
+    try:
+        payload = safe_load_bounded_json(
+            stdout,
+            maximum_bytes=_MAX_MODEL_CATALOG_OUTPUT_CHARS,
+            maximum_depth=48,
+            maximum_nodes=50_000,
+        )
+    except (TypeError, ValueError):
+        return _model_catalog_error("codex", "Codex returned an invalid model catalog")
+    rows = payload.get("models") if isinstance(payload, dict) else None
+    if not isinstance(rows, list) or len(rows) > 512:
+        return _model_catalog_error("codex", "Codex model catalog has an invalid shape")
+    models: list[CLIModelInfo] = []
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict) or str(row.get("visibility") or "") != "list":
+            continue
+        slug = str(row.get("slug") or "").strip()
+        if not slug or slug in seen or not is_safe_cli_model_id(slug):
+            continue
+        priority = row.get("priority", 1_000)
+        if isinstance(priority, bool) or not isinstance(priority, int):
+            priority = 1_000
+        models.append(
+            CLIModelInfo(
+                slug=slug,
+                display_name=str(row.get("display_name") or slug).strip()[:128],
+                description=str(row.get("description") or "").strip()[:256],
+                priority=max(0, min(priority, 1_000_000)),
+                default_reasoning_level=str(row.get("default_reasoning_level") or "").strip()[:32],
+            )
+        )
+        seen.add(slug)
+        if len(models) >= _MAX_MODEL_CATALOG_ENTRIES:
+            break
+    models.sort(key=lambda item: (item.priority, item.slug))
+    return CLIModelCatalog(
+        transport="codex",
+        models=tuple(models),
+        source="codex-cli",
+        observed_at=datetime.now(timezone.utc).isoformat(),
+        error="" if models else "Codex reported no visible models",
+    )
+
+
+def _discover_cli_models_uncached(
+    transport: str,
+    *,
+    timeout: float,
+    resolver: BinaryResolver,
+    runner: ProcessRunner,
+    environ: Mapping[str, str] | None,
+) -> CLIModelCatalog:
+    if transport != "codex":
+        return _model_catalog_error(
+            transport,
+            "account-aware model discovery is not available for this CLI transport",
+        )
+    executable = _resolve_cli_executable(transport, resolver, environ=environ)
+    if not executable:
+        return _model_catalog_error(transport, "Codex executable not found")
+    try:
+        with private_temporary_directory(prefix="cli-models") as temporary:
+            cwd = str(temporary)
+            result = runner(
+                _prepared_cli_command(executable, "debug", "models"),
+                timeout=timeout,
+                cwd=cwd,
+                env=_isolated_invocation_environment(transport, cwd, environ),
+                max_output_chars=_MAX_MODEL_CATALOG_OUTPUT_CHARS,
+            )
+    except Exception:
+        return _model_catalog_error(transport, "Codex model discovery failed")
+    if result.timed_out:
+        return _model_catalog_error(transport, "Codex model discovery timed out")
+    if result.returncode != 0 or result.stdout_truncated or result.stderr_truncated:
+        return _model_catalog_error(transport, "Codex model discovery was incomplete")
+    return _parse_codex_model_catalog(result.stdout)
+
+
+def discover_cli_models(
+    transport: str,
+    *,
+    refresh: bool = False,
+    timeout: float = 15.0,
+    resolver: BinaryResolver = shutil.which,
+    runner: ProcessRunner = run_bounded_process,
+    environ: Mapping[str, str] | None = None,
+) -> CLIModelCatalog:
+    """Discover account-visible models with bounded cache and singleflight."""
+
+    normalized = str(transport or "").strip().casefold()
+    if normalized not in SUPPORTED_CLI_TRANSPORTS:
+        return _model_catalog_error(normalized, "unsupported CLI transport")
+    if not _valid_timeout(timeout):
+        return _model_catalog_error(normalized, "model discovery timeout is invalid")
+    now = time.monotonic()
+    with _MODEL_CATALOG_CONDITION:
+        cached = _MODEL_CATALOG_CACHE.get(normalized)
+        if not refresh and cached is not None and cached[0] > now:
+            value = cached[1]
+            return CLIModelCatalog(
+                transport=value.transport,
+                models=value.models,
+                source=value.source,
+                observed_at=value.observed_at,
+                stale=value.stale,
+                error=value.error,
+                cache_hit=True,
+            )
+        deadline = now + float(timeout)
+        while normalized in _MODEL_CATALOG_IN_FLIGHT:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return _model_catalog_error(normalized, "model discovery is already in progress")
+            _MODEL_CATALOG_CONDITION.wait(timeout=remaining)
+            cached = _MODEL_CATALOG_CACHE.get(normalized)
+            if cached is not None and cached[0] > time.monotonic():
+                value = cached[1]
+                return CLIModelCatalog(
+                    transport=value.transport,
+                    models=value.models,
+                    source=value.source,
+                    observed_at=value.observed_at,
+                    stale=value.stale,
+                    error=value.error,
+                    cache_hit=True,
+                )
+        _MODEL_CATALOG_IN_FLIGHT.add(normalized)
+    try:
+        catalog = _discover_cli_models_uncached(
+            normalized,
+            timeout=float(timeout),
+            resolver=resolver,
+            runner=runner,
+            environ=environ,
+        )
+    finally:
+        with _MODEL_CATALOG_CONDITION:
+            if "catalog" in locals():
+                _MODEL_CATALOG_CACHE[normalized] = (
+                    time.monotonic() + _MODEL_CATALOG_CACHE_SECONDS,
+                    catalog,
+                )
+            _MODEL_CATALOG_IN_FLIGHT.discard(normalized)
+            _MODEL_CATALOG_CONDITION.notify_all()
+    return catalog
+
+
 def _parse_codex(stdout: str) -> dict[str, Any] | None:
     if not isinstance(stdout, str) or len(stdout) > _MAX_CLI_OUTPUT_CHARS:
         return None
@@ -718,7 +933,10 @@ def invoke_cli_judge(
 
 __all__ = [
     "SUPPORTED_CLI_TRANSPORTS",
+    "CLIModelCatalog",
+    "CLIModelInfo",
     "CLIProviderStatus",
+    "discover_cli_models",
     "inspect_cli_transport",
     "invoke_cli_judge",
     "invoke_cli_structured",

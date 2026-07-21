@@ -109,6 +109,15 @@ _SET_VALIDATORS = {
         minimum=0.0,
         maximum=1.0,
     ),
+    "delegation.child_inference_budget": lambda item: _integer(
+        item, "delegation.child_inference_budget", minimum=0, maximum=256
+    ),
+    "delegation.child_inference_concurrency": lambda item: _integer(
+        item, "delegation.child_inference_concurrency", minimum=1, maximum=32
+    ),
+    "delegation.child_cache_ttl_seconds": lambda item: _integer(
+        item, "delegation.child_cache_ttl_seconds", minimum=0, maximum=86400
+    ),
     "agents.disabled": lambda item: list(normalize_disabled_agents(item)),
     "store.db_path": lambda item: _string(item, "store.db_path", allow_empty=False, maximum=4096),
     "server.host": lambda item: _loopback_host(item, "server.host"),

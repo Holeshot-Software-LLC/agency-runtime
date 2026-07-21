@@ -20,6 +20,10 @@ HANDLER_NAMES = (
     "cmd_codex_exec",
     "cmd_config_get",
     "cmd_config_path",
+    "cmd_config_provider_list",
+    "cmd_config_provider_models",
+    "cmd_config_provider_remove",
+    "cmd_config_provider_set",
     "cmd_config_reset",
     "cmd_config_set",
     "cmd_config_show",
@@ -78,6 +82,11 @@ EXPECTED_PATHS = (
     "agency config",
     "agency config get",
     "agency config path",
+    "agency config provider",
+    "agency config provider list",
+    "agency config provider models",
+    "agency config provider remove",
+    "agency config provider set",
     "agency config reset",
     "agency config set",
     "agency config show",
@@ -146,6 +155,10 @@ EXPECTED_BINDINGS = {
     "agency codex exec": "cmd_codex_exec",
     "agency config get": "cmd_config_get",
     "agency config path": "cmd_config_path",
+    "agency config provider list": "cmd_config_provider_list",
+    "agency config provider models": "cmd_config_provider_models",
+    "agency config provider remove": "cmd_config_provider_remove",
+    "agency config provider set": "cmd_config_provider_set",
     "agency config reset": "cmd_config_reset",
     "agency config set": "cmd_config_set",
     "agency config show": "cmd_config_show",
@@ -199,7 +212,7 @@ EXPECTED_BINDINGS = {
     "agency status": "cmd_status",
     "agency sync": "cmd_sync",
 }
-EXPECTED_MANIFEST_SHA256 = "2d4e8dd63d06196f40b6a50010da1995d1ec9533177a5fe68654ac286a2d41fc"
+EXPECTED_MANIFEST_SHA256 = "79f85110c59a08ad5f7c59d59b84768c20190f99472b0c7d9e68d95d0d124abe"
 
 
 def _handler(name: str):
