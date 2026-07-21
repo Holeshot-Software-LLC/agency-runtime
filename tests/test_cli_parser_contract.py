@@ -199,7 +199,7 @@ EXPECTED_BINDINGS = {
     "agency status": "cmd_status",
     "agency sync": "cmd_sync",
 }
-EXPECTED_MANIFEST_SHA256 = "5a22e3267c43ab621b1d70beea6d9d4188ac5010a75e137f3120a0bf57e42d79"
+EXPECTED_MANIFEST_SHA256 = "2d4e8dd63d06196f40b6a50010da1995d1ec9533177a5fe68654ac286a2d41fc"
 
 
 def _handler(name: str):
@@ -380,6 +380,8 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "rollback": False,
                 "backup": None,
                 "no_dashboard": False,
+                "verify_activation": False,
+                "activation_timeout": 180.0,
                 "json": False,
                 "func": "cmd_install",
             },

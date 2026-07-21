@@ -13,7 +13,12 @@ from pathlib import Path
 import pytest
 
 import agency_runtime.core.canary as canary_module
-from agency_runtime.core.canary import CODEX_CANARY_EXEC_OPTIONS, _backend, run_canary
+from agency_runtime.core.canary import (
+    CODEX_CANARY_EXEC_OPTIONS,
+    CODEX_CURRENT_PROFILE_EXEC_OPTIONS,
+    _backend,
+    run_canary,
+)
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.installer import (
     INSTALL_MANIFEST,
@@ -67,6 +72,39 @@ def test_readiness_is_nonmutating_and_never_claims_a_live_canary(
     assert report["live_attempted"] is False
     assert report["canary_passed"] is False
     assert path.exists() is False
+
+
+def test_current_profile_codex_readiness_requires_distinct_confirmation(
+    tmp_path: Path,
+) -> None:
+    report = run_canary(
+        "codex",
+        db_path=tmp_path / "missing.db",
+        inspector=_ready_host,
+        profile_scope="current-profile",
+    )
+
+    assert report["ready"] is True
+    assert report["profile_scope"] == "current-profile"
+    assert report["execute_confirmation"] == "RUN LIVE codex CURRENT-PROFILE CANARY"
+
+
+def test_current_profile_canary_rejects_invalid_scope_and_non_codex_modes(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="unsupported canary profile scope"):
+        run_canary("codex", db_path=tmp_path / "db", profile_scope="unknown")
+    with pytest.raises(ValueError, match="support Codex Agency mode only"):
+        run_canary(
+            "claude",
+            db_path=tmp_path / "db",
+            profile_scope="current-profile",
+        )
+    with pytest.raises(ValueError, match="support Codex Agency mode only"):
+        run_canary(
+            "codex",
+            db_path=tmp_path / "db",
+            mode="native-only",
+            profile_scope="current-profile",
+        )
 
 
 def test_live_canary_requires_exact_confirmation_before_backend_execution(
@@ -800,11 +838,116 @@ def test_current_codex_cli_exposes_every_canary_command_capability(
     assert CODEX_CANARY_EXEC_OPTIONS[-1] == "-"
     assert "--ignore-user-config" not in CODEX_CANARY_EXEC_OPTIONS
     assert "--ignore-rules" in CODEX_CANARY_EXEC_OPTIONS
+    assert "--dangerously-bypass-hook-trust" not in CODEX_CURRENT_PROFILE_EXEC_OPTIONS
     assert "--json" in help_text("plugin", "marketplace", "add")
     assert "--json" in help_text("plugin", "add")
     plugin_list_help = help_text("plugin", "list")
     assert "--json" in plugin_list_help
     assert "--marketplace" in plugin_list_help
+
+
+def test_current_profile_codex_canary_uses_real_profile_without_trust_bypass(
+    tmp_path: Path,
+) -> None:
+    marketplace = tmp_path / "marketplace"
+    (marketplace / ".agents" / "plugins").mkdir(parents=True)
+    (marketplace / ".agents" / "plugins" / "marketplace.json").write_text(
+        "{}",
+        encoding="utf-8",
+    )
+    real_home = tmp_path / "codex-home"
+    real_home.mkdir()
+    db_path = tmp_path / "agency.db"
+    Store(db_path)
+    calls: list[dict] = []
+
+    def runner(argv: list[str], **kwargs):
+        calls.append({"argv": list(argv), **kwargs})
+        return BoundedProcessResult(
+            0,
+            "\n".join(
+                [
+                    json.dumps(
+                        {
+                            "type": "item.completed",
+                            "item": {"type": "agent_message", "text": _valid_header()},
+                        }
+                    ),
+                    json.dumps({"type": "turn.completed"}),
+                ]
+            ),
+            "",
+        )
+
+    backend = _backend(
+        "codex",
+        db_path=db_path,
+        timeout=10,
+        native={"managed_target": str(marketplace)},
+        resolver=lambda _name: "C:/tools/codex.exe",
+        runner=runner,
+        environ={"CODEX_HOME": str(real_home), "HOME": str(tmp_path), "PATH": "C:/tools"},
+        profile_scope="current-profile",
+    )
+    workdir = tmp_path / "empty-workdir"
+    workdir.mkdir()
+    result = backend.execute(task="current profile canary", workdir=str(workdir))
+
+    assert result["status"] == "completed"
+    assert result["profile_scope"] == "current-profile"
+    assert "isolated_plugin" not in result
+    assert len(calls) == 1
+    assert calls[0]["argv"][1] == "exec"
+    assert "--dangerously-bypass-hook-trust" not in calls[0]["argv"]
+    assert calls[0]["env"]["CODEX_HOME"] == str(real_home)
+    assert calls[0]["env"]["AGENCY_CANARY_MODE"] == "1"
+
+
+def test_current_profile_codex_canary_timeout_and_backend_scope_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    marketplace = tmp_path / "marketplace"
+    (marketplace / ".agents" / "plugins").mkdir(parents=True)
+    (marketplace / ".agents" / "plugins" / "marketplace.json").write_text(
+        "{}",
+        encoding="utf-8",
+    )
+    db_path = tmp_path / "agency.db"
+    Store(db_path)
+    monkeypatch.setattr(canary_module, "_remaining_canary_timeout", lambda *_a, **_kw: 0)
+    backend = _backend(
+        "codex",
+        db_path=db_path,
+        timeout=1,
+        native={"managed_target": str(marketplace)},
+        resolver=lambda _name: "codex",
+        runner=lambda *_a, **_kw: pytest.fail("timed-out backend must not execute"),
+        environ={"HOME": str(tmp_path), "PATH": "C:/tools"},
+        profile_scope="current-profile",
+    )
+    result = backend.execute(task="canary", workdir=str(tmp_path))
+    assert result["status"] == "timed_out"
+    assert result["profile_scope"] == "current-profile"
+
+    with pytest.raises(ValueError, match="unsupported canary profile scope"):
+        _backend(
+            "codex",
+            db_path=db_path,
+            timeout=1,
+            native={"managed_target": str(marketplace)},
+            resolver=lambda _name: "codex",
+            profile_scope="unknown",
+        )
+    with pytest.raises(ValueError, match="support Codex only"):
+        _backend(
+            "claude",
+            db_path=db_path,
+            timeout=1,
+            native={"managed_target": str(marketplace)},
+            resolver=lambda _name: "claude",
+            profile_scope="current-profile",
+        )
 
 
 def test_concurrent_same_trace_evidence_with_wrong_nonce_hash_cannot_pass(

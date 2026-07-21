@@ -53,8 +53,9 @@ RECEIPT_CAPABLE_HOSTS = frozenset({"hermes"})
 SAFE_CANARY_HOSTS = frozenset({"codex", "claude"})
 ISOLATED_CANARY_HOSTS = SAFE_CANARY_HOSTS
 CANARY_MODES = frozenset({"agency", "native-only"})
+CANARY_PROFILE_SCOPES = frozenset({"isolated-profile", "current-profile"})
 MAX_CANARY_TIMEOUT_SECONDS = 600.0
-CODEX_CANARY_EXEC_OPTIONS = (
+CODEX_CURRENT_PROFILE_EXEC_OPTIONS = (
     "--json",
     "--color",
     "never",
@@ -74,6 +75,10 @@ CODEX_CANARY_EXEC_OPTIONS = (
     "-c",
     "mcp_servers={}",
     "--skip-git-repo-check",
+    "-",
+)
+CODEX_CANARY_EXEC_OPTIONS = (
+    *CODEX_CURRENT_PROFILE_EXEC_OPTIONS[:-1],
     "--dangerously-bypass-hook-trust",
     "-",
 )
@@ -173,6 +178,7 @@ def _backend(
     runner: Callable[..., Any] | None = None,
     environ: Mapping[str, str] | None = None,
     master_enabled: bool = True,
+    profile_scope: str = "isolated-profile",
 ):
     return _backends.backend(
         host,
@@ -183,6 +189,7 @@ def _backend(
         runner=runner,
         environ=environ,
         master_enabled=master_enabled,
+        profile_scope=profile_scope,
     )
 
 
@@ -277,7 +284,12 @@ def _complete_successful_canary(
     proof: Any,
     evidence: Mapping[str, Any],
 ) -> None:
-    current = _assess_readiness(host, path, inspector)
+    current = _assess_readiness(
+        host,
+        path,
+        inspector,
+        profile_scope=assessment.profile_scope,
+    )
     if not _attestation_identity_is_current(assessment, current):
         report["unmet_prerequisites"].append(
             "native host or managed bundle identity changed or became unverified during canary"
@@ -329,6 +341,7 @@ def run_canary(
     db_path: str | Path | None = None,
     timeout: float = 120,
     mode: str = "agency",
+    profile_scope: str = "isolated-profile",
     inspector: Callable[[str], dict[str, Any]] = _default_inspector,
     backend_factory: Callable[..., Any] = _backend,
 ) -> dict[str, Any]:
@@ -337,9 +350,13 @@ def run_canary(
         raise ValueError(f"unsupported host: {host}")
     if mode not in CANARY_MODES:
         raise ValueError(f"unsupported canary mode: {mode}")
+    if profile_scope not in CANARY_PROFILE_SCOPES:
+        raise ValueError(f"unsupported canary profile scope: {profile_scope}")
+    if profile_scope == "current-profile" and (host != "codex" or mode != "agency"):
+        raise ValueError("current-profile canaries support Codex Agency mode only")
     timeout = _validated_timeout(timeout)
     path = Path(db_path).expanduser() if db_path else _default_db_path()
-    assessment = _assess_readiness(host, path, inspector)
+    assessment = _assess_readiness(host, path, inspector, profile_scope=profile_scope)
     report = _readiness_report(host, assessment, mode=mode)
     master_before = _attach_master_readiness(report, mode=mode)
     if master_before is None:
@@ -361,6 +378,7 @@ def run_canary(
         backend_factory=backend_factory,
         master_enabled=mode == "agency",
         mode=mode,
+        profile_scope=assessment.profile_scope,
     )
     if preparation.error:
         report["unmet_prerequisites"].append(preparation.error)
@@ -432,6 +450,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("host", choices=SUPPORTED_HOSTS)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--mode", choices=sorted(CANARY_MODES), default="agency")
+    parser.add_argument(
+        "--profile-scope",
+        choices=sorted(CANARY_PROFILE_SCOPES),
+        default="isolated-profile",
+    )
     parser.add_argument("--confirm", default="")
     parser.add_argument("--db", default=None)
     parser.add_argument("--timeout", type=_validated_timeout, default=120.0)
@@ -448,6 +471,7 @@ def main(argv: list[str] | None = None) -> int:
         db_path=args.db,
         timeout=args.timeout,
         mode=args.mode,
+        profile_scope=args.profile_scope,
     )
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.output:

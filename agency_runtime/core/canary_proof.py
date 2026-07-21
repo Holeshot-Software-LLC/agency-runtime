@@ -130,6 +130,8 @@ def assess_readiness(
     host: str,
     path: Path,
     inspector: Callable[[str], dict[str, Any]],
+    *,
+    profile_scope: str | None = None,
 ) -> ReadinessAssessment:
     facade = _facade()
     try:
@@ -141,14 +143,14 @@ def assess_readiness(
         if isinstance(inspected, dict)
         else {"host": host, "inspection_error": "native inspection unavailable"}
     )
-    control = facade._read_control_without_writes(path, host)
-    profile_scope = (
+    profile_scope = profile_scope or (
         "isolated-profile" if host in facade.ISOLATED_CANARY_HOSTS else "current-profile"
     )
+    control = facade._read_control_without_writes(path, host)
     unmet: list[str] = []
     if native.get("executable_discovered") is not True:
         unmet.append("host executable not discovered")
-    if host not in facade.ISOLATED_CANARY_HOSTS:
+    if profile_scope == "current-profile":
         if native.get("registered") is not True:
             unmet.append("Agency Runtime plugin registration not proven")
         if native.get("enabled") is not True:
@@ -181,7 +183,11 @@ def readiness_report(
     mode: str = "agency",
 ) -> dict[str, Any]:
     confirmation = (
-        f"RUN LIVE {host} CANARY" if mode == "agency" else f"RUN LIVE {host} NATIVE-ONLY CANARY"
+        f"RUN LIVE {host} CURRENT-PROFILE CANARY"
+        if assessment.profile_scope == "current-profile"
+        else f"RUN LIVE {host} CANARY"
+        if mode == "agency"
+        else f"RUN LIVE {host} NATIVE-ONLY CANARY"
     )
     return {
         "schema_version": "agency.host_canary.v1",
@@ -210,6 +216,7 @@ def prepare_live_invocation(
     backend_factory: Callable[..., Any],
     master_enabled: bool = True,
     mode: str = "agency",
+    profile_scope: str = "isolated-profile",
 ) -> LivePreparation:
     facade = _facade()
     try:
@@ -236,6 +243,7 @@ def prepare_live_invocation(
                 timeout=timeout,
                 native=native,
                 master_enabled=master_enabled,
+                profile_scope=profile_scope,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)

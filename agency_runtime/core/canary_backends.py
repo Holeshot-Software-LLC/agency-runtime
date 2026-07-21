@@ -202,21 +202,26 @@ def codex_output(stdout: str) -> str | None:
     return messages[-1] if completed and messages else None
 
 
-def codex_canary_record(result: Any) -> dict[str, Any]:
+def codex_canary_record(
+    result: Any,
+    *,
+    profile_scope: str = "isolated-profile",
+) -> dict[str, Any]:
     facade = _facade()
     completed = facade._process_succeeded(result)
     record: dict[str, Any] = {
         "backend": "codex",
-        "profile_scope": "isolated-profile",
-        "isolated_plugin": {
-            "registered": True,
-            "enabled": True,
-        },
+        "profile_scope": profile_scope,
         "status": "completed" if completed else "failed",
         "exit_code": result.returncode,
         "stdout_truncated": result.stdout_truncated,
         "stderr_truncated": result.stderr_truncated,
     }
+    if profile_scope == "isolated-profile":
+        record["isolated_plugin"] = {
+            "registered": True,
+            "enabled": True,
+        }
     if completed and (output := facade._codex_output(result.stdout)) is not None:
         record["output"] = output
     elif completed:
@@ -261,10 +266,10 @@ def remaining_timeout(deadline: float, *, maximum: float | None = None) -> float
     return max(0.0, remaining)
 
 
-def _timeout_record(host: str) -> dict[str, Any]:
+def _timeout_record(host: str, *, profile_scope: str = "isolated-profile") -> dict[str, Any]:
     return {
         "backend": host,
-        "profile_scope": "isolated-profile",
+        "profile_scope": profile_scope,
         "status": "timed_out",
         "exit_code": 124,
         "stdout_truncated": False,
@@ -282,6 +287,7 @@ class SafeCodexCanaryBackend:
     process_runner: Callable[..., Any]
     source_env: Mapping[str, str]
     master_enabled: bool = True
+    profile_scope: str = "isolated-profile"
 
     def _install_plugin(
         self,
@@ -386,6 +392,25 @@ class SafeCodexCanaryBackend:
         del check
         facade = _facade()
         deadline = facade.time.monotonic() + self.timeout
+        if self.profile_scope == "current-profile":
+            from agency_runtime.core.cli_transport import safe_cli_environment
+
+            env = safe_cli_environment(self.source_env)
+            env["AGENCY_DB_PATH"] = str(self.db_path.resolve())
+            env["AGENCY_CANARY_MODE"] = "1"
+            env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if self.master_enabled else "0"
+            timeout = facade._remaining_canary_timeout(deadline)
+            if timeout <= 0:
+                return _timeout_record("codex", profile_scope=self.profile_scope)
+            result = self.process_runner(
+                [self.executable, "exec", *facade.CODEX_CURRENT_PROFILE_EXEC_OPTIONS],
+                timeout=timeout,
+                cwd=workdir,
+                env=env,
+                input_text=task,
+                max_output_chars=256_000,
+            )
+            return facade._codex_canary_record(result, profile_scope=self.profile_scope)
         with private_temporary_directory(prefix="codex-home") as runtime_home:
             codex_home = facade._prepare_private_host_home(
                 runtime_home,
@@ -537,6 +562,7 @@ def backend(
     runner: Callable[..., Any] | None,
     environ: Mapping[str, str] | None,
     master_enabled: bool = True,
+    profile_scope: str = "isolated-profile",
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -547,6 +573,10 @@ def backend(
     executable = resolver(host)
     if not executable:
         raise ValueError(f"{host} executable is unavailable")
+    if profile_scope not in {"isolated-profile", "current-profile"}:
+        raise ValueError(f"unsupported canary profile scope: {profile_scope}")
+    if profile_scope == "current-profile" and host != "codex":
+        raise ValueError("current-profile canaries support Codex only")
     process_runner = runner or run_bounded_process
     source_env = facade.os.environ if environ is None else environ
     home = facade._source_home(source_env)
@@ -561,6 +591,7 @@ def backend(
             process_runner=process_runner,
             source_env=source_env,
             master_enabled=master_enabled,
+            profile_scope=profile_scope,
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()

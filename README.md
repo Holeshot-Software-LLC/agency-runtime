@@ -78,7 +78,7 @@ flowchart LR
 
 | Host | Integration | Notes |
 |---|---|---|
-| Codex | Native plugin, hooks, MCP, controls, canary | Review and trust the installed events with `/hooks`, then start a new session. |
+| Codex | Native plugin, hooks, MCP, controls, canary | Installation guides hook approval and verifies a normal Codex profile before reporting ready. |
 | Claude Code | Native plugin, hooks, MCP, controls, canary | Uses Claude's native plugin and Stop behavior. |
 | Hermes | Native Python plugin and commands | Supports direct `/agency` controls. |
 | OpenClaw | Native JavaScript plugin | Supported for the audited `2026.7.x` stable line at patch 1 or newer. |
@@ -102,13 +102,27 @@ agency --version
 agency configure --non-interactive --profile standard
 agency install --all --dry-run
 agency install --all
+agency install --agent codex --verify-activation
 agency smoke --all --json
 agency doctor
 ```
 
 The installer discovers supported hosts and registers only the ones it can
-identify. It does not restart a host automatically. Start a fresh host session
-after installation.
+identify. It does not restart a host automatically.
+
+Codex requires you to approve command hooks. Agency will install the plugin,
+report `activation_required`, and give you the exact next step. In Codex, run
+`/hooks` and trust the seven Agency Runtime events. Then finish the same install
+flow with:
+
+```bash
+agency install --agent codex --verify-activation
+```
+
+That verification starts a harmless normal-profile Codex session without the
+hook-trust bypass. Installation reports Codex as ready only when routing,
+specialist evidence, finalization, and the six-line header all appear. The
+installer never edits Codex's trust state for you.
 
 The dashboard is installed by default as a service for the current user. It
 does not require administrator access. To install only the runtime and host
@@ -123,6 +137,7 @@ Install or roll back one host:
 ```bash
 agency install --agent codex --dry-run
 agency install --agent codex
+agency install --agent codex --verify-activation
 agency install --agent codex --rollback
 ```
 

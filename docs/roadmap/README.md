@@ -131,6 +131,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-111` | [Honor global Agency mode in isolated host canaries](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | done | p0 | testing | [#115](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/115) |
 | `AR-112` | [Rewrite the README for public users](issue-AR-112-public-user-readme.md) | done | p1 | documentation | [#117](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/117) |
 | `AR-113` | [Isolate wall-clock performance gates from the compatibility matrix](issue-AR-113-isolate-performance-gates.md) | done | p0 | testing | [#119](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/119) |
+| `AR-114` | [Make Codex hook activation part of installation](issue-AR-114-guided-codex-hook-activation.md) | in_progress | p0 | host-integrations | [#123](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/123) |
 
 ## Traceability
 
@@ -253,6 +254,7 @@ not stable internal identifiers.
 | [AR-111](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | [`615d88c`](../worklog/README.md), [`f5fe972`](../worklog/README.md), [`b8f80bd`](../worklog/README.md), [`cb17e0d`](../worklog/README.md), [`123910a`](../worklog/README.md), [`edb922c`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0053](../decisions/0053-durable-fail-enabled-master-control.md), [ADR-0076](../decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md) |
 | [AR-112](issue-AR-112-public-user-readme.md) | [`4635a0b`](../worklog/README.md), [`de875f6`](../worklog/README.md), [`280b0b7`](../worklog/README.md) | None |
 | [AR-113](issue-AR-113-isolate-performance-gates.md) | [`9d4e55b`](../worklog/README.md), [`c994882`](../worklog/README.md), [`a751046`](../worklog/README.md) | None |
+| [AR-114](issue-AR-114-guided-codex-hook-activation.md) | [`58026a5`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
 
 ## Dependency summary
 

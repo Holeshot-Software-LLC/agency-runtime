@@ -113,6 +113,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9d4e55b` | 2026-07-20 | fix(ci): isolate wall-clock performance gates | [AR-113](../roadmap/issue-AR-113-isolate-performance-gates.md) | [detail](2026-07-20-9d4e55b-isolate-performance-gates.md) |
 | `c994882` | 2026-07-20 | docs(roadmap): complete performance gate isolation | [AR-113](../roadmap/issue-AR-113-isolate-performance-gates.md) | null |
 | `a751046` | 2026-07-20 | Merge pull request #121 from Holeshot-Software-LLC/codex/performance-gate-isolation | [AR-113](../roadmap/issue-AR-113-isolate-performance-gates.md) | [detail](2026-07-20-a751046-pr-121-merge.md) |
+| `58026a5` | 2026-07-20 | fix(installer): require verified Codex hook activation | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -65,11 +65,13 @@ or adding an index-install claim.
       matrix or clearly marked below that maturity.
 - [ ] Codex generated-bundle smoke proves the expected seven hook events,
       commands, and timeout schema; native inventory proves plugin registration
-      and enablement. Installation, status, and doctor report trust as
-      `unverified` and never query or mutate Codex's live trust store. An
-      operator reviews and trusts the hooks through `/hooks`, then starts a new
-      session and records the release evidence. Any one-invocation canary bypass
-      remains isolated and is never treated as durable installation trust.
+      and enablement. Installation reports `activation_required` until an
+      operator reviews and trusts the hooks through `/hooks` and
+      `agency install --agent codex --verify-activation` records a successful
+      current-profile canary. That verification omits the hook-trust bypass and
+      must prove routing, specialist evidence, finalization, and the response
+      header. Isolated canary bypasses remain package-only evidence and never
+      establish normal-profile readiness.
 - [ ] Windows npm command shims and POSIX executable launch are both verified.
 - [ ] Ubuntu/WSL live evidence comes from a Linux environment with the project
       and test tooling installed; Windows-only evidence is not relabeled Linux.
