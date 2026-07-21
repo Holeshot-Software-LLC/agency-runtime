@@ -112,6 +112,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `280b0b7` | 2026-07-20 | Merge pull request #116 from Holeshot-Software-LLC/codex/pr114-merge-ledger | [AR-79 through AR-85, AR-88, AR-89, AR-107, AR-109, AR-110, AR-112](../roadmap/README.md) | [detail](2026-07-20-280b0b7-pr-116-merge.md) |
 | `9d4e55b` | 2026-07-20 | fix(ci): isolate wall-clock performance gates | [AR-113](../roadmap/issue-AR-113-isolate-performance-gates.md) | [detail](2026-07-20-9d4e55b-isolate-performance-gates.md) |
 | `c994882` | 2026-07-20 | docs(roadmap): complete performance gate isolation | [AR-113](../roadmap/issue-AR-113-isolate-performance-gates.md) | null |
+| `a751046` | 2026-07-20 | Merge pull request #121 from Holeshot-Software-LLC/codex/performance-gate-isolation | [AR-113](../roadmap/issue-AR-113-isolate-performance-gates.md) | [detail](2026-07-20-a751046-pr-121-merge.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
