@@ -131,7 +131,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-111` | [Honor global Agency mode in isolated host canaries](issue-AR-111-honor-global-mode-in-isolated-canaries.md) | done | p0 | testing | [#115](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/115) |
 | `AR-112` | [Rewrite the README for public users](issue-AR-112-public-user-readme.md) | done | p1 | documentation | [#117](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/117) |
 | `AR-113` | [Isolate wall-clock performance gates from the compatibility matrix](issue-AR-113-isolate-performance-gates.md) | done | p0 | testing | [#119](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/119) |
-| `AR-114` | [Make Codex hook activation part of installation](issue-AR-114-guided-codex-hook-activation.md) | in_progress | p0 | host-integrations | [#123](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/123) |
+| `AR-114` | [Make Codex hook activation part of installation](issue-AR-114-guided-codex-hook-activation.md) | done | p0 | host-integrations | [#123](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/123) |
 
 ## Traceability
 

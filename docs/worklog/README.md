@@ -116,6 +116,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `58026a5` | 2026-07-20 | fix(installer): require verified Codex hook activation | null | null |
 | `527659d` | 2026-07-20 | Merge pull request #124 from Holeshot-Software-LLC/codex/ar-114-guided-codex-activation | null | null |
 | `7e24323` | 2026-07-21 | fix(installer): identify Codex terminal hook review | null | null |
+| `5d2bafb` | 2026-07-21 | Merge pull request #125 from Holeshot-Software-LLC/codex/ar-114-codex-tui-hook-trust | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

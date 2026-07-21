@@ -1,6 +1,6 @@
 ---
 title: "AR-114: Make Codex hook activation part of installation"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-20
 updated: 2026-07-21
@@ -63,10 +63,28 @@ installed Codex header proof. ADR-0036 governs host-canary attestations.
 
 ## Acceptance
 
-- [ ] Codex installation never claims ready while hook approval is unverified.
-- [ ] The installer clearly separates installed, activation-required, and ready states.
-- [ ] A guided path identifies the terminal TUI hook review without confusing it with Codex Desktop connector setup or modifying Codex trust state.
-- [ ] A current-profile Codex canary runs without `--dangerously-bypass-hook-trust`.
-- [ ] Only current-profile routing, load, finalization, and valid-header evidence establishes readiness.
-- [ ] JSON, human CLI, status, doctor, dashboard, and public documentation agree.
-- [ ] Windows and Linux tests cover interactive, non-interactive, trusted, untrusted, and interrupted activation.
+- [x] Codex installation never claims ready while hook approval is unverified.
+- [x] The installer clearly separates installed, activation-required, and ready states.
+- [x] A guided path identifies the terminal TUI hook review without confusing it with Codex Desktop connector setup or modifying Codex trust state.
+- [x] A current-profile Codex canary runs without `--dangerously-bypass-hook-trust`.
+- [x] Only current-profile routing, load, finalization, and valid-header evidence establishes readiness.
+- [x] JSON, human CLI, status, doctor, dashboard, and public documentation agree.
+- [x] Windows and Linux tests cover interactive, non-interactive, trusted, untrusted, and interrupted activation.
+
+## Verification
+
+The exact merged artifact from commit `5d2bafb` was independently verified and
+installed into the per-user runtime. After the user approved the seven Agency
+Runtime events in the Codex terminal TUI, the installed verifier completed on
+Windows with Codex CLI 0.144.3 and no hook-trust bypass. It persisted a
+`current-profile` attestation at `2026-07-21T13:42:00.106613Z` with trace
+`019f84e8-77c4-71c0-86ac-3b404c3f4a2d`, no unmet prerequisites, and promoted
+status, doctor, installer, and dashboard evidence to `runtime-verified` with
+`hook_trust_status=trusted`.
+
+Pull requests #124 and #125 passed the complete hosted Linux Python 3.10-3.14,
+Windows Python 3.10/3.14, portability, exact coverage, dashboard, performance,
+security, artifact parity, and artifact-smoke gates. The first #125 Windows
+Python 3.10 attempt encountered two late runner timeouts after 6,924 passing
+tests; the targeted rerun passed, while the same commit had already passed
+locally, on Windows Python 3.14, and across all Linux jobs.
