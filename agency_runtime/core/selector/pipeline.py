@@ -331,6 +331,7 @@ class _RouteRequest:
     cache_key: str
     source_message_hash: str
     active_ids: frozenset[str]
+    policy_active_ids: frozenset[str] = field(default_factory=frozenset)
     surface: str = "unknown"
     host: str = "unknown"
     inference_surface: str = ""
@@ -437,6 +438,11 @@ def _route_request(
         cache_key=cache_key(routing_query, context_fingerprint=fingerprint),
         source_message_hash=hashlib.sha256(user_message.encode("utf-8")).hexdigest(),
         active_ids=catalog_active_ids(eligible_catalog, context_fingerprint=fingerprint),
+        policy_active_ids=frozenset(
+            str(agent.get("slug") or agent.get("agent_slug") or "").strip()
+            for agent in catalog
+            if str(agent.get("slug") or agent.get("agent_slug") or "").strip()
+        ),
         surface=capabilities.surface,
         host=normalized_host,
         inference_surface=capabilities.inference_surface,
@@ -476,7 +482,10 @@ def routing_context_fingerprint(
 
 
 def _route_signals(request: _RouteRequest) -> _RouteSignals:
-    validation = validate_policy(request.policy, request.active_ids)
+    validation = validate_policy(
+        request.policy,
+        request.policy_active_ids or request.active_ids,
+    )
     matched_actions, companion_ids = detect_actions(
         request.user_message,
         request.policy,

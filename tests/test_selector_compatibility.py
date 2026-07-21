@@ -298,6 +298,50 @@ def test_pipeline_filters_before_inference_and_enforces_returned_set(monkeypatch
     ]
 
 
+def test_policy_validation_uses_active_roster_before_host_eligibility(monkeypatch) -> None:
+    catalog = [
+        _agent("domain-primary"),
+        _agent(
+            "linux-companion",
+            supported_platforms=["linux"],
+            supported_tool_platforms=["linux"],
+            required_tools=["source"],
+        ),
+    ]
+    monkeypatch.setattr(pipeline, "load_policy", lambda *_args: _policy("linux-companion"))
+    monkeypatch.setattr(
+        pipeline,
+        "query_judge",
+        lambda *_args, **_kwargs: {
+            "selected_ids": ["domain-primary"],
+            "confidence": 0.9,
+            "latency_ms": 1,
+            "status": "applied",
+        },
+    )
+
+    result = pipeline.route(
+        "policy-active-roster",
+        "Implement the domain change",
+        catalog,
+        config=AgencyConfig(),
+        host="codex",
+        platform="windows",
+        capability_receipt=_codex_receipt("policy-active-roster"),
+    )
+
+    assert result["semantic_ids"] == ["domain-primary"]
+    assert result["policy_validation"] == {
+        "valid": True,
+        "errors": [],
+        "enabled_count": 1,
+        "disabled_count": 0,
+    }
+    assert result["eligibility_rejections"] == [
+        {"slug": "linux-companion", "reason": "unsupported_tool_platform:windows"}
+    ]
+
+
 def test_pipeline_caps_semantic_plus_policy_companions_at_configured_max(
     monkeypatch,
 ) -> None:

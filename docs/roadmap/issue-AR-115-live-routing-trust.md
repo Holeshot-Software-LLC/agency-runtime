@@ -9,6 +9,7 @@ related:
   - README.md
   - agency_runtime/core/header/explanations.py
   - agency_runtime/core/selector/judge.py
+  - agency_runtime/core/selector/pipeline.py
   - agency_runtime/server/mcp_tools.py
   - docs/decisions/0078-present-human-routing-evidence-and-abstain-on-noise.md
 supersedes: []
@@ -34,11 +35,13 @@ Passing synthetic evaluation scores did not catch this real prompt.
 
 ## Current state
 
-The installed dashboard is active and reachable, but the response header is
-written for machines rather than people. When optional local inference is not
-available, very weak deterministic embedding collisions can still become
-specialist selections. The MCP delegation boundary forwards native worker
-labels into a store contract that intentionally accepts only generic-worker.
+Source and clean-distribution tests now reject the unrelated clinical,
+geography, translation, and generic-operations matches from the observed
+runtime/dashboard prompt. Configured Codex-subscription inference with an
+explicit model selects only `multi-agent-systems-architect` for that prompt,
+and the no-inference route has the same result. The exact installed candidate
+still requires a fresh normal Codex task after plugin restart before this item
+can close.
 
 ## Approach
 
@@ -52,6 +55,9 @@ Agency evidence capability visible to eligibility filtering, and avoid generic
 domain expansions that outrank the purpose-built runtime specialists.
 Normalize supported native-host worker labels to generic-worker at the MCP
 boundary while continuing to reject arbitrary specialist-like attribution.
+Validate companion-policy completeness against the full active roster before
+host capability filtering, while continuing to route only specialists eligible
+for the current host and platform.
 Add the observed prompt and explicit forbidden specialists to regression and
 live verification coverage.
 
@@ -70,6 +76,7 @@ quantitative routing gates.
 - [x] The native capability contract makes the audited runtime-evidence specialist eligible.
 - [x] Deterministic fallback selects only strongly grounded compatible specialists.
 - [x] Supported Codex native worker labels normalize to generic-worker attribution.
+- [x] Policy completeness is validated against the full active roster, not the host-eligible subset.
 - [ ] The observed prompt selects multi-agent-systems-architect or safely abstains in the installed runtime, with clinical, geography, translation, and generic operations specialists forbidden.
 - [ ] Both configured-inference and no-inference installed cases pass the forbidden-specialist assertions.
 - [x] Dashboard and public documentation explain the live test workflow.

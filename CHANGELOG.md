@@ -39,6 +39,9 @@ changes rather than duplicating every commit.
   settings across edits.
 - Dashboard CLI-provider staging now removes stale HTTP credentials before
   validation.
+- Companion-policy validation now uses the full active roster while selection
+  still uses the host-eligible subset, preventing valid cross-platform agents
+  from appearing missing on Windows or Linux routes.
 - Corrected Codex activation guidance to use the terminal TUI hook-review
   surface, distinguish Codex Desktop connector setup, and expose the approval
   surface and launch command in structured installer evidence.
