@@ -434,7 +434,9 @@ def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> No
     assert "Run dashboard UI tests with 100% coverage" in quality_steps
     quality_checkout = jobs["quality"]["steps"][0]
     assert quality_checkout["with"]["fetch-depth"] == 0
-    assert quality_checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha || github.sha }}"
+    assert (
+        quality_checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha || github.sha }}"
+    )
     quality_contracts = next(
         step
         for step in jobs["quality"]["steps"]
