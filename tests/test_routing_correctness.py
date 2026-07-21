@@ -172,6 +172,13 @@ def test_selection_confidence_floor_is_a_real_abstention() -> None:
     assert rejected["status"] == "abstained_low_confidence"
     assert rejected["error"] == "selection confidence below configured minimum"
 
+    malformed = pipeline_module._apply_selection_confidence_floor(
+        {"selected_ids": ["code-reviewer"], "semantic_ids": ["code-reviewer"], "confidence": "bad"},
+        minimum=0.8,
+    )
+    assert malformed["selected_ids"] == []
+    assert malformed["status"] == "abstained_low_confidence"
+
 
 def test_cache_and_stickiness_reject_ids_outside_current_catalog(monkeypatch) -> None:
     clear_cache()

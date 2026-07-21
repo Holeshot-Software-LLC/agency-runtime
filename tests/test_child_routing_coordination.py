@@ -27,6 +27,7 @@ def _key(value: str) -> str:
 
 def test_child_routing_singleflight_cache_and_content_boundary(tmp_path) -> None:
     store = Store(tmp_path / "agency.db")
+    assert store.read_child_routing_cache(_key("missing")) is None
     key = _key("assignment text that must not be stored")
     owner = store.reserve_child_routing(
         parent_session_id="parent-session",
