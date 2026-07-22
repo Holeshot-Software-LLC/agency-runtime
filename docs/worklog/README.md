@@ -132,6 +132,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `78afe96` | 2026-07-21 | fix(routing): preserve current child and provider evidence | [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md), [AR-118](../roadmap/issue-AR-118-reconcile-native-child-activation-evidence.md) | null |
 | `2c404f4` | 2026-07-21 | fix(routing): validate policy before host filtering | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md) | null |
 | `4f20f00` | 2026-07-21 | fix(routing): publish validated child assignment bundles | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | null |
+| `71faeef` | 2026-07-21 | fix(dashboard): preserve provider protocol coverage | [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
