@@ -134,6 +134,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4f20f00` | 2026-07-21 | fix(routing): publish validated child assignment bundles | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | null |
 | `71faeef` | 2026-07-21 | fix(dashboard): preserve provider protocol coverage | [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | null |
 | `4e0b0a7` | 2026-07-21 | docs(roadmap): define inference-first workforce delivery | [AR-119 through AR-125](../roadmap/README.md) | null |
+| `71405fa` | 2026-07-21 | feat(workforce): establish governed staffing foundation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-120](../roadmap/issue-AR-120-normalized-workforce-recruitment-index.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md), [AR-122](../roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md) | [detail](2026-07-21-71405fa-governed-workforce-foundation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
