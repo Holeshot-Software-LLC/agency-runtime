@@ -133,6 +133,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2c404f4` | 2026-07-21 | fix(routing): validate policy before host filtering | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md) | null |
 | `4f20f00` | 2026-07-21 | fix(routing): publish validated child assignment bundles | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | null |
 | `71faeef` | 2026-07-21 | fix(dashboard): preserve provider protocol coverage | [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | null |
+| `4e0b0a7` | 2026-07-21 | docs(roadmap): define inference-first workforce delivery | [AR-119 through AR-125](../roadmap/README.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
