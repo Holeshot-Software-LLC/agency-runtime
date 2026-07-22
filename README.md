@@ -256,13 +256,14 @@ The Agency response header exposes unreadable reason codes and effect codes.
 Explain how to test agent selection live and how to open the dashboard.
 ```
 
-With deterministic routing, the specialist result must be
-`multi-agent-systems-architect`; a weak prompt such as `Please help me with
-this.` must abstain. Neither case may select a clinical, geography, translation,
-or generic business-operations specialist. Repeat the first task with the
-configured inference provider enabled and confirm that the provider attempt,
-requested model or router alias, reconciled model, confidence, and compatibility
-decisions appear in the same Route Lab result.
+The result must include `multi-agent-systems-architect`.
+`technical-writer` is also valid because the task explicitly asks to make the
+header understandable. A weak prompt such as `Please help me with this.` must
+abstain. Neither case may select a clinical, geography, translation, or generic
+business-operations specialist. Repeat the first task with the configured
+inference provider enabled and confirm that the provider attempt, requested
+model or router alias, reconciled model, confidence, and compatibility decisions
+appear in the same Route Lab result.
 
 Or run it in the foreground on Windows or Linux:
 
@@ -374,11 +375,11 @@ agency host-canary codex
 ```
 
 Maintainers also test this exact selection pair from the built wheel and source
-archive, outside the checkout, on Windows and Linux. That artifact smoke fails
-if the runtime/dashboard prompt selects anything except
-`multi-agent-systems-architect`, if the ambiguous prompt does not abstain, or if
-any forbidden specialist appears. It complements the live canary; it does not
-replace a fresh normal-profile task after installation and restart.
+archive, outside the checkout, on Windows and Linux. That artifact smoke requires
+`multi-agent-systems-architect`, permits `technical-writer`, requires the
+ambiguous prompt to abstain, and rejects every forbidden specialist. It
+complements the live canary; it does not replace a fresh normal-profile task
+after installation and restart.
 
 Run an isolated live Codex canary only with its exact confirmation:
 

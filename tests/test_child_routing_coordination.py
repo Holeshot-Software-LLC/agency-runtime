@@ -12,6 +12,8 @@ from agency_runtime.core.preflight import (
     _assignment_recipe,
     _child_route_timeout,
     _normalize_parent_correlation,
+    _prepare_preflight_evidence,
+    _publish_child_routing_bundle,
     _resolve_preflight_routing,
 )
 from agency_runtime.core.preflight_recipe import _content_free_routing_recipe
@@ -165,6 +167,14 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
     }
     first, _, _ = _resolve_preflight_routing(**arguments)
     assert first["selected_ids"] == ["code-reviewer"]
+    _publish_child_routing_bundle(
+        store,
+        first,
+        trace_id="child-trace-one",
+        unit_assignment_agents=[],
+        suggestions=[],
+        ttl_seconds=config.delegation.child_cache_ttl_seconds,
+    )
     arguments.update(session_id="child-two", trace_id="child-trace-two")
     cached, _, _ = _resolve_preflight_routing(**arguments)
     assert cached["selected_ids"] == ["code-reviewer"]
@@ -184,6 +194,106 @@ def test_unplanned_child_reuses_inferred_route_and_abstains_when_budget_is_zero(
     assert abstained["selected_ids"] == []
     assert abstained["deterministic_candidate_ids"] == ["code-reviewer"]
     assert abstained["status"] == "child_budget_abstained"
+
+
+def test_cached_child_reuses_complete_multi_unit_assignment_bundle(tmp_path, monkeypatch) -> None:
+    store = Store(tmp_path / "agency.db")
+    message = "1. Review the implementation\n2. Audit the security controls"
+    route_calls: list[str] = []
+    assignment_calls: list[str] = []
+
+    class Pipeline:
+        @staticmethod
+        def route(_session_id, routed_message, _catalog, **_kwargs):
+            route_calls.append(routed_message)
+            return {
+                "selected_ids": ["code-reviewer"],
+                "semantic_ids": ["code-reviewer"],
+                "companion_ids": [],
+                "confidence": 0.9,
+                "latency_ms": 5,
+                "status": "selected",
+                "source": "inference",
+                "work_units": detect_work_units(routed_message),
+            }
+
+    assignment_agents = [{"slug": "code-reviewer", "work_unit_ids": ["unit-a"]}]
+    plan = [{"work_unit_id": "unit-a", "recommended_agent": "code-reviewer"}]
+
+    def assign(*_args, **_kwargs):
+        assignment_calls.append("inference")
+        return assignment_agents
+
+    monkeypatch.setattr("agency_runtime.core.preflight.assignment_agents_from_catalog", assign)
+    monkeypatch.setattr("agency_runtime.core.preflight._suggestion_recipe", lambda *_args: plan)
+    config = AgencyConfig(
+        providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
+        delegation=DelegationConfig(child_inference_budget=1),
+    )
+    classification = classify_turn_intent(
+        message,
+        TurnState(state_known=True, state_status="ready"),
+    )
+    arguments = {
+        "store": store,
+        "session_id": "child-one",
+        "trace_id": "child-trace-one",
+        "user_message": message,
+        "host": "codex",
+        "platform": "windows",
+        "available_tools": (),
+        "capability_receipt": SimpleNamespace(as_dict=lambda: {}),
+        "catalog": [],
+        "config": config,
+        "classification": classification,
+        "routing_fingerprint": "routing-fingerprint",
+        "policy_fingerprint": "policy-fingerprint",
+        "roster_generation": 1,
+        "pipeline": Pipeline,
+        "parent_session_id": "parent-session",
+        "parent_trace_id": "parent-trace",
+    }
+    first, _, _ = _resolve_preflight_routing(**arguments)
+    first_agents, first_plan = _assignment_recipe(
+        [],
+        first,
+        None,
+        config,
+        session_id="child-one",
+        trace_id="child-trace-one",
+        host="codex",
+        platform="windows",
+        available_tools=(),
+        capability_receipt=SimpleNamespace(),
+    )
+    _publish_child_routing_bundle(
+        store,
+        first,
+        trace_id="child-trace-one",
+        unit_assignment_agents=first_agents,
+        suggestions=first_plan,
+        ttl_seconds=config.delegation.child_cache_ttl_seconds,
+    )
+
+    arguments.update(session_id="child-two", trace_id="child-trace-two")
+    cached, _, _ = _resolve_preflight_routing(**arguments)
+    cached_agents, cached_plan = _assignment_recipe(
+        [],
+        cached,
+        None,
+        config,
+        session_id="child-two",
+        trace_id="child-trace-two",
+        host="codex",
+        platform="windows",
+        available_tools=(),
+        capability_receipt=SimpleNamespace(),
+    )
+
+    assert route_calls == [message]
+    assert assignment_calls == ["inference"]
+    assert cached_agents == first_agents == assignment_agents
+    assert cached_plan == first_plan == plan
 
 
 def test_child_store_rejects_invalid_keys_limits_and_documents(tmp_path) -> None:
@@ -456,7 +566,7 @@ def test_child_coalescing_timeout_abstains_without_duplicate_inference(monkeypat
         def route(*_args, **_kwargs):
             return {"selected_ids": ["code-reviewer"]}
 
-    clocks = iter((0.0, 0.0, 21.0))
+    clocks = iter((0.0, 0.0, 200.0))
     monkeypatch.setattr("agency_runtime.core.preflight.time.monotonic", lambda: next(clocks))
     monkeypatch.setattr("agency_runtime.core.preflight.time.sleep", lambda _seconds: None)
     classification = classify_turn_intent(
@@ -576,3 +686,154 @@ def test_budget_abstention_never_runs_exact_unit_routing() -> None:
     )
     assert agents == []
     assert plan == []
+
+
+def test_failed_preflight_validation_aborts_unpublished_child_bundle(tmp_path, monkeypatch) -> None:
+    store = Store(tmp_path / "agency.db")
+    message = "Review this patch"
+
+    class Pipeline:
+        @staticmethod
+        def route(*_args, **_kwargs):
+            return {
+                "selected_ids": [],
+                "semantic_ids": [],
+                "companion_ids": [],
+                "confidence": 0.0,
+                "latency_ms": 1,
+                "status": "abstained",
+                "source": "inference",
+                "work_units": detect_work_units(message),
+            }
+
+        @staticmethod
+        def build_routing_context(*_args, **_kwargs):
+            return ""
+
+    monkeypatch.setattr(
+        "agency_runtime.core.preflight._recipe_revision_refs",
+        lambda *_args, **_kwargs: ([], []),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.preflight._result_from_recipe",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("replay rejected")),
+    )
+    config = AgencyConfig(
+        providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
+        delegation=DelegationConfig(child_inference_budget=1),
+    )
+    classification = classify_turn_intent(
+        message,
+        TurnState(state_known=True, state_status="ready"),
+    )
+
+    with pytest.raises(RuntimeError, match="replay rejected"):
+        _prepare_preflight_evidence(
+            store,
+            session_id="child-session",
+            trace_id="child-trace",
+            user_message=message,
+            host="codex",
+            platform="windows",
+            runtime_capabilities=SimpleNamespace(capabilities=(), as_dict=lambda: {}),
+            catalog=[],
+            config=config,
+            classification=classification,
+            routing_fingerprint="routing-fingerprint",
+            policy_fingerprint="policy-fingerprint",
+            roster_generation=1,
+            delivery_mode="direct",
+            context_limit=4_096,
+            resident_binding=SimpleNamespace(as_dict=lambda: {}),
+            resident_context="",
+            pipeline=Pipeline,
+            parent_session_id="parent-session",
+            parent_trace_id="parent-trace",
+        )
+
+    with closing(sqlite3.connect(tmp_path / "agency.db")) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM child_routing_cache").fetchone()[0] == 0
+        assert connection.execute("SELECT COUNT(*) FROM child_routing_leases").fetchone()[0] == 0
+
+
+def test_child_routing_lease_can_be_renewed_until_complete(tmp_path) -> None:
+    store = Store(tmp_path / "agency.db")
+    key = _key("renewable")
+    owner = store.reserve_child_routing(
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+        cache_key=key,
+        budget=1,
+        concurrency=1,
+        lease_seconds=1,
+    )
+    with closing(sqlite3.connect(tmp_path / "agency.db")) as connection:
+        before = connection.execute(
+            "SELECT expires_at FROM child_routing_leases WHERE cache_key = ?", (key,)
+        ).fetchone()[0]
+    assert store.renew_child_routing(
+        cache_key=key,
+        owner_token=owner["owner_token"],
+        lease_seconds=60,
+    )
+    with closing(sqlite3.connect(tmp_path / "agency.db")) as connection:
+        after = connection.execute(
+            "SELECT expires_at FROM child_routing_leases WHERE cache_key = ?", (key,)
+        ).fetchone()[0]
+    assert after > before
+    assert store.complete_child_routing(
+        cache_key=key,
+        owner_token=owner["owner_token"],
+        decision={"routing": {"selected_ids": []}},
+        ttl_seconds=60,
+    )
+    assert not store.renew_child_routing(
+        cache_key=key,
+        owner_token=owner["owner_token"],
+        lease_seconds=60,
+    )
+
+
+def test_child_heartbeat_start_failure_aborts_owner_lease(tmp_path, monkeypatch) -> None:
+    store = Store(tmp_path / "agency.db")
+
+    class Pipeline:
+        @staticmethod
+        def route(*_args, **_kwargs):
+            return {"selected_ids": [], "work_units": detect_work_units("Review this patch")}
+
+    monkeypatch.setattr(
+        "agency_runtime.core.preflight._start_child_route_heartbeat",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("thread unavailable")),
+    )
+    classification = classify_turn_intent(
+        "Review this patch",
+        TurnState(state_known=True, state_status="ready"),
+    )
+    with pytest.raises(RuntimeError, match="thread unavailable"):
+        _resolve_preflight_routing(
+            store,
+            session_id="child-session",
+            trace_id="child-trace",
+            user_message="Review this patch",
+            host="codex",
+            platform="windows",
+            available_tools=(),
+            capability_receipt=SimpleNamespace(as_dict=lambda: {}),
+            catalog=[],
+            config=AgencyConfig(
+                providers=(ProviderEntry(name="codex", type="cli", transport="codex"),),
+                delegation=DelegationConfig(child_inference_budget=1),
+            ),
+            classification=classification,
+            routing_fingerprint="routing-fingerprint",
+            policy_fingerprint="policy-fingerprint",
+            roster_generation=1,
+            pipeline=Pipeline,
+            parent_session_id="parent-session",
+            parent_trace_id="parent-trace",
+        )
+
+    with closing(sqlite3.connect(tmp_path / "agency.db")) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM child_routing_cache").fetchone()[0] == 0
+        assert connection.execute("SELECT COUNT(*) FROM child_routing_leases").fetchone()[0] == 0

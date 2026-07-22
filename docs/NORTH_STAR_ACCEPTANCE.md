@@ -54,9 +54,10 @@ different specialist does not pass.
 The wheel and source archive are installed into clean environments outside the
 checkout on Windows and Linux. `scripts/smoke_installed_distribution.py` runs
 the exact Agency runtime/dashboard prompt against the complete approved roster
-and requires `multi-agent-systems-architect`; it then requires an ambiguous
-prompt to abstain. The report includes every selected slug and the forbidden
-set. Source-only execution is useful while developing, but only the isolated
+and requires `multi-agent-systems-architect` while permitting
+`technical-writer`; it then requires an ambiguous prompt to abstain. The report
+includes every selected slug and the forbidden set. Source-only execution is
+useful while developing, but only the isolated
 artifact jobs count for this gate.
 
 ## Portability evidence

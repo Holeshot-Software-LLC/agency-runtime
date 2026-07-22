@@ -839,6 +839,62 @@ def test_preflight_never_routes_hard_requirements_with_unknown_tool_state(
     assert receipt.execution_host == ""
 
 
+def test_policy_roster_change_invalidates_cache_even_when_agent_is_host_ineligible(
+    tmp_path: Path,
+) -> None:
+    policy_path = tmp_path / "policy.yaml"
+    policy_path.write_text(
+        "actions:\n"
+        "  RELEASE:\n"
+        "    triggers: [release]\n"
+        "    always_include:\n"
+        "      - slug: linux-release-agent\n"
+        "    conditional: []\n",
+        encoding="utf-8",
+    )
+    policy_path.chmod(0o600)
+    config = AgencyConfig(companion_policy_path=str(policy_path))
+    receipt = native_adapter_capability_receipt(
+        "codex",
+        platform="windows",
+        session_id="session",
+        trace_id="trace",
+    )
+    linux_only = {
+        "slug": "linux-release-agent",
+        "name": "Linux Release Agent",
+        "description": "Validates Linux releases.",
+        "prompt_body": "Validate the assigned Linux release.",
+        "audit_status": "approved",
+        "supported_hosts": ["codex"],
+        "supported_platforms": ["linux"],
+    }
+
+    missing = pipeline._route_request(
+        "session",
+        "release this build",
+        [],
+        config,
+        host="codex",
+        platform="windows",
+        capability_receipt=receipt,
+    )
+    present = pipeline._route_request(
+        "session",
+        "release this build",
+        [linux_only],
+        config,
+        host="codex",
+        platform="windows",
+        capability_receipt=receipt,
+    )
+
+    assert missing.catalog == present.catalog == []
+    assert missing.context_fingerprint != present.context_fingerprint
+    assert pipeline._route_signals(missing).policy_validation["valid"] is False
+    assert pipeline._route_signals(present).policy_validation["valid"] is True
+
+
 def test_mcp_caller_host_string_cannot_mint_native_contract_receipt(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

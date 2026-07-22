@@ -185,13 +185,14 @@ def _selection_safety() -> dict[str, object]:
             "The Agency response header exposes unreadable reason codes and effect codes. "
             "Explain how to test agent selection live and how to open the dashboard.",
             ("multi-agent-systems-architect",),
+            ("technical-writer",),
         ),
-        ("ambiguous-help", "Please help me with this.", ()),
+        ("ambiguous-help", "Please help me with this.", (), ()),
     )
     observed: dict[str, list[str]] = {}
     forbidden = {"clinical-evidence-agent", "geographer", "language-translator"}
     platform_name = "windows" if os.name == "nt" else "linux"
-    for case_id, message, expected in cases:
+    for case_id, message, required, acceptable in cases:
         clear_cache()
         clear_session_routing()
         session_id = f"installed-selection-{case_id}"
@@ -215,9 +216,17 @@ def _selection_safety() -> dict[str, object]:
             trace_id=trace_id,
         )
         selected = tuple(str(item) for item in decision.get("semantic_ids", []))
-        if selected != expected or forbidden.intersection(selected):
+        selected_set = set(selected)
+        allowed = set(required) | set(acceptable)
+        if (
+            not set(required).issubset(selected_set)
+            or not selected_set.issubset(allowed)
+            or forbidden.intersection(selected_set)
+        ):
             raise RuntimeError(
-                f"installed selection safety failed for {case_id}: selected={selected!r}"
+                "installed selection safety failed for "
+                f"{case_id}: selected={selected!r}, required={required!r}, "
+                f"acceptable={acceptable!r}"
             )
         observed[case_id] = list(selected)
     return {

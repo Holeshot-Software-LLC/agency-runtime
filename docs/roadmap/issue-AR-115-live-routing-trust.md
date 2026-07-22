@@ -38,8 +38,9 @@ Passing synthetic evaluation scores did not catch this real prompt.
 Source and clean-distribution tests now reject the unrelated clinical,
 geography, translation, and generic-operations matches from the observed
 runtime/dashboard prompt. Configured Codex-subscription inference with an
-explicit model selects only `multi-agent-systems-architect` for that prompt,
-and the no-inference route has the same result. The exact installed candidate
+explicit model requires `multi-agent-systems-architect` for that prompt and may
+also select `technical-writer` for the readability work. The no-inference route
+meets the same required/acceptable/forbidden contract. The exact installed candidate
 still requires a fresh normal Codex task after plugin restart before this item
 can close.
 

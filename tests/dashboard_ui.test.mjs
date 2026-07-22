@@ -565,6 +565,21 @@ test("provider builder validates, updates, removes, and reports discovery fallba
   builder({ name: "existing", type: "http", timeout: "12" });
   harness.api.upsertProviderDraft();
   assert.equal(JSON.parse(providers.value)[0].timeout, 12);
+  providers.value = JSON.stringify([{
+    name: "custom-ollama",
+    type: "http",
+    model: "local",
+    base_url: "http://127.0.0.1:11434",
+    api_key_env: "",
+    ollama_mode: true,
+    timeout: 15,
+  }]);
+  builder({ name: "custom-ollama", type: "http", model: "updated", timeout: "12" });
+  harness.api.upsertProviderDraft();
+  assert.equal(JSON.parse(providers.value)[0].ollama_mode, true);
+  builder({ name: "custom-ollama", type: "cli", transport: "codex" });
+  harness.api.upsertProviderDraft();
+  assert.equal(JSON.parse(providers.value)[0].ollama_mode, false);
   harness.api.syncProviderSecretOptions();
   harness.node("config-provider-secret-index").value = "0";
   harness.api.removeSelectedProvider();

@@ -6,9 +6,12 @@ import os
 import time
 import uuid
 from collections.abc import Mapping
+from contextlib import ExitStack
 from dataclasses import replace
 from hashlib import sha256
 from inspect import signature
+from math import ceil
+from threading import Event, Thread, current_thread
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig
@@ -47,11 +50,16 @@ from agency_runtime.core.turn_intent import (
     force_fresh_turn_reroute,
 )
 from agency_runtime.core.turn_origin import TurnOriginReceipt, current_turn_origin
-from agency_runtime.core.unit_assignment import assignment_agents_from_catalog
+from agency_runtime.core.unit_assignment import (
+    MAX_SUGGESTED_WORK_UNITS,
+    MAX_UNIT_SELECTION_WORKERS,
+    assignment_agents_from_catalog,
+)
 
 MAX_PREFLIGHT_CONTEXT_CHARS = _MAX_PREFLIGHT_CONTEXT_CHARS
 _MAX_CHILD_ROUTE_TIMEOUT_SECONDS = 60.0
 _CHILD_ROUTE_LEASE_MARGIN_SECONDS = 5.0
+_CHILD_ROUTE_BUNDLE_VERSION = 1
 
 
 def _normalize_parent_correlation(
@@ -76,6 +84,48 @@ def _child_route_timeout(config: AgencyConfig) -> float:
     configured = [float(config.judge.timeout)]
     configured.extend(float(provider.timeout) for provider in config.providers)
     return min(_MAX_CHILD_ROUTE_TIMEOUT_SECONDS, max(1.0, *configured))
+
+
+def _child_route_coordination_timeout(config: AgencyConfig) -> float:
+    """Bound one top-level route plus every possible parallel unit-routing wave."""
+
+    inference_waves = 1 + ceil(MAX_SUGGESTED_WORK_UNITS / MAX_UNIT_SELECTION_WORKERS)
+    return _child_route_timeout(config) * inference_waves + _CHILD_ROUTE_LEASE_MARGIN_SECONDS
+
+
+def _start_child_route_heartbeat(
+    store: Store,
+    *,
+    cache_key: str,
+    owner_token: str,
+    lease_seconds: float,
+) -> tuple[Event, Thread]:
+    """Keep a live owner lease current while bounded unit routing is in progress."""
+
+    stopped = Event()
+    interval = max(0.25, min(10.0, lease_seconds / 3.0))
+
+    def renew() -> None:
+        while not stopped.wait(interval):
+            if not store.renew_child_routing(
+                cache_key=cache_key,
+                owner_token=owner_token,
+                lease_seconds=lease_seconds,
+            ):
+                return
+
+    thread = Thread(target=renew, name="agency-child-route-lease", daemon=True)
+    thread.start()
+    return stopped, thread
+
+
+def _stop_child_route_heartbeat(cache_owner: Mapping[str, Any]) -> None:
+    stopped = cache_owner.get("heartbeat_stop")
+    thread = cache_owner.get("heartbeat_thread")
+    if isinstance(stopped, Event):
+        stopped.set()
+    if isinstance(thread, Thread) and thread is not current_thread():
+        thread.join(timeout=1.0)
 
 
 def _suggested_specialist_slugs(suggestions: list[dict[str, Any]]) -> list[str]:
@@ -351,6 +401,7 @@ def _resolve_preflight_routing(
     )
     child_cache_key = sha256(cache_material.encode("utf-8")).hexdigest()
     route_timeout = _child_route_timeout(config)
+    coordination_timeout = _child_route_coordination_timeout(config)
     reservation = store.reserve_child_routing(
         parent_session_id=parent_session_id,
         parent_trace_id=parent_trace_id,
@@ -360,7 +411,7 @@ def _resolve_preflight_routing(
         lease_seconds=route_timeout + _CHILD_ROUTE_LEASE_MARGIN_SECONDS,
     )
     if reservation["status"] == "coalescing":
-        deadline = time.monotonic() + route_timeout + _CHILD_ROUTE_LEASE_MARGIN_SECONDS
+        deadline = time.monotonic() + coordination_timeout
         while time.monotonic() < deadline:
             cached = store.read_child_routing_cache(child_cache_key)
             if cached is not None:
@@ -368,7 +419,16 @@ def _resolve_preflight_routing(
                 break
             time.sleep(0.05)
     if reservation["status"] == "cached":
-        cached = dict(reservation["decision"])
+        decision = dict(reservation["decision"])
+        bundled_routing = decision.get("routing")
+        if isinstance(bundled_routing, Mapping):
+            cached = dict(bundled_routing)
+            cached["_cached_unit_assignment_agents"] = list(
+                decision.get("unit_assignment_agents", [])
+            )
+            cached["_cached_unit_agent_plan"] = list(decision.get("unit_agent_plan", []))
+        else:
+            cached = decision
         current_hash = sha256(user_message.encode("utf-8", errors="surrogatepass")).hexdigest()
         cached.update(
             trace_id=trace_id,
@@ -389,15 +449,27 @@ def _resolve_preflight_routing(
         owner_token = str(reservation["owner_token"])
         try:
             routing = pipeline.route(session_id, user_message, catalog, **route_arguments)
-            store.complete_child_routing(
+        except BaseException:
+            store.abort_child_routing(cache_key=child_cache_key, owner_token=owner_token)
+            raise
+        routing["_child_cache_owner"] = {
+            "cache_key": child_cache_key,
+            "owner_token": owner_token,
+        }
+        try:
+            heartbeat_stop, heartbeat_thread = _start_child_route_heartbeat(
+                store,
                 cache_key=child_cache_key,
                 owner_token=owner_token,
-                decision=_content_free_routing_recipe(routing, trace_id=trace_id),
-                ttl_seconds=config.delegation.child_cache_ttl_seconds,
+                lease_seconds=route_timeout + _CHILD_ROUTE_LEASE_MARGIN_SECONDS,
             )
         except BaseException:
             store.abort_child_routing(cache_key=child_cache_key, owner_token=owner_token)
             raise
+        routing["_child_cache_owner"].update(
+            heartbeat_stop=heartbeat_stop,
+            heartbeat_thread=heartbeat_thread,
+        )
         routing["child_routing_source"] = "parent_budgeted_inference"
         return routing, None, classification
 
@@ -444,6 +516,10 @@ def _assignment_recipe(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     if routing.get("status") == "child_budget_abstained":
         return [], []
+    if "_cached_unit_assignment_agents" in routing:
+        return list(routing["_cached_unit_assignment_agents"]), list(
+            routing.get("_cached_unit_agent_plan", [])
+        )
     if continuation_snapshot is not None:
         source = continuation_snapshot["recipe"]
         return list(source.get("unit_assignment_agents", [])), list(
@@ -464,6 +540,53 @@ def _assignment_recipe(
         {**routing, "unit_assignment_agents": assignment_agents},
         config.delegation,
     )
+
+
+def _publish_child_routing_bundle(
+    store: Store,
+    routing: dict[str, Any],
+    *,
+    trace_id: str,
+    unit_assignment_agents: list[dict[str, Any]],
+    suggestions: list[dict[str, Any]],
+    ttl_seconds: float,
+) -> None:
+    """Publish one complete content-free route and release its singleflight lease."""
+
+    cache_owner = routing.get("_child_cache_owner")
+    if not isinstance(cache_owner, Mapping):
+        return
+    try:
+        completed = store.complete_child_routing(
+            cache_key=str(cache_owner["cache_key"]),
+            owner_token=str(cache_owner["owner_token"]),
+            decision={
+                "version": _CHILD_ROUTE_BUNDLE_VERSION,
+                "routing": _content_free_routing_recipe(routing, trace_id=trace_id),
+                "unit_assignment_agents": unit_assignment_agents,
+                "unit_agent_plan": suggestions,
+            },
+            ttl_seconds=ttl_seconds,
+        )
+    finally:
+        _stop_child_route_heartbeat(cache_owner)
+    if not completed:
+        raise RuntimeError("child routing ownership expired before assignment publish")
+
+
+def _abort_child_routing_bundle(store: Store, routing: Mapping[str, Any]) -> None:
+    """Release a pending bundle lease after any preparation failure."""
+
+    cache_owner = routing.get("_child_cache_owner")
+    if not isinstance(cache_owner, Mapping):
+        return
+    try:
+        store.abort_child_routing(
+            cache_key=str(cache_owner["cache_key"]),
+            owner_token=str(cache_owner["owner_token"]),
+        )
+    finally:
+        _stop_child_route_heartbeat(cache_owner)
 
 
 def _recipe_revision_refs(
@@ -640,88 +763,102 @@ def _prepare_preflight_evidence(
     )
     routing = dict(routing)
     routing["trace_id"] = trace_id
-    unit_assignment_agents, suggestions = _assignment_recipe(
-        catalog,
-        routing,
-        continuation_snapshot,
-        config,
-        session_id=session_id,
-        trace_id=trace_id,
-        host=host,
-        platform=platform,
-        available_tools=runtime_capabilities.capabilities,
-        capability_receipt=runtime_capabilities,
-    )
-    if delivery_mode == "isolated":
-        specialist_budget = MAX_SPECIALIST_CONTEXT_CHARS
-    else:
-        routing_context = pipeline.build_routing_context(routing, config)
-        manager_routing_context = _combine_context(
-            resident_context,
-            routing_context,
-            maximum_chars=context_limit,
+    cache_owner = routing.get("_child_cache_owner")
+    with ExitStack() as child_route_guard:
+        if isinstance(cache_owner, Mapping):
+            child_route_guard.callback(_abort_child_routing_bundle, store, routing)
+        unit_assignment_agents, suggestions = _assignment_recipe(
+            catalog,
+            routing,
+            continuation_snapshot,
+            config,
+            session_id=session_id,
+            trace_id=trace_id,
+            host=host,
+            platform=platform,
+            available_tools=runtime_capabilities.capabilities,
+            capability_receipt=runtime_capabilities,
         )
-        specialist_budget = max(0, context_limit - len(manager_routing_context) - 2)
-    hydration_routing = _specialist_hydration_routing(
-        routing,
-        delivery_mode=delivery_mode,
-        suggestions=suggestions,
-    )
-    loaded = hydrate_selected_specialist_context(
-        store,
-        catalog,
-        hydration_routing,
-        session_id=session_id,
-        trace_id=trace_id,
-        record_evidence=False,
-        maximum_chars=specialist_budget,
-        disabled_agents=frozenset(config.agents.disabled),
-    )
-    _require_available_unit_plan_agents(
-        delivery_mode=delivery_mode,
-        suggestions=suggestions,
-        loaded_slugs=loaded.slugs,
-    )
-    routing_recipe = _content_free_routing_recipe(routing, trace_id=trace_id)
-    specialist_refs, selection_refs = _recipe_revision_refs(
-        store,
-        catalog,
-        routing,
-        suggestions,
-        loaded,
-        continuation_snapshot,
-    )
-    recipe: dict[str, Any] = {
-        "recipe_version": PREFLIGHT_REPLAY_RECIPE_VERSION,
-        "policy_fingerprint": policy_fingerprint,
-        "session_id": session_id,
-        "trace_id": trace_id,
-        "host": host,
-        "delivery_mode": delivery_mode,
-        "context_limit": context_limit,
-        "routing": routing_recipe,
-        "specialist_refs": specialist_refs,
-        "selection_refs": selection_refs,
-        "unit_assignment_agents": unit_assignment_agents,
-        "unit_agent_plan": suggestions,
-        "trivial": not classification.selection_required,
-        "turn_classification": classification.as_dict(),
-        "resident_manager_binding": resident_binding.as_dict(),
-        "roster_size": len(catalog),
-        "roster_generation": roster_generation,
-    }
-    if continuation_snapshot is not None:
-        recipe["continuation_guard"] = continuation_snapshot["guard"]
-    _result_from_recipe(
-        store,
-        recipe,
-        session_id=session_id,
-        trace_id=trace_id,
-        user_message=user_message,
-        config=config,
-        pipeline=pipeline,
-    )
-    return recipe, routing_recipe, suggestions, specialist_refs, classification
+        if delivery_mode == "isolated":
+            specialist_budget = MAX_SPECIALIST_CONTEXT_CHARS
+        else:
+            routing_context = pipeline.build_routing_context(routing, config)
+            manager_routing_context = _combine_context(
+                resident_context,
+                routing_context,
+                maximum_chars=context_limit,
+            )
+            specialist_budget = max(0, context_limit - len(manager_routing_context) - 2)
+        hydration_routing = _specialist_hydration_routing(
+            routing,
+            delivery_mode=delivery_mode,
+            suggestions=suggestions,
+        )
+        loaded = hydrate_selected_specialist_context(
+            store,
+            catalog,
+            hydration_routing,
+            session_id=session_id,
+            trace_id=trace_id,
+            record_evidence=False,
+            maximum_chars=specialist_budget,
+            disabled_agents=frozenset(config.agents.disabled),
+        )
+        _require_available_unit_plan_agents(
+            delivery_mode=delivery_mode,
+            suggestions=suggestions,
+            loaded_slugs=loaded.slugs,
+        )
+        routing_recipe = _content_free_routing_recipe(routing, trace_id=trace_id)
+        specialist_refs, selection_refs = _recipe_revision_refs(
+            store,
+            catalog,
+            routing,
+            suggestions,
+            loaded,
+            continuation_snapshot,
+        )
+        recipe: dict[str, Any] = {
+            "recipe_version": PREFLIGHT_REPLAY_RECIPE_VERSION,
+            "policy_fingerprint": policy_fingerprint,
+            "session_id": session_id,
+            "trace_id": trace_id,
+            "host": host,
+            "delivery_mode": delivery_mode,
+            "context_limit": context_limit,
+            "routing": routing_recipe,
+            "specialist_refs": specialist_refs,
+            "selection_refs": selection_refs,
+            "unit_assignment_agents": unit_assignment_agents,
+            "unit_agent_plan": suggestions,
+            "trivial": not classification.selection_required,
+            "turn_classification": classification.as_dict(),
+            "resident_manager_binding": resident_binding.as_dict(),
+            "roster_size": len(catalog),
+            "roster_generation": roster_generation,
+        }
+        if continuation_snapshot is not None:
+            recipe["continuation_guard"] = continuation_snapshot["guard"]
+        _result_from_recipe(
+            store,
+            recipe,
+            session_id=session_id,
+            trace_id=trace_id,
+            user_message=user_message,
+            config=config,
+            pipeline=pipeline,
+        )
+        if isinstance(cache_owner, Mapping):
+            _publish_child_routing_bundle(
+                store,
+                routing,
+                trace_id=trace_id,
+                unit_assignment_agents=unit_assignment_agents,
+                suggestions=suggestions,
+                ttl_seconds=config.delegation.child_cache_ttl_seconds,
+            )
+        child_route_guard.pop_all()
+        return recipe, routing_recipe, suggestions, specialist_refs, classification
 
 
 def _prepare_with_bounded_continuation_reroute(

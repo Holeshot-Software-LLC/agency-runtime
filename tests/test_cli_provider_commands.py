@@ -157,6 +157,33 @@ def test_provider_set_update_remove_and_main_facade(monkeypatch, capsys) -> None
     assert converted["api_key_env"] == ""
     assert operations[-1][0][1]["action"] == "clear"
 
+    current.persisted["providers"] = [
+        {
+            "name": "subscription",
+            "type": "cli",
+            "transport": "codex",
+            "model": "gpt-cheap",
+            "base_url": "",
+            "api_key_env": "",
+        }
+    ]
+    assert (
+        config_commands.cmd_config_provider_set(
+            _args(
+                name="subscription",
+                type="openai-compatible",
+                transport=None,
+                base_url="https://api.example.test/v1",
+                api_key_env="AGENCY_API_KEY",
+            )
+        )
+        == 0
+    )
+    converted = operations[-1][0][0]["value"][0]
+    assert converted["transport"] == ""
+    assert converted["base_url"] == "https://api.example.test/v1"
+    assert converted["api_key_env"] == "AGENCY_API_KEY"
+
     current.persisted["providers"] = primary_providers
     with pytest.raises(ValueError, match="provider not found"):
         config_commands.cmd_config_provider_remove(_args(name="missing"))

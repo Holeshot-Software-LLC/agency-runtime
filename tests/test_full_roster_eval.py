@@ -223,7 +223,8 @@ def test_real_agency_runtime_prompt_has_safe_offline_specialists() -> None:
     )
 
     selected = set(decision["semantic_ids"])
-    assert selected == {"multi-agent-systems-architect"}
+    assert {"multi-agent-systems-architect"}.issubset(selected)
+    assert selected.issubset({"multi-agent-systems-architect", "technical-writer"})
     assert selected.isdisjoint({"clinical-evidence-agent", "geographer", "language-translator"})
 
 

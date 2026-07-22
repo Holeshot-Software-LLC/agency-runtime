@@ -461,9 +461,13 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
     updated = {
         "name": target_name,
         "type": provider_type,
-        "transport": str(
-            args.transport if args.transport is not None else existing.get("transport") or ""
-        ).strip(),
+        "transport": (
+            str(
+                args.transport if args.transport is not None else existing.get("transport") or ""
+            ).strip()
+            if cli_provider
+            else ""
+        ),
         "model": str(args.model if args.model is not None else existing.get("model") or "").strip(),
         "base_url": ""
         if cli_provider

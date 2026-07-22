@@ -112,6 +112,26 @@ class ChildRoutingStoreMixin:
             return None
         return value if isinstance(value, dict) else None
 
+    def renew_child_routing(
+        self,
+        *,
+        cache_key: str,
+        owner_token: str,
+        lease_seconds: float,
+    ) -> bool:
+        """Extend one live lease without changing its owner or inference budget."""
+
+        key = _cache_key(cache_key)
+        token = validate_correlation_id(owner_token, field="owner_token")
+        extension = max(1.0, min(float(lease_seconds), 120.0))
+        with closing(self._connect()) as conn, conn:
+            updated = conn.execute(
+                "UPDATE child_routing_leases SET expires_at = ? "
+                "WHERE cache_key = ? AND owner_token = ? AND expires_at > ?",
+                (time.time() + extension, key, token, time.time()),
+            ).rowcount
+        return bool(updated)
+
     def complete_child_routing(
         self,
         *,

@@ -408,6 +408,15 @@ def _route_request(
             and slug in eligible_slugs
         )
     )
+    policy_active_ids = frozenset(
+        slug
+        for agent in catalog[:MAX_ACTIVE_ROSTER_SIZE]
+        if (
+            slug := str(agent.get("slug") or agent.get("agent_slug") or "").strip()[
+                :MAX_ROUTING_TOKEN_CHARS
+            ]
+        )
+    )
     policy = load_policy(policy_path_for_config(config))
     base_fingerprint = routing_fingerprint(eligible_catalog, config, policy)
     fingerprint = hashlib.sha256(
@@ -419,6 +428,7 @@ def _route_request(
                 capabilities.inference_surface,
                 normalized_platform,
                 capabilities.status,
+                ",".join(sorted(policy_active_ids)),
                 "*" if bounded_semantic_roots is None else ",".join(sorted(bounded_semantic_roots)),
                 *normalized_tools,
                 *capabilities.unknown_tools,
@@ -438,11 +448,7 @@ def _route_request(
         cache_key=cache_key(routing_query, context_fingerprint=fingerprint),
         source_message_hash=hashlib.sha256(user_message.encode("utf-8")).hexdigest(),
         active_ids=catalog_active_ids(eligible_catalog, context_fingerprint=fingerprint),
-        policy_active_ids=frozenset(
-            str(agent.get("slug") or agent.get("agent_slug") or "").strip()
-            for agent in catalog
-            if str(agent.get("slug") or agent.get("agent_slug") or "").strip()
-        ),
+        policy_active_ids=policy_active_ids,
         surface=capabilities.surface,
         host=normalized_host,
         inference_surface=capabilities.inference_surface,
