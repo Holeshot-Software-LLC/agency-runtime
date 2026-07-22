@@ -19,7 +19,7 @@ issue_id: AR-116
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/128
 depends_on: [AR-115]
-blocks: [AR-118]
+blocks: [AR-118, AR-119]
 ---
 
 # AR-116: Bound native-child routing and add account-aware model selection

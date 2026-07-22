@@ -19,7 +19,7 @@ issue_id: AR-118
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/131
 depends_on: [AR-116]
-blocks: []
+blocks: [AR-119]
 ---
 
 # AR-118: Reconcile native-child activation evidence

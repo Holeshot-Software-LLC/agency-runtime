@@ -20,7 +20,7 @@ issue_id: AR-115
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/127
 depends_on: []
-blocks: [AR-116]
+blocks: [AR-116, AR-119]
 ---
 
 # AR-115: Make live routing and Agency headers trustworthy

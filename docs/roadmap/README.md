@@ -136,6 +136,13 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-116` | [Bound native-child routing and add account-aware model selection](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | open | p0 | routing | [#128](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/128) |
 | `AR-117` | [Parallelize PR verification without weakening coverage](issue-AR-117-parallelize-pr-verification.md) | in_progress | p1 | testing | [#130](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/130) |
 | `AR-118` | [Reconcile native-child activation evidence](issue-AR-118-reconcile-native-child-activation-evidence.md) | open | p0 | routing | [#131](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/131) |
+| `AR-119` | [Implement inference-first real-time workforce and contractor lifecycle](issue-AR-119-inference-first-workforce.md) | in_progress | p0 | routing | [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132) |
+| `AR-120` | [Normalize and audit the complete workforce recruitment index](issue-AR-120-normalized-workforce-recruitment-index.md) | open | p0 | routing | [#133](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/133) |
+| `AR-121` | [Implement inference-first planning and deterministic staffing](issue-AR-121-inference-planning-and-staffing.md) | open | p0 | routing | [#134](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/134) |
+| `AR-122` | [Implement governed contractor hiring and workforce lifecycle](issue-AR-122-contractor-hiring-and-lifecycle.md) | open | p0 | roster-governance | [#135](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/135) |
+| `AR-123` | [Add complete workforce CLI and live dashboard operations](issue-AR-123-workforce-cli-and-dashboard.md) | open | p0 | dashboard | [#136](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/136) |
+| `AR-124` | [Integrate lifecycle assurance, native delegation, and provider evidence](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | open | p0 | routing | [#137](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/137) |
+| `AR-125` | [Prove workforce selection and one-shot application outcomes](issue-AR-125-workforce-and-one-shot-evaluation.md) | open | p0 | testing | [#138](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138) |
 
 ## Traceability
 
@@ -261,6 +268,13 @@ not stable internal identifiers.
 | [AR-114](issue-AR-114-guided-codex-hook-activation.md) | [`58026a5`](../worklog/README.md), [`7e24323`](../worklog/README.md), [`5467026`](../worklog/README.md) | [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md), [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
 | [AR-115](issue-AR-115-live-routing-trust.md) | `673988d`, `49e8f99`, `795deef`, `0b21bdb`, `2c404f4`, `4f20f00` | [ADR-0001](../decisions/0001-layered-specialist-routing.md), [ADR-0011](../decisions/0011-explicit-delegation-evidence-lifecycle.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0078](../decisions/0078-present-human-routing-evidence-and-abstain-on-noise.md) |
 | [AR-116](issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | `673988d`, `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `795deef`, `0b21bdb`, `78afe96`, `4f20f00`, `71faeef` | [ADR-0067](../decisions/0067-require-configured-inference-for-selection.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md), [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
+| [AR-119](issue-AR-119-inference-first-workforce.md) | pending | [ADR-0080](../decisions/0080-plan-before-recruiting-from-the-whole-workforce.md), [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md), [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md) |
+| [AR-120](issue-AR-120-normalized-workforce-recruitment-index.md) | pending | [ADR-0080](../decisions/0080-plan-before-recruiting-from-the-whole-workforce.md) |
+| [AR-121](issue-AR-121-inference-planning-and-staffing.md) | pending | [ADR-0080](../decisions/0080-plan-before-recruiting-from-the-whole-workforce.md) |
+| [AR-122](issue-AR-122-contractor-hiring-and-lifecycle.md) | pending | [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md) |
+| [AR-123](issue-AR-123-workforce-cli-and-dashboard.md) | pending | [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md) |
+| [AR-124](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | pending | [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md) |
+| [AR-125](issue-AR-125-workforce-and-one-shot-evaluation.md) | pending | [ADR-0080](../decisions/0080-plan-before-recruiting-from-the-whole-workforce.md), [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
