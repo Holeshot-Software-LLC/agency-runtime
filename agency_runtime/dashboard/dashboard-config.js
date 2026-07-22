@@ -313,9 +313,8 @@ export function createConfigController(core) {
       (provider) => String(provider?.name || "").toLowerCase() === draft.name.toLowerCase(),
     );
     if (index >= 0) {
-      const existing = providers[index] || {};
-      const existingType = String(existing.type || "").toLowerCase();
-      const typeChanged = existingType && existingType !== draft.type;
+      const existing = providers[index];
+      const typeChanged = String(existing.type).toLowerCase() !== draft.type;
       if (!typeChanged && existing.ollama_mode === true) draft.ollama_mode = true;
     }
     if (index < 0) providers.push(draft);
