@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 32
+SCHEMA_VERSION = 33
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 _MAX_REMEDIATION_AUTHORITY_ID_BYTES = 512
@@ -1095,6 +1095,121 @@ CREATE TABLE IF NOT EXISTS agent_import_events (
         CHECK (typeof(event_sequence) = 'integer' AND event_sequence >= 0)
 );
 
+-- Agency-owned workforce identity and lifecycle overlays. Upstream prompt
+-- revisions remain immutable in agent_versions; these tables never rewrite
+-- source provenance.
+CREATE TABLE IF NOT EXISTS agent_workers (
+    worker_id TEXT PRIMARY KEY,
+    agent_slug TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    origin TEXT NOT NULL CHECK (origin IN ('upstream', 'agency')),
+    employment_class TEXT NOT NULL
+        CHECK (employment_class IN ('contractor', 'employee')),
+    standing TEXT NOT NULL DEFAULT 'active'
+        CHECK (standing IN ('active', 'suspended', 'retired', 'merged')),
+    current_agent_version_id TEXT NOT NULL,
+    current_version TEXT NOT NULL,
+    current_hash TEXT NOT NULL,
+    merged_into_worker_id TEXT,
+    revision INTEGER NOT NULL DEFAULT 0 CHECK (revision >= 0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    CHECK (
+        (standing = 'merged' AND merged_into_worker_id IS NOT NULL)
+        OR (standing <> 'merged' AND merged_into_worker_id IS NULL)
+    ),
+    FOREIGN KEY (merged_into_worker_id) REFERENCES agent_workers(worker_id)
+);
+
+CREATE TABLE IF NOT EXISTS agent_hiring_cases (
+    id TEXT PRIMARY KEY,
+    idempotency_key TEXT NOT NULL UNIQUE,
+    case_type TEXT NOT NULL CHECK (case_type IN ('hire', 'amend')),
+    status TEXT NOT NULL
+        CHECK (status IN ('proposed', 'audited', 'rejected', 'applied', 'folded')),
+    proposed_slug TEXT NOT NULL,
+    target_worker_id TEXT,
+    session_id TEXT NOT NULL DEFAULT '',
+    trace_id TEXT NOT NULL DEFAULT '',
+    work_unit_id TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    gap_evidence TEXT NOT NULL,
+    duplicate_evidence TEXT NOT NULL,
+    contract_evidence TEXT NOT NULL DEFAULT '{}',
+    critic_evidence TEXT NOT NULL DEFAULT '{}',
+    model_evidence TEXT NOT NULL DEFAULT '{}',
+    contract_hash TEXT NOT NULL DEFAULT '',
+    risk_tier TEXT NOT NULL DEFAULT 'standard'
+        CHECK (risk_tier IN ('low', 'standard', 'high')),
+    human_approval_required INTEGER NOT NULL DEFAULT 0
+        CHECK (human_approval_required IN (0, 1)),
+    human_approved_by TEXT NOT NULL DEFAULT '',
+    human_approved_at TEXT,
+    created_at TEXT NOT NULL,
+    decided_at TEXT,
+    applied_at TEXT,
+    FOREIGN KEY (target_worker_id) REFERENCES agent_workers(worker_id)
+);
+
+CREATE TABLE IF NOT EXISTS agent_version_lineage (
+    id TEXT PRIMARY KEY,
+    worker_id TEXT NOT NULL,
+    agent_version_id TEXT NOT NULL UNIQUE,
+    parent_version_id TEXT,
+    relation TEXT NOT NULL
+        CHECK (relation IN ('generated', 'upstream_update', 'agency_amendment', 'merge')),
+    recruitment_contract TEXT NOT NULL,
+    recruitment_contract_hash TEXT NOT NULL,
+    hiring_case_id TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (worker_id) REFERENCES agent_workers(worker_id),
+    FOREIGN KEY (hiring_case_id) REFERENCES agent_hiring_cases(id)
+);
+
+CREATE TABLE IF NOT EXISTS agent_worker_events (
+    id TEXT PRIMARY KEY,
+    event_sequence INTEGER NOT NULL UNIQUE CHECK (event_sequence > 0),
+    worker_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    from_class TEXT NOT NULL DEFAULT '',
+    to_class TEXT NOT NULL DEFAULT '',
+    from_standing TEXT NOT NULL DEFAULT '',
+    to_standing TEXT NOT NULL DEFAULT '',
+    version TEXT NOT NULL DEFAULT '',
+    merged_into_worker_id TEXT,
+    hiring_case_id TEXT,
+    actor TEXT NOT NULL DEFAULT '',
+    surface TEXT NOT NULL DEFAULT '',
+    session_id TEXT NOT NULL DEFAULT '',
+    trace_id TEXT NOT NULL DEFAULT '',
+    reason TEXT NOT NULL DEFAULT '',
+    evidence TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (worker_id) REFERENCES agent_workers(worker_id),
+    FOREIGN KEY (merged_into_worker_id) REFERENCES agent_workers(worker_id),
+    FOREIGN KEY (hiring_case_id) REFERENCES agent_hiring_cases(id)
+);
+
+CREATE TABLE IF NOT EXISTS agent_performance_events (
+    id TEXT PRIMARY KEY,
+    idempotency_key TEXT NOT NULL UNIQUE,
+    worker_id TEXT NOT NULL,
+    version TEXT NOT NULL,
+    version_hash TEXT NOT NULL,
+    session_id TEXT NOT NULL DEFAULT '',
+    trace_id TEXT NOT NULL DEFAULT '',
+    work_unit_id TEXT NOT NULL DEFAULT '',
+    activation_receipt_id TEXT NOT NULL DEFAULT '',
+    event_type TEXT NOT NULL,
+    outcome TEXT NOT NULL,
+    score REAL,
+    evidence_hash TEXT NOT NULL,
+    evidence_refs TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    CHECK (score IS NULL OR (score >= 0.0 AND score <= 1.0)),
+    FOREIGN KEY (worker_id) REFERENCES agent_workers(worker_id)
+);
+
 -- Schema version
 CREATE TABLE IF NOT EXISTS schema_version (
     version INTEGER PRIMARY KEY
@@ -1245,6 +1360,87 @@ CREATE INDEX IF NOT EXISTS idx_candidate_status_events_candidate_created
 ON agent_candidate_status_events(candidate_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_import_events_type_created
 ON agent_import_events(event_type, created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_workers_state
+ON agent_workers(standing, employment_class, agent_slug);
+CREATE INDEX IF NOT EXISTS idx_agent_workers_current_version
+ON agent_workers(current_agent_version_id);
+CREATE INDEX IF NOT EXISTS idx_agent_hiring_cases_created
+ON agent_hiring_cases(created_at DESC, id DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_lineage_hiring_case_once
+ON agent_version_lineage(hiring_case_id) WHERE hiring_case_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_agent_worker_events_worker_sequence
+ON agent_worker_events(worker_id, event_sequence DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_performance_worker_created
+ON agent_performance_events(worker_id, created_at DESC, id DESC);
+CREATE TRIGGER IF NOT EXISTS agency_version_lineage_immutable_update
+BEFORE UPDATE ON agent_version_lineage BEGIN
+SELECT RAISE(ABORT, 'agent version lineage is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_version_lineage_immutable_delete
+BEFORE DELETE ON agent_version_lineage BEGIN
+SELECT RAISE(ABORT, 'agent version lineage is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_worker_events_immutable_update
+BEFORE UPDATE ON agent_worker_events BEGIN
+SELECT RAISE(ABORT, 'agent worker events are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_worker_events_immutable_delete
+BEFORE DELETE ON agent_worker_events BEGIN
+SELECT RAISE(ABORT, 'agent worker events are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_performance_events_immutable_update
+BEFORE UPDATE ON agent_performance_events BEGIN
+SELECT RAISE(ABORT, 'agent performance events are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_workers_immutable_delete
+BEFORE DELETE ON agent_workers BEGIN
+SELECT RAISE(ABORT, 'agent workforce identity is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_hiring_case_evidence_immutable
+BEFORE UPDATE ON agent_hiring_cases
+WHEN OLD.id IS NOT NEW.id
+  OR OLD.idempotency_key IS NOT NEW.idempotency_key
+  OR OLD.case_type IS NOT NEW.case_type
+  OR OLD.proposed_slug IS NOT NEW.proposed_slug
+  OR OLD.target_worker_id IS NOT NEW.target_worker_id
+  OR OLD.session_id IS NOT NEW.session_id
+  OR OLD.trace_id IS NOT NEW.trace_id
+  OR OLD.work_unit_id IS NOT NEW.work_unit_id
+  OR OLD.request_hash IS NOT NEW.request_hash
+  OR OLD.gap_evidence IS NOT NEW.gap_evidence
+  OR OLD.duplicate_evidence IS NOT NEW.duplicate_evidence
+  OR OLD.contract_evidence IS NOT NEW.contract_evidence
+  OR OLD.critic_evidence IS NOT NEW.critic_evidence
+  OR OLD.model_evidence IS NOT NEW.model_evidence
+  OR OLD.contract_hash IS NOT NEW.contract_hash
+  OR OLD.risk_tier IS NOT NEW.risk_tier
+  OR OLD.human_approval_required IS NOT NEW.human_approval_required
+  OR OLD.created_at IS NOT NEW.created_at
+BEGIN SELECT RAISE(ABORT, 'agent hiring evidence is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_hiring_cases_immutable_delete
+BEFORE DELETE ON agent_hiring_cases BEGIN
+SELECT RAISE(ABORT, 'agent hiring evidence is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_hiring_case_status_transition
+BEFORE UPDATE OF status ON agent_hiring_cases
+WHEN NEW.status != OLD.status AND NOT (
+    (OLD.status = 'proposed' AND NEW.status IN ('audited', 'rejected', 'folded'))
+    OR (OLD.status = 'audited' AND NEW.status IN ('applied', 'rejected', 'folded'))
+)
+BEGIN SELECT RAISE(ABORT, 'invalid agent hiring status transition'); END;
+CREATE TRIGGER IF NOT EXISTS agency_hiring_case_applied_authority
+BEFORE UPDATE OF status ON agent_hiring_cases
+WHEN NEW.status = 'applied' AND NOT EXISTS (
+    SELECT 1 FROM agent_version_lineage AS lineage
+    WHERE lineage.hiring_case_id = NEW.id
+)
+BEGIN SELECT RAISE(ABORT, 'agent hiring case lacks applied lineage'); END;
+CREATE TRIGGER IF NOT EXISTS agency_hiring_case_human_approval_once
+BEFORE UPDATE OF human_approved_by, human_approved_at ON agent_hiring_cases
+WHEN (NEW.human_approved_by IS NOT OLD.human_approved_by
+      OR NEW.human_approved_at IS NOT OLD.human_approved_at)
+  AND NOT (
+      OLD.status = 'proposed'
+      AND OLD.human_approval_required = 1
+      AND OLD.human_approved_by = ''
+      AND OLD.human_approved_at IS NULL
+      AND NEW.human_approved_by != ''
+      AND NEW.human_approved_at IS NOT NULL
+  )
+BEGIN SELECT RAISE(ABORT, 'agent hiring approval is immutable'); END;
 """ + "\n".join(
     (
         _REMEDIATION_RESOLUTION_INDEX_SQL + ";",
@@ -1290,6 +1486,11 @@ ALL_TABLES: tuple[str, ...] = (
     "agent_active",
     "agent_retirements",
     "agent_import_events",
+    "agent_workers",
+    "agent_hiring_cases",
+    "agent_version_lineage",
+    "agent_worker_events",
+    "agent_performance_events",
     "agent_remediation_resolution_dependencies",
     "agent_remediation_resolution_authority",
     "schema_version",
@@ -1338,9 +1539,11 @@ RUNTIME_TABLE_TIMESTAMPS: dict[str, str] = {
     "child_routing_usage": "child_routing_usage.updated_at",
     "child_routing_leases": "child_routing_leases.created_at",
     "resident_manager_bindings": "resident_manager_bindings.updated_at",
+    "agent_performance_events": "agent_performance_events.created_at",
 }
 
 RUNTIME_DELETE_ORDER: tuple[str, ...] = (
+    "agent_performance_events",
     "delegation_activation_receipts",
     "worker_runs",
     "delegation_events",
@@ -1368,6 +1571,88 @@ def ensure_column(
     columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
     if column not in columns:
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
+def workforce_schema_is_current(conn: sqlite3.Connection) -> bool:
+    """Return whether durable workforce structures and active bindings are complete."""
+
+    required_columns = {
+        "agent_workers": {
+            "worker_id",
+            "agent_slug",
+            "employment_class",
+            "standing",
+            "current_agent_version_id",
+            "current_version",
+            "current_hash",
+            "revision",
+        },
+        "agent_hiring_cases": {
+            "idempotency_key",
+            "contract_evidence",
+            "critic_evidence",
+            "model_evidence",
+            "contract_hash",
+            "risk_tier",
+            "human_approval_required",
+        },
+        "agent_version_lineage": {
+            "worker_id",
+            "agent_version_id",
+            "recruitment_contract",
+            "recruitment_contract_hash",
+            "hiring_case_id",
+        },
+        "agent_worker_events": {"event_sequence", "worker_id", "event_type", "evidence"},
+        "agent_performance_events": {
+            "idempotency_key",
+            "worker_id",
+            "version",
+            "version_hash",
+            "activation_receipt_id",
+            "evidence_hash",
+        },
+    }
+    for table, expected in required_columns.items():
+        columns = {str(row["name"]) for row in conn.execute(f"PRAGMA table_info({table})")}
+        if not expected.issubset(columns):
+            return False
+    required_objects = {
+        "agency_version_lineage_immutable_update",
+        "agency_version_lineage_immutable_delete",
+        "agency_worker_events_immutable_update",
+        "agency_worker_events_immutable_delete",
+        "agency_performance_events_immutable_update",
+        "agency_workers_immutable_delete",
+        "agency_hiring_case_evidence_immutable",
+        "agency_hiring_cases_immutable_delete",
+        "agency_hiring_case_status_transition",
+        "agency_hiring_case_applied_authority",
+        "agency_hiring_case_human_approval_once",
+        "idx_agent_lineage_hiring_case_once",
+    }
+    observed = {
+        str(row["name"])
+        for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE name IN ("
+            + ",".join("?" for _ in required_objects)
+            + ")",
+            tuple(sorted(required_objects)),
+        )
+    }
+    if observed != required_objects:
+        return False
+    mismatch = conn.execute(
+        "SELECT 1 FROM agent_active AS active "
+        "JOIN agent_versions AS version ON version.agent_slug = active.agent_slug "
+        "AND version.version = active.version "
+        "LEFT JOIN agent_workers AS worker ON worker.agent_slug = active.agent_slug "
+        "WHERE worker.worker_id IS NULL "
+        "OR worker.current_agent_version_id != version.id "
+        "OR worker.current_version != active.version "
+        "OR worker.current_hash != active.hash LIMIT 1"
+    ).fetchone()
+    return mismatch is None
 
 
 def _canonical_schema_sql(value: object) -> str:
@@ -2673,6 +2958,16 @@ def _tombstone_legacy_source_behavior(
     conn.execute(
         "DELETE FROM agent_downloads WHERE id IN (SELECT id FROM agency_tainted_source_downloads)"
     )
+    from agency_runtime.core.store.workforce import retire_ingested_workforce_worker
+
+    for tainted in conn.execute(
+        "SELECT agent_slug FROM agency_tainted_source_active ORDER BY agent_slug"
+    ).fetchall():
+        retire_ingested_workforce_worker(
+            conn,
+            agent_slug=str(tainted["agent_slug"]),
+            reason="source privacy redaction removed the governed prompt revision",
+        )
     conn.execute(
         "DELETE FROM agent_active WHERE agent_slug IN "
         "(SELECT agent_slug FROM agency_tainted_source_active)"
@@ -4205,6 +4500,9 @@ def migrate_schema(
         if current_version < 30
         else source_redaction_purge_pending(conn)
     )
+    from agency_runtime.core.store.workforce import backfill_workforce_identity
+
+    backfill_workforce_identity(conn)
     conn.execute("DELETE FROM schema_version")
     conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
     return purge_pending

@@ -286,6 +286,11 @@ _OPEN_TRACE_RETENTION_GUARDS: Mapping[str, str] = {
         "runs.session_id = resident_manager_bindings.session_id "
         "AND runs.status IN ('active', 'evidence_only'))"
     ),
+    "agent_performance_events": (
+        "NOT EXISTS (SELECT 1 FROM runs WHERE "
+        "runs.trace_id = agent_performance_events.trace_id "
+        "AND runs.status IN ('active', 'evidence_only'))"
+    ),
 }
 
 
@@ -465,6 +470,8 @@ def retention_predicates(
                 "WHERE finalization_events.trace_id = runs.trace_id)",
                 "NOT EXISTS (SELECT 1 FROM routing_decisions "
                 "WHERE routing_decisions.trace_id = runs.trace_id)",
+                "NOT EXISTS (SELECT 1 FROM agent_performance_events "
+                "WHERE agent_performance_events.trace_id = runs.trace_id)",
             ]
         )
     return " AND ".join(f"({clause})" for clause in clauses), parameters

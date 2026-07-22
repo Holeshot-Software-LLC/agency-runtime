@@ -1,0 +1,685 @@
+"""Deterministically verify inference-ranked staffing against a roster snapshot."""
+
+from __future__ import annotations
+
+import itertools
+import re
+from collections.abc import Sequence
+from dataclasses import asdict, dataclass
+from typing import Any
+
+from agency_runtime.core.workforce.contract import (
+    WORKFORCE_CONTRACT_SCHEMA_VERSION,
+    WorkforceContract,
+    workforce_index_fingerprint,
+)
+from agency_runtime.core.workforce.planning_contracts import (
+    RecruiterProposal,
+    ShadowEvidence,
+    UnitRecruitment,
+    WorkUnit,
+    WorkUnitPlan,
+)
+
+_TOKENS = re.compile(r"[a-z0-9]+")
+_ASSURANCE_ARTIFACTS = frozenset({"review-report", "test-evidence"})
+_ASSURANCE_PHASES = frozenset({"review", "testing", "release"})
+
+
+@dataclass(frozen=True, slots=True)
+class StaffingBudget:
+    max_work_units: int = 16
+    max_selected_per_unit: int = 4
+    max_selected_total: int = 16
+    max_loaded: int = 1
+    max_delegated: int = 16
+    min_confidence: float = 0.8
+    min_margin: float = 0.1
+
+    def __post_init__(self) -> None:
+        counts = (
+            self.max_work_units,
+            self.max_selected_per_unit,
+            self.max_selected_total,
+            self.max_loaded,
+            self.max_delegated,
+        )
+        if any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in counts
+        ):
+            raise ValueError("staffing budget counts must be nonnegative integers")
+        if not 0 <= self.min_confidence <= 1 or not 0 <= self.min_margin <= 1:
+            raise ValueError("staffing confidence and margin bounds must be between zero and one")
+
+
+@dataclass(frozen=True, slots=True)
+class StaffingContext:
+    host: str
+    platform: str
+    available_tools: frozenset[str]
+    roster_generation: int
+
+    def __post_init__(self) -> None:
+        if not self.host or not self.platform:
+            raise ValueError("staffing host and platform are required")
+        if isinstance(self.roster_generation, bool) or self.roster_generation < 0:
+            raise ValueError("staffing roster generation must be nonnegative")
+
+
+@dataclass(frozen=True, slots=True)
+class AbstentionReason:
+    code: str
+    unit_id: str = ""
+    agent_id: str = ""
+    detail: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedUnitStaffing:
+    unit_id: str
+    selected: tuple[str, ...]
+    delivery: str
+    timing: str
+    contexts: tuple[tuple[str, str], ...]
+    disabled_shadows: tuple[ShadowEvidence, ...]
+    unavailable_shadows: tuple[ShadowEvidence, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class StaffingDecision:
+    status: str
+    units: tuple[VerifiedUnitStaffing, ...]
+    abstention_reasons: tuple[AbstentionReason, ...]
+
+    @property
+    def accepted(self) -> bool:
+        return self.status == "accepted"
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+def _reason(
+    reasons: list[AbstentionReason],
+    code: str,
+    *,
+    unit_id: str = "",
+    agent_id: str = "",
+    detail: str = "",
+) -> None:
+    item = AbstentionReason(code, unit_id, agent_id, detail)
+    if item not in reasons:
+        reasons.append(item)
+
+
+def _tokens(*values: str) -> frozenset[str]:
+    return frozenset(token for value in values for token in _TOKENS.findall(value.casefold()))
+
+
+def _contract_tokens(contract: WorkforceContract) -> frozenset[str]:
+    return _tokens(
+        contract.archetype,
+        *contract.outcomes,
+        *contract.artifact_kinds,
+        *contract.lifecycle_phases,
+        *contract.domains,
+        *contract.stacks,
+        *contract.scope_qualifiers,
+    )
+
+
+def _supports(contract: WorkforceContract, capability: str) -> bool:
+    required = _tokens(capability)
+    return bool(required) and required <= _contract_tokens(contract)
+
+
+def _out_of_scope(contract: WorkforceContract, unit: WorkUnit) -> bool:
+    unit_tokens = _tokens(
+        unit.outcome,
+        unit.artifact_kind,
+        unit.lifecycle_phase,
+        *unit.domains,
+        *unit.languages,
+        *unit.frameworks,
+        *unit.required_capabilities,
+        *unit.risks,
+        *unit.trust_boundaries,
+    )
+    return any(_tokens(value) and _tokens(value) <= unit_tokens for value in contract.not_for)
+
+
+def _eligibility(
+    unit: WorkUnit,
+    contract: WorkforceContract,
+    context: StaffingContext,
+    *,
+    ignore_enabled: bool = False,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if not contract.enabled and not ignore_enabled:
+        reasons.append("agent_disabled")
+    if contract.schema_version != WORKFORCE_CONTRACT_SCHEMA_VERSION:
+        reasons.append("agent_schema_unsupported")
+    if contract.audit.status != "approved" or not contract.audit.contract_valid:
+        reasons.append("agent_not_approved")
+    if not contract.audit.revision or not contract.version or not contract.version_hash:
+        reasons.append("agent_version_unbound")
+    if context.host not in contract.hosts:
+        reasons.append("agent_host_unsupported")
+    if context.platform not in contract.platforms or context.platform not in unit.platforms:
+        reasons.append("agent_platform_unsupported")
+    if (
+        set(contract.tool_classes) - context.available_tools
+        or not set(unit.required_tools) <= context.available_tools
+    ):
+        reasons.append("agent_tools_missing")
+    if contract.authority != unit.authority:
+        reasons.append("agent_authority_mismatch")
+    if unit.artifact_kind not in contract.artifact_kinds:
+        reasons.append("agent_artifact_mismatch")
+    if unit.lifecycle_phase not in contract.lifecycle_phases:
+        reasons.append("agent_lifecycle_mismatch")
+    if not set(unit.domains) <= set(contract.domains):
+        reasons.append("agent_domain_mismatch")
+    if not set(unit.languages + unit.frameworks) <= set(contract.stacks):
+        reasons.append("agent_stack_mismatch")
+    if unit.required_capabilities and not any(
+        _supports(contract, item) for item in unit.required_capabilities
+    ):
+        reasons.append("agent_capability_mismatch")
+    if _out_of_scope(contract, unit):
+        reasons.append("agent_explicitly_out_of_scope")
+    return tuple(reasons)
+
+
+def _requirements(unit: WorkUnit) -> tuple[str, ...]:
+    values = [
+        f"artifact:{unit.artifact_kind}",
+        f"lifecycle:{unit.lifecycle_phase}",
+        *(f"domain:{item}" for item in unit.domains),
+        *(f"stack:{item}" for item in unit.languages + unit.frameworks),
+        *(f"capability:{item}" for item in unit.required_capabilities),
+        f"authority:{unit.authority}",
+    ]
+    return tuple(dict.fromkeys(values))
+
+
+def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
+    covered: set[str] = set()
+    if unit.artifact_kind in contract.artifact_kinds:
+        covered.add(f"artifact:{unit.artifact_kind}")
+    if unit.lifecycle_phase in contract.lifecycle_phases:
+        covered.add(f"lifecycle:{unit.lifecycle_phase}")
+    covered.update(f"domain:{item}" for item in unit.domains if item in contract.domains)
+    covered.update(
+        f"stack:{item}" for item in unit.languages + unit.frameworks if item in contract.stacks
+    )
+    covered.update(
+        f"capability:{item}" for item in unit.required_capabilities if _supports(contract, item)
+    )
+    if unit.authority == contract.authority:
+        covered.add(f"authority:{unit.authority}")
+    return frozenset(covered)
+
+
+def _minimum_team(
+    unit: WorkUnit,
+    ranked_ids: tuple[str, ...],
+    contracts: dict[str, WorkforceContract],
+    maximum: int,
+) -> tuple[str, ...]:
+    required = set(_requirements(unit))
+    for size in range(1, min(maximum, len(ranked_ids)) + 1):
+        for combination in itertools.combinations(ranked_ids, size):
+            combined: set[str] = set()
+            for agent_id in combination:
+                combined.update(_coverage(unit, contracts[agent_id]))
+            if required <= combined:
+                return combination
+    return ()
+
+
+def _rank_signature(items: Sequence[Any]) -> tuple[tuple[str, int, float], ...]:
+    return tuple((item.agent_id, item.rank, item.score) for item in items)
+
+
+def _filtered_ranks(row: UnitRecruitment, predicate: Any) -> tuple[tuple[str, int, float], ...]:
+    result: list[tuple[str, int, float]] = []
+    for item in row.ranked_semantic:
+        if predicate(item.agent_id):
+            result.append((item.agent_id, len(result) + 1, item.score))
+    return tuple(result)
+
+
+def _snapshot(
+    proposal: RecruiterProposal,
+    contracts: Sequence[WorkforceContract],
+    context: StaffingContext,
+    reasons: list[AbstentionReason],
+) -> dict[str, WorkforceContract]:
+    roster: dict[str, WorkforceContract] = {}
+    for contract in contracts:
+        if contract.agent_id in roster:
+            _reason(reasons, "duplicate_roster_agent", agent_id=contract.agent_id)
+        roster[contract.agent_id] = contract
+    try:
+        fingerprint = workforce_index_fingerprint(contracts)
+    except ValueError as exc:
+        _reason(reasons, "invalid_roster_snapshot", detail=str(exc))
+        return roster
+    if proposal.roster_fingerprint != fingerprint:
+        _reason(reasons, "roster_fingerprint_mismatch")
+    if proposal.roster_count != len(contracts):
+        _reason(reasons, "roster_count_mismatch")
+    if proposal.roster_generation != context.roster_generation:
+        _reason(reasons, "roster_generation_mismatch")
+    return roster
+
+
+def _ranking(
+    unit: WorkUnit,
+    row: UnitRecruitment,
+    roster: dict[str, WorkforceContract],
+    context: StaffingContext,
+    reasons: list[AbstentionReason],
+) -> tuple[str, ...]:
+    for agent_id in sorted({item.agent_id for item in row.ranked_semantic} - set(roster)):
+        _reason(reasons, "unknown_ranked_agent", unit_id=unit.unit_id, agent_id=agent_id)
+    enabled = _filtered_ranks(row, lambda item: item in roster and roster[item].enabled)
+    if _rank_signature(row.ranked_enabled) != enabled:
+        _reason(reasons, "ranked_enabled_mismatch", unit_id=unit.unit_id)
+    executable = _filtered_ranks(
+        row, lambda item: item in roster and not _eligibility(unit, roster[item], context)
+    )
+    if _rank_signature(row.ranked_executable) != executable:
+        _reason(reasons, "ranked_executable_mismatch", unit_id=unit.unit_id)
+    return tuple(item[0] for item in executable)
+
+
+def _selection(
+    unit: WorkUnit,
+    row: UnitRecruitment,
+    roster: dict[str, WorkforceContract],
+    executable: tuple[str, ...],
+    context: StaffingContext,
+    budget: StaffingBudget,
+    reasons: list[AbstentionReason],
+) -> tuple[str, ...]:
+    claimed = set(row.required + row.acceptable + row.forbidden + row.selected + row.runner_up)
+    for agent_id in sorted(claimed - set(roster)):
+        _reason(reasons, "unknown_claimed_agent", unit_id=unit.unit_id, agent_id=agent_id)
+    if not set(row.required) <= set(row.selected):
+        _reason(reasons, "required_agents_missing", unit_id=unit.unit_id)
+    if not set(row.selected) <= set(row.required + row.acceptable):
+        _reason(reasons, "selected_agents_outside_allowed_set", unit_id=unit.unit_id)
+    expected_forbidden = tuple(
+        item.agent_id
+        for item in row.ranked_semantic
+        if item.agent_id in roster and _eligibility(unit, roster[item.agent_id], context)
+    )
+    if row.forbidden != expected_forbidden:
+        _reason(reasons, "forbidden_set_mismatch", unit_id=unit.unit_id)
+    if set(row.forbidden) & set(row.selected):
+        _reason(reasons, "forbidden_agent_selected", unit_id=unit.unit_id)
+    if set(row.runner_up) & (set(row.selected) | set(row.forbidden)):
+        _reason(reasons, "runner_up_set_invalid", unit_id=unit.unit_id)
+    expected = _minimum_team(unit, executable, roster, budget.max_selected_per_unit)
+    if row.selected != expected:
+        _reason(reasons, "selected_not_deterministic_minimum", unit_id=unit.unit_id)
+    if not expected:
+        _reason(reasons, "no_safe_sufficient_team", unit_id=unit.unit_id)
+    expected_runner = tuple(item for item in executable if item not in expected)[
+        : len(row.runner_up)
+    ]
+    if row.runner_up != expected_runner:
+        _reason(reasons, "runner_up_order_mismatch", unit_id=unit.unit_id)
+    return expected
+
+
+def _evidence(
+    unit: WorkUnit,
+    row: UnitRecruitment,
+    selected: tuple[str, ...],
+    roster: dict[str, WorkforceContract],
+    reasons: list[AbstentionReason],
+) -> None:
+    expected_coverage = tuple(
+        (
+            requirement,
+            tuple(agent for agent in selected if requirement in _coverage(unit, roster[agent])),
+        )
+        for requirement in _requirements(unit)
+    )
+    actual_coverage = tuple((item.requirement, item.agent_ids) for item in row.coverage)
+    if actual_coverage != expected_coverage or any(not agents for _, agents in expected_coverage):
+        _reason(reasons, "coverage_evidence_mismatch", unit_id=unit.unit_id)
+    positive = tuple(item.agent_id for item in row.positive_evidence)
+    if positive != selected or len(set(positive)) != len(positive):
+        _reason(reasons, "positive_evidence_mismatch", unit_id=unit.unit_id)
+    expected_negative = tuple(dict.fromkeys(row.forbidden + row.runner_up))
+    negative = tuple(item.agent_id for item in row.negative_evidence)
+    if negative != expected_negative or len(set(negative)) != len(negative):
+        _reason(reasons, "negative_evidence_mismatch", unit_id=unit.unit_id)
+
+
+def _shadow_signature(
+    items: Sequence[ShadowEvidence],
+) -> tuple[tuple[str, int, tuple[str, ...], str], ...]:
+    return tuple(
+        (item.agent_id, item.rank, item.reason_codes, item.fallback_agent_id) for item in items
+    )
+
+
+def _shadows(
+    unit: WorkUnit,
+    row: UnitRecruitment,
+    roster: dict[str, WorkforceContract],
+    context: StaffingContext,
+    selected: tuple[str, ...],
+    reasons: list[AbstentionReason],
+) -> None:
+    fallback = selected[0] if selected else ""
+    fallback_rank = next(
+        (item.rank for item in row.ranked_semantic if item.agent_id == fallback),
+        len(row.ranked_semantic) + 1,
+    )
+    disabled: list[tuple[str, int, tuple[str, ...], str]] = []
+    unavailable: list[tuple[str, int, tuple[str, ...], str]] = []
+    for item in row.ranked_semantic:
+        if item.rank >= fallback_rank or item.agent_id not in roster:
+            continue
+        contract = roster[item.agent_id]
+        failed = _eligibility(unit, contract, context)
+        if not failed:
+            continue
+        target = (
+            disabled
+            if not contract.enabled
+            and not _eligibility(unit, contract, context, ignore_enabled=True)
+            else unavailable
+        )
+        target.append((item.agent_id, item.rank, failed, fallback))
+    if _shadow_signature(row.disabled_shadows) != tuple(disabled):
+        _reason(reasons, "disabled_shadow_mismatch", unit_id=unit.unit_id)
+    if _shadow_signature(row.unavailable_shadows) != tuple(unavailable):
+        _reason(reasons, "unavailable_shadow_mismatch", unit_id=unit.unit_id)
+
+
+def _ancestors(plan: WorkUnitPlan, unit_id: str) -> frozenset[str]:
+    units = {unit.unit_id: unit for unit in plan.units}
+    found: set[str] = set()
+    pending = list(units[unit_id].depends_on)
+    while pending:
+        current = pending.pop()
+        if current not in found:
+            found.add(current)
+            pending.extend(units[current].depends_on)
+    return frozenset(found)
+
+
+def _agent_composition(
+    row: UnitRecruitment,
+    agent_id: str,
+    binding: dict[str, str],
+    ancestor_units: frozenset[str],
+    ancestor_agents: set[str],
+    selected: dict[str, tuple[str, ...]],
+    contexts: dict[str, dict[str, str]],
+    roster: dict[str, WorkforceContract],
+    reasons: list[AbstentionReason],
+) -> None:
+    if agent_id not in roster:
+        return
+    contract = roster[agent_id]
+    relation = contract.composition
+    if row.delivery == "load" and contract.context_mode == "isolated_only":
+        _reason(reasons, "agent_requires_delegation", unit_id=row.unit_id, agent_id=agent_id)
+    checks = (
+        (relation.selection_exclusive, "selection_exclusive_conflict", set(row.selected)),
+        (
+            relation.requires,
+            "required_composition_agent_missing",
+            set(row.selected) | ancestor_agents,
+        ),
+        (relation.must_follow, "composition_order_invalid", ancestor_agents),
+    )
+    for targets, code, present in checks:
+        for target in targets:
+            if (code == "selection_exclusive_conflict" and target in present) or (
+                code != "selection_exclusive_conflict" and target not in present
+            ):
+                _reason(
+                    reasons,
+                    code,
+                    unit_id=row.unit_id,
+                    agent_id=agent_id,
+                    detail=target,
+                )
+    for target in relation.same_context_conflicts:
+        if target in binding and binding[target] == binding[agent_id]:
+            _reason(
+                reasons,
+                "same_context_conflict",
+                unit_id=row.unit_id,
+                agent_id=agent_id,
+                detail=target,
+            )
+    for target in relation.must_review_independently:
+        if target not in ancestor_agents:
+            _reason(
+                reasons,
+                "independent_review_target_missing",
+                unit_id=row.unit_id,
+                agent_id=agent_id,
+                detail=target,
+            )
+            continue
+        target_units = [name for name in ancestor_units if target in selected[name]]
+        if binding[agent_id] in {contexts[name].get(target, "") for name in target_units}:
+            _reason(
+                reasons,
+                "review_context_reused",
+                unit_id=row.unit_id,
+                agent_id=agent_id,
+                detail=target,
+            )
+        own_class = relation.independence_class
+        if own_class and own_class == roster[target].composition.independence_class:
+            _reason(
+                reasons,
+                "review_independence_class_reused",
+                unit_id=row.unit_id,
+                agent_id=agent_id,
+                detail=target,
+            )
+
+
+def _substitution_groups(
+    row: UnitRecruitment,
+    roster: dict[str, WorkforceContract],
+    reasons: list[AbstentionReason],
+) -> None:
+    groups: dict[str, list[str]] = {}
+    for agent_id in row.selected:
+        if agent_id in roster and roster[agent_id].composition.substitution_group:
+            groups.setdefault(roster[agent_id].composition.substitution_group, []).append(agent_id)
+    for group, members in groups.items():
+        if len(members) > 1 and not all(
+            other in roster[member].composition.complements
+            for member in members
+            for other in members
+            if member != other
+        ):
+            _reason(reasons, "redundant_substitution_group", unit_id=row.unit_id, detail=group)
+
+
+def _composition(
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    roster: dict[str, WorkforceContract],
+    reasons: list[AbstentionReason],
+) -> None:
+    selected = {row.unit_id: row.selected for row in proposal.units}
+    contexts = {
+        row.unit_id: {item.agent_id: item.context_id for item in row.contexts}
+        for row in proposal.units
+    }
+    for row in proposal.units:
+        binding = contexts[row.unit_id]
+        if tuple(binding) != row.selected or len(binding) != len(row.contexts):
+            _reason(reasons, "context_binding_mismatch", unit_id=row.unit_id)
+            continue
+        if row.delivery == "delegate" and len(set(binding.values())) != len(binding):
+            _reason(reasons, "delegated_context_not_distinct", unit_id=row.unit_id)
+        ancestor_units = _ancestors(plan, row.unit_id)
+        ancestor_agents = {agent for name in ancestor_units for agent in selected[name]}
+        for agent_id in row.selected:
+            _agent_composition(
+                row,
+                agent_id,
+                binding,
+                ancestor_units,
+                ancestor_agents,
+                selected,
+                contexts,
+                roster,
+                reasons,
+            )
+        _substitution_groups(row, roster, reasons)
+
+
+def _has_assurance(
+    source_id: str,
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    roster: dict[str, WorkforceContract],
+) -> bool:
+    source = next(row for row in proposal.units if row.unit_id == source_id)
+    source_contexts = {item.context_id for item in source.contexts}
+    source_classes = {
+        roster[item].composition.independence_class
+        for item in source.selected
+        if item in roster and roster[item].composition.independence_class
+    }
+    units = {unit.unit_id: unit for unit in plan.units}
+    for row in proposal.units:
+        unit = units[row.unit_id]
+        if source_id not in _ancestors(plan, unit.unit_id):
+            continue
+        if (
+            unit.authority != "review"
+            or unit.artifact_kind not in _ASSURANCE_ARTIFACTS
+            or unit.lifecycle_phase not in _ASSURANCE_PHASES
+            or row.timing != "after_artifact"
+        ):
+            continue
+        row_contexts = {item.context_id for item in row.contexts}
+        row_classes = {
+            roster[item].composition.independence_class
+            for item in row.selected
+            if item in roster and roster[item].composition.independence_class
+        }
+        if (
+            not set(row.selected) & set(source.selected)
+            and not row_contexts & source_contexts
+            and not row_classes & source_classes
+        ):
+            return True
+    return False
+
+
+def _assurance(
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    roster: dict[str, WorkforceContract],
+    reasons: list[AbstentionReason],
+) -> None:
+    for unit in plan.units:
+        required = (unit.authority == "modify" and unit.mutation_scope != "read_only") or bool(
+            unit.claims
+        )
+        if required and not _has_assurance(unit.unit_id, plan, proposal, roster):
+            _reason(reasons, "independent_assurance_missing", unit_id=unit.unit_id)
+
+
+def _budgets(
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    budget: StaffingBudget,
+    reasons: list[AbstentionReason],
+) -> None:
+    if len(plan.units) > budget.max_work_units:
+        _reason(reasons, "work_unit_budget_exceeded")
+    total = sum(len(row.selected) for row in proposal.units)
+    loaded = sum(len(row.selected) for row in proposal.units if row.delivery == "load")
+    delegated = sum(len(row.selected) for row in proposal.units if row.delivery == "delegate")
+    if total > budget.max_selected_total:
+        _reason(reasons, "selected_agent_budget_exceeded")
+    if loaded > budget.max_loaded:
+        _reason(reasons, "loaded_agent_budget_exceeded")
+    if delegated > budget.max_delegated:
+        _reason(reasons, "delegated_agent_budget_exceeded")
+    for row in proposal.units:
+        if len(row.selected) > budget.max_selected_per_unit:
+            _reason(reasons, "unit_agent_budget_exceeded", unit_id=row.unit_id)
+        if row.selected and row.confidence < budget.min_confidence:
+            _reason(reasons, "selection_confidence_too_low", unit_id=row.unit_id)
+        if row.selected and row.margin < budget.min_margin:
+            _reason(reasons, "selection_margin_too_low", unit_id=row.unit_id)
+
+
+def verify_staffing(
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    contracts: Sequence[WorkforceContract],
+    *,
+    context: StaffingContext,
+    budget: StaffingBudget | None = None,
+) -> StaffingDecision:
+    """Recompute a proposal and accept it only when the complete recipe is safe."""
+
+    active_budget = budget or StaffingBudget()
+    reasons: list[AbstentionReason] = []
+    if proposal.plan_hash != plan.plan_hash:
+        _reason(reasons, "plan_hash_mismatch")
+    roster = _snapshot(proposal, contracts, context, reasons)
+    for unit, row in zip(plan.units, proposal.units, strict=True):
+        executable = _ranking(unit, row, roster, context, reasons)
+        selected = _selection(unit, row, roster, executable, context, active_budget, reasons)
+        if selected and all(item in roster for item in selected):
+            _evidence(unit, row, selected, roster, reasons)
+        _shadows(unit, row, roster, context, selected, reasons)
+        if not row.selected:
+            for detail in row.abstention_reasons or ("no_safe_candidate",):
+                _reason(reasons, "recruiter_abstained", unit_id=row.unit_id, detail=detail)
+    _composition(plan, proposal, roster, reasons)
+    _assurance(plan, proposal, roster, reasons)
+    _budgets(plan, proposal, active_budget, reasons)
+    if reasons:
+        return StaffingDecision("abstained", (), tuple(reasons))
+    return StaffingDecision(
+        "accepted",
+        tuple(
+            VerifiedUnitStaffing(
+                row.unit_id,
+                row.selected,
+                row.delivery,
+                row.timing,
+                tuple((item.agent_id, item.context_id) for item in row.contexts),
+                row.disabled_shadows,
+                row.unavailable_shadows,
+            )
+            for row in proposal.units
+        ),
+        (),
+    )
+
+
+__all__ = [
+    "AbstentionReason",
+    "StaffingBudget",
+    "StaffingContext",
+    "StaffingDecision",
+    "VerifiedUnitStaffing",
+    "verify_staffing",
+]

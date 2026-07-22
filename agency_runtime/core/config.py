@@ -210,6 +210,7 @@ class SelectorConfig:
 
 
 DELEGATION_MODES = frozenset({"observe", "prefer", "strong"})
+WORKFORCE_MODES = frozenset({"fast", "balanced", "strict"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -223,6 +224,29 @@ class DelegationConfig:
     child_inference_budget: int = 4
     child_inference_concurrency: int = 2
     child_cache_ttl_seconds: int = 900
+
+
+@dataclass(frozen=True, slots=True)
+class WorkforceConfig:
+    """Inference-first planning, staffing, hiring, and promotion policy."""
+
+    mode: str = "balanced"
+    provider: str = ""
+    planner_model: str = ""
+    recruiter_model: str = ""
+    hiring_model: str = ""
+    critic_model: str = ""
+    fast_call_budget: int = 1
+    balanced_call_budget: int = 2
+    strict_call_budget: int = 3
+    hiring_call_budget: int = 2
+    max_work_units: int = 16
+    max_selected_per_unit: int = 4
+    max_selected_total: int = 16
+    max_hires_per_task: int = 1
+    max_hires_per_day: int = 3
+    auto_promote_successes: int = 0
+    contractor_review_days: int = 30
 
 
 @dataclass(frozen=True, slots=True)
@@ -302,6 +326,7 @@ class AgencyConfig:
     providers: tuple[ProviderEntry, ...] = field(default_factory=tuple)
     selector: SelectorConfig = field(default_factory=SelectorConfig)
     delegation: DelegationConfig = field(default_factory=DelegationConfig)
+    workforce: WorkforceConfig = field(default_factory=WorkforceConfig)
     agents: AgentActivationConfig = field(default_factory=AgentActivationConfig)
     store: StoreConfig = field(default_factory=StoreConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
@@ -422,6 +447,7 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
     providers_raw = raw.get("providers", [])
     selector_raw = raw.get("selector", {})
     delegation_raw = raw.get("delegation", {})
+    workforce_raw = raw.get("workforce", {})
     agents_raw = raw.get("agents", {})
     store_raw = raw.get("store", {})
     server_raw = raw.get("server", {})
@@ -463,6 +489,25 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             child_inference_budget=int(delegation_raw.get("child_inference_budget", 4)),
             child_inference_concurrency=int(delegation_raw.get("child_inference_concurrency", 2)),
             child_cache_ttl_seconds=int(delegation_raw.get("child_cache_ttl_seconds", 900)),
+        ),
+        workforce=WorkforceConfig(
+            mode=str(workforce_raw.get("mode", "balanced")).strip().casefold(),
+            provider=str(workforce_raw.get("provider", "")).strip(),
+            planner_model=str(workforce_raw.get("planner_model", "")).strip(),
+            recruiter_model=str(workforce_raw.get("recruiter_model", "")).strip(),
+            hiring_model=str(workforce_raw.get("hiring_model", "")).strip(),
+            critic_model=str(workforce_raw.get("critic_model", "")).strip(),
+            fast_call_budget=int(workforce_raw.get("fast_call_budget", 1)),
+            balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 2)),
+            strict_call_budget=int(workforce_raw.get("strict_call_budget", 3)),
+            hiring_call_budget=int(workforce_raw.get("hiring_call_budget", 2)),
+            max_work_units=int(workforce_raw.get("max_work_units", 16)),
+            max_selected_per_unit=int(workforce_raw.get("max_selected_per_unit", 4)),
+            max_selected_total=int(workforce_raw.get("max_selected_total", 16)),
+            max_hires_per_task=int(workforce_raw.get("max_hires_per_task", 1)),
+            max_hires_per_day=int(workforce_raw.get("max_hires_per_day", 3)),
+            auto_promote_successes=int(workforce_raw.get("auto_promote_successes", 0)),
+            contractor_review_days=int(workforce_raw.get("contractor_review_days", 30)),
         ),
         agents=AgentActivationConfig(
             disabled=normalize_disabled_agents(agents_raw.get("disabled", [])),
@@ -881,6 +926,7 @@ def _load_config_uncached(
             "ollama",
             "selector",
             "delegation",
+            "workforce",
             "agents",
             "store",
             "server",
@@ -1013,6 +1059,25 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "child_inference_budget": cfg.delegation.child_inference_budget,
             "child_inference_concurrency": cfg.delegation.child_inference_concurrency,
             "child_cache_ttl_seconds": cfg.delegation.child_cache_ttl_seconds,
+        },
+        "workforce": {
+            "mode": cfg.workforce.mode,
+            "provider": cfg.workforce.provider,
+            "planner_model": cfg.workforce.planner_model,
+            "recruiter_model": cfg.workforce.recruiter_model,
+            "hiring_model": cfg.workforce.hiring_model,
+            "critic_model": cfg.workforce.critic_model,
+            "fast_call_budget": cfg.workforce.fast_call_budget,
+            "balanced_call_budget": cfg.workforce.balanced_call_budget,
+            "strict_call_budget": cfg.workforce.strict_call_budget,
+            "hiring_call_budget": cfg.workforce.hiring_call_budget,
+            "max_work_units": cfg.workforce.max_work_units,
+            "max_selected_per_unit": cfg.workforce.max_selected_per_unit,
+            "max_selected_total": cfg.workforce.max_selected_total,
+            "max_hires_per_task": cfg.workforce.max_hires_per_task,
+            "max_hires_per_day": cfg.workforce.max_hires_per_day,
+            "auto_promote_successes": cfg.workforce.auto_promote_successes,
+            "contractor_review_days": cfg.workforce.contractor_review_days,
         },
         "agents": {"disabled": list(cfg.agents.disabled)},
         "store": {"db_path": cfg.store.db_path},

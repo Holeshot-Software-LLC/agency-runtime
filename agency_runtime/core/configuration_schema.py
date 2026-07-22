@@ -27,6 +27,7 @@ _CLI_TRANSPORTS = frozenset({"codex", "claude"})
 _PROFILES = frozenset({"local-only", "standard", "power", "yolo"})
 _ENABLED_VALUES = frozenset({"auto", "true", "false"})
 _DELEGATION_MODES = frozenset({"observe", "prefer", "strong"})
+_WORKFORCE_MODES = frozenset({"fast", "balanced", "strict"})
 
 
 def _error(path: str, message: str) -> ConfigValidationError:
@@ -383,6 +384,96 @@ def _validate_delegation(value: Any) -> dict[str, Any]:
     return result
 
 
+def _validate_workforce(value: Any) -> dict[str, Any]:
+    section = _mapping(value, "workforce")
+    allowed = {
+        "mode",
+        "provider",
+        "planner_model",
+        "recruiter_model",
+        "hiring_model",
+        "critic_model",
+        "fast_call_budget",
+        "balanced_call_budget",
+        "strict_call_budget",
+        "hiring_call_budget",
+        "max_work_units",
+        "max_selected_per_unit",
+        "max_selected_total",
+        "max_hires_per_task",
+        "max_hires_per_day",
+        "auto_promote_successes",
+        "contractor_review_days",
+    }
+    if set(section) - allowed:
+        raise _error("workforce", "contains unsupported fields")
+    validators: dict[str, Callable[[Any], Any]] = {
+        "mode": lambda item: _choice(item, "workforce.mode", _WORKFORCE_MODES),
+        "provider": lambda item: _string(item, "workforce.provider", maximum=80).strip(),
+        "planner_model": lambda item: _string(item, "workforce.planner_model", maximum=512).strip(),
+        "recruiter_model": lambda item: _string(
+            item, "workforce.recruiter_model", maximum=512
+        ).strip(),
+        "hiring_model": lambda item: _string(item, "workforce.hiring_model", maximum=512).strip(),
+        "critic_model": lambda item: _string(item, "workforce.critic_model", maximum=512).strip(),
+        "fast_call_budget": lambda item: _integer(
+            item, "workforce.fast_call_budget", minimum=1, maximum=8
+        ),
+        "balanced_call_budget": lambda item: _integer(
+            item, "workforce.balanced_call_budget", minimum=1, maximum=8
+        ),
+        "strict_call_budget": lambda item: _integer(
+            item, "workforce.strict_call_budget", minimum=1, maximum=8
+        ),
+        "hiring_call_budget": lambda item: _integer(
+            item, "workforce.hiring_call_budget", minimum=1, maximum=8
+        ),
+        "max_work_units": lambda item: _integer(
+            item, "workforce.max_work_units", minimum=1, maximum=64
+        ),
+        "max_selected_per_unit": lambda item: _integer(
+            item, "workforce.max_selected_per_unit", minimum=1, maximum=16
+        ),
+        "max_selected_total": lambda item: _integer(
+            item, "workforce.max_selected_total", minimum=1, maximum=256
+        ),
+        "max_hires_per_task": lambda item: _integer(
+            item, "workforce.max_hires_per_task", minimum=0, maximum=16
+        ),
+        "max_hires_per_day": lambda item: _integer(
+            item, "workforce.max_hires_per_day", minimum=0, maximum=100
+        ),
+        "auto_promote_successes": lambda item: _integer(
+            item, "workforce.auto_promote_successes", minimum=0, maximum=10_000
+        ),
+        "contractor_review_days": lambda item: _integer(
+            item, "workforce.contractor_review_days", minimum=1, maximum=3650
+        ),
+    }
+    result = {name: validators[name](item) for name, item in section.items()}
+    fast = result.get("fast_call_budget", 1)
+    balanced = result.get("balanced_call_budget", 2)
+    strict = result.get("strict_call_budget", 3)
+    if fast > balanced:
+        raise _error(
+            "workforce.balanced_call_budget", "must be greater than or equal to fast_call_budget"
+        )
+    if balanced > strict:
+        raise _error(
+            "workforce.strict_call_budget", "must be greater than or equal to balanced_call_budget"
+        )
+    per_unit = result.get("max_selected_per_unit", 4)
+    total = result.get("max_selected_total", 16)
+    if per_unit > total:
+        raise _error(
+            "workforce.max_selected_total", "must be greater than or equal to max_selected_per_unit"
+        )
+    for field in ("provider", "planner_model", "recruiter_model", "hiring_model", "critic_model"):
+        if has_terminal_control(result.get(field, "")):
+            raise _error(f"workforce.{field}", "contains terminal control characters")
+    return result
+
+
 def _validate_agents(value: Any) -> dict[str, Any]:
     section = _mapping(value, "agents")
     if set(section) - {"disabled"}:
@@ -493,6 +584,7 @@ _TOP_LEVEL_VALIDATORS: dict[str, Callable[[Any], Any]] = {
     "ollama": _validate_ollama,
     "selector": _validate_selector,
     "delegation": _validate_delegation,
+    "workforce": _validate_workforce,
     "agents": _validate_agents,
     "store": _validate_store,
     "server": _validate_server,

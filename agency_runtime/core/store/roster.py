@@ -44,6 +44,8 @@ from agency_runtime.core.store.roster_authority import (
     assert_revision_activation_authority,
 )
 from agency_runtime.core.store.version_identity import normalize_version_identity
+from agency_runtime.core.store.workforce import synchronize_active_workforce_worker
+from agency_runtime.core.workforce.contract import project_workforce_contract
 
 _JSON_LIST_FIELDS = ("categories", "capabilities", "tool_affinity")
 _MAX_ACTIVE_ROSTER_LIMIT = MAX_ACTIVE_ROSTER_SIZE
@@ -65,7 +67,9 @@ _UI_ROSTER_PROJECTION = ", ".join(
 )
 _ACTIVE_ROSTER_JOIN = (
     "agent_active AS a JOIN agent_versions AS v "
-    "ON v.agent_slug = a.agent_slug AND v.version = a.version"
+    "ON v.agent_slug = a.agent_slug AND v.version = a.version "
+    "JOIN agent_workers AS w ON w.agent_slug = a.agent_slug "
+    "AND w.current_agent_version_id = v.id AND w.standing = 'active'"
 )
 _ACTIVE_ROSTER_ROUTING_PROJECTION = "a.*, v.metadata AS revision_metadata"
 _LEGACY_BUNDLED_VERSION = "1.0.0"
@@ -288,12 +292,16 @@ class _PreparedRosterAgent:
     capabilities: tuple[str, ...]
     tool_affinity: tuple[str, ...]
     prompt_path: str
+    workforce_contract: str
+    workforce_origin: str
+    workforce_employment: str
 
 
 def _prepared_roster_agent(
     agent: Mapping[str, Any],
     *,
     require_exact_bundled: bool = False,
+    allow_agency_amendment: bool = False,
 ) -> _PreparedRosterAgent:
     """Validate behavior-bearing fields before opening a write transaction."""
 
@@ -315,7 +323,9 @@ def _prepared_roster_agent(
                     "recognized bundled specialist must use its canonical slug"
                 )
     except BundledRosterError as exc:
-        raise ValueError("recognized bundled roster contract is invalid") from exc
+        if not (allow_agency_amendment and str(agent.get("origin") or "") == "agency"):
+            raise ValueError("recognized bundled roster contract is invalid") from exc
+        exact_bundled = False
     if require_exact_bundled and not exact_bundled:
         raise ValueError("public activation requires an exact approved bundled agent")
     agent = {**agent, "slug": normalized_slug}
@@ -333,6 +343,48 @@ def _prepared_roster_agent(
     decoded_metadata = decode_revision_metadata(metadata)
     if decoded_metadata is None:  # pragma: no cover - serializer contract
         raise ValueError("agent revision metadata could not be serialized")
+    workforce_origin = str(agent.get("origin") or "upstream").strip().casefold()
+    workforce_employment = str(agent.get("employment") or "employee").strip().casefold()
+    workforce_source = dict(agent)
+    if not all(
+        workforce_source.get(field)
+        for field in (
+            "authority",
+            "context_mode",
+            "supported_hosts",
+            "supported_platforms",
+            "audit_status",
+            "audit_revision",
+        )
+    ):
+        # Preserve import compatibility without making an incomplete legacy
+        # record recruitable. The whole-workforce index keeps it visible as a
+        # quarantined semantic candidate until governed ingestion enriches it.
+        workforce_source.update(
+            {
+                "authority": "advise",
+                "context_mode": "isolated_only",
+                "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
+                "supported_platforms": ["windows", "linux"],
+                "audit_status": "quarantined",
+                "audit_revision": "legacy-unclassified",
+                "routing_contract_valid": False,
+                "capabilities": list(agent.get("capabilities") or ["legacy unclassified role"]),
+                "division": str(agent.get("division") or "specialized"),
+            }
+        )
+    workforce_contract = project_workforce_contract(
+        {
+            **workforce_source,
+            "slug": normalized_slug,
+            "version": version,
+            "version_hash": content_hash,
+            "origin": workforce_origin,
+            "employment": workforce_employment,
+            "enabled": workforce_employment in {"contractor", "employee"},
+        },
+        origin=workforce_origin,
+    )
     return _PreparedRosterAgent(
         slug=str(agent["slug"]),
         name=str(agent.get("name") or ""),
@@ -349,7 +401,56 @@ def _prepared_roster_agent(
         capabilities=tuple(decoded_metadata["capabilities"]),
         tool_affinity=tuple(decoded_metadata["tool_affinity"]),
         prompt_path=str(agent.get("prompt_path") or ""),
+        workforce_contract=json.dumps(
+            workforce_contract.to_dict(),
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ),
+        workforce_origin=workforce_origin,
+        workforce_employment=workforce_employment,
     )
+
+
+def _stage_workforce_version(
+    conn: Any,
+    agent: _PreparedRosterAgent,
+    *,
+    version_id: str,
+    created_at: str,
+) -> str:
+    """Idempotently persist one validated but inactive workforce version."""
+
+    existing = conn.execute(
+        "SELECT id, hash, content, metadata FROM agent_versions "
+        "WHERE agent_slug = ? AND version = ?",
+        (agent.slug, agent.version),
+    ).fetchone()
+    if existing is not None:
+        if (
+            str(existing["hash"]) != agent.content_hash
+            or str(existing["content"]) != agent.content
+            or str(existing["metadata"]) != agent.metadata
+        ):
+            raise ValueError(f"immutable agent version conflict for {agent.slug}@{agent.version}")
+        return str(existing["id"])
+    conn.execute(
+        "INSERT INTO agent_versions "
+        "(id, agent_slug, version, source_version, source_id, hash, content, "
+        "metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            version_id,
+            agent.slug,
+            agent.version,
+            agent.source_version,
+            agent.source_id,
+            agent.content_hash,
+            agent.content,
+            agent.metadata,
+            created_at,
+        ),
+    )
+    return version_id
 
 
 class RosterStoreMixin:
@@ -633,6 +734,92 @@ class RosterStoreMixin:
             require_exact_bundled=False,
         )
 
+    def stage_agency_workforce_agent(self, agent: Mapping[str, Any]) -> str:
+        """Persist one validated Agency-owned prompt version without activating it."""
+
+        prepared = _prepared_roster_agent(agent, require_exact_bundled=False)
+        if prepared.workforce_origin != "agency" or prepared.workforce_employment != "contractor":
+            raise ValueError("staged workforce hires must be Agency-owned contractors")
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            if conn.execute(
+                "SELECT 1 FROM agent_active WHERE agent_slug = ?",
+                (prepared.slug,),
+            ).fetchone():
+                raise ValueError("staged contractor slug is already active")
+            if conn.execute(
+                "SELECT 1 FROM agent_workers WHERE agent_slug = ?",
+                (prepared.slug,),
+            ).fetchone():
+                raise ValueError("staged contractor slug already has a workforce identity")
+            version_id = _stage_workforce_version(
+                conn,
+                prepared,
+                version_id=self._uuid(),
+                created_at=self._now(),
+            )
+            conn.commit()
+            return version_id
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def stage_agency_workforce_amendment(
+        self,
+        agent: Mapping[str, Any],
+        *,
+        expected_revision: int,
+    ) -> str:
+        """Persist an Agency-owned amendment version without activating it."""
+
+        if isinstance(expected_revision, bool) or not isinstance(expected_revision, int):
+            raise TypeError("expected_revision must be an integer")
+        if expected_revision < 0:
+            raise ValueError("expected_revision is invalid")
+        prepared = _prepared_roster_agent(
+            agent,
+            require_exact_bundled=False,
+            allow_agency_amendment=True,
+        )
+        if prepared.workforce_origin != "agency":
+            raise ValueError("workforce amendments must be Agency-owned")
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            worker = conn.execute(
+                "SELECT worker.revision, worker.standing, version.content AS parent_content "
+                "FROM agent_workers AS worker JOIN agent_versions AS version "
+                "ON version.id = worker.current_agent_version_id WHERE worker.agent_slug = ?",
+                (prepared.slug,),
+            ).fetchone()
+            if worker is None:
+                raise KeyError("workforce worker not found")
+            if int(worker["revision"]) != expected_revision:
+                raise RuntimeError("workforce revision conflict")
+            if str(worker["standing"]) in {"retired", "merged"}:
+                raise ValueError("terminal workforce state cannot be amended")
+            parent_content = str(worker["parent_content"] or "")
+            if not parent_content or not prepared.content.startswith(parent_content):
+                raise ValueError("Agency amendment must preserve the complete upstream prompt")
+            if prepared.content == parent_content:
+                raise ValueError("Agency amendment must add a bounded capability extension")
+            version_id = _stage_workforce_version(
+                conn,
+                prepared,
+                version_id=self._uuid(),
+                created_at=self._now(),
+            )
+            conn.commit()
+            return version_id
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def _activate_prepared_agent(
         self,
         conn: Any,
@@ -641,6 +828,15 @@ class RosterStoreMixin:
         replace: bool,
     ) -> bool:
         """Apply one validated roster entry inside the caller's transaction."""
+
+        if (
+            agent.workforce_origin == "agency"
+            and not conn.execute(
+                "SELECT 1 FROM agent_workers WHERE agent_slug = ?",
+                (agent.slug,),
+            ).fetchone()
+        ):
+            raise ValueError("Agency-owned contractors must use audited workforce hiring")
 
         if not replace:
             existing_active = conn.execute(
@@ -665,12 +861,13 @@ class RosterStoreMixin:
         ):
             raise ValueError(f"immutable agent version conflict for {agent.slug}@{agent.version}")
         if existing_version is None:
+            agent_version_id = self._uuid()
             conn.execute(
                 "INSERT INTO agent_versions "
                 "(id, agent_slug, version, source_version, source_id, hash, content, "
                 "metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    self._uuid(),
+                    agent_version_id,
                     agent.slug,
                     agent.version,
                     agent.source_version,
@@ -681,6 +878,8 @@ class RosterStoreMixin:
                     self._now(),
                 ),
             )
+        else:
+            agent_version_id = str(existing_version["id"])
         statement = (
             "INSERT OR REPLACE INTO agent_active " if replace else "INSERT INTO agent_active "
         )
@@ -714,6 +913,17 @@ class RosterStoreMixin:
                 for category in dict.fromkeys(agent.categories)
                 if category
             ),
+        )
+        synchronize_active_workforce_worker(
+            conn,
+            agent_slug=agent.slug,
+            display_name=agent.name or agent.slug,
+            origin=agent.workforce_origin,
+            employment_class=agent.workforce_employment,
+            agent_version_id=agent_version_id,
+            version=agent.version,
+            version_hash=agent.content_hash,
+            recruitment_contract=agent.workforce_contract,
         )
         return True
 
@@ -909,7 +1119,9 @@ class RosterStoreMixin:
         """Return the active roster cardinality without materializing its rows."""
         conn = self._connect()
         try:
-            row = conn.execute("SELECT COUNT(*) AS count FROM agent_active").fetchone()
+            row = conn.execute(
+                f"SELECT COUNT(*) AS count FROM {_ACTIVE_ROSTER_JOIN}"  # nosec B608
+            ).fetchone()
             return int(row["count"])
         finally:
             conn.close()
@@ -943,7 +1155,9 @@ class RosterStoreMixin:
         disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
         conn = self._connect()
         try:
-            rows = conn.execute("SELECT agent_slug FROM agent_active").fetchall()
+            rows = conn.execute(
+                f"SELECT a.agent_slug FROM {_ACTIVE_ROSTER_JOIN}"  # nosec B608
+            ).fetchall()
             return sum(agent_is_enabled(row["agent_slug"], disabled) for row in rows)
         finally:
             conn.close()
@@ -962,7 +1176,8 @@ class RosterStoreMixin:
         try:
             row = conn.execute(
                 f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
-                f"FROM {_ACTIVE_ROSTER_JOIN} "  # nosec B608
+                "FROM agent_active AS a JOIN agent_versions AS v "
+                "ON v.agent_slug = a.agent_slug AND v.version = a.version "
                 "WHERE a.agent_slug = ? LIMIT 1",
                 (slug,),
             ).fetchone()
@@ -1062,8 +1277,10 @@ class RosterStoreMixin:
             row = conn.execute(
                 "SELECT a.*, v.content AS prompt_body, v.hash AS prompt_hash "
                 "FROM agent_active AS a "
-                "LEFT JOIN agent_versions AS v "
+                "JOIN agent_versions AS v "
                 "ON v.agent_slug = a.agent_slug AND v.version = a.version "
+                "JOIN agent_workers AS w ON w.agent_slug = a.agent_slug "
+                "AND w.current_agent_version_id = v.id AND w.standing = 'active' "
                 "WHERE a.agent_slug = ? LIMIT 1",
                 (normalized_slug,),
             ).fetchone()
@@ -1115,8 +1332,10 @@ class RosterStoreMixin:
         conn = self._connect()
         try:
             row = conn.execute(
-                "SELECT agent_slug, version, hash, content FROM agent_versions "
-                "WHERE agent_slug = ? AND version = ? AND hash = ? LIMIT 1",
+                "SELECT v.agent_slug, v.version, v.hash, v.content FROM agent_versions AS v "
+                "JOIN agent_workers AS w ON w.agent_slug = v.agent_slug "
+                "AND w.standing = 'active' "
+                "WHERE v.agent_slug = ? AND v.version = ? AND v.hash = ? LIMIT 1",
                 (normalized_slug, normalized_version, normalized_hash),
             ).fetchone()
             if row is None:
@@ -1160,7 +1379,7 @@ class RosterStoreMixin:
             if current is None:
                 raise ValueError(f"active agent not found: {normalized_slug}")
             current_revision = conn.execute(
-                "SELECT agent_slug, version, source_version, source_id, hash, content, metadata "
+                "SELECT id, agent_slug, version, source_version, source_id, hash, content, metadata "
                 "FROM agent_versions WHERE agent_slug = ? AND version = ? LIMIT 1",
                 (normalized_slug, str(current["version"] or "")),
             ).fetchone()
@@ -1180,7 +1399,7 @@ class RosterStoreMixin:
                     f"active revision changed for {normalized_slug}; refresh and retry rollback"
                 )
             revision = conn.execute(
-                "SELECT agent_slug, version, source_version, source_id, hash, content, metadata "
+                "SELECT id, agent_slug, version, source_version, source_id, hash, content, metadata "
                 "FROM agent_versions WHERE agent_slug = ? AND version = ? LIMIT 1",
                 (normalized_slug, target),
             ).fetchone()
@@ -1234,6 +1453,40 @@ class RosterStoreMixin:
             conn.executemany(
                 "INSERT INTO agent_categories (id, agent_slug, category) VALUES (?, ?, ?)",
                 ((self._uuid(), normalized_slug, category) for category in metadata["categories"]),
+            )
+            worker = conn.execute(
+                "SELECT origin, employment_class FROM agent_workers WHERE agent_slug = ?",
+                (normalized_slug,),
+            ).fetchone()
+            if worker is None:
+                raise ValueError(f"workforce identity is missing: {normalized_slug}")
+            rollback_contract = project_workforce_contract(
+                {
+                    **metadata,
+                    "slug": normalized_slug,
+                    "version": target,
+                    "version_hash": revision_hash,
+                    "origin": str(worker["origin"]),
+                    "employment": str(worker["employment_class"]),
+                    "enabled": True,
+                },
+                origin=str(worker["origin"]),
+            )
+            synchronize_active_workforce_worker(
+                conn,
+                agent_slug=normalized_slug,
+                display_name=str(metadata["name"] or normalized_slug),
+                origin=str(worker["origin"]),
+                employment_class=str(worker["employment_class"]),
+                agent_version_id=str(revision_record["id"]),
+                version=target,
+                version_hash=revision_hash,
+                recruitment_contract=json.dumps(
+                    rollback_contract.to_dict(),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ),
             )
             conn.execute(
                 "INSERT INTO agent_import_events "

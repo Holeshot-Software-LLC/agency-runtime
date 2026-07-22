@@ -236,6 +236,72 @@ def test_typed_update_writes_atomically_and_reloads_effective_config(
     assert list(tmp_path.glob(".agency.yaml.*.tmp")) == []
 
 
+def test_workforce_policy_round_trips_through_shared_cli_dashboard_config(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    result = apply_config_operations(
+        [
+            {"op": "set", "path": "workforce.mode", "value": "strict"},
+            {"op": "set", "path": "workforce.provider", "value": "codex-oauth"},
+            {
+                "op": "set",
+                "path": "workforce.recruiter_model",
+                "value": "gpt-5.6-mini",
+            },
+            {"op": "set", "path": "workforce.max_hires_per_task", "value": 0},
+            {"op": "set", "path": "workforce.auto_promote_successes", "value": 12},
+        ],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    assert result.state.persisted["workforce"] == {
+        "mode": "strict",
+        "provider": "codex-oauth",
+        "recruiter_model": "gpt-5.6-mini",
+        "max_hires_per_task": 0,
+        "auto_promote_successes": 12,
+    }
+    loaded = load_config(path, reload=True)
+    assert loaded.workforce.mode == "strict"
+    assert loaded.workforce.provider == "codex-oauth"
+    assert loaded.workforce.recruiter_model == "gpt-5.6-mini"
+    assert loaded.workforce.max_hires_per_task == 0
+    assert loaded.workforce.auto_promote_successes == 12
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "message"),
+    [
+        ("workforce.mode", "guess", "unsupported value"),
+        ("workforce.fast_call_budget", 3, "balanced_call_budget"),
+        ("workforce.max_selected_total", 3, "max_selected_per_unit"),
+        ("workforce.max_hires_per_day", -1, "supported range"),
+        ("workforce.provider", "unsafe\x1b[31m", "terminal control"),
+    ],
+)
+def test_workforce_policy_rejects_unsafe_or_incoherent_updates(
+    tmp_path: Path,
+    path: str,
+    value: object,
+    message: str,
+) -> None:
+    config_path = tmp_path / "agency.yaml"
+    state = read_config_state(config_path)
+
+    with pytest.raises(ConfigValidationError, match=message):
+        apply_config_operations(
+            [{"op": "set", "path": path, "value": value}],
+            expected_revision=state.revision,
+            path=config_path,
+        )
+
+    assert not config_path.exists()
+
+
 def test_replace_document_uses_same_validation_lock_and_redacted_result(
     tmp_path: Path,
 ) -> None:

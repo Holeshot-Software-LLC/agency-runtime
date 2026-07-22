@@ -71,6 +71,11 @@ from agency_runtime.core.store.schema import (
     remediation_indexes_are_current,
 )
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.store.workforce import (
+    retire_ingested_workforce_worker,
+    synchronize_active_workforce_worker,
+)
+from agency_runtime.core.workforce.contract import project_workforce_contract
 
 __all__ = [
     "RosterSyncError",
@@ -4538,12 +4543,13 @@ def _apply_candidate_delta(
         slug = str(agent["slug"])
         version = str(agent["version"])
         if (slug, version) not in existing_versions:
+            agent_version_id = _uuid(store)
             conn.execute(
                 "INSERT INTO agent_versions "
                 "(id, agent_slug, version, source_version, source_id, hash, content, "
                 "metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    _uuid(store),
+                    agent_version_id,
                     slug,
                     version,
                     agent.get("source_version", ""),
@@ -4553,6 +4559,13 @@ def _apply_candidate_delta(
                     serialized_revision_metadata(agent),
                     _now(),
                 ),
+            )
+        else:
+            agent_version_id = str(
+                conn.execute(
+                    "SELECT id FROM agent_versions WHERE agent_slug = ? AND version = ?",
+                    (slug, version),
+                ).fetchone()["id"]
             )
         if _active_agent_fingerprint(current_active.get(slug)) == target_fingerprints[slug]:
             continue
@@ -4585,6 +4598,32 @@ def _apply_candidate_delta(
             "INSERT INTO agent_categories (id, agent_slug, category) VALUES (?, ?, ?)",
             ((_uuid(store), slug, category) for category in _json_list(agent.get("categories"))),
         )
+        workforce_contract = project_workforce_contract(
+            {
+                **agent,
+                "origin": "upstream",
+                "employment": "employee",
+                "enabled": True,
+                "version_hash": str(agent.get("hash") or ""),
+            },
+            origin="upstream",
+        )
+        synchronize_active_workforce_worker(
+            conn,
+            agent_slug=slug,
+            display_name=str(agent.get("name") or agent.get("display_name") or slug),
+            origin="upstream",
+            employment_class="employee",
+            agent_version_id=agent_version_id,
+            version=version,
+            version_hash=str(agent.get("hash") or ""),
+            recruitment_contract=json.dumps(
+                workforce_contract.to_dict(),
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ),
+        )
     return changed
 
 
@@ -4613,6 +4652,11 @@ def _apply_retirement_delta(
         )
         conn.execute("DELETE FROM agent_active WHERE agent_slug = ?", (slug,))
         conn.execute("DELETE FROM agent_categories WHERE agent_slug = ?", (slug,))
+        retire_ingested_workforce_worker(
+            conn,
+            agent_slug=slug,
+            reason=f"upstream source retirement scan {retirement['scan_id']}",
+        )
         _record_import_event(
             conn,
             store,
