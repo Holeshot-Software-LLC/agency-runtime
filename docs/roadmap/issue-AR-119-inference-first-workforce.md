@@ -2132,6 +2132,58 @@ interpretation therefore remains invalid. Contractor lifecycle, untouched-
 corpus statistics, exact activation, superiority claims, and blinded
 completed-outcome trials remain deferred.
 
+The receiving package ran the required further unchanged active-incident
+matched confirmation from checkpoint `6d59e2c`. Both streams were captured
+concurrently outside the repository before parsing. The process finished in
+23.989 seconds, returned exit status 1, emitted 709,281 stdout bytes with
+SHA-256
+`5990268e3161a8c9066829971bc603bc049b105d9aaaa7bf2fd4b3789cfb83b0`,
+and emitted zero stderr bytes with the empty-stream SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+Its 639-byte exact projection had SHA-256
+`1a78c811dda3971aad99a4c31583fa2aa53783322d945aca9c711eff8c7e32cf`.
+
+The bounded benchmark was valid. Both arms retained the same request, roster,
+eligibility, host, provider, requested and actual `gpt-5.6-luna` model,
+explicit-model receipt, one-call count, applied inference, and 15000 ms budget.
+Agency again failed closed only on `selection_margin_too_low` at 9135.924 ms,
+with no forbidden, ineligible, or conflict selection:
+
+~~~text
+active-incident-containment | helpful=[incident-responder,incident-response-commander] | A=abstained/fail selected=[] f1=0 ms=9135.924 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:incident-responder;art:analysis,plan;life:discovery,planning] rc=[selection_margin_too_low] | U=accepted/fail selected=[incident-responder,incident-response-commander,secrets-credential-hygiene-engineer] f1=0.8 ms=13824.89 safety=f0/i0/c0 disabled=[]/required=[] missing=[art:analysis] rc=[active-security-incident,forensic-preservation-required,reversible-recovery-planning,offensive-probing-excluded,separate-contexts-for-specialists] | fairness=[]
+~~~
+
+A fresh cold Agency-only one-call diagnostic then produced another accepted
+two-unit plan. Its 23,475-byte outcome had SHA-256
+`59473e82589dd14caa5b9883c7fa15a8a6c1dc1b87b6163758a3b8b4c8cf1c5b`,
+and its explicit-model planner receipt recorded 9061 ms provider latency. The
+controlled plan shape exactly matched the prior accepted diagnostic: a
+read-only security `analysis`/`discovery` unit requiring `analysis` and
+`investigation`, followed by a read-only security `plan`/`planning` unit
+requiring `planning`, `operations`, and `risk-analysis`. Both diagnostics
+selected `incident-responder` for both units with the same runner-ups. Their
+accepted deterministic margins were respectively 0.200000 and 1.000000, then
+0.205000 and 1.000000.
+
+The matched score document retains the safe abstention and missing coverage but
+not the rejected planner units, so the cold diagnostic is not substituted for
+matched comparative evidence. It does show again that the same governed
+contracts accept the required plan shape. No stable general semantic defect
+was proven, and no product, policy, parser, coverage, latency, or call-budget
+rule changed.
+
+The raw captures for this package remain outside the repository at:
+
+- `C:\Users\lucas\AppData\Local\Temp\agency-runtime-ar119-019f8ee1-incident-20260723-081454`
+- `C:\Users\lucas\AppData\Local\Temp\agency-runtime-ar119-019f8ee1-incident-diagnostic-20260723-081805`
+
+The blocker remains exact: one earlier complete corpus passed all 19 Agency
+arms, the newest complete corpus passed 18/19, four consecutive bounded matched
+incident runs have now safely abstained, and two cold diagnostics have accepted
+the same governed incident plan shape. No complete corpus has produced 19
+benchmark-valid upstream arms. Comparative interpretation and every claim that
+Agency is better therefore remain invalid.
+
 ### Still required before AR-119 can close
 
 - Complete a benchmark-valid run of the implemented matched held-out selection
@@ -2155,8 +2207,10 @@ completed-outcome trials remain deferred.
 ### Next bounded work package
 
 Continue the matched selection package without advancing to contractor
-lifecycle work. Start with one further active-incident matched confirmation
-after the passing cold Agency diagnostic:
+lifecycle work. Run one further active-incident matched confirmation, but
+preserve the complete Agency `WorkforceInferenceOutcome` outside the repository
+through a pass-through diagnostic wrapper before the benchmark reduces it to a
+score document. Keep the benchmark inputs and command semantics unchanged:
 
 ```text
 .\.venv\Scripts\agency.exe eval upstream-selection --case active-incident-containment --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
@@ -2164,14 +2218,15 @@ after the passing cold Agency diagnostic:
 
 Capture both streams before parsing and preserve the same receipt, parity,
 safety, disclosure, and malformed-arm discipline. If Agency passes, make no
-policy change and run one further unchanged complete 19-case corpus to test
-repeatability while seeking valid upstream arms. If the incident arm fails
-again, compare the typed plan shape with the accepted diagnostic and change
-only a governed general semantic that is independently justified; do not
-weaken typed coverage, add a scenario route, reinterpret malformed output,
-raise the 15000 ms gate, or increase the one-call fast budget. Do not claim
-Agency is better: untouched-corpus statistics, exact activation, and blinded
-completed-outcome trials remain explicitly deferred release gates.
+policy change and run one further unchanged complete 19-case corpus. If it
+fails again, compare the captured rejected plan, proposal ranks, confidence,
+and margins directly with both accepted diagnostics. Change only a genuinely
+general governed semantic if that exact evidence proves a defect; otherwise
+record the variance. Do not weaken typed coverage, add a scenario route,
+reinterpret malformed output, raise the 15000 ms gate, or increase the one-call
+fast budget. Do not claim Agency is better: untouched-corpus statistics, exact
+activation, and blinded completed-outcome trials remain explicitly deferred
+release gates.
 
 ### Handoff constraints
 
