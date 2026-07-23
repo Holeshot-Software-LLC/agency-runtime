@@ -142,6 +142,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8af4cf0` | 2026-07-23 | docs(roadmap): record matched corpus variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-8af4cf0-matched-corpus-variance.md) |
 | `e697f23` | 2026-07-23 | docs(roadmap): record matched selection stability | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-e697f23-matched-selection-stability.md) |
 | `85afc03` | 2026-07-23 | docs(roadmap): record matched selection reruns | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-85afc03-matched-selection-reruns.md) |
+| `a27f340` | 2026-07-23 | docs(roadmap): record complete matched selection rerun | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-a27f340-complete-matched-selection-rerun.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
