@@ -171,6 +171,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b8c1eca` | 2026-07-23 | docs(roadmap): record bounded selection recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-b8c1eca-bounded-selection-recovery.md) |
 | `8918040` | 2026-07-23 | docs(roadmap): record matched latency recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-8918040-matched-latency-recovery.md) |
 | `6049510` | 2026-07-23 | docs(roadmap): record four-case selection variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-6049510-four-case-selection-variance.md) |
+| `48e3022` | 2026-07-23 | docs(roadmap): record four-case selection recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-48e3022-four-case-selection-recovery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
