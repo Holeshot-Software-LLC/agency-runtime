@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar-115-live-routing-trust
-evidence_commit: a6007afc713a5eadb4b1cbbc753f93f747457591
-minimum_ledger_commit: a8822d774fd05f4ca538fc07241e7399c84191fb
+evidence_commit: 06d12cf64195e7825a95d03b42f0a9e45e8448fe
+minimum_ledger_commit: ca425b77de143d0d5251488f343d311665f9e108
 hard_checkpoint_percent: 50
 live_evaluation_admission_percent: 65
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -32,9 +32,9 @@ complete historical and acceptance contract.
 
 - Branch: codex/ar-115-live-routing-trust.
 - Substantive evidence commit:
-  a6007afc713a5eadb4b1cbbc753f93f747457591.
+  06d12cf64195e7825a95d03b42f0a9e45e8448fe.
 - Minimum ledger commit:
-  a8822d774fd05f4ca538fc07241e7399c84191fb.
+  ca425b77de143d0d5251488f343d311665f9e108.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
@@ -69,6 +69,14 @@ complete historical and acceptance contract.
   upstream loss.
 - No general defect was established and no product, policy, parser, worker-
   contract, coverage, latency, or call-budget rule changed.
+- The external two-case pass-through runner, raw-stream wrapper, and comparison
+  parser are prepared and mechanically validated. Their SHA-256 values are
+  `446baf301481de9ffc907e656b93af4dceea31c2d1fec625bfec2436974671c3`,
+  `de08aef192d322e2ee0558adefb4b4095298349c32251afb5f98b143eb6dbefa`,
+  and `3f8f6fea7d035dc0eac65fdaa9e2bb3bbdefd6c6967e06c10775ce444d1be0ee`.
+- Zero-call validation bound the two canonical cases to the generation-561
+  272-worker snapshot, 247-tool union, configured provider/model/effort, and
+  one-call budget. Focused matched-benchmark tests passed 7/7.
 
 ## Exact blocker
 
@@ -78,9 +86,9 @@ complete historical and acceptance contract.
 - No complete corpus has produced 19 benchmark-valid upstream arms. Malformed,
   no-response, or timed-out arms remain validity failures, never comparative
   losses.
-- Immediately after the corpus, telemetry was 55.7%, below the fixed 65% live-
-  work gate. The conditional instrumented two-case confirmation therefore
-  remains unstarted in this same task.
+- Telemetry is 42.3%, below the fixed 65% live-work gate. The fully prepared
+  instrumented two-case confirmation therefore remains unstarted in this same
+  task; no provider call occurred during preparation.
 
 ## Same-task continuity
 
@@ -100,6 +108,9 @@ before returning them to the normal scorer. Capture both process streams before
 parsing. Keep the audited snapshot, Windows/Codex context, full tool union,
 provider, requested and actual model, 15000 ms gate, and one-call fast budget
 unchanged.
+
+The validated package is staged outside the repository at
+`C:\tmp\agency-runtime-ar119-019f8ee1-observability-broad-instrumented-20260723-131013`.
 
 The equivalent unchanged CLI selection is:
 

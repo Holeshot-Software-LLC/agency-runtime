@@ -2501,6 +2501,33 @@ task. The next admitted live package must preserve complete pre-projection
 Agency outcomes for the two confidence-abstention cases before deciding
 whether either observation is repeatable.
 
+At the next hard checkpoint, this same task completed the entire non-live
+preparation for that package without calling a provider. The prepared capture
+directory is
+`C:\tmp\agency-runtime-ar119-019f8ee1-observability-broad-instrumented-20260723-131013`.
+Its pass-through runner is 7,877 bytes with SHA-256
+`446baf301481de9ffc907e656b93af4dceea31c2d1fec625bfec2436974671c3`;
+the durable raw-stream wrapper is 3,193 bytes with SHA-256
+`de08aef192d322e2ee0558adefb4b4095298349c32251afb5f98b143eb6dbefa`;
+and the comparison parser is 13,376 bytes with SHA-256
+`3f8f6fea7d035dc0eac65fdaa9e2bb3bbdefd6c6967e06c10775ce444d1be0ee`.
+
+The zero-provider-call runner validation bound exactly
+`application-observability` and `broad-python-typescript-application` to the
+272-worker generation-561 snapshot, the full 247-tool union including
+`native-delegation`, `codex-subscription`, requested `gpt-5.6-luna`, low
+effort, and the one-call budget. Its 728-byte record has SHA-256
+`11b7479ecb535c918b0f9fd0d3dd8afb691540c6b89ee32e75d4555cf7a504e9`.
+The parser independently verified the accepted complete-corpus baseline
+`f5b462bc32bcaa000cb6ee426312022a62a3058c7518f598d09afb720572184a`
+and newest failed-corpus baseline
+`cd3b36733b56b4c631da9ffea259fa278c597438ecbe59e3275f3e1d25e687d0`;
+its 5,099-byte validation record has SHA-256
+`c271bcc662020a67617f437a0a0153582ad35acbd937c0d1bccb643845a0651e`.
+Focused matched-benchmark tests passed 7/7. Telemetry then reported 42.3%,
+so no live call started. The prepared package remains the next work item in
+this same task; no product or policy behavior changed.
+
 ### Still required before AR-119 can close
 
 - Complete a benchmark-valid run of the implemented matched held-out selection
