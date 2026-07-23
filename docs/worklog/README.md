@@ -167,6 +167,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `be1ec78` | 2026-07-23 | docs(roadmap): prepare confidence-abstention capture | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-ar119-prepare-confidence-abstention-capture.md) |
 | `3d0ee63` | 2026-07-23 | fix(governance): remove live context admission gate | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-3d0ee63-remove-live-context-admission-gate.md) |
 | `fc9c453` | 2026-07-23 | docs(roadmap): record confidence-abstention recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-fc9c453-confidence-abstention-recovery.md) |
+| `90179d8` | 2026-07-23 | docs(roadmap): record further matched corpus variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-90179d8-further-matched-corpus-variance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
