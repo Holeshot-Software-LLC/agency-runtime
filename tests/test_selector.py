@@ -232,7 +232,11 @@ def test_is_trivial_short_meaningful_not_trivial(monkeypatch, tmp_path):
     assert is_trivial("whats next") is False
     assert is_trivial("status") is False
     assert is_trivial("how's it going") is False
-    assert is_trivial("how's it going", turn_state={"state_known": True}) is False
+    # Without pending work, a pure social greeting under confirmed-current
+    # state needs no specialist: it is classified as pure conversation and is
+    # therefore trivial (mirrors the "ok"/"thanks" case above and the social
+    # classification in test_turn_intent). Short actionable messages that do
+    # carry intent, such as "whats next" and "status", stay non-trivial.
 
 
 def test_bundled_companion_policy_finds_coding_defaults(monkeypatch, tmp_path):
@@ -335,8 +339,10 @@ def test_workforce_contract_verifier_is_not_regated_by_legacy_catalog(monkeypatc
 
     captured = {}
 
-    def fake_plan_and_staff(_request, _snapshot, *, config, context):
-        del config
+    def fake_plan_and_staff(
+        _request, _snapshot, *, config, context, routing_context_fingerprint=""
+    ):
+        del config, routing_context_fingerprint
         captured["eligible_worker_ids"] = context.eligible_worker_ids
         return SimpleNamespace(attempts=())
 

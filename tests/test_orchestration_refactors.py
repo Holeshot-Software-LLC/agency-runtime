@@ -25,8 +25,10 @@ from agency_runtime.core.selector.pipeline import (
 def _request(*, source_hash: str = "current") -> _RouteRequest:
     return _RouteRequest(
         session_id="session",
+        trace_id="trace",
         user_message="review code",
         catalog=[{"slug": "reviewer"}, {"slug": "companion"}],
+        workforce_catalog=[{"slug": "reviewer"}, {"slug": "companion"}],
         config=AgencyConfig(),
         policy={},
         context_fingerprint="fingerprint",
