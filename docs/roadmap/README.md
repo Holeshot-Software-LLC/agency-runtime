@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-21
+updated: 2026-07-23
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -143,6 +143,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-123` | [Add complete workforce CLI and live dashboard operations](issue-AR-123-workforce-cli-and-dashboard.md) | open | p0 | dashboard | [#136](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/136) |
 | `AR-124` | [Integrate lifecycle assurance, native delegation, and provider evidence](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | open | p0 | routing | [#137](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/137) |
 | `AR-125` | [Prove workforce selection and one-shot application outcomes](issue-AR-125-workforce-and-one-shot-evaluation.md) | open | p0 | testing | [#138](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138) |
+| `AR-126` | [Make autonomous context handoffs bounded and idempotent](issue-AR-126-bounded-idempotent-context-handoffs.md) | in_progress | p0 | documentation | Pending authorization |
 
 ## Traceability
 
@@ -275,6 +276,7 @@ not stable internal identifiers.
 | [AR-123](issue-AR-123-workforce-cli-and-dashboard.md) | `4e0b0a7`, `743a982` | [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md) |
 | [AR-124](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | `4e0b0a7`, `743a982` | [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md) |
 | [AR-125](issue-AR-125-workforce-and-one-shot-evaluation.md) | `4e0b0a7`, `743a982`, `ca893fe`, `9d415bb`, `86fba47`, `8af4cf0`, `e697f23`, `85afc03`, `a27f340`, `9c6c1ae`, `d692379`, `ef24960`, `2f2cfbb`, `c158210`, `71f7775`, `4687a7b`, `47ff115`, `8a0e75d`, `1c91945`, `978e02c`, `a5844dc`, `c1efcaf` | [ADR-0080](../decisions/0080-plan-before-recruiting-from-the-whole-workforce.md), [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md) |
+| [AR-126](issue-AR-126-bounded-idempotent-context-handoffs.md) | pending | [ADR-0084](../decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

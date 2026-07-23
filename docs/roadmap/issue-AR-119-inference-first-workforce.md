@@ -10,6 +10,9 @@ related:
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0082-schedule-assurance-by-artifact-lifecycle.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
+  - docs/decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md
+  - docs/roadmap/handoffs/issue-AR-119.md
+  - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -41,6 +44,11 @@ complete contract and completion gates are authoritative in tracker issue
 [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132).
 AR-120 through AR-125 divide implementation into independently verifiable
 slices without narrowing that umbrella contract.
+
+Fresh-task recovery uses the bounded
+[AR-119 active recovery capsule](handoffs/issue-AR-119.md). The capsule is the
+current bootstrap projection; this issue remains the complete historical and
+acceptance contract.
 
 ## Approach
 

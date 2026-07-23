@@ -73,6 +73,15 @@ def _errors(doc: verify_docs.Document) -> list[str]:
             status="accepted",
             deciders=[],
         ),
+        _base_meta(
+            type="handoff",
+            issue_id="AR-119",
+            handoff_token="AR-119:bounded-package:v1",
+            branch="codex/ar-119",
+            evidence_commit="a" * 40,
+            minimum_ledger_commit="b" * 40,
+            tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
+        ),
         _base_meta(created=date(2026, 7, 10), updated=date(2026, 7, 12)),
     ],
 )
@@ -133,6 +142,32 @@ def test_decision_schema_reports_identity_status_and_decider_contracts() -> None
         f"{doc.relative}: invalid decision status 'active'",
         f"{doc.relative}: decision id must match ADR-NNNN",
         f"{doc.relative}: deciders must be a list",
+    ]
+
+
+def test_handoff_schema_reports_unbounded_identity_fields() -> None:
+    doc = _document(
+        _base_meta(
+            type="handoff",
+            status="draft",
+            issue_id="AR-1",
+            handoff_token="different-token",
+            branch="invalid branch",
+            evidence_commit="abc",
+            minimum_ledger_commit=None,
+            tracker_url=[],
+        ),
+        relative="docs/roadmap/handoffs/issue-AR-1.md",
+    )
+
+    assert _errors(doc) == [
+        f"{doc.relative}: active handoff status must be 'active'",
+        f"{doc.relative}: handoff issue_id must match AR-NN",
+        f"{doc.relative}: handoff_token must be a string prefixed by AR-1:",
+        f"{doc.relative}: branch must be a non-empty Git ref name",
+        f"{doc.relative}: evidence_commit must be a full lowercase Git SHA",
+        f"{doc.relative}: minimum_ledger_commit must be a full lowercase Git SHA",
+        f"{doc.relative}: tracker_url must be a string or null",
     ]
 
 
@@ -230,6 +265,174 @@ def test_validate_schema_appends_without_replacing_existing_errors() -> None:
         "existing error",
         f"{doc.relative}: invalid general-document status 'unknown'",
     ]
+
+
+def _handoff_body() -> str:
+    return """# AR-119 active recovery capsule
+
+## Checkpoint
+
+Current checkpoint.
+
+## Completed evidence
+
+Current evidence.
+
+## Exact blocker
+
+Current blocker.
+
+## Next bounded work package
+
+One package.
+
+## Verification
+
+Run checks.
+
+## Constraints
+
+Keep boundaries.
+"""
+
+
+def test_handoff_validation_accepts_one_bounded_capsule_per_issue(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    issue = _document(
+        _base_meta(
+            type="issue",
+            status="in_progress",
+            epic="routing",
+            issue_id="AR-119",
+            priority="p0",
+            tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
+            depends_on=[],
+            blocks=[],
+        ),
+        relative="docs/roadmap/issue-AR-119-fixture.md",
+    )
+    capsule_path = tmp_path / "docs/roadmap/handoffs/issue-AR-119.md"
+    capsule_path.parent.mkdir(parents=True)
+    capsule_path.write_text(_handoff_body(), encoding="utf-8")
+    capsule = verify_docs.Document(
+        path=capsule_path,
+        meta=_base_meta(
+            type="handoff",
+            issue_id="AR-119",
+            handoff_token="AR-119:bounded-package:v1",
+            branch="codex/ar-119",
+            evidence_commit="a" * 40,
+            minimum_ledger_commit="b" * 40,
+            tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
+            related=[issue.relative],
+        ),
+        body=_handoff_body(),
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_handoffs([issue, capsule], errors)
+
+    assert errors == []
+
+
+def test_handoff_validation_rejects_duplicate_tokens_and_missing_sections(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    issue = _document(
+        _base_meta(
+            type="issue",
+            status="in_progress",
+            epic="routing",
+            issue_id="AR-119",
+            priority="p0",
+            tracker_url=None,
+            depends_on=[],
+            blocks=[],
+        ),
+        relative="docs/roadmap/issue-AR-119-fixture.md",
+    )
+    capsules: list[verify_docs.Document] = []
+    for suffix in ("", "-duplicate"):
+        path = tmp_path / f"docs/roadmap/handoffs/issue-AR-119{suffix}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# Capsule\n", encoding="utf-8")
+        capsules.append(
+            verify_docs.Document(
+                path=path,
+                meta=_base_meta(
+                    type="handoff",
+                    issue_id="AR-119",
+                    handoff_token="AR-119:same-token:v1",
+                    branch="codex/ar-119",
+                    evidence_commit="a" * 40,
+                    minimum_ledger_commit="b" * 40,
+                    tracker_url=None,
+                    related=[issue.relative],
+                ),
+                body="# Capsule",
+            )
+        )
+    errors: list[str] = []
+
+    verify_docs.validate_handoffs([issue, *capsules], errors)
+
+    assert ("docs/roadmap/handoffs: duplicate handoff_token 'AR-119:same-token:v1'") in errors
+    assert "docs/roadmap/handoffs: multiple active capsules for AR-119" in errors
+    assert any("missing handoff sections" in error for error in errors)
+
+
+def test_handoff_validation_rejects_size_line_and_tracker_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    issue = _document(
+        _base_meta(
+            type="issue",
+            status="in_progress",
+            epic="routing",
+            issue_id="AR-119",
+            priority="p0",
+            tracker_url=None,
+            depends_on=[],
+            blocks=[],
+        ),
+        relative="docs/roadmap/issue-AR-119-fixture.md",
+    )
+    capsule_path = tmp_path / "docs/roadmap/handoffs/issue-AR-119.md"
+    capsule_path.parent.mkdir(parents=True)
+    oversized = (
+        _handoff_body()
+        + ("extra line\n" * (verify_docs.HANDOFF_MAX_LINES + 1))
+        + ("x" * verify_docs.HANDOFF_MAX_BYTES)
+    )
+    capsule_path.write_text(oversized, encoding="utf-8")
+    capsule = verify_docs.Document(
+        path=capsule_path,
+        meta=_base_meta(
+            type="handoff",
+            issue_id="AR-119",
+            handoff_token="AR-119:bounded-package:v1",
+            branch="codex/ar-119",
+            evidence_commit="a" * 40,
+            minimum_ledger_commit="b" * 40,
+            tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
+            related=[issue.relative],
+        ),
+        body=_handoff_body(),
+    )
+    errors: list[str] = []
+
+    verify_docs.validate_handoffs([issue, capsule], errors)
+
+    assert any("maximum is 12288" in error for error in errors)
+    assert any("maximum is 180" in error for error in errors)
+    assert (f"{capsule.relative}: tracker_url must match {issue.relative}") in errors
 
 
 def _decision(

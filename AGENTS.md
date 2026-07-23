@@ -3,7 +3,7 @@ title: "Repository Agent Instructions"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-22
+updated: 2026-07-23
 tags:
   - governance
   - documentation
@@ -32,6 +32,7 @@ below.
 |---|---|---|
 | Project overview | [README.md](README.md) | Installation, behavior, architecture, and public reference |
 | Planning | [docs/roadmap/README.md](docs/roadmap/README.md) | Internal issue registry and tracker mapping |
+| Active handoffs | [docs/roadmap/handoffs/README.md](docs/roadmap/handoffs/README.md) | Bounded recovery capsules for long-running work |
 | Change reasoning | [docs/worklog/README.md](docs/worklog/README.md) | Exact Git history index and reasoning-rich commit notes |
 | Durable decisions | [docs/decisions/README.md](docs/decisions/README.md) | Canonical ADR registry and superseding chains |
 | Contributor workflow | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, implementation boundaries, and validation |
@@ -160,8 +161,14 @@ historical reference alongside the record instead.
 ## Autonomous context handoff
 
 Long-running work must not depend on one chat retaining the entire execution
-history. On Codex, check the active thread's local telemetry at the start and
-end of every bounded package:
+history. Every long-running roadmap item uses one active recovery capsule under
+`docs/roadmap/handoffs/`. The capsule is a bounded current-state projection,
+not a second roadmap or an append-only transcript. `scripts/verify_docs.py`
+enforces one active capsule per issue, required recovery sections, a maximum of
+12 KiB and 180 lines, and stable checkpoint metadata.
+
+On Codex, check the active thread's local telemetry before reading task history
+and again at the end of every bounded package:
 
 ```bash
 python scripts/context_handoff_status.py --json --threshold 50
@@ -172,20 +179,50 @@ risk becomes apparent, the active agent must autonomously:
 
 1. Finish the smallest safe in-progress slice and run its proportionate local
    checks.
-2. Update the canonical roadmap issue with completed evidence, unresolved
-   gates, constraints, and one bounded next work package.
+2. Update the canonical roadmap issue and its active recovery capsule with
+   completed evidence, unresolved gates, constraints, and one bounded next work
+   package. Replace the capsule's prior package instead of appending history.
 3. Create a local recovery commit and its required worklog ledger commit. Do
    not push merely to create a handoff.
-4. Dispatch a fresh Codex task with the exact branch, commits, canonical issue,
-   next package, verification commands, and prohibited actions.
+4. Dispatch one fresh Codex task with the capsule's stable `handoff_token`, the
+   exact branch and clean HEAD, evidence and ledger commits, capsule path,
+   source task ID, verification commands, and prohibited actions.
 5. Wait until the receiving task acknowledges ownership or reports a concrete
    blocker before ending the current task.
+
+The dispatch operation is create-once and reconcile-on-error:
+
+1. List recent tasks and confirm that no active task already carries the exact
+   `handoff_token`.
+2. Call task creation once. A timeout, missing-handler response, or other
+   ambiguous error is an indeterminate result, not proof that creation failed.
+3. Before any retry, list tasks again and reconcile by exact `handoff_token`.
+   One match is the receiver. More than one match is a coordination incident:
+   pause every match before edits, verify the repository is unchanged, retain
+   one, and archive the duplicates. Retry only after confirming zero matches.
+4. Once the receiver acknowledges sole-writer ownership, the source task ends
+   promptly instead of remaining active as a monitor.
+
+The receiver bootstrap is deliberately bounded. It must read this file
+completely, the active recovery capsule completely, the live tracker issue,
+and the latest worklog named by the capsule before editing. It then reads only
+the canonical roadmap sections or evidence directly referenced by the capsule;
+dispatch prompts must not require a complete reread of an unbounded historical
+roadmap document. Historical evidence remains authoritative and searchable,
+but it is not bootstrap context.
+
+Run telemetry again after bootstrap and before the first mutation or live
+evaluation. If a fresh receiver reaches the threshold during read-only
+preflight, it reports a bootstrap-budget blocker and stops at the existing clean
+checkpoint. It must not add a telemetry-only roadmap note, create an empty
+recovery/ledger pair, or dispatch another receiver. Likewise, when a source has
+made no substantive change since the prior clean checkpoint, reuse that
+checkpoint rather than committing a no-op handoff.
 
 Codex Desktop does not inject its UI meter into the model prompt, so the helper
 reads the active `CODEX_THREAD_ID` token-count event from the local session log.
 If telemetry is unavailable on another host, use a conservative estimate. A
 compaction event, an unusually large diff, or declining ability to retain
-acceptance criteria triggers the same process. The receiving task must read
-this file, the canonical roadmap issue, and the live tracker issue before
-editing. It must preserve the prior task's work and must not mark the umbrella
-goal complete until every acceptance gate has current evidence.
+acceptance criteria triggers the same process. The receiver must preserve the
+prior task's work and must not mark the umbrella goal complete until every
+acceptance gate has current evidence.

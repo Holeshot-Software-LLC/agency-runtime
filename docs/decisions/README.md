@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-22
+updated: 2026-07-23
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -153,6 +153,7 @@ Status meanings:
 | ID | Decision | Status |
 |---|---|---|
 | [ADR-0025](0025-self-contained-linked-documentation.md) | Keep a self-contained planning-to-evidence documentation chain | Accepted |
+| [ADR-0084](0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md) | Use bounded recovery capsules and idempotent task dispatch | Accepted |
 
 ## Maintenance rules
 

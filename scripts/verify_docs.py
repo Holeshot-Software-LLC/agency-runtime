@@ -39,6 +39,18 @@ LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 GITHUB_RE = re.compile(r"https?://github\.com/([^/\s]+)/([^/\s)#\"']+)", re.I)
 WORKLOG_LEDGER_PREFIX = "docs(worklog):"
 LEGAL_PROVENANCE_NAME_EXEMPTIONS = frozenset({"THIRD_PARTY_NOTICES.md"})
+HANDOFF_MAX_BYTES = 12 * 1024
+HANDOFF_MAX_LINES = 180
+HANDOFF_REQUIRED_HEADINGS = frozenset(
+    {
+        "checkpoint",
+        "completed-evidence",
+        "exact-blocker",
+        "next-bounded-work-package",
+        "verification",
+        "constraints",
+    }
+)
 
 
 @dataclass
@@ -201,6 +213,39 @@ def _decision_schema_errors(doc: Document) -> list[str]:
     return errors
 
 
+def _handoff_schema_errors(doc: Document) -> list[str]:
+    errors = _missing_field_errors(
+        doc,
+        {
+            "issue_id",
+            "handoff_token",
+            "branch",
+            "evidence_commit",
+            "minimum_ledger_commit",
+            "tracker_url",
+        },
+    )
+    meta = doc.meta
+    issue_id = str(meta.get("issue_id", ""))
+    if meta.get("status") != "active":
+        errors.append(f"{doc.relative}: active handoff status must be 'active'")
+    if not re.fullmatch(r"AR-\d{2,}", issue_id):
+        errors.append(f"{doc.relative}: handoff issue_id must match AR-NN")
+    token = meta.get("handoff_token")
+    if not isinstance(token, str) or not token.startswith(f"{issue_id}:"):
+        errors.append(f"{doc.relative}: handoff_token must be a string prefixed by {issue_id}:")
+    branch = meta.get("branch")
+    if not isinstance(branch, str) or not re.fullmatch(r"[A-Za-z0-9._/-]+", branch):
+        errors.append(f"{doc.relative}: branch must be a non-empty Git ref name")
+    for field in ("evidence_commit", "minimum_ledger_commit"):
+        if not re.fullmatch(r"[0-9a-f]{40}", str(meta.get(field, ""))):
+            errors.append(f"{doc.relative}: {field} must be a full lowercase Git SHA")
+    tracker_url = meta.get("tracker_url")
+    if tracker_url is not None and not isinstance(tracker_url, str):
+        errors.append(f"{doc.relative}: tracker_url must be a string or null")
+    return errors
+
+
 def _variant_schema_errors(doc: Document) -> list[str]:
     doc_type = doc.meta.get("type")
     if doc_type == "issue":
@@ -209,6 +254,8 @@ def _variant_schema_errors(doc: Document) -> list[str]:
         return _worklog_schema_errors(doc)
     if doc_type == "decision":
         return _decision_schema_errors(doc)
+    if doc_type == "handoff":
+        return _handoff_schema_errors(doc)
     status = doc.meta.get("status")
     if status not in GENERAL_STATUSES:
         return [f"{doc.relative}: invalid general-document status {status!r}"]
@@ -392,6 +439,64 @@ def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[s
                 )
 
 
+def validate_handoffs(docs: list[Document], errors: list[str]) -> None:
+    handoffs = [doc for doc in docs if doc.meta.get("type") == "handoff"]
+    issues = {str(doc.meta.get("issue_id")): doc for doc in docs if doc.meta.get("type") == "issue"}
+    tokens: dict[str, list[Document]] = {}
+    issue_capsules: dict[str, list[Document]] = {}
+    for doc in handoffs:
+        issue_id = str(doc.meta.get("issue_id", ""))
+        token = str(doc.meta.get("handoff_token", ""))
+        tokens.setdefault(token, []).append(doc)
+        issue_capsules.setdefault(issue_id, []).append(doc)
+
+        expected_prefix = f"docs/roadmap/handoffs/issue-{issue_id}"
+        if not (
+            doc.relative == f"{expected_prefix}.md"
+            or doc.relative.startswith(f"{expected_prefix}-")
+        ):
+            errors.append(
+                f"{doc.relative}: active handoff filename must start with issue-{issue_id}"
+            )
+        try:
+            byte_count = len(doc.path.read_bytes())
+        except OSError as error:
+            errors.append(f"{doc.relative}: cannot read handoff bytes: {error}")
+            byte_count = 0
+        if byte_count > HANDOFF_MAX_BYTES:
+            errors.append(
+                f"{doc.relative}: active handoff is {byte_count} bytes; "
+                f"maximum is {HANDOFF_MAX_BYTES}"
+            )
+        line_count = len(doc.path.read_text(encoding="utf-8").splitlines())
+        if line_count > HANDOFF_MAX_LINES:
+            errors.append(
+                f"{doc.relative}: active handoff is {line_count} lines; "
+                f"maximum is {HANDOFF_MAX_LINES}"
+            )
+        missing_headings = sorted(HANDOFF_REQUIRED_HEADINGS - headings(doc.body))
+        if missing_headings:
+            errors.append(
+                f"{doc.relative}: missing handoff sections: " + ", ".join(missing_headings)
+            )
+
+        issue = issues.get(issue_id)
+        if issue is None:
+            errors.append(f"{doc.relative}: unknown handoff issue_id {issue_id!r}")
+            continue
+        if issue.relative not in doc.meta.get("related", []):
+            errors.append(f"{doc.relative}: related must include canonical issue {issue.relative}")
+        if doc.meta.get("tracker_url") != issue.meta.get("tracker_url"):
+            errors.append(f"{doc.relative}: tracker_url must match {issue.relative}")
+
+    for token, matches in sorted(tokens.items()):
+        if token and len(matches) > 1:
+            errors.append(f"docs/roadmap/handoffs: duplicate handoff_token {token!r}")
+    for issue_id, matches in sorted(issue_capsules.items()):
+        if issue_id and len(matches) > 1:
+            errors.append(f"docs/roadmap/handoffs: multiple active capsules for {issue_id}")
+
+
 def validate_worklog(docs: list[Document], errors: list[str]) -> None:
     registry = next((doc for doc in docs if doc.relative == "docs/worklog/README.md"), None)
     if not registry:
@@ -530,6 +635,7 @@ def main() -> int:
         validate_metadata_references(doc, errors)
         validate_links_and_boundaries(doc, errors)
     validate_roadmap(docs, args.require_tracker, errors)
+    validate_handoffs(docs, errors)
     validate_worklog(docs, errors)
     validate_decisions(docs, errors)
 
