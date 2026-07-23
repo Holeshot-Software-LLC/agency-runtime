@@ -2377,6 +2377,48 @@ visual-generation capability in a software plan. Repeatable complete Agency
 selection is still unproven, and no complete corpus has produced 19 valid
 upstream arms. Comparative interpretation remains invalid.
 
+The next receiver ran the required instrumented installed-release confirmation
+with the same pass-through router. It durably wrote the complete unchanged
+Agency `WorkforceInferenceOutcome` before benchmark projection while retaining
+the audited 272-worker Store snapshot at generation 561, Windows/Codex context,
+the full tool union plus `native-delegation`, `codex-subscription`, requested
+and actual `gpt-5.6-luna`, low effort, the one-call fast budget, and the 15000
+ms cold gate.
+
+The process returned status 0 in 23.807251 seconds. Its identical 690,970-byte
+report and stdout documents had SHA-256
+`20d1e5791d25188f525920b009d07a8b759a088277a581c88739144b90417871`;
+stderr was empty with the standard empty-stream SHA-256. The complete
+56,678-byte Agency outcome had SHA-256
+`de013181e16b869378d746b7a87b52f44c49cc79dd6f813e4260ccd04c48a704`,
+and the 767-byte exact projection had SHA-256
+`c1ccfd1db84a7937de026edbdf43a5ae4ff114d57e85f1e7a87b029604de6bd1`.
+The benchmark was valid, both arms used one applied explicit-model call, and
+neither selected a forbidden, ineligible, or conflicting worker:
+
+~~~text
+installed-cross-platform-release | helpful=[software-test-engineer,code-reviewer,cross-platform-release-verifier] | A=accepted/pass selected=[cross-platform-installer-engineer,software-test-engineer,code-reviewer,test-results-analyzer,cross-platform-release-verifier] f1=0.75 ms=6778.164 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[cross-platform-installer-engineer,software-test-engineer,cross-platform-release-verifier,application-integration-verifier,code-reviewer] f1=0.75 ms=16711.509 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[cross-platform-installation-required,windows-and-linux-release-scope,installed-artifact-verification-required,test-and-review-requested,independent-context-isolation] | fairness=[]
+~~~
+
+The preserved Agency plan had SHA-256 identity
+`sha256:cf8a3f9b89d9c07525e361e68281fe008c83a4dc1e6afe1fafbdb6ffcbeba13b`.
+Its five units again covered implementation, tests, independent code review,
+completed-test analysis, and installed-release verification. This time the
+first software unit required only controlled `implementation`, ranked and
+selected `cross-platform-installer-engineer` at confidence and margin
+1.000000, and did not impose `generation-preparation`. The accepted alternative
+plan shape confirms that the preserved abstention is not a repeatable governed
+staffing defect. No product, policy, parser, worker contract, coverage, latency,
+or call-budget rule changed.
+
+The upstream arm returned a complete team but exceeded the unchanged latency
+gate at 16711.509 ms. That is a valid descriptive observation, not a
+superiority result. The complete 19-case confirmation remains required. It was
+not started in this task because receiver telemetry reached the mandatory
+handoff threshold after the instrumented evidence was safely complete. The
+capture remains outside the repository at
+`C:\tmp\agency-runtime-ar119-019f8f6f-installed-confirmation-20260723-104906`.
+
 ### Still required before AR-119 can close
 
 - Complete a benchmark-valid run of the implemented matched held-out selection
@@ -2401,31 +2443,27 @@ upstream arms. Comparative interpretation remains invalid.
 ### Next bounded work package
 
 Continue the matched selection package without advancing to contractor
-lifecycle work. Clinical/legal now has a complete matched recovery. Run one
-further instrumented matched confirmation limited to
-`installed-cross-platform-release`, preserving the complete unchanged Agency
-outcome outside the repository before benchmark projection. Keep the audited
-snapshot, Windows/Codex context, full tool union, provider, requested and actual
-model, 15000 ms gate, and one-call fast budget unchanged.
+lifecycle work. The instrumented installed-release confirmation passed with a
+complete pre-projection outcome, so run one further unchanged complete 19-case
+corpus. Keep the audited snapshot, Windows/Codex context, full tool union,
+provider, requested and actual model, 15000 ms gate, and one-call fast budget
+unchanged.
 
 ```text
-.\.venv\Scripts\agency.exe eval upstream-selection --case installed-cross-platform-release --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
+.\.venv\Scripts\agency.exe eval upstream-selection --all --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
 ```
 
-Capture both streams before parsing and preserve the same receipt, parity,
-safety, disclosure, and malformed-arm discipline. If Agency passes, make no
-product or policy change and run one further unchanged complete 19-case corpus.
-If it fails, compare its captured plan and deterministic rejection with this
-`generation-preparation` occurrence. Repetition of configured-model plan shape
-is not by itself permission to erase a controlled capability, broaden design
-workers into software implementers, weaken typed coverage, or add a scenario
-route. Change only a genuinely general governed semantic proven by exact
-evidence. If a complete Agency corpus passes but upstream has malformed,
-no-response, or timed-out arms, record the exact validity blocker. Do not raise
-the 15000 ms gate, increase the one-call budget, reinterpret invalid arms as
-losses, or claim Agency is better. Untouched-corpus statistics, exact
-activation, blinded completed-outcome trials, and contractor lifecycle remain
-deferred.
+Capture both streams outside the repository before parsing and preserve the
+same receipt, parity, safety, disclosure, and malformed-arm discipline. Record
+the exact 19-line projection and complete aggregate bindings. If every Agency
+arm passes but any upstream arm is malformed, absent, or timed out, preserve
+the exact validity blocker and do not interpret it as a loss. If an Agency arm
+safely fails, keep the controls unchanged and identify the smallest next
+instrumented confirmation from exact evidence; do not make a product or policy
+change from one configured-model plan shape. Do not raise the 15000 ms gate,
+increase the one-call budget, weaken typed coverage, add a scenario route, or
+claim Agency is better. Exact activation, blinded completed-outcome trials, and
+contractor lifecycle remain deferred.
 
 ### Handoff constraints
 
