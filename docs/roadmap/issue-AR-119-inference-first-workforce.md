@@ -2666,6 +2666,53 @@ clinical-legal-boundary-review | helpful=[clinical-evidence-agent,legal-document
 The raw capture and projection remain outside the repository at
 `C:\tmp\agency-runtime-ar119-019f8ee1-full-20260723-140620`.
 
+### Instrumented recovery of the newest complete-corpus failures
+
+The further corpus was committed as substantive `90179d8` with ledger
+`00992a5`. From that clean ledger, a zero-call-validated instrumented package
+ran application observability and selection-safety review under the unchanged
+matched controls. The process returned status 0 in 38.702201 seconds. Its
+712,543-byte stdout and byte-identical report had SHA-256
+`5b8a2a7883ce7daeb78f39125815bebf6d18b317ceb6450ccd129e7b567b9ed6`;
+stderr was empty. The exact 1,180-byte projection had SHA-256
+`645d009288fec0942a32d4e0f611cc6cdad0e77d82fb63af09b93ca9d947d85f`.
+
+The benchmark was valid. All four arms retained codex-subscription, requested
+and actual `gpt-5.6-luna`, low effort, the explicit-model receipt, one call,
+applied inference, and the 15000 ms budget. Agency passed 2/2 with precision
+0.800000, recall 1.000000, F1 0.888889, 2/2 typed coverage, p50 7160.913 ms,
+p95/max 8594.981 ms, and zero forbidden, ineligible, or conflict selections.
+Descriptive upstream passed 1/2 with precision 0.600000, recall 0.750000, F1
+0.666667, 2/2 typed coverage, p50 11666.433 ms, p95/max 11757.145 ms, and
+zero safety selections. No fairness violation occurred.
+
+Both complete Agency outcomes were written before scoring. Application
+observability was 56,135 bytes with SHA-256
+`852966a8628790a8ed7cabfa56aa3bc18aebdc67a7ec1615714fbeafc2bcc533`;
+it accepted a five-unit plan with plan/proposal hash
+`sha256:56b67a891a9098b7c80ab763fa917ce22780c316debcec5dde679f8e3801205f`.
+Selection-safety review was 12,442 bytes with SHA-256
+`b031290408be9e5c7b0539dbd21ac2537ccec5fcef5a89f81bd5d2d6155fcabb`;
+it accepted one unit selecting `selection-safety-critic` with plan/proposal
+hash
+`sha256:2d41f4054f8d3ce7c442345ec41925d906471f846e723b278a914457963ad6b0`.
+Every unit had confidence and margin 1.0.
+
+Application observability now has accepted four-unit and five-unit bounded plan
+shapes around complete-corpus abstentions, while retaining the same final
+selected set. Selection-safety review also recovered immediately. The complete
+baselines do not preserve planner units, so this evidence establishes variance,
+not a stable defect or superiority. No product or selection-policy change was
+made.
+
+```text
+application-observability | helpful=[application-observability-engineer,software-test-engineer,code-reviewer] | A=accepted/pass selected=[application-observability-engineer,software-test-engineer,code-reviewer,test-results-analyzer] f1=0.857143 ms=8594.981 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[application-observability-engineer,software-test-engineer,application-integration-verifier] f1=0.666667 ms=11757.145 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:code-reviewer] rc=[observability-implementation-match,failure-testing-match,independent-review-match,complementary-specialists,distinct-isolated-contexts] | fairness=[]
+selection-safety-review | helpful=[selection-safety-critic] | A=accepted/pass selected=[selection-safety-critic] f1=1 ms=5726.844 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/pass selected=[agents-orchestrator,selection-safety-critic] f1=0.666667 ms=11575.722 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[resident-routing-required,selection-safety-critic-is-exact-semantic-match,distinct-contexts-for-specialists,no-disabled-semantic-winner-present] | fairness=[]
+```
+
+The raw and derived files remain outside the repository at
+`C:\tmp\agency-runtime-ar119-019f8ee1-observability-selection-safety-instrumented-20260723-141805`.
+
 ### Still required before AR-119 can close
 
 - Complete a benchmark-valid run of the implemented matched held-out selection
@@ -2674,10 +2721,11 @@ The raw capture and projection remain outside the repository at
   but later complete corpora have varied, including 18/19 and multiple 17/19
   observations. The newest complete corpus returned to 17/19: application
   observability failed after its bounded recovery, selection-safety review
-  newly abstained, and broad application passed. Obtain repeatable complete
-  Agency selection plus one complete corpus with valid comparable upstream
-  arms, and retain every malformed, no-response, or timed-out arm as a
-  benchmark-validity failure.
+  newly abstained, and broad application passed. Both failures then recovered
+  in the instrumented bounded confirmation. Obtain repeatable complete Agency
+  selection plus one complete corpus with valid comparable upstream arms, and
+  retain every malformed, no-response, or timed-out arm as a benchmark-validity
+  failure.
   Dangerous, forbidden, incompatible, disabled, and weak incidental matches
   remain explicit regressions, not aggregate-score noise.
 - Complete the whole-roster multi-agent and conflict corpus, contractor
@@ -2692,27 +2740,26 @@ The raw capture and projection remain outside the repository at
 ### Next bounded work package
 
 Continue the matched selection package without advancing to contractor
-lifecycle work. Run one instrumented matched confirmation of
-`application-observability` and `selection-safety-review`. A pass-through
-`agency_router` must durably write both complete unchanged Agency outcomes
-outside the repository before returning them to the normal scorer. Capture
-both process streams before parsing. Keep the audited snapshot, Windows/Codex
-context, full tool union, provider, requested and actual model, 15000 ms gate,
-and one-call fast budget unchanged.
+lifecycle work. Run one further unchanged complete 19-case Windows corpus from
+the new clean ledger checkpoint. Capture both streams durably outside the
+repository before parsing. Keep the audited snapshot, Windows/Codex context,
+full tool union, provider, requested and actual model, 15000 ms gate, and
+one-call fast budget unchanged.
 
 ```text
-.\.venv\Scripts\agency.exe eval upstream-selection --case application-observability --case selection-safety-review --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
+.\.venv\Scripts\agency.exe eval upstream-selection --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
 ```
 
-Retain the exact two-line projection, complete plan units, deterministic
-proposal scores, confidence, margins, rejection reasons, aggregate bindings,
-receipts, and validity failures. Treat recovery as variance unless a genuinely
-general, repeatable defect is proven. Do not raise the 15000 ms gate, increase
-the one-call budget, weaken typed coverage, add a scenario route, or claim
-Agency is better. Run observational telemetry immediately before the package;
-if it is at or below 50 percent, ensure the clean checkpoint and continue.
-Exact activation, blinded completed-outcome trials, and contractor lifecycle
-remain deferred.
+Retain the exact 19-line projection, aggregate bindings, receipts, safety,
+disabled disclosures, and benchmark-validity failures. If Agency is not 19/19,
+use bounded unchanged confirmation before considering any general semantic
+change. If upstream has malformed, no-response, or timed-out arms, keep the
+comparison invalid and never reinterpret them as losses. Do not raise the
+15000 ms gate, increase the one-call budget, weaken typed coverage, add a
+scenario route, or claim Agency is better. Run observational telemetry
+immediately before the package; if it is at or below 50 percent, ensure the
+clean checkpoint and continue. Exact activation, blinded completed-outcome
+trials, and contractor lifecycle remain deferred.
 
 ### Context checkpoint constraints
 

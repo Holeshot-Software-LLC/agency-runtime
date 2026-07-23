@@ -8,15 +8,15 @@ tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/worklog/2026-07-23-fc9c453-confidence-abstention-recovery.md
+  - docs/worklog/2026-07-23-90179d8-further-matched-corpus-variance.md
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar-115-live-routing-trust
-evidence_commit: fc9c453b360f2274b4afd03ffa4df3ce61e97aa0
-minimum_ledger_commit: 160c2dd0ef544ac920e9512cea3bd4f3d513b935
+evidence_commit: 90179d8b8b9708a2d5077c5e5005004ffa6bc102
+minimum_ledger_commit: 00992a538e35f1062f0b0396efee1f37d9839392
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -31,9 +31,9 @@ complete historical and acceptance contract.
 
 - Branch: codex/ar-115-live-routing-trust.
 - Substantive evidence commit:
-  fc9c453b360f2274b4afd03ffa4df3ce61e97aa0.
+  90179d8b8b9708a2d5077c5e5005004ffa6bc102.
 - Minimum ledger commit:
-  160c2dd0ef544ac920e9512cea3bd4f3d513b935.
+  00992a538e35f1062f0b0396efee1f37d9839392.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
@@ -43,8 +43,8 @@ complete historical and acceptance contract.
 ## Completed evidence
 
 - ADR-0086 removed the context admission threshold while retaining the
-  50-percent clean checkpoint. The two-case recovery was committed as
-  `fc9c453` / `160c2dd`.
+  50-percent clean checkpoint. The further corpus was committed as
+  `90179d8` / `00992a5`.
 - From clean `27fcecc`, the instrumented application-observability/broad-
   application process returned status 0 in
   57.628651 seconds. Its 723,247-byte stdout/report had SHA-256
@@ -69,6 +69,16 @@ complete historical and acceptance contract.
   F1 0.597938, 8/19 typed coverage, p50 13078.001 ms, and p95/max
   21629.692 ms. Five arms returned unknown disabled shadows, so the benchmark
   is invalid and none is an upstream loss.
+- From clean `00992a5`, the instrumented application-observability/selection-
+  safety process returned status 0 in 38.702201 seconds. Its 712,543-byte
+  stdout/report had SHA-256
+  `5b8a2a7883ce7daeb78f39125815bebf6d18b317ceb6450ccd129e7b567b9ed6`;
+  stderr was empty. The 1,180-byte exact projection had SHA-256
+  `645d009288fec0942a32d4e0f611cc6cdad0e77d82fb63af09b93ca9d947d85f`.
+- The bounded benchmark was valid and Agency passed 2/2. Application
+  observability accepted five units; selection-safety review accepted one.
+  Every unit had confidence and margin 1.0, and zero unsafe selections or
+  fairness violations occurred.
 - No product or selection-policy rule changed. Neither run establishes
   superiority.
 
@@ -76,7 +86,8 @@ complete historical and acceptance contract.
 
 - Complete Agency corpora have varied from 19/19 to 18/19 and multiple 17/19
   observations. The newest corpus failed application observability immediately
-  after its bounded recovery and newly failed selection-safety review; this is
+  after its bounded recovery and newly failed selection-safety review; both
+  then recovered immediately in the instrumented confirmation. This is
   variance, not a proven deterministic defect.
 - No complete corpus has produced 19 benchmark-valid upstream arms. Malformed,
   no-response, or timed-out arms remain validity failures, never comparative
@@ -92,21 +103,19 @@ complete historical and acceptance contract.
 ## Next bounded work package
 
 Stay in matched selection; do not advance to contractor lifecycle. Run one
-instrumented matched confirmation of `application-observability` and
-`selection-safety-review`. A pass-through `agency_router` must durably write
-both complete unchanged Agency outcomes outside the repository before returning
-them to the normal scorer. Capture both process streams before parsing. Keep
-the audited snapshot, Windows/Codex context, full tool union, provider,
+further unchanged complete 19-case Windows corpus from the new clean ledger
+checkpoint. Capture both streams durably outside the repository before parsing.
+Keep the audited snapshot, Windows/Codex context, full tool union, provider,
 requested and actual model, 15000 ms gate, and one-call fast budget unchanged.
 
 ~~~text
-.\.venv\Scripts\agency.exe eval upstream-selection --case application-observability --case selection-safety-review --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
+.\.venv\Scripts\agency.exe eval upstream-selection --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
 ~~~
 
-Record the exact two-line projection, complete plan units, deterministic
-proposal scores, confidence, margins, rejection reasons, aggregate bindings,
-receipts, and validity failures. Treat recovery as variance unless a genuinely
-general, repeatable defect is proven.
+Record the exact 19-line projection, aggregate bindings, receipts, safety,
+disabled disclosures, and benchmark-validity failures. If Agency is not 19/19,
+use bounded unchanged confirmation before considering any general semantic
+change. Keep every malformed upstream arm as a validity failure, never a loss.
 
 ## Verification
 
