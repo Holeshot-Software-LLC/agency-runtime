@@ -8,15 +8,15 @@ tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/worklog/2026-07-23-6049510-four-case-selection-variance.md
+  - docs/worklog/2026-07-23-48e3022-four-case-selection-recovery.md
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar-115-live-routing-trust
-evidence_commit: 6049510e218e225bfb800846392ba14f694ebf0c
-minimum_ledger_commit: 7b91cf89b3d90a6c3293e342dd019701dbcddb58
+evidence_commit: 48e3022837e822ee82d51219854939ca410e901d
+minimum_ledger_commit: 3e34c6f4e262680b000691644d7ec3e4b6c52440
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -31,9 +31,9 @@ complete historical and acceptance contract.
 
 - Branch: codex/ar-115-live-routing-trust.
 - Substantive evidence commit:
-  6049510e218e225bfb800846392ba14f694ebf0c.
+  48e3022837e822ee82d51219854939ca410e901d.
 - Minimum ledger commit:
-  7b91cf89b3d90a6c3293e342dd019701dbcddb58.
+  3e34c6f4e262680b000691644d7ec3e4b6c52440.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
@@ -43,8 +43,8 @@ complete historical and acceptance contract.
 ## Completed evidence
 
 - ADR-0086 removed the context admission threshold while retaining the
-  50-percent clean checkpoint. The latest committed recovery is `6049510` /
-  `7b91cf8`; telemetry never admits or blocks live work.
+  50-percent clean checkpoint. The latest committed recovery is `48e3022` /
+  `3e34c6f`; telemetry never admits or blocks live work.
 - That committed package preserved a 17/19 complete corpus with two latency-
   only misses followed by a valid 2/2 instrumented recovery. No product or
   policy rule changed.
@@ -74,16 +74,25 @@ complete historical and acceptance contract.
 - Agency passed 4/4 with complete typed coverage and disabled disclosure,
   p95/max 14074.396 ms, and zero unsafe selections. Every complete outcome was
   preserved before scoring. No product or policy rule changed.
+- From clean `3e34c6f`, the next complete corpus returned status 1 in
+  406.071759 seconds. Its 1,195,829-byte stdout had SHA-256
+  `2e051f5aa2aa7b158a2ba799fde3ca9ff0e413a89fd587d0be740d090063b530`;
+  the 13,313-byte projection had SHA-256
+  `bab3fbf0c735603439914d284afc5a044d154b6e56f27715ef8dbdefbc6400c6`.
+- Agency passed 19/19 with 19/19 typed coverage, complete disabled disclosure,
+  p95/max 12942.243 ms, and zero unsafe selections. All 38 arms retained exact
+  bindings. This is the second complete 19/19 Agency observation.
+- Exactly one upstream arm, application observability, returned unknown
+  disabled shadows. The benchmark remains invalid, and that arm is not a loss.
 
 ## Exact blocker
 
-- Complete Agency corpora have varied from 19/19 to 18/19 and multiple 17/19
-  observations. The newest corpus scored 15/19 on four distinct non-safety
-  gates, and all four immediately passed their unchanged instrumented
-  confirmation. This is variance, not a proven governed defect.
-- No complete corpus has produced 19 benchmark-valid upstream arms. Malformed,
-  no-response, or timed-out arms remain validity failures, never comparative
-  losses.
+- Two complete corpora have produced 19/19 Agency under unchanged controls,
+  with intervening misses recovering in bounded confirmation.
+- No complete corpus has produced 19 benchmark-valid upstream arms. The newest
+  corpus had exactly one invalid application-observability upstream arm.
+  Malformed, no-response, or timed-out arms remain validity failures, never
+  comparative losses.
 
 ## Same-task continuity
 
