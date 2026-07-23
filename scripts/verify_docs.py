@@ -41,11 +41,15 @@ WORKLOG_LEDGER_PREFIX = "docs(worklog):"
 LEGAL_PROVENANCE_NAME_EXEMPTIONS = frozenset({"THIRD_PARTY_NOTICES.md"})
 HANDOFF_MAX_BYTES = 12 * 1024
 HANDOFF_MAX_LINES = 180
+HANDOFF_HARD_CHECKPOINT_PERCENT = 50
+HANDOFF_LIVE_EVALUATION_ADMISSION_PERCENT = 65
+CODEX_TASK_ID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 HANDOFF_REQUIRED_HEADINGS = frozenset(
     {
         "checkpoint",
         "completed-evidence",
         "exact-blocker",
+        "goal-ownership",
         "next-bounded-work-package",
         "verification",
         "constraints",
@@ -221,6 +225,9 @@ def _handoff_schema_errors(doc: Document) -> list[str]:
             "handoff_token",
             "branch",
             "evidence_commit",
+            "goal_owner_task_id",
+            "hard_checkpoint_percent",
+            "live_evaluation_admission_percent",
             "minimum_ledger_commit",
             "tracker_url",
         },
@@ -243,6 +250,19 @@ def _handoff_schema_errors(doc: Document) -> list[str]:
     tracker_url = meta.get("tracker_url")
     if tracker_url is not None and not isinstance(tracker_url, str):
         errors.append(f"{doc.relative}: tracker_url must be a string or null")
+    if not CODEX_TASK_ID_RE.fullmatch(str(meta.get("goal_owner_task_id", ""))):
+        errors.append(f"{doc.relative}: goal_owner_task_id must be a lowercase UUID")
+    hard_checkpoint = meta.get("hard_checkpoint_percent")
+    if isinstance(hard_checkpoint, bool) or hard_checkpoint != HANDOFF_HARD_CHECKPOINT_PERCENT:
+        errors.append(
+            f"{doc.relative}: hard_checkpoint_percent must be {HANDOFF_HARD_CHECKPOINT_PERCENT}"
+        )
+    admission = meta.get("live_evaluation_admission_percent")
+    if isinstance(admission, bool) or admission != HANDOFF_LIVE_EVALUATION_ADMISSION_PERCENT:
+        errors.append(
+            f"{doc.relative}: live_evaluation_admission_percent must be "
+            f"{HANDOFF_LIVE_EVALUATION_ADMISSION_PERCENT}"
+        )
     return errors
 
 

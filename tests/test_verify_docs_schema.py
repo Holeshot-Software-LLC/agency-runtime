@@ -79,6 +79,9 @@ def _errors(doc: verify_docs.Document) -> list[str]:
             handoff_token="AR-119:bounded-package:v1",
             branch="codex/ar-119",
             evidence_commit="a" * 40,
+            goal_owner_task_id="019f8f6f-8051-7b61-a237-2035384601f6",
+            hard_checkpoint_percent=50,
+            live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,
             tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
         ),
@@ -154,6 +157,9 @@ def test_handoff_schema_reports_unbounded_identity_fields() -> None:
             handoff_token="different-token",
             branch="invalid branch",
             evidence_commit="abc",
+            goal_owner_task_id="not-a-task-id",
+            hard_checkpoint_percent=51,
+            live_evaluation_admission_percent=64,
             minimum_ledger_commit=None,
             tracker_url=[],
         ),
@@ -168,6 +174,9 @@ def test_handoff_schema_reports_unbounded_identity_fields() -> None:
         f"{doc.relative}: evidence_commit must be a full lowercase Git SHA",
         f"{doc.relative}: minimum_ledger_commit must be a full lowercase Git SHA",
         f"{doc.relative}: tracker_url must be a string or null",
+        f"{doc.relative}: goal_owner_task_id must be a lowercase UUID",
+        f"{doc.relative}: hard_checkpoint_percent must be 50",
+        f"{doc.relative}: live_evaluation_admission_percent must be 65",
     ]
 
 
@@ -282,6 +291,10 @@ Current evidence.
 
 Current blocker.
 
+## Goal ownership
+
+Task owns the persistent goal and repository writer lease.
+
 ## Next bounded work package
 
 One package.
@@ -325,6 +338,9 @@ def test_handoff_validation_accepts_one_bounded_capsule_per_issue(
             handoff_token="AR-119:bounded-package:v1",
             branch="codex/ar-119",
             evidence_commit="a" * 40,
+            goal_owner_task_id="019f8f6f-8051-7b61-a237-2035384601f6",
+            hard_checkpoint_percent=50,
+            live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,
             tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
             related=[issue.relative],
@@ -370,6 +386,9 @@ def test_handoff_validation_rejects_duplicate_tokens_and_missing_sections(
                     handoff_token="AR-119:same-token:v1",
                     branch="codex/ar-119",
                     evidence_commit="a" * 40,
+                    goal_owner_task_id="019f8f6f-8051-7b61-a237-2035384601f6",
+                    hard_checkpoint_percent=50,
+                    live_evaluation_admission_percent=65,
                     minimum_ledger_commit="b" * 40,
                     tracker_url=None,
                     related=[issue.relative],
@@ -420,6 +439,9 @@ def test_handoff_validation_rejects_size_line_and_tracker_drift(
             handoff_token="AR-119:bounded-package:v1",
             branch="codex/ar-119",
             evidence_commit="a" * 40,
+            goal_owner_task_id="019f8f6f-8051-7b61-a237-2035384601f6",
+            hard_checkpoint_percent=50,
+            live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,
             tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
             related=[issue.relative],

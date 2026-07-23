@@ -7,7 +7,10 @@ updated: 2026-07-23
 tags: [governance, documentation, codex, handoff, reliability]
 related:
   - AGENTS.md
+  - scripts/context_handoff_status.py
   - scripts/verify_docs.py
+  - tests/test_context_handoff_status.py
+  - tests/test_verify_docs_schema.py
   - docs/roadmap/handoffs/README.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -34,14 +37,20 @@ duplicates were paused, the retained receiver's required complete read of the
 percent before work, immediately triggering another handoff. The protocol could
 therefore duplicate writers or recurse forever without advancing the issue.
 
+A later recovery exposed the complementary same-chat failure. The receiver did
+not inherit the source's persistent goal, and after goal ownership was repaired,
+automatic continuations retained cumulative telemetry below the hard checkpoint
+instead of creating a reset boundary. Ending again produced empty turns rather
+than compaction or progress.
+
 ## Current state
 
-All duplicate receivers were stopped before live evaluation and archived. One
-temporary roadmap paragraph was removed, leaving the branch clean at the prior
-ledger checkpoint with no net repository, tracker, or hosted-state mutation.
-The existing protocol has telemetry and ownership gates but does not bound
-bootstrap input, reconcile ambiguous task creation, or prohibit no-op relay
-commits.
+All duplicate receivers were stopped before live evaluation and archived. The
+bounded capsule, create-once reconciliation, and no-op relay rules are already
+enforced. This repair adds persistent goal ownership, separate 65-percent live
+admission and 50-percent checkpoint meanings, immediately-preceding telemetry
+for every live run, and an explicit rule that cumulative telemetry never causes
+an empty wait-for-reset continuation.
 
 Tracker creation and label parity remain pending explicit authorization for the
 outward-facing write.
@@ -53,11 +62,17 @@ the current recovery state into one size-bounded active capsule per long-running
 issue. Validate capsule identity, size, required sections, canonical issue link,
 and tracker parity in the documentation gate.
 
-Make task dispatch create-once and reconcile-on-error using a stable
-package-specific token. Require receiver bootstrap from AGENTS.md, the capsule,
-live issue, and latest worklog rather than an unbounded issue reread. Make
-preflight context exhaustion a visible blocker at the existing clean
-checkpoint, not a reason to create empty commits or another task.
+Keep the current task as persistent goal owner and sole writer across same-chat
+continuations and compactions. Below 65 percent, forbid a new expensive live
+evaluation. At or below 50 percent, require a clean durable checkpoint before
+further work, prohibit cross-task dispatch, and permit only bounded non-live
+recovery or governance work required to repair or close the protocol. Never
+busy-loop waiting for cumulative telemetry to reset.
+
+Allow cross-task goal transfer only with explicit user authorization, proof that
+the source goal is inactive or its task archived, receiver-side goal creation,
+an acknowledgment naming `goal_owner_task_id`, and a clean sole-writer lease.
+Retain create-once reconciliation only for that exceptional authorized path.
 
 ## Dependencies
 
@@ -73,7 +88,17 @@ rules. AR-119 supplies the reproduced failure and first active capsule.
 - [x] Focused tests cover valid and invalid handoff metadata and duplicate
   active capsules.
 - [x] AR-119 has one current capsule under the enforced size and line limits.
+- [x] Telemetry distinguishes the fixed 50-percent hard checkpoint from the
+  65-percent expensive-live-evaluation admission gate.
+- [x] AGENTS.md requires telemetry after bootstrap and immediately before every
+  live evaluation, including conditional second runs.
+- [x] Same-chat persistent-goal continuation remains in the owning task below
+  the hard checkpoint and never waits in empty turns for cumulative reset.
+- [x] Capsule validation requires exact gate values, a goal-owner task UUID,
+  and an explicit Goal ownership section.
+- [x] Cross-task transfer is fail-closed unless every authorization, source-goal,
+  receiver-goal, acknowledgment, and sole-writer condition is proven.
 - [ ] A same-repository tracker issue titled with AR-126 and labeled
   epic:documentation is created and mapped after authorization.
-- [ ] A later real handoff demonstrates exactly one receiver and preserves
-  more than half of its context after bounded bootstrap.
+- [ ] A later explicitly authorized real goal transfer demonstrates exactly one
+  receiver and preserves the goal-owner and sole-writer invariants.

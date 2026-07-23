@@ -153,7 +153,7 @@ Status meanings:
 | ID | Decision | Status |
 |---|---|---|
 | [ADR-0025](0025-self-contained-linked-documentation.md) | Keep a self-contained planning-to-evidence documentation chain | Accepted |
-| [ADR-0084](0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md) | Use bounded recovery capsules and idempotent task dispatch | Accepted |
+| [ADR-0084](0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md) | Use bounded recovery capsules and persistent goal ownership | Accepted |
 
 ## Maintenance rules
 

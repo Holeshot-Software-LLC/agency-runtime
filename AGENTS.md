@@ -158,71 +158,77 @@ may remain.
 Do not alter faithful historical records merely to neutralize wording. Flag the
 historical reference alongside the record instead.
 
-## Autonomous context handoff
+## Autonomous context continuity
 
-Long-running work must not depend on one chat retaining the entire execution
+Long-running work must not depend on one prompt retaining the entire execution
 history. Every long-running roadmap item uses one active recovery capsule under
 `docs/roadmap/handoffs/`. The capsule is a bounded current-state projection,
-not a second roadmap or an append-only transcript. `scripts/verify_docs.py`
+not a second roadmap or append-only transcript. `scripts/verify_docs.py`
 enforces one active capsule per issue, required recovery sections, a maximum of
-12 KiB and 180 lines, and stable checkpoint metadata.
+12 KiB and 180 lines, the current persistent `goal_owner_task_id`, and the fixed
+50-percent hard checkpoint and 65-percent live-evaluation admission gates.
 
-On Codex, check the active thread's local telemetry before reading task history
-and again at the end of every bounded package:
+On Codex, run telemetry after bounded bootstrap, immediately before every live
+evaluation, and at the end of every bounded package:
 
 ```bash
-python scripts/context_handoff_status.py --json --threshold 50
+python scripts/context_handoff_status.py --json --threshold 50 --admission-threshold 65
 ```
 
-At or before half of the active context remains, or earlier when compaction
-risk becomes apparent, the active agent must autonomously:
+The helper reads the newest cumulative token-count event. Same-chat goal
+continuation or compaction may not reset that cumulative value, so never wait
+or emit an empty continuation hoping the percentage will rise.
 
-1. Finish the smallest safe in-progress slice and run its proportionate local
-   checks.
-2. Update the canonical roadmap issue and its active recovery capsule with
-   completed evidence, unresolved gates, constraints, and one bounded next work
-   package. Replace the capsule's prior package instead of appending history.
-3. Create a local recovery commit and its required worklog ledger commit. Do
-   not push merely to create a handoff.
-4. Dispatch one fresh Codex task with the capsule's stable `handoff_token`, the
-   exact branch and clean HEAD, evidence and ledger commits, capsule path,
-   source task ID, verification commands, and prohibited actions.
-5. Wait until the receiving task acknowledges ownership or reports a concrete
-   blocker before ending the current task.
+Apply the gates as follows:
 
-The dispatch operation is create-once and reconcile-on-error:
+- At or above 65 percent remaining, a new expensive live evaluation may start.
+- Below 65 percent, do not start any new expensive live evaluation. A
+  conditional rerun or complete corpus is a separate evaluation and requires a
+  fresh immediately-preceding telemetry check.
+- At or below 50 percent, first finish the smallest safe in-progress slice,
+  run proportionate checks, and create a clean durable substantive/ledger
+  checkpoint. Cross-task dispatch is prohibited. Only bounded non-live
+  recovery or governance work needed to repair or close the protocol may
+  continue in that goal-owning task.
 
-1. List recent tasks and confirm that no active task already carries the exact
-   `handoff_token`.
-2. Call task creation once. A timeout, missing-handler response, or other
-   ambiguous error is an indeterminate result, not proof that creation failed.
-3. Before any retry, list tasks again and reconcile by exact `handoff_token`.
-   One match is the receiver. More than one match is a coordination incident:
-   pause every match before edits, verify the repository is unchanged, retain
-   one, and archive the duplicates. Retry only after confirming zero matches.
-4. Once the receiver acknowledges sole-writer ownership, the source task ends
-   promptly instead of remaining active as a monitor.
+When the task has an explicitly authorized persistent goal, that same task
+remains both `goal_owner_task_id` and sole repository writer across automatic
+same-chat continuations and compactions. At the hard checkpoint it updates the
+canonical roadmap and active capsule with exact evidence, unresolved gates,
+constraints, and one next bounded package, creates the local recovery and
+ledger commits, and ends the turn when useful. It does not call
+`create_thread`, fork, or dispatch merely because cumulative telemetry remains
+low. If actual retention degrades, finish the smallest safe clean checkpoint
+and report a concrete user-action blocker instead of creating another task.
 
-The receiver bootstrap is deliberately bounded. It must read this file
-completely, the active recovery capsule completely, the live tracker issue,
-and the latest worklog named by the capsule before editing. It then reads only
-the canonical roadmap sections or evidence directly referenced by the capsule;
-dispatch prompts must not require a complete reread of an unbounded historical
-roadmap document. Historical evidence remains authoritative and searchable,
-but it is not bootstrap context.
+Cross-task goal transfer is exceptional and permitted only when all of these
+facts are proven:
 
-Run telemetry again after bootstrap and before the first mutation or live
-evaluation. If a fresh receiver reaches the threshold during read-only
-preflight, it reports a bootstrap-budget blocker and stops at the existing clean
-checkpoint. It must not add a telemetry-only roadmap note, create an empty
-recovery/ledger pair, or dispatch another receiver. Likewise, when a source has
-made no substantive change since the prior clean checkpoint, reuse that
-checkpoint rather than committing a no-op handoff.
+1. The user explicitly authorizes that exact transfer.
+2. The source persistent goal is paused or cleared, or the source task is
+   archived, so two active goal owners cannot exist.
+3. The receiver creates the authorized persistent goal in its own task.
+4. The receiver acknowledges ownership by naming its task ID, and the active
+   capsule records that value as `goal_owner_task_id` before further work.
+5. The branch is clean at the named ledger commit and the receiver confirms the
+   sole-writer lease.
+
+If any transfer condition cannot be proven, stop at the clean checkpoint. Do
+not create a speculative receiver. Once transfer is authorized, task creation
+remains create-once and reconcile-on-error: search the exact `handoff_token`
+before creation, call creation once, treat ambiguous errors as indeterminate,
+and reconcile before any retry. Duplicate matches are a coordination incident;
+pause them before edits and retain at most one verified receiver.
+
+An authorized receiver bootstrap is deliberately bounded. It reads this file,
+the active capsule, the live tracker issue, and the latest worklog named by the
+capsule completely, then only capsule-referenced canonical evidence. It checks
+telemetry after bootstrap and again immediately before live evaluation. A
+read-only preflight with no substantive delta never creates a telemetry note,
+empty recovery/ledger pair, or relay task; it reuses the existing checkpoint.
 
 Codex Desktop does not inject its UI meter into the model prompt, so the helper
-reads the active `CODEX_THREAD_ID` token-count event from the local session log.
-If telemetry is unavailable on another host, use a conservative estimate. A
-compaction event, an unusually large diff, or declining ability to retain
-acceptance criteria triggers the same process. The receiver must preserve the
-prior task's work and must not mark the umbrella goal complete until every
-acceptance gate has current evidence.
+reads the active `CODEX_THREAD_ID` session record. If telemetry is unavailable,
+use a conservative estimate. The goal owner must preserve prior work and must
+not mark an umbrella item complete until every acceptance gate has current
+evidence.

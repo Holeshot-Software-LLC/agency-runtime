@@ -8,7 +8,7 @@ tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/worklog/2026-07-23-ar119-installed-release-instrumented-recovery.md
+  - docs/worklog/2026-07-23-ar126-persistent-goal-context-continuity.md
   - docs/decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md
 supersedes: []
 superseded_by: null
@@ -16,8 +16,11 @@ type: handoff
 issue_id: AR-119
 handoff_token: "AR-119:full-corpus-after-installed-recovery:v1"
 branch: codex/ar-115-live-routing-trust
-evidence_commit: 1d3059dcfeddf3de9fe09582fb118e3f5129fc70
-minimum_ledger_commit: 1683d1741ce0e09f1a854b511b7be25dcc16a8f9
+evidence_commit: a6007afc713a5eadb4b1cbbc753f93f747457591
+minimum_ledger_commit: a8822d774fd05f4ca538fc07241e7399c84191fb
+goal_owner_task_id: 019f8f6f-8051-7b61-a237-2035384601f6
+hard_checkpoint_percent: 50
+live_evaluation_admission_percent: 65
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
 
@@ -31,9 +34,9 @@ complete historical and acceptance contract.
 
 - Branch: codex/ar-115-live-routing-trust.
 - Substantive evidence commit:
-  1d3059dcfeddf3de9fe09582fb118e3f5129fc70.
+  a6007afc713a5eadb4b1cbbc753f93f747457591.
 - Minimum ledger commit:
-  1683d1741ce0e09f1a854b511b7be25dcc16a8f9.
+  a8822d774fd05f4ca538fc07241e7399c84191fb.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
@@ -80,6 +83,17 @@ complete historical and acceptance contract.
   no-response, or timed-out upstream arms remain validity failures, never
   comparative losses.
 
+## Goal ownership
+
+- Persistent goal owner and sole repository writer:
+  019f8f6f-8051-7b61-a237-2035384601f6.
+- No cross-task transfer is authorized. Cumulative telemetry does not justify
+  another task or an empty continuation loop waiting for a reset.
+- Below 65 percent remaining, no new expensive live evaluation may start. At
+  or below 50 percent, first preserve a clean durable checkpoint, then perform
+  only bounded non-live recovery or governance work in this same goal-owning
+  task.
+
 ## Next bounded work package
 
 Stay in matched selection; do not advance to contractor lifecycle. Run one
@@ -110,12 +124,16 @@ policy change.
 .\.venv\Scripts\python.exe scripts\update_worklog.py --check
 .\.venv\Scripts\python.exe scripts\verify_docs.py
 git diff --check
-.\.venv\Scripts\python.exe scripts\context_handoff_status.py --json --threshold 50
+.\.venv\Scripts\python.exe scripts\context_handoff_status.py --json --threshold 50 --admission-threshold 65
 ~~~
 
 ## Constraints
 
 - Acknowledge sole-writer ownership before editing or live evaluation.
+- Check telemetry immediately before every live evaluation, including a
+  conditional second run; require at least 65 percent remaining to admit it.
+- At or below 50 percent, continue only bounded non-live work in the same goal;
+  do not dispatch a task or wait in empty turns for telemetry to reset.
 - Preserve every accumulated AR-119 commit and the clean branch.
 - Do not weaken typed coverage, add a scenario route, raise the 15000 ms gate,
   increase the one-call budget, or reinterpret malformed upstream output.
