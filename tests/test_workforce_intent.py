@@ -181,6 +181,28 @@ def test_compiler_treats_research_as_a_method_within_a_subject_domain() -> None:
     assert plan.units[0].required_capabilities == ("analysis", "research")
 
 
+def test_compiler_does_not_turn_software_diagnosis_into_incident_research() -> None:
+    value = _intent(
+        artifact="analysis",
+        domains=["software-engineering", "research"],
+        stacks=[],
+        capabilities=["analysis", "investigation"],
+    )
+    value["units"][0]["outcome"] = "Diagnose runtime routing and response-header failures"
+
+    plan = compile_intent_plan(
+        value,
+        request="Diagnose why a runtime hook failed to enforce its response header.",
+        context=_context(),
+        known_domains=("software-engineering", "research"),
+        known_stacks=(),
+        known_capability_ids=("analysis", "investigation"),
+    )
+
+    assert plan.units[0].domains == ("software-engineering",)
+    assert plan.units[0].required_capabilities == ("analysis",)
+
+
 def test_compiler_drops_a_domain_misplaced_as_a_capability() -> None:
     value = _intent(
         artifact="review-report",
@@ -502,6 +524,16 @@ def test_enrichment_binds_early_assurance_to_later_local_test_artifacts() -> Non
                 "depends_on": [],
             },
             {
+                "unit_id": "unit-observability",
+                "outcome": "Implement application observability",
+                "artifact_kind": "implementation-change",
+                "domains": ["software-engineering"],
+                "stacks": [],
+                "capability_ids": ["implementation"],
+                "novel_capability": "",
+                "depends_on": ["unit-implementation"],
+            },
+            {
                 "unit_id": "unit-evidence",
                 "outcome": "Independently analyze completed test evidence",
                 "artifact_kind": "test-evidence",
@@ -551,6 +583,8 @@ def test_enrichment_binds_early_assurance_to_later_local_test_artifacts() -> Non
 
     assert "unit-tests" in by_id["unit-evidence"].depends_on
     assert "unit-tests" in by_id["unit-review"].depends_on
+    assert "unit-observability" in by_id["unit-evidence"].depends_on
+    assert "unit-observability" in by_id["unit-review"].depends_on
 
 
 def test_documentation_intent_inherits_subject_domain_for_independent_review() -> None:

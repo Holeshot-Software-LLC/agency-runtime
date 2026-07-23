@@ -238,9 +238,23 @@ def role_anchors(unit: Any, *, request: str = "") -> tuple[str, ...]:
     if unit.artifact_kind == "analysis" and unit.lifecycle_phase == "discovery":
         request_tokens = semantic_tokens(request)
         scoped_tokens = tokens
-        if "finance" in unit.domains or (
-            tokens & {"cancellation", "incremental", "index", "symbol"}
-            and ("lsp" in request_tokens or {"language", "server"} <= request_tokens)
+        database_query_request = bool(
+            request_tokens & {"postgres", "postgresql"}
+            and "query" in request_tokens
+            and request_tokens & {"performance", "plan", "slow"}
+        )
+        runtime_routing_request = bool(
+            request_tokens & {"hook", "routing", "runtime"}
+            and request_tokens & {"diagnose", "diagnosis", "evidence", "integration", "trace"}
+        )
+        if (
+            "finance" in unit.domains
+            or database_query_request
+            or runtime_routing_request
+            or (
+                tokens & {"cancellation", "incremental", "index", "symbol"}
+                and ("lsp" in request_tokens or {"language", "server"} <= request_tokens)
+            )
         ):
             scoped_tokens |= request_tokens
         return _discovery_anchors(unit, scoped_tokens)

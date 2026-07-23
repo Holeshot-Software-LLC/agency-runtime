@@ -293,6 +293,34 @@ def test_runtime_integration_shortlists_anchor_each_lifecycle_owner() -> None:
     assert shortlists["unit-staffing-audit"]["role_anchors"] == ["selection-safety-critic"]
 
 
+def test_runtime_request_recovers_codebase_anchor_from_generic_analysis() -> None:
+    request = (
+        "Diagnose why an installed runtime hook selected unrelated agents and failed to "
+        "enforce its response header; inspect routing evidence and test the integration."
+    )
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-routing-diagnosis",
+                    "Produce evidence-backed technical analysis",
+                    "analysis",
+                    "discovery",
+                    ["software-engineering"],
+                    ["analysis"],
+                    "advise",
+                    "read_only",
+                    ["repository-read"],
+                )
+            ],
+        }
+    )
+
+    assert role_anchors(plan.units[0], request=request) == ("codebase-onboarding-engineer",)
+
+
 def test_documentation_unit_selects_existing_technical_writer_without_false_gap() -> None:
     snapshot = _snapshot()
     plan = parse_work_unit_plan(
@@ -708,6 +736,36 @@ def test_postgres_query_diagnosis_anchors_the_database_optimizer() -> None:
     )
 
     assert role_anchors(plan.units[0], request=request) == ("database-optimizer",)
+
+
+def test_postgres_request_recovers_database_anchor_from_generic_analysis() -> None:
+    request = (
+        "Analyze why this PostgreSQL write query is slow and return measured query-plan "
+        "findings only."
+    )
+    generic_request = "Analyze why this repository query helper is slow."
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-query-analysis",
+                    "Produce evidence-backed technical analysis",
+                    "analysis",
+                    "discovery",
+                    ["software-engineering"],
+                    ["analysis"],
+                    "advise",
+                    "read_only",
+                    ["repository-read"],
+                )
+            ],
+        }
+    )
+
+    assert role_anchors(plan.units[0], request=request) == ("database-optimizer",)
+    assert role_anchors(plan.units[0], request=generic_request) == ()
 
 
 def test_clinical_evidence_and_legal_review_anchor_bounded_specialists() -> None:

@@ -1211,6 +1211,22 @@ def test_production_observability_does_not_imply_release_verification() -> None:
     assert plan_policy_violations(request, plan) == ()
 
 
+def test_read_only_live_test_evidence_remains_in_the_testing_lifecycle() -> None:
+    request = (
+        "Diagnose why an installed runtime hook selected unrelated agents; inspect routing "
+        "evidence, test the live integration locally, and independently audit the result."
+    )
+
+    plan, reasons = deterministic_work_plan(request, context=_context())
+
+    assert reasons == ()
+    assert plan is not None
+    evidence = next(item for item in plan.units if item.artifact_kind == "test-evidence")
+    assert evidence.lifecycle_phase == "testing"
+    assert evidence.authority == "review"
+    assert evidence.mutation_scope == "read_only"
+
+
 def test_prohibited_mutation_words_do_not_create_fallback_code_or_docs_work() -> None:
     postgres, postgres_reasons = deterministic_work_plan(
         "Analyze why this PostgreSQL write query is slow. Do not write documentation or "

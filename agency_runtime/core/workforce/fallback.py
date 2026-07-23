@@ -488,7 +488,11 @@ def deterministic_work_plan(
                     else "Implement unit, integration, and failure-path tests"
                 ),
                 artifact="test-evidence" if review or analysis else "test-code",
-                lifecycle="review" if review or analysis else "testing",
+                # Test-result interpretation remains part of the testing
+                # lifecycle even when it is performed read-only and reviewed
+                # independently. Labeling the evidence unit as review loses the
+                # typed testing coverage that downstream staffing must prove.
+                lifecycle="testing",
                 domains=("quality-assurance",),
                 capabilities=("test-results" if review or analysis else "integration-tests",),
                 authority="review" if review or analysis else "modify",

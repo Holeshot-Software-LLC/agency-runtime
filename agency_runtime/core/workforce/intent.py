@@ -578,17 +578,35 @@ def compile_intent_plan(
             document["required_capabilities"] = [
                 item for item in document["required_capabilities"] if item != "automation"
             ]
-        if (
-            len(document["domains"]) > 1
-            and "research" in document["domains"]
-            and "research" in document["required_capabilities"]
-        ):
+        if len(document["domains"]) > 1 and "research" in document["domains"]:
             # Research is a method capability when the unit already names its
-            # subject-matter domain. Keeping it as a second domain incorrectly
-            # requires an unrelated generalist researcher to complement a
-            # subject specialist that already has audited research capability.
+            # subject-matter domain, regardless of whether the model repeats
+            # that method on the capability axis. Keeping it as a second domain
+            # incorrectly requires an unrelated generalist researcher.
             document["domains"] = [item for item in document["domains"] if item != "research"]
         outcome_tokens = _domain_tokens(str(document["outcome"]))
+        if (
+            document["artifact_kind"] == "analysis"
+            and document["domains"] == ["software-engineering"]
+            and "investigation" in document["required_capabilities"]
+            and not request_tokens
+            & {
+                "breach",
+                "containment",
+                "forensic",
+                "incident",
+                "malware",
+                "outage",
+                "ransomware",
+            }
+        ):
+            # Investigation is a distinct controlled capability for incidents
+            # and forensics. A routine software diagnosis is already covered by
+            # the analysis artifact and must not recruit an incident specialist
+            # merely because the planner chose a stronger method synonym.
+            document["required_capabilities"] = [
+                item for item in document["required_capabilities"] if item != "investigation"
+            ]
         if (
             document["artifact_kind"] == "implementation-change"
             and "software-engineering" in document["domains"]
@@ -739,7 +757,11 @@ def _bind_local_assurance(units: Sequence[WorkUnit]) -> list[WorkUnit]:
             "review-report",
             "test-evidence",
         }:
-            candidates = test_ids or implementation_ids
+            # Independent assurance covers every local mutable artifact. Tests
+            # are evidence, not a transitive promise that every separate
+            # implementation unit is among their ancestors; bind both sets so
+            # a cross-cutting implementation cannot escape downstream review.
+            candidates = tuple(dict.fromkeys((*test_ids, *implementation_ids)))
         for candidate in candidates:
             if (
                 candidate != unit.unit_id
