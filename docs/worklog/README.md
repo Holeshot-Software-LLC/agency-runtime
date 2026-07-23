@@ -161,6 +161,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `355c05a` | 2026-07-23 | docs(governance): bound autonomous context handoffs | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-355c05a-bounded-autonomous-context-handoffs.md) |
 | `1d3059d` | 2026-07-23 | docs(roadmap): record installed-release plan-shape variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-ar119-installed-release-plan-shape-variance.md) |
 | `a6007af` | 2026-07-23 | docs(roadmap): record installed-release instrumented recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-ar119-installed-release-instrumented-recovery.md) |
+| `b927266` | 2026-07-23 | fix(governance): enforce persistent goal context continuity | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-ar126-persistent-goal-context-continuity.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
