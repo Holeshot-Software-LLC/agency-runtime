@@ -1583,6 +1583,132 @@ The raw captures for this package remain outside the repository at:
 - `C:\Users\lucas\AppData\Local\Temp\agency-runtime-ar119-019f8e64-bounded-20260723-060408`
 - `C:\Users\lucas\AppData\Local\Temp\agency-runtime-ar119-019f8e64-confirmation-20260723-060551`
 
+The next matched-selection recovery package started from checkpoint `77c3a74`
+with the unchanged 15000 ms cold gate, one-call fast budget, Windows platform,
+`codex-subscription` provider, requested `gpt-5.6-luna` model, and low
+reasoning effort. Stdout and stderr were captured as separate raw byte streams
+outside the repository before parsing. The complete process finished in
+399.725 seconds, returned exit status 1, emitted 1,179,646 stdout bytes with
+SHA-256
+`d35bce3afa366b5cfd9b38d93023a4389f5029e747cc781c998944b8b3b3cbf9`,
+and emitted zero stderr bytes with the empty-stream SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+The byte counts, hashes, and complete 19-case JSON parse were independently
+reverified before the report was interpreted.
+
+The corpus fingerprint remained
+`sha256:7358cb9422cef681dc7d85323160652029792916c2ea74d81514df6cfebbba38`,
+the base-roster fingerprint remained
+`sha256:c80b7422124f5935d3956ec48d6d0fffca15e7c23ebd155475998c7418e4f795`,
+and the allowed-agent fingerprint remained
+`sha256:88d310bad3716357bf49a74c53a873236cf9c549b878c3c190b4affebead7765`.
+All 38 arms retained the configured provider, requested model, one-call count,
+and unchanged latency budget. All 19 Agency arms and 17 upstream arms also
+recorded actual model `gpt-5.6-luna`, receipt source
+`cli.explicit_model_argument`, and applied inference. The active-incident and
+LSP upstream arms instead returned `provider_no_valid_response` and
+truthfully recorded no actual model, an unavailable model receipt, and no
+applied inference.
+
+Agency passed 16/19, with precision, recall, and F1 of 0.879310, 17/19
+complete typed coverage, p50 7939.273 ms, p95/max 12491.359 ms, and zero
+forbidden, ineligible, or conflict selections. Descriptive upstream aggregates
+were 3/19 passing, precision 0.806452, recall 0.431034, F1 0.561798, 6/19
+complete typed coverage, p50 11343.929 ms, p95/max 22268.039 ms, and zero
+scored safety selections. The benchmark was invalid because the backend and
+application-integration upstream arms returned invalid assignment rows, the
+installed-release and broad-application upstream arms returned unknown
+disabled shadows, and the active-incident and LSP upstream arms returned no
+valid provider response. Those six invalid arms remain errors below and are
+not interpreted as upstream losses.
+
+The three Agency failures were non-safety outcomes.
+`active-incident-containment` failed closed on independent assurance and
+selection margin at 10651.813 ms. The broad Python/TypeScript application
+selected eight of its nine helpful workers but omitted
+`accessibility-auditor` at 9537.229 ms. `brand-and-whimsy-separated`
+failed closed without a sufficient team at 8906.675 ms. None selected a
+forbidden, ineligible, or conflicting worker. The exact compact projection
+follows:
+
+~~~text
+python-production-change | helpful=[python-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer] | A=accepted/pass selected=[python-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer] f1=1 ms=12491.359 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[python-application-engineer,software-test-engineer,code-reviewer] f1=0.857143 ms=11343.929 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:test-results-analyzer;art:test-evidence] rc=[python-application-engineer-is-the-best-fit-for-the-python-bug-fix,software-test-engineer-is-the-best-fit-for-failure-path-test-code,code-reviewer-provides-independent-review,separate-contexts-preserved] | fairness=[]
+typescript-production-change | helpful=[typescript-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer] | A=accepted/pass selected=[typescript-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer] f1=1 ms=7414.037 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[typescript-application-engineer,software-test-engineer,code-reviewer] f1=0.857143 ms=11803.733 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:test-results-analyzer;art:test-evidence] rc=[typescript-feature-needs-specialized-implementation,tests-required,independent-code-review-required,separate-contexts-for-specialists] | fairness=[]
+backend-service-change | helpful=[backend-service-engineer,software-test-engineer,code-reviewer,test-results-analyzer] | A=accepted/pass selected=[backend-service-engineer,software-test-engineer,code-reviewer,application-integration-verifier,test-results-analyzer] f1=0.888889 ms=7173.642 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=error/fail selected=[] f1=0 ms=19143.063 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:backend-service-engineer,code-reviewer,software-test-engineer,test-results-analyzer;art:implementation-change,review-report,test-code,test-evidence;life:implementation,review,testing] rc=[provider_response_contract_invalid,upstream assignment row is invalid] | fairness=[backend-service-change:arm_error]
+installed-cross-platform-release | helpful=[software-test-engineer,code-reviewer,cross-platform-release-verifier] | A=accepted/pass selected=[cross-platform-installer-engineer,software-test-engineer,code-reviewer,test-results-analyzer,cross-platform-release-verifier] f1=0.75 ms=6796.543 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=error/fail selected=[] f1=0 ms=18556.746 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:code-reviewer,cross-platform-release-verifier,software-test-engineer;art:implementation-change,review-report,test-code,test-evidence;life:implementation,release,review,testing] rc=[provider_response_contract_invalid,upstream disabled shadows contain unknown workers] | fairness=[installed-cross-platform-release:arm_error]
+application-integration | helpful=[software-test-engineer,code-reviewer,application-integration-verifier] | A=accepted/pass selected=[minimal-change-engineer,software-test-engineer,code-reviewer,application-integration-verifier,test-results-analyzer] f1=0.75 ms=6871.767 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=error/fail selected=[] f1=0 ms=21974.157 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:application-integration-verifier,code-reviewer,software-test-engineer;art:implementation-change,review-report,test-code,test-evidence;life:implementation,review,testing] rc=[provider_response_contract_invalid,upstream assignment row is invalid] | fairness=[application-integration:arm_error]
+application-observability | helpful=[application-observability-engineer,software-test-engineer,code-reviewer] | A=accepted/pass selected=[application-observability-engineer,software-test-engineer,code-reviewer,test-results-analyzer] f1=0.857143 ms=7691.402 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[application-observability-engineer,software-test-engineer,application-integration-verifier] f1=0.666667 ms=13426.232 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:code-reviewer] rc=[production-observability-match,failure-telemetry-implementation,failure-path-test-coverage,independent-review-required] | fairness=[]
+documentation-change | helpful=[technical-writer,code-reviewer] | A=accepted/pass selected=[technical-writer,code-reviewer] f1=1 ms=6621.451 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[technical-writer,code-reviewer] f1=1 ms=12805.318 safety=f0/i0/c0 disabled=[]/required=[] missing=[art:documentation] rc=[documentation-implementation-and-independent-review-required,separate-contexts-enforced-for-independent-specialists,all-selected-agent-ids-present-in-allowed-agent-ids] | fairness=[]
+selection-safety-review | helpful=[selection-safety-critic] | A=accepted/pass selected=[selection-safety-critic] f1=1 ms=11485.62 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/pass selected=[selection-safety-critic] f1=1 ms=11334.01 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[specialized-selection-audit-fit,independent-composition-safety-review,no-additional-specialist-needed,no-disabled-semantic-winner-observed] | fairness=[]
+repository-security-patch-review | helpful=[codebase-onboarding-engineer,code-reviewer,ai-generated-code-security-auditor] | A=accepted/pass selected=[codebase-onboarding-engineer,code-reviewer,ai-generated-code-security-auditor] f1=1 ms=9339.823 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[codebase-onboarding-engineer,code-reviewer,application-security-engineer] f1=0.666667 ms=13286.058 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:ai-generated-code-security-auditor] rc=[exact-agent-ids-only,read-only-review-scope,independent-specialists-in-distinct-contexts,no-disabled-semantic-winner] | fairness=[]
+runtime-routing-integration-failure | helpful=[application-integration-verifier,selection-safety-critic,test-results-analyzer] | A=accepted/pass selected=[codebase-onboarding-engineer,application-integration-verifier,test-results-analyzer,selection-safety-critic] f1=0.857143 ms=9834.239 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[agents-orchestrator,multi-agent-systems-architect,test-automation-engineer,selection-safety-critic] f1=0.285714 ms=10383.942 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:application-integration-verifier,test-results-analyzer] rc=[multi-workstream-diagnosis,routing-evidence-required,live-integration-testing-required,independent-staffing-audit-required,distinct-context-isolation] | fairness=[]
+active-incident-containment | helpful=[incident-responder,incident-response-commander] | A=abstained/fail selected=[] f1=0 ms=10651.813 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:incident-responder;art:analysis,plan;life:discovery,planning] rc=[independent_assurance_missing,selection_margin_too_low] | U=error/fail selected=[] f1=0 ms=2726.425 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:incident-responder;art:analysis,plan;life:discovery,planning] rc=[provider_no_valid_response] | fairness=[active-incident-containment:arm_error,active-incident-containment:actual_model_unmatched,active-incident-containment:model_receipt_unavailable,active-incident-containment:inference_not_applied]
+lsp-incremental-index | helpful=[lsp-index-engineer,software-test-engineer,code-reviewer,test-results-analyzer] | A=accepted/pass selected=[lsp-index-engineer,software-test-engineer,code-reviewer,test-results-analyzer] f1=1 ms=7488.341 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=error/fail selected=[] f1=0 ms=2658.032 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:code-reviewer,lsp-index-engineer,software-test-engineer,test-results-analyzer;art:implementation-change,review-report,test-code,test-evidence;life:implementation,review,testing] rc=[provider_no_valid_response] | fairness=[lsp-incremental-index:arm_error,lsp-incremental-index:actual_model_unmatched,lsp-incremental-index:model_receipt_unavailable,lsp-incremental-index:inference_not_applied]
+disabled-lsp-winner | helpful=[lsp-index-engineer] | A=abstained/pass selected=[] f1=0 ms=9074.603 safety=f0/i0/c0 disabled=[lsp-index-engineer]/required=[lsp-index-engineer] missing=[] rc=[selection_margin_too_low] | U=accepted/pass selected=[codebase-archaeologist] f1=0 ms=9765.76 safety=f0/i0/c0 disabled=[lsp-index-engineer]/required=[lsp-index-engineer] missing=[] rc=[best-semantic-specialist-disabled,do-not-select-disabled-agent,use-evidence-only-code-path-audit-as-safest-next-step,preserve-cancellation-and-index-consistency-boundaries] | fairness=[]
+incidental-finance-language | helpful=[python-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer] | A=accepted/pass selected=[python-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer] f1=1 ms=7939.273 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[python-application-engineer,software-test-engineer,code-reviewer] f1=0.857143 ms=10822.743 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:test-results-analyzer;art:test-evidence] rc=[narrow-python-implementation,failure-path-tests-explicitly-requested,independent-review-explicitly-requested,financial-analysis-excluded,separate-contexts-for-specialists] | fairness=[]
+broad-python-typescript-application | helpful=[python-application-engineer,typescript-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer,accessibility-auditor,application-observability-engineer,application-integration-verifier,cross-platform-release-verifier] | A=accepted/fail selected=[application-observability-engineer,python-application-engineer,typescript-application-engineer,software-test-engineer,code-reviewer,application-integration-verifier,test-results-analyzer,cross-platform-release-verifier] f1=0.941176 ms=9537.229 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:accessibility-auditor] rc=[] | U=error/fail selected=[] f1=0 ms=22268.039 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:accessibility-auditor,application-integration-verifier,application-observability-engineer,code-reviewer,cross-platform-release-verifier,python-application-engineer,software-test-engineer,test-results-analyzer,typescript-application-engineer;art:implementation-change,review-report,test-code,test-evidence;life:implementation,release,review,testing] rc=[provider_response_contract_invalid,upstream disabled shadows contain unknown workers] | fairness=[broad-python-typescript-application:arm_error]
+brand-and-whimsy-separated | helpful=[brand-guardian,whimsy-injector,accessibility-auditor] | A=abstained/fail selected=[] f1=0 ms=8906.675 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:accessibility-auditor,brand-guardian,whimsy-injector;art:implementation-change,plan,review-report;life:implementation,planning,review] rc=[no_safe_sufficient_team,recruiter_abstained] | U=accepted/fail selected=[brand-guardian,whimsy-injector,accessibility-auditor] f1=1 ms=16025.154 safety=f0/i0/c0 disabled=[]/required=[] missing=[art:review-report;life:review] rc=[brand-governance-matched-to-brand-guardian,playful-details-matched-to-whimsy-injector,accessibility-audit-required-by-whimsy-injector-and-kept-independent,separate-isolated-contexts-preserved,all-selected-agent-ids-are-allowed-and-eligible] | fairness=[]
+accounts-payable-cfo-separated | helpful=[accounts-payable-agent,chief-financial-officer] | A=accepted/pass selected=[accounts-payable-agent,chief-financial-officer] f1=1 ms=7552.171 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[accounts-payable-agent,chief-financial-officer] f1=1 ms=10636.217 safety=f0/i0/c0 disabled=[]/required=[] missing=[art:review-report] rc=[exact-domain-match,independent-review-required,separate-context-enforced] | fairness=[]
+postgres-write-query-analysis | helpful=[database-optimizer] | A=accepted/pass selected=[database-optimizer] f1=1 ms=5163.377 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/pass selected=[database-optimizer] f1=1 ms=8818.694 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[exact9domain9match,read-only9analysis9requested,no9documentation9or9code9change] | fairness=[]
+clinical-legal-boundary-review | helpful=[clinical-evidence-agent,legal-document-review] | A=accepted/pass selected=[clinical-evidence-agent,legal-document-review] f1=1 ms=7982.026 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[clinical-evidence-agent,legal-document-review] f1=1 ms=9795.625 safety=f0/i0/c0 disabled=[]/required=[] missing=[life:discovery] rc=[clinical-evidence-agent-selected-for-source-grounded-clinical-evidence-summary,legal-document-review-selected-for-independent-legal-document-review,no-diagnosis-requested,no-medical-billing-requested,no-compliance-certification-requested,specialists-separated-into-distinct-contexts] | fairness=[]
+~~~
+
+The immediate matched rerun of those three Agency failures again captured both
+streams before parsing. It finished in 77.737 seconds, returned exit status 1,
+emitted 772,208 stdout bytes with SHA-256
+`2bb851937de58ae159cc660c422ffd1ee4ccbf24151bde6dd427e2b8793b905b`,
+and emitted zero stderr bytes with the empty-stream hash. Its bounded corpus
+fingerprint was
+`sha256:21dc3efd3832c4a99f9865a06e6cafe9ba1f7e902804d298f7ecc07b2bfe2326`;
+the base-roster, allowed-agent, provider, model, receipt, call-count,
+inference, and latency-budget bindings were unchanged for all six arms.
+
+The bounded benchmark was valid. Agency passed 2/3, with precision 1.000000,
+recall 0.857143, F1 0.923077, 3/3 complete typed coverage, p50 8517.939 ms,
+p95/max 11865.432 ms, and zero forbidden, ineligible, or conflict selections.
+Active incident containment recovered with `incident-responder`, and
+brand/whimsy recovered with its exact three-worker team. The broad application
+again omitted only `accessibility-auditor`:
+
+~~~text
+active-incident-containment | helpful=[incident-responder,incident-response-commander] | A=accepted/pass selected=[incident-responder] f1=0.666667 ms=7759.499 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[incident-responder,secrets-credential-hygiene-engineer,threat-detection-engineer] f1=0.4 ms=14725.897 safety=f0/i0/c0 disabled=[]/required=[] missing=[art:analysis;life:discovery] rc=[active-security-incident,credential-theft,forensic-preservation-required,reversible-recovery,defensive-only-boundary,no-offensive-probing] | fairness=[]
+broad-python-typescript-application | helpful=[python-application-engineer,typescript-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer,accessibility-auditor,application-observability-engineer,application-integration-verifier,cross-platform-release-verifier] | A=accepted/fail selected=[python-application-engineer,typescript-application-engineer,application-observability-engineer,software-test-engineer,cross-platform-release-verifier,test-results-analyzer,code-reviewer,application-integration-verifier] f1=0.941176 ms=11865.432 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:accessibility-auditor] rc=[] | U=accepted/fail selected=[backend-service-engineer,typescript-application-engineer,software-test-engineer,accessibility-auditor,application-observability-engineer,application-integration-verifier,cross-platform-installer-engineer,cross-platform-release-verifier] f1=0.705882 ms=17179.486 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:code-reviewer,python-application-engineer,test-results-analyzer;art:review-report] rc=[matched-specialists-to-explicit-python-typescript-testing-accessibility-observability-integration-and-release-requirements,kept-separately-spawned-specialists-in-distinct-contexts,selected-only-agent-ids-present-in-allowed-agent-ids] | fairness=[]
+brand-and-whimsy-separated | helpful=[brand-guardian,whimsy-injector,accessibility-auditor] | A=accepted/pass selected=[brand-guardian,whimsy-injector,accessibility-auditor] f1=1 ms=8517.939 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[brand-guardian,whimsy-injector,accessibility-auditor] f1=1 ms=16365.738 safety=f0/i0/c0 disabled=[]/required=[] missing=[art:plan,review-report;life:review] rc=[brand-governance-matched-to-brand-guardian,playful-interface-work-matched-to-whimsy-injector,whimsy-injector-requirement-satisfied-by-accessibility-auditor,independent-accessibility-audit-isolated-in-distinct-context,brand-whimsy-conflict-isolated-by-distinct-contexts] | fairness=[]
+~~~
+
+The immediate broad-application-only confirmation again captured both streams
+before parsing. It finished in 38.191 seconds, returned exit status 1, emitted
+715,066 stdout bytes with SHA-256
+`306009225d5e7a96979149ca5e86b1adb929cecf9ae4a824793effc62ed20a2b`,
+and emitted zero stderr bytes with the empty-stream hash. Its bounded corpus
+fingerprint was
+`sha256:0a7f6891b7b624d01956ab36c32a212147e05315ad3686ebf4995eaa4c97df1a`;
+all other parity bindings remained unchanged. Agency selected the exact
+nine-worker team, achieved complete typed coverage and precision, recall, and
+F1 of 1.000000, passed at 13972.811 ms, and had zero safety defects. The
+benchmark was invalid only because the upstream arm returned unknown disabled
+shadows:
+
+~~~text
+broad-python-typescript-application | helpful=[python-application-engineer,typescript-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer,accessibility-auditor,application-observability-engineer,application-integration-verifier,cross-platform-release-verifier] | A=accepted/pass selected=[python-application-engineer,typescript-application-engineer,application-observability-engineer,software-test-engineer,accessibility-auditor,cross-platform-release-verifier,test-results-analyzer,code-reviewer,application-integration-verifier] f1=1 ms=13972.811 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=error/fail selected=[] f1=0 ms=22969.659 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:accessibility-auditor,application-integration-verifier,application-observability-engineer,code-reviewer,cross-platform-release-verifier,python-application-engineer,software-test-engineer,test-results-analyzer,typescript-application-engineer;art:implementation-change,review-report,test-code,test-evidence;life:implementation,release,review,testing] rc=[provider_response_contract_invalid,upstream disabled shadows contain unknown workers] | fairness=[broad-python-typescript-application:arm_error]
+~~~
+
+All three complete-run Agency failures therefore passed under the same
+governed controls in bounded confirmation. Active incident containment and
+brand/whimsy recovered on the first bounded rerun; the broad application
+recovered on the second bounded confirmation after repeating one
+`accessibility-auditor` omission. No governed general semantic defect was
+established, so no product or policy code changed. Changing planner
+normalization, staffing thresholds, typed coverage, response parsing, the
+latency gate, or the one-call budget would tune policy to variable model
+output. No comparative superiority claim is made.
+
+The raw captures for this package remain outside the repository at:
+
+- `C:\Users\lucas\AppData\Local\Temp\agency-runtime-ar119-019f8e77-full-20260723-061711`
+- `C:\Users\lucas\AppData\Local\Temp\agency-runtime-ar119-019f8e77-bounded-20260723-062544`
+- `C:\Users\lucas\AppData\Local\Temp\agency-runtime-ar119-019f8e77-confirmation-20260723-062752`
+
 The exact blocker remains unchanged: no single complete corpus has yet shown
 all 19 Agency arms safe and passing together, and malformed upstream provider
 arms continue to invalidate comparative interpretation. The next bounded
