@@ -8,15 +8,15 @@ tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/worklog/2026-07-23-ar119-prepare-confidence-abstention-capture.md
+  - docs/worklog/2026-07-23-3d0ee63-remove-live-context-admission-gate.md
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar-115-live-routing-trust
-evidence_commit: be1ec78c6ef7eff0feaf5ff859a489de5920091d
-minimum_ledger_commit: f789182f7e99b12aa09502d1de9e88d2fc23d556
+evidence_commit: 3d0ee636f8f7451ca0e88d354ae9c8fd6b5a4691
+minimum_ledger_commit: 27fcecc9bda22129949020bcbb69034620c3743c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -31,9 +31,9 @@ complete historical and acceptance contract.
 
 - Branch: codex/ar-115-live-routing-trust.
 - Substantive evidence commit:
-  be1ec78c6ef7eff0feaf5ff859a489de5920091d.
+  3d0ee636f8f7451ca0e88d354ae9c8fd6b5a4691.
 - Minimum ledger commit:
-  f789182f7e99b12aa09502d1de9e88d2fc23d556.
+  27fcecc9bda22129949020bcbb69034620c3743c.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
@@ -68,27 +68,35 @@ complete historical and acceptance contract.
   upstream loss.
 - No general defect was established and no product, policy, parser, worker-
   contract, coverage, latency, or call-budget rule changed.
-- The external two-case pass-through runner, raw-stream wrapper, and comparison
-  parser are prepared and mechanically validated. Their SHA-256 values are
-  `446baf301481de9ffc907e656b93af4dceea31c2d1fec625bfec2436974671c3`,
-  `de08aef192d322e2ee0558adefb4b4095298349c32251afb5f98b143eb6dbefa`,
-  and `3f8f6fea7d035dc0eac65fdaa9e2bb3bbdefd6c6967e06c10775ce444d1be0ee`.
-- Zero-call validation bound the two canonical cases to the generation-561
-  272-worker snapshot, 247-tool union, configured provider/model/effort, and
-  one-call budget. Focused matched-benchmark tests passed 7/7.
+- ADR-0086 removed the context admission threshold while retaining the
+  50-percent clean checkpoint. Its substantive/ledger pair is `3d0ee63` /
+  `27fcecc`; focused telemetry/schema tests passed 33/33 and docs validation
+  passed for 318 Markdown files.
+- From clean `27fcecc`, the instrumented two-case process returned status 0 in
+  57.628651 seconds. Its 723,247-byte stdout/report had SHA-256
+  `707f4a23fb46e3ea2d7ce85afb83dc0323e6cfcb9488e5aa32d6d3ad3ee5e320`;
+  stderr was empty. The 2,119-byte exact projection had SHA-256
+  `753f83abba79d4eb7e21babd956ff54e35d9fabe906aa62d4414d38ac15528f9`.
+- The benchmark was valid. Agency passed 2/2 with precision 0.923077, recall
+  1.0, F1 0.96, 2/2 typed coverage, p50 11767.710 ms, p95/max 13177.806
+  ms, and zero safety selections. Descriptive upstream passed 1/2 with
+  precision/recall/F1 0.75, 1/2 typed coverage, p50 16504.861 ms, p95/max
+  19676.308 ms, and zero safety selections.
+- Both complete Agency outcomes were captured before scoring. Application
+  observability accepted four units; the broad application accepted seven.
+  Every unit had confidence and margin 1.0, all bindings remained unchanged,
+  and no fairness violation occurred.
+- No product or selection-policy rule changed. This bounded recovery is not a
+  complete-corpus result and is not a superiority claim.
 
 ## Exact blocker
 
 - Complete Agency corpora have varied from 19/19 to 18/19 and multiple 17/19
-  observations. The newest failures are two different safe confidence
-  abstentions after the previously failing installed-release case recovered.
+  observations. The newest bounded confirmation recovered both prior
+  confidence abstentions, but a further complete corpus is still required.
 - No complete corpus has produced 19 benchmark-valid upstream arms. Malformed,
   no-response, or timed-out arms remain validity failures, never comparative
   losses.
-- The fully prepared instrumented two-case confirmation remains unstarted; no
-  provider call occurred during preparation. ADR-0086 removed the former
-  65-percent context admission rule, so context percentage is no longer an
-  execution blocker after a clean checkpoint.
 
 ## Same-task continuity
 
@@ -100,31 +108,21 @@ complete historical and acceptance contract.
 ## Next bounded work package
 
 Stay in matched selection; do not advance to contractor lifecycle. Run one
-instrumented matched confirmation of `application-observability` and
-`broad-python-typescript-application`. A pass-through `agency_router` must
-durably write both complete unchanged Agency outcomes outside the repository
-before returning them to the normal scorer. Capture both process streams before
+further unchanged complete 19-case Windows corpus from the new clean ledger
+checkpoint. Capture stdout and stderr durably outside the repository before
 parsing. Keep the audited snapshot, Windows/Codex context, full tool union,
 provider, requested and actual model, 15000 ms gate, and one-call fast budget
 unchanged.
 
-The validated package is staged outside the repository at
-`C:\tmp\agency-runtime-ar119-019f8ee1-observability-broad-instrumented-20260723-131013`.
-
-The equivalent unchanged CLI selection is:
-
 ~~~text
-.\.venv\Scripts\agency.exe eval upstream-selection --case application-observability --case broad-python-typescript-application --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
+.\.venv\Scripts\agency.exe eval upstream-selection --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
 ~~~
 
-Record the exact two-line projection, aggregate bindings, receipts, safety,
-disabled disclosures, and fairness validity. Compare each preserved plan,
-proposal score, confidence, margin, and rejection reason with prior accepted
-observations. If both Agency arms pass, make no product or policy change and
-retain a further complete corpus as the next matched gate. If either safely
-fails, change only genuinely general semantics proven by the complete outcome
-and repeatable evidence. One configured-model plan shape is not permission for
-a product or policy change.
+Record the exact 19-line projection, aggregate bindings, receipts, safety,
+disabled disclosures, and fairness validity. If Agency is not 19/19, use
+bounded unchanged confirmation before considering any general semantic change.
+If upstream has malformed, no-response, or timed-out arms, keep the complete
+comparison invalid and do not reinterpret them as losses.
 
 ## Verification
 

@@ -2533,17 +2533,79 @@ reading a clean-checkpoint signal only. The prepared package remains the next
 work item in this same task and may proceed after the governance change is
 committed with its ledger; no product or selection-policy behavior changed.
 
+### Bounded instrumented recovery after checkpoint-only telemetry
+
+ADR-0086 was committed as substantive `3d0ee63` with ledger `27fcecc`.
+Immediately preceding telemetry reported 47.9% and
+`ensure_clean_checkpoint_then_continue_same_task`; the repository was already
+clean at `27fcecc`, so the prepared live package continued without an empty
+commit or another task. The refreshed zero-call launch audit retained the exact
+two cases, clean branch and HEAD, prepared script hashes, generation-561
+272-worker roster, 247-tool union, codex-subscription, requested
+`gpt-5.6-luna`, low effort, and one configured fast call.
+
+The instrumented process completed with status 0 in 57.628651 seconds. Its
+723,247-byte stdout and byte-identical durable report had SHA-256
+`707f4a23fb46e3ea2d7ce85afb83dc0323e6cfcb9488e5aa32d6d3ad3ee5e320`;
+stderr was empty with SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+The exact 2,119-byte projection had SHA-256
+`753f83abba79d4eb7e21babd956ff54e35d9fabe906aa62d4414d38ac15528f9`.
+Independent file hashes matched the atomic manifest. Both complete Agency
+outcomes were written before scoring: application observability was 44,951
+bytes with SHA-256
+`0a866fa1de112dfc8151434d634ce201854cface8594e92c3efdacb38fb93db9`,
+and the broad application was 83,491 bytes with SHA-256
+`3faf2b6a48b15fd9a3dd1fe01ac399fb60818c45e1d696c4edc19331336bd149`.
+
+The matched two-case benchmark was valid and the report passed. All four arms
+retained codex-subscription, requested and actual `gpt-5.6-luna`, the
+`cli.explicit_model_argument` receipt, one call, applied inference, and the
+15000 ms budget. The fingerprints were corpus
+`sha256:7686bc7e6fdcd418fe112ac95fedaa859b5e72f99dfad8057164867e87af69a2`,
+base roster
+`sha256:c80b7422124f5935d3956ec48d6d0fffca15e7c23ebd155475998c7418e4f795`,
+and allowed agents
+`sha256:88d310bad3716357bf49a74c53a873236cf9c549b878c3c190b4affebead7765`.
+Agency passed 2/2 with precision 0.923077, recall 1.0, F1 0.96, complete
+typed coverage 2/2, p50 11767.710 ms, p95/max 13177.806 ms, and zero forbidden,
+ineligible, or conflict selections. Descriptive upstream passed 1/2 with
+precision, recall, and F1 0.75, typed coverage 1/2, p50 16504.861 ms, p95/max
+19676.308 ms, and zero safety selections. No fairness violation occurred.
+These bounded results are recovery evidence, not a superiority claim.
+
+Application observability accepted a four-unit plan selecting
+`application-observability-engineer`, `software-test-engineer`,
+`code-reviewer`, and `test-results-analyzer`; every proposal had confidence
+and margin 1.0. Its plan and proposal hash was
+`sha256:30f0bbe9560525b52daa05bd2b695c8850a2f034cdccbaa3c4c98be8c84df4f4`.
+The broad application accepted a seven-unit plan selecting the exact nine
+helpful specialists; every proposal also had confidence and margin 1.0. Its
+plan and proposal hash was
+`sha256:9feb5df9c009f7e8e24226297734ab3cc40c1b383cd53abdf57a3c2e14ff1dbc`.
+The accepted complete-corpus baseline preserved the same final selected sets
+but not complete planner units, so no stronger plan-shape comparison is
+available. No product or selection-policy change was made.
+
+```text
+application-observability | helpful=[application-observability-engineer,software-test-engineer,code-reviewer] | A=accepted/pass selected=[application-observability-engineer,software-test-engineer,code-reviewer,test-results-analyzer] f1=0.857143 ms=10357.614 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/pass selected=[application-observability-engineer,software-test-engineer,code-reviewer] f1=1 ms=13333.415 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[request-requires-production-observability-and-failure-telemetry,request-requires-executable-tests,request-requires-independent-review,selected-specialists-have-distinct-isolated-contexts,all-selected-agent-ids-are-present-in-allowed-agent-ids,no-disabled-semantic-winner-identified] | fairness=[]
+broad-python-typescript-application | helpful=[python-application-engineer,typescript-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer,accessibility-auditor,application-observability-engineer,application-integration-verifier,cross-platform-release-verifier] | A=accepted/pass selected=[application-observability-engineer,python-application-engineer,typescript-application-engineer,software-test-engineer,accessibility-auditor,cross-platform-release-verifier,test-results-analyzer,code-reviewer,application-integration-verifier] f1=1 ms=13177.806 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[backend-architect,python-application-engineer,frontend-developer,software-test-engineer,accessibility-auditor,application-observability-engineer,application-integration-verifier,cross-platform-installer-engineer,cross-platform-release-verifier] f1=0.666667 ms=19676.308 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:code-reviewer,test-results-analyzer,typescript-application-engineer;art:review-report;life:review] rc=[multi-stage-production-build,independent-specialist-contexts,failure-path-testing-required,accessibility-review-required,observability-required,independent-integration-verification-required,windows-linux-release-evidence-required] | fairness=[]
+```
+
+The raw and derived files remain outside the repository at
+`C:\tmp\agency-runtime-ar119-019f8ee1-observability-broad-instrumented-20260723-131013`.
+
 ### Still required before AR-119 can close
 
 - Complete a benchmark-valid run of the implemented matched held-out selection
   benchmark against the pinned source-visible upstream Agency Agents baseline.
   One complete corpus established all 19 Agency arms safe and passing together,
   but later complete corpora have varied, including 18/19 and multiple 17/19
-  observations. The newest 17/19 corpus safely abstained on application
-  observability and the broad application after the previously failing
-  installed-release case recovered. Obtain repeatable complete Agency selection
-  plus one complete corpus with valid comparable upstream arms, and retain every
-  malformed, no-response, or timed-out arm as a benchmark-validity failure.
+  observations. The newest bounded confirmation recovered both application
+  observability and the broad application, but it does not replace a complete
+  corpus. Obtain repeatable complete Agency selection plus one complete corpus
+  with valid comparable upstream arms, and retain every malformed, no-response,
+  or timed-out arm as a benchmark-validity failure.
   Dangerous, forbidden, incompatible, disabled, and weak incidental matches
   remain explicit regressions, not aggregate-score noise.
 - Complete the whole-roster multi-agent and conflict corpus, contractor
@@ -2558,30 +2620,26 @@ committed with its ledger; no product or selection-policy behavior changed.
 ### Next bounded work package
 
 Continue the matched selection package without advancing to contractor
-lifecycle work. Run one instrumented matched confirmation of
-`application-observability` and `broad-python-typescript-application`. Use a
-pass-through `agency_router` that durably writes each complete unchanged Agency
-`WorkforceInferenceOutcome` outside the repository before returning it to the
-normal scorer. Keep the audited snapshot, Windows/Codex context, full tool
-union, provider, requested and actual model, 15000 ms gate, and one-call fast
-budget unchanged.
+lifecycle work. Run one further unchanged complete 19-case Windows corpus from
+the new clean ledger checkpoint. Capture both process streams durably outside
+the repository before parsing. Keep the audited snapshot, Windows/Codex
+context, full tool union, provider, requested and actual model, 15000 ms gate,
+and one-call fast budget unchanged.
 
 ```text
-.\.venv\Scripts\agency.exe eval upstream-selection --case application-observability --case broad-python-typescript-application --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
+.\.venv\Scripts\agency.exe eval upstream-selection --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
 ```
 
-Capture both streams outside the repository before parsing and preserve the
-same receipt, parity, safety, disclosure, and malformed-arm discipline. Compare
-each preserved plan shape, deterministic proposal scores, confidence, margins,
-and rejection reasons with prior accepted observations. If both Agency arms
-pass, make no product or policy change; a further complete corpus remains the
-next matched gate. If either safely fails, change only genuinely general
-semantics supported by the complete outcome and repeatable evidence. Do not
-raise the 15000 ms gate, increase the one-call budget, weaken typed coverage,
-add a scenario route, or claim Agency is better. Run observational telemetry
-immediately before this live package; if it is at or below 50 percent, ensure
-the clean checkpoint and continue. Exact activation, blinded completed-outcome
-trials, and contractor lifecycle remain deferred.
+Retain the exact 19-line projection, aggregate bindings, receipts, safety
+counts, disabled disclosures, and benchmark-validity failures. If Agency is
+not 19/19, use bounded unchanged confirmation before considering any general
+semantic change. If upstream still has malformed, no-response, or timed-out
+arms, record the complete comparison as invalid and do not reinterpret those
+arms as losses. Do not raise the 15000 ms gate, increase the one-call budget,
+weaken typed coverage, add a scenario route, or claim Agency is better. Run
+observational telemetry immediately before the corpus; if it is at or below 50
+percent, ensure the clean checkpoint and continue. Exact activation, blinded
+completed-outcome trials, and contractor lifecycle remain deferred.
 
 ### Context checkpoint constraints
 
