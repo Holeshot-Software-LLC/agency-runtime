@@ -158,48 +158,52 @@ may remain.
 Do not alter faithful historical records merely to neutralize wording. Flag the
 historical reference alongside the record instead.
 
-## Context gates and clean checkpoints
+## Context telemetry and clean checkpoints
 
 Long-running work must not depend on one prompt retaining the entire execution
 history. Every long-running roadmap item uses one active recovery capsule under
 `docs/roadmap/handoffs/`. The capsule is a bounded current-state projection,
 not a second roadmap or append-only transcript. `scripts/verify_docs.py`
 enforces one active capsule per issue, required recovery sections, a maximum of
-12 KiB and 180 lines, and the fixed 50-percent hard checkpoint and 65-percent
-live-evaluation admission gates.
+12 KiB and 180 lines, and the fixed 50-percent clean-checkpoint threshold. The
+capsule schema rejects the removed live-evaluation admission field.
 
 On Codex, run telemetry after bounded bootstrap, immediately before every live
 evaluation, and at the end of every bounded package:
 
 ```bash
-python scripts/context_handoff_status.py --json --threshold 50 --admission-threshold 65
+python scripts/context_handoff_status.py --json --threshold 50
 ```
 
 The helper reads the newest cumulative token-count event. Normal Codex
 compaction may not reset that cumulative value, so never wait or emit an empty
 continuation hoping the percentage will rise.
 
-Apply the gates as follows:
+Apply the checkpoint as follows:
 
-- At or above 65 percent remaining, a new expensive live evaluation may start.
-- Below 65 percent, do not start any new expensive live evaluation. A
-  conditional rerun or complete corpus is a separate evaluation and requires a
-  fresh immediately-preceding telemetry check.
-- At or below 50 percent, first finish the smallest safe in-progress slice,
-  run proportionate checks, and create a clean durable substantive/ledger
-  checkpoint. Then continue in the same task. Because this is below the
-  65-percent gate, only non-live work may start until the current task again
-  has an admissible reading.
+- Above 50 percent remaining, continue normal bounded work.
+- At or below 50 percent, ensure the current substantive state is represented
+  by a clean durable substantive/ledger checkpoint. If work is in progress,
+  finish the smallest safe slice, run proportionate checks, update the
+  canonical issue and capsule, and commit the recovery pair. Then continue in
+  the same task, including live work.
+- A conditional rerun or complete corpus still requires a fresh
+  immediately-preceding telemetry check, but the percentage neither admits nor
+  blocks the evaluation. It only determines whether a clean checkpoint must
+  first be ensured.
 
 At each hard checkpoint, update the canonical roadmap and active capsule with
 exact evidence, unresolved gates, constraints, and one next bounded package,
-then create the local recovery and ledger commits. Continue the current task
-through normal Codex behavior, including compaction when it occurs.
+then create the local recovery and ledger commits. If the repository is already
+clean at such a checkpoint and has no substantive delta, reuse it rather than
+creating an empty commit pair. Continue the current task through normal Codex
+behavior, including compaction when it occurs.
 
-The thresholds never authorize or require creating, forking, dispatching, or
-waiting for another task. They also never require pausing or transferring a
-persistent goal, recording a task owner, acknowledging a receiver, or stopping
-for user action. Cross-task coordination is outside this context protocol.
+The threshold never authorizes or requires creating, forking, dispatching, or
+waiting for another task. It never blocks live work or requires pausing or
+transferring a persistent goal, recording a task owner, acknowledging a
+receiver, or stopping for user action. Cross-task coordination is outside this
+context protocol.
 A read-only preflight with no substantive delta never creates a telemetry note
 or empty recovery/ledger pair; it reuses the existing checkpoint.
 

@@ -44,8 +44,7 @@ def test_reads_newest_token_count_without_loading_older_records(tmp_path: Path) 
     assert status.remaining_tokens == 40
     assert status.remaining_percent == 40.0
     assert status.hard_checkpoint_required is True
-    assert status.live_evaluation_blocked is True
-    assert status.protocol_action == "checkpoint_then_continue_same_task"
+    assert status.protocol_action == "ensure_clean_checkpoint_then_continue_same_task"
 
 
 def test_finds_the_active_thread_record(tmp_path: Path) -> None:
@@ -84,8 +83,10 @@ def test_cli_reports_json_and_threshold(tmp_path: Path, capsys) -> None:
     payload = json.loads(capsys.readouterr().out)
     assert payload["remaining_percent"] == 51.0
     assert payload["hard_checkpoint_required"] is False
-    assert payload["live_evaluation_allowed"] is False
-    assert payload["protocol_action"] == "bounded_non_live_only"
+    assert payload["protocol_action"] == "continue_same_task"
+    assert "admission_threshold_percent" not in payload
+    assert "live_evaluation_allowed" not in payload
+    assert "live_evaluation_blocked" not in payload
 
 
 def test_cli_requires_a_thread_id(tmp_path: Path, capsys) -> None:
@@ -94,18 +95,16 @@ def test_cli_requires_a_thread_id(tmp_path: Path, capsys) -> None:
 
 
 @pytest.mark.parametrize(
-    ("used", "allowed", "hard_checkpoint", "action"),
+    ("used", "hard_checkpoint", "action"),
     [
-        (34, True, False, "live_evaluation_admitted"),
-        (35, True, False, "live_evaluation_admitted"),
-        (36, False, False, "bounded_non_live_only"),
-        (50, False, True, "checkpoint_then_continue_same_task"),
+        (49, False, "continue_same_task"),
+        (50, True, "ensure_clean_checkpoint_then_continue_same_task"),
+        (51, True, "ensure_clean_checkpoint_then_continue_same_task"),
     ],
 )
-def test_live_evaluation_admission_and_hard_checkpoint_boundaries(
+def test_hard_checkpoint_boundary_never_blocks_same_task_continuation(
     tmp_path: Path,
     used: int,
-    allowed: bool,
     hard_checkpoint: bool,
     action: str,
 ) -> None:
@@ -116,11 +115,8 @@ def test_live_evaluation_admission_and_hard_checkpoint_boundaries(
         path,
         thread_id="thread-123",
         threshold_percent=50,
-        admission_threshold_percent=65,
     )
 
-    assert status.live_evaluation_allowed is allowed
-    assert status.live_evaluation_blocked is (not allowed)
     assert status.hard_checkpoint_required is hard_checkpoint
     assert status.protocol_action == action
 
@@ -140,11 +136,11 @@ def test_newest_cumulative_event_never_requests_an_empty_reset_wait(tmp_path: Pa
     status = read_context_status(path, thread_id="thread-123", threshold_percent=50)
 
     assert status.timestamp == "newest-cumulative"
-    assert status.protocol_action == "checkpoint_then_continue_same_task"
+    assert status.protocol_action == "ensure_clean_checkpoint_then_continue_same_task"
     assert "wait" not in status.protocol_action
 
 
-def test_cli_rejects_admission_below_hard_checkpoint(tmp_path: Path, capsys) -> None:
+def test_cli_rejects_invalid_hard_checkpoint(tmp_path: Path, capsys) -> None:
     assert (
         main(
             [
@@ -153,11 +149,9 @@ def test_cli_rejects_admission_below_hard_checkpoint(tmp_path: Path, capsys) -> 
                 "--session-root",
                 str(tmp_path),
                 "--threshold",
-                "50",
-                "--admission-threshold",
-                "49",
+                "101",
             ]
         )
         == 2
     )
-    assert "must be at least --threshold" in capsys.readouterr().err
+    assert "--threshold must be between 0 and 100" in capsys.readouterr().err

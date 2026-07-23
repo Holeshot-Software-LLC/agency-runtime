@@ -12,6 +12,7 @@ related:
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md
   - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
+  - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
 supersedes: []
@@ -2494,12 +2495,14 @@ non-comparative because of the four upstream contract failures. The raw
 capture and derived projection remain outside the repository at
 `C:\tmp\agency-runtime-ar119-019f8ee1-full-20260723-123639`.
 
-Immediately after the corpus, telemetry reported 55.7% remaining. That is
-below the fixed 65% live-work admission gate, so this same task did not start
-the conditional instrumented rerun. It did not dispatch or wait for another
-task. The next admitted live package must preserve complete pre-projection
-Agency outcomes for the two confidence-abstention cases before deciding
-whether either observation is repeatable.
+Immediately after the corpus, telemetry reported 55.7% remaining. Under the
+then-current ADR-0085 65-percent live-work admission rule, this same task did
+not start the conditional instrumented rerun. It did not dispatch or wait for
+another task. ADR-0086 subsequently removed that admission rule because
+cumulative telemetry could block a cleanly checkpointed goal indefinitely. The
+next live package must preserve complete pre-projection Agency outcomes for the
+two confidence-abstention cases before deciding whether either observation is
+repeatable.
 
 At the next hard checkpoint, this same task completed the entire non-live
 preparation for that package without calling a provider. The prepared capture
@@ -2524,9 +2527,11 @@ and newest failed-corpus baseline
 `cd3b36733b56b4c631da9ffea259fa278c597438ecbe59e3275f3e1d25e687d0`;
 its 5,099-byte validation record has SHA-256
 `c271bcc662020a67617f437a0a0153582ad35acbd937c0d1bccb643845a0651e`.
-Focused matched-benchmark tests passed 7/7. Telemetry then reported 42.3%,
-so no live call started. The prepared package remains the next work item in
-this same task; no product or policy behavior changed.
+Focused matched-benchmark tests passed 7/7. Telemetry then reported 42.3%, so
+the then-current admission rule prevented a live call. ADR-0086 now makes that
+reading a clean-checkpoint signal only. The prepared package remains the next
+work item in this same task and may proceed after the governance change is
+committed with its ledger; no product or selection-policy behavior changed.
 
 ### Still required before AR-119 can close
 
@@ -2573,9 +2578,10 @@ pass, make no product or policy change; a further complete corpus remains the
 next matched gate. If either safely fails, change only genuinely general
 semantics supported by the complete outcome and repeatable evidence. Do not
 raise the 15000 ms gate, increase the one-call budget, weaken typed coverage,
-add a scenario route, or claim Agency is better. Check the 65% telemetry gate
-immediately before this live package. Exact activation, blinded completed-
-outcome trials, and contractor lifecycle remain deferred.
+add a scenario route, or claim Agency is better. Run observational telemetry
+immediately before this live package; if it is at or below 50 percent, ensure
+the clean checkpoint and continue. Exact activation, blinded completed-outcome
+trials, and contractor lifecycle remain deferred.
 
 ### Context checkpoint constraints
 
@@ -2585,8 +2591,9 @@ outcome trials, and contractor lifecycle remain deferred.
 - Do not push or trigger hosted GitHub Actions during intermediate packages;
   the user requested one consolidated hosted verification near the end.
 - After each bounded package, update this checkpoint, create local recovery and
-  ledger commits, and apply the same-task context gates in `AGENTS.md`. Never
-  create, fork, dispatch, or wait for another task because of telemetry.
+  ledger commits, and apply the same-task clean-checkpoint protocol in
+  `AGENTS.md`. Telemetry never blocks live work and never creates, forks,
+  dispatches, or waits for another task.
 
 ## Acceptance
 

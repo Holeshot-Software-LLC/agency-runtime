@@ -8,17 +8,16 @@ tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/worklog/2026-07-23-ar119-installed-release-instrumented-recovery.md
-  - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
+  - docs/worklog/2026-07-23-ar119-prepare-confidence-abstention-capture.md
+  - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar-115-live-routing-trust
-evidence_commit: 06d12cf64195e7825a95d03b42f0a9e45e8448fe
-minimum_ledger_commit: ca425b77de143d0d5251488f343d311665f9e108
+evidence_commit: be1ec78c6ef7eff0feaf5ff859a489de5920091d
+minimum_ledger_commit: f789182f7e99b12aa09502d1de9e88d2fc23d556
 hard_checkpoint_percent: 50
-live_evaluation_admission_percent: 65
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
 
@@ -32,9 +31,9 @@ complete historical and acceptance contract.
 
 - Branch: codex/ar-115-live-routing-trust.
 - Substantive evidence commit:
-  06d12cf64195e7825a95d03b42f0a9e45e8448fe.
+  be1ec78c6ef7eff0feaf5ff859a489de5920091d.
 - Minimum ledger commit:
-  ca425b77de143d0d5251488f343d311665f9e108.
+  f789182f7e99b12aa09502d1de9e88d2fc23d556.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
@@ -86,17 +85,17 @@ complete historical and acceptance contract.
 - No complete corpus has produced 19 benchmark-valid upstream arms. Malformed,
   no-response, or timed-out arms remain validity failures, never comparative
   losses.
-- Telemetry is 42.3%, below the fixed 65% live-work gate. The fully prepared
-  instrumented two-case confirmation therefore remains unstarted in this same
-  task; no provider call occurred during preparation.
+- The fully prepared instrumented two-case confirmation remains unstarted; no
+  provider call occurred during preparation. ADR-0086 removed the former
+  65-percent context admission rule, so context percentage is no longer an
+  execution blocker after a clean checkpoint.
 
 ## Same-task continuity
 
 - Context thresholds do not create, fork, dispatch, or wait for another task.
 - Continue this package in the current task through normal Codex compaction.
-- Below 65 percent remaining, no new expensive live evaluation may start. At
-  or below 50 percent, first preserve a clean durable checkpoint, then continue
-  in the same task.
+- At or below 50 percent, ensure a clean durable checkpoint, then continue in
+  the same task, including live evaluation.
 
 ## Next bounded work package
 
@@ -135,13 +134,14 @@ a product or policy change.
 .\.venv\Scripts\python.exe scripts\update_worklog.py --check
 .\.venv\Scripts\python.exe scripts\verify_docs.py
 git diff --check
-.\.venv\Scripts\python.exe scripts\context_handoff_status.py --json --threshold 50 --admission-threshold 65
+.\.venv\Scripts\python.exe scripts\context_handoff_status.py --json --threshold 50
 ~~~
 
 ## Constraints
 
 - Check telemetry immediately before every live evaluation, including a
-  conditional second run; require at least 65 percent remaining to admit it.
+  conditional second run; the reading only determines whether a clean
+  checkpoint must first be ensured.
 - At or below 50 percent, create a clean durable checkpoint and continue in the
   same task; do not dispatch a task or wait for telemetry to reset.
 - Preserve every accumulated AR-119 commit and the clean branch.

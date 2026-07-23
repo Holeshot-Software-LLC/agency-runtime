@@ -42,7 +42,6 @@ LEGAL_PROVENANCE_NAME_EXEMPTIONS = frozenset({"THIRD_PARTY_NOTICES.md"})
 HANDOFF_MAX_BYTES = 12 * 1024
 HANDOFF_MAX_LINES = 180
 HANDOFF_HARD_CHECKPOINT_PERCENT = 50
-HANDOFF_LIVE_EVALUATION_ADMISSION_PERCENT = 65
 HANDOFF_REQUIRED_HEADINGS = frozenset(
     {
         "checkpoint",
@@ -224,7 +223,6 @@ def _handoff_schema_errors(doc: Document) -> list[str]:
             "branch",
             "evidence_commit",
             "hard_checkpoint_percent",
-            "live_evaluation_admission_percent",
             "minimum_ledger_commit",
             "tracker_url",
         },
@@ -249,11 +247,10 @@ def _handoff_schema_errors(doc: Document) -> list[str]:
         errors.append(
             f"{doc.relative}: hard_checkpoint_percent must be {HANDOFF_HARD_CHECKPOINT_PERCENT}"
         )
-    admission = meta.get("live_evaluation_admission_percent")
-    if isinstance(admission, bool) or admission != HANDOFF_LIVE_EVALUATION_ADMISSION_PERCENT:
+    if "live_evaluation_admission_percent" in meta:
         errors.append(
-            f"{doc.relative}: live_evaluation_admission_percent must be "
-            f"{HANDOFF_LIVE_EVALUATION_ADMISSION_PERCENT}"
+            f"{doc.relative}: live_evaluation_admission_percent was removed; "
+            "only hard_checkpoint_percent is allowed"
         )
     return errors
 

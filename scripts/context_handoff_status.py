@@ -4,9 +4,9 @@
 Codex Desktop exposes context usage in its UI but does not inject that number
 into the model-visible prompt. The local JSONL session record contains the same
 token-count event. This helper reads only the active thread's newest cumulative
-event and reports both the hard checkpoint reserve and the higher admission
-gate for expensive live evaluations. A low cumulative reading never instructs
-the caller to wait for a reset, stop, or create another task.
+event and reports whether the fixed clean-checkpoint reserve has been reached.
+A low cumulative reading never blocks live work or instructs the caller to wait
+for a reset, stop, or create another task.
 """
 
 from __future__ import annotations
@@ -31,10 +31,7 @@ class ContextStatus:
     remaining_percent: float
     threshold_percent: float
     hard_checkpoint_percent: float
-    admission_threshold_percent: float
     hard_checkpoint_required: bool
-    live_evaluation_allowed: bool
-    live_evaluation_blocked: bool
     protocol_action: str
 
 
@@ -73,7 +70,6 @@ def read_context_status(
     *,
     thread_id: str,
     threshold_percent: float,
-    admission_threshold_percent: float = 65.0,
 ) -> ContextStatus:
     for line in _reverse_lines(path):
         try:
@@ -96,13 +92,10 @@ def read_context_status(
         remaining_tokens = max(context_window - used_tokens, 0)
         remaining_percent = round(remaining_tokens / context_window * 100, 1)
         hard_checkpoint_required = remaining_percent <= threshold_percent
-        live_evaluation_allowed = remaining_percent >= admission_threshold_percent
         if hard_checkpoint_required:
-            protocol_action = "checkpoint_then_continue_same_task"
-        elif live_evaluation_allowed:
-            protocol_action = "live_evaluation_admitted"
+            protocol_action = "ensure_clean_checkpoint_then_continue_same_task"
         else:
-            protocol_action = "bounded_non_live_only"
+            protocol_action = "continue_same_task"
         return ContextStatus(
             thread_id=thread_id,
             session_file=str(path),
@@ -113,10 +106,7 @@ def read_context_status(
             remaining_percent=remaining_percent,
             threshold_percent=threshold_percent,
             hard_checkpoint_percent=threshold_percent,
-            admission_threshold_percent=admission_threshold_percent,
             hard_checkpoint_required=hard_checkpoint_required,
-            live_evaluation_allowed=live_evaluation_allowed,
-            live_evaluation_blocked=not live_evaluation_allowed,
             protocol_action=protocol_action,
         )
     raise RuntimeError(f"no valid token_count event found in {path}")
@@ -143,12 +133,6 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         default=50.0,
         help="Require a clean hard checkpoint at or below this percentage.",
     )
-    parser.add_argument(
-        "--admission-threshold",
-        type=float,
-        default=65.0,
-        help="Allow a new expensive live evaluation at or above this percentage.",
-    )
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
     return parser.parse_args(argv)
 
@@ -161,19 +145,12 @@ def main(argv: list[str] | None = None) -> int:
     if not 0 <= args.threshold <= 100:
         print("--threshold must be between 0 and 100", file=sys.stderr)
         return 2
-    if not 0 <= args.admission_threshold <= 100:
-        print("--admission-threshold must be between 0 and 100", file=sys.stderr)
-        return 2
-    if args.admission_threshold < args.threshold:
-        print("--admission-threshold must be at least --threshold", file=sys.stderr)
-        return 2
     try:
         session_file = find_session_file(args.session_root, args.thread_id)
         status = read_context_status(
             session_file,
             thread_id=args.thread_id,
             threshold_percent=args.threshold,
-            admission_threshold_percent=args.admission_threshold,
         )
     except (FileNotFoundError, OSError, RuntimeError, UnicodeError) as error:
         print(str(error), file=sys.stderr)

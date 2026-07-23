@@ -79,7 +79,6 @@ def _errors(doc: verify_docs.Document) -> list[str]:
             branch="codex/ar-119",
             evidence_commit="a" * 40,
             hard_checkpoint_percent=50,
-            live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,
             tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
         ),
@@ -170,7 +169,7 @@ def test_handoff_schema_reports_invalid_checkpoint_fields() -> None:
         f"{doc.relative}: minimum_ledger_commit must be a full lowercase Git SHA",
         f"{doc.relative}: tracker_url must be a string or null",
         f"{doc.relative}: hard_checkpoint_percent must be 50",
-        f"{doc.relative}: live_evaluation_admission_percent must be 65",
+        f"{doc.relative}: live_evaluation_admission_percent was removed; only hard_checkpoint_percent is allowed",
     ]
 
 
@@ -332,7 +331,6 @@ def test_handoff_validation_accepts_one_bounded_capsule_per_issue(
             branch="codex/ar-119",
             evidence_commit="a" * 40,
             hard_checkpoint_percent=50,
-            live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,
             tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
             related=[issue.relative],
@@ -378,7 +376,6 @@ def test_handoff_validation_rejects_duplicate_capsules_and_missing_sections(
                     branch="codex/ar-119",
                     evidence_commit="a" * 40,
                     hard_checkpoint_percent=50,
-                    live_evaluation_admission_percent=65,
                     minimum_ledger_commit="b" * 40,
                     tracker_url=None,
                     related=[issue.relative],
@@ -428,7 +425,6 @@ def test_handoff_validation_rejects_size_line_and_tracker_drift(
             branch="codex/ar-119",
             evidence_commit="a" * 40,
             hard_checkpoint_percent=50,
-            live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,
             tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132",
             related=[issue.relative],

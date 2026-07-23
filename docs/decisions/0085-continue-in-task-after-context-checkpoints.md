@@ -1,6 +1,6 @@
 ---
 title: "Continue in the current task after context checkpoints"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-23
 updated: 2026-07-23
@@ -17,7 +17,7 @@ related:
   - docs/roadmap/handoffs/issue-AR-119.md
 supersedes:
   - docs/decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md
-superseded_by: null
+superseded_by: docs/decisions/0086-use-checkpoint-only-context-telemetry.md
 id: ADR-0085
 type: decision
 deciders: [maintainers]

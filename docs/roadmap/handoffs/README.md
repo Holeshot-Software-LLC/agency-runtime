@@ -10,7 +10,7 @@ related:
   - scripts/context_handoff_status.py
   - scripts/verify_docs.py
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
-  - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
+  - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
 supersedes: []
 superseded_by: null
 ---
@@ -30,8 +30,7 @@ docs/roadmap/handoffs/issue-AR-NN-description.md and use type: handoff.
 Each capsule carries:
 
 - the stable internal issue_id;
-- the fixed 50 percent hard-checkpoint threshold and 65 percent live-evaluation
-  admission threshold;
+- the fixed 50 percent clean-checkpoint threshold;
 - the expected branch;
 - the substantive evidence commit and minimum ledger commit already contained
   by the branch;
@@ -46,29 +45,30 @@ package advances; it is never an append-only task transcript.
 The command python scripts/verify_docs.py rejects a capsule over 12 KiB or 180
 lines, duplicate active capsules, missing recovery sections, malformed
 checkpoint metadata, threshold drift, tracker drift, and a missing canonical
-issue link.
+issue link. It also rejects the removed live-admission field.
 
 ## Telemetry and same-task continuity
 
 Run:
 
 ~~~text
-python scripts/context_handoff_status.py --json --threshold 50 --admission-threshold 65
+python scripts/context_handoff_status.py --json --threshold 50
 ~~~
 
 after bootstrap, immediately before every live evaluation, and at package
-closeout. A conditional rerun or full-corpus run is a separate admission
-decision and requires another immediately preceding check. Below 65 percent,
-do not start an expensive live evaluation. At or below 50 percent, first make
-the smallest safe in-progress slice a clean durable checkpoint, then continue
-in the same task. The 65-percent admission gate already prevents new live
-evaluation below that point.
+closeout. A conditional rerun or full-corpus run requires another immediately
+preceding check. At or below 50 percent, ensure the smallest safe in-progress
+slice is represented by a clean durable checkpoint, then continue in the same
+task, including live work. The percentage is observational for live evaluation;
+it neither admits nor blocks the run.
 
 Telemetry is cumulative and normal Codex compaction does not promise a reset.
 Never busy-loop, emit empty continuation turns, or wait for the percentage to
-rise. A threshold crossing never creates, forks, dispatches, pauses for, or
-transfers work to another task. After the clean checkpoint, continue with
-normal same-task behavior.
+rise. Reuse an existing clean recovery checkpoint when there is no substantive
+delta rather than creating an empty commit pair. A threshold crossing never
+creates, forks, dispatches, pauses for, blocks live work, or transfers work to
+another task. After the clean checkpoint, continue with normal same-task
+behavior.
 
 ## Active capsules
 
