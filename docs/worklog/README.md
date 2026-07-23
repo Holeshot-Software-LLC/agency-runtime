@@ -153,6 +153,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `71f7775` | 2026-07-23 | docs(roadmap): record matched selection recovery evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | null |
 | `4687a7b` | 2026-07-23 | docs(roadmap): record matched selection recovery evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | null |
 | `47ff115` | 2026-07-23 | docs(roadmap): record broad selection recovery evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-47ff115-broad-selection-recovery-evidence.md) |
+| `8a0e75d` | 2026-07-23 | docs(roadmap): record matched selection confidence recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-8a0e75d-matched-selection-confidence-recovery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
