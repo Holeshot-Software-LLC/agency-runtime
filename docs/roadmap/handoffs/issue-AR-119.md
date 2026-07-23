@@ -8,15 +8,15 @@ tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/worklog/2026-07-23-8918040-matched-latency-recovery.md
+  - docs/worklog/2026-07-23-6049510-four-case-selection-variance.md
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar-115-live-routing-trust
-evidence_commit: 89180406a56b575c969b0dccbe60ae85f4dcc10e
-minimum_ledger_commit: bb876f8390ffabbb0f24db911e5f5719cf919980
+evidence_commit: 6049510e218e225bfb800846392ba14f694ebf0c
+minimum_ledger_commit: 7b91cf89b3d90a6c3293e342dd019701dbcddb58
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -31,9 +31,9 @@ complete historical and acceptance contract.
 
 - Branch: codex/ar-115-live-routing-trust.
 - Substantive evidence commit:
-  89180406a56b575c969b0dccbe60ae85f4dcc10e.
+  6049510e218e225bfb800846392ba14f694ebf0c.
 - Minimum ledger commit:
-  bb876f8390ffabbb0f24db911e5f5719cf919980.
+  7b91cf89b3d90a6c3293e342dd019701dbcddb58.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
@@ -43,8 +43,8 @@ complete historical and acceptance contract.
 ## Completed evidence
 
 - ADR-0086 removed the context admission threshold while retaining the
-  50-percent clean checkpoint. The latest committed recovery is `8918040` /
-  `bb876f8`; telemetry never admits or blocks live work.
+  50-percent clean checkpoint. The latest committed recovery is `6049510` /
+  `7b91cf8`; telemetry never admits or blocks live work.
 - That committed package preserved a 17/19 complete corpus with two latency-
   only misses followed by a valid 2/2 instrumented recovery. No product or
   policy rule changed.
@@ -65,13 +65,22 @@ complete historical and acceptance contract.
   F1 0.639175, 5/19 typed coverage, p50 14325.921 ms, and p95/max
   26469.788 ms. Two unknown-shadow and two invalid-assignment arms made the
   benchmark invalid; none is an upstream loss.
+- The zero-call-validated four-case instrumented confirmation returned status
+  1 in 109.988309 seconds only because two upstream arms were malformed. Its
+  768,427-byte stdout/report had SHA-256
+  `2bc25b57ea7b5d86b36d8ef38bba1c2d6d510a88358b62a28814ed892181ac93`;
+  the 3,350-byte projection had SHA-256
+  `fb72cf528a86e079cee3b46e8cb60debaf803fa740826b845f006d6b2e239a50`.
+- Agency passed 4/4 with complete typed coverage and disabled disclosure,
+  p95/max 14074.396 ms, and zero unsafe selections. Every complete outcome was
+  preserved before scoring. No product or policy rule changed.
 
 ## Exact blocker
 
 - Complete Agency corpora have varied from 19/19 to 18/19 and multiple 17/19
   observations. The newest corpus scored 15/19 on four distinct non-safety
-  gates. Exact bounded confirmation is required before any defect claim or
-  governed semantic change.
+  gates, and all four immediately passed their unchanged instrumented
+  confirmation. This is variance, not a proven governed defect.
 - No complete corpus has produced 19 benchmark-valid upstream arms. Malformed,
   no-response, or timed-out arms remain validity failures, never comparative
   losses.
@@ -86,21 +95,19 @@ complete historical and acceptance contract.
 ## Next bounded work package
 
 Stay in matched selection; do not advance to contractor lifecycle. Run one
-zero-call-validated instrumented matched confirmation for exactly these cases:
+further unchanged complete 19-case Windows corpus from the new clean ledger
+checkpoint. Capture both streams outside the repository before parsing. Keep
+the roster, tools, provider, requested and actual model, low effort, one-call
+budget, and 15000 ms gate unchanged.
 
 ~~~text
-installed-cross-platform-release
-runtime-routing-integration-failure
-disabled-lsp-winner
-broad-python-typescript-application
+.\.venv\Scripts\agency.exe eval upstream-selection --all --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
 ~~~
 
-Write every complete Agency outcome before projection and capture both streams
-outside the repository. Keep the roster, tools, provider, model, low effort,
-one-call budget, and 15000 ms gate unchanged. If all four pass, make no product
-change. If a failure repeats, compare complete plan shapes and change only a
-genuinely general governed defect. Keep malformed upstream arms invalid, never
-losses.
+Retain the exact 19-line projection and every binding, receipt, safety,
+coverage, disabled-disclosure, and benchmark-validity result. If Agency is not
+19/19, confirm failures unchanged before any general semantic change. Keep
+malformed upstream arms invalid, never losses.
 
 ## Verification
 

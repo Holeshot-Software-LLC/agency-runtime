@@ -2897,6 +2897,77 @@ clinical-legal-boundary-review | helpful=[clinical-evidence-agent,legal-document
 The raw and derived files remain outside the repository at
 `C:\tmp\agency-runtime-ar119-019f8ee1-full-20260723-145700`.
 
+### Instrumented recovery of the four varied misses
+
+The complete corpus was committed as substantive `6049510` with ledger
+`7b91cf8`. From that clean checkpoint, a zero-provider-call validation bound
+exactly installed release, runtime routing, disabled LSP, and broad application
+to the unchanged generation 561 roster, 247-tool context, provider, model, low
+effort, one-call budget, and 15000 ms gate. The parser validated those cases
+against the preserved 19/19 Agency corpus and the newest four-failure corpus
+before launch. The pass-through router durably captured every complete Agency
+outcome before scoring.
+
+The process returned status 1 in 109.988309 seconds because the benchmark was
+invalid. Its byte-identical 768,427-byte stdout/report had SHA-256
+`2bc25b57ea7b5d86b36d8ef38bba1c2d6d510a88358b62a28814ed892181ac93`;
+stderr was empty. The 3,350-byte exact projection had SHA-256
+`fb72cf528a86e079cee3b46e8cb60debaf803fa740826b845f006d6b2e239a50`,
+and the 249,364-byte plan-shape analysis had SHA-256
+`fcf4c426211e497891e2058c39cceb4bdaa086166f1225d4699723f42f6427d9a2`.
+
+Agency passed 4/4 with precision 0.833333, recall 0.937500, F1 0.882353, 4/4
+complete typed coverage, complete required disabled disclosure, p50 8848.103
+ms, p95/max 14074.396 ms, and zero forbidden, ineligible, conflict, or unsafe
+selections. Installed release accepted the complete five-agent team at
+6962.794 ms; runtime routing accepted its complete four-agent team at
+9656.861 ms; disabled LSP safely abstained with the required disabled-winner
+disclosure at 8039.345 ms; and broad application accepted the complete
+nine-agent team at 14074.396 ms.
+
+Descriptive upstream passed 1/4 with precision 0.166667, recall 0.062500, F1
+0.090909, 2/4 typed coverage, complete required disabled disclosure, p50
+17544.041 ms, p95/max 24837.778 ms, and zero safety selections. Installed
+release returned unknown disabled shadows and broad application returned an
+invalid assignment row. Those two errors make the bounded benchmark invalid;
+they are not losses or comparative evidence.
+
+```text
+installed-cross-platform-release | helpful=[software-test-engineer,code-reviewer,cross-platform-release-verifier] | A=accepted/pass selected=[cross-platform-installer-engineer,software-test-engineer,code-reviewer,test-results-analyzer,cross-platform-release-verifier] f1=0.75 ms=6962.794 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=error/fail selected=[] f1=0 ms=17323.525 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:code-reviewer,cross-platform-release-verifier,software-test-engineer;art:implementation-change,review-report,test-code,test-evidence;life:implementation,release,review,testing] rc=[provider_response_contract_invalid,upstream disabled shadows contain unknown workers] | fairness=[installed-cross-platform-release:arm_error]
+runtime-routing-integration-failure | helpful=[application-integration-verifier,selection-safety-critic,test-results-analyzer] | A=accepted/pass selected=[codebase-onboarding-engineer,application-integration-verifier,test-results-analyzer,selection-safety-critic] f1=0.857143 ms=9656.861 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=accepted/fail selected=[agents-orchestrator,multi-agent-systems-architect,codebase-archaeologist,test-automation-engineer,selection-safety-critic] f1=0.25 ms=17764.556 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:application-integration-verifier,test-results-analyzer] rc=[resident-coordination-required,routing-and-delegation-architecture-match,repository-drift-audit-match,local-integration-testing-match,independent-staffing-audit-match] | fairness=[]
+disabled-lsp-winner | helpful=[lsp-index-engineer] | A=abstained/pass selected=[] f1=0 ms=8039.345 safety=f0/i0/c0 disabled=[lsp-index-engineer]/required=[lsp-index-engineer] missing=[] rc=[no_safe_sufficient_team,recruiter_abstained,selection_margin_too_low] | U=accepted/pass selected=[codebase-archaeologist] f1=0 ms=10150.842 safety=f0/i0/c0 disabled=[lsp-index-engineer]/required=[lsp-index-engineer] missing=[] rc=[best-semantic-specialist-disabled,safe-neighbor-selected-for-read-only-diagnosis,preserve-evidence-before-implementation] | fairness=[]
+broad-python-typescript-application | helpful=[python-application-engineer,typescript-application-engineer,software-test-engineer,code-reviewer,test-results-analyzer,accessibility-auditor,application-observability-engineer,application-integration-verifier,cross-platform-release-verifier] | A=accepted/pass selected=[python-application-engineer,typescript-application-engineer,application-observability-engineer,software-test-engineer,accessibility-auditor,code-reviewer,application-integration-verifier,test-results-analyzer,cross-platform-release-verifier] f1=1 ms=14074.396 safety=f0/i0/c0 disabled=[]/required=[] missing=[] rc=[] | U=error/fail selected=[] f1=0 ms=24837.778 safety=f0/i0/c0 disabled=[]/required=[] missing=[req:accessibility-auditor,application-integration-verifier,application-observability-engineer,code-reviewer,cross-platform-release-verifier,python-application-engineer,software-test-engineer,test-results-analyzer,typescript-application-engineer;art:implementation-change,review-report,test-code,test-evidence;life:implementation,release,review,testing] rc=[provider_response_contract_invalid,upstream assignment row is invalid] | fairness=[broad-python-typescript-application:arm_error]
+```
+
+The complete outcome hashes were:
+
+- installed release: 56,613 bytes, SHA-256
+  `b77c669e4776c3f332ffb0560510bd8ca57f0d4c07e97ca56eb69a80a93d44a6`,
+  plan/proposal hash
+  `sha256:05d22b3895ae1be53cc4b347dc2e6686f2ed8cda8c04cc8ad3a180726a84f781`;
+- runtime routing: 35,368 bytes, SHA-256
+  `3e8502cc9f4b9c3975370485ce6f461948b0f049632492e090fdd153c3231957`,
+  plan/proposal hash
+  `sha256:599ea558f8c0b6194bc3ca1378708b59b85ea9591a0f425fe11266f69e751e5d`;
+- disabled LSP: 24,461 bytes, SHA-256
+  `a72767fa6ece8df023155a84b2bedc36bc05adad5369155db6933140c7766422`,
+  plan/proposal hash
+  `sha256:bb8d36765397153e88274cc2ae4c2ebd85ac84f73d0a1eb2023ffcaa0dfcfe72`;
+- broad application: 93,808 bytes, SHA-256
+  `e609d1f39ef61f0455f96d0c938948b8520f31d09372f9b0d6288f18ea0eb326`,
+  plan/proposal hash
+  `sha256:c70a02ebb8f8df445988226ed0f71825b95fc07eb2f5db3b6f1dbafd719acdbe`.
+
+The three accepted outcomes used complete governed teams; every accepted unit
+had confidence and margin 1.0. The disabled case used a two-unit plan, exposed
+`lsp-index-engineer` as the disabled semantic winner in both units, and safely
+abstained when its second unit had no safe deterministic team. All four latest
+complete-corpus failures therefore recovered under identical bounds. This is
+variance, not a repeatable governed defect. No product, policy, parser,
+coverage, latency, or call-budget rule changed, and no superiority claim is
+made. The raw and derived files remain outside the repository at
+`C:\tmp\agency-runtime-ar119-019f8ee1-four-failures-instrumented-20260723-151600`.
+
 ### Still required before AR-119 can close
 
 - Complete a benchmark-valid run of the implemented matched held-out selection
@@ -2906,8 +2977,8 @@ The raw and derived files remain outside the repository at
   observations. The newest complete corpus scored 15/19: installed release and
   runtime routing safely abstained, the disabled LSP winner safely abstained
   without its required disclosure, and the correct broad team exceeded the
-  fixed latency gate. Confirm those four cases unchanged before treating any
-  outcome as a repeatable defect. Obtain repeatable complete Agency selection
+  fixed latency gate. All four passed their unchanged instrumented confirmation
+  with complete preserved outcomes. Obtain repeatable complete Agency selection
   within the unchanged coverage and latency gates plus one complete corpus with
   valid comparable upstream arms, and retain every malformed, no-response, or
   timed-out arm as a benchmark-validity failure.
@@ -2925,31 +2996,24 @@ The raw and derived files remain outside the repository at
 ### Next bounded work package
 
 Continue the matched selection package without advancing to contractor
-lifecycle work. Run one zero-provider-call-validated instrumented matched
-confirmation for exactly these complete-corpus failures:
+lifecycle work. Run one further unchanged complete 19-case Windows corpus from
+the new clean ledger checkpoint. Capture both streams durably outside the
+repository before parsing. Keep the audited snapshot, Windows/Codex context,
+full tool union, provider, requested and actual model, 15000 ms gate, and
+one-call fast budget unchanged.
 
 ```text
-installed-cross-platform-release
-runtime-routing-integration-failure
-disabled-lsp-winner
-broad-python-typescript-application
+.\.venv\Scripts\agency.exe eval upstream-selection --all --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
 ```
 
-Use the same pass-through router as the prior instrumented packages and write
-each complete unchanged Agency outcome before benchmark projection. Capture
-both process streams durably outside the repository. Keep the audited snapshot,
-Windows/Codex context, full tool union, provider, requested and actual model,
-15000 ms gate, and one-call fast budget unchanged.
-
-If all four Agency arms pass, make no product or policy change and run one
-further unchanged complete corpus after checkpointing the recovery. If a
-failure repeats, compare the complete plan/proposal with accepted observations
-and change only genuinely general governed semantics. Keep malformed upstream
-arms invalid, never losses. Do not raise the gate, add a call, weaken typed
-coverage, add a scenario route, or claim Agency is better. Run observational
-telemetry immediately before the package; at or below 50 percent, ensure the
-clean checkpoint and continue. Exact activation, blinded completed-outcome
-trials, and contractor lifecycle remain deferred.
+Retain the exact 19-line projection, aggregate bindings, receipts, safety,
+disabled disclosures, and benchmark-validity failures. If Agency is not 19/19,
+use bounded unchanged confirmation before considering any general semantic
+change. Keep malformed upstream arms invalid, never losses. Do not raise the
+gate, add a call, weaken typed coverage, add a scenario route, or claim Agency
+is better. Run observational telemetry immediately before the package; at or
+below 50 percent, ensure the clean checkpoint and continue. Exact activation,
+blinded completed-outcome trials, and contractor lifecycle remain deferred.
 
 ### Context checkpoint constraints
 
