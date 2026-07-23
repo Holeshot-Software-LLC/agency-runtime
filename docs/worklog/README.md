@@ -139,6 +139,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ca893fe` | 2026-07-22 | feat(eval): add matched upstream selection benchmark | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-22-ca893fe-matched-upstream-selection-benchmark.md) |
 | `9d415bb` | 2026-07-23 | feat(workforce): harden matched selection semantics | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-9d415bb-matched-selection-hardening.md) |
 | `86fba47` | 2026-07-23 | fix(workforce): harden matched corpus normalization | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-86fba47-matched-corpus-normalization.md) |
+| `8af4cf0` | 2026-07-23 | docs(roadmap): record matched corpus variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-8af4cf0-matched-corpus-variance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
