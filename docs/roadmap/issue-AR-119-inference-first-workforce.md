@@ -130,37 +130,68 @@ routing and provider choice, and AR-118 reconciles activation evidence.
   model outcomes may contain 512 characters, while locally derived acceptance
   evidence is bounded to 128. Evidence is now artifact-specific and bounded
   without using scenario-specific exceptions.
+- The measured incident gap is reconciled through governed roster and planning
+  semantics rather than a scenario route. Audited incident-response contracts
+  now cover their actual planning, operations, investigation, and risk-analysis
+  responsibilities; read-only plans and reviews may use those declared
+  capabilities without gaining mutation authority.
+- General plan compilation now removes ungrounded stacks and capabilities,
+  separates method capabilities from subject domains, ignores prohibited
+  mutation language when classifying requested work, normalizes safe
+  topological ordering, and keeps integration, release, accessibility, and
+  workforce-governance assurance distinct. A domain accidentally repeated in
+  the capability array is removed only when that exact governed domain is
+  already declared; every other unknown capability still fails closed.
+- Lifecycle ownership, minimum-team composition, disabled-winner disclosure,
+  independent assurance, and stackless cross-cutting specialists are enforced
+  locally across incident response, language-server indexing, installation,
+  observability, accessibility, finance, database analysis, clinical evidence,
+  legal review, brand, and playful-design boundaries. An applied inference
+  plan remains truthfully recorded as inferred when deterministic staffing
+  subsequently makes an allowed fail-closed abstention.
+- Before corpus expansion, the global cold selection budget was predeclared as
+  15000 ms. That value covers valid observed configured-provider calls and was
+  not adjusted per case; the one-call fast budget remains unchanged.
 
 Current focused evidence on Windows:
 
 ```text
-5 new cross-host and abstention cases passed
-82 unit-aware delegation, native-child hook, and child-routing cases passed
-55 matched-selection, compact-intent, selection-safety, upstream-architecture,
-and CLI contract cases passed
-ruff check passed for the touched routing slice
-ruff format --check passed for the touched routing slice
+257 compact-intent, inference, staffing, matched-selection, selection-safety,
+upstream-architecture, CLI, contract, and bundled-roster cases passed
+targeted compiler and policy regressions passed
+focused ruff check and ruff format --check passed during implementation
 git diff --check passed
 ```
 
-Current configured-provider canary on Windows, using `codex-subscription` and
-requested/actual model `gpt-5.6-luna`:
+Current configured-provider evidence on Windows uses `codex-subscription`,
+requested/actual model `gpt-5.6-luna`, low reasoning effort, and one planner
+call per Agency arm. Valid bounded runs produced:
 
 ```text
-agency eval upstream-selection --case active-incident-containment ...
-benchmark failed truthfully
-Agency helpful F1: 0.000
-upstream helpful F1: 0.667
-Agency forbidden/ineligible/conflict selections: 0/0/0
-Agency cold latency: 11459.837 ms (10000 ms predeclared budget)
+active-incident-containment: Agency F1 0.667, upstream F1 0.400,
+  Agency latency 11272 ms, Agency forbidden/ineligible/conflict 0/0/0
+runtime-routing-integration-failure: Agency F1 0.857, upstream F1 0.571,
+  Agency latency 10524.381 ms, Agency forbidden/ineligible/conflict 0/0/0
+lsp-incremental-index: Agency F1 1.000, upstream F1 0.857,
+  Agency latency 14041.717 ms, Agency forbidden/ineligible/conflict 0/0/0
+postgres-write-query-analysis: Agency F1 1.000, upstream F1 1.000,
+  Agency latency 5469.497 ms, Agency forbidden/ineligible/conflict 0/0/0
+clinical-legal-boundary-review: Agency F1 1.000, upstream F1 1.000,
+  Agency latency 8519.167 ms, Agency forbidden/ineligible/conflict 0/0/0
+disabled-lsp-winner: valid safe abstention on both arms, required disabled
+  shadow disclosed, Agency latency 7938.386 ms, no unsafe substitute
 ```
 
-The valid Agency planner receipt produced two security planning units, but
-deterministic staffing abstained with `no_safe_sufficient_team` and
-`recruiter_abstained`: the planner required `operations`, `investigation`, and
-`risk-analysis`, while the audited incident contracts do not currently cover
-the complete requirement set. This is the next measured contract/routing gap;
-it must not be relabeled as success or hidden by loosening the scorer.
+Additional bounded runs produced exact Agency teams for incidental-finance,
+composition, and broad Python/TypeScript application cases. The broad case's
+Agency arm selected the exact nine helpful workers at 11212.181 ms after the
+compiler normalization, but its paired upstream response was malformed, so the
+benchmark remained invalid rather than manufacturing comparative lift. Other
+observed invalid runs included upstream timeouts or malformed assignment and
+disabled-shadow rows and, before the final normalization, an Agency planner
+placing `accessibility` in both domain and capability dimensions. Malformed or
+timed-out arms remain invalid. The full 19-case corpus was deliberately not
+started after context telemetry crossed the mandatory handoff threshold.
 
 ### Still required before AR-119 can close
 
@@ -182,15 +213,16 @@ it must not be relabeled as success or hidden by loosening the scorer.
 ### Next bounded work package
 
 Continue the matched selection package without advancing to contractor
-lifecycle work. First reconcile the measured `active-incident-containment`
-capability mismatch through governed, general roster-contract or planning
-semantics; do not add a scenario-specific route or weaken required coverage.
-Rerun that configured-provider canary until Agency produces a safe sufficient
-team within a justified predeclared latency budget. Then execute all 19 matched
-scenarios, retain exact provider/model receipts and parity bindings, and fix
-every unsafe or clearly inferior Agency selection before advancing. Do not
-claim Agency is better unless later untouched-corpus and completed-outcome
-evidence satisfies the explicitly deferred release gates.
+lifecycle work. From this recovery commit, rerun a small boundary subset if
+needed and then execute all 19 matched scenarios with the unchanged 15000 ms
+cold budget and one-call fast setting. Retain exact provider/model receipts,
+parity bindings, per-case Agency selections, safety counts, and every malformed
+or timed-out arm. Fix any remaining unsafe or clearly inferior Agency result
+through governed general semantics; do not weaken typed coverage, add a
+scenario route, reinterpret a malformed arm as evidence, or tune latency after
+seeing the corpus. A valid full corpus is the next gate. Do not claim Agency is
+better: untouched-corpus statistics, exact activation, and blinded completed-
+outcome trials remain explicitly deferred release gates.
 
 ### Handoff constraints
 

@@ -319,6 +319,24 @@ def test_balanced_mode_accepts_clear_local_route_after_compact_plan_with_receipt
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
+def test_applied_plan_remains_inferred_when_local_staffing_safely_abstains() -> None:
+    snapshot = _snapshot(_contract("technical-analyst", enabled=False))
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        invoker=lambda *_args, **_kwargs: _result(_compact_plan_document()),
+    )
+
+    assert not outcome.accepted
+    assert outcome.inference_mode == "inferred"
+    assert [(item.stage, item.status) for item in outcome.attempts] == [("planner", "applied")]
+    assert outcome.proposal is not None
+    assert outcome.proposal.units[0].disabled_shadows[0].agent_id == "technical-analyst"
+
+
 def test_warm_route_reuses_version_bound_plan_and_candidate_without_inference() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     calls = 0
@@ -547,6 +565,29 @@ def test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps(
     assert row.margin == 0.1
 
 
+def test_inferred_acyclic_dependencies_are_stably_topologically_ordered() -> None:
+    plan = _plan_document()
+    implementation = plan["units"][0]
+    review = {
+        **dict(implementation),
+        "unit_id": "unit-review",
+        "outcome": "Independently review the implementation",
+        "artifact_kind": "review-report",
+        "lifecycle_phase": "review",
+        "required_capabilities": ["review"],
+        "authority": "review",
+        "mutation_scope": "read_only",
+        "depends_on": ["unit-analyze"],
+    }
+    plan["units"] = [review, implementation]
+
+    normalized = _normalized_plan_response(plan)
+    parsed = parse_work_unit_plan(normalized)
+
+    assert [unit.unit_id for unit in parsed.units] == ["unit-analyze", "unit-review"]
+    assert parsed.units[1].depends_on == ("unit-analyze",)
+
+
 def test_downstream_assurance_does_not_repeat_dependency_carried_domains() -> None:
     plan = _plan_document()
     plan["units"][0]["domains"] = ["security", "software-engineering"]
@@ -613,6 +654,60 @@ def test_repository_discovery_does_not_require_every_observed_language() -> None
 
     assert normalized["units"][0]["languages"] == []
     assert normalized["units"][0]["frameworks"] == []
+
+
+def test_evidence_based_discovery_uses_read_only_review_authority() -> None:
+    plan = _plan_document()
+    plan["units"][0].update(
+        {
+            "outcome": "Evidence-based diagnosis of cancellation defects",
+            "artifact_kind": "analysis",
+            "lifecycle_phase": "discovery",
+            "required_capabilities": ["analysis", "investigation"],
+            "authority": "advise",
+            "mutation_scope": "read_only",
+        }
+    )
+
+    normalized = _normalized_plan_response(plan)
+
+    assert normalized["units"][0]["authority"] == "review"
+
+
+def test_consultative_discovery_keeps_advisory_authority() -> None:
+    plan = _plan_document()
+    plan["units"][0].update(
+        {
+            "outcome": "Recommend product positioning options",
+            "artifact_kind": "analysis",
+            "lifecycle_phase": "discovery",
+            "authority": "advise",
+            "mutation_scope": "read_only",
+        }
+    )
+
+    normalized = _normalized_plan_response(plan)
+
+    assert normalized["units"][0]["authority"] == "advise"
+
+
+def test_code_implementation_does_not_treat_product_surface_as_extra_authority() -> None:
+    plan = _plan_document()
+    plan["units"][0].update(
+        {
+            "artifact_kind": "implementation-change",
+            "lifecycle_phase": "implementation",
+            "domains": ["software-engineering", "product", "accessibility"],
+            "languages": ["python", "typescript"],
+            "required_capabilities": ["implementation"],
+            "authority": "modify",
+            "mutation_scope": "workspace_write",
+        }
+    )
+
+    normalized = _normalized_plan_response(plan)
+
+    assert normalized["units"][0]["domains"] == ["software-engineering"]
 
 
 def test_specialized_discovery_preserves_required_language_expertise() -> None:
@@ -1090,6 +1185,58 @@ def test_deterministic_plan_preserves_review_then_document_dependencies() -> Non
         "unit-documentation",
     ]
     assert plan.units[1].depends_on == ("unit-source-review",)
+
+
+def test_repository_readme_rewrite_is_documentation_not_code_implementation() -> None:
+    request = "Rewrite the repository README installation guide and independently review it."
+    plan, reasons = deterministic_work_plan(request, context=_context())
+
+    assert reasons == ()
+    assert plan is not None
+    assert [item.unit_id for item in plan.units] == [
+        "unit-documentation",
+        "unit-documentation-review",
+    ]
+    assert plan.units[1].depends_on == ("unit-documentation",)
+    assert plan_policy_violations(request, plan) == ()
+
+
+def test_production_observability_does_not_imply_release_verification() -> None:
+    request = "Add production application observability, failure telemetry, tests, and review."
+    plan, reasons = deterministic_work_plan(request, context=_context())
+
+    assert reasons == ()
+    assert plan is not None
+    assert all(item.lifecycle_phase != "release" for item in plan.units)
+    assert plan_policy_violations(request, plan) == ()
+
+
+def test_prohibited_mutation_words_do_not_create_fallback_code_or_docs_work() -> None:
+    postgres, postgres_reasons = deterministic_work_plan(
+        "Analyze why this PostgreSQL write query is slow. Do not write documentation or "
+        "change application code; return measured query-plan findings only.",
+        context=_context(),
+    )
+    clinical, clinical_reasons = deterministic_work_plan(
+        "Summarize the supplied clinical-trial evidence and independently review its use "
+        "in a legal document. Do not diagnose, code medical billing, or certify compliance.",
+        context=_context(),
+    )
+
+    assert postgres is None
+    assert postgres_reasons == ("deterministic_request_ambiguous",)
+    assert clinical is None
+    assert clinical_reasons == ("deterministic_request_ambiguous",)
+
+
+def test_prohibited_mutation_words_do_not_trigger_implementation_policy() -> None:
+    request = (
+        "Analyze why this PostgreSQL write query is slow. Do not write documentation or "
+        "change application code; return measured query-plan findings only."
+    )
+    plan = parse_work_unit_plan(_plan_document())
+
+    assert plan_policy_violations(request, plan) == ()
 
 
 def test_no_provider_code_change_entails_coding_testing_and_independent_review() -> None:

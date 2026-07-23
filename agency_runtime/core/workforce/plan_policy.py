@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from agency_runtime.core.workforce.planning_contracts import WorkUnit, WorkUnitPlan
 
 _TOKENS = re.compile(r"[a-z0-9]+")
+_NEGATED_SCOPE = re.compile(
+    r"\b(?:do\s+not|don't|must\s+not|never|without)\b[^.;\n]*",
+    re.IGNORECASE,
+)
 _MUTATION = frozenset(
     {
         "add",
@@ -15,6 +19,7 @@ _MUTATION = frozenset(
         "change",
         "create",
         "debug",
+        "edit",
         "fix",
         "implement",
         "improve",
@@ -22,6 +27,8 @@ _MUTATION = frozenset(
         "refactor",
         "remove",
         "repair",
+        "revise",
+        "rewrite",
         "update",
     }
 )
@@ -65,9 +72,7 @@ _SECURITY = frozenset(
         "vulnerabilities",
     }
 )
-_RELEASE = frozenset(
-    {"deploy", "deployment", "install", "installer", "production", "release", "ship"}
-)
+_RELEASE = frozenset({"deploy", "deployment", "install", "installer", "release", "ship"})
 
 
 def _ancestors(plan: WorkUnitPlan, unit_id: str) -> frozenset[str]:
@@ -221,9 +226,14 @@ def _has_codebase_discovery(inventory: _PlanInventory) -> bool:
 def plan_policy_violations(request: str, plan: WorkUnitPlan) -> tuple[str, ...]:
     """Reject plans that omit assurance entailed by the requested outcome."""
 
-    tokens = frozenset(_TOKENS.findall(request.casefold()))
-    code_mutation = bool(tokens & _MUTATION and tokens & _CODE)
-    docs_mutation = bool(tokens & _MUTATION and tokens & _DOCS and not tokens & _CODE)
+    actionable_request = _NEGATED_SCOPE.sub(" ", request)
+    tokens = frozenset(_TOKENS.findall(actionable_request.casefold()))
+    docs_mutation = bool(
+        tokens & _MUTATION
+        and tokens & _DOCS
+        and not tokens & _CODE.difference({"repo", "repository"})
+    )
+    code_mutation = bool(tokens & _MUTATION and tokens & _CODE and not docs_mutation)
     inventory = _PlanInventory.from_plan(plan)
     codes: list[str] = []
     security_code_review = bool(

@@ -473,6 +473,14 @@ def _agency_run(
             for agent_id in row.selected
         )
         disabled.extend(item.agent_id for item in row.disabled_shadows)
+    if outcome.proposal is not None:
+        # A fail-closed staffing decision may reject every assignment while
+        # retaining a deterministically verified semantic ranking. Preserve
+        # disabled-winner disclosure from that proposal without treating any
+        # rejected worker as assigned.
+        disabled.extend(
+            shadow.agent_id for row in outcome.proposal.units for shadow in row.disabled_shadows
+        )
     applied = next((item for item in outcome.attempts if item.status == "applied"), None)
     last_attempt = outcome.attempts[-1] if outcome.attempts else None
     evidence = applied or last_attempt

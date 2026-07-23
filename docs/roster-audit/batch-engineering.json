@@ -1981,7 +1981,11 @@
     ],
     "task_types": [
       "analysis",
+      "coordination",
+      "investigation",
+      "operations",
       "planning",
+      "risk-analysis",
       "review"
     ],
     "preferred_when": [
@@ -2028,7 +2032,7 @@
     ],
     "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
     "content_hash": "1df5c8f558f99a8d3e6455cf6a6badbd1e0c2b2cccb02682843ee7ca11a13929",
-    "audit_revision": "1",
+    "audit_revision": "2",
     "audit_status": "approved",
     "findings": [
       "persona_does_not_confer_emergency_or_employment_authority",

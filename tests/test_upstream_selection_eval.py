@@ -44,7 +44,12 @@ from agency_runtime.core.workforce.inference import (
 )
 from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
 from agency_runtime.core.workforce.known_installer import known_contractor_agent
-from agency_runtime.core.workforce.planning_contracts import ShadowEvidence, parse_work_unit_plan
+from agency_runtime.core.workforce.planning_contracts import (
+    RecruiterProposal,
+    ShadowEvidence,
+    UnitRecruitment,
+    parse_work_unit_plan,
+)
 from agency_runtime.core.workforce.recruiter_index import (
     project_recruiter_index_record,
     recruiter_index_fingerprint,
@@ -182,27 +187,47 @@ def _accepted_outcome(provider: ProviderEntry) -> WorkforceRoutingOutcome:
 
 
 def _abstained_disabled_outcome(provider: ProviderEntry) -> WorkforceRoutingOutcome:
-    staffing = StaffingDecision(
-        "abstained",
+    shadow = ShadowEvidence(
+        "lsp-index-engineer",
+        1,
+        ("agent_disabled",),
+        "",
+        "The semantic winner is disabled; no weaker substitute was selected.",
+    )
+    proposal = RecruiterProposal(
+        2,
+        "plan-disabled",
+        "roster-disabled",
+        1,
+        7,
         (
-            VerifiedUnitStaffing(
+            UnitRecruitment(
                 "unit-disabled",
                 (),
+                (),
+                (),
+                (),
+                (),
+                (),
+                (),
+                (),
+                (shadow,),
+                (),
+                (),
+                (),
+                (),
+                (),
+                0.0,
+                0.0,
                 "delegate",
                 "immediate",
-                (),
-                (
-                    ShadowEvidence(
-                        "lsp-index-engineer",
-                        1,
-                        ("agent_disabled",),
-                        "",
-                        "The semantic winner is disabled; no weaker substitute was selected.",
-                    ),
-                ),
-                (),
+                ("best_candidate_disabled",),
             ),
         ),
+    )
+    staffing = StaffingDecision(
+        "abstained",
+        (),
         (AbstentionReason("best_candidate_disabled", "unit-disabled"),),
     )
     return WorkforceRoutingOutcome(
@@ -210,7 +235,7 @@ def _abstained_disabled_outcome(provider: ProviderEntry) -> WorkforceRoutingOutc
         "fast",
         "inferred",
         None,
-        None,
+        proposal,
         staffing,
         (_attempt(provider),),
         ("best_candidate_disabled",),
@@ -272,6 +297,7 @@ def test_pinned_source_license_and_corpus_are_complete() -> None:
     assert len(CASES) == 19
     assert len(CASES) < MINIMUM_RELEASE_SCENARIOS
     assert len({item.case_id for item in CASES}) == len(CASES)
+    assert {item.latency_budget_ms for item in CASES} == {15_000}
     assert required_categories <= {item.category for item in CASES}
     for case in CASES:
         assert case.expected_helpful_workers

@@ -275,6 +275,17 @@ def _domains(agent: Mapping[str, Any], division: str) -> tuple[str, ...]:
     owned_text = " ".join(str(item) for item in agent.get("capabilities", ())).casefold()
     if "security" in owned_text and "security" not in result:
         result.append("security")
+    if "quality" in categories and "quality-assurance" not in result:
+        result.append("quality-assurance")
+    if (
+        categories & {"accessibility", "inclusive-testing", "wcag"}
+        and "accessibility" not in result
+    ):
+        result.append("accessibility")
+    if categories & {"accounts-payable", "finance"} and "finance" not in result:
+        result.append("finance")
+    if categories & {"code-intelligence", "lsp"} and "software-engineering" not in result:
+        result.append("software-engineering")
     # Application-security and secure-code-review workers own software artifacts as well as
     # security outcomes. Keeping them security-only makes an inferred unit that correctly names
     # both domains impossible to staff, even when the exact specialist is present and eligible.

@@ -5,7 +5,11 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
-MAX_CAPABILITY_IDS = 8
+# A governed specialist can own several lifecycle and assurance capabilities
+# without becoming generic. Keep the projection tightly bounded while allowing
+# cross-cutting audited roles to retain every independently verified controlled
+# capability instead of dropping one at the contract boundary.
+MAX_CAPABILITY_IDS = 12
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9-]{0,127}")
 
 # These are the stable cross-roster task capabilities currently produced by

@@ -25,6 +25,7 @@ from agency_runtime.core.workforce.staffing_verifier import StaffingContext
 
 SCHEMA: Final[str] = "agency-runtime.workforce-inference-eval"
 VERSION: Final[str] = "1.3.0"
+DEFAULT_COLD_SELECTION_BUDGET_MS: Final[int] = 15_000
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,7 +42,7 @@ class WorkforceSelectionCase:
     required_disabled_shadows: tuple[str, ...] = ()
     forbidden_context_pairs: tuple[tuple[str, str], ...] = ()
     outcome_policy: str = "accepted"
-    latency_budget_ms: int = 10_000
+    latency_budget_ms: int = DEFAULT_COLD_SELECTION_BUDGET_MS
 
     def __post_init__(self) -> None:
         helpful = self.expected_helpful_workers
@@ -390,7 +391,16 @@ def _case_result(
     )
     disabled_disclosures = tuple(
         dict.fromkeys(
-            shadow.agent_id for unit in outcome.staffing.units for shadow in unit.disabled_shadows
+            [shadow.agent_id for unit in outcome.staffing.units for shadow in unit.disabled_shadows]
+            + (
+                []
+                if outcome.proposal is None
+                else [
+                    shadow.agent_id
+                    for unit in outcome.proposal.units
+                    for shadow in unit.disabled_shadows
+                ]
+            )
         )
     )
     contexts: dict[str, set[str]] = {}
@@ -580,6 +590,7 @@ def run_workforce_inference_eval(
 
 __all__ = [
     "CASES",
+    "DEFAULT_COLD_SELECTION_BUDGET_MS",
     "SCHEMA",
     "VERSION",
     "WorkforceSelectionCase",

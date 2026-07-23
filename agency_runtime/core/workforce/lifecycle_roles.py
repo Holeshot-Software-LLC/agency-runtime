@@ -46,14 +46,18 @@ _ALIASES = {
     "implemented": "implementation",
     "implementing": "implementation",
     "install": "installation",
+    "installable": "installation",
     "installed": "installation",
     "installer": "installation",
+    "indexed": "index",
+    "indexing": "index",
     "integrate": "integration",
     "integrated": "integration",
     "interpret": "analysis",
     "interpretation": "analysis",
     "observe": "observability",
     "package": "packaging",
+    "packaged": "packaging",
     "packages": "packaging",
     "released": "release",
     "releasing": "release",
@@ -96,6 +100,14 @@ def _evidence_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
 
 
 def _review_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
+    if "legal" in tokens and tokens & {"document", "documentation"}:
+        return ("legal-document-review",)
+    if "finance" in unit.domains and (
+        "cfo" in tokens or {"chief", "financial", "officer"} <= tokens
+    ):
+        return ("chief-financial-officer",)
+    if "accessibility" in unit.domains or tokens & {"accessibility", "wcag"}:
+        return ("accessibility-auditor",)
     if "workforce-governance" in unit.domains and tokens & {
         "selection",
         "staffing",
@@ -127,22 +139,67 @@ def _review_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
 
 
 def _implementation_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
+    if "design" in unit.domains and tokens & {
+        "delight",
+        "microinteraction",
+        "playful",
+        "whimsy",
+    }:
+        return ("whimsy-injector",)
+    if (
+        "lsp" in tokens
+        or {"language", "server", "index"} <= tokens
+        or {
+            "incremental",
+            "index",
+        }
+        <= tokens
+    ):
+        return ("lsp-index-engineer",)
     result: list[str] = []
     stacks = set(unit.languages + unit.frameworks)
     if stacks & {"typescript", "javascript", "node"}:
         result.append("typescript-application-engineer")
     if "python" in stacks:
         result.append("python-application-engineer")
-    if tokens & {"installer", "installation", "upgrade", "uninstall"}:
+    if (
+        tokens & {"installer", "installation", "packaging", "upgrade", "uninstall"}
+        or {
+            "linux",
+            "windows",
+        }
+        <= tokens
+    ):
         result.append("cross-platform-installer-engineer")
     if tokens & {"observability", "diagnostics", "health", "tracing"}:
         result.append("application-observability-engineer")
-    if tokens & {"backend", "service", "persistence", "api"}:
+    if not result and tokens & {"backend", "service", "persistence", "api"}:
         result.append("backend-service-engineer")
+    if not result:
+        # A bounded implementation unit still needs an audited specialist when
+        # no stack or product-specific owner can be proven. The minimum-change
+        # role is the governed narrow fallback, not an untyped generic child.
+        result.append("minimal-change-engineer")
     return tuple(dict.fromkeys(result))
 
 
-def _discovery_anchors(tokens: frozenset[str]) -> tuple[str, ...]:
+def _discovery_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
+    if (
+        tokens & {"postgres", "postgresql"}
+        and "query" in tokens
+        and tokens & {"performance", "plan", "slow"}
+    ):
+        return ("database-optimizer",)
+    if "healthcare" in unit.domains and ("clinical" in tokens and tokens & {"evidence", "trial"}):
+        return ("clinical-evidence-agent",)
+    if "finance" in unit.domains and {"accounts", "payable"} <= tokens:
+        return ("accounts-payable-agent",)
+    if (
+        "lsp" in tokens
+        or {"language", "server", "index"} <= tokens
+        or {"incremental", "index"} <= tokens
+    ):
+        return ("lsp-index-engineer",)
     if tokens & {"archaeology", "historical", "history", "legacy"}:
         return ("codebase-archaeologist",)
     if tokens & {
@@ -162,7 +219,13 @@ def _discovery_anchors(tokens: frozenset[str]) -> tuple[str, ...]:
     return ()
 
 
-def role_anchors(unit: Any) -> tuple[str, ...]:
+def _plan_anchors(unit: Any, tokens: frozenset[str]) -> tuple[str, ...]:
+    if "design" in unit.domains and tokens & {"brand", "governance", "identity"}:
+        return ("brand-guardian",)
+    return ()
+
+
+def role_anchors(unit: Any, *, request: str = "") -> tuple[str, ...]:
     """Return audited lifecycle owners for one typed work unit."""
 
     tokens = semantic_tokens(
@@ -173,7 +236,16 @@ def role_anchors(unit: Any) -> tuple[str, ...]:
         *unit.required_capabilities,
     )
     if unit.artifact_kind == "analysis" and unit.lifecycle_phase == "discovery":
-        return _discovery_anchors(tokens)
+        request_tokens = semantic_tokens(request)
+        scoped_tokens = tokens
+        if "finance" in unit.domains or (
+            tokens & {"cancellation", "incremental", "index", "symbol"}
+            and ("lsp" in request_tokens or {"language", "server"} <= request_tokens)
+        ):
+            scoped_tokens |= request_tokens
+        return _discovery_anchors(unit, scoped_tokens)
+    if unit.artifact_kind == "plan" and unit.lifecycle_phase == "planning":
+        return _plan_anchors(unit, tokens)
     if unit.artifact_kind == "documentation":
         return ("technical-writer",)
     if unit.artifact_kind == "test-code" and unit.lifecycle_phase == "testing":
@@ -181,9 +253,25 @@ def role_anchors(unit: Any) -> tuple[str, ...]:
     if unit.artifact_kind == "test-evidence":
         return _evidence_anchors(unit, tokens)
     if unit.artifact_kind == "review-report":
-        return _review_anchors(unit, tokens)
+        request_tokens = semantic_tokens(request) if "finance" in unit.domains else frozenset()
+        return _review_anchors(unit, tokens | request_tokens)
     if unit.artifact_kind == "implementation-change":
-        return _implementation_anchors(unit, tokens)
+        request_tokens = semantic_tokens(request)
+        scoped_tokens = tokens
+        if tokens & {"cancellation", "incremental", "index", "symbol"} and (
+            "lsp" in request_tokens or {"language", "server"} <= request_tokens
+        ):
+            scoped_tokens |= request_tokens
+        if tokens & {"installation", "packaging", "uninstall", "upgrade"}:
+            scoped_tokens |= request_tokens & {
+                "installation",
+                "linux",
+                "packaging",
+                "uninstall",
+                "upgrade",
+                "windows",
+            }
+        return _implementation_anchors(unit, scoped_tokens)
     return ()
 
 

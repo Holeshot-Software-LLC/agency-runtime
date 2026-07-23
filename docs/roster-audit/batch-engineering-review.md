@@ -3,7 +3,7 @@ title: "Roster semantic safety audit - engineering division"
 status: active
 category: governance
 created: 2026-07-17
-updated: 2026-07-18
+updated: 2026-07-22
 tags:
   - roster
   - security
@@ -34,6 +34,14 @@ record contains exactly one entry per source file and does not copy prompt bodie
 useful specialty can be retained when Agency projects only the recorded routing
 contract. Raw claims of memory, tool access, organizational authority, external
 authority, legal or compliance certainty, and production readiness remain inactive.
+
+Audit revision 2 also records `coordination`, `investigation`, `operations`, and
+`risk-analysis` as controlled capabilities for `incident-response-commander`, and
+retains its engineering identity and incident-response scope. Those identifiers
+are grounded in its reviewed incident-triage, response-coordination, risk-bounded
+recovery, and operational-planning outcomes. They do not authorize production
+containment or communications: the contract remains plan-only, isolated,
+tool-bound, and constrained by its anti-capabilities and approval requirements.
 
 ## Scope and method
 

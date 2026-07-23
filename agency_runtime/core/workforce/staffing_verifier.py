@@ -178,6 +178,11 @@ def _supports_planning_capability(contract: WorkforceContract, capability: str) 
         return bool(lifecycle & {"coordination", "release"})
     if capability == "planning":
         return contract.authority == "plan" or "planning" in lifecycle
+    if capability == "risk-analysis":
+        tokens = _contract_tokens(contract)
+        return contract.authority in {"plan", "review"} and bool(
+            tokens & {"risk", "risks", "safety", "unsafe"}
+        )
     if capability == "review":
         return contract.authority == "review" or "review" in lifecycle
     if capability == "testing":
@@ -195,10 +200,33 @@ def _supports(contract: WorkforceContract, capability: str) -> bool:
     return bool(required) and required <= _contract_tokens(contract)
 
 
-def _authority_satisfies(unit_authority: str, contract_authority: str) -> bool:
+def _authority_satisfies(unit: WorkUnit, contract: WorkforceContract) -> bool:
     """Allow bounded read-only expertise without weakening review or mutation authority."""
 
-    return contract_authority in _AUTHORITY_COMPATIBILITY.get(unit_authority, frozenset())
+    contract_authority = contract.authority
+    if (
+        unit.authority in {"advise", "review"}
+        and unit.artifact_kind == "analysis"
+        and unit.lifecycle_phase == "discovery"
+        and contract_authority == "modify"
+    ):
+        # A governed implementer may inspect and diagnose its own specialty in
+        # read-only discovery. It still cannot satisfy an independent
+        # review-report or any mutation without modify authority on that unit.
+        return True
+    if (
+        unit.authority == "plan"
+        and unit.artifact_kind == "plan"
+        and unit.lifecycle_phase == "planning"
+        and contract_authority == "review"
+        and "plan" in contract.artifact_kinds
+        and "planning" in contract.lifecycle_phases
+    ):
+        # An audited reviewer with explicit planning artifacts may author
+        # read-only guidance. It still cannot satisfy an independent review
+        # or any mutation authority.
+        return True
+    return contract_authority in _AUTHORITY_COMPATIBILITY.get(unit.authority, frozenset())
 
 
 def _out_of_scope(contract: WorkforceContract, unit: WorkUnit) -> bool:
@@ -251,12 +279,14 @@ def _unit_compatibility_reasons(
     contract: WorkforceContract,
 ) -> tuple[str, ...]:
     reasons: list[str] = []
-    if not _authority_satisfies(unit.authority, contract.authority):
+    if not _authority_satisfies(unit, contract):
         reasons.append("agent_authority_mismatch")
     if unit.domains and not set(unit.domains) & set(contract.domains):
         reasons.append("agent_domain_mismatch")
-    if unit.languages + unit.frameworks and not set(unit.languages + unit.frameworks) & set(
-        contract.stacks
+    if (
+        unit.languages + unit.frameworks
+        and contract.stacks
+        and not set(unit.languages + unit.frameworks) & set(contract.stacks)
     ):
         reasons.append("agent_stack_mismatch")
     if not _covers_required_capability(unit, contract):
@@ -272,7 +302,7 @@ def _eligibility(
     ignore_enabled: bool = False,
 ) -> tuple[str, ...]:
     reasons: list[str] = []
-    if not _is_live_eligible(contract, context):
+    if not _is_live_eligible(contract, context) and not (ignore_enabled and not contract.enabled):
         reasons.append("agent_not_live_eligible")
     if not contract.enabled and not ignore_enabled:
         reasons.append("agent_disabled")
@@ -317,7 +347,7 @@ def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
     covered.update(
         f"capability:{item}" for item in unit.required_capabilities if _supports(contract, item)
     )
-    if _authority_satisfies(unit.authority, contract.authority):
+    if _authority_satisfies(unit, contract):
         covered.add(f"authority:{unit.authority}")
     return frozenset(covered)
 
@@ -606,6 +636,7 @@ def _agent_composition(
     binding: dict[str, str],
     ancestor_units: frozenset[str],
     ancestor_agents: set[str],
+    required_agents: set[str],
     selected: dict[str, tuple[str, ...]],
     contexts: dict[str, dict[str, str]],
     roster: dict[str, WorkforceContract],
@@ -630,7 +661,7 @@ def _agent_composition(
         (
             relation.requires,
             "required_composition_agent_missing",
-            set(row.selected) | ancestor_agents,
+            required_agents,
         ),
         (relation.must_follow, "composition_order_invalid", ancestor_agents),
     )
@@ -711,6 +742,7 @@ def _composition(
     context: StaffingContext,
     reasons: list[AbstentionReason],
 ) -> None:
+    units = {unit.unit_id: unit for unit in plan.units}
     selected = {row.unit_id: row.selected for row in proposal.units}
     contexts = {
         row.unit_id: {item.agent_id: item.context_id for item in row.contexts}
@@ -725,6 +757,17 @@ def _composition(
             _reason(reasons, "delegated_context_not_distinct", unit_id=row.unit_id)
         ancestor_units = _ancestors(plan, row.unit_id)
         ancestor_agents = {agent for name in ancestor_units for agent in selected[name]}
+        downstream_assurance_agents = {
+            agent_id
+            for candidate in proposal.units
+            for agent_id in candidate.selected
+            if row.unit_id in _ancestors(plan, candidate.unit_id)
+            and units[candidate.unit_id].authority == "review"
+            and units[candidate.unit_id].artifact_kind in _ASSURANCE_ARTIFACTS
+            and units[candidate.unit_id].lifecycle_phase in _ASSURANCE_PHASES
+            and candidate.timing == "after_artifact"
+        }
+        required_agents = set(row.selected) | ancestor_agents | downstream_assurance_agents
         for agent_id in row.selected:
             _agent_composition(
                 row,
@@ -732,6 +775,7 @@ def _composition(
                 binding,
                 ancestor_units,
                 ancestor_agents,
+                required_agents,
                 selected,
                 contexts,
                 roster,
@@ -879,6 +923,7 @@ def build_deterministic_proposal(
     semantic_required: Mapping[str, frozenset[str]] | None = None,
     semantic_acceptable: Mapping[str, frozenset[str]] | None = None,
     semantic_forbidden: Mapping[str, frozenset[str]] | None = None,
+    invariant_required: Mapping[str, frozenset[str]] | None = None,
 ) -> RecruiterProposal:
     """Build a verifier-compatible proposal from deterministic semantic ranks."""
 
@@ -921,6 +966,13 @@ def build_deterministic_proposal(
             if semantic_forbidden is None
             else semantic_forbidden.get(unit.unit_id, frozenset())
         )
+        invariant_ids = (
+            frozenset()
+            if invariant_required is None
+            else invariant_required.get(unit.unit_id, frozenset())
+        )
+        if invariant_ids - required_ids:
+            raise ValueError("invariant staffing owners must also be semantically required")
         ranked_ids = {agent_id for agent_id, _score in semantic}
         if (
             (required_ids | acceptable_ids | forbidden_ids) != ranked_ids
@@ -996,12 +1048,32 @@ def build_deterministic_proposal(
         # higher-ranked worker that cannot satisfy the unit. Treating a partial
         # near neighbor as the runner made a safely sufficient lower-ranked
         # specialist look ambiguous and forced false abstentions.
-        alternative = _minimum_team(
-            unit,
-            tuple(agent_id for agent_id, _score in executable if agent_id not in selected),
-            roster,
-            active_budget.max_selected_per_unit,
-        )
+        if invariant_ids:
+            # A lifecycle owner is a semantic invariant, not an interchangeable
+            # runner-up. Keep required owners in the comparison pool and vary
+            # only complementary workers. If the required minimum is already
+            # the selected team, there is no valid alternative team.
+            selected_complements = set(selected).difference(invariant_ids)
+            alternative = _minimum_team_with_required(
+                unit,
+                tuple(
+                    agent_id
+                    for agent_id, _score in executable
+                    if agent_id not in selected_complements
+                ),
+                roster,
+                invariant_ids,
+                active_budget.max_selected_per_unit,
+            )
+            if alternative == selected:
+                alternative = ()
+        else:
+            alternative = _minimum_team(
+                unit,
+                tuple(agent_id for agent_id, _score in executable if agent_id not in selected),
+                roster,
+                active_budget.max_selected_per_unit,
+            )
         alternative_score = min(
             (score_by_id[item] for item in alternative),
             default=0.0,

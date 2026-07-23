@@ -14,7 +14,11 @@ Independence group: engineering-incident-response
 
 Task types:
 - analysis
+- coordination
+- investigation
+- operations
 - planning
+- risk-analysis
 - review
 
 Capabilities:
@@ -56,7 +60,7 @@ Known audit constraints:
 Provenance:
 - Source: https://github.com/msitarzewski/agency-agents/blob/459dce837db3bdfdc4763d3fefd1fd854e73c8f1/engineering/engineering-incident-response-commander.md
 - Source SHA-256: 1df5c8f558f99a8d3e6455cf6a6badbd1e0c2b2cccb02682843ee7ca11a13929
-- Audit revision: 1
+- Audit revision: 2
 
 If context mode is `isolated_only`, this prompt may execute only inside a native isolated
 worker. Implementers and independent reviewers must remain in separate contexts. Stop and

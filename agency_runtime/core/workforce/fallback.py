@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.workforce.contract import WorkforceContract
+from agency_runtime.core.workforce.lifecycle_roles import role_anchors
 from agency_runtime.core.workforce.planning_contracts import (
     WorkUnit,
     WorkUnitPlan,
@@ -19,6 +20,7 @@ from agency_runtime.core.workforce.staffing_verifier import (
     StaffingDecision,
     build_deterministic_proposal,
     typed_staffing_coverage,
+    typed_staffing_ineligibility,
     typed_staffing_requirements,
     verify_staffing,
 )
@@ -28,6 +30,10 @@ if TYPE_CHECKING:
     from agency_runtime.core.workforce.planning_contracts import RecruiterProposal
 
 _TOKENS = re.compile(r"[a-z0-9]+")
+_NEGATED_SCOPE = re.compile(
+    r"\b(?:do\s+not|don't|must\s+not|never|without)\b[^.;\n]*",
+    re.IGNORECASE,
+)
 _TRIVIAL = frozenset({"hello", "hi", "hey", "thanks", "thank", "ok", "okay", "continue"})
 _MUTATION = frozenset(
     {
@@ -36,6 +42,7 @@ _MUTATION = frozenset(
         "change",
         "create",
         "debug",
+        "edit",
         "fix",
         "implement",
         "improve",
@@ -43,6 +50,8 @@ _MUTATION = frozenset(
         "refactor",
         "remove",
         "repair",
+        "revise",
+        "rewrite",
         "update",
     }
 )
@@ -111,9 +120,7 @@ _REVIEW = frozenset({"audit", "inspect", "review", "validate", "verify"})
 _SECURITY = frozenset(
     {"auth", "authentication", "authorization", "credential", "exploit", "security", "threat"}
 )
-_RELEASE = frozenset(
-    {"deploy", "deployment", "install", "installer", "package", "production", "release", "ship"}
-)
+_RELEASE = frozenset({"deploy", "deployment", "install", "installer", "package", "release", "ship"})
 _ANALYSIS = frozenset(
     {"analyze", "assess", "diagnose", "evaluate", "explain", "investigate", "question", "why"}
 )
@@ -154,6 +161,18 @@ def _tokens(value: str) -> frozenset[str]:
 
 def _contains_any(tokens: frozenset[str], terms: frozenset[str]) -> bool:
     return bool(tokens & terms)
+
+
+def _document_mutation_requested(request: str) -> bool:
+    return bool(
+        re.search(r"\b(?:write|writing)\b(?!\s+(?:query|statement|transaction)\b)", request, re.I)
+        or re.search(r"\bdocumenting\b", request, re.I)
+        or re.search(
+            r"(?:^|[.;]\s*|\b(?:and|please|then|to)\s+)document\b",
+            request,
+            re.I,
+        )
+    )
 
 
 def _detected_values(
@@ -239,22 +258,39 @@ def deterministic_work_plan(
 ) -> tuple[WorkUnitPlan | None, tuple[str, ...]]:
     """Build only high-signal typed units; ambiguous work stays with resident managers."""
 
-    tokens = _tokens(request)
+    actionable_request = _NEGATED_SCOPE.sub(" ", request)
+    tokens = _tokens(actionable_request)
     if not tokens or tokens <= _TRIVIAL:
         return None, ("deterministic_request_trivial",)
     languages = tuple(_detected_values(tokens, _LANGUAGES))
     frameworks = tuple(_detected_values(tokens, _FRAMEWORKS))
-    mutating = _contains_any(tokens, _MUTATION | _DOCUMENT_MUTATION)
-    code = _contains_any(tokens, _CODE) or bool(languages or frameworks)
-    docs = _contains_any(tokens, _DOCS)
+    document_mutation = _document_mutation_requested(actionable_request)
+    mutating = _contains_any(tokens, _MUTATION) or document_mutation
+    docs = _contains_any(tokens, _DOCS - {"document", "write", "writing"}) or document_mutation
+    code_terms = _CODE.difference({"repo", "repository"}) if docs else _CODE
+    code = _contains_any(tokens, code_terms) or bool(languages or frameworks)
     tests = _contains_any(tokens, _TEST)
     review = _contains_any(tokens, _REVIEW)
     security = _contains_any(tokens, _SECURITY)
     release = _contains_any(tokens, _RELEASE)
     analysis = _contains_any(tokens, _ANALYSIS)
+    normalized_request = actionable_request.casefold()
+    review_position = min(
+        (normalized_request.find(term) for term in _REVIEW if normalized_request.find(term) >= 0),
+        default=len(normalized_request) + 1,
+    )
+    mutation_position = min(
+        (
+            normalized_request.find(term)
+            for term in _MUTATION | _DOCUMENT_MUTATION
+            if normalized_request.find(term) >= 0
+        ),
+        default=len(normalized_request) + 1,
+    )
+    review_before_mutation = review_position < mutation_position
     units: list[dict[str, object]] = []
 
-    if docs and mutating and review and not code:
+    if docs and mutating and review and review_before_mutation and not code:
         review_domains = ("security",) if security else ("software-engineering",)
         review_capabilities = (
             ("application-attack-surfaces",) if security else ("technical-analysis",)
@@ -369,10 +405,16 @@ def deterministic_work_plan(
                 tools=("repository", "filesystem"),
             )
         )
+        evidence_outcome = "Independently analyze completed test and coverage evidence"
+        if "integration" in tokens:
+            evidence_outcome = (
+                "Independently verify the complete running application integration and "
+                "completed test evidence"
+            )
         units.append(
             _unit(
                 "unit-test-results",
-                outcome="Independently analyze completed test and coverage evidence",
+                outcome=evidence_outcome,
                 artifact="test-evidence",
                 lifecycle="testing",
                 domains=("quality-assurance",),
@@ -432,11 +474,16 @@ def deterministic_work_plan(
                 )
             )
     elif tests:
+        evidence_outcome = (
+            "Independently verify the complete running application integration and test evidence"
+            if "integration" in tokens
+            else "Analyze complete test and coverage evidence"
+        )
         units.append(
             _unit(
                 "unit-test-analysis" if review or analysis else "unit-tests",
                 outcome=(
-                    "Analyze complete test and coverage evidence"
+                    evidence_outcome
                     if review or analysis
                     else "Implement unit, integration, and failure-path tests"
                 ),
@@ -454,7 +501,7 @@ def deterministic_work_plan(
         security
         and (review or analysis)
         and not mutating
-        and not _has_reviewable_code_artifact(request, tokens)
+        and not _has_reviewable_code_artifact(actionable_request, tokens)
     ):
         units.append(
             _unit(
@@ -472,7 +519,7 @@ def deterministic_work_plan(
         )
     elif review and code:
         review_dependencies: tuple[str, ...] = ()
-        if security and not _has_inline_code_context(request, tokens):
+        if security and not _has_inline_code_context(actionable_request, tokens):
             units.append(
                 _unit(
                     "unit-codebase-discovery",
@@ -663,10 +710,12 @@ def deterministic_rankings(
         by_id = {agent_id: row for row in rows for agent_id in (row[0],)}
         selected: set[str] = set()
 
-        for agent_id in role_anchors(unit):
+        anchor_ids: set[str] = set()
+        for agent_id in role_anchors(unit, request=request):
             row = by_id.get(agent_id)
             if row is not None and row[2]:
                 selected.add(agent_id)
+                anchor_ids.add(agent_id)
 
         # Preserve at least the strongest owner for every typed requirement.
         # This permits a complementary minimum team without sending the full
@@ -682,8 +731,14 @@ def deterministic_rankings(
             if len(selected) >= 16:
                 break
 
+        bounded_ids = set(anchor_ids)
+        for agent_id, _score, _coverage in rows:
+            if agent_id in selected:
+                bounded_ids.add(agent_id)
+            if len(bounded_ids) >= 16:
+                break
         bounded = sorted(
-            (by_id[agent_id] for agent_id in selected),
+            (by_id[agent_id] for agent_id in bounded_ids),
             key=lambda item: (-item[1], item[0]),
         )[:16]
         result[unit.unit_id] = tuple((agent_id, score) for agent_id, score, _coverage in bounded)
@@ -741,12 +796,46 @@ def deterministic_staff_plan(
         code = "deterministic_staffing_gap"
         staffing = StaffingDecision("abstained", (), (AbstentionReason(code),))
         return DeterministicWorkforceResult(plan, None, staffing, (code,))
+    contracts = {item.agent_id: item for item in snapshot.contracts}
+    anchor_floor = 1.0
+    for unit in plan.units:
+        anchors = frozenset(role_anchors(unit, request=request))
+        rankings[unit.unit_id] = tuple(
+            sorted(
+                (
+                    (
+                        agent_id,
+                        max(score, anchor_floor) if agent_id in anchors else score,
+                    )
+                    for agent_id, score in rankings[unit.unit_id]
+                ),
+                key=lambda item: (-item[1], item[0] not in anchors, item[0]),
+            )
+        )
+    required: dict[str, frozenset[str]] = {}
+    acceptable: dict[str, frozenset[str]] = {}
+    forbidden: dict[str, frozenset[str]] = {}
+    for unit in plan.units:
+        ranked_ids = frozenset(item for item, _score in rankings[unit.unit_id])
+        required_ids = frozenset(
+            agent_id
+            for agent_id in role_anchors(unit, request=request)
+            if agent_id in ranked_ids
+            and not typed_staffing_ineligibility(unit, contracts[agent_id], context)
+        )
+        required[unit.unit_id] = required_ids
+        acceptable[unit.unit_id] = ranked_ids.difference(required_ids)
+        forbidden[unit.unit_id] = frozenset()
     proposal = build_deterministic_proposal(
         plan,
         snapshot.contracts,
         rankings,
         context=context,
         budget=_budget(config),
+        semantic_required=required,
+        semantic_acceptable=acceptable,
+        semantic_forbidden=forbidden,
+        invariant_required=required,
     )
     staffing = verify_staffing(
         plan,

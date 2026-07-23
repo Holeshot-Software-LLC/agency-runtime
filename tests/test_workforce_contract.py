@@ -63,7 +63,11 @@ def test_projection_excludes_source_prompt_and_provenance() -> None:
 def test_security_review_outcome_adds_audited_secondary_domain() -> None:
     source = next(agent for agent in _manifest_agents() if agent["slug"] == "code-reviewer")
 
-    assert project_workforce_contract(source).domains == ("software-engineering", "security")
+    assert project_workforce_contract(source).domains == (
+        "software-engineering",
+        "security",
+        "quality-assurance",
+    )
 
 
 def test_application_security_code_review_owns_security_and_software_domains() -> None:
@@ -77,6 +81,72 @@ def test_application_security_code_review_owns_security_and_software_domains() -
         "security",
         "software-engineering",
     )
+
+
+def test_code_review_contract_owns_software_and_quality_domains() -> None:
+    source = next(agent for agent in _manifest_agents() if agent["slug"] == "code-reviewer")
+
+    contract = project_workforce_contract(source)
+
+    assert contract.domains == (
+        "software-engineering",
+        "security",
+        "quality-assurance",
+    )
+
+
+def test_lsp_contract_owns_its_software_engineering_domain() -> None:
+    source = next(agent for agent in _manifest_agents() if agent["slug"] == "lsp-index-engineer")
+
+    contract = project_workforce_contract(source)
+
+    assert contract.domains == ("specialist-services", "software-engineering")
+
+
+def test_accessibility_auditor_owns_its_explicit_domain() -> None:
+    source = next(agent for agent in _manifest_agents() if agent["slug"] == "accessibility-auditor")
+
+    contract = project_workforce_contract(source)
+
+    assert contract.domains == ("quality-assurance", "accessibility")
+
+
+@pytest.mark.parametrize("agent_id", ["accounts-payable-agent", "chief-financial-officer"])
+def test_specialized_finance_contracts_own_their_explicit_domain(agent_id: str) -> None:
+    source = next(agent for agent in _manifest_agents() if agent["slug"] == agent_id)
+
+    contract = project_workforce_contract(source)
+
+    assert contract.domains == ("specialist-services", "finance")
+
+
+def test_incident_contracts_project_their_audited_controlled_capabilities() -> None:
+    sources = {agent["slug"]: agent for agent in _manifest_agents()}
+
+    responder = project_workforce_contract(sources["incident-responder"])
+    commander = project_workforce_contract(sources["incident-response-commander"])
+
+    assert {
+        "analysis",
+        "audit",
+        "coordination",
+        "governance",
+        "investigation",
+        "operations",
+        "planning",
+        "review",
+        "risk-analysis",
+    } <= set(responder.capability_ids)
+    assert {
+        "analysis",
+        "coordination",
+        "investigation",
+        "operations",
+        "planning",
+        "risk-analysis",
+        "review",
+    } <= set(commander.capability_ids)
+    assert commander.domains == ("software-engineering",)
 
 
 def test_discovery_worker_accepts_analysis_artifacts_from_inference_plans() -> None:

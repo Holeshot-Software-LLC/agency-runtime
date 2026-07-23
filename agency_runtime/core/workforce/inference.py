@@ -1545,6 +1545,11 @@ def _canonicalize_planning_activity(unit: dict[str, Any]) -> tuple[str, str]:
     artifact = str(unit.get("artifact_kind") or "")
     lifecycle = str(unit.get("lifecycle_phase") or "")
     mutation = str(unit.get("mutation_scope") or "")
+    declared_capabilities = unit.get("required_capabilities")
+    discovery_tokens = _semantic_tokens(
+        str(unit.get("outcome") or ""),
+        *(str(item) for item in declared_capabilities if isinstance(declared_capabilities, list)),
+    )
     if artifact in _ARTIFACT_CAPABILITY:
         # Artifact and lifecycle already express the activity. Letting a model
         # add generic capabilities such as "analysis" and "design" to an
@@ -1552,7 +1557,42 @@ def _canonicalize_planning_activity(unit: dict[str, Any]) -> tuple[str, str]:
         # deterministically ineligible. Keep semantic specialization in the
         # domain/stack fields and derive this broad capability mechanically.
         unit["required_capabilities"] = [_ARTIFACT_CAPABILITY[artifact]]
-    if artifact in {"review-report", "test-evidence"} and mutation == "read_only":
+    domains = unit.get("domains")
+    if (
+        artifact == "implementation-change"
+        and isinstance(domains, list)
+        and "software-engineering" in domains
+        and set(domains) & {"accessibility", "product"}
+    ):
+        # Product names the surface being changed, not an additional code
+        # implementation authority. Product review or planning remains a
+        # separate typed unit when the request actually asks for it.
+        unit["domains"] = [item for item in domains if item not in {"accessibility", "product"}]
+    read_only_review = mutation == "read_only" and (
+        artifact in {"review-report", "test-evidence"}
+        or (
+            artifact == "analysis"
+            and lifecycle == "discovery"
+            and bool(
+                discovery_tokens
+                & {
+                    "defect",
+                    "diagnose",
+                    "diagnosis",
+                    "diagnostic",
+                    "evidence",
+                    "failure",
+                    "incident",
+                    "inspect",
+                    "investigation",
+                    "repository",
+                    "trace",
+                    "verification",
+                }
+            )
+        )
+    )
+    if read_only_review:
         unit["authority"] = "review"
     elif artifact in {"implementation-change", "test-code"} and mutation == "workspace_write":
         unit["authority"] = "modify"
@@ -1631,6 +1671,13 @@ def _normalize_assurance_taxonomy(
                 # exception cannot turn the critic into a generic reviewer.
                 unit[field] = list(dict.fromkeys(explicit or ["workforce-governance"]))
                 continue
+            if "accessibility" in items:
+                # Accessibility is its own audited review surface. Requiring
+                # the reviewed application's engineering domain on the same
+                # unit forces an unrelated code reviewer to co-author the
+                # accessibility assessment.
+                unit[field] = ["accessibility"]
+                continue
             subject_domains = sorted(item for item in carried if item != "quality-assurance")
             unit[field] = list(dict.fromkeys((*explicit, *(subject_domains or sorted(carried)))))
             continue
@@ -1649,12 +1696,51 @@ def _normalize_assurance_taxonomy(
             unit[field] = reduced
 
 
+def _stable_dependency_order(units: list[Any]) -> list[Any]:
+    """Order one valid acyclic model graph while leaving invalid graphs untouched."""
+
+    by_id: dict[str, Mapping[str, Any]] = {}
+    for unit in units:
+        if not isinstance(unit, Mapping):
+            return units
+        unit_id = unit.get("unit_id")
+        dependencies = unit.get("depends_on")
+        if (
+            not isinstance(unit_id, str)
+            or not unit_id
+            or unit_id in by_id
+            or not isinstance(dependencies, list)
+            or not all(isinstance(item, str) for item in dependencies)
+        ):
+            return units
+        by_id[unit_id] = unit
+    known_ids = set(by_id)
+    if any(set(unit["depends_on"]) - known_ids for unit in by_id.values()):
+        return units
+    pending = list(by_id.values())
+    ordered: list[Mapping[str, Any]] = []
+    emitted: set[str] = set()
+    while pending:
+        ready = [unit for unit in pending if set(unit["depends_on"]) <= emitted]
+        if not ready:
+            return units
+        for unit in ready:
+            ordered.append(unit)
+            emitted.add(str(unit["unit_id"]))
+            pending.remove(unit)
+    # Structured providers occasionally return a valid acyclic graph in
+    # presentation order instead of dependency order. Stable topological
+    # normalization preserves the graph and keeps invalid references closed.
+    return list(ordered)
+
+
 def _normalized_plan_response(value: Mapping[str, Any]) -> Mapping[str, Any]:
     """Canonicalize redundant model fields into deterministic staffing facts."""
 
     units = value.get("units")
     if not isinstance(units, list):
         return value
+    units = _stable_dependency_order(units)
     normalized_units: list[Any] = []
     inherited_taxonomy: dict[str, dict[str, set[str]]] = {}
     for unit in units:
@@ -2147,6 +2233,7 @@ def plan_and_staff_workforce(
             codes=tuple(item.code for item in staffing.abstention_reasons),
             calls_used=budget.used,
             staffing=staffing,
+            inference_mode="inferred",
             cache_hits=cache_hits,
         )
 

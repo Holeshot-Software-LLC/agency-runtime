@@ -56,8 +56,8 @@
           "engineering": 54
         },
         "review": "batch-engineering-review.md",
-        "artifact_sha256": "d6884d5e04f55e5b226c30f99062152b1bc5c8b01bea0dd28ad6d96be7899db1",
-        "review_sha256": "1e7b683edcdc52bb4228a91a28dd8b72259b521648fe1dee6dbd1de80cdc8483"
+        "artifact_sha256": "bd7dec974a2168d4e4712b4465b0e774ad17a46d3d79b0f7212c957f662ce0c4",
+        "review_sha256": "6b3a8fdf52b1f2b6ff02ec12653a8f6f7a3929d6baa0062267a6e97f004fd85b"
       },
       "batch-marketing-security.json": {
         "count": 55,
@@ -67,8 +67,8 @@
           "security": 12
         },
         "review": "batch-marketing-security-review.md",
-        "artifact_sha256": "9fa3565c3f96f1fded8ee9b05aa54c473a611f3623d95209d2d3d19e7a72bcf4",
-        "review_sha256": "34b2aa8a2386874b588eca8d6f19beaf7b0150b2957f30d4123189f74fbc400c"
+        "artifact_sha256": "cdc4fbef32983208a4b14d560cf78b1974478bf29dd7995017c88499a983c090",
+        "review_sha256": "c47df17ad0a8c1c72f31415ea6b4f1a0930f8c0b5bd56dfa587e58aa3fa25a8e"
       },
       "batch-specialized.json": {
         "count": 95,
@@ -79,8 +79,8 @@
           "specialized": 56
         },
         "review": "batch-specialized-review.md",
-        "artifact_sha256": "bf0706ef2d6d1ac7264cae6955f17a777b906355d4e0bd7ff07625c72d0380eb",
-        "review_sha256": "cfbf7f32c599e81c08d374680202617f54a8735670ce91ca3495f7f27220da9b"
+        "artifact_sha256": "1b718b54b3e3aacd77b9f4668917b9b3bf20264d62998ea563e4a79528c457c0",
+        "review_sha256": "1264771a2e7039fc8714567743e83d45131adfa6965c853a68e610d85d1a6b89"
       }
     }
   },

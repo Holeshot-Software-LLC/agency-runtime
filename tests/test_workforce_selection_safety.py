@@ -12,7 +12,10 @@ from agency_runtime.core.workforce.contract import (
     project_workforce_contract,
     workforce_index_fingerprint,
 )
-from agency_runtime.core.workforce.fallback import deterministic_plan_and_staff
+from agency_runtime.core.workforce.fallback import (
+    deterministic_plan_and_staff,
+    deterministic_staff_plan,
+)
 from agency_runtime.core.workforce.inference import (
     _normalized_plan_response,
     _proposal_from_nominations,
@@ -21,6 +24,7 @@ from agency_runtime.core.workforce.inference import (
 )
 from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
 from agency_runtime.core.workforce.known_installer import known_contractor_agent
+from agency_runtime.core.workforce.lifecycle_roles import role_anchors
 from agency_runtime.core.workforce.planning_contracts import parse_work_unit_plan
 from agency_runtime.core.workforce.recruiter_index import (
     project_recruiter_index_record,
@@ -148,6 +152,87 @@ def _captured_typescript_plan():
         ],
     }
     return parse_work_unit_plan(_normalized_plan_response(raw))
+
+
+def test_active_incident_plan_has_a_safe_sufficient_audited_team() -> None:
+    snapshot = _snapshot()
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Contain a credential-theft incident without offensive probing.",
+            "units": [
+                _unit(
+                    "unit-incident-investigation",
+                    "Preserve evidence and assess the active credential-theft incident",
+                    "analysis",
+                    "discovery",
+                    ["security"],
+                    ["analysis", "audit", "governance", "investigation", "risk-analysis"],
+                    "advise",
+                    "read_only",
+                    ["repository-read"],
+                ),
+                _unit(
+                    "unit-containment-plan",
+                    "Prepare a reversible containment and recovery plan",
+                    "plan",
+                    "planning",
+                    ["security"],
+                    ["operations", "planning"],
+                    "plan",
+                    "read_only",
+                    ["repository-read"],
+                    depends_on=["unit-incident-investigation"],
+                ),
+                _unit(
+                    "unit-recovery-plan",
+                    "Prepare a reversible recovery plan across security and service restoration",
+                    "plan",
+                    "planning",
+                    ["security", "software-engineering"],
+                    ["operations", "planning", "risk-analysis"],
+                    "plan",
+                    "read_only",
+                    ["repository-read"],
+                    depends_on=["unit-containment-plan"],
+                ),
+            ],
+        }
+    )
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "cloud-infrastructure",
+                "communications-draft",
+                "incident-timeline",
+                "monitoring-observability",
+                "native-delegation",
+                "repository-read",
+            }
+        ),
+        snapshot.generation,
+    )
+
+    result = deterministic_staff_plan(
+        "Contain an active credential-theft incident, preserve forensic evidence, and "
+        "prepare a reversible recovery plan. Do not probe the live target offensively.",
+        plan,
+        snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+
+    assert result.staffing.accepted
+    assert {row.unit_id: row.selected for row in result.staffing.units} == {
+        "unit-incident-investigation": ("incident-responder",),
+        "unit-containment-plan": ("incident-responder",),
+        "unit-recovery-plan": (
+            "incident-responder",
+            "incident-response-commander",
+        ),
+    }
 
 
 def test_runtime_integration_shortlists_anchor_each_lifecycle_owner() -> None:
@@ -373,6 +458,535 @@ def test_nonsoftware_review_does_not_force_a_code_reviewer() -> None:
     )
 
     assert _typed_shortlists(plan, snapshot.contracts)[0]["role_anchors"] == []
+
+
+def test_cross_platform_release_change_anchors_the_installer_owner() -> None:
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Correct the app and produce installable packages.",
+            "units": [
+                _unit(
+                    "unit-release-change",
+                    "A corrected app for Windows and Linux releases",
+                    "implementation-change",
+                    "implementation",
+                    ["software-engineering"],
+                    ["implementation"],
+                    "modify",
+                    "workspace_write",
+                    ["repository-read", "repository-write", "code-execution"],
+                )
+            ],
+        }
+    )
+
+    assert role_anchors(plan.units[0]) == ("cross-platform-installer-engineer",)
+
+
+def test_untyped_implementation_anchors_the_governed_minimum_change_specialist() -> None:
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Implement the bounded application integration.",
+            "units": [
+                _unit(
+                    "unit-application-integration",
+                    "Complete the bounded application integration change",
+                    "implementation-change",
+                    "implementation",
+                    ["software-engineering"],
+                    ["implementation"],
+                    "modify",
+                    "workspace_write",
+                    ["repository-read", "repository-write", "code-execution"],
+                )
+            ],
+        }
+    )
+
+    assert role_anchors(plan.units[0]) == ("minimal-change-engineer",)
+
+
+def test_accessibility_review_anchors_the_audited_accessibility_specialist() -> None:
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Review the dashboard accessibility.",
+            "units": [
+                _unit(
+                    "unit-accessibility-review",
+                    "Accessibility assessment with actionable findings",
+                    "review-report",
+                    "review",
+                    ["accessibility", "software-engineering"],
+                    ["review", "audit", "accessibility"],
+                    "review",
+                    "read_only",
+                    ["repository-read"],
+                )
+            ],
+        }
+    )
+
+    assert role_anchors(plan.units[0]) == ("accessibility-auditor",)
+
+
+def test_brand_whimsy_and_accessibility_owners_remain_in_isolated_units() -> None:
+    request = (
+        "Create brand-governance guidance and, in a separate isolated work unit, add "
+        "bounded playful interface details with an independent accessibility audit."
+    )
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-brand",
+                    "Brand-governance guidance and identity rules",
+                    "plan",
+                    "planning",
+                    ["design"],
+                    ["planning", "governance"],
+                    "plan",
+                    "read_only",
+                    ["repository-read"],
+                ),
+                _unit(
+                    "unit-whimsy",
+                    "Implement bounded playful interface details",
+                    "implementation-change",
+                    "implementation",
+                    ["design"],
+                    ["implementation"],
+                    "modify",
+                    "workspace_write",
+                    ["repository-read", "repository-write", "code-execution"],
+                ),
+                _unit(
+                    "unit-accessibility",
+                    "Independent accessibility audit of the interface details",
+                    "review-report",
+                    "review",
+                    ["accessibility"],
+                    ["review"],
+                    "review",
+                    "read_only",
+                    ["repository-read"],
+                    depends_on=["unit-whimsy"],
+                ),
+            ],
+        }
+    )
+    assert [role_anchors(unit, request=request) for unit in plan.units] == [
+        ("brand-guardian",),
+        ("whimsy-injector",),
+        ("accessibility-auditor",),
+    ]
+    snapshot = _snapshot()
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "native-delegation",
+                *(tool for contract in snapshot.contracts for tool in contract.tool_classes),
+            }
+        ),
+        snapshot.generation,
+    )
+
+    result = deterministic_staff_plan(
+        request,
+        plan,
+        snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+
+    assert result.staffing.accepted
+    assert {row.unit_id: row.selected for row in result.staffing.units} == {
+        "unit-brand": ("brand-guardian",),
+        "unit-whimsy": ("whimsy-injector",),
+        "unit-accessibility": ("accessibility-auditor",),
+    }
+    assert (
+        len({context_id for row in result.staffing.units for _agent_id, context_id in row.contexts})
+        == 3
+    )
+
+
+def test_accounts_payable_analysis_and_cfo_review_use_separate_finance_owners() -> None:
+    request = (
+        "Analyze supplied accounts-payable exceptions, then have the chief financial "
+        "officer independently review cash-impact options in a separate context."
+    )
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-payables",
+                    "Analyze supplied accounts-payable exceptions",
+                    "analysis",
+                    "discovery",
+                    ["finance"],
+                    ["analysis"],
+                    "advise",
+                    "read_only",
+                    ["repository-read"],
+                ),
+                _unit(
+                    "unit-cfo-review",
+                    "Independently review the cash-impact options",
+                    "review-report",
+                    "review",
+                    ["finance"],
+                    ["review"],
+                    "review",
+                    "read_only",
+                    ["repository-read"],
+                    depends_on=["unit-payables"],
+                ),
+            ],
+        }
+    )
+    assert [role_anchors(unit, request=request) for unit in plan.units] == [
+        ("accounts-payable-agent",),
+        ("chief-financial-officer",),
+    ]
+    snapshot = _snapshot()
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "native-delegation",
+                *(tool for contract in snapshot.contracts for tool in contract.tool_classes),
+            }
+        ),
+        snapshot.generation,
+    )
+
+    result = deterministic_staff_plan(
+        request,
+        plan,
+        snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+
+    assert result.staffing.accepted
+    assert {row.unit_id: row.selected for row in result.staffing.units} == {
+        "unit-payables": ("accounts-payable-agent",),
+        "unit-cfo-review": ("chief-financial-officer",),
+    }
+
+
+def test_postgres_query_diagnosis_anchors_the_database_optimizer() -> None:
+    request = "Analyze measured PostgreSQL query-plan evidence for a slow write query."
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-query-analysis",
+                    "Measured query-plan findings for the slow PostgreSQL write query",
+                    "analysis",
+                    "discovery",
+                    ["software-engineering"],
+                    ["analysis"],
+                    "advise",
+                    "read_only",
+                    ["repository-read"],
+                )
+            ],
+        }
+    )
+
+    assert role_anchors(plan.units[0], request=request) == ("database-optimizer",)
+
+
+def test_clinical_evidence_and_legal_review_anchor_bounded_specialists() -> None:
+    request = (
+        "Summarize supplied clinical-trial evidence and independently review its use in a "
+        "legal document without diagnosis or compliance certification."
+    )
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-clinical-evidence",
+                    "Evidence-grounded summary of supplied clinical-trial materials",
+                    "analysis",
+                    "discovery",
+                    ["healthcare"],
+                    ["analysis"],
+                    "advise",
+                    "read_only",
+                    ["repository-read"],
+                ),
+                _unit(
+                    "unit-legal-review",
+                    "Independent review of evidence use in the legal document",
+                    "review-report",
+                    "review",
+                    ["healthcare", "specialist-services"],
+                    ["review"],
+                    "review",
+                    "read_only",
+                    ["repository-read"],
+                    depends_on=["unit-clinical-evidence"],
+                ),
+            ],
+        }
+    )
+
+    assert [role_anchors(unit, request=request) for unit in plan.units] == [
+        ("clinical-evidence-agent",),
+        ("legal-document-review",),
+    ]
+
+
+def test_stackless_observability_owner_complements_python_implementation() -> None:
+    request = (
+        "Implement a production Python API with application observability, then separately "
+        "verify installed Windows and Linux release evidence."
+    )
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-python-observability",
+                    "Production Python API with application observability",
+                    "implementation-change",
+                    "implementation",
+                    ["software-engineering"],
+                    ["implementation"],
+                    "modify",
+                    "workspace_write",
+                    ["repository-read", "repository-write", "code-execution"],
+                    languages=["python"],
+                )
+            ],
+        }
+    )
+    assert role_anchors(plan.units[0], request=request) == (
+        "python-application-engineer",
+        "application-observability-engineer",
+    )
+    snapshot = _snapshot()
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "native-delegation",
+                *(tool for contract in snapshot.contracts for tool in contract.tool_classes),
+            }
+        ),
+        snapshot.generation,
+    )
+
+    result = deterministic_staff_plan(
+        request,
+        plan,
+        snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+
+    assert result.proposal is not None
+    assert result.proposal.units[0].selected == (
+        "application-observability-engineer",
+        "python-application-engineer",
+    )
+
+
+def test_incremental_language_server_change_anchors_the_lsp_specialist() -> None:
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Implement cancellation-safe incremental indexing.",
+            "units": [
+                _unit(
+                    "unit-lsp-index",
+                    "Language server supports cancellation-safe incremental indexing",
+                    "implementation-change",
+                    "implementation",
+                    ["software-engineering"],
+                    ["implementation"],
+                    "modify",
+                    "workspace_write",
+                    ["repository-read", "repository-write", "code-execution"],
+                )
+            ],
+        }
+    )
+
+    assert role_anchors(plan.units[0]) == ("lsp-index-engineer",)
+    assert role_anchors(
+        parse_work_unit_plan(
+            {
+                "schema_version": 2,
+                "request_summary": "Implement cancellation handling.",
+                "units": [
+                    _unit(
+                        "unit-generic-index-change",
+                        "Implement cancellation handling",
+                        "implementation-change",
+                        "implementation",
+                        ["software-engineering"],
+                        ["implementation"],
+                        "modify",
+                        "workspace_write",
+                        ["repository-read", "repository-write", "code-execution"],
+                    )
+                ],
+            }
+        ).units[0],
+        request="Implement cancellation-safe indexing in the language server.",
+    ) == ("lsp-index-engineer",)
+
+    snapshot = _snapshot()
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "native-delegation",
+                "repository-read",
+                "repository-write",
+                "code-execution",
+                *(tool for contract in snapshot.contracts for tool in contract.tool_classes),
+            }
+        ),
+        snapshot.generation,
+    )
+    result = deterministic_staff_plan(
+        "Implement cancellation-safe incremental indexing in the language server.",
+        plan,
+        snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+
+    assert result.proposal is not None
+    assert result.proposal.units[0].required == ("lsp-index-engineer",)
+    assert result.proposal.units[0].selected == ("lsp-index-engineer",)
+    assert result.proposal.units[0].margin >= AgencyConfig().workforce.min_margin
+
+
+def test_disabled_lsp_discovery_anchor_is_disclosed_before_safe_fallback() -> None:
+    request = (
+        "Diagnose cancellation and stale-symbol defects in a language-server index. "
+        "Explain the safest next step if the best specialist is disabled."
+    )
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": request,
+            "units": [
+                _unit(
+                    "unit-lsp-diagnosis",
+                    "Diagnose cancellation and stale-symbol defects",
+                    "analysis",
+                    "discovery",
+                    ["software-engineering"],
+                    ["analysis", "investigation"],
+                    "review",
+                    "read_only",
+                    ["repository-read"],
+                )
+            ],
+        }
+    )
+    assert role_anchors(plan.units[0], request=request) == ("lsp-index-engineer",)
+
+    snapshot = _snapshot()
+    contracts = tuple(
+        replace(contract, enabled=False, employment="disabled")
+        if contract.agent_id == "lsp-index-engineer"
+        else contract
+        for contract in snapshot.contracts
+    )
+    records = tuple(project_recruiter_index_record(contract) for contract in contracts)
+    disabled_snapshot = replace(
+        snapshot,
+        contracts=contracts,
+        contract_fingerprint=workforce_index_fingerprint(contracts),
+        recruiter_fingerprint=recruiter_index_fingerprint(records),
+        recruiter_index=serialize_recruiter_index(records),
+    )
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "native-delegation",
+                *(tool for contract in contracts for tool in contract.tool_classes),
+            }
+        ),
+        disabled_snapshot.generation,
+        frozenset(contract.agent_id for contract in contracts if contract.enabled),
+    )
+
+    result = deterministic_staff_plan(
+        request,
+        plan,
+        disabled_snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+
+    assert result.proposal is not None
+    row = result.proposal.units[0]
+    assert "lsp-index-engineer" not in row.selected
+    assert row.disabled_shadows[0].agent_id == "lsp-index-engineer"
+    assert row.disabled_shadows[0].fallback_agent_id in row.selected
+
+
+def test_deterministic_staffing_requires_each_safe_lifecycle_owner() -> None:
+    snapshot = _snapshot()
+    plan = _captured_typescript_plan()
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(
+            {
+                "code-execution",
+                "native-delegation",
+                "package-management",
+                "repository-read",
+                "repository-write",
+                "test-execution",
+            }
+        ),
+        snapshot.generation,
+    )
+
+    result = deterministic_staff_plan(
+        "Implement and independently verify the TypeScript application change.",
+        plan,
+        snapshot,
+        config=AgencyConfig(),
+        context=context,
+    )
+
+    assert result.staffing.accepted
+    assert {row.unit_id: row.selected for row in result.staffing.units} == {
+        "unit-implement": ("typescript-application-engineer",),
+        "unit-tests": ("software-test-engineer",),
+        "unit-review": ("code-reviewer",),
+        "unit-results": ("test-results-analyzer",),
+    }
 
 
 def test_captured_typescript_plan_forms_exact_safe_lifecycle_team_from_full_workforce() -> None:
