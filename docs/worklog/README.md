@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-21
+updated: 2026-07-22
 tags: []
 related: []
 supersedes: []
@@ -135,6 +135,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `71faeef` | 2026-07-21 | fix(dashboard): preserve provider protocol coverage | [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | null |
 | `4e0b0a7` | 2026-07-21 | docs(roadmap): define inference-first workforce delivery | [AR-119 through AR-125](../roadmap/README.md) | null |
 | `71405fa` | 2026-07-21 | feat(workforce): establish governed staffing foundation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-120](../roadmap/issue-AR-120-normalized-workforce-recruitment-index.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md), [AR-122](../roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md) | [detail](2026-07-21-71405fa-governed-workforce-foundation.md) |
+| `743a982` | 2026-07-22 | feat(workforce): build inference-first routing foundation | [AR-119 through AR-125](../roadmap/README.md) | [detail](2026-07-22-743a982-inference-first-routing-foundation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
