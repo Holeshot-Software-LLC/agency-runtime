@@ -169,6 +169,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fc9c453` | 2026-07-23 | docs(roadmap): record confidence-abstention recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-fc9c453-confidence-abstention-recovery.md) |
 | `90179d8` | 2026-07-23 | docs(roadmap): record further matched corpus variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-90179d8-further-matched-corpus-variance.md) |
 | `b8c1eca` | 2026-07-23 | docs(roadmap): record bounded selection recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-b8c1eca-bounded-selection-recovery.md) |
+| `8918040` | 2026-07-23 | docs(roadmap): record matched latency recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-8918040-matched-latency-recovery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
