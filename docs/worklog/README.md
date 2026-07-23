@@ -173,6 +173,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6049510` | 2026-07-23 | docs(roadmap): record four-case selection variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-6049510-four-case-selection-variance.md) |
 | `48e3022` | 2026-07-23 | docs(roadmap): record four-case selection recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-48e3022-four-case-selection-recovery.md) |
 | `0dfe777` | 2026-07-23 | docs(roadmap): record second 19-case Agency pass | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-0dfe777-second-19-case-agency-pass.md) |
+| `518d227` | 2026-07-23 | docs(roadmap): record post-pass corpus variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-518d227-post-pass-corpus-variance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
