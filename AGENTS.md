@@ -32,7 +32,7 @@ below.
 |---|---|---|
 | Project overview | [README.md](README.md) | Installation, behavior, architecture, and public reference |
 | Planning | [docs/roadmap/README.md](docs/roadmap/README.md) | Internal issue registry and tracker mapping |
-| Active handoffs | [docs/roadmap/handoffs/README.md](docs/roadmap/handoffs/README.md) | Bounded recovery capsules for long-running work |
+| Context checkpoints | [docs/roadmap/handoffs/README.md](docs/roadmap/handoffs/README.md) | Bounded recovery capsules for long-running work |
 | Change reasoning | [docs/worklog/README.md](docs/worklog/README.md) | Exact Git history index and reasoning-rich commit notes |
 | Durable decisions | [docs/decisions/README.md](docs/decisions/README.md) | Canonical ADR registry and superseding chains |
 | Contributor workflow | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, implementation boundaries, and validation |
@@ -158,15 +158,15 @@ may remain.
 Do not alter faithful historical records merely to neutralize wording. Flag the
 historical reference alongside the record instead.
 
-## Autonomous context continuity
+## Context gates and clean checkpoints
 
 Long-running work must not depend on one prompt retaining the entire execution
 history. Every long-running roadmap item uses one active recovery capsule under
 `docs/roadmap/handoffs/`. The capsule is a bounded current-state projection,
 not a second roadmap or append-only transcript. `scripts/verify_docs.py`
 enforces one active capsule per issue, required recovery sections, a maximum of
-12 KiB and 180 lines, the current persistent `goal_owner_task_id`, and the fixed
-50-percent hard checkpoint and 65-percent live-evaluation admission gates.
+12 KiB and 180 lines, and the fixed 50-percent hard checkpoint and 65-percent
+live-evaluation admission gates.
 
 On Codex, run telemetry after bounded bootstrap, immediately before every live
 evaluation, and at the end of every bounded package:
@@ -175,9 +175,9 @@ evaluation, and at the end of every bounded package:
 python scripts/context_handoff_status.py --json --threshold 50 --admission-threshold 65
 ```
 
-The helper reads the newest cumulative token-count event. Same-chat goal
-continuation or compaction may not reset that cumulative value, so never wait
-or emit an empty continuation hoping the percentage will rise.
+The helper reads the newest cumulative token-count event. Normal Codex
+compaction may not reset that cumulative value, so never wait or emit an empty
+continuation hoping the percentage will rise.
 
 Apply the gates as follows:
 
@@ -187,48 +187,23 @@ Apply the gates as follows:
   fresh immediately-preceding telemetry check.
 - At or below 50 percent, first finish the smallest safe in-progress slice,
   run proportionate checks, and create a clean durable substantive/ledger
-  checkpoint. Cross-task dispatch is prohibited. Only bounded non-live
-  recovery or governance work needed to repair or close the protocol may
-  continue in that goal-owning task.
+  checkpoint. Then continue in the same task. Because this is below the
+  65-percent gate, only non-live work may start until the current task again
+  has an admissible reading.
 
-When the task has an explicitly authorized persistent goal, that same task
-remains both `goal_owner_task_id` and sole repository writer across automatic
-same-chat continuations and compactions. At the hard checkpoint it updates the
-canonical roadmap and active capsule with exact evidence, unresolved gates,
-constraints, and one next bounded package, creates the local recovery and
-ledger commits, and ends the turn when useful. It does not call
-`create_thread`, fork, or dispatch merely because cumulative telemetry remains
-low. If actual retention degrades, finish the smallest safe clean checkpoint
-and report a concrete user-action blocker instead of creating another task.
+At each hard checkpoint, update the canonical roadmap and active capsule with
+exact evidence, unresolved gates, constraints, and one next bounded package,
+then create the local recovery and ledger commits. Continue the current task
+through normal Codex behavior, including compaction when it occurs.
 
-Cross-task goal transfer is exceptional and permitted only when all of these
-facts are proven:
-
-1. The user explicitly authorizes that exact transfer.
-2. The source persistent goal is paused or cleared, or the source task is
-   archived, so two active goal owners cannot exist.
-3. The receiver creates the authorized persistent goal in its own task.
-4. The receiver acknowledges ownership by naming its task ID, and the active
-   capsule records that value as `goal_owner_task_id` before further work.
-5. The branch is clean at the named ledger commit and the receiver confirms the
-   sole-writer lease.
-
-If any transfer condition cannot be proven, stop at the clean checkpoint. Do
-not create a speculative receiver. Once transfer is authorized, task creation
-remains create-once and reconcile-on-error: search the exact `handoff_token`
-before creation, call creation once, treat ambiguous errors as indeterminate,
-and reconcile before any retry. Duplicate matches are a coordination incident;
-pause them before edits and retain at most one verified receiver.
-
-An authorized receiver bootstrap is deliberately bounded. It reads this file,
-the active capsule, the live tracker issue, and the latest worklog named by the
-capsule completely, then only capsule-referenced canonical evidence. It checks
-telemetry after bootstrap and again immediately before live evaluation. A
-read-only preflight with no substantive delta never creates a telemetry note,
-empty recovery/ledger pair, or relay task; it reuses the existing checkpoint.
+The thresholds never authorize or require creating, forking, dispatching, or
+waiting for another task. They also never require pausing or transferring a
+persistent goal, recording a task owner, acknowledging a receiver, or stopping
+for user action. Cross-task coordination is outside this context protocol.
+A read-only preflight with no substantive delta never creates a telemetry note
+or empty recovery/ledger pair; it reuses the existing checkpoint.
 
 Codex Desktop does not inject its UI meter into the model prompt, so the helper
 reads the active `CODEX_THREAD_ID` session record. If telemetry is unavailable,
-use a conservative estimate. The goal owner must preserve prior work and must
-not mark an umbrella item complete until every acceptance gate has current
-evidence.
+use a conservative estimate. Preserve prior work and do not mark an umbrella
+item complete until every acceptance gate has current evidence.

@@ -1,6 +1,6 @@
 ---
 title: "Use bounded recovery capsules and persistent goal ownership"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-23
 updated: 2026-07-23
@@ -15,8 +15,9 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/handoffs/README.md
   - docs/roadmap/handoffs/issue-AR-119.md
+  - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0085-continue-in-task-after-context-checkpoints.md
 id: ADR-0084
 type: decision
 deciders: [maintainers]

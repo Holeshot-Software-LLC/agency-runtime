@@ -43,10 +43,9 @@ def test_reads_newest_token_count_without_loading_older_records(tmp_path: Path) 
     assert status.timestamp == "new"
     assert status.remaining_tokens == 40
     assert status.remaining_percent == 40.0
-    assert status.handoff_required is True
     assert status.hard_checkpoint_required is True
     assert status.live_evaluation_blocked is True
-    assert status.protocol_action == "checkpoint_then_continue_bounded_non_live"
+    assert status.protocol_action == "checkpoint_then_continue_same_task"
 
 
 def test_finds_the_active_thread_record(tmp_path: Path) -> None:
@@ -84,7 +83,6 @@ def test_cli_reports_json_and_threshold(tmp_path: Path, capsys) -> None:
     assert result == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["remaining_percent"] == 51.0
-    assert payload["handoff_required"] is False
     assert payload["hard_checkpoint_required"] is False
     assert payload["live_evaluation_allowed"] is False
     assert payload["protocol_action"] == "bounded_non_live_only"
@@ -101,7 +99,7 @@ def test_cli_requires_a_thread_id(tmp_path: Path, capsys) -> None:
         (34, True, False, "live_evaluation_admitted"),
         (35, True, False, "live_evaluation_admitted"),
         (36, False, False, "bounded_non_live_only"),
-        (50, False, True, "checkpoint_then_continue_bounded_non_live"),
+        (50, False, True, "checkpoint_then_continue_same_task"),
     ],
 )
 def test_live_evaluation_admission_and_hard_checkpoint_boundaries(
@@ -142,7 +140,7 @@ def test_newest_cumulative_event_never_requests_an_empty_reset_wait(tmp_path: Pa
     status = read_context_status(path, thread_id="thread-123", threshold_percent=50)
 
     assert status.timestamp == "newest-cumulative"
-    assert status.protocol_action == "checkpoint_then_continue_bounded_non_live"
+    assert status.protocol_action == "checkpoint_then_continue_same_task"
     assert "wait" not in status.protocol_action
 
 

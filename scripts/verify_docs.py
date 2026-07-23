@@ -43,13 +43,12 @@ HANDOFF_MAX_BYTES = 12 * 1024
 HANDOFF_MAX_LINES = 180
 HANDOFF_HARD_CHECKPOINT_PERCENT = 50
 HANDOFF_LIVE_EVALUATION_ADMISSION_PERCENT = 65
-CODEX_TASK_ID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 HANDOFF_REQUIRED_HEADINGS = frozenset(
     {
         "checkpoint",
         "completed-evidence",
         "exact-blocker",
-        "goal-ownership",
+        "same-task-continuity",
         "next-bounded-work-package",
         "verification",
         "constraints",
@@ -222,10 +221,8 @@ def _handoff_schema_errors(doc: Document) -> list[str]:
         doc,
         {
             "issue_id",
-            "handoff_token",
             "branch",
             "evidence_commit",
-            "goal_owner_task_id",
             "hard_checkpoint_percent",
             "live_evaluation_admission_percent",
             "minimum_ledger_commit",
@@ -238,9 +235,6 @@ def _handoff_schema_errors(doc: Document) -> list[str]:
         errors.append(f"{doc.relative}: active handoff status must be 'active'")
     if not re.fullmatch(r"AR-\d{2,}", issue_id):
         errors.append(f"{doc.relative}: handoff issue_id must match AR-NN")
-    token = meta.get("handoff_token")
-    if not isinstance(token, str) or not token.startswith(f"{issue_id}:"):
-        errors.append(f"{doc.relative}: handoff_token must be a string prefixed by {issue_id}:")
     branch = meta.get("branch")
     if not isinstance(branch, str) or not re.fullmatch(r"[A-Za-z0-9._/-]+", branch):
         errors.append(f"{doc.relative}: branch must be a non-empty Git ref name")
@@ -250,8 +244,6 @@ def _handoff_schema_errors(doc: Document) -> list[str]:
     tracker_url = meta.get("tracker_url")
     if tracker_url is not None and not isinstance(tracker_url, str):
         errors.append(f"{doc.relative}: tracker_url must be a string or null")
-    if not CODEX_TASK_ID_RE.fullmatch(str(meta.get("goal_owner_task_id", ""))):
-        errors.append(f"{doc.relative}: goal_owner_task_id must be a lowercase UUID")
     hard_checkpoint = meta.get("hard_checkpoint_percent")
     if isinstance(hard_checkpoint, bool) or hard_checkpoint != HANDOFF_HARD_CHECKPOINT_PERCENT:
         errors.append(
@@ -462,12 +454,9 @@ def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[s
 def validate_handoffs(docs: list[Document], errors: list[str]) -> None:
     handoffs = [doc for doc in docs if doc.meta.get("type") == "handoff"]
     issues = {str(doc.meta.get("issue_id")): doc for doc in docs if doc.meta.get("type") == "issue"}
-    tokens: dict[str, list[Document]] = {}
     issue_capsules: dict[str, list[Document]] = {}
     for doc in handoffs:
         issue_id = str(doc.meta.get("issue_id", ""))
-        token = str(doc.meta.get("handoff_token", ""))
-        tokens.setdefault(token, []).append(doc)
         issue_capsules.setdefault(issue_id, []).append(doc)
 
         expected_prefix = f"docs/roadmap/handoffs/issue-{issue_id}"
@@ -509,9 +498,6 @@ def validate_handoffs(docs: list[Document], errors: list[str]) -> None:
         if doc.meta.get("tracker_url") != issue.meta.get("tracker_url"):
             errors.append(f"{doc.relative}: tracker_url must match {issue.relative}")
 
-    for token, matches in sorted(tokens.items()):
-        if token and len(matches) > 1:
-            errors.append(f"docs/roadmap/handoffs: duplicate handoff_token {token!r}")
     for issue_id, matches in sorted(issue_capsules.items()):
         if issue_id and len(matches) > 1:
             errors.append(f"docs/roadmap/handoffs: multiple active capsules for {issue_id}")

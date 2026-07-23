@@ -9,16 +9,14 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/worklog/2026-07-23-ar126-persistent-goal-context-continuity.md
-  - docs/decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md
+  - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-handoff_token: "AR-119:full-corpus-after-installed-recovery:v1"
 branch: codex/ar-115-live-routing-trust
 evidence_commit: a6007afc713a5eadb4b1cbbc753f93f747457591
 minimum_ledger_commit: a8822d774fd05f4ca538fc07241e7399c84191fb
-goal_owner_task_id: 019f8f6f-8051-7b61-a237-2035384601f6
 hard_checkpoint_percent: 50
 live_evaluation_admission_percent: 65
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -40,8 +38,8 @@ complete historical and acceptance contract.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
-- The dispatch prompt supplies the exact current clean HEAD and source task ID.
-  The HEAD may be newer than the minimum ledger commit but must contain it.
+- The current HEAD may be newer than the minimum ledger commit but must contain
+  it.
 
 ## Completed evidence
 
@@ -75,24 +73,21 @@ complete historical and acceptance contract.
 - Installed release recovered under an unchanged bounded rerun. Its accepted
   alternative plan confirms the earlier generation-preparation occurrence was
   configured-model plan-shape variance, not a repeatable governed defect.
-- The required complete 19-case confirmation has not yet run. The receiver
-  stopped at the mandatory telemetry threshold after safely preserving the
-  bounded result.
+- The required complete 19-case confirmation has not yet run. The prior task
+  stopped under the now-superseded cross-task handoff protocol after safely
+  preserving the bounded result.
 - Complete Agency corpora have varied from 19/19 to 18/19 and 17/19, and no
   complete corpus has produced 19 benchmark-valid upstream arms. Malformed,
   no-response, or timed-out upstream arms remain validity failures, never
   comparative losses.
 
-## Goal ownership
+## Same-task continuity
 
-- Persistent goal owner and sole repository writer:
-  019f8f6f-8051-7b61-a237-2035384601f6.
-- No cross-task transfer is authorized. Cumulative telemetry does not justify
-  another task or an empty continuation loop waiting for a reset.
+- Context thresholds do not create, fork, dispatch, or wait for another task.
+- Continue this package in the current task through normal Codex compaction.
 - Below 65 percent remaining, no new expensive live evaluation may start. At
-  or below 50 percent, first preserve a clean durable checkpoint, then perform
-  only bounded non-live recovery or governance work in this same goal-owning
-  task.
+  or below 50 percent, first preserve a clean durable checkpoint, then continue
+  in the same task.
 
 ## Next bounded work package
 
@@ -129,11 +124,10 @@ git diff --check
 
 ## Constraints
 
-- Acknowledge sole-writer ownership before editing or live evaluation.
 - Check telemetry immediately before every live evaluation, including a
   conditional second run; require at least 65 percent remaining to admit it.
-- At or below 50 percent, continue only bounded non-live work in the same goal;
-  do not dispatch a task or wait in empty turns for telemetry to reset.
+- At or below 50 percent, create a clean durable checkpoint and continue in the
+  same task; do not dispatch a task or wait for telemetry to reset.
 - Preserve every accumulated AR-119 commit and the clean branch.
 - Do not weaken typed coverage, add a scenario route, raise the 15000 ms gate,
   increase the one-call budget, or reinterpret malformed upstream output.

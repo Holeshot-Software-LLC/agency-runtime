@@ -76,10 +76,8 @@ def _errors(doc: verify_docs.Document) -> list[str]:
         _base_meta(
             type="handoff",
             issue_id="AR-119",
-            handoff_token="AR-119:bounded-package:v1",
             branch="codex/ar-119",
             evidence_commit="a" * 40,
-            goal_owner_task_id="019f8f6f-8051-7b61-a237-2035384601f6",
             hard_checkpoint_percent=50,
             live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,
@@ -148,16 +146,14 @@ def test_decision_schema_reports_identity_status_and_decider_contracts() -> None
     ]
 
 
-def test_handoff_schema_reports_unbounded_identity_fields() -> None:
+def test_handoff_schema_reports_invalid_checkpoint_fields() -> None:
     doc = _document(
         _base_meta(
             type="handoff",
             status="draft",
             issue_id="AR-1",
-            handoff_token="different-token",
             branch="invalid branch",
             evidence_commit="abc",
-            goal_owner_task_id="not-a-task-id",
             hard_checkpoint_percent=51,
             live_evaluation_admission_percent=64,
             minimum_ledger_commit=None,
@@ -169,12 +165,10 @@ def test_handoff_schema_reports_unbounded_identity_fields() -> None:
     assert _errors(doc) == [
         f"{doc.relative}: active handoff status must be 'active'",
         f"{doc.relative}: handoff issue_id must match AR-NN",
-        f"{doc.relative}: handoff_token must be a string prefixed by AR-1:",
         f"{doc.relative}: branch must be a non-empty Git ref name",
         f"{doc.relative}: evidence_commit must be a full lowercase Git SHA",
         f"{doc.relative}: minimum_ledger_commit must be a full lowercase Git SHA",
         f"{doc.relative}: tracker_url must be a string or null",
-        f"{doc.relative}: goal_owner_task_id must be a lowercase UUID",
         f"{doc.relative}: hard_checkpoint_percent must be 50",
         f"{doc.relative}: live_evaluation_admission_percent must be 65",
     ]
@@ -291,9 +285,9 @@ Current evidence.
 
 Current blocker.
 
-## Goal ownership
+## Same-task continuity
 
-Task owns the persistent goal and repository writer lease.
+Continue in the current task after a clean checkpoint.
 
 ## Next bounded work package
 
@@ -335,10 +329,8 @@ def test_handoff_validation_accepts_one_bounded_capsule_per_issue(
         meta=_base_meta(
             type="handoff",
             issue_id="AR-119",
-            handoff_token="AR-119:bounded-package:v1",
             branch="codex/ar-119",
             evidence_commit="a" * 40,
-            goal_owner_task_id="019f8f6f-8051-7b61-a237-2035384601f6",
             hard_checkpoint_percent=50,
             live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,
@@ -354,7 +346,7 @@ def test_handoff_validation_accepts_one_bounded_capsule_per_issue(
     assert errors == []
 
 
-def test_handoff_validation_rejects_duplicate_tokens_and_missing_sections(
+def test_handoff_validation_rejects_duplicate_capsules_and_missing_sections(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -383,10 +375,8 @@ def test_handoff_validation_rejects_duplicate_tokens_and_missing_sections(
                 meta=_base_meta(
                     type="handoff",
                     issue_id="AR-119",
-                    handoff_token="AR-119:same-token:v1",
                     branch="codex/ar-119",
                     evidence_commit="a" * 40,
-                    goal_owner_task_id="019f8f6f-8051-7b61-a237-2035384601f6",
                     hard_checkpoint_percent=50,
                     live_evaluation_admission_percent=65,
                     minimum_ledger_commit="b" * 40,
@@ -400,7 +390,6 @@ def test_handoff_validation_rejects_duplicate_tokens_and_missing_sections(
 
     verify_docs.validate_handoffs([issue, *capsules], errors)
 
-    assert ("docs/roadmap/handoffs: duplicate handoff_token 'AR-119:same-token:v1'") in errors
     assert "docs/roadmap/handoffs: multiple active capsules for AR-119" in errors
     assert any("missing handoff sections" in error for error in errors)
 
@@ -436,10 +425,8 @@ def test_handoff_validation_rejects_size_line_and_tracker_drift(
         meta=_base_meta(
             type="handoff",
             issue_id="AR-119",
-            handoff_token="AR-119:bounded-package:v1",
             branch="codex/ar-119",
             evidence_commit="a" * 40,
-            goal_owner_task_id="019f8f6f-8051-7b61-a237-2035384601f6",
             hard_checkpoint_percent=50,
             live_evaluation_admission_percent=65,
             minimum_ledger_commit="b" * 40,

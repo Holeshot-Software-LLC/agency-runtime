@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Report Codex context capacity for bounded goal-owned work.
+"""Report Codex context capacity for bounded same-task work.
 
 Codex Desktop exposes context usage in its UI but does not inject that number
 into the model-visible prompt. The local JSONL session record contains the same
 token-count event. This helper reads only the active thread's newest cumulative
 event and reports both the hard checkpoint reserve and the higher admission
 gate for expensive live evaluations. A low cumulative reading never instructs
-the caller to wait for a reset or create another task.
+the caller to wait for a reset, stop, or create another task.
 """
 
 from __future__ import annotations
@@ -32,7 +32,6 @@ class ContextStatus:
     threshold_percent: float
     hard_checkpoint_percent: float
     admission_threshold_percent: float
-    handoff_required: bool
     hard_checkpoint_required: bool
     live_evaluation_allowed: bool
     live_evaluation_blocked: bool
@@ -99,7 +98,7 @@ def read_context_status(
         hard_checkpoint_required = remaining_percent <= threshold_percent
         live_evaluation_allowed = remaining_percent >= admission_threshold_percent
         if hard_checkpoint_required:
-            protocol_action = "checkpoint_then_continue_bounded_non_live"
+            protocol_action = "checkpoint_then_continue_same_task"
         elif live_evaluation_allowed:
             protocol_action = "live_evaluation_admitted"
         else:
@@ -115,7 +114,6 @@ def read_context_status(
             threshold_percent=threshold_percent,
             hard_checkpoint_percent=threshold_percent,
             admission_threshold_percent=admission_threshold_percent,
-            handoff_required=hard_checkpoint_required,
             hard_checkpoint_required=hard_checkpoint_required,
             live_evaluation_allowed=live_evaluation_allowed,
             live_evaluation_blocked=not live_evaluation_allowed,
@@ -126,7 +124,7 @@ def read_context_status(
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Report active Codex context capacity and handoff status."
+        description="Report active Codex context capacity and checkpoint status."
     )
     parser.add_argument(
         "--thread-id",

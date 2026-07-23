@@ -11,6 +11,7 @@ related:
   - docs/decisions/0082-schedule-assurance-by-artifact-lifecycle.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md
+  - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
 supersedes: []
@@ -2414,9 +2415,10 @@ or call-budget rule changed.
 The upstream arm returned a complete team but exceeded the unchanged latency
 gate at 16711.509 ms. That is a valid descriptive observation, not a
 superiority result. The complete 19-case confirmation remains required. It was
-not started in this task because receiver telemetry reached the mandatory
-handoff threshold after the instrumented evidence was safely complete. The
-capture remains outside the repository at
+not started in the prior task because telemetry reached the then-mandatory
+cross-task handoff threshold after the instrumented evidence was safely
+complete. ADR-0085 now retains the gate and clean checkpoint but continues in
+the same task. The capture remains outside the repository at
 `C:\tmp\agency-runtime-ar119-019f8f6f-installed-confirmation-20260723-104906`.
 
 ### Still required before AR-119 can close
@@ -2465,7 +2467,7 @@ increase the one-call budget, weaken typed coverage, add a scenario route, or
 claim Agency is better. Exact activation, blinded completed-outcome trials, and
 contractor lifecycle remain deferred.
 
-### Handoff constraints
+### Context checkpoint constraints
 
 - Continue on `codex/ar-115-live-routing-trust`; do not reset, discard, or
   silently rewrite the accumulated AR-119 work.
@@ -2473,7 +2475,8 @@ contractor lifecycle remain deferred.
 - Do not push or trigger hosted GitHub Actions during intermediate packages;
   the user requested one consolidated hosted verification near the end.
 - After each bounded package, update this checkpoint, create local recovery and
-  ledger commits, and apply the autonomous context handoff rule in `AGENTS.md`.
+  ledger commits, and apply the same-task context gates in `AGENTS.md`. Never
+  create, fork, dispatch, or wait for another task because of telemetry.
 
 ## Acceptance
 
