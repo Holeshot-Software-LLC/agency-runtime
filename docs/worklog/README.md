@@ -164,6 +164,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b927266` | 2026-07-23 | fix(governance): enforce persistent goal context continuity | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-ar126-persistent-goal-context-continuity.md) |
 | `4a19e23` | 2026-07-23 | fix(governance): keep context checkpoints in-task | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-ar126-same-task-context-checkpoints.md) |
 | `06d12cf` | 2026-07-23 | docs(roadmap): record complete-corpus confidence variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-ar119-complete-corpus-confidence-variance.md) |
+| `be1ec78` | 2026-07-23 | docs(roadmap): prepare confidence-abstention capture | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-ar119-prepare-confidence-abstention-capture.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
