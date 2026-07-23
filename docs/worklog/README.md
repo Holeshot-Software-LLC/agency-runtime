@@ -160,6 +160,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c1efcaf` | 2026-07-23 | docs(roadmap): record instrumented incident recovery and corpus variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-c1efcaf-instrumented-incident-recovery-and-corpus-variance.md) |
 | `355c05a` | 2026-07-23 | docs(governance): bound autonomous context handoffs | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-355c05a-bounded-autonomous-context-handoffs.md) |
 | `1d3059d` | 2026-07-23 | docs(roadmap): record installed-release plan-shape variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-ar119-installed-release-plan-shape-variance.md) |
+| `a6007af` | 2026-07-23 | docs(roadmap): record installed-release instrumented recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-ar119-installed-release-instrumented-recovery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
