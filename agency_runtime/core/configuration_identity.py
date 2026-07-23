@@ -18,7 +18,6 @@ from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded
 from agency_runtime.core.configuration_contracts import ConfigurationError
 from agency_runtime.core.process_argv import (
     PersistentArtifactIdentity,
-    agency_bootstrap_path,
     persistent_artifacts_from_manifest,
     revalidate_persistent_artifacts,
 )
@@ -178,26 +177,25 @@ def _canonical_absolute_path(value: object) -> Path | None:
 
 
 def _valid_worker_binding(worker: object, config_path: str) -> bool:
-    if not isinstance(worker, list) or len(worker) != 8:
+    if not isinstance(worker, list) or len(worker) != 7:
         return False
     if any(not isinstance(item, str) for item in worker):
         return False
-    if worker[1:7] != [
-        "-I",
-        agency_bootstrap_path(),
-        "agency_runtime.cli",
-        "dashboard",
-        "--service-mode",
+    if worker[1:3] != ["-I", "-S"] or worker[4:6] != [
+        "agency_runtime.server.dashboard_service",
         "--config",
     ]:
         return False
     try:
         _path(worker[0], label="manifest worker executable")
+        _path(worker[3], label="manifest worker bootstrap")
     except (OSError, UnicodeError, ValueError):
         return False
     # Preserve virtualenv shims: service argv intentionally stores an absolute
     # launcher path without dereferencing its final symlink.
-    return Path(worker[0]).is_absolute() and worker[7] == config_path
+    return (
+        Path(worker[0]).is_absolute() and Path(worker[3]).is_absolute() and worker[6] == config_path
+    )
 
 
 def _valid_manifest_integrity(value: dict[str, Any]) -> bool:
@@ -237,7 +235,7 @@ def _valid_manifest_integrity(value: dict[str, Any]) -> bool:
 def _valid_launcher_binding(value: object, worker: object) -> bool:
     """Validate the exact persistent interpreter/bootstrap identity pair."""
 
-    if not isinstance(value, list) or not isinstance(worker, list) or len(worker) < 3:
+    if not isinstance(value, list) or not isinstance(worker, list) or len(worker) < 4:
         return False
     fields = set(PersistentArtifactIdentity.__dataclass_fields__)
     if any(not isinstance(item, dict) or set(item) != fields for item in value):
@@ -248,7 +246,7 @@ def _valid_launcher_binding(value: object, worker: object) -> bool:
         return False
     if len(artifacts) != 2 or [item.lexical_path for item in artifacts] != [
         worker[0],
-        worker[2],
+        worker[3],
     ]:
         return False
     try:

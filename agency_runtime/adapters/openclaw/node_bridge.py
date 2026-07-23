@@ -1108,14 +1108,32 @@ def _handle_observation_action(
     if action == "native_child_started":
         if not session_id or not trace_id:
             return {}
+        worker_id = _bounded_string(payload, "workerId", limit=256)
+        native_run_id = _bounded_string(payload, "nativeRunId", limit=256)
+        work_unit_id = _bounded_string(payload, "workUnitId", limit=160)
+        goal = _bounded_string(payload, "goal", limit=MAX_INPUT_BYTES)
+        if not worker_id or not native_run_id:
+            return {}
+        if work_unit_id or goal:
+            adapter.post_tool_call_handler(
+                tool_name="sessions_spawn",
+                args={"prompt": goal, "work_unit_id": work_unit_id},
+                result={
+                    "childSessionKey": worker_id,
+                    "native_run_id": native_run_id,
+                },
+                session_id=session_id,
+                trace_id=trace_id,
+            )
+            return {}
         adapter.store.record_native_child_started(
             host="openclaw",
             backend="sessions_spawn",
             session_id=session_id,
             trace_id=trace_id,
-            work_unit_id=_bounded_string(payload, "workUnitId", limit=160),
-            worker_id=payload.get("workerId"),
-            native_run_id=payload.get("nativeRunId"),
+            work_unit_id=work_unit_id,
+            worker_id=worker_id,
+            native_run_id=native_run_id,
         )
         return {}
 
@@ -1207,6 +1225,8 @@ def handle(
                 origin_receipt=origin_receipt,
                 parent_session_id=_bounded_string(payload, "parentSessionId", limit=512),
                 parent_trace_id=_bounded_string(payload, "parentTraceId", limit=512),
+                native_worker_id=_bounded_string(payload, "workerId", limit=256),
+                native_run_id=_bounded_string(payload, "nativeRunId", limit=256),
             )
             or {}
         )

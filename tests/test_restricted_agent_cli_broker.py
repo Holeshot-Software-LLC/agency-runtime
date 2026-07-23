@@ -628,6 +628,34 @@ def test_broker_read_operations_reject_non_object_responses(
             broker.broker_search_agents(query="review", limit=1)
 
 
+def test_route_broker_waits_for_the_bounded_inference_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def request(*_args: Any, **kwargs: Any) -> None:
+        calls.append(kwargs)
+        return None
+
+    monkeypatch.setattr(broker, "dashboard_api_request", request)
+
+    with pytest.raises(ValueError, match="response is invalid"):
+        broker.broker_explain_selection(session_id="session", task="review", limit=1)
+
+    assert calls == [
+        {
+            "method": "POST",
+            "payload": {
+                "session_id": "session",
+                "task": "review",
+                "limit": 1,
+                "host": "codex",
+            },
+            "timeout": 245.0,
+        }
+    ]
+
+
 @pytest.mark.parametrize(
     ("mutation", "message"),
     [
@@ -861,6 +889,7 @@ def test_broker_agent_toggle_accepts_exact_changed_and_noop_receipts(
                 "enabled": requested_enabled,
                 "confirm": f"{verb} alpha-reviewer",
                 "expected_revision": _revision(),
+                "reason": "operator activation toggle",
             },
         ),
     ]
@@ -1233,7 +1262,11 @@ def test_default_agent_activation_reads_and_writes_use_the_restricted_broker(
     monkeypatch.setattr(
         broker,
         "broker_set_agent_enabled",
-        lambda slug, *, enabled: (str(slug), not enabled, str(default_path)),
+        lambda slug, *, enabled, reason="": (
+            str(slug),
+            not enabled,
+            str(default_path),
+        ),
     )
 
     assert roster_commands._activation_rows() == (

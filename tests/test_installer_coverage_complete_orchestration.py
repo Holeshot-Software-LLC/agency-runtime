@@ -115,6 +115,11 @@ def _stub_install_inputs(
     monkeypatch.setattr(orchestration, "_root_state", lambda *_args, **_kwargs: root_state)
     monkeypatch.setattr(
         orchestration,
+        "_prepare_adapter_launcher_paths",
+        lambda: ("trusted-python", "trusted-bootstrap"),
+    )
+    monkeypatch.setattr(
+        orchestration,
         "_freeze_adapter_launcher",
         lambda files: (files, (object(),)),
     )
@@ -186,6 +191,58 @@ def test_install_reports_pre_staging_launcher_identity_failure(
         "failed_step": "launcher_identity",
         "error": "ValueError: invalid launcher",
     }
+
+
+def test_freeze_adapter_launcher_snapshots_the_bound_private_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    paths = ("python.exe", "agency-bootstrap.py")
+    identity = type("Identity", (), {"manifest": lambda self: {"sha256": "a" * 64}})()
+    attempts = 0
+
+    def snapshot(value: object) -> tuple[object, ...]:
+        nonlocal attempts
+        attempts += 1
+        assert value == paths
+        return (identity,)
+
+    monkeypatch.setattr(orchestration, "_launcher_artifact_paths", lambda: paths)
+    monkeypatch.setattr(orchestration, "snapshot_persistent_artifacts", snapshot)
+
+    files, identities = orchestration._freeze_adapter_launcher({"plugin": "body"})
+
+    assert identities == (identity,)
+    assert attempts == 1
+    assert orchestration.ADAPTER_LAUNCHER_MANIFEST in files
+
+
+def test_prepare_adapter_launcher_projects_the_complete_private_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package_paths = ("python.exe", "package-bootstrap.py")
+    private_paths = ("python.exe", "private-bootstrap.py")
+    attempts: list[tuple[str, str]] = []
+    monkeypatch.setattr(orchestration, "_launcher_artifact_paths", lambda: package_paths)
+    monkeypatch.setattr(
+        orchestration,
+        "persistent_python_executable",
+        lambda path: private_paths[0] if path == package_paths[0] else "",
+    )
+
+    def snapshot(paths: tuple[str, str]) -> tuple[object, ...]:
+        attempts.append(paths)
+        assert paths == private_paths
+        return (object(),)
+
+    monkeypatch.setattr(orchestration, "snapshot_persistent_artifacts", snapshot)
+    monkeypatch.setattr(
+        orchestration,
+        "prepare_private_package_runtime",
+        lambda path: private_paths[1] if path == package_paths[1] else "",
+    )
+
+    assert orchestration._prepare_adapter_launcher_paths() == private_paths
+    assert attempts == [private_paths]
 
 
 def test_install_reports_launcher_drift_before_native_registration(

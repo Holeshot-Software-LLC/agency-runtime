@@ -29,13 +29,23 @@ from agency_runtime.core.native_child_activation import (
     NativeChildRunIdentity,
     build_native_child_run_identity,
 )
+from agency_runtime.core.native_child_prompt_delivery import (
+    NativeChildPromptDelivery,
+    parse_native_child_prompt_delivery,
+    render_native_child_prompt_delivery,
+)
 from agency_runtime.core.retry_receipts import (
     attach_retry_receipt as _attach_retry_receipt,
 )
 from agency_runtime.core.retry_receipts import (
     normalize_receipt_id as _normalize_receipt_id,
 )
+from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.unit_assignment import (
+    native_child_activation_contract,
+    work_unit_goal_hash,
+)
 
 MAX_HOOK_INPUT_BYTES = 1_048_576
 MAX_HOOK_OUTPUT_BYTES = 65_536
@@ -119,9 +129,8 @@ _CODEX_SPAWN_TOOL_NAMES = frozenset(
     }
 )
 _CLAUDE_AGENT_TOOL_NAME = "Agent"
-_CLAUDE_CHILD_PREFLIGHT_MARKER = "[AGENCY CHILD PREFLIGHT v1]"
 _CLAUDE_CHILD_IDENTITY_MARKER = "[AGENCY NATIVE CHILD IDENTITY v1]"
-_MAX_CLAUDE_CHILD_RECIPE_CHARS = 8_192
+_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN = "x" * 43
 
 
 def _bounded_completion_reason(reason: object) -> str:
@@ -192,14 +201,20 @@ class HookCorrelation:
 
 
 @dataclass(frozen=True, slots=True)
-class ClaudeChildAssignment:
-    """One content-free, store-verified Claude child work-unit binding."""
+class NativeChildAssignment:
+    """One exact store-verified native child work-unit binding."""
 
     session_id: str
     trace_id: str
     tool_use_id: str
     work_unit_id: str
     specialist_slug: str
+    specialist_version: str
+    specialist_prompt_hash: str
+    goal_hash: str
+    mutation_scope: str
+    resource_hashes: tuple[str, ...]
+    required_evidence: tuple[str, ...]
 
 
 def _optional_string(payload: dict[str, Any], key: str) -> str:
@@ -271,39 +286,65 @@ def _codex_native_child_identity(agent_id: object) -> NativeChildRunIdentity:
     )
 
 
-def _claude_child_preflight_recipe(assignment: ClaudeChildAssignment) -> str:
-    """Render a bounded child-owned activation recipe with no prompt or bearer."""
+def _pre_tool_use_denial(reason: object) -> dict[str, Any]:
+    """Block a planned child that cannot receive its exact specialist."""
 
-    fields = {
-        "parent_session_id": assignment.session_id,
-        "parent_trace_id": assignment.trace_id,
-        "parent_tool_use_id": assignment.tool_use_id,
-        "work_unit_id": assignment.work_unit_id,
-        "specialist_slug": assignment.specialist_slug,
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": _bounded_completion_reason(reason),
+        }
     }
-    lines = [
-        _CLAUDE_CHILD_PREFLIGHT_MARKER,
-        "This content-free recipe belongs only to this native child. It does not "
-        "inherit or contain a specialist prompt or activation token.",
-        *(f"{name}={json.dumps(value, ensure_ascii=True)}" for name, value in fields.items()),
-        "Use the exact worker_id and native_run_id injected by the "
-        "[AGENCY NATIVE CHILD IDENTITY v1] SubagentStart context. If that identity "
-        "is absent, do not claim an Agency specialist was loaded.",
-        "Inside this child, call agency.prepare_delegation exactly once with the "
-        "specialist_slug, parent_session_id as session_id, parent_trace_id as "
-        "trace_id, work_unit_id, worker_kind=generic-worker, and worker_id.",
-        "Immediately call agency.load_specialist with the returned activation_token, "
-        "the same slug/session/trace/work-unit values, worker_id, and native_run_id. "
-        "Apply the returned exact prompt only inside this child.",
-        "Never copy the activation token or specialist prompt into status text, the "
-        "child result, or another worker. If preparation or loading fails, continue "
-        "only as an ordinary native worker and report that Agency activation was not "
-        "established.",
-    ]
-    recipe = "\n".join(lines)
-    if len(recipe) > _MAX_CLAUDE_CHILD_RECIPE_CHARS:
-        raise RuntimeError("Claude child preflight recipe exceeds its context budget")
-    return recipe
+
+
+def _native_child_tool_identity(
+    host: str,
+    tool_response: Any,
+) -> tuple[Any, NativeChildRunIdentity | None]:
+    """Project only host-returned child identity into activation evidence."""
+
+    if not isinstance(tool_response, dict):
+        return tool_response, None
+    agent_id = _first_string(tool_response, "agent_id", "agentId")
+    if agent_id:
+        try:
+            identity = (
+                _claude_native_child_identity(agent_id)
+                if host == "claude"
+                else _codex_native_child_identity(agent_id)
+            )
+        except ValueError:
+            return tool_response, None
+        return (
+            {
+                **tool_response,
+                "agent_id": identity.worker_id,
+                "native_run_id": identity.native_run_id,
+            },
+            identity,
+        )
+    if host != "codex":
+        return tool_response, None
+    task_name = _first_string(tool_response, "task_name", "taskName")
+    if not task_name:
+        return tool_response, None
+    try:
+        identity = build_native_child_run_identity(
+            worker_kind="generic-worker",
+            worker_id=f"task:{task_name}",
+            native_run_id=f"codex-task:{task_name}",
+        )
+    except ValueError:
+        return tool_response, None
+    return (
+        {
+            **tool_response,
+            "agent_id": identity.worker_id,
+            "native_run_id": identity.native_run_id,
+        },
+        identity,
+    )
 
 
 def _native_work_unit_label(host: str, tool_name: str, args: dict[str, Any]) -> str:
@@ -562,6 +603,17 @@ class HookBridge:
             for row in snapshot.get("specialist_activations", [])
             if isinstance(row, dict)
         )
+        candidates.update(
+            str(row.get("work_unit_id") or "").strip()
+            for row in snapshot.get("unit_agent_plan", [])
+            if isinstance(row, dict)
+        )
+        if not snapshot.get("unit_agent_plan"):
+            candidates.update(
+                f"specialist:{str(row.get('slug') or '').strip()}"
+                for row in snapshot.get("selected_specialists", [])
+                if isinstance(row, dict) and str(row.get("slug") or "").strip()
+            )
         matches = [
             work_unit_id
             for work_unit_id in candidates
@@ -569,27 +621,125 @@ class HookBridge:
         ]
         return matches[0] if len(matches) == 1 else ""
 
-    def _resolve_claude_child_assignment(
+    @staticmethod
+    def _assignment_from_snapshot(
+        snapshot: Any,
+        *,
+        session_id: str,
+        trace_id: str,
+        tool_use_id: str,
+        native_label: str,
+        host: str,
+    ) -> NativeChildAssignment | None:
+        """Resolve one exact selected reference from one persisted plan snapshot."""
+
+        if (
+            not isinstance(snapshot, dict)
+            or snapshot.get("session_id") != session_id
+            or snapshot.get("trace_id") != trace_id
+            or snapshot.get("status") not in {"active", "evidence_only"}
+            or snapshot.get("delivery_mode") != "isolated"
+        ):
+            return None
+        raw_references = snapshot.get("selected_specialists")
+        raw_plan = snapshot.get("unit_agent_plan")
+        if not isinstance(raw_references, list) or not isinstance(raw_plan, list):
+            return None
+        references: dict[str, dict[str, Any]] = {}
+        for value in raw_references:
+            if not isinstance(value, dict):
+                return None
+            slug = str(value.get("slug") or "").strip()
+            version = str(value.get("version") or "").strip()
+            content_hash = str(value.get("hash") or "").strip()
+            if not slug or not version or not content_hash or slug in references:
+                return None
+            references[slug] = value
+
+        candidates: list[tuple[str, str, str, str, tuple[str, ...], tuple[str, ...]]] = []
+        if raw_plan:
+            for row in raw_plan:
+                if not isinstance(row, dict):
+                    return None
+                work_unit_id = str(row.get("work_unit_id") or "").strip()
+                specialist_slug = str(row.get("recommended_agent") or "").strip()
+                goal_hash = str(row.get("goal_hash") or "").strip().casefold()
+                mutation_scope = str(row.get("mutation_scope") or "").strip().casefold()
+                raw_resource_hashes = row.get("resource_hashes")
+                raw_required_evidence = row.get("required_evidence")
+                if (
+                    not work_unit_id
+                    or not specialist_slug
+                    or re.fullmatch(r"[0-9a-f]{64}", goal_hash) is None
+                    or not isinstance(raw_resource_hashes, list)
+                    or not isinstance(raw_required_evidence, list)
+                ):
+                    return None
+                expected_label = (
+                    codex_task_name_for_work_unit(work_unit_id) if host == "codex" else work_unit_id
+                )
+                if expected_label == native_label:
+                    candidates.append(
+                        (
+                            work_unit_id,
+                            specialist_slug,
+                            goal_hash,
+                            mutation_scope,
+                            tuple(str(item) for item in raw_resource_hashes),
+                            tuple(str(item) for item in raw_required_evidence),
+                        )
+                    )
+        else:
+            # Legacy reference-only recipes have no authenticated goal binding.
+            # Keep them replayable through explicit MCP activation, but never
+            # inject their prompt into an arbitrary native-child task.
+            return None
+        if len(candidates) != 1:
+            return None
+        (
+            work_unit_id,
+            specialist_slug,
+            goal_hash,
+            mutation_scope,
+            resource_hashes,
+            required_evidence,
+        ) = candidates[0]
+        reference = references.get(specialist_slug)
+        if reference is None:
+            return None
+        return NativeChildAssignment(
+            session_id=session_id,
+            trace_id=trace_id,
+            tool_use_id=tool_use_id,
+            work_unit_id=work_unit_id,
+            specialist_slug=specialist_slug,
+            specialist_version=str(reference["version"]),
+            specialist_prompt_hash=str(reference["hash"]),
+            goal_hash=goal_hash,
+            mutation_scope=mutation_scope,
+            resource_hashes=resource_hashes,
+            required_evidence=required_evidence,
+        )
+
+    def _resolve_native_child_assignment(
         self,
         *,
         payload: dict[str, Any],
         tool_input: Any,
         trace_id: str = "",
-    ) -> ClaudeChildAssignment | None:
-        """Resolve one exact persisted plan row without correlating by callback order."""
+    ) -> NativeChildAssignment | None:
+        """Resolve one exact persisted row without callback-order correlation."""
 
-        if (
-            self.host != "claude"
-            or _optional_string(payload, "tool_name") != _CLAUDE_AGENT_TOOL_NAME
-        ):
-            return None
-        args = _dict_or_empty(tool_input)
-        description = args.get("description")
-        if (
-            not isinstance(description, str)
-            or not description
-            or description != description.strip()
-        ):
+        tool_name = _optional_string(payload, "tool_name")
+        if self.host == "claude":
+            if tool_name != _CLAUDE_AGENT_TOOL_NAME:
+                return None
+            native_label = _first_string(_dict_or_empty(tool_input), "description")
+        else:
+            if tool_name not in _CODEX_SPAWN_TOOL_NAMES:
+                return None
+            native_label = _first_string(_dict_or_empty(tool_input), "task_name")
+        if not native_label:
             return None
         correlation = self._correlation(payload, tool_input)
         if not correlation.tool_use_id:
@@ -606,49 +756,30 @@ class HookBridge:
             )
         except Exception:
             return None
-        if (
-            not isinstance(snapshot, dict)
-            or snapshot.get("session_id") != correlation.session_id
-            or snapshot.get("trace_id") != resolved_trace
-            or snapshot.get("status") not in {"active", "evidence_only"}
-            or snapshot.get("delivery_mode") != "isolated"
-        ):
-            return None
-
-        references = snapshot.get("selected_specialists")
-        if not isinstance(references, list):
-            return None
-        reference_slugs = [
-            str(reference.get("slug") or "")
-            for reference in references
-            if isinstance(reference, dict)
-        ]
-        plan = snapshot.get("unit_agent_plan")
-        if not isinstance(plan, list):
-            return None
-        if plan:
-            matches = [
-                row
-                for row in plan
-                if isinstance(row, dict) and row.get("work_unit_id") == description
-            ]
-            if len(matches) != 1:
-                return None
-            specialist_slug = str(matches[0].get("recommended_agent") or "")
-        elif description.startswith("specialist:"):
-            specialist_slug = description.removeprefix("specialist:")
-        else:
-            return None
-        if not specialist_slug or reference_slugs.count(specialist_slug) != 1:
-            return None
-        # ``removeprefix`` plus the fixed prefix makes reconstruction identical;
-        # no second string-equality branch can add validation here.
-        return ClaudeChildAssignment(
+        return self._assignment_from_snapshot(
+            snapshot,
             session_id=correlation.session_id,
             trace_id=resolved_trace,
             tool_use_id=correlation.tool_use_id,
-            work_unit_id=description,
-            specialist_slug=specialist_slug,
+            native_label=native_label,
+            host=self.host,
+        )
+
+    def _resolve_claude_child_assignment(
+        self,
+        *,
+        payload: dict[str, Any],
+        tool_input: Any,
+        trace_id: str = "",
+    ) -> NativeChildAssignment | None:
+        """Compatibility wrapper for the shared exact native-child resolver."""
+
+        if self.host != "claude":
+            return None
+        return self._resolve_native_child_assignment(
+            payload=payload,
+            tool_input=tool_input,
+            trace_id=trace_id,
         )
 
     @staticmethod
@@ -677,32 +808,146 @@ class HookBridge:
             identity,
         )
 
-    def _handle_claude_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Attach a child-owned recipe while leaving Claude's Agent scheduler intact."""
+    def _handle_native_child_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Inject one exact prompt while leaving the native scheduler in control."""
 
-        if _required_string(payload, "tool_name") != _CLAUDE_AGENT_TOOL_NAME:
+        tool_name = _required_string(payload, "tool_name")
+        if self.host == "claude" and tool_name != _CLAUDE_AGENT_TOOL_NAME:
+            return {}
+        if self.host == "codex" and tool_name not in _CODEX_SPAWN_TOOL_NAMES:
             return {}
         tool_input = payload.get("tool_input")
         args = _dict_or_empty(tool_input)
-        prompt = args.get("prompt")
-        if not isinstance(prompt, str) or not prompt:
-            raise HookInputError("Claude Agent tool_input.prompt is required")
-        if _CLAUDE_CHILD_PREFLIGHT_MARKER in prompt:
+        task_field = "prompt" if self.host == "claude" else "message"
+        task = args.get(task_field)
+        if not isinstance(task, str) or not task:
+            raise HookInputError(f"{tool_name} tool_input.{task_field} is required")
+        if parse_native_child_prompt_delivery(task) is not None:
             return {}
-        assignment = self._resolve_claude_child_assignment(
+        assignment = self._resolve_native_child_assignment(
             payload=payload,
             tool_input=tool_input,
         )
         if assignment is None:
             return {}
-        recipe = _claude_child_preflight_recipe(assignment)
+        if work_unit_goal_hash(task) != assignment.goal_hash:
+            return _pre_tool_use_denial(
+                "Agency refused this native child because its task does not exactly match "
+                "the persisted work-unit goal. Use the exact goal from the delegation plan."
+            )
+        try:
+            activation_contract = native_child_activation_contract(
+                task,
+                mutation_scope=assignment.mutation_scope,
+                resource_hashes=assignment.resource_hashes,
+                required_evidence=assignment.required_evidence,
+            )
+        except ValueError:
+            return _pre_tool_use_denial(
+                "Agency could not verify this native child's planned mutation and evidence "
+                "boundary. Use the exact current delegation plan."
+            )
+        prompt_reader = getattr(self.store, "get_versioned_specialist_prompt", None)
+        preparer = getattr(self.store, "prepare_delegation_activation", None)
+        if not callable(prompt_reader) or not callable(preparer):
+            return _pre_tool_use_denial(
+                "Agency could not access the exact planned specialist; the native child "
+                "was not launched as an untyped substitute."
+            )
+        prompt = prompt_reader(
+            assignment.specialist_slug,
+            assignment.specialist_version,
+            assignment.specialist_prompt_hash,
+            max_chars=MAX_SPECIALIST_PROMPT_CHARS,
+        )
+        if (
+            not isinstance(prompt, dict)
+            or prompt.get("prompt_truncated") is not False
+            or prompt.get("version") != assignment.specialist_version
+            or prompt.get("hash") != assignment.specialist_prompt_hash
+            or not isinstance(prompt.get("prompt_body"), str)
+            or not prompt["prompt_body"]
+        ):
+            return _pre_tool_use_denial(
+                f"Agency could not verify {assignment.specialist_slug}'s exact selected "
+                "prompt version; the planned native child was not launched."
+            )
+        projected_task = render_native_child_prompt_delivery(
+            task,
+            prompt["prompt_body"],
+            host=self.host,
+            parent_session_id=assignment.session_id,
+            parent_trace_id=assignment.trace_id,
+            tool_use_id=assignment.tool_use_id,
+            work_unit_id=assignment.work_unit_id,
+            specialist_slug=assignment.specialist_slug,
+            specialist_version=assignment.specialist_version,
+            specialist_prompt_hash=assignment.specialist_prompt_hash,
+            activation_token=_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN,
+        )
+        projected = {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "allow",
+                "updatedInput": {**args, task_field: projected_task},
+            }
+        }
+        if (
+            len(
+                json.dumps(
+                    projected,
+                    allow_nan=False,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            )
+            >= MAX_HOOK_OUTPUT_BYTES
+        ):
+            return _pre_tool_use_denial(
+                "Agency's exact child context exceeds the host hook limit; split the "
+                "work unit or use a smaller audited specialist prompt."
+            )
+        try:
+            activation = preparer(
+                session_id=assignment.session_id,
+                trace_id=assignment.trace_id,
+                specialist_slug=assignment.specialist_slug,
+                work_unit_id=assignment.work_unit_id,
+                worker_kind="generic-worker",
+                **activation_contract,
+            )
+            if (
+                activation.get("version") != assignment.specialist_version
+                or activation.get("prompt_hash") != assignment.specialist_prompt_hash
+            ):
+                raise ValueError("prepared activation identity does not match the plan")
+            activation_token = str(activation.get("activation_token") or "")
+            delivered_task = render_native_child_prompt_delivery(
+                task,
+                prompt["prompt_body"],
+                host=self.host,
+                parent_session_id=assignment.session_id,
+                parent_trace_id=assignment.trace_id,
+                tool_use_id=assignment.tool_use_id,
+                work_unit_id=assignment.work_unit_id,
+                specialist_slug=assignment.specialist_slug,
+                specialist_version=assignment.specialist_version,
+                specialist_prompt_hash=assignment.specialist_prompt_hash,
+                activation_token=activation_token,
+            )
+        except (RuntimeError, ValueError):
+            return _pre_tool_use_denial(
+                f"Agency could not issue {assignment.specialist_slug}'s one-use activation; "
+                "the planned native child was not launched."
+            )
         updated_input = {
             **args,
-            "prompt": f"{prompt}\n\n{recipe}",
+            task_field: delivered_task,
         }
         result = {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
+                "permissionDecision": "allow",
                 "updatedInput": updated_input,
             }
         }
@@ -712,7 +957,14 @@ class HookBridge:
             ensure_ascii=False,
             separators=(",", ":"),
         ).encode("utf-8")
-        return result if len(encoded) < MAX_HOOK_OUTPUT_BYTES else {}
+        if len(encoded) >= MAX_HOOK_OUTPUT_BYTES:
+            raise RuntimeError("native-child delivery size changed after grant preparation")
+        return result
+
+    def _handle_claude_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Compatibility wrapper for the shared hook-owned delivery path."""
+
+        return self._handle_native_child_pre_tool_use(payload)
 
     def _handle_claude_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Give this child its own identity without assigning any specialist."""
@@ -741,10 +993,11 @@ class HookBridge:
             f"worker_kind={json.dumps(identity.worker_kind)}",
             f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
             f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
-            "Use these exact values only when this child's prompt contains an "
-            "[AGENCY CHILD PREFLIGHT v1] recipe. Otherwise make no Agency "
-            "specialist claim until independently calling agency.preflight with the "
-            "complete delegated assignment.",
+            "A planned child receives [AGENCY EXACT SPECIALIST ACTIVATION v1] "
+            "instructions directly in its native task through the installed PreToolUse "
+            "hook. Follow that exact prompt when present; no prepare/load tool calls are "
+            "required. Otherwise make no Agency specialist claim until independently "
+            "calling agency.preflight with the complete delegated assignment.",
         ]
         if session_id and trace_id:
             context_lines.append(
@@ -816,9 +1069,11 @@ class HookBridge:
             f"worker_kind={json.dumps(identity.worker_kind)}",
             f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
             f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
-            "If this child's task contains an [AGENCY CHILD PREFLIGHT v1] recipe, "
-            "follow only that exact current recipe and consume its one-use activation "
-            "inside this child.",
+            "If this child's task contains [AGENCY EXACT SPECIALIST ACTIVATION v1], "
+            "the installed PreToolUse hook has already placed the exact audited prompt "
+            "inside this child and PostToolUse will consume its one-use receipt from "
+            "authoritative launch evidence. Follow that prompt without calling prepare "
+            "or load again.",
             "If no current recipe is present, independently call agency.preflight "
             "before substantive work using the complete delegated assignment as "
             "user_message and "
@@ -869,6 +1124,100 @@ class HookBridge:
             )
         return {}
 
+    def _consume_native_child_prompt_delivery(
+        self,
+        *,
+        event: str,
+        payload: dict[str, Any],
+        tool_input: Any,
+        tool_response: Any,
+        trace_id: str,
+    ) -> tuple[NativeChildPromptDelivery | None, Any, NativeChildRunIdentity | None, bool]:
+        """Consume a hook-issued grant only after authoritative native execution."""
+
+        args = _dict_or_empty(tool_input)
+        raw_task = args.get("prompt" if self.host == "claude" else "message")
+        task = raw_task if isinstance(raw_task, str) else ""
+        delivery = parse_native_child_prompt_delivery(task)
+        if delivery is None:
+            return None, tool_response, None, False
+        correlation = self._correlation(payload, tool_input, tool_response)
+        assignment = self._resolve_native_child_assignment(
+            payload=payload,
+            tool_input=tool_input,
+            trace_id=trace_id,
+        )
+        expected = (
+            self.host,
+            correlation.session_id,
+            trace_id,
+            correlation.tool_use_id,
+            assignment.work_unit_id if assignment is not None else "",
+            assignment.specialist_slug if assignment is not None else "",
+            assignment.specialist_version if assignment is not None else "",
+            assignment.specialist_prompt_hash if assignment is not None else "",
+        )
+        observed = (
+            delivery.host,
+            delivery.parent_session_id,
+            delivery.parent_trace_id,
+            delivery.tool_use_id,
+            delivery.work_unit_id,
+            delivery.specialist_slug,
+            delivery.specialist_version,
+            delivery.specialist_prompt_hash,
+        )
+        if (
+            event != "PostToolUse"
+            or assignment is None
+            or observed != expected
+            or work_unit_goal_hash(delivery.original_task) != assignment.goal_hash
+        ):
+            return delivery, tool_response, None, False
+        projected_response, identity = _native_child_tool_identity(self.host, tool_response)
+        if identity is None:
+            return delivery, projected_response, None, False
+        lineage = {
+            "worker_kind": identity.worker_kind,
+            "worker_id": identity.worker_id,
+            "native_run_id": identity.native_run_id,
+        }
+        consumer = getattr(self.store, "consume_delegation_activation", None)
+        if not callable(consumer):
+            return delivery, projected_response, identity, False
+        try:
+            activation = consumer(
+                activation_token=delivery.activation_token,
+                session_id=delivery.parent_session_id,
+                trace_id=delivery.parent_trace_id,
+                specialist_slug=delivery.specialist_slug,
+                work_unit_id=delivery.work_unit_id,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+            )
+        except ValueError:
+            lineage_reader = getattr(self.store, "get_consumed_delegation_lineage", None)
+            if not callable(lineage_reader):
+                return delivery, projected_response, identity, False
+            existing = lineage_reader(
+                session_id=delivery.parent_session_id,
+                trace_id=delivery.parent_trace_id,
+                specialist_slug=delivery.specialist_slug,
+                work_unit_id=delivery.work_unit_id,
+            )
+            return delivery, projected_response, identity, existing == lineage
+        verified = (
+            isinstance(activation, dict)
+            and activation.get("slug") == delivery.specialist_slug
+            and activation.get("version") == delivery.specialist_version
+            and activation.get("prompt_hash") == delivery.specialist_prompt_hash
+            and activation.get("prompt_body") == delivery.prompt_body
+            and activation.get("worker_kind") == identity.worker_kind
+            and activation.get("worker_id") == identity.worker_id
+            and activation.get("native_run_id") == identity.native_run_id
+        )
+        return delivery, projected_response, identity, verified
+
     def _handle_post_tool_use(
         self,
         event: str,
@@ -896,6 +1245,20 @@ class HookBridge:
             tool_input,
             tool_response,
         )
+        delivery: NativeChildPromptDelivery | None = None
+        delivery_activated = False
+        if (self.host == "claude" and tool_name == _CLAUDE_AGENT_TOOL_NAME) or (
+            self.host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES
+        ):
+            delivery, tool_response, _delivery_identity, delivery_activated = (
+                self._consume_native_child_prompt_delivery(
+                    event=event,
+                    payload=payload,
+                    tool_input=tool_input,
+                    tool_response=tool_response,
+                    trace_id=trace_id,
+                )
+            )
         if self.host == "claude" and tool_name == _CLAUDE_AGENT_TOOL_NAME:
             assignment = self._resolve_claude_child_assignment(
                 payload=payload,
@@ -921,24 +1284,27 @@ class HookBridge:
             )
             canonical_args["requested_model"] = requested_model
             canonical_args["resolved_model"] = resolved_model or "unavailable"
-            tool_response, _identity = self._claude_post_tool_response(
-                payload,
-                tool_response,
-            )
+            if delivery is not None and delivery_activated:
+                canonical_args["goal"] = delivery.original_task
+            elif not isinstance(tool_response, dict) or not _first_string(
+                tool_response, "native_run_id"
+            ):
+                tool_response, _identity = self._claude_post_tool_response(
+                    payload,
+                    tool_response,
+                )
         elif self.host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES:
-            if isinstance(tool_response, dict):
-                agent_id = _first_string(tool_response, "agent_id", "agentId")
-                if agent_id:
-                    try:
-                        identity = _codex_native_child_identity(agent_id)
-                    except ValueError:
-                        pass
-                    else:
-                        tool_response = {
-                            **tool_response,
-                            "agent_id": identity.worker_id,
-                            "native_run_id": identity.native_run_id,
-                        }
+            if delivery is not None and delivery_activated:
+                canonical_args["agent"] = delivery.specialist_slug
+                canonical_args["work_unit_id"] = delivery.work_unit_id
+                canonical_args["goal"] = delivery.original_task
+            elif not isinstance(tool_response, dict) or not _first_string(
+                tool_response, "native_run_id"
+            ):
+                tool_response, _identity = _native_child_tool_identity(
+                    "codex",
+                    tool_response,
+                )
         resolved_codex_unit = self._resolve_codex_task_name(
             tool_name=tool_name,
             tool_input=tool_input,
@@ -1020,8 +1386,8 @@ class HookBridge:
                 }
             }
 
-        if event == "PreToolUse" and self.host == "claude":
-            return self._handle_claude_pre_tool_use(payload)
+        if event == "PreToolUse":
+            return self._handle_native_child_pre_tool_use(payload)
 
         if event == "SubagentStart":
             return (
@@ -1596,6 +1962,11 @@ class HookBridge:
 
     def _reject_completion(self, reason: str, *, retry: bool) -> dict[str, Any]:
         """Return a host-native fail-closed completion result."""
+        if self.host == "codex":
+            # Current Codex Stop hooks accept the shared lifecycle shape.
+            # The legacy decision:block form can be ignored by Codex exec,
+            # leaving the model without correction context.
+            return _completion_rejection(reason, retry=True)
         return _completion_rejection(reason, retry=retry)
 
     def _record_finalization(

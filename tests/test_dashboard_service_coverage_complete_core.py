@@ -60,6 +60,7 @@ def test_dashboard_runtime_generation_helpers_are_fail_closed(tmp_path, monkeypa
     )
     first = subject._dashboard_runtime_fingerprint(ctx)
     assert first is not None
+    assert subject._dashboard_runtime_port(ctx) == 7810
     monkeypatch.setattr(dashboard_runtime, "dashboard_service_reachable", lambda **_kw: True)
     assert subject._cleanup_stale_dashboard_runtime(ctx) is False
     assert subject._dashboard_runtime_cleared(ctx) is False
@@ -175,6 +176,42 @@ def test_dashboard_runtime_clearance_wait_preserves_replacement(
     assert no_prior.replacement_detected is True
 
 
+def test_dashboard_runtime_clearance_waits_for_the_old_listener_to_release(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python",
+    )
+    assert ctx is not None
+    listener_states = iter((True, False))
+    listener_calls = []
+    sleeps = []
+    monkeypatch.setattr(subject, "_dashboard_runtime_fingerprint", lambda _ctx: None)
+    monkeypatch.setattr(subject, "_dashboard_runtime_cleared", lambda _ctx: True)
+    monkeypatch.setattr(
+        subject,
+        "_loopback_listener_present",
+        lambda port: listener_calls.append(port) or next(listener_states),
+    )
+    monkeypatch.setattr(subject.time, "sleep", sleeps.append)
+
+    outcome = subject._wait_dashboard_runtime_cleared(
+        ctx,
+        "sha256:old",
+        previous_port=7810,
+        timeout_seconds=1.0,
+        poll_seconds=0.0,
+    )
+
+    assert outcome == subject._DashboardRuntimeClearance(True, False)
+    assert listener_calls == [7810, 7810]
+    assert sleeps == [0.0]
+
+
 def test_dashboard_runtime_clearance_wait_fails_closed_at_deadline(
     tmp_path,
     monkeypatch,
@@ -244,10 +281,9 @@ def test_config_path_precedence_and_worker_argv(tmp_path, monkeypatch):
     assert argv == [
         str((tmp_path / "python").resolve()),
         "-I",
+        "-S",
         agency_bootstrap_path(),
-        "agency_runtime.cli",
-        "dashboard",
-        "--service-mode",
+        "agency_runtime.server.dashboard_service",
         "--config",
         str(explicit.resolve()),
     ]
@@ -376,6 +412,83 @@ def test_native_windows_launcher_platform_is_detected_portably(
     monkeypatch.setattr(subject, "os", os_facade(subject.os, name="nt"))
 
     assert subject._native_launcher_platform(ctx) == "nt"
+
+
+def test_dashboard_launcher_projects_complete_private_runtime_then_rechecks(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python.exe",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(subject, "_native_launcher_platform", lambda _ctx: "nt")
+    identity = SimpleNamespace()
+    private = str(tmp_path / "private-bootstrap.py")
+    monkeypatch.setattr(
+        subject,
+        "prepare_private_package_runtime",
+        lambda path: private if path == ctx.worker_argv[3] else "",
+    )
+
+    def snapshot(paths, *, platform_name):
+        assert platform_name == "nt"
+        assert paths == (ctx.worker_argv[0], private)
+        return (identity,)
+
+    monkeypatch.setattr(subject, "snapshot_persistent_artifacts", snapshot)
+
+    validated = subject._validate_dashboard_launcher(ctx)
+
+    assert validated.worker_argv[3] == private
+    assert validated.launcher_artifacts == (identity,)
+
+
+def test_installed_dashboard_launcher_is_read_only_and_exact(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=tmp_path / "python.exe",
+    )
+    assert ctx is not None
+    monkeypatch.setattr(subject, "_native_launcher_platform", lambda _ctx: "nt")
+    private = str(tmp_path / "published" / "_bootstrap.py")
+    worker = [*ctx.worker_argv]
+    worker[3] = private
+    verified: list[str] = []
+    identity = SimpleNamespace()
+    monkeypatch.setattr(
+        subject,
+        "verify_private_package_runtime",
+        lambda path: verified.append(path) or path,
+    )
+    monkeypatch.setattr(
+        subject,
+        "prepare_private_package_runtime",
+        lambda _path: pytest.fail("read-only inspection attempted projection creation"),
+    )
+    monkeypatch.setattr(
+        subject,
+        "snapshot_persistent_artifacts",
+        lambda paths, **_kwargs: (identity,) if paths == (worker[0], private) else (),
+    )
+
+    validated = subject._validate_installed_dashboard_launcher(ctx, worker)
+
+    assert verified == [private]
+    assert validated.worker_argv == tuple(worker)
+    assert validated.launcher_artifacts == (identity,)
+
+    for invalid in (None, worker[:3], [*worker[:4], "wrong.module", *worker[5:]]):
+        with pytest.raises(OSError, match="invalid worker command"):
+            subject._validate_installed_dashboard_launcher(ctx, invalid)
 
 
 def test_windows_sid_non_windows_and_library_failure(monkeypatch):

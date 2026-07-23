@@ -131,6 +131,12 @@ def test_isolated_hydration_uses_every_unique_planned_agent() -> None:
         suggestions=[],
         loaded_slugs=(),
     )
+    with pytest.raises(RuntimeError, match="lacks an exact unit-agent plan"):
+        preflight_module._require_available_unit_plan_agents(
+            delivery_mode="isolated",
+            suggestions=[],
+            loaded_slugs=("writer",),
+        )
     preflight_module._require_available_unit_plan_agents(
         delivery_mode="isolated",
         suggestions=suggestions,
@@ -272,6 +278,17 @@ def test_mixed_dependency_route_never_emits_an_independent_delegation_plan(
 
     context = result["hookSpecificOutput"]["additionalContext"]
     assert "[AGENCY DELEGATION PLAN]" not in context
+    assert "No specialist assignment was accepted" in context
+    snapshot = store.get_completion_evidence_snapshot("session", "trace")
+    assert snapshot["selected_specialists"] == []
+    receipt = store.get_ready_routing_receipt(
+        "session",
+        "trace",
+        evidence_revision=snapshot["evidence_revision"],
+    )
+    assert receipt is not None
+    assert "routing_status:abstained" in receipt["reason_codes"]
+    assert "selection_abstained" in receipt["effect_codes"]
     assert store.get_delegations("trace") == []
 
 
@@ -783,23 +800,37 @@ def test_preflight_replay_preserves_the_metadata_assignment(
         {
             "slug": "agent-01",
             "name": "Guardian",
+            "division": "specialized",
             "description": "Reviews trust boundaries.",
             "capabilities": ["OAuth threat modeling", "security review"],
             "categories": ["security"],
             "prompt_body": "Audit authentication and security boundaries.",
             "version": "1.0.0",
             "authority": "review",
+            "context_mode": "isolated_only",
+            "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
+            "supported_platforms": ["windows", "linux"],
+            "audit_status": "approved",
+            "audit_revision": "test-audit-v1",
+            "routing_contract_valid": True,
             "task_types": ["analysis", "review"],
         },
         {
             "slug": "agent-02",
             "name": "Scribe",
+            "division": "specialized",
             "description": "Maintains public guidance.",
             "capabilities": ["installation documentation", "README writing"],
             "categories": ["documentation"],
             "prompt_body": "Write accurate installation documentation.",
             "version": "1.0.0",
             "authority": "modify",
+            "context_mode": "isolated_only",
+            "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
+            "supported_platforms": ["windows", "linux"],
+            "audit_status": "approved",
+            "audit_revision": "test-audit-v1",
+            "routing_contract_valid": True,
             "task_types": ["analysis", "implementation", "review"],
         },
     ):
@@ -952,10 +983,10 @@ def test_isolated_native_hook_receives_exact_unit_agent_plan(
 
     context = result["hookSpecificOutput"]["additionalContext"]
     assert "[AGENCY DELEGATION PLAN]" in context
-    assert 'task="Review the authentication code"' in context
-    assert 'task="Document the public API"' in context
-    assert "recommended_agent=code-reviewer" in context
-    assert "recommended_agent=technical-writer" in context
+    assert 'goal="Review the authentication code"' in context
+    assert 'goal="Document the public API"' in context
+    assert "agent=code-reviewer" in context
+    assert "agent=technical-writer" in context
     for unit in detect_work_units(prompt)["units"]:
         work_unit_id = work_unit_id_from_text(unit)
         assert work_unit_id in context

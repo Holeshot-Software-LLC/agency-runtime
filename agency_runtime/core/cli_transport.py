@@ -22,7 +22,11 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
-from agency_runtime.core.config import ProviderEntry, is_safe_cli_model_id
+from agency_runtime.core.config import (
+    CODEX_REASONING_EFFORTS,
+    ProviderEntry,
+    is_safe_cli_model_id,
+)
 from agency_runtime.core.delegation.backends import (
     BoundedProcessResult,
     run_bounded_process,
@@ -130,6 +134,7 @@ class CLIModelInfo:
     description: str
     priority: int
     default_reasoning_level: str
+    supported_reasoning_levels: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -138,6 +143,7 @@ class CLIModelInfo:
             "description": self.description,
             "priority": self.priority,
             "default_reasoning_level": self.default_reasoning_level,
+            "supported_reasoning_levels": list(self.supported_reasoning_levels),
         }
 
 
@@ -576,6 +582,15 @@ def _parse_codex_model_catalog(stdout: str) -> CLIModelCatalog:
         priority = row.get("priority", 1_000)
         if isinstance(priority, bool) or not isinstance(priority, int):
             priority = 1_000
+        reasoning_rows = row.get("supported_reasoning_levels")
+        reasoning_levels: list[str] = []
+        if isinstance(reasoning_rows, list) and len(reasoning_rows) <= 32:
+            for reasoning_row in reasoning_rows:
+                if not isinstance(reasoning_row, dict):
+                    continue
+                effort = str(reasoning_row.get("effort") or "").strip().lower()
+                if effort in CODEX_REASONING_EFFORTS and effort not in reasoning_levels:
+                    reasoning_levels.append(effort)
         models.append(
             CLIModelInfo(
                 slug=slug,
@@ -583,6 +598,7 @@ def _parse_codex_model_catalog(stdout: str) -> CLIModelCatalog:
                 description=str(row.get("description") or "").strip()[:256],
                 priority=max(0, min(priority, 1_000_000)),
                 default_reasoning_level=str(row.get("default_reasoning_level") or "").strip()[:32],
+                supported_reasoning_levels=tuple(reasoning_levels),
             )
         )
         seen.add(slug)
@@ -702,7 +718,11 @@ def discover_cli_models(
     return catalog
 
 
-def _parse_codex(stdout: str) -> dict[str, Any] | None:
+def _parse_codex(
+    stdout: str,
+    *,
+    allow_completed_item_without_turn: bool = False,
+) -> dict[str, Any] | None:
     if not isinstance(stdout, str) or len(stdout) > _MAX_CLI_OUTPUT_CHARS:
         return None
     events: list[dict[str, Any]] = []
@@ -725,7 +745,14 @@ def _parse_codex(stdout: str) -> dict[str, Any] | None:
         str(event.get("type") or "") in {"error", "turn.failed"} for event in events
     ):
         return None
-    if not any(event.get("type") == "turn.completed" for event in events):
+    turn_completed = any(event.get("type") == "turn.completed" for event in events)
+    last_item_completed = bool(
+        events
+        and events[-1].get("type") == "item.completed"
+        and isinstance(events[-1].get("item"), dict)
+        and events[-1]["item"].get("type") == "agent_message"
+    )
+    if not turn_completed and not (allow_completed_item_without_turn and last_item_completed):
         return None
     messages = [
         str(item["text"])
@@ -778,12 +805,61 @@ def _parse_claude(stdout: str) -> dict[str, Any] | None:
     return result if isinstance(result, dict) else None
 
 
+def _cli_schema(value: object) -> object:
+    """Project only the one assertion unsupported by Codex output schemas."""
+
+    if isinstance(value, Mapping):
+        return {str(key): _cli_schema(item) for key, item in value.items() if key != "uniqueItems"}
+    if isinstance(value, list):
+        return [_cli_schema(item) for item in value]
+    return value
+
+
+def _codex_reasoning_effort(provider: ProviderEntry, transport: str) -> str | None:
+    """Return a normalized safe override, or None when the provider is invalid."""
+
+    effort = provider.reasoning_effort.strip().lower()
+    if not effort:
+        return ""
+    if transport != "codex" or effort not in CODEX_REASONING_EFFORTS:
+        return None
+    return effort
+
+
+def _valid_structured_cli_request(
+    provider: ProviderEntry,
+    transport: str,
+    reasoning_effort: str | None,
+    timeout: float,
+    schema: object,
+) -> bool:
+    """Keep transport validation out of the already branch-heavy invocation path."""
+
+    return (
+        provider.type.strip().lower() == "cli"
+        and transport in SUPPORTED_CLI_TRANSPORTS
+        and is_safe_cli_model_id(provider.model)
+        and _valid_timeout(timeout)
+        and isinstance(schema, Mapping)
+        and reasoning_effort is not None
+    )
+
+
+def _codex_reasoning_arguments(effort: str | None) -> list[str]:
+    """Project one already-validated effort into inert argv data."""
+
+    if not effort:
+        return []
+    return ["-c", f'model_reasoning_effort="{effort}"']
+
+
 def invoke_cli_structured(
     provider: ProviderEntry,
     prompt: str,
     schema: Mapping[str, Any],
     *,
     timeout: float,
+    system_prompt: str = "",
     resolver: BinaryResolver = shutil.which,
     runner: ProcessRunner = run_bounded_process,
     environ: Mapping[str, str] | None = None,
@@ -791,22 +867,28 @@ def invoke_cli_structured(
     """Invoke one supported CLI provider with an explicit bounded JSON schema."""
 
     transport = provider.transport.strip().lower()
-    if (
-        provider.type.strip().lower() != "cli"
-        or transport not in SUPPORTED_CLI_TRANSPORTS
-        or not is_safe_cli_model_id(provider.model)
-        or not _valid_timeout(timeout)
-        or not isinstance(schema, Mapping)
+    reasoning_effort = _codex_reasoning_effort(provider, transport)
+    if not _valid_structured_cli_request(
+        provider,
+        transport,
+        reasoning_effort,
+        timeout,
+        schema,
     ):
         return None
     timeout = float(timeout)
-    if not isinstance(prompt, str):
+    if not isinstance(prompt, str) or not isinstance(system_prompt, str):
         return None
+    effective_prompt = (
+        f"{system_prompt}\n\n[UNTRUSTED REQUEST DATA]\n{prompt}"
+        if system_prompt.strip()
+        else prompt
+    )
     try:
         invalid_prompt = (
-            not prompt.strip()
-            or "\x00" in prompt
-            or len(prompt.encode("utf-8")) > _MAX_CLI_PROMPT_BYTES
+            not effective_prompt.strip()
+            or "\x00" in effective_prompt
+            or len(effective_prompt.encode("utf-8")) > _MAX_CLI_PROMPT_BYTES
         )
     except UnicodeError:
         return None
@@ -815,7 +897,7 @@ def invoke_cli_structured(
 
     try:
         schema_json = json.dumps(
-            dict(schema),
+            _cli_schema(dict(schema)),
             separators=(",", ":"),
             sort_keys=True,
             allow_nan=False,
@@ -864,6 +946,7 @@ def invoke_cli_structured(
                 ]
                 if provider.model:
                     arguments.extend(["--model", provider.model])
+                arguments.extend(_codex_reasoning_arguments(reasoning_effort))
                 arguments.append("-")
             else:
                 arguments = [
@@ -894,17 +977,20 @@ def invoke_cli_structured(
                 timeout=timeout,
                 cwd=cwd,
                 env=_isolated_invocation_environment(transport, cwd, environ),
-                input_text=prompt,
+                input_text=effective_prompt,
                 max_output_chars=_MAX_CLI_OUTPUT_CHARS,
             )
     except Exception:
         return None
-    if (
-        result.timed_out
-        or result.returncode != 0
-        or result.stdout_truncated
-        or result.stderr_truncated
-    ):
+    if result.stdout_truncated or result.stderr_truncated:
+        return None
+    if result.timed_out:
+        return (
+            _parse_codex(result.stdout, allow_completed_item_without_turn=True)
+            if transport == "codex"
+            else None
+        )
+    if result.returncode != 0:
         return None
     return _parse_codex(result.stdout) if transport == "codex" else _parse_claude(result.stdout)
 

@@ -9,6 +9,7 @@ import pytest
 from agency_runtime.core.workforce import (
     StaffingBudget,
     StaffingContext,
+    build_deterministic_proposal,
     parse_recruiter_proposal,
     parse_work_unit_plan,
     verify_staffing,
@@ -38,7 +39,7 @@ def _contract(
     context_mode: str = "isolated_only",
     hosts: tuple[str, ...] = ("codex", "claude", "openclaw", "hermes"),
     platforms: tuple[str, ...] = ("windows", "linux"),
-    tools: tuple[str, ...] = ("repository",),
+    tools: tuple[str, ...] = ("repository-read",),
     composition: CompositionContract | None = None,
 ) -> WorkforceContract:
     return WorkforceContract(
@@ -48,6 +49,15 @@ def _contract(
         display_name=agent_id.replace("-", " ").title(),
         archetype="implementer" if authority == "modify" else "reviewer",
         outcomes=outcomes,
+        capability_ids=(
+            "implementation"
+            if artifact == "implementation-change"
+            else "testing"
+            if artifact in {"test-code", "test-evidence"}
+            else "review"
+            if artifact == "review-report"
+            else "analysis",
+        ),
         artifact_kinds=(artifact,),
         lifecycle_phases=(lifecycle,),
         domains=domains,
@@ -98,7 +108,7 @@ def _unit(
         "claims": list(claims),
         "depends_on": list(depends_on),
         "resources": ["repository"],
-        "required_tools": ["repository"],
+        "required_tools": ["repository-read"],
         "platforms": ["windows", "linux"],
         "acceptance_evidence": [f"{unit_id} verified"],
         "parallelization": "unspecified",
@@ -232,7 +242,64 @@ def _proposal(plan, roster: tuple[WorkforceContract, ...], *rows: dict[str, obje
 
 
 def _context() -> StaffingContext:
-    return StaffingContext("codex", "windows", frozenset({"repository"}), _GENERATION)
+    return StaffingContext(
+        "codex",
+        "windows",
+        frozenset({"native-delegation", "repository-read"}),
+        _GENERATION,
+    )
+
+
+def test_review_authority_can_satisfy_advisory_analysis_but_not_the_reverse() -> None:
+    review_worker = _contract(
+        "codebase-onboarding-engineer",
+        outcomes=("Map repository code paths",),
+        authority="review",
+    )
+    advisory_plan = _plan(_unit("unit-map", authority="advise", capabilities=("analysis",)))
+    context = _context()
+    advisory_proposal = build_deterministic_proposal(
+        advisory_plan,
+        (review_worker,),
+        {"unit-map": (("codebase-onboarding-engineer", 0.99),)},
+        context=context,
+        budget=StaffingBudget(),
+    )
+
+    advisory = verify_staffing(
+        advisory_plan,
+        advisory_proposal,
+        (review_worker,),
+        context=context,
+        budget=StaffingBudget(),
+    )
+
+    assert advisory.accepted
+    assert advisory.units[0].selected == ("codebase-onboarding-engineer",)
+
+    advisor = replace(review_worker, authority="advise")
+    review_plan = _plan(_unit("unit-review", authority="review", capabilities=("analysis",)))
+    review_proposal = build_deterministic_proposal(
+        review_plan,
+        (advisor,),
+        {"unit-review": (("codebase-onboarding-engineer", 0.99),)},
+        context=context,
+        budget=StaffingBudget(),
+    )
+    review = verify_staffing(
+        review_plan,
+        review_proposal,
+        (advisor,),
+        context=context,
+        budget=StaffingBudget(),
+    )
+
+    assert not review.accepted
+    assert "agent_authority_mismatch" in {
+        reason
+        for item in review_proposal.units[0].negative_evidence
+        for reason in item.reason_codes
+    }
 
 
 def _codes(decision) -> set[str]:
@@ -377,10 +444,79 @@ def test_wrong_but_host_and_tool_compatible_candidate_is_rejected() -> None:
     decision = verify_staffing(plan, proposal, roster, context=_context())
 
     assert {
-        "coverage_evidence_mismatch",
         "forbidden_agent_selected",
         "selected_not_deterministic_minimum",
     } <= _codes(decision)
+
+
+def test_semantically_forbidden_near_neighbor_cannot_enter_executable_team() -> None:
+    roster = (
+        _contract("wrong-neighbor", outcomes=("Technical analysis",)),
+        _contract("right-specialist", outcomes=("Technical analysis",)),
+    )
+    plan = _plan(_unit("unit-analysis"))
+    proposal = build_deterministic_proposal(
+        plan,
+        roster,
+        {
+            "unit-analysis": (
+                ("wrong-neighbor", 1.0),
+                ("right-specialist", 0.9),
+            )
+        },
+        context=_context(),
+        semantic_required={"unit-analysis": frozenset({"right-specialist"})},
+        semantic_acceptable={"unit-analysis": frozenset()},
+        semantic_forbidden={"unit-analysis": frozenset({"wrong-neighbor"})},
+    )
+
+    row = proposal.units[0]
+    assert row.selected == ("right-specialist",)
+    assert tuple(item.agent_id for item in row.ranked_semantic) == (
+        "wrong-neighbor",
+        "right-specialist",
+    )
+    assert tuple(item.agent_id for item in row.ranked_executable) == ("right-specialist",)
+    assert row.forbidden == ("wrong-neighbor",)
+    assert verify_staffing(plan, proposal, roster, context=_context()).accepted
+
+
+def test_semantic_staffing_classes_must_partition_the_ranking() -> None:
+    roster = (_contract("right-specialist", outcomes=("Technical analysis",)),)
+    plan = _plan(_unit("unit-analysis"))
+
+    with pytest.raises(ValueError, match="partition"):
+        build_deterministic_proposal(
+            plan,
+            roster,
+            {"unit-analysis": (("right-specialist", 1.0),)},
+            context=_context(),
+            semantic_required={"unit-analysis": frozenset()},
+            semantic_acceptable={"unit-analysis": frozenset()},
+            semantic_forbidden={"unit-analysis": frozenset()},
+        )
+
+
+def test_worker_tool_requirements_are_part_of_executable_eligibility() -> None:
+    roster = (
+        _contract(
+            "browser-reviewer",
+            outcomes=("Technical analysis",),
+            tools=("repository-read", "browser-interaction"),
+        ),
+    )
+    plan = _plan(_unit("unit-analysis"))
+    proposal = build_deterministic_proposal(
+        plan,
+        roster,
+        {"unit-analysis": (("browser-reviewer", 1.0),)},
+        context=_context(),
+    )
+
+    assert proposal.units[0].selected == ()
+    assert "agent_worker_tools_missing" in {
+        reason for item in proposal.units[0].negative_evidence for reason in item.reason_codes
+    }
 
 
 def test_disabled_shadow_winner_is_reported_while_enabled_fallback_is_safe() -> None:
@@ -473,6 +609,121 @@ def test_complementary_specialists_use_distinct_contexts_and_cannot_conflict() -
     decision = verify_staffing(plan, proposal, roster, context=_context())
 
     assert {"delegated_context_not_distinct", "same_context_conflict"} <= _codes(decision)
+
+
+def test_complementary_specialists_can_jointly_cover_multiple_domains() -> None:
+    roster = (
+        _contract(
+            "security-specialist",
+            outcomes=("Security review",),
+            domains=("security",),
+        ),
+        _contract(
+            "quality-specialist",
+            outcomes=("Quality verification",),
+            domains=("quality-assurance",),
+        ),
+    )
+    raw_unit = _unit(
+        "unit-cross-domain",
+        capabilities=("security-review", "quality-verification"),
+    )
+    raw_unit["domains"] = ["security", "quality-assurance"]
+    plan = _plan(raw_unit)
+
+    proposal = build_deterministic_proposal(
+        plan,
+        roster,
+        {
+            "unit-cross-domain": (
+                ("security-specialist", 0.98),
+                ("quality-specialist", 0.95),
+            )
+        },
+        context=_context(),
+    )
+    decision = verify_staffing(plan, proposal, roster, context=_context())
+
+    assert decision.accepted
+    assert decision.units[0].selected == (
+        "security-specialist",
+        "quality-specialist",
+    )
+
+
+def test_broad_planning_capabilities_use_typed_authority_and_lifecycle() -> None:
+    reviewer = _contract(
+        "code-reviewer",
+        outcomes=("Code quality findings",),
+        artifact="review-report",
+        lifecycle="review",
+        authority="review",
+    )
+    raw_unit = _unit(
+        "unit-review",
+        artifact="review-report",
+        lifecycle="review",
+        capabilities=("audit", "investigation", "review", "verification"),
+        authority="review",
+    )
+    plan = _plan(raw_unit)
+
+    proposal = build_deterministic_proposal(
+        plan,
+        (reviewer,),
+        {"unit-review": (("code-reviewer", 0.98),)},
+        context=_context(),
+    )
+
+    assert verify_staffing(plan, proposal, (reviewer,), context=_context()).accepted
+
+
+def test_subject_matter_reviewer_can_complement_test_evidence_owner() -> None:
+    evidence_owner = _contract(
+        "application-integration-verifier",
+        outcomes=("Application test verification",),
+        artifact="test-evidence",
+        lifecycle="testing",
+        authority="review",
+        domains=("quality-assurance",),
+    )
+    security_reviewer = _contract(
+        "code-reviewer",
+        outcomes=("Security review",),
+        artifact="review-report",
+        lifecycle="review",
+        authority="review",
+        domains=("security", "software-engineering"),
+    )
+    raw_unit = _unit(
+        "unit-security-tests",
+        artifact="test-evidence",
+        lifecycle="testing",
+        capabilities=("testing", "verification", "review"),
+        authority="review",
+    )
+    raw_unit["domains"] = ["security", "software-engineering", "quality-assurance"]
+    plan = _plan(raw_unit)
+    roster = (evidence_owner, security_reviewer)
+
+    proposal = build_deterministic_proposal(
+        plan,
+        roster,
+        {
+            "unit-security-tests": (
+                ("application-integration-verifier", 0.98),
+                ("code-reviewer", 0.95),
+            )
+        },
+        context=_context(),
+    )
+    decision = verify_staffing(plan, proposal, roster, context=_context())
+
+    assert decision.accepted
+    assert decision.units[0].selected == (
+        "application-integration-verifier",
+        "code-reviewer",
+    )
 
 
 def test_selection_exclusive_contract_is_enforced() -> None:
@@ -594,6 +845,43 @@ def test_mutation_or_durable_claim_without_later_assurance_abstains() -> None:
     )
 
 
+def test_terminal_review_claim_is_itself_assurance_not_recursive_work() -> None:
+    roster = (
+        _contract(
+            "reviewer",
+            outcomes=("Evidence review",),
+            artifact="review-report",
+            lifecycle="review",
+            authority="review",
+        ),
+    )
+    plan = _plan(
+        _unit(
+            "unit-review",
+            artifact="review-report",
+            lifecycle="review",
+            capabilities=("review",),
+            authority="review",
+            claims=("evidence-backed-findings",),
+        )
+    )
+    proposal = _proposal(
+        plan,
+        roster,
+        _row(
+            plan.units[0],
+            roster,
+            semantic=("reviewer",),
+            executable=("reviewer",),
+            selected=("reviewer",),
+        ),
+    )
+
+    assert "independent_assurance_missing" not in _codes(
+        verify_staffing(plan, proposal, roster, context=_context())
+    )
+
+
 def test_explicit_recruiter_abstention_is_preserved() -> None:
     roster: tuple[WorkforceContract, ...] = ()
     plan = _plan(_unit("unit-analysis"))
@@ -604,3 +892,71 @@ def test_explicit_recruiter_abstention_is_preserved() -> None:
 
     assert decision.status == "abstained"
     assert {"no_safe_sufficient_team", "recruiter_abstained"} <= _codes(decision)
+
+
+def test_deterministic_proposal_builder_preserves_disabled_winner_visibility() -> None:
+    roster = (
+        _contract("disabled-analyst", outcomes=("Technical analysis",), enabled=False),
+        _contract("enabled-analyst", outcomes=("Technical analysis",)),
+    )
+    plan = _plan(_unit("unit-analysis"))
+    proposal = build_deterministic_proposal(
+        plan,
+        roster,
+        {"unit-analysis": (("disabled-analyst", 0.99), ("enabled-analyst", 0.9))},
+        context=_context(),
+    )
+
+    decision = verify_staffing(plan, proposal, roster, context=_context())
+
+    assert decision.accepted
+    assert decision.units[0].selected == ("enabled-analyst",)
+    assert decision.units[0].disabled_shadows[0].agent_id == "disabled-analyst"
+    assert decision.units[0].disabled_shadows[0].fallback_agent_id == "enabled-analyst"
+
+
+def test_deterministic_proposal_builder_cannot_bypass_confidence_or_margin_policy() -> None:
+    roster = (
+        _contract("first-analyst", outcomes=("Technical analysis",)),
+        _contract("second-analyst", outcomes=("Technical analysis",)),
+    )
+    plan = _plan(_unit("unit-analysis"))
+    proposal = build_deterministic_proposal(
+        plan,
+        roster,
+        {"unit-analysis": (("first-analyst", 0.7), ("second-analyst", 0.69))},
+        context=_context(),
+    )
+
+    decision = verify_staffing(plan, proposal, roster, context=_context())
+
+    assert not decision.accepted
+    assert {"selection_confidence_too_low", "selection_margin_too_low"} <= _codes(decision)
+
+
+def test_margin_compares_complete_alternative_teams_not_partial_near_neighbors() -> None:
+    unit = _unit("unit-analysis")
+    unit["domains"] = ["security", "software-engineering"]
+    plan = _plan(unit)
+    complete = _contract("complete-reviewer", outcomes=("Technical analysis",))
+    partial = replace(
+        _contract("partial-neighbor", outcomes=("Technical analysis",)),
+        domains=("security",),
+    )
+    complete = replace(
+        complete,
+        domains=("security", "software-engineering"),
+    )
+    context = _context()
+
+    proposal = build_deterministic_proposal(
+        plan,
+        (partial, complete),
+        {plan.units[0].unit_id: (("partial-neighbor", 1.0), ("complete-reviewer", 0.9))},
+        context=context,
+    )
+    decision = verify_staffing(plan, proposal, (partial, complete), context=context)
+
+    assert proposal.units[0].selected == ("complete-reviewer",)
+    assert proposal.units[0].margin == 0.9
+    assert decision.accepted

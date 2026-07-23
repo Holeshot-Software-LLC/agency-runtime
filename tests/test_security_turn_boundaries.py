@@ -448,6 +448,12 @@ const encoded = serializeBridgePayload({
   traceId: "trace",
   parentSessionId: "parent-session",
   parentTraceId: "parent-trace",
+  workUnitId: "unit-auth",
+  workerId: "child-session",
+  nativeRunId: "native-run",
+  childSessionId: "child-session",
+  goal: "Review authentication",
+  outcome: "ok",
   toolName: "delegate_task",
   toolInput: { agent: "reviewer", prompt: huge, ignored: huge },
   toolResult: { success: true, message: huge, ignored: huge },
@@ -456,6 +462,9 @@ if (Buffer.byteLength(encoded, "utf8") > MAX_BRIDGE_INPUT_BYTES) process.exit(21
 const projected = JSON.parse(encoded);
 if ("ignored" in projected.toolInput || "ignored" in projected.toolResult) process.exit(22);
 if (projected.parentSessionId !== "parent-session" || projected.parentTraceId !== "parent-trace") process.exit(33);
+if (projected.workUnitId !== "unit-auth" || projected.workerId !== "child-session") process.exit(34);
+if (projected.nativeRunId !== "native-run" || projected.childSessionId !== "child-session") process.exit(35);
+if (projected.goal !== "Review authentication" || projected.outcome !== "ok") process.exit(36);
 const hostileText = String.fromCharCode(34, 92, 1).repeat(16 * 1024);
 const hostilePayload = canonicalOutboundPayload({ text: hostileText });
 const hostileEnvelope = serializeBridgePayload({

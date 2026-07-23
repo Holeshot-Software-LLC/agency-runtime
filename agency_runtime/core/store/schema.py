@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 33
+SCHEMA_VERSION = 35
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 _MAX_REMEDIATION_AUTHORITY_ID_BYTES = 512
@@ -1166,6 +1166,20 @@ CREATE TABLE IF NOT EXISTS agent_version_lineage (
     FOREIGN KEY (hiring_case_id) REFERENCES agent_hiring_cases(id)
 );
 
+CREATE TABLE IF NOT EXISTS agent_recruitment_contract_projections (
+    id TEXT PRIMARY KEY,
+    projection_sequence INTEGER NOT NULL UNIQUE CHECK (projection_sequence > 0),
+    worker_id TEXT NOT NULL,
+    agent_version_id TEXT NOT NULL,
+    parent_contract_hash TEXT NOT NULL,
+    recruitment_contract TEXT NOT NULL,
+    recruitment_contract_hash TEXT NOT NULL,
+    projection_authority TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (worker_id) REFERENCES agent_workers(worker_id),
+    FOREIGN KEY (agent_version_id) REFERENCES agent_versions(id)
+);
+
 CREATE TABLE IF NOT EXISTS agent_worker_events (
     id TEXT PRIMARY KEY,
     event_sequence INTEGER NOT NULL UNIQUE CHECK (event_sequence > 0),
@@ -1370,6 +1384,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_lineage_hiring_case_once
 ON agent_version_lineage(hiring_case_id) WHERE hiring_case_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_agent_worker_events_worker_sequence
 ON agent_worker_events(worker_id, event_sequence DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_contract_projections_worker_sequence
+ON agent_recruitment_contract_projections(
+    worker_id, agent_version_id, projection_sequence DESC
+);
 CREATE INDEX IF NOT EXISTS idx_agent_performance_worker_created
 ON agent_performance_events(worker_id, created_at DESC, id DESC);
 CREATE TRIGGER IF NOT EXISTS agency_version_lineage_immutable_update
@@ -1378,6 +1396,12 @@ SELECT RAISE(ABORT, 'agent version lineage is immutable'); END;
 CREATE TRIGGER IF NOT EXISTS agency_version_lineage_immutable_delete
 BEFORE DELETE ON agent_version_lineage BEGIN
 SELECT RAISE(ABORT, 'agent version lineage is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_contract_projections_immutable_update
+BEFORE UPDATE ON agent_recruitment_contract_projections BEGIN
+SELECT RAISE(ABORT, 'agent recruitment contract projections are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS agency_contract_projections_immutable_delete
+BEFORE DELETE ON agent_recruitment_contract_projections BEGIN
+SELECT RAISE(ABORT, 'agent recruitment contract projections are immutable'); END;
 CREATE TRIGGER IF NOT EXISTS agency_worker_events_immutable_update
 BEFORE UPDATE ON agent_worker_events BEGIN
 SELECT RAISE(ABORT, 'agent worker events are immutable'); END;
@@ -1489,6 +1513,7 @@ ALL_TABLES: tuple[str, ...] = (
     "agent_workers",
     "agent_hiring_cases",
     "agent_version_lineage",
+    "agent_recruitment_contract_projections",
     "agent_worker_events",
     "agent_performance_events",
     "agent_remediation_resolution_dependencies",
@@ -1603,6 +1628,15 @@ def workforce_schema_is_current(conn: sqlite3.Connection) -> bool:
             "recruitment_contract_hash",
             "hiring_case_id",
         },
+        "agent_recruitment_contract_projections": {
+            "projection_sequence",
+            "worker_id",
+            "agent_version_id",
+            "parent_contract_hash",
+            "recruitment_contract",
+            "recruitment_contract_hash",
+            "projection_authority",
+        },
         "agent_worker_events": {"event_sequence", "worker_id", "event_type", "evidence"},
         "agent_performance_events": {
             "idempotency_key",
@@ -1617,9 +1651,13 @@ def workforce_schema_is_current(conn: sqlite3.Connection) -> bool:
         columns = {str(row["name"]) for row in conn.execute(f"PRAGMA table_info({table})")}
         if not expected.issubset(columns):
             return False
+    if not recruitment_contract_projection_history_is_current(conn):
+        return False
     required_objects = {
         "agency_version_lineage_immutable_update",
         "agency_version_lineage_immutable_delete",
+        "agency_contract_projections_immutable_update",
+        "agency_contract_projections_immutable_delete",
         "agency_worker_events_immutable_update",
         "agency_worker_events_immutable_delete",
         "agency_performance_events_immutable_update",
@@ -1658,6 +1696,96 @@ def workforce_schema_is_current(conn: sqlite3.Connection) -> bool:
 def _canonical_schema_sql(value: object) -> str:
     normalized = re.sub(r"\s+", " ", str(value or "").strip()).casefold()
     return normalized.replace(" if not exists ", " ")
+
+
+def recruitment_contract_projection_history_is_current(
+    conn: sqlite3.Connection,
+) -> bool:
+    """Return whether the append-only projection ledger permits A-B-A history.
+
+    Contract projections are immutable events, not a set of unique contract
+    bodies. A package can legitimately restore an earlier derived projection
+    after an intervening release, so content hashes cannot be globally unique
+    for one worker revision.
+    """
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master "
+        "WHERE type = 'table' AND name = 'agent_recruitment_contract_projections'"
+    ).fetchone()
+    if row is None:
+        return False
+    sql = str(row["sql"] if isinstance(row, sqlite3.Row) else row[0])
+    legacy_constraint = re.search(
+        r"unique\s*\(\s*worker_id\s*,\s*agent_version_id\s*,"
+        r"\s*recruitment_contract_hash\s*\)",
+        sql,
+        flags=re.IGNORECASE,
+    )
+    return legacy_constraint is None
+
+
+def migrate_recruitment_contract_projection_history(conn: sqlite3.Connection) -> None:
+    """Remove the legacy content-uniqueness constraint without losing history."""
+
+    if recruitment_contract_projection_history_is_current(conn):
+        return
+    before = int(
+        conn.execute("SELECT COUNT(*) FROM agent_recruitment_contract_projections").fetchone()[0]
+    )
+    conn.execute("DROP TRIGGER IF EXISTS agency_contract_projections_immutable_update")
+    conn.execute("DROP TRIGGER IF EXISTS agency_contract_projections_immutable_delete")
+    conn.execute("DROP INDEX IF EXISTS idx_agent_contract_projections_worker_sequence")
+    conn.execute(
+        "ALTER TABLE agent_recruitment_contract_projections "
+        "RENAME TO agent_recruitment_contract_projections_legacy_unique"
+    )
+    conn.execute(
+        "CREATE TABLE agent_recruitment_contract_projections ("
+        "id TEXT PRIMARY KEY, "
+        "projection_sequence INTEGER NOT NULL UNIQUE CHECK (projection_sequence > 0), "
+        "worker_id TEXT NOT NULL, "
+        "agent_version_id TEXT NOT NULL, "
+        "parent_contract_hash TEXT NOT NULL, "
+        "recruitment_contract TEXT NOT NULL, "
+        "recruitment_contract_hash TEXT NOT NULL, "
+        "projection_authority TEXT NOT NULL, "
+        "created_at TEXT NOT NULL, "
+        "FOREIGN KEY (worker_id) REFERENCES agent_workers(worker_id), "
+        "FOREIGN KEY (agent_version_id) REFERENCES agent_versions(id))"
+    )
+    columns = (
+        "id, projection_sequence, worker_id, agent_version_id, "
+        "parent_contract_hash, recruitment_contract, recruitment_contract_hash, "
+        "projection_authority, created_at"
+    )
+    conn.execute(
+        "INSERT INTO agent_recruitment_contract_projections "
+        f"({columns}) SELECT {columns} "
+        "FROM agent_recruitment_contract_projections_legacy_unique "
+        "ORDER BY projection_sequence"
+    )
+    after = int(
+        conn.execute("SELECT COUNT(*) FROM agent_recruitment_contract_projections").fetchone()[0]
+    )
+    if after != before:
+        raise RuntimeError("agent recruitment projection migration lost history")
+    conn.execute("DROP TABLE agent_recruitment_contract_projections_legacy_unique")
+    conn.execute(
+        "CREATE INDEX idx_agent_contract_projections_worker_sequence "
+        "ON agent_recruitment_contract_projections("
+        "worker_id, agent_version_id, projection_sequence DESC)"
+    )
+    conn.execute(
+        "CREATE TRIGGER agency_contract_projections_immutable_update "
+        "BEFORE UPDATE ON agent_recruitment_contract_projections BEGIN "
+        "SELECT RAISE(ABORT, 'agent recruitment contract projections are immutable'); END"
+    )
+    conn.execute(
+        "CREATE TRIGGER agency_contract_projections_immutable_delete "
+        "BEFORE DELETE ON agent_recruitment_contract_projections BEGIN "
+        "SELECT RAISE(ABORT, 'agent recruitment contract projections are immutable'); END"
+    )
 
 
 def _bounded_utf8_text(value: object, maximum: int) -> str | None:
@@ -4500,6 +4628,8 @@ def migrate_schema(
         if current_version < 30
         else source_redaction_purge_pending(conn)
     )
+    migrate_recruitment_contract_projection_history(conn)
+
     from agency_runtime.core.store.workforce import backfill_workforce_identity
 
     backfill_workforce_identity(conn)

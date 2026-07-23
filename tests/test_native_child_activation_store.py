@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -11,6 +12,7 @@ import pytest
 
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.delegation.events import mark_delegation_executed
+from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.native_child_activation import (
     NATIVE_CHILD_ACTIVATION_LEGACY_VERSION,
     build_native_child_activation_grant,
@@ -29,15 +31,23 @@ def _isolated_turn(path: Path) -> tuple[Store, str, str]:
         store,
         session_id="session",
         trace_id="trace",
-        user_message="Review and refactor this code for security and correctness",
+        user_message="Review and refactor this Python code for security and correctness",
         host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id="session",
+            trace_id="trace",
+        ),
     )
     slug = next(
         candidate
         for candidate in result.selected_specialists
         if candidate not in PROTECTED_AGENT_SLUGS
     )
-    return store, slug, f"specialist:{slug}"
+    snapshot = store.get_completion_evidence_snapshot("session", "trace")
+    planned = next(row for row in snapshot["unit_agent_plan"] if row["recommended_agent"] == slug)
+    return store, slug, str(planned["work_unit_id"])
 
 
 def _prepare(store: Store, slug: str, unit: str, **changes: object) -> dict[str, object]:
@@ -849,10 +859,30 @@ def test_public_delegate_reconciles_to_consumed_native_child_lineage(tmp_path: P
     assert observed["status"] == "delegation observed"
     assert observed["worker_id"] == "native-worker"
     assert observed["native_run_id"] == "codex-agent:native-worker"
-    [delegation] = store.get_delegations("trace")
+    [delegation] = [
+        row
+        for row in store.get_delegations("trace")
+        if row["work_unit_id"] == unit and row["recommended_agent"] == slug
+    ]
     assert delegation["executed_worker_id"] == "native-worker"
     assert delegation["native_run_id"] == "codex-agent:native-worker"
     assert delegation["activation_receipt_id"] == prepared["receipt_id"]
+    snapshot = store.get_completion_evidence_snapshot("session", "trace")
+    for planned in snapshot["unit_agent_plan"]:
+        if planned["work_unit_id"] == unit:
+            continue
+        declined = handle_tool_call(
+            "agency.decline_delegation",
+            {
+                "session_id": "session",
+                "trace_id": "trace",
+                "agent": planned["recommended_agent"],
+                "work_unit_id": planned["work_unit_id"],
+                "reason": "Not needed for this lineage-focused test.",
+            },
+            store=store,
+        )
+        assert declined["status"] == "delegation declined"
     finalized = handle_tool_call(
         "agency.finalize",
         {
@@ -864,7 +894,8 @@ def test_public_delegate_reconciles_to_consumed_native_child_lineage(tmp_path: P
         },
         store=store,
     )
-    assert finalized["action"] == "accept"
+    assert finalized["action"] == "continue"
+    assert finalized["missing"] == ["evidence_verification"]
     assert consumed["consumption_receipt_id"]
 
 
@@ -909,7 +940,11 @@ def test_consumed_lineage_can_repair_one_unlinked_delegation_receipt(tmp_path: P
     )
 
     assert observed["status"] == "delegation observed"
-    [delegation] = store.get_delegations("trace")
+    [delegation] = [
+        row
+        for row in store.get_delegations("trace")
+        if row["work_unit_id"] == unit and row["recommended_agent"] == slug
+    ]
     assert delegation["executed_worker_id"] == "native-worker"
     assert delegation["native_run_id"] == "codex-agent:native-worker"
     assert delegation["activation_receipt_id"] == prepared["receipt_id"]

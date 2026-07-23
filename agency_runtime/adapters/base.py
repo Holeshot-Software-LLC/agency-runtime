@@ -782,6 +782,8 @@ class BaseAdapter(ABC):
         origin_receipt: Any | None = None,
         parent_session_id: str = "",
         parent_trace_id: str = "",
+        native_worker_id: str = "",
+        native_run_id: str = "",
     ) -> dict[str, Any] | None:
         """Run selector preflight and persist suggested delegations."""
         if not self.runtime_enabled():
@@ -826,6 +828,8 @@ class BaseAdapter(ABC):
             origin_receipt=origin_receipt,
             parent_session_id=parent_session_id,
             parent_trace_id=parent_trace_id,
+            native_worker_id=native_worker_id,
+            native_run_id=native_run_id,
         )
         return result.as_dict()
 
@@ -840,6 +844,8 @@ class BaseAdapter(ABC):
         origin_receipt: Any | None = None,
         parent_session_id: str = "",
         parent_trace_id: str = "",
+        native_worker_id: str = "",
+        native_run_id: str = "",
     ) -> dict[str, Any] | None:
         """Host hook alias for pre-LLM routing context."""
         return self.build_preflight_context(
@@ -851,6 +857,8 @@ class BaseAdapter(ABC):
             origin_receipt=origin_receipt,
             parent_session_id=parent_session_id,
             parent_trace_id=parent_trace_id,
+            native_worker_id=native_worker_id,
+            native_run_id=native_run_id,
         )
 
     def enforce_pre_verify(

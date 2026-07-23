@@ -76,6 +76,9 @@ _TOKEN_ALIASES = {
     "fixes": "fix",
     "forecasting": "forecast",
     "forecasts": "forecast",
+    "analyze": "analysis",
+    "analyzes": "analysis",
+    "analyzing": "analysis",
     "implementation": "implement",
     "implements": "implement",
     "interactions": "interaction",
@@ -88,9 +91,11 @@ _TOKEN_ALIASES = {
     "refactoring": "refactor",
     "requirements": "requirement",
     "reviews": "review",
+    "results": "result",
     "runbooks": "runbook",
     "servers": "server",
     "testing": "test",
+    "tests": "test",
     "tools": "tool",
     "transports": "transport",
     "vulnerabilities": "vulnerability",
@@ -105,6 +110,7 @@ _AMBIGUOUS_SINGLE_TOKENS = frozenset(
         "layout",
         "plan",
         "review",
+        "test",
     }
 )
 

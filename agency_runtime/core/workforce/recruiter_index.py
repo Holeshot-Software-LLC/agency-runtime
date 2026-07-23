@@ -23,6 +23,7 @@ RECRUITER_INDEX_FIELDS = (
     "origin",
     "archetype",
     "owned_outcomes",
+    "capability_ids",
     "artifact_kinds",
     "lifecycle_phases",
     "domains",
@@ -64,6 +65,7 @@ class RecruiterIndexRecord:
     origin: str
     archetype: str
     owned_outcomes: tuple[str, ...]
+    capability_ids: tuple[str, ...]
     artifact_kinds: tuple[str, ...]
     lifecycle_phases: tuple[str, ...]
     domains: tuple[str, ...]
@@ -92,6 +94,7 @@ class RecruiterIndexRecord:
             self.origin,
             self.archetype,
             self.owned_outcomes,
+            self.capability_ids,
             self.artifact_kinds,
             self.lifecycle_phases,
             self.domains,
@@ -123,6 +126,7 @@ def project_recruiter_index_record(contract: WorkforceContract) -> RecruiterInde
         origin=contract.origin,
         archetype=contract.archetype,
         owned_outcomes=contract.outcomes,
+        capability_ids=contract.capability_ids,
         artifact_kinds=contract.artifact_kinds,
         lifecycle_phases=contract.lifecycle_phases,
         domains=contract.domains,

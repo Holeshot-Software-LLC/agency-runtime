@@ -155,6 +155,12 @@ _SET_VALIDATORS = {
     "workforce.max_selected_total": lambda item: _integer(
         item, "workforce.max_selected_total", minimum=1, maximum=256
     ),
+    "workforce.min_confidence": lambda item: _number(
+        item, "workforce.min_confidence", minimum=0.0, maximum=1.0
+    ),
+    "workforce.min_margin": lambda item: _number(
+        item, "workforce.min_margin", minimum=0.0, maximum=1.0
+    ),
     "workforce.max_hires_per_task": lambda item: _integer(
         item, "workforce.max_hires_per_task", minimum=0, maximum=16
     ),

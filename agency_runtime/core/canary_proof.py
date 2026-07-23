@@ -70,10 +70,45 @@ def evidence_summary(
     ]
     finalizations = [row for row in delta.get("finalizations", []) if row.get("host") == host]
     receipts = [row for row in delta.get("receipts", []) if row.get("host") == host]
+    specialists = list(delta.get("specialists", []))
+    completed_runs = [
+        row
+        for row in delta.get("runs", [])
+        if row.get("host") == host
+        and row.get("status") == "completed"
+        and bool(row.get("ended_at"))
+    ]
+    accepted_finalizations = [
+        row
+        for row in finalizations
+        if row.get("action") == "accept" and row.get("terminal_status") == "completed"
+    ]
     route_traces = {str(row.get("trace_id")) for row in routing if row.get("trace_id")}
     final_traces = {str(row.get("trace_id")) for row in finalizations if row.get("trace_id")}
+    accepted_traces = {
+        str(row.get("trace_id")) for row in accepted_finalizations if row.get("trace_id")
+    }
+    completed_traces = {str(row.get("trace_id")) for row in completed_runs if row.get("trace_id")}
     receipt_traces = {str(row.get("trace_id")) for row in receipts if row.get("trace_id")}
+    expected_specialist = str(facade.CANARY_EXPECTED_SPECIALIST)
+    routed_specialists = sorted(
+        {
+            str(agent_id)
+            for row in routing
+            for field in ("selected_ids", "companion_ids")
+            for agent_id in row.get(field, [])
+            if agent_id
+        }
+    )
+    loaded_specialists = sorted(
+        {
+            str(row.get("slug"))
+            for row in specialists
+            if str(row.get("trace_id") or "") in route_traces and row.get("slug")
+        }
+    )
     correlated = sorted(route_traces & final_traces)
+    accepted = sorted(route_traces & accepted_traces & completed_traces)
     receipt_correlated = sorted(set(correlated) & receipt_traces)
     receipt_required = host in facade.RECEIPT_CAPABLE_HOSTS
     return {
@@ -83,11 +118,19 @@ def evidence_summary(
         },
         "counts": {name: len(rows) for name, rows in delta.items()},
         "host_finalization_count": len(finalizations),
+        "accepted_finalization_count": len(accepted_finalizations),
         "host_receipt_count": len(receipts),
         "correlated_trace_ids": correlated,
+        "accepted_trace_ids": accepted,
+        "completed_run_trace_ids": sorted(completed_traces),
         "receipt_correlated_trace_ids": receipt_correlated,
         "receipt_required": receipt_required,
         "receipt_proven": bool(receipt_correlated),
+        "expected_specialist": expected_specialist,
+        "routed_specialists": routed_specialists,
+        "loaded_specialists": loaded_specialists,
+        "expected_specialist_selected": expected_specialist in routed_specialists,
+        "expected_specialist_loaded": expected_specialist in loaded_specialists,
         "query_hash": expected_query_hash,
     }
 
@@ -203,6 +246,7 @@ def readiness_report(
         "execute_confirmation": confirmation,
         "live_attempted": False,
         "canary_passed": False,
+        "attestation_persisted": False,
         "unmet_prerequisites": list(assessment.unmet),
     }
 
@@ -279,6 +323,8 @@ def invoke_and_collect_evidence(
             evidence=None,
             error="safe canary invocation prerequisites are incomplete",
         )
+    result: dict[str, Any] | None = None
+    invocation_error: str | None = None
     try:
         with private_temporary_directory(prefix="canary") as workdir:
             result = preparation.backend.execute(
@@ -289,11 +335,7 @@ def invoke_and_collect_evidence(
             if not isinstance(result, dict):
                 raise RuntimeError("canary backend returned an invalid result")
     except Exception:
-        return InvocationOutcome(
-            result=None,
-            evidence=None,
-            error="safe host invocation failed before evidence could be evaluated",
-        )
+        invocation_error = "safe host invocation failed before evidence could be evaluated"
     try:
         after = preparation.store.recent_runtime_activity(limit=200)
     except Exception:
@@ -310,6 +352,7 @@ def invoke_and_collect_evidence(
             host,
             expected_query_hash=expected_query_hash,
         ),
+        error=invocation_error,
     )
 
 
@@ -368,8 +411,14 @@ def proof_failures(
     else:
         if not header_valid:
             failures.append("final response header was not proven")
-        if not evidence["correlated_trace_ids"]:
-            failures.append("correlated routing and finalization evidence was not proven")
+        if not evidence["expected_specialist_selected"]:
+            failures.append("expected canary specialist was not selected")
+        elif not evidence["expected_specialist_loaded"]:
+            failures.append("expected canary specialist activation was not proven")
+        if not evidence["accepted_trace_ids"]:
+            failures.append(
+                "correlated routing and an authoritative accepted terminal turn were not proven"
+            )
         elif evidence["receipt_required"] and not evidence["receipt_proven"]:
             failures.append(
                 "the host exposes response telemetry but a correlated receipt was not proven"
@@ -420,7 +469,9 @@ def evaluate_proof(
             plugin_invoked=plugin_invoked,
         )
         evidence_passed = bool(
-            evidence["correlated_trace_ids"]
+            evidence["accepted_trace_ids"]
+            and evidence["expected_specialist_selected"]
+            and evidence["expected_specialist_loaded"]
             and (not evidence["receipt_required"] or evidence["receipt_proven"])
         )
         header_passed = header_valid
@@ -478,7 +529,7 @@ def attestation_payload(
         "plugin_version": _facade().PLUGIN_VERSION,
         "install_id": str(assessment.native["install_id"]),
         "bundle_digest": str(assessment.native["bundle_digest"]),
-        "trace_id": evidence["correlated_trace_ids"][0],
+        "trace_id": evidence["accepted_trace_ids"][0],
         "passed_at": passed_at,
     }
 

@@ -667,6 +667,64 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         finally:
             conn.close()
 
+    def fail_canary_run(
+        self,
+        run_id: str,
+        *,
+        host: str,
+        request_fingerprint: str,
+    ) -> bool:
+        """Close one active run proven to belong to an exact canary request."""
+
+        normalized_run = validate_correlation_id(run_id, field="run_id")
+        normalized_host = str(host or "").strip().casefold()
+        fingerprint = str(request_fingerprint or "").strip()
+        if not normalized_host or len(normalized_host) > 64:
+            raise ValueError("canary host is invalid")
+        if len(fingerprint) != 64 or any(
+            character not in "0123456789abcdef" for character in fingerprint
+        ):
+            raise ValueError("canary request fingerprint must be a lowercase SHA-256 digest")
+        closed_at = self._now()
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            run = conn.execute(
+                "SELECT id, trace_id, session_id FROM runs "
+                "WHERE id = ? AND host = ? "
+                "AND (preflight_request_fingerprint = ? OR EXISTS ("
+                "SELECT 1 FROM routing_decisions AS routing "
+                "WHERE routing.trace_id = runs.trace_id AND routing.query_hash = ?"
+                ")) LIMIT 1",
+                (normalized_run, normalized_host, fingerprint, fingerprint),
+            ).fetchone()
+            if run is None:
+                conn.commit()
+                return False
+            closed = conn.execute(
+                "UPDATE runs SET ended_at = COALESCE(ended_at, ?), "
+                "status = 'canary_failed', "
+                f"last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
+                "WHERE id = ? AND terminal_finalization_id IS NULL "
+                "AND status IN ('active', 'evidence_only')",
+                (closed_at, normalized_run),
+            )
+            if closed.rowcount != 1:
+                conn.commit()
+                return False
+            conn.execute(
+                "UPDATE specialists_loaded SET expired_at = ? "
+                "WHERE session_id = ? AND trace_id = ? AND expired_at IS NULL",
+                (closed_at, str(run["session_id"] or ""), str(run["trace_id"] or "")),
+            )
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     # ── Model receipts ─────────────────────────────────────────────
 
     def record_model_receipt(

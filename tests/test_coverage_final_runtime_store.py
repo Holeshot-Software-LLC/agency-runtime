@@ -498,7 +498,8 @@ def test_smoke_rejects_six_argument_config_without_flag(
     payload = json.loads(mcp_path.read_text(encoding="utf-8"))
     payload["mcpServers"]["agency-runtime"]["args"] = [
         "-I",
-        payload["mcpServers"]["agency-runtime"]["args"][1],
+        "-S",
+        payload["mcpServers"]["agency-runtime"]["args"][2],
         "agency_runtime.server.mcp",
         "--stdio",
         "--wrong",

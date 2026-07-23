@@ -860,6 +860,12 @@ export function createRenderer(core, config, callbacks) {
       .filter(Boolean);
     const eligibility = receipt.eligibility || {};
     const hostCapability = receipt.host_capability_receipt || {};
+    const routing = receipt.routing || {};
+    const providerAttempts = Array.isArray(routing.provider_attempts)
+      ? routing.provider_attempts
+        .slice(0, 8)
+        .filter((attempt) => attempt && typeof attempt === "object")
+      : [];
     const eligibilitySummary = Number.isInteger(eligibility.rejection_count)
       ? `${eligibility.eligible_count || 0} eligible · ${eligibility.rejection_count} rejected${eligibility.truncated ? " · bounded view" : ""}`
       : "not reported";
@@ -878,6 +884,8 @@ export function createRenderer(core, config, callbacks) {
       ["Policy actions", receipt.signals?.policy?.matched_actions || []],
       ["Work units", workUnits],
       ["Decision source", receipt.signals?.selection?.provider || receipt.provider || "deterministic"],
+      ["Inference mode", routing.inference_mode || "not reported"],
+      ["Provider calls", providerAttempts.length],
     ];
     blocks.forEach(([label, value]) => {
       const block = el("div", "receipt-block");
@@ -891,6 +899,59 @@ export function createRenderer(core, config, callbacks) {
       } else block.append(el("p", "", value));
       root.append(block);
     });
+    const modelBlock = el("div", "receipt-block model-receipts");
+    modelBlock.append(el("span", "", "Inference and model receipts"));
+    if (!providerAttempts.length) {
+      modelBlock.append(el("p", "", "No model call was recorded for this route."));
+    } else {
+      const modelList = el("div", "model-receipt-list");
+      modelList.setAttribute("role", "list");
+      modelList.setAttribute("aria-label", "Inference provider and model receipts");
+      providerAttempts.forEach((attempt, index) => {
+        const status = String(attempt.status || "unknown").toLowerCase();
+        const card = el("article", "model-receipt-card");
+        card.setAttribute("role", "listitem");
+        const heading = el("div", "model-receipt-heading");
+        heading.append(
+          el("strong", "", String(attempt.stage || "provider") + " call " + (index + 1)),
+          el("span", "model-receipt-status status-" + status, status.replaceAll("_", " ")),
+        );
+        card.append(heading);
+        const facts = el("dl", "model-receipt-facts");
+        [
+          [
+            "Configured provider",
+            [attempt.provider_name, attempt.provider_type].filter(Boolean).join(" · ")
+              || "unavailable",
+          ],
+          ["Requested model", attempt.requested_model || "not declared"],
+          ["Router / model group", attempt.model_group || "none"],
+          ["Actual model", attempt.actual_model || "unavailable"],
+          ["Receipt source", attempt.model_receipt_source || "unavailable"],
+          [
+            "Latency",
+            Number.isFinite(Number(attempt.latency_ms))
+              ? (Number(attempt.latency_ms) / 1000).toFixed(2) + " s"
+              : "unavailable",
+          ],
+        ].forEach(([label, value]) => {
+          const fact = el("div");
+          fact.append(el("dt", "", label), el("dd", "", value));
+          facts.append(fact);
+        });
+        card.append(facts);
+        if (attempt.reason_code || attempt.validation_detail) {
+          const detail = [
+            String(attempt.reason_code || "").replaceAll("_", " "),
+            attempt.validation_detail,
+          ].filter(Boolean).join(" · ");
+          card.append(el("p", "model-receipt-detail", detail));
+        }
+        modelList.append(card);
+      });
+      modelBlock.append(modelList);
+    }
+    root.append(modelBlock);
     const rejectionRows = Array.isArray(eligibility.rejections)
       ? eligibility.rejections
       : [];
@@ -1025,6 +1086,271 @@ export function createRenderer(core, config, callbacks) {
     ).toUpperCase();
   }
 
+  function appendTokenGroup(root, label, values) {
+    const items = Array.isArray(values) ? values.filter(Boolean) : [];
+    const group = el("div", "workforce-token-group");
+    group.append(el("small", "", label));
+    const tokens = el("div", "token-list");
+    (items.length ? items : ["none recorded"]).slice(0, 12).forEach((value) => {
+      tokens.append(el("span", "token", value));
+    });
+    group.append(tokens);
+    root.append(group);
+  }
+
+  function workforceActions(worker) {
+    const stateValue = String(worker.state || "").toLowerCase();
+    const employment = String(worker.employment_class || "").toLowerCase();
+    if (stateValue === "retired" || stateValue === "merged") return [];
+    if (stateValue === "suspended") {
+      return [
+        ["resume", "Resume worker"],
+        ["retire", "Retire worker"],
+        ["merge", "Merge into another worker"],
+      ];
+    }
+    if (stateValue === "disabled") {
+      return [
+        ["enable", "Enable worker"],
+        ["suspend", "Suspend worker"],
+        ["retire", "Retire worker"],
+        ["merge", "Merge into another worker"],
+      ];
+    }
+    const actions = [];
+    if (employment === "contractor") actions.push(["promote", "Promote contractor"]);
+    actions.push(
+      ["disable", "Disable worker"],
+      ["suspend", "Suspend worker"],
+      ["retire", "Retire worker"],
+      ["merge", "Merge into another worker"],
+    );
+    return actions;
+  }
+
+  function appendWorkerHistory(root, detail) {
+    const history = el("details", "workforce-history");
+    history.append(el("summary", "", "Recent lifecycle and outcome evidence"));
+    const list = el("div", "workforce-history-list");
+    const rows = [
+      ...(Array.isArray(detail.events) ? detail.events : []).map((item) => ({
+        kind: item.event_type || "lifecycle",
+        result: item.reason || (String(item.from_standing || "—") + " → " + String(item.to_standing || "—")),
+        at: item.created_at,
+      })),
+      ...(Array.isArray(detail.outcomes) ? detail.outcomes : []).map((item) => ({
+        kind: item.event_type || "outcome",
+        result: item.outcome || "recorded",
+        at: item.created_at,
+      })),
+    ].sort((left, right) => String(right.at || "").localeCompare(String(left.at || "")));
+    if (!rows.length) {
+      list.append(el("small", "", "No assignment or outcome evidence has been recorded yet."));
+    } else {
+      rows.slice(0, 12).forEach((item) => {
+        const row = el("div", "workforce-history-row");
+        row.append(
+          el("strong", "", item.kind),
+          el("span", "", item.result),
+          el("time", "", formatTime(item.at)),
+        );
+        list.append(row);
+      });
+    }
+    history.append(list);
+    root.append(history);
+  }
+
+  function renderWorkerDetail() {
+    const root = byId("workforce-detail");
+    const form = byId("workforce-action-form");
+    const detail = state.selectedWorkerDetail;
+    if (!root || !form) return;
+    root.replaceChildren();
+    if (!detail?.worker) {
+      root.className = "empty-state";
+      root.textContent = "Select a worker to inspect scope, lineage, hiring evidence, assignments, and outcomes.";
+      form.hidden = true;
+      byId("workforce-detail-state").textContent = "SELECT";
+      return;
+    }
+    root.className = "workforce-detail";
+    const worker = detail.worker;
+    const contract = detail.recruitment_contract || {};
+    byId("workforce-detail-state").textContent = String(worker.state || "unknown").toUpperCase();
+    const heading = el("div", "workforce-detail-heading");
+    heading.append(
+      el("span", "worker-state", worker.state || "unknown"),
+      el("h3", "", worker.display_label || worker.display_name || worker.agent_slug),
+      el("p", "", contract.scope || contract.narrow_scope || worker.agent_slug),
+    );
+    root.append(heading);
+    const facts = el("dl", "workforce-facts");
+    [
+      ["Stable worker ID", worker.worker_id],
+      ["Agent slug", worker.agent_slug],
+      ["Version", worker.current_version],
+      ["Revision", worker.revision],
+      ["Archetype", contract.archetype],
+      ["Authority", contract.authority],
+      ["Origin", worker.origin],
+    ].forEach(([label, value]) => {
+      const fact = el("div");
+      fact.append(el("dt", "", label), el("dd", "", value || "—"));
+      facts.append(fact);
+    });
+    root.append(facts);
+    appendTokenGroup(root, "Domains", contract.domains);
+    appendTokenGroup(root, "Stacks", contract.stacks);
+    appendTokenGroup(root, "Outcomes owned", contract.outcomes || contract.outcomes_owned);
+    appendTokenGroup(root, "Evidence required", contract.evidence_requirements);
+    const readiness = detail.promotion_readiness || {};
+    const readinessCard = el(
+      "section",
+      "promotion-readiness " + (readiness.eligible_for_automatic_promotion ? "ready" : ""),
+    );
+    readinessCard.append(
+      el("small", "", "Promotion readiness"),
+      el(
+        "strong",
+        "",
+        readiness.automatic_policy_enabled
+          ? String(readiness.verified_successes || 0) + " / " + String(readiness.required_successes || 0) + " verified assignments"
+          : "Human-controlled",
+      ),
+      el("p", "", (readiness.reasons || []).join(" ") || "No promotion evidence applies."),
+      el("span", "", readiness.evidence_rule || ""),
+    );
+    root.append(readinessCard);
+    const comparisons = el("section", "workforce-comparisons");
+    comparisons.append(el("small", "", "Closest workers"));
+    const comparisonRows = Array.isArray(detail.closest_workers) ? detail.closest_workers : [];
+    if (!comparisonRows.length) {
+      comparisons.append(el("p", "", "No comparable worker evidence is available."));
+    } else {
+      comparisonRows.slice(0, 5).forEach((item) => {
+        const row = el("article", "workforce-comparison " + String(item.recommendation || ""));
+        row.append(
+          el("strong", "", item.right || "unknown"),
+          el("span", "", String(Math.round(Number(item.score || 0) * 100)) + "% overlap"),
+          el("small", "", (item.reasons || []).join("; ")),
+        );
+        comparisons.append(row);
+      });
+    }
+    root.append(comparisons);
+    const prompt = detail.compiled_prompt;
+    if (prompt?.preview) {
+      const promptDetails = el("details", "compiled-prompt-preview");
+      promptDetails.append(
+        el("summary", "", "Compiled prompt preview"),
+        el("small", "", "Version " + String(prompt.version || "unknown") + " · " + String(prompt.hash || "no hash")),
+      );
+      const pre = el("pre");
+      pre.textContent = String(prompt.preview) + (prompt.truncated ? "\n… preview truncated" : "");
+      promptDetails.append(pre);
+      root.append(promptDetails);
+    }
+    const evidence = el("div", "workforce-evidence-summary");
+    evidence.append(
+      el("strong", "", `${detail.lineage?.length || 0} version records`),
+      el("span", "", `${detail.events?.length || 0} lifecycle events`),
+      el("span", "", `${detail.outcomes?.length || 0} recorded outcomes`),
+      el("span", "", `${detail.hiring_cases?.length || 0} hiring records`),
+    );
+    root.append(evidence);
+    appendWorkerHistory(root, detail);
+    byId("workforce-action-worker").value = worker.agent_slug || "";
+    byId("workforce-action-revision").value = String(worker.revision ?? "");
+    const actionSelect = byId("workforce-action-kind");
+    const actions = workforceActions(worker);
+    actionSelect.replaceChildren();
+    actions.forEach(([value, label]) => {
+      const option = el("option", "", label);
+      option.value = value;
+      actionSelect.append(option);
+    });
+    form.hidden = actions.length === 0;
+  }
+
+  function renderWorkforce() {
+    const workers = Array.isArray(state.workforce) ? state.workforce : [];
+    const counts = state.workforceCounts || {};
+    setMetric("workforce-employees", counts.employee || 0);
+    setMetric("workforce-contractors", counts.contractor || 0);
+    setMetric("workforce-disabled", counts.disabled || 0);
+    setMetric("workforce-suspended", counts.suspended || 0);
+    setMetric("workforce-retired", counts.retired || 0);
+    setMetric("workforce-merged", counts.merged || 0);
+    setMetric("workforce-count", workers.length);
+    const grid = byId("workforce-grid");
+    if (grid) {
+      grid.replaceChildren();
+      if (!workers.length) grid.append(el("div", "empty-state", "No governed workers are installed yet."));
+      workers.forEach((worker) => {
+        const card = el("button", `workforce-card state-${worker.state || "unknown"}`);
+        card.type = "button";
+        card.dataset.worker = worker.agent_slug || "";
+        card.setAttribute("aria-label", `Inspect ${worker.display_label || worker.agent_slug}`);
+        const head = el("span", "workforce-card-head");
+        head.append(
+          el("strong", "", worker.display_label || worker.display_name || worker.agent_slug),
+          el("span", "worker-state", worker.state || "unknown"),
+        );
+        card.append(
+          head,
+          el("span", "workforce-card-slug", worker.agent_slug),
+          el("small", "", `v${worker.current_version || "unknown"} · revision ${worker.revision ?? 0}`),
+        );
+        listen(card, "click", () => callbacks.selectWorker(worker.agent_slug));
+        grid.append(card);
+      });
+    }
+    const hiring = Array.isArray(state.hiring) ? state.hiring : [];
+    setMetric("hiring-count", hiring.length);
+    const hiringList = byId("hiring-list");
+    if (hiringList) {
+      hiringList.replaceChildren();
+      if (!hiring.length) hiringList.append(el("div", "empty-state", "No hiring cases have been recorded."));
+      hiring.forEach((item) => {
+        const card = el("article", `hiring-card status-${item.status || "unknown"}`);
+        const head = el("div", "hiring-card-head");
+        head.append(
+          el("strong", "", item.proposed_slug || "Unnamed candidate"),
+          el("span", "worker-state", `${item.case_type || "hire"} · ${item.status || "unknown"}`),
+        );
+        card.append(head, el("small", "", `Risk: ${item.risk_tier || "standard"} · work unit ${item.work_unit_id || "—"}`));
+        [
+          ["Gap evidence", item.gap_evidence],
+          ["Duplicate analysis", item.duplicate_evidence],
+          ["Independent critic", item.critic_evidence],
+          ["Model receipts", item.model_evidence],
+        ].forEach(([label, value]) => {
+          const details = el("details", "hiring-evidence");
+          details.append(el("summary", "", label));
+          const pre = el("pre");
+          pre.textContent = JSON.stringify(value || {}, null, 2);
+          details.append(pre);
+          card.append(details);
+        });
+        if (item.status === "proposed" && item.human_approval_required === true) {
+          const approve = el(
+            "button",
+            "button ghost",
+            item.case_type === "amend"
+              ? "Approve and apply amendment"
+              : "Approve reviewed contractor",
+          );
+          approve.type = "button";
+          listen(approve, "click", () => callbacks.hiringApprove(item.id));
+          card.append(approve);
+        }
+        hiringList.append(card);
+      });
+    }
+    renderWorkerDetail();
+  }
+
   function activeEvidenceKind() {
     return document.querySelector(".subnav-item.active")?.dataset.evidence || "specialists";
   }
@@ -1035,6 +1361,7 @@ export function createRenderer(core, config, callbacks) {
     else if (state.activeView === "evidence") renderEvidence(activeEvidenceKind());
     else if (state.activeView === "hosts") renderHosts();
     else if (state.activeView === "roster") renderRoster();
+    else if (state.activeView === "workforce") renderWorkforce();
   }
 
   function renderActiveControlView() {
@@ -1042,6 +1369,7 @@ export function createRenderer(core, config, callbacks) {
     if (state.activeView === "overview" && state.overview) renderOverview();
     else if (state.activeView === "hosts") renderHosts();
     else if (state.activeView === "roster") renderRoster();
+    else if (state.activeView === "workforce") renderWorkforce();
   }
 
   function switchView(name) {
@@ -1063,6 +1391,7 @@ export function createRenderer(core, config, callbacks) {
       routing: "Routing lab",
       evidence: "Evidence ledger",
       roster: "Roster governance",
+      workforce: "Workforce operations",
       hosts: "Host integrations",
       settings: "Settings & retention",
     };
@@ -1138,6 +1467,8 @@ export function createRenderer(core, config, callbacks) {
     renderHosts,
     renderRouteHosts,
     renderRoster,
+    renderWorkforce,
+    renderWorkerDetail,
     renderEvidence,
     renderReceipt,
     renderActiveView,

@@ -1,9 +1,10 @@
 """Isolated launcher for installed Agency Runtime process boundaries.
 
 Generated host hooks and services invoke this file by absolute path under
-``python -I``.  Isolated mode removes the caller's CWD, user site, and
-``PYTHONPATH``; this bootstrap then restores only the exact package parent that
-owns this file, which also supports a normal ``pip install --user`` layout.
+``python -I -S``. Isolated mode removes the caller's CWD, user site, and
+``PYTHONPATH`` while ``-S`` prevents the original environment from processing
+executable path files. This bootstrap then restores only the exact private
+package parent that owns this file.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ _ALLOWED_MODULES = frozenset(
         "agency_runtime.adapters.hooks",
         "agency_runtime.adapters.openclaw.node_bridge",
         "agency_runtime.cli",
+        "agency_runtime.server.dashboard_service",
         "agency_runtime.server.mcp",
     }
 )

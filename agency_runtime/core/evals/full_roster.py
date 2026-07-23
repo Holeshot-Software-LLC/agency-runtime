@@ -19,6 +19,7 @@ from __future__ import annotations
 import re
 from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
+from itertools import combinations
 from typing import Any, Final
 
 from agency_runtime.core.evals.full_roster_cases import (
@@ -29,15 +30,20 @@ from agency_runtime.core.evals.full_roster_cases import (
 from agency_runtime.core.roster.bundled import bundled_manifest
 from agency_runtime.core.roster.selector_projection import selector_roster_projection
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
-from agency_runtime.core.selector.compatibility import enforce_compatible_set
+from agency_runtime.core.selector.compatibility import (
+    compile_compatibility_catalog,
+    enforce_compatible_set,
+)
 from agency_runtime.core.selector.semantic_retrieval import (
     retrieve_candidate_union,
     semantic_retrieve,
 )
 from agency_runtime.core.turn_intent import classify_turn_intent
+from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
+from agency_runtime.core.workforce.known_installer import known_contractor_package
 
 SCHEMA: Final[str] = "agency-runtime.full-roster-selection-eval"
-VERSION: Final[str] = "1.0.0"
+VERSION: Final[str] = "2.0.0"
 EVIDENCE_KIND: Final[str] = "contract_only"
 DEFAULT_CANDIDATE_LIMIT: Final[int] = 40
 MIN_CANDIDATE_LIMIT: Final[int] = 8
@@ -51,6 +57,7 @@ THRESHOLDS: Final[dict[str, tuple[str, float]]] = {
     "curated_case_accuracy": (">=", 1.0),
     "abstention_accuracy": (">=", 1.0),
     "compatibility_case_accuracy": (">=", 1.0),
+    "pairwise_composition_accuracy": (">=", 1.0),
     "turn_case_accuracy": (">=", 1.0),
     "identity_leak_rate": ("<=", 0.0),
     "preferred_sentence_copy_rate": ("<=", 0.0),
@@ -157,6 +164,10 @@ def _routing_cards() -> tuple[dict[str, Any], list[dict[str, Any]]]:
             "name": entry["display_name"],
         }
         cards.append(selector_roster_projection(source))
+    cards.extend(
+        selector_roster_projection(known_contractor_package(slug).agent)
+        for slug in sorted(KNOWN_CONTRACTORS_BY_SLUG)
+    )
     return manifest, cards
 
 
@@ -509,6 +520,52 @@ def _compatibility_eval(
     }, details
 
 
+def _pairwise_composition_eval(
+    cards: Sequence[dict[str, Any]],
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Exercise every two-worker request and reject any unsafe resulting team."""
+
+    ids = tuple(sorted(_agent_id(card) for card in cards))
+    by_id = {_agent_id(card): card for card in cards}
+    compatibility_catalog = compile_compatibility_catalog(cards)
+    failures: list[dict[str, Any]] = []
+    pair_count = 0
+    direct_conflict_pairs = 0
+    for left, right in combinations(ids, 2):
+        pair_count += 1
+        left_conflicts = set(_strings(by_id[left].get("conflicts_with")))
+        right_conflicts = set(_strings(by_id[right].get("conflicts_with")))
+        direct_conflict = right in left_conflicts or left in right_conflicts
+        direct_conflict_pairs += int(direct_conflict)
+        result = enforce_compatible_set((left, right), compatibility_catalog, limit=16)
+        selected = set(result["selected_ids"])
+        violations: list[str] = []
+        if direct_conflict and {left, right} <= selected:
+            violations.append("direct_conflict_survived")
+        for selected_id in selected:
+            conflicts = set(_strings(by_id[selected_id].get("conflicts_with")))
+            overlap = sorted(conflicts.intersection(selected))
+            if overlap:
+                violations.append(f"selected_conflict:{selected_id}:{','.join(overlap)}")
+        if violations:
+            failures.append(
+                {
+                    "requested": [left, right],
+                    "selected": list(result["selected_ids"]),
+                    "violations": violations,
+                }
+            )
+    passed = pair_count - len(failures)
+    return {
+        "worker_count": len(ids),
+        "pair_count": pair_count,
+        "direct_conflict_pairs": direct_conflict_pairs,
+        "passed_pairs": passed,
+        "failed_pairs": len(failures),
+        "pairwise_composition_accuracy": _ratio(passed, pair_count),
+    }, failures
+
+
 def _turn_eval() -> tuple[dict[str, Any], list[dict[str, Any]]]:
     details: list[dict[str, Any]] = []
     for case in TURN_CASES:
@@ -584,6 +641,7 @@ def run_full_roster_selection_eval(
         candidate_limit=candidate_limit,
     )
     compatibility_metrics, compatibility_details = _compatibility_eval(cards)
+    pairwise_metrics, pairwise_failures = _pairwise_composition_eval(cards)
     turn_metrics, turn_details = _turn_eval()
 
     values = {
@@ -594,6 +652,7 @@ def run_full_roster_selection_eval(
         "curated_case_accuracy": curated_metrics["curated_case_accuracy"],
         "abstention_accuracy": curated_metrics["abstention_accuracy"],
         "compatibility_case_accuracy": compatibility_metrics["compatibility_case_accuracy"],
+        "pairwise_composition_accuracy": pairwise_metrics["pairwise_composition_accuracy"],
         "turn_case_accuracy": turn_metrics["turn_case_accuracy"],
         "identity_leak_rate": probe_metrics["identity_leak_rate"],
         "preferred_sentence_copy_rate": probe_metrics["preferred_sentence_copy_rate"],
@@ -620,6 +679,8 @@ def run_full_roster_selection_eval(
             "manifest_approved": manifest["counts"]["approved"],
             "manifest_quarantined": manifest["counts"]["quarantined"],
             "manifest_retired": manifest["counts"]["retired"],
+            "packaged_contractors": len(KNOWN_CONTRACTORS_BY_SLUG),
+            "workforce_total": len(cards),
             "approved_enabled": len(cards),
             "division_count": len({str(card["division"]) for card in cards}),
             "source_revision": manifest["source"]["revision"],
@@ -630,6 +691,7 @@ def run_full_roster_selection_eval(
             "probe_retrieval": probe_metrics,
             "curated_retrieval": curated_metrics,
             "compatibility": compatibility_metrics,
+            "pairwise_composition": pairwise_metrics,
             "turn_state": turn_metrics,
         },
         "thresholds": {
@@ -642,6 +704,7 @@ def run_full_roster_selection_eval(
             "probe_retrieval": probe_details,
             "curated_retrieval": curated_details,
             "compatibility": compatibility_details,
+            "pairwise_composition_failures": pairwise_failures,
             "turn_state": turn_details,
         },
     }

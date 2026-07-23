@@ -10,6 +10,26 @@ from agency_runtime.cli import roster_commands
 from agency_runtime.core import host_capabilities, host_control
 
 
+def test_disabled_candidate_shadow_is_human_visible(capsys: pytest.CaptureFixture[str]) -> None:
+    roster_commands._print_disabled_candidate_shadows(
+        {
+            "disabled_candidate_shadows": [
+                None,
+                {"agent_id": ""},
+                {
+                    "agent_id": "typescript-application-engineer",
+                    "fallback_agent_id": "backend-service-engineer",
+                },
+            ]
+        }
+    )
+
+    assert capsys.readouterr().out == (
+        "left on the table: disabled typescript-application-engineer ranked higher; "
+        "used backend-service-engineer\n"
+    )
+
+
 def _status(
     host: str = "codex",
     *,
@@ -96,7 +116,7 @@ def test_route_and_explain_forward_the_verified_diagnostic_context(
         "capability_receipt": receipt,
     }
     operation = roster_commands._RoutingOperation(
-        store=object(),
+        store=SimpleNamespace(get_turn_state_context=lambda _session_id: {"state_known": True}),
         snapshot=SimpleNamespace(catalog=[{"slug": "agent"}], config=object()),
         receipt=None,
     )

@@ -79,4 +79,60 @@ def capture_routing_snapshot(
     )
 
 
-__all__ = ["RoutingSnapshot", "capture_routing_snapshot", "catalog_for_routing"]
+def capture_operational_routing_snapshot(
+    store: Any,
+    config: AgencyConfig | None = None,
+) -> RoutingSnapshot:
+    """Reconcile package-owned workers before an operation that may route."""
+
+    snapshot = capture_routing_snapshot(store, config)
+    from agency_runtime.core.installer import (
+        ensure_no_match_fallback_roster,
+        reconcile_packaged_contractors,
+        seed_starter_roster,
+    )
+
+    can_activate = any(
+        callable(getattr(store, name, None))
+        for name in (
+            "activate_agent",
+            "activate_agent_if_missing",
+            "activate_agents_if_missing",
+            "reconcile_bundled_agents",
+        )
+    )
+    if not snapshot.catalog and can_activate:
+        seed_starter_roster(store)
+    else:
+        reconcile_packaged_contractors(store)
+        if can_activate:
+            ensure_no_match_fallback_roster(store)
+    return capture_routing_snapshot(store, snapshot.config)
+
+
+def bind_workforce_snapshot(store: Any, routing: RoutingSnapshot) -> tuple[RoutingSnapshot, Any]:
+    """Capture contracts from the exact roster generation used by a route."""
+
+    if getattr(routing, "roster_generation", 0) == 0:
+        return routing, None
+    from agency_runtime.core.roster.workforce import workforce_index_snapshot
+
+    snapshot = routing
+    for _attempt in range(2):
+        workforce = workforce_index_snapshot(
+            store,
+            disabled_agents=frozenset(snapshot.config.agents.disabled),
+        )
+        if workforce.generation == snapshot.roster_generation:
+            return snapshot, workforce
+        snapshot = capture_routing_snapshot(store, snapshot.config)
+    raise RuntimeError("roster changed while capturing the workforce routing snapshot")
+
+
+__all__ = [
+    "RoutingSnapshot",
+    "bind_workforce_snapshot",
+    "capture_operational_routing_snapshot",
+    "capture_routing_snapshot",
+    "catalog_for_routing",
+]

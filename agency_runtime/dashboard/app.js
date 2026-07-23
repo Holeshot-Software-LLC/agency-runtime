@@ -15,6 +15,8 @@ export function createDashboard(runtime = globalThis) {
     rosterAction: (...args) => actions.rosterAction(...args),
     toggleAgent: (...args) => actions.toggleAgent(...args),
     toggleHost: (...args) => actions.toggleHost(...args),
+    selectWorker: (...args) => actions.selectWorker(...args),
+    hiringApprove: (...args) => actions.hiringApprove(...args),
   });
   const live = createLiveController(core, config, renderer);
   actions = createActionController(core, config, renderer, live);
@@ -116,7 +118,12 @@ export function createDashboard(runtime = globalThis) {
     if (state.lifecycle.bound || state.lifecycle.destroyed) return false;
     state.lifecycle.bound = true;
     document.querySelectorAll(".nav-item").forEach((node) => {
-      listen(node, "click", () => renderer.switchView(node.dataset.view));
+      listen(node, "click", () => {
+        renderer.switchView(node.dataset.view);
+        if (node.dataset.view === "workforce") {
+          void live.refreshWorkforce().catch((error) => core.showNotice(error.message, true));
+        }
+      });
     });
     renderer.configureEvidenceTabs();
     listen(byId("refresh-button"), "click", live.refreshAll);
@@ -143,6 +150,8 @@ export function createDashboard(runtime = globalThis) {
       byId("trim-days").dataset.dirty = "true";
     });
     listen(byId("config-form"), "submit", actions.saveConfig);
+    const workforceActionForm = byId("workforce-action-form");
+    if (workforceActionForm) listen(workforceActionForm, "submit", actions.workforceAction);
     listen(byId("config-form"), "input", config.updateConfigDirtyState);
     listen(byId("config-form"), "change", config.updateConfigDirtyState);
     const providerSave = byId("provider-builder-save");
@@ -162,11 +171,30 @@ export function createDashboard(runtime = globalThis) {
     const providerTransport = byId("provider-builder-transport");
     const providerModelSelect = byId("provider-builder-model-select");
     const providerModelRefresh = byId("provider-builder-model-refresh");
-    if (providerType) listen(providerType, "change", () => { void config.loadProviderModels(); });
-    if (providerTransport) listen(providerTransport, "change", () => { void config.loadProviderModels(); });
+    if (providerType) {
+      listen(providerType, "change", () => {
+        config.syncProviderTimeoutRecommendation();
+        config.syncProviderReasoningEffortOptions();
+        void config.loadProviderModels();
+      });
+    }
+    if (providerTransport) listen(providerTransport, "change", () => {
+      config.syncProviderReasoningEffortOptions();
+      void config.loadProviderModels();
+    });
     if (providerModelSelect) listen(providerModelSelect, "change", config.syncProviderModelInput);
     if (providerModelRefresh) {
       listen(providerModelRefresh, "click", () => { void config.loadProviderModels({ refresh: true }); });
+    }
+    const workforceProvider = byId("config-workforce-provider");
+    const workforceModelRefresh = byId("workforce-model-refresh");
+    if (workforceProvider) {
+      listen(workforceProvider, "change", () => { void config.loadWorkforceModels(); });
+    }
+    if (workforceModelRefresh) {
+      listen(workforceModelRefresh, "click", () => {
+        void config.loadWorkforceModels({ refresh: true });
+      });
     }
     const providerRemove = byId("provider-builder-remove");
     if (providerRemove) {

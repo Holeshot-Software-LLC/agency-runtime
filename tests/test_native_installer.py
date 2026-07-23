@@ -19,6 +19,7 @@ from agency_runtime.core.config import (
     JudgeConfig,
     OllamaConfig,
     ProviderEntry,
+    WorkforceConfig,
 )
 from agency_runtime.core.installer import (
     INSTALL_MANIFEST,
@@ -523,12 +524,14 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
     assert {
         "SessionStart",
         "UserPromptSubmit",
+        "PreToolUse",
         "PostToolUse",
         "SubagentStart",
         "SubagentStop",
         "PostCompact",
         "Stop",
     }.issubset(codex_hooks["hooks"])
+    assert codex_hooks["hooks"]["PreToolUse"][0]["matcher"] == "spawn_agent"
 
     claude_files, _ = _bundle_files("claude", cfg)
     claude_hooks = json.loads(claude_files["plugins/agency-preflight/hooks/hooks.json"])
@@ -552,6 +555,32 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
     assert f"function invokeAgency(payload, processTimeoutMs = {hook_timeout * 1000})" in bridge
     assert f"timeoutMs: {(hook_timeout + 2) * 1000}" in bridge
     assert f"timeoutMs: {(hook_timeout + 2) * 1000}" in bridge
+
+
+def test_generated_hook_timeout_covers_balanced_workforce_call_budget() -> None:
+    cfg = AgencyConfig(
+        providers=(
+            ProviderEntry(
+                name="oauth-router",
+                type="cli",
+                transport="codex",
+                model="gpt-test",
+                timeout=30,
+            ),
+        ),
+        workforce=WorkforceConfig(
+            mode="balanced",
+            fast_call_budget=1,
+            balanced_call_budget=4,
+            strict_call_budget=5,
+        ),
+    )
+
+    assert _effective_judge_budget_seconds(cfg) == 120
+    codex_files, _ = _bundle_files("codex", cfg)
+    codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
+    handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
+    assert handler["timeout"] == 125
 
 
 def test_codex_windows_hook_command_is_inert_powershell_argv(
@@ -581,7 +610,7 @@ def test_codex_windows_hook_command_is_inert_powershell_argv(
 
     bootstrap = installer_payloads.agency_bootstrap_path().replace("'", "''")
     assert windows == (
-        "& 'C:\\Program Files\\O''Brien & Sons\\python.exe' '-I' "
+        "& 'C:\\Program Files\\O''Brien & Sons\\python.exe' '-I' '-S' "
         f"'{bootstrap}' 'agency_runtime.cli' 'hook' 'codex; Write-Output injected' "
         "'$HOME' 'O''Brien'"
     )

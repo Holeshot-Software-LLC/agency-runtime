@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from agency_runtime.core.workforce.capability_ontology import CORE_CAPABILITY_IDS
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
     project_workforce_contract,
@@ -34,7 +35,10 @@ def test_every_bundled_agent_projects_to_an_immutable_compact_contract() -> None
     assert {item.schema_version for item in contracts} == {WORKFORCE_CONTRACT_SCHEMA_VERSION}
     assert len({item.agent_id for item in contracts}) == 263
     assert len({item.worker_id for item in contracts}) == 263
-    assert all(item.outcomes and item.artifact_kinds for item in contracts)
+    assert all(item.outcomes and item.capability_ids and item.artifact_kinds for item in contracts)
+    observed_capabilities = {item for contract in contracts for item in contract.capability_ids}
+    assert observed_capabilities <= CORE_CAPABILITY_IDS
+    assert len(observed_capabilities) >= 20
     assert all(item.hosts and item.platforms for item in contracts)
     assert workforce_index_fingerprint(contracts).startswith("sha256:")
     with pytest.raises(FrozenInstanceError):
@@ -47,12 +51,42 @@ def test_projection_excludes_source_prompt_and_provenance() -> None:
     rendered = json.dumps(payload, sort_keys=True)
 
     assert payload["archetype"] == "implementer"
+    assert "implementation" in payload["capability_ids"]
     assert payload["domains"] == ("software-engineering",)
     assert "prompt_file" not in rendered
     assert "relative_path" not in rendered
     assert "source_content_hash" not in rendered
     assert "source_revision" not in rendered
     assert "findings" not in rendered
+
+
+def test_security_review_outcome_adds_audited_secondary_domain() -> None:
+    source = next(agent for agent in _manifest_agents() if agent["slug"] == "code-reviewer")
+
+    assert project_workforce_contract(source).domains == ("software-engineering", "security")
+
+
+def test_application_security_code_review_owns_security_and_software_domains() -> None:
+    source = next(
+        agent
+        for agent in _manifest_agents()
+        if agent["slug"] == "ai-generated-code-security-auditor"
+    )
+
+    assert project_workforce_contract(source).domains == (
+        "security",
+        "software-engineering",
+    )
+
+
+def test_discovery_worker_accepts_analysis_artifacts_from_inference_plans() -> None:
+    source = next(
+        agent for agent in _manifest_agents() if agent["slug"] == "codebase-onboarding-engineer"
+    )
+    contract = project_workforce_contract(source)
+
+    assert contract.lifecycle_phases == ("discovery", "review")
+    assert contract.artifact_kinds == ("documentation", "analysis", "review-report")
 
 
 def test_projection_preserves_typed_relationships_without_promoting_conflicts() -> None:
@@ -114,8 +148,8 @@ def test_full_index_fingerprint_rejects_dangling_relationships() -> None:
 def test_projection_rejects_unbounded_or_invalid_contracts() -> None:
     source = _manifest_agents()[0]
 
-    with pytest.raises(ValueError, match="outcomes exceeds 4 items"):
-        project_workforce_contract({**source, "outcomes": [str(i) for i in range(5)]})
+    with pytest.raises(ValueError, match="outcomes exceeds 8 items"):
+        project_workforce_contract({**source, "outcomes": [str(i) for i in range(9)]})
     with pytest.raises(ValueError, match="display_name exceeds 128 bytes"):
         project_workforce_contract({**source, "display_name": "x" * 129})
     with pytest.raises(ValueError, match="unsupported workforce authority"):
@@ -124,6 +158,24 @@ def test_projection_rejects_unbounded_or_invalid_contracts() -> None:
         project_workforce_contract({**source, "employment": "disabled"})
     with pytest.raises(ValueError, match="supported host identifiers"):
         project_workforce_contract({**source, "supported_hosts": ["imaginary-host"]})
+    with pytest.raises(ValueError, match="require ontology review"):
+        project_workforce_contract({**source, "capability_ids": ["unreviewed-upstream-skill"]})
+
+
+def test_agency_contractor_can_extend_the_versioned_capability_ontology() -> None:
+    source = _manifest_agents()[0]
+    contractor = project_workforce_contract(
+        {
+            **source,
+            "origin": "agency",
+            "employment": "contractor",
+            "capability_ids": ["novel-reviewed-specialty"],
+        },
+        origin="agency",
+    )
+
+    assert contractor.capability_ids[0] == "novel-reviewed-specialty"
+    assert set(contractor.capability_ids[1:]) <= CORE_CAPABILITY_IDS
 
 
 def test_explicit_normalized_fields_override_conservative_derivation() -> None:
@@ -155,6 +207,26 @@ def test_explicit_normalized_fields_override_conservative_derivation() -> None:
     assert contract.composition.complements == ("gis-qa-engineer",)
     assert contract.composition.must_review_independently == ("accessibility-auditor",)
     assert contract.composition.same_context_conflicts == ()
+
+
+def test_testing_archetype_always_has_testing_lifecycle() -> None:
+    source = next(agent for agent in _manifest_agents() if agent["slug"] == "test-results-analyzer")
+
+    contract = project_workforce_contract(source)
+
+    assert contract.archetype == "tester"
+    assert "test-evidence" in contract.artifact_kinds
+    assert "testing" in contract.lifecycle_phases
+
+
+def test_writer_archetype_always_has_documentation_lifecycle() -> None:
+    source = next(agent for agent in _manifest_agents() if agent["slug"] == "technical-writer")
+
+    contract = project_workforce_contract(source)
+
+    assert contract.archetype == "writer"
+    assert "documentation" in contract.artifact_kinds
+    assert contract.lifecycle_phases[0] == "documentation"
 
 
 def test_terse_recruiter_index_contains_every_bundled_worker_and_required_field() -> None:

@@ -14,6 +14,7 @@ from agency_runtime.core.agent_activation import agent_is_enabled, normalize_age
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import load_config
 from agency_runtime.core.roster.bundled import (
+    SOURCE_REPOSITORY,
     BundledRosterError,
     verify_bundled_agent_contract,
 )
@@ -27,6 +28,7 @@ from agency_runtime.core.roster.revisions import (
     ROUTING_SCALAR_METADATA_FIELDS,
     content_identity_matches,
     decode_revision_metadata,
+    immutable_revision_version,
     serialized_revision_metadata,
     source_version,
 )
@@ -45,7 +47,10 @@ from agency_runtime.core.store.roster_authority import (
 )
 from agency_runtime.core.store.version_identity import normalize_version_identity
 from agency_runtime.core.store.workforce import synchronize_active_workforce_worker
-from agency_runtime.core.workforce.contract import project_workforce_contract
+from agency_runtime.core.workforce.contract import (
+    parse_workforce_contract,
+    project_workforce_contract,
+)
 
 _JSON_LIST_FIELDS = ("categories", "capabilities", "tool_affinity")
 _MAX_ACTIVE_ROSTER_LIMIT = MAX_ACTIVE_ROSTER_SIZE
@@ -69,11 +74,24 @@ _ACTIVE_ROSTER_JOIN = (
     "agent_active AS a JOIN agent_versions AS v "
     "ON v.agent_slug = a.agent_slug AND v.version = a.version "
     "JOIN agent_workers AS w ON w.agent_slug = a.agent_slug "
-    "AND w.current_agent_version_id = v.id AND w.standing = 'active'"
+    "AND w.current_agent_version_id = v.id AND w.standing = 'active' "
+    "JOIN agent_version_lineage AS wl ON wl.worker_id = w.worker_id "
+    "AND wl.agent_version_id = w.current_agent_version_id "
+    "LEFT JOIN agent_recruitment_contract_projections AS wp ON wp.id = ("
+    "SELECT candidate.id FROM agent_recruitment_contract_projections AS candidate "
+    "WHERE candidate.worker_id = w.worker_id "
+    "AND candidate.agent_version_id = w.current_agent_version_id "
+    "ORDER BY candidate.projection_sequence DESC LIMIT 1)"
 )
-_ACTIVE_ROSTER_ROUTING_PROJECTION = "a.*, v.metadata AS revision_metadata"
+_ACTIVE_WORKFORCE_CONTRACT = (
+    "COALESCE(wp.recruitment_contract, wl.recruitment_contract) AS workforce_recruitment_contract"
+)
+_ACTIVE_ROSTER_ROUTING_PROJECTION = (
+    f"a.*, v.metadata AS revision_metadata, {_ACTIVE_WORKFORCE_CONTRACT}"
+)
 _LEGACY_BUNDLED_VERSION = "1.0.0"
 _LEGACY_BUNDLED_SOURCE = "bundled"
+_MANAGED_BUNDLED_SOURCE_ID = "agency-agents"
 _LEGACY_BUNDLED_IDENTITIES: Mapping[str, tuple[str, str]] = {
     # Exact prompt and active-projection SHA-256 identities from the released
     # seven-agent inline starter roster. They are intentionally immutable:
@@ -169,6 +187,46 @@ def _decoded_roster_rows(rows: list[Any]) -> list[dict[str, Any]]:
             for field in ROUTING_LIST_METADATA_FIELDS:
                 value = metadata.get(field) if metadata else []
                 agent[field] = list(value) if isinstance(value, list) else []
+        raw_contract = agent.pop("workforce_recruitment_contract", None)
+        if raw_contract is not None:
+            try:
+                contract_document = safe_load_bounded_json(
+                    raw_contract,
+                    maximum_bytes=256 * 1024,
+                    maximum_depth=16,
+                    maximum_nodes=2_000,
+                )
+                contract = parse_workforce_contract(contract_document)
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError("stored workforce recruitment contract is invalid") from exc
+            if (
+                contract.agent_id != str(agent.get("agent_slug") or "")
+                or contract.version != str(agent.get("version") or "")
+                or contract.version_hash.removeprefix("sha256:")
+                != str(agent.get("hash") or "").removeprefix("sha256:")
+            ):
+                raise RuntimeError("stored workforce recruitment contract identity is invalid")
+            agent.update(
+                {
+                    "authority": contract.authority,
+                    "context_mode": contract.context_mode,
+                    "required_tools": list(contract.tool_classes),
+                    "supported_hosts": list(contract.hosts),
+                    "supported_platforms": list(contract.platforms),
+                    "conflicts_with": list(
+                        dict.fromkeys(
+                            (
+                                *contract.composition.same_context_conflicts,
+                                *contract.composition.selection_exclusive,
+                            )
+                        )
+                    ),
+                    "requires": list(contract.composition.requires),
+                    "audit_status": contract.audit.status,
+                    "audit_revision": contract.audit.revision,
+                    "routing_contract_valid": contract.audit.contract_valid,
+                }
+            )
         agents.append(agent)
     return agents
 
@@ -228,6 +286,36 @@ def _is_legacy_bundled_active(row: Mapping[str, Any], slug: str) -> bool:
         and content_hash == expected_content_hash
         and str(row.get("hash") or "") == expected_content_hash
         and _legacy_active_projection_hash(row) == expected_projection_hash
+    )
+
+
+def _is_managed_bundled_active(row: Mapping[str, Any], slug: str) -> bool:
+    """Recognize an older audited revision previously activated from this package."""
+
+    metadata = decode_revision_metadata(row.get("revision_metadata"))
+    source_version_value = str(row.get("source_version") or "")
+    revision_source_version = str(row.get("revision_source_version") or "")
+    content = str(row.get("revision_content") or "")
+    content_hash = str(row.get("revision_hash") or "")
+    return bool(
+        metadata is not None
+        and str(row.get("agent_slug") or "") == slug
+        and str(row.get("version") or "").startswith("sha256:")
+        and str(row.get("source") or "") == SOURCE_REPOSITORY
+        and str(row.get("source_id") or "") == _MANAGED_BUNDLED_SOURCE_ID
+        and str(row.get("prompt_path") or "") == f"bundled://{_MANAGED_BUNDLED_SOURCE_ID}/{slug}"
+        and str(row.get("revision_source_id") or "") == _MANAGED_BUNDLED_SOURCE_ID
+        and source_version_value
+        and revision_source_version == source_version_value
+        and str(metadata.get("source_revision") or "") == revision_source_version
+        and str(metadata.get("audit_status") or "") == "approved"
+        and re.fullmatch(r"[a-f0-9]{64}", str(metadata.get("source_content_hash") or ""))
+        is not None
+        and content
+        and content_identity_matches(content, content_hash)
+        and str(row.get("hash") or "") == content_hash
+        and str(row.get("version") or "")
+        == immutable_revision_version({**metadata, "hash": content_hash})
     )
 
 
@@ -360,19 +448,29 @@ def _prepared_roster_agent(
         # Preserve import compatibility without making an incomplete legacy
         # record recruitable. The whole-workforce index keeps it visible as a
         # quarantined semantic candidate until governed ingestion enriches it.
-        workforce_source.update(
-            {
-                "authority": "advise",
-                "context_mode": "isolated_only",
-                "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
-                "supported_platforms": ["windows", "linux"],
-                "audit_status": "quarantined",
-                "audit_revision": "legacy-unclassified",
-                "routing_contract_valid": False,
-                "capabilities": list(agent.get("capabilities") or ["legacy unclassified role"]),
-                "division": str(agent.get("division") or "specialized"),
-            }
-        )
+        # The primary roster row preserves the imported metadata exactly.  Its
+        # compatibility projection must not reinterpret unreviewed strings as
+        # a recruitment contract or let oversized legacy metadata block
+        # activation.  Use a deliberately generic, quarantined contract until
+        # governed ingestion produces a complete audited projection.
+        workforce_source = {
+            "slug": normalized_slug,
+            "name": normalized_slug,
+            "division": "specialized",
+            "authority": "advise",
+            "context_mode": "isolated_only",
+            "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
+            "supported_platforms": ["windows", "linux"],
+            "audit_status": "quarantined",
+            "audit_revision": "legacy-unclassified",
+            "routing_contract_valid": False,
+            "capabilities": ["legacy unclassified role"],
+            "task_types": [],
+            "required_tools": [],
+            "preferred_when": [],
+            "avoid_when": [],
+            "composition": {},
+        }
     workforce_contract = project_workforce_contract(
         {
             **workforce_source,
@@ -549,12 +647,13 @@ class RosterStoreMixin:
         self,
         agents: Sequence[Mapping[str, Any]],
     ) -> BundledRosterReconciliation:
-        """Seed current contracts and replace only provable legacy bundled rows.
+        """Seed current contracts and refresh only provable package-owned bundled rows.
 
         Synced, operator-owned, and already-current active revisions are never
-        replaced. The legacy predicate binds the historical package source,
-        version, prompt URI, empty routing metadata, and prompt digest before
-        the current audited bundled revision can become active.
+        replaced. Historical inline starters use an immutable allowlist. Newer
+        package revisions must retain the audited repository, source ID, prompt
+        URI, revision metadata, and content identity before an update may become
+        active. Every replaced revision remains in immutable history.
         """
 
         if isinstance(agents, (str, bytes, bytearray)) or not isinstance(agents, Sequence):
@@ -602,7 +701,11 @@ class RosterStoreMixin:
                 if current is None:
                     added += self._activate_prepared_agent(conn, item, replace=False)
                     continue
-                if _is_legacy_bundled_active(dict(current), item.slug):
+                current_row = dict(current)
+                package_update = str(
+                    current_row.get("version") or ""
+                ) != item.version and _is_managed_bundled_active(current_row, item.slug)
+                if _is_legacy_bundled_active(current_row, item.slug) or package_update:
                     upgraded += self._activate_prepared_agent(conn, item, replace=True)
             changed = added + upgraded
             if changed:
@@ -753,6 +856,17 @@ class RosterStoreMixin:
                 (prepared.slug,),
             ).fetchone():
                 raise ValueError("staged contractor slug already has a workforce identity")
+            existing = conn.execute(
+                "SELECT version.id FROM agent_versions AS version "
+                "LEFT JOIN agent_version_lineage AS lineage "
+                "ON lineage.agent_version_id = version.id "
+                "WHERE version.agent_slug = ? AND version.version = ? AND version.hash = ? "
+                "AND lineage.agent_version_id IS NULL ORDER BY version.created_at LIMIT 1",
+                (prepared.slug, prepared.version, prepared.content_hash),
+            ).fetchone()
+            if existing is not None:
+                conn.commit()
+                return str(existing["id"])
             version_id = _stage_workforce_version(
                 conn,
                 prepared,
@@ -1126,6 +1240,28 @@ class RosterStoreMixin:
         finally:
             conn.close()
 
+    def has_active_roster_definition(self, slug: str) -> bool:
+        """Return whether one immutable active definition exists.
+
+        Activation policy also applies to legacy definitions that predate the
+        normalized workforce projection. Those definitions remain excluded
+        from routing until reconciliation, but operators must still be able to
+        disable them immediately.
+        """
+
+        normalized = normalize_agent_slug(slug)
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT 1 FROM agent_active AS a JOIN agent_versions AS v "
+                "ON v.agent_slug = a.agent_slug AND v.version = a.version "
+                "WHERE a.agent_slug = ? LIMIT 1",
+                (normalized,),
+            ).fetchone()
+            return row is not None
+        finally:
+            conn.close()
+
     def get_enabled_roster(
         self,
         *,
@@ -1176,8 +1312,7 @@ class RosterStoreMixin:
         try:
             row = conn.execute(
                 f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
-                "FROM agent_active AS a JOIN agent_versions AS v "
-                "ON v.agent_slug = a.agent_slug AND v.version = a.version "
+                f"FROM {_ACTIVE_ROSTER_JOIN} "
                 "WHERE a.agent_slug = ? LIMIT 1",
                 (slug,),
             ).fetchone()

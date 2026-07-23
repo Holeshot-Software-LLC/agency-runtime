@@ -70,6 +70,9 @@ _EFFECT_TEXT = {
     "specialists_selected": "the best remaining compatible specialists were selected",
     "selection_abstained": "no specialist was selected",
     "policy_fallback_applied": "the default coordinators were used as the safe fallback",
+    "disabled_specialist_left_unselected": (
+        "a stronger disabled specialist was left out and the enabled fallback was used"
+    ),
     "delegation_plan_prepared": "a delegation plan was prepared",
     "specialist_context_loaded": "selected specialist instructions were loaded for this turn",
     "skill_context_loaded": "selected skill instructions were loaded for this turn",
@@ -80,6 +83,9 @@ _EFFECT_TEXT = {
 
 def _fallback_text(code: str) -> str:
     family, separator, value = code.partition(":")
+    if family == "disabled_candidate" and separator:
+        specialist = value.replace("_", " ").replace("-", " ").strip()
+        return f"disabled specialist {specialist} would have ranked higher"
     words = (value if separator else family).replace("_", " ").replace("-", " ").strip()
     if separator:
         label = family.replace("_", " ").replace("-", " ").strip()

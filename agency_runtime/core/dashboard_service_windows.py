@@ -838,6 +838,14 @@ def _set_restored_windows_active_state(
     transaction.results.append(active_result)
     if not active_result.ok:
         transaction.error = "Windows rollback active-state restoration failed"
+        return
+    reached, state_queries = _wait_windows_running_state(
+        transaction.prior_active,
+        command_runner=transaction.command_runner,
+    )
+    transaction.results.extend(state_queries)
+    if not reached:
+        transaction.error = "Windows rollback active-state transition did not settle"
 
 
 def _restore_windows_active_state(transaction: _WindowsRestoreTransaction) -> None:

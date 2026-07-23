@@ -43,6 +43,7 @@ from agency_runtime.core.routing_snapshot import (
     catalog_for_routing,
 )
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.store.version_identity import is_valid_version_identity
 from agency_runtime.core.turn_intent import (
     TurnClassification,
     TurnState,
@@ -54,12 +55,23 @@ from agency_runtime.core.unit_assignment import (
     MAX_SUGGESTED_WORK_UNITS,
     MAX_UNIT_SELECTION_WORKERS,
     assignment_agents_from_catalog,
+    hydrate_unit_agent_plan,
+    native_child_activation_contract,
+    project_unit_agent_plan,
+    project_unit_assignment_agents,
+    work_unit_goal_hash,
+)
+from agency_runtime.core.workforce.cache import WORKFORCE_CACHE_IDENTITY_VERSION
+from agency_runtime.core.workforce.planning_contracts import (
+    PLAN_SCHEMA_VERSION,
+    RECRUITMENT_SCHEMA_VERSION,
 )
 
 MAX_PREFLIGHT_CONTEXT_CHARS = _MAX_PREFLIGHT_CONTEXT_CHARS
 _MAX_CHILD_ROUTE_TIMEOUT_SECONDS = 60.0
 _CHILD_ROUTE_LEASE_MARGIN_SECONDS = 5.0
-_CHILD_ROUTE_BUNDLE_VERSION = 1
+_CHILD_ROUTE_BUNDLE_VERSION = 2
+_DIRECT_NATIVE_CHILD_HOSTS = frozenset({"hermes", "openclaw"})
 
 
 def _normalize_parent_correlation(
@@ -238,11 +250,7 @@ def _selection_refs_for_recipe(
             active = store.get_roster_entry(slug) or {}
         version = str(active.get("version") or hydrated.get("version") or "").strip()
         content_hash = str(active.get("hash") or hydrated.get("hash") or "").strip()
-        if (
-            not version
-            or len(content_hash) != 64
-            or any(character not in "0123456789abcdef" for character in content_hash)
-        ):
+        if not is_valid_version_identity(version) or not is_valid_version_identity(content_hash):
             raise RuntimeError(f"selected specialist '{slug}' lacks an active revision identity")
         capabilities = hydrated.get("capabilities", catalog_entry.get("capabilities", []))
         result.append(
@@ -299,15 +307,346 @@ def _ensure_preflight_catalog(
     *,
     seed_starter_roster: Any,
     ensure_no_match_fallback_roster: Any,
+    reconcile_packaged_contractors: Any,
 ) -> Any:
     """Refresh the atomic roster snapshot after any required bootstrap mutation."""
 
     if not routing_snapshot.catalog:
         seed_starter_roster(store)
         return capture_routing_snapshot(store, config)
-    if ensure_no_match_fallback_roster(store):
+    contractors_installed, _contractors_existing = reconcile_packaged_contractors(store)
+    if ensure_no_match_fallback_roster(store) or contractors_installed:
         return capture_routing_snapshot(store, config)
     return routing_snapshot
+
+
+def _coherent_workforce_snapshot(
+    store: Store,
+    config: AgencyConfig,
+    routing_snapshot: Any,
+) -> tuple[Any, Any]:
+    """Capture matching catalog and workforce generations with one bounded retry."""
+
+    from agency_runtime.core.roster.workforce import workforce_index_snapshot
+
+    snapshot = routing_snapshot
+    for _attempt in range(2):
+        workforce = workforce_index_snapshot(
+            store,
+            disabled_agents=frozenset(config.agents.disabled),
+        )
+        if workforce.generation == snapshot.roster_generation:
+            return snapshot, workforce
+        snapshot = capture_routing_snapshot(store, config)
+    raise RuntimeError("roster changed while capturing the workforce routing snapshot")
+
+
+def _planned_parent_unit_routing(
+    store: Store,
+    *,
+    parent_session_id: str,
+    parent_trace_id: str,
+    user_message: str,
+    host: str,
+    catalog: list[dict[str, Any]],
+    routing_fingerprint: str,
+    capability_receipt: HostCapabilityReceipt,
+) -> dict[str, Any] | None:
+    """Reuse one exact parent unit locally before spending any child inference."""
+
+    snapshot_reader = getattr(store, "get_completion_evidence_snapshot", None)
+    if not callable(snapshot_reader):
+        return None
+    try:
+        snapshot = snapshot_reader(parent_session_id, parent_trace_id)
+    except Exception:
+        return None
+    run = snapshot.get("run") if isinstance(snapshot, Mapping) else None
+    if (
+        not isinstance(snapshot, Mapping)
+        or not isinstance(run, Mapping)
+        or snapshot.get("session_id") != parent_session_id
+        or snapshot.get("trace_id") != parent_trace_id
+        or snapshot.get("status") not in {"active", "evidence_only"}
+        or snapshot.get("delivery_mode") != "isolated"
+        or str(run.get("host") or "").strip().casefold() != str(host or "").strip().casefold()
+    ):
+        return None
+    raw_plan = snapshot.get("unit_agent_plan")
+    raw_references = snapshot.get("selected_specialists")
+    if not isinstance(raw_plan, list) or not isinstance(raw_references, list):
+        return None
+    goal_hash = work_unit_goal_hash(user_message)
+    matches = [
+        row
+        for row in raw_plan
+        if isinstance(row, Mapping) and str(row.get("goal_hash") or "") == goal_hash
+    ]
+    if len(matches) != 1:
+        return None
+    source_plan = dict(matches[0])
+    primary = str(source_plan.get("recommended_agent") or "").strip().casefold()
+    raw_team = source_plan.get("recommended_agents")
+    team = (
+        [str(item or "").strip().casefold() for item in raw_team]
+        if isinstance(raw_team, list)
+        else [primary]
+    )
+    # One native unit currently has one exact child context. Multi-specialist
+    # teams must be represented as separate planned units, never silently
+    # collapsed to their first member.
+    if not primary or team != [primary]:
+        return None
+    references = {
+        str(item.get("slug") or "").strip().casefold(): item
+        for item in raw_references
+        if isinstance(item, Mapping)
+    }
+    reference = references.get(primary)
+    catalog_by_slug = {
+        str(item.get("slug") or item.get("agent_slug") or "").strip().casefold(): item
+        for item in catalog
+    }
+    agent = catalog_by_slug.get(primary)
+    if reference is None or agent is None:
+        return None
+    if (
+        str(agent.get("version") or "").strip() != str(reference.get("version") or "").strip()
+        or str(agent.get("hash") or "").strip() != str(reference.get("hash") or "").strip()
+    ):
+        return None
+
+    child_plan = project_unit_agent_plan(
+        [{**source_plan, "depends_on": []}],
+        allow_legacy=False,
+        require_current=True,
+    )
+    work_unit_id = str(source_plan.get("work_unit_id") or "").strip().casefold()
+    tags: list[Any] = []
+    for field in ("tags", "categories"):
+        values = agent.get(field)
+        if isinstance(values, (list, tuple)):
+            tags.extend(values)
+    assignment_agents = project_unit_assignment_agents(
+        [
+            {
+                "slug": primary,
+                "name": agent.get("name"),
+                "description": agent.get("description"),
+                "capabilities": agent.get("capabilities"),
+                "tags": tags,
+                "required_tools": agent.get("required_tools"),
+                "evidence_requirements": agent.get("evidence_requirements"),
+                "matched_work_unit_ids": [work_unit_id],
+                "primary_work_unit_ids": [work_unit_id],
+            }
+        ],
+        strict=True,
+    )
+    if child_plan is None or assignment_agents is None or not assignment_agents:
+        return None
+
+    from agency_runtime.core.selector.delegation_detection import detect_work_units
+
+    work_units = {
+        **detect_work_units(user_message),
+        "delegate": True,
+        "count": 1,
+        "source": "parent_unit_reuse",
+    }
+    current_message_hash = sha256(user_message.encode("utf-8", errors="surrogatepass")).hexdigest()
+    routing = {
+        "selected_ids": [primary],
+        "semantic_ids": [primary],
+        "companion_ids": [],
+        "confidence": float(source_plan.get("selection_confidence") or 0.0),
+        "top_score": float(source_plan.get("selection_confidence") or 0.0),
+        "latency_ms": 0,
+        "candidate_count": len(catalog),
+        "status": "parent_unit_reused",
+        "source": "parent_unit_reuse",
+        "work_units": work_units,
+        "query_hash": current_message_hash,
+        "source_message_hash": current_message_hash,
+        "context_fingerprint": routing_fingerprint,
+        "origin_trace_id": parent_trace_id,
+        "cache_hit": False,
+        "session_reused": False,
+        "parent_unit_reused": True,
+        "continuation_reused": False,
+        "continuation_resolution_required": False,
+        "fallback_considered": False,
+        "fallback_applied": False,
+        "inference_attempted": False,
+        "inference_mode": "parent_unit_reuse",
+        "child_routing_source": "parent_unit_reuse",
+        "execution_context": capability_receipt.as_dict(),
+        "_cached_unit_assignment_agents": assignment_agents,
+        "_cached_unit_agent_plan": child_plan,
+    }
+    try:
+        hydrate_unit_agent_plan(routing, child_plan)
+    except RuntimeError:
+        return None
+    return routing
+
+
+def _activate_direct_native_child(
+    store: Store,
+    result: PreflightResult,
+    *,
+    parent_session_id: str,
+    parent_trace_id: str,
+    user_message: str,
+    host: str,
+    worker_id: str,
+    native_run_id: str,
+) -> PreflightResult:
+    """Consume one exact parent grant at a native child's pre-LLM boundary."""
+
+    normalized_host = str(host or "").strip().casefold()
+    if not parent_trace_id or normalized_host not in _DIRECT_NATIVE_CHILD_HOSTS:
+        return result
+    worker = str(worker_id or "").strip()
+    native = str(native_run_id or "").strip()
+    if not worker or not native:
+        raise RuntimeError("direct native child activation lacks host-issued child lineage")
+    if (
+        result.routing.get("source") != "parent_unit_reuse"
+        or result.routing.get("status") != "parent_unit_reused"
+        or len(result.selected_specialists) != 1
+        or len(result.delegation_plan) != 1
+    ):
+        raise RuntimeError("direct native child activation requires one exact parent plan row")
+    slug = result.selected_specialists[0]
+    plan = result.delegation_plan[0]
+    if (
+        plan.get("recommended_agent") != slug
+        or plan.get("recommended_agents") != [slug]
+        or work_unit_goal_hash(user_message) != plan.get("goal_hash")
+    ):
+        raise RuntimeError("direct native child activation does not match the parent assignment")
+    unit = str(plan.get("work_unit_id") or "").strip()
+    snapshot = store.get_completion_evidence_snapshot(parent_session_id, parent_trace_id)
+    references = {
+        str(item.get("slug") or "").strip(): item
+        for item in snapshot.get("selected_specialists", [])
+        if isinstance(item, Mapping)
+    }
+    reference = references.get(slug)
+    if reference is None:
+        raise RuntimeError("direct native child specialist reference is unavailable")
+    prompt = store.get_versioned_specialist_prompt(
+        slug,
+        str(reference.get("version") or ""),
+        str(reference.get("hash") or ""),
+        max_chars=_MAX_PREFLIGHT_CONTEXT_CHARS,
+    )
+    prompt_body = prompt.get("prompt_body") if isinstance(prompt, Mapping) else None
+    if (
+        not isinstance(prompt_body, str)
+        or not prompt_body
+        or prompt.get("prompt_truncated") is not False
+        or prompt_body not in result.context
+    ):
+        raise RuntimeError(
+            "direct native child context lacks the exact selected specialist "
+            f"(prompt_chars={len(prompt_body or '')}, context_chars={len(result.context)})"
+        )
+    lineage = store.get_consumed_delegation_lineage(
+        session_id=parent_session_id,
+        trace_id=parent_trace_id,
+        specialist_slug=slug,
+        work_unit_id=unit,
+    )
+    expected_lineage = {
+        "worker_kind": "generic-worker",
+        "worker_id": worker,
+        "native_run_id": native,
+    }
+    if lineage is not None:
+        if lineage != expected_lineage:
+            raise RuntimeError("direct native child activation is bound to another worker")
+        return result
+    activation_contract = native_child_activation_contract(
+        user_message,
+        mutation_scope=plan.get("mutation_scope"),
+        resource_hashes=plan.get("resource_hashes"),
+        required_evidence=plan.get("required_evidence"),
+    )
+    try:
+        prepared = store.prepare_delegation_activation(
+            session_id=parent_session_id,
+            trace_id=parent_trace_id,
+            specialist_slug=slug,
+            work_unit_id=unit,
+            worker_kind="generic-worker",
+            worker_id=worker,
+            **activation_contract,
+        )
+        consumed = store.consume_delegation_activation(
+            activation_token=prepared["activation_token"],
+            session_id=parent_session_id,
+            trace_id=parent_trace_id,
+            specialist_slug=slug,
+            work_unit_id=unit,
+            worker_id=worker,
+            native_run_id=native,
+        )
+    except ValueError as error:
+        lineage = store.get_consumed_delegation_lineage(
+            session_id=parent_session_id,
+            trace_id=parent_trace_id,
+            specialist_slug=slug,
+            work_unit_id=unit,
+        )
+        if lineage != expected_lineage:
+            raise RuntimeError("direct native child activation could not be consumed") from error
+        return result
+    if (
+        consumed.get("slug") != slug
+        or consumed.get("version") != reference.get("version")
+        or consumed.get("prompt_hash") != reference.get("hash")
+        or consumed.get("prompt_body") != prompt_body
+    ):
+        raise RuntimeError("direct native child activation receipt changed specialist identity")
+    return result
+
+
+def _activate_or_close_direct_native_child(
+    store: Store,
+    result: PreflightResult,
+    *,
+    child_session_id: str,
+    child_trace_id: str,
+    parent_session_id: str,
+    parent_trace_id: str,
+    user_message: str,
+    host: str,
+    worker_id: str,
+    native_run_id: str,
+) -> PreflightResult:
+    """Terminalize a child whose exact pre-LLM activation cannot be proven."""
+
+    try:
+        return _activate_direct_native_child(
+            store,
+            result,
+            parent_session_id=parent_session_id,
+            parent_trace_id=parent_trace_id,
+            user_message=user_message,
+            host=host,
+            worker_id=worker_id,
+            native_run_id=native_run_id,
+        )
+    except Exception:
+        if parent_trace_id and str(host or "").strip().casefold() in _DIRECT_NATIVE_CHILD_HOSTS:
+            store.close_turn_evidence(
+                child_session_id,
+                child_trace_id,
+                status="specialist_activation_failed",
+            )
+        raise
 
 
 def _resolve_preflight_routing(
@@ -327,6 +666,7 @@ def _resolve_preflight_routing(
     policy_fingerprint: str,
     roster_generation: int,
     pipeline: Any,
+    workforce_snapshot: Any = None,
     parent_session_id: str = "",
     parent_trace_id: str = "",
 ) -> tuple[dict[str, Any], dict[str, Any] | None, TurnClassification]:
@@ -372,6 +712,7 @@ def _resolve_preflight_routing(
         "platform": platform,
         "available_tools": available_tools,
         "capability_receipt": capability_receipt,
+        "workforce_snapshot": workforce_snapshot,
     }
     if not parent_trace_id:
         return (
@@ -380,6 +721,19 @@ def _resolve_preflight_routing(
             classification,
         )
 
+    planned_parent_unit = _planned_parent_unit_routing(
+        store,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        user_message=user_message,
+        host=host,
+        catalog=catalog,
+        routing_fingerprint=routing_fingerprint,
+        capability_receipt=capability_receipt,
+    )
+    if planned_parent_unit is not None:
+        return planned_parent_unit, None, classification
+
     from agency_runtime.core.selector.judge import inference_is_configured
 
     if not inference_is_configured(config):
@@ -387,16 +741,38 @@ def _resolve_preflight_routing(
         routing["child_routing_source"] = "deterministic_unconfigured"
         return routing, None, classification
 
+    workforce_contract_fingerprint = str(
+        getattr(workforce_snapshot, "contract_fingerprint", "") or ""
+    )
+    workforce_recruiter_fingerprint = str(
+        getattr(workforce_snapshot, "recruiter_fingerprint", "") or ""
+    )
     cache_material = "\0".join(
         (
-            "agency-child-route-v1",
+            "agency-child-route-v2",
+            str(_CHILD_ROUTE_BUNDLE_VERSION),
+            str(PREFLIGHT_REPLAY_RECIPE_VERSION),
+            WORKFORCE_CACHE_IDENTITY_VERSION,
+            str(PLAN_SCHEMA_VERSION),
+            str(RECRUITMENT_SCHEMA_VERSION),
+            parent_session_id,
+            parent_trace_id,
             sha256(user_message.encode("utf-8", errors="surrogatepass")).hexdigest(),
             routing_fingerprint,
             policy_fingerprint,
             str(roster_generation),
+            workforce_contract_fingerprint,
+            workforce_recruiter_fingerprint,
+            classification.turn_kind,
+            str(classification.classifier_version),
+            str(classification.state_revision),
             host,
             platform,
+            str(getattr(capability_receipt, "surface", "") or ""),
+            str(getattr(capability_receipt, "inference_surface", "") or ""),
+            str(getattr(capability_receipt, "status", "") or ""),
             "\x1f".join(available_tools),
+            "\x1f".join(tuple(getattr(capability_receipt, "unknown_tools", ()) or ())),
         )
     )
     child_cache_key = sha256(cache_material.encode("utf-8")).hexdigest()
@@ -525,6 +901,15 @@ def _assignment_recipe(
         return list(source.get("unit_assignment_agents", [])), list(
             source.get("unit_agent_plan", [])
         )
+    workforce_assignments = routing.get("unit_assignment_agents")
+    if isinstance(workforce_assignments, (list, tuple)):
+        projected = project_unit_assignment_agents(workforce_assignments, strict=True)
+        if projected is None:
+            raise RuntimeError("verified workforce assignments are malformed")
+        return projected, _suggestion_recipe(
+            {**routing, "unit_assignment_agents": projected},
+            config.delegation,
+        )
     assignment_agents = assignment_agents_from_catalog(
         catalog,
         routing,
@@ -627,13 +1012,57 @@ def _require_available_unit_plan_agents(
 ) -> None:
     """Fail before ready commit when any persisted assignment is unpreparable."""
 
-    if delivery_mode != "isolated" or not suggestions:
+    if delivery_mode != "isolated":
+        return
+    if loaded_slugs and not suggestions:
+        raise RuntimeError("isolated specialist selection lacks an exact unit-agent plan")
+    if not suggestions:
         return
     planned_agents = set(_suggested_specialist_slugs(suggestions))
     missing_agents = planned_agents.difference(loaded_slugs)
     if missing_agents:
         missing = ", ".join(sorted(missing_agents))
         raise RuntimeError(f"unit-agent plan has unavailable specialist prompts: {missing}")
+
+
+def _abstain_unplanned_isolated_selection(
+    routing: dict[str, Any],
+    unit_assignment_agents: list[dict[str, Any]],
+    suggestions: list[dict[str, Any]],
+    *,
+    delivery_mode: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Never present an unbound specialist as usable in a persistent parent.
+
+    Current workforce routes produce exact unit rows. This guard contains a
+    legacy, malformed, or degraded route that selected identities without a
+    child-activation recipe; guessing a unit-to-specialist mapping here would
+    bypass conflict and goal binding.
+    """
+
+    selected = [str(item).strip() for item in routing.get("selected_ids", []) if str(item).strip()]
+    if delivery_mode != "isolated" or not selected or suggestions:
+        return routing, unit_assignment_agents, suggestions
+    work_units = routing.get("work_units")
+    bounded_units = dict(work_units) if isinstance(work_units, Mapping) else {}
+    bounded_units.update(delegate=False, source="isolated_plan_policy")
+    return (
+        {
+            **routing,
+            "selected_ids": [],
+            "semantic_ids": list(dict.fromkeys([*routing.get("semantic_ids", []), *selected])),
+            "companion_ids": [],
+            "confidence": 0.0,
+            "status": "abstained",
+            "source": "isolated_plan_policy",
+            "work_units": bounded_units,
+            "deterministic_candidate_ids": selected,
+            "fallback_considered": True,
+            "fallback_applied": False,
+        },
+        [],
+        [],
+    )
 
 
 def _resident_binding_for_preflight(
@@ -721,6 +1150,7 @@ def _prepare_preflight_evidence(
     routing_fingerprint: str,
     policy_fingerprint: str,
     roster_generation: int,
+    workforce_snapshot: Any,
     delivery_mode: str,
     context_limit: int,
     resident_binding: Any,
@@ -740,6 +1170,7 @@ def _prepare_preflight_evidence(
     from agency_runtime.core.specialist_context import (
         MAX_SPECIALIST_CONTEXT_CHARS,
         hydrate_selected_specialist_context,
+        hydrate_selected_specialist_references,
     )
 
     routing, continuation_snapshot, classification = _resolve_preflight_routing(
@@ -757,6 +1188,7 @@ def _prepare_preflight_evidence(
         routing_fingerprint=routing_fingerprint,
         policy_fingerprint=policy_fingerprint,
         roster_generation=roster_generation,
+        workforce_snapshot=workforce_snapshot,
         pipeline=pipeline,
         parent_session_id=parent_session_id,
         parent_trace_id=parent_trace_id,
@@ -779,6 +1211,12 @@ def _prepare_preflight_evidence(
             available_tools=runtime_capabilities.capabilities,
             capability_receipt=runtime_capabilities,
         )
+        routing, unit_assignment_agents, suggestions = _abstain_unplanned_isolated_selection(
+            routing,
+            unit_assignment_agents,
+            suggestions,
+            delivery_mode=delivery_mode,
+        )
         if delivery_mode == "isolated":
             specialist_budget = MAX_SPECIALIST_CONTEXT_CHARS
         else:
@@ -794,15 +1232,27 @@ def _prepare_preflight_evidence(
             delivery_mode=delivery_mode,
             suggestions=suggestions,
         )
-        loaded = hydrate_selected_specialist_context(
-            store,
-            catalog,
-            hydration_routing,
-            session_id=session_id,
-            trace_id=trace_id,
-            record_evidence=False,
-            maximum_chars=specialist_budget,
-            disabled_agents=frozenset(config.agents.disabled),
+        hydration_arguments = {
+            "session_id": session_id,
+            "trace_id": trace_id,
+            "disabled_agents": frozenset(config.agents.disabled),
+        }
+        loaded = (
+            hydrate_selected_specialist_references(
+                store,
+                catalog,
+                hydration_routing,
+                **hydration_arguments,
+            )
+            if delivery_mode == "isolated"
+            else hydrate_selected_specialist_context(
+                store,
+                catalog,
+                hydration_routing,
+                record_evidence=False,
+                maximum_chars=specialist_budget,
+                **hydration_arguments,
+            )
         )
         _require_available_unit_plan_agents(
             delivery_mode=delivery_mode,
@@ -909,6 +1359,8 @@ def run_preflight(
     origin_receipt: TurnOriginReceipt | None = None,
     parent_session_id: str = "",
     parent_trace_id: str = "",
+    native_worker_id: str = "",
+    native_run_id: str = "",
 ) -> PreflightResult:
     """Create one turn, route it, hydrate prompts, and persist exact evidence."""
     normalized_session = validate_correlation_id(session_id, field="session_id")
@@ -921,6 +1373,7 @@ def run_preflight(
 
     from agency_runtime.core.installer import (
         ensure_no_match_fallback_roster,
+        reconcile_packaged_contractors,
         seed_starter_roster,
     )
     from agency_runtime.core.installer_payloads import hook_timeout_seconds
@@ -931,6 +1384,17 @@ def run_preflight(
         field="trace_id",
     )
     normalized_host = str(host or "unknown").strip() or "unknown"
+    direct_activation_arguments = {
+        "child_session_id": normalized_session,
+        "child_trace_id": turn_trace_id,
+        "parent_session_id": normalized_parent_session,
+        "parent_trace_id": normalized_parent_trace,
+        "user_message": user_message,
+        "host": normalized_host,
+        "worker_id": native_worker_id,
+        "native_run_id": native_run_id,
+    }
+
     current_origin = current_turn_origin(
         origin_receipt,
         host=normalized_host,
@@ -956,7 +1420,10 @@ def run_preflight(
     try:
         routing_snapshot = capture_routing_snapshot(store, config)
         cfg = routing_snapshot.config
-        delivery_mode, context_limit = preflight_delivery_policy(normalized_host)
+        delivery_mode, context_limit = preflight_delivery_policy(
+            normalized_host,
+            native_child=bool(normalized_parent_trace),
+        )
         turn_state = _turn_state_for_preflight(
             store,
             session_id=normalized_session,
@@ -1003,25 +1470,33 @@ def run_preflight(
         if not attempt_token:
             raise RuntimeError("preflight attempt identity was not persisted")
         if outcome == "reused_ready":
-            return _read_ready_result(
+            return _activate_or_close_direct_native_child(
                 store,
-                session_id=normalized_session,
-                trace_id=turn_trace_id,
-                attempt_token=attempt_token,
-                user_message=user_message,
-                config=cfg,
-                pipeline=pipeline,
+                _read_ready_result(
+                    store,
+                    session_id=normalized_session,
+                    trace_id=turn_trace_id,
+                    attempt_token=attempt_token,
+                    user_message=user_message,
+                    config=cfg,
+                    pipeline=pipeline,
+                ),
+                **direct_activation_arguments,
             )
         if outcome == "reused_in_progress":
-            return _await_ready_result(
+            return _activate_or_close_direct_native_child(
                 store,
-                session_id=normalized_session,
-                trace_id=turn_trace_id,
-                attempt_token=attempt_token,
-                user_message=user_message,
-                config=cfg,
-                pipeline=pipeline,
-                timeout_seconds=lease_seconds,
+                _await_ready_result(
+                    store,
+                    session_id=normalized_session,
+                    trace_id=turn_trace_id,
+                    attempt_token=attempt_token,
+                    user_message=user_message,
+                    config=cfg,
+                    pipeline=pipeline,
+                    timeout_seconds=lease_seconds,
+                ),
+                **direct_activation_arguments,
             )
         attempt_owner = outcome in {"started", "recovered_started"}
         resident_binding, resident_context = _resident_binding_for_preflight(
@@ -1036,6 +1511,12 @@ def run_preflight(
             routing_snapshot,
             seed_starter_roster=seed_starter_roster,
             ensure_no_match_fallback_roster=ensure_no_match_fallback_roster,
+            reconcile_packaged_contractors=reconcile_packaged_contractors,
+        )
+        routing_snapshot, workforce_snapshot = _coherent_workforce_snapshot(
+            store,
+            cfg,
+            routing_snapshot,
         )
         catalog = routing_snapshot.catalog
 
@@ -1048,6 +1529,7 @@ def run_preflight(
             platform=runtime_platform,
             available_tools=runtime_capabilities.capabilities,
             capability_receipt=runtime_capabilities,
+            workforce_snapshot=workforce_snapshot,
         )
         policy_fingerprint = _context_policy_fingerprint(
             cfg,
@@ -1067,6 +1549,7 @@ def run_preflight(
             "routing_fingerprint": routing_fingerprint,
             "policy_fingerprint": policy_fingerprint,
             "roster_generation": routing_snapshot.roster_generation,
+            "workforce_snapshot": workforce_snapshot,
             "delivery_mode": delivery_mode,
             "context_limit": context_limit,
             "resident_binding": resident_binding,
@@ -1116,6 +1599,7 @@ def run_preflight(
                     routing_fingerprint=routing_fingerprint,
                     policy_fingerprint=policy_fingerprint,
                     roster_generation=routing_snapshot.roster_generation,
+                    workforce_snapshot=workforce_snapshot,
                     delivery_mode=delivery_mode,
                     context_limit=context_limit,
                     resident_binding=resident_binding,
@@ -1144,14 +1628,18 @@ def run_preflight(
             "replay",
         }:
             raise RuntimeError("preflight attempt became terminal before it reached ready")
-        return _read_ready_result(
+        return _activate_or_close_direct_native_child(
             store,
-            session_id=normalized_session,
-            trace_id=turn_trace_id,
-            attempt_token=attempt_token,
-            user_message=user_message,
-            config=cfg,
-            pipeline=pipeline,
+            _read_ready_result(
+                store,
+                session_id=normalized_session,
+                trace_id=turn_trace_id,
+                attempt_token=attempt_token,
+                user_message=user_message,
+                config=cfg,
+                pipeline=pipeline,
+            ),
+            **direct_activation_arguments,
         )
     except Exception as error:
         # Cleanup is an exact-token compare-and-set. A concurrent successful

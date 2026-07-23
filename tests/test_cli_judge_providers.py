@@ -302,6 +302,9 @@ def test_codex_judge_uses_stdin_strict_tool_gates_and_isolated_home() -> None:
     def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
         observed.update({"argv": argv, **kwargs})
         assert Path(kwargs["cwd"]).exists()
+        schema_path = Path(argv[argv.index("--output-schema") + 1])
+        projected = json.loads(schema_path.read_text(encoding="utf-8"))
+        assert "uniqueItems" not in json.dumps(projected)
         return _result(stdout)
 
     parsed = invoke_cli_judge(
@@ -310,6 +313,7 @@ def test_codex_judge_uses_stdin_strict_tool_gates_and_isolated_home() -> None:
             type="cli",
             transport="codex",
             model="openai/gpt-5-mini",
+            reasoning_effort="low",
         ),
         prompt,
         timeout=4,
@@ -330,6 +334,7 @@ def test_codex_judge_uses_stdin_strict_tool_gates_and_isolated_home() -> None:
     assert prompt not in observed["argv"]
     assert observed["input_text"] == prompt
     assert observed["argv"][observed["argv"].index("--model") + 1] == ("openai/gpt-5-mini")
+    assert 'model_reasoning_effort="low"' in observed["argv"]
     assert "--strict-config" in observed["argv"]
     assert "features.shell_tool=false" in observed["argv"]
     assert "features.unified_exec=false" in observed["argv"]
@@ -339,6 +344,38 @@ def test_codex_judge_uses_stdin_strict_tool_gates_and_isolated_home() -> None:
     for name in ("TEMP", "TMP", "TMPDIR"):
         assert Path(observed["env"][name]).is_relative_to(Path(observed["cwd"]))
     assert "OPENAI_API_KEY" not in observed["env"]
+
+
+def test_codex_structured_accepts_completed_schema_item_when_turn_hangs() -> None:
+    stdout = "\n".join(
+        [
+            json.dumps({"type": "thread.started"}),
+            json.dumps({"type": "turn.started"}),
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "agent_message",
+                        "text": '{"selected_ids":[],"confidence":0}',
+                    },
+                }
+            ),
+        ]
+    )
+
+    parsed = invoke_cli_judge(
+        ProviderEntry(name="codex", type="cli", transport="codex", model="gpt-test"),
+        "route safely",
+        timeout=3,
+        resolver=lambda _name: _TRUSTED_CLI,
+        runner=lambda *_args, **_kwargs: _result(
+            stdout,
+            timed_out=True,
+            returncode=124,
+        ),
+    )
+
+    assert parsed == {"selected_ids": [], "confidence": 0}
 
 
 def test_claude_judge_disables_tools_customizations_and_persistence() -> None:
@@ -429,6 +466,36 @@ def test_windows_cmd_shim_rejects_model_metacharacters_before_launch() -> None:
             "private prompt remains on stdin",
             timeout=1,
             resolver=lambda _name: "C:\\tools\\codex.CMD",
+            runner=runner,
+        )
+        is None
+    )
+    assert called is False
+
+
+@pytest.mark.parametrize(
+    "provider",
+    [
+        ProviderEntry(name="codex", type="cli", transport="codex", reasoning_effort="extreme"),
+        ProviderEntry(name="claude", type="cli", transport="claude", reasoning_effort="low"),
+    ],
+)
+def test_cli_judge_rejects_unallowlisted_reasoning_effort_before_launch(
+    provider: ProviderEntry,
+) -> None:
+    called = False
+
+    def runner(*_args: Any, **_kwargs: Any) -> BoundedProcessResult:
+        nonlocal called
+        called = True
+        return _result()
+
+    assert (
+        invoke_cli_judge(
+            provider,
+            "private prompt remains on stdin",
+            timeout=1,
+            resolver=lambda _name: _TRUSTED_CLI,
             runner=runner,
         )
         is None

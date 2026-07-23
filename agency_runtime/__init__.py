@@ -13,6 +13,7 @@ Usage:
 
 from __future__ import annotations
 
+import os
 from typing import Any
 from uuid import uuid4
 
@@ -38,6 +39,12 @@ def _bypassed_routing(trace_id: str = "") -> dict[str, Any]:
             "delegate": False,
         },
     }
+
+
+def _current_platform() -> str:
+    """Return the platform token used by native-host capability receipts."""
+
+    return "windows" if os.name == "nt" else "linux"
 
 
 class AgencyRuntime:
@@ -77,20 +84,20 @@ class AgencyRuntime:
 
     def _active_routing_snapshot(self) -> Any:
         """Freeze config and return its catalog, seeding the starter roster once."""
-        from agency_runtime.core.routing_snapshot import capture_routing_snapshot
-
-        snapshot = capture_routing_snapshot(self.store)
-        from agency_runtime.core.installer import (
-            ensure_no_match_fallback_roster,
-            seed_starter_roster,
+        from agency_runtime.core.routing_snapshot import (
+            capture_operational_routing_snapshot,
         )
 
-        if not snapshot.catalog:
-            seed_starter_roster(self.store)
-            return capture_routing_snapshot(self.store, snapshot.config)
-        if ensure_no_match_fallback_roster(self.store):
-            return capture_routing_snapshot(self.store, snapshot.config)
-        return snapshot
+        return capture_operational_routing_snapshot(self.store)
+
+    def _workforce_snapshot(self, routing_snapshot: Any) -> tuple[Any, Any]:
+        """Bind catalog and workforce contracts to one roster generation."""
+
+        if getattr(routing_snapshot, "roster_generation", 0) == 0:
+            return routing_snapshot, None
+        from agency_runtime.core.routing_snapshot import bind_workforce_snapshot
+
+        return bind_workforce_snapshot(self.store, routing_snapshot)
 
     def route(
         self,
@@ -98,21 +105,64 @@ class AgencyRuntime:
         user_message: str,
         *,
         trace_id: str = "",
+        host: str = "unknown",
+        platform: str = "",
+        capability_receipt: Any | None = None,
     ) -> dict[str, Any]:
-        """Route a user message to specialist agents."""
+        """Route a user message using verified native-host capabilities.
+
+        A host name alone is not execution evidence. Native adapters should
+        pass the opaque receipt returned by :meth:`attest_native_host`; calls
+        without one remain useful for diagnostics but safely exclude workers
+        whose host or tool requirements cannot be proven.
+        """
         if not self._runtime_enabled():
             return _bypassed_routing(trace_id)
         from agency_runtime.core.selector.pipeline import route
 
         if not str(session_id or "").strip():
             raise ValueError("session_id is required for Agency routing correlation")
-        snapshot = self._active_routing_snapshot()
+        snapshot, workforce = self._workforce_snapshot(self._active_routing_snapshot())
         return route(
             session_id,
             user_message,
             snapshot.catalog,
             config=snapshot.config,
             trace_id=trace_id or None,
+            host=host,
+            platform=platform or _current_platform(),
+            capability_receipt=capability_receipt,
+            workforce_snapshot=workforce,
+        )
+
+    @staticmethod
+    def attest_native_host(
+        host: str,
+        *,
+        session_id: str,
+        trace_id: str,
+        platform: str = "",
+        available_tools: tuple[str, ...] = (),
+        restricted: bool = False,
+    ) -> Any:
+        """Create one process-local native-adapter capability receipt.
+
+        This is an adapter integration seam, not a serialized trust bypass.
+        The resulting receipt is sealed to this process, correlation, host,
+        platform, and short lifetime.
+        """
+
+        from agency_runtime.core.host_capabilities import (
+            native_adapter_capability_receipt,
+        )
+
+        return native_adapter_capability_receipt(
+            host,
+            platform=platform or _current_platform(),
+            session_id=session_id,
+            trace_id=trace_id,
+            available_tools=available_tools,
+            restricted=restricted,
         )
 
     def route_with_context(
@@ -121,6 +171,8 @@ class AgencyRuntime:
         user_message: str,
         *,
         trace_id: str = "",
+        host: str = "unknown",
+        capability_receipt: Any | None = None,
     ) -> str:
         """Run correlated preflight and return only its context projection."""
         return str(
@@ -128,6 +180,8 @@ class AgencyRuntime:
                 session_id,
                 user_message,
                 trace_id=trace_id,
+                host=host,
+                capability_receipt=capability_receipt,
             )["context"]
         )
 
@@ -138,6 +192,7 @@ class AgencyRuntime:
         *,
         trace_id: str = "",
         host: str = "python",
+        capability_receipt: Any | None = None,
     ) -> dict[str, Any]:
         """Run one fully correlated routing and prompt-hydration turn."""
         if not self._runtime_enabled():
@@ -171,6 +226,7 @@ class AgencyRuntime:
             user_message=user_message,
             host=host,
             trace_id=current_trace_id,
+            capability_receipt=capability_receipt,
             origin_receipt=origin_receipt,
         ).as_dict()
 

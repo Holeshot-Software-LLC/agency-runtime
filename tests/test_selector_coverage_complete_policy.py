@@ -315,6 +315,12 @@ def test_trigger_and_condition_matching_rejects_nonlexical_inputs() -> None:
     assert policy._matches_condition("code review", ["code"]) is False
 
 
+def test_multiword_condition_requires_more_than_one_generic_token() -> None:
+    assert policy._matches_condition("test agent selection live", "test result analysis") is False
+    assert policy._matches_condition("analyze the test results", "test result analysis") is True
+    assert policy._matches_condition("authentication failed", "authentication") is True
+
+
 def test_policy_reload_reuses_unchanged_file_and_retains_last_good_same_path(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

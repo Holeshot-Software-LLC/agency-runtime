@@ -11,8 +11,9 @@ import re
 import secrets
 import signal
 import webbrowser
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, wait
+from contextlib import suppress
 from datetime import datetime, timezone
 from http import HTTPStatus
 from importlib.resources import files
@@ -37,6 +38,10 @@ from agency_runtime.core.configuration import (
     read_config_state,
     resolve_config_path,
 )
+from agency_runtime.core.dashboard_broker_runtime import (
+    remove_codex_dashboard_broker,
+    write_codex_dashboard_broker,
+)
 from agency_runtime.core.dashboard_operational import (
     MAX_OPERATIONAL_ROSTER_RESULTS,
     MAX_RECENT_FAILURES,
@@ -46,6 +51,7 @@ from agency_runtime.core.dashboard_operational import (
     roster_operational_page,
 )
 from agency_runtime.core.dashboard_runtime import (
+    dashboard_broker_request_allowed,
     remove_dashboard_runtime,
     write_dashboard_runtime,
 )
@@ -68,7 +74,11 @@ from agency_runtime.core.roster.selector_projection import (
     ui_roster_projection,
 )
 from agency_runtime.core.roster.sync import activate_snapshot, approve_snapshot
-from agency_runtime.core.routing_snapshot import RoutingSnapshot, capture_routing_snapshot
+from agency_runtime.core.roster.workforce import workforce_index_snapshot
+from agency_runtime.core.routing_snapshot import (
+    RoutingSnapshot,
+    capture_operational_routing_snapshot,
+)
 from agency_runtime.core.runtime_control import (
     RuntimeControlConflictError,
     read_runtime_control,
@@ -83,6 +93,9 @@ from agency_runtime.core.selector.receipt_projection import (
     bounded_receipt_text,
 )
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.workforce.comparison import nearest_workers
+from agency_runtime.core.workforce.hiring import apply_approved_hiring_case
+from agency_runtime.core.workforce.promotion import promotion_readiness
 from agency_runtime.server.http import (
     AgencyHTTPHandler,
     AgencyHTTPServer,
@@ -324,7 +337,7 @@ def _require_agent_toggle_precondition(
 
     state = read_config_state(config_path)
     binding = _require_store_service_binding(store, state)
-    if store.get_roster_entry(slug) is None:
+    if not store.has_active_roster_definition(slug):
         raise ValueError(f"agent is not present in the active roster: {slug}")
     verb = "ENABLE" if enabled else "DISABLE"
     expected_confirmation = f"{verb} {slug}"
@@ -695,6 +708,13 @@ def _route_lab_host_failure(
 ) -> str:
     """Project a bounded, credential-free host eligibility reason."""
 
+    inspection_status = str(status.get("inspection_status") or "").strip().casefold()
+    if inspection_status == "timed_out":
+        return "native installation inspection is still pending; retry shortly"
+    if inspection_status == "stale":
+        return "native installation evidence expired while refresh is pending; retry shortly"
+    if inspection_status == "error":
+        return "native installation inspection failed; check dashboard service diagnostics"
     if capability_receipt is None:
         return "authoritative capability receipt is invalid"
     if status.get("effective_enabled") is False:
@@ -939,8 +959,53 @@ def _delegation_graph(receipt: dict[str, Any]) -> dict[str, Any]:
         normalize_work_units,
     )
 
+    routing = receipt.get("routing")
+    routing = routing if isinstance(routing, dict) else {}
     work_units = receipt.get("signals", {}).get("work_units", {}).get("units", [])
-    units = normalize_work_units(work_units)
+    bindings = routing.get("workforce_unit_bindings")
+    plan = routing.get("workforce_plan")
+    if (
+        isinstance(bindings, list)
+        and bindings
+        and len(bindings) == len(work_units)
+        and all(isinstance(item, dict) for item in bindings)
+    ):
+        graph_units = [
+            {
+                "id": binding.get("work_unit_id"),
+                "description": description,
+                "depends_on": binding.get("depends_on", []),
+            }
+            for binding, description in zip(bindings, work_units, strict=True)
+        ]
+    elif (
+        isinstance(plan, dict)
+        and isinstance(plan.get("units"), Sequence)
+        and not isinstance(plan.get("units"), (str, bytes, bytearray))
+        and len(plan["units"]) == len(work_units)
+        and all(isinstance(item, dict) for item in plan["units"])
+    ):
+        planned_units = plan["units"]
+        normalized_goals = normalize_work_units(work_units)
+        source_to_graph = {
+            str(item.get("unit_id") or ""): unit.id
+            for item, unit in zip(planned_units, normalized_goals, strict=True)
+        }
+        graph_units = [
+            {
+                "id": unit.id,
+                "description": unit.description,
+                "depends_on": [
+                    source_to_graph[source]
+                    for source in item.get("depends_on", [])
+                    if source in source_to_graph
+                ],
+            }
+            for item, unit in zip(planned_units, normalized_goals, strict=True)
+        ]
+    else:
+        graph_units = work_units
+    units = normalize_work_units(graph_units)
     graph = build_dependency_graph(units)
     return {
         "nodes": [{"id": unit.id, "description": unit.description} for unit in units],
@@ -964,6 +1029,10 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
     @property
     def auth_token(self) -> str:
         return self.server.auth_token  # type: ignore[attr-defined]
+
+    @property
+    def broker_token(self) -> str:
+        return self.server.broker_token  # type: ignore[attr-defined]
 
     @property
     def config_path(self) -> Path:
@@ -1030,6 +1099,8 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/activity": self._handle_activity,
                 "/api/hosts": self._handle_hosts,
                 "/api/inference": self._handle_inference,
+                "/api/workforce": self._handle_workforce,
+                "/api/hiring": self._handle_hiring,
                 "/api/runtime": lambda: self._json_ok({"master": self._master_control()}),
                 "/api/config": self._handle_config,
                 "/api/providers/models": self._handle_provider_models,
@@ -1074,6 +1145,8 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/hosts/toggle": self._handle_host_toggle,
                 "/api/agents/toggle": self._handle_agent_toggle,
                 "/api/runtime/toggle": self._handle_runtime_toggle,
+                "/api/workforce/action": self._handle_workforce_action,
+                "/api/hiring/approve": self._handle_hiring_approve,
                 "/api/config": self._handle_config_update,
             }.get(path)
             if handler is None:
@@ -1111,13 +1184,30 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 return False
 
         supplied = self.headers.get("Authorization", "")
-        expected = f"Bearer {self.auth_token}"
-        if (
+        owner_expected = f"Bearer {self.auth_token}"
+        broker_expected = f"Bearer {self.broker_token}"
+        scalar_invalid = (
             len(supplied) > 8192
             or not supplied.isascii()
-            or len(expected) > 8192
-            or not expected.isascii()
-            or not secrets.compare_digest(supplied, expected)
+            or len(owner_expected) > 8192
+            or not owner_expected.isascii()
+            or len(broker_expected) > 8192
+            or not broker_expected.isascii()
+        )
+        owner_authorized = not scalar_invalid and secrets.compare_digest(
+            supplied,
+            owner_expected,
+        )
+        broker_authorized = (
+            bool(self.broker_token)
+            and not scalar_invalid
+            and secrets.compare_digest(
+                supplied,
+                broker_expected,
+            )
+        )
+        if not owner_authorized and not (
+            broker_authorized and dashboard_broker_request_allowed(self.path, self.command)
         ):
             self._json_error(HTTPStatus.UNAUTHORIZED, "authentication required")
             return False
@@ -1326,6 +1416,94 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             }
         )
 
+    def _handle_workforce(self) -> None:
+        """Return workforce summaries or one complete evidence-bound worker."""
+
+        query = parse_qs(urlparse(self.path).query)
+        state_filter = str(query.get("state", [""])[0]).strip().casefold()
+        worker = str(query.get("worker", [""])[0]).strip()
+        limit = _bounded_query_limit(self.path, default=100)
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        if worker:
+            detail = self.store.get_workforce_worker_detail(
+                worker,
+                evidence_limit=limit,
+            )
+            snapshot = workforce_index_snapshot(self.store)
+            slug = str(detail["worker"]["agent_slug"])
+            contracts = {item.agent_id: item for item in snapshot.contracts}
+            target = contracts.get(slug)
+            comparisons = (
+                []
+                if target is None
+                else [
+                    item.as_dict()
+                    for item in nearest_workers(target, snapshot.contracts, limit=min(limit, 10))
+                ]
+            )
+            prompt = self.store.get_specialist_prompt(slug, disabled_agents=())
+            config = load_config(self.config_path)
+            detail["closest_workers"] = comparisons
+            detail["promotion_readiness"] = promotion_readiness(
+                detail["worker"],
+                detail["outcomes"],
+                required_successes=config.workforce.auto_promote_successes,
+            )
+            detail["compiled_prompt"] = (
+                None
+                if prompt is None
+                else {
+                    "version": prompt["version"],
+                    "hash": prompt["hash"],
+                    "preview": str(prompt["prompt_body"])[:8192],
+                    "truncated": len(str(prompt["prompt_body"])) > 8192,
+                }
+            )
+            payload: dict[str, Any] = {"detail": detail}
+        else:
+            workers = self.store.list_workforce_workers(
+                state=state_filter,
+                limit=limit,
+            )
+            all_workers = self.store.list_workforce_workers(limit=1000)
+            counts: dict[str, int] = {}
+            for item in all_workers:
+                key = str(item["state"])
+                counts[key] = counts.get(key, 0) + 1
+            payload = {
+                "count": len(workers),
+                "total": len(all_workers),
+                "counts": counts,
+                "workers": workers,
+            }
+        self._json_ok({**payload, **_store_response_identity(state, binding)})
+
+    def _handle_hiring(self) -> None:
+        """Return one hiring case or a bounded evidence list."""
+
+        query = parse_qs(urlparse(self.path).query)
+        case_id = str(query.get("case_id", [""])[0]).strip()
+        status = str(query.get("status", [""])[0]).strip().casefold()
+        case_type = str(query.get("type", [""])[0]).strip().casefold()
+        limit = _bounded_query_limit(self.path, default=100)
+        state = read_config_state(self.config_path)
+        binding = _require_store_service_binding(self.store, state)
+        payload = (
+            {"hiring_case": self.store.get_hiring_case(case_id)}
+            if case_id
+            else {
+                "hiring_cases": self.store.list_hiring_cases(
+                    status=status,
+                    case_type=case_type,
+                    limit=limit,
+                )
+            }
+        )
+        if "hiring_cases" in payload:
+            payload["count"] = len(payload["hiring_cases"])
+        self._json_ok({**payload, **_store_response_identity(state, binding)})
+
     def _handle_hosts(self) -> None:
         from agency_runtime.core.host_control import inspect_host_status
 
@@ -1503,7 +1681,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         with config_read_lock(self.config_path):
             before = read_config_state(self.config_path)
             binding = _require_store_service_binding(self.store, before)
-            snapshot = capture_routing_snapshot(self.store)
+            snapshot = capture_operational_routing_snapshot(self.store)
             after = read_config_state(self.config_path)
             if (
                 before.path != after.path
@@ -1591,6 +1769,12 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         enabled = body.get("enabled")
         if not isinstance(enabled, bool):
             raise ValueError("enabled must be a JSON boolean")
+        reason_value = body.get("reason")
+        if reason_value is not None and not isinstance(reason_value, str):
+            raise ValueError("reason must be a string")
+        reason = str(reason_value or "operator activation toggle").strip()
+        if not reason:
+            raise ValueError("reason must not be blank")
         state = read_config_state(self.config_path)
         # Fail fast on an already-stale service, then repeat this proof inside
         # the writer lock before any toggle can be committed.
@@ -1636,6 +1820,18 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 }
             )
             return
+        if result.changed_paths:
+            # Legacy active-roster entries can predate workforce projection.
+            # The config remains authoritative until reconciliation creates it.
+            with suppress(KeyError):
+                self.store.record_workforce_enablement(
+                    slug,
+                    enabled=enabled,
+                    config_revision=result.state.revision,
+                    reason=reason,
+                    actor="operator",
+                    surface="dashboard",
+                )
         self._json_ok(
             {
                 "ok": True,
@@ -1823,6 +2019,78 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             }
         )
 
+    def _handle_workforce_action(self, body: dict[str, Any]) -> None:
+        """Apply one revision-bound lifecycle change with destructive confirmation."""
+
+        action = str(body.get("action") or "").strip().casefold()
+        if action not in {"promote", "suspend", "resume", "retire", "merge"}:
+            raise ValueError("workforce action is invalid")
+        slug = normalize_agent_slug(body.get("worker"))
+        target = str(body.get("into") or "").strip()
+        if action == "merge":
+            target = normalize_agent_slug(target)
+        elif target:
+            raise ValueError("into is valid only for merge")
+        revision = body.get("expected_revision")
+        if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0:
+            raise ValueError("expected_revision must be a non-negative integer")
+        reason = str(body.get("reason") or "").strip()
+        if not reason:
+            raise ValueError("reason is required")
+        if action in {"suspend", "retire", "merge"}:
+            expected = (
+                f"MERGE {slug} INTO {target}" if action == "merge" else f"{action.upper()} {slug}"
+            )
+            if body.get("confirm") != expected:
+                raise ValueError(f"confirmation phrase must be {expected}")
+        with config_read_lock(self.config_path):
+            state = read_config_state(self.config_path)
+            binding = _require_store_service_binding(self.store, state)
+            worker = self.store.transition_workforce_worker(
+                slug,
+                action=action,
+                expected_revision=revision,
+                reason=reason,
+                merged_into_worker_id=target,
+                actor="operator",
+                surface="dashboard",
+                disabled_agents=state.effective.get("agents", {}).get("disabled", []),
+            )
+        self._json_ok(
+            {
+                "ok": True,
+                "action": action,
+                "worker": worker,
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_hiring_approve(self, body: dict[str, Any]) -> None:
+        """Approve and materialize one reviewed high-risk hiring case."""
+
+        case_id = str(body.get("case_id") or "").strip()
+        approved_by = str(body.get("approved_by") or "").strip()
+        if not case_id or not approved_by:
+            raise ValueError("case_id and approved_by are required")
+        expected = f"APPROVE {case_id}"
+        if body.get("confirm") != expected:
+            raise ValueError(f"confirmation phrase must be {expected}")
+        with config_read_lock(self.config_path):
+            state = read_config_state(self.config_path)
+            binding = _require_store_service_binding(self.store, state)
+            case = self.store.approve_hiring_case(case_id, approved_by=approved_by)
+            worker = apply_approved_hiring_case(self.store, case["id"])
+            case = self.store.get_hiring_case(case["id"])
+        self._json_ok(
+            {
+                "ok": True,
+                "action": "approve",
+                "hiring_case": case,
+                "worker": worker,
+                **_store_response_identity(state, binding),
+            }
+        )
+
     def _handle_roster_action(self, body: dict[str, Any]) -> None:
         action = str(body.get("action") or "").strip().lower()
         snapshot_id = str(body.get("snapshot_id") or "").strip()
@@ -1925,6 +2193,7 @@ class DashboardHTTPServer(AgencyHTTPServer):
         store: Store,
         *,
         auth_token: str,
+        broker_token: str = "",
         host: str = "127.0.0.1",
         port: int = 0,
         host_inspector: Callable[[], list[dict[str, Any]]] | None = None,
@@ -1941,6 +2210,7 @@ class DashboardHTTPServer(AgencyHTTPServer):
         if resolve_config_path(store_config_path) != canonical_config_path:
             raise ValueError("dashboard Store and configuration paths must match")
         self.auth_token = auth_token
+        self.broker_token = broker_token
         self.host_inspector = host_inspector or _HOST_INSPECTIONS.inspect
         self.config_path = canonical_config_path
         self.runtime_control_path = runtime_control_path(home_dir=runtime_control_home)
@@ -1950,6 +2220,58 @@ class DashboardHTTPServer(AgencyHTTPServer):
             port,
             handler_class=DashboardHTTPHandler,
             max_body_size=load_config(canonical_config_path).server.max_body_size,
+        )
+
+
+def _publish_service_runtime(
+    *,
+    owner_token: str,
+    broker_token: str,
+    port: int,
+    home_dir: str | Path | None,
+) -> bool:
+    descriptor = write_dashboard_runtime(
+        token=owner_token,
+        port=port,
+        home_dir=home_dir,
+    )
+    if not broker_token:
+        return False
+    try:
+        return bool(
+            write_codex_dashboard_broker(
+                token=broker_token,
+                port=port,
+                pid=int(descriptor["pid"]),
+                started_at=str(descriptor["started_at"]),
+                home_dir=home_dir,
+            )
+        )
+    except (KeyError, OSError, PermissionError, TypeError, ValueError) as exc:
+        logger.warning(
+            "Codex dashboard broker publication failed: %s",
+            type(exc).__name__,
+        )
+        return False
+
+
+def _remove_service_runtime(
+    *,
+    owner_token: str,
+    broker_token: str,
+    broker_descriptor_written: bool,
+    home_dir: str | Path | None,
+) -> None:
+    remove_dashboard_runtime(
+        token=owner_token,
+        pid=os.getpid(),
+        home_dir=home_dir,
+    )
+    if broker_descriptor_written:
+        remove_codex_dashboard_broker(
+            token=broker_token,
+            pid=os.getpid(),
+            home_dir=home_dir,
         )
 
 
@@ -1975,9 +2297,11 @@ def run_dashboard(
         else Store(config_path=canonical_config_path)
     )
     token = secrets.token_urlsafe(32)
+    broker_token = secrets.token_urlsafe(32) if service_mode and os.name == "nt" else ""
     server = DashboardHTTPServer(
         store,
         auth_token=token,
+        broker_token=broker_token,
         port=port,
         config_path=canonical_config_path,
         runtime_control_home=home_dir,
@@ -1985,9 +2309,11 @@ def run_dashboard(
     actual_port = int(server.server_address[1])
     url = f"http://127.0.0.1:{actual_port}/#token={token}"
     descriptor_written = False
+    broker_descriptor_written = False
     if service_mode:
-        write_dashboard_runtime(
-            token=token,
+        broker_descriptor_written = _publish_service_runtime(
+            owner_token=token,
+            broker_token=broker_token,
             port=actual_port,
             home_dir=home_dir,
         )
@@ -2043,9 +2369,10 @@ def run_dashboard(
             except (OSError, ValueError):
                 continue
         if descriptor_written:
-            remove_dashboard_runtime(
-                token=token,
-                pid=os.getpid(),
+            _remove_service_runtime(
+                owner_token=token,
+                broker_token=broker_token,
+                broker_descriptor_written=broker_descriptor_written,
                 home_dir=home_dir,
             )
 

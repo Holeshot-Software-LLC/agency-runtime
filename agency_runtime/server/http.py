@@ -37,7 +37,7 @@ from agency_runtime.core.config import load_config
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.header.finalize import finalize_response
 from agency_runtime.core.preflight import run_preflight
-from agency_runtime.core.routing_snapshot import capture_routing_snapshot
+from agency_runtime.core.routing_snapshot import capture_operational_routing_snapshot
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.specialist_context import SpecialistPromptDeliveryError
@@ -409,7 +409,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
             return
 
-        snapshot = capture_routing_snapshot(self.store)
+        snapshot = capture_operational_routing_snapshot(self.store)
         payload = explain_route(
             session_id,
             task,

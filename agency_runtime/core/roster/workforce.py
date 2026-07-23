@@ -66,11 +66,21 @@ def workforce_index_snapshot(
             raise RuntimeError("roster generation counter is unavailable")
         total = int(conn.execute("SELECT COUNT(*) FROM agent_workers").fetchone()[0])
         rows = conn.execute(
-            "SELECT worker.*, lineage.recruitment_contract, "
-            "lineage.recruitment_contract_hash "
+            "SELECT worker.*, "
+            "COALESCE(projection.recruitment_contract, "
+            "lineage.recruitment_contract) AS recruitment_contract, "
+            "COALESCE(projection.recruitment_contract_hash, "
+            "lineage.recruitment_contract_hash) AS recruitment_contract_hash "
             "FROM agent_workers AS worker JOIN agent_version_lineage AS lineage "
             "ON lineage.worker_id = worker.worker_id "
             "AND lineage.agent_version_id = worker.current_agent_version_id "
+            "LEFT JOIN agent_recruitment_contract_projections AS projection "
+            "ON projection.id = ("
+            "SELECT candidate.id FROM agent_recruitment_contract_projections AS candidate "
+            "WHERE candidate.worker_id = worker.worker_id "
+            "AND candidate.agent_version_id = worker.current_agent_version_id "
+            "ORDER BY candidate.projection_sequence DESC LIMIT 1"
+            ") "
             "ORDER BY worker.worker_id, worker.agent_slug"
         ).fetchall()
         if len(rows) != total:

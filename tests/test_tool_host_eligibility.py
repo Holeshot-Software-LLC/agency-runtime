@@ -71,6 +71,24 @@ def test_tool_aliases_are_canonical_bounded_and_unknowns_stay_unknown() -> None:
     assert unknown == ("not-a-governed-tool",)
 
 
+def test_test_result_and_coverage_readers_use_test_execution_capability() -> None:
+    capabilities, unknown = canonicalize_tool_capabilities(
+        ("test-results-reader", "coverage-reader")
+    )
+
+    assert capabilities == ("test-execution",)
+    assert unknown == ()
+
+
+def test_staffing_plan_and_workforce_readers_use_runtime_evidence_capability() -> None:
+    capabilities, unknown = canonicalize_tool_capabilities(
+        ("staffing-plan-reader", "workforce-index")
+    )
+
+    assert capabilities == ("runtime-evidence",)
+    assert unknown == ()
+
+
 def test_tool_capability_normalization_rejects_invalid_and_overflow_labels() -> None:
     capabilities, unknown = canonicalize_tool_capabilities(
         [None, *("source" for _index in range(MAX_TOOL_CAPABILITIES))]

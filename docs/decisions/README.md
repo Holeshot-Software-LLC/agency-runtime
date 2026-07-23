@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-20
+updated: 2026-07-22
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -39,6 +39,7 @@ Status meanings:
 - ADR-0054 Use Unit-Aware Specialist Assignment and Event-Driven DAG Scheduling → ADR-0068 Select Compatible Specialist Closures per Work Unit
 - ADR-0062 Isolate Directive Specialists and Route Each Work Unit Before Hydration → ADR-0069 Enforce Specialist Conflicts Before Prompt Composition
 - ADR-0063 Import External Rosters Through Declared Manifests into Quarantine → ADR-0066 Package the Audited Upstream Roster and Synchronize Quarantined Deltas
+- ADR-0080 Plan before recruiting from the whole workforce → ADR-0083 Use capability-indexed recall and bounded inference
 
 ## Architecture and integrations
 
@@ -78,7 +79,8 @@ Status meanings:
 | [ADR-0072](0072-compare-task-outcomes-with-paired-trials.md) | Compare task outcomes with evidence-labelled paired trials | Accepted |
 | [ADR-0078](0078-present-human-routing-evidence-and-abstain-on-noise.md) | Present human routing evidence and abstain on weak heuristic noise | Accepted |
 | [ADR-0079](0079-route-native-children-once-and-bound-unplanned-reroutes.md) | Route native children once and bound unplanned reroutes | Accepted |
-| [ADR-0080](0080-plan-before-recruiting-from-the-whole-workforce.md) | Plan before recruiting from the whole workforce | Accepted |
+| [ADR-0080](0080-plan-before-recruiting-from-the-whole-workforce.md) | Plan before recruiting from the whole workforce | Superseded |
+| [ADR-0083](0083-use-capability-indexed-recall-and-bounded-inference.md) | Use capability-indexed recall and bounded inference | Accepted |
 
 ## Evidence and observability
 

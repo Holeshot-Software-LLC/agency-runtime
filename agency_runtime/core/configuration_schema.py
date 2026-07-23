@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 
 from agency_runtime.core.agent_activation import normalize_disabled_agents
 from agency_runtime.core.config import (
+    CODEX_REASONING_EFFORTS,
     MAX_PROVIDER_CHAIN_ENTRIES,
     is_safe_cli_model_id,
     is_safe_credential_url,
@@ -178,6 +179,7 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
         "api_key_env",
         "ollama_mode",
         "timeout",
+        "reasoning_effort",
     }
     if set(entry) - allowed:
         raise _error(path, "contains unsupported fields")
@@ -202,6 +204,13 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
         "timeout": _number(
             entry.get("timeout", 15.0), f"{path}.timeout", minimum=0.05, maximum=60.0
         ),
+        "reasoning_effort": _string(
+            entry.get("reasoning_effort", ""),
+            f"{path}.reasoning_effort",
+            maximum=16,
+        )
+        .strip()
+        .lower(),
     }
     for field in ("name", "model"):
         if has_terminal_control(result[field]):
@@ -216,11 +225,22 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
             )
         if result["base_url"] or result["api_key"] or result["api_key_env"]:
             raise _error(path, "CLI providers cannot configure URL or API-key fields")
+        if result["reasoning_effort"] and (
+            result["transport"] != "codex"
+            or result["reasoning_effort"] not in CODEX_REASONING_EFFORTS
+        ):
+            raise _error(
+                f"{path}.reasoning_effort",
+                "is supported only for Codex CLI providers and must be one of "
+                + ", ".join(sorted(CODEX_REASONING_EFFORTS)),
+            )
         result["ollama_mode"] = False
     else:
         result["transport"] = _string(transport_value, f"{path}.transport", maximum=80).strip()
         if result["transport"]:
             raise _error(path, "transport is supported only for CLI providers")
+        if result["reasoning_effort"]:
+            raise _error(path, "reasoning_effort is supported only for Codex CLI providers")
     if provider_type == "ollama":
         result["ollama_mode"] = True
     elif (
@@ -400,6 +420,8 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         "max_work_units",
         "max_selected_per_unit",
         "max_selected_total",
+        "min_confidence",
+        "min_margin",
         "max_hires_per_task",
         "max_hires_per_day",
         "auto_promote_successes",
@@ -437,6 +459,10 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         "max_selected_total": lambda item: _integer(
             item, "workforce.max_selected_total", minimum=1, maximum=256
         ),
+        "min_confidence": lambda item: _number(
+            item, "workforce.min_confidence", minimum=0.0, maximum=1.0
+        ),
+        "min_margin": lambda item: _number(item, "workforce.min_margin", minimum=0.0, maximum=1.0),
         "max_hires_per_task": lambda item: _integer(
             item, "workforce.max_hires_per_task", minimum=0, maximum=16
         ),
@@ -452,8 +478,8 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
     }
     result = {name: validators[name](item) for name, item in section.items()}
     fast = result.get("fast_call_budget", 1)
-    balanced = result.get("balanced_call_budget", 2)
-    strict = result.get("strict_call_budget", 3)
+    balanced = result.get("balanced_call_budget", 4)
+    strict = result.get("strict_call_budget", 5)
     if fast > balanced:
         raise _error(
             "workforce.balanced_call_budget", "must be greater than or equal to fast_call_budget"

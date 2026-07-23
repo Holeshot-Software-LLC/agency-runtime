@@ -184,6 +184,11 @@ def cmd_configure(
 
     print(f"\n✅ Config written to {config_path}")
     print(f"✅ Starter roster installed: {count} agents")
+    print(
+        "✅ Governed contractors: "
+        f"{int(getattr(count, 'contractors_installed', 0))} installed, "
+        f"{int(getattr(count, 'contractors_existing', 0))} already current"
+    )
     print(f"✅ SQLite database initialized: {cfg.store.resolved_path()}")
     print("\nNext steps:")
     print("  agency doctor              — verify everything is working")
@@ -408,9 +413,10 @@ def cmd_config_provider_list(args: argparse.Namespace) -> int:
     for index, provider in enumerate(providers, start=1):
         model = str(provider.get("model") or "default")
         endpoint = str(provider.get("transport") or provider.get("base_url") or "not set")
+        effort = str(provider.get("reasoning_effort") or "default")
         print(
             f"{index}. {provider.get('name')} · {provider.get('type')} · "
-            f"model/router={model} · {endpoint}"
+            f"model/router={model} · reasoning={effort} · {endpoint}"
         )
     return 0
 
@@ -430,7 +436,13 @@ def cmd_config_provider_models(args: argparse.Namespace) -> int:
         if catalog.models:
             for model in catalog.models:
                 detail = f" - {model.description}" if model.description else ""
-                print(f"{model.slug} · {model.display_name}{detail}")
+                efforts = ", ".join(model.supported_reasoning_levels)
+                reasoning = (
+                    f" · reasoning={efforts} (default {model.default_reasoning_level})"
+                    if efforts
+                    else ""
+                )
+                print(f"{model.slug} · {model.display_name}{reasoning}{detail}")
             print(f"Source: {catalog.source} · observed {catalog.observed_at}")
         else:
             print(catalog.error or "No visible models were reported.")
@@ -458,16 +470,26 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
     existing_type = str(existing.get("type") or "").strip().casefold()
     provider_type_changed = bool(args.type is not None and provider_type != existing_type)
     cli_provider = provider_type == "cli"
+    transport = (
+        str(args.transport if args.transport is not None else existing.get("transport") or "")
+        .strip()
+        .casefold()
+        if cli_provider
+        else ""
+    )
+    requested_effort = getattr(args, "reasoning_effort", None)
+    if requested_effort is None:
+        reasoning_effort = str(existing.get("reasoning_effort") or "").strip().casefold()
+    else:
+        reasoning_effort = "" if requested_effort == "default" else str(requested_effort)
+    if transport != "codex":
+        if requested_effort not in (None, "default"):
+            raise ValueError("--reasoning-effort is supported only for Codex CLI providers")
+        reasoning_effort = ""
     updated = {
         "name": target_name,
         "type": provider_type,
-        "transport": (
-            str(
-                args.transport if args.transport is not None else existing.get("transport") or ""
-            ).strip()
-            if cli_provider
-            else ""
-        ),
+        "transport": transport,
         "model": str(args.model if args.model is not None else existing.get("model") or "").strip(),
         "base_url": ""
         if cli_provider
@@ -486,6 +508,7 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
             if args.timeout is not None
             else float(existing.get("timeout", 15.0))
         ),
+        "reasoning_effort": reasoning_effort,
     }
     if index is None:
         providers.append(updated)
@@ -509,7 +532,8 @@ def cmd_config_provider_set(args: argparse.Namespace) -> int:
     suffix = f" ({'; '.join(notes)})" if notes else ""
     print(
         f"Set provider {target_name} at position {index + 1}: "
-        f"type={provider_type}, model/router={updated['model'] or 'default'}{suffix}"
+        f"type={provider_type}, model/router={updated['model'] or 'default'}, "
+        f"reasoning={updated['reasoning_effort'] or 'default'}{suffix}"
     )
     return 0
 

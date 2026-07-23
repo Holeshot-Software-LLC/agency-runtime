@@ -15,7 +15,7 @@ _DOMAIN_EXPANSIONS: dict[str, list[str]] = {
     "agent selection": [
         "specialist routing",
         "agent orchestration",
-        "compatibility analysis",
+        "specialist compatibility constraints",
     ],
     "response header": [
         "developer experience",

@@ -8,7 +8,10 @@ from uuid import uuid4
 
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.resident_managers import resident_manager_boundary_error
-from agency_runtime.core.routing_snapshot import capture_routing_snapshot
+from agency_runtime.core.routing_snapshot import (
+    bind_workforce_snapshot,
+    capture_operational_routing_snapshot,
+)
 from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.turn_correlation import active_turn_error
 
@@ -88,7 +91,8 @@ def _search_agents(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
 def _explain_selection(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     from agency_runtime.core.selector.explain import explain_route
 
-    snapshot = capture_routing_snapshot(store)
+    snapshot = capture_operational_routing_snapshot(store)
+    snapshot, workforce = bind_workforce_snapshot(store, snapshot)
     return explain_route(
         arguments.get("session_id", ""),
         arguments["task"],
@@ -96,6 +100,7 @@ def _explain_selection(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         config=snapshot.config,
         limit=arguments.get("limit"),
         store=store,
+        workforce_snapshot=workforce,
     )
 
 

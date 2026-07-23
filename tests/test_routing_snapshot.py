@@ -126,7 +126,11 @@ def test_http_explain_passes_one_snapshot_to_selector(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     snapshot = RoutingSnapshot(_config(disabled=("code-reviewer",)), _catalog())
-    monkeypatch.setattr(http_module, "capture_routing_snapshot", lambda _store: snapshot)
+    monkeypatch.setattr(
+        http_module,
+        "capture_operational_routing_snapshot",
+        lambda _store: snapshot,
+    )
     observed: dict[str, Any] = {}
 
     def explain(*args: Any, **kwargs: Any) -> dict[str, Any]:
@@ -149,7 +153,11 @@ def test_mcp_explain_passes_one_snapshot_to_selector(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     snapshot = RoutingSnapshot(_config(disabled=("code-reviewer",)), _catalog())
-    monkeypatch.setattr(mcp_tools, "capture_routing_snapshot", lambda _store: snapshot)
+    monkeypatch.setattr(
+        mcp_tools,
+        "capture_operational_routing_snapshot",
+        lambda _store: snapshot,
+    )
     observed: dict[str, Any] = {}
 
     def explain(*args: Any, **kwargs: Any) -> dict[str, Any]:
@@ -495,7 +503,14 @@ def test_broker_explain_accepts_only_the_echoed_frozen_operation(
     identity = _operation_identity()
     requests: list[tuple[str, str, dict[str, Any]]] = []
 
-    def request(path: str, *, method: str, payload: dict[str, Any]) -> dict[str, Any]:
+    def request(
+        path: str,
+        *,
+        method: str,
+        payload: dict[str, Any],
+        timeout: float,
+    ) -> dict[str, Any]:
+        assert timeout > 0
         requests.append((path, method, payload))
         return {
             "schema_version": "agency.selection_explain.v1",
@@ -523,7 +538,7 @@ def test_broker_explain_accepts_only_the_echoed_frozen_operation(
         (
             "/api/route",
             "POST",
-            {"session_id": "", "task": "review code", "limit": 10},
+            {"session_id": "", "task": "review code", "limit": 10, "host": "codex"},
         )
     ]
 
@@ -682,7 +697,11 @@ def test_dashboard_operation_snapshot_rejects_a_mid_operation_config_toggle(
         "_require_store_service_binding",
         lambda _store, _state: {"store_path": _operation_identity()["store_path"]},
     )
-    monkeypatch.setattr(dashboard_module, "capture_routing_snapshot", capture)
+    monkeypatch.setattr(
+        dashboard_module,
+        "capture_operational_routing_snapshot",
+        capture,
+    )
     handler = object.__new__(dashboard_module.DashboardHTTPHandler)
     handler.server = SimpleNamespace(store=object(), config_path=config_path)
 

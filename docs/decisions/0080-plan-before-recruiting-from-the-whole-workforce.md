@@ -1,16 +1,16 @@
 ---
 title: "Plan before recruiting from the whole workforce"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-07-22
 tags: [routing, planning, recruitment, inference]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
   - docs/roadmap/issue-AR-121-inference-planning-and-staffing.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
 id: ADR-0080
 type: decision
 deciders: [maintainers]

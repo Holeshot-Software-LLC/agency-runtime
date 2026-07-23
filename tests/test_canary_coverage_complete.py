@@ -14,6 +14,7 @@ import pytest
 
 from agency_runtime.core import canary
 from agency_runtime.core.bounded_io import FileSizeLimitError
+from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
 
 
 def _result(**changes: Any) -> SimpleNamespace:
@@ -184,6 +185,13 @@ def test_copy_auth_removes_partial_file_after_stream_ownership_transfer(
     assert not destination.exists()
 
 
+def test_agency_canary_prompt_does_not_trigger_unrelated_business_policy() -> None:
+    actions, companions = detect_actions(canary.CANARY_PROMPT, load_bundled_policy())
+
+    assert "BUSINESS" not in actions
+    assert "business-strategist" not in companions
+
+
 def test_canary_output_and_records_cover_empty_and_failed_results() -> None:
     assert canary._codex_output("\n\n") is None
     assert canary._codex_output("{invalid") is None
@@ -203,7 +211,7 @@ def test_codex_setup_and_inventory_failures_are_typed(tmp_path: Path) -> None:
     backend = canary._SafeCodexCanaryBackend(
         executable="codex",
         db_path=tmp_path / "agency.db",
-        timeout=1,
+        timeout=30,
         marketplace=tmp_path,
         auth_source=tmp_path / "auth.json",
         process_runner=lambda *_args, **_kwargs: next(responses),
@@ -371,7 +379,9 @@ def test_profile_and_proof_helpers_cover_current_and_receipt_failure() -> None:
         profile_proven=True,
         header_valid=True,
         evidence={
-            "correlated_trace_ids": ["trace"],
+            "accepted_trace_ids": ["trace"],
+            "expected_specialist_selected": True,
+            "expected_specialist_loaded": True,
             "receipt_required": True,
             "receipt_proven": False,
         },

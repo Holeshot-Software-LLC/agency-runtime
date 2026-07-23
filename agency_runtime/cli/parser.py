@@ -6,6 +6,8 @@ import argparse
 from collections.abc import Callable, Mapping
 
 from agency_runtime import __version__
+from agency_runtime.core.evals.product_scenarios import PRODUCT_SCENARIOS_BY_ID
+from agency_runtime.core.evals.workforce_selection import CASES
 from agency_runtime.core.policy.profiles import PROFILES
 from agency_runtime.core.runtime_control_command import parse_runtime_control_command
 
@@ -314,6 +316,12 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
     )
     provider_set.add_argument("--model", default=None, help="Model or LiteLLM router alias")
     provider_set.add_argument(
+        "--reasoning-effort",
+        choices=["default", "low", "medium", "high", "xhigh", "max", "ultra"],
+        default=None,
+        help="Codex subscription reasoning effort; 'default' clears the override",
+    )
+    provider_set.add_argument(
         "--transport",
         choices=["codex", "claude"],
         default=None,
@@ -602,6 +610,186 @@ def _register_selection(sub: Subparsers, handlers: Handlers) -> None:
     _bind(explain, handlers, "cmd_explain")
 
 
+def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
+    """Register durable workforce, contractor, and hiring evidence surfaces."""
+
+    workforce = sub.add_parser("workforce", help="Inspect and manage Agency's workforce")
+    workforce_sub = workforce.add_subparsers(dest="workforce_command", required=True)
+    workforce_list = workforce_sub.add_parser("list", help="List workers in every lifecycle state")
+    workforce_list.add_argument(
+        "--state",
+        choices=["contractor", "employee", "disabled", "suspended", "retired", "merged"],
+        default="",
+        help="Filter by the effective workforce lifecycle state",
+    )
+    workforce_list.add_argument(
+        "--limit", type=_search_limit, default=100, help="Maximum workers to return"
+    )
+    workforce_list.add_argument("--after", default="", help="Continue after this worker slug")
+    workforce_list.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(workforce_list, handlers, "cmd_workforce_list")
+
+    workforce_search = workforce_sub.add_parser(
+        "search", help="Search normalized recruitment contracts"
+    )
+    workforce_search.add_argument("query", help="Terms to match against recruitment contracts")
+    workforce_search.add_argument(
+        "--state",
+        choices=["contractor", "employee", "disabled", "suspended", "retired", "merged"],
+        default="",
+        help="Filter matches by lifecycle state",
+    )
+    workforce_search.add_argument(
+        "--limit", type=_search_limit, default=20, help="Maximum matching workers to return"
+    )
+    workforce_search.add_argument(
+        "--json", action="store_true", help="Print machine-readable output"
+    )
+    _bind(workforce_search, handlers, "cmd_workforce_search")
+
+    duplicates = workforce_sub.add_parser(
+        "duplicates",
+        help="Compare one worker with the complete workforce without changing it",
+    )
+    duplicates.add_argument("worker", help="Stable worker ID or slug")
+    duplicates.add_argument(
+        "--limit", type=_search_limit, default=10, help="Maximum nearest workers to return"
+    )
+    duplicates.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(duplicates, handlers, "cmd_workforce_duplicates")
+
+    consolidate = workforce_sub.add_parser(
+        "consolidate",
+        help="List evidence-based amendment or merge candidates without changing them",
+    )
+    consolidate.add_argument(
+        "--limit", type=_search_limit, default=25, help="Maximum review candidates to return"
+    )
+    consolidate.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(consolidate, handlers, "cmd_workforce_consolidate")
+
+    workforce_show = workforce_sub.add_parser(
+        "show", help="Show contract, lineage, lifecycle, and outcome evidence"
+    )
+    workforce_show.add_argument("worker", help="Stable worker ID or slug")
+    workforce_show.add_argument(
+        "--limit", type=_search_limit, default=100, help="Maximum evidence events to return"
+    )
+    workforce_show.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(workforce_show, handlers, "cmd_workforce_show")
+
+    for action in ("promote", "suspend", "resume", "retire"):
+        action_parser = workforce_sub.add_parser(action, help=f"{action.title()} a worker")
+        action_parser.set_defaults(workforce_action=action)
+        action_parser.add_argument("worker", help="Stable worker ID or slug")
+        action_parser.add_argument(
+            "--expected-revision", type=int, required=True, help="Current worker revision"
+        )
+        action_parser.add_argument("--reason", required=True, help="Durable reason for the change")
+        if action in {"suspend", "retire"}:
+            action_parser.add_argument(
+                "--confirm",
+                required=True,
+                help=f"Exact confirmation: {action.upper()} <slug>",
+            )
+        action_parser.add_argument(
+            "--json", action="store_true", help="Print machine-readable output"
+        )
+        _bind(action_parser, handlers, "cmd_workforce_transition")
+
+    merge = workforce_sub.add_parser("merge", help="Merge a worker into a coherent survivor")
+    merge.set_defaults(workforce_action="merge")
+    merge.add_argument("worker", help="Worker to merge")
+    merge.add_argument("--into", required=True, help="Surviving worker slug")
+    merge.add_argument(
+        "--expected-revision", type=int, required=True, help="Current revision of the merged worker"
+    )
+    merge.add_argument("--reason", required=True, help="Durable evidence for the coherent merge")
+    merge.add_argument(
+        "--confirm",
+        required=True,
+        help="Exact confirmation: MERGE <slug> INTO <survivor>",
+    )
+    merge.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(merge, handlers, "cmd_workforce_transition")
+
+    amend = workforce_sub.add_parser(
+        "amend",
+        help="Approve and apply an inference-produced governed amendment case",
+    )
+    amend.add_argument("case_id", help="Stable amendment hiring-case ID")
+    amend.add_argument("--approved-by", required=True, help="Auditable operator identity")
+    amend.add_argument("--confirm", required=True, help="Exact confirmation: APPROVE <case-id>")
+    amend.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(amend, handlers, "cmd_hiring_approve")
+
+    for action, handler in (("enable", "cmd_agent_enable"), ("disable", "cmd_agent_disable")):
+        toggle = workforce_sub.add_parser(action, help=f"{action.title()} workforce routing")
+        toggle.add_argument("slug", help="Governed worker slug")
+        toggle.add_argument("--config", default=None, help="Override the Agency config path")
+        toggle.add_argument("--reason", required=True, help="Durable reason for the change")
+        toggle.add_argument(
+            "--confirm",
+            required=True,
+            help=f"Exact confirmation: {action.upper()} <slug>",
+        )
+        toggle.add_argument("--json", action="store_true", help="Print machine-readable output")
+        _bind(toggle, handlers, handler)
+
+    contractor = sub.add_parser("contractor", help="Inspect newly hired contractors")
+    contractor_sub = contractor.add_subparsers(dest="contractor_command", required=True)
+    contractor_list = contractor_sub.add_parser("list", help="List active contractors")
+    contractor_list.add_argument(
+        "--limit", type=_search_limit, default=100, help="Maximum contractors to return"
+    )
+    contractor_list.add_argument("--after", default="", help="Continue after this worker slug")
+    contractor_list.add_argument(
+        "--json", action="store_true", help="Print machine-readable output"
+    )
+    _bind(contractor_list, handlers, "cmd_contractor_list")
+    contractor_show = contractor_sub.add_parser("show", help="Show contractor evidence")
+    contractor_show.add_argument("worker", help="Stable contractor worker ID or slug")
+    contractor_show.add_argument(
+        "--limit", type=_search_limit, default=100, help="Maximum evidence events to return"
+    )
+    contractor_show.add_argument(
+        "--json", action="store_true", help="Print machine-readable output"
+    )
+    _bind(contractor_show, handlers, "cmd_workforce_show")
+
+    hiring = sub.add_parser("hiring", help="Inspect and approve governed hiring evidence")
+    hiring_sub = hiring.add_subparsers(dest="hiring_command", required=True)
+    hiring_list = hiring_sub.add_parser("list", help="List hiring and amendment cases")
+    hiring_list.add_argument(
+        "--status",
+        choices=["proposed", "audited", "rejected", "applied", "folded"],
+        default="",
+        help="Filter by hiring decision state",
+    )
+    hiring_list.add_argument(
+        "--type", choices=["hire", "amend"], default="", help="Filter hires or amendments"
+    )
+    hiring_list.add_argument(
+        "--limit", type=_search_limit, default=100, help="Maximum hiring cases to return"
+    )
+    hiring_list.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(hiring_list, handlers, "cmd_hiring_list")
+    hiring_show = hiring_sub.add_parser("show", help="Show complete hiring evidence")
+    hiring_show.add_argument("case_id", help="Stable hiring case ID")
+    hiring_show.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(hiring_show, handlers, "cmd_hiring_show")
+    hiring_approve = hiring_sub.add_parser(
+        "approve", help="Approve a high-risk proposed hire before audit"
+    )
+    hiring_approve.add_argument("case_id", help="High-risk proposed hiring case ID")
+    hiring_approve.add_argument("--approved-by", required=True, help="Auditable operator identity")
+    hiring_approve.add_argument(
+        "--confirm", required=True, help="Exact confirmation: APPROVE <case-id>"
+    )
+    hiring_approve.add_argument("--json", action="store_true", help="Print machine-readable output")
+    _bind(hiring_approve, handlers, "cmd_hiring_approve")
+
+
 def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
     delegate = sub.add_parser("delegate", help="Delegate a task to a backend")
     delegate.add_argument(
@@ -673,6 +861,114 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         help="Omit per-case details from the report",
     )
     _bind(eval_full_roster, handlers, "cmd_eval_full_roster")
+    eval_upstream_architecture = eval_sub.add_parser(
+        "upstream-architecture",
+        help="Compare Agency's explicit contracts with a pinned upstream orchestrator",
+    )
+    eval_upstream_architecture.add_argument(
+        "--json", action="store_true", help="Print machine-readable results"
+    )
+    _bind(
+        eval_upstream_architecture,
+        handlers,
+        "cmd_eval_upstream_architecture",
+    )
+    eval_workforce = eval_sub.add_parser(
+        "workforce",
+        help="Run a configured-inference workforce selection corpus (may incur provider cost)",
+    )
+    eval_workforce.add_argument(
+        "--all",
+        action="store_true",
+        help=f"Run all {len(CASES)} configured-inference cases",
+    )
+    eval_workforce.add_argument(
+        "--case",
+        action="append",
+        choices=tuple(case.case_id for case in CASES),
+        default=[],
+        help="Run only this case; repeat to run a bounded subset",
+    )
+    eval_workforce.add_argument(
+        "--host",
+        choices=("codex", "claude", "openclaw", "hermes"),
+        default="codex",
+        help="Execution host contract to grade",
+    )
+    eval_workforce.add_argument(
+        "--platform",
+        choices=("windows", "linux"),
+        required=True,
+        help="Target operating system contract",
+    )
+    eval_workforce.add_argument(
+        "--available-tool",
+        action="append",
+        default=[],
+        help="Repeat for each capability available to planned work units",
+    )
+    eval_workforce.add_argument(
+        "--confirm-live-inference",
+        default="",
+        help='Required exact phrase: "RUN LIVE WORKFORCE EVAL"',
+    )
+    eval_workforce.add_argument(
+        "--json", action="store_true", help="Print machine-readable results"
+    )
+    eval_workforce.add_argument(
+        "--no-details", action="store_true", help="Omit per-case selection details"
+    )
+    _bind(eval_workforce, handlers, "cmd_eval_workforce")
+    eval_product = eval_sub.add_parser(
+        "product",
+        help="Run one exact-confirmed one-shot product build (may incur host/model cost)",
+    )
+    eval_product.add_argument(
+        "--scenario",
+        choices=tuple(PRODUCT_SCENARIOS_BY_ID),
+        required=True,
+        help="Versioned application contract to build and grade",
+    )
+    eval_product.add_argument(
+        "--trial-id",
+        required=True,
+        help="Stable lowercase trial identifier used in the evidence report",
+    )
+    eval_product.add_argument(
+        "--host",
+        choices=("codex", "claude", "openclaw", "hermes"),
+        required=True,
+        help="Native agent host to execute",
+    )
+    eval_product.add_argument(
+        "--mode",
+        choices=("agency", "native-only"),
+        required=True,
+        help="Run with Agency enabled or as a native-host baseline",
+    )
+    eval_product.add_argument(
+        "--workspace",
+        required=True,
+        help="Existing empty real directory that will receive the generated application",
+    )
+    eval_product.add_argument(
+        "--timeout",
+        type=float,
+        default=1800.0,
+        help="End-to-end host deadline in seconds (1 through 3600)",
+    )
+    eval_product.add_argument(
+        "--model",
+        default="",
+        help="Optional native-host model request; actual model remains receipt-gated",
+    )
+    eval_product.add_argument(
+        "--confirm-live-product-eval",
+        default="",
+        help="Exact phrase: RUN LIVE PRODUCT EVAL <scenario> <host> <mode>",
+    )
+    eval_product.add_argument("--json", action="store_true", help="Print machine-readable results")
+    _bind(eval_product, handlers, "cmd_eval_product")
     eval_compare = eval_sub.add_parser(
         "compare",
         help="Validate and summarize bounded paired native/Agency outcome evidence",
@@ -834,6 +1130,7 @@ def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     _register_host_control(sub, handlers)
     _register_configuration(sub, handlers)
     _register_roster(sub, handlers)
+    _register_workforce(sub, handlers)
     _register_selection(sub, handlers)
     _register_delegation_and_evals(sub, handlers)
     _register_database(sub, handlers)

@@ -20,6 +20,7 @@ from agency_runtime.adapters.hooks import (
     _write_output,
     run_hook_stdio,
 )
+from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import finalize_response, response_hash
 from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
 from agency_runtime.core.roster.bundled import bundled_roster
@@ -251,7 +252,22 @@ def test_codex_user_prompt_maps_to_native_additional_context() -> None:
 
 def test_realistic_prompt_to_stop_sequence_uses_one_turn_trace(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from agency_runtime.core.config import load_config
+    from agency_runtime.core.selector import judge
+
+    config = load_config()
+    assert config.providers == ()
+    assert config.judge.model == ""
+    assert config.judge.base_url == ""
+    assert config.ollama.enabled is False
+
+    def reject_live_provider(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("ordinary hook tests must not invoke an inference provider")
+
+    monkeypatch.setattr(judge, "_try_provider", reject_live_provider)
+    monkeypatch.setattr(judge, "_try_legacy_judge", reject_live_provider)
     store = Store(tmp_path / "agency.db")
     bridge = HookBridge("codex", store=store)
     turn_id = "turn-correlated-1"
@@ -277,7 +293,7 @@ def test_realistic_prompt_to_stop_sequence_uses_one_turn_trace(
     )
 
     assert prompt["hookSpecificOutput"]["additionalContext"]
-    assert stopped["decision"] == "block"
+    assert stopped["continue"] is False
     activity = store.recent_runtime_activity(limit=20)
     assert activity["routing"][0]["trace_id"] == turn_id
     assert activity["finalizations"][0]["trace_id"] == turn_id
@@ -531,9 +547,14 @@ def test_no_turn_id_identical_digest_is_checked_against_current_evidence(
         }
     )
 
-    assert stopped["decision"] == "block"
-    assert "current-reviewer" in stopped["reason"]
-    assert "<!-- agency-continuation:" in stopped["reason"]
+    if host == "codex":
+        assert stopped["continue"] is False
+        correction = stopped["stopReason"]
+    else:
+        assert stopped["decision"] == "block"
+        correction = stopped["reason"]
+    assert "current-reviewer" in correction
+    assert "<!-- agency-continuation:" in correction
     assert store.get_run("prior") == prior_run
     assert store.get_run("current")["status"] == "active"
     assert store.get_open_traces_for_session("session") == ["current"]
@@ -544,7 +565,7 @@ def test_no_turn_id_identical_digest_is_checked_against_current_evidence(
         if row["trace_id"] == "current"
     ]
     assert [row["action"] for row in current_events] == ["continue"]
-    assert stopped["reason"].endswith(f"<!-- agency-continuation:{current_events[0]['id']} -->")
+    assert correction.endswith(f"<!-- agency-continuation:{current_events[0]['id']} -->")
 
 
 def test_missing_turn_id_stays_uncorrelated_when_open_turns_are_ambiguous(
@@ -1196,14 +1217,16 @@ def test_stop_verification_uses_host_continuation_shape_and_turn_trace() -> None
         }
     )
 
-    assert result["decision"] == "block"
-    assert result["reason"].startswith("Correct the evidence header.")
+    assert result["continue"] is False
+    assert result["stopReason"].startswith("Correct the evidence header.")
     assert adapter.verify_calls[0]["session_id"] == "session-stop"
     assert adapter.verify_calls[0]["model"] == "gpt-5.6-codex"
     assert store.finalizations[0]["trace_id"] == "turn-stop"
     assert store.finalizations[0]["host"] == "codex"
     assert store.finalizations[0]["action"] == "continue"
-    assert result["reason"].endswith(f"<!-- agency-continuation:{store.finalizations[0]['id']} -->")
+    assert result["stopReason"].endswith(
+        f"<!-- agency-continuation:{store.finalizations[0]['id']} -->"
+    )
 
 
 def test_stop_hook_active_revalidates_blocks_and_closes_exhausted_turn() -> None:
@@ -1261,8 +1284,8 @@ def test_identical_codex_stop_without_retry_flag_exhausts_after_one_block() -> N
     second = bridge.handle(dict(payload))
     third = bridge.handle(dict(payload))
 
-    assert first["decision"] == "block"
-    assert "<!-- agency-continuation:" in first["reason"]
+    assert first["continue"] is False
+    assert "<!-- agency-continuation:" in first["stopReason"]
     assert second["continue"] is False
     assert second["stopReason"].startswith("AGENCY RETRY EXHAUSTED:")
     assert third == second
@@ -1294,7 +1317,7 @@ def test_strongly_preferred_delegation_declines_once_then_replays_terminally() -
     terminal = bridge.handle(dict(payload))
     replay = bridge.handle(dict(payload))
 
-    assert first["decision"] == "block"
+    assert first["continue"] is False
     assert terminal["continue"] is False
     assert terminal["stopReason"].startswith("AGENCY DELEGATION DECLINED:")
     assert replay == terminal
@@ -1453,7 +1476,10 @@ def test_missing_or_blank_stop_response_fails_closed_and_exhausts_one_retry(
 
     first = bridge.handle(payload)
 
-    assert first["decision"] == "block"
+    if host == "codex":
+        assert first["continue"] is False
+    else:
+        assert first["decision"] == "block"
     assert store.get_run("turn-empty")["status"] == "active"
 
     payload["stop_hook_active"] = True
@@ -1577,6 +1603,87 @@ def test_agency_hook_codex_runs_as_an_actual_stdin_process(tmp_path: Path) -> No
     output = json.loads(completed.stdout)
     assert output["hookSpecificOutput"]["hookEventName"] == "UserPromptSubmit"
     assert RESIDENT_MANAGER_KERNEL in output["hookSpecificOutput"]["additionalContext"]
+
+
+def test_codex_stdio_stop_corrects_then_accepts_exact_turn_header(tmp_path: Path) -> None:
+    db_path = tmp_path / "codex-finalization.db"
+    store = Store(db_path)
+    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
+    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
+    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
+    session_id = "stdio-finalization"
+    turn_id = "stdio-finalization-turn"
+    model = "gpt-5.6-codex"
+
+    prompt = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "model": model,
+                "prompt": "Explain the current Agency Runtime selection state.",
+            }
+        ),
+    )
+    assert prompt.returncode == 0, prompt.stderr
+    corrected_response = finalize_header(
+        "The runtime is active.",
+        session_id,
+        store,
+        model,
+        turn_id,
+    )
+    assert corrected_response.startswith(
+        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff\n"
+        "Agency/Agencies delegated: none\n"
+        "Skills loaded: none\n"
+    )
+    assert "reason_codes=" not in corrected_response
+    assert "effect_codes=" not in corrected_response
+    assert "business-strategist" not in corrected_response
+
+    missing_header = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "Stop",
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "model": model,
+                "last_assistant_message": "The runtime is active.",
+            }
+        ),
+    )
+    assert missing_header.returncode == 0, missing_header.stderr
+    correction = json.loads(missing_header.stdout)
+    assert correction["continue"] is False
+    assert correction["stopReason"].startswith(
+        "Your response is missing or has malformed Agency header fields:"
+    )
+
+    accepted = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "Stop",
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "model": model,
+                "stop_hook_active": True,
+                "last_assistant_message": corrected_response,
+            }
+        ),
+    )
+
+    assert accepted.returncode == 0, accepted.stderr
+    assert json.loads(accepted.stdout) == {}
+    finalizations = store.recent_runtime_activity(limit=10)["finalizations"]
+    assert [item["action"] for item in reversed(finalizations)] == ["continue", "accept"]
 
 
 @pytest.mark.parametrize(

@@ -574,6 +574,36 @@ def _dashboard_control_target(path: str) -> tuple[str, str]:
     return endpoint, expected_method
 
 
+def dashboard_broker_request_allowed(path: str, method: str) -> bool:
+    """Return whether a host-scoped broker token may call this exact operation."""
+
+    try:
+        _endpoint, expected_method = _dashboard_control_target(path)
+    except ValueError:
+        return False
+    return str(method or "").strip().upper() == expected_method
+
+
+def _dashboard_request_descriptor(
+    *,
+    descriptor: Mapping[str, Any] | None,
+    home_dir: str | Path | None,
+) -> dict[str, Any]:
+    if descriptor is not None:
+        return _validate_descriptor(descriptor)
+    try:
+        return _validate_descriptor(read_dashboard_runtime(home_dir=home_dir))
+    except ValueError as private_error:
+        try:
+            from agency_runtime.core.dashboard_broker_runtime import (
+                read_codex_dashboard_broker,
+            )
+
+            return _validate_descriptor(read_codex_dashboard_broker(home_dir=home_dir))
+        except ValueError as broker_error:
+            raise private_error from broker_error
+
+
 def dashboard_api_request(
     path: str,
     *,
@@ -595,8 +625,9 @@ def dashboard_api_request(
         raise ValueError("dashboard GET requests cannot include a payload")
     if normalized_method == "POST" and not isinstance(payload, Mapping):
         raise ValueError("dashboard POST requests require a JSON object")
-    value = _validate_descriptor(
-        descriptor if descriptor is not None else read_dashboard_runtime(home_dir=home_dir)
+    value = _dashboard_request_descriptor(
+        descriptor=descriptor,
+        home_dir=home_dir,
     )
     body = None
     headers = {
@@ -686,6 +717,7 @@ def open_dashboard_service(
 __all__ = [
     "DESCRIPTOR_SCHEMA_VERSION",
     "dashboard_api_request",
+    "dashboard_broker_request_allowed",
     "dashboard_runtime_instance_fingerprint",
     "dashboard_runtime_path",
     "dashboard_service_reachable",

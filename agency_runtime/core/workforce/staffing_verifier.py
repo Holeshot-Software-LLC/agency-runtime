@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import itertools
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
+from functools import lru_cache
 from typing import Any
 
 from agency_runtime.core.workforce.contract import (
@@ -13,17 +14,33 @@ from agency_runtime.core.workforce.contract import (
     WorkforceContract,
     workforce_index_fingerprint,
 )
+from agency_runtime.core.workforce.lifecycle_roles import role_anchors
 from agency_runtime.core.workforce.planning_contracts import (
+    RECRUITMENT_SCHEMA_VERSION,
     RecruiterProposal,
     ShadowEvidence,
     UnitRecruitment,
     WorkUnit,
     WorkUnitPlan,
+    parse_recruiter_proposal,
 )
 
 _TOKENS = re.compile(r"[a-z0-9]+")
 _ASSURANCE_ARTIFACTS = frozenset({"review-report", "test-evidence"})
 _ASSURANCE_PHASES = frozenset({"review", "testing", "release"})
+_AUTHORITY_COMPATIBILITY = {
+    "advise": frozenset({"advise", "plan", "review"}),
+    "modify": frozenset({"modify"}),
+    "plan": frozenset({"plan"}),
+    "review": frozenset({"review"}),
+}
+
+
+@lru_cache(maxsize=4)
+def _workforce_fingerprint(contracts: tuple[WorkforceContract, ...]) -> str:
+    """Reuse immutable snapshot validation across per-unit staffing operations."""
+
+    return workforce_index_fingerprint(contracts)
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,6 +75,7 @@ class StaffingContext:
     platform: str
     available_tools: frozenset[str]
     roster_generation: int
+    eligible_worker_ids: frozenset[str] | None = None
 
     def __post_init__(self) -> None:
         if not self.host or not self.platform:
@@ -117,8 +135,15 @@ def _tokens(*values: str) -> frozenset[str]:
 
 
 def _contract_tokens(contract: WorkforceContract) -> frozenset[str]:
+    # Identity is audited contract evidence too. The recall scorer has always
+    # considered it, so the verifier must use the same evidence vocabulary or
+    # exact specialists such as ``python-application-engineer`` can rank first
+    # and then be rejected for not spelling their own role again in an outcome.
     return _tokens(
+        contract.agent_id,
+        contract.display_name,
         contract.archetype,
+        *contract.capability_ids,
         *contract.outcomes,
         *contract.artifact_kinds,
         *contract.lifecycle_phases,
@@ -128,9 +153,52 @@ def _contract_tokens(contract: WorkforceContract) -> frozenset[str]:
     )
 
 
+def _supports_planning_capability(contract: WorkforceContract, capability: str) -> bool | None:
+    """Interpret the planner's controlled broad vocabulary from typed fields."""
+
+    if capability in contract.capability_ids:
+        return True
+    lifecycle = set(contract.lifecycle_phases)
+    artifacts = set(contract.artifact_kinds)
+    if capability == "analysis":
+        return contract.authority in {"advise", "plan", "review"}
+    if capability == "audit":
+        return contract.authority == "review"
+    if capability == "coordination":
+        return "coordination" in lifecycle
+    if capability == "design":
+        return contract.authority == "plan" or "design" in lifecycle
+    if capability == "documentation":
+        return "documentation" in artifacts or "documentation" in lifecycle
+    if capability == "implementation":
+        return contract.authority == "modify" or "implementation" in lifecycle
+    if capability == "investigation":
+        return bool(lifecycle & {"discovery", "review", "testing"})
+    if capability == "operations":
+        return bool(lifecycle & {"coordination", "release"})
+    if capability == "planning":
+        return contract.authority == "plan" or "planning" in lifecycle
+    if capability == "review":
+        return contract.authority == "review" or "review" in lifecycle
+    if capability == "testing":
+        return "testing" in lifecycle or bool(artifacts & {"test-code", "test-evidence"})
+    if capability == "verification":
+        return contract.authority == "review" or "testing" in lifecycle
+    return None
+
+
 def _supports(contract: WorkforceContract, capability: str) -> bool:
+    broad = _supports_planning_capability(contract, capability)
+    if broad is not None:
+        return broad
     required = _tokens(capability)
     return bool(required) and required <= _contract_tokens(contract)
+
+
+def _authority_satisfies(unit_authority: str, contract_authority: str) -> bool:
+    """Allow bounded read-only expertise without weakening review or mutation authority."""
+
+    return contract_authority in _AUTHORITY_COMPATIBILITY.get(unit_authority, frozenset())
 
 
 def _out_of_scope(contract: WorkforceContract, unit: WorkUnit) -> bool:
@@ -148,6 +216,54 @@ def _out_of_scope(contract: WorkforceContract, unit: WorkUnit) -> bool:
     return any(_tokens(value) and _tokens(value) <= unit_tokens for value in contract.not_for)
 
 
+def _is_live_eligible(contract: WorkforceContract, context: StaffingContext) -> bool:
+    eligible = context.eligible_worker_ids
+    return eligible is None or contract.agent_id in eligible
+
+
+def _supports_platform(
+    unit: WorkUnit,
+    contract: WorkforceContract,
+    context: StaffingContext,
+) -> bool:
+    return context.platform in contract.platforms and context.platform in unit.platforms
+
+
+def _covers_required_capability(unit: WorkUnit, contract: WorkforceContract) -> bool:
+    return not unit.required_capabilities or any(
+        _supports(contract, item) for item in unit.required_capabilities
+    )
+
+
+def _contract_binding_reasons(contract: WorkforceContract) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if contract.schema_version != WORKFORCE_CONTRACT_SCHEMA_VERSION:
+        reasons.append("agent_schema_unsupported")
+    if contract.audit.status != "approved" or not contract.audit.contract_valid:
+        reasons.append("agent_not_approved")
+    if not contract.audit.revision or not contract.version or not contract.version_hash:
+        reasons.append("agent_version_unbound")
+    return tuple(reasons)
+
+
+def _unit_compatibility_reasons(
+    unit: WorkUnit,
+    contract: WorkforceContract,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if not _authority_satisfies(unit.authority, contract.authority):
+        reasons.append("agent_authority_mismatch")
+    if unit.domains and not set(unit.domains) & set(contract.domains):
+        reasons.append("agent_domain_mismatch")
+    if unit.languages + unit.frameworks and not set(unit.languages + unit.frameworks) & set(
+        contract.stacks
+    ):
+        reasons.append("agent_stack_mismatch")
+    if not _covers_required_capability(unit, contract):
+        reasons.append("agent_capability_mismatch")
+    return tuple(reasons)
+
+
 def _eligibility(
     unit: WorkUnit,
     contract: WorkforceContract,
@@ -156,37 +272,21 @@ def _eligibility(
     ignore_enabled: bool = False,
 ) -> tuple[str, ...]:
     reasons: list[str] = []
+    if not _is_live_eligible(contract, context):
+        reasons.append("agent_not_live_eligible")
     if not contract.enabled and not ignore_enabled:
         reasons.append("agent_disabled")
-    if contract.schema_version != WORKFORCE_CONTRACT_SCHEMA_VERSION:
-        reasons.append("agent_schema_unsupported")
-    if contract.audit.status != "approved" or not contract.audit.contract_valid:
-        reasons.append("agent_not_approved")
-    if not contract.audit.revision or not contract.version or not contract.version_hash:
-        reasons.append("agent_version_unbound")
+    reasons.extend(_contract_binding_reasons(contract))
     if context.host not in contract.hosts:
         reasons.append("agent_host_unsupported")
-    if context.platform not in contract.platforms or context.platform not in unit.platforms:
+    if not _supports_platform(unit, contract, context):
         reasons.append("agent_platform_unsupported")
-    if (
-        set(contract.tool_classes) - context.available_tools
-        or not set(unit.required_tools) <= context.available_tools
-    ):
+    required_tools = set(unit.required_tools)
+    if not required_tools <= context.available_tools:
         reasons.append("agent_tools_missing")
-    if contract.authority != unit.authority:
-        reasons.append("agent_authority_mismatch")
-    if unit.artifact_kind not in contract.artifact_kinds:
-        reasons.append("agent_artifact_mismatch")
-    if unit.lifecycle_phase not in contract.lifecycle_phases:
-        reasons.append("agent_lifecycle_mismatch")
-    if not set(unit.domains) <= set(contract.domains):
-        reasons.append("agent_domain_mismatch")
-    if not set(unit.languages + unit.frameworks) <= set(contract.stacks):
-        reasons.append("agent_stack_mismatch")
-    if unit.required_capabilities and not any(
-        _supports(contract, item) for item in unit.required_capabilities
-    ):
-        reasons.append("agent_capability_mismatch")
+    if not set(contract.tool_classes) <= context.available_tools:
+        reasons.append("agent_worker_tools_missing")
+    reasons.extend(_unit_compatibility_reasons(unit, contract))
     if _out_of_scope(contract, unit):
         reasons.append("agent_explicitly_out_of_scope")
     return tuple(reasons)
@@ -217,9 +317,34 @@ def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
     covered.update(
         f"capability:{item}" for item in unit.required_capabilities if _supports(contract, item)
     )
-    if unit.authority == contract.authority:
+    if _authority_satisfies(unit.authority, contract.authority):
         covered.add(f"authority:{unit.authority}")
     return frozenset(covered)
+
+
+def typed_staffing_requirements(unit: WorkUnit) -> tuple[str, ...]:
+    """Expose the deterministic requirements used to prove team sufficiency."""
+
+    return _requirements(unit)
+
+
+def typed_staffing_coverage(
+    unit: WorkUnit,
+    contract: WorkforceContract,
+) -> frozenset[str]:
+    """Expose one worker's typed contribution without making it eligible."""
+
+    return _coverage(unit, contract)
+
+
+def typed_staffing_ineligibility(
+    unit: WorkUnit,
+    contract: WorkforceContract,
+    context: StaffingContext,
+) -> tuple[str, ...]:
+    """Expose deterministic execution exclusions for audited recruitment policy."""
+
+    return _eligibility(unit, contract, context)
 
 
 def _minimum_team(
@@ -237,6 +362,40 @@ def _minimum_team(
             if required <= combined:
                 return combination
     return ()
+
+
+def _minimum_team_with_required(
+    unit: WorkUnit,
+    ranked_ids: tuple[str, ...],
+    contracts: dict[str, WorkforceContract],
+    required_ids: frozenset[str],
+    maximum: int,
+) -> tuple[str, ...]:
+    if not required_ids:
+        return _minimum_team(unit, ranked_ids, contracts, maximum)
+    if not required_ids <= set(ranked_ids) or len(required_ids) > maximum:
+        return ()
+    ordered_required = tuple(item for item in ranked_ids if item in required_ids)
+    covered = set().union(*(_coverage(unit, contracts[item]) for item in ordered_required))
+    missing = set(_requirements(unit)).difference(covered)
+    if not missing:
+        return ordered_required
+    remaining = tuple(item for item in ranked_ids if item not in required_ids)
+    for size in range(1, min(maximum - len(ordered_required), len(remaining)) + 1):
+        for additions in itertools.combinations(remaining, size):
+            combined = set(covered)
+            for agent_id in additions:
+                combined.update(_coverage(unit, contracts[agent_id]))
+            if set(_requirements(unit)) <= combined:
+                chosen = {*ordered_required, *additions}
+                return tuple(item for item in ranked_ids if item in chosen)
+    return ()
+
+
+def _semantic_forbidden(row: UnitRecruitment) -> frozenset[str]:
+    return frozenset(
+        item.agent_id for item in row.negative_evidence if "semantic-forbidden" in item.reason_codes
+    )
 
 
 def _rank_signature(items: Sequence[Any]) -> tuple[tuple[str, int, float], ...]:
@@ -263,7 +422,7 @@ def _snapshot(
             _reason(reasons, "duplicate_roster_agent", agent_id=contract.agent_id)
         roster[contract.agent_id] = contract
     try:
-        fingerprint = workforce_index_fingerprint(contracts)
+        fingerprint = _workforce_fingerprint(tuple(contracts))
     except ValueError as exc:
         _reason(reasons, "invalid_roster_snapshot", detail=str(exc))
         return roster
@@ -288,8 +447,14 @@ def _ranking(
     enabled = _filtered_ranks(row, lambda item: item in roster and roster[item].enabled)
     if _rank_signature(row.ranked_enabled) != enabled:
         _reason(reasons, "ranked_enabled_mismatch", unit_id=unit.unit_id)
+    semantic_forbidden = _semantic_forbidden(row)
     executable = _filtered_ranks(
-        row, lambda item: item in roster and not _eligibility(unit, roster[item], context)
+        row,
+        lambda item: (
+            item in roster
+            and item not in semantic_forbidden
+            and not _eligibility(unit, roster[item], context)
+        ),
     )
     if _rank_signature(row.ranked_executable) != executable:
         _reason(reasons, "ranked_executable_mismatch", unit_id=unit.unit_id)
@@ -312,10 +477,15 @@ def _selection(
         _reason(reasons, "required_agents_missing", unit_id=unit.unit_id)
     if not set(row.selected) <= set(row.required + row.acceptable):
         _reason(reasons, "selected_agents_outside_allowed_set", unit_id=unit.unit_id)
+    semantic_forbidden = _semantic_forbidden(row)
     expected_forbidden = tuple(
         item.agent_id
         for item in row.ranked_semantic
-        if item.agent_id in roster and _eligibility(unit, roster[item.agent_id], context)
+        if item.agent_id in roster
+        and (
+            item.agent_id in semantic_forbidden
+            or _eligibility(unit, roster[item.agent_id], context)
+        )
     )
     if row.forbidden != expected_forbidden:
         _reason(reasons, "forbidden_set_mismatch", unit_id=unit.unit_id)
@@ -323,7 +493,20 @@ def _selection(
         _reason(reasons, "forbidden_agent_selected", unit_id=unit.unit_id)
     if set(row.runner_up) & (set(row.selected) | set(row.forbidden)):
         _reason(reasons, "runner_up_set_invalid", unit_id=unit.unit_id)
-    expected = _minimum_team(unit, executable, roster, budget.max_selected_per_unit)
+    lifecycle_required = frozenset(
+        agent_id
+        for agent_id in role_anchors(unit)
+        if agent_id in roster and not _eligibility(unit, roster[agent_id], context)
+    )
+    if not lifecycle_required <= set(row.required):
+        _reason(reasons, "lifecycle_owner_missing_from_required", unit_id=unit.unit_id)
+    expected = _minimum_team_with_required(
+        unit,
+        executable,
+        roster,
+        frozenset(row.required),
+        budget.max_selected_per_unit,
+    )
     if row.selected != expected:
         _reason(reasons, "selected_not_deterministic_minimum", unit_id=unit.unit_id)
     if not expected:
@@ -426,6 +609,7 @@ def _agent_composition(
     selected: dict[str, tuple[str, ...]],
     contexts: dict[str, dict[str, str]],
     roster: dict[str, WorkforceContract],
+    context: StaffingContext,
     reasons: list[AbstentionReason],
 ) -> None:
     if agent_id not in roster:
@@ -434,6 +618,13 @@ def _agent_composition(
     relation = contract.composition
     if row.delivery == "load" and contract.context_mode == "isolated_only":
         _reason(reasons, "agent_requires_delegation", unit_id=row.unit_id, agent_id=agent_id)
+    if row.delivery == "delegate" and "native-delegation" not in context.available_tools:
+        _reason(
+            reasons,
+            "native_delegation_unavailable",
+            unit_id=row.unit_id,
+            agent_id=agent_id,
+        )
     checks = (
         (relation.selection_exclusive, "selection_exclusive_conflict", set(row.selected)),
         (
@@ -517,6 +708,7 @@ def _composition(
     plan: WorkUnitPlan,
     proposal: RecruiterProposal,
     roster: dict[str, WorkforceContract],
+    context: StaffingContext,
     reasons: list[AbstentionReason],
 ) -> None:
     selected = {row.unit_id: row.selected for row in proposal.units}
@@ -543,6 +735,7 @@ def _composition(
                 selected,
                 contexts,
                 roster,
+                context,
                 reasons,
             )
         _substitution_groups(row, roster, reasons)
@@ -595,8 +788,9 @@ def _assurance(
     reasons: list[AbstentionReason],
 ) -> None:
     for unit in plan.units:
-        required = (unit.authority == "modify" and unit.mutation_scope != "read_only") or bool(
-            unit.claims
+        required = unit.authority == "modify" and (
+            unit.mutation_scope != "read_only"
+            or (bool(unit.claims) and unit.artifact_kind in {"implementation-change", "test-code"})
         )
         if required and not _has_assurance(unit.unit_id, plan, proposal, roster):
             _reason(reasons, "independent_assurance_missing", unit_id=unit.unit_id)
@@ -652,7 +846,7 @@ def verify_staffing(
         if not row.selected:
             for detail in row.abstention_reasons or ("no_safe_candidate",):
                 _reason(reasons, "recruiter_abstained", unit_id=row.unit_id, detail=detail)
-    _composition(plan, proposal, roster, reasons)
+    _composition(plan, proposal, roster, context, reasons)
     _assurance(plan, proposal, roster, reasons)
     _budgets(plan, proposal, active_budget, reasons)
     if reasons:
@@ -675,11 +869,224 @@ def verify_staffing(
     )
 
 
+def build_deterministic_proposal(
+    plan: WorkUnitPlan,
+    contracts: Sequence[WorkforceContract],
+    rankings: Mapping[str, Sequence[tuple[str, float]]],
+    *,
+    context: StaffingContext,
+    budget: StaffingBudget | None = None,
+    semantic_required: Mapping[str, frozenset[str]] | None = None,
+    semantic_acceptable: Mapping[str, frozenset[str]] | None = None,
+    semantic_forbidden: Mapping[str, frozenset[str]] | None = None,
+) -> RecruiterProposal:
+    """Build a verifier-compatible proposal from deterministic semantic ranks."""
+
+    active_budget = budget or StaffingBudget()
+    roster = {item.agent_id: item for item in contracts}
+    if len(roster) != len(contracts):
+        raise ValueError("deterministic proposal roster contains duplicate agents")
+    rows: list[dict[str, Any]] = []
+    for unit in plan.units:
+        raw_ranks = rankings.get(unit.unit_id, ())
+        if not raw_ranks or len(raw_ranks) > 16:
+            raise ValueError("deterministic proposal requires one bounded ranking per unit")
+        seen: set[str] = set()
+        semantic: list[tuple[str, float]] = []
+        for agent_id, score in raw_ranks:
+            if agent_id not in roster or agent_id in seen:
+                raise ValueError("deterministic ranking contains an unknown or duplicate agent")
+            if isinstance(score, bool) or not 0.0 <= float(score) <= 1.0:
+                raise ValueError("deterministic ranking score must be between zero and one")
+            seen.add(agent_id)
+            semantic.append((agent_id, round(float(score), 6)))
+        if any(left[1] < right[1] for left, right in itertools.pairwise(semantic)):
+            raise ValueError("deterministic ranking scores must be descending")
+        explicit_semantics = any(
+            mapping is not None
+            for mapping in (semantic_required, semantic_acceptable, semantic_forbidden)
+        )
+        required_ids = (
+            frozenset()
+            if semantic_required is None
+            else semantic_required.get(unit.unit_id, frozenset())
+        )
+        acceptable_ids = (
+            frozenset()
+            if semantic_acceptable is None
+            else semantic_acceptable.get(unit.unit_id, frozenset())
+        )
+        forbidden_ids = (
+            frozenset()
+            if semantic_forbidden is None
+            else semantic_forbidden.get(unit.unit_id, frozenset())
+        )
+        ranked_ids = {agent_id for agent_id, _score in semantic}
+        if (
+            (required_ids | acceptable_ids | forbidden_ids) != ranked_ids
+            or required_ids & acceptable_ids
+            or required_ids & forbidden_ids
+            or acceptable_ids & forbidden_ids
+        ) and explicit_semantics:
+            raise ValueError("semantic staffing classes must partition the complete ranking")
+        enabled = [(agent_id, score) for agent_id, score in semantic if roster[agent_id].enabled]
+        executable = [
+            (agent_id, score)
+            for agent_id, score in semantic
+            if agent_id not in forbidden_ids and not _eligibility(unit, roster[agent_id], context)
+        ]
+        selected = _minimum_team_with_required(
+            unit,
+            tuple(agent_id for agent_id, _score in executable),
+            roster,
+            required_ids,
+            active_budget.max_selected_per_unit,
+        )
+        runner_up = tuple(agent_id for agent_id, _score in executable if agent_id not in selected)[
+            :2
+        ]
+        forbidden = tuple(
+            agent_id
+            for agent_id, _score in semantic
+            if agent_id in forbidden_ids or _eligibility(unit, roster[agent_id], context)
+        )
+        fallback = selected[0] if selected else ""
+        fallback_rank = next(
+            (index for index, (agent_id, _score) in enumerate(semantic, 1) if agent_id == fallback),
+            len(semantic) + 1,
+        )
+        disabled_shadows: list[dict[str, Any]] = []
+        unavailable_shadows: list[dict[str, Any]] = []
+        for rank, (agent_id, _score) in enumerate(semantic, 1):
+            if rank >= fallback_rank:
+                continue
+            contract = roster[agent_id]
+            failed = _eligibility(unit, contract, context)
+            if not failed:
+                continue
+            target = (
+                disabled_shadows
+                if not contract.enabled
+                and not _eligibility(unit, contract, context, ignore_enabled=True)
+                else unavailable_shadows
+            )
+            target.append(
+                {
+                    "agent_id": agent_id,
+                    "rank": rank,
+                    "reason_codes": list(failed),
+                    "fallback_agent_id": fallback,
+                    "tradeoff": "The higher deterministic match is unavailable under current policy.",
+                }
+            )
+        coverage = [
+            {
+                "requirement": requirement,
+                "agent_ids": [
+                    agent_id
+                    for agent_id in selected
+                    if requirement in _coverage(unit, roster[agent_id])
+                ],
+            }
+            for requirement in _requirements(unit)
+        ]
+        score_by_id = dict(semantic)
+        confidence = min((score_by_id[item] for item in selected), default=0.0)
+        # Margin compares complete executable teams, not an individually
+        # higher-ranked worker that cannot satisfy the unit. Treating a partial
+        # near neighbor as the runner made a safely sufficient lower-ranked
+        # specialist look ambiguous and forced false abstentions.
+        alternative = _minimum_team(
+            unit,
+            tuple(agent_id for agent_id, _score in executable if agent_id not in selected),
+            roster,
+            active_budget.max_selected_per_unit,
+        )
+        alternative_score = min(
+            (score_by_id[item] for item in alternative),
+            default=0.0,
+        )
+        margin = round(max(0.0, confidence - alternative_score), 6) if selected else 0.0
+        negative_ids = tuple(dict.fromkeys((*forbidden, *runner_up)))
+        projected_required = required_ids if explicit_semantics else frozenset(selected)
+        projected_acceptable = acceptable_ids if explicit_semantics else frozenset()
+        rows.append(
+            {
+                "unit_id": unit.unit_id,
+                "required": [item for item, _score in semantic if item in projected_required],
+                "acceptable": [item for item, _score in semantic if item in projected_acceptable],
+                "forbidden": list(forbidden),
+                "selected": list(selected),
+                "runner_up": list(runner_up),
+                "ranked_semantic": [
+                    {"agent_id": item, "rank": rank, "score": score}
+                    for rank, (item, score) in enumerate(semantic, 1)
+                ],
+                "ranked_enabled": [
+                    {"agent_id": item, "rank": rank, "score": score}
+                    for rank, (item, score) in enumerate(enabled, 1)
+                ],
+                "ranked_executable": [
+                    {"agent_id": item, "rank": rank, "score": score}
+                    for rank, (item, score) in enumerate(executable, 1)
+                ],
+                "disabled_shadows": disabled_shadows,
+                "unavailable_shadows": unavailable_shadows,
+                "coverage": coverage if selected else [],
+                "positive_evidence": [
+                    {
+                        "agent_id": item,
+                        "reason_codes": ["deterministic-capability-coverage"],
+                    }
+                    for item in selected
+                ],
+                "negative_evidence": [
+                    {
+                        "agent_id": item,
+                        "reason_codes": (
+                            ["semantic-forbidden"]
+                            if item in forbidden_ids
+                            else list(_eligibility(unit, roster[item], context))
+                            or ["lower-deterministic-score"]
+                        ),
+                    }
+                    for item in negative_ids
+                ],
+                "contexts": [
+                    {"agent_id": item, "context_id": f"ctx-{unit.unit_id}-{item}"}
+                    for item in selected
+                ],
+                "confidence": confidence,
+                "margin": margin,
+                "delivery": "delegate",
+                "timing": "after_artifact"
+                if unit.authority == "review" and unit.depends_on
+                else "immediate",
+                "abstention_reasons": [] if selected else ["no-safe-deterministic-team"],
+            }
+        )
+    return parse_recruiter_proposal(
+        {
+            "schema_version": RECRUITMENT_SCHEMA_VERSION,
+            "plan_hash": plan.plan_hash,
+            "roster_fingerprint": _workforce_fingerprint(tuple(contracts)),
+            "roster_count": len(contracts),
+            "roster_generation": context.roster_generation,
+            "units": rows,
+        },
+        plan,
+    )
+
+
 __all__ = [
     "AbstentionReason",
     "StaffingBudget",
     "StaffingContext",
     "StaffingDecision",
     "VerifiedUnitStaffing",
+    "build_deterministic_proposal",
+    "typed_staffing_coverage",
+    "typed_staffing_ineligibility",
+    "typed_staffing_requirements",
     "verify_staffing",
 ]

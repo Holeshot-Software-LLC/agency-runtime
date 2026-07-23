@@ -298,8 +298,11 @@ Claude session. OpenAI-compatible endpoints and ordered fallback chains are also
 supported.
 
 The guided setup and dashboard can list models visible to the signed-in Codex
-account. You can still type a model ID manually. LiteLLM users enter the router
-or model-group alias exactly, for example `task-agency-router`.
+account. For Codex subscription routing, the CLI and dashboard also expose the
+model's supported reasoning levels; `low` is usually enough for the compact
+intent plan and reduces routing latency. You can still use the model default or
+type a model ID manually. LiteLLM users enter the router or model-group alias
+exactly, for example `task-agency-router`.
 
 Example provider chain:
 
@@ -309,7 +312,8 @@ providers:
     type: cli
     transport: codex
     model: ""
-    timeout: 15
+    reasoning_effort: low
+    timeout: 60
   - name: local-compatible
     type: openai-compatible
     model: local-model
@@ -323,7 +327,7 @@ Set a model or enter a secret without placing it on the command line:
 agency config set judge.model qwen3.5:2b
 agency config set judge.api_key --prompt
 agency config set judge.api_key --clear
-agency config provider set codex-subscription --type cli --transport codex --model gpt-5.6-luna
+agency config provider set codex-subscription --type cli --transport codex --model gpt-5.6-luna --reasoning-effort low --timeout 60
 agency config provider set office-router --type litellm --model task-agency-router --base-url http://127.0.0.1:4000/v1
 agency config set delegation.child_inference_budget 4
 agency config set delegation.child_inference_concurrency 2

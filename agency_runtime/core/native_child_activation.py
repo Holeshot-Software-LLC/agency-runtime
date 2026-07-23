@@ -19,6 +19,7 @@ from typing import Any, Final, cast
 from agency_runtime.core.agent_activation import normalize_agent_slug
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.resident_managers import is_resident_manager_slug
+from agency_runtime.core.roster.revisions import content_digest_identity
 from agency_runtime.core.store.version_identity import normalize_version_identity
 
 NATIVE_CHILD_ACTIVATION_LEGACY_VERSION: Final[int] = 1
@@ -58,7 +59,6 @@ NATIVE_CHILD_WORKER_BINDING_MODES: Final[tuple[str, ...]] = (
 _WORK_UNIT_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}$")
 _EVIDENCE_TOKEN_PATTERN = re.compile(r"^[a-z][a-z0-9._-]{0,63}$")
 _RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,255}$")
-_SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _OPAQUE_ID_PATTERN = re.compile(r"^(?:ncg|ncr)-[0-9a-f]{32}$")
 
 _GRANT_V1_FIELDS = frozenset(
@@ -385,8 +385,10 @@ def build_native_child_specialist_identity(
     if not isinstance(content_hash, str):
         raise ValueError("specialist content_hash must be a string")
     normalized_hash = content_hash.strip().casefold()
-    if _SHA256_PATTERN.fullmatch(normalized_hash) is None:
-        raise ValueError("specialist content_hash must be a lowercase SHA-256 digest")
+    if content_digest_identity(normalized_hash) is None:
+        raise ValueError(
+            "specialist content_hash must be a bare or sha256-prefixed lowercase digest"
+        )
     return NativeChildSpecialistIdentity(
         slug=normalized_slug,
         version=normalized_version,

@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import threading
 from collections import OrderedDict
-from collections.abc import Container, Iterable, Sequence
+from collections.abc import Container, Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any
 
 from agency_runtime.core.host_capabilities import (
@@ -57,6 +58,24 @@ class EligibilityResult:
 
     eligible: tuple[dict[str, Any], ...]
     rejected: tuple[dict[str, str], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CompatibilityCatalog:
+    """Pre-indexed immutable catalog for exhaustive or repeated composition checks."""
+
+    by_slug: Mapping[str, dict[str, Any]]
+
+
+def compile_compatibility_catalog(
+    catalog: Sequence[dict[str, Any]],
+) -> CompatibilityCatalog:
+    """Validate unique identities once and reuse the deterministic composition index."""
+
+    by_slug = {_slug(agent): agent for agent in catalog if _slug(agent)}
+    if len(by_slug) != sum(bool(_slug(agent)) for agent in catalog):
+        raise ValueError("compatibility catalog contains duplicate specialist identities")
+    return CompatibilityCatalog(MappingProxyType(by_slug))
 
 
 @dataclass(frozen=True, slots=True)
@@ -482,7 +501,7 @@ def _closure_conflict(
 
 def enforce_compatible_set(
     selected_ids: Iterable[object],
-    catalog: Sequence[dict[str, Any]],
+    catalog: Sequence[dict[str, Any]] | CompatibilityCatalog,
     *,
     limit: int = MAX_COMPATIBLE_SPECIALISTS,
     review_overflow_ids: Iterable[object] = (),
@@ -504,7 +523,11 @@ def enforce_compatible_set(
     review_overflow = {
         str(item or "").strip() for item in review_overflow_ids if str(item or "").strip()
     }
-    by_slug = {_slug(agent): agent for agent in catalog if _slug(agent)}
+    by_slug = (
+        catalog.by_slug
+        if isinstance(catalog, CompatibilityCatalog)
+        else {_slug(agent): agent for agent in catalog if _slug(agent)}
+    )
     rejected: list[dict[str, str]] = []
     added_requirements: list[str] = []
     accepted: list[str] = []
@@ -578,8 +601,10 @@ def enforce_compatible_set(
 __all__ = [
     "COMPATIBILITY_CONTRACT_VERSION",
     "MAX_COMPATIBLE_SPECIALISTS",
+    "CompatibilityCatalog",
     "EligibilityResult",
     "clear_eligibility_cache",
+    "compile_compatibility_catalog",
     "enforce_compatible_set",
     "filter_eligible_catalog",
 ]

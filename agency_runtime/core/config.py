@@ -42,6 +42,7 @@ from agency_runtime.core.policy.profiles import PROFILES
 
 _BUNDLED_DEFAULTS = Path(__file__).parent / "config_defaults.yaml"
 MAX_PROVIDER_CHAIN_ENTRIES = 4
+CODEX_REASONING_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max", "ultra"})
 _CLI_MODEL_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+\-]{0,255}\Z")
 
 
@@ -132,6 +133,7 @@ class ProviderEntry:
     api_key_env: str = ""
     ollama_mode: bool = False
     timeout: float = 15.0
+    reasoning_effort: str = ""
 
     def resolve_api_key(self) -> str:
         """Return the API key: direct value first, then env var."""
@@ -230,19 +232,21 @@ class DelegationConfig:
 class WorkforceConfig:
     """Inference-first planning, staffing, hiring, and promotion policy."""
 
-    mode: str = "balanced"
+    mode: str = "fast"
     provider: str = ""
     planner_model: str = ""
     recruiter_model: str = ""
     hiring_model: str = ""
     critic_model: str = ""
     fast_call_budget: int = 1
-    balanced_call_budget: int = 2
-    strict_call_budget: int = 3
+    balanced_call_budget: int = 4
+    strict_call_budget: int = 5
     hiring_call_budget: int = 2
     max_work_units: int = 16
     max_selected_per_unit: int = 4
     max_selected_total: int = 16
+    min_confidence: float = 0.8
+    min_margin: float = 0.1
     max_hires_per_task: int = 1
     max_hires_per_day: int = 3
     auto_promote_successes: int = 0
@@ -407,6 +411,7 @@ def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
         api_key_env=str(raw.get("api_key_env", "")),
         ollama_mode=bool(raw.get("ollama_mode", raw.get("type") == "ollama")),
         timeout=float(raw.get("timeout", 15.0)),
+        reasoning_effort=str(raw.get("reasoning_effort", "")),
     )
 
 
@@ -491,19 +496,21 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
             child_cache_ttl_seconds=int(delegation_raw.get("child_cache_ttl_seconds", 900)),
         ),
         workforce=WorkforceConfig(
-            mode=str(workforce_raw.get("mode", "balanced")).strip().casefold(),
+            mode=str(workforce_raw.get("mode", "fast")).strip().casefold(),
             provider=str(workforce_raw.get("provider", "")).strip(),
             planner_model=str(workforce_raw.get("planner_model", "")).strip(),
             recruiter_model=str(workforce_raw.get("recruiter_model", "")).strip(),
             hiring_model=str(workforce_raw.get("hiring_model", "")).strip(),
             critic_model=str(workforce_raw.get("critic_model", "")).strip(),
             fast_call_budget=int(workforce_raw.get("fast_call_budget", 1)),
-            balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 2)),
-            strict_call_budget=int(workforce_raw.get("strict_call_budget", 3)),
+            balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 4)),
+            strict_call_budget=int(workforce_raw.get("strict_call_budget", 5)),
             hiring_call_budget=int(workforce_raw.get("hiring_call_budget", 2)),
             max_work_units=int(workforce_raw.get("max_work_units", 16)),
             max_selected_per_unit=int(workforce_raw.get("max_selected_per_unit", 4)),
             max_selected_total=int(workforce_raw.get("max_selected_total", 16)),
+            min_confidence=float(workforce_raw.get("min_confidence", 0.8)),
+            min_margin=float(workforce_raw.get("min_margin", 0.1)),
             max_hires_per_task=int(workforce_raw.get("max_hires_per_task", 1)),
             max_hires_per_day=int(workforce_raw.get("max_hires_per_day", 3)),
             auto_promote_successes=int(workforce_raw.get("auto_promote_successes", 0)),
@@ -1043,6 +1050,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
                 "api_key_env": p.api_key_env,
                 "ollama_mode": p.ollama_mode,
                 "timeout": p.timeout,
+                "reasoning_effort": p.reasoning_effort,
             }
             for p in cfg.providers
         ],
@@ -1074,6 +1082,8 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "max_work_units": cfg.workforce.max_work_units,
             "max_selected_per_unit": cfg.workforce.max_selected_per_unit,
             "max_selected_total": cfg.workforce.max_selected_total,
+            "min_confidence": cfg.workforce.min_confidence,
+            "min_margin": cfg.workforce.min_margin,
             "max_hires_per_task": cfg.workforce.max_hires_per_task,
             "max_hires_per_day": cfg.workforce.max_hires_per_day,
             "auto_promote_successes": cfg.workforce.auto_promote_successes,

@@ -48,6 +48,10 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Codex subscription providers can now choose a validated reasoning effort in
+  both the CLI and dashboard. Account model discovery reports supported levels,
+  and the isolated inference process receives the selected override without
+  inheriting unrelated host configuration.
 - A durable Agency-wide master switch shared by `agency on|off --global` and
   the authenticated dashboard. Host adapters and protocol surfaces consult it
   before Store creation, correlation, routing, prompt activation, delegation,

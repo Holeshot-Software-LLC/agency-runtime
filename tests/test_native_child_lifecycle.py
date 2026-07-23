@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ import pytest
 from agency_runtime.adapters.hermes.bridge import handle as handle_hermes_bridge
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
 from agency_runtime.core.delegation.events import work_unit_id_from_text
+from agency_runtime.core.roster.bundled import BundledRoster
 from agency_runtime.core.store.schema import SCHEMA_VERSION
 from agency_runtime.core.store.sqlite import Store
 
@@ -42,6 +44,10 @@ def _delegation(
     )
 
 
+def _agent(slug: str) -> dict[str, object]:
+    return next(dict(agent) for agent in BundledRoster() if agent["slug"] == slug)
+
+
 def test_native_child_start_and_end_update_reciprocal_delegation(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     event_id = _delegation(store)
@@ -67,6 +73,68 @@ def test_native_child_start_and_end_update_reciprocal_delegation(tmp_path: Path)
     assert ended["exit_code"] == 0
     assert ended["ended_at"]
     assert store.get_delegations("parent-run")[0]["status"] == "completed"
+
+
+def test_native_child_completion_atomically_records_workforce_assignment(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store._activate_prevalidated_agent(_agent("code-reviewer"))
+    worker = store.get_workforce_worker("code-reviewer", disabled_agents=())
+    store.create_run(
+        trace_id="parent-run",
+        session_id="parent-session",
+        host="openclaw",
+    )
+    event_id = _delegation(store)
+    with closing(store._connect()) as conn, conn:
+        conn.execute(
+            "INSERT INTO delegation_activation_receipts "
+            "(id, token_hash, session_id, trace_id, work_unit_id, specialist_slug, "
+            "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
+            "native_run_id, delegation_event_id, created_at, consumed_at) VALUES "
+            "('assignment-activation', ?, 'parent-session', 'parent-run', 'unit-1', "
+            "'code-reviewer', ?, ?, 'generic-worker', "
+            "'agent:main:subagent:child-1', 'child-run-1', ?, "
+            "'2026-07-21T00:00:00+00:00', '2026-07-21T00:00:01+00:00')",
+            ("a" * 64, worker["current_version"], worker["current_hash"], event_id),
+        )
+        conn.execute(
+            "UPDATE delegation_events SET activation_receipt_id = 'assignment-activation', "
+            "retrieved_specialist_slug = 'code-reviewer', "
+            "retrieved_specialist_version = ?, retrieved_specialist_prompt_hash = ? "
+            "WHERE id = ?",
+            (worker["current_version"], worker["current_hash"], event_id),
+        )
+
+    ended = store.record_native_child_ended(
+        host="openclaw",
+        backend="sessions_spawn",
+        **_PARENT_SCOPE,
+        worker_id="agent:main:subagent:child-1",
+        native_run_id="child-run-1",
+        outcome="ok",
+    )
+    replay = store.record_native_child_ended(
+        host="openclaw",
+        backend="sessions_spawn",
+        **_PARENT_SCOPE,
+        worker_id="agent:main:subagent:child-1",
+        native_run_id="child-run-1",
+        outcome="ok",
+    )
+
+    assert ended["workforce_outcome_id"]
+    assert replay["workforce_outcome_id"] == ended["workforce_outcome_id"]
+    detail = store.get_workforce_worker_detail("code-reviewer", disabled_agents=())
+    assignments = [item for item in detail["outcomes"] if item["event_type"] == "assignment"]
+    assert len(assignments) == 1
+    assert assignments[0]["outcome"] == "passed"
+    assert assignments[0]["activation_receipt_id"] == "assignment-activation"
+    assert assignments[0]["evidence_refs"] == {
+        "delegation_event_id": event_id,
+        "native_worker_run_id": ended["id"],
+    }
 
 
 def test_hermes_official_child_hooks_create_execution_and_terminal_receipts(

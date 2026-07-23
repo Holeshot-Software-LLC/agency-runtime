@@ -246,7 +246,7 @@ export function createActionController(core, config, renderer, live) {
     }
   }
 
-  async function toggleAgent(slug, enabled) {
+  async function toggleAgent(slug, enabled, reason = "") {
     if (serviceControlBlocked()) return;
     const expected = `${enabled ? "ENABLE" : "DISABLE"} ${slug}`;
     const accepted = await requestConfirmation(
@@ -263,6 +263,7 @@ export function createActionController(core, config, renderer, live) {
           slug,
           enabled,
           confirm: expected,
+          ...(reason ? { reason } : {}),
           expected_revision: state.controlConfigRevision
             || state.config?.revision
             || "missing",
@@ -321,6 +322,99 @@ export function createActionController(core, config, renderer, live) {
     }
   }
 
+  async function selectWorker(slug) {
+    if (!slug || state.lifecycle.destroyed || state.lifecycle.suspended) return;
+    try {
+      const payload = await api(`/api/workforce?worker=${encodeURIComponent(slug)}&limit=100`);
+      if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
+      state.selectedWorkerDetail = payload.detail || null;
+      renderer.renderWorkerDetail();
+    } catch (error) {
+      showNotice(error.message, true);
+    }
+  }
+
+  async function workforceAction(event) {
+    event.preventDefault();
+    if (serviceControlBlocked()) return;
+    const action = byId("workforce-action-kind").value.trim().toLowerCase();
+    const worker = byId("workforce-action-worker").value.trim();
+    const target = byId("workforce-action-target").value.trim();
+    const reason = byId("workforce-action-reason").value.trim();
+    const revision = Number(byId("workforce-action-revision").value);
+    if (!worker || !Number.isInteger(revision) || revision < 0) {
+      return showNotice("Worker lifecycle evidence is stale. Select the worker again.", true);
+    }
+    if (!reason) return showNotice("Add an evidence-based reason for this lifecycle action.", true);
+    if (action === "enable" || action === "disable") {
+      return toggleAgent(worker, action === "enable", reason);
+    }
+    if (action === "merge" && !target) return showNotice("A merge target is required.", true);
+    let confirm = "";
+    if (["suspend", "retire", "merge"].includes(action)) {
+      confirm = action === "merge"
+        ? `MERGE ${worker} INTO ${target}`
+        : `${action.toUpperCase()} ${worker}`;
+      const accepted = await requestConfirmation(
+        confirm,
+        "This lifecycle change is revision-bound and retained in the worker evidence ledger.",
+      );
+      if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
+      if (!accepted) return showNotice("Workforce action cancelled.", true);
+    }
+    markButtonPending("workforce-action-submit");
+    const controller = live.beginMutation();
+    try {
+      await api("/api/workforce/action", {
+        method: "POST",
+        body: JSON.stringify({
+          action,
+          worker,
+          into: action === "merge" ? target : "",
+          expected_revision: revision,
+          reason,
+          confirm,
+        }),
+        signal: controller.signal,
+      });
+      if (!live.mutationIsCurrent(controller)) return;
+      state.selectedWorkerDetail = null;
+      byId("workforce-action-reason").value = "";
+      byId("workforce-action-target").value = "";
+      await live.reconcileAll(`${worker} lifecycle changed: ${action}.`);
+    } catch (error) {
+      if (maySurface(error, controller)) showNotice(error.message, true);
+    } finally {
+      if (!state.lifecycle.destroyed) clearButtonPending("workforce-action-submit");
+      live.finishMutation(controller);
+    }
+  }
+
+  async function hiringApprove(caseId) {
+    if (serviceControlBlocked()) return;
+    const confirm = `APPROVE ${caseId}`;
+    const accepted = await requestConfirmation(
+      confirm,
+      "This records explicit human approval for a high-risk proposed hire.",
+    );
+    if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
+    if (!accepted) return showNotice("Hiring approval cancelled.", true);
+    const controller = live.beginMutation();
+    try {
+      await api("/api/hiring/approve", {
+        method: "POST",
+        body: JSON.stringify({ case_id: caseId, approved_by: "dashboard-operator", confirm }),
+        signal: controller.signal,
+      });
+      if (!live.mutationIsCurrent(controller)) return;
+      await live.reconcileAll(`Hiring case ${caseId} approved.`);
+    } catch (error) {
+      if (maySurface(error, controller)) showNotice(error.message, true);
+    } finally {
+      live.finishMutation(controller);
+    }
+  }
+
   return {
     runRoute,
     trimRuntime,
@@ -331,5 +425,8 @@ export function createActionController(core, config, renderer, live) {
     toggleAgent,
     toggleHost,
     toggleMaster,
+    selectWorker,
+    workforceAction,
+    hiringApprove,
   };
 }

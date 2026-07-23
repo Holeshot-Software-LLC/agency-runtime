@@ -165,21 +165,59 @@ def reconcile_starter_roster(store: Store) -> BundledRosterReconciliation:
 
 
 class _StarterRosterSeedCount(int):
-    """Additions-only integer carrying optional upgrade detail for new callers."""
+    """Additions-only integer carrying exact workforce reconciliation detail."""
 
     upgraded: int
+    contractors_installed: int
+    contractors_existing: int
 
-    def __new__(cls, added: int, *, upgraded: int) -> _StarterRosterSeedCount:
+    def __new__(
+        cls,
+        added: int,
+        *,
+        upgraded: int,
+        contractors_installed: int = 0,
+        contractors_existing: int = 0,
+    ) -> _StarterRosterSeedCount:
         value = super().__new__(cls, added)
         value.upgraded = upgraded
+        value.contractors_installed = contractors_installed
+        value.contractors_existing = contractors_existing
         return value
 
 
+def reconcile_packaged_contractors(store: Store) -> tuple[int, int]:
+    """Install contractors and refresh exact package-owned derived contracts."""
+
+    required = (
+        "create_hiring_case",
+        "get_workforce_worker",
+        "register_workforce_worker",
+        "stage_agency_workforce_agent",
+        "transition_hiring_case",
+    )
+    if not all(callable(getattr(store, name, None)) for name in required):
+        return 0, 0
+    from agency_runtime.core.workforce.known_installer import install_known_contractors
+
+    result = install_known_contractors(store)
+    reconcile_contracts = getattr(store, "reconcile_packaged_workforce_contracts", None)
+    if callable(reconcile_contracts):
+        reconcile_contracts()
+    return len(result.installed), len(result.existing)
+
+
 def seed_starter_roster(store: Store) -> int:
-    """Seed missing built-ins while preserving the historical additions-only API."""
+    """Reconcile built-ins and governed contractors behind the compatible integer API."""
 
     result = reconcile_starter_roster(store)
-    return _StarterRosterSeedCount(result.added, upgraded=result.upgraded)
+    contractors_installed, contractors_existing = reconcile_packaged_contractors(store)
+    return _StarterRosterSeedCount(
+        result.added,
+        upgraded=result.upgraded,
+        contractors_installed=contractors_installed,
+        contractors_existing=contractors_existing,
+    )
 
 
 def ensure_no_match_fallback_roster(store: Store) -> int:

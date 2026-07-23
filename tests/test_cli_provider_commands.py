@@ -21,6 +21,7 @@ def _args(**values):
         "name": "primary",
         "type": None,
         "model": None,
+        "reasoning_effort": None,
         "base_url": None,
         "api_key_env": None,
     }
@@ -88,6 +89,7 @@ def test_provider_set_update_remove_and_main_facade(monkeypatch, capsys) -> None
                 type="cli",
                 transport="codex",
                 model="gpt-cheap",
+                reasoning_effort="low",
                 base_url="",
                 api_key_env="",
                 timeout=7,
@@ -96,12 +98,14 @@ def test_provider_set_update_remove_and_main_facade(monkeypatch, capsys) -> None
         == 0
     )
     assert operations[-1][0][0]["value"][0]["model"] == "gpt-cheap"
+    assert operations[-1][0][0]["value"][0]["reasoning_effort"] == "low"
     assert "restart" in capsys.readouterr().out
 
     current.persisted["providers"] = operations[-1][0][0]["value"]
     monkeypatch.setattr(config_commands, "_config_set_notes", lambda *_a: [])
     assert config_commands.cmd_config_provider_set(_args(model="gpt-updated", timeout=None)) == 0
     assert operations[-1][0][0]["value"][0]["timeout"] == 7.0
+    assert operations[-1][0][0]["value"][0]["reasoning_effort"] == "low"
     primary_providers = operations[-1][0][0]["value"]
 
     current.persisted["providers"] = [
@@ -183,6 +187,20 @@ def test_provider_set_update_remove_and_main_facade(monkeypatch, capsys) -> None
     assert converted["transport"] == ""
     assert converted["base_url"] == "https://api.example.test/v1"
     assert converted["api_key_env"] == "AGENCY_API_KEY"
+    assert converted["reasoning_effort"] == ""
+
+    current.persisted["providers"] = primary_providers
+    assert (
+        config_commands.cmd_config_provider_set(_args(name="primary", reasoning_effort="default"))
+        == 0
+    )
+    assert operations[-1][0][0]["value"][0]["reasoning_effort"] == ""
+
+    current.persisted["providers"] = [{"name": "claude", "type": "cli", "transport": "claude"}]
+    with pytest.raises(ValueError, match="only for Codex"):
+        config_commands.cmd_config_provider_set(
+            _args(name="claude", transport=None, reasoning_effort="low")
+        )
 
     current.persisted["providers"] = primary_providers
     with pytest.raises(ValueError, match="provider not found"):

@@ -64,7 +64,7 @@ def _text(value: object, *, label: str, maximum: int = MAX_TEXT_CHARS) -> str:
         raise ValueError(f"{label} must be text")
     text = " ".join(value.split())
     if not text or len(text) > maximum or any(ord(character) < 32 for character in text):
-        raise ValueError(f"{label} is empty or exceeds its bound")
+        raise ValueError(f"{label} must contain 1..{maximum} printable characters")
     return text
 
 

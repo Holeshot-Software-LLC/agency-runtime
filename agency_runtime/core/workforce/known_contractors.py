@@ -32,6 +32,7 @@ def _definition(
     negative_rationale: str,
     authority: str = "modify",
     relationship: str = "complements",
+    relationship_target: str | None = None,
 ) -> dict[str, Any]:
     return {
         "schema_version": 1,
@@ -53,7 +54,9 @@ def _definition(
         "platforms": _PLATFORMS,
         "hosts": _HOSTS,
         "requirements": ["Receive a bounded work unit and repository policy"],
-        "relationships": [{"kind": relationship, "target": closest}],
+        "relationships": (
+            [{"kind": relationship, "target": relationship_target}] if relationship_target else []
+        ),
         "evidence_requirements": ["Changed artifacts and focused verification results"],
         "closest_workers": [
             {
@@ -98,6 +101,7 @@ _RAW_DEFINITIONS = (
         positive="Build a typed async Python CLI with packaging and failure-path tests",
         negative="Train and evaluate a specialized machine-learning model",
         negative_rationale="A machine-learning specialist owns model development",
+        relationship_target="software-test-engineer",
     ),
     _definition(
         "typescript-application-engineer",
@@ -120,6 +124,7 @@ _RAW_DEFINITIONS = (
         positive="Build a cross-platform TypeScript CLI with runtime validation and async tests",
         negative="Design and implement a polished responsive marketing interface",
         negative_rationale="A visual frontend specialist owns interface implementation",
+        relationship_target="software-test-engineer",
     ),
     _definition(
         "backend-service-engineer",
@@ -145,6 +150,7 @@ _RAW_DEFINITIONS = (
         positive="Implement retries, idempotency, persistence, and error handling across a backend service",
         negative="Choose an enterprise-wide target architecture without implementing a service",
         negative_rationale="An architecture specialist owns architecture-only decisions",
+        relationship_target="software-test-engineer",
     ),
     _definition(
         "software-test-engineer",
@@ -172,6 +178,7 @@ _RAW_DEFINITIONS = (
         positive="Add property, concurrency, contract, and failure-path tests to an existing service",
         negative="Interpret a completed flaky test report and decide whether the product can ship",
         negative_rationale="Result analysis and release verification require independent specialists",
+        relationship_target="application-integration-verifier",
     ),
     _definition(
         "cross-platform-installer-engineer",
@@ -201,6 +208,7 @@ _RAW_DEFINITIONS = (
         positive="Implement idempotent Windows and Linux install, upgrade, rollback, and uninstall flows",
         negative="Design a cloud deployment pipeline for an already packaged service",
         negative_rationale="A delivery automation specialist owns cloud pipeline work",
+        relationship_target="cross-platform-release-verifier",
     ),
     _definition(
         "application-observability-engineer",
@@ -228,6 +236,7 @@ _RAW_DEFINITIONS = (
         positive="Instrument a service with traces, metrics, health signals, and failure diagnostics",
         negative="Benchmark and optimize a CPU-bound algorithm against a latency target",
         negative_rationale="A performance specialist owns measurement-led optimization",
+        relationship_target="application-integration-verifier",
     ),
     _definition(
         "application-integration-verifier",
@@ -250,7 +259,7 @@ _RAW_DEFINITIONS = (
         negative="Implement the missing authentication endpoint found during verification",
         negative_rationale="An implementation specialist must repair the defect before independent re-verification",
         authority="review",
-        relationship="must_review_independently",
+        relationship_target="software-test-engineer",
     ),
     _definition(
         "cross-platform-release-verifier",
@@ -273,7 +282,7 @@ _RAW_DEFINITIONS = (
         negative="Prepare mobile application-store metadata and staged rollout settings",
         negative_rationale="A mobile release specialist owns application-store delivery",
         authority="review",
-        relationship="must_follow",
+        relationship_target="cross-platform-installer-engineer",
     ),
     _definition(
         "selection-safety-critic",
@@ -297,7 +306,6 @@ _RAW_DEFINITIONS = (
         negative="Review a TypeScript source diff for correctness and maintainability",
         negative_rationale="A code reviewer owns source-diff review",
         authority="review",
-        relationship="must_review_independently",
     ),
 )
 

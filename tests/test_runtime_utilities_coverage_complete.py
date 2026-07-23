@@ -103,6 +103,8 @@ def test_absolute_executable_path_rejects_invalid_values(value: str) -> None:
 def test_isolated_bootstrap_ignores_hostile_cwd_and_supports_user_site_layout(
     tmp_path: Path,
 ) -> None:
+    import yaml
+
     import agency_runtime
 
     user_site = tmp_path / "user-site"
@@ -110,6 +112,11 @@ def test_isolated_bootstrap_ignores_hostile_cwd_and_supports_user_site_layout(
     shutil.copytree(
         Path(agency_runtime.__file__).parent,
         installed_package,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    shutil.copytree(
+        Path(yaml.__file__).parent,
+        user_site / "yaml",
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
     )
     hostile = tmp_path / "hostile"
@@ -126,7 +133,7 @@ def test_isolated_bootstrap_ignores_hostile_cwd_and_supports_user_site_layout(
     bootstrap = installed_package / "_bootstrap.py"
 
     completed = subprocess.run(
-        [sys.executable, "-I", str(bootstrap), "agency_runtime.cli", "--help"],
+        [sys.executable, "-I", "-S", str(bootstrap), "agency_runtime.cli", "--help"],
         cwd=hostile,
         env=environment,
         capture_output=True,
@@ -147,6 +154,7 @@ def test_isolated_python_argv_binds_absolute_interpreter_and_package_bootstrap()
     assert Path(argv[0]).is_absolute()
     assert argv[1:] == [
         "-I",
+        "-S",
         agency_bootstrap_path(),
         "agency_runtime.cli",
         "--help",

@@ -13,8 +13,8 @@ import inspect
 import math
 import os
 import platform
+import socket
 import subprocess
-import sys
 import tempfile
 import time
 from collections.abc import Callable, Mapping, Sequence
@@ -24,6 +24,11 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.configuration_persistence import resolve_config_path
+from agency_runtime.core.launcher_bootstrap import (
+    persistent_python_executable,
+    prepare_private_package_runtime,
+    verify_private_package_runtime,
+)
 from agency_runtime.core.process_argv import (
     PersistentArtifactIdentity,
     absolute_executable_path,
@@ -350,14 +355,12 @@ def build_service_worker_argv(
 
     home = _home(home_dir)
     executable = _executable_path(
-        python_executable if python_executable is not None else sys.executable
+        python_executable if python_executable is not None else persistent_python_executable()
     )
     config = _config_path(home, home_dir, config_path)
     argv = isolated_python_argv(
         executable,
-        "agency_runtime.cli",
-        "dashboard",
-        "--service-mode",
+        "agency_runtime.server.dashboard_service",
         "--config",
         str(config),
     )
@@ -377,7 +380,7 @@ def _context(
     home = _home(home_dir)
     config = _config_path(home, home_dir, config_path, platform_name=target)
     executable = _executable_path(
-        python_executable if python_executable is not None else sys.executable
+        python_executable if python_executable is not None else persistent_python_executable()
     )
     worker = tuple(
         build_service_worker_argv(
@@ -456,13 +459,54 @@ def _validate_dashboard_launcher(ctx: _Context) -> _Context:
         # execute the generated registration. A native install always takes
         # the validated branch above.
         return replace(ctx, launcher_artifacts=())
-    if len(ctx.worker_argv) < 3:
+    if len(ctx.worker_argv) < 4:
         raise OSError("dashboard worker argv does not identify its isolated bootstrap")
+    paths = (
+        ctx.worker_argv[0],
+        prepare_private_package_runtime(ctx.worker_argv[3]),
+    )
     identities = snapshot_persistent_artifacts(
-        (ctx.worker_argv[0], ctx.worker_argv[2]),
+        paths,
         platform_name=native_platform,
     )
-    return replace(ctx, launcher_artifacts=identities)
+    worker_argv = (*ctx.worker_argv[:3], paths[1], *ctx.worker_argv[4:])
+    return replace(ctx, worker_argv=worker_argv, launcher_artifacts=identities)
+
+
+def _validate_installed_dashboard_launcher(
+    ctx: _Context,
+    worker_argv: object,
+) -> _Context:
+    """Attest the exact launcher recorded by an owned service manifest.
+
+    Inspection is read-only and may run inside a restricted host token. It
+    therefore verifies an already-published private projection and never
+    creates, repairs, or upgrades launcher state.
+    """
+
+    native_platform = _native_launcher_platform(ctx)
+    if native_platform is None:
+        return replace(ctx, launcher_artifacts=())
+    if not isinstance(worker_argv, (list, tuple)) or len(worker_argv) != 7:
+        raise OSError("dashboard service manifest has an invalid worker command")
+    worker = tuple(_validate_text(item, label="service argument") for item in worker_argv)
+    expected_suffix = (
+        "agency_runtime.server.dashboard_service",
+        "--config",
+        str(ctx.config_path),
+    )
+    if worker[1:3] != ("-I", "-S") or worker[4:] != expected_suffix:
+        raise OSError("dashboard service manifest has an invalid worker command")
+    private_bootstrap = verify_private_package_runtime(worker[3])
+    paths = (worker[0], private_bootstrap)
+    identities = snapshot_persistent_artifacts(paths, platform_name=native_platform)
+    installed_worker = (*worker[:3], private_bootstrap, *worker[4:])
+    return replace(
+        ctx,
+        python_executable=Path(worker[0]),
+        worker_argv=installed_worker,
+        launcher_artifacts=identities,
+    )
 
 
 def _revalidate_dashboard_launcher(ctx: _Context) -> None:
@@ -483,6 +527,33 @@ def _dashboard_runtime_fingerprint(ctx: _Context) -> str | None:
     from agency_runtime.core.dashboard_runtime import dashboard_runtime_instance_fingerprint
 
     return dashboard_runtime_instance_fingerprint(home_dir=ctx.home)
+
+
+def _dashboard_runtime_port(ctx: _Context) -> int | None:
+    """Return the validated loopback port of the published worker, if any."""
+
+    from agency_runtime.core.dashboard_runtime import read_dashboard_runtime
+
+    try:
+        descriptor = read_dashboard_runtime(home_dir=ctx.home)
+    except ValueError:
+        return None
+    port = descriptor.get("port")
+    return (
+        int(port)
+        if isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535
+        else None
+    )
+
+
+def _loopback_listener_present(port: int, *, timeout_seconds: float = 0.1) -> bool:
+    """Return whether any process still accepts TCP connections on one local port."""
+
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=timeout_seconds):
+            return True
+    except OSError:
+        return False
 
 
 def _cleanup_stale_dashboard_runtime(
@@ -534,6 +605,7 @@ def _wait_dashboard_runtime_cleared(
     ctx: _Context,
     previous_fingerprint: str | None,
     *,
+    previous_port: int | None = None,
     timeout_seconds: float = _DASHBOARD_RUNTIME_CLEAR_TIMEOUT_SECONDS,
     poll_seconds: float = _DASHBOARD_RUNTIME_CLEAR_POLL_SECONDS,
 ) -> _DashboardRuntimeClearance:
@@ -546,6 +618,14 @@ def _wait_dashboard_runtime_cleared(
     bounded wait expires.
     """
 
+    if previous_port is None and previous_fingerprint is not None:
+        previous_port = _dashboard_runtime_port(ctx)
+    if previous_port is not None and (
+        isinstance(previous_port, bool)
+        or not isinstance(previous_port, int)
+        or not 1 <= previous_port <= 65535
+    ):
+        raise ValueError("previous dashboard runtime port is invalid")
     deadline = time.monotonic() + max(0.0, timeout_seconds)
     descriptor_removed = False
     while True:
@@ -571,7 +651,9 @@ def _wait_dashboard_runtime_cleared(
                 )
                 or descriptor_removed
             )
-        if _dashboard_runtime_cleared(ctx):
+        descriptor_cleared = _dashboard_runtime_cleared(ctx)
+        listener_released = previous_port is None or not _loopback_listener_present(previous_port)
+        if descriptor_cleared and listener_released:
             return _DashboardRuntimeClearance(
                 cleared=True,
                 descriptor_removed=descriptor_removed,
@@ -769,11 +851,13 @@ __all__ = [
     "_context",
     "_dashboard_runtime_cleared",
     "_dashboard_runtime_fingerprint",
+    "_dashboard_runtime_port",
     "_fresh_dashboard_readiness",
     "_revalidate_dashboard_launcher",
     "_run",
     "_unsupported",
     "_validate_dashboard_launcher",
+    "_validate_installed_dashboard_launcher",
     "_validate_text",
     "_wait_dashboard_runtime_cleared",
     "build_service_worker_argv",

@@ -297,7 +297,8 @@ def parse_employment_contract(value: object) -> EmploymentContract:
     hosts = _items(raw["hosts"], "hosts", allowed=_HOSTS)
     phases = _items(raw["lifecycle_phases"], "lifecycle_phases", allowed=_LIFECYCLE_PHASES)
     relationships = tuple(
-        _relationship(item) for item in _sequence(raw["relationships"], "relationships")
+        _relationship(item)
+        for item in _sequence(raw["relationships"], "relationships", allow_empty=True)
     )
     if any(item.target == slug for item in relationships):
         raise ValueError("contractor relationship cannot target itself")
@@ -338,14 +339,20 @@ def parse_employment_contract(value: object) -> EmploymentContract:
     )
 
 
-def _sequence(value: object, label: str) -> Sequence[object]:
+def _sequence(
+    value: object,
+    label: str,
+    *,
+    allow_empty: bool = False,
+) -> Sequence[object]:
     if (
         not isinstance(value, Sequence)
         or isinstance(value, (str, bytes, bytearray))
-        or not value
+        or (not value and not allow_empty)
         or len(value) > MAX_ITEMS
     ):
-        raise ValueError(f"{label} must be a nonempty bounded list")
+        qualifier = "bounded" if allow_empty else "nonempty bounded"
+        raise ValueError(f"{label} must be a {qualifier} list")
     return value
 
 

@@ -149,6 +149,35 @@ def test_interactive_wizard_advanced_tuning_and_litellm_recursion_guard(
     assert result["adapters"]["openclaw"]["enabled"] == "auto"
 
 
+def test_interactive_wizard_gives_subscription_cli_a_realistic_default_timeout(
+    monkeypatch,
+):
+    detected = detection()
+    chain = [
+        {
+            "name": "codex-subscription",
+            "type": "cli",
+            "transport": "codex",
+            "model": "gpt-cheap",
+        },
+        {
+            "name": "local",
+            "type": "ollama",
+            "model": "local-model",
+            "base_url": "http://127.0.0.1:11434",
+        },
+    ]
+    monkeypatch.setattr("builtins.input", lambda _prompt="": "")
+    monkeypatch.setattr(subject, "_guided_provider_chain", lambda *_a, **_kw: chain)
+    monkeypatch.setattr(subject, "_print_config_summary", lambda _data: None)
+
+    result = subject._interactive_wizard(detected, "standard")
+
+    assert result["judge"]["timeout"] == subject.DEFAULT_PROVIDER_TIMEOUT
+    assert result["providers"][0]["timeout"] == subject.DEFAULT_CLI_PROVIDER_TIMEOUT
+    assert result["providers"][1]["timeout"] == subject.DEFAULT_PROVIDER_TIMEOUT
+
+
 def test_legacy_judge_and_provider_entry_variants():
     http = {
         "model": "model",

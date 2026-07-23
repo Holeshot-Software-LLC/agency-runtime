@@ -67,7 +67,7 @@
           "security": 12
         },
         "review": "batch-marketing-security-review.md",
-        "artifact_sha256": "55f324c445fd5518ce2563afd6a1445af662a3d4dbf79c7df9e2478cbafd1dc2",
+        "artifact_sha256": "9fa3565c3f96f1fded8ee9b05aa54c473a611f3623d95209d2d3d19e7a72bcf4",
         "review_sha256": "34b2aa8a2386874b588eca8d6f19beaf7b0150b2957f30d4123189f74fbc400c"
       },
       "batch-specialized.json": {

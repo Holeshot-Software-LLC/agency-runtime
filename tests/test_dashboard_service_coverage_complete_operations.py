@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from agency_runtime.core import dashboard_service_core as core
@@ -163,10 +165,13 @@ def test_plan_and_inspect_unsupported(tmp_path):
 
 def test_inspect_reports_launcher_validation_failure(tmp_path, monkeypatch):
     ctx = context(tmp_path)
+    manifest = {"worker_argv": list(ctx.worker_argv)}
+    monkeypatch.setattr(inspection, "_read_manifest", lambda _ctx: manifest)
+    monkeypatch.setattr(inspection, "_manifest_owned", lambda *_args: True)
     monkeypatch.setattr(
         inspection,
-        "_validate_dashboard_launcher",
-        lambda _ctx: (_ for _ in ()).throw(OSError("launcher identity unavailable")),
+        "_validate_installed_dashboard_launcher",
+        lambda *_args: (_ for _ in ()).throw(OSError("launcher identity unavailable")),
     )
 
     result = inspection.inspect_dashboard_service(_ctx=ctx, _validate_launcher=True)
@@ -177,6 +182,42 @@ def test_inspect_reports_launcher_validation_failure(tmp_path, monkeypatch):
         inspection.inspect_dashboard_service(home_dir=tmp_path, platform_name="darwin")["supported"]
         is False
     )
+
+
+def test_restricted_windows_absence_is_unknown_not_a_false_uninstall(
+    tmp_path,
+    monkeypatch,
+    os_facade,
+):
+    ctx = replace(context(tmp_path, "windows"), launcher_artifacts=(object(),))
+    manifest = {"worker_argv": list(ctx.worker_argv)}
+    monkeypatch.setattr(inspection, "os", os_facade(inspection.os, name="nt"))
+    monkeypatch.setattr(inspection, "_read_manifest", lambda _ctx: manifest)
+    monkeypatch.setattr(inspection, "_manifest_owned", lambda *_args: True)
+    monkeypatch.setattr(inspection, "_manifest_current", lambda *_args: True)
+    monkeypatch.setattr(
+        inspection,
+        "_manager_probe",
+        lambda *_args, **_kwargs: (True, command(stdout="ABSENT"), "absent"),
+    )
+    monkeypatch.setattr(
+        inspection,
+        "current_process_token_is_restricted",
+        lambda **_kwargs: True,
+    )
+
+    result = inspection.inspect_dashboard_service(
+        _ctx=ctx,
+        _config=object(),
+        reachability_probe=lambda: False,
+    )
+
+    assert result["ok"] is True
+    assert result["visibility_limited"] is True
+    assert result["installed"] is None
+    assert result["reachable"] is None
+    assert result["repair_recommended"] is False
+    assert "normal user terminal" in result["warning"]
 
 
 def test_inspection_registration_linux_and_windows(tmp_path, monkeypatch):
@@ -620,6 +661,84 @@ def test_windows_install_activation_waits_for_worker_generation_clearance(
 
     assert cleanup_calls == ["cleanup", "cleanup", "cleanup"]
     assert [item["command"][0] for item in transaction.commands] == ["exact", "run", "state"]
+
+
+def test_windows_install_coalesces_a_late_replacement_before_activation(
+    tmp_path,
+    monkeypatch,
+):
+    ctx = context(tmp_path, "windows")
+    transaction = install._WindowsInstallTransaction(
+        prior_manifest=None,
+        installed=True,
+        registration_changed=True,
+        runtime_changed=True,
+        prior_reachable=False,
+        prior_runtime_fingerprint="sha256:old",
+        prior_runtime_port=7810,
+        prior_active=False,
+        changed=True,
+    )
+    clearances = iter(
+        (
+            core._DashboardRuntimeClearance(
+                False,
+                False,
+                replacement_detected=True,
+            ),
+            core._DashboardRuntimeClearance(True, True),
+        )
+    )
+    monkeypatch.setattr(
+        install,
+        "_wait_dashboard_runtime_cleared",
+        lambda *_args, **_kwargs: next(clearances),
+    )
+    monkeypatch.setattr(
+        install,
+        "_dashboard_runtime_fingerprint",
+        lambda _ctx: "sha256:late",
+    )
+    monkeypatch.setattr(install, "_dashboard_runtime_port", lambda _ctx: 7810)
+    monkeypatch.setattr(
+        install,
+        "_windows_running_state",
+        lambda **_kwargs: (True, command("replacement-running")),
+    )
+    monkeypatch.setattr(
+        install,
+        "_assert_windows_task_unchanged",
+        lambda *_args, **_kwargs: command("exact"),
+    )
+    monkeypatch.setattr(install, "_run", lambda *_args, **_kwargs: command("manager"))
+    states = iter(
+        (
+            (True, [command("idle")]),
+            (True, [command("running")]),
+        )
+    )
+    monkeypatch.setattr(
+        install,
+        "_wait_windows_running_state",
+        lambda *_args, **_kwargs: next(states),
+    )
+
+    install._activate_windows_install_if_needed(
+        ctx,
+        transaction,
+        "current-task",
+        command_runner=None,
+    )
+
+    assert [item["command"][0] for item in transaction.commands] == [
+        "replacement-running",
+        "exact",
+        "manager",
+        "idle",
+        "exact",
+        "manager",
+        "running",
+    ]
 
 
 def test_failed_windows_install_rolls_back_only_after_mutation(tmp_path, monkeypatch):

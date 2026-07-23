@@ -14,12 +14,16 @@ from collections.abc import Container, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from agency_runtime.core.workforce.capability_ontology import (
+    CORE_CAPABILITY_IDS,
+    normalize_capability_ids,
+)
 from agency_runtime.core.workforce.identity import stable_worker_id
 
-WORKFORCE_CONTRACT_SCHEMA_VERSION = "1"
+WORKFORCE_CONTRACT_SCHEMA_VERSION = "2"
 MAX_CONTRACT_BYTES = 8_192
 MAX_TEXT_BYTES = 192
-MAX_OUTCOMES = 4
+MAX_OUTCOMES = 8
 MAX_TAXONOMY_ITEMS = 8
 MAX_RELATIONSHIPS = 16
 
@@ -54,24 +58,6 @@ _DIVISION_DOMAINS = {
     "support": "customer-operations",
     "testing": "quality-assurance",
 }
-
-_TOOL_CLASS_MARKERS = (
-    ("browser", ("browser", "playwright", "cypress", "web-test")),
-    ("repository", ("repository", "source-code", "code-reader", "architecture-document")),
-    ("filesystem", ("file-", "filesystem", "document-reader", "artifact-reader")),
-    ("source-control", ("git", "source-control", "ci-reader", "ci-runner")),
-    ("shell", ("shell", "terminal", "command-runner")),
-    ("package-manager", ("package-manager", "dependency")),
-    ("test-runner", ("test", "coverage", "profiler", "benchmark")),
-    ("security", ("security", "scanner", "threat", "credential", "secret")),
-    ("research", ("research", "documentation-search", "policy", "legal")),
-    ("data", ("database", "data-reader", "analytics", "spreadsheet", "sql")),
-    ("communications", ("crm", "ticket", "email", "communications", "community")),
-    ("media", ("media", "audio", "video", "image", "asset")),
-    ("geospatial", ("gis", "geospatial", "scene", "spatial", "map")),
-    ("build-toolchain", ("build", "compiler", "sdk", "runtime", "toolchain")),
-    ("cloud", ("cloud", "monitoring", "infrastructure", "deployment")),
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,6 +94,7 @@ class WorkforceContract:
     display_name: str
     archetype: str
     outcomes: tuple[str, ...]
+    capability_ids: tuple[str, ...]
     artifact_kinds: tuple[str, ...]
     lifecycle_phases: tuple[str, ...]
     domains: tuple[str, ...]
@@ -237,6 +224,8 @@ def _artifact_kinds(agent: Mapping[str, Any], archetype: str) -> tuple[str, ...]
         result.append("implementation-change")
     if "planning" in tasks:
         result.append("plan")
+    if {"analysis", "research"} & tasks:
+        result.append("analysis")
     if "review" in tasks:
         result.append("review-report")
     if not result:
@@ -264,6 +253,15 @@ def _lifecycle_phases(agent: Mapping[str, Any], archetype: str) -> tuple[str, ..
         for raw in agent.get("task_types", ())
         if (item := str(raw).casefold()) in mapping
     ]
+    # Some upstream technical-writing roles describe document creation with a
+    # generic "implementation" task type.  Their audited category is the
+    # stronger lifecycle signal.  Do not apply this to read-only discovery
+    # roles that may also produce documentation-shaped analysis artifacts.
+    categories = {str(item).casefold() for item in agent.get("categories", ())}
+    if archetype == "writer" and "technical-writing" in categories:
+        phases.insert(0, "documentation")
+    if archetype == "tester":
+        phases.insert(0, "testing")
     if archetype == "resident-manager":
         phases.insert(0, "coordination")
     return tuple(dict.fromkeys(phases)) or ("discovery",)
@@ -272,22 +270,38 @@ def _lifecycle_phases(agent: Mapping[str, Any], archetype: str) -> tuple[str, ..
 def _domains(agent: Mapping[str, Any], division: str) -> tuple[str, ...]:
     if "domains" in agent:
         return _items(agent["domains"], field="domains", identifiers=True)
-    return (_DIVISION_DOMAINS.get(division, division or "specialist-services"),)
+    result = [_DIVISION_DOMAINS.get(division, division or "specialist-services")]
+    categories = {str(item).casefold() for item in agent.get("categories", ())}
+    owned_text = " ".join(str(item) for item in agent.get("capabilities", ())).casefold()
+    if "security" in owned_text and "security" not in result:
+        result.append("security")
+    # Application-security and secure-code-review workers own software artifacts as well as
+    # security outcomes. Keeping them security-only makes an inferred unit that correctly names
+    # both domains impossible to staff, even when the exact specialist is present and eligible.
+    if (
+        division == "security"
+        and categories & {"application-security", "code-review"}
+        and "software-engineering" not in result
+    ):
+        result.append("software-engineering")
+    return tuple(result)
 
 
 def _tool_classes(agent: Mapping[str, Any]) -> tuple[str, ...]:
-    if "tool_classes" in agent:
-        return _items(agent["tool_classes"], field="tool_classes", identifiers=True)
-    classes: list[str] = []
-    for raw in agent.get("required_tools", ()):
-        tool = str(raw).casefold()
-        matched = next(
-            (name for name, markers in _TOOL_CLASS_MARKERS if any(x in tool for x in markers)),
-            "specialized-tool",
-        )
-        if matched not in classes:
-            classes.append(matched)
-    return tuple(classes[:MAX_TAXONOMY_ITEMS])
+    from agency_runtime.core.host_capabilities import canonicalize_tool_capabilities
+
+    # Eligibility is an executable minimum, not a worker's complete affinity
+    # profile. Audited records may advertise optional tools (for example a
+    # browser for one integration-verification scenario) in tool_classes
+    # while excluding them from required_tools. Preferring the broad list here
+    # incorrectly made every optional surface mandatory and could remove the
+    # strongest specialist from an otherwise executable unit.
+    raw = agent.get("required_tools", agent.get("tool_classes", ()))
+    values = raw if isinstance(raw, (list, tuple)) else ()
+    canonical, unknown = canonicalize_tool_capabilities(values)
+    # Unknown reviewed labels stay explicit so eligibility rejects a host that
+    # cannot prove them; never collapse them into a broad pseudo-capability.
+    return tuple((*canonical, *unknown)[:MAX_TAXONOMY_ITEMS])
 
 
 def _composition(agent: Mapping[str, Any]) -> CompositionContract:
@@ -378,6 +392,18 @@ def project_workforce_contract(
     if audit_status not in _AUDIT_STATES:
         raise ValueError(f"unsupported workforce audit status: {audit_status}")
 
+    artifact_kinds = _artifact_kinds(agent, archetype)
+    contract_origin = _identifier(agent.get("origin", origin), field="origin")
+    capability_ids = normalize_capability_ids(
+        agent.get("capability_ids", agent.get("task_types", ())),
+        artifact_kinds=artifact_kinds,
+        archetype=archetype,
+    )
+    if contract_origin != "agency" and not set(capability_ids) <= CORE_CAPABILITY_IDS:
+        unknown = sorted(set(capability_ids) - CORE_CAPABILITY_IDS)
+        raise ValueError(
+            "external workforce capability ids require ontology review: " + ",".join(unknown)
+        )
     contract = WorkforceContract(
         schema_version=WORKFORCE_CONTRACT_SCHEMA_VERSION,
         worker_id=_identifier(
@@ -397,7 +423,8 @@ def project_workforce_contract(
             agent.get("capabilities", ()),
             maximum_items=MAX_OUTCOMES,
         ),
-        artifact_kinds=_artifact_kinds(agent, archetype),
+        capability_ids=capability_ids,
+        artifact_kinds=artifact_kinds,
         lifecycle_phases=_lifecycle_phases(agent, archetype),
         domains=_domains(agent, division),
         stacks=_explicit_items(agent, "stacks", (), identifiers=True),
@@ -433,7 +460,7 @@ def project_workforce_contract(
         ),
         enabled=enabled,
         employment=employment,
-        origin=_identifier(agent.get("origin", origin), field="origin"),
+        origin=contract_origin,
     )
     if not contract.outcomes:
         raise ValueError("workforce outcomes must not be empty")
@@ -452,11 +479,20 @@ def parse_workforce_contract(value: object) -> WorkforceContract:
 
     if not isinstance(value, Mapping):
         raise ValueError("stored workforce contract must be an object")
+    document = dict(value)
     expected = set(WorkforceContract.__dataclass_fields__)
-    if set(value) != expected:
+    legacy = expected - {"capability_ids"}
+    if set(document) == legacy and document.get("schema_version") == "1":
+        document["schema_version"] = WORKFORCE_CONTRACT_SCHEMA_VERSION
+        document["capability_ids"] = normalize_capability_ids(
+            (),
+            artifact_kinds=tuple(document.get("artifact_kinds") or ()),
+            archetype=str(document.get("archetype") or ""),
+        )
+    if set(document) != expected:
         raise ValueError("stored workforce contract has an unsupported shape")
-    composition = value.get("composition")
-    audit = value.get("audit")
+    composition = document.get("composition")
+    audit = document.get("audit")
     if not isinstance(composition, Mapping) or set(composition) != set(
         CompositionContract.__dataclass_fields__
     ):
@@ -465,36 +501,37 @@ def parse_workforce_contract(value: object) -> WorkforceContract:
         raise ValueError("stored workforce audit has an unsupported shape")
     projected = project_workforce_contract(
         {
-            "slug": value["agent_id"],
-            "worker_id": value["worker_id"],
-            "display_name": value["display_name"],
+            "slug": document["agent_id"],
+            "worker_id": document["worker_id"],
+            "display_name": document["display_name"],
             "division": "specialized",
-            "archetype": value["archetype"],
-            "outcomes": value["outcomes"],
-            "artifact_kinds": value["artifact_kinds"],
-            "lifecycle_phases": value["lifecycle_phases"],
-            "domains": value["domains"],
-            "stacks": value["stacks"],
-            "scope_qualifiers": value["scope_qualifiers"],
-            "not_for": value["not_for"],
-            "authority": value["authority"],
-            "context_mode": value["context_mode"],
-            "tool_classes": value["tool_classes"],
-            "supported_hosts": value["hosts"],
-            "supported_platforms": value["platforms"],
+            "archetype": document["archetype"],
+            "outcomes": document["outcomes"],
+            "capability_ids": document["capability_ids"],
+            "artifact_kinds": document["artifact_kinds"],
+            "lifecycle_phases": document["lifecycle_phases"],
+            "domains": document["domains"],
+            "stacks": document["stacks"],
+            "scope_qualifiers": document["scope_qualifiers"],
+            "not_for": document["not_for"],
+            "authority": document["authority"],
+            "context_mode": document["context_mode"],
+            "tool_classes": document["tool_classes"],
+            "supported_hosts": document["hosts"],
+            "supported_platforms": document["platforms"],
             "composition": composition,
             "audit_status": audit["status"],
             "audit_revision": audit["revision"],
             "routing_contract_valid": audit["contract_valid"],
-            "version": value["version"],
-            "version_hash": value["version_hash"],
-            "enabled": value["enabled"],
-            "employment": value["employment"],
-            "origin": value["origin"],
+            "version": document["version"],
+            "version_hash": document["version_hash"],
+            "enabled": document["enabled"],
+            "employment": document["employment"],
+            "origin": document["origin"],
         },
-        origin=str(value["origin"]),
+        origin=str(document["origin"]),
     )
-    if projected.schema_version != value["schema_version"]:
+    if projected.schema_version != document["schema_version"]:
         raise ValueError("stored workforce contract schema_version is unsupported")
     return projected
 

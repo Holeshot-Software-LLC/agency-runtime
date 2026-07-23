@@ -32,7 +32,7 @@ RECENT_ACTIVITY_QUERIES: Mapping[str, str] = {
         "ORDER BY COALESCE(completed_at, started_at) DESC, id DESC LIMIT ?"
     ),
     "finalizations": (
-        "SELECT id, trace_id, host, action, missing, created_at "
+        "SELECT id, trace_id, host, action, missing, terminal_status, created_at "
         "FROM finalization_events ORDER BY created_at DESC, id DESC LIMIT ?"
     ),
     "specialists": (

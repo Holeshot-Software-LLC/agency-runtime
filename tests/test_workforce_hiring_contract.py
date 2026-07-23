@@ -216,12 +216,18 @@ def test_bounded_lists_reject_every_invalid_container_shape(bad: object) -> None
         parse_employment_contract(raw)
 
 
-@pytest.mark.parametrize("bad", [None, "relationship", [], [{}] * 13])
+@pytest.mark.parametrize("bad", [None, "relationship", [{}] * 13])
 def test_structured_lists_reject_every_invalid_container_shape(bad: object) -> None:
     raw = _raw()
     raw["relationships"] = bad
-    with pytest.raises(ValueError, match="nonempty bounded list"):
+    with pytest.raises(ValueError, match="bounded list"):
         parse_employment_contract(raw)
+
+
+def test_relationship_list_can_be_empty_when_no_composition_rule_is_true() -> None:
+    raw = _raw("selection-safety-critic")
+    assert raw["relationships"] == ()
+    assert parse_employment_contract(raw).relationships == ()
 
 
 def test_text_uniqueness_identifier_relationship_and_boolean_guards() -> None:

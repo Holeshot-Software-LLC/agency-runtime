@@ -340,13 +340,26 @@ def _matches_condition(text: str, condition: Any) -> bool:
             continue
         if _matches(text, " ".join(words)):
             return True
-        variants: set[str] = set(words)
+        variants_by_word: list[set[str]] = []
         for word in words:
+            variants = {word}
             if len(word) > 4 and word.endswith("ies"):
                 variants.add(f"{word[:-3]}y")
             elif len(word) > 4 and word.endswith("s") and not word.endswith("ss"):
                 variants.add(word[:-1])
-        if any(_matches(text, word) for word in variants if len(word) >= 3):
+            elif len(word) > 4:
+                variants.add(f"{word}s")
+            variants_by_word.append(variants)
+        matched_words = sum(
+            any(_matches(text, variant) for variant in variants if len(variant) >= 3)
+            for variants in variants_by_word
+        )
+        # A single generic token from a multi-word condition is not evidence
+        # for that specialist. For example, "test agent selection" must not
+        # satisfy "test result analysis" and activate a results analyst. Exact
+        # phrases still win above; otherwise require two independent terms.
+        required_words = 1 if len(words) == 1 else 2
+        if matched_words >= required_words:
             return True
     return False
 

@@ -50,6 +50,8 @@ DEFAULT_DEPENDENCIES = WizardDependencies()
 MAX_MODEL_DISCOVERY_BYTES = 1024 * 1024
 MAX_DISCOVERED_MODELS = 1000
 MAX_MODEL_ID_CHARS = 512
+DEFAULT_PROVIDER_TIMEOUT = 15.0
+DEFAULT_CLI_PROVIDER_TIMEOUT = 60.0
 
 
 def _models(
@@ -165,14 +167,18 @@ def _interactive_wizard(
     # Step 4: Tuning
     print("\nStep 4: Advanced Tuning")
     print("━" * 40)
-    print("Use default tuning values? (confidence=0.4, timeout=15s, max_selected=3)")
+    print(
+        "Use recommended tuning values? "
+        "(confidence=0.4, HTTP/local timeout=15s, subscription CLI timeout=60s, "
+        "max_selected=3)"
+    )
     resp = input("  [Y/n] ").strip().lower()
     if resp == "n":
-        timeout = float(input("  Judge timeout (seconds): ") or "15")
+        timeout = float(input("  Provider timeout (seconds): ") or str(DEFAULT_PROVIDER_TIMEOUT))
         max_sel = int(input("  Max selected agents: ") or "3")
         threshold = float(input("  Confidence bypass threshold: ") or "15")
     else:
-        timeout, max_sel, threshold = 15.0, 3, 15.0
+        timeout, max_sel, threshold = DEFAULT_PROVIDER_TIMEOUT, 3, 15.0
 
     judge_cfg["timeout"] = timeout
     judge_cfg["max_selected"] = max_sel
@@ -183,7 +189,11 @@ def _interactive_wizard(
     print("━" * 40)
 
     for provider in provider_entries:
-        provider["timeout"] = timeout
+        provider["timeout"] = (
+            DEFAULT_CLI_PROVIDER_TIMEOUT
+            if resp != "n" and provider.get("type") == "cli"
+            else timeout
+        )
 
     config_data = {
         "providers": provider_entries,
@@ -264,6 +274,7 @@ def _provider_entry(
         "api_key_env": judge.get("api_key_env", ""),
         "ollama_mode": bool(judge.get("ollama_mode", False)),
         "timeout": float(judge.get("timeout", 15.0)),
+        "reasoning_effort": str(judge.get("reasoning_effort", "")),
     }
 
 

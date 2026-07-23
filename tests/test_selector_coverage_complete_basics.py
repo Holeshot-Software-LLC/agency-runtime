@@ -359,6 +359,47 @@ def test_pipeline_refreshes_legacy_cache_and_survives_persistence_failure() -> N
     assert "decision_id" not in finalized
 
 
+def test_workforce_route_does_not_expose_legacy_keyword_companions() -> None:
+    signals = pipeline._RouteSignals(
+        policy_validation={
+            "valid": True,
+            "errors": [],
+            "enabled_slugs": ["business-strategist"],
+            "disabled_count": 0,
+        },
+        matched_actions=["BUSINESS"],
+        companion_ids=["business-strategist"],
+        available_companion_ids=["business-strategist"],
+        unavailable_companion_ids=[],
+        fallback_companion_ids=["agents-orchestrator", "chief-of-staff"],
+        available_fallback_companion_ids=["agents-orchestrator", "chief-of-staff"],
+        unavailable_fallback_companion_ids=[],
+        work_units={"delegate": False},
+    )
+
+    result = pipeline._attach_workforce_signals(
+        {
+            "selected_ids": ["application-integration-verifier"],
+            "semantic_ids": ["application-integration-verifier"],
+        },
+        SimpleNamespace(
+            source_message_hash="a" * 64,
+            capability_receipt={},
+            eligibility_rejections=(),
+        ),  # type: ignore[arg-type]
+        signals,
+    )
+
+    assert result["selected_ids"] == ["application-integration-verifier"]
+    assert result["companion_actions"] == []
+    assert result["companion_ids"] == []
+    assert result["selected_companion_ids"] == []
+    assert result["fallback_companion_ids"] == [
+        "agents-orchestrator",
+        "chief-of-staff",
+    ]
+
+
 def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -375,8 +416,10 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
 
     request = pipeline._RouteRequest(
         session_id="session",
+        trace_id="trace",
         user_message="work",
         catalog=[{"slug": "active"}],
+        workforce_catalog=[{"slug": "active"}],
         config=cfg,
         policy={},
         context_fingerprint="fingerprint",
@@ -589,6 +632,7 @@ def test_full_roster_card_projection_skips_nonapproved_entries(
     }
     monkeypatch.setattr(full_roster_eval, "bundled_manifest", lambda: manifest)
     monkeypatch.setattr(full_roster_eval, "selector_roster_projection", dict)
+    monkeypatch.setattr(full_roster_eval, "KNOWN_CONTRACTORS_BY_SLUG", {})
 
     loaded_manifest, cards = full_roster_eval._routing_cards()
 

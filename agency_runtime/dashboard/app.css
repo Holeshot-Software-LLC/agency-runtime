@@ -131,6 +131,19 @@ input:focus, textarea:focus, select:focus { border-color: #477162; box-shadow: 0
 .receipt-block { padding: 13px; border: 1px solid var(--line-soft); border-radius: 10px; background: #080d14; }
 .receipt-block span { color: #65758a; font: 700 9px ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
 .receipt-block p { margin: 8px 0 0; color: #c7d3e1; font-size: 12px; line-height: 1.6; }
+.model-receipt-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 10px; margin-top: 12px; }
+.model-receipt-card { min-width: 0; padding: 12px; border: 1px solid #253342; border-radius: 9px; background: #0c1219; }
+.model-receipt-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.model-receipt-heading > strong { min-width: 0; color: var(--accent-2); font: 700 10px var(--font-mono, ui-monospace), monospace; text-transform: capitalize; overflow-wrap: anywhere; }
+.model-receipt-heading .model-receipt-status { flex: 0 0 auto; padding: 4px 6px; border: 1px solid #344354; border-radius: 999px; color: #aab8c8; font-size: 8px; letter-spacing: .06em; }
+.model-receipt-heading .status-applied { border-color: #315c50; color: #94dbc2; background: rgba(101, 232, 184, .06); }
+.model-receipt-heading .status-rejected,
+.model-receipt-heading .status-failed { border-color: #704044; color: #efa3aa; background: rgba(239, 107, 118, .06); }
+.model-receipt-facts { display: grid; gap: 0; margin: 11px 0 0; }
+.model-receipt-facts > div { display: grid; grid-template-columns: minmax(105px, .48fr) minmax(0, 1fr); gap: 9px; padding: 7px 0; border-top: 1px solid #1d2834; }
+.model-receipt-facts dt { color: #718196; font: 700 8px var(--font-mono, ui-monospace), monospace; letter-spacing: .06em; text-transform: uppercase; }
+.model-receipt-facts dd { min-width: 0; margin: 0; color: #bac6d3; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+.model-receipt-detail { padding: 8px 9px; border-left: 2px solid #42566b; background: rgba(101, 117, 138, .06); color: #9fb0c2 !important; font-size: 10px !important; overflow-wrap: anywhere; }
 .dependency-nodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-top: 10px; }
 .dependency-node { padding: 10px; border: 1px solid #253244; border-radius: 8px; background: #0d141e; }
 .dependency-node strong, .dependency-node small { display: block; }
@@ -1926,7 +1939,7 @@ main:focus-visible {
   }
 }
 
-@media (max-width: 980px) {
+@media (max-width: 900px) {
   .shell {
     grid-template-columns: 78px minmax(0, 1fr);
   }
@@ -2152,7 +2165,7 @@ main:focus-visible {
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 600px) {
   .rail {
     scrollbar-width: thin;
     scrollbar-color: var(--line-bright) transparent;
@@ -2245,6 +2258,254 @@ main:focus-visible {
   .outcome-legend {
     grid-template-columns: 1fr;
   }
+}
+
+.workforce-layout {
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
+  align-items: start;
+}
+
+.workforce-grid,
+.hiring-list {
+  display: grid;
+  gap: 12px;
+}
+
+.workforce-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.workforce-card {
+  appearance: none;
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  padding: 15px 16px;
+  color: var(--text);
+  text-align: left;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .012));
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.workforce-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: linear-gradient(145deg, rgba(71, 228, 255, .08), rgba(255, 255, 255, .02));
+}
+
+.workforce-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.workforce-card.state-contractor { border-left-color: var(--warn); }
+.workforce-card.state-disabled { border-left-color: var(--muted); opacity: .78; }
+.workforce-card.state-suspended,
+.workforce-card.state-retired { border-left-color: var(--danger); }
+
+.workforce-card-head,
+.hiring-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.workforce-card-head strong,
+.hiring-card-head strong {
+  font-size: .92rem;
+  line-height: 1.25;
+}
+
+.workforce-card-slug,
+.workforce-card small,
+.hiring-card small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.worker-state {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  color: var(--accent);
+  font: 700 .64rem/1 var(--font-mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: rgba(101, 232, 184, .08);
+  border: 1px solid rgba(101, 232, 184, .2);
+  border-radius: 999px;
+}
+
+.workforce-detail-panel {
+  position: sticky;
+  top: 18px;
+}
+
+.workforce-detail,
+.workforce-detail-heading,
+.workforce-action-form,
+.workforce-token-group {
+  display: grid;
+  gap: 10px;
+}
+
+.workforce-detail-heading h3,
+.workforce-detail-heading p { margin: 0; }
+.workforce-detail-heading p { color: var(--muted); line-height: 1.55; }
+
+.promotion-readiness,
+.workforce-comparisons,
+.compiled-prompt-preview,
+.workforce-history {
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  padding: 0.85rem;
+}
+
+.promotion-readiness {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.promotion-readiness.ready {
+  border-color: color-mix(in srgb, var(--success) 54%, var(--line));
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
+.promotion-readiness p,
+.promotion-readiness span,
+.workforce-comparison small {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.workforce-comparisons {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.workforce-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.2rem 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+}
+
+.workforce-comparison small { grid-column: 1 / -1; }
+
+.compiled-prompt-preview pre {
+  max-height: 22rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.workforce-history-list { display: grid; gap: 0.5rem; margin-top: 0.7rem; }
+.workforce-history-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 0.7fr) minmax(8rem, 1.5fr) auto;
+  gap: 0.65rem;
+  align-items: baseline;
+}
+.workforce-history-row time { color: var(--muted); font-size: 0.78rem; }
+
+.workforce-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 4px 0;
+  overflow: hidden;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.workforce-facts > div {
+  min-width: 0;
+  padding: 10px;
+  background: var(--surface);
+}
+
+.workforce-facts dt {
+  color: var(--muted);
+  font: 600 .65rem/1.2 var(--font-mono);
+  text-transform: uppercase;
+}
+
+.workforce-facts dd {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+  font-size: .78rem;
+}
+
+.workforce-evidence-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workforce-evidence-summary > * {
+  padding: 9px;
+  background: rgba(255, 255, 255, .025);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: .72rem;
+}
+
+.workforce-action-form {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.hiring-panel { margin-top: 16px; }
+.hiring-list { grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); }
+
+.hiring-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  background: rgba(255, 255, 255, .022);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-2);
+  border-radius: 12px;
+}
+
+.hiring-evidence summary {
+  padding: 7px 0;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.hiring-evidence pre {
+  max-height: 260px;
+  margin: 4px 0 0;
+  padding: 10px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font: .7rem/1.55 var(--font-mono);
+  background: rgba(0, 0, 0, .22);
+  border-radius: 8px;
+}
+
+@media (max-width: 980px) {
+  .workforce-layout { grid-template-columns: 1fr; }
+  .workforce-detail-panel { position: static; }
+}
+
+@media (max-width: 620px) {
+  .workforce-facts,
+  .workforce-evidence-summary,
+  .hiring-list { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

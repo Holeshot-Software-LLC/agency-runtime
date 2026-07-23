@@ -68,6 +68,7 @@ _BASE_CANONICAL_TOOL_CAPABILITIES: Final[frozenset[str]] = frozenset(
         "performance-profiling",
         "repository-read",
         "repository-write",
+        "runtime-evidence",
         "screenshot-capture",
         "security-analysis",
         "shell-execution",
@@ -164,6 +165,8 @@ def _alias_map() -> dict[str, str]:
         "source-control": {"source-control", "git", "git-history-reader"},
         "code-execution": {
             "code-execution",
+            "node",
+            "nodejs",
             "python",
             "python-runtime",
             "prototype-runtime",
@@ -171,6 +174,8 @@ def _alias_map() -> dict[str, str]:
         "test-execution": {
             "test-execution",
             "test-runner",
+            "test-results-reader",
+            "coverage-reader",
             "benchmark-runner",
             "evaluation-runner",
             "experiment-runner",
@@ -251,6 +256,11 @@ def _alias_map() -> dict[str, str]:
             "performance-profiling",
             "performance-profiler",
             "profiler",
+        },
+        "runtime-evidence": {
+            "runtime-evidence",
+            "staffing-plan-reader",
+            "workforce-index",
         },
         "native-delegation": {"native-delegation"},
     }

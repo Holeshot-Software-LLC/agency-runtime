@@ -23,7 +23,7 @@ import {{ execFile, execFileSync }} from "node:child_process";
 import {{ createHash, randomUUID }} from "node:crypto";
 
 const PYTHON = {python};
-const MODULE_ARGS = ["-I", {bootstrap}, "agency_runtime.adapters.openclaw.node_bridge"{config_args}];
+const MODULE_ARGS = ["-I", "-S", {bootstrap}, "agency_runtime.adapters.openclaw.node_bridge"{config_args}];
 const FINALIZATION_UNAVAILABLE = "Agency Runtime could not verify this response. Restore the local runtime and retry.";
 const TERMINAL_REJECTION_MESSAGE = "Agency Runtime blocked this response because its required evidence contract remained invalid after the bounded revision. Start a new turn after restoring the runtime or correcting the response.";
 const MAX_BRIDGE_INPUT_BYTES = 1024 * 1024;
@@ -220,6 +220,12 @@ function serializeBridgePayload(payload) {{
     traceId: boundedCorrelation(payload?.traceId),
     parentSessionId: boundedCorrelation(payload?.parentSessionId),
     parentTraceId: boundedCorrelation(payload?.parentTraceId),
+    workUnitId: boundedUtf8(payload?.workUnitId, 160),
+    workerId: boundedUtf8(payload?.workerId, 256),
+    nativeRunId: boundedUtf8(payload?.nativeRunId, 256),
+    childSessionId: boundedCorrelation(payload?.childSessionId),
+    goal: boundedUtf8(payload?.goal, MAX_BRIDGE_TEXT_BYTES),
+    outcome: boundedUtf8(payload?.outcome, 32),
     userMessage: boundedUtf8(payload?.userMessage, MAX_BRIDGE_TEXT_BYTES),
     finalResponse: boundedUtf8(payload?.finalResponse, MAX_BRIDGE_TEXT_BYTES),
     outboundPayload: boundedUtf8(payload?.outboundPayload, MAX_OUTBOUND_PAYLOAD_BYTES),
@@ -831,6 +837,8 @@ export default definePluginEntry({{
         model: modelId(ctx),
         parentSessionId: String(childParent?.sessionId || ""),
         parentTraceId: String(childParent?.traceId || ""),
+        workerId: String(childParent?.workerId || ""),
+        nativeRunId: String(childParent?.nativeRunId || ""),
       }});
       const stateApplied = observeRuntimeState(result, stateEpoch);
       if (!stateApplied && !runtimeEnabled) return undefined;
@@ -847,17 +855,28 @@ export default definePluginEntry({{
       const childSession = String(event?.childSessionKey || "");
       const parentSession = sessionId(event, ctx);
       const parentTrace = String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || "");
+      const nativeRunId = String(event?.runId || (childSession ? `openclaw-subagent:${{childSession}}` : ""));
+      const workUnitId = String(event?.workUnitId || event?.taskName || "");
+      const goal = String(event?.goal || event?.task || event?.prompt || "");
       if (childSession && parentSession && parentTrace) {{
-        nativeChildParents.set(childSession, {{ sessionId: parentSession, traceId: parentTrace }});
+        nativeChildParents.set(childSession, {{
+          sessionId: parentSession,
+          traceId: parentTrace,
+          workerId: childSession,
+          nativeRunId,
+          workUnitId,
+        }});
         if (nativeChildParents.size > 512) nativeChildParents.delete(nativeChildParents.keys().next().value);
       }}
       await invokeAgency({{
         action: "native_child_started",
         sessionId: sessionId(event, ctx),
         traceId: String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || ""),
-        workUnitId: String(event?.workUnitId || event?.taskName || ""),
+        workUnitId,
         workerId: String(event?.childSessionKey || ""),
-        nativeRunId: String(event?.runId || ""),
+        nativeRunId,
+        childSessionId: childSession,
+        goal,
       }});
     }}, {{ timeoutMs: {host_timeout_ms} }});
 

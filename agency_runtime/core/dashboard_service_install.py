@@ -19,6 +19,7 @@ from agency_runtime.core.dashboard_service_core import (
     _Context,
     _context,
     _dashboard_runtime_fingerprint,
+    _dashboard_runtime_port,
     _fresh_dashboard_readiness,
     _revalidate_dashboard_launcher,
     _run,
@@ -262,6 +263,7 @@ class _WindowsInstallTransaction:
     commands: list[dict[str, Any]] = field(default_factory=list)
     prior_task: str | None = None
     prior_runtime_fingerprint: str | None = None
+    prior_runtime_port: int | None = None
     prior_active: bool = False
     state_mutated: bool = False
     created_registration: bool = False
@@ -291,6 +293,7 @@ def _capture_prior_windows_install(
     *,
     command_runner: CommandRunner | None,
 ) -> None:
+    transaction.prior_runtime_port = _dashboard_runtime_port(ctx)
     transaction.prior_runtime_fingerprint = _dashboard_runtime_fingerprint(ctx)
     if transaction.installed:
         transaction.prior_task, ownership_query = _export_owned_windows_task(
@@ -363,20 +366,16 @@ def _write_and_verify_windows_install(
     return current_task
 
 
-def _restart_windows_install_if_needed(
+def _stop_windows_install_task(
     ctx: _Context,
     transaction: _WindowsInstallTransaction,
     current_task: str,
     *,
     command_runner: CommandRunner | None,
+    failure_label: str,
 ) -> None:
-    restart_needed = (
-        transaction.installed
-        and transaction.prior_active
-        and (transaction.registration_changed or transaction.runtime_changed)
-    )
-    if not restart_needed:
-        return
+    """Stop one exact owned task instance and wait for Task Scheduler to settle."""
+
     exact = _assert_windows_task_unchanged(ctx, current_task, command_runner=command_runner)
     transaction.commands.append(exact.public())
     end_result = _run(
@@ -392,14 +391,37 @@ def _restart_windows_install_if_needed(
     transaction.state_mutated = True
     transaction.commands.append(end_result.public())
     if not end_result.ok:
-        raise RuntimeError("scheduled-task stop before restart failed")
+        raise RuntimeError(f"{failure_label} failed")
     stopped, state_queries = _wait_windows_running_state(
         False,
         command_runner=command_runner,
     )
     transaction.commands.extend(query.public() for query in state_queries)
     if not stopped:
-        raise RuntimeError("scheduled task did not reach the idle state before restart")
+        raise RuntimeError(f"{failure_label} did not reach the idle state")
+
+
+def _restart_windows_install_if_needed(
+    ctx: _Context,
+    transaction: _WindowsInstallTransaction,
+    current_task: str,
+    *,
+    command_runner: CommandRunner | None,
+) -> None:
+    restart_needed = (
+        transaction.installed
+        and transaction.prior_active
+        and (transaction.registration_changed or transaction.runtime_changed)
+    )
+    if not restart_needed:
+        return
+    _stop_windows_install_task(
+        ctx,
+        transaction,
+        current_task,
+        command_runner=command_runner,
+        failure_label="scheduled-task stop before restart",
+    )
 
 
 def _activate_windows_install_if_needed(
@@ -414,13 +436,41 @@ def _activate_windows_install_if_needed(
     clearance = _wait_dashboard_runtime_cleared(
         ctx,
         transaction.prior_runtime_fingerprint,
+        previous_port=transaction.prior_runtime_port,
     )
-    if not clearance.cleared:
-        if clearance.replacement_detected:
+    if clearance.replacement_detected:
+        replacement_fingerprint = _dashboard_runtime_fingerprint(ctx)
+        replacement_port = _dashboard_runtime_port(ctx)
+        if replacement_fingerprint is None:
             raise RuntimeError(
                 "dashboard runtime generation changed before activation; "
-                "the replacement was preserved"
+                "the replacement identity could not be verified"
             )
+        replacement_running, replacement_query = _windows_running_state(
+            command_runner=command_runner
+        )
+        transaction.commands.append(replacement_query.public())
+        if replacement_running is None:
+            raise RuntimeError(
+                "dashboard runtime generation changed before activation; "
+                "the replacement task state could not be verified"
+            )
+        if replacement_running:
+            _stop_windows_install_task(
+                ctx,
+                transaction,
+                current_task,
+                command_runner=command_runner,
+                failure_label="scheduled-task replacement stop",
+            )
+        clearance = _wait_dashboard_runtime_cleared(
+            ctx,
+            replacement_fingerprint,
+            previous_port=replacement_port,
+        )
+        if clearance.replacement_detected:
+            raise RuntimeError("dashboard runtime generation changed repeatedly before activation")
+    if not clearance.cleared:
         raise RuntimeError("old dashboard runtime remained reachable before activation")
     exact = _assert_windows_task_unchanged(ctx, current_task, command_runner=command_runner)
     transaction.commands.append(exact.public())

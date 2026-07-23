@@ -5,7 +5,9 @@ from __future__ import annotations
 import math
 import shlex
 import sys
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -28,6 +30,11 @@ from agency_runtime.core.installer_payload_openclaw import render_openclaw_index
 from agency_runtime.core.process_argv import (
     absolute_executable_path,
     agency_bootstrap_path,
+)
+
+_BOUND_LAUNCHER_ARTIFACTS: ContextVar[tuple[str, str] | None] = ContextVar(
+    "agency_bound_launcher_artifacts",
+    default=None,
 )
 
 
@@ -103,14 +110,30 @@ def python_commands(module: str, *args: str) -> tuple[str, str]:
 def launcher_artifact_paths() -> tuple[str, str]:
     """Return the exact interpreter and bootstrap persisted by every adapter."""
 
+    if bound := _BOUND_LAUNCHER_ARTIFACTS.get():
+        return bound
     return absolute_executable_path(sys.executable), agency_bootstrap_path()
+
+
+@contextmanager
+def bind_launcher_artifact_paths(paths: tuple[str, str]) -> Iterator[None]:
+    """Bind one already-attested launcher pair during deterministic rendering."""
+
+    if not isinstance(paths, tuple) or len(paths) != 2:
+        raise ValueError("launcher artifact binding requires two paths")
+    bound = tuple(absolute_executable_path(path) for path in paths)
+    token = _BOUND_LAUNCHER_ARTIFACTS.set(bound)
+    try:
+        yield
+    finally:
+        _BOUND_LAUNCHER_ARTIFACTS.reset(token)
 
 
 def runtime_python_argv(module: str, *args: str) -> list[str]:
     """Build the exact isolated argv shared by payloads and fingerprints."""
 
     python_executable, bootstrap_path = launcher_artifact_paths()
-    return [python_executable, "-I", bootstrap_path, module, *args]
+    return [python_executable, "-I", "-S", bootstrap_path, module, *args]
 
 
 def resolve_install_config(
@@ -126,7 +149,7 @@ def resolve_install_config(
 
 
 def effective_judge_budget_seconds(cfg: AgencyConfig) -> float:
-    """Conservatively bound the selector's sequential provider attempts."""
+    """Conservatively bound every sequential inference path in one hook."""
     budgets = [
         max(0.0, float(provider.timeout))
         for provider in cfg.providers
@@ -142,7 +165,31 @@ def effective_judge_budget_seconds(cfg: AgencyConfig) -> float:
         budgets.append(max(0.0, float(cfg.judge.timeout)))
     if cfg.ollama.enabled and cfg.ollama.model:
         budgets.append(max(0.0, float(cfg.judge.timeout)))
-    return max(max(0.0, float(cfg.judge.timeout)), sum(budgets))
+    selector_budget = max(max(0.0, float(cfg.judge.timeout)), sum(budgets))
+    workforce_calls = {
+        "fast": cfg.workforce.fast_call_budget,
+        "balanced": cfg.workforce.balanced_call_budget,
+        "strict": cfg.workforce.strict_call_budget,
+    }[cfg.workforce.mode]
+    workforce_provider_timeouts = [
+        max(0.0, float(provider.timeout))
+        for provider in cfg.providers
+        if (
+            (provider.model and provider.base_url)
+            or (
+                provider.type.strip().lower() == "cli"
+                and provider.transport.strip().lower() in {"codex", "claude"}
+            )
+        )
+    ]
+    if not workforce_provider_timeouts and (
+        (cfg.judge.model and cfg.judge.base_url) or (cfg.ollama.enabled and cfg.ollama.model)
+    ):
+        workforce_provider_timeouts = [max(0.0, float(cfg.judge.timeout))]
+    workforce_budget = (
+        workforce_calls * max(workforce_provider_timeouts) if workforce_provider_timeouts else 0.0
+    )
+    return max(selector_budget, workforce_budget)
 
 
 def hook_timeout_seconds(cfg: AgencyConfig) -> int:
@@ -217,6 +264,17 @@ def codex_hooks(
             ],
             "UserPromptSubmit": [
                 {"hooks": [handler("UserPromptSubmit", "Routing with Agency Runtime")]}
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "spawn_agent",
+                    "hooks": [
+                        handler(
+                            "PreToolUse",
+                            "Binding exact Agency specialist to native child",
+                        )
+                    ],
+                }
             ],
             "PostToolUse": [
                 {

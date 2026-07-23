@@ -930,7 +930,7 @@
         "reporting secrets or personal data verbatim",
         "claiming scanner or runtime evidence that was not produced"
       ],
-      "audit_revision": "1",
+      "audit_revision": "2",
       "audit_status": "approved",
       "authority": "review",
       "avoid_when": [
@@ -972,17 +972,19 @@
         "high-reasoning",
         "tool-use"
       ],
+      "optional_tools": [
+        "security-scanner"
+      ],
       "preferred_when": [
         "generated or assisted code needs an independent security review",
         "a proposed fix needs exploitability and regression analysis"
       ],
       "prompt_file": "prompts/ai-generated-code-security-auditor.txt",
-      "prompt_hash": "046907d56e213d475825a91a0a81e60de46fd4297654fa94a2bc5be3fb50eeba",
+      "prompt_hash": "1030b0bd2d90d4b7586e435b2340327d2fe5f4be4ea2353333f062b11c35d54c",
       "relative_path": "security/security-ai-generated-code-auditor.md",
       "required_tools": [
         "file-read",
-        "git",
-        "security-scanner"
+        "git"
       ],
       "requires": [],
       "slug": "ai-generated-code-security-auditor",
@@ -1003,7 +1005,7 @@
         "review",
         "testing"
       ],
-      "version": "sha256:2b537175181601cd142b8c5f7a0f9f7d498cda26f92ae65fbf66362d15cc02d2"
+      "version": "sha256:6f74a99b7c0bdecd7dacb1760e81c6bb6f47e4f7bcfbdb16699f63afb94f84d6"
     },
     {
       "anti_capabilities": [

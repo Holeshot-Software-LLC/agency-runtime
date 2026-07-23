@@ -21,8 +21,9 @@
         <button class="nav-item" type="button" data-view="routing" aria-controls="view-routing" title="Routing lab"><span data-short="RT" aria-hidden="true">02</span>Routing lab</button>
         <button class="nav-item" type="button" data-view="evidence" aria-controls="view-evidence" title="Evidence"><span data-short="EV" aria-hidden="true">03</span>Evidence</button>
         <button class="nav-item" type="button" data-view="roster" aria-controls="view-roster" title="Roster"><span data-short="RO" aria-hidden="true">04</span>Roster</button>
-        <button class="nav-item" type="button" data-view="hosts" aria-controls="view-hosts" title="Hosts"><span data-short="HO" aria-hidden="true">05</span>Hosts</button>
-        <button class="nav-item" type="button" data-view="settings" aria-controls="view-settings" title="Settings"><span data-short="SE" aria-hidden="true">06</span>Settings</button>
+        <button class="nav-item" type="button" data-view="workforce" aria-controls="view-workforce" title="Workforce"><span data-short="WF" aria-hidden="true">05</span>Workforce</button>
+        <button class="nav-item" type="button" data-view="hosts" aria-controls="view-hosts" title="Hosts"><span data-short="HO" aria-hidden="true">06</span>Hosts</button>
+        <button class="nav-item" type="button" data-view="settings" aria-controls="view-settings" title="Settings"><span data-short="SE" aria-hidden="true">07</span>Settings</button>
       </nav>
       <div class="rail-foot">
         <span class="pulse" aria-hidden="true"></span>
@@ -223,6 +224,52 @@
         </div>
       </section>
 
+      <section id="view-workforce" class="view" data-view-panel="workforce" hidden>
+        <div class="metric-grid workforce-metrics" aria-label="Workforce state summary">
+          <article class="metric primary"><span>Employees</span><strong id="workforce-employees">0</strong><small>proven durable specialists</small></article>
+          <article class="metric"><span>Contractors</span><strong id="workforce-contractors">0</strong><small>enabled newly hired specialists</small></article>
+          <article class="metric"><span>Disabled</span><strong id="workforce-disabled">0</strong><small>capability left available but off</small></article>
+          <article class="metric"><span>Suspended</span><strong id="workforce-suspended">0</strong><small>operator safety holds</small></article>
+          <article class="metric"><span>Retired</span><strong id="workforce-retired">0</strong><small>preserved history, no new assignments</small></article>
+          <article class="metric"><span>Merged</span><strong id="workforce-merged">0</strong><small>superseded workers with lineage intact</small></article>
+        </div>
+        <div class="split workforce-layout">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">THE COMPANY</p><h2>Employees and contractors</h2></div><span id="workforce-count" class="panel-tag">0</span></div>
+            <p class="panel-copy">Every worker keeps a stable identity, exact version, recruitment contract, and lifecycle history. Contractors are enabled immediately but remain visibly new until promotion.</p>
+            <div id="workforce-grid" class="workforce-grid" aria-live="polite"></div>
+          </article>
+          <article class="panel workforce-detail-panel">
+            <div class="panel-head"><div><p class="eyebrow">WORKER RECORD</p><h2>Evidence and controls</h2></div><span id="workforce-detail-state" class="panel-tag">SELECT</span></div>
+            <div id="workforce-detail" class="empty-state">Select a worker to inspect scope, lineage, hiring evidence, assignments, and outcomes.</div>
+            <form id="workforce-action-form" class="workforce-action-form" hidden>
+              <input id="workforce-action-worker" type="hidden">
+              <input id="workforce-action-revision" type="hidden">
+              <label for="workforce-action-kind">Lifecycle action</label>
+              <select id="workforce-action-kind">
+                <option value="promote">Promote contractor</option>
+                <option value="enable">Enable worker</option>
+                <option value="disable">Disable worker</option>
+                <option value="suspend">Suspend worker</option>
+                <option value="resume">Resume worker</option>
+                <option value="retire">Retire worker</option>
+                <option value="merge">Merge into another worker</option>
+              </select>
+              <label for="workforce-action-target">Merge target <small>(merge only)</small></label>
+              <input id="workforce-action-target" autocomplete="off" placeholder="surviving-worker-slug">
+              <label for="workforce-action-reason">Evidence-based reason</label>
+              <textarea id="workforce-action-reason" rows="3" maxlength="2048" placeholder="Why this lifecycle change is warranted"></textarea>
+              <button id="workforce-action-submit" class="button solid" type="submit">Apply lifecycle action</button>
+            </form>
+          </article>
+        </div>
+        <article class="panel hiring-panel">
+          <div class="panel-head"><div><p class="eyebrow">HIRING DESK</p><h2>Gap, duplicate, and critic evidence</h2></div><span id="hiring-count" class="panel-tag">0</span></div>
+          <p class="panel-copy">Hiring records show why a capability was missing, the nearest existing workers, the compiled contract, the independent critic, and recorded model evidence.</p>
+          <div id="hiring-list" class="hiring-list" aria-live="polite"></div>
+        </article>
+      </section>
+
       <section id="view-hosts" class="view" data-view-panel="hosts" hidden>
         <article class="panel">
           <div class="panel-head"><div><p class="eyebrow">NATIVE DISCOVERY</p><h2>Installed agent hosts</h2></div><span class="panel-tag">WINDOWS + LINUX</span></div>
@@ -338,6 +385,38 @@
           </div>
 
           <article class="panel config-panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">DYNAMIC WORKFORCE</p><h2>Planning, recruitment, and contractors</h2></div>
+              <span class="panel-tag">INFERENCE FIRST</span>
+            </div>
+            <p class="panel-copy">Agency plans the work, asks the selected provider to classify the best workers, then verifies eligibility and conflicts locally. Blank stage models use the provider's default model. Choose a faster account model for interactive routing or enter a LiteLLM router alias.</p>
+            <datalist id="workforce-provider-options"></datalist>
+            <datalist id="workforce-model-options"></datalist>
+            <div class="config-grid">
+              <div><label for="config-workforce-mode">Assurance mode</label><select id="config-workforce-mode" data-config-path="workforce.mode"><option value="fast">Fast · compact plan + local staffing</option><option value="balanced">Balanced · recruiter only for ambiguity</option><option value="strict">Strict · ambiguity recruiter + critic</option></select></div>
+              <div><label for="config-workforce-provider">Provider</label><input id="config-workforce-provider" data-config-path="workforce.provider" list="workforce-provider-options" placeholder="codex-subscription"><small class="field-help">Blank uses the ordered provider chain.</small></div>
+              <div><label for="config-workforce-planner-model">Planner model</label><input id="config-workforce-planner-model" data-config-path="workforce.planner_model" list="workforce-model-options" placeholder="Use provider model"></div>
+              <div><label for="config-workforce-recruiter-model">Recruiter model</label><input id="config-workforce-recruiter-model" data-config-path="workforce.recruiter_model" list="workforce-model-options" placeholder="Use provider model"></div>
+              <div><label for="config-workforce-hiring-model">Contractor hiring model</label><input id="config-workforce-hiring-model" data-config-path="workforce.hiring_model" list="workforce-model-options" placeholder="Use provider model"></div>
+              <div><label for="config-workforce-critic-model">Staffing critic model</label><input id="config-workforce-critic-model" data-config-path="workforce.critic_model" list="workforce-model-options" placeholder="Use provider model"></div>
+              <div><label for="config-workforce-fast-budget">Fast call budget</label><input id="config-workforce-fast-budget" data-config-path="workforce.fast_call_budget" data-value-type="integer" type="number" min="1" max="8"></div>
+              <div><label for="config-workforce-balanced-budget">Balanced call budget</label><input id="config-workforce-balanced-budget" data-config-path="workforce.balanced_call_budget" data-value-type="integer" type="number" min="1" max="8"></div>
+              <div><label for="config-workforce-strict-budget">Strict call budget</label><input id="config-workforce-strict-budget" data-config-path="workforce.strict_call_budget" data-value-type="integer" type="number" min="1" max="8"></div>
+              <div><label for="config-workforce-hiring-budget">Hiring call budget</label><input id="config-workforce-hiring-budget" data-config-path="workforce.hiring_call_budget" data-value-type="integer" type="number" min="1" max="8"></div>
+              <div><label for="config-workforce-max-units">Maximum work units</label><input id="config-workforce-max-units" data-config-path="workforce.max_work_units" data-value-type="integer" type="number" min="1" max="64"></div>
+              <div><label for="config-workforce-max-per-unit">Workers per unit</label><input id="config-workforce-max-per-unit" data-config-path="workforce.max_selected_per_unit" data-value-type="integer" type="number" min="1" max="16"></div>
+              <div><label for="config-workforce-max-total">Workers per request</label><input id="config-workforce-max-total" data-config-path="workforce.max_selected_total" data-value-type="integer" type="number" min="1" max="256"></div>
+              <div><label for="config-workforce-confidence">Minimum confidence</label><input id="config-workforce-confidence" data-config-path="workforce.min_confidence" data-value-type="number" type="number" min="0" max="1" step="0.01"></div>
+              <div><label for="config-workforce-margin">Minimum winner margin</label><input id="config-workforce-margin" data-config-path="workforce.min_margin" data-value-type="number" type="number" min="0" max="1" step="0.01"></div>
+              <div><label for="config-workforce-hires-task">Maximum hires per request</label><input id="config-workforce-hires-task" data-config-path="workforce.max_hires_per_task" data-value-type="integer" type="number" min="0" max="16"></div>
+              <div><label for="config-workforce-hires-day">Maximum hires per day</label><input id="config-workforce-hires-day" data-config-path="workforce.max_hires_per_day" data-value-type="integer" type="number" min="0" max="100"></div>
+              <div><label for="config-workforce-promote">Auto-promotion successes</label><input id="config-workforce-promote" data-config-path="workforce.auto_promote_successes" data-value-type="integer" type="number" min="0" max="10000"><small class="field-help">Zero keeps promotion manual.</small></div>
+              <div><label for="config-workforce-review-days">Contractor review window (days)</label><input id="config-workforce-review-days" data-config-path="workforce.contractor_review_days" data-value-type="integer" type="number" min="1" max="3650"></div>
+            </div>
+            <div class="card-actions"><button id="workforce-model-refresh" class="button ghost" type="button">Refresh account models</button><span id="workforce-model-status" class="field-help" aria-live="polite">Choose a configured provider to discover models.</span></div>
+          </article>
+
+          <article class="panel config-panel">
             <div class="panel-head"><div><p class="eyebrow">ORDERED FALLBACK</p><h2>Providers</h2></div><span class="panel-tag">BUILDER + JSON</span></div>
             <p class="panel-copy">Providers are tried in order. Supported types are <code>openai-compatible</code>, <code>anthropic</code>, <code>ollama</code>, <code>litellm</code>, and allowlisted <code>cli</code> entries with <code>transport: codex|claude</code>. Prefer <code>api_key_env</code> over direct keys.</p>
             <div class="config-grid">
@@ -351,9 +430,14 @@
                 <div class="card-actions"><button id="provider-builder-model-refresh" class="button ghost" type="button">Refresh models</button><span id="provider-builder-model-status" class="field-help" aria-live="polite">Choose Codex to discover account models.</span></div>
               </div>
               <div><label for="provider-builder-transport">CLI transport</label><select id="provider-builder-transport"><option value="">Not a CLI provider</option><option value="codex">Codex OAuth subscription</option><option value="claude">Claude OAuth subscription</option></select></div>
+              <div>
+                <label for="provider-builder-reasoning-effort">Reasoning effort</label>
+                <select id="provider-builder-reasoning-effort"><option value="">Model default</option></select>
+                <small id="provider-builder-reasoning-effort-help" class="field-help">Codex subscription only. Lower effort is faster and uses less subscription capacity for routing.</small>
+              </div>
               <div><label for="provider-builder-url">Base URL</label><input id="provider-builder-url" placeholder="http://127.0.0.1:4000/v1" inputmode="url"></div>
               <div><label for="provider-builder-env">Key environment variable</label><input id="provider-builder-env" placeholder="LITELLM_API_KEY" spellcheck="false"></div>
-              <div><label for="provider-builder-timeout">Timeout seconds</label><input id="provider-builder-timeout" type="number" min="0.05" max="60" step="0.05" value="15"></div>
+              <div><label for="provider-builder-timeout">Timeout seconds</label><input id="provider-builder-timeout" type="number" min="0.05" max="60" step="0.05" value="60"><small class="field-help">Subscription CLIs default to 60 seconds; HTTP and local providers default to 15.</small></div>
             </div>
             <div class="card-actions"><button id="provider-builder-save" class="button solid" type="button">Add or update provider</button><button id="provider-builder-remove" class="button ghost" type="button">Remove selected provider</button></div>
             <details class="advanced-config">

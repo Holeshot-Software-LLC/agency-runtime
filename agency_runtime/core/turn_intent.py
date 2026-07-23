@@ -30,8 +30,8 @@ TurnKind = Literal[
 ]
 TurnStateStatus = Literal["current", "missing", "stale", "ambiguous", "corrupt"]
 
-TURN_CLASSIFIER_VERSION = 3
-SUPPORTED_TURN_CLASSIFIER_VERSIONS: Final[frozenset[int]] = frozenset({1, 2, 3})
+TURN_CLASSIFIER_VERSION = 4
+SUPPORTED_TURN_CLASSIFIER_VERSIONS: Final[frozenset[int]] = frozenset({1, 2, 3, 4})
 MAX_TURN_SIGNAL_CHARS = 16_384
 MAX_REASON_CODES = 8
 MAX_REASON_CODE_CHARS = 64
@@ -373,7 +373,11 @@ class TurnClassification:
         )
         allowed = {
             "acknowledgement": {(False, False, False), (True, True, True)},
-            "conversation": {(True, True, True)},
+            "conversation": (
+                {(True, True, True), (False, False, False)}
+                if self.classifier_version >= 4
+                else {(True, True, True)}
+            ),
             "control": {(False, False, False)},
             "continuation": {(True, False, True), (True, True, True)},
             "new_intent": {(True, True, True)},
@@ -751,11 +755,11 @@ def classify_turn_intent(
             current_state,
             raw_message,
             "pure_social_conversation",
-            "roster_consideration_required",
-            confidence=0.98,
-            selection_required=True,
-            reroute_required=True,
-            execution_decision_required=True,
+            "no_pending_state",
+            confidence=0.99,
+            selection_required=False,
+            reroute_required=False,
+            execution_decision_required=False,
         )
 
     if (

@@ -28,7 +28,7 @@ from agency_runtime.core.resident_managers import (
     is_current_resident_manager_kernel_reference,
     is_resident_manager_slug,
 )
-from agency_runtime.core.specialist_contracts import MAX_SELECTED_SPECIALISTS
+from agency_runtime.core.specialist_contracts import MAX_DURABLE_SPECIALIST_REFERENCES
 from agency_runtime.core.store.projections import (
     RUN_CONTENT_LIMIT as _RUN_CONTENT_LIMIT,
 )
@@ -43,11 +43,13 @@ from agency_runtime.core.store.version_identity import (
     MAX_VERSION_IDENTITY_BYTES,
     is_valid_version_identity,
 )
+from agency_runtime.core.turn_intent import TURN_CLASSIFIER_VERSION
 from agency_runtime.core.unit_assignment import project_unit_assignment_agents
 
 _DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _WORK_UNIT_ID_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
 _MAX_RECIPE_BYTES = 48_000
+_MAX_RECIPE_NODES = 2_048
 _CONTINUATION_GUARD_VERSION = 1
 _MAX_SELECTION_REFS = 16
 _TURN_KINDS = frozenset(
@@ -152,7 +154,7 @@ def _project_turn_classification(value: object) -> dict[str, Any] | None:
         or _DIGEST_PATTERN.fullmatch(state_revision) is None
         or isinstance(classifier_version, bool)
         or not isinstance(classifier_version, int)
-        or not 1 <= classifier_version <= 3
+        or not 1 <= classifier_version <= TURN_CLASSIFIER_VERSION
         or any(not isinstance(item, bool) for item in booleans.values())
         or (classifier_version >= 3 and _DIGEST_PATTERN.fullmatch(message_fingerprint) is None)
         or (message_fingerprint and _DIGEST_PATTERN.fullmatch(message_fingerprint) is None)
@@ -173,7 +175,11 @@ def _project_turn_classification(value: object) -> dict[str, Any] | None:
     )
     allowed = {
         "acknowledgement": {(False, False, False), (True, True, True)},
-        "conversation": {(True, True, True)},
+        "conversation": (
+            {(True, True, True), (False, False, False)}
+            if classifier_version >= 4
+            else {(True, True, True)}
+        ),
         "control": {(False, False, False)},
         "continuation": {(True, False, True), (True, True, True)},
         "new_intent": {(True, True, True)},
@@ -242,13 +248,27 @@ def _project_recipe_routing(value: object, *, trace_id: str) -> dict[str, Any] |
     safe_decision.pop("provider", None)
     safe_decision["trace_id"] = trace_id
     safe_decision["work_units"] = _project_content_free_work_units(safe_work_units)
+    if "workforce_unit_descriptors" in value:
+        from agency_runtime.core.workforce.routing_projection import (
+            project_workforce_unit_bindings,
+            project_workforce_unit_descriptors,
+        )
+
+        descriptors = project_workforce_unit_descriptors(value.get("workforce_unit_descriptors"))
+        if descriptors is None:
+            return None
+        safe_decision["workforce_unit_descriptors"] = descriptors
+        bindings = project_workforce_unit_bindings(value.get("workforce_unit_bindings"))
+        if bindings is None:
+            return None
+        safe_decision["workforce_unit_bindings"] = bindings
     return safe_decision
 
 
 def _project_specialist_refs(
     value: object,
     *,
-    maximum: int = MAX_SELECTED_SPECIALISTS,
+    maximum: int = MAX_DURABLE_SPECIALIST_REFERENCES,
 ) -> list[dict[str, Any]] | None:
     if not isinstance(value, (list, tuple)) or len(value) > maximum:
         return None
@@ -522,7 +542,7 @@ def _decode_preflight_recipe(
             str(value),
             maximum_bytes=_MAX_RECIPE_BYTES,
             maximum_depth=10,
-            maximum_nodes=512,
+            maximum_nodes=_MAX_RECIPE_NODES,
         )
     except (TypeError, ValueError):
         return None
@@ -578,6 +598,20 @@ def _project_routing_evidence(value: object, *, trace_id: str) -> dict[str, Any]
     safe_decision["query_hash"] = query_hash
     safe_decision["context_fingerprint"] = context_fingerprint
     safe_decision["work_units"] = _project_content_free_work_units(safe_work_units)
+    if "workforce_unit_descriptors" in value:
+        from agency_runtime.core.workforce.routing_projection import (
+            project_workforce_unit_bindings,
+            project_workforce_unit_descriptors,
+        )
+
+        descriptors = project_workforce_unit_descriptors(value.get("workforce_unit_descriptors"))
+        if descriptors is None:
+            return None
+        safe_decision["workforce_unit_descriptors"] = descriptors
+        bindings = project_workforce_unit_bindings(value.get("workforce_unit_bindings"))
+        if bindings is None:
+            return None
+        safe_decision["workforce_unit_bindings"] = bindings
     return {
         "query_hash": query_hash,
         "context_fingerprint": context_fingerprint,
@@ -677,6 +711,8 @@ _CONTINUATION_ROUTING_FIELDS = (
     "top_score",
     "candidate_count",
     "work_units",
+    "workforce_unit_descriptors",
+    "workforce_unit_bindings",
 )
 
 

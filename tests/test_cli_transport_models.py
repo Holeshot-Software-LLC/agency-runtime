@@ -29,6 +29,11 @@ def test_codex_model_catalog_projects_only_visible_safe_metadata() -> None:
                         "visibility": "list",
                         "priority": 2,
                         "default_reasoning_level": "low",
+                        "supported_reasoning_levels": [
+                            {"effort": "low", "description": "Fast"},
+                            {"effort": "high", "description": "Deep"},
+                            {"effort": "danger;run", "description": "Invalid"},
+                        ],
                         "base_instructions": "secret instructions must never be projected",
                     },
                     {"slug": "hidden-model", "visibility": "hide", "priority": 1},
@@ -38,6 +43,8 @@ def test_codex_model_catalog_projects_only_visible_safe_metadata() -> None:
         )
     )
     assert [model.slug for model in catalog.models] == ["gpt-cheap"]
+    assert catalog.models[0].supported_reasoning_levels == ("low", "high")
+    assert catalog.as_dict()["models"][0]["supported_reasoning_levels"] == ["low", "high"]
     assert "secret instructions" not in json.dumps(catalog.as_dict())
 
 

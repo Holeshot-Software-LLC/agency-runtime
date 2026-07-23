@@ -99,6 +99,10 @@ def test_state_accepts_only_empty_or_whitespace_yaml_document(
     assert path.read_bytes() == content
 
 
+def test_default_workforce_mode_uses_one_compact_planner_call(tmp_path: Path) -> None:
+    assert load_config(tmp_path / "missing.yaml", reload=True).workforce.mode == "fast"
+
+
 def test_state_separates_redacted_persisted_and_effective_values(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -277,7 +281,7 @@ def test_workforce_policy_round_trips_through_shared_cli_dashboard_config(
     ("path", "value", "message"),
     [
         ("workforce.mode", "guess", "unsupported value"),
-        ("workforce.fast_call_budget", 3, "balanced_call_budget"),
+        ("workforce.fast_call_budget", 5, "balanced_call_budget"),
         ("workforce.max_selected_total", 3, "max_selected_per_unit"),
         ("workforce.max_hires_per_day", -1, "supported range"),
         ("workforce.provider", "unsafe\x1b[31m", "terminal control"),
@@ -781,6 +785,7 @@ def test_cli_provider_and_keyless_loopback_round_trip(tmp_path: Path) -> None:
                         "model": "",
                         "base_url": "",
                         "timeout": 3,
+                        "reasoning_effort": "low",
                     },
                     {
                         "name": "lm-studio",
@@ -797,8 +802,10 @@ def test_cli_provider_and_keyless_loopback_round_trip(tmp_path: Path) -> None:
     )
 
     assert result.state.persisted["providers"][0]["transport"] == "codex"
+    assert result.state.persisted["providers"][0]["reasoning_effort"] == "low"
     loaded = load_config(path, reload=True)
     assert loaded.providers[0].auth_method() == "oauth"
+    assert loaded.providers[0].reasoning_effort == "low"
     assert loaded.providers[0].is_available() is True
     assert loaded.providers[1].is_available() is True
 
@@ -818,6 +825,43 @@ def test_cli_provider_rejects_windows_batch_metacharacters_in_model(
                     }
                 ],
             },
+            expected_revision=read_config_state(tmp_path / "agency.yaml").revision,
+            path=tmp_path / "agency.yaml",
+        )
+
+
+@pytest.mark.parametrize(
+    "provider",
+    [
+        {
+            "name": "claude-cli",
+            "type": "cli",
+            "transport": "claude",
+            "reasoning_effort": "low",
+        },
+        {
+            "name": "remote",
+            "type": "openai-compatible",
+            "model": "model",
+            "base_url": "https://api.example.test/v1",
+            "api_key_env": "AGENCY_API_KEY",
+            "reasoning_effort": "low",
+        },
+        {
+            "name": "codex-cli",
+            "type": "cli",
+            "transport": "codex",
+            "reasoning_effort": "extreme",
+        },
+    ],
+)
+def test_reasoning_effort_is_bounded_to_supported_codex_cli_values(
+    provider: dict[str, object],
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ConfigValidationError, match="reasoning_effort"):
+        replace_config_document(
+            {"providers": [provider]},
             expected_revision=read_config_state(tmp_path / "agency.yaml").revision,
             path=tmp_path / "agency.yaml",
         )

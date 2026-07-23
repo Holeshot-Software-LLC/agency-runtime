@@ -62,7 +62,7 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
-def _wait_dashboard_ready(timeout_seconds: float = 8.0) -> bool:
+def _wait_dashboard_ready(timeout_seconds: float = 60.0) -> bool:
     from agency_runtime.core.dashboard_runtime import dashboard_service_reachable
 
     deadline = time.monotonic() + timeout_seconds

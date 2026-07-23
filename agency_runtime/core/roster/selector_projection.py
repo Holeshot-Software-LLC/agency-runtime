@@ -38,6 +38,7 @@ _ROUTING_LIST_FIELDS = (
     "preferred_when",
     "avoid_when",
     "required_tools",
+    "optional_tools",
     "supported_hosts",
     "supported_platforms",
     "conflicts_with",

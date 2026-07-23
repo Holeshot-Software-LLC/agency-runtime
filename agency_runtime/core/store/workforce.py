@@ -7,13 +7,19 @@ import json
 import uuid
 from collections.abc import Container, Mapping
 from contextlib import closing
+from dataclasses import dataclass
 from typing import Any
 
 from agency_runtime.core.agent_activation import agent_is_enabled, normalize_agent_slug
 from agency_runtime.core.correlation import validate_correlation_id
+from agency_runtime.core.roster.revisions import serialized_revision_metadata
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
-from agency_runtime.core.workforce.contract import project_workforce_contract
+from agency_runtime.core.workforce.contract import (
+    parse_workforce_contract,
+    project_workforce_contract,
+)
 from agency_runtime.core.workforce.identity import stable_worker_id
+from agency_runtime.core.workforce.promotion import promotion_readiness
 
 MAX_WORKFORCE_DOCUMENT_BYTES = 256 * 1024
 MAX_WORKFORCE_PAGE = 1_000
@@ -28,6 +34,14 @@ _CASE_TRANSITIONS = {
 _ACTIVATION_BOUND_OUTCOMES = frozenset(
     {"assignment", "artifact", "review", "test", "acceptance", "failure"}
 )
+
+
+@dataclass(frozen=True, slots=True)
+class WorkforceContractReconciliation:
+    """Result of re-projecting exact package-owned active revisions."""
+
+    inspected: int
+    updated: int
 
 
 def _identity(value: object, *, field: str) -> str:
@@ -123,6 +137,12 @@ def _worker_projection(row: Mapping[str, Any], disabled: Container[str] = ()) ->
 
 
 def _case_evidence_is_auditable(row: Mapping[str, Any]) -> bool:
+    from agency_runtime.core.workforce.known_installer import (
+        packaged_hiring_case_is_auditable,
+    )
+
+    if packaged_hiring_case_is_auditable(row):
+        return True
     contract = _decoded(row["contract_evidence"])
     critic = _decoded(row["critic_evidence"])
     model = _decoded(row["model_evidence"])
@@ -135,14 +155,25 @@ def _case_evidence_is_auditable(row: Mapping[str, Any]) -> bool:
         and bool(critic["receipt"])
         and isinstance(receipts, list)
         and bool(receipts)
-        and all(
-            isinstance(receipt, Mapping)
-            and bool(str(receipt.get("provider") or "").strip())
-            and bool(str(receipt.get("actual_model") or "").strip())
-            and bool(str(receipt.get("receipt_id") or "").strip())
-            for receipt in receipts
-        )
+        and all(_auditable_model_receipt(receipt) for receipt in receipts)
     )
+
+
+def _auditable_model_receipt(value: object) -> bool:
+    """Accept actual-model evidence or an explicitly requested CLI model, never a guess."""
+
+    if not isinstance(value, Mapping):
+        return False
+    provider = str(value.get("provider") or "").strip()
+    receipt_id = str(value.get("receipt_id") or "").strip()
+    actual = str(value.get("actual_model") or "").strip()
+    requested = str(value.get("requested_model") or "").strip()
+    source = str(value.get("model_receipt_source") or "").strip()
+    if not provider or not receipt_id:
+        return False
+    if actual:
+        return source not in {"", "unavailable"}
+    return bool(requested and source == "cli.explicit_model_argument")
 
 
 def _next_event_sequence(conn: Any) -> int:
@@ -243,6 +274,246 @@ def _record_worker_event(
             evidence,
         ),
     )
+
+
+def _outcome_promotion_policy(
+    store: Any,
+    configured_successes: int | None,
+    disabled_agents: Container[str] | None,
+) -> tuple[int, frozenset[str]]:
+    if configured_successes is None:
+        from agency_runtime.core.config_binding import config_for_store
+
+        config = config_for_store(store)
+        return config.workforce.auto_promote_successes, frozenset(config.agents.disabled)
+    if (
+        isinstance(configured_successes, bool)
+        or not isinstance(configured_successes, int)
+        or configured_successes < 0
+    ):
+        raise ValueError("auto promotion successes must be a non-negative integer")
+    disabled = (
+        store.get_disabled_agent_slugs() if disabled_agents is None else frozenset(disabled_agents)
+    )
+    return configured_successes, disabled
+
+
+def _bind_outcome_activation(
+    conn: Any,
+    worker: Mapping[str, Any],
+    *,
+    activation_id: str,
+    session: str,
+    trace: str,
+    unit: str,
+) -> tuple[str, str, str, str, str]:
+    version = str(worker["current_version"])
+    version_hash = str(worker["current_hash"])
+    if not activation_id:
+        return version, version_hash, session, trace, unit
+    activation = conn.execute(
+        "SELECT * FROM delegation_activation_receipts WHERE id = ?",
+        (activation_id,),
+    ).fetchone()
+    if activation is None or activation["consumed_at"] is None:
+        raise ValueError("outcome activation receipt is missing or unconsumed")
+    if str(activation["specialist_slug"]) != str(worker["agent_slug"]):
+        raise ValueError("outcome activation receipt belongs to another worker")
+    for supplied, recorded, field in (
+        (session, str(activation["session_id"]), "session_id"),
+        (trace, str(activation["trace_id"]), "trace_id"),
+        (unit, str(activation["work_unit_id"]), "work_unit_id"),
+    ):
+        if supplied and supplied != recorded:
+            raise ValueError(f"outcome {field} does not match activation receipt")
+    return (
+        str(activation["specialist_version"]),
+        str(activation["specialist_prompt_hash"]),
+        str(activation["session_id"]),
+        str(activation["trace_id"]),
+        str(activation["work_unit_id"]),
+    )
+
+
+def _validated_outcome_evidence(
+    conn: Any,
+    worker: Mapping[str, Any],
+    *,
+    event: str,
+    session: str,
+    trace: str,
+    evidence_refs: Mapping[str, Any],
+) -> str:
+    normalized = dict(evidence_refs)
+    normalized.pop("independent_verification_validated", None)
+    verifier_id = str(normalized.get("independent_verifier_worker_id") or "").strip()
+    receipt_id = str(normalized.get("independent_verification_receipt_id") or "").strip()
+    if bool(verifier_id) != bool(receipt_id):
+        raise ValueError("independent verification evidence is incomplete")
+    if not verifier_id:
+        return _document(normalized, field="evidence_refs")
+    if event != "acceptance":
+        raise ValueError("independent verification evidence is valid only for acceptance")
+    verification = conn.execute(
+        "SELECT receipt.*, workforce.worker_id AS verifier_worker_id "
+        "FROM delegation_activation_receipts AS receipt "
+        "JOIN agent_workers AS workforce "
+        "ON workforce.agent_slug = receipt.specialist_slug "
+        "WHERE receipt.id = ? LIMIT 1",
+        (receipt_id,),
+    ).fetchone()
+    if verification is None or verification["consumed_at"] is None:
+        raise ValueError("independent verification receipt is missing or unconsumed")
+    if str(verification["verifier_worker_id"]) != verifier_id:
+        raise ValueError("independent verifier identity does not match receipt")
+    if verifier_id == str(worker["worker_id"]):
+        raise ValueError("independent verifier must be a different worker")
+    if str(verification["session_id"]) != session or str(verification["trace_id"]) != trace:
+        raise ValueError("independent verification receipt belongs to another turn")
+    normalized["independent_verification_validated"] = True
+    return _document(normalized, field="evidence_refs")
+
+
+def _auto_promote_if_ready(
+    conn: Any,
+    worker: Mapping[str, Any],
+    *,
+    disabled: Container[str],
+    required_successes: int,
+) -> None:
+    performance_rows = conn.execute(
+        "SELECT * FROM agent_performance_events WHERE worker_id = ? ORDER BY created_at, rowid",
+        (worker["worker_id"],),
+    ).fetchall()
+    state = (
+        "disabled"
+        if str(worker["agent_slug"]) in disabled
+        else str(worker["employment_class"])
+        if str(worker["standing"]) == "active"
+        else str(worker["standing"])
+    )
+    readiness = promotion_readiness(
+        {"worker_id": str(worker["worker_id"]), "state": state},
+        [
+            {**dict(item), "evidence_refs": _decoded(item["evidence_refs"])}
+            for item in performance_rows
+        ],
+        required_successes=required_successes,
+    )
+    if not readiness["eligible_for_automatic_promotion"]:
+        return
+    revision = int(worker["revision"]) + 1
+    conn.execute(
+        "UPDATE agent_workers SET employment_class = 'employee', "
+        f"revision = ?, updated_at = {STORE_CLOCK_SQL} WHERE worker_id = ?",
+        (revision, worker["worker_id"]),
+    )
+    _record_worker_event(
+        conn,
+        worker_id=str(worker["worker_id"]),
+        event_type="promote",
+        from_class="contractor",
+        to_class="employee",
+        from_standing=str(worker["standing"]),
+        to_standing=str(worker["standing"]),
+        version=str(worker["current_version"]),
+        actor="promotion-policy",
+        surface="outcome-recorder",
+        reason=(
+            "automatic promotion after "
+            f"{readiness['verified_successes']} independently verified successful assignments"
+        ),
+        evidence=_document(readiness, field="automatic promotion evidence"),
+    )
+    conn.execute("UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'")
+
+
+def record_native_assignment_outcome(
+    conn: Any,
+    *,
+    delegation: Mapping[str, Any],
+    worker_run_id: str,
+    outcome: str,
+) -> str | None:
+    """Atomically bind one native child result to its consumed specialist receipt."""
+
+    receipt_id = str(delegation["activation_receipt_id"] or "")
+    if not receipt_id:
+        return None
+    receipt = conn.execute(
+        "SELECT receipt.*, workforce.worker_id AS workforce_worker_id "
+        "FROM delegation_activation_receipts AS receipt "
+        "JOIN agent_workers AS workforce "
+        "ON workforce.agent_slug = receipt.specialist_slug "
+        "WHERE receipt.id = ? LIMIT 1",
+        (receipt_id,),
+    ).fetchone()
+    if receipt is None or receipt["consumed_at"] is None:
+        raise RuntimeError("native assignment lacks a consumed workforce activation receipt")
+    normalized_outcome = "passed" if outcome == "ok" else "failed"
+    evidence_refs = {
+        "delegation_event_id": str(delegation["id"]),
+        "native_worker_run_id": worker_run_id,
+    }
+    evidence_document = _document(evidence_refs, field="evidence_refs")
+    evidence_hash = _document_hash(evidence_document)
+    key = hashlib.sha256(
+        (
+            "native-assignment\0"
+            + str(delegation["id"])
+            + "\0"
+            + worker_run_id
+            + "\0"
+            + normalized_outcome
+        ).encode("utf-8")
+    ).hexdigest()
+    existing = conn.execute(
+        "SELECT * FROM agent_performance_events WHERE idempotency_key = ?",
+        (key,),
+    ).fetchone()
+    expected = {
+        "worker_id": str(receipt["workforce_worker_id"]),
+        "version": str(receipt["specialist_version"]),
+        "version_hash": str(receipt["specialist_prompt_hash"]),
+        "session_id": str(delegation["session_id"]),
+        "trace_id": str(delegation["trace_id"]),
+        "work_unit_id": str(delegation["work_unit_id"]),
+        "activation_receipt_id": receipt_id,
+        "event_type": "assignment",
+        "outcome": normalized_outcome,
+        "score": 1.0 if normalized_outcome == "passed" else 0.0,
+        "evidence_hash": evidence_hash,
+        "evidence_refs": evidence_document,
+    }
+    if existing is not None:
+        if any(existing[field] != value for field, value in expected.items()):
+            raise RuntimeError("native assignment outcome evidence conflicts with its replay")
+        return str(existing["id"])
+    event_id = str(uuid.uuid4())
+    conn.execute(
+        "INSERT INTO agent_performance_events "
+        "(id, idempotency_key, worker_id, version, version_hash, session_id, trace_id, "
+        "work_unit_id, activation_receipt_id, event_type, outcome, score, evidence_hash, "
+        "evidence_refs, created_at) "
+        f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, {STORE_CLOCK_SQL})",
+        (
+            event_id,
+            key,
+            expected["worker_id"],
+            expected["version"],
+            expected["version_hash"],
+            expected["session_id"],
+            expected["trace_id"],
+            expected["work_unit_id"],
+            expected["activation_receipt_id"],
+            expected["event_type"],
+            expected["outcome"],
+            expected["score"],
+            expected["evidence_hash"],
+            expected["evidence_refs"],
+        ),
+    )
+    return event_id
 
 
 def _validate_worker_registration(
@@ -564,8 +835,200 @@ def backfill_workforce_identity(conn: Any) -> int:
     return created
 
 
+def _packaged_workforce_authorities() -> dict[str, tuple[dict[str, Any], str]]:
+    """Load exact package-owned revisions eligible for derived-contract repair."""
+
+    from agency_runtime.core.roster.bundled import BundledRoster
+    from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
+    from agency_runtime.core.workforce.known_installer import known_contractor_agent
+
+    authorities = {str(agent["slug"]): (dict(agent), "upstream") for agent in BundledRoster()}
+    for contract in KNOWN_CONTRACTORS_BY_SLUG.values():
+        agent = known_contractor_agent(contract)
+        slug = str(agent["slug"])
+        if slug in authorities:
+            raise RuntimeError(f"packaged workforce identity collision: {slug}")
+        authorities[slug] = (agent, "agency")
+    return authorities
+
+
+def _exact_packaged_revision(row: Mapping[str, Any], agent: Mapping[str, Any]) -> bool:
+    """Prove that a stored immutable revision is the exact packaged source."""
+
+    expected_metadata = {serialized_revision_metadata(agent)}
+    if str(agent.get("origin") or "").strip().casefold() == "agency":
+        from agency_runtime.core.workforce.known_installer import (
+            known_contractor_revision_metadata_authorities,
+        )
+
+        expected_metadata.update(
+            known_contractor_revision_metadata_authorities(str(agent.get("slug") or ""))
+        )
+    return (
+        str(row["current_version"]) == str(agent.get("version") or "")
+        and str(row["current_hash"]) == str(agent.get("hash") or "")
+        and str(row["version_id"]) == str(row["current_agent_version_id"])
+        and str(row["version"]) == str(agent.get("version") or "")
+        and str(row["version_hash"]) == str(agent.get("hash") or "")
+        and str(row["content"]) == str(agent.get("prompt_body") or agent.get("content") or "")
+        and str(row["metadata"]) in expected_metadata
+    )
+
+
+def _workforce_hash_matches_version(stored_hash: str, version_hash: str) -> bool:
+    """Compare the contract's canonical digest with a version identity."""
+
+    return stored_hash.removeprefix("sha256:") == version_hash.removeprefix("sha256:")
+
+
 class WorkforceStoreMixin:
     """Persist workforce overlays without rewriting governed prompt revisions."""
+
+    def reconcile_packaged_workforce_contracts(self) -> WorkforceContractReconciliation:
+        """Re-project stale derived contracts for exact active packaged revisions.
+
+        Prompt bodies, immutable version rows, lifecycle state, and provenance
+        never change. Unknown, modified, inactive, or externally supplied
+        revisions are deliberately outside this repair authority.
+        """
+
+        authorities = _packaged_workforce_authorities()
+        inspected = 0
+        updated = 0
+        with closing(self._connect()) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            rows = conn.execute(
+                "SELECT worker.*, version.id AS version_id, version.version, "
+                "version.hash AS version_hash, version.content, version.metadata, "
+                "lineage.id AS lineage_id, "
+                "COALESCE(projection.recruitment_contract, "
+                "lineage.recruitment_contract) AS recruitment_contract, "
+                "COALESCE(projection.recruitment_contract_hash, "
+                "lineage.recruitment_contract_hash) AS recruitment_contract_hash "
+                "FROM agent_workers AS worker JOIN agent_versions AS version "
+                "ON version.id = worker.current_agent_version_id "
+                "JOIN agent_version_lineage AS lineage "
+                "ON lineage.worker_id = worker.worker_id "
+                "AND lineage.agent_version_id = worker.current_agent_version_id "
+                "LEFT JOIN agent_recruitment_contract_projections AS projection "
+                "ON projection.id = ("
+                "SELECT candidate.id "
+                "FROM agent_recruitment_contract_projections AS candidate "
+                "WHERE candidate.worker_id = worker.worker_id "
+                "AND candidate.agent_version_id = worker.current_agent_version_id "
+                "ORDER BY candidate.projection_sequence DESC LIMIT 1"
+                ") "
+                "WHERE worker.standing = 'active' ORDER BY worker.agent_slug"
+            ).fetchall()
+            sequence = int(
+                conn.execute(
+                    "SELECT COALESCE(MAX(projection_sequence), 0) "
+                    "FROM agent_recruitment_contract_projections"
+                ).fetchone()[0]
+            )
+            for row in rows:
+                authority = authorities.get(str(row["agent_slug"]))
+                if authority is None:
+                    continue
+                agent, expected_origin = authority
+                if str(row["origin"]) != expected_origin or not _exact_packaged_revision(
+                    row, agent
+                ):
+                    continue
+                inspected += 1
+                current_document = str(row["recruitment_contract"])
+                current_hash = str(row["recruitment_contract_hash"])
+                if _document_hash(current_document) != current_hash:
+                    raise RuntimeError(
+                        f"stored workforce recruitment contract hash is invalid: "
+                        f"{row['agent_slug']}"
+                    )
+                try:
+                    current = parse_workforce_contract(json.loads(current_document))
+                except (TypeError, ValueError) as exc:
+                    raise RuntimeError(
+                        f"stored workforce recruitment contract is invalid: {row['agent_slug']}"
+                    ) from exc
+                if (
+                    current.worker_id != str(row["worker_id"])
+                    or current.agent_id != str(row["agent_slug"])
+                    or current.version != str(row["current_version"])
+                    or not _workforce_hash_matches_version(
+                        current.version_hash,
+                        str(row["current_hash"]),
+                    )
+                ):
+                    raise RuntimeError(
+                        f"stored workforce recruitment contract identity is invalid: "
+                        f"{row['agent_slug']}"
+                    )
+                projected = project_workforce_contract(
+                    {
+                        **agent,
+                        "worker_id": str(row["worker_id"]),
+                        "origin": str(row["origin"]),
+                        "employment": str(row["employment_class"]),
+                        "enabled": True,
+                        "version": str(row["current_version"]),
+                        "version_hash": str(row["current_hash"]),
+                    },
+                    origin=str(row["origin"]),
+                )
+                document = json.dumps(
+                    projected.to_dict(),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                )
+                contract_hash = _document_hash(document)
+                if document == current_document and contract_hash == current_hash:
+                    continue
+                sequence += 1
+                conn.execute(
+                    "INSERT INTO agent_recruitment_contract_projections "
+                    "(id, projection_sequence, worker_id, agent_version_id, "
+                    "parent_contract_hash, recruitment_contract, "
+                    "recruitment_contract_hash, projection_authority, created_at) "
+                    f"VALUES (?, ?, ?, ?, ?, ?, ?, 'agency-runtime-package', "
+                    f"{STORE_CLOCK_SQL})",
+                    (
+                        str(uuid.uuid4()),
+                        sequence,
+                        row["worker_id"],
+                        row["current_agent_version_id"],
+                        current_hash,
+                        document,
+                        contract_hash,
+                    ),
+                )
+                _record_worker_event(
+                    conn,
+                    worker_id=str(row["worker_id"]),
+                    event_type="recruitment_contract_reprojected",
+                    from_class=str(row["employment_class"]),
+                    to_class=str(row["employment_class"]),
+                    from_standing=str(row["standing"]),
+                    to_standing=str(row["standing"]),
+                    version=str(row["current_version"]),
+                    actor="agency-runtime",
+                    surface="package-upgrade",
+                    reason="derived recruitment contract projection changed",
+                    evidence=_document(
+                        {
+                            "from_contract_hash": current_hash,
+                            "to_contract_hash": contract_hash,
+                            "version_hash": str(row["current_hash"]),
+                        },
+                        field="evidence",
+                    ),
+                )
+                updated += 1
+            if updated:
+                conn.execute(
+                    "UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'"
+                )
+            conn.commit()
+        return WorkforceContractReconciliation(inspected=inspected, updated=updated)
 
     def create_hiring_case(
         self,
@@ -708,6 +1171,12 @@ class WorkforceStoreMixin:
                 raise KeyError("hiring case not found")
             if not bool(row["human_approval_required"]):
                 raise ValueError("hiring case does not require human approval")
+            if row["human_approved_at"] is not None:
+                if str(row["human_approved_by"]) != operator:
+                    raise ValueError("hiring case was already approved by another operator")
+                if str(row["status"]) in {"proposed", "audited", "applied"}:
+                    return self.get_hiring_case(normalized_id)
+                raise ValueError("approved hiring case is no longer actionable")
             if str(row["status"]) != "proposed":
                 raise ValueError("only a proposed hiring case can be approved")
             if row["human_approved_at"] is None:
@@ -716,8 +1185,6 @@ class WorkforceStoreMixin:
                     f"human_approved_at = {STORE_CLOCK_SQL} WHERE id = ?",
                     (operator, normalized_id),
                 )
-            elif str(row["human_approved_by"]) != operator:
-                raise ValueError("hiring case was already approved by another operator")
         return self.get_hiring_case(normalized_id)
 
     def transition_hiring_case(self, case_id: str, *, status: str) -> dict[str, Any]:
@@ -774,6 +1241,57 @@ class WorkforceStoreMixin:
             "model_evidence",
         ):
             result[field] = _decoded(result[field])
+        result["human_approval_required"] = bool(result["human_approval_required"])
+        return result
+
+    def list_hiring_cases(
+        self,
+        *,
+        status: str = "",
+        case_type: str = "",
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        """Return bounded newest-first hiring evidence for operator surfaces."""
+
+        if isinstance(limit, bool) or not isinstance(limit, int):
+            raise TypeError("hiring case limit must be an integer")
+        if not 1 <= limit <= MAX_WORKFORCE_PAGE:
+            raise ValueError("hiring case limit is invalid")
+        normalized_status = str(status or "").strip().casefold()
+        normalized_type = str(case_type or "").strip().casefold()
+        if normalized_status and normalized_status not in _CASE_STATUSES:
+            raise ValueError("hiring case status is invalid")
+        if normalized_type and normalized_type not in _CASE_TYPES:
+            raise ValueError("hiring case type is invalid")
+        clauses: list[str] = []
+        values: list[Any] = []
+        if normalized_status:
+            clauses.append("status = ?")
+            values.append(normalized_status)
+        if normalized_type:
+            clauses.append("case_type = ?")
+            values.append(normalized_type)
+        where = " WHERE " + " AND ".join(clauses) if clauses else ""
+        with closing(self._connect()) as conn:
+            rows = conn.execute(
+                "SELECT * FROM agent_hiring_cases"
+                + where
+                + " ORDER BY created_at DESC, rowid DESC LIMIT ?",
+                (*values, limit),
+            ).fetchall()
+        result: list[dict[str, Any]] = []
+        for stored in rows:
+            item = dict(stored)
+            for field in (
+                "gap_evidence",
+                "duplicate_evidence",
+                "contract_evidence",
+                "critic_evidence",
+                "model_evidence",
+            ):
+                item[field] = _decoded(item[field])
+            item["human_approval_required"] = bool(item["human_approval_required"])
+            result.append(item)
         return result
 
     def register_workforce_worker(
@@ -1012,6 +1530,97 @@ class WorkforceStoreMixin:
         disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
         return _worker_projection(row, disabled)
 
+    def get_workforce_worker_detail(
+        self,
+        worker_id_or_slug: str,
+        *,
+        evidence_limit: int = 100,
+        disabled_agents: Container[str] | None = None,
+    ) -> dict[str, Any]:
+        """Return one worker with contract, lineage, lifecycle, and outcome evidence."""
+
+        if isinstance(evidence_limit, bool) or not isinstance(evidence_limit, int):
+            raise TypeError("workforce evidence limit must be an integer")
+        if not 1 <= evidence_limit <= MAX_WORKFORCE_PAGE:
+            raise ValueError("workforce evidence limit is invalid")
+        worker = self.get_workforce_worker(
+            worker_id_or_slug,
+            disabled_agents=disabled_agents,
+        )
+        worker_id = str(worker["worker_id"])
+        slug = str(worker["agent_slug"])
+        with closing(self._connect()) as conn:
+            current = conn.execute(
+                "SELECT COALESCE(projection.recruitment_contract, "
+                "lineage.recruitment_contract) AS recruitment_contract, "
+                "COALESCE(projection.recruitment_contract_hash, "
+                "lineage.recruitment_contract_hash) AS recruitment_contract_hash "
+                "FROM agent_workers AS workforce JOIN agent_version_lineage AS lineage "
+                "ON lineage.worker_id = workforce.worker_id "
+                "AND lineage.agent_version_id = workforce.current_agent_version_id "
+                "LEFT JOIN agent_recruitment_contract_projections AS projection "
+                "ON projection.id = (SELECT candidate.id "
+                "FROM agent_recruitment_contract_projections AS candidate "
+                "WHERE candidate.worker_id = workforce.worker_id "
+                "AND candidate.agent_version_id = workforce.current_agent_version_id "
+                "ORDER BY candidate.projection_sequence DESC LIMIT 1) "
+                "WHERE workforce.worker_id = ?",
+                (worker_id,),
+            ).fetchone()
+            if current is None:
+                raise RuntimeError("workforce current-version lineage is incomplete")
+            contract = _decoded(current["recruitment_contract"])
+            if _document_hash(str(current["recruitment_contract"])) != str(
+                current["recruitment_contract_hash"]
+            ):
+                raise RuntimeError("stored workforce recruitment contract hash is invalid")
+            lineage = [
+                dict(row)
+                for row in conn.execute(
+                    "SELECT lineage.id, lineage.agent_version_id, lineage.parent_version_id, "
+                    "lineage.relation, lineage.recruitment_contract_hash, "
+                    "lineage.hiring_case_id, lineage.created_at, version.version, version.hash "
+                    "FROM agent_version_lineage AS lineage JOIN agent_versions AS version "
+                    "ON version.id = lineage.agent_version_id WHERE lineage.worker_id = ? "
+                    "ORDER BY lineage.created_at, lineage.rowid",
+                    (worker_id,),
+                ).fetchall()
+            ]
+            events = []
+            for row in conn.execute(
+                "SELECT * FROM agent_worker_events WHERE worker_id = ? "
+                "ORDER BY event_sequence DESC LIMIT ?",
+                (worker_id, evidence_limit),
+            ).fetchall():
+                item = dict(row)
+                item["evidence"] = _decoded(item["evidence"])
+                events.append(item)
+            outcomes = []
+            for row in conn.execute(
+                "SELECT * FROM agent_performance_events WHERE worker_id = ? "
+                "ORDER BY created_at DESC, rowid DESC LIMIT ?",
+                (worker_id, evidence_limit),
+            ).fetchall():
+                item = dict(row)
+                item["evidence_refs"] = _decoded(item["evidence_refs"])
+                outcomes.append(item)
+            case_ids = {str(row["hiring_case_id"]) for row in lineage if row.get("hiring_case_id")}
+            cases = [
+                item
+                for item in self.list_hiring_cases(limit=evidence_limit)
+                if str(item["id"]) in case_ids
+                or str(item["target_worker_id"] or "") == worker_id
+                or str(item["proposed_slug"]) == slug
+            ][:evidence_limit]
+        return {
+            "worker": worker,
+            "recruitment_contract": contract,
+            "lineage": lineage,
+            "events": events,
+            "outcomes": outcomes,
+            "hiring_cases": cases,
+        }
+
     def list_workforce_workers(
         self,
         *,
@@ -1059,6 +1668,7 @@ class WorkforceStoreMixin:
         merged_into_worker_id: str = "",
         actor: str = "operator",
         surface: str = "cli",
+        disabled_agents: Container[str] | None = None,
     ) -> dict[str, Any]:
         value = _bounded_text(worker_id_or_slug, field="worker identity", maximum=256)
         normalized_action = str(action or "").strip().casefold()
@@ -1069,10 +1679,19 @@ class WorkforceStoreMixin:
         if expected_revision < 0:
             raise ValueError("expected_revision is invalid")
         normalized_reason = _bounded_text(reason, field="reason", maximum=2_048)
-        target = (
-            _identity(merged_into_worker_id, field="merged_into_worker_id")
+        target_identity = (
+            _bounded_text(
+                merged_into_worker_id,
+                field="merged_into_worker_id",
+                maximum=256,
+            )
             if merged_into_worker_id
             else None
+        )
+        disabled = (
+            self.get_disabled_agent_slugs()
+            if disabled_agents is None
+            else frozenset(disabled_agents)
         )
         with closing(self._connect()) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
@@ -1084,6 +1703,20 @@ class WorkforceStoreMixin:
                 raise KeyError("workforce worker not found")
             if int(row["revision"]) != int(expected_revision):
                 raise RuntimeError("workforce revision conflict")
+            if normalized_action == "promote" and str(row["agent_slug"]) in disabled:
+                raise ValueError("a disabled contractor must be enabled before promotion")
+            target = None
+            if target_identity:
+                target_row = conn.execute(
+                    "SELECT worker_id, agent_slug FROM agent_workers "
+                    "WHERE worker_id = ? OR agent_slug = ? LIMIT 1",
+                    (target_identity, target_identity.casefold()),
+                ).fetchone()
+                if target_row is None:
+                    raise ValueError("merge target is invalid")
+                if str(target_row["agent_slug"]) in disabled:
+                    raise ValueError("merge target must be enabled")
+                target = str(target_row["worker_id"])
             before_class = str(row["employment_class"])
             before_standing = str(row["standing"])
             employment, standing, target = _transition_state(
@@ -1120,6 +1753,58 @@ class WorkforceStoreMixin:
             )
         return self.get_workforce_worker(str(row["worker_id"]))
 
+    def record_workforce_enablement(
+        self,
+        worker_id_or_slug: str,
+        *,
+        enabled: bool,
+        config_revision: str,
+        reason: str,
+        actor: str = "operator",
+        surface: str = "cli",
+    ) -> None:
+        """Append idempotent operator evidence for an activation-policy change."""
+
+        if not isinstance(enabled, bool):
+            raise TypeError("enabled must be a boolean")
+        identity = _bounded_text(worker_id_or_slug, field="worker identity", maximum=256)
+        revision = _bounded_text(config_revision, field="config revision", maximum=128)
+        normalized_reason = _bounded_text(reason, field="reason", maximum=2_048)
+        evidence = _document(
+            {"config_revision": revision, "enabled": enabled},
+            field="enablement evidence",
+        )
+        event_type = "enable" if enabled else "disable"
+        with closing(self._connect()) as conn, conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT * FROM agent_workers WHERE worker_id = ? OR agent_slug = ? LIMIT 1",
+                (identity, identity.casefold()),
+            ).fetchone()
+            if row is None:
+                raise KeyError("workforce worker not found")
+            existing = conn.execute(
+                "SELECT 1 FROM agent_worker_events "
+                "WHERE worker_id = ? AND event_type = ? AND evidence = ? LIMIT 1",
+                (row["worker_id"], event_type, evidence),
+            ).fetchone()
+            if existing is not None:
+                return
+            _record_worker_event(
+                conn,
+                worker_id=str(row["worker_id"]),
+                event_type=event_type,
+                from_class=str(row["employment_class"]),
+                to_class=str(row["employment_class"]),
+                from_standing=str(row["standing"]),
+                to_standing=str(row["standing"]),
+                version=str(row["current_version"]),
+                actor=_bounded_text(actor, field="actor", maximum=128),
+                surface=_bounded_text(surface, field="surface", maximum=64),
+                reason=normalized_reason,
+                evidence=evidence,
+            )
+
     def record_workforce_outcome(
         self,
         worker_id_or_slug: str,
@@ -1134,6 +1819,8 @@ class WorkforceStoreMixin:
         trace_id: str = "",
         work_unit_id: str = "",
         activation_receipt_id: str = "",
+        auto_promote_successes: int | None = None,
+        disabled_agents: Container[str] | None = None,
     ) -> dict[str, Any]:
         worker_identity = _bounded_text(
             worker_id_or_slug,
@@ -1158,7 +1845,11 @@ class WorkforceStoreMixin:
         )
         if event in _ACTIVATION_BOUND_OUTCOMES and not activation_id:
             raise ValueError(f"{event} outcomes require an activation receipt")
-        evidence_document = _document(evidence_refs, field="evidence_refs")
+        auto_promote_successes, disabled = _outcome_promotion_policy(
+            self,
+            auto_promote_successes,
+            disabled_agents,
+        )
         event_id = str(uuid.uuid4())
         with closing(self._connect()) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
@@ -1168,29 +1859,22 @@ class WorkforceStoreMixin:
             ).fetchone()
             if worker is None:
                 raise KeyError("workforce worker not found")
-            version = str(worker["current_version"])
-            version_hash = str(worker["current_hash"])
-            if activation_id:
-                activation = conn.execute(
-                    "SELECT * FROM delegation_activation_receipts WHERE id = ?",
-                    (activation_id,),
-                ).fetchone()
-                if activation is None or activation["consumed_at"] is None:
-                    raise ValueError("outcome activation receipt is missing or unconsumed")
-                if str(activation["specialist_slug"]) != str(worker["agent_slug"]):
-                    raise ValueError("outcome activation receipt belongs to another worker")
-                version = str(activation["specialist_version"])
-                version_hash = str(activation["specialist_prompt_hash"])
-                for supplied, recorded, field in (
-                    (session, str(activation["session_id"]), "session_id"),
-                    (trace, str(activation["trace_id"]), "trace_id"),
-                    (unit, str(activation["work_unit_id"]), "work_unit_id"),
-                ):
-                    if supplied and supplied != recorded:
-                        raise ValueError(f"outcome {field} does not match activation receipt")
-                session = str(activation["session_id"])
-                trace = str(activation["trace_id"])
-                unit = str(activation["work_unit_id"])
+            version, version_hash, session, trace, unit = _bind_outcome_activation(
+                conn,
+                worker,
+                activation_id=activation_id,
+                session=session,
+                trace=trace,
+                unit=unit,
+            )
+            evidence_document = _validated_outcome_evidence(
+                conn,
+                worker,
+                event=event,
+                session=session,
+                trace=trace,
+                evidence_refs=evidence_refs,
+            )
             existing = conn.execute(
                 "SELECT * FROM agent_performance_events WHERE idempotency_key = ?", (key,)
             ).fetchone()
@@ -1242,6 +1926,12 @@ class WorkforceStoreMixin:
                     "SELECT * FROM agent_performance_events WHERE id = ?",
                     (event_id,),
                 ).fetchone()
+            _auto_promote_if_ready(
+                conn,
+                worker,
+                disabled=disabled,
+                required_successes=auto_promote_successes,
+            )
         projection = dict(row)
         projection["evidence_refs"] = _decoded(projection["evidence_refs"])
         return projection
@@ -1251,5 +1941,6 @@ __all__ = [
     "MAX_WORKFORCE_DOCUMENT_BYTES",
     "MAX_WORKFORCE_PAGE",
     "WorkforceStoreMixin",
+    "record_native_assignment_outcome",
     "stable_worker_id",
 ]
