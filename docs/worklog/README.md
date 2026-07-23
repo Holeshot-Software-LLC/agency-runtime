@@ -178,6 +178,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `effa10b` | 2026-07-23 | Merge pull request #129 from Holeshot-Software-LLC/codex/ar-115-live-routing-trust | null | null |
 | `9d68e7e` | 2026-07-23 | fix(dashboard): minify shipped assets under the 256 KiB release budget | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | [detail](2026-07-23-9d68e7e-dashboard-asset-budget-minify.md) |
 | `dc0d3f2` | 2026-07-23 | chore(gitignore): ignore local .zcode editor session state | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | [detail](2026-07-23-dc0d3f2-gitignore-zcode.md) |
+| `10e3b4c` | 2026-07-23 | fix(smoke): accept the PreToolUse hook in the Codex bundle contract | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | [detail](2026-07-23-10e3b4c-codex-pretooluse-hook-contract.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
