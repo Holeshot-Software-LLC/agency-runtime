@@ -32,6 +32,8 @@ _REVISION_PREFIX = "sha256:"
 _MAX_PATH_BYTES = 4096
 _MAX_ROUTE_TEXT_BYTES = 64 * 1024
 _MAX_SESSION_BYTES = 1024
+_ROUTE_TIMEOUT_SECONDS = 245.0
+_BROKER_EXECUTION_HOST = "codex"
 _ROUTE_BYPASS_FIELDS = frozenset(
     {
         "schema_version",
@@ -536,7 +538,13 @@ def broker_explain_selection(
             "session_id": normalized_session,
             "task": normalized_task,
             "limit": limit,
+            # The public broker descriptor is issued only to an attested Codex
+            # client. Bind routing diagnostics to that native host so a
+            # multi-host installation cannot become ambiguous or silently use
+            # another host's execution capabilities.
+            "host": _BROKER_EXECUTION_HOST,
         },
+        timeout=_ROUTE_TIMEOUT_SECONDS,
     )
     if (
         not isinstance(response, Mapping)
@@ -737,7 +745,12 @@ def _disabled_agents(value: Any) -> tuple[str, ...]:
     return tuple(normalized)
 
 
-def broker_set_agent_enabled(slug: object, *, enabled: bool) -> tuple[str, bool, str]:
+def broker_set_agent_enabled(
+    slug: object,
+    *,
+    enabled: bool,
+    reason: str = "operator activation toggle",
+) -> tuple[str, bool, str]:
     """Apply one exact revision-checked activation mutation through the broker."""
 
     normalized = normalize_agent_slug(slug)
@@ -751,6 +764,7 @@ def broker_set_agent_enabled(slug: object, *, enabled: bool) -> tuple[str, bool,
             "enabled": enabled,
             "confirm": f"{verb} {normalized}",
             "expected_revision": revision,
+            "reason": reason,
         },
     )
     if not isinstance(response, Mapping) or response.get("ok") is not True:

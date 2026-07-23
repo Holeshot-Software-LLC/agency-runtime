@@ -498,7 +498,8 @@ def test_smoke_rejects_six_argument_config_without_flag(
     payload = json.loads(mcp_path.read_text(encoding="utf-8"))
     payload["mcpServers"]["agency-runtime"]["args"] = [
         "-I",
-        payload["mcpServers"]["agency-runtime"]["args"][1],
+        "-S",
+        payload["mcpServers"]["agency-runtime"]["args"][2],
         "agency_runtime.server.mcp",
         "--stdio",
         "--wrong",
@@ -713,6 +714,39 @@ def test_mcp_prepare_delegation_correlation_and_active_turn_errors(
         object(),
     )
     assert result == {"error": "terminal"}
+
+
+def test_mcp_prepare_delegation_normalizes_native_worker_attribution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Store:
+        def prepare_delegation_activation(self, **kwargs: object) -> dict[str, object]:
+            return kwargs
+
+    monkeypatch.setattr(mcp_tools, "active_turn_error", lambda *_args: "")
+    result = mcp_tools._prepare_delegation(
+        {
+            "session_id": "session",
+            "trace_id": "trace",
+            "slug": "code-reviewer",
+            "work_unit_id": "unit-review",
+            "worker_kind": "codex-native-subagent",
+        },
+        Store(),
+    )
+    assert result["worker_kind"] == "generic-worker"
+
+    rejected = mcp_tools._prepare_delegation(
+        {
+            "session_id": "session",
+            "trace_id": "trace",
+            "slug": "code-reviewer",
+            "work_unit_id": "unit-review",
+            "worker_kind": "claimed-specialist",
+        },
+        Store(),
+    )
+    assert rejected == {"error": "delegated specialist retrieval uses generic-worker attribution"}
 
 
 def test_restricted_control_target_fails_closed_on_token_probe_error(

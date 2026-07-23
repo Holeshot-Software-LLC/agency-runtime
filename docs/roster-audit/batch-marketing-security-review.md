@@ -3,7 +3,7 @@ title: "Roster semantic safety audit - marketing, paid media, and security"
 status: active
 category: governance
 created: 2026-07-17
-updated: 2026-07-18
+updated: 2026-07-22
 tags:
   - roster
   - security
@@ -35,6 +35,15 @@ be retained when Agency projects only the recorded capabilities, anti-capabiliti
 authority, evidence contract, host support, and context mode. Raw prompt claims of
 memory, tool access, external authority, production readiness, or permission remain
 inactive.
+
+Audit revision 2 also records `audit`, `coordination`, `governance`,
+`investigation`, `operations`, and `risk-analysis` as controlled capabilities for
+`incident-responder`. Those identifiers are grounded in its already reviewed
+evidence integrity and chain-of-custody controls, crisis coordination,
+evidence-triage, containment/recovery-planning, and post-incident-analysis outcomes.
+They improve typed recruitment without granting live containment authority: the
+contract remains plan-only, isolated, tool-bound, and subject to every recorded
+anti-capability and approval gate.
 
 `marketing/marketing-app-store-optimizer.md` contains U+0004 control characters at
 byte offsets **6817** and **10647**, a C1 U+0080 control, and mojibake headings. The

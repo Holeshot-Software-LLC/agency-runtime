@@ -47,6 +47,14 @@ def _private_dashboard_bootstrap(
         "agency_runtime.core.process_argv.agency_bootstrap_path",
         lambda: str(target),
     )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_service_core.prepare_private_package_runtime",
+        lambda path: str(target) if Path(path) == target else str(path),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_service_core.verify_private_package_runtime",
+        lambda path: str(target) if Path(path) == target else str(path),
+    )
 
 
 @pytest.mark.parametrize("platform_name", ["linux", "windows"])
@@ -529,10 +537,9 @@ def test_worker_argv_is_exact_strict_and_credential_free(tmp_path: Path) -> None
     assert argv == [
         str(python.resolve()),
         "-I",
+        "-S",
         str(_test_bootstrap_path(tmp_path)),
-        "agency_runtime.cli",
-        "dashboard",
-        "--service-mode",
+        "agency_runtime.server.dashboard_service",
         "--config",
         str(config.resolve()),
     ]
@@ -569,8 +576,7 @@ def test_linux_plan_quotes_systemd_specifiers_and_writes_nothing(
     ]
     unit = plan["registration_content"]
     assert unit.startswith(f"# {OWNER_MARKER}\n")
-    assert '"agency_runtime.cli"' in unit
-    assert '"--service-mode"' in unit
+    assert '"agency_runtime.server.dashboard_service"' in unit
     assert "$$" in unit
     assert "%%" in unit
     serialized_plan = json.dumps(plan).lower()
@@ -697,10 +703,9 @@ def test_linux_install_is_owned_idempotent_and_json_safe(tmp_path: Path) -> None
     assert manifest["worker_argv"] == [
         str(python.resolve()),
         "-I",
+        "-S",
         str(_test_bootstrap_path(tmp_path)),
-        "agency_runtime.cli",
-        "dashboard",
-        "--service-mode",
+        "agency_runtime.server.dashboard_service",
         "--config",
         str(config.resolve()),
     ]
@@ -879,7 +884,7 @@ def test_windows_plan_install_and_lifecycle_are_current_user_and_idempotent(
     assert manager.task_exists is True
     assert manager.active is True
     assert manager.create_count == 1
-    assert "--service-mode" in manager.action
+    assert "agency_runtime.server.dashboard_service" in manager.action
     assert "bearer " not in manager.action.lower()
     assert "#token=" not in manager.action.lower()
 
@@ -1449,6 +1454,10 @@ def test_successful_stop_removes_unreachable_runtime_descriptor(
         dashboard_runtime,
         "dashboard_service_reachable",
         lambda **_kwargs: False,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_service_core._loopback_listener_present",
+        lambda _port: False,
     )
 
     stopped = stop_dashboard_service(

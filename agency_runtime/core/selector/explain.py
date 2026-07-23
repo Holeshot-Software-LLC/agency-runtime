@@ -222,6 +222,8 @@ def _explanation_signals(
             "top_score": float(routing.get("top_score", scores[0] if scores else 0.0) or 0.0),
             "pre_narrow_limit": candidate_limit,
             "roster_size": len(catalog),
+            "disabled_candidate_shadows": list(routing.get("disabled_candidate_shadows", [])),
+            "unavailable_candidate_shadows": list(routing.get("unavailable_candidate_shadows", [])),
         },
         "work_units": routing.get("work_units", {}),
     }
@@ -240,6 +242,7 @@ def explain_route(
     platform: str = "unknown",
     available_tools: tuple[str, ...] | None = None,
     capability_receipt: Mapping[str, Any] | HostCapabilityReceipt | None = None,
+    workforce_snapshot: Any = None,
 ) -> dict[str, Any]:
     """Return a machine-readable explanation for one routing decision.
 
@@ -249,6 +252,15 @@ def explain_route(
     """
     cfg = _get_config(config, store)
     catalog = catalog or []
+    if store is not None and workforce_snapshot is None:
+        from agency_runtime.core.routing_snapshot import (
+            bind_workforce_snapshot,
+            capture_routing_snapshot,
+        )
+
+        bound = capture_routing_snapshot(store, cfg)
+        if bound.catalog == catalog:
+            _bound, workforce_snapshot = bind_workforce_snapshot(store, bound)
     candidate_limit = _clamp_limit(limit)
 
     refined_query = refine_query(user_message, cfg)
@@ -265,7 +277,18 @@ def explain_route(
     # semantic match simply because fallback prompts are installed.
     policy_fallbacks = set(detect_fallback_companions(policy))
     semantic_catalog = [agent for agent in catalog if _agent_slug(agent) not in policy_fallbacks]
-    turn_classification = classify_turn_intent(user_message)
+    # Route Lab and CLI explanations are diagnostic turns, but they still need
+    # an authoritative statement that the absence of prior state is known. A
+    # bare classifier call represents *missing/untrusted* state and therefore
+    # must route conservatively; using it here made a fresh ``hello`` consume
+    # the configured provider timeout even though this surface can prove that
+    # no continuation is pending.
+    turn_state = (
+        store.get_turn_state_context(session_id)
+        if store is not None
+        else {"state_known": True, "state_status": "current"}
+    )
+    turn_classification = classify_turn_intent(user_message, turn_state)
     if not turn_classification.selection_required:
         candidates, scores = [], []
     else:
@@ -303,6 +326,7 @@ def explain_route(
         available_tools=available_tools,
         capability_receipt=diagnostic_receipt,
         allow_installation_diagnostic=diagnostic_receipt is not None,
+        workforce_snapshot=workforce_snapshot,
     )
     selected_ids = [str(slug) for slug in routing.get("selected_ids", []) if str(slug)]
     decision_companion_ids = [

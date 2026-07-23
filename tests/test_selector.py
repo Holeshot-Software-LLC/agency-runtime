@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 # Ensure package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.selector.cache import cache_get, cache_key, cache_put, clear_cache
 from agency_runtime.core.selector.candidate_narrow import pre_narrow, score_agent, tokenize
 from agency_runtime.core.selector.delegation_detection import detect_work_units
@@ -16,7 +18,12 @@ from agency_runtime.core.selector.intent_text import (
     affirmative_intent,
     mask_excluded_intent,
 )
-from agency_runtime.core.selector.pipeline import build_routing_context, is_trivial, refine_query
+from agency_runtime.core.selector.pipeline import (
+    build_routing_context,
+    is_trivial,
+    refine_query,
+    route,
+)
 from agency_runtime.core.selector.policy import detect_actions, detect_fallback_companions
 
 # ─── Token scoring ──────────────────────────────────────────────────
@@ -127,6 +134,18 @@ def test_expand_query_no_match():
 def test_expand_query_requires_complete_domain_terms():
     assert expand_query("slackened validation rules") == "slackened validation rules"
     assert "real-time communication" in expand_query("Configure Slack alerts")
+
+
+def test_expand_query_routes_agency_runtime_language_to_agent_system_domains():
+    expanded = expand_query("Explain the Agency response header, dashboard, and agent selection")
+
+    assert "agent orchestration" in expanded
+    assert "specialist routing" in expanded
+    assert "specialist compatibility constraints" in expanded
+    assert "compatibility analysis" not in expanded
+    assert "runtime dashboard" in expanded
+    assert "configuration interface" in expanded
+    assert "response telemetry" in expanded
 
 
 def test_affirmative_intent_masks_only_explicit_exclusions():
@@ -309,6 +328,58 @@ def test_routing_context_surfaces_low_confidence_default_agents():
 
     assert "Default specialist routing suggestion" in context
     assert "senior-developer, code-reviewer" in context
+
+
+def test_workforce_contract_verifier_is_not_regated_by_legacy_catalog(monkeypatch):
+    from agency_runtime.core.workforce import inference, routing_projection
+
+    captured = {}
+
+    def fake_plan_and_staff(_request, _snapshot, *, config, context):
+        del config
+        captured["eligible_worker_ids"] = context.eligible_worker_ids
+        return SimpleNamespace(attempts=())
+
+    def fake_projection(_outcome, catalog, **_kwargs):
+        captured["projected_catalog"] = catalog
+        return {
+            "selected_ids": ["catalog-only"],
+            "semantic_ids": ["catalog-only"],
+            "confidence": 0.99,
+            "margin": 0.5,
+            "status": "accepted",
+            "source": "workforce_inference",
+            "work_units": {"count": 1, "units": [], "delegate": False},
+        }
+
+    monkeypatch.setattr(inference, "plan_and_staff_workforce", fake_plan_and_staff)
+    monkeypatch.setattr(routing_projection, "project_workforce_routing", fake_projection)
+    catalog = [
+        {
+            "agent_slug": "catalog-only",
+            "slug": "catalog-only",
+            "name": "Catalog Only",
+            "description": "A reasoning specialist",
+            "routing_contract_valid": True,
+            "required_tools": ["browser"],
+        }
+    ]
+    snapshot = SimpleNamespace(
+        generation=7,
+        worker_count=1,
+        contract_fingerprint="sha256:" + "a" * 64,
+    )
+
+    route(
+        "workforce-contract-gate",
+        "Review this implementation",
+        catalog,
+        config=AgencyConfig(),
+        workforce_snapshot=snapshot,
+    )
+
+    assert captured["eligible_worker_ids"] is None
+    assert [item["agent_slug"] for item in captured["projected_catalog"]] == ["catalog-only"]
 
 
 # ─── Query refinement ───────────────────────────────────────────────

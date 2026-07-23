@@ -2,14 +2,27 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
+from agency_runtime.cli import roster_commands
 from agency_runtime.cli.main import build_parser, main
-from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig, reset_config_cache
+from agency_runtime.core.config import (
+    AgencyConfig,
+    JudgeConfig,
+    OllamaConfig,
+    ProviderEntry,
+    reset_config_cache,
+)
+from agency_runtime.core.host_capabilities import (
+    diagnostic_installation_capability_receipt,
+    host_capability_receipt_from_native_evidence,
+)
+from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.selector.stickiness import clear_session_routing
@@ -33,10 +46,82 @@ def _catalog() -> list[dict[str, object]]:
     ]
 
 
+def _stored_catalog() -> list[dict[str, object]]:
+    agents = _catalog()
+    agents[0].update(
+        {
+            "categories": ["software-engineering", "review"],
+            "division": "engineering",
+            "capabilities": ["review-diffs", "code-review"],
+            "task_types": ["review"],
+            "outcomes": ["Independently review code for defects and regressions"],
+            "scope_qualifiers": ["review diffs"],
+            "artifact_kinds": ["review-report"],
+            "lifecycle_phases": ["review"],
+            "domains": ["software-engineering"],
+            "authority": "review",
+            "context_mode": "isolated_only",
+            "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
+            "supported_platforms": ["windows", "linux"],
+            "audit_status": "approved",
+            "audit_revision": "fixture-v1",
+            "routing_contract_valid": True,
+            "version": "1.0.0",
+        }
+    )
+    agents[1].update(
+        {
+            "categories": ["documentation"],
+            "division": "documentation",
+            "capabilities": ["technical-writing"],
+            "task_types": ["documentation"],
+            "outcomes": ["Produce accurate technical documentation"],
+            "scope_qualifiers": ["technical writing"],
+            "artifact_kinds": ["documentation"],
+            "lifecycle_phases": ["implementation"],
+            "domains": ["documentation"],
+            "authority": "modify",
+            "context_mode": "isolated_only",
+            "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
+            "supported_platforms": ["windows", "linux"],
+            "audit_status": "approved",
+            "audit_revision": "fixture-v1",
+            "routing_contract_valid": True,
+            "version": "1.0.0",
+        }
+    )
+    for agent in agents:
+        prompt = str(agent["prompt_body"])
+        agent["hash"] = hashlib.sha256(prompt.encode()).hexdigest()
+    return agents
+
+
 def _seed_store(db: Path) -> None:
     store = Store(db)
-    for agent in _catalog():
+    for agent in _stored_catalog():
         store._activate_prevalidated_agent(agent)
+
+
+def _verified_diagnostic_context() -> dict[str, object]:
+    inventory = host_capability_receipt_from_native_evidence(
+        "codex",
+        platform="windows",
+        native_record={
+            "host": "codex",
+            "executable_discovered": True,
+            "registered": True,
+            "enabled": True,
+            "managed_plugin_version": "fixture-v1",
+            "launcher_artifacts_current": True,
+        },
+    )
+    receipt = diagnostic_installation_capability_receipt(
+        inventory,
+        surface="codex",
+        platform="windows",
+    )
+    assert receipt is not None
+    return {"host": "codex", "platform": "windows", "capability_receipt": receipt}
 
 
 @pytest.fixture
@@ -68,6 +153,47 @@ def test_explain_route_returns_selection_receipt(_isolated_selector_state) -> No
     assert "reason" in receipt["rejected_candidates"][0]
 
 
+@pytest.mark.parametrize("with_store", [False, True])
+def test_explain_route_skips_inference_for_known_empty_social_turn(
+    _isolated_selector_state,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    with_store: bool,
+) -> None:
+    config = AgencyConfig(
+        providers=(
+            ProviderEntry(
+                name="configured",
+                type="openai-compatible",
+                model="configured-model",
+                base_url="https://configured.invalid/v1",
+                api_key="test-key",
+                timeout=5.0,
+            ),
+        ),
+        judge=JudgeConfig(confidence_bypass_threshold=0.0),
+        ollama=OllamaConfig(enabled=False, model=""),
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "query_judge",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("pure social diagnostic called inference")
+        ),
+    )
+    store = Store(tmp_path / "agency.db") if with_store else None
+
+    receipt = explain_route("social-session", "hello", _catalog(), config=config, store=store)
+
+    routing = receipt["routing"]
+    assert routing["turn_kind"] == "conversation"
+    assert routing["selection_required"] is False
+    assert routing["inference_required"] is False
+    assert routing["inference_attempted"] is False
+    assert routing["provider_attempts"] == []
+    assert routing["selected_ids"] == []
+
+
 def test_cli_explain_json(
     _isolated_selector_state,
     monkeypatch,
@@ -78,16 +204,22 @@ def test_cli_explain_json(
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
     monkeypatch.setenv("AGENCY_BYPASS_THRESHOLD", "1")
+    monkeypatch.setattr(
+        roster_commands,
+        "_single_verified_route_host",
+        lambda _store: _verified_diagnostic_context(),
+    )
     _seed_store(db)
 
     payload = {}
     for _attempt in range(2):
         assert main(["explain", "review code", "--session-id", "s1", "--limit", "2"]) == 0
         payload = json.loads(capsys.readouterr().out)
+        assert payload["selected"], payload
 
     assert payload["schema_version"] == "agency.selection_explain.v1"
     assert payload["selected"][0]["slug"] == "fixture-code-reviewer"
-    assert payload["signals"]["selection"]["roster_size"] == 2
+    assert payload["signals"]["selection"]["roster_size"] >= 2
     assert "decision_id" not in payload["routing"]
     assert Store(db).get_open_traces_for_session("s1") == []
 
@@ -115,6 +247,27 @@ def test_cli_route_is_repeatably_diagnostic(
         assert conn.execute("SELECT COUNT(*) FROM routing_decisions").fetchone()[0] == 0
     finally:
         conn.close()
+
+
+def test_cli_route_marks_fresh_social_diagnostic_trivial(
+    _isolated_selector_state,
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+) -> None:
+    db = tmp_path / "agency.db"
+    monkeypatch.setenv("AGENCY_DB_PATH", str(db))
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
+    _seed_store(db)
+
+    assert main(["route", "hello", "--json"]) == 0
+
+    routing = json.loads(capsys.readouterr().out)["routing"]
+    assert routing["turn_kind"] == "conversation"
+    assert routing["selection_required"] is False
+    assert routing["inference_attempted"] is False
+    assert routing["provider_attempts"] == []
+    assert set(routing["selected_ids"]) <= {"agents-orchestrator", "chief-of-staff"}
 
 
 @pytest.mark.parametrize("command", ["search", "route", "explain"])

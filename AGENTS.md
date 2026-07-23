@@ -3,7 +3,7 @@ title: "Repository Agent Instructions"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-23
 tags:
   - governance
   - documentation
@@ -32,6 +32,7 @@ below.
 |---|---|---|
 | Project overview | [README.md](README.md) | Installation, behavior, architecture, and public reference |
 | Planning | [docs/roadmap/README.md](docs/roadmap/README.md) | Internal issue registry and tracker mapping |
+| Context checkpoints | [docs/roadmap/handoffs/README.md](docs/roadmap/handoffs/README.md) | Bounded recovery capsules for long-running work |
 | Change reasoning | [docs/worklog/README.md](docs/worklog/README.md) | Exact Git history index and reasoning-rich commit notes |
 | Durable decisions | [docs/decisions/README.md](docs/decisions/README.md) | Canonical ADR registry and superseding chains |
 | Contributor workflow | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, implementation boundaries, and validation |
@@ -156,3 +157,57 @@ may remain.
 
 Do not alter faithful historical records merely to neutralize wording. Flag the
 historical reference alongside the record instead.
+
+## Context telemetry and clean checkpoints
+
+Long-running work must not depend on one prompt retaining the entire execution
+history. Every long-running roadmap item uses one active recovery capsule under
+`docs/roadmap/handoffs/`. The capsule is a bounded current-state projection,
+not a second roadmap or append-only transcript. `scripts/verify_docs.py`
+enforces one active capsule per issue, required recovery sections, a maximum of
+12 KiB and 180 lines, and the fixed 50-percent clean-checkpoint threshold. The
+capsule schema rejects the removed live-evaluation admission field.
+
+On Codex, run telemetry after bounded bootstrap, immediately before every live
+evaluation, and at the end of every bounded package:
+
+```bash
+python scripts/context_handoff_status.py --json --threshold 50
+```
+
+The helper reads the newest cumulative token-count event. Normal Codex
+compaction may not reset that cumulative value, so never wait or emit an empty
+continuation hoping the percentage will rise.
+
+Apply the checkpoint as follows:
+
+- Above 50 percent remaining, continue normal bounded work.
+- At or below 50 percent, ensure the current substantive state is represented
+  by a clean durable substantive/ledger checkpoint. If work is in progress,
+  finish the smallest safe slice, run proportionate checks, update the
+  canonical issue and capsule, and commit the recovery pair. Then continue in
+  the same task, including live work.
+- A conditional rerun or complete corpus still requires a fresh
+  immediately-preceding telemetry check, but the percentage neither admits nor
+  blocks the evaluation. It only determines whether a clean checkpoint must
+  first be ensured.
+
+At each hard checkpoint, update the canonical roadmap and active capsule with
+exact evidence, unresolved gates, constraints, and one next bounded package,
+then create the local recovery and ledger commits. If the repository is already
+clean at such a checkpoint and has no substantive delta, reuse it rather than
+creating an empty commit pair. Continue the current task through normal Codex
+behavior, including compaction when it occurs.
+
+The threshold never authorizes or requires creating, forking, dispatching, or
+waiting for another task. It never blocks live work or requires pausing or
+transferring a persistent goal, recording a task owner, acknowledging a
+receiver, or stopping for user action. Cross-task coordination is outside this
+context protocol.
+A read-only preflight with no substantive delta never creates a telemetry note
+or empty recovery/ledger pair; it reuses the existing checkpoint.
+
+Codex Desktop does not inject its UI meter into the model prompt, so the helper
+reads the active `CODEX_THREAD_ID` session record. If telemetry is unavailable,
+use a conservative estimate. Preserve prior work and do not mark an umbrella
+item complete until every acceptance gate has current evidence.

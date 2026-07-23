@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
 from agency_runtime.core.evals.full_roster import (
     DEFAULT_CANDIDATE_LIMIT,
     SCHEMA,
@@ -13,8 +14,11 @@ from agency_runtime.core.evals.full_roster import (
     VERSION,
     _gap_groups,
     _probe_queries,
+    _routing_cards,
     run_full_roster_selection_eval,
 )
+from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
+from agency_runtime.core.selector.pipeline import route
 
 
 @pytest.fixture(scope="module")
@@ -43,7 +47,9 @@ def test_full_roster_eval_is_truthfully_contract_only(report: dict[str, Any]) ->
     assert report["roster"]["manifest_approved"] == 263
     assert report["roster"]["manifest_quarantined"] == 0
     assert report["roster"]["manifest_retired"] == 0
-    assert report["roster"]["approved_enabled"] == 263
+    assert report["roster"]["packaged_contractors"] == 9
+    assert report["roster"]["workforce_total"] == 272
+    assert report["roster"]["approved_enabled"] == 272
     assert report["roster"]["division_count"] == 17
 
 
@@ -51,12 +57,12 @@ def test_every_approved_enabled_agent_participates_in_both_retrievers(
     report: dict[str, Any],
 ) -> None:
     participation = report["metrics"]["participation"]
-    assert participation["approved_enabled_count"] == 263
+    assert participation["approved_enabled_count"] == 272
     assert participation["prompt_body_field_count"] == 0
-    assert participation["lexical_participation_count"] == 263
+    assert participation["lexical_participation_count"] == 272
     assert participation["lexical_participation_rate"] == 1.0
     assert participation["lexical_missing_agent_ids"] == []
-    assert participation["semantic_participation_count"] == 263
+    assert participation["semantic_participation_count"] == 272
     assert participation["semantic_participation_rate"] == 1.0
     assert participation["semantic_missing_agent_ids"] == []
     assert "field-access instrumentation" in participation["proof_method"]
@@ -67,14 +73,14 @@ def test_identity_free_probes_report_agent_and_category_gaps(
 ) -> None:
     metrics = report["metrics"]["probe_retrieval"]
     details = report["details"]["probe_retrieval"]
-    assert metrics["probe_count"] == 263
-    assert metrics["unique_probe_count"] == 263
-    assert metrics["target_hits"] == 263
+    assert metrics["probe_count"] == 272
+    assert metrics["unique_probe_count"] == 272
+    assert metrics["target_hits"] == 272
     assert metrics["target_candidate_recall"] == 1.0
     assert metrics["target_recall_at_10"] >= THRESHOLDS["target_recall_at_10"][1]
-    assert metrics["positive_candidate_identity_count"] == 263
+    assert metrics["positive_candidate_identity_count"] == 272
     assert metrics["positive_candidate_identity_coverage"] == 1.0
-    assert metrics["complete_candidate_identity_count"] == 263
+    assert metrics["complete_candidate_identity_count"] == 272
     assert metrics["complete_candidate_identity_coverage"] == 1.0
     assert metrics["identity_leak_count"] == 0
     assert metrics["preferred_sentence_copy_count"] == 0
@@ -124,7 +130,7 @@ def test_curated_retrieval_covers_hard_negatives_multi_intent_and_abstention(
         "performance-benchmarker",
     }
     assert details["out-of-domain-abstention"]["positive_candidate_ids"] == []
-    assert details["out-of-domain-abstention"]["candidate_union"]["full_roster_count"] == 263
+    assert details["out-of-domain-abstention"]["candidate_union"]["full_roster_count"] == 272
 
 
 def test_compatibility_eval_enforces_conflicts_requirements_and_isolation(
@@ -152,6 +158,20 @@ def test_compatibility_eval_enforces_conflicts_requirements_and_isolation(
     assert requirement["added_requirements"] == ["accessibility-auditor"]
     assert ["accessibility-auditor", "ui-designer"] in requirement["separate_context_pairs"]
     assert all(detail["passed"] for detail in details.values())
+
+
+def test_every_packaged_worker_pair_produces_a_conflict_free_team(
+    report: dict[str, Any],
+) -> None:
+    assert report["metrics"]["pairwise_composition"] == {
+        "worker_count": 272,
+        "pair_count": 36_856,
+        "direct_conflict_pairs": 29,
+        "passed_pairs": 36_856,
+        "failed_pairs": 0,
+        "pairwise_composition_accuracy": 1.0,
+    }
+    assert report["details"]["pairwise_composition_failures"] == []
 
 
 def test_state_eval_keeps_short_replies_bound_to_durable_context(
@@ -184,6 +204,44 @@ def test_full_roster_eval_gates_are_deterministic(report: dict[str, Any]) -> Non
     assert [gate["metric"] for gate in report["gates"]] == list(THRESHOLDS)
     assert all(gate["passed"] for gate in report["gates"])
     assert report["passed"] is True
+
+
+def test_real_agency_runtime_prompt_has_safe_offline_specialists() -> None:
+    _manifest, cards = _routing_cards()
+    capability_receipt = native_adapter_capability_receipt(
+        "codex",
+        platform="windows",
+        session_id="offline-agency-runtime-regression",
+        trace_id="offline-agency-runtime-trace",
+    )
+    decision = route(
+        "offline-agency-runtime-regression",
+        (
+            "The Agency response header exposes unreadable reason codes and effect codes. "
+            "Explain how to test agent selection live and how to open the dashboard."
+        ),
+        cards,
+        config=AgencyConfig(
+            providers=(),
+            judge=JudgeConfig(
+                model="",
+                base_url="",
+                confidence_bypass_threshold=999.0,
+            ),
+            ollama=OllamaConfig(enabled=False, model=""),
+        ),
+        host="codex",
+        platform="windows",
+        capability_receipt=capability_receipt,
+        capability_session_id="offline-agency-runtime-regression",
+        capability_trace_id="offline-agency-runtime-trace",
+        trace_id="offline-agency-runtime-trace",
+    )
+
+    selected = set(decision["semantic_ids"])
+    assert {"multi-agent-systems-architect"}.issubset(selected)
+    assert selected.issubset({"multi-agent-systems-architect", "technical-writer"})
+    assert selected.isdisjoint({"clinical-evidence-agent", "geographer", "language-translator"})
 
 
 @pytest.mark.parametrize("candidate_limit", [True, 7, 81, 40.0, "40"])

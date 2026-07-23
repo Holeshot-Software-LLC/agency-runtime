@@ -822,6 +822,22 @@ def test_turn_classification_rejects_every_invalid_shape_and_deduplicates_reason
     assert projected["reason_codes"] == ["coverage"]
 
 
+def test_turn_classification_versions_pure_social_bypass_without_rewriting_v3() -> None:
+    social = {
+        **_turn_classification(turn_kind="conversation"),
+        "selection_required": False,
+        "reroute_required": False,
+        "execution_decision_required": False,
+        "message_fingerprint": _DIGEST_B,
+    }
+
+    assert store_preflight._project_turn_classification({**social, "classifier_version": 3}) is None
+    projected = store_preflight._project_turn_classification({**social, "classifier_version": 4})
+    assert projected is not None
+    assert projected["turn_kind"] == "conversation"
+    assert projected["selection_required"] is False
+
+
 def test_continuation_guard_and_resident_kernel_reject_invalid_projections() -> None:
     valid_guard = {
         "guard_version": 1,

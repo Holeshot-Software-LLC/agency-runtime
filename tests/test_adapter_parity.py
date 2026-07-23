@@ -17,14 +17,44 @@ import pytest
 from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
 from agency_runtime.adapters.codex.wrapper import CodexAdapter
 from agency_runtime.adapters.generic.wrapper import GenericAdapter
+from agency_runtime.adapters.hermes import bridge as hermes_bridge
 from agency_runtime.adapters.hermes.plugin import HermesAdapter
 from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core.installer import install_agent_adapter
-from agency_runtime.core.process_argv import isolated_python_argv
 from agency_runtime.core.store.sqlite import Store
 from tests.runtime_support import ensure_private_test_directory
 
 ADAPTERS = [HermesAdapter, OpenClawAdapter, CodexAdapter, ClaudeAdapter, GenericAdapter]
+
+
+def test_hermes_bridge_forwards_complete_parent_correlation() -> None:
+    captured: dict[str, Any] = {}
+
+    class Adapter:
+        store = object()
+
+        @staticmethod
+        def pre_llm_call_handler(**kwargs):
+            captured.update(kwargs)
+            return {"context": "routed"}
+
+    result = hermes_bridge._pre_llm_call(
+        Adapter(),
+        {
+            "user_message": "Review this",
+            "parent_session_id": "parent-session",
+            "parent_trace_id": "parent-trace",
+            "native_worker_id": "child-worker",
+            "native_run_id": "hermes-subagent:child-worker",
+        },
+        session_id="child-session",
+        trace_id="child-trace",
+    )
+    assert result == {"context": "routed"}
+    assert captured["parent_session_id"] == "parent-session"
+    assert captured["parent_trace_id"] == "parent-trace"
+    assert captured["native_worker_id"] == "child-worker"
+    assert captured["native_run_id"] == "hermes-subagent:child-worker"
 
 
 class FakeHookContext:
@@ -291,6 +321,19 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         child_subagent_id="child-1",
         child_goal="Review the adapter",
     )
+    assert module._pre_llm_call(
+        conversation_id="child-session",
+        turn_id="child-turn",
+        parent_session_id="hermes-session",
+        child_subagent_id="child-1",
+        user_message="Review the adapter",
+    ) == {"context": "routed"}
+    child_preflight = calls[-1][1]
+    assert child_preflight["parent_session_id"] == "hermes-session"
+    assert child_preflight["parent_trace_id"] == "hermes-turn"
+    assert child_preflight["native_worker_id"] == "child-1"
+    assert child_preflight["native_run_id"] == "hermes-subagent:child-1"
+    assert module._pre_llm_call(user_message="Review this", **native) == {"context": "routed"}
     module._subagent_stop(
         parent_session_id="hermes-session",
         child_subagent_id="child-1",
@@ -443,8 +486,9 @@ def test_generated_hermes_bridge_uses_bounded_shell_free_absolute_argv(
 
     assert result == {"context": "routed"}
     assert Path(observed["argv"][0]).is_absolute()
-    assert observed["argv"][1:4] == [
+    assert observed["argv"][1:5] == [
         "-I",
+        "-S",
         str(private_installer_launcher[1]),
         "agency_runtime.adapters.hermes.bridge",
     ]
@@ -458,6 +502,7 @@ def test_generated_hermes_bridge_uses_bounded_shell_free_absolute_argv(
 def test_hermes_bridge_subprocess_rejects_linked_config_identity(
     tmp_path: Path,
     linked_component: str,
+    private_installer_launcher: tuple[Path, Path],
 ) -> None:
     destination = tmp_path / "destination"
     destination.mkdir()
@@ -486,12 +531,15 @@ def test_hermes_bridge_subprocess_rejects_linked_config_identity(
     }
 
     completed = subprocess.run(
-        isolated_python_argv(
-            sys.executable,
+        [
+            str(private_installer_launcher[0]),
+            "-I",
+            "-S",
+            str(private_installer_launcher[1]),
             "agency_runtime.adapters.hermes.bridge",
             "--config",
             str(config_path.absolute()),
-        ),
+        ],
         input=b'{"action":"control","raw_args":"status"}',
         cwd=tmp_path,
         env=environment,
@@ -692,6 +740,7 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
             ]
     assert mcp["mcpServers"]["agency-runtime"]["args"] == [
         "-I",
+        "-S",
         str(private_installer_launcher[1]),
         "agency_runtime.server.mcp",
         "--stdio",
@@ -780,7 +829,7 @@ def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
     enabled = handle({"action": "control", "command": "on"})
     enabled_status = handle({"action": "control", "command": "status"})
 
-    assert "agents-orchestrator, chief-of-staff" in routed["context"]
+    assert "managers=agents-orchestrator,chief-of-staff" in routed["context"]
     assert correlated["context"]
     assert ordinary["context"]
     assert recorded == {}

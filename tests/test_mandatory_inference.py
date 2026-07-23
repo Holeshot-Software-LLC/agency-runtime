@@ -427,28 +427,17 @@ def test_acknowledgement_requires_explicit_current_state_to_bypass(
 
 
 @pytest.mark.parametrize("message", ["hello", "how's it going"])
-def test_social_conversation_still_uses_configured_inference(
+def test_pure_social_conversation_skips_configured_inference(
     message: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls: list[str] = []
-
-    def infer(task: str, *_args: Any, **_kwargs: Any) -> dict[str, Any]:
-        calls.append(task)
-        return {
-            "selected_ids": [],
-            "confidence": 0.92,
-            "latency_ms": 1,
-            "status": "abstain",
-            "inference_configured": True,
-            "inference_required": True,
-            "inference_attempted": True,
-            "inference_mode": "provider",
-            "provider_attempts": ["configured"],
-            "inference_failures": [],
-        }
-
-    monkeypatch.setattr(pipeline, "query_judge", infer)
+    monkeypatch.setattr(
+        pipeline,
+        "query_judge",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("pure social conversation called inference")
+        ),
+    )
 
     result = pipeline.route(
         "session",
@@ -458,11 +447,12 @@ def test_social_conversation_still_uses_configured_inference(
         turn_state={"state_known": True},
     )
 
-    assert calls == [message]
     assert result["turn_kind"] == "conversation"
-    assert result["selection_required"] is True
-    assert result["inference_required"] is True
-    assert result["inference_attempted"] is True
+    assert result["selection_required"] is False
+    assert result["inference_required"] is False
+    assert result["inference_attempted"] is False
+    assert result["inference_mode"] == "deterministic"
+    assert result["provider_attempts"] == []
 
 
 def test_detailed_continuation_requires_fresh_configured_inference(
@@ -624,7 +614,10 @@ def test_rerouted_intent_requires_fresh_selection_without_an_inference_provider(
         ),
     )
 
-    assert calls == ["fix auth"]
+    assert calls == [
+        "fix auth [domain context: application security, authentication, "
+        "authorization, identity access management]"
+    ]
     assert result["selected_ids"] == ["code-reviewer"]
     assert result["inference_mode"] == "heuristic"
 

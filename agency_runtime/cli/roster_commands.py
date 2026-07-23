@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
@@ -52,7 +53,12 @@ from agency_runtime.core.roster.sync import (
     remediation_queue_snapshot,
     validate_agent,
 )
-from agency_runtime.core.routing_snapshot import RoutingSnapshot, capture_routing_snapshot
+from agency_runtime.core.routing_snapshot import (
+    RoutingSnapshot,
+    bind_workforce_snapshot,
+    capture_operational_routing_snapshot,
+    capture_routing_snapshot,
+)
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.selector.policy import (
@@ -795,6 +801,7 @@ def _set_agent_enabled(
     *,
     enabled: bool,
     config_argument: object = None,
+    reason: str = "operator activation toggle",
 ) -> tuple[str, bool, str]:
     """Atomically change one effective agent policy using config revision CAS."""
 
@@ -807,15 +814,25 @@ def _set_agent_enabled(
         effective = state.effective.get("agents", {})
         disabled = effective.get("disabled", []) if isinstance(effective, dict) else []
         updated = updated_disabled_agents(disabled, normalized, enabled=enabled)
-        if _activation_store(config_argument).get_roster_entry(normalized) is None:
+        runtime_store = _activation_store(config_argument)
+        if runtime_store.get_roster_entry(normalized) is None:
             raise ValueError(f"agent is not present in the active roster: {normalized}")
         changed = tuple(disabled) != updated
         if changed:
-            apply_config_operations(
+            result = apply_config_operations(
                 [{"op": "set", "path": "agents.disabled", "value": list(updated)}],
                 expected_revision=state.revision,
                 path=path,
             )
+            with suppress(KeyError):
+                runtime_store.record_workforce_enablement(
+                    normalized,
+                    enabled=enabled,
+                    config_revision=result.state.revision,
+                    reason=reason,
+                    actor="operator",
+                    surface="cli",
+                )
         return normalized, changed, str(path)
     except Exception as direct_error:
         require_restricted_windows_token(direct_error)
@@ -826,7 +843,7 @@ def _set_agent_enabled(
         try:
             from agency_runtime.cli.agent_control_broker import broker_set_agent_enabled
 
-            result = broker_set_agent_enabled(slug, enabled=enabled)
+            result = broker_set_agent_enabled(slug, enabled=enabled, reason=reason)
             if not _same_config_path(result[2], str(path)):
                 raise ValueError("dashboard service config does not match the CLI config identity")
             return result
@@ -838,30 +855,68 @@ def _set_agent_enabled(
 
 
 def cmd_agent_enable(args: argparse.Namespace) -> int:
+    expected = f"ENABLE {normalize_agent_slug(args.slug)}"
     try:
+        if getattr(args, "confirm", expected) != expected:
+            raise ValueError(f'confirmation required: --confirm "{expected}"')
         slug, changed, config_path = _set_agent_enabled(
             args.slug,
             enabled=True,
             config_argument=getattr(args, "config", None),
+            reason=str(getattr(args, "reason", "operator activation toggle")),
         )
-    except RuntimeError as exc:
-        print(f"❌ {safe_display_token(str(exc), limit=500)}")
+    except (RuntimeError, ValueError) as exc:
+        message = safe_display_token(str(exc), limit=500)
+        if getattr(args, "json", False):
+            _print_json({"ok": False, "error": message})
+        else:
+            print(f"❌ {message}")
         return 1
+    if getattr(args, "json", False):
+        _print_json(
+            {
+                "ok": True,
+                "slug": slug,
+                "enabled": True,
+                "changed": changed,
+                "config_path": config_path,
+            }
+        )
+        return 0
     print(f"{slug} is {'enabled' if changed else 'already enabled'}")
     print(f"config\t{config_path}")
     return 0
 
 
 def cmd_agent_disable(args: argparse.Namespace) -> int:
+    expected = f"DISABLE {normalize_agent_slug(args.slug)}"
     try:
+        if getattr(args, "confirm", expected) != expected:
+            raise ValueError(f'confirmation required: --confirm "{expected}"')
         slug, changed, config_path = _set_agent_enabled(
             args.slug,
             enabled=False,
             config_argument=getattr(args, "config", None),
+            reason=str(getattr(args, "reason", "operator activation toggle")),
         )
-    except RuntimeError as exc:
-        print(f"❌ {safe_display_token(str(exc), limit=500)}")
+    except (RuntimeError, ValueError) as exc:
+        message = safe_display_token(str(exc), limit=500)
+        if getattr(args, "json", False):
+            _print_json({"ok": False, "error": message})
+        else:
+            print(f"❌ {message}")
         return 1
+    if getattr(args, "json", False):
+        _print_json(
+            {
+                "ok": True,
+                "slug": slug,
+                "enabled": False,
+                "changed": changed,
+                "config_path": config_path,
+            }
+        )
+        return 0
     print(f"{slug} is {'disabled' if changed else 'already disabled'}")
     print(f"config\t{config_path}")
     return 0
@@ -943,7 +998,7 @@ def _routing_operation(*, session_id: str, task: str, limit: int) -> _RoutingOpe
         runtime_store = _store()
         return _RoutingOperation(
             store=runtime_store,
-            snapshot=capture_routing_snapshot(runtime_store),
+            snapshot=capture_operational_routing_snapshot(runtime_store),
             receipt=None,
         )
     except Exception as direct_error:
@@ -1052,6 +1107,7 @@ def cmd_route(args: argparse.Namespace) -> int:
         routing = dict(receipt["routing"])
         candidate_rows = [dict(item) for item in receipt["considered_candidates"]]
     elif snapshot is not None:
+        snapshot, workforce = bind_workforce_snapshot(operation.store, snapshot)
         catalog = snapshot.catalog
         if not catalog:
             if args.json:
@@ -1075,7 +1131,9 @@ def cmd_route(args: argparse.Namespace) -> int:
             catalog,
             config=snapshot.config,
             store=None,
+            turn_state=operation.store.get_turn_state_context("cli"),
             allow_installation_diagnostic=bool(host_context),
+            workforce_snapshot=workforce,
             **host_context,
         )
         candidates, scores = pre_narrow(args.task, catalog, limit=args.limit)
@@ -1108,7 +1166,21 @@ def cmd_route(args: argparse.Namespace) -> int:
             print(f"candidate: {agent['slug']} score={agent['score']:.3f}")
         if routing.get("companion_actions"):
             print(f"companion actions: {', '.join(routing['companion_actions'])}")
+        _print_disabled_candidate_shadows(routing)
     return 0
+
+
+def _print_disabled_candidate_shadows(routing: dict[str, Any]) -> None:
+    """Show higher-ranked disabled workers without changing routing policy."""
+
+    for shadow in routing.get("disabled_candidate_shadows") or []:
+        if not isinstance(shadow, dict):
+            continue
+        disabled = str(shadow.get("agent_id") or "").strip()
+        fallback = str(shadow.get("fallback_agent_id") or "").strip()
+        if disabled:
+            suffix = f"; used {fallback}" if fallback else ""
+            print(f"left on the table: disabled {disabled} ranked higher{suffix}")
 
 
 def cmd_explain(args: argparse.Namespace) -> int:

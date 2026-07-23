@@ -109,6 +109,19 @@ def _work_unit_metadata(value: Any) -> dict[str, Any]:
     }
 
 
+def _workforce_unit_descriptors(value: Any) -> list[dict[str, Any]]:
+    if value is None:
+        return []
+    from agency_runtime.core.workforce.routing_projection import (
+        project_workforce_unit_descriptors,
+    )
+
+    result = project_workforce_unit_descriptors(value)
+    if result is None:
+        raise RuntimeError("workforce unit descriptors are malformed")
+    return result
+
+
 def _content_free_routing_recipe(
     routing: dict[str, Any],
     *,
@@ -151,6 +164,17 @@ def _content_free_routing_recipe(
         "work_units": _work_unit_metadata(routing.get("work_units")),
         "routing_receipt": project_durable_routing_receipt(routing),
     }
+    descriptors = _workforce_unit_descriptors(routing.get("workforce_unit_descriptors"))
+    if descriptors or str(routing.get("source") or "").startswith("workforce_"):
+        projected["workforce_unit_descriptors"] = descriptors
+        from agency_runtime.core.workforce.routing_projection import (
+            project_workforce_unit_bindings,
+        )
+
+        bindings = project_workforce_unit_bindings(routing.get("workforce_unit_bindings"))
+        if bindings is None:
+            raise RuntimeError("workforce unit bindings are malformed")
+        projected["workforce_unit_bindings"] = bindings
     raw_execution_context = routing.get("execution_context")
     if raw_execution_context is not None:
         execution_context = project_host_capability_receipt(raw_execution_context)
@@ -185,7 +209,7 @@ def _suggestion_recipe(
     work_units = routing.get("work_units")
     if not isinstance(work_units, dict) or not work_units.get("delegate"):
         return []
-    if _bounded_count(work_units.get("count")) < 2:
+    if _bounded_count(work_units.get("count")) < 1:
         return []
     return build_unit_agent_plan(routing, delegation)
 
@@ -239,17 +263,17 @@ def _isolated_delegation_context(
                     "mutation_scope": "read_only",
                     "parallelization": "unspecified",
                     "expected_deliverable": "Completed outcome with supporting evidence.",
+                    "dependencies": [],
                     "required_tools": [],
                     "required_evidence": [],
                     "likely_files_or_resources": ["repository-workspace"],
                 }
             )
     lines = [
-        "[AGENCY DELEGATION PLAN] Independent current-turn work units were detected.",
-        "Agency recommends expertise and topology only; the native host remains the scheduler. "
-        "Preserve each exact task and stable work_unit_id. A preferred row may be declined "
-        "with an explicit agency.decline_delegation receipt. A strongly_preferred row receives "
-        "at most one corrective Stop pass when neither native execution nor decline is recorded.",
+        "[AGENCY DELEGATION PLAN] Current-turn work units; the native host remains the scheduler.",
+        "Dispatch with the exact native label and goal shown. Hooks bind the audited specialist "
+        "and its full assignment contract only inside that child. Decline a row explicitly with "
+        "agency.decline_delegation when native delegation is not appropriate.",
     ]
     normalized_host = str(host or "").strip().casefold()
     if normalized_host == "codex":
@@ -264,21 +288,11 @@ def _isolated_delegation_context(
             if normalized_host == "codex"
             else ""
         )
+        dependencies = ",".join(item.get("dependencies", ())) or "none"
         lines.append(
-            f"- work_unit_id={work_unit_id}; "
-            f"strength={item['delegation_strength']}; "
-            f"recommended_agent={item['recommended_agent']}; "
-            f"recommended_agents={json.dumps(item['recommended_agents'])}; "
-            f"confidence={item['selection_confidence']:.2f}; "
-            f"mutation_scope={item['mutation_scope']}; "
-            f"parallelization={item['parallelization']}; "
-            f"goal={json.dumps(item['goal'], ensure_ascii=False)}; "
-            f"task={json.dumps(item['goal'], ensure_ascii=False)}; "
-            f"expected_deliverable={json.dumps(item['expected_deliverable'])}; "
-            f"required_tools={json.dumps(item['required_tools'])}; "
-            f"required_evidence={json.dumps(item['required_evidence'])}; "
-            f"likely_files_or_resources={json.dumps(item['likely_files_or_resources'])}"
-            f"{native_label}"
+            f"- unit={work_unit_id}; agent={item['recommended_agent']}; "
+            f"strength={item['delegation_strength']}; depends_on={dependencies}"
+            f"{native_label}; goal={json.dumps(item['goal'], ensure_ascii=False)}"
         )
     lines.append(native_delegation_instruction(normalized_host))
     return "\n".join(lines)
@@ -322,11 +336,17 @@ def _continuation_abstention_context() -> str:
     )
 
 
-def preflight_delivery_policy(host: str) -> tuple[str, int]:
+def preflight_delivery_policy(
+    host: str,
+    *,
+    native_child: bool = False,
+) -> tuple[str, int]:
     """Return the truthful specialist delivery mode and context ceiling for a host."""
 
     normalized = str(host or "unknown").strip().casefold()
-    if normalized in {"codex", "claude"}:
+    if normalized in {"openclaw", "hermes"} and native_child:
+        return "direct", MAX_PREFLIGHT_CONTEXT_CHARS
+    if normalized in {"codex", "claude", "openclaw", "hermes"}:
         return "isolated", PERSISTENT_HOST_CONTEXT_CHARS
     if normalized == "litellm":
         return "direct", LITELLM_PREFLIGHT_CONTEXT_CHARS
@@ -400,6 +420,9 @@ def _context_policy_fingerprint(
             "strongly_preferred_min_confidence": (
                 config.delegation.strongly_preferred_min_confidence
             ),
+            "child_inference_budget": config.delegation.child_inference_budget,
+            "child_inference_concurrency": config.delegation.child_inference_concurrency,
+            "child_cache_ttl_seconds": config.delegation.child_cache_ttl_seconds,
         }
     encoded = json.dumps(policy, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return sha256(encoded).hexdigest()
@@ -562,10 +585,45 @@ def _verified_work_units(recipe_routing: dict[str, Any], user_message: str) -> d
     expected = recipe_routing.get("work_units")
     if not isinstance(expected, dict):
         raise RuntimeError("ready preflight is missing work-unit metadata")
-    detected = detect_work_units(user_message)
+    descriptors = _workforce_unit_descriptors(recipe_routing.get("workforce_unit_descriptors"))
+    if "workforce_unit_descriptors" in recipe_routing:
+        from agency_runtime.core.workforce.routing_projection import (
+            workforce_work_units_from_descriptors,
+        )
+
+        units = workforce_work_units_from_descriptors(user_message, descriptors)
+        detected = {
+            "delegate": bool(expected.get("delegate")),
+            "count": len(units),
+            "confidence": expected.get("confidence"),
+            "source": expected.get("source"),
+            "units": units,
+        }
+    elif expected.get("source") == "parent_unit_reuse":
+        normalized = " ".join(str(user_message or "").split())
+        if not normalized:
+            raise RuntimeError("parent unit replay has no current work-unit goal")
+        detected = {
+            "delegate": True,
+            "count": 1,
+            "confidence": expected.get("confidence"),
+            "source": "parent_unit_reuse",
+            "units": [normalized],
+        }
+    elif expected.get("source") == "isolated_plan_policy":
+        detected = {
+            **detect_work_units(user_message),
+            "delegate": False,
+            "source": "isolated_plan_policy",
+        }
+    else:
+        detected = detect_work_units(user_message)
     detected_metadata = _work_unit_metadata(detected)
     if detected_metadata != expected:
-        raise RuntimeError("ready preflight work-unit recipe does not match the request")
+        raise RuntimeError(
+            "ready preflight work-unit recipe does not match the request: "
+            f"expected={expected!r}, actual={detected_metadata!r}"
+        )
     return {
         **expected,
         "units": [
@@ -600,6 +658,11 @@ def _replay_routing_from_recipe(
     )
     replay["unit_assignment_agents"] = unit_assignment_agents
     if continuation:
+        return replay
+    if routing.get("source") == "parent_unit_reuse":
+        from agency_runtime.core.unit_assignment import hydrate_unit_agent_plan
+
+        hydrate_unit_agent_plan(replay, unit_agent_plan)
         return replay
     from agency_runtime.core.delegation.events import build_unit_agent_plan
 
@@ -767,6 +830,7 @@ def _result_from_recipe(
             store,
             references,
             disabled_agents=disabled,
+            include_context=False,
         )
         specialist_context = format_isolated_specialist_context(
             selected.references,

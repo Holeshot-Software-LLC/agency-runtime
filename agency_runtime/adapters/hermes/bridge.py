@@ -294,12 +294,26 @@ def _pre_llm_call(
     )
     if internal_retry:
         return None
+    handler_kwargs: dict[str, Any] = {
+        "session_id": session_id,
+        "user_message": _bounded_text(payload.get("user_message")),
+        "model": _bounded_text(payload.get("model"), maximum_bytes=512),
+        "trace_id": resolved_trace_id,
+        "origin_receipt": origin_receipt,
+    }
+    parent_session_id = _bounded_text(payload.get("parent_session_id"), maximum_bytes=512)
+    parent_trace_id = _bounded_text(payload.get("parent_trace_id"), maximum_bytes=512)
+    native_worker_id = _bounded_text(payload.get("native_worker_id"), maximum_bytes=256)
+    native_run_id = _bounded_text(payload.get("native_run_id"), maximum_bytes=256)
+    if parent_session_id and parent_trace_id:
+        handler_kwargs.update(
+            parent_session_id=parent_session_id,
+            parent_trace_id=parent_trace_id,
+            native_worker_id=native_worker_id,
+            native_run_id=native_run_id,
+        )
     return adapter.pre_llm_call_handler(
-        session_id=session_id,
-        user_message=_bounded_text(payload.get("user_message")),
-        model=_bounded_text(payload.get("model"), maximum_bytes=512),
-        trace_id=resolved_trace_id,
-        origin_receipt=origin_receipt,
+        **handler_kwargs,
     )
 
 

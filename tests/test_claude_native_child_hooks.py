@@ -3,19 +3,44 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from hashlib import sha256
+from threading import Lock
 from typing import Any
 
+import pytest
+
 from agency_runtime.adapters.hooks import HookBridge
+from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
+from agency_runtime.core.native_child_prompt_delivery import (
+    parse_native_child_prompt_delivery,
+    render_native_child_prompt_delivery,
+)
 from agency_runtime.core.specialist_context import (
     SpecialistPromptReference,
     format_isolated_specialist_context,
 )
+from agency_runtime.core.unit_assignment import work_unit_goal_hash
 
 
 class _PlanStore:
     def __init__(self, *, open_traces: tuple[str, ...] = ("trace",)) -> None:
         self.open_traces = open_traces
         self.snapshot_reads: list[tuple[str, str]] = []
+        self.prompts = {
+            "code-reviewer": "You are the exact code review specialist.",
+            "security-reviewer": "You are the exact security review specialist.",
+        }
+        self.hashes = {
+            slug: sha256(prompt.encode()).hexdigest() for slug, prompt in self.prompts.items()
+        }
+        self.goals = {
+            "unit-code": "Review the implementation.",
+            "unit-security": "Audit the implementation security.",
+        }
+        self.prepared: list[dict[str, Any]] = []
+        self.consumed: list[dict[str, Any]] = []
+        self._lineage: dict[tuple[str, str], dict[str, str]] = {}
+        self._lock = Lock()
 
     def get_open_traces_for_session(self, _session_id: str) -> list[str]:
         return list(self.open_traces)
@@ -32,20 +57,94 @@ class _PlanStore:
             "status": "active",
             "delivery_mode": "isolated",
             "selected_specialists": [
-                {"slug": "code-reviewer", "version": "v1", "hash": "a" * 64},
-                {"slug": "security-reviewer", "version": "v1", "hash": "b" * 64},
+                {
+                    "slug": "code-reviewer",
+                    "version": "v1",
+                    "hash": self.hashes["code-reviewer"],
+                },
+                {
+                    "slug": "security-reviewer",
+                    "version": "v1",
+                    "hash": self.hashes["security-reviewer"],
+                },
             ],
             "unit_agent_plan": [
                 {
                     "work_unit_id": "unit-code",
                     "recommended_agent": "code-reviewer",
+                    "goal_hash": work_unit_goal_hash(self.goals["unit-code"]),
+                    "mutation_scope": "read_only",
+                    "resource_hashes": [sha256(b"repository-workspace").hexdigest()],
+                    "required_evidence": [],
                 },
                 {
                     "work_unit_id": "unit-security",
                     "recommended_agent": "security-reviewer",
+                    "goal_hash": work_unit_goal_hash(self.goals["unit-security"]),
+                    "mutation_scope": "read_only",
+                    "resource_hashes": [sha256(b"repository-workspace").hexdigest()],
+                    "required_evidence": [],
                 },
             ],
         }
+
+    def get_versioned_specialist_prompt(
+        self,
+        slug: str,
+        version: str,
+        content_hash: str,
+        *,
+        max_chars: int,
+    ) -> dict[str, Any] | None:
+        prompt = self.prompts.get(slug)
+        if prompt is None or version != "v1" or self.hashes[slug] != content_hash:
+            return None
+        return {
+            "slug": slug,
+            "version": version,
+            "hash": content_hash,
+            "prompt_body": prompt[:max_chars],
+            "prompt_truncated": len(prompt) > max_chars,
+        }
+
+    def prepare_delegation_activation(self, **kwargs: Any) -> dict[str, Any]:
+        with self._lock:
+            token = f"token-{len(self.prepared)}-{kwargs['specialist_slug']}"
+            row = {**kwargs, "activation_token": token}
+            self.prepared.append(row)
+        slug = str(kwargs["specialist_slug"])
+        return {
+            "activation_token": token,
+            "version": "v1",
+            "prompt_hash": self.hashes[slug],
+        }
+
+    def consume_delegation_activation(self, **kwargs: Any) -> dict[str, Any]:
+        token = str(kwargs["activation_token"])
+        with self._lock:
+            if any(row["activation_token"] == token for row in self.consumed):
+                raise ValueError("already consumed")
+            prepared = next(row for row in self.prepared if row["activation_token"] == token)
+            slug = str(prepared["specialist_slug"])
+            row = {
+                **kwargs,
+                "activation_token": token,
+                "slug": slug,
+                "version": "v1",
+                "prompt_hash": self.hashes[slug],
+                "prompt_body": self.prompts[slug],
+                "worker_kind": "generic-worker",
+            }
+            self.consumed.append(row)
+            self._lineage[(str(kwargs["work_unit_id"]), slug)] = {
+                "worker_kind": "generic-worker",
+                "worker_id": str(kwargs["worker_id"]),
+                "native_run_id": str(kwargs["native_run_id"]),
+            }
+            return row
+
+    def get_consumed_delegation_lineage(self, **kwargs: Any) -> dict[str, str] | None:
+        return self._lineage.get((str(kwargs["work_unit_id"]), str(kwargs["specialist_slug"])))
 
 
 class _RecordingAdapter:
@@ -78,25 +177,28 @@ def _agent_payload(
     }
 
 
-def test_pre_tool_use_preserves_native_agent_scheduling_and_appends_child_recipe() -> None:
+def test_pre_tool_use_preserves_native_scheduling_and_injects_exact_prompt() -> None:
     store = _PlanStore()
     result = HookBridge("claude", store=store).handle(_agent_payload())  # type: ignore[arg-type]
 
     output = result["hookSpecificOutput"]
     updated = output["updatedInput"]
     assert output["hookEventName"] == "PreToolUse"
+    assert output["permissionDecision"] == "allow"
     assert updated["description"] == "unit-code"
     assert updated["subagent_type"] == "general-purpose"
     assert updated["model"] == "sonnet"
     assert updated["prompt"].startswith("Review the implementation.\n\n")
-    assert "[AGENCY CHILD PREFLIGHT v1]" in updated["prompt"]
-    assert 'parent_session_id="claude-session"' in updated["prompt"]
-    assert 'parent_trace_id="trace"' in updated["prompt"]
-    assert 'parent_tool_use_id="toolu-code"' in updated["prompt"]
-    assert 'work_unit_id="unit-code"' in updated["prompt"]
-    assert 'specialist_slug="code-reviewer"' in updated["prompt"]
-    assert "secret-specialist-prompt" not in updated["prompt"]
-    assert "permissionDecision" not in output
+    assert "[AGENCY EXACT SPECIALIST ACTIVATION v1]" in updated["prompt"]
+    assert store.prompts["code-reviewer"] in updated["prompt"]
+    delivery = parse_native_child_prompt_delivery(updated["prompt"])
+    assert delivery is not None
+    assert delivery.parent_session_id == "claude-session"
+    assert delivery.parent_trace_id == "trace"
+    assert delivery.tool_use_id == "toolu-code"
+    assert delivery.work_unit_id == "unit-code"
+    assert delivery.specialist_slug == "code-reviewer"
+    assert delivery.prompt_body == store.prompts["code-reviewer"]
     assert store.snapshot_reads == [("claude-session", "trace")]
 
 
@@ -111,32 +213,197 @@ def test_pre_tool_use_fails_closed_for_unplanned_or_ambiguous_work() -> None:
     assert ambiguous_store.snapshot_reads == []
 
 
-def test_pre_tool_use_is_idempotent_and_never_serializes_a_bearer() -> None:
-    prompt = "Review.\n\n[AGENCY CHILD PREFLIGHT v1]\nalready attached"
-    result = HookBridge("claude", store=_PlanStore()).handle(  # type: ignore[arg-type]
-        _agent_payload(prompt=prompt)
-    )
+def test_pre_tool_use_is_idempotent_for_an_exact_existing_delivery() -> None:
+    store = _PlanStore()
+    bridge = HookBridge("claude", store=store)  # type: ignore[arg-type]
+    first = bridge.handle(_agent_payload())
+    prompt = first["hookSpecificOutput"]["updatedInput"]["prompt"]
 
-    assert result == {}
+    assert bridge.handle(_agent_payload(prompt=prompt)) == {}
+    assert len(store.prepared) == 1
 
 
 def test_concurrent_agent_calls_keep_work_unit_recipes_disjoint() -> None:
     bridge = HookBridge("claude", store=_PlanStore())  # type: ignore[arg-type]
     payloads = (
         _agent_payload(description="unit-code", tool_use_id="toolu-code"),
-        _agent_payload(description="unit-security", tool_use_id="toolu-security"),
+        _agent_payload(
+            description="unit-security",
+            prompt="Audit the implementation security.",
+            tool_use_id="toolu-security",
+        ),
     )
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         results = list(executor.map(bridge.handle, payloads))
 
-    prompts = [result["hookSpecificOutput"]["updatedInput"]["prompt"] for result in results]
-    assert 'work_unit_id="unit-code"' in prompts[0]
-    assert 'specialist_slug="code-reviewer"' in prompts[0]
-    assert "security-reviewer" not in prompts[0]
-    assert 'work_unit_id="unit-security"' in prompts[1]
-    assert 'specialist_slug="security-reviewer"' in prompts[1]
-    assert "code-reviewer" not in prompts[1]
+    deliveries = [
+        parse_native_child_prompt_delivery(result["hookSpecificOutput"]["updatedInput"]["prompt"])
+        for result in results
+    ]
+    assert deliveries[0] is not None and deliveries[0].work_unit_id == "unit-code"
+    assert deliveries[0].specialist_slug == "code-reviewer"
+    assert deliveries[1] is not None and deliveries[1].work_unit_id == "unit-security"
+    assert deliveries[1].specialist_slug == "security-reviewer"
+
+
+def test_pre_tool_use_rejects_a_planned_label_with_the_wrong_goal() -> None:
+    store = _PlanStore()
+
+    result = HookBridge("claude", store=store).handle(  # type: ignore[arg-type]
+        _agent_payload(prompt="Audit an unrelated deployment.")
+    )
+
+    output = result["hookSpecificOutput"]
+    assert output["permissionDecision"] == "deny"
+    assert "does not exactly match" in output["permissionDecisionReason"]
+    assert store.prepared == []
+
+
+def test_claude_post_tool_consumes_exact_delivery_with_host_child_identity() -> None:
+    store = _PlanStore()
+    adapter = _RecordingAdapter()
+    bridge = HookBridge("claude", store=store, adapter=adapter)  # type: ignore[arg-type]
+    preflight = bridge.handle(_agent_payload())
+    updated_input = preflight["hookSpecificOutput"]["updatedInput"]
+    post = _agent_payload(event="PostToolUse")
+    post["tool_input"] = updated_input
+    post["tool_response"] = {
+        "agentId": "agent-42",
+        "resolvedModel": "claude-sonnet-5",
+        "status": "completed",
+    }
+
+    assert bridge.handle(post) == {}
+    [consumed] = store.consumed
+    assert consumed["specialist_slug"] == "code-reviewer"
+    assert consumed["work_unit_id"] == "unit-code"
+    assert consumed["worker_id"] == "agent-42"
+    assert consumed["native_run_id"] == "claude-agent:agent-42"
+    [call] = adapter.calls
+    assert call["args"]["agent"] == "code-reviewer"
+    assert call["args"]["work_unit_id"] == "unit-code"
+    assert call["args"]["goal"] == "Review the implementation."
+
+    # A replay sees the same immutable lineage and does not create a second
+    # activation consumption.
+    assert bridge.handle(post) == {}
+    assert len(store.consumed) == 1
+
+
+def test_post_tool_rejects_a_delivery_rebound_to_a_different_goal() -> None:
+    store = _PlanStore()
+    bridge = HookBridge("claude", store=store, adapter=_RecordingAdapter())  # type: ignore[arg-type]
+    payload = _agent_payload()
+    updated_input = bridge.handle(payload)["hookSpecificOutput"]["updatedInput"]
+    delivery = parse_native_child_prompt_delivery(updated_input["prompt"])
+    assert delivery is not None
+    updated_input["prompt"] = render_native_child_prompt_delivery(
+        "Audit an unrelated deployment.",
+        delivery.prompt_body,
+        host=delivery.host,
+        parent_session_id=delivery.parent_session_id,
+        parent_trace_id=delivery.parent_trace_id,
+        tool_use_id=delivery.tool_use_id,
+        work_unit_id=delivery.work_unit_id,
+        specialist_slug=delivery.specialist_slug,
+        specialist_version=delivery.specialist_version,
+        specialist_prompt_hash=delivery.specialist_prompt_hash,
+        activation_token=delivery.activation_token,
+    )
+
+    bridge.handle(
+        {
+            **payload,
+            "hook_event_name": "PostToolUse",
+            "tool_input": updated_input,
+            "tool_response": {"agentId": "agent-42", "status": "completed"},
+        }
+    )
+
+    assert store.consumed == []
+
+
+def test_codex_pre_and_post_hooks_deliver_exact_specialist_without_child_mcp_calls() -> None:
+    store = _PlanStore()
+    adapter = _RecordingAdapter()
+    bridge = HookBridge("codex", store=store, adapter=adapter)  # type: ignore[arg-type]
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "codex-session",
+        "turn_id": "trace",
+        "tool_name": "spawn_agent",
+        "tool_use_id": "call-code",
+        "tool_input": {
+            "task_name": codex_task_name_for_work_unit("unit-code"),
+            "message": "Review the implementation.",
+            "agent_type": "worker",
+        },
+    }
+
+    preflight = bridge.handle(payload)
+    output = preflight["hookSpecificOutput"]
+    assert output["permissionDecision"] == "allow"
+    delivery = parse_native_child_prompt_delivery(output["updatedInput"]["message"])
+    assert delivery is not None
+    assert delivery.specialist_slug == "code-reviewer"
+    assert delivery.prompt_body == store.prompts["code-reviewer"]
+
+    post = {
+        **payload,
+        "hook_event_name": "PostToolUse",
+        "tool_input": output["updatedInput"],
+        "tool_response": {"agent_id": "agent-77", "status": "accepted"},
+    }
+    assert bridge.handle(post) == {}
+    [consumed] = store.consumed
+    assert consumed["worker_id"] == "agent-77"
+    assert consumed["native_run_id"] == "codex-agent:agent-77"
+    [call] = adapter.calls
+    assert call["args"]["agent"] == "code-reviewer"
+    assert call["args"]["work_unit_id"] == "unit-code"
+    assert call["args"]["goal"] == "Review the implementation."
+
+
+def test_codex_v2_task_path_is_authoritative_native_child_identity() -> None:
+    store = _PlanStore()
+    adapter = _RecordingAdapter()
+    bridge = HookBridge("codex", store=store, adapter=adapter)  # type: ignore[arg-type]
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "codex-session",
+        "turn_id": "trace",
+        "tool_name": "spawn_agent",
+        "tool_use_id": "call-code",
+        "tool_input": {
+            "task_name": codex_task_name_for_work_unit("unit-code"),
+            "message": "Review the implementation.",
+        },
+    }
+    updated = bridge.handle(payload)["hookSpecificOutput"]["updatedInput"]
+    post = {
+        **payload,
+        "hook_event_name": "PostToolUse",
+        "tool_input": updated,
+        "tool_response": {"task_name": "/root/unit_code", "status": "accepted"},
+    }
+
+    assert bridge.handle(post) == {}
+    [consumed] = store.consumed
+    assert consumed["worker_id"] == "task:/root/unit_code"
+    assert consumed["native_run_id"] == "codex-task:/root/unit_code"
+
+
+def test_planned_child_is_blocked_when_exact_prompt_cannot_be_verified() -> None:
+    store = _PlanStore()
+    store.prompts.clear()
+
+    result = HookBridge("claude", store=store).handle(_agent_payload())  # type: ignore[arg-type]
+
+    output = result["hookSpecificOutput"]
+    assert output["permissionDecision"] == "deny"
+    assert "exact selected prompt version" in output["permissionDecisionReason"]
+    assert store.prepared == []
 
 
 def test_subagent_start_injects_only_current_child_lineage() -> None:
@@ -158,7 +425,27 @@ def test_subagent_start_injects_only_current_child_lineage() -> None:
     assert 'native_run_id="claude-agent:agent-42"' in context
     assert "code-reviewer" not in context
     assert "activation_token" not in context
-    assert "trace" not in context
+    assert 'parent_session_id="claude-session"' in context
+    assert 'parent_trace_id="trace"' in context
+    assert "shared parent budget, cache, and singleflight" in context
+
+
+def test_subagent_start_omits_both_parent_ids_when_trace_is_ambiguous() -> None:
+    store = _PlanStore(open_traces=("trace-a", "trace-b"))
+    payload = {
+        "hook_event_name": "SubagentStart",
+        "session_id": "session",
+        "agent_id": "agent-42",
+        "agent_type": "general-purpose",
+    }
+
+    for host in ("claude", "codex"):
+        context = HookBridge(host, store=store).handle(payload)["hookSpecificOutput"][
+            "additionalContext"
+        ]
+        assert "Parent correlation is unavailable" in context
+        assert "parent_session_id=" not in context
+        assert "parent_trace_id=" not in context
 
 
 def test_subagent_stop_does_not_guess_parent_work_unit_correlation() -> None:
@@ -286,7 +573,34 @@ def test_post_tool_use_without_an_exact_open_turn_records_nothing() -> None:
     assert adapter.calls == []
 
 
-def test_claude_parent_guidance_defers_prepare_and_load_to_the_native_child() -> None:
+@pytest.mark.parametrize(
+    ("host", "native_tool", "binding", "activation_marker", "forbidden_marker"),
+    [
+        ("codex", "`spawn_agent`", "`native_task_name`", "PreToolUse hook", "`Agent`"),
+        ("claude", "`Agent`", "`description`", "PreToolUse hook", "`spawn_agent`"),
+        (
+            "hermes",
+            "`delegate_task`",
+            "unchanged `work_unit_id` and exact `goal`",
+            "child pre-LLM hook",
+            "PreToolUse hook",
+        ),
+        (
+            "openclaw",
+            "`sessions_spawn`",
+            "unchanged `work_unit_id` and exact `goal`",
+            "child pre-LLM hook",
+            "PreToolUse hook",
+        ),
+    ],
+)
+def test_isolated_parent_guidance_uses_the_exact_host_activation_contract(
+    host: str,
+    native_tool: str,
+    binding: str,
+    activation_marker: str,
+    forbidden_marker: str,
+) -> None:
     reference = SpecialistPromptReference(
         slug="code-reviewer",
         version="v1",
@@ -297,20 +611,23 @@ def test_claude_parent_guidance_defers_prepare_and_load_to_the_native_child() ->
 
     context = format_isolated_specialist_context(
         [reference],
-        host="claude",
-        session_id="claude-session",
+        host=host,
+        session_id=f"{host}-session",
         trace_id="trace",
         nontrivial=True,
+        unit_plan=[{"work_unit_id": "unit-review"}],
     )
 
-    assert "Do not call `agency.prepare_delegation` in the parent" in context
-    assert "do not place an activation token in the Agent prompt" in context
-    assert "PreToolUse and SubagentStart hooks" in context
-    assert "Inside the child only" in context
-    assert "code-reviewer => work_unit_id=specialist:code-reviewer" in context
+    assert native_tool in context
+    assert binding in context
+    assert activation_marker in context
+    assert forbidden_marker not in context
+    assert "Do not call `agency.prepare_delegation`" in context
+    assert "`agency.load_specialist`" in context
+    assert "code-reviewer" in context
 
 
-def test_codex_parent_guidance_keeps_parent_preparation_contract() -> None:
+def test_isolated_parent_guidance_rejects_selected_specialist_without_exact_plan() -> None:
     reference = SpecialistPromptReference(
         slug="code-reviewer",
         version="v1",
@@ -319,14 +636,24 @@ def test_codex_parent_guidance_keeps_parent_preparation_contract() -> None:
         capabilities=("review",),
     )
 
+    with pytest.raises(RuntimeError, match="lacks an exact unit-agent plan"):
+        format_isolated_specialist_context(
+            [reference],
+            host="codex",
+            session_id="codex-session",
+            trace_id="trace",
+            nontrivial=True,
+        )
+
+
+def test_isolated_parent_guidance_does_not_dispatch_an_untyped_worker() -> None:
     context = format_isolated_specialist_context(
-        [reference],
-        host="codex",
-        session_id="codex-session",
+        [],
+        host="openclaw",
+        session_id="openclaw-session",
         trace_id="trace",
-        nontrivial=True,
+        nontrivial=False,
     )
 
-    assert "In the parent, call `agency.prepare_delegation`" in context
-    assert "returned `activation_token` only to its isolated child" in context
-    assert "PreToolUse and SubagentStart hooks" not in context
+    assert "No specialist assignment was accepted" in context
+    assert "Do not dispatch an untyped native worker" in context

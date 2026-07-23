@@ -3,7 +3,7 @@ title: "Roster semantic safety audit - specialized and spatial batch"
 status: active
 category: governance
 created: 2026-07-17
-updated: 2026-07-17
+updated: 2026-07-22
 tags:
   - roster
   - security
@@ -34,6 +34,13 @@ record contains exactly one entry per source file and does not copy prompt bodie
 useful specialty remains selectable only through the bounded routing contract.
 Raw claims of memory, tool access, executive or professional authority, external
 action, certification, legal currency, or production readiness remain inactive.
+
+Audit revision 2 also records read-only `analysis` for `lsp-index-engineer`.
+That identifier is grounded in its reviewed graph-consistency, profiling,
+cancellation, stale-file, duplicate-symbol, hostile-input, and benchmark evidence
+contracts. It permits bounded diagnosis before an implementation decision; it does
+not grant independent review authority, host mutation, global tool installation, or
+an unsupported performance claim.
 
 ## Scope and method
 
@@ -172,7 +179,7 @@ Generation fails closed unless all of the following hold:
 - all required fields and only those fields, with semantically non-empty routing arrays;
 - valid authority, context, status, host, and platform enums;
 - exact SHA-256 match between every record and its full raw source bytes;
-- source revision `459dce837db3bdfdc4763d3fefd1fd854e73c8f1` and audit revision `1` on every record;
+- source revision `459dce837db3bdfdc4763d3fefd1fd854e73c8f1`, batch audit revision `2`, and a current per-record audit revision;
 - all conflict and dependency references resolve within this batch and conflicts are symmetric;
 - no direct-safe record has mutating authority or requires tools;
 - LiteLLM is absent from execution-host compatibility; and

@@ -930,7 +930,7 @@
         "reporting secrets or personal data verbatim",
         "claiming scanner or runtime evidence that was not produced"
       ],
-      "audit_revision": "1",
+      "audit_revision": "2",
       "audit_status": "approved",
       "authority": "review",
       "avoid_when": [
@@ -972,17 +972,19 @@
         "high-reasoning",
         "tool-use"
       ],
+      "optional_tools": [
+        "security-scanner"
+      ],
       "preferred_when": [
         "generated or assisted code needs an independent security review",
         "a proposed fix needs exploitability and regression analysis"
       ],
       "prompt_file": "prompts/ai-generated-code-security-auditor.txt",
-      "prompt_hash": "046907d56e213d475825a91a0a81e60de46fd4297654fa94a2bc5be3fb50eeba",
+      "prompt_hash": "1030b0bd2d90d4b7586e435b2340327d2fe5f4be4ea2353333f062b11c35d54c",
       "relative_path": "security/security-ai-generated-code-auditor.md",
       "required_tools": [
         "file-read",
-        "git",
-        "security-scanner"
+        "git"
       ],
       "requires": [],
       "slug": "ai-generated-code-security-auditor",
@@ -1003,7 +1005,7 @@
         "review",
         "testing"
       ],
-      "version": "sha256:2b537175181601cd142b8c5f7a0f9f7d498cda26f92ae65fbf66362d15cc02d2"
+      "version": "sha256:6f74a99b7c0bdecd7dacb1760e81c6bb6f47e4f7bcfbdb16699f63afb94f84d6"
     },
     {
       "anti_capabilities": [
@@ -8686,7 +8688,7 @@
         "collecting from live systems without authorization",
         "making legal notification, attribution, or public-disclosure decisions"
       ],
-      "audit_revision": "1",
+      "audit_revision": "2",
       "audit_status": "approved",
       "authority": "plan",
       "avoid_when": [
@@ -8731,7 +8733,7 @@
         "a completed incident needs an evidence-backed postmortem"
       ],
       "prompt_file": "prompts/incident-responder.txt",
-      "prompt_hash": "2a1060fb97788260ad344cd44a9aed856e935b563a626c3fbff3f7b277e87779",
+      "prompt_hash": "8bcff30a9895dbf52317bfe55fbcf5625b41df9282b91908df184cc6616fb0a4",
       "relative_path": "security/security-incident-responder.md",
       "required_tools": [
         "file-read",
@@ -8754,10 +8756,16 @@
       ],
       "task_types": [
         "analysis",
+        "audit",
+        "coordination",
+        "governance",
+        "investigation",
+        "operations",
         "planning",
+        "risk-analysis",
         "review"
       ],
-      "version": "sha256:da8d640fa536e3df2662d1205561d40b35593b575659f96967d5c88938df3cf2"
+      "version": "sha256:873b71e860d23fcef934ab32588f74b1aad2740018220be54dc1d9b4aba77d14"
     },
     {
       "anti_capabilities": [
@@ -8765,7 +8773,7 @@
         "execute production containment autonomously",
         "send public or customer communications"
       ],
-      "audit_revision": "1",
+      "audit_revision": "2",
       "audit_status": "approved",
       "authority": "plan",
       "avoid_when": [
@@ -8811,7 +8819,7 @@
         "response readiness and runbooks need review"
       ],
       "prompt_file": "prompts/incident-response-commander.txt",
-      "prompt_hash": "049a0a827b7172bd1acc202e071e5dfe64f73e5b8d453eb3fb56955d857cfd49",
+      "prompt_hash": "59d7cdce787c36a069bbd742c75c76955b20cbe8d18905682104bf39719aec0a",
       "relative_path": "engineering/engineering-incident-response-commander.md",
       "required_tools": [
         "monitoring",
@@ -8835,10 +8843,14 @@
       ],
       "task_types": [
         "analysis",
+        "coordination",
+        "investigation",
+        "operations",
         "planning",
+        "risk-analysis",
         "review"
       ],
-      "version": "sha256:bcfd84526f2b775794b108fb3d05bad4d1b07ca7284f9f1ff2e29b4239b9e7da"
+      "version": "sha256:b62d4e4075f105de8a2b5f638b410ce598369b48b4e3e38f698e413803555d7b"
     },
     {
       "anti_capabilities": [
@@ -10305,7 +10317,7 @@
         "indexing secrets or untrusted repositories unsafely",
         "claiming latency without benchmarks"
       ],
-      "audit_revision": "1",
+      "audit_revision": "2",
       "audit_status": "approved",
       "authority": "modify",
       "avoid_when": [
@@ -10346,7 +10358,7 @@
         "a repository needs a scoped LSP aggregator index or performance repair"
       ],
       "prompt_file": "prompts/lsp-index-engineer.txt",
-      "prompt_hash": "5ce0101668496ee925f033e953b1eb770458f556261e83e1fdddc251485966f8",
+      "prompt_hash": "d94268d662c4a6bd0296478d4ac4a511da0a6a9fa7cf910e2b052ea4b8a79269",
       "relative_path": "specialized/lsp-index-engineer.md",
       "required_tools": [
         "source-code-reader",
@@ -10368,11 +10380,12 @@
         "linux"
       ],
       "task_types": [
+        "analysis",
         "architecture",
         "implementation",
         "testing"
       ],
-      "version": "sha256:e6917e7c51407f6555e4e61cc308ac9eba6d2e6db96e480b4bbdf87f06576578"
+      "version": "sha256:46fa3e932973ee8ccd5bfdc8fef9751b7bd2b99ad2b9da20b865e5be72f0cf77"
     },
     {
       "anti_capabilities": [

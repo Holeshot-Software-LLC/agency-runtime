@@ -50,7 +50,10 @@ def _isolated_config_environment(
 ):
     _executable, bootstrap = private_installer_launcher_files
     monkeypatch.setattr(process_argv, "agency_bootstrap_path", lambda: str(bootstrap))
-    monkeypatch.setattr(identity, "agency_bootstrap_path", lambda: str(bootstrap))
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_service_core.prepare_private_package_runtime",
+        lambda path: str(bootstrap) if Path(path) == bootstrap else str(path),
+    )
     monkeypatch.delenv("AGENCY_CONFIG_PATH", raising=False)
     reset_config_cache()
     try:
@@ -71,7 +74,7 @@ def _installed_manifest(
     assert ctx is not None
     ctx = replace(
         ctx,
-        launcher_artifacts=snapshot_persistent_artifacts((ctx.worker_argv[0], ctx.worker_argv[2])),
+        launcher_artifacts=snapshot_persistent_artifacts((ctx.worker_argv[0], ctx.worker_argv[3])),
     )
     _write_manifest(ctx)
     return ctx.manifest_path, _manifest_value(ctx)
@@ -613,6 +616,7 @@ def test_explicit_preflight_config_precedes_store_binding(
         task,
         store.get_active_roster_as_catalog(),
         config=load_config(explicit_config),
+        store=store,
         host="test",
         platform=platform.system().casefold(),
     )

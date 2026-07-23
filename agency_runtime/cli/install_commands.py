@@ -381,11 +381,17 @@ def _render_install_summary(
     roster_upgraded: int,
     dashboard_result: dict[str, Any],
     dashboard_opted_out: bool,
+    contractors_installed: int = 0,
+    contractors_existing: int = 0,
 ) -> None:
     """Render profile, provider, roster, and dashboard setup results."""
     print(f"✅ Agency Runtime profile: {profile_name}")
     print(f"✅ Starter roster added: {roster_added} agents")
     print(f"✅ Legacy bundled contracts upgraded: {roster_upgraded} agents")
+    print(
+        "✅ Governed contractors: "
+        f"{contractors_installed} installed, {contractors_existing} already current"
+    )
     print(f"   Config: {cfg.config_path or '(defaults only)'}")
     print(
         f"   Judge model: {safe_display_token(cfg.judge.model)} "
@@ -563,17 +569,23 @@ def _install_succeeded(
 
 
 def _seed_starter_roster(store: Store) -> int:
-    from agency_runtime.core.installer import reconcile_starter_roster
+    from agency_runtime.core.installer import seed_starter_roster
 
-    result = reconcile_starter_roster(store)
-    store.record_import_event("starter_roster_installed", "", f"count={result.added}")
+    result = seed_starter_roster(store)
+    store.record_import_event("starter_roster_installed", "", f"count={int(result)}")
     if result.upgraded:
         store.record_import_event(
             "starter_roster_upgraded",
             "",
             f"count={result.upgraded}",
         )
-    return result.added
+    if result.contractors_installed:
+        store.record_import_event(
+            "packaged_contractors_installed",
+            "",
+            f"count={result.contractors_installed}",
+        )
+    return result
 
 
 def _materialize_install_controls(store: object, hosts: list[str]) -> None:
@@ -693,6 +705,8 @@ def cmd_install(
         _materialize_install_controls(runtime_store, targets)
         roster_added = seed_starter_roster(runtime_store)
         roster_upgraded = int(getattr(roster_added, "upgraded", 0))
+        contractors_installed = int(getattr(roster_added, "contractors_installed", 0))
+        contractors_existing = int(getattr(roster_added, "contractors_existing", 0))
     except Exception as exc:
         require_restricted_windows_token(exc)
         error = safe_display_token(
@@ -728,6 +742,8 @@ def cmd_install(
             cfg=cfg,
             roster_added=int(roster_added),
             roster_upgraded=roster_upgraded,
+            contractors_installed=contractors_installed,
+            contractors_existing=contractors_existing,
             dashboard_result=dashboard_result,
             dashboard_opted_out=dashboard_opted_out,
         )
@@ -758,6 +774,8 @@ def cmd_install(
                 "profile": profile_name,
                 "roster_added": int(roster_added),
                 "roster_upgraded": roster_upgraded,
+                "contractors_installed": contractors_installed,
+                "contractors_existing": contractors_existing,
                 "hosts": host_results,
                 "dashboard": dashboard_result,
             }

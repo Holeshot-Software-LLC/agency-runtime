@@ -178,7 +178,7 @@ def test_changed_install_lineage_cannot_receive_a_stale_attestation(
         "_invoke_and_collect_evidence",
         lambda *_args, **_kwargs: canary._InvocationOutcome(
             result={},
-            evidence={"correlated_trace_ids": ["trace"]},
+            evidence={"accepted_trace_ids": ["trace"]},
         ),
     )
     monkeypatch.setattr(

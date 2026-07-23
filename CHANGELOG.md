@@ -27,12 +27,31 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Unsafe deterministic and inferred selection candidates now have to clear the
+  configured confidence floor before caching, prompt hydration, or activation.
+  Agency runtime/dashboard questions prefer the purpose-built multi-agent
+  systems specialist, while ambiguous input abstains instead of accepting a
+  weak semantic collision.
+- Native-child delegation events now reconcile to the exact consumed activation
+  receipt, so task labels cannot strand valid child evidence in a repeated Stop
+  retry. Shared child routes also preserve multi-unit plans, zero-TTL
+  singleflight results, complete parent correlation, and provider protocol
+  settings across edits.
+- Dashboard CLI-provider staging now removes stale HTTP credentials before
+  validation.
+- Companion-policy validation now uses the full active roster while selection
+  still uses the host-eligible subset, preventing valid cross-platform agents
+  from appearing missing on Windows or Linux routes.
 - Corrected Codex activation guidance to use the terminal TUI hook-review
   surface, distinguish Codex Desktop connector setup, and expose the approval
   surface and launch command in structured installer evidence.
 
 ### Added
 
+- Codex subscription providers can now choose a validated reasoning effort in
+  both the CLI and dashboard. Account model discovery reports supported levels,
+  and the isolated inference process receives the selected override without
+  inheriting unrelated host configuration.
 - A durable Agency-wide master switch shared by `agency on|off --global` and
   the authenticated dashboard. Host adapters and protocol surfaces consult it
   before Store creation, correlation, routing, prompt activation, delegation,

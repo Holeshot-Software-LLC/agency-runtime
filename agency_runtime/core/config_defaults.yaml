@@ -35,7 +35,7 @@ ollama:
   model: qwen3.5:2b
 
 selector:
-  min_confidence: 0.4
+  min_confidence: 0.8
   max_user_msg_len: 4000
   # Deprecated compatibility value; state-aware turn intent owns bypass policy.
   trivial_msg_threshold: 0
@@ -48,6 +48,35 @@ delegation:
   preferred_min_units: 2
   strongly_preferred_min_units: 4
   strongly_preferred_min_confidence: 0.8
+  # Parent-scoped protection for native children that were not pre-planned.
+  child_inference_budget: 4
+  child_inference_concurrency: 2
+  child_cache_ttl_seconds: 900
+
+# Planning uses configured inference whenever any provider is available. Every
+# mode searches the complete local capability index. Fast accepts only a clear
+# local team; balanced adds a bounded recruiter for ambiguity; strict also adds
+# an independent selection critic.
+workforce:
+  mode: fast
+  provider: ""                  # blank = use the configured provider chain
+  planner_model: ""             # blank = provider's configured model/alias
+  recruiter_model: ""
+  hiring_model: ""
+  critic_model: ""
+  fast_call_budget: 1
+  balanced_call_budget: 4
+  strict_call_budget: 5
+  hiring_call_budget: 2
+  max_work_units: 16
+  max_selected_per_unit: 4
+  max_selected_total: 16
+  min_confidence: 0.8
+  min_margin: 0.1
+  max_hires_per_task: 1
+  max_hires_per_day: 3
+  auto_promote_successes: 0     # zero keeps promotion human-controlled
+  contractor_review_days: 30
 
 # Reversible selection policy. Definitions and version history remain in the
 # roster while listed specialists are unavailable to routing and new loads.

@@ -67,7 +67,8 @@ def _isolate_runtime_master_state(
     from agency_runtime.core import runtime_control
 
     original_path = runtime_control.runtime_control_path
-    isolated = tmp_path / "runtime-control" / "control.json"
+    runtime_root = tmp_path.parent / f".{tmp_path.name}-agency-runtime"
+    isolated = runtime_root / "runtime-control" / "control.json"
 
     def isolated_control_path(
         *,
@@ -81,6 +82,58 @@ def _isolate_runtime_master_state(
     monkeypatch.setattr(runtime_control, "runtime_control_path", isolated_control_path)
     yield
     runtime_control.clear_runtime_control_cache()
+
+
+@pytest.fixture(autouse=True)
+def _isolate_runtime_configuration(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> Iterator[None]:
+    """Prevent ordinary tests from inheriting live operator inference settings.
+
+    Provider integration tests opt in by writing an explicit configuration or
+    monkeypatching the transport. The suite-wide baseline is deliberately
+    offline so a local regression run cannot spend provider quota, depend on a
+    workstation's OAuth state, or change behavior with the user's config.
+    """
+
+    from agency_runtime.core.config import reset_config_cache
+    from agency_runtime.core.workforce.cache import clear_workforce_caches
+
+    runtime_root = tmp_path.parent / f".{tmp_path.name}-agency-runtime"
+    config_path = runtime_root / "offline-runtime" / "agency.yaml"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    store_path = (runtime_root / "offline-runtime" / "agency.db").as_posix()
+    config_path.write_text(
+        "store:\n"
+        f'  db_path: "{store_path}"\n'
+        "providers: []\n"
+        "judge:\n"
+        '  model: ""\n'
+        '  base_url: ""\n'
+        '  api_key: ""\n'
+        '  api_key_env: ""\n'
+        "  ollama_mode: false\n"
+        "ollama:\n"
+        "  enabled: false\n",
+        encoding="utf-8",
+    )
+    for name in (
+        "AGENCY_JUDGE_API_KEY",
+        "AGENCY_JUDGE_BASE_URL",
+        "AGENCY_JUDGE_MODEL",
+        "LITELLM_API_KEY",
+        "OLLAMA_BASE_URL",
+        "AGENCY_OLLAMA_FALLBACK_MODEL",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
+    monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
+    reset_config_cache()
+    clear_workforce_caches()
+    yield
+    clear_workforce_caches()
+    reset_config_cache()
 
 
 @pytest.fixture
@@ -142,7 +195,7 @@ def private_installer_launcher(
 ) -> tuple[Path, Path]:
     """Bind installer generation to the private importable launcher copy."""
 
-    from agency_runtime.core import installer, installer_payloads
+    from agency_runtime.core import installer, installer_orchestration, installer_payloads
 
     executable, bootstrap = private_installer_launcher_files
 
@@ -151,6 +204,11 @@ def private_installer_launcher(
 
     monkeypatch.setattr(installer_payloads, "launcher_artifact_paths", launcher_paths)
     monkeypatch.setattr(installer, "_launcher_artifact_paths", launcher_paths)
+    monkeypatch.setattr(
+        installer_orchestration,
+        "_prepare_adapter_launcher_paths",
+        launcher_paths,
+    )
     return executable, bootstrap
 
 

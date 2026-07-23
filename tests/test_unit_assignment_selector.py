@@ -15,6 +15,7 @@ from agency_runtime.core.config import (
     ProviderEntry,
 )
 from agency_runtime.core.host_capabilities import (
+    diagnostic_installation_capability_receipt,
     host_capability_receipt_from_native_evidence,
     native_adapter_capability_receipt,
 )
@@ -179,9 +180,11 @@ def test_configured_inference_is_attempted_for_every_exact_work_unit(
         ),
     )
 
-    assert [task for task, _slugs in calls] == list(units)
-    assert set(calls[0][1]) == {item["slug"] for item in catalog}
-    assert calls[1][1] == ("technical-writer",)
+    calls_by_task = dict(calls)
+    assert set(calls_by_task) == set(units)
+    assert len(calls) == len(units)
+    assert set(calls_by_task[units[0]]) == {item["slug"] for item in catalog}
+    assert calls_by_task[units[1]] == ("technical-writer",)
     assert [item["slug"] for item in snapshot] == [
         "security-reviewer",
         "technical-writer",
@@ -524,6 +527,31 @@ def test_offline_unit_fallback_uses_deliverable_compatible_reviewed_contracts() 
     assert "operations-manager" not in {
         specialist for item in plan for specialist in item["compatible_specialists"]
     }
+
+
+def test_diagnostic_unit_routing_accepts_an_opaque_installation_receipt() -> None:
+    receipt = host_capability_receipt_from_native_evidence(
+        "codex",
+        platform="windows",
+        native_record={
+            "host": "codex",
+            "executable_discovered": True,
+            "registered": True,
+            "enabled": True,
+            "managed_plugin_version": "0.1.0",
+            "launcher_artifacts_current": True,
+        },
+    )
+
+    projected = diagnostic_installation_capability_receipt(
+        receipt,
+        surface="codex",
+        platform="windows",
+    )
+
+    assert projected is not None
+    assert projected.execution_host == "codex"
+    assert projected.status == "native-installation-verified"
 
 
 def test_deliverable_filter_tolerates_absent_optional_taxonomy_lists() -> None:

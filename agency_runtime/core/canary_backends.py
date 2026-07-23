@@ -288,6 +288,7 @@ class SafeCodexCanaryBackend:
     source_env: Mapping[str, str]
     master_enabled: bool = True
     profile_scope: str = "isolated-profile"
+    exec_options: tuple[str, ...] | None = None
 
     def _install_plugin(
         self,
@@ -403,7 +404,11 @@ class SafeCodexCanaryBackend:
             if timeout <= 0:
                 return _timeout_record("codex", profile_scope=self.profile_scope)
             result = self.process_runner(
-                [self.executable, "exec", *facade.CODEX_CURRENT_PROFILE_EXEC_OPTIONS],
+                [
+                    self.executable,
+                    "exec",
+                    *(self.exec_options or facade.CODEX_CURRENT_PROFILE_EXEC_OPTIONS),
+                ],
                 timeout=timeout,
                 cwd=workdir,
                 env=env,
@@ -439,7 +444,11 @@ class SafeCodexCanaryBackend:
             if timeout <= 0:
                 return _timeout_record("codex")
             result = self.process_runner(
-                [self.executable, "exec", *facade.CODEX_CANARY_EXEC_OPTIONS],
+                [
+                    self.executable,
+                    "exec",
+                    *(self.exec_options or facade.CODEX_CANARY_EXEC_OPTIONS),
+                ],
                 timeout=timeout,
                 cwd=workdir,
                 env=env,

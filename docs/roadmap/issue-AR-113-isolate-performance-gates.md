@@ -17,7 +17,7 @@ issue_id: AR-113
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/119
 depends_on: []
-blocks: []
+blocks: [AR-117]
 ---
 
 # AR-113: Isolate wall-clock performance gates from the compatibility matrix

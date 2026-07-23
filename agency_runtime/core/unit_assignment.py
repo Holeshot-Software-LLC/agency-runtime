@@ -47,6 +47,7 @@ _AGENT_TOKEN_RE = re.compile(r"[a-z0-9]+")
 _WORK_UNIT_ID_RE = re.compile(r"unit-[0-9a-f]{10}")
 _DIGEST_RE = re.compile(r"[0-9a-f]{64}")
 _RATIONALE_CODE_RE = re.compile(r"[a-z0-9][a-z0-9:_-]{0,63}")
+_EVIDENCE_TOKEN_RE = re.compile(r"[a-z][a-z0-9._-]{0,63}")
 _RESOURCE_TOKEN_RE = re.compile(
     rf'"[^"\r\n]{{1,{MAX_RESOURCE_CHARS}}}"|'
     rf"'[^'\r\n]{{1,{MAX_RESOURCE_CHARS}}}'|[^\s]+"
@@ -548,7 +549,13 @@ def _compatible_unit_selection(
             limit=len(selected),
         )
         selected = list(compatibility["selected_ids"])
-    elif inference_mode == "heuristic" and unit_routing.get("status") == "token_fallback":
+    elif inference_mode == "heuristic" and unit_routing.get("status") in {
+        "token_fallback",
+        "abstained",
+    }:
+        # A broad route should abstain when lexical evidence is weak. An exact
+        # delegated unit has a narrower contract: choose one reviewed,
+        # deliverable-compatible specialist from the host-eligible catalog.
         selected = _deterministic_unit_selection(unit, eligible_catalog)
         compatibility = enforce_compatible_set(
             selected,
@@ -929,6 +936,60 @@ def work_unit_id_from_text(text: str) -> str:
 
 def _plan_hash(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8", errors="surrogatepass")).hexdigest()
+
+
+def work_unit_goal_hash(value: Any) -> str:
+    """Return the canonical durable hash for one transient work-unit goal."""
+
+    return _plan_hash(_normalized_goal(value))
+
+
+def native_child_activation_contract(
+    goal: Any,
+    *,
+    mutation_scope: Any,
+    resource_hashes: Any,
+    required_evidence: Any,
+) -> dict[str, Any]:
+    """Rehydrate the exact bounded child authority from a content-free plan row."""
+
+    normalized_goal = _normalized_goal(goal)
+    if not normalized_goal:
+        raise ValueError("native child activation requires one exact work-unit goal")
+    resources = _likely_resources(normalized_goal)
+    expected_hashes = [_plan_hash(resource) for resource in resources]
+    if not isinstance(resource_hashes, (list, tuple)) or list(resource_hashes) != expected_hashes:
+        raise ValueError("native child activation resources do not match the durable plan")
+    normalized_scope = str(mutation_scope or "").strip().casefold()
+    if normalized_scope == "external_write":
+        raise ValueError("external writes cannot be delegated by a native child activation")
+    if normalized_scope not in {"read_only", "workspace_write"}:
+        raise ValueError("native child activation mutation scope is unsupported")
+    path_prefixes = (
+        []
+        if normalized_scope == "read_only"
+        else ["." if resource == "repository-workspace" else resource for resource in resources]
+    )
+    if not isinstance(required_evidence, (list, tuple)):
+        raise ValueError("native child activation evidence requirements are malformed")
+    evidence = ["delegation-execution", "specialist-load"]
+    for item in required_evidence:
+        normalized = str(item or "").strip().casefold()
+        if normalized and _EVIDENCE_TOKEN_RE.fullmatch(normalized) is None:
+            normalized = (
+                "evidence-"
+                + hashlib.sha256(normalized.encode("utf-8", errors="surrogatepass")).hexdigest()[
+                    :32
+                ]
+            )
+        if normalized and normalized not in evidence:
+            evidence.append(normalized)
+    return {
+        "mutation_mode": normalized_scope,
+        "mutation_path_prefixes": path_prefixes,
+        "evidence_contract_id": "agency-native-child-plan-v1",
+        "evidence_requirements": evidence,
+    }
 
 
 def _selection_confidence(work_units: Mapping[str, Any]) -> float:
@@ -1313,6 +1374,14 @@ def build_unit_agent_plan(
         return []
     if len(raw_units) > MAX_SUGGESTED_WORK_UNITS:
         return []
+    workforce_bindings = routing.get("workforce_unit_bindings")
+    if isinstance(workforce_bindings, (list, tuple)):
+        return _build_verified_workforce_plan(
+            routing,
+            raw_units,
+            workforce_bindings,
+            policy or DelegationConfig(),
+        )
     metadata = project_unit_assignment_agents(routing.get("unit_assignment_agents")) or []
     catalog_assignment = any(item.get("matched_work_unit_ids") for item in metadata)
     assignment_version = (
@@ -1399,6 +1468,93 @@ def build_unit_agent_plan(
     return projected
 
 
+def _build_verified_workforce_plan(
+    routing: Mapping[str, Any],
+    raw_units: Sequence[Any],
+    raw_bindings: Sequence[Any],
+    policy: DelegationConfig,
+) -> list[dict[str, Any]]:
+    """Translate verifier-approved unit bindings without rerouting any unit."""
+
+    goals: dict[str, str] = {}
+    for raw in raw_units:
+        goal = _normalized_goal(raw)
+        if goal:
+            goals[work_unit_id_from_text(goal)] = goal
+    suggestions: list[dict[str, Any]] = []
+    for raw in raw_bindings[:MAX_SUGGESTED_WORK_UNITS]:
+        if not isinstance(raw, Mapping) or raw.get("delivery") != "delegate":
+            continue
+        work_unit_id = _clean(raw.get("work_unit_id"), 15).casefold()
+        goal = goals.get(work_unit_id)
+        agents = _bounded_agent_ids(raw.get("selected"))[:MAX_UNIT_SELECTION_WORKERS]
+        dependencies = _bounded_work_unit_ids(raw.get("depends_on"), strict=True)
+        required_tools = _bounded_strings(raw.get("required_tools"))
+        required_evidence = _bounded_strings(raw.get("required_evidence"))
+        mutation_scope = _clean(raw.get("mutation_scope"), 32).casefold()
+        parallelization = _clean(raw.get("parallelization"), 32).casefold()
+        timing = _clean(raw.get("timing"), 32).casefold()
+        artifact = _clean(raw.get("artifact_kind"), 64).casefold()
+        try:
+            confidence = float(raw.get("confidence") or 0.0)
+        except (TypeError, ValueError, OverflowError):
+            confidence = 0.0
+        if (
+            goal is None
+            or not agents
+            or dependencies is None
+            or mutation_scope not in MUTATION_SCOPES
+            or parallelization not in PARALLELIZATION_MODES
+            or timing not in {"immediate", "after_dependencies", "after_artifact"}
+            or not math.isfinite(confidence)
+            or not 0.0 <= confidence <= 1.0
+        ):
+            raise RuntimeError("verified workforce unit binding is malformed")
+        deliverable = (
+            "review"
+            if artifact == "review-report"
+            else "verification"
+            if artifact == "test-evidence"
+            else "documentation"
+            if artifact == "documentation"
+            else "implementation"
+            if artifact in {"implementation-change", "test-code"}
+            else "outcome"
+        )
+        resources = _likely_resources(goal)
+        suggestions.append(
+            {
+                "assignment_version": str(UNIT_AGENT_ASSIGNMENT_VERSION),
+                "work_unit_id": work_unit_id,
+                "goal_hash": _plan_hash(goal),
+                "deliverable_kind": deliverable,
+                "recommended_agent": agents[0],
+                "recommended_agents": agents,
+                "selection_confidence": confidence,
+                "rationale_codes": [
+                    "workforce:verified",
+                    f"timing:{timing}",
+                    f"policy:{policy.mode}",
+                ],
+                "depends_on": dependencies,
+                "parallelization": parallelization,
+                "mutation_scope": mutation_scope,
+                "resource_hashes": [_plan_hash(resource) for resource in resources],
+                "required_tools": required_tools,
+                "required_evidence": required_evidence,
+                "delegation_strength": _delegation_strength(
+                    policy=policy,
+                    unit_count=len(raw_bindings),
+                    confidence=confidence,
+                ),
+            }
+        )
+    projected = project_unit_agent_plan(suggestions, require_current=True)
+    if projected is None:
+        raise RuntimeError("verified workforce unit plan is invalid")
+    return projected
+
+
 __all__ = [
     "DELEGATION_STRENGTHS",
     "LEGACY_UNIT_AGENT_ASSIGNMENT_VERSION",
@@ -1410,7 +1566,9 @@ __all__ = [
     "assignment_agents_from_catalog",
     "build_unit_agent_plan",
     "hydrate_unit_agent_plan",
+    "native_child_activation_contract",
     "project_unit_agent_plan",
     "project_unit_assignment_agents",
+    "work_unit_goal_hash",
     "work_unit_id_from_text",
 ]

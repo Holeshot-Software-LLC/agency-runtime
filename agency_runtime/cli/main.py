@@ -29,6 +29,7 @@ from . import install_commands as _install
 from . import parser as _parser
 from . import roster_commands as _roster
 from . import service_commands as _services
+from . import workforce_commands as _workforce
 
 _REDACTED = _common.REDACTED
 _SECRET_KEY_PARTS = _common.SECRET_KEY_PARTS
@@ -239,6 +240,22 @@ def cmd_config_set(args: argparse.Namespace) -> int:
     return _config.cmd_config_set(args, dependencies=_configuration_dependencies())
 
 
+def cmd_config_provider_list(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_list(args)
+
+
+def cmd_config_provider_models(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_models(args)
+
+
+def cmd_config_provider_set(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_set(args)
+
+
+def cmd_config_provider_remove(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_remove(args)
+
+
 def cmd_config_validate(args: argparse.Namespace) -> int:
     return _config.cmd_config_validate(
         args,
@@ -281,9 +298,57 @@ cmd_eval_delegation = _roster.cmd_eval_delegation
 cmd_eval_routing = _roster.cmd_eval_routing
 cmd_eval_compare = _evals.cmd_eval_compare
 cmd_eval_full_roster = _evals.cmd_eval_full_roster
+cmd_eval_product = _evals.cmd_eval_product
+cmd_eval_upstream_architecture = _evals.cmd_eval_upstream_architecture
+cmd_eval_upstream_selection = _evals.cmd_eval_upstream_selection
+cmd_eval_workforce = _evals.cmd_eval_workforce
 cmd_smoke = _roster.cmd_smoke
 cmd_db_stats = _roster.cmd_db_stats
 cmd_db_trim = _roster.cmd_db_trim
+
+
+def _workforce_dependencies() -> _workforce.WorkforceDependencies:
+    return _workforce.WorkforceDependencies(store_factory=_store, emit_json=_print_json)
+
+
+def cmd_workforce_list(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_list(args, dependencies=_workforce_dependencies())
+
+
+def cmd_workforce_search(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_search(args, dependencies=_workforce_dependencies())
+
+
+def cmd_workforce_duplicates(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_duplicates(args, dependencies=_workforce_dependencies())
+
+
+def cmd_workforce_consolidate(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_consolidate(args, dependencies=_workforce_dependencies())
+
+
+def cmd_workforce_show(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_show(args, dependencies=_workforce_dependencies())
+
+
+def cmd_workforce_transition(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_transition(args, dependencies=_workforce_dependencies())
+
+
+def cmd_contractor_list(args: argparse.Namespace) -> int:
+    return _workforce.cmd_contractor_list(args, dependencies=_workforce_dependencies())
+
+
+def cmd_hiring_list(args: argparse.Namespace) -> int:
+    return _workforce.cmd_hiring_list(args, dependencies=_workforce_dependencies())
+
+
+def cmd_hiring_show(args: argparse.Namespace) -> int:
+    return _workforce.cmd_hiring_show(args, dependencies=_workforce_dependencies())
+
+
+def cmd_hiring_approve(args: argparse.Namespace) -> int:
+    return _workforce.cmd_hiring_approve(args, dependencies=_workforce_dependencies())
 
 
 def cmd_policy(args: argparse.Namespace) -> int:
@@ -317,11 +382,16 @@ _COMMAND_NAMES = (
     "cmd_codex_exec",
     "cmd_config_get",
     "cmd_config_path",
+    "cmd_config_provider_list",
+    "cmd_config_provider_models",
+    "cmd_config_provider_remove",
+    "cmd_config_provider_set",
     "cmd_config_reset",
     "cmd_config_set",
     "cmd_config_show",
     "cmd_config_validate",
     "cmd_configure",
+    "cmd_contractor_list",
     "cmd_dashboard",
     "cmd_dashboard_service",
     "cmd_db_stats",
@@ -331,9 +401,16 @@ _COMMAND_NAMES = (
     "cmd_eval_compare",
     "cmd_eval_delegation",
     "cmd_eval_full_roster",
+    "cmd_eval_product",
+    "cmd_eval_upstream_architecture",
+    "cmd_eval_upstream_selection",
     "cmd_eval_routing",
+    "cmd_eval_workforce",
     "cmd_explain",
     "cmd_hook",
+    "cmd_hiring_approve",
+    "cmd_hiring_list",
+    "cmd_hiring_show",
     "cmd_host_canary",
     "cmd_install",
     "cmd_mcp",
@@ -363,6 +440,12 @@ _COMMAND_NAMES = (
     "cmd_source_list",
     "cmd_status",
     "cmd_sync",
+    "cmd_workforce_list",
+    "cmd_workforce_consolidate",
+    "cmd_workforce_duplicates",
+    "cmd_workforce_search",
+    "cmd_workforce_show",
+    "cmd_workforce_transition",
 )
 
 

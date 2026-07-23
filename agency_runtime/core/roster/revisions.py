@@ -12,7 +12,7 @@ from agency_runtime.core.bounded_json import safe_load_bounded_json
 
 IMMUTABLE_REVISION_PREFIX = "sha256:"
 _REVISION_PATTERN = re.compile(r"sha256:[a-f0-9]{64}\Z")
-_CONTENT_DIGEST_PATTERN = re.compile(r"[a-f0-9]{64}\Z")
+_CONTENT_DIGEST_PATTERN = re.compile(r"(?:sha256:)?([a-f0-9]{64})\Z")
 _LEGACY_SCALAR_METADATA_FIELDS = (
     "name",
     "division",
@@ -41,6 +41,7 @@ _ROUTING_LIST_METADATA_FIELDS = (
     "preferred_when",
     "avoid_when",
     "required_tools",
+    "optional_tools",
     "supported_hosts",
     "supported_platforms",
     "conflicts_with",
@@ -65,13 +66,18 @@ def content_digest(content: object) -> str:
     return hashlib.sha256(str(content or "").encode("utf-8")).hexdigest()
 
 
+def content_digest_identity(identity: object) -> str | None:
+    """Return the bare digest from either supported SHA-256 identity form."""
+
+    match = _CONTENT_DIGEST_PATTERN.fullmatch(str(identity or ""))
+    return match.group(1) if match is not None else None
+
+
 def content_identity_matches(content: object, identity: object) -> bool:
     """Verify digest-shaped identities while preserving legacy opaque tokens."""
 
-    normalized = str(identity or "")
-    return (
-        not _CONTENT_DIGEST_PATTERN.fullmatch(normalized) or content_digest(content) == normalized
-    )
+    digest = content_digest_identity(identity)
+    return digest is None or content_digest(content) == digest
 
 
 def source_version(agent: Mapping[str, Any]) -> str:
@@ -101,6 +107,11 @@ def revision_metadata(agent: Mapping[str, Any]) -> dict[str, Any]:
             projected[field] = [raw]
         else:
             projected[field] = []
+    # Preserve every pre-optional-tools revision identity. An absent or empty
+    # optional list has no behavior, so only contracts that declare optional
+    # tools gain the new behavior-bearing metadata key.
+    if not projected["optional_tools"]:
+        projected.pop("optional_tools")
     return projected
 
 

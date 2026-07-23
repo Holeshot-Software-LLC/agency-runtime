@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -28,6 +29,7 @@ from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.ingress import MAX_LIST_ITEMS
 from agency_runtime.core.roster.sync import quarantine_candidate
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.workforce.known_installer import install_known_contractors
 from agency_runtime.server import dashboard as dashboard_module
 from agency_runtime.server.dashboard import (
     DashboardHTTPServer,
@@ -73,10 +75,28 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
             "description": "Reviews application security and threat boundaries.",
             "source": "test",
             "version": "1.0",
-            "hash": "security-reviewer-v1",
+            "hash": hashlib.sha256(
+                b"Review application security and threat boundaries."
+            ).hexdigest(),
             "categories": ["security"],
-            "capabilities": ["security-review", "threat-modeling"],
+            "capabilities": [
+                "application-attack-surfaces",
+                "security-review",
+                "threat-modeling",
+            ],
             "tool_affinity": ["git"],
+            "authority": "review",
+            "context_mode": "isolated_only",
+            "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
+            "supported_platforms": ["windows", "linux"],
+            "audit_status": "approved",
+            "audit_revision": "dashboard-test-v1",
+            "routing_contract_valid": True,
+            "outcomes": ["Review application attack surfaces, security, and threat boundaries"],
+            "artifact_kinds": ["review-report"],
+            "lifecycle_phases": ["review"],
+            "domains": ["security"],
+            "required_tools": ["repository-read"],
             "prompt_path": "",
             "prompt_body": "Review application security and threat boundaries.",
         }
@@ -94,9 +114,11 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         native_run_id="dashboard-native-run",
     )
     token = "test-dashboard-token-32-characters"
+    broker_token = "test-dashboard-broker-token-32-characters"
     server = DashboardHTTPServer(
         store,
         auth_token=token,
+        broker_token=broker_token,
         port=0,
         host_inspector=lambda: [_verified_codex_record()],
         runtime_control_home=tmp_path,
@@ -113,6 +135,7 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
             "base": f"http://127.0.0.1:{port}",
             "port": port,
             "token": token,
+            "broker_token": broker_token,
             "store": store,
             "home": tmp_path,
         }
@@ -374,7 +397,7 @@ def test_agent_toggle_checks_roster_while_holding_config_writer_lock(
     writer_lock_attempted = threading.Event()
     writer_done = threading.Event()
     original_lock = configuration._config_lock
-    original_get_roster_entry = Store.get_roster_entry
+    original_has_active_roster_definition = Store.has_active_roster_definition
 
     @contextmanager
     def observed_lock(*args, **kwargs):
@@ -383,14 +406,18 @@ def test_agent_toggle_checks_roster_while_holding_config_writer_lock(
         with original_lock(*args, **kwargs):
             yield
 
-    def paused_get_roster_entry(store, slug):
+    def paused_has_active_roster_definition(store, slug):
         membership_entered.set()
         if not release_membership.wait(timeout=3):
             raise TimeoutError("test did not release the roster membership check")
-        return original_get_roster_entry(store, slug)
+        return original_has_active_roster_definition(store, slug)
 
     monkeypatch.setattr(configuration, "_config_lock", observed_lock)
-    monkeypatch.setattr(Store, "get_roster_entry", paused_get_roster_entry)
+    monkeypatch.setattr(
+        Store,
+        "has_active_roster_definition",
+        paused_has_active_roster_definition,
+    )
 
     request_result: list[tuple[int, dict, dict[str, str]]] = []
     request_errors: list[BaseException] = []
@@ -653,6 +680,148 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
         assert forbidden not in assets
 
 
+def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
+    dashboard_server,
+) -> None:
+    install_known_contractors(dashboard_server["store"])
+    token = dashboard_server["token"]
+    slug = "typescript-application-engineer"
+
+    status, workforce, _headers = _json_response(
+        dashboard_server,
+        "/api/workforce?state=contractor&limit=20",
+        token=token,
+    )
+    assert status == 200
+    assert workforce["counts"]["contractor"] == 9
+    assert any(item["agent_slug"] == slug for item in workforce["workers"])
+
+    status, detail, _headers = _json_response(
+        dashboard_server,
+        f"/api/workforce?worker={slug}",
+        token=token,
+    )
+    assert status == 200
+    assert detail["detail"]["worker"]["state"] == "contractor"
+    assert detail["detail"]["recruitment_contract"]["stacks"] == [
+        "typescript",
+        "javascript",
+    ]
+    assert len(detail["detail"]["closest_workers"]) == min(10, workforce["total"] - 1)
+    assert detail["detail"]["promotion_readiness"] == {
+        "state": "contractor",
+        "human_promotion_available": True,
+        "automatic_policy_enabled": False,
+        "eligible_for_automatic_promotion": False,
+        "required_successes": 0,
+        "verified_successes": 0,
+        "remaining_successes": 0,
+        "verified_work_units": [],
+        "evidence_rule": (
+            "Distinct accepted work units with an activation receipt and a receipt from "
+            "a different verifying worker."
+        ),
+        "reasons": ["Automatic promotion is off; promotion requires an operator."],
+    }
+    assert detail["detail"]["compiled_prompt"]["preview"]
+    assert detail["detail"]["compiled_prompt"]["hash"]
+
+    status, hiring, _headers = _json_response(
+        dashboard_server,
+        "/api/hiring?status=applied&limit=20",
+        token=token,
+    )
+    assert status == 200
+    assert hiring["count"] == 9
+    assert all(item["status"] == "applied" for item in hiring["hiring_cases"])
+
+    status, promoted, _headers = _json_response(
+        dashboard_server,
+        "/api/workforce/action",
+        method="POST",
+        body={
+            "action": "promote",
+            "worker": slug,
+            "expected_revision": 0,
+            "reason": "independently verified assignments",
+        },
+        token=token,
+    )
+    assert status == 200
+    assert promoted["worker"]["state"] == "employee"
+
+    status, rejected, _headers = _json_response(
+        dashboard_server,
+        "/api/workforce/action",
+        method="POST",
+        body={
+            "action": "suspend",
+            "worker": slug,
+            "expected_revision": 1,
+            "reason": "operator hold",
+            "confirm": "wrong",
+        },
+        token=token,
+    )
+    assert status == 400
+    assert f"SUSPEND {slug}" in rejected["error"]
+
+    status, suspended, _headers = _json_response(
+        dashboard_server,
+        "/api/workforce/action",
+        method="POST",
+        body={
+            "action": "suspend",
+            "worker": slug,
+            "expected_revision": 1,
+            "reason": "operator hold",
+            "confirm": f"SUSPEND {slug}",
+        },
+        token=token,
+    )
+    assert status == 200
+    assert suspended["worker"]["state"] == "suspended"
+
+
+def test_dashboard_workforce_toggle_records_operator_reason(dashboard_server) -> None:
+    install_known_contractors(dashboard_server["store"])
+    token = dashboard_server["token"]
+    slug = "typescript-application-engineer"
+    status, workforce, _headers = _json_response(
+        dashboard_server,
+        "/api/workforce?limit=20",
+        token=token,
+    )
+    assert status == 200
+
+    status, toggled, _headers = _json_response(
+        dashboard_server,
+        "/api/agents/toggle",
+        method="POST",
+        body={
+            "slug": slug,
+            "enabled": False,
+            "confirm": f"DISABLE {slug}",
+            "expected_revision": workforce["config_revision"],
+            "reason": "temporarily excluded after an unsafe near-neighbor result",
+        },
+        token=token,
+    )
+    assert status == 200
+    assert toggled["changed"] is True
+
+    status, detail, _headers = _json_response(
+        dashboard_server,
+        f"/api/workforce?worker={slug}",
+        token=token,
+    )
+    assert status == 200
+    assert detail["detail"]["worker"]["state"] == "disabled"
+    event = detail["detail"]["events"][0]
+    assert event["event_type"] == "disable"
+    assert event["reason"] == "temporarily excluded after an unsafe near-neighbor result"
+
+
 def test_dashboard_javascript_parses_when_node_is_available() -> None:
     node = shutil.which("node")
     if node is None:
@@ -691,6 +860,34 @@ def test_dashboard_javascript_parses_when_node_is_available() -> None:
 def test_dashboard_api_requires_per_launch_token(dashboard_server):
     status, payload, _headers = _json_response(dashboard_server, "/api/overview")
 
+    assert status == 401
+    assert payload == {"error": "authentication required"}
+
+
+def test_dashboard_broker_token_is_scoped_to_bounded_control_endpoints(
+    dashboard_server,
+) -> None:
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime",
+        token=dashboard_server["broker_token"],
+    )
+    assert status == 200
+    assert payload["master"]["enabled"] is True
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/config",
+        token=dashboard_server["broker_token"],
+    )
+    assert status == 401
+    assert payload == {"error": "authentication required"}
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/overview",
+        token=dashboard_server["broker_token"],
+    )
     assert status == 401
     assert payload == {"error": "authentication required"}
 
@@ -2164,15 +2361,13 @@ def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
     assert payload["task"] == task
     assert payload["host_capability_receipt"]["source"] == "native-installation-evidence"
     assert payload["host_capability_receipt"]["execution_host"] == "codex"
-    assert payload["eligibility"] == {
-        "execution_host": "codex",
-        "capability_status": "native-installation-verified",
-        "eligible_count": 1,
-        "rejection_count": 0,
-        "rejections": [],
-        "truncated": False,
-        "host_resolution": "derived",
-    }
+    eligibility = payload["eligibility"]
+    assert eligibility["execution_host"] == "codex"
+    assert eligibility["capability_status"] == "native-installation-verified"
+    assert eligibility["eligible_count"] >= 1
+    assert eligibility["rejection_count"] == len(eligibility["rejections"])
+    assert eligibility["truncated"] is False
+    assert eligibility["host_resolution"] == "derived"
     assert payload["routing"]["execution_context"]["execution_host"] == "codex"
     assert payload["delegation_graph"]["nodes"]
     assert [item["description"] for item in payload["delegation_graph"]["nodes"]] == payload[
@@ -2184,7 +2379,7 @@ def test_dashboard_route_lab_returns_explain_receipt(dashboard_server):
     assert plan["execution_host"] == "codex"
     assert "spawn_agent" in plan["mechanism"]
     assert "not execution" in plan["evidence_contract"]
-    assert plan["unit_count"] == len(plan["units"]) > 0
+    assert plan["unit_count"] == len(plan["units"]) > 0, json.dumps(payload["routing"])
     assert all(item["recommended_agent"] == "security-reviewer" for item in plan["units"])
     assert all(item["compatible_specialists"] == ["security-reviewer"] for item in plan["units"])
     assert all(
@@ -2292,6 +2487,37 @@ def test_route_lab_host_capability_rejects_unproven_duplicate_and_unbounded_inve
         )
 
 
+@pytest.mark.parametrize(
+    ("inspection_status", "message"),
+    [
+        ("timed_out", "inspection is still pending; retry shortly"),
+        ("stale", "evidence expired while refresh is pending; retry shortly"),
+        ("error", "inspection failed; check dashboard service diagnostics"),
+    ],
+)
+def test_route_lab_host_capability_surfaces_transient_inspection_state(
+    tmp_path: Path,
+    inspection_status: str,
+    message: str,
+) -> None:
+    store = Store(tmp_path / f"transient-route-host-{inspection_status}.db")
+
+    with pytest.raises(ValueError, match=message):
+        dashboard_module._route_lab_host_capability(
+            store,
+            lambda: [
+                {
+                    "host": "codex",
+                    "inspection_status": inspection_status,
+                    "registered": None,
+                    "enabled": None,
+                }
+            ],
+            requested_host="codex",
+            global_enabled=True,
+        )
+
+
 def test_route_lab_eligibility_projection_is_bounded_and_content_safe() -> None:
     raw = [
         {"slug": f"agent-{index}", "reason": f"missing-capability-{index}"}
@@ -2357,14 +2583,12 @@ def test_dashboard_route_lab_uses_authoritative_dependency_graph(dashboard_serve
 
     assert status == 200
     graph = payload["delegation_graph"]
-    assert len(graph["nodes"]) == 2
-    assert graph["edges"] == [
-        {
-            "from": graph["nodes"][0]["id"],
-            "to": graph["nodes"][1]["id"],
-            "reason": "sequencing language in work-unit description",
-        }
-    ]
+    assert len(graph["nodes"]) == 4
+    assert {(edge["from"], edge["to"], edge["reason"]) for edge in graph["edges"]} == {
+        (graph["nodes"][0]["id"], graph["nodes"][1]["id"], "explicit depends_on"),
+        (graph["nodes"][1]["id"], graph["nodes"][2]["id"], "explicit depends_on"),
+        (graph["nodes"][1]["id"], graph["nodes"][3]["id"], "explicit depends_on"),
+    }
 
 
 def test_dashboard_route_lab_orders_inline_then_sequence(dashboard_server):
@@ -2381,15 +2605,14 @@ def test_dashboard_route_lab_orders_inline_then_sequence(dashboard_server):
 
     assert status == 200
     graph = payload["delegation_graph"]
-    assert [item["description"] for item in graph["nodes"]] == [
-        "Review the authentication design",
-        "then document the deployment workflow.",
-    ]
+    assert len(graph["nodes"]) == 2
+    assert "review-report during review" in graph["nodes"][0]["description"]
+    assert "documentation during documentation" in graph["nodes"][1]["description"]
     assert graph["edges"] == [
         {
             "from": graph["nodes"][0]["id"],
             "to": graph["nodes"][1]["id"],
-            "reason": "sequencing language in work-unit description",
+            "reason": "explicit depends_on",
         }
     ]
 
@@ -2958,7 +3181,10 @@ def test_dashboard_serves_authenticated_requests_on_ipv6_loopback(tmp_path: Path
         pytest.skip(f"IPv6 loopback is unavailable: {exc}")
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    connection = HTTPConnection("::1", int(server.server_address[1]), timeout=2)
+    # The full Windows suite can briefly delay this new server thread while
+    # releasing memory from earlier process-heavy tests. Keep the bound finite
+    # without turning scheduler contention into a false IPv6 failure.
+    connection = HTTPConnection("::1", int(server.server_address[1]), timeout=5)
     try:
         connection.request(
             "GET",

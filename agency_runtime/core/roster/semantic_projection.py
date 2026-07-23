@@ -244,6 +244,13 @@ def _bullets(values: list[str]) -> str:
 def governed_prompt(contract: Mapping[str, Any]) -> str:
     """Render only allowlisted reviewed fields; raw upstream prose is never executable."""
 
+    optional_tools = list(contract.get("optional_tools", []))
+    optional_tools_section = (
+        "\n\nOptional tools (may strengthen evidence but are not prerequisites):\n"
+        f"{_bullets(optional_tools)}"
+        if optional_tools
+        else ""
+    )
     return f"""[Agency governed specialist contract v2]
 
 Work only on the exact assigned work unit and obey system, user, repository, permission,
@@ -274,7 +281,7 @@ Avoid when:
 {_bullets(list(contract["avoid_when"]))}
 
 Required tools (availability must be proven before use):
-{_bullets(list(contract["required_tools"]))}
+{_bullets(list(contract["required_tools"]))}{optional_tools_section}
 
 Expected output:
 {contract["expected_output_contract"]}

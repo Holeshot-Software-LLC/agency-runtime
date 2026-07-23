@@ -21,6 +21,7 @@ from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration_persistence import resolve_config_path
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.exception_notes import add_exception_note
+from agency_runtime.core.store.child_routing import ChildRoutingStoreMixin
 from agency_runtime.core.store.delegation_activation import DelegationActivationStoreMixin
 from agency_runtime.core.store.evidence import EvidenceStoreMixin
 from agency_runtime.core.store.initialization_lock import storage_initialization_lock
@@ -65,6 +66,7 @@ from agency_runtime.core.store.schema import (
     trace_tombstone_turn_sequence_is_unique,
     validate_stored_source_identities,
     verify_remediation_authority,
+    workforce_schema_is_current,
 )
 from agency_runtime.core.store.security import (
     CreatedStoragePath,
@@ -88,6 +90,7 @@ from agency_runtime.core.store.trace_identity import (
     correlation_digest,
     ensure_correlation_key_integrity,
 )
+from agency_runtime.core.store.workforce import WorkforceStoreMixin
 
 _RUN_CONTENT_LIMIT = RUN_CONTENT_LIMIT
 _DELEGATION_DETAIL_LIMIT = DELEGATION_DETAIL_LIMIT
@@ -435,11 +438,13 @@ _RUNTIME_DELETE_ORDER = RUNTIME_DELETE_ORDER
 
 
 class Store(
+    ChildRoutingStoreMixin,
     DelegationActivationStoreMixin,
     NativeChildStoreMixin,
     EvidenceStoreMixin,
     MaintenanceStoreMixin,
     RosterStoreMixin,
+    WorkforceStoreMixin,
 ):
     """SQLite-backed canonical store for Agency Runtime."""
 
@@ -1002,6 +1007,7 @@ class Store(
                         or not remediation_indexes_are_current(conn)
                         or not remediation_authority_schema_is_current(conn)
                         or not agent_import_event_sequence_schema_is_current(conn)
+                        or not workforce_schema_is_current(conn)
                     ):
                         return False, journal_ready
                     ensure_correlation_key_integrity(

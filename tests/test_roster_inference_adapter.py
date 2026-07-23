@@ -1017,9 +1017,14 @@ def test_structured_provider_safety_and_cli_dispatch(monkeypatch: pytest.MonkeyP
 
     monkeypatch.setattr(structured_provider, "invoke_cli_structured", invoke)
     schema = {"type": "object"}
-    assert structured_provider.invoke_structured_provider(
+    result = structured_provider.invoke_structured_provider_result(
         cli, "prompt", schema, system_prompt="system", timeout=3
-    ) == {"status": "passed", "findings": []}
+    )
+    assert result is not None
+    assert result.value == {"status": "passed", "findings": []}
+    assert result.requested_model == cli.model
+    assert result.actual_model == cli.model
+    assert result.model_receipt_source == "cli.explicit_model_argument"
     assert captured["args"] == (cli, "prompt", schema)
     assert captured["kwargs"]["timeout"] == 3
 
@@ -1089,6 +1094,43 @@ def test_structured_http_provider_protocols(
         assert "authorization" not in captured["headers"]
     else:
         assert captured["url"].endswith("/v1/chat/completions")
+
+
+def test_structured_litellm_result_keeps_router_alias_and_reconciled_model_separate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = _provider(
+        "agency-router",
+        provider_type="litellm",
+        model="task-agency-router",
+    )
+    body = json.dumps(
+        {
+            "id": "response-1",
+            "model": "openai/gpt-5.6-mini-2026-07-01",
+            "choices": [{"message": {"content": '{"status":"passed","findings":[]}'}}],
+        }
+    ).encode()
+    monkeypatch.setattr(
+        structured_provider,
+        "open_no_redirect",
+        lambda *_args, **_kwargs: _Response(body),
+    )
+
+    result = structured_provider.invoke_structured_provider_result(
+        provider,
+        "prompt",
+        {"type": "object"},
+        system_prompt="system",
+    )
+
+    assert result is not None
+    assert result.value == {"status": "passed", "findings": []}
+    assert result.requested_model == "task-agency-router"
+    assert result.model_group == "task-agency-router"
+    assert result.actual_model == "openai/gpt-5.6-mini-2026-07-01"
+    assert result.model_receipt_source == "response.body.model"
+    assert result.receipt()["actual_model"] != result.receipt()["model_group"]
 
 
 @pytest.mark.parametrize(

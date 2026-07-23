@@ -132,10 +132,10 @@ def test_social_conversation_is_distinct_from_acknowledgement_and_real_questions
     question = classify_turn_intent("what do you think about auth?", _empty_state())
 
     assert social.turn_kind == "conversation"
-    assert social.selection_required is True
-    assert social.reroute_required is True
-    assert social.execution_decision_required is True
-    assert "roster_consideration_required" in social.reason_codes
+    assert social.selection_required is False
+    assert social.reroute_required is False
+    assert social.execution_decision_required is False
+    assert "no_pending_state" in social.reason_codes
     assert question.turn_kind == "new_intent"
     assert question.selection_required is True
 
@@ -311,7 +311,7 @@ def test_unknown_durable_state_fails_closed_for_apparent_acknowledgement() -> No
     ("message", "state", "kind", "decisions"),
     (
         ("thanks", _empty_state(), "acknowledgement", (False, False, False)),
-        ("hello", _empty_state(), "conversation", (True, True, True)),
+        ("hello", _empty_state(), "conversation", (False, False, False)),
         ("agency status", _empty_state(), "control", (False, False, False)),
         ("continue", _active_state(), "continuation", (True, False, True)),
         ("fix auth", _empty_state(), "new_intent", (True, True, True)),

@@ -68,6 +68,7 @@ _BASE_CANONICAL_TOOL_CAPABILITIES: Final[frozenset[str]] = frozenset(
         "performance-profiling",
         "repository-read",
         "repository-write",
+        "runtime-evidence",
         "screenshot-capture",
         "security-analysis",
         "shell-execution",
@@ -164,6 +165,8 @@ def _alias_map() -> dict[str, str]:
         "source-control": {"source-control", "git", "git-history-reader"},
         "code-execution": {
             "code-execution",
+            "node",
+            "nodejs",
             "python",
             "python-runtime",
             "prototype-runtime",
@@ -171,6 +174,8 @@ def _alias_map() -> dict[str, str]:
         "test-execution": {
             "test-execution",
             "test-runner",
+            "test-results-reader",
+            "coverage-reader",
             "benchmark-runner",
             "evaluation-runner",
             "experiment-runner",
@@ -252,6 +257,11 @@ def _alias_map() -> dict[str, str]:
             "performance-profiler",
             "profiler",
         },
+        "runtime-evidence": {
+            "runtime-evidence",
+            "staffing-plan-reader",
+            "workforce-index",
+        },
         "native-delegation": {"native-delegation"},
     }
     aliases: dict[str, str] = {}
@@ -281,6 +291,7 @@ _NATIVE_HOST_CAPABILITIES: Final[Mapping[str, tuple[str, ...]]] = MappingProxyTy
             "package-management",
             "repository-read",
             "repository-write",
+            "runtime-evidence",
             "shell-execution",
             "source-control",
             "test-execution",
@@ -752,6 +763,8 @@ def diagnostic_installation_capability_receipt(
 ) -> HostCapabilityReceipt | None:
     """Rehydrate verified inventory evidence for non-executing diagnostics only."""
 
+    if isinstance(value, HostCapabilityReceipt):
+        value = value.as_dict()
     projected = project_host_capability_receipt(value)
     normalized_surface = _token(surface)
     normalized_platform = _token(platform)

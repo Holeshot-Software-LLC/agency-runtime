@@ -45,7 +45,12 @@ _MAX_PROVIDER_ATTEMPTS = MAX_PROVIDER_CHAIN_ENTRIES
 _MAX_JUDGE_DEADLINE_SECONDS = 60.0
 _MAX_JUDGE_CANDIDATES = 20
 _MAX_SELECTED = 50
+_MAX_TOKEN_FALLBACK_SELECTED = 2
 _MIN_RELATIVE_FALLBACK_SCORE = 0.30
+_MIN_TOKEN_FALLBACK_SCORE = 3.0
+_MIN_TOKEN_FALLBACK_CONFIDENCE = 0.8
+_MAX_TOKEN_FALLBACK_CONFIDENCE = 0.95
+_TOKEN_FALLBACK_CONFIDENCE_SCORE_SPAN = 15.0
 
 
 def _agent_id(agent: dict[str, Any]) -> str:
@@ -283,6 +288,7 @@ def _fallback_result(
     candidate_count: int,
     top_score: float,
     max_sel: int,
+    lexical_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     fallback = _token_only_fallback(
         candidates,
@@ -290,6 +296,7 @@ def _fallback_result(
         candidate_count,
         top_score,
         max_sel,
+        lexical_ids=lexical_ids,
     )
     return _with_cumulative_latency(fallback, state.started)
 
@@ -301,6 +308,7 @@ def _degraded_result(
     candidate_count: int,
     top_score: float,
     max_sel: int,
+    lexical_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """Fail closed after mandatory inference exhausts its bounded chain."""
 
@@ -311,6 +319,7 @@ def _degraded_result(
         candidate_count,
         top_score,
         max_sel,
+        lexical_ids,
     )
     deterministic_ids = list(fallback.get("selected_ids", []))
     fallback_status = str(fallback.get("status") or "unknown")
@@ -434,6 +443,7 @@ def query_judge(
                 candidate_count,
                 top_score,
                 max_sel,
+                retrieval.lexical_ids,
             )
         )
 
@@ -486,6 +496,7 @@ def query_judge(
                 candidate_count,
                 top_score,
                 max_sel,
+                retrieval.lexical_ids,
             )
         )
 
@@ -496,6 +507,7 @@ def query_judge(
         candidate_count,
         top_score,
         max_sel,
+        retrieval.lexical_ids,
     )
     return finish(
         _with_inference_evidence(
@@ -513,16 +525,55 @@ def _token_only_fallback(
     candidate_count: int,
     top_score: float,
     max_sel: int,
+    *,
+    lexical_ids: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """Return bounded token-scored candidates without an LLM call."""
-    selected_ids = _scored_selection(candidates, scores, max_sel)
+    """Return bounded token-scored candidates without an LLM call.
+
+    Very low deterministic embedding scores are collision noise, not a
+    defensible specialist match.  Abstaining lets the resident coordinators
+    handle the request instead of confidently loading an unrelated domain.
+    """
+    lexical = set(lexical_ids)
+    deterministic = [
+        (candidate, score)
+        for candidate, score in zip(candidates, scores, strict=True)
+        if not lexical or _agent_id(candidate) in lexical
+    ]
+    bounded_candidates = [candidate for candidate, _score in deterministic]
+    bounded_scores = [score for _candidate, score in deterministic]
+    bounded_top_score = bounded_scores[0] if bounded_scores else 0.0
+    selected_ids = (
+        _scored_selection(
+            bounded_candidates,
+            bounded_scores,
+            min(max_sel, _MAX_TOKEN_FALLBACK_SELECTED),
+        )
+        if bounded_top_score >= _MIN_TOKEN_FALLBACK_SCORE
+        else []
+    )
     has_signal = bool(selected_ids)
+    confidence = (
+        round(
+            min(
+                _MAX_TOKEN_FALLBACK_CONFIDENCE,
+                _MIN_TOKEN_FALLBACK_CONFIDENCE
+                + (
+                    max(0.0, bounded_top_score - _MIN_TOKEN_FALLBACK_SCORE)
+                    / _TOKEN_FALLBACK_CONFIDENCE_SCORE_SPAN
+                ),
+            ),
+            4,
+        )
+        if has_signal
+        else 0.0
+    )
     return {
         "selected_ids": selected_ids,
-        "confidence": 0.3 if has_signal else 0.0,
+        "confidence": confidence,
         "latency_ms": 0,
         "status": "token_fallback" if has_signal else "abstained",
         "error": "" if has_signal else "no positive routing signal",
         "candidate_count": candidate_count,
-        "top_score": top_score,
+        "top_score": bounded_top_score,
     }

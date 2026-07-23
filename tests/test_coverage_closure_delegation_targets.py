@@ -76,7 +76,7 @@ def test_dashboard_helpers_reject_stale_or_malformed_inputs(
         "_require_store_service_binding",
         lambda _store, _state: {"store_path": str(tmp_path / "agency.db")},
     )
-    active_store = SimpleNamespace(get_roster_entry=lambda _slug: {"agent_slug": "reviewer"})
+    active_store = SimpleNamespace(has_active_roster_definition=lambda _slug: True)
     with pytest.raises(ConfigConflictError, match="configuration changed"):
         dashboard._require_agent_toggle_precondition(
             active_store,
@@ -135,7 +135,11 @@ def test_dashboard_routing_snapshot_rejects_wrong_config_and_activation_identity
         "_require_store_service_binding",
         lambda _store, _state: {"store_path": str(tmp_path / "agency.db")},
     )
-    monkeypatch.setattr(dashboard, "capture_routing_snapshot", lambda _store: snapshot)
+    monkeypatch.setattr(
+        dashboard,
+        "capture_operational_routing_snapshot",
+        lambda _store: snapshot,
+    )
 
     with pytest.raises(ConfigurationError, match="configuration identity"):
         handler._routing_operation_snapshot()

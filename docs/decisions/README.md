@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-20
+updated: 2026-07-23
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -39,6 +39,7 @@ Status meanings:
 - ADR-0054 Use Unit-Aware Specialist Assignment and Event-Driven DAG Scheduling → ADR-0068 Select Compatible Specialist Closures per Work Unit
 - ADR-0062 Isolate Directive Specialists and Route Each Work Unit Before Hydration → ADR-0069 Enforce Specialist Conflicts Before Prompt Composition
 - ADR-0063 Import External Rosters Through Declared Manifests into Quarantine → ADR-0066 Package the Audited Upstream Roster and Synchronize Quarantined Deltas
+- ADR-0080 Plan before recruiting from the whole workforce → ADR-0083 Use capability-indexed recall and bounded inference
 
 ## Architecture and integrations
 
@@ -76,6 +77,10 @@ Status meanings:
 | [ADR-0070](0070-run-child-specific-agency-activation.md) | Run child-specific Agency activation through native host lifecycles | Accepted |
 | [ADR-0071](0071-bound-native-delegation-correction.md) | Bound native delegation correction to one evidence-checked pass | Accepted |
 | [ADR-0072](0072-compare-task-outcomes-with-paired-trials.md) | Compare task outcomes with evidence-labelled paired trials | Accepted |
+| [ADR-0078](0078-present-human-routing-evidence-and-abstain-on-noise.md) | Present human routing evidence and abstain on weak heuristic noise | Accepted |
+| [ADR-0079](0079-route-native-children-once-and-bound-unplanned-reroutes.md) | Route native children once and bound unplanned reroutes | Accepted |
+| [ADR-0080](0080-plan-before-recruiting-from-the-whole-workforce.md) | Plan before recruiting from the whole workforce | Superseded |
+| [ADR-0083](0083-use-capability-indexed-recall-and-bounded-inference.md) | Use capability-indexed recall and bounded inference | Accepted |
 
 ## Evidence and observability
 
@@ -102,6 +107,7 @@ Status meanings:
 | [ADR-0048](0048-preserve-legacy-tombstones-without-inventing-session-identity.md) | Preserve legacy tombstones without inventing session identity | Accepted |
 | [ADR-0063](0063-import-external-rosters-through-declared-manifests.md) | Import external rosters through declared manifests into quarantine | Superseded |
 | [ADR-0066](0066-package-audited-roster-and-sync-quarantined-deltas.md) | Package the audited upstream roster and synchronize quarantined deltas | Accepted |
+| [ADR-0081](0081-compile-contractors-from-governed-structured-contracts.md) | Compile contractors from governed structured contracts | Accepted |
 
 ## Operations and engineering
 
@@ -140,12 +146,16 @@ Status meanings:
 | [ADR-0075](0075-preserve-config-trust-under-wsl-systemd.md) | Preserve configuration trust while adapting systemd hardening on WSL | Accepted |
 | [ADR-0076](0076-bind-isolated-canaries-to-explicit-agency-modes.md) | Bind isolated canaries to explicit Agency modes | Accepted |
 | [ADR-0077](0077-prove-codex-activation-behaviorally.md) | Prove Codex hook activation behaviorally without bypassing trust | Accepted |
+| [ADR-0082](0082-schedule-assurance-by-artifact-lifecycle.md) | Schedule assurance by artifact lifecycle | Accepted |
 
 ## Documentation governance
 
 | ID | Decision | Status |
 |---|---|---|
 | [ADR-0025](0025-self-contained-linked-documentation.md) | Keep a self-contained planning-to-evidence documentation chain | Accepted |
+| [ADR-0084](0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md) | Use bounded recovery capsules and persistent goal ownership | Superseded |
+| [ADR-0085](0085-continue-in-task-after-context-checkpoints.md) | Continue in the current task after context checkpoints | Superseded |
+| [ADR-0086](0086-use-checkpoint-only-context-telemetry.md) | Use checkpoint-only context telemetry | Accepted |
 
 ## Maintenance rules
 

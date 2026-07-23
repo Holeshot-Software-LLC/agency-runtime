@@ -20,6 +20,7 @@ from agency_runtime.core.canary import (
     run_canary,
 )
 from agency_runtime.core.delegation.backends import BoundedProcessResult
+from agency_runtime.core.header.finalize import response_hash
 from agency_runtime.core.installer import (
     INSTALL_MANIFEST,
     PLUGIN_VERSION,
@@ -55,6 +56,54 @@ def _valid_header() -> str:
         "How it shaped outcome: proved the final response contract\n\n"
         "Canary complete."
     )
+
+
+def _start_canary_turn(
+    store: Store,
+    *,
+    trace_id: str,
+    session_id: str,
+    host: str,
+    task: str,
+    context_fingerprint: str,
+) -> None:
+    store.create_run(
+        trace_id=trace_id,
+        session_id=session_id,
+        host=host,
+    )
+    store.record_routing_decision(
+        trace_id=trace_id,
+        session_id=session_id,
+        query_hash=hashlib.sha256(task.encode("utf-8")).hexdigest(),
+        context_fingerprint=context_fingerprint,
+        decision={"status": "selected", "selected_ids": ["code-reviewer"]},
+    )
+    store.record_specialist_loaded(
+        session_id,
+        "code-reviewer",
+        trace_id=trace_id,
+    )
+
+
+def _commit_accepted_canary_turn(
+    store: Store,
+    *,
+    trace_id: str,
+    session_id: str,
+    host: str,
+) -> None:
+    snapshot = store.get_completion_evidence_snapshot(session_id, trace_id)
+    result = store.commit_terminal_finalization(
+        session_id=session_id,
+        trace_id=trace_id,
+        host=host,
+        action="accept",
+        response_hash=response_hash(_valid_header()),
+        status="completed",
+        expected_evidence_revision=snapshot["evidence_revision"],
+    )
+    assert result["authoritative"] is True
 
 
 def test_readiness_is_nonmutating_and_never_claims_a_live_canary(
@@ -264,7 +313,8 @@ def test_proof_failures_are_complete_ordered_and_safely_rendered(
         "host invocation did not complete successfully",
         "canary profile plugin registration and enablement were not proven",
         "final response header was not proven",
-        "correlated routing and finalization evidence was not proven",
+        "expected canary specialist was not selected",
+        "correlated routing and an authoritative accepted terminal turn were not proven",
     ]
 
 
@@ -282,18 +332,21 @@ def test_attestation_failure_cannot_turn_valid_evidence_into_a_pass(
     class EvidenceBackend:
         def execute(self, **kwargs):
             trace_id = "attestation-write-failure"
+            session_id = "attestation-session"
             store = Store(path)
-            store.record_routing_decision(
+            _start_canary_turn(
+                store,
                 trace_id=trace_id,
-                session_id="attestation-session",
-                query_hash=hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest(),
-                context_fingerprint="a" * 64,
-                decision={"status": "selected", "selected_ids": ["reviewer"]},
-            )
-            store.record_finalization(
-                trace_id=trace_id,
+                session_id=session_id,
                 host="codex",
-                action="accept",
+                task=kwargs["task"],
+                context_fingerprint="a" * 64,
+            )
+            _commit_accepted_canary_turn(
+                store,
+                trace_id=trace_id,
+                session_id=session_id,
+                host="codex",
             )
             return {
                 "backend": "codex",
@@ -340,21 +393,13 @@ def test_live_canary_passes_only_with_correlated_runtime_evidence(
                 store = Store(db_path)
                 trace_id = "trace-live-canary"
                 session_id = "session-live-canary"
-                store.create_run(
+                _start_canary_turn(
+                    store,
                     trace_id=trace_id,
                     session_id=session_id,
                     host=host,
-                )
-                store.record_routing_decision(
-                    trace_id=trace_id,
-                    session_id=session_id,
-                    query_hash=hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest(),
+                    task=kwargs["task"],
                     context_fingerprint="b" * 64,
-                    decision={
-                        "status": "selected",
-                        "selected_ids": ["canary-specialist"],
-                        "confidence": 1.0,
-                    },
                 )
                 store.record_model_receipt(
                     trace_id=trace_id,
@@ -364,10 +409,11 @@ def test_live_canary_passes_only_with_correlated_runtime_evidence(
                     resolved_model="model",
                     status="success",
                 )
-                store.record_finalization(
+                _commit_accepted_canary_turn(
+                    store,
                     trace_id=trace_id,
+                    session_id=session_id,
                     host=host,
-                    action="accept",
                 )
                 return {
                     "backend": host,
@@ -397,6 +443,9 @@ def test_live_canary_passes_only_with_correlated_runtime_evidence(
     assert report["live_attempted"] is True
     assert report["invocation"]["header_valid"] is True
     assert report["evidence"]["correlated_trace_ids"] == ["trace-live-canary"]
+    assert report["evidence"]["accepted_trace_ids"] == ["trace-live-canary"]
+    assert report["evidence"]["expected_specialist_selected"] is True
+    assert report["evidence"]["expected_specialist_loaded"] is True
     assert report["canary_passed"] is True
     assert report["attestation_persisted"] is True
     assert "stdout" not in report["invocation"]
@@ -460,6 +509,111 @@ def test_successful_process_without_evidence_cannot_pass(
     }
 
 
+def test_valid_header_with_continue_event_and_active_run_cannot_pass(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.db"
+    Store(path)
+
+    class CorrectionOnlyBackend:
+        def execute(self, **kwargs):
+            store = Store(path)
+            trace_id = "correction-only-turn"
+            session_id = "correction-only-session"
+            _start_canary_turn(
+                store,
+                trace_id=trace_id,
+                session_id=session_id,
+                host="codex",
+                task=kwargs["task"],
+                context_fingerprint="c" * 64,
+            )
+            store.record_finalization(
+                trace_id=trace_id,
+                host="codex",
+                action="continue",
+            )
+            return {
+                "backend": "codex",
+                "profile_scope": "isolated-profile",
+                "isolated_plugin": {"registered": True, "enabled": True},
+                "status": "completed",
+                "exit_code": 0,
+                "output": _valid_header(),
+            }
+
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=path,
+        inspector=_ready_host,
+        backend_factory=lambda *_args, **_kwargs: CorrectionOnlyBackend(),
+    )
+
+    assert report["invocation"]["header_valid"] is True
+    assert report["evidence"]["correlated_trace_ids"] == ["correction-only-turn"]
+    assert report["evidence"]["accepted_trace_ids"] == []
+    assert report["evidence"]["completed_run_trace_ids"] == []
+    assert report["canary_passed"] is False
+    assert report["attestation_persisted"] is False
+    assert report["unmet_prerequisites"] == [
+        "correlated routing and an authoritative accepted terminal turn were not proven"
+    ]
+    assert Store(path).get_run("correction-only-turn")["status"] == "canary_failed"
+    assert report["failed_run_cleanup"]["closed_count"] == 1
+
+
+def test_failed_canary_cleanup_is_request_scoped_without_routing_evidence(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.db"
+    Store(path)
+
+    class TimedOutBackend:
+        def execute(self, **kwargs):
+            store = Store(path)
+            fingerprint = hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest()
+            store.begin_preflight_attempt(
+                trace_id="timed-out-canary",
+                session_id="timed-out-canary-session",
+                host="codex",
+                request_fingerprint=fingerprint,
+                request_kind="nontrivial",
+            )
+            store.begin_preflight_attempt(
+                trace_id="concurrent-unrelated-turn",
+                session_id="concurrent-unrelated-session",
+                host="codex",
+                request_fingerprint="f" * 64,
+                request_kind="nontrivial",
+            )
+            return {
+                "backend": "codex",
+                "profile_scope": "isolated-profile",
+                "isolated_plugin": {"registered": True, "enabled": True},
+                "status": "timed_out",
+                "exit_code": 124,
+                "output": "",
+            }
+
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=path,
+        inspector=_ready_host,
+        backend_factory=lambda *_args, **_kwargs: TimedOutBackend(),
+    )
+
+    store = Store(path)
+    assert report["canary_passed"] is False
+    assert report["failed_run_cleanup"]["candidate_count"] == 2
+    assert report["failed_run_cleanup"]["closed_count"] == 1
+    assert store.get_run("timed-out-canary")["status"] == "canary_failed"
+    assert store.get_run("concurrent-unrelated-turn")["status"] == "active"
+
+
 def test_claude_real_shape_canary_passes_without_synthesizing_a_receipt(
     tmp_path: Path,
 ) -> None:
@@ -470,17 +624,20 @@ def test_claude_real_shape_canary_passes_without_synthesizing_a_receipt(
         def execute(self, **kwargs):
             store = Store(path)
             trace_id = "claude-turn-42"
-            store.record_routing_decision(
+            session_id = "claude-session"
+            _start_canary_turn(
+                store,
                 trace_id=trace_id,
-                session_id="claude-session",
-                query_hash=hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest(),
-                context_fingerprint="d" * 64,
-                decision={"status": "selected", "selected_ids": ["reviewer"]},
-            )
-            store.record_finalization(
-                trace_id=trace_id,
+                session_id=session_id,
                 host="claude",
-                action="accept",
+                task=kwargs["task"],
+                context_fingerprint="d" * 64,
+            )
+            _commit_accepted_canary_turn(
+                store,
+                trace_id=trace_id,
+                session_id=session_id,
+                host="claude",
             )
             return {
                 "backend": "claude",
@@ -526,17 +683,20 @@ def test_codex_canary_attests_isolated_profile_without_claiming_real_profile(
         def execute(self, **kwargs):
             store = Store(path)
             trace_id = "codex-isolated-turn"
-            store.record_routing_decision(
+            session_id = "codex-isolated-session"
+            _start_canary_turn(
+                store,
                 trace_id=trace_id,
-                session_id="codex-isolated-session",
-                query_hash=hashlib.sha256(kwargs["task"].encode("utf-8")).hexdigest(),
-                context_fingerprint="f" * 64,
-                decision={"status": "selected", "selected_ids": ["reviewer"]},
-            )
-            store.record_finalization(
-                trace_id=trace_id,
+                session_id=session_id,
                 host="codex",
-                action="accept",
+                task=kwargs["task"],
+                context_fingerprint="f" * 64,
+            )
+            _commit_accepted_canary_turn(
+                store,
+                trace_id=trace_id,
+                session_id=session_id,
+                host="codex",
             )
             return {
                 "backend": "codex",

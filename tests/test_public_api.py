@@ -65,28 +65,55 @@ def test_public_runtime_facade_exercises_routing_and_evidence(tmp_path: Path) ->
     assert runtime.search("security") == []
     assert runtime.get_roster() == []
     trace_id = "trace"
+    route_receipt = runtime.attest_native_host(
+        "hermes",
+        session_id="session",
+        trace_id="route-trace",
+    )
     routing = runtime.route(
         "session",
         "review this security patch",
         trace_id="route-trace",
+        host="hermes",
+        capability_receipt=route_receipt,
     )
-    assert "code-reviewer" in routing["selected_ids"]
+    assert set(routing["selected_ids"]) == {
+        "codebase-onboarding-engineer",
+        "code-reviewer",
+        "ai-generated-code-security-auditor",
+    }
     assert "decision_id" not in routing
     assert runtime.store.get_run("route-trace") is None
+    preflight_receipt = runtime.attest_native_host(
+        "hermes",
+        session_id="session",
+        trace_id=trace_id,
+    )
     preflight = runtime.preflight(
         "session",
-        "review this security patch",
+        "Review this README documentation.",
         trace_id=trace_id,
+        host="hermes",
+        capability_receipt=preflight_receipt,
     )
     assert preflight["trace_id"] == trace_id
-    assert "code-reviewer" in preflight["loaded_specialists"]
-    context = runtime.route_with_context(
-        "session",
-        "review this security patch",
+    assert preflight["routing"]["selected_ids"] == ["codebase-onboarding-engineer"]
+    assert preflight["selected_specialists"] == ["codebase-onboarding-engineer"]
+    assert preflight["loaded_specialists"] == ["codebase-onboarding-engineer"]
+    continuation_receipt = runtime.attest_native_host(
+        "hermes",
+        session_id="session",
         trace_id=trace_id,
     )
+    context = runtime.route_with_context(
+        "session",
+        "Review this README documentation.",
+        trace_id=trace_id,
+        host="hermes",
+        capability_receipt=continuation_receipt,
+    )
     assert context is not None
-    assert "code-reviewer" in context
+    assert "codebase-onboarding-engineer" in context
     work = runtime.detect_work_units("1. Review the API\n2. Test the dashboard")
     assert len(work["units"]) == 2
 
@@ -122,10 +149,13 @@ def test_public_runtime_facade_exercises_routing_and_evidence(tmp_path: Path) ->
         model="task-general",
         trace_id=trace_id,
     )
-    assert finalized.splitlines()[0] == (
-        "Agency/Agencies loaded: agents-orchestrator, chief-of-staff, "
-        "code-reviewer, security-reviewer"
-    )
+    loaded = finalized.splitlines()[0].removeprefix("Agency/Agencies loaded: ").split(", ")
+    assert set(loaded) == {
+        "agents-orchestrator",
+        "chief-of-staff",
+        "codebase-onboarding-engineer",
+        "security-reviewer",
+    }
     assert (
         "Agency/Agencies delegated: none - executed worker has no validated Agency specialist"
         in finalized
@@ -153,8 +183,23 @@ def test_public_route_repairs_legacy_fallback_roster_without_opening_turns(
     )
 
     for trace_id in ("diagnostic-route-1", "diagnostic-route-2"):
-        routing = runtime.route("legacy-session", "ok", trace_id=trace_id)
-        assert routing["selected_ids"] == ["agents-orchestrator", "chief-of-staff"]
+        receipt = runtime.attest_native_host(
+            "hermes",
+            session_id="legacy-session",
+            trace_id=trace_id,
+        )
+        routing = runtime.route(
+            "legacy-session",
+            "ok",
+            trace_id=trace_id,
+            host="hermes",
+            capability_receipt=receipt,
+        )
+        assert routing["selected_ids"] == []
+        assert routing["fallback_companion_ids"] == [
+            "agents-orchestrator",
+            "chief-of-staff",
+        ]
         assert "decision_id" not in routing
         assert runtime.store.get_run(trace_id) is None
 
@@ -164,6 +209,23 @@ def test_public_route_repairs_legacy_fallback_roster_without_opening_turns(
     )
     for slug in ("agents-orchestrator", "chief-of-staff"):
         assert runtime.store.get_roster_entry(slug)["source"] == SOURCE_REPOSITORY
+
+
+def test_public_route_does_not_treat_a_host_name_as_capability_evidence(
+    tmp_path: Path,
+) -> None:
+    runtime = AgencyRuntime(str(tmp_path / "agency.db"))
+
+    routing = runtime.route(
+        "unproven-session",
+        "Review this security patch.",
+        trace_id="unproven-trace",
+        host="hermes",
+    )
+
+    assert routing["selected_ids"] == []
+    assert routing["execution_context"]["status"] == "native-evidence-unproven"
+    assert routing["eligibility_rejections"]
 
 
 def test_public_runtime_finalize_header_fails_closed_for_unaccepted_turn(

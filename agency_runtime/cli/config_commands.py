@@ -13,6 +13,7 @@ from typing import Any
 import yaml
 
 from agency_runtime.core.bounded_yaml import BoundedYAMLError, safe_load_bounded
+from agency_runtime.core.cli_transport import discover_cli_models
 from agency_runtime.core.config import (
     AgencyConfig,
     config_to_yaml,
@@ -183,6 +184,11 @@ def cmd_configure(
 
     print(f"\n✅ Config written to {config_path}")
     print(f"✅ Starter roster installed: {count} agents")
+    print(
+        "✅ Governed contractors: "
+        f"{int(getattr(count, 'contractors_installed', 0))} installed, "
+        f"{int(getattr(count, 'contractors_existing', 0))} already current"
+    )
     print(f"✅ SQLite database initialized: {cfg.store.resolved_path()}")
     print("\nNext steps:")
     print("  agency doctor              — verify everything is working")
@@ -380,6 +386,174 @@ def cmd_config_set(
     notes = _config_set_notes(args.key, result)
     suffix = f" ({'; '.join(notes)})" if notes else ""
     print(f"Set {args.key} = {_format_config_value(display)}{suffix}")
+    return 0
+
+
+def _editable_providers(state: Any) -> list[dict[str, Any]]:
+    raw = state.persisted.get("providers", [])
+    if not isinstance(raw, list):
+        return []
+    return [
+        {str(key): value for key, value in provider.items() if str(key) != "api_key"}
+        for provider in raw
+        if isinstance(provider, dict)
+    ]
+
+
+def cmd_config_provider_list(args: argparse.Namespace) -> int:
+    """Show the ordered provider chain without exposing direct secrets."""
+
+    providers = _editable_providers(read_config_state())
+    if args.json:
+        _print_json({"providers": providers})
+        return 0
+    if not providers:
+        print("No inference providers configured.")
+        return 0
+    for index, provider in enumerate(providers, start=1):
+        model = str(provider.get("model") or "default")
+        endpoint = str(provider.get("transport") or provider.get("base_url") or "not set")
+        effort = str(provider.get("reasoning_effort") or "default")
+        print(
+            f"{index}. {provider.get('name')} · {provider.get('type')} · "
+            f"model/router={model} · reasoning={effort} · {endpoint}"
+        )
+    return 0
+
+
+def cmd_config_provider_models(args: argparse.Namespace) -> int:
+    """List account-visible models for one authenticated CLI transport."""
+
+    catalog = discover_cli_models(
+        args.transport,
+        refresh=bool(args.refresh),
+        timeout=float(args.timeout),
+    )
+    payload = catalog.as_dict()
+    if args.json:
+        _print_json(payload)
+    else:
+        if catalog.models:
+            for model in catalog.models:
+                detail = f" - {model.description}" if model.description else ""
+                efforts = ", ".join(model.supported_reasoning_levels)
+                reasoning = (
+                    f" · reasoning={efforts} (default {model.default_reasoning_level})"
+                    if efforts
+                    else ""
+                )
+                print(f"{model.slug} · {model.display_name}{reasoning}{detail}")
+            print(f"Source: {catalog.source} · observed {catalog.observed_at}")
+        else:
+            print(catalog.error or "No visible models were reported.")
+    return 0 if catalog.models else 1
+
+
+def cmd_config_provider_set(args: argparse.Namespace) -> int:
+    """Add or update one named inference provider while preserving its secret."""
+
+    state = read_config_state()
+    providers = _editable_providers(state)
+    target_name = str(args.name).strip()
+    index = next(
+        (
+            position
+            for position, provider in enumerate(providers)
+            if str(provider.get("name") or "").casefold() == target_name.casefold()
+        ),
+        None,
+    )
+    existing = providers[index] if index is not None else {}
+    provider_type = str(args.type or existing.get("type") or "").strip().casefold()
+    if not provider_type:
+        raise ValueError("--type is required when adding a provider")
+    existing_type = str(existing.get("type") or "").strip().casefold()
+    provider_type_changed = bool(args.type is not None and provider_type != existing_type)
+    cli_provider = provider_type == "cli"
+    transport = (
+        str(args.transport if args.transport is not None else existing.get("transport") or "")
+        .strip()
+        .casefold()
+        if cli_provider
+        else ""
+    )
+    requested_effort = getattr(args, "reasoning_effort", None)
+    if requested_effort is None:
+        reasoning_effort = str(existing.get("reasoning_effort") or "").strip().casefold()
+    else:
+        reasoning_effort = "" if requested_effort == "default" else str(requested_effort)
+    if transport != "codex":
+        if requested_effort not in (None, "default"):
+            raise ValueError("--reasoning-effort is supported only for Codex CLI providers")
+        reasoning_effort = ""
+    updated = {
+        "name": target_name,
+        "type": provider_type,
+        "transport": transport,
+        "model": str(args.model if args.model is not None else existing.get("model") or "").strip(),
+        "base_url": ""
+        if cli_provider
+        else str(
+            args.base_url if args.base_url is not None else existing.get("base_url") or ""
+        ).strip(),
+        "api_key_env": ""
+        if cli_provider
+        else str(
+            args.api_key_env if args.api_key_env is not None else existing.get("api_key_env") or ""
+        ).strip(),
+        "ollama_mode": provider_type == "ollama"
+        or (not provider_type_changed and bool(existing.get("ollama_mode", False))),
+        "timeout": (
+            float(args.timeout)
+            if args.timeout is not None
+            else float(existing.get("timeout", 15.0))
+        ),
+        "reasoning_effort": reasoning_effort,
+    }
+    if index is None:
+        providers.append(updated)
+        index = len(providers) - 1
+    else:
+        providers[index] = updated
+    operations: list[dict[str, Any]] = [{"op": "set", "path": "providers", "value": providers}]
+    if cli_provider:
+        operations.append(
+            {
+                "op": "secret",
+                "path": f"providers.{index}.api_key",
+                "action": "clear",
+            }
+        )
+    result = apply_config_operations(
+        operations,
+        expected_revision=state.revision,
+    )
+    notes = _config_set_notes("providers", result)
+    suffix = f" ({'; '.join(notes)})" if notes else ""
+    print(
+        f"Set provider {target_name} at position {index + 1}: "
+        f"type={provider_type}, model/router={updated['model'] or 'default'}, "
+        f"reasoning={updated['reasoning_effort'] or 'default'}{suffix}"
+    )
+    return 0
+
+
+def cmd_config_provider_remove(args: argparse.Namespace) -> int:
+    """Remove one named provider from the ordered chain."""
+
+    state = read_config_state()
+    providers = _editable_providers(state)
+    target = str(args.name).strip().casefold()
+    retained = [
+        provider for provider in providers if str(provider.get("name") or "").casefold() != target
+    ]
+    if len(retained) == len(providers):
+        raise ValueError(f"provider not found: {args.name}")
+    apply_config_operations(
+        [{"op": "set", "path": "providers", "value": retained}],
+        expected_revision=state.revision,
+    )
+    print(f"Removed provider {args.name}")
     return 0
 
 

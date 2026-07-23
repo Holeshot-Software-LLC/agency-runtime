@@ -18,6 +18,7 @@ from agency_runtime.core.dashboard_service_core import (
     _Context,
     _context,
     _dashboard_runtime_fingerprint,
+    _dashboard_runtime_port,
     _DashboardRuntimeClearance,
     _fresh_dashboard_readiness,
     _revalidate_dashboard_launcher,
@@ -247,7 +248,9 @@ def _start_dashboard_service_locked(
         }
     commands: list[dict[str, Any]] = []
     previous_runtime: str | None = None
+    previous_runtime_port: int | None = None
     if ctx.platform == "windows":
+        previous_runtime_port = _dashboard_runtime_port(ctx)
         previous_runtime = _dashboard_runtime_fingerprint(ctx)
         task_xml, capture = _export_owned_windows_task(ctx, command_runner=command_runner)
         commands.append(capture.public())
@@ -277,6 +280,7 @@ def _start_dashboard_service_locked(
         clearance = _wait_dashboard_runtime_cleared(
             ctx,
             previous_runtime,
+            previous_port=previous_runtime_port,
         )
         clearance_failure = _runtime_clearance_failure(
             "start",
@@ -406,7 +410,9 @@ def _stop_dashboard_service_locked(
     idle = ctx.platform == "linux" and state.get("active") is False
     task_xml: str | None = None
     previous_runtime: str | None = None
+    previous_runtime_port: int | None = None
     if ctx.platform == "windows":
+        previous_runtime_port = _dashboard_runtime_port(ctx)
         previous_runtime = _dashboard_runtime_fingerprint(ctx)
         task_xml, capture = _export_owned_windows_task(ctx, command_runner=command_runner)
         commands.append(capture.public())
@@ -425,6 +431,7 @@ def _stop_dashboard_service_locked(
             clearance = _wait_dashboard_runtime_cleared(
                 ctx,
                 previous_runtime,
+                previous_port=previous_runtime_port,
             )
             descriptor_removed = clearance.descriptor_removed
             clearance_failure = _runtime_clearance_failure(
@@ -487,6 +494,7 @@ def _stop_dashboard_service_locked(
         clearance = _wait_dashboard_runtime_cleared(
             ctx,
             previous_runtime,
+            previous_port=previous_runtime_port,
         )
         descriptor_removed = clearance.descriptor_removed
         clearance_failure = _runtime_clearance_failure(
@@ -581,6 +589,7 @@ def _restart_dashboard_service_locked(
         return definition_block
     _revalidate_dashboard_launcher(ctx)
     previous_runtime: str | None = None
+    previous_runtime_port: int | None = None
     if ctx.platform == "linux":
         raw_results = [
             _run(
@@ -590,6 +599,7 @@ def _restart_dashboard_service_locked(
         ]
         command_ok = raw_results[0].ok
     else:
+        previous_runtime_port = _dashboard_runtime_port(ctx)
         previous_runtime = _dashboard_runtime_fingerprint(ctx)
         task_xml, capture = _export_owned_windows_task(ctx, command_runner=command_runner)
         if not _windows_definition_matches(ctx, task_xml):
@@ -646,6 +656,7 @@ def _restart_dashboard_service_locked(
         clearance = _wait_dashboard_runtime_cleared(
             ctx,
             previous_runtime,
+            previous_port=previous_runtime_port,
         )
         clearance_failure = _runtime_clearance_failure(
             "restart",

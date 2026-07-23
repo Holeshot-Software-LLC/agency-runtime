@@ -15,12 +15,23 @@ from pathlib import Path
 
 from agency_runtime import __version__
 from agency_runtime.core.bounded_json import safe_load_bounded_json
-from agency_runtime.core.config import load_config, reset_config_cache
+from agency_runtime.core.config import (
+    AgencyConfig,
+    JudgeConfig,
+    OllamaConfig,
+    load_config,
+    reset_config_cache,
+)
+from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.private_paths import (
     ensure_private_directory,
     private_temporary_directory,
 )
 from agency_runtime.core.roster.bundled import bundled_manifest, bundled_roster
+from agency_runtime.core.roster.selector_projection import selector_roster_projection
+from agency_runtime.core.selector.cache import clear_cache
+from agency_runtime.core.selector.pipeline import route
+from agency_runtime.core.selector.stickiness import clear_session_routing
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.dashboard import DashboardHTTPServer
 
@@ -150,6 +161,81 @@ def _roster_integrity() -> dict[str, int]:
     return {key: int(value) for key, value in counts.items()}
 
 
+def _selection_safety() -> dict[str, object]:
+    manifest = bundled_manifest()
+    cards = [
+        selector_roster_projection(
+            {
+                **entry,
+                "agent_slug": entry["slug"],
+                "name": entry["display_name"],
+            }
+        )
+        for entry in manifest["agents"]
+        if entry["audit_status"] == "approved"
+    ]
+    offline = AgencyConfig(
+        providers=(),
+        judge=JudgeConfig(model="", base_url="", confidence_bypass_threshold=999.0),
+        ollama=OllamaConfig(enabled=False, model=""),
+    )
+    cases = (
+        (
+            "agency-runtime-dashboard",
+            "The Agency response header exposes unreadable reason codes and effect codes. "
+            "Explain how to test agent selection live and how to open the dashboard.",
+            ("multi-agent-systems-architect",),
+            ("technical-writer",),
+        ),
+        ("ambiguous-help", "Please help me with this.", (), ()),
+    )
+    observed: dict[str, list[str]] = {}
+    forbidden = {"clinical-evidence-agent", "geographer", "language-translator"}
+    platform_name = "windows" if os.name == "nt" else "linux"
+    for case_id, message, required, acceptable in cases:
+        clear_cache()
+        clear_session_routing()
+        session_id = f"installed-selection-{case_id}"
+        trace_id = f"installed-selection-trace-{case_id}"
+        capability = native_adapter_capability_receipt(
+            "codex",
+            platform=platform_name,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+        decision = route(
+            session_id,
+            message,
+            cards,
+            config=offline,
+            host="codex",
+            platform=platform_name,
+            capability_receipt=capability,
+            capability_session_id=session_id,
+            capability_trace_id=trace_id,
+            trace_id=trace_id,
+        )
+        selected = tuple(str(item) for item in decision.get("semantic_ids", []))
+        selected_set = set(selected)
+        allowed = set(required) | set(acceptable)
+        if (
+            not set(required).issubset(selected_set)
+            or not selected_set.issubset(allowed)
+            or forbidden.intersection(selected_set)
+        ):
+            raise RuntimeError(
+                "installed selection safety failed for "
+                f"{case_id}: selected={selected!r}, required={required!r}, "
+                f"acceptable={acceptable!r}"
+            )
+        observed[case_id] = list(selected)
+    return {
+        "status": "passed",
+        "cases": observed,
+        "forbidden_specialists": sorted(forbidden),
+    }
+
+
 def run() -> dict[str, object]:
     installed_version = version("agency-runtime")
     if installed_version != __version__:
@@ -159,6 +245,7 @@ def run() -> dict[str, object]:
     if missing:
         raise RuntimeError(f"installed distribution is missing dashboard assets: {missing}")
     roster = _roster_integrity()
+    selection = _selection_safety()
 
     with private_temporary_directory(prefix="distribution-smoke") as root:
         isolated_home = ensure_private_directory(root / "home")
@@ -184,6 +271,7 @@ def run() -> dict[str, object]:
         "assets": len(_DASHBOARD_ASSETS),
         "config": "passed",
         "roster": roster,
+        "selection": selection,
         "mcp": mcp,
         "dashboard": dashboard_result,
     }

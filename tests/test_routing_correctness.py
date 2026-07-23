@@ -99,7 +99,7 @@ def test_routing_fingerprint_covers_roster_config_and_policy() -> None:
     changed_config = AgencyConfig(
         judge=base_config.judge,
         ollama=base_config.ollama,
-        selector=SelectorConfig(min_confidence=0.8),
+        selector=SelectorConfig(min_confidence=0.7),
     )
     policy_a = {"actions": {"DEFAULT": {"always_include": []}}}
     policy_b = {"actions": {"DEFAULT": {"always_include": [{"slug": "x"}]}}}
@@ -154,6 +154,30 @@ def test_pipeline_excludes_negated_terms_before_domain_expansion(monkeypatch) ->
     assert "Slack" not in observed[0]
     assert "real-time communication" not in observed[0]
     assert "implement Python retry backoff" in observed[0]
+
+
+def test_selection_confidence_floor_is_a_real_abstention() -> None:
+    rejected = pipeline_module._apply_selection_confidence_floor(
+        {
+            "selected_ids": ["minimal-change-engineer"],
+            "semantic_ids": ["minimal-change-engineer"],
+            "confidence": 0.76,
+            "status": "applied",
+        },
+        minimum=0.8,
+    )
+
+    assert rejected["selected_ids"] == []
+    assert rejected["semantic_ids"] == []
+    assert rejected["status"] == "abstained_low_confidence"
+    assert rejected["error"] == "selection confidence below configured minimum"
+
+    malformed = pipeline_module._apply_selection_confidence_floor(
+        {"selected_ids": ["code-reviewer"], "semantic_ids": ["code-reviewer"], "confidence": "bad"},
+        minimum=0.8,
+    )
+    assert malformed["selected_ids"] == []
+    assert malformed["status"] == "abstained_low_confidence"
 
 
 def test_cache_and_stickiness_reject_ids_outside_current_catalog(monkeypatch) -> None:
@@ -282,6 +306,27 @@ def test_zero_signal_token_fallback_abstains() -> None:
     assert result["status"] == "abstained"
 
 
+def test_low_signal_token_fallback_abstains_instead_of_loading_noise() -> None:
+    result = query_judge(
+        "explain a runtime header and dashboard",
+        [
+            {
+                "slug": "clinical-evidence-agent",
+                "description": "Review clinical evidence and medical literature",
+            },
+            {
+                "slug": "geographer",
+                "description": "Analyze physical and human geography",
+            },
+        ],
+        config=_offline_config(),
+    )
+
+    assert result["top_score"] < 2.0
+    assert result["selected_ids"] == []
+    assert result["status"] == "abstained"
+
+
 def test_token_fallback_does_not_pad_with_zero_score_candidates() -> None:
     catalog = [
         {
@@ -327,6 +372,14 @@ def test_token_fallback_excludes_weak_incidental_matches() -> None:
     )
 
     assert result["selected_ids"] == ["performance-benchmarker"]
+
+
+def test_token_fallback_rejects_candidates_below_the_relative_floor() -> None:
+    assert judge_module._scored_selection(
+        [{"slug": "relevant"}, {"slug": "incidental"}],
+        [10.0, 2.9],
+        2,
+    ) == ["relevant"]
 
 
 def test_token_fallback_retains_comparable_multi_domain_matches() -> None:

@@ -1,6 +1,7 @@
 "use strict";
 
 export function createConfigController(core) {
+  const codexReasoningEfforts = ["low", "medium", "high", "xhigh", "max", "ultra"];
   const {
     document,
     state,
@@ -9,6 +10,7 @@ export function createConfigController(core) {
     showNotice,
     nestedValue,
     comparable,
+    api,
   } = core;
 
   function readConfigControl(node) {
@@ -203,6 +205,7 @@ export function createConfigController(core) {
       option.value = "";
       select.append(option);
       select.disabled = true;
+      syncWorkforceProviderOptions([]);
       return;
     }
     select.disabled = false;
@@ -214,6 +217,255 @@ export function createConfigController(core) {
     select.value = [...select.options].some((option) => option.value === selected)
       ? selected
       : "0";
+    syncWorkforceProviderOptions(providers);
+  }
+
+  function configuredProviders() {
+    try {
+      const value = JSON.parse(byId("config-providers")?.value || "[]");
+      return Array.isArray(value) ? value.filter((item) => item && typeof item === "object") : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function syncWorkforceProviderOptions(providers = configuredProviders()) {
+    const options = byId("workforce-provider-options");
+    if (!options) return;
+    options.replaceChildren();
+    providers.forEach((provider) => {
+      const name = typeof provider.name === "string" ? provider.name.trim() : "";
+      if (!name) return;
+      const option = el("option", "", name);
+      option.value = name;
+      options.append(option);
+    });
+  }
+
+  async function loadWorkforceModels({ refresh = false } = {}) {
+    const providerName = byId("config-workforce-provider")?.value.trim() || "";
+    const providers = configuredProviders();
+    const provider = providers.find(
+      (item) => String(item.name || "").toLowerCase() === providerName.toLowerCase(),
+    ) || (!providerName ? providers[0] : null);
+    const options = byId("workforce-model-options");
+    const status = byId("workforce-model-status");
+    if (!options || !status) return false;
+    options.replaceChildren();
+    if (!provider) {
+      status.textContent = "Choose a configured provider to discover models.";
+      return false;
+    }
+    const type = String(provider.type || "").toLowerCase();
+    const transport = String(provider.transport || "").toLowerCase();
+    if (type !== "cli" || !["codex", "claude"].includes(transport)) {
+      status.textContent = type === "litellm"
+        ? "Enter the LiteLLM router or model-group alias in any stage model field."
+        : "This provider uses manually entered model names.";
+      return false;
+    }
+    status.textContent = `Discovering ${transport} account models…`;
+    try {
+      const suffix = refresh ? "&refresh=true" : "";
+      const catalog = await api(`/api/providers/models?transport=${encodeURIComponent(transport)}${suffix}`);
+      const models = Array.isArray(catalog?.models)
+        ? catalog.models.filter((model) => model && typeof model.slug === "string" && model.slug)
+        : [];
+      models.forEach((model) => {
+        const option = el("option", "", model.display_name || model.slug);
+        option.value = model.slug;
+        option.title = model.description || model.slug;
+        options.append(option);
+      });
+      status.textContent = models.length
+        ? `${models.length} account model${models.length === 1 ? "" : "s"} available for every workforce stage.`
+        : catalog?.error || `No visible ${transport} models were found.`;
+      return models.length > 0;
+    } catch (error) {
+      status.textContent = error.message || "Model discovery failed.";
+      return false;
+    }
+  }
+
+  function providerBuilderDraft() {
+    const name = byId("provider-builder-name")?.value.trim() || "";
+    const type = byId("provider-builder-type")?.value.trim() || "";
+    const selectedModel = byId("provider-builder-model-select")?.value || "__manual__";
+    const model = selectedModel === "__manual__"
+      ? byId("provider-builder-model")?.value.trim() || ""
+      : selectedModel;
+    const transport = byId("provider-builder-transport")?.value.trim() || "";
+    const requestedEffort = byId("provider-builder-reasoning-effort")?.value.trim() || "";
+    const reasoningEffort = type === "cli" && transport === "codex" ? requestedEffort : "";
+    const baseUrl = byId("provider-builder-url")?.value.trim() || "";
+    const apiKeyEnv = byId("provider-builder-env")?.value.trim() || "";
+    const timeout = Number(
+      byId("provider-builder-timeout")?.value || (type === "cli" ? 60 : 15),
+    );
+    if (!name) throw new Error("Provider name is required.");
+    if (!type) throw new Error("Provider type is required.");
+    if (!Number.isFinite(timeout) || timeout < 0.05 || timeout > 60) {
+      throw new Error("Provider timeout must be between 0.05 and 60 seconds.");
+    }
+    if (type === "cli" && !["codex", "claude"].includes(transport)) {
+      throw new Error("CLI providers require a Codex or Claude transport.");
+    }
+    if (reasoningEffort && !codexReasoningEfforts.includes(reasoningEffort)) {
+      throw new Error("Codex reasoning effort is not supported.");
+    }
+    if (type === "litellm" && !model) {
+      throw new Error("LiteLLM providers require a model or router alias.");
+    }
+    return {
+      name,
+      type,
+      transport: type === "cli" ? transport : "",
+      model,
+      base_url: type === "cli" ? "" : baseUrl,
+      api_key_env: type === "cli" ? "" : apiKeyEnv,
+      ollama_mode: type === "ollama",
+      timeout,
+      reasoning_effort: reasoningEffort,
+    };
+  }
+
+  function syncProviderReasoningEffortOptions() {
+    const input = byId("provider-builder-reasoning-effort");
+    const help = byId("provider-builder-reasoning-effort-help");
+    if (!input) return;
+    const type = byId("provider-builder-type")?.value.trim() || "";
+    const transport = byId("provider-builder-transport")?.value.trim() || "";
+    const selectedModel = byId("provider-builder-model-select")?.value || "__manual__";
+    const available = state.providerReasoningLevels?.[selectedModel];
+    const levels = Array.isArray(available) && available.length
+      ? available.filter((value) => codexReasoningEfforts.includes(value))
+      : codexReasoningEfforts;
+    const previous = input.value || "";
+    input.replaceChildren();
+    const defaultOption = el("option", "", "Model default");
+    defaultOption.value = "";
+    input.append(defaultOption);
+    levels.forEach((value) => {
+      const option = el("option", "", value === "xhigh" ? "Extra high" : `${value[0].toUpperCase()}${value.slice(1)}`);
+      option.value = value;
+      input.append(option);
+    });
+    const enabled = type === "cli" && transport === "codex";
+    input.disabled = !enabled;
+    input.value = enabled && (previous === "" || levels.includes(previous)) ? previous : "";
+    if (help) {
+      help.textContent = enabled
+        ? "Codex subscription only. Low is usually enough for compact routing plans."
+        : "Reasoning effort is available for Codex subscription providers.";
+    }
+  }
+
+  function syncProviderTimeoutRecommendation() {
+    const type = byId("provider-builder-type")?.value.trim() || "";
+    const input = byId("provider-builder-timeout");
+    if (!input) return;
+    const current = String(input.value || "").trim();
+    if (type === "cli" && (!current || current === "15")) input.value = "60";
+    if (type !== "cli" && (!current || current === "60")) input.value = "15";
+  }
+
+  async function loadProviderModels({ refresh = false } = {}) {
+    const type = byId("provider-builder-type")?.value || "";
+    const transport = byId("provider-builder-transport")?.value || "";
+    const select = byId("provider-builder-model-select");
+    const status = byId("provider-builder-model-status");
+    const manual = byId("provider-builder-model");
+    if (!select || !status || !manual) return false;
+    select.replaceChildren();
+    const manualOption = el("option", "", "Enter a model or router alias");
+    manualOption.value = "__manual__";
+    select.append(manualOption);
+    select.value = "__manual__";
+    manual.hidden = false;
+    if (type !== "cli" || !transport) {
+      state.providerReasoningLevels = {};
+      syncProviderReasoningEffortOptions();
+      status.textContent = type === "litellm"
+        ? "Enter the LiteLLM router or model-group alias below."
+        : "Choose a CLI subscription transport to discover account models.";
+      return false;
+    }
+    status.textContent = `Discovering ${transport} account models…`;
+    try {
+      const suffix = refresh ? "&refresh=true" : "";
+      const catalog = await api(`/api/providers/models?transport=${encodeURIComponent(transport)}${suffix}`);
+      const models = Array.isArray(catalog?.models)
+        ? catalog.models.filter((model) => model && typeof model.slug === "string" && model.slug)
+        : [];
+      state.providerReasoningLevels = Object.fromEntries(models.map((model) => [
+        model.slug,
+        Array.isArray(model.supported_reasoning_levels)
+          ? model.supported_reasoning_levels
+          : [],
+      ]));
+      models.forEach((model) => {
+        const option = el("option", "", model.display_name || model.slug);
+        option.value = model.slug;
+        option.title = model.description || model.slug;
+        select.append(option);
+      });
+      if (models.length) {
+        select.value = models[0].slug;
+        manual.hidden = true;
+        status.textContent = `${models.length} account model${models.length === 1 ? "" : "s"} from ${catalog.source || transport}.`;
+        syncProviderReasoningEffortOptions();
+        return true;
+      }
+      syncProviderReasoningEffortOptions();
+      status.textContent = catalog?.error || `No visible ${transport} models were found.`;
+      return false;
+    } catch (error) {
+      state.providerReasoningLevels = {};
+      syncProviderReasoningEffortOptions();
+      status.textContent = error.message || "Model discovery failed.";
+      return false;
+    }
+  }
+
+  function syncProviderModelInput() {
+    const select = byId("provider-builder-model-select");
+    const manual = byId("provider-builder-model");
+    if (!select || !manual) return;
+    manual.hidden = select.value !== "__manual__";
+    syncProviderReasoningEffortOptions();
+  }
+
+  function upsertProviderDraft() {
+    const draft = providerBuilderDraft();
+    const control = byId("config-providers");
+    const providers = JSON.parse(control.value || "[]");
+    if (!Array.isArray(providers)) throw new Error("Provider array must be a JSON list.");
+    const index = providers.findIndex(
+      (provider) => String(provider?.name || "").toLowerCase() === draft.name.toLowerCase(),
+    );
+    if (index >= 0) {
+      const existing = providers[index];
+      const typeChanged = String(existing.type).toLowerCase() !== draft.type;
+      if (!typeChanged && existing.ollama_mode === true) draft.ollama_mode = true;
+    }
+    if (index < 0) providers.push(draft);
+    else providers[index] = { ...providers[index], ...draft };
+    control.value = JSON.stringify(providers, null, 2);
+    syncProviderSecretOptions();
+    updateConfigDirtyState();
+    return draft;
+  }
+
+  function removeSelectedProvider() {
+    const select = byId("config-provider-secret-index");
+    if (!select || select.value === "") throw new Error("Select a provider to remove.");
+    const control = byId("config-providers");
+    const providers = JSON.parse(control.value || "[]");
+    if (!Array.isArray(providers)) throw new Error("Provider array must be a JSON list.");
+    providers.splice(Number(select.value), 1);
+    control.value = JSON.stringify(providers, null, 2);
+    syncProviderSecretOptions();
+    updateConfigDirtyState();
   }
 
   function updateConfigDirtyState() {
@@ -323,6 +575,15 @@ export function createConfigController(core) {
     collectConfigChanges,
     appendSecretOperation,
     syncProviderSecretOptions,
+    syncWorkforceProviderOptions,
+    loadWorkforceModels,
+    providerBuilderDraft,
+    syncProviderTimeoutRecommendation,
+    syncProviderReasoningEffortOptions,
+    loadProviderModels,
+    syncProviderModelInput,
+    upsertProviderDraft,
+    removeSelectedProvider,
     updateConfigDirtyState,
     serviceRestartRequired,
     applyServiceBinding,

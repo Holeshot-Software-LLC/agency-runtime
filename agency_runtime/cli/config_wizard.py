@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.cli_transport import CLIModelCatalog, discover_cli_models
 from agency_runtime.core.config import (
     MAX_PROVIDER_CHAIN_ENTRIES,
     ProviderEntry,
@@ -41,6 +42,7 @@ class WizardDependencies:
     open_url: Callable[..., Any] = open_no_redirect
     provider_validator: Callable[..., Any] = validate_provider
     model_fetcher: Callable[[str, str | None], list[str]] | None = None
+    cli_model_discoverer: Callable[[str], CLIModelCatalog] = discover_cli_models
 
 
 DEFAULT_DEPENDENCIES = WizardDependencies()
@@ -48,6 +50,8 @@ DEFAULT_DEPENDENCIES = WizardDependencies()
 MAX_MODEL_DISCOVERY_BYTES = 1024 * 1024
 MAX_DISCOVERED_MODELS = 1000
 MAX_MODEL_ID_CHARS = 512
+DEFAULT_PROVIDER_TIMEOUT = 15.0
+DEFAULT_CLI_PROVIDER_TIMEOUT = 60.0
 
 
 def _models(
@@ -163,14 +167,18 @@ def _interactive_wizard(
     # Step 4: Tuning
     print("\nStep 4: Advanced Tuning")
     print("━" * 40)
-    print("Use default tuning values? (confidence=0.4, timeout=15s, max_selected=3)")
+    print(
+        "Use recommended tuning values? "
+        "(confidence=0.4, HTTP/local timeout=15s, subscription CLI timeout=60s, "
+        "max_selected=3)"
+    )
     resp = input("  [Y/n] ").strip().lower()
     if resp == "n":
-        timeout = float(input("  Judge timeout (seconds): ") or "15")
+        timeout = float(input("  Provider timeout (seconds): ") or str(DEFAULT_PROVIDER_TIMEOUT))
         max_sel = int(input("  Max selected agents: ") or "3")
         threshold = float(input("  Confidence bypass threshold: ") or "15")
     else:
-        timeout, max_sel, threshold = 15.0, 3, 15.0
+        timeout, max_sel, threshold = DEFAULT_PROVIDER_TIMEOUT, 3, 15.0
 
     judge_cfg["timeout"] = timeout
     judge_cfg["max_selected"] = max_sel
@@ -181,7 +189,11 @@ def _interactive_wizard(
     print("━" * 40)
 
     for provider in provider_entries:
-        provider["timeout"] = timeout
+        provider["timeout"] = (
+            DEFAULT_CLI_PROVIDER_TIMEOUT
+            if resp != "n" and provider.get("type") == "cli"
+            else timeout
+        )
 
     config_data = {
         "providers": provider_entries,
@@ -191,7 +203,7 @@ def _interactive_wizard(
             "base_url": p.ollama_base_url,
         },
         "selector": {
-            "min_confidence": 0.4,
+            "min_confidence": 0.8,
             "max_user_msg_len": 4000,
             "trivial_msg_threshold": 0,
         },
@@ -200,6 +212,9 @@ def _interactive_wizard(
             "preferred_min_units": 2,
             "strongly_preferred_min_units": 4,
             "strongly_preferred_min_confidence": 0.8,
+            "child_inference_budget": 4,
+            "child_inference_concurrency": 2,
+            "child_cache_ttl_seconds": 900,
         },
         "store": {"db_path": "~/.agency-runtime/agency.db"},
         "server": {"host": "127.0.0.1", "port": 7800},
@@ -259,7 +274,34 @@ def _provider_entry(
         "api_key_env": judge.get("api_key_env", ""),
         "ollama_mode": bool(judge.get("ollama_mode", False)),
         "timeout": float(judge.get("timeout", 15.0)),
+        "reasoning_effort": str(judge.get("reasoning_effort", "")),
     }
+
+
+def _pick_cli_model(
+    transport: str,
+    dependencies: WizardDependencies,
+) -> str:
+    """Offer account-visible CLI models and retain a bounded manual fallback."""
+
+    catalog = dependencies.cli_model_discoverer(transport)
+    if not catalog.models:
+        if catalog.error:
+            print(f"  Account model discovery unavailable: {catalog.error}")
+        return input(f"Model override for {transport} (blank uses CLI default): ").strip()
+    print(f"\nVisible {transport.title()} subscription models:")
+    print("  [1] CLI default")
+    for index, item in enumerate(catalog.models, start=2):
+        detail = f" — {item.description}" if item.description else ""
+        print(f"  [{index}] {item.display_name} ({item.slug}){detail}")
+    custom_index = len(catalog.models) + 2
+    print(f"  [{custom_index}] Enter another model ID")
+    chosen = _prompt_choice(custom_index, default=1)
+    if 2 <= chosen < custom_index:
+        return catalog.models[chosen - 2].slug
+    if chosen == custom_index:
+        return input("Model ID: ").strip()
+    return ""
 
 
 def _new_provider_entry(
@@ -320,11 +362,10 @@ def _new_provider_entry(
         )
     if provider_key.startswith("cli:"):
         transport = provider_key.split(":", 1)[1]
-        model = input(f"Model override for {transport} (blank uses CLI default): ").strip()
         return _provider_entry(
             f"{transport}-cli",
             "cli",
-            {"model": model},
+            {"model": _pick_cli_model(transport, dependencies)},
             transport=transport,
         )
     custom = _pick_custom_endpoint(dependencies=dependencies)

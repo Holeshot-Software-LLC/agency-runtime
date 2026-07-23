@@ -12,6 +12,7 @@ import math
 import time
 import urllib.request
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
@@ -38,6 +39,33 @@ _HTTP_PROVIDER_TYPES = frozenset(
         "openai-compatible",
     }
 )
+
+
+@dataclass(frozen=True, slots=True)
+class StructuredProviderResult:
+    """Validated structured output plus non-secret provider identity evidence."""
+
+    value: dict[str, Any]
+    provider_name: str
+    provider_type: str
+    transport: str
+    requested_model: str
+    model_group: str
+    actual_model: str
+    model_receipt_source: str
+    latency_ms: int
+
+    def receipt(self) -> dict[str, Any]:
+        return {
+            "provider_name": self.provider_name,
+            "provider_type": self.provider_type,
+            "transport": self.transport,
+            "requested_model": self.requested_model,
+            "model_group": self.model_group,
+            "actual_model": self.actual_model,
+            "model_receipt_source": self.model_receipt_source,
+            "latency_ms": self.latency_ms,
+        }
 
 
 def _bounded_timeout(value: object) -> float:
@@ -178,6 +206,22 @@ def _parse_model_text(value: object) -> dict[str, Any] | None:
     return _parse_json_object(text[start : end + 1])
 
 
+def _model_identity(value: object) -> str:
+    """Return a bounded display-safe model identity from provider evidence."""
+
+    if not isinstance(value, str):
+        return ""
+    normalized = " ".join(value.split())
+    if (
+        not normalized
+        or "\x00" in normalized
+        or len(normalized.encode("utf-8", errors="replace")) > 512
+        or any(ord(character) < 32 for character in normalized)
+    ):
+        return ""
+    return normalized
+
+
 def _response_text(
     data: Mapping[str, Any],
     *,
@@ -303,16 +347,17 @@ def _http_provider_is_safe(provider: ProviderEntry, api_key: str) -> bool:
     return bool(api_key or keyless_loopback)
 
 
-def invoke_structured_provider(
+def invoke_structured_provider_result(
     provider: ProviderEntry,
     prompt: str,
     schema: Mapping[str, Any],
     *,
     system_prompt: str,
     timeout: float | None = None,
-) -> dict[str, Any] | None:
-    """Return one bounded structured response, or ``None`` on any unsafe failure."""
+) -> StructuredProviderResult | None:
+    """Return bounded structured output with truthful provider-model evidence."""
 
+    started = time.monotonic()
     if not isinstance(prompt, str) or not isinstance(system_prompt, str):
         return None
     try:
@@ -334,11 +379,29 @@ def invoke_structured_provider(
         return None
     provider_type = provider.type.strip().casefold()
     if provider_type == "cli":
-        return invoke_cli_structured(
+        value = invoke_cli_structured(
             provider,
             prompt,
             schema,
             timeout=request_timeout,
+            system_prompt=system_prompt,
+        )
+        if value is None:
+            return None
+        return StructuredProviderResult(
+            value=value,
+            provider_name=provider.name,
+            provider_type=provider_type,
+            transport=provider.transport.strip().casefold(),
+            requested_model=provider.model,
+            model_group="",
+            # A successful allowlisted CLI invocation executed with this exact explicit
+            # --model argument. Unlike a router alias, there is no downstream model to
+            # reconcile; retain the command-bound selection as the receipt and identify
+            # its source honestly instead of reporting an unavailable model.
+            actual_model=provider.model,
+            model_receipt_source="cli.explicit_model_argument",
+            latency_ms=max(0, int((time.monotonic() - started) * 1000)),
         )
 
     api_key = provider.resolve_api_key()
@@ -370,18 +433,54 @@ def invoke_structured_provider(
     response_object = _parse_json_object(raw)
     if response_object is None:
         return None
-    return _parse_model_text(
+    value = _parse_model_text(
         _response_text(
             response_object,
             provider_type=provider_type,
             ollama_mode=provider.ollama_mode or provider_type == "ollama",
         )
     )
+    if value is None:
+        return None
+    actual_model = _model_identity(response_object.get("model"))
+    return StructuredProviderResult(
+        value=value,
+        provider_name=provider.name,
+        provider_type=provider_type,
+        transport="",
+        requested_model=provider.model,
+        model_group=provider.model if provider_type == "litellm" else "",
+        actual_model=actual_model,
+        model_receipt_source="response.body.model" if actual_model else "unavailable",
+        latency_ms=max(0, int((time.monotonic() - started) * 1000)),
+    )
+
+
+def invoke_structured_provider(
+    provider: ProviderEntry,
+    prompt: str,
+    schema: Mapping[str, Any],
+    *,
+    system_prompt: str,
+    timeout: float | None = None,
+) -> dict[str, Any] | None:
+    """Compatibility wrapper returning only the validated structured value."""
+
+    result = invoke_structured_provider_result(
+        provider,
+        prompt,
+        schema,
+        system_prompt=system_prompt,
+        timeout=timeout,
+    )
+    return None if result is None else result.value
 
 
 __all__ = [
     "MAX_STRUCTURED_PROMPT_BYTES",
     "MAX_STRUCTURED_RESPONSE_BYTES",
     "MAX_STRUCTURED_SCHEMA_BYTES",
+    "StructuredProviderResult",
     "invoke_structured_provider",
+    "invoke_structured_provider_result",
 ]

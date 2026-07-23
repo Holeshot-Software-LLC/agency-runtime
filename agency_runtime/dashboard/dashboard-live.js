@@ -573,6 +573,7 @@ export function createLiveController(core, config, renderer) {
       applyMasterState(hosts.master);
       const rosterPage = applyRosterPage(roster);
       applyGovernanceSnapshot(snapshots);
+      if (state.activeView === "workforce") await refreshWorkforce({ signal: controller.signal });
       state.overview = { ...(state.overview || {}), roster_count: rosterPage.enabled_count };
       renderer.renderActiveControlView();
     } catch (error) {
@@ -638,6 +639,7 @@ export function createLiveController(core, config, renderer) {
       applyMasterState(hosts.master);
       const rosterPage = applyRosterPage(roster);
       applyGovernanceSnapshot(snapshots);
+      if (state.activeView === "workforce") await refreshWorkforce({ signal: controller.signal });
       const effective = configSnapshot.effective || configSnapshot.config || {};
       state.overview = {
         roster_count: rosterPage.enabled_count,
@@ -685,6 +687,19 @@ export function createLiveController(core, config, renderer) {
     } finally {
       scheduleLive(LIVE_INTERVAL_MS);
     }
+  }
+
+  async function refreshWorkforce({ signal } = {}) {
+    const [workforce, hiring] = await Promise.all([
+      api("/api/workforce?limit=1000", { signal }),
+      api("/api/hiring?limit=100", { signal }),
+    ]);
+    if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+    state.workforce = workforce.workers || [];
+    state.workforceCounts = workforce.counts || {};
+    state.hiring = hiring.hiring_cases || [];
+    if (state.activeView === "workforce") renderer.renderWorkforce();
+    return true;
   }
 
   async function reconcileRuntimeEvidence(successMessage) {
@@ -753,6 +768,7 @@ export function createLiveController(core, config, renderer) {
     refreshControlPlane,
     refreshAll,
     refreshRuntimeEvidence,
+    refreshWorkforce,
     reconcileRuntimeEvidence,
     reconcileAll,
   };

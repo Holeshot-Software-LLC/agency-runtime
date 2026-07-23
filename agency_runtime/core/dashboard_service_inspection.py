@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,7 @@ from agency_runtime.core.dashboard_service_core import (
     _RollbackOutcome,
     _run,
     _unsupported,
-    _validate_dashboard_launcher,
+    _validate_installed_dashboard_launcher,
     dashboard_service_environment_error,
     dashboard_service_environment_overrides,
     dashboard_service_manager_environment_overrides,
@@ -48,6 +49,7 @@ from agency_runtime.core.dashboard_service_windows import (
     _windows_task_properties,
     _windows_xml_owned,
 )
+from agency_runtime.core.windows_acl import current_process_token_is_restricted
 from agency_runtime.core.windows_system import windows_system_command
 
 
@@ -495,6 +497,27 @@ def _select_immediate_probe(
     return reachability_probe or readiness_probe
 
 
+def _restricted_windows_visibility(
+    ctx: _Context,
+    *,
+    manifest_owned: bool,
+    registration_state: str | None,
+) -> bool:
+    """Detect when a sandboxed token cannot authoritatively see an owned task."""
+
+    if (
+        ctx.platform != "windows"
+        or os.name != "nt"
+        or not manifest_owned
+        or registration_state != "absent"
+    ):
+        return False
+    try:
+        return current_process_token_is_restricted(is_windows=True)
+    except (OSError, RuntimeError):
+        return False
+
+
 def _render_inspection(
     ctx: _Context,
     *,
@@ -561,15 +584,27 @@ def inspect_dashboard_service(
     )
     if ctx is None:
         return _unsupported("inspect", platform_name)
-    if _validate_launcher and not ctx.launcher_artifacts:
+    manifest = _read_manifest(ctx)
+    manifest_owned = _manifest_owned(ctx, manifest)
+    if _validate_launcher and not ctx.launcher_artifacts and manifest_owned:
         try:
-            ctx = _validate_dashboard_launcher(ctx)
+            ctx = _validate_installed_dashboard_launcher(
+                ctx,
+                manifest.get("worker_argv") if manifest is not None else None,
+            )
         except OSError as exc:
             return _failed("inspect", ctx, error=str(exc), commands=[])
     config = _config if _config is not None else load_config(ctx.config_path)
     available, probe, registration_state = _manager_probe(
         ctx, home_dir=home_dir, command_runner=command_runner
     )
+    visibility_limited = _restricted_windows_visibility(
+        ctx,
+        manifest_owned=manifest_owned,
+        registration_state=registration_state,
+    )
+    if visibility_limited:
+        registration_state = None
     manager_overrides = (
         dashboard_service_manager_environment_overrides(config, probe.stdout)
         if ctx.platform == "linux" and probe is not None and probe.ok
@@ -588,8 +623,6 @@ def inspect_dashboard_service(
         result["manager_environment_durable"] = False
         result["non_durable_manager_environment_overrides"] = list(manager_overrides)
         return result
-    manifest = _read_manifest(ctx)
-    manifest_owned = _manifest_owned(ctx, manifest)
     immediate_probe = _select_immediate_probe(
         reachability_probe=reachability_probe,
         readiness_probe=readiness_probe,
@@ -602,14 +635,34 @@ def inspect_dashboard_service(
         command_runner=command_runner,
         manifest_owned=manifest_owned,
     )
+    reachable = _readiness(immediate_probe)
     result = _render_inspection(
         ctx,
         available=available,
         manifest=manifest,
         manifest_owned=manifest_owned,
         registration=registration,
-        reachable=_readiness(immediate_probe),
+        reachable=None if visibility_limited else reachable,
     )
+    result["visibility_limited"] = visibility_limited
+    if visibility_limited:
+        result.update(
+            {
+                "installed": None,
+                "owned": None,
+                "registration_owned": None,
+                "definition_drift": None,
+                "enabled": None,
+                "active": None,
+                "reachable": None,
+                "repair_recommended": False,
+                "warning": (
+                    "This restricted Windows host token cannot inspect the user-owned "
+                    "dashboard task or bearer descriptor. Run the same status command in "
+                    "a normal user terminal for authoritative service state."
+                ),
+            }
+        )
     result["manager_environment_durable"] = not bool(manager_overrides)
     result["non_durable_manager_environment_overrides"] = list(manager_overrides)
     return result

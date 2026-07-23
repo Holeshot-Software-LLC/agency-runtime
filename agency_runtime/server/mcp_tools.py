@@ -8,11 +8,24 @@ from uuid import uuid4
 
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.resident_managers import resident_manager_boundary_error
-from agency_runtime.core.routing_snapshot import capture_routing_snapshot
+from agency_runtime.core.routing_snapshot import (
+    bind_workforce_snapshot,
+    capture_operational_routing_snapshot,
+)
 from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.turn_correlation import active_turn_error
 
 ToolHandler = Callable[[dict[str, Any], Any], dict[str, Any]]
+
+_NATIVE_GENERIC_WORKER_KINDS = frozenset(
+    {
+        "generic-worker",
+        "codex-native-subagent",
+        "claude-native-subagent",
+        "hermes-native-subagent",
+        "openclaw-native-subagent",
+    }
+)
 
 
 def _correlation(arguments: dict[str, Any]) -> tuple[str, str] | None:
@@ -49,6 +62,8 @@ def _preflight(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
             user_message=arguments["user_message"],
             trace_id=trace_id,
             origin_receipt=origin_receipt,
+            parent_session_id=str(arguments.get("parent_session_id") or "").strip(),
+            parent_trace_id=str(arguments.get("parent_trace_id") or "").strip(),
         )
     except ValueError as exc:
         return {"error": str(exc)}
@@ -76,7 +91,8 @@ def _search_agents(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
 def _explain_selection(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     from agency_runtime.core.selector.explain import explain_route
 
-    snapshot = capture_routing_snapshot(store)
+    snapshot = capture_operational_routing_snapshot(store)
+    snapshot, workforce = bind_workforce_snapshot(store, snapshot)
     return explain_route(
         arguments.get("session_id", ""),
         arguments["task"],
@@ -84,6 +100,7 @@ def _explain_selection(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         config=snapshot.config,
         limit=arguments.get("limit"),
         store=store,
+        workforce_snapshot=workforce,
     )
 
 
@@ -187,13 +204,19 @@ def _prepare_delegation(arguments: dict[str, Any], store: Any) -> dict[str, Any]
         operation="receive ordinary delegation activation",
     ):
         return {"error": error}
+    requested_worker_kind = str(arguments.get("worker_kind") or "generic-worker").strip()
+    if requested_worker_kind not in _NATIVE_GENERIC_WORKER_KINDS:
+        return {"error": "delegated specialist retrieval uses generic-worker attribution"}
     try:
         return store.prepare_delegation_activation(
             session_id=session_id,
             trace_id=trace_id,
             specialist_slug=slug,
             work_unit_id=str(arguments.get("work_unit_id") or ""),
-            worker_kind=str(arguments.get("worker_kind") or "generic-worker"),
+            # Native hosts use different names for their ordinary worker. The
+            # durable Agency contract intentionally records all of them as a
+            # generic worker so it cannot be mistaken for specialist identity.
+            worker_kind="generic-worker",
             worker_id=str(arguments.get("worker_id") or ""),
         )
     except ValueError as exc:
@@ -236,6 +259,18 @@ def _delegate(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     worker_kind = str(arguments.get("worker_kind") or "").strip()
     worker_id = str(arguments.get("worker_id") or "").strip()
     native_run_id = str(arguments.get("native_run_id") or "").strip()
+    lineage_reader = getattr(store, "get_consumed_delegation_lineage", None)
+    if callable(lineage_reader) and agent and work_unit_id:
+        consumed_lineage = lineage_reader(
+            session_id=session_id,
+            trace_id=trace_id,
+            specialist_slug=agent,
+            work_unit_id=work_unit_id,
+        )
+        if consumed_lineage is not None:
+            worker_kind = consumed_lineage["worker_kind"]
+            worker_id = consumed_lineage["worker_id"]
+            native_run_id = consumed_lineage["native_run_id"]
     missing = [
         name
         for name, value in (

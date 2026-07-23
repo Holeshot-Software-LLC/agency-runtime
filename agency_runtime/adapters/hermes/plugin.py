@@ -61,6 +61,10 @@ class HermesAdapter(BaseAdapter):
         *,
         reservation_token: str = "",
         origin_receipt: Any | None = None,
+        parent_session_id: str = "",
+        parent_trace_id: str = "",
+        native_worker_id: str = "",
+        native_run_id: str = "",
     ) -> dict[str, Any] | None:
         """Pre-LLM call handler for Hermes plugin system.
 
@@ -80,6 +84,10 @@ class HermesAdapter(BaseAdapter):
             trace_id,
             reservation_token=reservation_token,
             origin_receipt=origin_receipt,
+            parent_session_id=parent_session_id,
+            parent_trace_id=parent_trace_id,
+            native_worker_id=native_worker_id,
+            native_run_id=native_run_id,
         )
 
     def pre_verify_handler(

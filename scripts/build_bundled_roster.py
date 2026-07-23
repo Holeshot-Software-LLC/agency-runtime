@@ -99,6 +99,7 @@ CONTRACT_LIST_FIELDS = (
     "model_requirements",
     "findings",
 )
+CONTRACT_OPTIONAL_LIST_FIELDS = ("optional_tools",)
 CONTRACT_TEXT_FIELDS = (
     "relative_path",
     "slug",
@@ -898,6 +899,7 @@ def _validate_contract_values(contract: Mapping[str, Any], manifest: Mapping[str
     slug_lists = (
         "categories",
         "required_tools",
+        "optional_tools",
         "supported_hosts",
         "supported_platforms",
         "conflicts_with",
@@ -905,11 +907,16 @@ def _validate_contract_values(contract: Mapping[str, Any], manifest: Mapping[str
         "model_requirements",
     )
     for field in slug_lists:
-        if any(not _SAFE_SLUG.fullmatch(item) for item in contract[field]):
+        if any(not _SAFE_SLUG.fullmatch(item) for item in contract.get(field, [])):
             raise BundleBuildError(f"{relative_path}:{field} contains a noncanonical value")
     for field in manifest["nonempty_list_fields"]:
         if not contract[field]:
             raise BundleBuildError(f"{relative_path}:{field} must be semantically non-empty")
+    overlap = sorted(set(contract["required_tools"]) & set(contract.get("optional_tools", [])))
+    if overlap:
+        raise BundleBuildError(
+            f"{relative_path}: tools cannot be both required and optional: {overlap}"
+        )
 
 
 def _validate_contract_execution(contract: Mapping[str, Any]) -> None:
@@ -939,13 +946,25 @@ def _normalize_audit_contract(
     filename: str,
     manifest: Mapping[str, Any],
 ) -> dict[str, Any]:
-    _require_exact_fields(raw, CONTRACT_FIELDS, label=f"audit entry in {filename}")
+    missing = set(CONTRACT_FIELDS) - set(raw)
+    unexpected = set(raw) - set(CONTRACT_FIELDS) - set(CONTRACT_OPTIONAL_LIST_FIELDS)
+    if missing or unexpected:
+        raise BundleBuildError(
+            f"audit entry in {filename} fields must match the contract; "
+            f"missing={sorted(missing)}, unexpected={sorted(unexpected)}"
+        )
     contract = {
         field: _string(raw[field], label=f"{filename}:{field}") for field in CONTRACT_TEXT_FIELDS
     }
     contract["relative_path"] = _safe_source_path(contract["relative_path"])
     for field in CONTRACT_LIST_FIELDS:
         contract[field] = _strings(raw[field], label=f"{contract['relative_path']}:{field}")
+    for field in CONTRACT_OPTIONAL_LIST_FIELDS:
+        if field in raw:
+            contract[field] = _strings(
+                raw[field],
+                label=f"{contract['relative_path']}:{field}",
+            )
     _validate_contract_identity(contract, manifest)
     _validate_contract_values(contract, manifest)
     _validate_contract_execution(contract)
@@ -1342,6 +1361,8 @@ def _manifest_entry(
         "audit_revision": contract["audit_revision"],
         "audit_status": contract["audit_status"],
     }
+    if contract.get("optional_tools"):
+        entry["optional_tools"] = list(contract["optional_tools"])
     if "remediation" in contract:
         entry["remediation"] = copy.deepcopy(contract["remediation"])
     if contract["audit_status"] != "approved":
@@ -1351,7 +1372,10 @@ def _manifest_entry(
             "source": SOURCE_REPOSITORY,
             "prompt_path": "",
             "source_version": entry["source_revision"],
-            "tool_affinity": entry["required_tools"],
+            "tool_affinity": [
+                *entry["required_tools"],
+                *entry.get("optional_tools", []),
+            ],
             "hash": entry["source_content_hash"],
             "content": "",
         }
@@ -1371,7 +1395,10 @@ def _manifest_entry(
         "source": SOURCE_REPOSITORY,
         "prompt_path": f"bundled://agency-agents/{entry['slug']}",
         "source_version": entry["source_revision"],
-        "tool_affinity": entry["required_tools"],
+        "tool_affinity": [
+            *entry["required_tools"],
+            *entry.get("optional_tools", []),
+        ],
         "hash": prompt_hash,
         "content": prompt.decode("utf-8"),
     }

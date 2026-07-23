@@ -337,11 +337,13 @@ def test_service_mode_publishes_descriptor_without_printing_token(
             _store,
             *,
             auth_token,
+            broker_token,
             port,
             config_path,
             runtime_control_home,
         ):
             self.auth_token = auth_token
+            self.broker_token = broker_token
             assert port == 8123
             assert Path(config_path).is_absolute()
             assert runtime_control_home == tmp_path
@@ -378,12 +380,30 @@ def test_service_mode_publishes_descriptor_without_printing_token(
     monkeypatch.setattr(
         dashboard_module,
         "write_dashboard_runtime",
-        lambda **kwargs: published.append(kwargs),
+        lambda **kwargs: (
+            published.append(kwargs)
+            or {
+                "pid": os.getpid(),
+                "started_at": "2026-07-22T12:00:00+00:00",
+            }
+        ),
     )
     monkeypatch.setattr(
         dashboard_module,
         "remove_dashboard_runtime",
         lambda **kwargs: removed.append(kwargs),
+    )
+    broker_published: list[dict] = []
+    broker_removed: list[dict] = []
+    monkeypatch.setattr(
+        dashboard_module,
+        "write_codex_dashboard_broker",
+        lambda **kwargs: broker_published.append(kwargs) or (tmp_path / "broker.json"),
+    )
+    monkeypatch.setattr(
+        dashboard_module,
+        "remove_codex_dashboard_broker",
+        lambda **kwargs: broker_removed.append(kwargs) or True,
     )
 
     dashboard_module.run_dashboard(
@@ -400,3 +420,9 @@ def test_service_mode_publishes_descriptor_without_printing_token(
     assert removed[0]["token"] == published[0]["token"]
     assert removed[0]["pid"] == os.getpid()
     assert published[0]["token"] not in output.out
+    if os.name == "nt":
+        assert broker_published[0]["token"] != published[0]["token"]
+        assert broker_removed[0]["token"] == broker_published[0]["token"]
+    else:
+        assert broker_published == []
+        assert broker_removed == []

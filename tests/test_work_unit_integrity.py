@@ -19,6 +19,7 @@ from agency_runtime.core.unit_assignment import (
     _plan_hash,
     build_unit_agent_plan,
     hydrate_unit_agent_plan,
+    native_child_activation_contract,
     work_unit_id_from_text,
 )
 
@@ -116,6 +117,40 @@ def test_resource_parser_stops_at_prose_and_normalizes_equivalent_paths() -> Non
     assert _likely_resources("Update src/a.py and src\\a.py") == ["src/a.py"]
     many = " ".join(f"src/component-{index}.py" for index in range(12))
     assert len(_likely_resources(many)) == 8
+
+
+def test_native_child_activation_rehydrates_exact_scope_and_content_free_evidence() -> None:
+    goal = "Update src/auth.py and verify the change"
+    resource = "src/auth.py"
+    contract = native_child_activation_contract(
+        goal,
+        mutation_scope="workspace_write",
+        resource_hashes=[_plan_hash(resource)],
+        required_evidence=["targeted-tests", "Evidence proves the requested behavior"],
+    )
+
+    assert contract["mutation_mode"] == "workspace_write"
+    assert contract["mutation_path_prefixes"] == [resource]
+    assert contract["evidence_requirements"][:3] == [
+        "delegation-execution",
+        "specialist-load",
+        "targeted-tests",
+    ]
+    assert contract["evidence_requirements"][3].startswith("evidence-")
+    with pytest.raises(ValueError, match="resources do not match"):
+        native_child_activation_contract(
+            goal,
+            mutation_scope="workspace_write",
+            resource_hashes=["0" * 64],
+            required_evidence=[],
+        )
+    with pytest.raises(ValueError, match="external writes"):
+        native_child_activation_contract(
+            goal,
+            mutation_scope="external_write",
+            resource_hashes=[_plan_hash(resource)],
+            required_evidence=[],
+        )
 
 
 def test_same_resource_writes_get_deterministic_dependency_edges() -> None:

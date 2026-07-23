@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -11,6 +12,7 @@ import pytest
 
 from agency_runtime.core.agent_activation import PROTECTED_AGENT_SLUGS
 from agency_runtime.core.delegation.events import mark_delegation_executed
+from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.native_child_activation import (
     NATIVE_CHILD_ACTIVATION_LEGACY_VERSION,
     build_native_child_activation_grant,
@@ -20,6 +22,7 @@ from agency_runtime.core.native_child_activation import (
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.store import delegation_activation as activation_store
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.server.mcp import handle_tool_call
 
 
 def _isolated_turn(path: Path) -> tuple[Store, str, str]:
@@ -28,15 +31,23 @@ def _isolated_turn(path: Path) -> tuple[Store, str, str]:
         store,
         session_id="session",
         trace_id="trace",
-        user_message="Review and refactor this code for security and correctness",
+        user_message="Review and refactor this Python code for security and correctness",
         host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id="session",
+            trace_id="trace",
+        ),
     )
     slug = next(
         candidate
         for candidate in result.selected_specialists
         if candidate not in PROTECTED_AGENT_SLUGS
     )
-    return store, slug, f"specialist:{slug}"
+    snapshot = store.get_completion_evidence_snapshot("session", "trace")
+    planned = next(row for row in snapshot["unit_agent_plan"] if row["recommended_agent"] == slug)
+    return store, slug, str(planned["work_unit_id"])
 
 
 def _prepare(store: Store, slug: str, unit: str, **changes: object) -> dict[str, object]:
@@ -815,3 +826,125 @@ def test_legacy_consumed_projection_remains_reciprocally_attachable(tmp_path: Pa
     assert receipt["delegation_event_id"] == event_id
     assert receipt["worker_id"] == "legacy-worker"
     assert receipt["native_run_id"] == "legacy-run"
+
+
+def test_public_delegate_reconciles_to_consumed_native_child_lineage(tmp_path: Path) -> None:
+    store, slug, unit = _isolated_turn(tmp_path / "mcp-reconcile.db")
+    prepared = _prepare(store, slug, unit)
+    consumed = _consume(
+        store,
+        prepared,
+        slug,
+        unit,
+        worker_id="native-worker",
+        native_run_id="codex-agent:native-worker",
+    )
+
+    observed = handle_tool_call(
+        "agency.delegate",
+        {
+            "session_id": "session",
+            "trace_id": "trace",
+            "agent": slug,
+            "task": "Review the bounded failure.",
+            "backend": "codex-subagent",
+            "work_unit_id": unit,
+            "worker_kind": "generic-worker",
+            "worker_id": "task-label-that-is-not-a-worker-id",
+            "native_run_id": "task-label-that-is-not-a-native-run-id",
+        },
+        store=store,
+    )
+
+    assert observed["status"] == "delegation observed"
+    assert observed["worker_id"] == "native-worker"
+    assert observed["native_run_id"] == "codex-agent:native-worker"
+    [delegation] = [
+        row
+        for row in store.get_delegations("trace")
+        if row["work_unit_id"] == unit and row["recommended_agent"] == slug
+    ]
+    assert delegation["executed_worker_id"] == "native-worker"
+    assert delegation["native_run_id"] == "codex-agent:native-worker"
+    assert delegation["activation_receipt_id"] == prepared["receipt_id"]
+    snapshot = store.get_completion_evidence_snapshot("session", "trace")
+    for planned in snapshot["unit_agent_plan"]:
+        if planned["work_unit_id"] == unit:
+            continue
+        declined = handle_tool_call(
+            "agency.decline_delegation",
+            {
+                "session_id": "session",
+                "trace_id": "trace",
+                "agent": planned["recommended_agent"],
+                "work_unit_id": planned["work_unit_id"],
+                "reason": "Not needed for this lineage-focused test.",
+            },
+            store=store,
+        )
+        assert declined["status"] == "delegation declined"
+    finalized = handle_tool_call(
+        "agency.finalize",
+        {
+            "session_id": "session",
+            "trace_id": "trace",
+            "draft_text": "Reconciled child work is complete.",
+            "model": "task-general",
+            "host": "codex",
+        },
+        store=store,
+    )
+    assert finalized["action"] == "continue"
+    assert finalized["missing"] == ["evidence_verification"]
+    assert consumed["consumption_receipt_id"]
+
+
+def test_consumed_lineage_can_repair_one_unlinked_delegation_receipt(tmp_path: Path) -> None:
+    store, slug, unit = _isolated_turn(tmp_path / "late-reconcile.db")
+    prepared = _prepare(store, slug, unit)
+    store.record_delegation(
+        trace_id="trace",
+        session_id="session",
+        host="mcp",
+        work_unit_id=unit,
+        recommended_agent=slug,
+        status="delegated",
+        backend="codex-subagent",
+        executed_worker_kind="generic-worker",
+        executed_worker_id="task-label",
+        native_run_id="task-label",
+    )
+    _consume(
+        store,
+        prepared,
+        slug,
+        unit,
+        worker_id="native-worker",
+        native_run_id="codex-agent:native-worker",
+    )
+
+    observed = handle_tool_call(
+        "agency.delegate",
+        {
+            "session_id": "session",
+            "trace_id": "trace",
+            "agent": slug,
+            "task": "Review the bounded failure.",
+            "backend": "codex-subagent",
+            "work_unit_id": unit,
+            "worker_kind": "generic-worker",
+            "worker_id": "native-worker",
+            "native_run_id": "codex-agent:native-worker",
+        },
+        store=store,
+    )
+
+    assert observed["status"] == "delegation observed"
+    [delegation] = [
+        row
+        for row in store.get_delegations("trace")
+        if row["work_unit_id"] == unit and row["recommended_agent"] == slug
+    ]
+    assert delegation["executed_worker_id"] == "native-worker"
+    assert delegation["native_run_id"] == "codex-agent:native-worker"
+    assert delegation["activation_receipt_id"] == prepared["receipt_id"]

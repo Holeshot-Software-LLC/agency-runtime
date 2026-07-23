@@ -86,7 +86,7 @@ _TEXT_FIELDS = (
     "version",
 )
 _AGENT_FIELDS = frozenset((*_TEXT_FIELDS, *_LIST_FIELDS, "prompt_file", "prompt_hash"))
-_AGENT_OPTIONAL_FIELDS = frozenset({"remediation"})
+_AGENT_OPTIONAL_FIELDS = frozenset({"optional_tools", "remediation"})
 _SOURCE_FIELDS = frozenset({"repository", "revision", "license", "license_file", "license_hash"})
 _MANIFEST_FIELDS = frozenset({"schema_version", "source", "counts", "agents"})
 _COUNT_FIELDS = frozenset({"total", "approved", "quarantined", "retired"})
@@ -248,7 +248,10 @@ def _revision_input(
             else ""
         ),
         "source_version": entry["source_revision"],
-        "tool_affinity": entry["required_tools"],
+        "tool_affinity": [
+            *entry["required_tools"],
+            *entry.get("optional_tools", []),
+        ],
         "hash": content_hash,
         "content": prompt_body,
     }
@@ -308,15 +311,24 @@ def _validate_remediation(entry: Mapping[str, Any], result: dict[str, Any]) -> N
     result["remediation"] = receipt.public_dict()
 
 
+def _optional_tools(entry: Mapping[str, Any], required_tools: list[str]) -> list[str]:
+    optional_tools = _string_list(entry, "optional_tools") if "optional_tools" in entry else []
+    if set(required_tools) & set(optional_tools):
+        raise BundledRosterError("bundled roster required and optional tools overlap")
+    return optional_tools
+
+
 def _validate_agent(entry: object, *, source: Mapping[str, str]) -> dict[str, Any]:
-    if not isinstance(entry, dict) or set(entry) not in {
-        _AGENT_FIELDS,
-        _AGENT_FIELDS | _AGENT_OPTIONAL_FIELDS,
-    }:
+    if (
+        not isinstance(entry, dict)
+        or not set(entry) >= _AGENT_FIELDS
+        or not set(entry) <= _AGENT_FIELDS | _AGENT_OPTIONAL_FIELDS
+    ):
         raise BundledRosterError("bundled roster agent entry is invalid")
     result: dict[str, Any] = {field: _required_text(entry, field) for field in _TEXT_FIELDS}
     for field in _LIST_FIELDS:
         result[field] = _string_list(entry, field)
+    result["optional_tools"] = _optional_tools(entry, result["required_tools"])
 
     slug = result["slug"]
     if not _SLUG.fullmatch(slug):
@@ -514,6 +526,7 @@ def bundled_roster() -> list[dict[str, Any]]:
             "preferred_when": list(entry["preferred_when"]),
             "avoid_when": list(entry["avoid_when"]),
             "required_tools": list(entry["required_tools"]),
+            "optional_tools": list(entry.get("optional_tools", [])),
             "supported_hosts": list(entry["supported_hosts"]),
             "supported_platforms": list(entry["supported_platforms"]),
             "authority": entry["authority"],
@@ -529,7 +542,10 @@ def bundled_roster() -> list[dict[str, Any]]:
             "audit_revision": entry["audit_revision"],
             "audit_status": entry["audit_status"],
             "findings": list(entry["findings"]),
-            "tool_affinity": list(entry["required_tools"]),
+            "tool_affinity": [
+                *entry["required_tools"],
+                *entry.get("optional_tools", []),
+            ],
             "source": source["repository"],
             "source_id": "agency-agents",
             "source_version": source["revision"],

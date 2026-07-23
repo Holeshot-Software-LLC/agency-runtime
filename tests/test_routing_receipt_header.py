@@ -18,6 +18,10 @@ from agency_runtime.core.header.contract import (
     format_header,
     validate_completion_policy,
 )
+from agency_runtime.core.header.explanations import (
+    humanize_effect_codes,
+    humanize_reason_codes,
+)
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector import receipt_projection as receipts
@@ -153,6 +157,32 @@ def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:
     assert secret not in json.dumps(receipt)
     assert "INJECT" not in json.dumps(receipt)
     assert normalize_durable_routing_receipt({"receipt_version": 999}) is None
+
+
+def test_disabled_higher_ranked_specialist_is_visible_in_header_evidence() -> None:
+    routing = _routing("Implement the TypeScript change.", "trace-disabled")
+    routing["disabled_candidate_shadows"] = [
+        {
+            "agent_id": "typescript-application-engineer",
+            "rank": 1,
+            "reason_codes": ["agent_disabled"],
+            "fallback_agent_id": "backend-service-engineer",
+            "tradeoff": "The higher deterministic match is unavailable under current policy.",
+        }
+    ]
+
+    receipt = project_durable_routing_receipt(routing)
+
+    assert "disabled_candidate:typescript-application-engineer" in receipt["reason_codes"]
+    assert "disabled_specialist_left_unselected" in receipt["effect_codes"]
+    assert (
+        "typescript application engineer would have ranked higher"
+        in humanize_reason_codes(receipt["reason_codes"]).casefold()
+    )
+    assert (
+        "stronger disabled specialist was left out"
+        in humanize_effect_codes(receipt["effect_codes"]).casefold()
+    )
 
 
 def test_routing_receipt_projection_rejects_malformed_and_bounds_every_collection() -> None:
@@ -344,11 +374,10 @@ def test_ready_receipt_persists_once_and_drives_all_six_header_fields(
         "ready-receipt",
         evidence_snapshot=snapshot,
     )
-    assert fields["why"].startswith("reason_codes=")
-    assert "requested_question_task_or_output" in fields["why"]
-    assert fields["how_it_shaped_outcome"].startswith("effect_codes=")
-    assert "inference_attempted" in fields["how_it_shaped_outcome"]
-    assert "eligibility_exclusions_applied" in fields["how_it_shaped_outcome"]
+    assert "substantive answer or action" in fields["why"]
+    assert "required capabilities" in fields["why"]
+    assert "Agency attempted inference" in fields["how_it_shaped_outcome"]
+    assert "eligibility exclusions were applied" in fields["how_it_shaped_outcome"]
 
     first = finalize_header(
         "Body",
@@ -475,9 +504,9 @@ def test_legacy_ready_recipe_without_receipt_remains_readable_but_reports_unavai
         "legacy-receipt",
         evidence_snapshot=snapshot,
     )
-    assert fields["why"].startswith("reason_codes=")
+    assert "substantive answer or action" in fields["why"]
     assert fields["how_it_shaped_outcome"] == (
-        "unavailable - no authoritative current-turn effect codes"
+        "Unavailable - no authoritative routing effect was recorded for this turn."
     )
 
 

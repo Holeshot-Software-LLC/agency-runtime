@@ -9,6 +9,7 @@ from typing import Any
 
 from agency_runtime.core.resident_managers import is_resident_manager_slug
 from agency_runtime.core.specialist_contracts import (
+    MAX_DURABLE_SPECIALIST_REFERENCES,
     MAX_SELECTED_SPECIALISTS,
     MAX_SPECIALIST_PROMPT_CHARS,
 )
@@ -60,6 +61,12 @@ def _bounded_text(value: Any, maximum: int) -> str:
     return str(value or "").strip()[:maximum]
 
 
+def _bounded_prompt_body(value: Any, maximum: int) -> str:
+    """Preserve the exact prompt bytes admitted by the immutable prompt ceiling."""
+
+    return (value if isinstance(value, str) else str(value or ""))[:maximum]
+
+
 class SpecialistPromptDeliveryError(RuntimeError):
     """Raised when a selected prompt cannot be delivered exactly within policy."""
 
@@ -87,6 +94,7 @@ def _selected_prompts(
     routing: Mapping[str, Any],
     *,
     disabled_agents: Container[str] | None = None,
+    maximum_specialists: int = MAX_SELECTED_SPECIALISTS,
 ) -> list[dict[str, Any]]:
     active_slugs = {_slug(agent) for agent in catalog if _slug(agent)}
     selected: list[dict[str, Any]] = []
@@ -110,7 +118,7 @@ def _selected_prompts(
             continue
         selected.append(prompt)
         seen.add(slug)
-        if len(selected) >= MAX_SELECTED_SPECIALISTS:
+        if len(selected) >= max(0, min(maximum_specialists, MAX_DURABLE_SPECIALIST_REFERENCES)):
             break
     return selected
 
@@ -137,7 +145,7 @@ def _prompt_context_lines(prompt: Mapping[str, Any]) -> list[str]:
     return [
         f"- {slug}: {description}{capability_text}",
         "  Instructions: "
-        + _bounded_text(
+        + _bounded_prompt_body(
             prompt.get("prompt_body"),
             MAX_SPECIALIST_PROMPT_CHARS,
         ),
@@ -189,93 +197,62 @@ def format_isolated_specialist_context(
 ) -> str:
     """Return a compact recipe that keeps prompt bodies out of parent history."""
 
+    normalized_host = str(host or "").strip().casefold()
+    native_tools = {
+        "codex": "`spawn_agent`",
+        "claude": "`Agent`",
+        "hermes": "`delegate_task`",
+        "openclaw": "`sessions_spawn`",
+    }
+    native_tool = native_tools.get(normalized_host)
+    if native_tool is None:
+        raise ValueError(f"isolated specialist delivery is unsupported for host: {host}")
     slugs = ", ".join(reference.slug for reference in references) or "none"
-    native_tool = "`spawn_agent`" if host == "codex" else "`Agent`"
     requirement = "Before substantive work" if nontrivial else "When specialist work is needed"
     if unit_plan:
-        if host == "claude":
-            activation_flow = (
-                "For every accepted row in the [AGENCY DELEGATION PLAN] below, dispatch one "
-                "native `Agent` with its `description` set to that row's unchanged "
-                "`work_unit_id`. Do not call `agency.prepare_delegation` in the "
-                "parent and do not place an activation token in the Agent prompt. "
-                "The installed PreToolUse and SubagentStart hooks verify the exact "
-                f"plan row for `session_id={session_id}` and `trace_id={trace_id}`, "
-                "then add a content-free child recipe and that child's native identity. "
-                "Inside the child only, follow that recipe to call "
-                "`agency.prepare_delegation` and immediately consume its one-use result "
-                "with `agency.load_specialist`. For a declined row, record one explicit "
-                "`agency.decline_delegation` receipt instead"
-            )
-        else:
-            activation_flow = (
-                "For every accepted row in the [AGENCY DELEGATION PLAN] below, call "
-                "`agency.prepare_delegation` exactly once in the parent with that row's "
-                "`recommended_agent` as the slug and its unchanged `work_unit_id`, "
-                f"`session_id={session_id}`, and `trace_id={trace_id}`; pass each "
-                "returned `activation_token` only to its isolated child and set the "
-                "native `task_name` to that row's legal `native_task_name` so the "
-                "post-tool receipt can reconcile. Prefix the child's task with a "
-                "bounded `[AGENCY CHILD PREFLIGHT v1]` recipe containing only the "
-                "parent session ID, parent trace ID, unchanged work-unit ID, selected "
-                "slug, and that one-use activation token. The installed SubagentStart "
-                "hook supplies the native child identity separately. Inside that child, call "
-                "`agency.load_specialist` with the same slug, correlation, work-unit "
-                "ID, activation token, and injected native identity. For a declined row, "
-                "record one explicit `agency.decline_delegation` receipt instead"
-            )
+        native_binding = {
+            "codex": "set `task_name` to that row's legal `native_task_name`",
+            "claude": "set `description` to that row's unchanged `work_unit_id`",
+            "hermes": "pass that row's unchanged `work_unit_id` and exact `goal`",
+            "openclaw": "pass that row's unchanged `work_unit_id` and exact `goal`",
+        }[normalized_host]
+        hook_delivery = (
+            "the installed PreToolUse hook verifies the exact persisted row, injects "
+            "the selected immutable specialist prompt only into that child launch, and "
+            "issues its one-use grant. PostToolUse consumes the grant only after "
+            "authoritative native launch evidence supplies the child identity"
+            if normalized_host in {"codex", "claude"}
+            else "the installed child pre-LLM hook verifies the exact persisted row, "
+            "injects the selected immutable specialist prompt only at that child's "
+            "inference boundary, and consumes its one-use grant against host-issued "
+            "child lineage"
+        )
+        activation_flow = (
+            "For every accepted row in the [AGENCY DELEGATION PLAN] below, dispatch one "
+            f"native {native_tool} and {native_binding}. Do not call "
+            f"`agency.prepare_delegation` or `agency.load_specialist`; {hook_delivery}. "
+            "For a declined row, "
+            "record one explicit `agency.decline_delegation` receipt instead"
+        )
+        execution_instruction = (
+            f"{requirement}, use the host-native {native_tool} worker. {activation_flow}. "
+            "Apply the returned exact-version prompt only inside the child, and return "
+            "a bounded result. Do not load a specialist prompt body in the parent"
+        )
     else:
-        from agency_runtime.core.delegation.native_labels import (
-            codex_task_name_for_work_unit,
+        if references:
+            raise RuntimeError("isolated specialist selection lacks an exact unit-agent plan")
+        execution_instruction = (
+            "No specialist assignment was accepted for this turn. Do not dispatch an "
+            "untyped native worker or claim Agency participation. Continue under the "
+            "native host's own policy without attributing specialist work to Agency"
         )
-
-        grants = "; ".join(
-            (
-                f"{reference.slug} => work_unit_id=specialist:{reference.slug}, "
-                "native_task_name="
-                f"{codex_task_name_for_work_unit(f'specialist:{reference.slug}')}"
-                if host == "codex"
-                else f"{reference.slug} => work_unit_id=specialist:{reference.slug}"
-            )
-            for reference in references
-        )
-        if host == "claude":
-            activation_flow = (
-                "For every selected slug, dispatch one native `Agent` and set its "
-                f"`description` to the exact work-unit binding ({grants or 'none'}). "
-                "Do not call `agency.prepare_delegation` in the parent and do not "
-                "place an activation token in the Agent prompt. The installed "
-                "PreToolUse and SubagentStart hooks verify that binding for "
-                f"`session_id={session_id}` and `trace_id={trace_id}`, then add a "
-                "content-free child recipe and that child's native identity. Inside "
-                "the child only, follow that recipe to call `agency.prepare_delegation` "
-                "and immediately consume its one-use result with "
-                "`agency.load_specialist`"
-            )
-        else:
-            activation_flow = (
-                "In the parent, call `agency.prepare_delegation` once for every "
-                f"selected slug with its exact work-unit binding ({grants or 'none'}), "
-                f"`session_id={session_id}`, and `trace_id={trace_id}`; pass each "
-                "returned `activation_token` only to its isolated child and set the "
-                "native `task_name` to that binding's legal `native_task_name` so the "
-                "post-tool receipt can reconcile. Prefix the child's task with a "
-                "bounded `[AGENCY CHILD PREFLIGHT v1]` recipe containing only the "
-                "parent session ID, parent trace ID, exact work-unit binding, selected "
-                "slug, and that one-use activation token. The installed SubagentStart "
-                "hook supplies the native child identity separately. Inside that child, call "
-                "`agency.load_specialist` with the same slug, correlation, work-unit "
-                "ID, activation token, and injected native identity"
-            )
     return (
         f"[AGENCY PREFLIGHT] Current isolated turn {trace_id}; unit-plan specialists: "
         f"{slugs}. "
         "Earlier Agency turn recipes are expired. Full specialist prompt bodies are "
-        f"excluded from this persistent {host} parent transcript. {requirement}, use "
-        f"the host-native {native_tool} worker. {activation_flow}. Apply the "
-        "returned exact-version prompt only inside the child, "
-        "and return a bounded result. Do not load a specialist prompt body in the "
-        "parent. Native worker labels are not Agency specialist identities. Preserve "
+        f"excluded from this persistent {normalized_host} parent transcript. "
+        f"{execution_instruction}. Native worker labels are not Agency specialist identities. Preserve "
         "delegated goal text exactly from the current user request. Include the six-line "
         "Agency evidence header in the final parent response. Start the response with "
         "exactly these six field labels, in this order, and fill values only from "
@@ -320,9 +297,10 @@ def rebuild_versioned_specialist_context(
     *,
     maximum_chars: int = MAX_SPECIALIST_CONTEXT_CHARS,
     disabled_agents: Container[str] | None = None,
+    include_context: bool = True,
 ) -> LoadedSpecialistContext:
     """Rebuild prompt context from exact immutable versions without evidence writes."""
-    if len(references) > MAX_SELECTED_SPECIALISTS:
+    if len(references) > MAX_DURABLE_SPECIALIST_REFERENCES:
         raise RuntimeError("ready preflight references too many specialists")
     if not references:
         return LoadedSpecialistContext(context="", slugs=(), references=())
@@ -383,9 +361,12 @@ def rebuild_versioned_specialist_context(
         prompts.append(prompt)
         exact_references.append(reference)
 
-    context, included = _fit_loaded_context(prompts, maximum_chars)
-    if len(included) != len(prompts):
-        raise RuntimeError("ready preflight specialist prompts exceed the delivery ceiling")
+    if include_context:
+        context, included = _fit_loaded_context(prompts, maximum_chars)
+        if len(included) != len(prompts):
+            raise RuntimeError("ready preflight specialist prompts exceed the delivery ceiling")
+    else:
+        context = ""
     return LoadedSpecialistContext(
         context=context,
         slugs=tuple(reference.slug for reference in exact_references),
@@ -436,6 +417,34 @@ def hydrate_selected_specialist_context(
     )
 
 
+def hydrate_selected_specialist_references(
+    store: Store,
+    catalog: Sequence[Mapping[str, Any]],
+    routing: Mapping[str, Any],
+    *,
+    session_id: str,
+    trace_id: str,
+    disabled_agents: Container[str] | None = None,
+) -> LoadedSpecialistContext:
+    """Validate every isolated assignment while keeping prompt bodies out of the parent."""
+
+    if not str(session_id or "").strip() or not str(trace_id or "").strip():
+        raise ValueError("session_id and trace_id are required for specialist hydration")
+    prompts = _selected_prompts(
+        store,
+        catalog,
+        routing,
+        disabled_agents=disabled_agents,
+        maximum_specialists=MAX_DURABLE_SPECIALIST_REFERENCES,
+    )
+    references = tuple(_prompt_reference(prompt) for prompt in prompts)
+    return LoadedSpecialistContext(
+        context="",
+        slugs=tuple(reference.slug for reference in references),
+        references=references,
+    )
+
+
 __all__ = [
     "MAX_SELECTED_SPECIALISTS",
     "MAX_SPECIALIST_CONTEXT_CHARS",
@@ -445,5 +454,6 @@ __all__ = [
     "SpecialistPromptReference",
     "format_isolated_specialist_context",
     "hydrate_selected_specialist_context",
+    "hydrate_selected_specialist_references",
     "rebuild_versioned_specialist_context",
 ]

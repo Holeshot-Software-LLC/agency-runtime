@@ -657,6 +657,15 @@ def test_crud_search_and_explain_commands(monkeypatch, capsys):
         "capture_routing_snapshot",
         lambda _store: SimpleNamespace(catalog=store.catalog, config=object()),
     )
+    monkeypatch.setattr(
+        subject,
+        "capture_operational_routing_snapshot",
+        lambda _store: SimpleNamespace(
+            catalog=store.catalog,
+            config=object(),
+            roster_generation=0,
+        ),
+    )
     monkeypatch.setattr(subject, "pre_narrow", lambda query, catalog, limit: (catalog, [0.75]))
     assert subject._search("review", 3)[0]["score"] == 0.75
     monkeypatch.setattr(

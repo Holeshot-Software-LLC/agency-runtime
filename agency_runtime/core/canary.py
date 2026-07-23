@@ -40,10 +40,13 @@ from agency_runtime.core.store.sqlite import (
 )
 
 CANARY_PROMPT = (
-    "Agency Runtime live installation canary. Reply with a concise confirmation "
-    "and obey the installed Agency Runtime routing and final-response contract. "
-    "Do not modify files, call external services, or expose secrets."
+    "Review this proposed Python change: in a text-normalization helper, replace "
+    "'return value' with 'return value.strip()'. In one concise sentence, identify "
+    "the main behavioral risk while following the installed Agency Runtime routing "
+    "and required response format. Do not modify files, use tools, call external "
+    "services, or expose secrets."
 )
+CANARY_EXPECTED_SPECIALIST = "code-reviewer"
 NATIVE_ONLY_CANARY_PROMPT = (
     "Agency Runtime native-only installation canary. Reply with a concise plain "
     "confirmation. Do not emit an Agency header, modify files, call external "
@@ -333,6 +336,65 @@ def _complete_successful_canary(
     report["canary_passed"] = True
 
 
+def _terminate_failed_canary_runs(
+    report: dict[str, Any],
+    *,
+    host: str,
+    preparation: Any,
+    evidence: Mapping[str, Any] | None,
+) -> None:
+    """Close only active runs bound to this exact failed canary request."""
+
+    if (
+        preparation.store is None
+        or preparation.expected_query_hash is None
+        or not isinstance(evidence, Mapping)
+    ):
+        return
+    new_ids = evidence.get("new_ids")
+    run_ids = new_ids.get("runs", []) if isinstance(new_ids, Mapping) else []
+    closed: list[str] = []
+    errors = 0
+    for run_id in run_ids:
+        try:
+            if preparation.store.fail_canary_run(
+                str(run_id),
+                host=host,
+                request_fingerprint=preparation.expected_query_hash,
+            ):
+                closed.append(str(run_id))
+        except Exception:
+            errors += 1
+    report["failed_run_cleanup"] = {
+        "candidate_count": len(run_ids),
+        "closed_count": len(closed),
+        "closed_run_ids": closed,
+    }
+    if errors:
+        report["unmet_prerequisites"].append(
+            "one or more failed canary runs could not be terminated"
+        )
+
+
+def _report_failed_canary_invocation(
+    report: dict[str, Any],
+    *,
+    host: str,
+    preparation: Any,
+    evidence: Mapping[str, Any] | None,
+    error: str,
+) -> None:
+    if evidence is not None:
+        report["evidence"] = evidence
+    _terminate_failed_canary_runs(
+        report,
+        host=host,
+        preparation=preparation,
+        evidence=evidence,
+    )
+    report["unmet_prerequisites"].append(error)
+
+
 def run_canary(
     host: str,
     *,
@@ -397,7 +459,13 @@ def run_canary(
         expected_query_hash=preparation.expected_query_hash,
     )
     if outcome.error:
-        report["unmet_prerequisites"].append(outcome.error)
+        _report_failed_canary_invocation(
+            report,
+            host=host,
+            preparation=preparation,
+            evidence=outcome.evidence,
+            error=outcome.error,
+        )
         return report
     if outcome.result is None or outcome.evidence is None:
         report["unmet_prerequisites"].append(
@@ -410,6 +478,12 @@ def run_canary(
         read_failure=("authoritative Agency master control could not be re-read after invocation"),
         drift_failure="Agency master control changed during the canary invocation",
     ):
+        _terminate_failed_canary_runs(
+            report,
+            host=host,
+            preparation=preparation,
+            evidence=outcome.evidence,
+        )
         return report
     proof = _evaluate_proof(
         host,
@@ -438,6 +512,13 @@ def run_canary(
             master_before=master_before,
             preparation=preparation,
             proof=proof,
+            evidence=outcome.evidence,
+        )
+    else:
+        _terminate_failed_canary_runs(
+            report,
+            host=host,
+            preparation=preparation,
             evidence=outcome.evidence,
         )
     return report

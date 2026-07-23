@@ -3248,7 +3248,9 @@
     ],
     "required_tools": [
       "file-read",
-      "git",
+      "git"
+    ],
+    "optional_tools": [
       "security-scanner"
     ],
     "supported_hosts": [
@@ -3282,7 +3284,7 @@
     ],
     "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
     "content_hash": "ac2196a914bfb00dddfef93edb9eef1860f924f9582d814cd303ab45e4fc71bc",
-    "audit_revision": "1",
+    "audit_revision": "2",
     "audit_status": "approved",
     "findings": [
       "unsupported_memory_assumption",
@@ -3693,7 +3695,13 @@
     ],
     "task_types": [
       "analysis",
+      "audit",
+      "coordination",
+      "governance",
+      "investigation",
+      "operations",
       "planning",
+      "risk-analysis",
       "review"
     ],
     "preferred_when": [
@@ -3737,7 +3745,7 @@
     ],
     "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
     "content_hash": "a648cf5a0b40d8726ccb61ea48f1dee2797691f1b52395c59af91c7a5f511278",
-    "audit_revision": "1",
+    "audit_revision": "2",
     "audit_status": "approved",
     "findings": [
       "unsupported_memory_assumption",

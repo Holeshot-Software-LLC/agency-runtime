@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import os
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
@@ -19,8 +21,9 @@ from agency_runtime.core.header.contract import (
     _delegation_line,
     validate_completion_policy,
 )
+from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.installer import seed_starter_roster
-from agency_runtime.core.preflight import run_preflight
+from agency_runtime.core.preflight import PreflightResult, run_preflight
 from agency_runtime.core.store import schema as store_schema
 from agency_runtime.core.store.schema import (
     SCHEMA_VERSION,
@@ -39,9 +42,9 @@ How it shaped outcome: The review was applied in an isolated worker.
 
 Done.
 """
-_REQUEST = "Review and refactor this code for security and correctness"
+_REQUEST = "Review and refactor this Python code for security and correctness"
 _MULTI_REQUEST = (
-    "Review and refactor this code for security and correctness, "
+    "Review and refactor this Python code for security and correctness, "
     "then document the deployment workflow."
 )
 
@@ -66,13 +69,22 @@ def _optional_selected(selected: tuple[str, ...]) -> str:
     return next(slug for slug in selected if slug not in PROTECTED_AGENT_SLUGS)
 
 
-def _isolated_turn(
+def _capability(host: str, session_id: str, trace_id: str):
+    return native_adapter_capability_receipt(
+        host,
+        platform="windows" if os.name == "nt" else "linux",
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+
+
+def _isolated_preflight(
     path: Path,
     *,
     host: str = "codex",
     user_message: str = _REQUEST,
     minimum_selected: int = 1,
-) -> tuple[Store, tuple[str, ...]]:
+) -> tuple[Store, PreflightResult]:
     store = Store(path)
     result = run_preflight(
         store,
@@ -80,8 +92,25 @@ def _isolated_turn(
         trace_id="trace",
         user_message=user_message,
         host=host,
+        capability_receipt=_capability(host, "session", "trace"),
     )
     assert len(result.selected_specialists) >= minimum_selected
+    return store, result
+
+
+def _isolated_turn(
+    path: Path,
+    *,
+    host: str = "codex",
+    user_message: str = _REQUEST,
+    minimum_selected: int = 1,
+) -> tuple[Store, tuple[str, ...]]:
+    store, result = _isolated_preflight(
+        path,
+        host=host,
+        user_message=user_message,
+        minimum_selected=minimum_selected,
+    )
     return store, result.selected_specialists
 
 
@@ -105,6 +134,126 @@ def _activation_work_unit(store: Store, slug: str) -> str:
         None,
     )
     return str(planned["work_unit_id"]) if planned is not None else f"specialist:{slug}"
+
+
+def _planned_goal(context: str, work_unit_id: str) -> str:
+    prefix = f"- unit={work_unit_id};"
+    line = next(item for item in context.splitlines() if item.startswith(prefix))
+    return str(json.loads(line.split("; goal=", 1)[1]))
+
+
+@pytest.mark.parametrize(
+    ("host", "native_tool"),
+    [
+        ("codex", "`spawn_agent`"),
+        ("claude", "`Agent`"),
+        ("openclaw", "`sessions_spawn`"),
+        ("hermes", "`delegate_task`"),
+    ],
+)
+def test_every_persistent_host_parent_receives_an_exact_specialist_plan(
+    tmp_path: Path,
+    host: str,
+    native_tool: str,
+) -> None:
+    store, result = _isolated_preflight(
+        tmp_path / f"{host}-parent-plan.db",
+        host=host,
+    )
+    snapshot = store.get_completion_evidence_snapshot("session", "trace")
+    plan = snapshot["unit_agent_plan"]
+
+    assert result.selected_specialists
+    assert plan
+    assert set(result.selected_specialists) == {
+        slug for row in plan for slug in row["recommended_agents"]
+    }
+    assert result.loaded_specialists == ()
+    assert "[AGENCY DELEGATION PLAN]" in result.context
+    assert native_tool in result.context
+    assert all(row["goal_hash"] and row["resource_hashes"] for row in plan)
+
+
+@pytest.mark.parametrize("host", ["openclaw", "hermes"])
+def test_direct_native_child_preflight_consumes_the_exact_parent_activation(
+    tmp_path: Path,
+    host: str,
+) -> None:
+    store, parent = _isolated_preflight(
+        tmp_path / "openclaw-direct-child.db",
+        host=host,
+    )
+    parent_snapshot = store.get_completion_evidence_snapshot("session", "trace")
+    plan = parent_snapshot["unit_agent_plan"][0]
+    unit = str(plan["work_unit_id"])
+    slug = str(plan["recommended_agent"])
+    goal = _planned_goal(parent.context, unit)
+    backend = "sessions_spawn" if host == "openclaw" else "delegate_task"
+    worker_id = f"{host}-child-session"
+    native_run_id = f"{host}-subagent:{worker_id}"
+    assert (
+        mark_delegation_executed(
+            store,
+            session_id="session",
+            trace_id="trace",
+            host=host,
+            backend=backend,
+            agent=slug,
+            goal=goal,
+            work_unit_id=unit,
+            executed_worker_kind="generic-worker",
+            executed_worker_id=worker_id,
+            native_run_id=native_run_id,
+        )
+        == 1
+    )
+    store.record_native_child_started(
+        host=host,
+        backend=backend,
+        session_id="session",
+        trace_id="trace",
+        work_unit_id=unit,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+
+    child = run_preflight(
+        store,
+        session_id="child-session",
+        trace_id="child-trace",
+        user_message=goal,
+        host=host,
+        capability_receipt=_capability(host, "child-session", "child-trace"),
+        parent_session_id="session",
+        parent_trace_id="trace",
+        native_worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+
+    assert child.routing["source"] == "parent_unit_reuse"
+    assert child.routing["status"] == "parent_unit_reused"
+    assert child.loaded_specialists == (slug,)
+    assert child.selected_specialists == (slug,)
+    reference = next(
+        item for item in parent_snapshot["selected_specialists"] if item["slug"] == slug
+    )
+    prompt = store.get_versioned_specialist_prompt(
+        slug,
+        reference["version"],
+        reference["hash"],
+    )
+    assert prompt["prompt_body"] in child.context
+    completed_parent = store.get_completion_evidence_snapshot("session", "trace")
+    activation = next(
+        item for item in completed_parent["specialist_activations"] if item["work_unit_id"] == unit
+    )
+    assert activation["specialist_slug"] == slug
+    assert activation["worker_id"] == worker_id
+    assert activation["native_run_id"] == native_run_id
+    delegation = next(
+        item for item in completed_parent["delegations"] if item["work_unit_id"] == unit
+    )
+    assert delegation["activation_receipt_id"] == activation["id"]
 
 
 def _activate(
@@ -492,6 +641,82 @@ def test_official_isolated_native_shapes_reciprocally_bind_receipt(
     assert _delegation_line([event]) == expected_header.format(slug=slug)
 
 
+@pytest.mark.parametrize(
+    ("host", "tool_name", "label_field", "task_field", "worker_id", "native_run_id"),
+    [
+        (
+            "codex",
+            "spawn_agent",
+            "task_name",
+            "message",
+            "agent-123",
+            "codex-agent:agent-123",
+        ),
+        (
+            "claude",
+            "Agent",
+            "description",
+            "prompt",
+            "claude-worker",
+            "claude-agent:claude-worker",
+        ),
+    ],
+)
+def test_hook_owned_delivery_injects_and_reciprocally_activates_exact_prompt(
+    tmp_path: Path,
+    host: str,
+    tool_name: str,
+    label_field: str,
+    task_field: str,
+    worker_id: str,
+    native_run_id: str,
+) -> None:
+    store, result = _isolated_preflight(tmp_path / f"hook-owned-{host}.db", host=host)
+    selected = result.selected_specialists
+    slug = selected[0]
+    unit = _activation_work_unit(store, slug)
+    goal = _planned_goal(result.context, unit)
+    native_label = codex_task_name_for_work_unit(unit) if host == "codex" else unit
+    bridge = HookBridge(host, store=store)
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "session",
+        "turn_id": "trace",
+        "tool_use_id": f"{host}-tool-use-1",
+        "tool_name": tool_name,
+        "tool_input": {
+            label_field: native_label,
+            task_field: goal,
+            **({"subagent_type": "general-purpose"} if host == "claude" else {}),
+        },
+    }
+
+    pre_tool = bridge.handle(payload)
+    output = pre_tool["hookSpecificOutput"]
+    assert output["permissionDecision"] == "allow"
+    rewritten = output["updatedInput"]
+    assert "[AGENCY EXACT SPECIALIST ACTIVATION v1]" in rewritten[task_field]
+    response_key = "agent_id" if host == "codex" else "agentId"
+    bridge.handle(
+        {
+            **payload,
+            "hook_event_name": "PostToolUse",
+            "tool_input": rewritten,
+            "tool_response": {response_key: worker_id, "status": "completed"},
+        }
+    )
+
+    snapshot = store.get_completion_evidence_snapshot("session", "trace")
+    [activation] = snapshot["specialist_activations"]
+    [event] = [item for item in snapshot["delegations"] if item["work_unit_id"] == unit]
+    assert activation["specialist_slug"] == slug
+    assert activation["worker_id"] == worker_id
+    assert activation["native_run_id"] == native_run_id
+    assert activation["delegation_event_id"] == event["id"]
+    assert event["activation_receipt_id"] == activation["id"]
+    assert event["retrieved_specialist_slug"] == slug
+
+
 def test_all_selected_receipts_require_reciprocal_native_execution(tmp_path: Path) -> None:
     store, selected = _isolated_turn(tmp_path / "reciprocal.db")
     bridge = HookBridge("codex", store=store)
@@ -613,6 +838,7 @@ def test_explicit_config_identity_governs_selection_replay_and_activation(
         user_message=_REQUEST,
         host="codex",
         config=config,
+        capability_receipt=_capability("codex", "custom-session", "custom-trace"),
     )
     assert "code-reviewer" in first.selected_specialists
 
@@ -623,6 +849,7 @@ def test_explicit_config_identity_governs_selection_replay_and_activation(
         user_message=_REQUEST,
         host="codex",
         config=config,
+        capability_receipt=_capability("codex", "custom-session", "custom-trace"),
     )
     assert replay.selected_specialists == first.selected_specialists
     assert replay.context == first.context
@@ -696,6 +923,7 @@ def test_disabled_agent_kills_prepare_and_ready_recipe_replay(
             trace_id="trace",
             user_message=_REQUEST,
             host="codex",
+            capability_receipt=_capability("codex", "session", "trace"),
         )
     assert replay_store.get_run("trace")["status"] == "specialist_disabled"
 
@@ -852,6 +1080,7 @@ def test_oversized_prompt_is_rejected_for_isolated_and_direct_delivery(
             trace_id="trace",
             user_message="Review this code for security and correctness",
             host=host,
+            capability_receipt=_capability(host, "session", "trace"),
         )
 
 

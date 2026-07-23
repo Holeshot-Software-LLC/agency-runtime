@@ -109,6 +109,70 @@ _SET_VALIDATORS = {
         minimum=0.0,
         maximum=1.0,
     ),
+    "delegation.child_inference_budget": lambda item: _integer(
+        item, "delegation.child_inference_budget", minimum=0, maximum=256
+    ),
+    "delegation.child_inference_concurrency": lambda item: _integer(
+        item, "delegation.child_inference_concurrency", minimum=1, maximum=32
+    ),
+    "delegation.child_cache_ttl_seconds": lambda item: _integer(
+        item, "delegation.child_cache_ttl_seconds", minimum=0, maximum=86400
+    ),
+    "workforce.mode": lambda item: _choice(
+        item, "workforce.mode", frozenset({"fast", "balanced", "strict"})
+    ),
+    "workforce.provider": lambda item: _string(item, "workforce.provider", maximum=80).strip(),
+    "workforce.planner_model": lambda item: _string(
+        item, "workforce.planner_model", maximum=512
+    ).strip(),
+    "workforce.recruiter_model": lambda item: _string(
+        item, "workforce.recruiter_model", maximum=512
+    ).strip(),
+    "workforce.hiring_model": lambda item: _string(
+        item, "workforce.hiring_model", maximum=512
+    ).strip(),
+    "workforce.critic_model": lambda item: _string(
+        item, "workforce.critic_model", maximum=512
+    ).strip(),
+    "workforce.fast_call_budget": lambda item: _integer(
+        item, "workforce.fast_call_budget", minimum=1, maximum=8
+    ),
+    "workforce.balanced_call_budget": lambda item: _integer(
+        item, "workforce.balanced_call_budget", minimum=1, maximum=8
+    ),
+    "workforce.strict_call_budget": lambda item: _integer(
+        item, "workforce.strict_call_budget", minimum=1, maximum=8
+    ),
+    "workforce.hiring_call_budget": lambda item: _integer(
+        item, "workforce.hiring_call_budget", minimum=1, maximum=8
+    ),
+    "workforce.max_work_units": lambda item: _integer(
+        item, "workforce.max_work_units", minimum=1, maximum=64
+    ),
+    "workforce.max_selected_per_unit": lambda item: _integer(
+        item, "workforce.max_selected_per_unit", minimum=1, maximum=16
+    ),
+    "workforce.max_selected_total": lambda item: _integer(
+        item, "workforce.max_selected_total", minimum=1, maximum=256
+    ),
+    "workforce.min_confidence": lambda item: _number(
+        item, "workforce.min_confidence", minimum=0.0, maximum=1.0
+    ),
+    "workforce.min_margin": lambda item: _number(
+        item, "workforce.min_margin", minimum=0.0, maximum=1.0
+    ),
+    "workforce.max_hires_per_task": lambda item: _integer(
+        item, "workforce.max_hires_per_task", minimum=0, maximum=16
+    ),
+    "workforce.max_hires_per_day": lambda item: _integer(
+        item, "workforce.max_hires_per_day", minimum=0, maximum=100
+    ),
+    "workforce.auto_promote_successes": lambda item: _integer(
+        item, "workforce.auto_promote_successes", minimum=0, maximum=10_000
+    ),
+    "workforce.contractor_review_days": lambda item: _integer(
+        item, "workforce.contractor_review_days", minimum=1, maximum=3650
+    ),
     "agents.disabled": lambda item: list(normalize_disabled_agents(item)),
     "store.db_path": lambda item: _string(item, "store.db_path", allow_empty=False, maximum=4096),
     "server.host": lambda item: _loopback_host(item, "server.host"),

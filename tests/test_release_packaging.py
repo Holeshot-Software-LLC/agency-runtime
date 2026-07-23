@@ -359,12 +359,12 @@ def test_maintained_release_instructions_require_canonical_git_blob_builder() ->
         assert f"--cov=scripts.{module}" in checklist
 
 
-def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
+def test_coverage_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
     assert workflow["jobs"]["test"]["timeout-minutes"] == 45
 
     for job_name, preparation_name in (
-        ("quality", "Prepare private test runtime"),
+        ("coverage", "Prepare private coverage runtime"),
         ("test", "Prepare private test runtime"),
     ):
         steps = workflow["jobs"][job_name]["steps"]
@@ -374,7 +374,7 @@ def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
             for step in steps
             if step["name"]
             in {
-                "Run warning-strict 100% line and branch coverage",
+                "Run warning-strict coverage shard",
                 "Run tests",
             }
         )
@@ -390,7 +390,7 @@ def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
                 "tests-py${AGENCY_CI_MATRIX_PYTHON}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
             ) in preparation["run"]
         else:
-            assert "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}" in preparation["run"]
+            assert "coverage-${AGENCY_CI_SHARD}-${AGENCY_CI_RUN_ID}" in preparation["run"]
             for module in RELEASE_COVERAGE_MODULES:
                 assert f"--cov=scripts.{module}" in execution["run"]
         for boundary in (
@@ -401,6 +401,62 @@ def test_quality_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
             '"${AGENCY_CI_PYTHON}" -m pytest',
         ):
             assert boundary in execution["run"]
+
+
+def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> None:
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+    jobs = workflow["jobs"]
+    assert "needs" not in jobs["quality-contracts"]
+    assert "needs" not in jobs["coverage"]
+    assert "needs" not in jobs["performance"]
+    assert jobs["coverage"]["strategy"]["matrix"]["include"] == [
+        {"index": 0, "label": 1},
+        {"index": 1, "label": 2},
+        {"index": 2, "label": 3},
+        {"index": 3, "label": 4},
+    ]
+    coverage_run = next(
+        step
+        for step in jobs["coverage"]["steps"]
+        if step["name"] == "Run warning-strict coverage shard"
+    )["run"]
+    assert "scripts.select_test_shard" in coverage_run
+    assert "--cov-report=" in coverage_run
+    assert 'mv .coverage ".coverage.${AGENCY_CI_SHARD}"' in coverage_run
+    assert jobs["coverage-complete"]["needs"] == "coverage"
+    combined_run = jobs["coverage-complete"]["steps"][-1]["run"]
+    assert "coverage combine" in combined_run
+    assert "coverage report --fail-under=100" in combined_run
+    performance_run = jobs["performance"]["steps"][-1]["run"]
+    assert "-m performance" in performance_run
+    quality_steps = {step["name"] for step in jobs["quality-contracts"]["steps"]}
+    assert "Verify fast workflow and documentation contracts" in quality_steps
+    assert "Run dashboard UI tests with 100% coverage" in quality_steps
+    quality_checkout = jobs["quality-contracts"]["steps"][0]
+    assert quality_checkout["with"]["fetch-depth"] == 0
+    assert (
+        quality_checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha || github.sha }}"
+    )
+    quality_contracts = next(
+        step
+        for step in jobs["quality-contracts"]["steps"]
+        if step["name"] == "Verify fast workflow and documentation contracts"
+    )["run"]
+    assert "update_worklog.py --check" in quality_contracts
+    assert "verify_docs.py --require-tracker" in quality_contracts
+    assert "if" not in jobs["test"]
+    assert jobs["quality"]["if"] == "always()"
+    assert set(jobs["quality"]["needs"]) == {
+        "quality-contracts",
+        "coverage-complete",
+        "performance",
+        "test",
+        "windows-portability-contract",
+        "artifact-smoke",
+        "security",
+    }
+    aggregate_run = jobs["quality"]["steps"][0]["run"]
+    assert 'detail.get("result") != "success"' in aggregate_run
 
 
 def test_history_derived_ledgers_use_the_complete_durable_head() -> None:

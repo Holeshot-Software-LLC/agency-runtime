@@ -339,6 +339,44 @@ class DelegationActivationStoreMixin:
         finally:
             conn.close()
 
+    def get_consumed_delegation_lineage(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        specialist_slug: str,
+        work_unit_id: str,
+    ) -> dict[str, str] | None:
+        """Return authoritative native-child lineage for one consumed grant."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        slug = _identity(
+            specialist_slug,
+            maximum=MAX_DELEGATION_AGENT_CHARS,
+            field="specialist_slug",
+            required=True,
+        )
+        unit = _work_unit_identity(work_unit_id, required=True)
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT worker_kind, worker_id, native_run_id "
+                "FROM delegation_activation_consumptions "
+                "WHERE session_id = ? AND trace_id = ? AND work_unit_id = ? "
+                "AND specialist_slug = ? LIMIT 1",
+                (normalized_session, normalized_trace, unit, slug),
+            ).fetchone()
+            if row is None:
+                return None
+            return {
+                "worker_kind": str(row["worker_kind"]),
+                "worker_id": str(row["worker_id"]),
+                "native_run_id": str(row["native_run_id"]),
+            }
+        finally:
+            conn.close()
+
     def prepare_delegation_activation(
         self,
         *,

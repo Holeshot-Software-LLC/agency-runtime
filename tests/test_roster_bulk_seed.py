@@ -13,6 +13,10 @@ import pytest
 from agency_runtime.cli import install_commands
 from agency_runtime.core import installer
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
+from agency_runtime.core.roster.revisions import (
+    decode_revision_metadata,
+    immutable_revision_version,
+)
 from agency_runtime.core.store import roster as roster_module
 from agency_runtime.core.store.roster import BundledRosterReconciliation
 from agency_runtime.core.store.sqlite import Store
@@ -76,6 +80,18 @@ def _version_count(store: Store, slug: str) -> int:
         ).fetchone()
         assert row is not None
         return int(row["count"])
+    finally:
+        conn.close()
+
+
+def _active_definition(store: Store, slug: str) -> dict[str, Any] | None:
+    conn = store._connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM agent_active WHERE agent_slug = ? LIMIT 1",
+            (slug,),
+        ).fetchone()
+        return None if row is None else dict(row)
     finally:
         conn.close()
 
@@ -299,7 +315,7 @@ def test_bundled_reconciliation_upgrades_only_the_legacy_package_shape(
         upgraded=0,
     )
     assert _generation(store) == generation + 1
-    active = store.get_roster_entry("code-reviewer")
+    active = _active_definition(store, "code-reviewer")
     assert active is not None
     assert active["version"] == canonical["version"]
     assert active["hash"] == canonical["hash"]
@@ -307,6 +323,67 @@ def test_bundled_reconciliation_upgrades_only_the_legacy_package_shape(
     assert _version_count(store, "code-reviewer") == 2
     catalog = store.get_active_roster_as_catalog()
     assert catalog[0]["routing_contract_valid"] is True
+
+
+def test_bundled_reconciliation_refreshes_an_exact_older_package_revision(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    canonical = next(
+        agent for agent in STARTER_ROSTER if agent["slug"] == "ai-generated-code-security-auditor"
+    )
+    store.activate_agent(canonical)
+    conn = store._connect()
+    try:
+        current = conn.execute(
+            "SELECT content, metadata FROM agent_versions WHERE agent_slug = ? AND version = ?",
+            (canonical["slug"], canonical["version"]),
+        ).fetchone()
+        assert current is not None
+        metadata = decode_revision_metadata(current["metadata"])
+        assert metadata is not None
+        prior_content = str(current["content"]) + "\nPrior audited package revision.\n"
+        prior_hash = hashlib.sha256(prior_content.encode("utf-8")).hexdigest()
+        prior_version = immutable_revision_version({**metadata, "hash": prior_hash})
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute(
+            "INSERT INTO agent_versions "
+            "(id, agent_slug, version, source_version, source_id, hash, content, metadata, "
+            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                str(uuid4()),
+                canonical["slug"],
+                prior_version,
+                canonical["source_version"],
+                canonical["source_id"],
+                prior_hash,
+                prior_content,
+                current["metadata"],
+                store._now(),
+            ),
+        )
+        conn.execute(
+            "UPDATE agent_active SET version = ?, hash = ? WHERE agent_slug = ?",
+            (prior_version, prior_hash, canonical["slug"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    generation = _generation(store)
+    assert store.reconcile_bundled_agents([canonical]) == BundledRosterReconciliation(
+        added=0,
+        upgraded=1,
+    )
+    assert store.reconcile_bundled_agents([canonical]) == BundledRosterReconciliation(
+        added=0,
+        upgraded=0,
+    )
+    assert _generation(store) == generation + 1
+    active = store.get_roster_entry(canonical["slug"])
+    assert active is not None
+    assert active["version"] == canonical["version"]
+    assert _version_count(store, canonical["slug"]) == 2
 
 
 @pytest.mark.parametrize(
@@ -336,7 +413,7 @@ def test_bundled_reconciliation_preserves_legacy_near_misses(
         upgraded=0,
     )
     assert _generation(store) == generation
-    active = store.get_roster_entry("code-reviewer")
+    active = _active_definition(store, "code-reviewer")
     assert active is not None
     assert active["version"] == "1.0.0"
     assert active["hash"] == legacy_hash
@@ -368,7 +445,7 @@ def test_bundled_reconciliation_requires_exact_historical_identity(
         added=0,
         upgraded=0,
     )
-    active = store.get_roster_entry("code-reviewer")
+    active = _active_definition(store, "code-reviewer")
     assert active is not None
     assert active["hash"] == legacy_hash
     assert active["name"] == (name or _LEGACY_CODE_REVIEWER["name"])

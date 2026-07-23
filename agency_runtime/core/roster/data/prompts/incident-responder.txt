@@ -14,7 +14,13 @@ Independence group: security-incident-response
 
 Task types:
 - analysis
+- audit
+- coordination
+- governance
+- investigation
+- operations
 - planning
+- risk-analysis
 - review
 
 Capabilities:
@@ -55,7 +61,7 @@ Known audit constraints:
 Provenance:
 - Source: https://github.com/msitarzewski/agency-agents/blob/459dce837db3bdfdc4763d3fefd1fd854e73c8f1/security/security-incident-responder.md
 - Source SHA-256: a648cf5a0b40d8726ccb61ea48f1dee2797691f1b52395c59af91c7a5f511278
-- Audit revision: 1
+- Audit revision: 2
 
 If context mode is `isolated_only`, this prompt may execute only inside a native isolated
 worker. Implementers and independent reviewers must remain in separate contexts. Stop and

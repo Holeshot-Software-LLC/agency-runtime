@@ -60,23 +60,33 @@ def specialist_load_guidance(host: object, session_id: str, trace_id: str) -> st
     """Return a truthful loading instruction for ephemeral or persistent hosts."""
 
     normalized = str(host or "").strip().casefold()
-    if normalized in {"codex", "claude"}:
-        native_tool = "`spawn_agent`" if normalized == "codex" else "`Agent`"
+    if normalized in _NATIVE_DELEGATION_TOOLS:
+        native_tool = _NATIVE_DELEGATION_TOOLS[normalized]
         label_instruction = (
             "Use the plan row's legal `native_task_name` for Codex `task_name`; "
             "keep the unchanged internal ID in Agency tool calls. "
             if normalized == "codex"
-            else "Use the unchanged work-unit ID as the native `description`. "
+            else (
+                "Use the unchanged work-unit ID as the native `description`. "
+                if normalized == "claude"
+                else "Preserve the exact goal and unchanged work-unit ID in the request. "
+            )
+        )
+        delivery = (
+            "The installed PreToolUse hook injects the exact selected immutable prompt "
+            "only into that native child, and PostToolUse consumes its one-use grant "
+            "from authoritative child-launch evidence"
+            if normalized in {"codex", "claude"}
+            else "The installed child pre-LLM hook injects the exact selected immutable "
+            "prompt only at that native child's inference boundary and consumes its "
+            "one-use grant against host-issued child lineage"
         )
         return (
-            "call `agency.prepare_delegation` in the parent for every persisted "
-            "unit-agent plan row, using its recommended agent and exact work unit, "
-            f"then dispatch an isolated {native_tool} worker. "
-            f"{label_instruction}Inside that child only, call "
-            "`agency.load_specialist` with the returned one-use activation token, "
-            f"selected slug, `session_id={session_id}`, and `trace_id={trace_id}`. "
-            "Do not load the "
-            "specialist prompt body into the persistent parent transcript"
+            f"dispatch an isolated {native_tool} worker for every accepted persisted "
+            f"unit-agent plan row. {label_instruction}{delivery} for "
+            f"`session_id={session_id}` and `trace_id={trace_id}`. Do not "
+            "call `agency.prepare_delegation` or `agency.load_specialist` manually, and "
+            "do not load the specialist prompt body into the persistent parent transcript"
         )
     return SPECIALIST_TOOL_GUIDANCE
 

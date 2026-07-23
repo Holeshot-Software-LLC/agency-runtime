@@ -211,6 +211,44 @@ def test_restore_reports_failed_active_state_mutation_and_runs_final_verificatio
     ]
 
 
+def test_restored_active_state_waits_for_scheduler_transition(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction = windows._WindowsRestoreTransaction(
+        ctx=_context(),
+        prior_task="prior",
+        prior_manifest=b"manifest",
+        prior_active=False,
+        created_registration=False,
+        command_runner=None,
+        restored_xml="prior",
+    )
+    monkeypatch.setattr(
+        windows,
+        "_assert_windows_task_unchanged",
+        lambda *_args, **_kwargs: _result("exact"),
+    )
+    monkeypatch.setattr(
+        windows,
+        "_run",
+        lambda *_args, **_kwargs: _result("end"),
+    )
+    monkeypatch.setattr(
+        windows,
+        "_wait_windows_running_state",
+        lambda *_args, **_kwargs: (True, [_result("idle")]),
+    )
+
+    windows._set_restored_windows_active_state(transaction)
+
+    assert transaction.error is None
+    assert [item.command[0] for item in transaction.results] == [
+        "exact",
+        "end",
+        "idle",
+    ]
+
+
 def test_created_task_recheck_conflict_invalidates_manifest_without_deleting(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -563,6 +601,7 @@ def test_active_state_is_reconciled_in_both_directions(
     next_active = _sequence(
         [
             (not prior_active, _result("active-before")),
+            (prior_active, _result("active-transition")),
             (prior_active, _result("active-final")),
         ]
     )

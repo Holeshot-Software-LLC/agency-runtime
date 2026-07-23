@@ -24,6 +24,11 @@ from agency_runtime.core.installer_contracts import (
     NativeCommandResult,
     openclaw_version_supported,
 )
+from agency_runtime.core.installer_payloads import bind_launcher_artifact_paths
+from agency_runtime.core.launcher_bootstrap import (
+    persistent_python_executable,
+    prepare_private_package_runtime,
+)
 from agency_runtime.core.openclaw_streaming_policy import retained_backup_status
 from agency_runtime.core.process_argv import (
     PersistentArtifactIdentity,
@@ -303,7 +308,8 @@ def _staged_install_result(
 def _freeze_adapter_launcher(
     files: dict[str, str],
 ) -> tuple[dict[str, str], tuple[PersistentArtifactIdentity, ...]]:
-    identities = snapshot_persistent_artifacts(_launcher_artifact_paths())
+    paths = _launcher_artifact_paths()
+    identities = snapshot_persistent_artifacts(paths)
     marker = {
         "schema_version": 1,
         "artifacts": [identity.manifest() for identity in identities],
@@ -312,6 +318,16 @@ def _freeze_adapter_launcher(
         **files,
         ADAPTER_LAUNCHER_MANIFEST: json.dumps(marker, indent=2) + "\n",
     }, identities
+
+
+def _prepare_adapter_launcher_paths() -> tuple[str, str]:
+    """Return one trusted launcher pair backed by a private runtime closure."""
+
+    paths = _launcher_artifact_paths()
+    staged = prepare_private_package_runtime(paths[1])
+    prepared = (persistent_python_executable(paths[0]), staged)
+    snapshot_persistent_artifacts(prepared)
+    return prepared
 
 
 def _openclaw_failure_facts(
@@ -491,11 +507,6 @@ def install_agent_adapter(
     effective_cfg = _resolve_install_config(cfg, home_dir=home_dir)
     from agency_runtime.core.runtime_control import runtime_control_path
 
-    files, primary = _bundle_files(
-        host,
-        effective_cfg,
-        runtime_control_path_value=str(runtime_control_path(home_dir=home_dir)),
-    )
     executable = _resolve_binary(host, binary_resolver)
     root_exists, current_root, _markers = _root_state(host, home_dir=home_dir)
     if not (executable or root_exists or current_root):
@@ -506,7 +517,14 @@ def install_agent_adapter(
             "host": host,
         }
     try:
-        files, launcher_artifacts = _freeze_adapter_launcher(files)
+        launcher_paths = _prepare_adapter_launcher_paths()
+        with bind_launcher_artifact_paths(launcher_paths):
+            files, primary = _bundle_files(
+                host,
+                effective_cfg,
+                runtime_control_path_value=str(runtime_control_path(home_dir=home_dir)),
+            )
+            files, launcher_artifacts = _freeze_adapter_launcher(files)
     except (OSError, ValueError) as exc:
         return {
             "ok": False,

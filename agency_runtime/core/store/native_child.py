@@ -18,6 +18,7 @@ from agency_runtime.core.delegation_status import (
 )
 from agency_runtime.core.store.projections import project_delegation_detail
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
+from agency_runtime.core.store.workforce import record_native_assignment_outcome
 
 _MAX_WORKER_ID_CHARS = 256
 _MAX_NATIVE_RUN_ID_CHARS = 256
@@ -428,6 +429,20 @@ class NativeChildStoreMixin:
                     outcome=normalized_outcome,
                     error=error,
                 )
+                delegation = conn.execute(
+                    "SELECT * FROM delegation_events WHERE id = ?",
+                    (delegation["id"],),
+                ).fetchone()
+            workforce_outcome_id = (
+                None
+                if delegation is None
+                else record_native_assignment_outcome(
+                    conn,
+                    delegation=delegation,
+                    worker_run_id=row_id,
+                    outcome=normalized_outcome,
+                )
+            )
             terminal = conn.execute(
                 "SELECT id, delegation_event_id, backend, session_id, trace_id, "
                 "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, ended_at "
@@ -440,6 +455,7 @@ class NativeChildStoreMixin:
             return {
                 **dict(terminal),
                 "outcome": normalized_outcome,
+                "workforce_outcome_id": workforce_outcome_id,
             }
         except Exception:
             conn.rollback()

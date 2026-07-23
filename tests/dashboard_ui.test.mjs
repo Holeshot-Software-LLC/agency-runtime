@@ -452,6 +452,499 @@ test("app.js renders provider configuration without reflecting stored API keys",
   );
 });
 
+test("provider builder exposes and stages a LiteLLM router alias", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("this test does not fetch");
+  });
+  const providers = new FakeNode("config-providers");
+  providers.dataset.configPath = "providers";
+  providers.dataset.valueType = "json";
+  providers.labels = [{ textContent: "Providers" }];
+  providers.value = "[]";
+  harness.nodes.set("config-providers", providers);
+  harness.select("[data-config-path]", [providers]);
+  harness.api.state.configBaseline = new Map([["providers", JSON.stringify([])]]);
+
+  harness.node("provider-builder-name").value = "agency-router";
+  harness.node("provider-builder-type").value = "litellm";
+  harness.node("provider-builder-model").value = "task-agency-router";
+  harness.node("provider-builder-transport").value = "";
+  harness.node("provider-builder-url").value = "http://127.0.0.1:4000/v1";
+  harness.node("provider-builder-env").value = "LITELLM_API_KEY";
+  harness.node("provider-builder-timeout").value = "15";
+
+  const provider = harness.api.upsertProviderDraft();
+
+  assert.equal(provider.model, "task-agency-router");
+  assert.deepEqual(JSON.parse(providers.value), [{
+    name: "agency-router",
+    type: "litellm",
+    transport: "",
+    model: "task-agency-router",
+    base_url: "http://127.0.0.1:4000/v1",
+    api_key_env: "LITELLM_API_KEY",
+    ollama_mode: false,
+    timeout: 15,
+    reasoning_effort: "",
+  }]);
+  assert.equal(harness.node("config-provider-secret-index").value, "0");
+  assert.equal(harness.node("config-save-button").disabled, false);
+});
+
+test("provider builder discovers signed-in Codex models and keeps manual fallback", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    return jsonResponse(200, {
+      transport: "codex",
+      source: "codex-cli",
+      models: [
+        {
+          slug: "gpt-cheap",
+          display_name: "Cheap",
+          description: "Low cost",
+          supported_reasoning_levels: ["low", "medium"],
+        },
+        { slug: "gpt-frontier", display_name: "Frontier", description: "Deep work" },
+      ],
+    });
+  });
+  harness.node("provider-builder-type").value = "cli";
+  harness.node("provider-builder-transport").value = "codex";
+  harness.node("provider-builder-name").value = "codex-subscription";
+  harness.node("provider-builder-timeout").value = "60";
+  assert.equal(await harness.api.loadProviderModels({ refresh: true }), true);
+  assert.equal(calls[0], "/api/providers/models?transport=codex&refresh=true");
+  assert.equal(harness.node("provider-builder-model-select").value, "gpt-cheap");
+  assert.equal(harness.node("provider-builder-model").hidden, true);
+  assert.deepEqual(
+    harness.node("provider-builder-reasoning-effort").options.map((option) => option.value),
+    ["", "low", "medium"],
+  );
+  harness.node("provider-builder-reasoning-effort").value = "low";
+  assert.equal(harness.api.providerBuilderDraft().reasoning_effort, "low");
+  assert.match(harness.node("provider-builder-model-status").textContent, /2 account models/);
+  harness.node("provider-builder-model-select").value = "__manual__";
+  harness.api.syncProviderModelInput();
+  assert.equal(harness.node("provider-builder-model").hidden, false);
+});
+
+test("provider builder recommends subscription-safe timeouts without overwriting custom values", () => {
+  const harness = createAppHarness(() => { throw new Error("no fetch expected"); });
+  const type = harness.node("provider-builder-type");
+  const timeout = harness.node("provider-builder-timeout");
+
+  type.value = "cli";
+  timeout.value = "15";
+  harness.api.syncProviderTimeoutRecommendation();
+  assert.equal(timeout.value, "60");
+
+  type.value = "litellm";
+  harness.api.syncProviderTimeoutRecommendation();
+  assert.equal(timeout.value, "15");
+
+  timeout.value = "30";
+  type.value = "cli";
+  harness.api.syncProviderTimeoutRecommendation();
+  assert.equal(timeout.value, "30");
+});
+
+test("workforce settings discover account models and expose configured providers", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    return jsonResponse(200, {
+      models: [
+        { slug: "gpt-cheap", display_name: "Cheap", description: "Low cost" },
+        { slug: "gpt-frontier", display_name: "Frontier", description: "Deep work" },
+      ],
+    });
+  });
+  harness.node("config-providers").value = JSON.stringify([
+    { name: "codex-subscription", type: "cli", transport: "codex" },
+    { name: "task-router", type: "litellm", model: "task-agency-router" },
+  ]);
+
+  harness.api.syncWorkforceProviderOptions();
+  assert.deepEqual(
+    harness.node("workforce-provider-options").options.map((option) => option.value),
+    ["codex-subscription", "task-router"],
+  );
+
+  harness.node("config-workforce-provider").value = "codex-subscription";
+  assert.equal(await harness.api.loadWorkforceModels({ refresh: true }), true);
+  assert.equal(calls[0], "/api/providers/models?transport=codex&refresh=true");
+  assert.deepEqual(
+    harness.node("workforce-model-options").options.map((option) => option.value),
+    ["gpt-cheap", "gpt-frontier"],
+  );
+  assert.equal(harness.node("workforce-model-options").options[0].title, "Low cost");
+  assert.match(harness.node("workforce-model-status").textContent, /2 account models/);
+
+  harness.node("config-workforce-provider").value = "task-router";
+  assert.equal(await harness.api.loadWorkforceModels(), false);
+  assert.match(harness.node("workforce-model-status").textContent, /router or model-group alias/i);
+});
+
+test("workforce model discovery handles defaults, empty catalogs, and failures", async () => {
+  const defaultProvider = createAppHarness(async () => jsonResponse(200, {
+    models: [{ slug: "claude-fast" }],
+  }));
+  defaultProvider.node("config-providers").value = JSON.stringify([
+    { name: "claude-subscription", type: "cli", transport: "claude" },
+  ]);
+  assert.equal(await defaultProvider.api.loadWorkforceModels(), true);
+  assert.equal(defaultProvider.node("workforce-model-options").options[0].value, "claude-fast");
+
+  const empty = createAppHarness(async () => jsonResponse(200, { models: [], error: "No models" }));
+  empty.node("config-providers").value = JSON.stringify([
+    { name: "codex-subscription", type: "cli", transport: "codex" },
+  ]);
+  assert.equal(await empty.api.loadWorkforceModels(), false);
+  assert.equal(empty.node("workforce-model-status").textContent, "No models");
+
+  const failed = createAppHarness(async () => { throw new Error("catalog unavailable"); });
+  failed.node("config-providers").value = JSON.stringify([
+    { name: "codex-subscription", type: "cli", transport: "codex" },
+  ]);
+  assert.equal(await failed.api.loadWorkforceModels(), false);
+  assert.equal(failed.node("workforce-model-status").textContent, "catalog unavailable");
+
+  const unknown = createAppHarness(() => { throw new Error("no fetch expected"); });
+  unknown.node("config-providers").value = "not-json";
+  unknown.node("config-workforce-provider").value = "missing";
+  assert.equal(await unknown.api.loadWorkforceModels(), false);
+  assert.match(unknown.node("workforce-model-status").textContent, /Choose a configured provider/i);
+});
+
+test("workforce detail renders comparison, promotion, prompt, history, and state-safe actions", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("workforce detail rendering does not fetch");
+  });
+  harness.api.state.selectedWorkerDetail = {
+    worker: {
+      agent_slug: "typescript-application-engineer",
+      current_version: "contractor-v1",
+      display_label: "Contractor · TypeScript Application Engineer",
+      employment_class: "contractor",
+      origin: "agency",
+      revision: 2,
+      state: "contractor",
+      worker_id: "worker-typescript",
+    },
+    recruitment_contract: {
+      archetype: "implementer",
+      authority: "modify",
+      domains: ["software-engineering"],
+      evidence_requirements: ["tests"],
+      outcomes: ["production TypeScript"],
+      scope: "Production TypeScript applications",
+      stacks: ["typescript"],
+    },
+    closest_workers: [{
+      recommendation: "keep_distinct",
+      reasons: ["different stack ownership"],
+      right: "python-application-engineer",
+      score: 0.42,
+    }],
+    compiled_prompt: {
+      hash: "a".repeat(64),
+      preview: "Use the governed TypeScript contract.",
+      truncated: false,
+      version: "contractor-v1",
+    },
+    promotion_readiness: {
+      automatic_policy_enabled: true,
+      eligible_for_automatic_promotion: false,
+      evidence_rule: "Independent acceptance receipts only.",
+      reasons: ["1 more independently verified assignment is required."],
+      required_successes: 2,
+      verified_successes: 1,
+    },
+    events: [{
+      created_at: "2026-07-22T12:00:00Z",
+      event_type: "generated",
+      reason: "known contractor installed",
+    }],
+    outcomes: [{
+      created_at: "2026-07-22T13:00:00Z",
+      event_type: "acceptance",
+      outcome: "passed",
+    }],
+    hiring_cases: [{}],
+    lineage: [{}],
+  };
+  harness.api.state.workforceCounts = {
+    contractor: 1,
+    disabled: 2,
+    employee: 3,
+    merged: 4,
+    retired: 5,
+    suspended: 6,
+  };
+  harness.api.renderWorkforce();
+  assert.equal(harness.node("workforce-retired").textContent, "5");
+  assert.equal(harness.node("workforce-merged").textContent, "4");
+
+  harness.api.renderWorkerDetail();
+
+  const text = descendants(harness.node("workforce-detail"))
+    .map((item) => item.textContent)
+    .join(" ");
+  assert.match(text, /1 \/ 2 verified assignments/);
+  assert.match(text, /python-application-engineer/);
+  assert.match(text, /42% overlap/);
+  assert.match(text, /Use the governed TypeScript contract/);
+  assert.match(text, /known contractor installed/);
+  assert.deepEqual(
+    harness.node("workforce-action-kind").options.map((option) => option.value),
+    ["promote", "disable", "suspend", "retire", "merge"],
+  );
+  assert.equal(harness.node("workforce-action-form").hidden, false);
+
+  harness.api.state.selectedWorkerDetail.worker.state = "disabled";
+  harness.api.renderWorkerDetail();
+  assert.deepEqual(
+    harness.node("workforce-action-kind").options.map((option) => option.value),
+    ["enable", "suspend", "retire", "merge"],
+  );
+
+  harness.api.state.selectedWorkerDetail.worker.state = "retired";
+  harness.api.renderWorkerDetail();
+  assert.equal(harness.node("workforce-action-kind").options.length, 0);
+  assert.equal(harness.node("workforce-action-form").hidden, true);
+});
+
+test("provider builder validates, updates, removes, and reports discovery fallbacks", async () => {
+  const harness = createAppHarness(async () => jsonResponse(200, {
+    transport: "codex",
+    models: [null, { slug: 7 }, { slug: "" }],
+    error: "No account models",
+  }));
+  const providers = new FakeNode("config-providers");
+  providers.dataset.configPath = "providers";
+  providers.dataset.valueType = "json";
+  providers.labels = [{ textContent: "Providers" }];
+  providers.value = JSON.stringify([{ name: "existing", timeout: 1 }]);
+  harness.nodes.set("config-providers", providers);
+  harness.select("[data-config-path]", [providers]);
+  harness.api.state.configBaseline = new Map([["providers", providers.value]]);
+
+  const builder = (values) => {
+    harness.node("provider-builder-name").value = values.name ?? "provider";
+    harness.node("provider-builder-type").value = values.type ?? "http";
+    harness.node("provider-builder-model").value = values.model ?? "model";
+    harness.node("provider-builder-model-select").value = "__manual__";
+    harness.node("provider-builder-transport").value = values.transport ?? "";
+    harness.node("provider-builder-reasoning-effort").value = values.reasoningEffort ?? "";
+    harness.node("provider-builder-timeout").value = values.timeout ?? "15";
+  };
+  builder({ timeout: "0" });
+  assert.throws(() => harness.api.providerBuilderDraft(), /between 0.05 and 60/i);
+  builder({ type: "cli", transport: "other" });
+  assert.throws(() => harness.api.providerBuilderDraft(), /Codex or Claude/i);
+  builder({ type: "cli", transport: "codex" });
+  harness.node("provider-builder-url").value = "https://stale.example.test";
+  harness.node("provider-builder-env").value = "STALE_API_KEY";
+  const cliDraft = harness.api.providerBuilderDraft();
+  assert.equal(cliDraft.base_url, "");
+  assert.equal(cliDraft.api_key_env, "");
+  assert.equal(cliDraft.reasoning_effort, "");
+  builder({ type: "cli", transport: "codex", reasoningEffort: "low" });
+  assert.equal(harness.api.providerBuilderDraft().reasoning_effort, "low");
+  builder({ type: "cli", transport: "claude", reasoningEffort: "low" });
+  assert.equal(harness.api.providerBuilderDraft().reasoning_effort, "");
+  builder({ type: "litellm", model: "" });
+  assert.throws(() => harness.api.providerBuilderDraft(), /model or router alias/i);
+
+  harness.node("provider-builder-type").value = "litellm";
+  assert.equal(await harness.api.loadProviderModels(), false);
+  assert.match(harness.node("provider-builder-model-status").textContent, /LiteLLM router/i);
+  harness.node("provider-builder-type").value = "http";
+  assert.equal(await harness.api.loadProviderModels(), false);
+  assert.match(harness.node("provider-builder-model-status").textContent, /CLI subscription/i);
+  harness.node("provider-builder-type").value = "cli";
+  harness.node("provider-builder-transport").value = "codex";
+  assert.equal(await harness.api.loadProviderModels(), false);
+  assert.equal(harness.node("provider-builder-model-status").textContent, "No account models");
+
+  builder({ name: "existing", type: "http", timeout: "12" });
+  harness.api.upsertProviderDraft();
+  assert.equal(JSON.parse(providers.value)[0].timeout, 12);
+  providers.value = JSON.stringify([{
+    name: "custom-ollama",
+    type: "http",
+    model: "local",
+    base_url: "http://127.0.0.1:11434",
+    api_key_env: "",
+    ollama_mode: true,
+    timeout: 15,
+  }]);
+  builder({ name: "custom-ollama", type: "http", model: "updated", timeout: "12" });
+  harness.api.upsertProviderDraft();
+  assert.equal(JSON.parse(providers.value)[0].ollama_mode, true);
+  builder({ name: "custom-ollama", type: "cli", transport: "codex" });
+  harness.api.upsertProviderDraft();
+  assert.equal(JSON.parse(providers.value)[0].ollama_mode, false);
+  providers.value = JSON.stringify([{ name: "legacy", model: "old" }]);
+  builder({ name: "legacy", type: "http", model: "updated", timeout: "12" });
+  harness.api.upsertProviderDraft();
+  assert.equal(JSON.parse(providers.value)[0].ollama_mode, false);
+  harness.api.syncProviderSecretOptions();
+  harness.node("config-provider-secret-index").value = "0";
+  harness.api.removeSelectedProvider();
+  assert.deepEqual(JSON.parse(providers.value), []);
+  harness.node("config-provider-secret-index").value = "";
+  assert.throws(() => harness.api.removeSelectedProvider(), /select a provider/i);
+
+  const failed = createAppHarness(async () => jsonResponse(500, { error: "catalog offline" }));
+  failed.node("provider-builder-type").value = "cli";
+  failed.node("provider-builder-transport").value = "codex";
+  assert.equal(await failed.api.loadProviderModels(), false);
+  assert.match(failed.node("provider-builder-model-status").textContent, /catalog offline/i);
+});
+
+test("bound provider staging controls report successful and rejected edits", async () => {
+  const harness = createAppHarness(() => { throw new Error("no fetch expected"); });
+  const providers = new FakeNode("config-providers");
+  providers.dataset.configPath = "providers";
+  providers.dataset.valueType = "json";
+  providers.labels = [{ textContent: "Providers" }];
+  providers.value = "[]";
+  harness.nodes.set("config-providers", providers);
+  harness.select("[data-config-path]", [providers]);
+  harness.api.state.configBaseline = new Map([["providers", "[]"]]);
+  harness.node("provider-builder-name").value = "primary";
+  harness.node("provider-builder-type").value = "http";
+  harness.node("provider-builder-timeout").value = "15";
+  harness.api.bindEvents();
+
+  harness.node("provider-builder-save").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /Provider primary staged/i);
+  harness.node("provider-builder-name").value = "";
+  harness.node("provider-builder-save").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /name is required/i);
+
+  harness.api.syncProviderSecretOptions();
+  harness.node("config-provider-secret-index").value = "0";
+  harness.node("provider-builder-remove").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /removal staged/i);
+  harness.node("config-provider-secret-index").value = "";
+  harness.node("provider-builder-remove").listeners.get("click")[0]();
+  assert.match(harness.node("notice").textContent, /select a provider/i);
+  harness.node("provider-builder-type").listeners.get("change")[0]();
+  harness.node("provider-builder-transport").listeners.get("change")[0]();
+  harness.node("provider-builder-model-select").listeners.get("change")[0]();
+  harness.node("provider-builder-model-refresh").listeners.get("click")[0]();
+  await Promise.resolve();
+});
+
+test("provider configuration defensive branches stay bounded", async () => {
+  const missingName = createAppHarness(() => { throw new Error("no fetch"); });
+  missingName.missing("provider-builder-name");
+  assert.throws(() => missingName.api.providerBuilderDraft(), /name is required/i);
+  const missingType = createAppHarness(() => { throw new Error("no fetch"); });
+  missingType.node("provider-builder-name").value = "provider";
+  missingType.missing("provider-builder-type");
+  assert.throws(() => missingType.api.providerBuilderDraft(), /type is required/i);
+
+  const sparse = createAppHarness(() => { throw new Error("no fetch"); });
+  sparse.node("provider-builder-name").value = "sparse";
+  sparse.node("provider-builder-type").value = "ollama";
+  for (const id of [
+    "provider-builder-model-select",
+    "provider-builder-model",
+    "provider-builder-transport",
+    "provider-builder-url",
+    "provider-builder-env",
+    "provider-builder-timeout",
+  ]) sparse.missing(id);
+  const sparseDraft = sparse.api.providerBuilderDraft();
+  assert.equal(sparseDraft.model, "");
+  assert.equal(sparseDraft.timeout, 15);
+  assert.equal(sparseDraft.ollama_mode, true);
+
+  const selected = createAppHarness(() => { throw new Error("no fetch"); });
+  selected.node("provider-builder-name").value = "selected";
+  selected.node("provider-builder-type").value = "cli";
+  selected.node("provider-builder-transport").value = "claude";
+  selected.node("provider-builder-model-select").value = "account-model";
+  selected.node("provider-builder-timeout").value = "61";
+  assert.throws(() => selected.api.providerBuilderDraft(), /between 0.05 and 60/i);
+  selected.node("provider-builder-timeout").value = "not-a-number";
+  assert.throws(() => selected.api.providerBuilderDraft(), /between 0.05 and 60/i);
+  selected.node("provider-builder-timeout").value = "10";
+  assert.equal(selected.api.providerBuilderDraft().model, "account-model");
+
+  for (const id of [
+    "provider-builder-model-select",
+    "provider-builder-model-status",
+    "provider-builder-model",
+  ]) {
+    const absent = createAppHarness(() => { throw new Error("no fetch"); });
+    absent.missing(id);
+    assert.equal(await absent.api.loadProviderModels(), false);
+  }
+  const noTransport = createAppHarness(() => { throw new Error("no fetch"); });
+  noTransport.node("provider-builder-type").value = "cli";
+  noTransport.missing("provider-builder-transport");
+  assert.equal(await noTransport.api.loadProviderModels(), false);
+
+  const emptyCatalog = createAppHarness(async () => jsonResponse(200, null));
+  emptyCatalog.node("provider-builder-type").value = "cli";
+  emptyCatalog.node("provider-builder-transport").value = "codex";
+  assert.equal(await emptyCatalog.api.loadProviderModels(), false);
+  assert.match(emptyCatalog.node("provider-builder-model-status").textContent, /No visible/i);
+
+  const singular = createAppHarness(async () => jsonResponse(200, {
+    models: [{ slug: "solo" }],
+  }));
+  singular.node("provider-builder-type").value = "cli";
+  singular.node("provider-builder-transport").value = "codex";
+  assert.equal(await singular.api.loadProviderModels(), true);
+  assert.match(singular.node("provider-builder-model-status").textContent, /1 account model from codex/i);
+  assert.equal(singular.node("provider-builder-model-select").options[1].title, "solo");
+
+  const broken = createAppHarness(async () => { throw new Error(""); });
+  broken.node("provider-builder-type").value = "cli";
+  broken.node("provider-builder-transport").value = "codex";
+  assert.equal(await broken.api.loadProviderModels(), false);
+  assert.equal(broken.node("provider-builder-model-status").textContent, "Model discovery failed.");
+
+  const invalidProviders = createAppHarness(() => { throw new Error("no fetch"); });
+  invalidProviders.node("provider-builder-name").value = "provider";
+  invalidProviders.node("provider-builder-type").value = "http";
+  invalidProviders.node("config-providers").value = "{}";
+  assert.throws(() => invalidProviders.api.upsertProviderDraft(), /JSON list/i);
+  invalidProviders.node("config-provider-secret-index").value = "0";
+  assert.throws(() => invalidProviders.api.removeSelectedProvider(), /JSON list/i);
+
+  const emptyProviders = createAppHarness(() => { throw new Error("no fetch"); });
+  emptyProviders.node("provider-builder-name").value = "provider";
+  emptyProviders.node("provider-builder-type").value = "http";
+  emptyProviders.node("config-providers").value = "";
+  assert.equal(emptyProviders.api.upsertProviderDraft().name, "provider");
+  emptyProviders.node("config-providers").value = JSON.stringify([{}]);
+  emptyProviders.node("provider-builder-name").value = "different";
+  emptyProviders.api.upsertProviderDraft();
+  assert.equal(JSON.parse(emptyProviders.node("config-providers").value).length, 2);
+
+  const missingSelect = createAppHarness(() => { throw new Error("no fetch"); });
+  missingSelect.missing("config-provider-secret-index");
+  assert.throws(() => missingSelect.api.removeSelectedProvider(), /select a provider/i);
+  const emptyRemove = createAppHarness(() => { throw new Error("no fetch"); });
+  emptyRemove.node("config-provider-secret-index").value = "0";
+  emptyRemove.node("config-providers").value = "";
+  emptyRemove.api.removeSelectedProvider();
+  assert.equal(emptyRemove.node("config-providers").value, "[]");
+  const missingModelSelect = createAppHarness(() => { throw new Error("no fetch"); });
+  missingModelSelect.missing("provider-builder-model-select");
+  missingModelSelect.api.syncProviderModelInput();
+  const missingManual = createAppHarness(() => { throw new Error("no fetch"); });
+  missingManual.missing("provider-builder-model");
+  missingManual.api.syncProviderModelInput();
+});
+
 test("app.js config controls normalize typed values and preserve dirty edits on refresh", () => {
   const harness = createAppHarness(() => {
     throw new Error("this test does not fetch");
@@ -682,6 +1175,36 @@ test("Route Lab renders authoritative host evidence and bounded eligibility reje
       execution_host: "codex",
       status: "native-installation-verified",
     },
+    routing: {
+      inference_mode: "inferred",
+      provider_attempts: [
+        {
+          actual_model: "gpt-5.6-luna",
+          latency_ms: 38187,
+          model_group: "",
+          model_receipt_source: "cli.explicit_model_argument",
+          provider_name: "codex-subscription",
+          provider_type: "cli",
+          reason_code: "structured_response_applied",
+          requested_model: "gpt-5.6-luna",
+          stage: "planner",
+          status: "applied",
+        },
+        {
+          actual_model: "openai/gpt-5.6-mini",
+          latency_ms: 27688,
+          model_group: "task-agency-router",
+          model_receipt_source: "response.body.model",
+          provider_name: "agency-router",
+          provider_type: "litellm",
+          reason_code: "provider_response_contract_invalid",
+          requested_model: "task-agency-router",
+          stage: "recruiter",
+          status: "rejected",
+          validation_detail: "missing typed shortlist candidate",
+        },
+      ],
+    },
     selected: [],
     signals: { selection: { status: "abstained" } },
   });
@@ -690,6 +1213,13 @@ test("Route Lab renders authoritative host evidence and bounded eligibility reje
   assert.ok(text.includes("codex"));
   assert.ok(text.some((value) => /17 eligible · 2 rejected · bounded view/i.test(value)));
   assert.ok(text.some((value) => /browser-specialist: missing_capabilities/i.test(value)));
+  assert.ok(text.includes("codex-subscription · cli"));
+  assert.ok(text.includes("task-agency-router"));
+  assert.ok(text.includes("openai/gpt-5.6-mini"));
+  assert.ok(text.includes("response.body.model"));
+  assert.ok(text.includes("27.69 s"));
+  assert.ok(text.some((value) => /provider response contract invalid/i.test(value)));
+  assert.ok(text.some((value) => /missing typed shortlist candidate/i.test(value)));
   assert.equal(harness.node("route-status").textContent, "ABSTAINED");
 
   harness.api.renderReceipt({
@@ -4559,6 +5089,15 @@ test("operational dashboard markup and accessibility policies stay discoverable"
     "roster-filter-host", "roster-filter-platform", "roster-filter-tool",
     "review-list", "upstream-status",
   ]) assert.match(INDEX_SOURCE, new RegExp(`id="${id}"`));
+  for (const path of [
+    "workforce.mode", "workforce.provider", "workforce.planner_model",
+    "workforce.recruiter_model", "workforce.hiring_model", "workforce.critic_model",
+    "workforce.max_work_units", "workforce.max_selected_per_unit",
+    "workforce.max_selected_total", "workforce.max_hires_per_task",
+    "workforce.max_hires_per_day", "workforce.auto_promote_successes",
+  ]) assert.match(INDEX_SOURCE, new RegExp(`data-config-path="${path.replaceAll(".", "\\.")}"`));
+  assert.match(INDEX_SOURCE, /id="workforce-model-refresh"/);
+  assert.match(INDEX_SOURCE, /id="workforce-model-status"[^>]*aria-live="polite"/);
   assert.match(APP_CSS_SOURCE, /\.roster-filter-grid/);
   assert.match(APP_CSS_SOURCE, /\.review-card/);
   assert.match(APP_CSS_SOURCE, /\.remediation-card/);

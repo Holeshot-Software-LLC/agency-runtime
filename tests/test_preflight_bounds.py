@@ -22,6 +22,7 @@ from agency_runtime.core.delegation.events import (
     MAX_WORK_UNIT_CHARS,
     record_suggested_delegations,
 )
+from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.resident_manager_binding import build_resident_manager_binding
 from agency_runtime.core.resident_managers import (
@@ -33,8 +34,24 @@ from agency_runtime.core.selector.delegation_detection import (
     MAX_WORK_UNIT_INPUT_CHARS,
     detect_work_units,
 )
+from agency_runtime.core.specialist_context import _prompt_context_lines
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.turn_origin import native_adapter_turn_origin
+
+
+def test_direct_specialist_capsule_preserves_exact_prompt_whitespace() -> None:
+    prompt_body = "  exact leading whitespace\ntrailing whitespace  \n"
+    rendered = "\n".join(
+        _prompt_context_lines(
+            {
+                "slug": "code-reviewer",
+                "description": "Reviews code.",
+                "prompt_body": prompt_body,
+            }
+        )
+    )
+
+    assert prompt_body in rendered
 
 
 def test_preflight_persists_request_kind_and_terminalizes_downstream_failure(
@@ -525,14 +542,23 @@ def test_ready_replay_uses_immutable_prompt_and_persisted_roster_metadata(
 ) -> None:
     store = Store(tmp_path / "agency.db")
     message = "Review this security patch."
+    deterministic_config = AgencyConfig()
+    capability_receipt = native_adapter_capability_receipt(
+        "codex",
+        platform="windows",
+        session_id="session",
+        trace_id="versioned-ready",
+    )
     first = run_preflight(
         store,
         session_id="session",
         user_message=message,
         host="codex",
         trace_id="versioned-ready",
+        config=deterministic_config,
+        capability_receipt=capability_receipt,
     )
-    assert "code-reviewer" in first.selected_specialists
+    assert "code-reviewer" in first.selected_specialists, first.routing
     assert first.loaded_specialists == ()
     connection = store._connect()
     try:
@@ -563,6 +589,8 @@ def test_ready_replay_uses_immutable_prompt_and_persisted_roster_metadata(
         user_message=message,
         host="codex",
         trace_id="versioned-ready",
+        config=deterministic_config,
+        capability_receipt=capability_receipt,
     )
 
     assert second.as_dict() == first.as_dict()

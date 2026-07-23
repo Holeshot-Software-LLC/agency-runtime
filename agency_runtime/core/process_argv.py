@@ -917,6 +917,7 @@ def isolated_python_argv(
     return [
         absolute_executable_path(python_executable),
         "-I",
+        "-S",
         agency_bootstrap_path(),
         module,
         *arguments,

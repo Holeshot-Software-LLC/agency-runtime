@@ -159,6 +159,41 @@ def _seed_open_graph(store: Store, *, status: str) -> None:
             "WHERE session_id = 'session' AND host = 'claude'",
             (_OLD, _OLD),
         )
+        connection.execute(
+            "INSERT INTO child_routing_cache "
+            "(cache_key, decision, expires_at, created_at) VALUES (?, '{}', ?, ?)",
+            ("e" * 64, 4_102_444_800.0, _OLD),
+        )
+        connection.execute(
+            "INSERT INTO child_routing_usage "
+            "(parent_trace_id, parent_session_id, inference_calls, updated_at) "
+            "VALUES ('trace', 'session', 1, ?)",
+            (_OLD,),
+        )
+        connection.execute(
+            "INSERT INTO child_routing_leases "
+            "(cache_key, parent_trace_id, owner_token, expires_at, created_at) "
+            "VALUES (?, 'trace', 'lease-token', ?, ?)",
+            ("e" * 64, 4_102_444_800.0, _OLD),
+        )
+        connection.execute(
+            "INSERT INTO agent_workers "
+            "(worker_id, agent_slug, display_name, origin, employment_class, standing, "
+            "current_agent_version_id, current_version, current_hash, revision, "
+            "created_at, updated_at) VALUES "
+            "('workforce-worker', 'reviewer', 'Reviewer', 'upstream', 'employee', "
+            "'active', 'version-id', '1.0.0', ?, 0, ?, ?)",
+            ("d" * 64, _OLD, _OLD),
+        )
+        connection.execute(
+            "INSERT INTO agent_performance_events "
+            "(id, idempotency_key, worker_id, version, version_hash, session_id, trace_id, "
+            "work_unit_id, activation_receipt_id, event_type, outcome, score, evidence_hash, "
+            "evidence_refs, created_at) VALUES "
+            "('performance', ?, 'workforce-worker', '1.0.0', ?, 'session', 'trace', "
+            "'unit', 'activation', 'acceptance', 'passed', 1.0, ?, '{}', ?)",
+            ("f" * 64, "d" * 64, "a" * 64, _OLD),
+        )
         # Store-clock ingestion activity, not caller-owned semantic timestamps,
         # is the sole stale-open lease authority. Backdate it only after every
         # child mutation so the fixture represents an abandoned graph.

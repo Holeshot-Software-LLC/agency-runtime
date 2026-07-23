@@ -21,7 +21,7 @@ _PYTHON = __AGENCY_PYTHON__
 _BOOTSTRAP = __AGENCY_BOOTSTRAP__
 _CONFIG_PATH = __AGENCY_CONFIG__
 _TIMEOUT_SECONDS = __AGENCY_TIMEOUT__
-_MODULE_ARGS = ("-I", _BOOTSTRAP, "agency_runtime.adapters.hermes.bridge")
+_MODULE_ARGS = ("-I", "-S", _BOOTSTRAP, "agency_runtime.adapters.hermes.bridge")
 _MAX_INPUT_BYTES = 1024 * 1024
 _MAX_OUTPUT_BYTES = 128 * 1024
 _MAX_TEXT_BYTES = 64 * 1024
@@ -202,6 +202,14 @@ def _remember_preflight_result(session_id, result):
 
 def _pre_llm_call(**kwargs):
     session_id, trace_id = _correlation(kwargs, include_active=False)
+    worker_id, parent_session_id, parent_trace_id = _child_binding(
+        worker_id=_bounded_text(
+            kwargs.get("child_subagent_id") or kwargs.get("subagent_id"), 256
+        ),
+        session_id=_bounded_text(kwargs.get("parent_session_id"), 512),
+        child_role=_bounded_text(kwargs.get("child_role"), 256),
+    )
+    native_run_id = "hermes-subagent:" + worker_id if worker_id else ""
     _forget_turn(session_id)
     try:
         result = _invoke(
@@ -211,6 +219,10 @@ def _pre_llm_call(**kwargs):
                 "trace_id": trace_id,
                 "user_message": kwargs.get("user_message"),
                 "model": kwargs.get("model"),
+                "parent_session_id": parent_session_id,
+                "parent_trace_id": parent_trace_id,
+                "native_worker_id": worker_id,
+                "native_run_id": native_run_id,
             },
         )
         _remember_preflight_result(session_id, result)

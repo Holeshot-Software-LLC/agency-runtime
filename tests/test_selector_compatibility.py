@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import hashlib
 
+import pytest
+
 from agency_runtime.core.config import AgencyConfig, JudgeConfig
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.selector.compatibility import (
+    compile_compatibility_catalog,
     enforce_compatible_set,
     filter_eligible_catalog,
 )
@@ -104,6 +107,14 @@ def test_compatible_set_adds_requirements_and_rejects_explicit_conflicts() -> No
     assert result["selected_ids"] == ["architect", "implementer"]
     assert result["added_requirements"] == ["architect"]
     assert result["rejected"] == [{"slug": "reviewer", "reason": "conflicts_with:implementer"}]
+
+    compiled = compile_compatibility_catalog(catalog)
+    assert enforce_compatible_set(["implementer", "reviewer"], compiled) == result
+
+
+def test_compiled_compatibility_catalog_rejects_duplicate_identities() -> None:
+    with pytest.raises(ValueError, match="duplicate specialist identities"):
+        compile_compatibility_catalog([_agent("duplicate"), _agent("duplicate")])
 
 
 def test_required_closure_does_not_consume_the_requested_specialist_budget() -> None:
@@ -286,6 +297,7 @@ def test_pipeline_filters_before_inference_and_enforces_returned_set(monkeypatch
         host="codex",
         platform="windows",
         capability_receipt=_codex_receipt("session"),
+        capability_trace_id="route",
     )
 
     assert observed == ["builder", "reviewer"]
@@ -295,6 +307,51 @@ def test_pipeline_filters_before_inference_and_enforces_returned_set(monkeypatch
     ]
     assert result["eligibility_rejections"] == [
         {"slug": "linux-only", "reason": "unsupported_tool_platform:windows"}
+    ]
+
+
+def test_policy_validation_uses_active_roster_before_host_eligibility(monkeypatch) -> None:
+    catalog = [
+        _agent("domain-primary"),
+        _agent(
+            "linux-companion",
+            supported_platforms=["linux"],
+            supported_tool_platforms=["linux"],
+            required_tools=["source"],
+        ),
+    ]
+    monkeypatch.setattr(pipeline, "load_policy", lambda *_args: _policy("linux-companion"))
+    monkeypatch.setattr(
+        pipeline,
+        "query_judge",
+        lambda *_args, **_kwargs: {
+            "selected_ids": ["domain-primary"],
+            "confidence": 0.9,
+            "latency_ms": 1,
+            "status": "applied",
+        },
+    )
+
+    result = pipeline.route(
+        "policy-active-roster",
+        "Implement the domain change",
+        catalog,
+        config=AgencyConfig(),
+        host="codex",
+        platform="windows",
+        capability_receipt=_codex_receipt("policy-active-roster"),
+        capability_trace_id="route",
+    )
+
+    assert result["semantic_ids"] == ["domain-primary"]
+    assert result["policy_validation"] == {
+        "valid": True,
+        "errors": [],
+        "enabled_count": 1,
+        "disabled_count": 0,
+    }
+    assert result["eligibility_rejections"] == [
+        {"slug": "linux-companion", "reason": "unsupported_tool_platform:windows"}
     ]
 
 
@@ -334,6 +391,7 @@ def test_pipeline_caps_semantic_plus_policy_companions_at_configured_max(
         host="codex",
         platform="windows",
         capability_receipt=_codex_receipt("bounded-policy"),
+        capability_trace_id="route",
     )
 
     assert result["selected_ids"] == ["domain-primary", "domain-secondary"]
@@ -351,8 +409,10 @@ def test_versioned_compatibility_receipt_proves_only_current_exact_hits() -> Non
     config = AgencyConfig(judge=JudgeConfig(max_selected=1))
     request = pipeline._RouteRequest(
         session_id="receipt",
+        trace_id="receipt-trace",
         user_message="work",
         catalog=catalog,
+        workforce_catalog=catalog,
         config=config,
         policy={},
         context_fingerprint="fingerprint",
@@ -491,6 +551,7 @@ def test_exact_cache_hit_is_reprojected_under_current_selection_budget(
         host="codex",
         platform="windows",
         capability_receipt=_codex_receipt("bounded-cache"),
+        capability_trace_id="route",
     )
 
     assert result["cache_hit"] is True
@@ -537,6 +598,7 @@ def test_pipeline_allows_one_explicit_review_companion_in_a_separate_context(
         host="codex",
         platform="windows",
         capability_receipt=_codex_receipt("explicit-review"),
+        capability_trace_id="route",
     )
     negated = pipeline.route(
         "negated-review",
@@ -546,6 +608,7 @@ def test_pipeline_allows_one_explicit_review_companion_in_a_separate_context(
         host="codex",
         platform="windows",
         capability_receipt=_codex_receipt("negated-review"),
+        capability_trace_id="route",
     )
 
     assert explicit["selected_ids"] == ["builder", "code-reviewer"]

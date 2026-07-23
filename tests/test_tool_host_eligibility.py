@@ -71,6 +71,24 @@ def test_tool_aliases_are_canonical_bounded_and_unknowns_stay_unknown() -> None:
     assert unknown == ("not-a-governed-tool",)
 
 
+def test_test_result_and_coverage_readers_use_test_execution_capability() -> None:
+    capabilities, unknown = canonicalize_tool_capabilities(
+        ("test-results-reader", "coverage-reader")
+    )
+
+    assert capabilities == ("test-execution",)
+    assert unknown == ()
+
+
+def test_staffing_plan_and_workforce_readers_use_runtime_evidence_capability() -> None:
+    capabilities, unknown = canonicalize_tool_capabilities(
+        ("staffing-plan-reader", "workforce-index")
+    )
+
+    assert capabilities == ("runtime-evidence",)
+    assert unknown == ()
+
+
 def test_tool_capability_normalization_rejects_invalid_and_overflow_labels() -> None:
     capabilities, unknown = canonicalize_tool_capabilities(
         [None, *("source" for _index in range(MAX_TOOL_CAPABILITIES))]
@@ -837,6 +855,62 @@ def test_preflight_never_routes_hard_requirements_with_unknown_tool_state(
     assert receipt is not None
     assert receipt.status == "native-evidence-unproven"
     assert receipt.execution_host == ""
+
+
+def test_policy_roster_change_invalidates_cache_even_when_agent_is_host_ineligible(
+    tmp_path: Path,
+) -> None:
+    policy_path = tmp_path / "policy.yaml"
+    policy_path.write_text(
+        "actions:\n"
+        "  RELEASE:\n"
+        "    triggers: [release]\n"
+        "    always_include:\n"
+        "      - slug: linux-release-agent\n"
+        "    conditional: []\n",
+        encoding="utf-8",
+    )
+    policy_path.chmod(0o600)
+    config = AgencyConfig(companion_policy_path=str(policy_path))
+    receipt = native_adapter_capability_receipt(
+        "codex",
+        platform="windows",
+        session_id="session",
+        trace_id="trace",
+    )
+    linux_only = {
+        "slug": "linux-release-agent",
+        "name": "Linux Release Agent",
+        "description": "Validates Linux releases.",
+        "prompt_body": "Validate the assigned Linux release.",
+        "audit_status": "approved",
+        "supported_hosts": ["codex"],
+        "supported_platforms": ["linux"],
+    }
+
+    missing = pipeline._route_request(
+        "session",
+        "release this build",
+        [],
+        config,
+        host="codex",
+        platform="windows",
+        capability_receipt=receipt,
+    )
+    present = pipeline._route_request(
+        "session",
+        "release this build",
+        [linux_only],
+        config,
+        host="codex",
+        platform="windows",
+        capability_receipt=receipt,
+    )
+
+    assert missing.catalog == present.catalog == []
+    assert missing.context_fingerprint != present.context_fingerprint
+    assert pipeline._route_signals(missing).policy_validation["valid"] is False
+    assert pipeline._route_signals(present).policy_validation["valid"] is True
 
 
 def test_mcp_caller_host_string_cannot_mint_native_contract_receipt(

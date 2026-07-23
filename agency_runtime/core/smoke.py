@@ -265,14 +265,15 @@ def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
     interpreter, bootstrap = _installed_launcher_paths(install_root)
     expected_prefix = [
         "-I",
+        "-S",
         bootstrap,
         "agency_runtime.server.mcp",
         "--stdio",
     ]
-    if not isinstance(args, list) or args[:4] != expected_prefix:
+    if not isinstance(args, list) or args[:5] != expected_prefix:
         raise RuntimeError(f"{host} bundle has invalid Agency Runtime MCP command")
-    if len(args) not in {4, 6} or (
-        len(args) == 6 and (args[4] != "--config" or not Path(str(args[5])).is_absolute())
+    if len(args) not in {5, 7} or (
+        len(args) == 7 and (args[5] != "--config" or not Path(str(args[6])).is_absolute())
     ):
         raise RuntimeError(f"{host} bundle has invalid Agency Runtime config binding")
     command = Path(str(server.get("command") or ""))

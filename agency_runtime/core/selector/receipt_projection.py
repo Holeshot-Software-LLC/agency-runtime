@@ -266,6 +266,12 @@ def _routing_reason_codes(
         if isinstance(row, Mapping):
             family = _reason_family(row.get("reason_code"))
             append(f"eligibility:{family}" if family else "")
+    shadows = routing.get("disabled_candidate_shadows")
+    if isinstance(shadows, (list, tuple)):
+        for shadow in shadows[:4]:
+            if isinstance(shadow, Mapping):
+                agent_id = _code(shadow.get("agent_id"))
+                append(f"disabled_candidate:{agent_id}" if agent_id else "")
     return codes
 
 
@@ -297,6 +303,10 @@ def _routing_effect_codes(
     append("specialists_selected", bool(selected))
     append("selection_abstained", not selected)
     append("policy_fallback_applied", routing.get("fallback_applied") is True)
+    append(
+        "disabled_specialist_left_unselected",
+        bool(routing.get("disabled_candidate_shadows")),
+    )
     append(
         "delegation_plan_prepared",
         isinstance(work_units, Mapping) and work_units.get("delegate") is True,
