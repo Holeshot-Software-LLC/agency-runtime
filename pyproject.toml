@@ -78,6 +78,7 @@ agency_runtime = [
     "dashboard/*.svg",
     "dashboard/package.json",
     "core/evals/data/*.json",
+    "core/evals/data/*.txt",
     "core/evals/data/*.yaml",
     "core/evals/data/*.yml",
     "core/roster/data/*.json",

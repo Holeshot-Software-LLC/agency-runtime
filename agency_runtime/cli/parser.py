@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping
 
 from agency_runtime import __version__
 from agency_runtime.core.evals.product_scenarios import PRODUCT_SCENARIOS_BY_ID
+from agency_runtime.core.evals.upstream_selection import CASES as UPSTREAM_SELECTION_CASES
 from agency_runtime.core.evals.workforce_selection import CASES
 from agency_runtime.core.policy.profiles import PROFILES
 from agency_runtime.core.runtime_control_command import parse_runtime_control_command
@@ -872,6 +873,63 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         eval_upstream_architecture,
         handlers,
         "cmd_eval_upstream_architecture",
+    )
+    eval_upstream_selection = eval_sub.add_parser(
+        "upstream-selection",
+        help="Run a matched held-out selection benchmark against pinned upstream Agency Agents",
+    )
+    eval_upstream_selection.add_argument(
+        "--all",
+        action="store_true",
+        help=f"Run all {len(UPSTREAM_SELECTION_CASES)} held-out matched cases",
+    )
+    eval_upstream_selection.add_argument(
+        "--case",
+        action="append",
+        choices=tuple(case.case_id for case in UPSTREAM_SELECTION_CASES),
+        default=[],
+        help="Run only this held-out case; repeat to run a bounded subset",
+    )
+    eval_upstream_selection.add_argument(
+        "--host",
+        choices=("codex", "claude", "openclaw", "hermes"),
+        default="codex",
+        help="Execution host contract shared by both selection arms",
+    )
+    eval_upstream_selection.add_argument(
+        "--platform",
+        choices=("windows", "linux"),
+        required=True,
+        help="Target operating system contract shared by both selection arms",
+    )
+    eval_upstream_selection.add_argument(
+        "--available-tool",
+        action="append",
+        default=[],
+        help=(
+            "Optionally restrict shared tool capabilities; by default every audited "
+            "roster tool class is visible to both arms"
+        ),
+    )
+    eval_upstream_selection.add_argument(
+        "--confirm-live-inference",
+        default="",
+        help='Required exact phrase: "RUN MATCHED UPSTREAM SELECTION EVAL"',
+    )
+    eval_upstream_selection.add_argument(
+        "--json",
+        action="store_true",
+        help="Print machine-readable matched results",
+    )
+    eval_upstream_selection.add_argument(
+        "--no-details",
+        action="store_true",
+        help="Omit per-case matched selection details",
+    )
+    _bind(
+        eval_upstream_selection,
+        handlers,
+        "cmd_eval_upstream_selection",
     )
     eval_workforce = eval_sub.add_parser(
         "workforce",

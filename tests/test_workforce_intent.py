@@ -111,6 +111,18 @@ def test_compiler_canonicalizes_noise_without_erasing_specialist_need() -> None:
     )
 
 
+def test_compiler_bounds_locally_derived_evidence_for_long_model_outcomes() -> None:
+    value = _intent()
+    value["units"][0]["outcome"] = "A" * 512  # type: ignore[index]
+
+    unit = _compile(value).units[0]
+
+    assert unit.acceptance_evidence == (
+        "Evidence proves the requested implementation change outcome.",
+    )
+    assert len(unit.acceptance_evidence[0]) <= 128
+
+
 def test_compiler_separates_known_capabilities_from_a_real_novel_gap() -> None:
     plan = _compile(_intent(novel="quantum-build-orchestration"))
 

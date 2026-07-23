@@ -300,6 +300,7 @@ cmd_eval_compare = _evals.cmd_eval_compare
 cmd_eval_full_roster = _evals.cmd_eval_full_roster
 cmd_eval_product = _evals.cmd_eval_product
 cmd_eval_upstream_architecture = _evals.cmd_eval_upstream_architecture
+cmd_eval_upstream_selection = _evals.cmd_eval_upstream_selection
 cmd_eval_workforce = _evals.cmd_eval_workforce
 cmd_smoke = _roster.cmd_smoke
 cmd_db_stats = _roster.cmd_db_stats
@@ -402,6 +403,7 @@ _COMMAND_NAMES = (
     "cmd_eval_full_roster",
     "cmd_eval_product",
     "cmd_eval_upstream_architecture",
+    "cmd_eval_upstream_selection",
     "cmd_eval_routing",
     "cmd_eval_workforce",
     "cmd_explain",

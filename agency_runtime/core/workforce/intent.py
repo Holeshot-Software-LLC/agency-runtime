@@ -443,7 +443,9 @@ def _unit_document(
         "resources": ["request", "repository"],
         "required_tools": list(_required_tools(artifact, mutation)),
         "platforms": [platform],
-        "acceptance_evidence": [f"Evidence proves {outcome.casefold()}"],
+        "acceptance_evidence": [
+            f"Evidence proves the requested {artifact.replace('-', ' ')} outcome."
+        ],
         "parallelization": "sequential" if raw["depends_on"] else "unspecified",
     }
 

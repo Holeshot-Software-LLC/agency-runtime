@@ -112,23 +112,64 @@ routing and provider choice, and AR-118 reconciles activation evidence.
   work-unit schema.
 - Parent plans and exact one-use native-child activation paths remain covered
   across Codex, Claude, Hermes, and OpenClaw.
+- A matched selection benchmark now executes Agency and the exact pinned
+  upstream Agency Agents orchestrator prompt through the same configured
+  provider and requested model, with the same request, complete visible roster,
+  explicit eligible-worker set, alternating arm order, and one shared scorer.
+  The upstream prompt and MIT license are packaged and hash-verified at revision
+  `ee5e758c10b412cf905f8984a02c5c016315e1ec`.
+- The selection-safety corpus now has 19 labeled scenarios. Every scenario
+  declares helpful and forbidden workers and the corpus covers dangerous or
+  incompatible choices, disabled semantic winners, weak incidental lexical
+  matches, broad multi-agent work, typed context conflicts, and latency.
+- Malformed responses, provider/model mismatches, unavailable model receipts,
+  non-inferred arms, and unequal call counts invalidate the comparison instead
+  of creating artificial Agency lift. The report always keeps superiority and
+  release-claim eligibility false for this bounded selection-only evidence.
+- A live canary exposed and fixed one general compact-plan compiler defect:
+  model outcomes may contain 512 characters, while locally derived acceptance
+  evidence is bounded to 128. Evidence is now artifact-specific and bounded
+  without using scenario-specific exceptions.
 
 Current focused evidence on Windows:
 
 ```text
 5 new cross-host and abstention cases passed
 82 unit-aware delegation, native-child hook, and child-routing cases passed
+55 matched-selection, compact-intent, selection-safety, upstream-architecture,
+and CLI contract cases passed
 ruff check passed for the touched routing slice
 ruff format --check passed for the touched routing slice
 git diff --check passed
 ```
 
+Current configured-provider canary on Windows, using `codex-subscription` and
+requested/actual model `gpt-5.6-luna`:
+
+```text
+agency eval upstream-selection --case active-incident-containment ...
+benchmark failed truthfully
+Agency helpful F1: 0.000
+upstream helpful F1: 0.667
+Agency forbidden/ineligible/conflict selections: 0/0/0
+Agency cold latency: 11459.837 ms (10000 ms predeclared budget)
+```
+
+The valid Agency planner receipt produced two security planning units, but
+deterministic staffing abstained with `no_safe_sufficient_team` and
+`recruiter_abstained`: the planner required `operations`, `investigation`, and
+`risk-analysis`, while the audited incident contracts do not currently cover
+the complete requirement set. This is the next measured contract/routing gap;
+it must not be relabeled as success or hidden by loosening the scorer.
+
 ### Still required before AR-119 can close
 
-- Build and pass a matched held-out selection benchmark against a pinned,
-  source-visible upstream Agency Agents baseline. Dangerous, forbidden,
-  incompatible, disabled, and weak incidental matches must be explicit
-  regressions, not aggregate-score noise.
+- Complete and pass the implemented matched held-out selection benchmark
+  against the pinned source-visible upstream Agency Agents baseline. Reconcile
+  the measured incident contract/planner capability mismatch, rerun its canary,
+  then run all 19 scenarios and fix every unsafe or clearly inferior Agency
+  result. Dangerous, forbidden, incompatible, disabled, and weak incidental
+  matches remain explicit regressions, not aggregate-score noise.
 - Complete the whole-roster multi-agent and conflict corpus, contractor
   duplicate/admission/promotion lifecycle, and CLI/dashboard operator flows.
 - Prove cold, warm, cache-invalidation, and large native-fan-out latency bounds.
@@ -140,13 +181,16 @@ git diff --check passed
 
 ### Next bounded work package
 
-Implement the matched upstream selection benchmark and expand the held-out
-selection-safety corpus first. Pin the compared upstream revision and use the
-same scenarios, roster visibility, allowed agents, and scoring dimensions for
-both paths. Require per-scenario expected helpful agents plus forbidden agents,
-disabled-best-candidate disclosure, composition/conflict assertions, and
-latency. Fix every unsafe or clearly inferior Agency selection exposed by the
-corpus before advancing to contractor lifecycle work.
+Continue the matched selection package without advancing to contractor
+lifecycle work. First reconcile the measured `active-incident-containment`
+capability mismatch through governed, general roster-contract or planning
+semantics; do not add a scenario-specific route or weaken required coverage.
+Rerun that configured-provider canary until Agency produces a safe sufficient
+team within a justified predeclared latency budget. Then execute all 19 matched
+scenarios, retain exact provider/model receipts and parity bindings, and fix
+every unsafe or clearly inferior Agency selection before advancing. Do not
+claim Agency is better unless later untouched-corpus and completed-outcome
+evidence satisfies the explicitly deferred release gates.
 
 ### Handoff constraints
 
