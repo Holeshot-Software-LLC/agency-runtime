@@ -8,15 +8,15 @@ tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/worklog/2026-07-23-48e3022-four-case-selection-recovery.md
+  - docs/worklog/2026-07-23-0dfe777-second-19-case-agency-pass.md
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar-115-live-routing-trust
-evidence_commit: 48e3022837e822ee82d51219854939ca410e901d
-minimum_ledger_commit: 3e34c6f4e262680b000691644d7ec3e4b6c52440
+evidence_commit: 0dfe777e87e0137433b199c015fcd994740c6974
+minimum_ledger_commit: 644aec1b2d078a1060a48630e1af722a38181f93
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -31,9 +31,9 @@ complete historical and acceptance contract.
 
 - Branch: codex/ar-115-live-routing-trust.
 - Substantive evidence commit:
-  48e3022837e822ee82d51219854939ca410e901d.
+  0dfe777e87e0137433b199c015fcd994740c6974.
 - Minimum ledger commit:
-  3e34c6f4e262680b000691644d7ec3e4b6c52440.
+  644aec1b2d078a1060a48630e1af722a38181f93.
 - Live umbrella: issue
   [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
   which remains open.
@@ -43,8 +43,8 @@ complete historical and acceptance contract.
 ## Completed evidence
 
 - ADR-0086 removed the context admission threshold while retaining the
-  50-percent clean checkpoint. The latest committed recovery is `48e3022` /
-  `3e34c6f`; telemetry never admits or blocks live work.
+  50-percent clean checkpoint. The latest committed recovery is `0dfe777` /
+  `644aec1`; telemetry never admits or blocks live work.
 - That committed package preserved a 17/19 complete corpus with two latency-
   only misses followed by a valid 2/2 instrumented recovery. No product or
   policy rule changed.
@@ -84,15 +84,24 @@ complete historical and acceptance contract.
   bindings. This is the second complete 19/19 Agency observation.
 - Exactly one upstream arm, application observability, returned unknown
   disabled shadows. The benchmark remains invalid, and that arm is not a loss.
+- From clean `644aec1`, the next corpus returned status 1 in 441.588810
+  seconds. Its 1,189,496-byte stdout had SHA-256
+  `c3d5276a257e3ec6fefd7a64ca1c24b1c852ae6ca12853a0c0d48864c7523707`;
+  the 12,979-byte projection had SHA-256
+  `72ff44fb13c003221bb623fbeb2d487ad1a170759eb8ff3f9c8fc9dff111524e`.
+- Agency scored 17/19 with complete disabled disclosure and zero unsafe
+  selections. Active incident abstained on margin; accounts payable omitted
+  the required CFO review. Three upstream unknown-shadow arms kept the
+  benchmark invalid.
 
 ## Exact blocker
 
 - Two complete corpora have produced 19/19 Agency under unchanged controls,
   with intervening misses recovering in bounded confirmation.
-- No complete corpus has produced 19 benchmark-valid upstream arms. The newest
-  corpus had exactly one invalid application-observability upstream arm.
-  Malformed, no-response, or timed-out arms remain validity failures, never
-  comparative losses.
+- The newest corpus returned to 17/19; its two Agency failures require exact
+  bounded confirmation. No complete corpus has produced 19 benchmark-valid
+  upstream arms. Malformed, no-response, or timed-out arms remain validity
+  failures, never comparative losses.
 
 ## Same-task continuity
 
@@ -104,18 +113,16 @@ complete historical and acceptance contract.
 ## Next bounded work package
 
 Stay in matched selection; do not advance to contractor lifecycle. Run one
-further unchanged complete 19-case Windows corpus from the new clean ledger
-checkpoint. Capture both streams outside the repository before parsing. Keep
-the roster, tools, provider, requested and actual model, low effort, one-call
-budget, and 15000 ms gate unchanged.
+zero-call-validated instrumented matched confirmation for exactly these cases:
 
 ~~~text
-.\.venv\Scripts\agency.exe eval upstream-selection --all --platform windows --confirm-live-inference "RUN MATCHED UPSTREAM SELECTION EVAL" --json
+active-incident-containment
+accounts-payable-cfo-separated
 ~~~
 
-Retain the exact 19-line projection and every binding, receipt, safety,
-coverage, disabled-disclosure, and benchmark-validity result. If Agency is not
-19/19, confirm failures unchanged before any general semantic change. Keep
+Preserve complete outcomes before projection and keep every control unchanged.
+If both pass, make no product change. If either repeats, compare complete plans
+with prior accepted outcomes and change only a genuinely general defect. Keep
 malformed upstream arms invalid, never losses.
 
 ## Verification
