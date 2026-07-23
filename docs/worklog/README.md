@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-22
+updated: 2026-07-23
 tags: []
 related: []
 supersedes: []
@@ -137,6 +137,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `71405fa` | 2026-07-21 | feat(workforce): establish governed staffing foundation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-120](../roadmap/issue-AR-120-normalized-workforce-recruitment-index.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md), [AR-122](../roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md) | [detail](2026-07-21-71405fa-governed-workforce-foundation.md) |
 | `743a982` | 2026-07-22 | feat(workforce): build inference-first routing foundation | [AR-119 through AR-125](../roadmap/README.md) | [detail](2026-07-22-743a982-inference-first-routing-foundation.md) |
 | `ca893fe` | 2026-07-22 | feat(eval): add matched upstream selection benchmark | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-22-ca893fe-matched-upstream-selection-benchmark.md) |
+| `9d415bb` | 2026-07-23 | feat(workforce): harden matched selection semantics | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-9d415bb-matched-selection-hardening.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
