@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +22,10 @@ class _Result:
 
     def fetchone(self) -> Any:
         return self._row
+
+    def __iter__(self) -> Iterator[Any]:
+        # workforce_schema_is_current iterates PRAGMA table_info(...) results.
+        return iter([self._row] if self._row is not None else [])
 
 
 class _IntegrityConnection:
@@ -130,6 +134,7 @@ def test_current_schema_state_fails_closed_on_integrity_corruption(
         lambda *_args, **_kwargs: None,
     )
     monkeypatch.setattr(sqlite_store, "trace_tombstone_turn_sequence_is_unique", lambda _conn: True)
+    monkeypatch.setattr(sqlite_store, "workforce_schema_is_current", lambda _conn: True)
     with pytest.raises(RuntimeError, match=message):
         store._current_schema_state()
     assert connection.closed is True

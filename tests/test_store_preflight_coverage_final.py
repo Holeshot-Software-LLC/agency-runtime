@@ -103,7 +103,7 @@ def test_preflight_projection_rejects_malformed_metadata_and_scalars() -> None:
 
 
 def test_specialist_and_suggestion_projections_reject_every_invalid_shape() -> None:
-    max_refs = store_preflight.MAX_SELECTED_SPECIALISTS
+    max_refs = store_preflight.MAX_DURABLE_SPECIALIST_REFERENCES
     assert store_preflight._project_specialist_refs({}) is None
     assert store_preflight._project_specialist_refs([{}] * (max_refs + 1)) is None
     assert store_preflight._project_specialist_refs(["agent"]) is None
