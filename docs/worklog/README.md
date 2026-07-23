@@ -155,6 +155,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `47ff115` | 2026-07-23 | docs(roadmap): record broad selection recovery evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-47ff115-broad-selection-recovery-evidence.md) |
 | `8a0e75d` | 2026-07-23 | docs(roadmap): record matched selection confidence recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-8a0e75d-matched-selection-confidence-recovery.md) |
 | `1c91945` | 2026-07-23 | docs(roadmap): record 19-case Agency selection pass | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-1c91945-19-case-agency-selection-pass.md) |
+| `978e02c` | 2026-07-23 | docs(roadmap): record matched incident selection variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-978e02c-matched-incident-selection-variance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
