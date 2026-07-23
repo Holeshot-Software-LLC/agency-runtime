@@ -143,7 +143,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-123` | [Add complete workforce CLI and live dashboard operations](issue-AR-123-workforce-cli-and-dashboard.md) | open | p0 | dashboard | [#136](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/136) |
 | `AR-124` | [Integrate lifecycle assurance, native delegation, and provider evidence](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | open | p0 | routing | [#137](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/137) |
 | `AR-125` | [Prove workforce selection and one-shot application outcomes](issue-AR-125-workforce-and-one-shot-evaluation.md) | open | p0 | testing | [#138](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138) |
-| `AR-126` | [Keep context checkpoints in the current task](issue-AR-126-bounded-idempotent-context-handoffs.md) | in_progress | p0 | documentation | Pending authorization |
+| `AR-126` | [Keep context checkpoints in the current task](issue-AR-126-bounded-idempotent-context-handoffs.md) | done | p0 | documentation | [#139](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/139) |
 
 ## Traceability
 

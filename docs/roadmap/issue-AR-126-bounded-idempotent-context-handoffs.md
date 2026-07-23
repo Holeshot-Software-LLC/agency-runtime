@@ -1,6 +1,6 @@
 ---
 title: "AR-126: Keep context checkpoints in the current task"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-23
 updated: 2026-07-23
@@ -23,7 +23,7 @@ type: issue
 epic: documentation
 issue_id: AR-126
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/139
 depends_on: []
 blocks: []
 ---
@@ -53,8 +53,9 @@ capsule, the 50-percent clean checkpoint, and immediately-preceding telemetry
 for every live run. After a checkpoint, all bounded work continues in the same
 task through normal Codex behavior.
 
-Tracker creation and label parity remain pending explicit authorization for the
-outward-facing write.
+GitHub issue #139 now records the same scope with the required
+`epic:documentation` label. PR #129 carries this canonical local contract and
+will close the tracker item when merged.
 
 ## Approach
 
@@ -93,5 +94,5 @@ supplies the reproduced failure and first active capsule.
   live-admission fields.
 - [x] Threshold crossings never create, fork, dispatch, transfer, acknowledge,
   stop for, or wait on another task.
-- [ ] A same-repository tracker issue titled with AR-126 and labeled
+- [x] A same-repository tracker issue titled with AR-126 and labeled
   epic:documentation is created and mapped after authorization.
