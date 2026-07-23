@@ -158,6 +158,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `978e02c` | 2026-07-23 | docs(roadmap): record matched incident selection variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-978e02c-matched-incident-selection-variance.md) |
 | `a5844dc` | 2026-07-23 | docs(roadmap): record repeated matched incident variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-a5844dc-repeated-matched-incident-variance.md) |
 | `c1efcaf` | 2026-07-23 | docs(roadmap): record instrumented incident recovery and corpus variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-c1efcaf-instrumented-incident-recovery-and-corpus-variance.md) |
+| `355c05a` | 2026-07-23 | docs(governance): bound autonomous context handoffs | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-355c05a-bounded-autonomous-context-handoffs.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
