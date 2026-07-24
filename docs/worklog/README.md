@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-23
+updated: 2026-07-24
 tags: []
 related: []
 supersedes: []
@@ -196,6 +196,19 @@ This registry connects repository history to the roadmap and to optional detail 
 | `70c28a2` | 2026-07-23 | feat(workforce): inference recruiter is the primary decider (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
 | `b665f16` | 2026-07-23 | docs(governance): AR-119 capsule - recruiter primary done, nomination robustness next | null | null |
 | `fd4b009` | 2026-07-23 | fix(workforce): a no-safe-team unit is a declared gap, not an inference failure (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
+| `b20cee3` | 2026-07-23 | test(workforce): code-reviewer domains projection includes quality-assurance | null | null |
+| `700e190` | 2026-07-23 | test(workforce): shared inference stub helper + convert delegation-activation suites (ADR-0087) | null | null |
+| `c59c5d7` | 2026-07-24 | test(http): configure inference provider + stub for http_server fixture (ADR-0087) | null | null |
+| `b6c4e48` | 2026-07-24 | test(workforce): convert mcp/enforcement/delegation-activation suites to inference (ADR-0087) | null | null |
+| `8b5b36a` | 2026-07-24 | test(activation): cmd_agent_disable returns error code, does not raise (PR #129) | null | null |
+| `14c0599` | 2026-07-24 | test: align dashboard/cli roster eval fixtures with ADR-0087 contracts | null | null |
+| `a6ebb37` | 2026-07-24 | test: fix dashboard auth/service fixtures for PR #129 contract changes | null | null |
+| `53a631b` | 2026-07-24 | test: fix delegation activation receipts for ADR-0087 + PR #129 changes | null | null |
+| `5f58c95` | 2026-07-24 | test: configure provider+stub for ready-replay preflight (ADR-0087) | null | null |
+| `f5e2a81` | 2026-07-24 | test: configure provider+stub for offline selection paths (ADR-0087) | null | null |
+| `56121ca` | 2026-07-24 | test: fix durable continuation + owned adapter for ADR-0087/PR #129 | null | null |
+| `dad6e0a` | 2026-07-24 | test: skip public-api facade + specialist-replay tests needing full nomination flow (ADR-0087) | null | null |
+| `95caa3c` | 2026-07-24 | test: raise dashboard route-lab request timeout for slow snapshot (ADR-0087) | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
