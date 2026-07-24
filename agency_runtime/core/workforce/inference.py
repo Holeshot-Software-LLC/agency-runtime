@@ -1992,6 +1992,34 @@ def _deterministic_outcome(
     )
 
 
+def _declined_outcome(
+    *,
+    config: AgencyConfig,
+) -> WorkforceRoutingOutcome:
+    """Return a labeled decline when no inference provider is configured.
+
+    Per ADR-0087 the runtime ships no deterministic decider: deterministic
+    selection cannot read intent and its picks rest on keyword luck, so the
+    runtime refuses to select a specialist when inference is unavailable
+    rather than emit a wrong pick. Offline injects no Agency specialist; the
+    turn is handed to the host's native capability. The deterministic
+    plan-and-staff decider survives only as a governed evaluation baseline
+    (evals compare the algorithms), never as a runtime selection.
+    """
+
+    return WorkforceRoutingOutcome(
+        status="declined",
+        mode=config.workforce.mode,
+        inference_mode="declined_no_provider",
+        plan=None,
+        proposal=None,
+        staffing=StaffingDecision("declined", (), ("no_inference_provider",)),
+        attempts=(),
+        abstention_codes=("no_inference_provider",),
+        calls_used=0,
+    )
+
+
 def _strict_critic(
     *,
     request: str,
@@ -2060,12 +2088,7 @@ def plan_and_staff_workforce(
     ask = _safe_request(request)
     mode = config.workforce.mode
     if not _inference_declared(config):
-        return _deterministic_outcome(
-            ask,
-            snapshot,
-            config=config,
-            context=context,
-        )
+        return _declined_outcome(config=config)
     budget = _CallBudget(_mode_budget(config))
     attempts: list[WorkforceInferenceAttempt] = []
     cache_hits: list[str] = []
