@@ -945,17 +945,8 @@ def test_openclaw_constructor_error_and_oversized_main_fallback(monkeypatch) -> 
 
 
 def test_hook_claude_assignment_and_child_identity_fail_closed_matrix(monkeypatch) -> None:
-    assignment = hooks.ClaudeChildAssignment(
-        session_id="session",
-        trace_id="trace",
-        tool_use_id="tool",
-        work_unit_id="specialist:reviewer",
-        specialist_slug="reviewer",
-    )
-    monkeypatch.setattr(hooks, "_MAX_CLAUDE_CHILD_RECIPE_CHARS", 1)
-    with pytest.raises(RuntimeError, match="context budget"):
-        hooks._claude_child_preflight_recipe(assignment)
-
+    # The native-child preflight recipe budget was removed in PR #129; the
+    # assignment type is now NativeChildAssignment.
     assert hooks._canonical_tool_call("codex", "Agent", {}, {})[0] == "spawn_agent"
 
     payload = {
@@ -968,8 +959,17 @@ def test_hook_claude_assignment_and_child_identity_fail_closed_matrix(monkeypatc
         "trace_id": "trace",
         "status": "active",
         "delivery_mode": "isolated",
-        "selected_specialists": [{"slug": "reviewer"}],
-        "unit_agent_plan": [],
+        "selected_specialists": [{"slug": "reviewer", "version": "1.0.0", "hash": "a" * 64}],
+        "unit_agent_plan": [
+            {
+                "work_unit_id": "specialist:reviewer",
+                "recommended_agent": "reviewer",
+                "goal_hash": "a" * 64,
+                "mutation_scope": "",
+                "resource_hashes": [],
+                "required_evidence": [],
+            }
+        ],
     }
     bridge = hooks.HookBridge(
         "claude",
