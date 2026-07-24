@@ -192,6 +192,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `358bacc` | 2026-07-23 | fix(workforce): derive required capabilities from artifact_kind (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
 | `9e19d38` | 2026-07-23 | docs(governance): update AR-119 capsule - capability blocker fixed, nomination accepted | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `90ff042` | 2026-07-23 | fix(workforce): specialist tool_classes are descriptive, not a host precondition | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
+| `5cbfabb` | 2026-07-23 | docs(governance): AR-119 capsule - selection proven end-to-end live | null | null |
+| `70c28a2` | 2026-07-23 | feat(workforce): inference recruiter is the primary decider (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
