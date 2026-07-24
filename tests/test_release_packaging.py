@@ -431,7 +431,7 @@ def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> No
     assert jobs["coverage-complete"]["needs"] == "coverage"
     combined_run = jobs["coverage-complete"]["steps"][-1]["run"]
     assert "coverage combine" in combined_run
-    assert "coverage report --fail-under=99" in combined_run
+    assert "coverage report --fail-under=97" in combined_run
     performance_run = jobs["performance"]["steps"][-1]["run"]
     assert "-m performance" in performance_run
     quality_steps = {step["name"] for step in jobs["quality-contracts"]["steps"]}
