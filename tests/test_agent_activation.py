@@ -203,10 +203,12 @@ def test_cli_lists_toggles_and_reenables_preserved_agent(
     assert (
         next(row for row in payload["agents"] if row["slug"] == "code-reviewer")["enabled"] is True
     )
-    with pytest.raises(ValueError, match="protected coordinator"):
-        roster_commands.cmd_agent_disable(SimpleNamespace(slug="chief-of-staff"))
-    with pytest.raises(ValueError, match="not present"):
-        roster_commands.cmd_agent_disable(SimpleNamespace(slug="missing-agent"))
+    # PR #129: cmd_agent_disable catches ValueError and returns 1 (prints
+    # error) instead of raising. Assert the return code + message.
+    assert roster_commands.cmd_agent_disable(SimpleNamespace(slug="chief-of-staff")) == 1
+    assert "protected coordinator" in capsys.readouterr().out
+    assert roster_commands.cmd_agent_disable(SimpleNamespace(slug="missing-agent")) == 1
+    assert "not present" in capsys.readouterr().out
 
 
 def test_cli_parser_executes_agent_toggle_and_reports_protected_error(
@@ -219,7 +221,7 @@ def test_cli_parser_executes_agent_toggle_and_reports_protected_error(
     assert cli_main.main(["agents", "enable", "code-reviewer"]) == 0
     assert "code-reviewer is enabled" in capsys.readouterr().out
     assert cli_main.main(["agents", "disable", "agents-orchestrator"]) == 1
-    assert "protected coordinator" in capsys.readouterr().err
+    assert "protected coordinator" in capsys.readouterr().out
 
 
 def test_cli_agent_controls_accept_explicit_config_and_report_its_identity(

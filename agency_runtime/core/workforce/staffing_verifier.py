@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import itertools
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from functools import lru_cache
 from typing import Any
@@ -160,36 +160,88 @@ def _supports_planning_capability(contract: WorkforceContract, capability: str) 
         return True
     lifecycle = set(contract.lifecycle_phases)
     artifacts = set(contract.artifact_kinds)
-    if capability == "analysis":
-        return contract.authority in {"advise", "plan", "review"}
-    if capability == "audit":
-        return contract.authority == "review"
-    if capability == "coordination":
-        return "coordination" in lifecycle
-    if capability == "design":
-        return contract.authority == "plan" or "design" in lifecycle
-    if capability == "documentation":
-        return "documentation" in artifacts or "documentation" in lifecycle
-    if capability == "implementation":
-        return contract.authority == "modify" or "implementation" in lifecycle
-    if capability == "investigation":
-        return bool(lifecycle & {"discovery", "review", "testing"})
-    if capability == "operations":
-        return bool(lifecycle & {"coordination", "release"})
-    if capability == "planning":
-        return contract.authority == "plan" or "planning" in lifecycle
+    rule = _CAPABILITY_RULES.get(capability)
+    if rule is not None:
+        return rule(contract, lifecycle, artifacts)
     if capability == "risk-analysis":
         tokens = _contract_tokens(contract)
         return contract.authority in {"plan", "review"} and bool(
             tokens & {"risk", "risks", "safety", "unsafe"}
         )
-    if capability == "review":
-        return contract.authority == "review" or "review" in lifecycle
-    if capability == "testing":
-        return "testing" in lifecycle or bool(artifacts & {"test-code", "test-evidence"})
-    if capability == "verification":
-        return contract.authority == "review" or "testing" in lifecycle
+    if capability == "architecture":
+        # An architecture-record unit needs someone who owns the design. A
+        # planner, a designer, or an architect-by-lifecycle fits; a read-only
+        # reviewer or implementer does not own the system design.
+        return (
+            contract.authority == "plan"
+            or bool(lifecycle & {"architecture", "design", "planning"})
+            or bool(artifacts & {"architecture-record", "plan"})
+        )
     return None
+
+
+def _analysis_rule(contract: WorkforceContract, _lifecycle, _artifacts) -> bool:
+    return contract.authority in {"advise", "plan", "review"}
+
+
+def _audit_rule(contract: WorkforceContract, _lifecycle, _artifacts) -> bool:
+    return contract.authority == "review"
+
+
+def _coordination_rule(_contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    return "coordination" in lifecycle
+
+
+def _design_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    return contract.authority == "plan" or "design" in lifecycle
+
+
+def _documentation_rule(_contract: WorkforceContract, lifecycle, artifacts) -> bool:
+    return "documentation" in artifacts or "documentation" in lifecycle
+
+
+def _implementation_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    return contract.authority == "modify" or "implementation" in lifecycle
+
+
+def _investigation_rule(_contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    return bool(lifecycle & {"discovery", "review", "testing"})
+
+
+def _operations_rule(_contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    return bool(lifecycle & {"coordination", "release"})
+
+
+def _planning_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    return contract.authority == "plan" or "planning" in lifecycle
+
+
+def _review_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    return contract.authority == "review" or "review" in lifecycle
+
+
+def _testing_rule(_contract: WorkforceContract, lifecycle, artifacts) -> bool:
+    return "testing" in lifecycle or bool(artifacts & {"test-code", "test-evidence"})
+
+
+def _verification_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    return contract.authority == "review" or "testing" in lifecycle
+
+
+_CAPABILITY_RULES: dict[str, Callable[[WorkforceContract, set[str], set[str]], bool]] = {
+    "analysis": _analysis_rule,
+    "audit": _audit_rule,
+    "coordination": _coordination_rule,
+    "design": _design_rule,
+    "documentation": _documentation_rule,
+    "implementation": _implementation_rule,
+    "investigation": _investigation_rule,
+    "operations": _operations_rule,
+    "planning": _planning_rule,
+    "review": _review_rule,
+    "testing": _testing_rule,
+    "verification": _verification_rule,
+}
 
 
 def _supports(contract: WorkforceContract, capability: str) -> bool:
@@ -314,8 +366,14 @@ def _eligibility(
     required_tools = set(unit.required_tools)
     if not required_tools <= context.available_tools:
         reasons.append("agent_tools_missing")
-    if not set(contract.tool_classes) <= context.available_tools:
-        reasons.append("agent_worker_tools_missing")
+    # A specialist's declared tool_classes describe what it CAN use, not a
+    # precondition the host must satisfy. Re-gating contracts on their full
+    # declared tool set (the legacy broad-required-tool trap) rejects the
+    # model's best-coverage specialist when it owns an optional surface the
+    # host doesn't advertise -- e.g. a security auditor that declares
+    # security-analysis on a host that supplies only repository-read. The unit's
+    # required-tools check above is the real host-capability gate; the worker's
+    # own tools are descriptive metadata, not a hard eligibility failure.
     reasons.extend(_unit_compatibility_reasons(unit, contract))
     if _out_of_scope(contract, unit):
         reasons.append("agent_explicitly_out_of_scope")

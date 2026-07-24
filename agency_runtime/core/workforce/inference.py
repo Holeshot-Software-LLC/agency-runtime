@@ -24,7 +24,10 @@ from agency_runtime.core.workforce.cache import (
     workforce_cache_identity,
     workforce_cache_put,
 )
-from agency_runtime.core.workforce.capability_ontology import CORE_CAPABILITY_IDS
+from agency_runtime.core.workforce.capability_ontology import (
+    ARTIFACT_CAPABILITY,
+    CORE_CAPABILITY_IDS,
+)
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.intent import (
     COMPACT_INTENT_RESPONSE_SCHEMA,
@@ -1444,11 +1447,13 @@ def _proposal_from_nominations(
         semantic_acceptable=semantic_acceptable,
         semantic_forbidden=semantic_forbidden,
     )
-    if any(not row.selected for row in proposal.units):
-        raise ValueError(
-            "workforce nominations have no safe team; "
-            + _missing_team_detail(plan, proposal, snapshot.contracts)
-        )
+    # ADR-0087: a unit with no safe team is a real capability gap, not an
+    # invalid nomination. The model ranked the candidates it could; if the
+    # deterministic builder cannot form a safe team for a unit, that unit's gap
+    # is signal that should reach the gap -> hire path in pipeline.route
+    # (_single_hireable_gap_unit + hire_contractor_for_gap), not a ValueError
+    # that makes the whole nomination read as "inference failed". Return the
+    # proposal with the gap visible (empty selected, abstention reasons).
     return proposal
 
 
@@ -1528,16 +1533,6 @@ _PLAN_SET_FIELDS = frozenset(
     }
 )
 
-_ARTIFACT_CAPABILITY = {
-    "analysis": "analysis",
-    "architecture-record": "design",
-    "documentation": "documentation",
-    "implementation-change": "implementation",
-    "plan": "planning",
-    "review-report": "review",
-    "test-code": "testing",
-    "test-evidence": "verification",
-}
 _REPOSITORY_RECONNAISSANCE = frozenset({"codebase", "repo", "repository"})
 
 
@@ -1550,13 +1545,13 @@ def _canonicalize_planning_activity(unit: dict[str, Any]) -> tuple[str, str]:
         str(unit.get("outcome") or ""),
         *(str(item) for item in declared_capabilities if isinstance(declared_capabilities, list)),
     )
-    if artifact in _ARTIFACT_CAPABILITY:
+    if artifact in ARTIFACT_CAPABILITY:
         # Artifact and lifecycle already express the activity. Letting a model
         # add generic capabilities such as "analysis" and "design" to an
         # implementation unit can make every correctly scoped implementer
         # deterministically ineligible. Keep semantic specialization in the
         # domain/stack fields and derive this broad capability mechanically.
-        unit["required_capabilities"] = [_ARTIFACT_CAPABILITY[artifact]]
+        unit["required_capabilities"] = [ARTIFACT_CAPABILITY[artifact]]
     domains = unit.get("domains")
     if (
         artifact == "implementation-change"
@@ -1837,36 +1832,6 @@ def _mode_budget(config: AgencyConfig) -> int:
     }[config.workforce.mode]
 
 
-_RECRUITER_REFINABLE_CODES = frozenset(
-    {
-        "composition_order_invalid",
-        "delegated_context_not_distinct",
-        "redundant_substitution_group",
-        "required_composition_agent_missing",
-        "review_context_reused",
-        "review_independence_class_reused",
-        "same_context_conflict",
-        "selected_agent_budget_exceeded",
-        "selection_confidence_too_low",
-        "selection_exclusive_conflict",
-        "selection_margin_too_low",
-        "unit_agent_budget_exceeded",
-    }
-)
-
-
-def _can_refine_with_recruiter(
-    proposal: RecruiterProposal | None,
-    staffing: StaffingDecision,
-) -> bool:
-    """Use model recruitment only for a complete but ambiguous local candidate set."""
-
-    if proposal is None or staffing.accepted or any(not row.selected for row in proposal.units):
-        return False
-    codes = {item.code for item in staffing.abstention_reasons}
-    return bool(codes) and codes <= _RECRUITER_REFINABLE_CODES
-
-
 def _recruit_ambiguous_plan(
     *,
     request: str,
@@ -1992,6 +1957,34 @@ def _deterministic_outcome(
     )
 
 
+def _declined_outcome(
+    *,
+    config: AgencyConfig,
+) -> WorkforceRoutingOutcome:
+    """Return a labeled decline when no inference provider is configured.
+
+    Per ADR-0087 the runtime ships no deterministic decider: deterministic
+    selection cannot read intent and its picks rest on keyword luck, so the
+    runtime refuses to select a specialist when inference is unavailable
+    rather than emit a wrong pick. Offline injects no Agency specialist; the
+    turn is handed to the host's native capability. The deterministic
+    plan-and-staff decider survives only as a governed evaluation baseline
+    (evals compare the algorithms), never as a runtime selection.
+    """
+
+    return WorkforceRoutingOutcome(
+        status="declined",
+        mode=config.workforce.mode,
+        inference_mode="declined_no_provider",
+        plan=None,
+        proposal=None,
+        staffing=StaffingDecision("declined", (), ("no_inference_provider",)),
+        attempts=(),
+        abstention_codes=("no_inference_provider",),
+        calls_used=0,
+    )
+
+
 def _strict_critic(
     *,
     request: str,
@@ -2052,20 +2045,21 @@ def plan_and_staff_workforce(
     *,
     config: AgencyConfig,
     context: StaffingContext,
-    invoker: StructuredInvoker = invoke_structured_provider_result,
+    invoker: StructuredInvoker | None = None,
     routing_context_fingerprint: str = "",
 ) -> WorkforceRoutingOutcome:
     """Plan, recruit, and verify one request without letting inference activate workers."""
 
+    # Resolve the invoker at call time so callers that do not pass one (the
+    # full preflight -> route -> workforce stack) honor a monkeypatched
+    # module-global invoke_structured_provider_result. This is the test seam
+    # for exercising inference through the whole stack without a live CLI.
+    if invoker is None:
+        invoker = invoke_structured_provider_result
     ask = _safe_request(request)
     mode = config.workforce.mode
     if not _inference_declared(config):
-        return _deterministic_outcome(
-            ask,
-            snapshot,
-            config=config,
-            context=context,
-        )
+        return _declined_outcome(config=config)
     budget = _CallBudget(_mode_budget(config))
     attempts: list[WorkforceInferenceAttempt] = []
     cache_hits: list[str] = []
@@ -2160,14 +2154,15 @@ def plan_and_staff_workforce(
     proposal = recruited.proposal
     staffing = recruited.staffing
 
-    if (
-        not staffing.accepted
-        and mode != "fast"
-        and _can_refine_with_recruiter(
-            proposal,
-            staffing,
-        )
-    ):
+    # ADR-0087: inference is the primary specialist decider. With a provider
+    # configured (we passed the offline-decline check above), the recruiter
+    # ranks the recalled typed shortlist and nominates the best specialist(s)
+    # per unit or declares a gap. Run it whenever inference is available,
+    # regardless of mode; the deterministic candidate stage above is the recall
+    # input. Skip only when deterministic recall already accepted a complete,
+    # safe team (inference would merely confirm it) -- but never gate the
+    # recruiter behind mode or a narrow abstention-code predicate.
+    if _inference_declared(config) and not staffing.accepted:
         parsed_proposal, stage_attempts, failure, recruiter_cache_hit = _recruit_ambiguous_plan(
             request=ask,
             plan=plan,

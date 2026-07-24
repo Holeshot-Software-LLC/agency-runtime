@@ -214,7 +214,10 @@ def test_v30_import_events_without_event_sequence_upgrade_atomically() -> None:
         ] == [("legacy-one", 1), ("legacy-two", 2)]
         assert schema.agent_import_event_sequence_schema_is_current(connection) is True
         assert schema.remediation_indexes_are_current(connection) is True
-        assert connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 32
+        assert (
+            connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+            == schema.SCHEMA_VERSION
+        )
     finally:
         connection.close()
 

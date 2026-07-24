@@ -7,123 +7,101 @@ updated: 2026-07-23
 tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
-  - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
-  - docs/worklog/2026-07-23-0dfe777-second-19-case-agency-pass.md
-  - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
+  - docs/roadmap/issue-AR-121-inference-planning-and-staffing.md
+  - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar-115-live-routing-trust
-evidence_commit: 0dfe777e87e0137433b199c015fcd994740c6974
-minimum_ledger_commit: 644aec1b2d078a1060a48630e1af722a38181f93
+branch: codex/ar-119-green-main-then-finish
+evidence_commit: c95ecea09c573cd46e5b10d196029234f411cd29
+minimum_ledger_commit: c95ecea09c573cd46e5b10d196029234f411cd29
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
 
 # AR-119 active recovery capsule
 
-This is the bounded bootstrap projection for the next AR-119 package. The
-[canonical issue](../issue-AR-119-inference-first-workforce.md) remains the
-complete historical and acceptance contract.
+This is the bounded current-state projection for AR-119. The
+[canonical issue](../issue-AR-119-inference-first-workforce.md) remains
+the complete acceptance contract.
 
 ## Checkpoint
 
-- Branch: codex/ar-115-live-routing-trust.
-- Substantive evidence commit:
-  0dfe777e87e0137433b199c015fcd994740c6974.
-- Minimum ledger commit:
-  644aec1b2d078a1060a48630e1af722a38181f93.
-- Live umbrella: issue
-  [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132),
-  which remains open.
-- The current HEAD may be newer than the minimum ledger commit but must contain
-  it.
+- Branch: `codex/ar-119-green-main-then-finish` (from `origin/main`
+  `effa10b`). Substantive/ledger head: `c95ecea`.
+- Live umbrella [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
+  remains open; tracker writes need authorization.
+- Architecture pivoted to ADR-0087 (inference-decides-from-a-relevance-
+  shortlist). The deterministic decider is removed from the runtime.
 
 ## Completed evidence
 
-- ADR-0086 removed the context admission threshold while retaining the
-  50-percent clean checkpoint. The latest committed recovery is `0dfe777` /
-  `644aec1`; telemetry never admits or blocks live work.
-- That committed package preserved a 17/19 complete corpus with two latency-
-  only misses followed by a valid 2/2 instrumented recovery. No product or
-  policy rule changed.
-- From clean `bb876f8`, the next unchanged complete corpus returned status 1
-  in 454.014647 seconds. Its 1,182,655-byte stdout had SHA-256
-  `b7d2f45e06703901b92d7c63272c4f6852c864b800d09915c1bb26792429e35b`;
-  stderr was empty. The 12,702-byte exact projection had SHA-256
-  `c0ae85f40b8667e21479d97693fb52e3f3c2dad4020f45b35a1d635f4b73545c`.
-- All 38 arms retained the exact provider/model/receipt, applied-inference,
-  one-call, and 15000 ms bindings. Corpus, roster, and allowed-agent
-  fingerprints remained unchanged.
-- Agency scored 15/19 with precision 0.925926, recall 0.862069, F1 0.892857,
-  17/19 typed coverage, p50 8939.435 ms, p95/max 16712.282 ms, and zero unsafe
-  selections. Installed release and runtime routing abstained; disabled LSP
-  omitted its required disclosure; broad application exceeded latency with the
-  complete expected team.
-- Descriptive upstream scored 4/19 with precision 0.794872, recall 0.534483,
-  F1 0.639175, 5/19 typed coverage, p50 14325.921 ms, and p95/max
-  26469.788 ms. Two unknown-shadow and two invalid-assignment arms made the
-  benchmark invalid; none is an upstream loss.
-- The zero-call-validated four-case instrumented confirmation returned status
-  1 in 109.988309 seconds only because two upstream arms were malformed. Its
-  768,427-byte stdout/report had SHA-256
-  `2bc25b57ea7b5d86b36d8ef38bba1c2d6d510a88358b62a28814ed892181ac93`;
-  the 3,350-byte projection had SHA-256
-  `fb72cf528a86e079cee3b46e8cb60debaf803fa740826b845f006d6b2e239a50`.
-- Agency passed 4/4 with complete typed coverage and disabled disclosure,
-  p95/max 14074.396 ms, and zero unsafe selections. Every complete outcome was
-  preserved before scoring. No product or policy rule changed.
-- From clean `3e34c6f`, the next complete corpus returned status 1 in
-  406.071759 seconds. Its 1,195,829-byte stdout had SHA-256
-  `2e051f5aa2aa7b158a2ba799fde3ca9ff0e413a89fd587d0be740d090063b530`;
-  the 13,313-byte projection had SHA-256
-  `bab3fbf0c735603439914d284afc5a044d154b6e56f27715ef8dbdefbc6400c6`.
-- Agency passed 19/19 with 19/19 typed coverage, complete disabled disclosure,
-  p95/max 12942.243 ms, and zero unsafe selections. All 38 arms retained exact
-  bindings. This is the second complete 19/19 Agency observation.
-- Exactly one upstream arm, application observability, returned unknown
-  disabled shadows. The benchmark remains invalid, and that arm is not a loss.
-- From clean `644aec1`, the next corpus returned status 1 in 441.588810
-  seconds. Its 1,189,496-byte stdout had SHA-256
-  `c3d5276a257e3ec6fefd7a64ca1c24b1c852ae6ca12853a0c0d48864c7523707`;
-  the 12,979-byte projection had SHA-256
-  `72ff44fb13c003221bb623fbeb2d487ad1a170759eb8ff3f9c8fc9dff111524e`.
-- Agency scored 17/19 with complete disabled disclosure and zero unsafe
-  selections. Active incident abstained on margin; accounts payable omitted
-  the required CFO review. Three upstream unknown-shadow arms kept the
-  benchmark invalid.
+PR #129 merged red; Phase 0 recovery + the ADR-0087 pivot are underway.
+Each below is verified green and ledgered.
+
+- **P0a** `9d68e7e`: dashboard assets 275,892 B -> 240,565 B (21.1 KiB
+  headroom). `.zcode` ignore `dc0d3f2`. **P0b** `10e3b4c`: Codex
+  PreToolUse hook contract. **P0c** `45f78cc`: routing fixtures.
+  **D1/D2** `8b95ab0`: roster opaque-hash tolerance + reroute-on-
+  mismatch (the only genuine prod fixes). **P0e** `85cd7b7`: schema
+  fixtures. Conflict-closure seeding `fb9829e`.
+- **ADR-0087** `495b4a4`/`58c9cd9`: inference is the sole decider;
+  deterministic recall stays as stage 1; offline declines; the upstream
+  asset worth borrowing is the audited pool, not its selector.
+- **Offline-decline pivot** `ee47985`: `plan_and_staff_workforce`
+  returns a labeled `_declined_outcome` (no deterministic decider) when
+  no provider is configured. 45 workforce-inference tests pass.
+- **Invoker seam** `c95ecea`: `plan_and_staff_workforce(invoker=None)`
+  resolves the module-global at call time, so the full
+  preflight->route->workforce stack is stubbable via monkeypatch without
+  a live CLI.
 
 ## Exact blocker
 
-- Two complete corpora have produced 19/19 Agency under unchanged controls,
-  with intervening misses recovering in bounded confirmation.
-- The newest corpus returned to 17/19; its two Agency failures require exact
-  bounded confirmation. No complete corpus has produced 19 benchmark-valid
-  upstream arms. Malformed, no-response, or timed-out arms remain validity
-  failures, never comparative losses.
+**SELECTION WORKS END-TO-END (proven live, in fast mode).** Against
+codex-cli 0.145.0, the recruiter (now primary, `70c28a2`) nominates and
+the verifier ACCEPTS: `unit-code-review` -> **code-reviewer**,
+`unit-security-review` -> **ai-generated-code-security-auditor**.
+Unblocked by: `358bacc` (capability from artifact_kind), `90ff042`
+(tool_classes descriptive), `70c28a2` (recruiter primary in all modes +
+fast_call_budget 1->2).
 
-## Same-task continuity
+Remaining items to reach the full north star:
 
-- Context thresholds do not create, fork, dispatch, or wait for another task.
-- Continue this package in the current task through normal Codex compaction.
-- At or below 50 percent, ensure a clean durable checkpoint, then continue in
-  the same task, including live evaluation.
+1. **Nomination robustness (WP3-3).** For complex/multi-unit asks (e.g. a
+   FluxUI dashboard) the recruiter nomination fails validation
+   (`workforce_inference_failed`) — `_proposal_from_nominations` rejects
+   the model output on a coverage/composition rule, so the gap->hire path
+   is not yet reached for those asks. Also the codebase-discovery tie-break
+   intermittently picks code-reviewer over the model's #1
+   codebase-onboarding-engineer.
+2. **Test conversions (WP3-4).** 14 selection-asserting suites
+   (http/mcp/delegation) still see the offline decline; convert to
+   provider+stub (or live) once recruiter is primary. Then green-main.
 
 ## Next bounded work package
 
-Stay in matched selection; do not advance to contractor lifecycle. Run one
-zero-call-validated instrumented matched confirmation for exactly these cases:
+1. Harden `_proposal_from_nominations` so a valid model nomination for a
+   complex/multi-unit ask is accepted (not rejected on a coverage/
+   composition rule); then a FluxUI-style gap reaches `hire_contractor_for_gap`.
+   Also resolve the codebase-discovery tie-break so the model's #1 stands.
+2. Convert the 14 selection-asserting suites (http/mcp/delegation) to
+   provider+stub (or live) and resume green-main.
 
-~~~text
-active-incident-containment
-accounts-payable-cfo-separated
-~~~
+## Live-evaluation baseline (unchanged)
 
-Preserve complete outcomes before projection and keep every control unchanged.
-If both pass, make no product change. If either repeats, compare complete plans
-with prior accepted outcomes and change only a genuinely general defect. Keep
-malformed upstream arms invalid, never losses.
+Two unchanged corpora produced 19/19 safe Agency passes; the newest
+returned 17/19 (active-incident abstained on margin; accounts-payable
+omitted the CFO review). No corpus has produced 19 benchmark-valid
+upstream arms; malformed/timed-out/no-response arms are validity
+failures, never losses.
+
+## Same-task continuity
+
+Context thresholds never create/fork/dispatch/wait for another task.
+Continue through compaction. At or below 50%, ensure a clean durable
+checkpoint, then continue in the same task.
 
 ## Verification
 
@@ -132,22 +110,21 @@ malformed upstream arms invalid, never losses.
 .\.venv\Scripts\python.exe scripts\update_policy_availability.py --check
 .\.venv\Scripts\python.exe scripts\update_worklog.py --check
 .\.venv\Scripts\python.exe scripts\verify_docs.py
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
+python -m pytest tests/test_workforce_inference.py -q -W error
 git diff --check
 .\.venv\Scripts\python.exe scripts\context_handoff_status.py --json --threshold 50
 ~~~
 
 ## Constraints
 
-- Check telemetry immediately before every live evaluation, including a
-  conditional second run; the reading only determines whether a clean
-  checkpoint must first be ensured.
-- At or below 50 percent, create a clean durable checkpoint and continue in the
-  same task; do not dispatch a task or wait for telemetry to reset.
-- Preserve every accumulated AR-119 commit and the clean branch.
-- Do not weaken typed coverage, add a scenario route, raise the 15000 ms gate,
-  increase the one-call budget, or reinterpret malformed upstream output.
-- Do not claim Agency is better.
-- Do not push, open or update a PR, trigger hosted Actions, mutate or close
-  issue #132, or mark AR-119 complete.
-- Update the canonical issue and replace this capsule when the package changes;
-  create the required substantive and ledger commits.
+- Telemetry before every live evaluation; conservative estimate when
+  `CODEX_THREAD_ID` is absent.
+- Do not weaken typed coverage/parser validation, add a scenario route,
+  reinterpret malformed upstream output, or claim Agency is better
+  without a benchmark-valid comparison.
+- A specialist governs its unit (generalize/test/review); offline
+  declines rather than emit a keyword-luck pick (ADR-0087).
+- Update the canonical issue and replace this capsule when the package
+  changes; create the required substantive and ledger commits.

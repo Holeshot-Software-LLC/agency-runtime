@@ -228,8 +228,10 @@ def test_pipeline_reuses_session_selection_for_a_continuation(
     config = _offline_config()
     request = pipeline._RouteRequest(
         session_id="session",
+        trace_id="trace",
         user_message="continue",
         catalog=[{"slug": "active"}],
+        workforce_catalog=[{"slug": "active"}],
         config=config,
         policy={},
         context_fingerprint="fingerprint",
@@ -288,8 +290,10 @@ def test_pipeline_discards_an_exact_but_nonreusable_cache_entry(
     config = _offline_config()
     request = pipeline._RouteRequest(
         session_id="session",
+        trace_id="trace",
         user_message="continue",
         catalog=[{"slug": "active"}],
+        workforce_catalog=[{"slug": "active"}],
         config=config,
         policy={},
         context_fingerprint="fingerprint",

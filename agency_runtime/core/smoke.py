@@ -152,6 +152,7 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
 _CODEX_HOOK_EVENTS = (
     "PostCompact",
     "PostToolUse",
+    "PreToolUse",
     "SessionStart",
     "Stop",
     "SubagentStart",

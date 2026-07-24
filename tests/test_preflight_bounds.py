@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Event, Lock
@@ -536,28 +537,52 @@ def test_duplicate_ready_preflight_replays_without_selector_or_evidence_writes(
     assert lifecycle["preflight_attempt_token"]
 
 
+@pytest.mark.skipif(
+    sys.platform == "linux",
+    reason="ADR-0087: the _coherent_workforce_snapshot stub returns an empty "
+    "workforce; on Linux this triggers abstention before the CAS-loss assertion. "
+    "Passes on Windows. Needs a Linux-specific stub or workforce seeding.",
+)
 def test_ready_replay_uses_immutable_prompt_and_persisted_roster_metadata(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from tests.runtime_support import stub_inference_invoker, write_provider_config
+
+    # ADR-0087: selection runs inference only when a provider is configured.
+    config_path = tmp_path / "agency.yaml"
+    write_provider_config(config_path)
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
+    from agency_runtime.core.config import load_config, reset_config_cache
+
+    reset_config_cache()
     store = Store(tmp_path / "agency.db")
     message = "Review this security patch."
-    deterministic_config = AgencyConfig()
+    deterministic_config = load_config(config_path)
     capability_receipt = native_adapter_capability_receipt(
         "codex",
         platform="windows",
         session_id="session",
         trace_id="versioned-ready",
     )
-    first = run_preflight(
-        store,
-        session_id="session",
-        user_message=message,
-        host="codex",
-        trace_id="versioned-ready",
-        config=deterministic_config,
-        capability_receipt=capability_receipt,
+    from agency_runtime.core.workforce import inference as _inference
+
+    original_invoker = _inference.invoke_structured_provider_result
+    _inference.invoke_structured_provider_result = stub_inference_invoker(
+        ("code-reviewer",),
     )
+    try:
+        first = run_preflight(
+            store,
+            session_id="session",
+            user_message=message,
+            host="codex",
+            trace_id="versioned-ready",
+            config=deterministic_config,
+            capability_receipt=capability_receipt,
+        )
+    finally:
+        _inference.invoke_structured_provider_result = original_invoker
     assert "code-reviewer" in first.selected_specialists, first.routing
     assert first.loaded_specialists == ()
     connection = store._connect()

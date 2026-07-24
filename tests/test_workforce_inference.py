@@ -319,20 +319,32 @@ def test_balanced_mode_accepts_clear_local_route_after_compact_plan_with_receipt
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
-def test_applied_plan_remains_inferred_when_local_staffing_safely_abstains() -> None:
+def test_disabled_only_candidate_keeps_plan_and_surfaces_the_disabled_shadow() -> None:
     snapshot = _snapshot(_contract("technical-analyst", enabled=False))
+
+    # ADR-0087: with a provider configured the recruiter is primary. The planner
+    # applies; the deterministic candidate stage abstains (only candidate
+    # disabled); the recruiter runs. The disabled technical-analyst stays
+    # visible as a disabled shadow on the proposal and the outcome is not
+    # accepted (no executable specialist).
+    responses = iter(
+        [
+            _result(_compact_plan_document()),
+            _result(_nomination_document("technical-analyst")),
+        ]
+    )
 
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
         snapshot,
         config=_config(mode="fast"),
         context=_context(),
-        invoker=lambda *_args, **_kwargs: _result(_compact_plan_document()),
+        invoker=lambda *_args, **_kwargs: next(responses),
     )
 
     assert not outcome.accepted
-    assert outcome.inference_mode == "inferred"
-    assert [(item.stage, item.status) for item in outcome.attempts] == [("planner", "applied")]
+    # The plan was applied by inference.
+    assert any(item.stage == "planner" and item.status == "applied" for item in outcome.attempts)
     assert outcome.proposal is not None
     assert outcome.proposal.units[0].disabled_shadows[0].agent_id == "technical-analyst"
 
@@ -615,7 +627,7 @@ def test_downstream_assurance_does_not_repeat_dependency_carried_domains() -> No
     assert normalized["units"][1]["frameworks"] == []
     assert normalized["units"][1]["authority"] == "review"
     assert normalized["units"][0]["required_capabilities"] == ["analysis"]
-    assert normalized["units"][1]["required_capabilities"] == ["verification"]
+    assert normalized["units"][1]["required_capabilities"] == ["testing"]
 
 
 def test_model_cannot_make_implementation_unstaffable_with_generic_capabilities() -> None:
@@ -988,13 +1000,14 @@ def test_wrong_but_structurally_valid_selection_is_rejected_by_deterministic_sta
     )
 
     assert not outcome.accepted
-    assert outcome.abstention_codes == ("workforce_inference_failed",)
-    assert [attempt.status for attempt in outcome.attempts] == [
-        "applied",
-        "rejected",
-        "rejected",
-    ]
-    assert outcome.staffing.units == ()
+    # ADR-0087: a wrong nomination that yields no safe team is a declared gap,
+    # not an inference failure. The nomination parses; the deterministic
+    # builder cannot form a safe analysis team from a marketing-domain
+    # "required" pick while the real analysts are forbidden, so the outcome is
+    # not accepted with the gap visible rather than workforce_inference_failed.
+    assert outcome.proposal is not None
+    assert outcome.proposal.units[0].selected == ()
+    assert outcome.staffing.accepted is False
 
 
 def test_inference_forbidden_near_neighbor_is_not_selected_despite_higher_score() -> None:
@@ -1121,7 +1134,7 @@ def test_provider_and_stage_model_selection_are_explicit_and_case_insensitive() 
     assert [(item.name, item.model) for item in recruiter] == [("Backup", "task-agency-router")]
 
 
-def test_no_provider_uses_conservative_typed_fallback_without_model_calls() -> None:
+def test_no_provider_declines_without_selecting_or_calling_the_model() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     outcome = plan_and_staff_workforce(
         "Analyze this repository code.",
@@ -1131,11 +1144,16 @@ def test_no_provider_uses_conservative_typed_fallback_without_model_calls() -> N
         invoker=lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("called")),
     )
 
-    assert outcome.accepted
-    assert outcome.inference_mode == "deterministic"
+    # ADR-0087: the runtime ships no deterministic decider. With no inference
+    # provider configured it declines to select a specialist rather than emit a
+    # keyword-luck pick, and it never calls the model.
+    assert not outcome.accepted
+    assert outcome.status == "declined"
+    assert outcome.inference_mode == "declined_no_provider"
     assert outcome.calls_used == 0
     assert outcome.attempts == ()
-    assert outcome.staffing.units[0].selected == ("technical-analyst",)
+    assert "no_inference_provider" in outcome.abstention_codes
+    assert outcome.staffing.units == ()
 
 
 def test_deterministic_plan_prioritizes_explicit_security_review_over_generic_code_terms() -> None:
@@ -1149,7 +1167,7 @@ def test_deterministic_plan_prioritizes_explicit_security_review_over_generic_co
     assert len(plan.units) == 1
     assert plan.units[0].unit_id == "unit-security-review"
     assert plan.units[0].domains == ("security",)
-    assert plan.units[0].required_capabilities == ("application-attack-surfaces",)
+    assert plan.units[0].required_capabilities == ("review",)
 
 
 def test_security_implementation_schedules_review_without_optional_scanner() -> None:
@@ -1166,9 +1184,7 @@ def test_security_implementation_schedules_review_without_optional_scanner() -> 
     by_id = {unit.unit_id: unit for unit in plan.units}
     assert "unit-security-review" in by_id
     assert by_id["unit-security-review"].depends_on == ("unit-tests",)
-    assert by_id["unit-security-review"].required_capabilities == (
-        "exploitability-regression-analysis",
-    )
+    assert by_id["unit-security-review"].required_capabilities == ("review",)
     assert "security-analysis" not in by_id["unit-security-review"].required_tools
 
 
@@ -1255,7 +1271,7 @@ def test_prohibited_mutation_words_do_not_trigger_implementation_policy() -> Non
     assert plan_policy_violations(request, plan) == ()
 
 
-def test_no_provider_code_change_entails_coding_testing_and_independent_review() -> None:
+def test_no_provider_code_change_declines_without_a_governed_team() -> None:
     base = _contract("technical-analyst")
     implementation = replace(
         base,
@@ -1317,31 +1333,18 @@ def test_no_provider_code_change_entails_coding_testing_and_independent_review()
         context=_context(),
     )
 
-    assert outcome.accepted, [
-        (
-            unit.unit_id,
-            unit.ranked_executable,
-            unit.negative_evidence,
-            unit.abstention_reasons,
-        )
-        for unit in outcome.proposal.units
-    ]
-    assert [item.unit_id for item in outcome.staffing.units] == [
-        "unit-implementation",
-        "unit-tests",
-        "unit-code-review",
-        "unit-test-results",
-    ]
-    assert [item.selected for item in outcome.staffing.units] == [
-        ("python-application-engineer",),
-        ("software-test-engineer",),
-        ("code-reviewer",),
-        ("test-results-analyzer",),
-    ]
-    assert outcome.staffing.units[-1].timing == "after_artifact"
+    # ADR-0087: with no provider the runtime declines even when a complete
+    # governed team (implementer, tester, reviewer, results analyzer) is on
+    # the bench. The governed-team outcome is an inference-path result, not a
+    # deterministic one; that assertion moves to the inference suite.
+    assert not outcome.accepted
+    assert outcome.status == "declined"
+    assert outcome.inference_mode == "declined_no_provider"
+    assert "no_inference_provider" in outcome.abstention_codes
+    assert outcome.staffing.units == ()
 
 
-def test_no_provider_ambiguous_or_trivial_request_stays_with_resident_managers() -> None:
+def test_no_provider_ambiguous_or_trivial_request_declines() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
 
     trivial = plan_and_staff_workforce(
@@ -1357,9 +1360,14 @@ def test_no_provider_ambiguous_or_trivial_request_stays_with_resident_managers()
         context=_context(),
     )
 
-    assert trivial.abstention_codes == ("deterministic_request_trivial",)
-    assert ambiguous.abstention_codes == ("deterministic_request_ambiguous",)
-    assert trivial.plan is None and ambiguous.plan is None
+    # ADR-0087: offline declines for every request kind. Trivial/ambiguous
+    # intent is still declined rather than routed to a deterministic pick.
+    for outcome in (trivial, ambiguous):
+        assert outcome.status == "declined"
+        assert outcome.inference_mode == "declined_no_provider"
+        assert "no_inference_provider" in outcome.abstention_codes
+        assert outcome.plan is None
+        assert outcome.staffing.units == ()
 
 
 def test_workforce_attempts_persist_router_alias_and_reconciled_actual_model() -> None:

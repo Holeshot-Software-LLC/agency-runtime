@@ -40,3 +40,4 @@ venv/
 .chunkhound/
 graphify-out/
 .graphify/
+.zcode/

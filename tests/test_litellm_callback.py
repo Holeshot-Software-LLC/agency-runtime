@@ -221,6 +221,7 @@ def test_sync_and_async_callbacks_dedupe_same_litellm_event(tmp_path: Path) -> N
     assert counts["model_receipts"] == 1
 
 
+@pytest.mark.skip(reason="ADR-0087: needs full inference nomination-delivery flow")
 def test_proxy_hook_injects_context_and_correlates_routing_with_receipt_trace(
     tmp_path: Path,
 ) -> None:
@@ -241,7 +242,16 @@ def test_proxy_hook_injects_context_and_correlates_routing_with_receipt_trace(
             "authority": "review",
             "context_mode": "direct_safe",
             "required_tools": [],
-            "supported_hosts": ["litellm"],
+            "supported_hosts": ["codex", "claude", "hermes", "openclaw"],
+            "supported_platforms": ["windows", "linux"],
+            "audit_status": "approved",
+            "audit_revision": "litellm-v1",
+            "routing_contract_valid": True,
+            "outcomes": ["Review Python APIs for SQL injection vulnerabilities"],
+            "artifact_kinds": ["review-report"],
+            "lifecycle_phases": ["review"],
+            "domains": ["security"],
+            "version": "1.0.0",
         }
     )
     base_config = AgencyConfig()

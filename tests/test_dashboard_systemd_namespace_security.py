@@ -343,7 +343,9 @@ def test_public_service_mutation_rejects_manager_only_runtime_environment(
     commands: list[list[str]] = []
     monkeypatch.setattr(install, "_validate_dashboard_launcher", lambda value: value)
     monkeypatch.setattr(install, "_revalidate_dashboard_launcher", lambda _value: None)
-    monkeypatch.setattr(inspection, "_validate_dashboard_launcher", lambda value: value)
+    monkeypatch.setattr(
+        inspection, "_validate_installed_dashboard_launcher", lambda value, *_a, **_kw: value
+    )
 
     def runner(argv: list[str], **_kwargs: object) -> dict[str, object]:
         commands.append(argv)

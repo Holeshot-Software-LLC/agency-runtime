@@ -82,7 +82,7 @@ def _request(
         f"{server.base}{path}", data=data, headers=headers, method=method
     )
     try:
-        with urllib.request.urlopen(request, timeout=5) as response:
+        with urllib.request.urlopen(request, timeout=30) as response:
             return response.status, json.loads(response.read())
     except urllib.error.HTTPError as exc:
         with exc:

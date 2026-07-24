@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -390,12 +391,32 @@ def _python_cli(
 
 
 def _python_runtime() -> str | None:
-    """Prefer the base interpreter so an editable workspace venv is never executed."""
+    """Prefer the base interpreter so an editable workspace venv is never executed.
 
-    base = str(getattr(sys, "_base_executable", "") or "").strip()
-    if base and Path(base).is_file():
-        return base
-    return shutil.which("python3") or shutil.which("python")
+    On CI runners ``sys._base_executable`` may point to a venv creation shim
+    that lacks the project installation. Verify the resolved interpreter can
+    actually import the project before using it; otherwise fall back to the
+    current interpreter which is known-good.
+    """
+
+    candidates = [
+        str(getattr(sys, "_base_executable", "") or "").strip(),
+        shutil.which("python3") or "",
+        shutil.which("python") or "",
+        sys.executable,
+    ]
+    for candidate in candidates:
+        if not candidate or not Path(candidate).is_file():
+            continue
+        probe = subprocess.run(
+            [candidate, "-c", "import agency_runtime"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if probe.returncode == 0:
+            return candidate
+    return sys.executable
 
 
 def _typescript_cli(

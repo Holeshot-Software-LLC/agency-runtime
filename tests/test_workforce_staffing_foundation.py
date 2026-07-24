@@ -497,7 +497,13 @@ def test_semantic_staffing_classes_must_partition_the_ranking() -> None:
         )
 
 
-def test_worker_tool_requirements_are_part_of_executable_eligibility() -> None:
+def test_worker_declared_tools_are_descriptive_not_a_host_precondition() -> None:
+    # ADR-0087 / pipeline intent: a specialist's declared tool_classes describe
+    # what it CAN use, not tools the host must provide. The browser-reviewer
+    # declares browser-interaction, but on a host that supplies the unit's
+    # required tools it remains eligible -- its declared tool is descriptive
+    # metadata, not a hard gate. Only the unit's required-tools check (host
+    # capability) is a hard eligibility failure.
     roster = (
         _contract(
             "browser-reviewer",
@@ -513,10 +519,7 @@ def test_worker_tool_requirements_are_part_of_executable_eligibility() -> None:
         context=_context(),
     )
 
-    assert proposal.units[0].selected == ()
-    assert "agent_worker_tools_missing" in {
-        reason for item in proposal.units[0].negative_evidence for reason in item.reason_codes
-    }
+    assert proposal.units[0].selected == ("browser-reviewer",)
 
 
 def test_disabled_shadow_winner_is_reported_while_enabled_fallback_is_safe() -> None:

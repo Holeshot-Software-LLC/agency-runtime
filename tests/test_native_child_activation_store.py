@@ -23,23 +23,42 @@ from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.store import delegation_activation as activation_store
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.mcp import handle_tool_call
+from tests.runtime_support import stub_inference_invoker, write_provider_config
 
 
 def _isolated_turn(path: Path) -> tuple[Store, str, str]:
+    # ADR-0087: selection runs inference only when a provider is configured.
+    config_path = path.parent / "agency.yaml"
+    write_provider_config(config_path)
+    os.environ["AGENCY_CONFIG_PATH"] = str(config_path)
+    from agency_runtime.core.config import reset_config_cache
+
+    reset_config_cache()
     store = Store(path)
-    result = run_preflight(
-        store,
-        session_id="session",
-        trace_id="trace",
-        user_message="Review and refactor this Python code for security and correctness",
-        host="codex",
-        capability_receipt=native_adapter_capability_receipt(
-            "codex",
-            platform="windows" if os.name == "nt" else "linux",
+    from agency_runtime.core.workforce import inference as _inference
+
+    original_invoker = _inference.invoke_structured_provider_result
+    _inference.invoke_structured_provider_result = stub_inference_invoker(
+        ("code-reviewer",),
+    )
+    try:
+        result = run_preflight(
+            store,
             session_id="session",
             trace_id="trace",
-        ),
-    )
+            user_message="Review and refactor this Python code for security and correctness",
+            host="codex",
+            capability_receipt=native_adapter_capability_receipt(
+                "codex",
+                platform="windows" if os.name == "nt" else "linux",
+                session_id="session",
+                trace_id="trace",
+            ),
+        )
+    finally:
+        _inference.invoke_structured_provider_result = original_invoker
+        os.environ.pop("AGENCY_CONFIG_PATH", None)
+        reset_config_cache()
     slug = next(
         candidate
         for candidate in result.selected_specialists

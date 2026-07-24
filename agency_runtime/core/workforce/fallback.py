@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from agency_runtime.core.config import AgencyConfig
+from agency_runtime.core.workforce.capability_ontology import artifact_capability
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.lifecycle_roles import role_anchors
 from agency_runtime.core.workforce.planning_contracts import (
@@ -217,7 +218,6 @@ def _unit(
     artifact: str,
     lifecycle: str,
     domains: tuple[str, ...],
-    capabilities: tuple[str, ...],
     authority: str,
     mutation: str,
     context: StaffingContext,
@@ -228,6 +228,10 @@ def _unit(
     tools: tuple[str, ...] = (),
     parallelization: str = "unspecified",
 ) -> dict[str, object]:
+    # ADR-0087: a unit's required capability is the governed broad task
+    # capability for its artifact kind. The workforce contracts speak the
+    # CORE_CAPABILITY_IDS vocabulary; bespoke per-unit capability strings must
+    # not bypass the ontology (they match no contract and block acceptance).
     return {
         "unit_id": unit_id,
         "outcome": outcome,
@@ -236,7 +240,7 @@ def _unit(
         "domains": list(domains),
         "languages": list(languages),
         "frameworks": list(frameworks),
-        "required_capabilities": list(capabilities),
+        "required_capabilities": [artifact_capability(artifact)],
         "authority": authority,
         "mutation_scope": mutation,
         "risks": ["regression"] if mutation != "read_only" else [],
@@ -292,9 +296,6 @@ def deterministic_work_plan(
 
     if docs and mutating and review and review_before_mutation and not code:
         review_domains = ("security",) if security else ("software-engineering",)
-        review_capabilities = (
-            ("application-attack-surfaces",) if security else ("technical-analysis",)
-        )
         units.append(
             _unit(
                 "unit-source-review",
@@ -302,7 +303,6 @@ def deterministic_work_plan(
                 artifact="review-report",
                 lifecycle="review",
                 domains=review_domains,
-                capabilities=review_capabilities,
                 authority="review",
                 mutation="read_only",
                 context=context,
@@ -316,7 +316,6 @@ def deterministic_work_plan(
                 artifact="documentation",
                 lifecycle="documentation",
                 domains=("software-engineering",),
-                capabilities=("technical-documentation",),
                 authority="modify",
                 mutation="workspace_write",
                 context=context,
@@ -333,7 +332,6 @@ def deterministic_work_plan(
                 artifact="documentation",
                 lifecycle="documentation",
                 domains=("software-engineering",),
-                capabilities=("technical-documentation",),
                 authority="modify",
                 mutation="workspace_write",
                 context=context,
@@ -348,7 +346,6 @@ def deterministic_work_plan(
                 artifact="review-report",
                 lifecycle="review",
                 domains=("software-engineering",),
-                capabilities=("documentation-review",),
                 authority="review",
                 mutation="read_only",
                 context=context,
@@ -357,7 +354,6 @@ def deterministic_work_plan(
             )
         )
     elif mutating and code:
-        capability = f"{languages[0]}-application" if languages else "software-implementation"
         units.append(
             _unit(
                 "unit-implementation",
@@ -365,7 +361,6 @@ def deterministic_work_plan(
                 artifact="implementation-change",
                 lifecycle="implementation",
                 domains=("software-engineering",),
-                capabilities=(capability,),
                 authority="modify",
                 mutation="workspace_write",
                 context=context,
@@ -382,7 +377,6 @@ def deterministic_work_plan(
                 artifact="test-code",
                 lifecycle="testing",
                 domains=("quality-assurance",),
-                capabilities=("integration-tests",),
                 authority="modify",
                 mutation="workspace_write",
                 context=context,
@@ -397,7 +391,6 @@ def deterministic_work_plan(
                 artifact="review-report",
                 lifecycle="review",
                 domains=("software-engineering",),
-                capabilities=("review-diffs",),
                 authority="review",
                 mutation="read_only",
                 context=context,
@@ -418,7 +411,6 @@ def deterministic_work_plan(
                 artifact="test-evidence",
                 lifecycle="testing",
                 domains=("quality-assurance",),
-                capabilities=("test-results",),
                 authority="review",
                 mutation="read_only",
                 context=context,
@@ -439,7 +431,6 @@ def deterministic_work_plan(
                     # specialist than an architecture-only threat-model pass.
                     # The generated-code auditor is deliberately usable with
                     # repository evidence alone; scanners remain optional.
-                    capabilities=("exploitability-regression-analysis",),
                     authority="review",
                     mutation="read_only",
                     context=context,
@@ -465,7 +456,6 @@ def deterministic_work_plan(
                     artifact="test-evidence",
                     lifecycle="release",
                     domains=("quality-assurance",),
-                    capabilities=("installed-artifact",),
                     authority="review",
                     mutation="read_only",
                     context=context,
@@ -494,7 +484,6 @@ def deterministic_work_plan(
                 # typed testing coverage that downstream staffing must prove.
                 lifecycle="testing",
                 domains=("quality-assurance",),
-                capabilities=("test-results" if review or analysis else "integration-tests",),
                 authority="review" if review or analysis else "modify",
                 mutation="read_only" if review or analysis else "workspace_write",
                 context=context,
@@ -514,7 +503,6 @@ def deterministic_work_plan(
                 artifact="review-report",
                 lifecycle="review",
                 domains=("security",),
-                capabilities=("application-attack-surfaces",),
                 authority="review",
                 mutation="read_only",
                 context=context,
@@ -531,7 +519,6 @@ def deterministic_work_plan(
                     artifact="review-report",
                     lifecycle="discovery",
                     domains=("software-engineering",),
-                    capabilities=("repository-map",),
                     authority="review",
                     mutation="read_only",
                     context=context,
@@ -546,7 +533,6 @@ def deterministic_work_plan(
                 artifact="review-report",
                 lifecycle="review",
                 domains=("software-engineering",),
-                capabilities=("review-diffs",),
                 authority="review",
                 mutation="read_only",
                 context=context,
@@ -562,7 +548,6 @@ def deterministic_work_plan(
                     artifact="review-report",
                     lifecycle="review",
                     domains=("security",),
-                    capabilities=("exploitability-regression-analysis",),
                     authority="review",
                     mutation="read_only",
                     context=context,
@@ -579,7 +564,6 @@ def deterministic_work_plan(
                 artifact="review-report",
                 lifecycle="review",
                 domains=("software-engineering",),
-                capabilities=("documentation-review",),
                 authority="review",
                 mutation="read_only",
                 context=context,
@@ -594,7 +578,6 @@ def deterministic_work_plan(
                 artifact="analysis",
                 lifecycle="discovery",
                 domains=("software-engineering",),
-                capabilities=("technical-analysis",),
                 authority="advise",
                 mutation="read_only",
                 context=context,

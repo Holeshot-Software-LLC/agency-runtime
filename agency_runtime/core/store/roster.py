@@ -26,6 +26,7 @@ from agency_runtime.core.roster.remediation import is_registered_encoding_interm
 from agency_runtime.core.roster.revisions import (
     ROUTING_LIST_METADATA_FIELDS,
     ROUTING_SCALAR_METADATA_FIELDS,
+    content_digest,
     content_identity_matches,
     decode_revision_metadata,
     immutable_revision_version,
@@ -199,13 +200,16 @@ def _decoded_roster_rows(rows: list[Any]) -> list[dict[str, Any]]:
                 contract = parse_workforce_contract(contract_document)
             except (TypeError, ValueError) as exc:
                 raise RuntimeError("stored workforce recruitment contract is invalid") from exc
-            if (
-                contract.agent_id != str(agent.get("agent_slug") or "")
-                or contract.version != str(agent.get("version") or "")
-                or contract.version_hash.removeprefix("sha256:")
-                != str(agent.get("hash") or "").removeprefix("sha256:")
+            if contract.agent_id != str(agent.get("agent_slug") or "") or contract.version != str(
+                agent.get("version") or ""
             ):
                 raise RuntimeError("stored workforce recruitment contract identity is invalid")
+            # The contract version_hash is the governed content digest; the
+            # roster row hash may carry a legacy or opaque upstream token (see
+            # normalize_version_identity / content_identity_matches). A stale or
+            # tampered row hash is state the continuation guard detects and
+            # reroutes on, not corruption that should crash snapshot decode, so
+            # it is intentionally not part of this hard identity guard.
             agent.update(
                 {
                     "authority": contract.authority,
@@ -476,7 +480,7 @@ def _prepared_roster_agent(
             **workforce_source,
             "slug": normalized_slug,
             "version": version,
-            "version_hash": content_hash,
+            "version_hash": content_digest(content),
             "origin": workforce_origin,
             "employment": workforce_employment,
             "enabled": workforce_employment in {"contractor", "employee"},
