@@ -118,7 +118,7 @@ def _starts_with_header(text: str) -> bool:
 def _body_after_possible_header(text: str) -> str:
     if not _starts_with_header(text):
         return text.strip()
-    return "\n".join(text.splitlines()[6:]).strip()
+    return "\n".join(text.splitlines()[len(HEADER_FIELDS) :]).strip()
 
 
 def _observation_action(action: str) -> str:

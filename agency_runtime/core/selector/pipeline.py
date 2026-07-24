@@ -1338,6 +1338,7 @@ HEADER_INSTRUCTION = (
     "  Agency/Agencies delegated: <agent-id>\n"
     "  Skills loaded: <skill-id[, skill-id...] or none>\n"
     "  Actual Model selected: <requested alias> -> <resolved provider/model>\n"
+    "  Recruited via: <inference | deterministic | cached | none>\n"
     "  Why: <one line>\n"
     "  How it shaped outcome: <one line>"
 )

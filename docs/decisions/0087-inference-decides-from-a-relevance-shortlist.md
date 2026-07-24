@@ -16,7 +16,7 @@ related:
   - agency_runtime/core/workforce/capability_ontology.py
   - agency_runtime/core/host_capabilities.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0088-deterministic-typed-recall-offline-floor.md
 id: ADR-0087
 type: decision
 deciders: [maintainers]

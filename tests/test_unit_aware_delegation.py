@@ -1134,11 +1134,23 @@ def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
     assert {identity[0] for identity in activation_identities} == {
         row["work_unit_id"] for row in rows
     }
+    fields = fill_header_fields(
+        {},
+        "session",
+        store,
+        "",
+        "trace",
+        evidence_snapshot=snapshot,
+    )
+    assert fields["agencies_delegated"] == (f"technical-writer via generic-worker/{backend}")
+    assert fields["why"].endswith(".")
+    assert "specialist instructions were loaded" in fields["how_it_shaped_outcome"]
     draft = (
         "Agency/Agencies loaded: agents-orchestrator, chief-of-staff, technical-writer\n"
         f"Agency/Agencies delegated: generic-worker via {backend}\n"
         "Skills loaded: none\n"
         "Actual Model selected: unknown -> unavailable - no model receipt recorded\n"
+        f"Recruited via: {fields['recruited_via']}\n"
         "Why: Both documentation units required specialist context.\n"
         "How it shaped outcome: Each isolated unit used its exact activation grant.\n\n"
         "Done."
@@ -1153,17 +1165,6 @@ def test_same_specialist_can_activate_for_two_out_of_order_native_work_units(
     assert stale is not None
     assert stale["missing"] == ["agencies_delegated", "why", "how_it_shaped_outcome"]
 
-    fields = fill_header_fields(
-        {},
-        "session",
-        store,
-        "",
-        "trace",
-        evidence_snapshot=snapshot,
-    )
-    assert fields["agencies_delegated"] == (f"technical-writer via generic-worker/{backend}")
-    assert fields["why"].endswith(".")
-    assert "specialist instructions were loaded" in fields["how_it_shaped_outcome"]
     authoritative_draft = format_header(fields) + "\n\nDone."
     assert (
         validate_completion_policy(

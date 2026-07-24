@@ -520,13 +520,35 @@ class WorkforceRoutingOutcome:
     abstention_codes: tuple[str, ...]
     calls_used: int
     cache_hits: tuple[str, ...] = ()
+    # ADR-0088: machine-reliable recruitment source, surfaced in the structured
+    # routing evidence, the dashboard, `agency explain`/`--json`, and the
+    # response header "Recruited via" line. Distinct from the model-authored
+    # "Why" line: this is stamped from how the specialist was actually selected.
+    decision_source: str = "none"
 
     @property
     def accepted(self) -> bool:
         return self.status == "accepted" and self.staffing.accepted
 
+    @property
+    def recruited_via(self) -> str:
+        """Human label for the stamped recruitment source."""
+
+        return _DECISION_SOURCE_LABELS.get(self.decision_source, self.decision_source)
+
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+# Maps the stamped decision_source to the concise label used in the response
+# header and operator-facing surfaces. Keep in sync with routing_projection
+# source derivation and HEADER_INSTRUCTION.
+_DECISION_SOURCE_LABELS: dict[str, str] = {
+    "inferred": "inference",
+    "deterministic": "deterministic",
+    "cached": "cached",
+    "none": "none (declined)",
+}
 
 
 StructuredInvoker = Callable[..., StructuredProviderResult | None]
@@ -1782,6 +1804,7 @@ def _abstained(
     staffing: StaffingDecision | None = None,
     inference_mode: str = "degraded",
     cache_hits: Sequence[str] = (),
+    decision_source: str = "none",
 ) -> WorkforceRoutingOutcome:
     normalized = tuple(dict.fromkeys(code for code in codes if code)) or ("no_safe_staffing",)
     return WorkforceRoutingOutcome(
@@ -1795,6 +1818,7 @@ def _abstained(
         abstention_codes=normalized,
         calls_used=calls_used,
         cache_hits=tuple(cache_hits),
+        decision_source=decision_source,
     )
 
 
@@ -1949,30 +1973,58 @@ def _deterministic_outcome(
     )
 
 
-def _declined_outcome(
+def _deterministic_floor_outcome(
+    request: str,
+    snapshot: WorkforceIndexSnapshot,
     *,
     config: AgencyConfig,
+    context: StaffingContext,
 ) -> WorkforceRoutingOutcome:
-    """Return a labeled decline when no inference provider is configured.
+    """Run the deterministic typed-recall floor when no provider is configured.
 
-    Per ADR-0087 the runtime ships no deterministic decider: deterministic
-    selection cannot read intent and its picks rest on keyword luck, so the
-    runtime refuses to select a specialist when inference is unavailable
-    rather than emit a wrong pick. Offline injects no Agency specialist; the
-    turn is handed to the host's native capability. The deterministic
-    plan-and-staff decider survives only as a governed evaluation baseline
-    (evals compare the algorithms), never as a runtime selection.
+    ADR-0088: Agency should add value without a configured provider. Rather
+    than decline outright (the prior ADR-0087 behavior), the runtime runs the
+    existing typed-coverage recall layer as an offline floor: a deterministic
+    keyword->typed-unit plan, whole-roster typed recall, role-anchor promotion,
+    and ``verify_staffing`` composition/coverage/eligibility validation. This is
+    NOT the old "keyword-luck" decider and NOT the upstream token-matcher -- it
+    matches on typed contract fields (artifact/lifecycle/domain/stack/capability/
+    authority) and enforces the same composition rules as the inference path.
+
+    The result is stamped ``inference_mode="deterministic"`` so it is never
+    mistaken for an inference pick: the deterministic floor cannot read intent,
+    so it is a best typed-guess, not an intent-aware selection. A user who wants
+    the intent-aware path configures a provider. If the floor abstains (trivial,
+    ambiguous, or no safe team), the turn is handed to the host's native
+    capability -- Agency injects no specialist rather than force a wrong pick.
     """
 
+    from agency_runtime.core.workforce.fallback import deterministic_plan_and_staff
+
+    result = deterministic_plan_and_staff(request, snapshot, config=config, context=context)
+    if result.staffing.accepted and result.plan is not None and result.proposal is not None:
+        return WorkforceRoutingOutcome(
+            status="accepted",
+            mode=config.workforce.mode,
+            inference_mode="deterministic",
+            plan=result.plan,
+            proposal=result.proposal,
+            staffing=result.staffing,
+            attempts=(),
+            abstention_codes=(),
+            calls_used=0,
+            decision_source="deterministic",
+        )
+    codes = result.reason_codes or ("deterministic_floor_abstained",)
     return WorkforceRoutingOutcome(
         status="declined",
         mode=config.workforce.mode,
-        inference_mode="declined_no_provider",
-        plan=None,
-        proposal=None,
-        staffing=StaffingDecision("declined", (), ("no_inference_provider",)),
+        inference_mode="deterministic_abstained",
+        plan=result.plan,
+        proposal=result.proposal,
+        staffing=result.staffing,
         attempts=(),
-        abstention_codes=("no_inference_provider",),
+        abstention_codes=codes,
         calls_used=0,
     )
 
@@ -2051,7 +2103,9 @@ def plan_and_staff_workforce(
     ask = _safe_request(request)
     mode = config.workforce.mode
     if not _inference_declared(config):
-        return _declined_outcome(config=config)
+        # ADR-0088: no provider -> run the deterministic typed-recall floor
+        # (best typed-guess, stamped "deterministic"), not a hard decline.
+        return _deterministic_floor_outcome(request, snapshot, config=config, context=context)
     budget = _CallBudget(_mode_budget(config))
     attempts: list[WorkforceInferenceAttempt] = []
     cache_hits: list[str] = []
@@ -2259,6 +2313,7 @@ def plan_and_staff_workforce(
         abstention_codes=(),
         calls_used=budget.used,
         cache_hits=tuple(cache_hits),
+        decision_source="inferred",
     )
 
 

@@ -31,6 +31,7 @@ SAMPLE_HEADER = """Agency/Agencies loaded: code-reviewer
 Agency/Agencies delegated: none
 Skills loaded: none
 Actual Model selected: task-general -> openai/gpt-5.5
+Recruited via: inference
 Why: Code review requested
 How it shaped outcome: Loaded code review specialist
 

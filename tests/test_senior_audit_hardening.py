@@ -110,6 +110,7 @@ def _valid_none_header() -> str:
             "Agency/Agencies delegated: none - no delegation executed",
             "Skills loaded: none",
             "Actual Model selected: requested -> unavailable",
+            "Recruited via: none",
             "Why: routing was required",
             "How it shaped outcome: no specialist evidence was recorded",
             "",

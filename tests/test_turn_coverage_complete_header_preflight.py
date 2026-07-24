@@ -59,6 +59,7 @@ def _valid_header() -> str:
             "agencies_delegated": "none",
             "skills_loaded": "none",
             "actual_model_selected": "unknown -> unavailable - no model receipt recorded",
+            "recruited_via": "none",
             "why": "Authoritative audit evidence.",
             "how_it_shaped_outcome": "Preserved the current turn boundary.",
         }

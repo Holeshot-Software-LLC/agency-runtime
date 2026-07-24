@@ -156,7 +156,8 @@ Status meanings:
 | [ADR-0084](0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md) | Use bounded recovery capsules and persistent goal ownership | Superseded |
 | [ADR-0085](0085-continue-in-task-after-context-checkpoints.md) | Continue in the current task after context checkpoints | Superseded |
 | [ADR-0086](0086-use-checkpoint-only-context-telemetry.md) | Use checkpoint-only context telemetry | Accepted |
-| [ADR-0087](0087-inference-decides-from-a-relevance-shortlist.md) | Inference decides specialist selection from a relevance shortlist | Accepted |
+| [ADR-0087](0087-inference-decides-from-a-relevance-shortlist.md) | Inference decides specialist selection from a relevance shortlist | Accepted (offline-decline clause superseded by ADR-0088) |
+| [ADR-0088](0088-deterministic-typed-recall-offline-floor.md) | Deterministic typed-recall is the offline floor | Accepted |
 
 ## Maintenance rules
 

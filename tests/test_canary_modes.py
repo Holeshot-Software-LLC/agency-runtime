@@ -108,6 +108,7 @@ def test_native_only_mode_passes_without_header_evidence_or_attestation(
             "Agency/Agencies delegated: none\n"
             "Skills loaded: none\n"
             "Actual Model selected: test\n"
+            "Recruited via: deterministic\n"
             "Why: test\n"
             "How it shaped outcome: test",
             "Agency response header was present in native-only mode",
