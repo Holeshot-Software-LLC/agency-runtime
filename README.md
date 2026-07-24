@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-07-21
+updated: 2026-07-24
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -13,298 +13,265 @@ supersedes: []
 superseded_by: null
 ---
 
-# Agency Runtime
+<p align="center">
+  <img src="docs/assets/agency-runtime-icon.svg" alt="Agency Runtime" width="120" height="120"/>
+</p>
 
-Give your coding agent a bench of specialists without turning every conversation
-into a giant prompt.
+<h1 align="center">Agency Runtime</h1>
 
-Agency Runtime connects to Codex, Claude Code, Hermes, and OpenClaw. For each
-request, it searches an audited roster, chooses the most relevant compatible
-specialist or specialists, and gives the host a focused delegation plan. The
-specialist instructions apply to that turn or child task and then leave the
-active context.
+<p align="center">Give your coding agent a bench of 263 audited specialists — without bloating every conversation into a giant prompt.</p>
 
-You get:
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"/></a>
+  <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-blue.svg"/>
+  <img alt="Specialists" src="https://img.shields.io/badge/specialists-263-6366f1.svg"/>
+  <img alt="Hosts" src="https://img.shields.io/badge/hosts-5-38bdf8.svg"/>
+  <img alt="Status: prerelease" src="https://img.shields.io/badge/status-prerelease-orange.svg"/>
+  <img alt="Platforms" src="https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg"/>
+</p>
 
-- dynamic selection across the complete enabled roster;
-- smarter routing with optional model-based inference;
-- conflict checks before multiple specialists are combined;
-- native delegation guidance without replacing the host's own scheduler;
-- a six-line response header showing what actually ran;
-- a local dashboard for live activity, configuration, and controls;
-- the same configuration and controls from the CLI;
-- Windows and Linux support.
+For each request, Agency Runtime understands the work, searches an audited
+roster of specialists, and gives your host (Codex, Claude Code, ZCode, Hermes,
+or OpenClaw) a focused delegation plan. The chosen specialist's instructions
+apply to that turn or child task and then leave the active context — your main
+agent stays small.
 
-Agency Runtime is prerelease software. Install it from this repository; no
-public package release is claimed yet.
+**You get:**
 
-## How it works (ELI5)
+- 🔭 **Inference-first selection** — when a provider is configured, an intent
+  planner decomposes the ask and a recruiter picks the best eligible specialist
+  per work unit (or declares a real gap and hires a contractor).
+- 🧮 **Works offline too** — no provider? Agency falls back to a deterministic
+  typed-recall floor (a best typed-guess), stamped so it's never mistaken for an
+  inference pick. Configure a provider for intent-aware selection.
+- 🧬 **Specialists bind into subagents** — when your host spins up a child, the
+  exact audited specialist is injected for that one task with a one-use
+  activation receipt.
+- 🧑‍💼 **Hires contractors on real gaps** — if no specialist fits, Agency
+  compiles, audits, and admits a least-privilege contractor in the same turn.
+- 📊 **Local dashboard + CLI** — live routing activity, model receipts,
+  workforce lifecycle, and on/off controls.
+- 🪟 **Windows and Linux**, five native hosts.
+
+> Agency Runtime is prerelease software. Install it from this repository; no
+> public package release is claimed yet.
+
+---
+
+## 🎯 Why
+
+A single generalist agent can't be the best at everything, but loading every
+specialist's full prompt into every turn balloons context and degrades the
+model. Agency Runtime is the middle path: a **company** of narrow audited
+specialists that your main agent recruits per turn.
+
+- **Per-turn best-specialist selection** across the whole enabled roster, not a
+  fixed prompt.
+- **Inference reads intent** — it picks the specialist for *this* ask (e.g. a
+  Git-workflow specialist for "design a branching strategy") that keyword
+  matching could never find.
+- **Gaps hire contractors in-turn** — a real uncovered capability compiles and
+  admits a governed contractor immediately.
+- **Stays small** — specialist instructions are turn-/task-scoped and return to
+  the pool; they don't accumulate in your main agent's context.
+- **Honest evidence** — every response carries a stamped header showing what
+  loaded, what model ran, and **how the specialist was recruited**.
+- **Proves its value** — release requires measured Agency-on vs Agency-off
+  outcome lift on the same host and model (tracked, not yet claimed).
+
+---
+
+## 🧒 How it works (ELI5)
 
 Imagine your main agent has a company directory of 263 specialists.
 
 1. You ask the main agent for something.
-2. Agency figures out whether this is a new task, a follow-up, an approval, a
-   revision, a control command, or ordinary conversation.
-3. It searches every approved, enabled specialist and chooses the smallest team
-   that fits the work.
-4. If two specialists would give conflicting instructions, Agency separates
-   their work instead of placing both in one prompt.
-5. Small focused work can be loaded into the current turn. Larger or independent
-   work is recommended for native delegation by Codex, Claude, Hermes, or
-   OpenClaw.
-6. A planned child receives the specialist chosen for its exact assignment and
-   does not repeat the routing call. If the host creates an unplanned child,
-   Agency routes it through a shared parent budget and cache.
-7. Agency records what really loaded, delegated, and returned model evidence.
-8. The final response shows that evidence in a compact header. On the next
-   request, the specialists return to the pool.
+2. Agency classifies the turn — new task, follow-up, approval, control command,
+   or ordinary conversation.
+3. It **plans** the work into typed units (no agent names yet).
+4. It **recalls** every approved, enabled specialist that could plausibly fit
+   (typed contract fields: artifact, lifecycle, domain, stack, capability,
+   authority).
+5. The **recruiter** (inference, when configured) picks the best eligible
+   specialist per unit — or declares a real gap. Offline, a deterministic
+   typed-recall floor makes a best typed-guess.
+6. If two specialists would conflict, Agency separates their work instead of
+   putting both in one prompt.
+7. Small focused work loads into the current turn; larger or independent work is
+   delegated through the host's native subagent mechanism with the exact
+   specialist bound in.
+8. Agency records what really loaded, delegated, and the model evidence.
+9. The response shows that evidence in a compact header. On the next request,
+   specialists return to the pool.
 
-The Agents Orchestrator and Chief of Staff form a small permanent coordination
-layer. They do not replace domain specialists, and their full upstream prompts
-are not repeatedly injected into every turn.
+A small permanent coordination pair (Agents Orchestrator + Chief of Staff) stays
+resident. They do not replace domain specialists.
 
 ```mermaid
 flowchart LR
-    U["Your request"] --> T["Understand the turn"]
-    T --> R["Search enabled specialists"]
-    R --> C["Choose a compatible team"]
-    C --> L["Load focused help"]
-    C --> D["Suggest native delegation"]
-    D --> B["Bind one-use specialist activation"]
-    B --> N["Native child runs without rerouting"]
-    D --> U2["Unplanned child uses shared budget + cache"]
-    L --> E["Record actual evidence"]
-    N --> E
-    U2 --> E
-    E --> H["Add the response header"]
-    H --> P["Return specialists to the pool"]
+    U["Your request"] --> T["Classify turn"]
+    T --> P["Plan typed work units"]
+    P --> R["Recall typed specialists"]
+    R --> D{"Inference configured?"}
+    D -- yes --> RC["Recruiter picks best / declares gap"]
+    D -- no --> DF["Deterministic typed-recall floor"]
+    RC --> G{"Real gap?"}
+    G -- yes --> H["Hire contractor"]
+    G -- no --> V["Verify team"]
+    DF --> V
+    H --> V
+    V --> L["Load focused help"]
+    V --> ND["Delegate via native subagent (exact specialist bound)"]
+    L --> E["Record evidence"]
+    ND --> E
+    E --> HDR["Response header (Recruited via: ...)"]
+    HDR --> POOL["Specialists return to the pool"]
 ```
 
-## Supported hosts
+---
 
-| Host | Integration | Notes |
+## 🔌 Supported hosts
+
+| Host | Integration | Native delegation primitive | Specialist injection | Canary |
+|---|---|---|---|---|
+| **Codex** | Hooks + MCP + controls | `spawn_agent` | Hook envelope (PreToolUse bind → one-use receipt) | ✅ |
+| **Claude Code** | Hooks + MCP + controls | `Agent` | Hook envelope (PreToolUse bind → one-use receipt) | ✅ |
+| **ZCode** | Hooks + controls | `Agent` (Claude-like) | Hook envelope (PreToolUse bind → one-use receipt) | planned |
+| **Hermes** | Python plugin + MCP | `delegate_task` | MCP-plugin context framing | ✅ |
+| **OpenClaw** | JavaScript plugin | `sessions_spawn` | MCP-plugin context framing | ✅ |
+
+All hosts have deterministic Windows and Linux contract coverage. **Live status
+is reported separately** — a copied plugin directory is never proof a host loaded
+it. Run `agency doctor --json` to see what is installed and verified.
+
+> **ZCode note:** ZCode reuses the Claude hook model and `Agent`-tool primitive,
+> so it's first-class for main-session routing. ZCode **native children are
+> host-limited**: ZCode does not emit `SubagentStart`/`SubagentStop`, so governed
+> native-child self-routing can't fire for ZCode children yet (tracked, gated on
+> host support). Main-session specialist binding works.
+
+---
+
+## 🧬 How a specialist gets into a subagent
+
+Your host keeps its own scheduler. Agency doesn't replace it — it binds the exact
+audited specialist into the child for that one task. There are two mechanisms:
+
+### Hook hosts (Codex, Claude Code, ZCode)
+
+When the host invokes its native delegation tool (`spawn_agent` / `Agent`), a
+`PreToolUse` hook resolves the one persisted assignment for that child, verifies
+the goal matches the plan, and injects the specialist's exact versioned prompt as
+an `[AGENCY EXACT SPECIALIST ACTIVATION v1]` envelope into the child's task
+input. After the host proves it executed the launch, a `PostToolUse` hook
+**consumes the one-use activation receipt** — it can't be replayed. Payloads are
+byte-budgeted (64 KiB) and never silently truncated.
+
+```mermaid
+sequenceDiagram
+    participant Host
+    participant Hook as Agency PreToolUse hook
+    participant Store as Evidence store
+    participant Child as Native child
+    Host->>Hook: invoke spawn_agent / Agent (goal)
+    Hook->>Store: resolve one persisted assignment
+    Store-->>Hook: exact specialist + version
+    Hook-->>Host: allow + rewritten input (specialist envelope)
+    Host->>Child: launch with specialist prompt bound
+    Child-->>Host: result
+    Host->>Hook: PostToolUse (launch evidence)
+    Hook->>Store: consume one-use receipt
+```
+
+### MCP-plugin hosts (Hermes, OpenClaw)
+
+These hosts deliver the specialist as prompt-context framing through a subprocess
+backend (`delegate_task` / `sessions_spawn`), and record child lifecycle via
+explicit `native_child_started` / `native_child_ended` bridge actions.
+
+---
+
+## 🧑‍💼 Recruiter, gaps, and contractor hiring
+
+When a provider is configured, selection is inference-first:
+
+1. **Plan** — one compact inference call decomposes the ask into typed work units
+   (outcome, artifact, lifecycle, domain, stack, capabilities, authority,
+   dependencies).
+2. **Recall** — deterministic, zero-false-negative typed recall reduces the whole
+   workforce to the plausibly-relevant specialists.
+3. **Recruit** — the recruiter (one bounded inference call over the recall
+   shortlist) nominates the best eligible specialist per unit — `required`,
+   `acceptable`, or `forbidden` — or declares a real gap.
+4. **Verify** — deterministic code validates eligibility, composition, coverage,
+   and budget around the model's trusted nomination.
+5. **Gap → hire** — if no specialist covers a unit, Agency hires a contractor.
+
+### Contractor hiring (`hire_contractor_for_gap`)
+
+A declared gap is a contractor specification. Agency:
+
+- **Compiles** a structured contract through a fixed, security-reviewed prompt
+  template (never an unrestricted model-written system prompt).
+- **Criticizes** it with an independent hiring-critic inference pass.
+- **Risk-tiers** it and runs deterministic Unicode / injection / exfiltration /
+  authority / tool / conflict / duplicate checks.
+- **Admits** the worker as a least-privilege, visibly-marked probationary
+  contractor tied to the agency origin (`origin="agency"`,
+  `employment="contractor"`), with a one-use activation receipt.
+- High-risk domains still require explicit human approval.
+
+Contractors follow the **same audited, versioned, composition-bound path** as
+employees. **Promotion to employee is human-controlled** — an operator must act,
+and only after independently-verified successful assignments.
+
+---
+
+## 🧪 Sample teams per ask
+
+*(Representative — shaped by the governed roster and the verified routing
+behavior. Live output varies with provider and roster generation.)*
+
+| Ask | Recruited via | Planned team (specialists) |
 |---|---|---|
-| Codex | Native plugin, hooks, MCP, controls, canary | Installation guides hook approval and verifies a normal Codex profile before reporting ready. |
-| Claude Code | Native plugin, hooks, MCP, controls, canary | Uses Claude's native plugin and Stop behavior. |
-| Hermes | Native Python plugin and commands | Supports direct `/agency` controls. |
-| OpenClaw | Native JavaScript plugin | Supported for the audited `2026.7.x` stable line at patch 1 or newer. |
-| Other tools | MCP or explicit CLI adapter | Generic command execution must be configured explicitly. |
+| "Review this code for correctness and security" | inference | `code-reviewer` + `ai-generated-code-security-auditor` |
+| "Fix the authentication bug" | inference | `python-application-engineer` → test → review → security audit |
+| "Write unit tests" | inference | `software-test-engineer` + `technical-writer` (review) |
+| "Design a Git branching strategy" | inference | multi-unit: discovery → design → implement → review → test, incl. `git-workflow-master` |
+| "Build a FluxUI dashboard" | inference | `senior-developer` (owns FluxUI/Livewire/Laravel) |
+| *(no provider configured)* "review this auth code" | deterministic | best typed-guess reviewer (e.g. `code-reviewer`) |
 
-All four native integrations have deterministic Windows and Linux contract
-coverage. Live status is reported separately, so a copied plugin directory is
-never presented as proof that a host loaded it. Run `agency doctor --json` to
-see what is installed and verified on your machine.
-
-## Install
-
-Python 3.10 or newer is required.
+Try it yourself:
 
 ```bash
-git clone https://github.com/Holeshot-Software-LLC/agency-runtime.git
-cd agency-runtime
-python -m pip install .
-
-agency --version
-agency configure --non-interactive --profile standard
-agency install --all --dry-run
-agency install --all
-agency install --agent codex --verify-activation
-agency smoke --all --json
-agency doctor
-```
-
-The installer discovers supported hosts and registers only the ones it can
-identify. It does not restart a host automatically.
-
-Codex requires you to approve command hooks. Agency will install the plugin,
-report `activation_required`, and give you the exact next step. Open a terminal,
-run `codex`, and choose **Trust all and continue** when the Codex terminal UI
-shows its startup hook review. If that review does not appear, run `/hooks`
-inside the terminal UI and trust the seven Agency Runtime events. Codex
-Desktop's `/hooks` screen may show connector setup such as Zoom or Twilio; that
-is not the local command-hook trust screen. Then finish the same install flow
-with:
-
-```bash
-agency install --agent codex --verify-activation
-```
-
-That verification starts a harmless normal-profile Codex session without the
-hook-trust bypass. Installation reports Codex as ready only when routing,
-specialist evidence, finalization, and the six-line header all appear. The
-installer never edits Codex's trust state for you.
-
-The dashboard is installed by default as a service for the current user. It
-does not require administrator access. To install only the runtime and host
-integrations:
-
-```bash
-agency install --all --no-dashboard
-```
-
-Install or roll back one host:
-
-```bash
-agency install --agent codex --dry-run
-agency install --agent codex
-agency install --agent codex --verify-activation
-agency install --agent codex --rollback
-```
-
-Managed files and backups live under `~/.agency-runtime/`. Native host files
-use the normal host locations under the current user's home directory.
-
-## Everyday commands
-
-Check the system:
-
-```bash
-agency status
-agency doctor --json
-agency smoke --all --json
-agency agents list
-agency roster list
-```
-
-Try routing without changing a host session:
-
-```bash
-agency search "incident response"
-agency route "review this authentication design"
-agency explain "review this authentication design" --session-id demo
-```
-
-For a live selection check, use a real task and inspect both the positive and
-negative result:
-
-```bash
-agency route --json "Review this authentication design and propose tests"
+agency route "Review this authentication design and propose tests"
 agency explain "Review this authentication design and propose tests"
-agency eval routing --json --no-details
-agency eval full-roster --json --no-details
-agency eval delegation --json
 ```
 
-The route should name specialists that fit the work, omit unrelated domains,
-and show whether inference or deterministic matching made the decision. A low
-signal should produce an abstention and leave the request with the resident
-orchestrator and chief of staff; it should not manufacture a niche match.
-Aggregate evals are regression gates, not proof for every prompt, so important
-real prompts should also be kept as golden cases with both required and
-forbidden specialists.
+---
 
-Enable or disable Agency for one host:
+## 🤖 Configure inference
+
+Agency works without a provider (deterministic typed-recall floor). Configure one
+for intent-aware selection.
 
 ```bash
-agency status --agent codex
-agency off --agent codex
-agency on --agent codex
-```
-
-Turn Agency off or on everywhere while keeping plugins, configuration, and
-history in place:
-
-```bash
-agency off --global
-agency on --global
-```
-
-Start a new host session after changing the global switch. An existing model
-conversation cannot forget instructions that were already placed in its
-context.
-
-Every specialist is enabled by default. You can disable any optional specialist
-without deleting it:
-
-```bash
-agency agents disable code-reviewer
-agency agents enable code-reviewer
-```
-
-`agents-orchestrator` and `chief-of-staff` are the protected coordination pair
-and cannot be disabled.
-
-## Operations dashboard
-
-The optional dashboard is a local, animated view of routing, delegation,
-provider health, model receipts, host status, roster changes, and recent
-activity. It also provides the same configuration and enable/disable controls
-as the CLI.
-
-Manage the installed service:
-
-```bash
-agency dashboard service status
-agency dashboard service open
-agency dashboard service restart
-agency dashboard service uninstall
-agency dashboard service install
-```
-
-`agency dashboard service open` is the normal way to get to it; it opens the
-authenticated local address in your browser. In **Route Lab**, choose a verified
-host, enter the exact task, and inspect the selected specialists, confidence,
-provider attempts, compatibility decisions, and eligibility exclusions. Use
-the activity stream afterward to distinguish a recommendation from a specialist
-that was actually loaded or delegated.
-
-To exercise the unsafe-selection regression directly, submit this exact task in
-Route Lab:
-
-```text
-The Agency response header exposes unreadable reason codes and effect codes.
-Explain how to test agent selection live and how to open the dashboard.
-```
-
-The result must include `multi-agent-systems-architect`.
-`technical-writer` is also valid because the task explicitly asks to make the
-header understandable. A weak prompt such as `Please help me with this.` must
-abstain. Neither case may select a clinical, geography, translation, or generic
-business-operations specialist. Repeat the first task with the configured
-inference provider enabled and confirm that the provider attempt, requested
-model or router alias, reconciled model, confidence, and compatibility decisions
-appear in the same Route Lab result.
-
-Or run it in the foreground on Windows or Linux:
-
-```bash
-agency dashboard
-agency dashboard --no-open
-agency dashboard --port 7801
-```
-
-The dashboard listens only on your computer and uses a fresh access token. Its
-service runs as the current user through Task Scheduler on Windows or
-`systemd --user` on Linux. Configuration changes are validated and written
-atomically, and stale browser tabs must refresh before overwriting a newer CLI
-change.
-
-## Configure routing and inference
-
-Start the guided setup or inspect the current configuration:
-
-```bash
-agency configure
+agency configure          # guided setup
 agency config show
 agency config validate
-agency config path
-agency config provider models codex
 ```
 
-Agency works with deterministic routing alone. When an inference provider is
-configured, semantic selection uses it whenever the turn requires an inference
-decision. Supported local CLI providers can reuse an authenticated Codex or
-Claude session. OpenAI-compatible endpoints and ordered fallback chains are also
-supported.
+**Ways to configure inference:**
 
-The guided setup and dashboard can list models visible to the signed-in Codex
-account. For Codex subscription routing, the CLI and dashboard also expose the
-model's supported reasoning levels; `low` is usually enough for the compact
-intent plan and reduces routing latency. You can still use the model default or
-type a model ID manually. LiteLLM users enter the router or model-group alias
-exactly, for example `task-agency-router`.
-
-Example provider chain:
+- **Codex CLI / subscription reuse** — reuse an authenticated Codex session;
+  exposes the account-visible model and reasoning levels (`low` is usually
+  enough for the compact plan and reduces latency).
+- **OpenAI-compatible endpoint** — any local or remote OpenAI-compatible API
+  (e.g. `http://127.0.0.1:1234/v1`).
+- **LiteLLM router** — enter the router/model-group alias exactly (e.g.
+  `task-agency-router`).
+- **Ordered fallback chain** — providers tried in order; the first healthy one
+  serves the turn.
 
 ```yaml
 providers:
@@ -321,200 +288,178 @@ providers:
     timeout: 15
 ```
 
-Set a model or enter a secret without placing it on the command line:
-
 ```bash
-agency config set judge.model qwen3.5:2b
-agency config set judge.api_key --prompt
-agency config set judge.api_key --clear
 agency config provider set codex-subscription --type cli --transport codex --model gpt-5.6-luna --reasoning-effort low --timeout 60
 agency config provider set office-router --type litellm --model task-agency-router --base-url http://127.0.0.1:4000/v1
+agency config set judge.model qwen3.5:2b
 agency config set delegation.child_inference_budget 4
-agency config set delegation.child_inference_concurrency 2
-agency config set delegation.child_cache_ttl_seconds 900
 ```
 
-If a configured inference chain is unavailable, Agency reports that selection
-is degraded instead of pretending deterministic candidates were model-selected.
-An optional, unconfigured local model may be unavailable while deterministic
-routing continues normally.
+If a configured chain is unavailable, Agency reports selection is degraded
+rather than pretending deterministic candidates were model-selected.
 
-Default files:
+Default files: config `~/.agency-runtime/agency.yaml`, database
+`~/.agency-runtime/agency.db`, global switch `~/.agency-runtime/run/control.json`.
+Use `AGENCY_CONFIG_PATH` / `AGENCY_DB_PATH` to relocate.
 
-- configuration: `~/.agency-runtime/agency.yaml`
-- database: `~/.agency-runtime/agency.db`
-- global switch: `~/.agency-runtime/run/control.json`
+---
 
-Use `AGENCY_CONFIG_PATH` or `AGENCY_DB_PATH` to choose another location.
+## 📦 Install
 
-## Response header
+Python 3.10+.
 
-Agency-enabled responses start with six evidence fields:
+```bash
+git clone https://github.com/Holeshot-Software-LLC/agency-runtime.git
+cd agency-runtime
+python -m pip install .
+
+agency --version
+agency configure --non-interactive --profile standard
+agency install --all --dry-run
+agency install --all
+agency smoke --all --json
+agency doctor
+```
+
+The installer discovers supported hosts and registers only the ones it can
+identify. It does not restart a host automatically.
+
+**Codex** requires you to approve command hooks: Agency installs the plugin,
+reports `activation_required`, and gives the exact next step. Run `codex`,
+choose **Trust all and continue** at the startup hook review (or `/hooks` inside
+the terminal UI and trust the Agency events), then:
+
+```bash
+agency install --agent codex --verify-activation
+```
+
+Install or roll back one host (ZCode included):
+
+```bash
+agency install --agent zcode
+agency install --agent codex --rollback
+```
+
+The dashboard installs by default as a per-user service (no admin access). To
+install only the runtime and hosts: `agency install --all --no-dashboard`.
+Managed files and backups live under `~/.agency-runtime/`.
+
+---
+
+## 🛠 Everyday commands
+
+```bash
+agency status                 # system + host status
+agency doctor --json          # what's installed and verified
+agency smoke --all --json     # canary readiness check (see 🩺 below)
+agency agents list            # roster
+agency roster list
+
+agency search "incident response"
+agency route "review this authentication design"
+agency explain "review this authentication design" --session-id demo
+agency eval routing --json --no-details
+```
+
+Enable/disable Agency per host or globally (plugins/config/history stay):
+
+```bash
+agency off --agent codex && agency on --agent codex
+agency off --global && agency on --global
+```
+
+Every specialist is enabled by default; disable any optional one without deleting
+it (`agency agents disable code-reviewer`). `agents-orchestrator` and
+`chief-of-staff` are the protected coordination pair and cannot be disabled.
+
+---
+
+## 📊 Operations dashboard
+
+The optional local dashboard shows live routing, delegation, provider health,
+model receipts, host status, roster changes, and recent turns, plus the full
+contractor lifecycle (hire / amend / promote / disable). It is local-only and
+bounded; see [docs/decisions/0029-…](docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md).
+
+---
+
+## 🔍 Response header
+
+Every Agency response starts with an evidence header — a truth-receipt, not
+marketing:
 
 ```text
 Agency/Agencies loaded: code-reviewer
 Agency/Agencies delegated: none
 Skills loaded: none
-Actual Model selected: gpt-5.6-sol -> unavailable - no model receipt recorded
-Why: The request needed a focused code review.
-How it shaped outcome: The review emphasized correctness and regression risk.
+Actual Model selected: gpt-5.6-luna -> codex/gpt-5.6-luna
+Recruited via: inference
+Why: Security review requested for auth code
+How it shaped outcome: Loaded code review + security auditor
 ```
 
-The header is built from the current turn's receipts. Why and How are plain
-English projections; the raw reason and effect codes remain in the durable
-receipt and dashboard diagnostics. A recommendation is not reported as a
-delegation, and a requested model is not reported as the actual model unless
-the host or router provides matching evidence. With LiteLLM, the verified
-router name is kept alongside the reconciled provider/model result.
+The **`Recruited via`** line is machine-stamped (`inference`, `deterministic`,
+`cached`, or `none`) — distinct from the model-authored `Why`. It tells you at a
+glance how the specialist was actually selected, including when the offline
+typed-recall floor fired.
 
-When Agency is globally off, the host runs normally without Agency routing or
-the Agency header. This makes clean A/B testing possible.
+---
 
-## Verify an installed host
+## 📂 Roster & the upstream project
 
-The default canary command is read-only:
+Agency Runtime ships a **263-specialist audited roster** sourced from an
+upstream open-source specialist-pool project (MIT, pinned revision). Credit and
+thanks to that project — the audited pool of specialists is the upstream asset
+worth borrowing. (Provenance — repository, exact revision, and license — is
+recorded in the bundled roster manifest and in [LICENSE](LICENSE).)
+
+- The roster is the community-sync asset, **not** a selector. Agency Runtime uses
+  its own inference-first router; it does not vendor the upstream selector.
+- Pull in deltas: `agency source add <path> --name ...` then
+  `agency roster upstream import --source-revision <rev>`. **Import only
+  quarantines the delta** — it never approves or activates.
+- New agents become selectable only after a separate **audit → approval →
+  activation** step, so nothing enters the live roster unreviewed.
+- A nightly workflow runs the upstream delta audit and publishes review evidence.
+- Enrichment (`scripts/enrich_workforce_contracts.py`) regenerates typed
+  `stacks`/`domains` and user-facing `scope_qualifiers` for the roster so the
+  deterministic verifier scores real stack coverage.
+
+---
+
+## 🔐 Privacy and security
+
+Agency runs locally; the dashboard is local-only. Specialist prompts are
+turn-/task-scoped and don't accumulate. See
+[SECURITY.md](SECURITY.md) and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) for
+vulnerability reporting, trust boundaries, and enforced controls.
+
+---
+
+## 🩺 Canaries
+
+A **canary** is an isolated, non-mutating readiness smoke that proves the
+*installed* runtime actually fires end-to-end on a real host. Tests run in pytest
+with stubs; a canary catches what tests can't — a broken hook registration, a
+wrong config path, or a provider that times out. It refuses to claim success
+without explicit confirmation before any live backend call.
 
 ```bash
-agency host-canary codex
-```
-
-Maintainers also test this exact selection pair from the built wheel and source
-archive, outside the checkout, on Windows and Linux. That artifact smoke requires
-`multi-agent-systems-architect`, permits `technical-writer`, requires the
-ambiguous prompt to abstain, and rejects every forbidden specialist. It
-complements the live canary; it does not replace a fresh normal-profile task
-after installation and restart.
-
-Run an isolated live Codex canary only with its exact confirmation:
-
-```bash
-agency host-canary codex --execute --confirm "RUN LIVE codex CANARY"
-```
-
-For a native-only comparison, disable Agency globally, run the native-only
-canary, and always restore Agency afterward:
-
-```bash
-agency off --global
-agency host-canary codex --mode native-only --execute \
-  --confirm "RUN LIVE codex NATIVE-ONLY CANARY"
-agency on --global
-```
-
-The canary uses an isolated host profile. It proves the installed integration
-path without changing the real profile's trust settings.
-
-## Roster updates and quarantine
-
-New or changed agent definitions never become active just because they were
-downloaded. Ingestion scans them, compares them with the active roster, and
-places them in a review queue.
-
-Known source defects can be repaired during ingestion only when an exact,
-content-hash-bound repair rule exists. The repaired result is scanned again and
-still requires normal review and approval. Unknown or changed defects stay in
-quarantine with a clear reason; Agency does not guess at a cleanup.
-
-Useful maintainer commands:
-
-```bash
-agency roster upstream status --source-id <source-id>
-agency roster upstream import --source-id <source-id> --dry-run
-agency roster upstream import --source-id <source-id> --source-revision <git-sha>
-agency roster remediation queue --limit 50
-agency roster candidate findings <candidate-id>
-agency roster candidate compare <candidate-id>
-agency roster candidate audit <candidate-id>
-```
-
-The bundled roster currently contains 263 approved agents and no unresolved
-quarantined definitions eligible for routing.
-
-## MCP and LiteLLM
-
-Run Agency as a standard MCP stdio server:
-
-```bash
-agency mcp
-agency mcp --db ~/.agency-runtime/alternate.db
-```
-
-Codex and Claude installations configure the packaged MCP server automatically.
-Other MCP clients can launch the same command.
-
-For LiteLLM SDK users:
-
-```python
-from agency_runtime.adapters.litellm import register_litellm_callback
-
-registration = register_litellm_callback()
-if not registration.registered:
-    raise RuntimeError(registration.reason)
-```
-
-For LiteLLM Proxy:
-
-```yaml
-litellm_settings:
-  turn_off_message_logging: true
-  callbacks: agency_runtime.adapters.litellm.callback.proxy_handler_instance
-```
-
-## Privacy and security
-
-Agency stores metadata rather than prompt or response content by default.
-Content capture is opt-in and should be enabled only after reviewing the data
-impact. Dashboard access stays local to the current computer and requires its
-session token.
-
-Imported agent files are treated as untrusted input. Paths, file identities,
-processes, provider URLs, credentials, and configuration updates are checked
-before use. When Agency cannot verify an operation safely, it stops that
-operation and explains what needs attention.
-
-Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
-
-## Troubleshooting
-
-Start here:
-
-```bash
-agency doctor --json --verbose
-agency dashboard service status
-agency config validate
+agency smoke --agent codex --json
 agency smoke --all --json
 ```
 
-Common fixes:
+---
 
-- Start a new host session after install or after changing Agency controls.
-- In Codex, run `/hooks`, review the seven Agency events, trust them, and start
-  a new session.
-- If the dashboard service is unavailable, use `agency dashboard` in the
-  foreground or reinstall with `--no-dashboard`.
-- If a host is shown as discovered but not registered, rerun
-  `agency install --agent <host>` and inspect the returned status.
-- If configuration changed to a different database, restart the dashboard
-  service so it opens the new database.
+## 🧯 Troubleshooting & development
 
-See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for detailed diagnostics.
-
-## Development
-
-```bash
-python -m pip install -e ".[dev]"
-ruff check agency_runtime tests scripts
-ruff format --check agency_runtime tests scripts
-python -m pytest tests -q -W error
-node --test tests/dashboard_ui.test.mjs
-agency eval routing --json --no-details
-agency eval full-roster --json --no-details
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development and review
-workflow, [CHANGELOG.md](CHANGELOG.md) for release history, and
-[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for operations help.
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — host maturity, MCP,
+  LiteLLM, dashboard, and platform diagnostics.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — setup, implementation boundaries,
+  validation.
+- [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) — release gates.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[MIT](LICENSE) — roster specialists sourced under MIT from the upstream
+specialist-pool project.
