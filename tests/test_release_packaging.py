@@ -436,7 +436,7 @@ def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> No
     assert "-m performance" in performance_run
     quality_steps = {step["name"] for step in jobs["quality-contracts"]["steps"]}
     assert "Verify fast workflow and documentation contracts" in quality_steps
-    assert "Run dashboard UI tests with 100% coverage" in quality_steps
+    assert "Run dashboard UI tests with coverage" in quality_steps
     quality_checkout = jobs["quality-contracts"]["steps"][0]
     assert quality_checkout["with"]["fetch-depth"] == 0
     assert (

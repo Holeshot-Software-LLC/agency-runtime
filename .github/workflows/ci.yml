@@ -53,7 +53,7 @@ jobs:
           python scripts/update_worklog.py --check
           python scripts/verify_docs.py --require-tracker
           python -m pytest tests/test_ci_sharding.py tests/test_release_packaging.py -q -W error
-      - name: Run dashboard UI tests with 100% coverage
+      - name: Run dashboard UI tests with coverage
         run: >-
           node --test --experimental-test-coverage
           --test-coverage-lines=95 --test-coverage-branches=90
@@ -127,7 +127,7 @@ jobs:
           retention-days: 1
 
   coverage-complete:
-    name: coverage / combined 100 percent
+    name: coverage / combined
     needs: coverage
     runs-on: ubuntu-24.04
     timeout-minutes: 5
