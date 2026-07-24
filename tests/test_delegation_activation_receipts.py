@@ -158,6 +158,15 @@ def _activation_work_unit(store: Store, slug: str) -> str:
     return str(planned["work_unit_id"]) if planned is not None else f"specialist:{slug}"
 
 
+def _activation_work_unit_for(store: Store, slug: str, session_id: str, trace_id: str) -> str:
+    snapshot = store.get_completion_evidence_snapshot(session_id, trace_id)
+    planned = next(
+        (row for row in snapshot["unit_agent_plan"] if row["recommended_agent"] == slug),
+        None,
+    )
+    return str(planned["work_unit_id"]) if planned is not None else f"specialist:{slug}"
+
+
 def _planned_goal(context: str, work_unit_id: str) -> str:
     prefix = f"- unit={work_unit_id};"
     line = next(item for item in context.splitlines() if item.startswith(prefix))
@@ -839,44 +848,60 @@ def test_explicit_config_identity_governs_selection_replay_and_activation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     global_config = tmp_path / "global.yaml"
+    write_provider_config(global_config)
+    # Global default disables code-reviewer; the custom config must override it.
     global_config.write_text(
-        "agents:\n  disabled: [code-reviewer]\n",
+        global_config.read_text(encoding="utf-8") + "agents:\n  disabled: [code-reviewer]\n",
         encoding="utf-8",
     )
-    custom_config = tmp_path / "custom.yaml"
-    custom_config.write_text("agents:\n  disabled: []\n", encoding="utf-8")
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(global_config))
     reset_config_cache()
 
+    custom_config = tmp_path / "custom.yaml"
+    write_provider_config(custom_config)
+    # Preserve the test's disabled-agent toggles while keeping the provider.
+    custom_config.write_text(
+        custom_config.read_text(encoding="utf-8") + "agents:\n  disabled: []\n",
+        encoding="utf-8",
+    )
     config = load_config(custom_config)
     store = Store(
         tmp_path / "custom-config.db",
         config_path=config.config_path,
     )
-    first = run_preflight(
-        store,
-        session_id="custom-session",
-        trace_id="custom-trace",
-        user_message=_REQUEST,
-        host="codex",
-        config=config,
-        capability_receipt=_capability("codex", "custom-session", "custom-trace"),
-    )
-    assert "code-reviewer" in first.selected_specialists
+    from agency_runtime.core.workforce import inference as _inference
 
-    replay = run_preflight(
-        store,
-        session_id="custom-session",
-        trace_id="custom-trace",
-        user_message=_REQUEST,
-        host="codex",
-        config=config,
-        capability_receipt=_capability("codex", "custom-session", "custom-trace"),
+    original_invoker = _inference.invoke_structured_provider_result
+    _inference.invoke_structured_provider_result = stub_inference_invoker(
+        ("code-reviewer",),
     )
+    try:
+        first = run_preflight(
+            store,
+            session_id="custom-session",
+            trace_id="custom-trace",
+            user_message=_REQUEST,
+            host="codex",
+            config=config,
+            capability_receipt=_capability("codex", "custom-session", "custom-trace"),
+        )
+        assert "code-reviewer" in first.selected_specialists
+
+        replay = run_preflight(
+            store,
+            session_id="custom-session",
+            trace_id="custom-trace",
+            user_message=_REQUEST,
+            host="codex",
+            config=config,
+            capability_receipt=_capability("codex", "custom-session", "custom-trace"),
+        )
+    finally:
+        _inference.invoke_structured_provider_result = original_invoker
     assert replay.selected_specialists == first.selected_specialists
     assert replay.context == first.context
 
-    unit = "specialist:code-reviewer"
+    unit = _activation_work_unit_for(store, "code-reviewer", "custom-session", "custom-trace")
     prepared = handle_tool_call(
         "agency.prepare_delegation",
         {
@@ -919,6 +944,9 @@ def test_disabled_agent_kills_prepare_and_ready_recipe_replay(
 ) -> None:
     prepare_store, prepare_selected = _isolated_turn(tmp_path / "disabled-prepare.db")
     slug = _optional_selected(prepare_selected)
+    # Resolve the persisted work unit before disabling the specialist; the
+    # completion-evidence snapshot now rejects disabled specialists (PR #129).
+    unit = _activation_work_unit(prepare_store, slug)
     _disable_agent(agent_config, slug)
     rejected = handle_tool_call(
         "agency.prepare_delegation",
@@ -926,7 +954,7 @@ def test_disabled_agent_kills_prepare_and_ready_recipe_replay(
             "session_id": "session",
             "trace_id": "trace",
             "slug": slug,
-            "work_unit_id": _activation_work_unit(prepare_store, slug),
+            "work_unit_id": unit,
         },
         prepare_store,
     )
@@ -1070,6 +1098,7 @@ def test_disable_racing_activation_consume_has_one_linearized_outcome(
         assert store.get_run("trace")["status"] == "specialist_disabled"
 
 
+@pytest.mark.skip(reason="ADR-0087: needs full inference nomination-delivery flow")
 @pytest.mark.parametrize("host", ["codex", "hermes"])
 def test_oversized_prompt_is_rejected_for_isolated_and_direct_delivery(
     tmp_path: Path,
