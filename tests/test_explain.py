@@ -200,10 +200,15 @@ def test_cli_explain_json(
     tmp_path: Path,
     capsys,
 ) -> None:
+    from tests.runtime_support import stub_inference_invoker, write_provider_config
+
     db = tmp_path / "agency.db"
+    config_path = tmp_path / "agency.yaml"
+    write_provider_config(config_path, db_path=db)
     monkeypatch.setenv("AGENCY_DB_PATH", str(db))
-    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
     monkeypatch.setenv("AGENCY_BYPASS_THRESHOLD", "1")
+    reset_config_cache()
     monkeypatch.setattr(
         roster_commands,
         "_single_verified_route_host",
@@ -211,11 +216,21 @@ def test_cli_explain_json(
     )
     _seed_store(db)
 
-    payload = {}
-    for _attempt in range(2):
-        assert main(["explain", "review code", "--session-id", "s1", "--limit", "2"]) == 0
-        payload = json.loads(capsys.readouterr().out)
-        assert payload["selected"], payload
+    from agency_runtime.core.workforce import inference as _inference
+
+    original_invoker = _inference.invoke_structured_provider_result
+    _inference.invoke_structured_provider_result = stub_inference_invoker(
+        ("fixture-code-reviewer",),
+    )
+    try:
+        payload = {}
+        for _attempt in range(2):
+            assert main(["explain", "review code", "--session-id", "s1", "--limit", "2"]) == 0
+            payload = json.loads(capsys.readouterr().out)
+            assert payload["selected"], payload
+    finally:
+        _inference.invoke_structured_provider_result = original_invoker
+        reset_config_cache()
 
     assert payload["schema_version"] == "agency.selection_explain.v1"
     assert payload["selected"][0]["slug"] == "fixture-code-reviewer"

@@ -439,7 +439,7 @@ def test_partial_legacy_roster_gains_fallback_without_overwriting_operator_entry
     )
 
     assert result is not None
-    assert "agents-orchestrator, chief-of-staff" in result["context"]
+    assert "managers=agents-orchestrator,chief-of-staff" in result["context"]
     assert store.get_roster_entry("operator-specialist") == before
     assert store.get_specialist_prompt("operator-specialist")["prompt_body"] == (
         "Preserve this operator-owned prompt."
