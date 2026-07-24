@@ -183,6 +183,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5f78309` | 2026-07-24 | fix(zcode): add zcode to hook CLI choices + HOSTS inventory | null | null |
 | `117a84b` | 2026-07-24 | feat(workforce): broad-domain recall + team-decomposition planner prompts (ADR-0087) | AR-119 | null |
 | `c8872c9` | 2026-07-24 | feat(workforce): trust inference nominations, fix ZCode header, wire enrichment (ADR-0087) | AR-119 | null |
+| `8c10848` | 2026-07-24 | feat(workforce): deterministic typed-recall offline floor + stamped recruited-via header (ADR-0088) | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
