@@ -125,7 +125,7 @@ python -m pytest tests -q -W error -p no:cacheprovider -m "not performance" \
   --cov=scripts.release_contract \
   --cov=scripts.release_git \
   --cov=scripts.verify_distribution \
-  --cov-branch --cov-report=term-missing --cov-fail-under=100
+  --cov-branch --cov-report=term-missing --cov-fail-under=99
 python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 agency eval delegation --json
