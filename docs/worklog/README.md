@@ -212,6 +212,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `32300a0` | 2026-07-24 | test: handle litellm callback routing under ADR-0087 | null | null |
 | `fc35468` | 2026-07-24 | test: fix last 3 suite failures (codex stop shape, security-audit winner, openclaw delegation skip) | null | null |
 | `126c853` | 2026-07-24 | style: format test_openclaw_adapter.py (ruff format CI fix) | null | null |
+| `7a0b9c6` | 2026-07-24 | fix(eval): resolve CI-only product-validator and preflight-bounds failures | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
