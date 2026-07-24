@@ -46,8 +46,12 @@ def _seed_store(tmp_path: Path) -> Store:
         encoding="utf-8",
     )
     store = Store(config_path=config_path)
-    reviewer = next(agent for agent in BundledRoster() if agent["slug"] == "code-reviewer")
-    store._activate_prevalidated_agent(reviewer)
+    bundled = {agent["slug"]: agent for agent in BundledRoster()}
+    store._activate_prevalidated_agent(bundled["code-reviewer"])
+    # code-reviewer's same_context_conflicts closure must be present so the
+    # workforce index fingerprint stays coherent during preflight.
+    for slug in ("codebase-onboarding-engineer", "technical-writer"):
+        store._activate_prevalidated_agent(bundled[slug])
     return store
 
 

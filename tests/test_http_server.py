@@ -44,9 +44,17 @@ def http_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     store = Store(db)
 
     # Seed active agents so preflight/search have a catalog to work with.
+    # code-reviewer's same_context_conflicts closure (codebase-onboarding-
+    # engineer -> technical-writer) must be present so the workforce index
+    # fingerprint stays coherent during preflight.
     bundled = {agent["slug"]: dict(agent) for agent in BundledRoster()}
     store._activate_prevalidated_agent(bundled["code-reviewer"])
-    for slug in ("agents-orchestrator", "chief-of-staff"):
+    for slug in (
+        "agents-orchestrator",
+        "chief-of-staff",
+        "codebase-onboarding-engineer",
+        "technical-writer",
+    ):
         store._activate_prevalidated_agent(bundled[slug])
 
     server = AgencyHTTPServer(

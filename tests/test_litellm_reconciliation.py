@@ -291,9 +291,11 @@ def test_sdk_and_proxy_callbacks_persist_standard_reconciled_receipts(tmp_path: 
 
 def test_model_receipt_does_not_terminalize_turn_before_finalization(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
-    store._activate_prevalidated_agent(
-        next(agent for agent in bundled_roster() if agent["slug"] == "code-reviewer")
-    )
+    bundled = {agent["slug"]: agent for agent in bundled_roster()}
+    store._activate_prevalidated_agent(bundled["code-reviewer"])
+    # Seed code-reviewer's same_context_conflicts closure.
+    for slug in ("codebase-onboarding-engineer", "technical-writer"):
+        store._activate_prevalidated_agent(bundled[slug])
     callback = AgencyLiteLLMCallback(store=store, config=AgencyConfig())
     preflight = callback.adapter.pre_call_handler(
         "session-1",
