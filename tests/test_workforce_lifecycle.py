@@ -143,6 +143,7 @@ def test_packaged_contract_reconciliation_repairs_only_derived_projection(
     assert json.loads(str(projection["recruitment_contract"]))["domains"] == [
         "software-engineering",
         "security",
+        "quality-assurance",
     ]
     with closing(store._connect()) as conn:
         immutable_after = dict(
