@@ -301,7 +301,7 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     if host == "openclaw":
         return _smoke_openclaw_plugin(host, plugin_path)
 
-    if host in {"codex", "claude"}:
+    if host in {"codex", "claude", "zcode"}:
         return _smoke_marketplace_bundle(host, plugin_path)
 
     spec = importlib.util.spec_from_file_location(f"agency_runtime_smoke_{host}", plugin_path)

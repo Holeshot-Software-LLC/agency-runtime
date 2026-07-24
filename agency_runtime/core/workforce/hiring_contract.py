@@ -36,7 +36,7 @@ _LIFECYCLE_PHASES = frozenset(
         "release",
     }
 )
-_HOSTS = frozenset({"codex", "claude", "openclaw", "hermes"})
+_HOSTS = frozenset({"codex", "claude", "openclaw", "hermes", "zcode"})
 _PLATFORMS = frozenset({"windows", "linux"})
 _RELATIONSHIPS = frozenset(
     {

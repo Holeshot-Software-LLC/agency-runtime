@@ -9,7 +9,7 @@ from agency_runtime.core.workforce.hiring_contract import (
     parse_employment_contract,
 )
 
-_HOSTS = ["codex", "claude", "openclaw", "hermes"]
+_HOSTS = ["codex", "claude", "openclaw", "hermes", "zcode"]
 _PLATFORMS = ["windows", "linux"]
 
 

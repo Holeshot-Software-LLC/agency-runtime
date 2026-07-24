@@ -22,7 +22,7 @@ from typing import Any, Final
 
 from agency_runtime.core.correlation import validate_correlation_id
 
-EXECUTION_HOSTS: Final[tuple[str, ...]] = ("codex", "claude", "openclaw", "hermes")
+EXECUTION_HOSTS: Final[tuple[str, ...]] = ("codex", "claude", "openclaw", "hermes", "zcode")
 INFERENCE_SURFACES: Final[tuple[str, ...]] = ("litellm",)
 SUPPORTED_PLATFORMS: Final[tuple[str, ...]] = ("windows", "linux")
 MAX_TOOL_CAPABILITIES: Final[int] = 64

@@ -892,7 +892,7 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
     )
     eval_upstream_selection.add_argument(
         "--host",
-        choices=("codex", "claude", "openclaw", "hermes"),
+        choices=("codex", "claude", "openclaw", "hermes", "zcode"),
         default="codex",
         help="Execution host contract shared by both selection arms",
     )
@@ -949,7 +949,7 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
     )
     eval_workforce.add_argument(
         "--host",
-        choices=("codex", "claude", "openclaw", "hermes"),
+        choices=("codex", "claude", "openclaw", "hermes", "zcode"),
         default="codex",
         help="Execution host contract to grade",
     )
@@ -994,7 +994,7 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
     )
     eval_product.add_argument(
         "--host",
-        choices=("codex", "claude", "openclaw", "hermes"),
+        choices=("codex", "claude", "openclaw", "hermes", "zcode"),
         required=True,
         help="Native agent host to execute",
     )

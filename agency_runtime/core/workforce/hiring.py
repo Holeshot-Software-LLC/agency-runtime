@@ -155,7 +155,7 @@ _CONTRACT_PROPERTIES = {
     },
     "hosts": {
         "type": "array",
-        "items": {"enum": ["codex", "claude", "openclaw", "hermes"], "type": "string"},
+        "items": {"enum": ["codex", "claude", "openclaw", "hermes", "zcode"], "type": "string"},
         "minItems": 1,
         "maxItems": 4,
         "uniqueItems": True,

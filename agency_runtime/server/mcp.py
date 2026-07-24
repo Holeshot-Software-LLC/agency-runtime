@@ -70,7 +70,7 @@ MCP_TOOLS = [
                 "parent_trace_id": {"type": "string", "maxLength": 512},
                 "host": {
                     "type": "string",
-                    "enum": ["codex", "claude", "openclaw", "hermes"],
+                    "enum": ["codex", "claude", "openclaw", "hermes", "zcode"],
                 },
                 "user_message": {"type": "string", "maxLength": 262_144},
             },

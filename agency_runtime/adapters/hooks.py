@@ -286,6 +286,17 @@ def _codex_native_child_identity(agent_id: object) -> NativeChildRunIdentity:
     )
 
 
+def _zcode_native_child_identity(agent_id: object) -> NativeChildRunIdentity:
+    """Derive the ZCode child lineage (same Agent-tool model as Claude)."""
+
+    validated_agent_id = validate_correlation_id(agent_id, field="agent_id")
+    return build_native_child_run_identity(
+        worker_kind="generic-worker",
+        worker_id=validated_agent_id,
+        native_run_id=f"zcode-agent:{validated_agent_id}",
+    )
+
+
 def _pre_tool_use_denial(reason: object) -> dict[str, Any]:
     """Block a planned child that cannot receive its exact specialist."""
 
@@ -355,7 +366,7 @@ def _native_work_unit_label(host: str, tool_name: str, args: dict[str, Any]) -> 
         # Resolution is store-bound in HookBridge so an arbitrary legal-looking
         # native label cannot invent a persisted Agency work unit.
         return ""
-    elif host == "claude" and tool_name == "Agent":
+    elif host in {"claude", "zcode"} and tool_name == "Agent":
         candidate = _first_string(args, "description")
     return candidate if candidate.startswith(("specialist:", "unit-")) else ""
 
@@ -422,7 +433,7 @@ class HookBridge:
         _master: dict[str, Any] | None = None,
     ) -> None:
         normalized_host = host.strip().casefold()
-        if normalized_host not in {"codex", "claude"}:
+        if normalized_host not in {"codex", "claude", "zcode"}:
             raise ValueError(f"unsupported hook host: {host}")
         self.host = normalized_host
         self._store = store
@@ -736,7 +747,7 @@ class HookBridge:
         """Resolve one exact persisted row without callback-order correlation."""
 
         tool_name = _optional_string(payload, "tool_name")
-        if self.host == "claude":
+        if self.host in {"claude", "zcode"}:
             if tool_name != _CLAUDE_AGENT_TOOL_NAME:
                 return None
             native_label = _first_string(_dict_or_empty(tool_input), "description")
@@ -817,13 +828,13 @@ class HookBridge:
         """Inject one exact prompt while leaving the native scheduler in control."""
 
         tool_name = _required_string(payload, "tool_name")
-        if self.host == "claude" and tool_name != _CLAUDE_AGENT_TOOL_NAME:
+        if self.host in {"claude", "zcode"} and tool_name != _CLAUDE_AGENT_TOOL_NAME:
             return {}
         if self.host == "codex" and tool_name not in _CODEX_SPAWN_TOOL_NAMES:
             return {}
         tool_input = payload.get("tool_input")
         args = _dict_or_empty(tool_input)
-        task_field = "prompt" if self.host == "claude" else "message"
+        task_field = "prompt" if self.host in {"claude", "zcode"} else "message"
         task = args.get(task_field)
         if not isinstance(task, str) or not task:
             raise HookInputError(f"{tool_name} tool_input.{task_field} is required")
@@ -1260,7 +1271,7 @@ class HookBridge:
             }
         correlation = self._correlation(payload, tool_input, tool_response)
         turn_trace_id = correlation.turn_id or self._unambiguous_open_trace(correlation.session_id)
-        if self.host == "claude" and tool_name == _CLAUDE_AGENT_TOOL_NAME and not turn_trace_id:
+        if self.host in {"claude", "zcode"} and tool_name == _CLAUDE_AGENT_TOOL_NAME and not turn_trace_id:
             return {}
         trace_id = turn_trace_id or correlation.tool_use_id
         canonical_name, canonical_args = _canonical_tool_call(
@@ -1271,7 +1282,7 @@ class HookBridge:
         )
         delivery: NativeChildPromptDelivery | None = None
         delivery_activated = False
-        if (self.host == "claude" and tool_name == _CLAUDE_AGENT_TOOL_NAME) or (
+        if (self.host in {"claude", "zcode"} and tool_name == _CLAUDE_AGENT_TOOL_NAME) or (
             self.host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES
         ):
             delivery, tool_response, _delivery_identity, delivery_activated = (

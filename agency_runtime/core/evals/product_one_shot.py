@@ -19,7 +19,7 @@ from agency_runtime.core.store.security import metadata_is_link_or_reparse_point
 
 PRODUCT_TRIAL_SCHEMA_VERSION: Final[int] = 1
 PRODUCT_TRIAL_MODES: Final[tuple[str, ...]] = ("agency", "native-only")
-PRODUCT_TRIAL_HOSTS: Final[tuple[str, ...]] = ("codex", "claude", "openclaw", "hermes")
+PRODUCT_TRIAL_HOSTS: Final[tuple[str, ...]] = ("codex", "claude", "openclaw", "hermes", "zcode")
 MAX_PRODUCT_TRIAL_TIMEOUT_SECONDS: Final[float] = 3600.0
 _ID = re.compile(r"[a-z0-9][a-z0-9-]{0,127}\Z")
 

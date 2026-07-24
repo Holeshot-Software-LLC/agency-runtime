@@ -78,6 +78,10 @@ def _claude_hooks(*args: Any, **kwargs: Any) -> dict[str, Any]:
     return _facade()._claude_hooks(*args, **kwargs)
 
 
+def _zcode_hooks(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    return _facade()._zcode_hooks(*args, **kwargs)
+
+
 def _agency_control_skill(*args: Any, **kwargs: Any) -> str:
     return _facade()._agency_control_skill(*args, **kwargs)
 
@@ -331,6 +335,67 @@ def claude_hooks(
             "PostCompact": [{"hooks": [handler("PostCompact")]}],
             "Stop": [{"hooks": [handler("Stop")]}],
             "SessionEnd": [{"hooks": [handler("SessionEnd")]}],
+        }
+    }
+
+
+def zcode_hooks(
+    timeout_seconds: int,
+    config_path: str = "",
+    runtime_control_path_value: str = "",
+) -> dict[str, Any]:
+    """ZCode hook registration (same event model as Codex, Agent-tool like Claude).
+
+    ZCode supports exactly seven hook events: SessionStart, UserPromptSubmit,
+    PreToolUse, PermissionRequest, PostToolUse, PostToolUseFailure, Stop.
+    It does NOT support SubagentStart/SubagentStop/PostCompact/SessionEnd.
+    Native children spawn via the Agent tool (same as Claude), so PreToolUse
+    matches on "Agent". ZCode hooks live in ~/.zcode/cli/config.json under the
+    "hooks" key (or workspace .zcode/config.json) and must set enabled: true.
+    """
+
+    def handler(event: str, status_message: str) -> dict[str, Any]:
+        command, command_windows = _python_commands(
+            "agency_runtime.cli",
+            "hook",
+            "zcode",
+            "--event",
+            event,
+            *_config_args(config_path),
+            *_runtime_control_args(runtime_control_path_value),
+        )
+        return {
+            "type": "command",
+            "command": command,
+            "commandWindows": command_windows,
+            "async": False,
+            "timeout": timeout_seconds,
+            "statusMessage": status_message,
+        }
+
+    return {
+        "hooks": {
+            "SessionStart": [
+                {"hooks": [handler("SessionStart", "Loading Agency Runtime managers")]}
+            ],
+            "UserPromptSubmit": [
+                {"hooks": [handler("UserPromptSubmit", "Routing with Agency Runtime")]}
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "Agent",
+                    "hooks": [
+                        handler("PreToolUse", "Binding exact Agency specialist to native child")
+                    ],
+                }
+            ],
+            "PostToolUse": [
+                {
+                    "matcher": "*",
+                    "hooks": [handler("PostToolUse", "Recording Agency Runtime evidence")],
+                }
+            ],
+            "Stop": [{"hooks": [handler("Stop", "Checking Agency Runtime response contract")]}],
         }
     }
 
