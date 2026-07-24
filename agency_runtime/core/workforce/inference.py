@@ -2080,11 +2080,17 @@ def plan_and_staff_workforce(
     *,
     config: AgencyConfig,
     context: StaffingContext,
-    invoker: StructuredInvoker = invoke_structured_provider_result,
+    invoker: StructuredInvoker | None = None,
     routing_context_fingerprint: str = "",
 ) -> WorkforceRoutingOutcome:
     """Plan, recruit, and verify one request without letting inference activate workers."""
 
+    # Resolve the invoker at call time so callers that do not pass one (the
+    # full preflight -> route -> workforce stack) honor a monkeypatched
+    # module-global invoke_structured_provider_result. This is the test seam
+    # for exercising inference through the whole stack without a live CLI.
+    if invoker is None:
+        invoker = invoke_structured_provider_result
     ask = _safe_request(request)
     mode = config.workforce.mode
     if not _inference_declared(config):
