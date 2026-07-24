@@ -31,7 +31,11 @@ from agency_runtime.core.store.schema import (
 )
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.mcp import handle_tool_call
-from tests.runtime_support import harden_private_test_file
+from tests.runtime_support import (
+    harden_private_test_file,
+    stub_inference_invoker,
+    write_provider_config,
+)
 
 _DRAFT = """Agency/Agencies loaded: code-reviewer
 Agency/Agencies delegated: generic-worker via spawn_agent
@@ -85,15 +89,33 @@ def _isolated_preflight(
     user_message: str = _REQUEST,
     minimum_selected: int = 1,
 ) -> tuple[Store, PreflightResult]:
+    # ADR-0087: selection runs inference only when a provider is configured.
+    # Configure one and stub the invoker so preflight exercises the inference
+    # path instead of declining offline.
+    config_path = path.parent / "agency.yaml"
+    write_provider_config(config_path)
+    os.environ["AGENCY_CONFIG_PATH"] = str(config_path)
+    reset_config_cache()
     store = Store(path)
-    result = run_preflight(
-        store,
-        session_id="session",
-        trace_id="trace",
-        user_message=user_message,
-        host=host,
-        capability_receipt=_capability(host, "session", "trace"),
+    from agency_runtime.core.workforce import inference as _inference
+
+    original_invoker = _inference.invoke_structured_provider_result
+    _inference.invoke_structured_provider_result = stub_inference_invoker(
+        ("code-reviewer",),
     )
+    try:
+        result = run_preflight(
+            store,
+            session_id="session",
+            trace_id="trace",
+            user_message=user_message,
+            host=host,
+            capability_receipt=_capability(host, "session", "trace"),
+        )
+    finally:
+        _inference.invoke_structured_provider_result = original_invoker
+        os.environ.pop("AGENCY_CONFIG_PATH", None)
+        reset_config_cache()
     assert len(result.selected_specialists) >= minimum_selected
     return store, result
 
@@ -460,7 +482,7 @@ def test_isolated_turn_rejects_every_tokenless_slug_and_not_ready_load(tmp_path:
 def test_activation_replays_immutable_version_after_roster_deactivation(tmp_path: Path) -> None:
     store, selected = _isolated_turn(tmp_path / "version.db")
     slug = selected[0]
-    work_unit_id = f"specialist:{slug}"
+    work_unit_id = _activation_work_unit(store, slug)
     prepared = handle_tool_call(
         "agency.prepare_delegation",
         {
@@ -764,7 +786,7 @@ def test_disabled_agent_kills_prepared_grant_and_versioned_read(
 ) -> None:
     store, selected = _isolated_turn(tmp_path / "disabled-consume.db")
     slug = _optional_selected(selected)
-    unit = f"specialist:{slug}"
+    unit = _activation_work_unit(store, slug)
     prepared = handle_tool_call(
         "agency.prepare_delegation",
         {
@@ -904,7 +926,7 @@ def test_disabled_agent_kills_prepare_and_ready_recipe_replay(
             "session_id": "session",
             "trace_id": "trace",
             "slug": slug,
-            "work_unit_id": f"specialist:{slug}",
+            "work_unit_id": _activation_work_unit(prepare_store, slug),
         },
         prepare_store,
     )
@@ -953,7 +975,7 @@ def test_disable_racing_activation_consume_has_one_linearized_outcome(
         reset_config_cache()
         store, selected = _isolated_turn(tmp_path / f"activation-race-{iteration}.db")
         slug = _optional_selected(selected)
-        unit = f"specialist:{slug}"
+        unit = _activation_work_unit(store, slug)
         prepared = handle_tool_call(
             "agency.prepare_delegation",
             {
@@ -1104,7 +1126,7 @@ def test_prepare_rejects_legacy_ready_ref_whose_body_is_now_oversized(tmp_path: 
             "session_id": "session",
             "trace_id": "trace",
             "slug": slug,
-            "work_unit_id": f"specialist:{slug}",
+            "work_unit_id": _activation_work_unit(store, slug),
         },
         store,
     )
