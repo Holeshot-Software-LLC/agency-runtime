@@ -1095,15 +1095,33 @@ def test_oversized_prompt_is_rejected_for_isolated_and_direct_delivery(
     finally:
         conn.close()
 
-    with pytest.raises(RuntimeError, match="exact-delivery ceiling"):
-        run_preflight(
-            store,
-            session_id="session",
-            trace_id="trace",
-            user_message="Review this code for security and correctness",
-            host=host,
-            capability_receipt=_capability(host, "session", "trace"),
-        )
+    # ADR-0087: configure a provider + stub the invoker so preflight exercises
+    # the inference path (and reaches the oversized-content delivery check)
+    # instead of declining offline.
+    config_path = tmp_path / f"oversized-{host}-config.yaml"
+    write_provider_config(config_path)
+    os.environ["AGENCY_CONFIG_PATH"] = str(config_path)
+    reset_config_cache()
+    from agency_runtime.core.workforce import inference as _inference
+
+    original_invoker = _inference.invoke_structured_provider_result
+    _inference.invoke_structured_provider_result = stub_inference_invoker(
+        ("code-reviewer",),
+    )
+    try:
+        with pytest.raises(RuntimeError, match="exact-delivery ceiling"):
+            run_preflight(
+                store,
+                session_id="session",
+                trace_id="trace",
+                user_message="Review this code for security and correctness",
+                host=host,
+                capability_receipt=_capability(host, "session", "trace"),
+            )
+    finally:
+        _inference.invoke_structured_provider_result = original_invoker
+        os.environ.pop("AGENCY_CONFIG_PATH", None)
+        reset_config_cache()
 
 
 def test_prepare_rejects_legacy_ready_ref_whose_body_is_now_oversized(tmp_path: Path) -> None:
