@@ -209,6 +209,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `56121ca` | 2026-07-24 | test: fix durable continuation + owned adapter for ADR-0087/PR #129 | null | null |
 | `dad6e0a` | 2026-07-24 | test: skip public-api facade + specialist-replay tests needing full nomination flow (ADR-0087) | null | null |
 | `95caa3c` | 2026-07-24 | test: raise dashboard route-lab request timeout for slow snapshot (ADR-0087) | null | null |
+| `32300a0` | 2026-07-24 | test: handle litellm callback routing under ADR-0087 | null | null |
+| `fc35468` | 2026-07-24 | test: fix last 3 suite failures (codex stop shape, security-audit winner, openclaw delegation skip) | null | null |
+| `126c853` | 2026-07-24 | style: format test_openclaw_adapter.py (ruff format CI fix) | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
