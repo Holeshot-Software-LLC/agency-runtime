@@ -14,7 +14,9 @@ from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.store.sqlite import Store
 
 
-@pytest.mark.skip(reason="ADR-0087: needs full inference nomination-delivery flow for delegation recording")
+@pytest.mark.skip(
+    reason="ADR-0087: needs full inference nomination-delivery flow for delegation recording"
+)
 def test_openclaw_message_preflight_records_suggested_delegations(
     monkeypatch, tmp_path: Path
 ) -> None:
