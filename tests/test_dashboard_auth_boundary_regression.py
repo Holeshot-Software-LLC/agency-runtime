@@ -25,6 +25,7 @@ def test_dashboard_rejects_unsafe_authorization_without_compare_error(
     handler = SimpleNamespace(
         headers={"Authorization": authorization},
         auth_token="expected-token",
+        broker_token="",
         _valid_host_header=lambda: True,
         _json_error=lambda status, message: errors.append((status, message)),
     )
@@ -40,6 +41,7 @@ def test_dashboard_accepts_exact_ascii_bearer_token() -> None:
     handler = SimpleNamespace(
         headers={"Authorization": "Bearer expected-token"},
         auth_token="expected-token",
+        broker_token="",
         _valid_host_header=lambda: True,
         _json_error=lambda status, message: errors.append((status, message)),
     )
@@ -65,6 +67,7 @@ def test_dashboard_rejects_unsafe_configured_token_without_compare_error(
     handler = SimpleNamespace(
         headers={"Authorization": "Bearer wrong-ascii-token"},
         auth_token=auth_token,
+        broker_token="",
         _valid_host_header=lambda: True,
         _json_error=lambda status, message: errors.append((status, message)),
     )
