@@ -64,6 +64,8 @@ def test_cmd_eval_full_roster_prints_honest_summary(monkeypatch, capsys) -> None
         "roster": {
             "manifest_approved": 261,
             "manifest_quarantined": 2,
+            "packaged_contractors": 4,
+            "workforce_total": 265,
             "division_count": 17,
         },
         "gates": [

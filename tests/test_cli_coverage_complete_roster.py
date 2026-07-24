@@ -93,6 +93,9 @@ class Store:
             "tables": {"events": {"deleted": 2}, "empty": {"deleted": 0}},
         }
 
+    def get_turn_state_context(self, _session_id, **_kwargs):
+        return {}
+
 
 def test_candidate_download_validation_and_quarantine(monkeypatch):
     errors = []
