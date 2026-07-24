@@ -517,7 +517,7 @@ def test_offline_unit_fallback_uses_deliverable_compatible_reviewed_contracts() 
     )
 
     assert [item["recommended_agent"] for item in plan] == [
-        "code-reviewer",
+        "ai-generated-code-security-auditor",
         "minimal-change-engineer",
         "technical-writer",
     ]
