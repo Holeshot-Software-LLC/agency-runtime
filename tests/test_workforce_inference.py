@@ -1000,13 +1000,14 @@ def test_wrong_but_structurally_valid_selection_is_rejected_by_deterministic_sta
     )
 
     assert not outcome.accepted
-    assert outcome.abstention_codes == ("workforce_inference_failed",)
-    assert [attempt.status for attempt in outcome.attempts] == [
-        "applied",
-        "rejected",
-        "rejected",
-    ]
-    assert outcome.staffing.units == ()
+    # ADR-0087: a wrong nomination that yields no safe team is a declared gap,
+    # not an inference failure. The nomination parses; the deterministic
+    # builder cannot form a safe analysis team from a marketing-domain
+    # "required" pick while the real analysts are forbidden, so the outcome is
+    # not accepted with the gap visible rather than workforce_inference_failed.
+    assert outcome.proposal is not None
+    assert outcome.proposal.units[0].selected == ()
+    assert outcome.staffing.accepted is False
 
 
 def test_inference_forbidden_near_neighbor_is_not_selected_despite_higher_score() -> None:

@@ -1447,11 +1447,13 @@ def _proposal_from_nominations(
         semantic_acceptable=semantic_acceptable,
         semantic_forbidden=semantic_forbidden,
     )
-    if any(not row.selected for row in proposal.units):
-        raise ValueError(
-            "workforce nominations have no safe team; "
-            + _missing_team_detail(plan, proposal, snapshot.contracts)
-        )
+    # ADR-0087: a unit with no safe team is a real capability gap, not an
+    # invalid nomination. The model ranked the candidates it could; if the
+    # deterministic builder cannot form a safe team for a unit, that unit's gap
+    # is signal that should reach the gap -> hire path in pipeline.route
+    # (_single_hireable_gap_unit + hire_contractor_for_gap), not a ValueError
+    # that makes the whole nomination read as "inference failed". Return the
+    # proposal with the gap visible (empty selected, abstention reasons).
     return proposal
 
 
