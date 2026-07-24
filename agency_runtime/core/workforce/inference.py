@@ -1036,7 +1036,7 @@ def _typed_shortlists(
         # recruiter and let inference pick. The score is a rough ordering
         # hint, not a definitive rank.
         candidates.sort(key=lambda item: (-item[2], -len(item[1]), item[0]))
-        selected = candidates[:max(MAX_UNIT_SHORTLIST, 16)]
+        selected = candidates[: max(MAX_UNIT_SHORTLIST, 16)]
         result.append(
             {
                 "unit_id": unit.unit_id,
@@ -1259,46 +1259,63 @@ def _semantic_staffing_classes(
     contracts_by_id: Mapping[str, WorkforceContract],
     context: StaffingContext,
 ) -> tuple[frozenset[str], frozenset[str], frozenset[str]]:
-    """Bind model classifications to eligible audited lifecycle owners."""
+    """Bind model classifications to a clean required/acceptable/forbidden partition.
+
+    ADR-0087: with inference as the sole decider, the model's eligible
+    ``required`` nominations ARE the selection authority. Determinism must not
+    override an explicit model pick with role anchors (the prior behavior
+    replaced ``model_required`` with ``executable_anchors`` whenever any anchor
+    existed, demoting the model's genuine picks to ``acceptable`` and sometimes
+    landing a specialist in both required and forbidden). Role anchors survive
+    only as a fallback lifecycle-owner safety net for the degenerate case where
+    the model nominates no eligible required specialist. The returned classes
+    always form a clean partition of the ranked set: no agent is ever both
+    required and forbidden.
+    """
 
     model_required = frozenset(
         agent_id
         for agent_id, classification in classifications.items()
         if classification == "required"
     )
-    model_acceptable = frozenset(
-        agent_id
-        for agent_id, classification in classifications.items()
-        if classification == "acceptable"
-    )
-    forbidden = frozenset(
+    model_forbidden = frozenset(
         agent_id
         for agent_id, classification in classifications.items()
         if classification == "forbidden"
     )
-    executable_anchors = frozenset(
+
+    # Trust the model's eligible required picks. These survive the downstream
+    # _eligibility filters, so they stay in `executable` and are selected first
+    # by _minimum_team_with_required (required is ordered before complements).
+    required = frozenset(
         agent_id
-        for agent_id in _role_anchors(unit)
-        if agent_id in scores
-        and not typed_staffing_ineligibility(
-            unit,
-            contracts_by_id[agent_id],
-            context,
-        )
+        for agent_id in model_required
+        if not typed_staffing_ineligibility(unit, contracts_by_id[agent_id], context)
     )
-    forbidden_anchors = executable_anchors & forbidden
-    if forbidden_anchors:
-        raise ValueError(
-            "workforce nominations forbid eligible role anchors: "
-            + ",".join(sorted(forbidden_anchors))
+
+    # Fallback only: when the model nominates no eligible required specialist,
+    # seed the unit's required set with eligible lifecycle owners that the model
+    # did not explicitly forbid. This is the deterministic safety net that keeps
+    # a unit owned by its audited specialist rather than abstaining. It never
+    # overrides a model pick because it runs only when the model offered no
+    # eligible required nomination, and it respects the model's explicit
+    # forbidden set.
+    if not required:
+        required = frozenset(
+            agent_id
+            for agent_id in _role_anchors(unit)
+            if agent_id in scores
+            and agent_id not in model_forbidden
+            and not typed_staffing_ineligibility(unit, contracts_by_id[agent_id], context)
         )
-    if not executable_anchors:
-        return model_required, model_acceptable, forbidden
-    return (
-        executable_anchors,
-        (model_required | model_acceptable) - executable_anchors,
-        forbidden,
-    )
+
+    # Ineligible model-required picks cannot be executed, so they fall through to
+    # forbidden. This agrees with build_deterministic_proposal, which also moves
+    # _eligibility-failing agents into forbidden, so required and forbidden never
+    # overlap and the three sets partition the complete ranking.
+    forbidden = model_forbidden | (model_required - required)
+    acceptable = frozenset(classifications) - required - forbidden
+    return required, acceptable, forbidden
 
 
 def _proposal_from_nominations(
@@ -1308,7 +1325,6 @@ def _proposal_from_nominations(
     *,
     config: AgencyConfig,
     context: StaffingContext,
-    require_typed_shortlist: bool = True,
     allowed_candidate_ids: frozenset[str] | None = None,
 ) -> RecruiterProposal:
     if not isinstance(value, Mapping) or set(value) != {"units"}:
@@ -1318,14 +1334,6 @@ def _proposal_from_nominations(
         raise ValueError("workforce nominations must contain one row per work unit")
     contracts_by_id = {item.agent_id: item for item in snapshot.contracts}
     known = set(contracts_by_id)
-    shortlist_by_unit = (
-        {
-            str(row["unit_id"]): {str(candidate["agent_id"]) for candidate in row["candidates"]}
-            for row in _typed_shortlists(plan, snapshot.contracts, context=context)
-        }
-        if require_typed_shortlist
-        else {}
-    )
     rows_by_unit: dict[str, Mapping[str, Any]] = {}
     for row in rows:
         if not isinstance(row, Mapping) or set(row) != {"unit_id", "ranked_semantic"}:
@@ -1383,8 +1391,10 @@ def _proposal_from_nominations(
         )
         if allowed_candidate_ids is not None and set(scores) - allowed_candidate_ids:
             raise ValueError("workforce nominations contain a candidate outside detail_cards")
-        if not shortlist_by_unit.get(expected_unit.unit_id, set()) <= set(scores):
-            raise ValueError("workforce nominations must include every typed_shortlists candidate")
+        # ADR-0087: with broad-domain recall, the candidate pool is large (16+).
+        # The recruiter is not required to rank every candidate — only the ones
+        # it deems relevant. Forcing it to rank all 16+ would waste tokens and
+        # produce meaningless rankings for obviously-unrelated specialists.
         required, acceptable, forbidden = _semantic_staffing_classes(
             expected_unit,
             classifications,
@@ -1833,12 +1843,14 @@ def _recruit_ambiguous_plan(
                 continue
             if contract.agent_id not in eligible_ids:
                 eligible_ids.add(contract.agent_id)
-                compact_cards.append({
-                    "agent_id": contract.agent_id,
-                    "display_name": contract.display_name,
-                    "outcomes": list(contract.outcomes[:2]),
-                    "scope_qualifiers": list(contract.scope_qualifiers[:2]),
-                })
+                compact_cards.append(
+                    {
+                        "agent_id": contract.agent_id,
+                        "display_name": contract.display_name,
+                        "outcomes": list(contract.outcomes[:2]),
+                        "scope_qualifiers": list(contract.scope_qualifiers[:2]),
+                    }
+                )
     detail_cards = compact_cards
     allowed_candidate_ids = frozenset(eligible_ids)
     recruiter_prompt = _recruiter_prompt(

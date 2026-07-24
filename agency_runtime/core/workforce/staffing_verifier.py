@@ -9,12 +9,12 @@ from dataclasses import asdict, dataclass
 from functools import lru_cache
 from typing import Any
 
+from agency_runtime.core.host_capabilities import expand_compatible_hosts
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
     WorkforceContract,
     workforce_index_fingerprint,
 )
-from agency_runtime.core.workforce.lifecycle_roles import role_anchors
 from agency_runtime.core.workforce.planning_contracts import (
     RECRUITMENT_SCHEMA_VERSION,
     RecruiterProposal,
@@ -359,7 +359,12 @@ def _eligibility(
     if not contract.enabled and not ignore_enabled:
         reasons.append("agent_disabled")
     reasons.extend(_contract_binding_reasons(contract))
-    if context.host not in contract.hosts:
+    # ADR-0087: zcode uses the same hook model as codex/claude. Specialists that
+    # declare codex or claude are eligible on zcode even though they do not list
+    # it (zcode is new; existing contracts predate it), and vice versa. The same
+    # equivalence applies to every host pair in expand_compatible_hosts.
+    effective_hosts = expand_compatible_hosts(contract.hosts)
+    if context.host not in effective_hosts:
         reasons.append("agent_host_unsupported")
     if not _supports_platform(unit, contract, context):
         reasons.append("agent_platform_unsupported")
@@ -581,13 +586,12 @@ def _selection(
         _reason(reasons, "forbidden_agent_selected", unit_id=unit.unit_id)
     if set(row.runner_up) & (set(row.selected) | set(row.forbidden)):
         _reason(reasons, "runner_up_set_invalid", unit_id=unit.unit_id)
-    lifecycle_required = frozenset(
-        agent_id
-        for agent_id in role_anchors(unit)
-        if agent_id in roster and not _eligibility(unit, roster[agent_id], context)
-    )
-    if not lifecycle_required <= set(row.required):
-        _reason(reasons, "lifecycle_owner_missing_from_required", unit_id=unit.unit_id)
+    # ADR-0087: the model's eligible required nomination is the selection
+    # authority. Role anchors are a recall/fallback safety net only (see
+    # _semantic_staffing_classes), so determinism must NOT re-derive required
+    # from role_anchors and force eligible anchors into row.required. The
+    # guarantees below validate eligibility, composition, coverage, and budget
+    # around the trusted required set rather than re-deriving it.
     expected = _minimum_team_with_required(
         unit,
         executable,

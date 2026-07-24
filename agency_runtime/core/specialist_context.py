@@ -198,9 +198,13 @@ def format_isolated_specialist_context(
     """Return a compact recipe that keeps prompt bodies out of parent history."""
 
     normalized_host = str(host or "").strip().casefold()
+    # ADR-0087: zcode reuses the Claude hook model and the `Agent`-tool native
+    # delegation primitive (same `description` field binding), so it shares
+    # Claude's isolated-delivery instructions.
     native_tools = {
         "codex": "`spawn_agent`",
         "claude": "`Agent`",
+        "zcode": "`Agent`",
         "hermes": "`delegate_task`",
         "openclaw": "`sessions_spawn`",
     }
@@ -213,6 +217,7 @@ def format_isolated_specialist_context(
         native_binding = {
             "codex": "set `task_name` to that row's legal `native_task_name`",
             "claude": "set `description` to that row's unchanged `work_unit_id`",
+            "zcode": "set `description` to that row's unchanged `work_unit_id`",
             "hermes": "pass that row's unchanged `work_unit_id` and exact `goal`",
             "openclaw": "pass that row's unchanged `work_unit_id` and exact `goal`",
         }[normalized_host]
@@ -221,7 +226,7 @@ def format_isolated_specialist_context(
             "the selected immutable specialist prompt only into that child launch, and "
             "issues its one-use grant. PostToolUse consumes the grant only after "
             "authoritative native launch evidence supplies the child identity"
-            if normalized_host in {"codex", "claude"}
+            if normalized_host in {"codex", "claude", "zcode"}
             else "the installed child pre-LLM hook verifies the exact persisted row, "
             "injects the selected immutable specialist prompt only at that child's "
             "inference boundary, and consumes its one-use grant against host-issued "

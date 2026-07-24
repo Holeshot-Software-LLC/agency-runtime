@@ -181,6 +181,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4db876e` | 2026-07-24 | docs(roadmap): AR-119 acceptance evidence for AR-120..AR-125 | null | null |
 | `28d912a` | 2026-07-24 | feat(zcode): add ZCode as 5th execution host (ADR-0087) | null | null |
 | `5f78309` | 2026-07-24 | fix(zcode): add zcode to hook CLI choices + HOSTS inventory | null | null |
+| `117a84b` | 2026-07-24 | feat(workforce): broad-domain recall + team-decomposition planner prompts (ADR-0087) | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes

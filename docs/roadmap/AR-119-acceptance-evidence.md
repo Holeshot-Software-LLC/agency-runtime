@@ -54,19 +54,30 @@ child-routing follow-up.
   `disabled_shadows` and `unavailable_shadows` surfaces disabled/unavailable
   candidates without selecting them. Verified in
   `test_workforce_selection_safety.py`.
-- [x] **Degraded deterministic fallback abstains on unsafe or weak coverage.**
+- [x] **Offline (no provider) declines rather than selecting a keyword-luck pick.**
   ADR-0087: offline (no provider) returns `_declined_outcome` (commit
-  `ee47985`). The deterministic plan-and-staff decider survives as eval
-  baseline only, never as a runtime selection path.
+  `ee47985`) — Agency injects no specialist and produces no Agency value rather
+  than a wrong pick. The deterministic plan-and-staff decider survives as an
+  eval baseline only, never as a runtime selection path. Deterministic code in
+  the runtime path is recall plus validation, not a selection decider.
 
 ## AR-122: Governed contractor hiring and workforce lifecycle
 
 - [x] **A proven real gap hires, enables, activates, and reports a contractor.**
   `hire_contractor_for_gap` builds, audits, enables, and activates a
   contractor from a declared unit gap. `_single_hireable_gap_unit`
-  detects the gap in `pipeline.route`. Proven live: a FluxUI ask declares
-  the gap; hiring tests (`test_workforce_dynamic_hiring.py`, 38 passed)
-  exercise the full path.
+  detects the gap in `pipeline.route`. Hiring tests
+  (`test_workforce_dynamic_hiring.py`) exercise the full gap→admit→enable→
+  activate→report path.
+  - **Correction (previously overstated):** a FluxUI ask is NOT a genuine gap.
+    `senior-developer` is the real FluxUI specialist — FluxUI appears in its
+    `preferred_when` ("a Laravel, Livewire, or FluxUI repository needs a
+    substantive product feature") and reaches the recruiter via the
+    `scope_qualifiers`←`preferred_when` fallback (`contract.py:442`). The
+    documented blocker for complex/multi-unit asks was nomination *validation
+    rejection* in `_proposal_from_nominations`, not a real capability gap; the
+    WP1/WP2 fixes (trust the model's eligible required nomination) address it.
+    A genuine gap is one where no eligible specialist covers the typed unit.
 - [x] **Duplicate gaps amend a coherent worker; unsafe merges are rejected.**
   `test_workforce_dynamic_hiring.py` covers: coherent gap amend,
   authority-escalation rejection, duplicate-covering-worker prevention,

@@ -42,7 +42,7 @@ def test_known_contractor_set_is_exact_bounded_and_immediately_enabled() -> None
     )
     assert all(item.platforms == ("windows", "linux") for item in KNOWN_CONTRACTOR_CONTRACTS)
     assert all(
-        set(item.hosts) == {"codex", "claude", "openclaw", "hermes"}
+        set(item.hosts) == {"codex", "claude", "openclaw", "hermes", "zcode"}
         for item in KNOWN_CONTRACTOR_CONTRACTS
     )
     assert all(item.closest_workers for item in KNOWN_CONTRACTOR_CONTRACTS)

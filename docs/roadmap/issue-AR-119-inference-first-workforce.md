@@ -56,14 +56,29 @@ acceptance contract.
 
 Plan typed work before naming agents; resolve the required controlled
 capabilities against an immutable versioned projection of the entire workforce;
-verify staffing deterministically; and give the native host exact specialist
-recipes without replacing its scheduler. A high-margin complete local result
-needs no recruiter call. Balanced and strict modes may ask inference to resolve
-an ambiguous bounded shortlist, but the model cannot nominate outside the
-runtime-supplied cards or override eligibility and composition policy. Every
-accepted Agency work unit must prove that the performing parent or child
-consumed its exact-version activation receipt. Parent plans are reused by
-children so native fan-out does not multiply inference calls.
+and give the native host exact specialist recipes without replacing its
+scheduler.
+
+> **ADR-0087 (accepted) governs this approach.** Inference is the sole
+> specialist decider when a provider is configured: plan the intent, run
+> broad typed recall (zero false negatives), then let inference pick the best
+> eligible specialist per unit, declare a real gap, or hire a governed
+> contractor on the gap. Deterministic code is **recall plus validation only**
+> — it never selects the best specialist and never overrides the model's
+> eligible required nomination with role anchors. When no provider is
+> configured, the runtime **declines** (injects no Agency specialist) rather
+> than emit a keyword-luck pick. The earlier wording below ("verify staffing
+> deterministically", "high-margin complete local result needs no recruiter
+> call") predates ADR-0087 and is retained for provenance; the deterministic
+> decider it implied was removed from the runtime. See
+> [ADR-0087](../decisions/0087-inference-decides-from-a-relevance-shortlist.md).
+
+A high-margin complete local result needs no recruiter call. Balanced and strict
+modes may ask inference to resolve an ambiguous bounded shortlist, but the model
+cannot nominate outside the runtime-supplied cards or override eligibility and
+composition policy. Every accepted Agency work unit must prove that the
+performing parent or child consumed its exact-version activation receipt. Parent
+plans are reused by children so native fan-out does not multiply inference calls.
 
 Treat routing speed as a product contract: the common path uses one compact
 intent-planning call followed by local whole-roster recall, warm continuations
@@ -3139,6 +3154,17 @@ call, weaken typed coverage, add a scenario route, or claim Agency is better.
   dispatches, or waits for another task.
 
 ## Acceptance
+
+> **ADR-0087 frame.** The acceptance items below are read under the
+> inference-decides architecture: inference selects the best eligible
+> specialist per typed unit, declares a real gap, or hires a governed
+> contractor on the gap. Deterministic code validates eligibility,
+> composition, coverage, and budget — it is **not** the selection decider.
+> When no provider is configured, Agency declines (no specialist injected).
+> ZCode is the fifth execution host; its main session carries the Agency
+> banner, but ZCode native children are host-limited (ZCode emits no
+> `SubagentStart`/`SubagentStop`), so governed native-child self-routing is a
+> follow-up gated on host support.
 
 - [ ] AR-120 through AR-125 are complete and tracker-evidenced.
 - [ ] Every new intent is planned or explicitly classified as a continuation, and every Agency-assigned native child consumes the exact specialist recipe and one-use activation receipt.

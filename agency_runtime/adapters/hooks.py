@@ -472,7 +472,15 @@ class HookBridge:
             return CodexAdapter(store=self.store)
         from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
 
-        return ClaudeAdapter(store=self.store)
+        # ADR-0087: zcode reuses the Claude hook model and Agent-tool delegation
+        # primitive, so it shares the ClaudeAdapter behavior. But it must keep
+        # its own host identity so runtime-control reads the zcode row (not
+        # claude's) and all evidence receipts are attributed to zcode rather
+        # than masqueraded as claude.
+        adapter = ClaudeAdapter(store=self.store)
+        if self.host == "zcode":
+            adapter.host_name = "zcode"
+        return adapter
 
     def _event_name(self, payload: dict[str, Any]) -> str:
         event = _required_string(payload, "hook_event_name")
@@ -1271,7 +1279,11 @@ class HookBridge:
             }
         correlation = self._correlation(payload, tool_input, tool_response)
         turn_trace_id = correlation.turn_id or self._unambiguous_open_trace(correlation.session_id)
-        if self.host in {"claude", "zcode"} and tool_name == _CLAUDE_AGENT_TOOL_NAME and not turn_trace_id:
+        if (
+            self.host in {"claude", "zcode"}
+            and tool_name == _CLAUDE_AGENT_TOOL_NAME
+            and not turn_trace_id
+        ):
             return {}
         trace_id = turn_trace_id or correlation.tool_use_id
         canonical_name, canonical_args = _canonical_tool_call(

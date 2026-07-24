@@ -507,6 +507,13 @@ def bundled_manifest() -> dict[str, Any]:
 def bundled_roster() -> list[dict[str, Any]]:
     """Return every approved specialist with its governed prompt body."""
 
+    # ADR-0087 / AR-119: merge the enrichment overlay (typed stacks/domains and
+    # user-facing scope_qualifiers) before projection so the workforce contract
+    # and deterministic verifier score real stack coverage. The overlay only
+    # supplements; declared typed metadata always wins. Imported lazily to avoid
+    # a module-load cycle (enrichment reads bundled._resource).
+    from agency_runtime.core.roster.enrichment import apply_enrichment
+
     manifest = _validated_manifest()
     source = manifest["source"]
     result: list[dict[str, Any]] = []
@@ -568,6 +575,7 @@ def bundled_roster() -> list[dict[str, Any]]:
             != entry["version"]
         ):
             raise BundledRosterError(f"immutable version does not match for {entry['slug']}")
+        apply_enrichment(agent)
         result.append(agent)
     return result
 

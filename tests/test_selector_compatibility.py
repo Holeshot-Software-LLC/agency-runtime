@@ -92,6 +92,50 @@ def test_hard_filter_rejects_audit_host_platform_and_tool_mismatches() -> None:
     }
 
 
+def test_host_compatible_map_makes_zcode_eligible_for_codex_claude_contracts() -> None:
+    # ADR-0087: zcode reuses the codex/claude hook model, so a specialist that
+    # declares codex or claude (but not zcode) is eligible on a zcode host, and
+    # a zcode-declaring specialist is eligible on codex/claude. openclaw/hermes
+    # remain distinct and must declare the target host. The legacy selector must
+    # apply the same equivalence as the workforce verifier (single source of
+    # truth: expand_compatible_hosts).
+    catalog = [
+        _agent("codex-declared", supported_hosts=["codex"]),
+        _agent("claude-declared", supported_hosts=["claude"]),
+        _agent("zcode-declared", supported_hosts=["zcode"]),
+        _agent("openclaw-only", supported_hosts=["openclaw"]),
+    ]
+
+    zcode_result = filter_eligible_catalog(
+        catalog,
+        host="zcode",
+        platform="windows",
+        available_tools=set(),
+    )
+    assert {item["slug"] for item in zcode_result.eligible} == {
+        "codex-declared",
+        "claude-declared",
+        "zcode-declared",
+    }
+    assert {item["slug"] for item in zcode_result.rejected} == {"openclaw-only"}
+
+    # Reverse direction: a zcode-declared specialist routes on codex and claude.
+    codex_result = filter_eligible_catalog(
+        [agent for agent in catalog if agent["slug"] != "openclaw-only"],
+        host="codex",
+        platform="windows",
+        available_tools=set(),
+    )
+    assert "zcode-declared" in {item["slug"] for item in codex_result.eligible}
+    claude_result = filter_eligible_catalog(
+        [agent for agent in catalog if agent["slug"] != "openclaw-only"],
+        host="claude",
+        platform="windows",
+        available_tools=set(),
+    )
+    assert "zcode-declared" in {item["slug"] for item in claude_result.eligible}
+
+
 def test_compatible_set_adds_requirements_and_rejects_explicit_conflicts() -> None:
     catalog = [
         _agent("implementer", requires=["architect"], authority="modify"),

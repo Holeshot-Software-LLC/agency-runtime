@@ -21,6 +21,7 @@ from agency_runtime.core.workforce.fallback import (
 from agency_runtime.core.workforce.inference import (
     _normalized_plan_response,
     _proposal_from_nominations,
+    _semantic_staffing_classes,
     _typed_shortlists,
     staffing_budget_for_config,
 )
@@ -1262,7 +1263,14 @@ def test_live_shaped_multidomain_security_plan_recruits_the_exact_safe_team() ->
     }
 
 
-def test_runtime_promotes_security_role_owner_over_broad_code_reviewer() -> None:
+def test_model_required_specialist_is_trusted_under_adr_0087() -> None:
+    # ADR-0087: inference is the sole decider. When the model nominates an
+    # ELIGIBLE specialist as required, the runtime trusts that pick. Determinism
+    # must not override an explicit model choice with a role anchor. Here both
+    # the broad code-reviewer and the security auditor are eligible and cover
+    # the unit; the model nominates the security auditor as required, so it is
+    # selected even though a generic code-reviewer is also a valid anchor-free
+    # candidate.
     snapshot = _snapshot()
     plan = parse_work_unit_plan(
         {
@@ -1289,13 +1297,13 @@ def test_runtime_promotes_security_role_owner_over_broad_code_reviewer() -> None
         frozenset({"native-delegation", "repository-read", "source-control"}),
         snapshot.generation,
     )
+    role_owner = "ai-generated-code-security-auditor"
     shortlist = _typed_shortlists(plan, snapshot.contracts)[0]
     candidates = [item["agent_id"] for item in shortlist["candidates"]]
-    role_owner = "ai-generated-code-security-auditor"
     assert {role_owner, "code-reviewer"} <= set(candidates)
     ordered = [
-        "code-reviewer",
         role_owner,
+        "code-reviewer",
         *(item for item in candidates if item not in {"code-reviewer", role_owner}),
     ]
     nominations = {
@@ -1308,9 +1316,9 @@ def test_runtime_promotes_security_role_owner_over_broad_code_reviewer() -> None
                         "score": round(1.0 - (index * 0.03), 2),
                         "classification": (
                             "required"
-                            if agent_id == "code-reviewer"
-                            else "acceptable"
                             if agent_id == role_owner
+                            else "acceptable"
+                            if agent_id == "code-reviewer"
                             else "forbidden"
                         ),
                         "positive_evidence": (
@@ -1336,7 +1344,85 @@ def test_runtime_promotes_security_role_owner_over_broad_code_reviewer() -> None
         context=context,
     )
 
+    # The model's eligible required pick is the selection authority.
+    assert proposal.units[0].required == (role_owner,)
     assert proposal.units[0].selected == (role_owner,)
+    # No agent lands in both required and forbidden (clean partition).
+    assert not set(proposal.units[0].required) & set(proposal.units[0].forbidden)
+
+
+def test_role_anchor_fallback_only_when_model_nominates_no_eligible_required() -> None:
+    # ADR-0087: role anchors are a recall/fallback safety net, not a gate that
+    # overrides the model. The fallback seeds required from eligible audited
+    # lifecycle owners ONLY when the model nominates no eligible required
+    # specialist, and it respects the model's explicit forbidden set. Exercise
+    # _semantic_staffing_classes directly with controlled inputs so the behavior
+    # is pinned independent of which roster candidates happen to be recalled.
+    snapshot = _snapshot()
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Audit a security patch for exploitability",
+            "units": [
+                _unit(
+                    "unit-exploitability-audit",
+                    "Audit exploitability and security regressions",
+                    "review-report",
+                    "review",
+                    ["security", "software-engineering"],
+                    ["review"],
+                    "review",
+                    "read_only",
+                    ["repository-read"],
+                )
+            ],
+        }
+    )
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset({"native-delegation", "repository-read", "source-control"}),
+        snapshot.generation,
+    )
+    unit = plan.units[0]
+    contracts_by_id = {contract.agent_id: contract for contract in snapshot.contracts}
+    role_owner = "ai-generated-code-security-auditor"
+    assert role_anchors(unit) == (role_owner,)
+    # software-test-engineer is a real specialist that is ineligible for this
+    # security review unit (authority + domain + capability mismatch), so it
+    # stands in for a model that nominates the wrong specialist as required.
+    ineligible = "software-test-engineer"
+
+    # Case 1: the model nominates an ineligible specialist as required. No
+    # eligible model-required pick exists, so the fallback seeds required from
+    # the eligible audited lifecycle owner.
+    required, acceptable, forbidden = _semantic_staffing_classes(
+        unit,
+        {ineligible: "required"},
+        {ineligible: 0.99, role_owner: 0.0},
+        contracts_by_id,
+        context,
+    )
+    assert required == {role_owner}
+    assert ineligible not in acceptable  # ineligible -> forbidden
+    assert ineligible in forbidden
+    assert role_owner not in forbidden
+
+    # Case 2: the model explicitly forbids the only eligible anchor. The
+    # fallback respects that forbidden set, so required stays empty and no agent
+    # is silently promoted over the model's choice (a declared gap, not an
+    # override).
+    required, acceptable, forbidden = _semantic_staffing_classes(
+        unit,
+        {ineligible: "required", role_owner: "forbidden"},
+        {ineligible: 0.99, role_owner: 0.90},
+        contracts_by_id,
+        context,
+    )
+    assert required == set()
+    assert role_owner in forbidden
+    # Clean partition invariant: no agent in both required and forbidden.
+    assert not (required & forbidden)
 
 
 def _contract_plan(contract, *, outcome: str | None = None):
