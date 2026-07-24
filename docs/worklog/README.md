@@ -187,6 +187,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fb9829e` | 2026-07-23 | test(workforce): seed code-reviewer conflict closure for index fingerprint | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
 | `58c9cd9` | 2026-07-23 | docs(decisions): sharpen ADR-0087 to no-deterministic-decider, offline declines | null | null |
 | `ee47985` | 2026-07-23 | feat(workforce): offline declines instead of deterministic selection (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | [detail](2026-07-23-ee47985-offline-declines.md) |
+| `c95ecea` | 2026-07-23 | feat(workforce): add invoker test seam to plan_and_staff_workforce | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | [detail](2026-07-23-c95ecea-invoker-seam.md) |
+| `29c3da4` | 2026-07-23 | docs(governance): checkpoint AR-119 capsule to the inference-decline state and proven nomination diagnosis | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
