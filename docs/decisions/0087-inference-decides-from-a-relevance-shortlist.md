@@ -75,18 +75,25 @@ determinism as the recall filter**:
    contractor for exactly that need in the causing turn. A generic employee
    is never force-fitted to a real gap.
 
-The deterministic path is the **degraded fallback** only when inference is
-genuinely unavailable (no configured provider). In that mode it must still
-select a defensible specialist via the typed matcher rather than abstain to
-an empty selection, but it is explicitly not the product.
+**There is no deterministic decider.** Deterministic selection is
+shit-by-nature at "best specialist for *this* ask" — it rests on keyword
+luck and cannot read intent — so the runtime refuses to ship one. When a
+provider is configured, inference is the sole decider (steps 1-3 above).
+When inference is unavailable (no configured provider), the runtime
+**declines to select**: it injects no Agency specialist and hands the turn
+to the host's native capability. Declining is preferred over a bad pick —
+offline produces *no* Agency value rather than *wrong* Agency value. The
+prior deterministic fallback (`workforce/fallback.py` plan-and-staff
+decider, `staffing_verifier` "optimal team" logic) is removed; only the
+typed *recall* it performs survives, repurposed as stage 1.
 
 The capability vocabulary is governed at one place
 (`workforce/capability_ontology.py`): the workforce contracts use the
-`CORE_CAPABILITY_IDS`, the deterministic fallback derives each work unit's
-required capability from its `artifact_kind` through one unified
-`ARTIFACT_CAPABILITY` map, and no bespoke per-unit capability strings bypass
-that map. New specialists and contractors are inherently discoverable
-because recall reads the live roster index, not a static keyword list.
+`CORE_CAPABILITY_IDS`, recall matches units to contracts on typed fields
+(capability, authority, lifecycle, domain, stack), and no bespoke
+per-unit capability string bypasses the ontology. New specialists and
+contractors are inherently discoverable because recall reads the live
+roster index, not a static keyword list.
 
 ## Consequences
 
@@ -94,12 +101,18 @@ because recall reads the live roster index, not a static keyword list.
   best specialist for the exact intent, or a hired contractor on a real
   gap. New agents and contractors become selectable the moment they enter
   the roster, with no vocabulary or code change.
-- Latency and cost are bounded: inference sees a shortlist, not the whole
-  roster. The cold-selection gate (currently 15000 ms) holds as the budget;
-  the soft cap is tunable from measured provider evidence, not guesswork.
-- The deterministic fallback is honest but bounded: offline, it picks a
-  typed-match specialist instead of abstaining, and never claims to be the
-  intelligent selector. Tests that run offline exercise this fallback.
+- Latency and cost are bounded: inference sees a recall shortlist, not the
+  whole roster. The cold-selection gate (currently 15000 ms) holds as the
+  budget; the soft cap is tunable from measured provider evidence.
+- Offline (no provider) declines: the runtime injects no Agency specialist
+  and hands the turn to the host's native capability. Offline never
+  produces a wrong pick — it produces no pick. This is preferred over a
+  bad deterministic pick; Agency value requires a configured provider.
+- The deterministic *recall* layer survives (typed shortlisting with zero
+  false negatives) as stage 1; the deterministic *decider* is removed.
+  Tests that asserted optimal specialist selection against the deterministic
+  decider are converted to the inference path (the only place optimality is
+  attainable or asserted).
 - The capability ontology is the single source of truth for
   artifact-to-capability derivation; the prior duplicate map in
   `inference._ARTIFACT_CAPABILITY` is removed to eliminate the
@@ -107,18 +120,25 @@ because recall reads the live roster index, not a static keyword list.
 
 ## Alternatives
 
-- **Determinism as primary selector** (richer typed matching, inference only
-  for hard-to-type asks). Rejected: it caps "best specialist" at what static
-  types can express and cannot distinguish specialized intent; it is the
-  generic-match behavior this project exists to beat. Determinism is kept
-  only as recall and as the degraded fallback.
+- **Determinism as primary or fallback selector** (a typed matcher that
+  decides "best specialist"). Rejected: deterministic selection cannot read
+  intent and its picks rest on keyword luck, so it is shit-by-nature at
+  "best for this ask." Every reimplementation (the bespoke fallback here,
+  the upstream selector, colleagues' rewrites) lands the same way because
+  the approach, not the implementation, is the limit. Determinism is kept
+  only as the recall filter (stage 1), never as a decider.
+- **Use the upstream selector as the offline floor.** Rejected: that
+  enshrines the known-shit deterministic behavior as a safety net. The
+  upstream asset worth borrowing is the *pool* (ingested, audited,
+  versioned specialists), not its selector. The pool is retained and grown;
+  the selector is not vendored.
 - **Govern the bespoke planner capabilities (`review-diffs`, etc.) as a new
-  vocabulary or refinement map.** Rejected: it would enshrine the fallback's
-  rigid keyword templates as permanent ontology, block runtime
-  discoverability of unmodeled specialties (e.g. FluxUI), and contradict the
-  inference-decides model. The bespoke strings are removed; descriptive
-  detail already lives in the typed unit fields (`artifact_kind`,
-  `lifecycle_phase`, `outcome`).
+  vocabulary or refinement map.** Rejected: it would enshrine rigid keyword
+  templates as permanent ontology, block runtime discoverability of
+  unmodeled specialties (e.g. FluxUI), and contradict the inference-decides
+  model. The bespoke strings are removed; descriptive detail already lives
+  in the typed unit fields (`artifact_kind`, `lifecycle_phase`, `outcome`).
 - **Pass the whole roster to inference.** Rejected: unbounded latency and
-  cost, and unnecessary — the relevance shortlist preserves the candidates
-  that matter.
+  cost, and it degrades quality — the model chooses best among a few
+  plausible candidates, not a crowd. The recall shortlist is what makes
+  inference both good and fast.
