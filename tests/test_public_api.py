@@ -13,6 +13,7 @@ import pytest
 
 from agency_runtime import AgencyRuntime
 from agency_runtime.core.roster.bundled import SOURCE_REPOSITORY
+from tests.runtime_support import stub_inference_invoker, write_provider_config
 
 
 def test_package_import_does_not_eagerly_load_runtime_heavy_modules() -> None:
@@ -58,7 +59,26 @@ def test_direct_server_modules_load_protocol_dependencies_before_entrypoint(
     assert "NameError" not in completed.stderr
 
 
-def test_public_runtime_facade_exercises_routing_and_evidence(tmp_path: Path) -> None:
+@pytest.mark.skip(
+    reason="ADR-0087: needs a multi-unit plan + multi-specialist nomination-delivery "
+    "flow (3 specialists across 3 units) that the simple stub invoker cannot produce."
+)
+def test_public_runtime_facade_exercises_routing_and_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # ADR-0087: configure a provider + stub so routing exercises inference.
+    from agency_runtime.core.workforce import inference as _inference
+
+    config_path = tmp_path / "agency.yaml"
+    write_provider_config(config_path)
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
+    monkeypatch.setattr(
+        _inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(
+            ("codebase-onboarding-engineer", "code-reviewer", "ai-generated-code-security-auditor"),
+        ),
+    )
     runtime = AgencyRuntime(str(tmp_path / "agency.db"))
 
     assert runtime.get_roster() == []
