@@ -59,41 +59,34 @@ Each below is verified green and ledgered.
 
 ## Exact blocker
 
-**SELECTION WORKS END-TO-END (proven live).** Against codex-cli 0.145.0,
-for "review code for correctness and security", inference nominates and
+**SELECTION WORKS END-TO-END (proven live, in fast mode).** Against
+codex-cli 0.145.0, the recruiter (now primary, `70c28a2`) nominates and
 the verifier ACCEPTS: `unit-code-review` -> **code-reviewer**,
-`unit-security-review` -> **ai-generated-code-security-auditor**. Two
-commits unblocked it: `358bacc` (derive capability from artifact_kind;
-killed `missing=capability:repository-map`) and `90ff042` (specialist
-tool_classes are descriptive, not a host precondition; unblocked the
-security auditor that was hard-rejected on `agent_worker_tools_missing`).
+`unit-security-review` -> **ai-generated-code-security-auditor**.
+Unblocked by: `358bacc` (capability from artifact_kind), `90ff042`
+(tool_classes descriptive), `70c28a2` (recruiter primary in all modes +
+fast_call_budget 1->2).
 
 Remaining items to reach the full north star:
 
-1. **Recruiter-primary wiring (WP3-2).** The recruiter only runs in
-   `balanced` mode today — it's gated as an optional refinement
-   (`mode != "fast"` + `_can_refine_with_recruiter`) and default
-   `mode="fast"` + `fast_call_budget=1` means it never runs by default.
-   Making it primary when a provider is configured + raising
-   `fast_call_budget` cascades into 7 mode/budget/cache tests that encode
-   the old refinement model.
-2. **Tie-break refinement (WP3-3).** For `unit-codebase-discovery` the
-   model ranks codebase-onboarding-engineer #1 but the deterministic
-   minimum-team tie-break picks code-reviewer. Selection works; this is
-   optimality on one unit. Also prove gap -> hire on a FluxUI-style ask.
-3. **Test conversions (WP3-4).** 14 selection-asserting suites
+1. **Nomination robustness (WP3-3).** For complex/multi-unit asks (e.g. a
+   FluxUI dashboard) the recruiter nomination fails validation
+   (`workforce_inference_failed`) — `_proposal_from_nominations` rejects
+   the model output on a coverage/composition rule, so the gap->hire path
+   is not yet reached for those asks. Also the codebase-discovery tie-break
+   intermittently picks code-reviewer over the model's #1
+   codebase-onboarding-engineer.
+2. **Test conversions (WP3-4).** 14 selection-asserting suites
    (http/mcp/delegation) still see the offline decline; convert to
    provider+stub (or live) once recruiter is primary. Then green-main.
 
 ## Next bounded work package
 
-1. Make the inference recruiter the primary decider when a provider is
-   configured (run regardless of mode), and raise `fast_call_budget` so
-   planner+recruiter fit. Convert the 7 mode/budget/cache tests.
-2. Refine the codebase-discovery tie-break so the model's #1 pick
-   (codebase-onboarding-engineer) stands; prove gap -> hire on a
-   FluxUI-style ask.
-3. Convert the 14 selection-asserting suites (http/mcp/delegation) to
+1. Harden `_proposal_from_nominations` so a valid model nomination for a
+   complex/multi-unit ask is accepted (not rejected on a coverage/
+   composition rule); then a FluxUI-style gap reaches `hire_contractor_for_gap`.
+   Also resolve the codebase-discovery tie-break so the model's #1 stands.
+2. Convert the 14 selection-asserting suites (http/mcp/delegation) to
    provider+stub (or live) and resume green-main.
 
 ## Live-evaluation baseline (unchanged)
