@@ -183,6 +183,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a010ef9` | 2026-07-23 | docs(governance): checkpoint AR-119 capsule to green-main recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `8b95ab0` | 2026-07-23 | fix(roster): reconcile governed contract identity with opaque roster hashes | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | [detail](2026-07-23-8b95ab0-roster-contract-identity.md) |
 | `85cd7b7` | 2026-07-23 | test(store): align schema and preflight fixtures with the v35 contract | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
+| `495b4a4` | 2026-07-23 | docs(decisions): record ADR-0087 inference-decides-from-a-relevance-shortlist | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
