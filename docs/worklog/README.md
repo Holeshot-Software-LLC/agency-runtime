@@ -182,6 +182,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `28d912a` | 2026-07-24 | feat(zcode): add ZCode as 5th execution host (ADR-0087) | null | null |
 | `5f78309` | 2026-07-24 | fix(zcode): add zcode to hook CLI choices + HOSTS inventory | null | null |
 | `117a84b` | 2026-07-24 | feat(workforce): broad-domain recall + team-decomposition planner prompts (ADR-0087) | AR-119 | null |
+| `c8872c9` | 2026-07-24 | feat(workforce): trust inference nominations, fix ZCode header, wire enrichment (ADR-0087) | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
