@@ -59,50 +59,42 @@ Each below is verified green and ledgered.
 
 ## Exact blocker
 
-The inference funnel runs end-to-end against the real codex CLI
-(codex-cli 0.145.0). The model nominates correctly (proven): for "review
-code for correctness and security" it ranks codebase-onboarding-engineer
-(required, 0.99) for discovery, code-reviewer for review, etc.
+**SELECTION WORKS END-TO-END (proven live).** Against codex-cli 0.145.0,
+for "review code for correctness and security", inference nominates and
+the verifier ACCEPTS: `unit-code-review` -> **code-reviewer**,
+`unit-security-review` -> **ai-generated-code-security-auditor**. Two
+commits unblocked it: `358bacc` (derive capability from artifact_kind;
+killed `missing=capability:repository-map`) and `90ff042` (specialist
+tool_classes are descriptive, not a host precondition; unblocked the
+security auditor that was hard-rejected on `agent_worker_tools_missing`).
 
-`358bacc` fixed the capability blocker (derive from artifact_kind):
-`missing=capability:repository-map` is gone. With real host tools
-supplied (`repository-read`, etc.), `_recruit_ambiguous_plan` now
-**succeeds** and returns a proposal — the nomination is accepted.
+Remaining items to reach the full north star:
 
-Remaining verifier issue (now isolated): **worker-tool gating rejects the
-best specialist.** For unit-security-review the model's best coverage is
-`ai-generated-code-security-auditor` (`missing=none` on capability) but
-the verifier rejects it with `agent_worker_tools_missing` because the
-auditor's contract `tool_classes` don't declare `repository-read`, even
-though the host supplies it. The deterministic fallback then collapses
-every unit to `code-reviewer` (`status=lower-deterministic-score`). The
-verifier is re-gating contracts on broad required-tool metadata the way
-the legacy catalog did — the opposite of the pipeline.py:1106-1109 intent
-("do not re-gate contracts through broad required-tool metadata ...
-
-optional surfaces"). Fix: stop hard-rejecting on `agent_worker_tools_missing`
-when the host already advertises the tool; treat it as a soft signal, not
-a hard gate, so the model's best-coverage pick stands.
-
-Also: the inference recruiter is still gated as an optional *refinement*
-(`mode != "fast"` + `_can_refine_with_recruiter`), not the primary
-decider. Default `mode="fast"` + `fast_call_budget=1` means it
-never runs. Making it primary (ADR-0087) cascades into 7 mode/budget
-tests that encode the old refinement model and must convert.
+1. **Recruiter-primary wiring (WP3-2).** The recruiter only runs in
+   `balanced` mode today — it's gated as an optional refinement
+   (`mode != "fast"` + `_can_refine_with_recruiter`) and default
+   `mode="fast"` + `fast_call_budget=1` means it never runs by default.
+   Making it primary when a provider is configured + raising
+   `fast_call_budget` cascades into 7 mode/budget/cache tests that encode
+   the old refinement model.
+2. **Tie-break refinement (WP3-3).** For `unit-codebase-discovery` the
+   model ranks codebase-onboarding-engineer #1 but the deterministic
+   minimum-team tie-break picks code-reviewer. Selection works; this is
+   optimality on one unit. Also prove gap -> hire on a FluxUI-style ask.
+3. **Test conversions (WP3-4).** 14 selection-asserting suites
+   (http/mcp/delegation) still see the offline decline; convert to
+   provider+stub (or live) once recruiter is primary. Then green-main.
 
 ## Next bounded work package
 
-1. Re-apply the capability derivation (artifact_kind -> core id) —
-   confirmed needed; this time keep it scoped and accept the
-   `test_security_patch_review...` regression converts to the inference
-   path (the decider no longer claims optimality).
-2. Make the inference recruiter the primary decider when a provider is
+1. Make the inference recruiter the primary decider when a provider is
    configured (run regardless of mode), and raise `fast_call_budget` so
    planner+recruiter fit. Convert the 7 mode/budget/cache tests.
-3. Confirm end-to-end with real codex that a correct nomination is
-   ACCEPTED (supply real tools in the context) and selects the best
-   specialist; declare a gap -> hire on a FluxUI-style ask.
-4. Then convert the 14 selection-asserting suites and resume green-main.
+2. Refine the codebase-discovery tie-break so the model's #1 pick
+   (codebase-onboarding-engineer) stands; prove gap -> hire on a
+   FluxUI-style ask.
+3. Convert the 14 selection-asserting suites (http/mcp/delegation) to
+   provider+stub (or live) and resume green-main.
 
 ## Live-evaluation baseline (unchanged)
 
