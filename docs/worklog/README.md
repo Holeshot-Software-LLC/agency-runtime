@@ -185,6 +185,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `85cd7b7` | 2026-07-23 | test(store): align schema and preflight fixtures with the v35 contract | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
 | `495b4a4` | 2026-07-23 | docs(decisions): record ADR-0087 inference-decides-from-a-relevance-shortlist | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
 | `fb9829e` | 2026-07-23 | test(workforce): seed code-reviewer conflict closure for index fingerprint | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
+| `58c9cd9` | 2026-07-23 | docs(decisions): sharpen ADR-0087 to no-deterministic-decider, offline declines | null | null |
+| `ee47985` | 2026-07-23 | feat(workforce): offline declines instead of deterministic selection (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | [detail](2026-07-23-ee47985-offline-declines.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
