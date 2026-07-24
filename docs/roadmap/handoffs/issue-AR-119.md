@@ -60,33 +60,33 @@ Each below is verified green and ledgered.
 ## Exact blocker
 
 The inference funnel runs end-to-end against the real codex CLI
-(codex-cli 0.145.0 is installed). Isolated testing of
-`_recruit_ambiguous_plan` PROVES the model nominates correctly: for
-"review code for correctness and security" it ranks
-`codebase-onboarding-engineer` (required, 0.99) for codebase-discovery,
-`code-reviewer` (acceptable) for code-review, etc. — exactly the right
-specialists, correctly classified.
+(codex-cli 0.145.0). The model nominates correctly (proven): for "review
+code for correctness and security" it ranks codebase-onboarding-engineer
+(required, 0.99) for discovery, code-reviewer for review, etc.
 
-The nomination is then REJECTED by `_proposal_from_nominations` with
-`workforce nominations have no safe team; ... status=agent_tools_missing
-... missing=capability:repository-map`. Two compounding verifier gates
-block a correct nomination:
+`358bacc` fixed the capability blocker (derive from artifact_kind):
+`missing=capability:repository-map` is gone. With real host tools
+supplied (`repository-read`, etc.), `_recruit_ambiguous_plan` now
+**succeeds** and returns a proposal — the nomination is accepted.
 
-1. **`agent_tools_missing`**: the verifier gates each candidate on
-   `unit.required_tools` against the host's available tools. The isolated
-   test passes `available_tools=frozenset()` (empty), so every specialist
-   is "tools missing." In production the host supplies tools
-   (repository-read, etc.); the gate is correct but the test context is
-   empty. Production-path and tests that supply real tools should pass.
-2. **`capability:repository-map`**: the deterministic plan still emits
-   the bespoke capability `repository-map` (the reverted-WP1 vocabulary
-   bug), which no contract has, so `missing=capability:repository-map`
-   rejects otherwise-matching candidates. The capability derivation fix
-   IS needed — derive from `artifact_kind` via `ARTIFACT_CAPABILITY`.
+Remaining verifier issue (now isolated): **worker-tool gating rejects the
+best specialist.** For unit-security-review the model's best coverage is
+`ai-generated-code-security-auditor` (`missing=none` on capability) but
+the verifier rejects it with `agent_worker_tools_missing` because the
+auditor's contract `tool_classes` don't declare `repository-read`, even
+though the host supplies it. The deterministic fallback then collapses
+every unit to `code-reviewer` (`status=lower-deterministic-score`). The
+verifier is re-gating contracts on broad required-tool metadata the way
+the legacy catalog did — the opposite of the pipeline.py:1106-1109 intent
+("do not re-gate contracts through broad required-tool metadata ...
 
-Also: the inference recruiter is currently gated as an optional
-*refinement* (`mode != "fast"` + `_can_refine_with_recruiter`), not the
-primary decider. Default `mode="fast"` + `fast_call_budget=1` means it
+optional surfaces"). Fix: stop hard-rejecting on `agent_worker_tools_missing`
+when the host already advertises the tool; treat it as a soft signal, not
+a hard gate, so the model's best-coverage pick stands.
+
+Also: the inference recruiter is still gated as an optional *refinement*
+(`mode != "fast"` + `_can_refine_with_recruiter`), not the primary
+decider. Default `mode="fast"` + `fast_call_budget=1` means it
 never runs. Making it primary (ADR-0087) cascades into 7 mode/budget
 tests that encode the old refinement model and must convert.
 
