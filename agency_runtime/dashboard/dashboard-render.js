@@ -1,5 +1,7 @@
 "use strict";
+
 const EXECUTION_HOSTS = ["codex", "claude", "openclaw", "hermes"];
+
 const EVIDENCE_COLUMNS = {
   specialists: [["slug", "Specialist"], ["session_id", "Session"], ["trace_id", "Trace"], ["state", "Evidence state"], ["loaded_at", "Activated"], ["expired_at", "Expired"]],
   delegations: [["recommended_agent", "Agent"], ["host", "Host"], ["status", "Status"], ["backend", "Backend"], ["work_unit_id", "Work unit"], ["started_at", "Started"]],
@@ -8,6 +10,7 @@ const EVIDENCE_COLUMNS = {
   runs: [["trace_id", "Trace"], ["session_id", "Session"], ["host", "Host"], ["status", "Status"], ["started_at", "Started"], ["ended_at", "Ended"]],
   finalizations: [["trace_id", "Trace"], ["host", "Host"], ["action", "Action"], ["missing", "Missing"], ["created_at", "Created"]],
 };
+
 export function createRenderer(core, config, callbacks) {
   const {
     runtime,
@@ -25,10 +28,12 @@ export function createRenderer(core, config, callbacks) {
   } = core;
   const animationListeners = new Map();
   const configuredTabs = new WeakSet();
+
   function reducedMotionPreferred() {
     return typeof window.matchMedia === "function"
       && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
+
   function runButtonAction(button, action) {
     button.disabled = true;
     button.setAttribute("aria-busy", "true");
@@ -39,6 +44,7 @@ export function createRenderer(core, config, callbacks) {
         button.removeAttribute("aria-busy");
       });
   }
+
   function markUpdated(node, className = "is-updated") {
     if (!node || reducedMotionPreferred()) return;
     const previous = animationListeners.get(node);
@@ -56,6 +62,7 @@ export function createRenderer(core, config, callbacks) {
     animationListeners.set(node, { className, listener: finished });
     node.addEventListener("animationend", finished, { once: true });
   }
+
   function disposeAnimations() {
     animationListeners.forEach(({ className, listener }, node) => {
       node.removeEventListener("animationend", listener);
@@ -63,6 +70,7 @@ export function createRenderer(core, config, callbacks) {
     });
     animationListeners.clear();
   }
+
   function setMetric(id, value) {
     const node = byId(id);
     if (!node) return;
@@ -72,6 +80,7 @@ export function createRenderer(core, config, callbacks) {
     state.metricValues.set(id, rendered);
     if (previous !== undefined && previous !== rendered) markUpdated(node);
   }
+
   function renderCharts() {
     const charts = runtime.AgencyCharts;
     if (!charts) return;
@@ -109,6 +118,7 @@ export function createRenderer(core, config, callbacks) {
       if (node) node.textContent = String(value);
     });
   }
+
   function evidenceRowKey(row, index) {
     if (row && typeof row === "object") {
       return String(
@@ -118,6 +128,7 @@ export function createRenderer(core, config, callbacks) {
     }
     return `row:${index}`;
   }
+
   function emptyRow(columns, message) {
     const tr = el("tr");
     const td = el("td", "", message);
@@ -125,6 +136,7 @@ export function createRenderer(core, config, callbacks) {
     tr.append(td);
     return tr;
   }
+
   function renderOverview() {
     const data = state.overview || {};
     setMetric(
@@ -142,6 +154,7 @@ export function createRenderer(core, config, callbacks) {
     if (trimDays && trimDays.dataset.dirty !== "true") {
       trimDays.value = data.retention_days || 30;
     }
+
     const tbody = byId("overview-delegations");
     tbody.replaceChildren();
     const previousOverviewKeys = state.evidenceKeys.get("overview") || new Set();
@@ -163,6 +176,7 @@ export function createRenderer(core, config, callbacks) {
     });
     state.evidenceKeys.set("overview", nextOverviewKeys);
     if (!tbody.children.length) tbody.append(emptyRow(5, "No delegation evidence yet."));
+
     const hostStack = byId("overview-hosts");
     hostStack.replaceChildren();
     state.hosts.forEach((host) => {
@@ -180,6 +194,7 @@ export function createRenderer(core, config, callbacks) {
         "No supported agent hosts were found. Install or register a host, then refresh.",
       ));
     }
+
     const providerStack = byId("provider-health");
     providerStack.replaceChildren();
     const inference = data.inference && typeof data.inference === "object"
@@ -260,6 +275,7 @@ export function createRenderer(core, config, callbacks) {
     }
     renderCharts();
   }
+
   function renderHosts() {
     const grid = byId("host-grid");
     grid.replaceChildren();
@@ -333,6 +349,7 @@ export function createRenderer(core, config, callbacks) {
       ));
     }
   }
+
   function renderRouteHosts() {
     const select = byId("route-host");
     if (!select) return "";
@@ -392,6 +409,7 @@ export function createRenderer(core, config, callbacks) {
     }
     return select.value;
   }
+
   function populateRosterFacet(id, values, emptyLabel) {
     const select = byId(id);
     if (!select) return;
@@ -406,6 +424,7 @@ export function createRenderer(core, config, callbacks) {
     });
     select.value = [...select.options].some((option) => option.value === previous) ? previous : "";
   }
+
   function appendOperationalAgentDetails(card, agent) {
     if (!agent.audit_status && !agent.source_revision && !agent.authority) return;
     const identity = el("div", "agent-contract-line");
@@ -456,6 +475,7 @@ export function createRenderer(core, config, callbacks) {
     details.append(el("h4", "", "Immutable revision history"), history);
     card.append(details);
   }
+
   function renderReviewQueue() {
     const review = state.rosterReview || {};
     const candidates = Array.isArray(review.candidates) ? review.candidates : [];
@@ -639,6 +659,7 @@ export function createRenderer(core, config, callbacks) {
       button.disabled = hasMore === true && !cursor;
     });
   }
+
   function renderRoster() {
     const grid = byId("roster-grid");
     grid.replaceChildren();
@@ -768,6 +789,7 @@ export function createRenderer(core, config, callbacks) {
     if (!list.children.length) list.append(el("div", "empty-state", "No roster snapshots."));
     renderReviewQueue();
   }
+
   function renderEvidence(kind = "specialists") {
     const columns = EVIDENCE_COLUMNS[kind];
     const label = kind.endsWith("s") ? kind.slice(0, -1) : kind;
@@ -828,6 +850,7 @@ export function createRenderer(core, config, callbacks) {
       body.append(emptyRow(columns.length, `No ${emptyLabel} evidence yet.`));
     }
   }
+
   function renderReceipt(receipt) {
     const root = byId("route-result");
     root.className = "receipt";
@@ -1062,6 +1085,7 @@ export function createRenderer(core, config, callbacks) {
       receipt.status || receipt.signals?.selection?.status || "complete",
     ).toUpperCase();
   }
+
   function appendTokenGroup(root, label, values) {
     const items = Array.isArray(values) ? values.filter(Boolean) : [];
     const group = el("div", "workforce-token-group");
@@ -1073,6 +1097,7 @@ export function createRenderer(core, config, callbacks) {
     group.append(tokens);
     root.append(group);
   }
+
   function workforceActions(worker) {
     const stateValue = String(worker.state || "").toLowerCase();
     const employment = String(worker.employment_class || "").toLowerCase();
@@ -1102,6 +1127,7 @@ export function createRenderer(core, config, callbacks) {
     );
     return actions;
   }
+
   function appendWorkerHistory(root, detail) {
     const history = el("details", "workforce-history");
     history.append(el("summary", "", "Recent lifecycle and outcome evidence"));
@@ -1134,6 +1160,7 @@ export function createRenderer(core, config, callbacks) {
     history.append(list);
     root.append(history);
   }
+
   function renderWorkerDetail() {
     const root = byId("workforce-detail");
     const form = byId("workforce-action-form");
@@ -1245,6 +1272,7 @@ export function createRenderer(core, config, callbacks) {
     });
     form.hidden = actions.length === 0;
   }
+
   function renderWorkforce() {
     const workers = Array.isArray(state.workforce) ? state.workforce : [];
     const counts = state.workforceCounts || {};
@@ -1322,9 +1350,11 @@ export function createRenderer(core, config, callbacks) {
     }
     renderWorkerDetail();
   }
+
   function activeEvidenceKind() {
     return document.querySelector(".subnav-item.active")?.dataset.evidence || "specialists";
   }
+
   function renderActiveView() {
     renderRouteHosts();
     if (state.activeView === "overview" && state.overview) renderOverview();
@@ -1333,6 +1363,7 @@ export function createRenderer(core, config, callbacks) {
     else if (state.activeView === "roster") renderRoster();
     else if (state.activeView === "workforce") renderWorkforce();
   }
+
   function renderActiveControlView() {
     renderRouteHosts();
     if (state.activeView === "overview" && state.overview) renderOverview();
@@ -1340,6 +1371,7 @@ export function createRenderer(core, config, callbacks) {
     else if (state.activeView === "roster") renderRoster();
     else if (state.activeView === "workforce") renderWorkforce();
   }
+
   function switchView(name) {
     state.activeView = name;
     document.querySelectorAll(".nav-item").forEach((node) => {
@@ -1369,6 +1401,7 @@ export function createRenderer(core, config, callbacks) {
     }
     renderActiveView();
   }
+
   function activateEvidenceTab(node, { focus = false } = {}) {
     const tabs = [...document.querySelectorAll(".subnav-item")];
     tabs.forEach((item) => {
@@ -1382,6 +1415,7 @@ export function createRenderer(core, config, callbacks) {
     renderEvidence(node.dataset.evidence);
     if (focus) node.focus();
   }
+
   function configureEvidenceTabs() {
     const tabs = [...document.querySelectorAll(".subnav-item")];
     if (!tabs.length) return;
@@ -1421,6 +1455,7 @@ export function createRenderer(core, config, callbacks) {
       panel.tabIndex = 0;
     }
   }
+
   return {
     reducedMotionPreferred,
     markUpdated,

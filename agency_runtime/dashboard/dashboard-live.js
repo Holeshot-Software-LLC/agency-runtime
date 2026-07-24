@@ -1,5 +1,7 @@
 "use strict";
+
 import { APIError, CONTROL_INTERVAL_MS, LIVE_INTERVAL_MS } from "./dashboard-core.js";
+
 export function createLiveController(core, config, renderer) {
   const {
     runtime,
@@ -13,10 +15,12 @@ export function createLiveController(core, config, renderer) {
     nestedValue,
   } = core;
   const AGENT_SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]{1,127}$/;
+
   function setConnection(connected, label) {
     document.querySelector(".rail-foot")?.classList.toggle("connected", connected);
     if (byId("connection-label")) byId("connection-label").textContent = label;
   }
+
   function setLiveStatus(label, stateName, { announce = false } = {}) {
     const status = byId("live-status");
     if (status) {
@@ -28,6 +32,7 @@ export function createLiveController(core, config, renderer) {
     }
     state.live.statusText = label;
   }
+
   function updateLastSync(sampledAt) {
     const parsed = new Date(sampledAt || Date.now());
     const rendered = Number.isNaN(parsed.valueOf())
@@ -35,6 +40,7 @@ export function createLiveController(core, config, renderer) {
       : `Last sync ${parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
     if (byId("last-sync")) byId("last-sync").textContent = rendered;
   }
+
   function updateLocalClock() {
     window.clearTimeout(state.clockTimer);
     state.clockTimer = null;
@@ -56,6 +62,7 @@ export function createLiveController(core, config, renderer) {
     const delay = Math.max(100, 1020 - (Date.now() % 1000));
     state.clockTimer = window.setTimeout(updateLocalClock, delay);
   }
+
   function syncLiveToggle() {
     const toggle = byId("live-toggle");
     if (!toggle) return;
@@ -64,6 +71,7 @@ export function createLiveController(core, config, renderer) {
       toggle.checked = state.live.enabled;
     }
   }
+
   function syncMasterControl() {
     const master = state.master;
     const known = Boolean(master);
@@ -135,6 +143,7 @@ export function createLiveController(core, config, renderer) {
       byId("route-status").textContent = "IDLE";
     }
   }
+
   function applyMasterState(master) {
     if (master === undefined || master === null) return false;
     if (
@@ -157,6 +166,7 @@ export function createLiveController(core, config, renderer) {
     syncMasterControl();
     return changed;
   }
+
   function cancelLiveRequest() {
     state.live.generation += 1;
     window.clearTimeout(state.live.timer);
@@ -166,6 +176,7 @@ export function createLiveController(core, config, renderer) {
     state.live.inFlight = false;
     if (controller) controller.abort();
   }
+
   function cancelControlRequest() {
     window.clearTimeout(state.control.timer);
     state.control.timer = null;
@@ -174,6 +185,7 @@ export function createLiveController(core, config, renderer) {
     state.control.inFlight = false;
     if (controller) controller.abort();
   }
+
   function cancelFullRefresh() {
     state.full.generation += 1;
     const controller = state.full.controller;
@@ -183,6 +195,7 @@ export function createLiveController(core, config, renderer) {
     if (controller) controller.abort();
     if (wasInFlight) byId("refresh-button").disabled = false;
   }
+
   function cancelMutationRequests() {
     const hadActiveMutations = state.mutation.active > 0;
     state.mutation.controllers.forEach((controller) => controller.abort());
@@ -190,17 +203,20 @@ export function createLiveController(core, config, renderer) {
     state.mutation.active = 0;
     if (hadActiveMutations) byId("refresh-button").disabled = false;
   }
+
   function pauseForMutation() {
     cancelFullRefresh();
     cancelLiveRequest();
     cancelControlRequest();
     byId("refresh-button").disabled = true;
   }
+
   function resumeAfterMutation() {
     if (!state.full.inFlight) byId("refresh-button").disabled = false;
     scheduleLive(LIVE_INTERVAL_MS);
     scheduleControlRefresh();
   }
+
   function beginMutation() {
     pauseForMutation();
     const controller = new AbortController();
@@ -208,18 +224,21 @@ export function createLiveController(core, config, renderer) {
     state.mutation.active += 1;
     return controller;
   }
+
   function mutationIsCurrent(controller) {
     return !state.lifecycle.destroyed
       && !state.lifecycle.suspended
       && !controller.signal.aborted
       && state.mutation.controllers.has(controller);
   }
+
   function finishMutation(controller) {
     if (!state.mutation.controllers.delete(controller)) return false;
     state.mutation.active = Math.max(0, state.mutation.active - 1);
     if (state.mutation.active === 0) resumeAfterMutation();
     return true;
   }
+
   function liveCanRun() {
     return state.live.enabled
       && !state.live.terminal
@@ -227,12 +246,14 @@ export function createLiveController(core, config, renderer) {
       && !state.lifecycle.suspended
       && document.visibilityState !== "hidden";
   }
+
   function scheduleLive(delay = LIVE_INTERVAL_MS) {
     window.clearTimeout(state.live.timer);
     state.live.timer = null;
     if (!liveCanRun()) return;
     state.live.timer = window.setTimeout(runLivePoll, Math.max(0, delay));
   }
+
   async function fetchLiveSnapshot() {
     if (state.live.inFlight) return null;
     const controller = new AbortController();
@@ -250,6 +271,7 @@ export function createLiveController(core, config, renderer) {
       }
     }
   }
+
   function applyLiveSnapshot(payload, { render = true } = {}) {
     if (!payload || payload.schema_version !== 1) {
       throw new Error("Unsupported live dashboard response.");
@@ -274,9 +296,11 @@ export function createLiveController(core, config, renderer) {
     if (render) renderer.renderActiveView();
     return true;
   }
+
   function terminalLiveFailure(error) {
     return error instanceof APIError && (error.status === 401 || error.status === 403);
   }
+
   function handleLiveFailure(error) {
     if (error?.name === "AbortError" || state.lifecycle.destroyed) return;
     if (terminalLiveFailure(error)) {
@@ -305,6 +329,7 @@ export function createLiveController(core, config, renderer) {
     }
     scheduleLive(retry);
   }
+
   async function runLivePoll() {
     state.live.timer = null;
     if (!liveCanRun() || state.live.inFlight) return;
@@ -320,15 +345,18 @@ export function createLiveController(core, config, renderer) {
       handleLiveFailure(error);
     }
   }
+
   function scheduleControlRefresh(delay = CONTROL_INTERVAL_MS) {
     window.clearTimeout(state.control.timer);
     state.control.timer = null;
     if (!liveCanRun()) return;
     state.control.timer = window.setTimeout(refreshControlPlane, Math.max(0, delay));
   }
+
   function pageInteger(value, fallback, minimum = 0) {
     return Number.isInteger(value) && value >= minimum ? value : fallback;
   }
+
   function applyRosterPage(payload = {}) {
     const agents = Array.isArray(payload.agents) ? payload.agents : [];
     const count = pageInteger(payload.count, agents.length);
@@ -346,6 +374,7 @@ export function createLiveController(core, config, renderer) {
     state.rosterPage = rosterPage;
     return rosterPage;
   }
+
   function applyGovernanceSnapshot(payload = {}) {
     state.snapshots = Array.isArray(payload.snapshots) ? payload.snapshots : [];
     if (payload.operations && typeof payload.operations === "object") {
@@ -360,6 +389,7 @@ export function createLiveController(core, config, renderer) {
       snapshots: state.snapshots,
     };
   }
+
   function operationalFilterValues() {
     const fields = ["query", "division", "capability", "authority", "host", "platform", "tool"];
     return Object.fromEntries(fields.flatMap((field) => {
@@ -367,10 +397,12 @@ export function createLiveController(core, config, renderer) {
       return value ? [[field, value]] : [];
     }));
   }
+
   function operationalRosterPath(filters = {}) {
     const query = new URLSearchParams({ limit: "100", ...filters });
     return `/api/roster/operations?${query.toString()}`;
   }
+
   async function applyOperationalFilters(event) {
     event?.preventDefault?.();
     if (config.serviceRestartRequired()) {
@@ -393,6 +425,7 @@ export function createLiveController(core, config, renderer) {
       return false;
     }
   }
+
   function clearOperationalFilters() {
     ["query", "division", "capability", "authority", "host", "platform", "tool"]
       .forEach((field) => {
@@ -401,6 +434,7 @@ export function createLiveController(core, config, renderer) {
       });
     return applyOperationalFilters();
   }
+
   async function loadMoreRemediation(kind) {
     if (!["pending", "history"].includes(kind)) {
       throw new Error("Remediation page kind must be pending or history.");
@@ -461,11 +495,13 @@ export function createLiveController(core, config, renderer) {
     }
     return loaded;
   }
+
   function rosterRequestPath() {
     return state.rosterFilter
       ? `/api/agents/lookup?slug=${encodeURIComponent(state.rosterFilter)}`
       : "/api/roster?limit=100";
   }
+
   function normalizeRosterFilter(value) {
     const slug = String(value || "").trim().toLowerCase();
     if (slug && !AGENT_SLUG_PATTERN.test(slug)) {
@@ -473,6 +509,7 @@ export function createLiveController(core, config, renderer) {
     }
     return slug;
   }
+
   async function applyRosterFilter(value) {
     if (config.serviceRestartRequired()) {
       showNotice("Restart the dashboard service before searching the roster.", true);
@@ -497,13 +534,16 @@ export function createLiveController(core, config, renderer) {
     }
     return refreshed === true;
   }
+
   function searchRoster(event) {
     event.preventDefault();
     return applyRosterFilter(byId("roster-search-slug").value);
   }
+
   function clearRosterSearch() {
     return applyRosterFilter("");
   }
+
   async function refreshControlPlane() {
     state.control.timer = null;
     if (
@@ -552,6 +592,7 @@ export function createLiveController(core, config, renderer) {
       }
     }
   }
+
   async function refreshAll({ surfaceErrors = true } = {}) {
     cancelFullRefresh();
     const controller = new AbortController();
@@ -632,6 +673,7 @@ export function createLiveController(core, config, renderer) {
       }
     }
   }
+
   async function refreshRuntimeEvidence() {
     cancelLiveRequest();
     try {
@@ -646,6 +688,7 @@ export function createLiveController(core, config, renderer) {
       scheduleLive(LIVE_INTERVAL_MS);
     }
   }
+
   async function refreshWorkforce({ signal } = {}) {
     const [workforce, hiring] = await Promise.all([
       api("/api/workforce?limit=1000", { signal }),
@@ -658,6 +701,7 @@ export function createLiveController(core, config, renderer) {
     if (state.activeView === "workforce") renderer.renderWorkforce();
     return true;
   }
+
   async function reconcileRuntimeEvidence(successMessage) {
     if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
     showNotice(successMessage);
@@ -670,6 +714,7 @@ export function createLiveController(core, config, renderer) {
     }
     return true;
   }
+
   async function reconcileAll(successMessage) {
     if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
     showNotice(successMessage);
@@ -682,6 +727,7 @@ export function createLiveController(core, config, renderer) {
     }
     return true;
   }
+
   return {
     setConnection,
     setLiveStatus,

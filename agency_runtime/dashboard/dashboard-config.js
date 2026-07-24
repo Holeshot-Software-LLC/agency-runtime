@@ -1,4 +1,5 @@
 "use strict";
+
 export function createConfigController(core) {
   const codexReasoningEfforts = ["low", "medium", "high", "xhigh", "max", "ultra"];
   const {
@@ -11,6 +12,7 @@ export function createConfigController(core) {
     comparable,
     api,
   } = core;
+
   function readConfigControl(node) {
     const kind = node.dataset.valueType || "string";
     if (kind === "boolean") return node.checked;
@@ -35,6 +37,7 @@ export function createConfigController(core) {
     if (node.dataset.nullable === "true" && !node.value.trim()) return null;
     return node.value;
   }
+
   function writeConfigControl(node, value) {
     const kind = node.dataset.valueType || "string";
     if (kind === "boolean") node.checked = value === true;
@@ -45,12 +48,15 @@ export function createConfigController(core) {
       node.value = JSON.stringify(safeValue ?? [], null, 2);
     } else node.value = value ?? "";
   }
+
   function configControls() {
     return [...document.querySelectorAll("[data-config-path]")];
   }
+
   function serviceRestartRequired() {
     return state.serviceBinding?.store_restart_required === true;
   }
+
   function applyServiceBinding(snapshot = {}) {
     const value = snapshot.service_binding;
     const binding = value && typeof value === "object" ? {
@@ -113,6 +119,7 @@ export function createConfigController(core) {
     }
     return blocked;
   }
+
   function projectConfigSummary(snapshot) {
     const effective = snapshot?.effective || snapshot?.config || {};
     const retentionDays = nestedValue(effective, "observability.retention_days");
@@ -133,6 +140,7 @@ export function createConfigController(core) {
       if (privacy) privacy.textContent = enabled ? "Redacted content" : "Metadata only";
     }
   }
+
   function appendSecretOperation(operations, path, value, clear) {
     if (value && clear) {
       throw new Error(`Choose either a new value or clear for ${path}, not both.`);
@@ -140,6 +148,7 @@ export function createConfigController(core) {
     if (value) operations.push({ op: "secret", path, action: "replace", value });
     if (clear) operations.push({ op: "secret", path, action: "clear" });
   }
+
   function collectConfigChanges() {
     const operations = [];
     configControls().forEach((node) => {
@@ -183,6 +192,7 @@ export function createConfigController(core) {
     }
     return operations;
   }
+
   function syncProviderSecretOptions() {
     const select = byId("config-provider-secret-index");
     const selected = select.value;
@@ -209,6 +219,7 @@ export function createConfigController(core) {
       : "0";
     syncWorkforceProviderOptions(providers);
   }
+
   function configuredProviders() {
     try {
       const value = JSON.parse(byId("config-providers")?.value || "[]");
@@ -217,6 +228,7 @@ export function createConfigController(core) {
       return [];
     }
   }
+
   function syncWorkforceProviderOptions(providers = configuredProviders()) {
     const options = byId("workforce-provider-options");
     if (!options) return;
@@ -229,6 +241,7 @@ export function createConfigController(core) {
       options.append(option);
     });
   }
+
   async function loadWorkforceModels({ refresh = false } = {}) {
     const providerName = byId("config-workforce-provider")?.value.trim() || "";
     const providers = configuredProviders();
@@ -273,6 +286,7 @@ export function createConfigController(core) {
       return false;
     }
   }
+
   function providerBuilderDraft() {
     const name = byId("provider-builder-name")?.value.trim() || "";
     const type = byId("provider-builder-type")?.value.trim() || "";
@@ -314,6 +328,7 @@ export function createConfigController(core) {
       reasoning_effort: reasoningEffort,
     };
   }
+
   function syncProviderReasoningEffortOptions() {
     const input = byId("provider-builder-reasoning-effort");
     const help = byId("provider-builder-reasoning-effort-help");
@@ -344,6 +359,7 @@ export function createConfigController(core) {
         : "Reasoning effort is available for Codex subscription providers.";
     }
   }
+
   function syncProviderTimeoutRecommendation() {
     const type = byId("provider-builder-type")?.value.trim() || "";
     const input = byId("provider-builder-timeout");
@@ -352,6 +368,7 @@ export function createConfigController(core) {
     if (type === "cli" && (!current || current === "15")) input.value = "60";
     if (type !== "cli" && (!current || current === "60")) input.value = "15";
   }
+
   async function loadProviderModels({ refresh = false } = {}) {
     const type = byId("provider-builder-type")?.value || "";
     const transport = byId("provider-builder-transport")?.value || "";
@@ -409,6 +426,7 @@ export function createConfigController(core) {
       return false;
     }
   }
+
   function syncProviderModelInput() {
     const select = byId("provider-builder-model-select");
     const manual = byId("provider-builder-model");
@@ -416,6 +434,7 @@ export function createConfigController(core) {
     manual.hidden = select.value !== "__manual__";
     syncProviderReasoningEffortOptions();
   }
+
   function upsertProviderDraft() {
     const draft = providerBuilderDraft();
     const control = byId("config-providers");
@@ -436,6 +455,7 @@ export function createConfigController(core) {
     updateConfigDirtyState();
     return draft;
   }
+
   function removeSelectedProvider() {
     const select = byId("config-provider-secret-index");
     if (!select || select.value === "") throw new Error("Select a provider to remove.");
@@ -447,6 +467,7 @@ export function createConfigController(core) {
     syncProviderSecretOptions();
     updateConfigDirtyState();
   }
+
   function updateConfigDirtyState() {
     syncProviderSecretOptions();
     configControls().forEach((node) => {
@@ -475,6 +496,7 @@ export function createConfigController(core) {
       : `No unsaved changes${pending}`;
     byId("config-save-button").disabled = count === 0;
   }
+
   function renderConfig(snapshot) {
     applyServiceBinding(snapshot);
     const effective = snapshot.effective || snapshot.config || {};
@@ -508,14 +530,22 @@ export function createConfigController(core) {
       : "NO OVERRIDES";
     updateConfigDirtyState();
   }
+
   function applyConfigSnapshot(snapshot, { force = false } = {}) {
     if (!snapshot) return false;
     applyServiceBinding(snapshot);
+    // The summary describes the effective runtime, not the editor baseline. It
+    // must advance even while dirty fields retain their older CAS revision.
     projectConfigSummary(snapshot);
     const currentRevision = String(state.config?.revision || "missing");
     const nextRevision = String(snapshot.revision || "missing");
+    // Quick card controls may safely advance their own CAS token while the
+    // settings editor keeps its older baseline and revision for conflict-safe
+    // saves. Never rewrite dirty inputs merely to unblock an unrelated toggle.
     state.controlConfigRevision = nextRevision;
     if (!force && state.activeView !== "settings" && !state.configDirty) {
+      // Quick controls need the latest CAS token even while settings inputs are
+      // off-screen. Keep the pending snapshot for deferred field rendering.
       state.config = snapshot;
       state.pendingConfig = snapshot;
       return false;
@@ -537,6 +567,7 @@ export function createConfigController(core) {
     renderConfig(snapshot);
     return true;
   }
+
   return {
     readConfigControl,
     writeConfigControl,

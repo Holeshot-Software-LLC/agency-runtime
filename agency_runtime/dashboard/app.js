@@ -1,9 +1,11 @@
 "use strict";
+
 import { createActionController } from "./dashboard-actions.js";
 import { createConfigController } from "./dashboard-config.js";
 import { APIError, createCore } from "./dashboard-core.js";
 import { createLiveController } from "./dashboard-live.js";
 import { createRenderer } from "./dashboard-render.js";
+
 export function createDashboard(runtime = globalThis) {
   const core = createCore(runtime);
   const { document, window, state, byId, listen } = core;
@@ -18,6 +20,7 @@ export function createDashboard(runtime = globalThis) {
   });
   const live = createLiveController(core, config, renderer);
   actions = createActionController(core, config, renderer, live);
+
   async function connectFromLocation() {
     const generation = state.connection.generation + 1;
     state.connection.generation = generation;
@@ -39,6 +42,7 @@ export function createDashboard(runtime = globalThis) {
       return false;
     }
   }
+
   function setLiveEnabled(enabled) {
     state.live.enabled = Boolean(enabled);
     live.syncLiveToggle();
@@ -54,6 +58,7 @@ export function createDashboard(runtime = globalThis) {
     live.scheduleLive(0);
     live.scheduleControlRefresh(0);
   }
+
   function suspendRuntime() {
     state.lifecycle.suspended = true;
     window.clearTimeout(state.clockTimer);
@@ -63,6 +68,7 @@ export function createDashboard(runtime = globalThis) {
     live.cancelFullRefresh();
     live.cancelMutationRequests();
   }
+
   function handleVisibilityChange() {
     if (document.visibilityState === "hidden") {
       suspendRuntime();
@@ -79,6 +85,7 @@ export function createDashboard(runtime = globalThis) {
       live.scheduleControlRefresh(0);
     }
   }
+
   function handlePageShow(event) {
     if (!event.persisted || state.lifecycle.destroyed) return;
     state.lifecycle.suspended = false;
@@ -88,6 +95,7 @@ export function createDashboard(runtime = globalThis) {
     live.scheduleLive(0);
     live.scheduleControlRefresh(0);
   }
+
   function destroy() {
     if (state.lifecycle.destroyed) return false;
     state.lifecycle.destroyed = true;
@@ -100,10 +108,12 @@ export function createDashboard(runtime = globalThis) {
     state.lifecycle.bound = false;
     return true;
   }
+
   function handlePageHide(event = {}) {
     suspendRuntime();
     if (!event.persisted) destroy();
   }
+
   function bindEvents() {
     if (state.lifecycle.bound || state.lifecycle.destroyed) return false;
     state.lifecycle.bound = true;
@@ -226,16 +236,20 @@ export function createDashboard(runtime = globalThis) {
     listen(document, "visibilitychange", handleVisibilityChange);
     listen(window, "pagehide", handlePageHide);
     listen(window, "pageshow", handlePageShow);
+    // Some launchers attach the fragment after DOMContentLoaded. Reconnect
+    // without retaining the token in browser history or a stale async render.
     listen(window, "hashchange", () => { void connectFromLocation(); });
     renderer.switchView(document.querySelector(".nav-item.active")?.dataset.view || "overview");
     return true;
   }
+
   async function start() {
     if (state.lifecycle.destroyed) return false;
     bindEvents();
     live.updateLocalClock();
     return connectFromLocation();
   }
+
   const dashboard = {
     ...core,
     ...config,
@@ -256,4 +270,5 @@ export function createDashboard(runtime = globalThis) {
   listen(document, "DOMContentLoaded", start, { once: true });
   return dashboard;
 }
+
 export const bootstrappedDashboard = createDashboard(globalThis);

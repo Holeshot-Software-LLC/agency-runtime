@@ -1,4 +1,5 @@
 "use strict";
+
 export function createActionController(core, config, renderer, live) {
   const {
     state,
@@ -8,20 +9,24 @@ export function createActionController(core, config, renderer, live) {
     formatBytes,
     requestConfirmation,
   } = core;
+
   function maySurface(error, controller) {
     return error?.name !== "AbortError"
       && live.mutationIsCurrent(controller);
   }
+
   function markButtonPending(id) {
     const button = byId(id);
     button.disabled = true;
     button.setAttribute("aria-busy", "true");
   }
+
   function clearButtonPending(id) {
     const button = byId(id);
     button.disabled = false;
     button.removeAttribute("aria-busy");
   }
+
   function serviceControlBlocked() {
     if (!config.serviceRestartRequired()) return false;
     showNotice(
@@ -30,6 +35,7 @@ export function createActionController(core, config, renderer, live) {
     );
     return true;
   }
+
   async function runRoute() {
     if (serviceControlBlocked()) return;
     if (state.master?.enabled === false) {
@@ -85,6 +91,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   async function trimRuntime() {
     const confirm = byId("trim-confirm").value;
     if (confirm !== "TRIM RUNTIME DATA") {
@@ -115,6 +122,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   function requiredConfigConfirmations(operations) {
     const confirmations = ["SAVE CONFIG"];
     if (operations.some((operation) => operation.op === "secret")) {
@@ -128,12 +136,14 @@ export function createActionController(core, config, renderer, live) {
     if (capture?.value === true) confirmations.push("ENABLE CONTENT CAPTURE");
     return confirmations;
   }
+
   async function saveConfig(event) {
     event.preventDefault();
     let operations;
     try { operations = config.collectConfigChanges(); }
     catch (error) { return showNotice(error.message, true); }
     if (!operations.length) return;
+
     const confirmations = [];
     for (const phrase of requiredConfigConfirmations(operations)) {
       const accepted = await requestConfirmation(
@@ -144,6 +154,7 @@ export function createActionController(core, config, renderer, live) {
       if (!accepted) return showNotice("Configuration save cancelled.", true);
       confirmations.push(phrase);
     }
+
     markButtonPending("config-save-button");
     const controller = live.beginMutation();
     try {
@@ -176,6 +187,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   async function rosterAction(action, snapshotId) {
     if (serviceControlBlocked()) return;
     const expected = `${action.toUpperCase()} ${snapshotId}`;
@@ -200,6 +212,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   async function toggleHost(host, enabled, expectedGeneration) {
     if (serviceControlBlocked()) return;
     if (!Number.isInteger(expectedGeneration) || expectedGeneration < 0) {
@@ -232,6 +245,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   async function toggleAgent(slug, enabled, reason = "") {
     if (serviceControlBlocked()) return;
     const expected = `${enabled ? "ENABLE" : "DISABLE"} ${slug}`;
@@ -266,6 +280,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   async function toggleMaster(enabled) {
     if (!state.master || !Number.isInteger(state.master.generation)) {
       return showNotice("Agency master state is still loading. Refresh and try again.", true);
@@ -306,6 +321,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   async function selectWorker(slug) {
     if (!slug || state.lifecycle.destroyed || state.lifecycle.suspended) return;
     try {
@@ -317,6 +333,7 @@ export function createActionController(core, config, renderer, live) {
       showNotice(error.message, true);
     }
   }
+
   async function workforceAction(event) {
     event.preventDefault();
     if (serviceControlBlocked()) return;
@@ -372,6 +389,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   async function hiringApprove(caseId) {
     if (serviceControlBlocked()) return;
     const confirm = `APPROVE ${caseId}`;
@@ -396,6 +414,7 @@ export function createActionController(core, config, renderer, live) {
       live.finishMutation(controller);
     }
   }
+
   return {
     runRoute,
     trimRuntime,

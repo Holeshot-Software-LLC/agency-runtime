@@ -1,4 +1,5 @@
 "use strict";
+
 (function installAgencyCharts(root, factory) {
   const charts = factory();
   if (typeof module === "object" && module.exports) module.exports = charts;
@@ -9,20 +10,24 @@
   const FAILED = new Set(["failed", "failure", "error", "cancelled", "timed_out", "timeout"]);
   const SKIPPED = new Set(["skipped", "blocked", "not_run"]);
   let chartSequence = 0;
+
   function boundedInteger(value, fallback, minimum, maximum) {
     const number = Number(value);
     if (!Number.isFinite(number)) return fallback;
     return Math.max(minimum, Math.min(Math.trunc(number), maximum));
   }
+
   function timestamp(value) {
     if (value instanceof Date) return value.valueOf();
     if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
     const parsed = Date.parse(value);
     return Number.isFinite(parsed) ? parsed : NaN;
   }
+
   function rows(activity, name) {
     return Array.isArray(activity?.[name]) ? activity[name] : [];
   }
+
   function bucketActivity(activity, options = {}) {
     const bucketCount = boundedInteger(options.bucketCount, 24, 1, 48);
     const bucketMs = boundedInteger(options.bucketMs, 60000, 10000, 3600000);
@@ -36,6 +41,7 @@
       routes: 0,
       delegations: 0,
     }));
+
     function observe(items, field, fallbackField) {
       items.forEach((item) => {
         if (!item || typeof item !== "object") return;
@@ -48,10 +54,12 @@
         buckets[index][field === "created_at" ? "routes" : "delegations"] += 1;
       });
     }
+
     observe(rows(activity, "routing"), "created_at");
     observe(rows(activity, "delegations"), "completed_at", "started_at");
     return buckets;
   }
+
   function outcomeCounts(activity) {
     const counts = { success: 0, failed: 0, skipped: 0, unknown: 0, total: 0 };
     rows(activity, "delegations").forEach((delegation) => {
@@ -66,6 +74,7 @@
     });
     return counts;
   }
+
   function retryDelay(attempt, random = Math.random) {
     const normalizedAttempt = boundedInteger(attempt, 1, 1, 31);
     const exponential = Math.min(30000, 2000 * (2 ** (normalizedAttempt - 1)));
@@ -76,15 +85,18 @@
     const jitter = Math.floor(Math.min(500, exponential * 0.2) * unit);
     return Math.min(30000, exponential + jitter);
   }
+
   function svgNode(documentRef, tag, attributes = {}, text) {
     const node = documentRef.createElementNS(SVG_NS, tag);
     Object.entries(attributes).forEach(([name, value]) => node.setAttribute(name, String(value)));
     if (text !== undefined) node.textContent = String(text);
     return node;
   }
+
   function chartDocument(root) {
     return root?.ownerDocument || (typeof document === "object" ? document : null);
   }
+
   function accessibleSvg(documentRef, title, description, viewBox, summaryId = "") {
     chartSequence += 1;
     const titleId = `agency-chart-title-${chartSequence}`;
@@ -103,6 +115,7 @@
     );
     return svg;
   }
+
   function linePoints(buckets, key, width, height, left, top, maximum) {
     const step = buckets.length > 1 ? width / (buckets.length - 1) : 0;
     return buckets.map((bucket, index) => {
@@ -111,6 +124,7 @@
       return { x, y };
     });
   }
+
   function pathFromPoints(points) {
     let path = `M${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
     for (let index = 1; index < points.length; index += 1) {
@@ -123,11 +137,13 @@
     }
     return path;
   }
+
   function areaFromPoints(points, baseline) {
     const first = points[0];
     const last = points[points.length - 1];
     return `${pathFromPoints(points)} L${last.x.toFixed(2)},${baseline} L${first.x.toFixed(2)},${baseline} Z`;
   }
+
   function renderActivityChart(root, summaryRoot, activity, options = {}) {
     const buckets = bucketActivity(activity, options);
     const routes = buckets.reduce((total, bucket) => total + bucket.routes, 0);
@@ -137,6 +153,7 @@
     );
     const summary = `${routes} observed routes · ${delegations} delegations · last ${minutes} minutes`;
     if (summaryRoot) summaryRoot.textContent = summary;
+
     const documentRef = chartDocument(root);
     if (!root || !documentRef) return buckets;
     const svg = accessibleSvg(
@@ -152,6 +169,7 @@
     const plotHeight = 172;
     const baseline = top + plotHeight;
     const maximum = Math.max(1, ...buckets.flatMap((bucket) => [bucket.routes, bucket.delegations]));
+
     for (let index = 0; index <= 4; index += 1) {
       const y = top + ((plotHeight / 4) * index);
       svg.append(svgNode(documentRef, "line", {
@@ -179,6 +197,7 @@
         "text-anchor": "end",
       }, 0),
     );
+
     const routePoints = linePoints(buckets, "routes", plotWidth, plotHeight, left, top, maximum);
     const delegationPoints = linePoints(buckets, "delegations", plotWidth, plotHeight, left, top, maximum);
     svg.append(
@@ -237,6 +256,7 @@
       circle.append(svgNode(documentRef, "title", {}, `${buckets[index].delegations} delegations`));
       svg.append(circle);
     });
+
     const first = buckets[0]?.startMs;
     const last = buckets[buckets.length - 1]?.startMs;
     if (Number.isFinite(first) && Number.isFinite(last)) {
@@ -251,10 +271,12 @@
     root.dataset.delegations = String(delegations);
     return buckets;
   }
+
   function renderOutcomeChart(root, summaryRoot, activity) {
     const counts = outcomeCounts(activity);
     const summary = `${counts.total} observed delegations · ${counts.success} completed · ${counts.failed} failed · ${counts.skipped} skipped · ${counts.unknown} unknown`;
     if (summaryRoot) summaryRoot.textContent = summary;
+
     const documentRef = chartDocument(root);
     if (!root || !documentRef) return counts;
     const svg = accessibleSvg(
@@ -274,6 +296,7 @@
       pathLength: 100,
       "stroke-width": 18,
     }));
+
     let offset = 0;
     [
       ["success", "Completed", counts.success],
@@ -325,6 +348,7 @@
     root.dataset.total = String(counts.total);
     return counts;
   }
+
   return {
     bucketActivity,
     outcomeCounts,
