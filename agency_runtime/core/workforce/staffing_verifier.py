@@ -366,8 +366,14 @@ def _eligibility(
     required_tools = set(unit.required_tools)
     if not required_tools <= context.available_tools:
         reasons.append("agent_tools_missing")
-    if not set(contract.tool_classes) <= context.available_tools:
-        reasons.append("agent_worker_tools_missing")
+    # A specialist's declared tool_classes describe what it CAN use, not a
+    # precondition the host must satisfy. Re-gating contracts on their full
+    # declared tool set (the legacy broad-required-tool trap) rejects the
+    # model's best-coverage specialist when it owns an optional surface the
+    # host doesn't advertise -- e.g. a security auditor that declares
+    # security-analysis on a host that supplies only repository-read. The unit's
+    # required-tools check above is the real host-capability gate; the worker's
+    # own tools are descriptive metadata, not a hard eligibility failure.
     reasons.extend(_unit_compatibility_reasons(unit, contract))
     if _out_of_scope(contract, unit):
         reasons.append("agent_explicitly_out_of_scope")
