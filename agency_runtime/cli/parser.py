@@ -80,7 +80,7 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
     )
     install_target.add_argument(
         "--agent",
-        choices=["hermes", "openclaw", "codex", "claude"],
+        choices=["hermes", "openclaw", "codex", "claude", "zcode"],
         default=None,
         help="Wire into a specific agent host",
     )
@@ -128,7 +128,7 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
     on_target = on_p.add_mutually_exclusive_group()
     on_target.add_argument(
         "--agent",
-        choices=["hermes", "openclaw", "codex", "claude"],
+        choices=["hermes", "openclaw", "codex", "claude", "zcode"],
         default=None,
         help="Host to enable (default: every detected host)",
     )
@@ -156,7 +156,7 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
     off_target = off_p.add_mutually_exclusive_group()
     off_target.add_argument(
         "--agent",
-        choices=["hermes", "openclaw", "codex", "claude"],
+        choices=["hermes", "openclaw", "codex", "claude", "zcode"],
         default=None,
         help="Host to disable (default: every detected host)",
     )
@@ -183,7 +183,7 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
     )
     status_p.add_argument(
         "--agent",
-        choices=["hermes", "openclaw", "codex", "claude"],
+        choices=["hermes", "openclaw", "codex", "claude", "zcode"],
         default=None,
         help="Host to inspect (default: every supported host)",
     )
@@ -195,7 +195,7 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         help="Inspect host readiness or run an exact-confirmed live canary",
     )
     canary_p.add_argument(
-        "agent", choices=["hermes", "openclaw", "codex", "claude"], help="Host to verify"
+        "agent", choices=["hermes", "openclaw", "codex", "claude", "zcode"], help="Host to verify"
     )
     canary_p.add_argument(
         "--execute",
@@ -1084,7 +1084,7 @@ def _register_native_protocols(sub: Subparsers, handlers: Handlers) -> None:
     _bind(mcp, handlers, "cmd_mcp")
 
     hook = sub.add_parser("hook", help="Handle one native host hook event")
-    hook.add_argument("host", choices=["codex", "claude"], help="Native hook protocol")
+    hook.add_argument("host", choices=["codex", "claude", "zcode"], help="Native hook protocol")
     hook.add_argument(
         "--event",
         choices=_NATIVE_HOOK_EVENTS,
