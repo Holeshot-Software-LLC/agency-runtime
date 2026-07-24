@@ -1830,36 +1830,6 @@ def _mode_budget(config: AgencyConfig) -> int:
     }[config.workforce.mode]
 
 
-_RECRUITER_REFINABLE_CODES = frozenset(
-    {
-        "composition_order_invalid",
-        "delegated_context_not_distinct",
-        "redundant_substitution_group",
-        "required_composition_agent_missing",
-        "review_context_reused",
-        "review_independence_class_reused",
-        "same_context_conflict",
-        "selected_agent_budget_exceeded",
-        "selection_confidence_too_low",
-        "selection_exclusive_conflict",
-        "selection_margin_too_low",
-        "unit_agent_budget_exceeded",
-    }
-)
-
-
-def _can_refine_with_recruiter(
-    proposal: RecruiterProposal | None,
-    staffing: StaffingDecision,
-) -> bool:
-    """Use model recruitment only for a complete but ambiguous local candidate set."""
-
-    if proposal is None or staffing.accepted or any(not row.selected for row in proposal.units):
-        return False
-    codes = {item.code for item in staffing.abstention_reasons}
-    return bool(codes) and codes <= _RECRUITER_REFINABLE_CODES
-
-
 def _recruit_ambiguous_plan(
     *,
     request: str,
@@ -2182,14 +2152,15 @@ def plan_and_staff_workforce(
     proposal = recruited.proposal
     staffing = recruited.staffing
 
-    if (
-        not staffing.accepted
-        and mode != "fast"
-        and _can_refine_with_recruiter(
-            proposal,
-            staffing,
-        )
-    ):
+    # ADR-0087: inference is the primary specialist decider. With a provider
+    # configured (we passed the offline-decline check above), the recruiter
+    # ranks the recalled typed shortlist and nominates the best specialist(s)
+    # per unit or declares a gap. Run it whenever inference is available,
+    # regardless of mode; the deterministic candidate stage above is the recall
+    # input. Skip only when deterministic recall already accepted a complete,
+    # safe team (inference would merely confirm it) -- but never gate the
+    # recruiter behind mode or a narrow abstention-code predicate.
+    if _inference_declared(config) and not staffing.accepted:
         parsed_proposal, stage_attempts, failure, recruiter_cache_hit = _recruit_ambiguous_plan(
             request=ask,
             plan=plan,

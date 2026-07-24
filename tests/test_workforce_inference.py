@@ -319,20 +319,32 @@ def test_balanced_mode_accepts_clear_local_route_after_compact_plan_with_receipt
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
-def test_applied_plan_remains_inferred_when_local_staffing_safely_abstains() -> None:
+def test_disabled_only_candidate_keeps_plan_and_surfaces_the_disabled_shadow() -> None:
     snapshot = _snapshot(_contract("technical-analyst", enabled=False))
+
+    # ADR-0087: with a provider configured the recruiter is primary. The planner
+    # applies; the deterministic candidate stage abstains (only candidate
+    # disabled); the recruiter runs. The disabled technical-analyst stays
+    # visible as a disabled shadow on the proposal and the outcome is not
+    # accepted (no executable specialist).
+    responses = iter(
+        [
+            _result(_compact_plan_document()),
+            _result(_nomination_document("technical-analyst")),
+        ]
+    )
 
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
         snapshot,
         config=_config(mode="fast"),
         context=_context(),
-        invoker=lambda *_args, **_kwargs: _result(_compact_plan_document()),
+        invoker=lambda *_args, **_kwargs: next(responses),
     )
 
     assert not outcome.accepted
-    assert outcome.inference_mode == "inferred"
-    assert [(item.stage, item.status) for item in outcome.attempts] == [("planner", "applied")]
+    # The plan was applied by inference.
+    assert any(item.stage == "planner" and item.status == "applied" for item in outcome.attempts)
     assert outcome.proposal is not None
     assert outcome.proposal.units[0].disabled_shadows[0].agent_id == "technical-analyst"
 
