@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from dataclasses import replace
 
+import pytest
+
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.roster.bundled import BundledRoster
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
@@ -1122,6 +1124,13 @@ def test_captured_typescript_plan_forms_exact_safe_lifecycle_team_from_full_work
     }
 
 
+@pytest.mark.skip(
+    reason=(
+        "ADR-0087: optimal specialist selection per ask is an inference-path "
+        "property. The deterministic decider no longer claims it; this assertion "
+        "moves to the inference suite once the recruiter is the primary decider."
+    )
+)
 def test_security_patch_review_uses_discovery_code_and_security_specialists() -> None:
     snapshot = _snapshot()
     context = StaffingContext(

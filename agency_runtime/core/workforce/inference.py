@@ -24,7 +24,10 @@ from agency_runtime.core.workforce.cache import (
     workforce_cache_identity,
     workforce_cache_put,
 )
-from agency_runtime.core.workforce.capability_ontology import CORE_CAPABILITY_IDS
+from agency_runtime.core.workforce.capability_ontology import (
+    ARTIFACT_CAPABILITY,
+    CORE_CAPABILITY_IDS,
+)
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.intent import (
     COMPACT_INTENT_RESPONSE_SCHEMA,
@@ -1528,16 +1531,6 @@ _PLAN_SET_FIELDS = frozenset(
     }
 )
 
-_ARTIFACT_CAPABILITY = {
-    "analysis": "analysis",
-    "architecture-record": "design",
-    "documentation": "documentation",
-    "implementation-change": "implementation",
-    "plan": "planning",
-    "review-report": "review",
-    "test-code": "testing",
-    "test-evidence": "verification",
-}
 _REPOSITORY_RECONNAISSANCE = frozenset({"codebase", "repo", "repository"})
 
 
@@ -1550,13 +1543,13 @@ def _canonicalize_planning_activity(unit: dict[str, Any]) -> tuple[str, str]:
         str(unit.get("outcome") or ""),
         *(str(item) for item in declared_capabilities if isinstance(declared_capabilities, list)),
     )
-    if artifact in _ARTIFACT_CAPABILITY:
+    if artifact in ARTIFACT_CAPABILITY:
         # Artifact and lifecycle already express the activity. Letting a model
         # add generic capabilities such as "analysis" and "design" to an
         # implementation unit can make every correctly scoped implementer
         # deterministically ineligible. Keep semantic specialization in the
         # domain/stack fields and derive this broad capability mechanically.
-        unit["required_capabilities"] = [_ARTIFACT_CAPABILITY[artifact]]
+        unit["required_capabilities"] = [ARTIFACT_CAPABILITY[artifact]]
     domains = unit.get("domains")
     if (
         artifact == "implementation-change"

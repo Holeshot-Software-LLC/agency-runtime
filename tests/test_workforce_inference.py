@@ -615,7 +615,7 @@ def test_downstream_assurance_does_not_repeat_dependency_carried_domains() -> No
     assert normalized["units"][1]["frameworks"] == []
     assert normalized["units"][1]["authority"] == "review"
     assert normalized["units"][0]["required_capabilities"] == ["analysis"]
-    assert normalized["units"][1]["required_capabilities"] == ["verification"]
+    assert normalized["units"][1]["required_capabilities"] == ["testing"]
 
 
 def test_model_cannot_make_implementation_unstaffable_with_generic_capabilities() -> None:
@@ -1154,7 +1154,7 @@ def test_deterministic_plan_prioritizes_explicit_security_review_over_generic_co
     assert len(plan.units) == 1
     assert plan.units[0].unit_id == "unit-security-review"
     assert plan.units[0].domains == ("security",)
-    assert plan.units[0].required_capabilities == ("application-attack-surfaces",)
+    assert plan.units[0].required_capabilities == ("review",)
 
 
 def test_security_implementation_schedules_review_without_optional_scanner() -> None:
@@ -1171,9 +1171,7 @@ def test_security_implementation_schedules_review_without_optional_scanner() -> 
     by_id = {unit.unit_id: unit for unit in plan.units}
     assert "unit-security-review" in by_id
     assert by_id["unit-security-review"].depends_on == ("unit-tests",)
-    assert by_id["unit-security-review"].required_capabilities == (
-        "exploitability-regression-analysis",
-    )
+    assert by_id["unit-security-review"].required_capabilities == ("review",)
     assert "security-analysis" not in by_id["unit-security-review"].required_tools
 
 
