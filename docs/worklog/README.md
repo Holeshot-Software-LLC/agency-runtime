@@ -177,17 +177,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4f850c7` | 2026-07-23 | docs(governance): complete context checkpoint tracking | [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-4f850c7-context-checkpoint-tracking.md) |
 | `effa10b` | 2026-07-23 | Merge pull request #129 from Holeshot-Software-LLC/codex/ar-115-live-routing-trust | null | null |
 | `7e8609d` | 2026-07-24 | feat(workforce): inference-first specialist selection (ADR-0087) + green main recovery (#140) | null | null |
-| `b75df20` | 2026-07-24 | feat(adapters): forward parent correlation for native child UserPromptSubmit (ADR-0087) | null | null |
-| `4db876e` | 2026-07-24 | docs(roadmap): AR-119 acceptance evidence for AR-120..AR-125 | null | null |
-| `28d912a` | 2026-07-24 | feat(zcode): add ZCode as 5th execution host (ADR-0087) | null | null |
-| `5f78309` | 2026-07-24 | fix(zcode): add zcode to hook CLI choices + HOSTS inventory | null | null |
-| `117a84b` | 2026-07-24 | feat(workforce): broad-domain recall + team-decomposition planner prompts (ADR-0087) | AR-119 | null |
-| `c8872c9` | 2026-07-24 | feat(workforce): trust inference nominations, fix ZCode header, wire enrichment (ADR-0087) | AR-119 | null |
-| `8c10848` | 2026-07-24 | feat(workforce): deterministic typed-recall offline floor + stamped recruited-via header (ADR-0088) | AR-119 | null |
-| `2e89f6a` | 2026-07-24 | docs(readme): full public overhaul + project icon (ADR-0087/0088) | AR-119 | null |
-| `05671bb` | 2026-07-24 | fix(zcode): complete 5th-host integration gaps blocking CI (ADR-0087) | AR-119 | null |
-| `e06b074` | 2026-07-24 | fix(zcode): update remaining stale 4-host test assertions for 5th host | AR-119 | null |
-| `573f9cb` | 2026-07-24 | test(product): skip py3.14 product-validator subprocess tests (CI env) | AR-119 | null |
+| `c6bc953` | 2026-07-24 | feat: ZCode 5th host + Codex/Claude child-routing plumbing + AR-120..125 acceptance evidence (#141) | AR-119 | null |
+| `9a9beda` | 2026-07-25 | docs(readme): cleaner hub-and-spoke logo + intent-aware sample teams; reconcile squash-merge ledger | AR-119 | null |
+| `f031a40` | 2026-07-25 | docs(roadmap): reconcile tracker parity — flip 9 done issues to status done | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes

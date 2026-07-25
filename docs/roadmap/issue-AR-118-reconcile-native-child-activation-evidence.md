@@ -1,6 +1,6 @@
 ---
 title: "AR-118: Reconcile native-child activation evidence"
-status: open
+status: done
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21

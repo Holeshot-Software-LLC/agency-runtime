@@ -130,18 +130,24 @@ child-routing follow-up.
 
 ## AR-125: Workforce selection and one-shot application evaluation
 
-- [~] **Every worker passes positive, hard-negative, qualifier, shadow, and
+- [x] **Every worker passes positive, hard-negative, qualifier, shadow, and
       eligibility cases.**
-  `test_workforce_selection_safety.py` (22 tests) covers positive, hard-
-  negative, qualifier, shadow, and eligibility for representative workers.
-  Full per-worker coverage across all 263 is a follow-up.
-- [~] **Pairwise invariants and curated lifecycle teams pass.**
+  `test_every_worker_contract_has_positive_negative_shadow_and_eligibility_evidence`
+  iterates the full snapshot — all 263 bundled specialists + 9 known
+  contractors (asserts `worker_count == 272`) — and verifies positive
+  selection, hard-negative (`not_for`), disabled-shadow, and live-eligibility
+  for each. Plus 22+ scenario tests for representative workers. Full per-worker
+  coverage is no longer a follow-up; it is green.
+- [x] **Pairwise invariants and curated lifecycle teams pass.**
   Composition, coverage, and team-formation invariants verified via
   `verify_staffing`. Curated lifecycle teams in `test_workforce_dynamic_
   hiring.py`.
 - [ ] **All representative one-shot applications pass outcome-based grading.**
-  Not yet: one-shot app evaluation requires live inference runs with
-  independent grading — the live-eval phase (WP7).
+  BLOCKED on a configured provider: one-shot app evaluation requires live
+  inference runs with independent grading. The deterministic validators
+  (`agency_runtime/core/evals/product_*`) and the eval harness
+  (`agency eval routing`) run clean, but the graded one-shot trials need a
+  live provider, which is not configured in the current environment.
 - [ ] **Windows/Linux artifacts and all four host contracts pass before release.**
-  Artifact smoke passes on both OS in CI. Four-host canaries are a
-  release-gate follow-up (WP8).
+  Artifact smoke passes on both OS in CI. Four-host + ZCode canaries are a
+  release-gate follow-up requiring live host sessions (WP8).

@@ -1,6 +1,6 @@
 ---
 title: "AR-124: Integrate lifecycle assurance, native delegation, and provider evidence"
-status: open
+status: done
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21

@@ -1,6 +1,6 @@
 ---
 title: "AR-121: Implement inference-first planning and deterministic staffing"
-status: open
+status: done
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21

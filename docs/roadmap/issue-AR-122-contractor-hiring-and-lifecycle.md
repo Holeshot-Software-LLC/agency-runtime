@@ -1,6 +1,6 @@
 ---
 title: "AR-122: Implement governed contractor hiring and workforce lifecycle"
-status: open
+status: done
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21
