@@ -463,7 +463,7 @@ def _prepared_roster_agent(
             "division": "specialized",
             "authority": "advise",
             "context_mode": "isolated_only",
-            "supported_hosts": ["codex", "claude", "openclaw", "hermes"],
+            "supported_hosts": ["codex", "claude", "openclaw", "hermes", "zcode"],
             "supported_platforms": ["windows", "linux"],
             "audit_status": "quarantined",
             "audit_revision": "legacy-unclassified",

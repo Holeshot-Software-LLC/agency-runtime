@@ -636,13 +636,14 @@ def test_pending_interaction_projects_questions_without_storing_response_content
     }
 
 
-def test_pending_interaction_ignores_the_six_line_header() -> None:
+def test_pending_interaction_ignores_the_agency_header() -> None:
     response = "\n".join(
         (
             "Agency/Agencies loaded: agents-orchestrator",
             "Agency/Agencies delegated: none",
             "Skills loaded: none",
             "Actual Model selected: unavailable",
+            "Recruited via: inference",
             "Why: routing evidence",
             "How it shaped outcome: bounded",
             "",

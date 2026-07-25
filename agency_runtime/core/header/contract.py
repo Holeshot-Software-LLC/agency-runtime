@@ -33,6 +33,7 @@ HEADER_FIELDS: tuple[tuple[str, str], ...] = (
     ("agencies_delegated", "Agency/Agencies delegated"),
     ("skills_loaded", "Skills loaded"),
     ("actual_model_selected", "Actual Model selected"),
+    ("recruited_via", "Recruited via"),
     ("why", "Why"),
     ("how_it_shaped_outcome", "How it shaped outcome"),
 )
@@ -46,6 +47,7 @@ _EMPTY_VALUES = {
     "<none>",
     "<none | agent-id[, agent-id...]>",
     "<none | skill-id[, skill-id...]>",
+    "<inference | deterministic | cached | none>",
     "<one line>",
 }
 _EVIDENCE_CODE = re.compile(r"^[a-z0-9][a-z0-9_.:+-]{0,95}$")
@@ -703,6 +705,37 @@ def _complexity_for_model_group(model_group: str) -> str:
     return _MODEL_GROUP_COMPLEXITY.get(_clean(model_group), "")
 
 
+# Maps the durable routing receipt's inference mode to the concise "Recruited
+# via" label stamped in the response header. Mirrors the
+# WorkforceRoutingOutcome.decision_source labels so the header, the structured
+# routing evidence, and the dashboard all agree on how a specialist was
+# recruited. Keep in sync with inference._DECISION_SOURCE_LABELS.
+_RECRUITED_VIA_LABELS: dict[str, str] = {
+    "inferred": "inference",
+    "deterministic": "deterministic",
+    "cached": "cached",
+    "durable_reuse": "cached",
+}
+
+
+def _recruited_via_line(routing_receipt: Mapping[str, Any] | None) -> str:
+    """Stamp how the specialist was recruited from the durable routing receipt.
+
+    Machine-reliable, distinct from the model-authored ``Why`` line: this reads
+    the routing receipt's ``inference.mode`` (the stamped decision source), not
+    anything the model wrote.
+    """
+
+    if not isinstance(routing_receipt, Mapping):
+        return "none (no routing receipt)"
+    inference = routing_receipt.get("inference")
+    mode = _clean(inference.get("mode")) if isinstance(inference, Mapping) else ""
+    if not mode or mode in {"unavailable", "degraded"}:
+        # No specialist was recruited by a selection path this turn.
+        return "none (declined)" if mode == "degraded" else "none (no routing receipt)"
+    return _RECRUITED_VIA_LABELS.get(mode, mode)
+
+
 def _model_line(receipt: Mapping[str, Any] | None, requested_model: str) -> str:
     requested = (
         _clean((receipt or {}).get("requested_model")) or _clean(requested_model) or "unknown"
@@ -1257,6 +1290,7 @@ def fill_header_fields(
     filled["agencies_delegated"] = _delegation_line(delegations)
     filled["skills_loaded"] = ", ".join(skills) if skills else "none"
     filled["actual_model_selected"] = _model_line(model_receipt, model)
+    filled["recruited_via"] = _recruited_via_line(routing_receipt)
     filled["why"] = humanize_reason_codes(_header_reason_codes(snapshot, routing_receipt))
     filled["how_it_shaped_outcome"] = humanize_effect_codes(
         _header_effect_codes(snapshot, routing_receipt)

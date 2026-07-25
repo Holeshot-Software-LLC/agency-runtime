@@ -198,9 +198,13 @@ def format_isolated_specialist_context(
     """Return a compact recipe that keeps prompt bodies out of parent history."""
 
     normalized_host = str(host or "").strip().casefold()
+    # ADR-0087: zcode reuses the Claude hook model and the `Agent`-tool native
+    # delegation primitive (same `description` field binding), so it shares
+    # Claude's isolated-delivery instructions.
     native_tools = {
         "codex": "`spawn_agent`",
         "claude": "`Agent`",
+        "zcode": "`Agent`",
         "hermes": "`delegate_task`",
         "openclaw": "`sessions_spawn`",
     }
@@ -213,6 +217,7 @@ def format_isolated_specialist_context(
         native_binding = {
             "codex": "set `task_name` to that row's legal `native_task_name`",
             "claude": "set `description` to that row's unchanged `work_unit_id`",
+            "zcode": "set `description` to that row's unchanged `work_unit_id`",
             "hermes": "pass that row's unchanged `work_unit_id` and exact `goal`",
             "openclaw": "pass that row's unchanged `work_unit_id` and exact `goal`",
         }[normalized_host]
@@ -221,7 +226,7 @@ def format_isolated_specialist_context(
             "the selected immutable specialist prompt only into that child launch, and "
             "issues its one-use grant. PostToolUse consumes the grant only after "
             "authoritative native launch evidence supplies the child identity"
-            if normalized_host in {"codex", "claude"}
+            if normalized_host in {"codex", "claude", "zcode"}
             else "the installed child pre-LLM hook verifies the exact persisted row, "
             "injects the selected immutable specialist prompt only at that child's "
             "inference boundary, and consumes its one-use grant against host-issued "
@@ -253,9 +258,9 @@ def format_isolated_specialist_context(
         "Earlier Agency turn recipes are expired. Full specialist prompt bodies are "
         f"excluded from this persistent {normalized_host} parent transcript. "
         f"{execution_instruction}. Native worker labels are not Agency specialist identities. Preserve "
-        "delegated goal text exactly from the current user request. Include the six-line "
+        "delegated goal text exactly from the current user request. Include the "
         "Agency evidence header in the final parent response. Start the response with "
-        "exactly these six field labels, in this order, and fill values only from "
+        "exactly these field labels, in this order, and fill values only from "
         "current-turn runtime evidence (use `none` or an explicit unavailable state "
         "when evidence is absent):\n"
         "Agency/Agencies loaded: <agent-id[, agent-id...] or none>\n"
@@ -263,6 +268,7 @@ def format_isolated_specialist_context(
         "Skills loaded: <skill-id[, skill-id...] or none>\n"
         "Actual Model selected: <requested alias> -> <resolved provider/model or "
         "unavailable reason>\n"
+        "Recruited via: <inference | deterministic | cached | none>\n"
         "Why: <one evidence-grounded line>\n"
         "How it shaped outcome: <one evidence-grounded line>"
     )

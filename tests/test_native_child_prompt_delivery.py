@@ -45,6 +45,32 @@ def test_delivery_round_trip_preserves_original_task_and_exact_prompt() -> None:
     assert parsed.activation_token == "one-use-token"
 
 
+@pytest.mark.parametrize("host", ["codex", "claude", "zcode"])
+def test_delivery_accepts_each_agent_tool_host(host: str) -> None:
+    # ADR-0087: zcode reuses the Claude hook model and Agent-tool delegation
+    # primitive, so native-child prompt delivery must accept it (not raise
+    # "host is unsupported"). codex and claude remain supported.
+    prompt = "Exact specialist prompt"
+    rendered = render_native_child_prompt_delivery(
+        "Review auth",
+        prompt,
+        host=host,
+        parent_session_id="session",
+        parent_trace_id="trace",
+        tool_use_id="call-1",
+        work_unit_id="unit-auth",
+        specialist_slug="code-reviewer",
+        specialist_version="v1",
+        specialist_prompt_hash=sha256(prompt.encode()).hexdigest(),
+        activation_token="one-use-token",
+    )
+
+    parsed = parse_native_child_prompt_delivery(rendered)
+
+    assert parsed is not None
+    assert parsed.host == host
+
+
 def test_delivery_rejects_prompt_or_marker_tampering() -> None:
     rendered = _render()
 

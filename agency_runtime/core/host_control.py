@@ -18,7 +18,7 @@ from agency_runtime.core.runtime_control_command import parse_host_control_argum
 from agency_runtime.core.store.evidence import HostControlConflictError
 from agency_runtime.core.store.sqlite import Store
 
-SUPPORTED_HOSTS: tuple[str, ...] = ("hermes", "openclaw", "codex", "claude")
+SUPPORTED_HOSTS: tuple[str, ...] = ("hermes", "openclaw", "codex", "claude", "zcode")
 
 
 def normalize_host(host: str) -> str:

@@ -9,12 +9,14 @@ related:
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/AR-119-acceptance-evidence.md
   - docs/roadmap/issue-AR-121-inference-planning-and-staffing.md
   - agency_runtime/core/workforce/inference.py
   - agency_runtime/core/workforce/staffing_verifier.py
   - agency_runtime/core/workforce/capability_ontology.py
+  - agency_runtime/core/host_capabilities.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0088-deterministic-typed-recall-offline-floor.md
 id: ADR-0087
 type: decision
 deciders: [maintainers]

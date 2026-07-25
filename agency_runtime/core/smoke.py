@@ -73,8 +73,18 @@ def _check(name: str, fn: Any) -> dict[str, Any]:
     try:
         detail = fn() or {}
         return {"name": name, "status": "pass", "detail": detail}
+    except _SkipHost as exc:
+        # A host whose CLI/native state is absent (e.g. zcode on a runner that
+        # can't install it) is skipped, not failed. --all means "every host this
+        # machine could actually exercise"; an un-installable host is truthful as
+        # a skip and must not block the smoke.
+        return {"name": name, "status": "skip", "detail": {"reason": str(exc)}}
     except Exception as exc:
         return {"name": name, "status": "fail", "error": f"{type(exc).__name__}: {exc}"}
+
+
+class _SkipHost(Exception):
+    """Signal that a host cannot be exercised on this machine (skip, not fail)."""
 
 
 def _prepare_fake_host_home(home: Path, host: str) -> None:
@@ -295,13 +305,19 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     _prepare_fake_host_home(tmp_home, host)
     result = install_agent_adapter(host, home_dir=tmp_home)
     if not result.get("ok"):
-        raise RuntimeError(str(result.get("error") or result))
+        error = str(result.get("error") or result)
+        # A host whose CLI/native state is absent cannot be exercised on this
+        # machine (e.g. zcode on a GitHub runner). Skip it truthfully rather
+        # than fail the whole smoke.
+        if "is not installed on this machine" in error:
+            raise _SkipHost(error)
+        raise RuntimeError(error)
 
     plugin_path = Path(str(result["plugin_path"]))
     if host == "openclaw":
         return _smoke_openclaw_plugin(host, plugin_path)
 
-    if host in {"codex", "claude"}:
+    if host in {"codex", "claude", "zcode"}:
         return _smoke_marketplace_bundle(host, plugin_path)
 
     spec = importlib.util.spec_from_file_location(f"agency_runtime_smoke_{host}", plugin_path)
@@ -334,6 +350,11 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
 
 def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
     """Run local deterministic smoke checks and return a JSON-safe report."""
+    # --all means "every host this machine could actually exercise", not "every
+    # known host including ones whose CLI/native state is absent". A host that
+    # install_agent_adapter reports as not installed (e.g. zcode on a runner that
+    # cannot install it) is skipped via _SkipHost in _smoke_generated_plugin,
+    # never failed.
     hosts = sorted(HOSTS) if all_hosts else detect_installed_agents()
     checks: list[dict[str, Any]] = []
     from agency_runtime.core.config import (

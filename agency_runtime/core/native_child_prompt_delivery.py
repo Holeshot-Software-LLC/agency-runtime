@@ -107,7 +107,7 @@ def _metadata(
     activation_token: object,
 ) -> dict[str, Any]:
     normalized_host = str(host or "").strip().casefold()
-    if normalized_host not in {"codex", "claude"}:
+    if normalized_host not in {"codex", "claude", "zcode"}:
         raise ValueError("native-child prompt delivery host is unsupported")
     session_id = validate_correlation_id(parent_session_id, field="parent_session_id")
     trace_id = validate_correlation_id(parent_trace_id, field="parent_trace_id")

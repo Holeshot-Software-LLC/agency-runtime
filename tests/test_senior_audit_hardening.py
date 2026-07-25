@@ -110,6 +110,7 @@ def _valid_none_header() -> str:
             "Agency/Agencies delegated: none - no delegation executed",
             "Skills loaded: none",
             "Actual Model selected: requested -> unavailable",
+            "Recruited via: none",
             "Why: routing was required",
             "How it shaped outcome: no specialist evidence was recorded",
             "",
@@ -612,4 +613,4 @@ def test_mcp_status_counts_roster_without_materializing_rows(tmp_path: Path) -> 
 
     assert result["roster_count"] == 54_321
     assert result["db_path"] == str(tmp_path / "mcp-status.db")
-    assert set(result["hosts"]) == {"hermes", "openclaw", "codex", "claude"}
+    assert set(result["hosts"]) == {"hermes", "openclaw", "codex", "claude", "zcode"}

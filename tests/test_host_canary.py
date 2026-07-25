@@ -52,6 +52,7 @@ def _valid_header() -> str:
         "Agency/Agencies delegated: none - single-host canary\n"
         "Skills loaded: none - no skill required\n"
         "Actual Model selected: canary-provider/model\n"
+        "Recruited via: deterministic\n"
         "Why: exercise the installed runtime\n"
         "How it shaped outcome: proved the final response contract\n\n"
         "Canary complete."

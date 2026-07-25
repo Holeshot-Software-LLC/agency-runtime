@@ -22,7 +22,47 @@ from typing import Any, Final
 
 from agency_runtime.core.correlation import validate_correlation_id
 
-EXECUTION_HOSTS: Final[tuple[str, ...]] = ("codex", "claude", "openclaw", "hermes")
+EXECUTION_HOSTS: Final[tuple[str, ...]] = ("codex", "claude", "openclaw", "hermes", "zcode")
+
+# ADR-0087: host compatibility map. A new host that reuses an existing host's
+# hook model and native-delegation primitive is automatically eligible for any
+# specialist that declares the compatible host. This avoids forcing every
+# existing contract to be rewritten whenever a new host is added (zcode reuses
+# the codex/claude hook model and the Agent-tool delegation primitive). This is
+# the single source of truth for host equivalence; the workforce verifier and
+# the legacy selector both expand through ``expand_compatible_hosts``.
+_HOST_COMPATIBLE: Final[Mapping[str, frozenset[str]]] = MappingProxyType(
+    {
+        "codex": frozenset({"zcode"}),
+        "claude": frozenset({"zcode"}),
+        "zcode": frozenset({"codex", "claude"}),
+    }
+)
+
+
+def expand_compatible_hosts(hosts: Iterable[str]) -> frozenset[str]:
+    """Return the declared hosts plus every host that directly reuses their hook model.
+
+    Contract-vs-target-host eligibility must expand through this helper rather
+    than testing literal membership, so a specialist declaring ``codex`` or
+    ``claude`` is eligible on ``zcode`` (and vice versa) without requiring every
+    contract to be rewritten. ``EXECUTION_HOSTS`` remains the identifier
+    vocabulary; this helper encodes the direct compatibility relationships.
+
+    Expansion is intentionally NON-transitive: it considers only the originally
+    declared hosts. codex and claude both share zcode as a compatible descendant,
+    but they remain distinct hosts — a codex-declared specialist is eligible on
+    codex and zcode, NOT on claude (and vice versa). A transitive closure would
+    wrongly collapse all three into one equivalence class.
+    """
+
+    declared = set(hosts)
+    effective = set(declared)
+    for host in declared:
+        effective.update(_HOST_COMPATIBLE.get(host, frozenset()))
+    return frozenset(effective)
+
+
 INFERENCE_SURFACES: Final[tuple[str, ...]] = ("litellm",)
 SUPPORTED_PLATFORMS: Final[tuple[str, ...]] = ("windows", "linux")
 MAX_TOOL_CAPABILITIES: Final[int] = 64

@@ -188,7 +188,7 @@ def test_unknown_host_results_keep_public_schema_distinctions() -> None:
     assert install == {
         "ok": False,
         "exit_code": 2,
-        "error": "Unknown host: unknown. Supported: hermes, openclaw, codex, claude",
+        "error": "Unknown host: unknown. Supported: hermes, openclaw, codex, claude, zcode",
     }
     assert (
         rollback

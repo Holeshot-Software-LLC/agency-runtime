@@ -44,7 +44,7 @@ def _preflight(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     host = str(arguments.get("host") or "").strip().casefold()
     if host not in EXECUTION_HOSTS:
         return {
-            "error": "host must identify one execution host: codex, claude, openclaw, or hermes"
+            "error": "host must identify one execution host: codex, claude, openclaw, hermes, or zcode"
         }
     trace_id = str(arguments.get("trace_id") or "").strip() or str(uuid4())
     origin_receipt = native_adapter_turn_origin(

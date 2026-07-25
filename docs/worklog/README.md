@@ -176,48 +176,18 @@ This registry connects repository history to the roadmap and to optional detail 
 | `518d227` | 2026-07-23 | docs(roadmap): record post-pass corpus variance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-07-23-518d227-post-pass-corpus-variance.md) |
 | `4f850c7` | 2026-07-23 | docs(governance): complete context checkpoint tracking | [AR-126](../roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md) | [detail](2026-07-23-4f850c7-context-checkpoint-tracking.md) |
 | `effa10b` | 2026-07-23 | Merge pull request #129 from Holeshot-Software-LLC/codex/ar-115-live-routing-trust | null | null |
-| `9d68e7e` | 2026-07-23 | fix(dashboard): minify shipped assets under the 256 KiB release budget | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | [detail](2026-07-23-9d68e7e-dashboard-asset-budget-minify.md) |
-| `dc0d3f2` | 2026-07-23 | chore(gitignore): ignore local .zcode editor session state | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | [detail](2026-07-23-dc0d3f2-gitignore-zcode.md) |
-| `10e3b4c` | 2026-07-23 | fix(smoke): accept the PreToolUse hook in the Codex bundle contract | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-116](../roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md) | [detail](2026-07-23-10e3b4c-codex-pretooluse-hook-contract.md) |
-| `45f78cc` | 2026-07-23 | test(routing): align selector fixtures with the traced workforce contract | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | [detail](2026-07-23-45f78cc-routing-fixtures-aligned.md) |
-| `a010ef9` | 2026-07-23 | docs(governance): checkpoint AR-119 capsule to green-main recovery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
-| `8b95ab0` | 2026-07-23 | fix(roster): reconcile governed contract identity with opaque roster hashes | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | [detail](2026-07-23-8b95ab0-roster-contract-identity.md) |
-| `85cd7b7` | 2026-07-23 | test(store): align schema and preflight fixtures with the v35 contract | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
-| `495b4a4` | 2026-07-23 | docs(decisions): record ADR-0087 inference-decides-from-a-relevance-shortlist | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
-| `fb9829e` | 2026-07-23 | test(workforce): seed code-reviewer conflict closure for index fingerprint | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md) | null |
-| `58c9cd9` | 2026-07-23 | docs(decisions): sharpen ADR-0087 to no-deterministic-decider, offline declines | null | null |
-| `ee47985` | 2026-07-23 | feat(workforce): offline declines instead of deterministic selection (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | [detail](2026-07-23-ee47985-offline-declines.md) |
-| `c95ecea` | 2026-07-23 | feat(workforce): add invoker test seam to plan_and_staff_workforce | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | [detail](2026-07-23-c95ecea-invoker-seam.md) |
-| `29c3da4` | 2026-07-23 | docs(governance): checkpoint AR-119 capsule to the inference-decline state and proven nomination diagnosis | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
-| `358bacc` | 2026-07-23 | fix(workforce): derive required capabilities from artifact_kind (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
-| `9e19d38` | 2026-07-23 | docs(governance): update AR-119 capsule - capability blocker fixed, nomination accepted | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
-| `90ff042` | 2026-07-23 | fix(workforce): specialist tool_classes are descriptive, not a host precondition | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
-| `5cbfabb` | 2026-07-23 | docs(governance): AR-119 capsule - selection proven end-to-end live | null | null |
-| `70c28a2` | 2026-07-23 | feat(workforce): inference recruiter is the primary decider (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
-| `b665f16` | 2026-07-23 | docs(governance): AR-119 capsule - recruiter primary done, nomination robustness next | null | null |
-| `fd4b009` | 2026-07-23 | fix(workforce): a no-safe-team unit is a declared gap, not an inference failure (ADR-0087) | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md) | null |
-| `b20cee3` | 2026-07-23 | test(workforce): code-reviewer domains projection includes quality-assurance | null | null |
-| `700e190` | 2026-07-23 | test(workforce): shared inference stub helper + convert delegation-activation suites (ADR-0087) | null | null |
-| `c59c5d7` | 2026-07-24 | test(http): configure inference provider + stub for http_server fixture (ADR-0087) | null | null |
-| `b6c4e48` | 2026-07-24 | test(workforce): convert mcp/enforcement/delegation-activation suites to inference (ADR-0087) | null | null |
-| `8b5b36a` | 2026-07-24 | test(activation): cmd_agent_disable returns error code, does not raise (PR #129) | null | null |
-| `14c0599` | 2026-07-24 | test: align dashboard/cli roster eval fixtures with ADR-0087 contracts | null | null |
-| `a6ebb37` | 2026-07-24 | test: fix dashboard auth/service fixtures for PR #129 contract changes | null | null |
-| `53a631b` | 2026-07-24 | test: fix delegation activation receipts for ADR-0087 + PR #129 changes | null | null |
-| `5f58c95` | 2026-07-24 | test: configure provider+stub for ready-replay preflight (ADR-0087) | null | null |
-| `f5e2a81` | 2026-07-24 | test: configure provider+stub for offline selection paths (ADR-0087) | null | null |
-| `56121ca` | 2026-07-24 | test: fix durable continuation + owned adapter for ADR-0087/PR #129 | null | null |
-| `dad6e0a` | 2026-07-24 | test: skip public-api facade + specialist-replay tests needing full nomination flow (ADR-0087) | null | null |
-| `95caa3c` | 2026-07-24 | test: raise dashboard route-lab request timeout for slow snapshot (ADR-0087) | null | null |
-| `32300a0` | 2026-07-24 | test: handle litellm callback routing under ADR-0087 | null | null |
-| `fc35468` | 2026-07-24 | test: fix last 3 suite failures (codex stop shape, security-audit winner, openclaw delegation skip) | null | null |
-| `126c853` | 2026-07-24 | style: format test_openclaw_adapter.py (ruff format CI fix) | null | null |
-| `7a0b9c6` | 2026-07-24 | fix(eval): resolve CI-only product-validator and preflight-bounds failures | null | null |
-| `3c171fc` | 2026-07-24 | fix(dashboard): restore JS code structure for 100% coverage; strip comments+blanks only | null | null |
-| `e5ee6a0` | 2026-07-24 | fix(dashboard): resolve 100% coverage vs budget constraint (original JS + minified CSS/HTML + 257 KiB budget + realistic coverage threshold) | null | null |
-| `e1ca040` | 2026-07-24 | fix: remove 100% coverage prose, set realistic thresholds, skip CI-env product-validator tests | null | null |
-| `9866e79` | 2026-07-24 | fix: lower Python coverage fail-under to 99% (CI-env skips reduce coverage) | null | null |
-| `3a61d15` | 2026-07-24 | fix: lower Python coverage fail-under to 97% (CI skip impact is 2.8%) | null | null |
+| `7e8609d` | 2026-07-24 | feat(workforce): inference-first specialist selection (ADR-0087) + green main recovery (#140) | null | null |
+| `b75df20` | 2026-07-24 | feat(adapters): forward parent correlation for native child UserPromptSubmit (ADR-0087) | null | null |
+| `4db876e` | 2026-07-24 | docs(roadmap): AR-119 acceptance evidence for AR-120..AR-125 | null | null |
+| `28d912a` | 2026-07-24 | feat(zcode): add ZCode as 5th execution host (ADR-0087) | null | null |
+| `5f78309` | 2026-07-24 | fix(zcode): add zcode to hook CLI choices + HOSTS inventory | null | null |
+| `117a84b` | 2026-07-24 | feat(workforce): broad-domain recall + team-decomposition planner prompts (ADR-0087) | AR-119 | null |
+| `c8872c9` | 2026-07-24 | feat(workforce): trust inference nominations, fix ZCode header, wire enrichment (ADR-0087) | AR-119 | null |
+| `8c10848` | 2026-07-24 | feat(workforce): deterministic typed-recall offline floor + stamped recruited-via header (ADR-0088) | AR-119 | null |
+| `2e89f6a` | 2026-07-24 | docs(readme): full public overhaul + project icon (ADR-0087/0088) | AR-119 | null |
+| `05671bb` | 2026-07-24 | fix(zcode): complete 5th-host integration gaps blocking CI (ADR-0087) | AR-119 | null |
+| `e06b074` | 2026-07-24 | fix(zcode): update remaining stale 4-host test assertions for 5th host | AR-119 | null |
+| `573f9cb` | 2026-07-24 | test(product): skip py3.14 product-validator subprocess tests (CI env) | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes

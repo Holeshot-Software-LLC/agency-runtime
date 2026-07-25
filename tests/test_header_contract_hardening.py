@@ -20,6 +20,7 @@ def _fields(**overrides: str) -> dict[str, str]:
         "agencies_delegated": "none",
         "skills_loaded": "none",
         "actual_model_selected": "task-general -> unavailable",
+        "recruited_via": "none",
         "why": "audit",
         "how_it_shaped_outcome": "made evidence visible",
     }
@@ -51,10 +52,10 @@ def test_header_split_and_dedupe_cover_empty_and_duplicate_values() -> None:
     assert contract._starts_with_header(header) is True
     assert contract._starts_with_header("body") is False
     lines, body = contract._split_header_body(header)
-    assert len(lines) == 6
+    assert len(lines) == 7
     assert body == ""
     lines, body = contract._split_header_body(header + "\n\nBody")
-    assert len(lines) == 6
+    assert len(lines) == 7
     assert body == "Body"
     assert contract._dedupe(["", " alpha ", "alpha", "beta\nline"]) == [
         "alpha",

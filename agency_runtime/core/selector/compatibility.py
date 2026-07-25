@@ -21,6 +21,7 @@ from agency_runtime.core.host_capabilities import (
     SUPPORTED_PLATFORMS,
     canonicalize_tool_capabilities,
     execution_contract_projection,
+    expand_compatible_hosts,
 )
 
 COMPATIBILITY_CONTRACT_VERSION = 1
@@ -217,10 +218,12 @@ def _tool_requirement_reason(
 ) -> str:
     if context.host not in _KNOWN_HOSTS:
         return "execution_host_unproven"
-    if (
-        operational["supported_execution_hosts"]
-        and context.host not in operational["supported_execution_hosts"]
-    ):
+    # ADR-0087: a host that reuses another host's hook model (zcode reuses
+    # codex/claude) is eligible for any specialist declaring the compatible
+    # host. Expand before the membership test so existing contracts need not
+    # list every new host.
+    supported = expand_compatible_hosts(operational["supported_execution_hosts"])
+    if operational["supported_execution_hosts"] and context.host not in supported:
         return f"unsupported_execution_host:{context.host}"
     if (
         context.platform in _KNOWN_PLATFORMS
@@ -247,7 +250,7 @@ def _reasoning_reason(
     if (
         context.host in _KNOWN_HOSTS
         and operational["supported_execution_hosts"]
-        and context.host not in operational["supported_execution_hosts"]
+        and context.host not in expand_compatible_hosts(operational["supported_execution_hosts"])
     ):
         return f"unsupported_execution_host:{context.host}"
     context_mode = str(agent.get("context_mode") or "").strip().casefold()

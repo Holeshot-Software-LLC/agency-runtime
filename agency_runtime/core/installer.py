@@ -114,6 +114,7 @@ _hook_timeout_seconds = _payloads.hook_timeout_seconds
 _mcp_config = _payloads.mcp_config
 _codex_hooks = _payloads.codex_hooks
 _claude_hooks = _payloads.claude_hooks
+_zcode_hooks = _payloads.zcode_hooks
 _agency_control_skill = _payloads.agency_control_skill
 _openclaw_index = _payloads.openclaw_index
 _codex_plugin_version = _payloads.codex_plugin_version

@@ -107,6 +107,7 @@ def test_openclaw_pre_verify_blocks_open_suggestions(tmp_path: Path) -> None:
             "Agency/Agencies delegated: none",
             "Skills loaded: agency-specialist-routing",
             "Actual Model selected: task-chunk-planner -> test/model",
+            "Recruited via: deterministic",
             "Why: test",
             "How it shaped outcome: test",
             "",

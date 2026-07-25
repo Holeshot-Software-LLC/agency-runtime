@@ -346,7 +346,7 @@ def preflight_delivery_policy(
     normalized = str(host or "unknown").strip().casefold()
     if normalized in {"openclaw", "hermes"} and native_child:
         return "direct", MAX_PREFLIGHT_CONTEXT_CHARS
-    if normalized in {"codex", "claude", "openclaw", "hermes"}:
+    if normalized in {"codex", "claude", "openclaw", "hermes", "zcode"}:
         return "isolated", PERSISTENT_HOST_CONTEXT_CHARS
     if normalized == "litellm":
         return "direct", LITELLM_PREFLIGHT_CONTEXT_CHARS

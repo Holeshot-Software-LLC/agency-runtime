@@ -21,6 +21,7 @@ WORK_UNIT_CORRELATION_GUIDANCE = (
 _NATIVE_DELEGATION_TOOLS = {
     "codex": "Codex `spawn_agent` (or `functions.collaboration.spawn_agent`)",
     "claude": "Claude Code `Agent`",
+    "zcode": "ZCode `Agent` (same native-delegation primitive as Claude)",
     "hermes": "Hermes `delegate_task`",
     "openclaw": "OpenClaw `sessions_spawn`",
 }

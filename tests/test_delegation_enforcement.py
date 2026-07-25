@@ -45,6 +45,7 @@ def _valid_header(
             f"Agency/Agencies delegated: {delegated or 'none'}",
             "Skills loaded: none",
             "Actual Model selected: [planner] task-chunk-planner -> unavailable - no model receipt recorded",
+            "Recruited via: deterministic",
             "Why: test",
             "How it shaped outcome: test",
             "",

@@ -286,6 +286,17 @@ def _codex_native_child_identity(agent_id: object) -> NativeChildRunIdentity:
     )
 
 
+def _zcode_native_child_identity(agent_id: object) -> NativeChildRunIdentity:
+    """Derive the ZCode child lineage (same Agent-tool model as Claude)."""
+
+    validated_agent_id = validate_correlation_id(agent_id, field="agent_id")
+    return build_native_child_run_identity(
+        worker_kind="generic-worker",
+        worker_id=validated_agent_id,
+        native_run_id=f"zcode-agent:{validated_agent_id}",
+    )
+
+
 def _pre_tool_use_denial(reason: object) -> dict[str, Any]:
     """Block a planned child that cannot receive its exact specialist."""
 
@@ -355,7 +366,7 @@ def _native_work_unit_label(host: str, tool_name: str, args: dict[str, Any]) -> 
         # Resolution is store-bound in HookBridge so an arbitrary legal-looking
         # native label cannot invent a persisted Agency work unit.
         return ""
-    elif host == "claude" and tool_name == "Agent":
+    elif host in {"claude", "zcode"} and tool_name == "Agent":
         candidate = _first_string(args, "description")
     return candidate if candidate.startswith(("specialist:", "unit-")) else ""
 
@@ -422,12 +433,17 @@ class HookBridge:
         _master: dict[str, Any] | None = None,
     ) -> None:
         normalized_host = host.strip().casefold()
-        if normalized_host not in {"codex", "claude"}:
+        if normalized_host not in {"codex", "claude", "zcode"}:
             raise ValueError(f"unsupported hook host: {host}")
         self.host = normalized_host
         self._store = store
         self._adapter = adapter
         self._master = _master
+        # Map child session_id -> (parent_session_id, parent_trace_id,
+        # worker_id, native_run_id) populated by SubagentStart so that a
+        # child's UserPromptSubmit can forward parent correlation to the
+        # workforce routing path (ADR-0087: every child self-routes).
+        self._child_parent_scopes: dict[str, tuple[str, str, str, str]] = {}
 
     @property
     def store(self) -> Store:
@@ -456,7 +472,15 @@ class HookBridge:
             return CodexAdapter(store=self.store)
         from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
 
-        return ClaudeAdapter(store=self.store)
+        # ADR-0087: zcode reuses the Claude hook model and Agent-tool delegation
+        # primitive, so it shares the ClaudeAdapter behavior. But it must keep
+        # its own host identity so runtime-control reads the zcode row (not
+        # claude's) and all evidence receipts are attributed to zcode rather
+        # than masqueraded as claude.
+        adapter = ClaudeAdapter(store=self.store)
+        if self.host == "zcode":
+            adapter.host_name = "zcode"
+        return adapter
 
     def _event_name(self, payload: dict[str, Any]) -> str:
         event = _required_string(payload, "hook_event_name")
@@ -731,7 +755,7 @@ class HookBridge:
         """Resolve one exact persisted row without callback-order correlation."""
 
         tool_name = _optional_string(payload, "tool_name")
-        if self.host == "claude":
+        if self.host in {"claude", "zcode"}:
             if tool_name != _CLAUDE_AGENT_TOOL_NAME:
                 return None
             native_label = _first_string(_dict_or_empty(tool_input), "description")
@@ -812,13 +836,13 @@ class HookBridge:
         """Inject one exact prompt while leaving the native scheduler in control."""
 
         tool_name = _required_string(payload, "tool_name")
-        if self.host == "claude" and tool_name != _CLAUDE_AGENT_TOOL_NAME:
+        if self.host in {"claude", "zcode"} and tool_name != _CLAUDE_AGENT_TOOL_NAME:
             return {}
         if self.host == "codex" and tool_name not in _CODEX_SPAWN_TOOL_NAMES:
             return {}
         tool_input = payload.get("tool_input")
         args = _dict_or_empty(tool_input)
-        task_field = "prompt" if self.host == "claude" else "message"
+        task_field = "prompt" if self.host in {"claude", "zcode"} else "message"
         task = args.get(task_field)
         if not isinstance(task, str) or not task:
             raise HookInputError(f"{tool_name} tool_input.{task_field} is required")
@@ -986,6 +1010,14 @@ class HookBridge:
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
             )
+        child_session_id = f"claude-child:{identity.worker_id}"
+        if session_id and trace_id:
+            self._child_parent_scopes[child_session_id] = (
+                session_id,
+                trace_id,
+                identity.worker_id,
+                identity.native_run_id,
+            )
         context_lines = [
             _CLAUDE_CHILD_IDENTITY_MARKER,
             "This identity belongs only to the current native child. It does not "
@@ -1039,6 +1071,8 @@ class HookBridge:
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
             )
+        child_session_id = f"claude-child:{identity.worker_id}"
+        self._child_parent_scopes.pop(child_session_id, None)
         return {}
 
     def _handle_codex_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1062,6 +1096,13 @@ class HookBridge:
                 native_run_id=identity.native_run_id,
             )
         child_session_id = f"codex-child:{identity.worker_id}"
+        if session_id and trace_id:
+            self._child_parent_scopes[child_session_id] = (
+                session_id,
+                trace_id,
+                identity.worker_id,
+                identity.native_run_id,
+            )
         context_lines = [
             _CLAUDE_CHILD_IDENTITY_MARKER,
             "This identity belongs only to the current native Codex child. It "
@@ -1122,6 +1163,8 @@ class HookBridge:
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
             )
+        child_session_id = f"codex-child:{identity.worker_id}"
+        self._child_parent_scopes.pop(child_session_id, None)
         return {}
 
     def _consume_native_child_prompt_delivery(
@@ -1236,7 +1279,11 @@ class HookBridge:
             }
         correlation = self._correlation(payload, tool_input, tool_response)
         turn_trace_id = correlation.turn_id or self._unambiguous_open_trace(correlation.session_id)
-        if self.host == "claude" and tool_name == _CLAUDE_AGENT_TOOL_NAME and not turn_trace_id:
+        if (
+            self.host in {"claude", "zcode"}
+            and tool_name == _CLAUDE_AGENT_TOOL_NAME
+            and not turn_trace_id
+        ):
             return {}
         trace_id = turn_trace_id or correlation.tool_use_id
         canonical_name, canonical_args = _canonical_tool_call(
@@ -1247,7 +1294,7 @@ class HookBridge:
         )
         delivery: NativeChildPromptDelivery | None = None
         delivery_activated = False
-        if (self.host == "claude" and tool_name == _CLAUDE_AGENT_TOOL_NAME) or (
+        if (self.host in {"claude", "zcode"} and tool_name == _CLAUDE_AGENT_TOOL_NAME) or (
             self.host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES
         ):
             delivery, tool_response, _delivery_identity, delivery_activated = (
@@ -1331,6 +1378,63 @@ class HookBridge:
         )
         return {}
 
+    def _handle_user_prompt_submit(self, payload: dict[str, Any]) -> dict[str, Any]:
+        prompt = _required_string(payload, "prompt")
+        correlation = self._correlation(payload)
+        trace_id = correlation.trace_id or str(uuid4())
+        origin_receipt = self._user_prompt_origin(correlation, trace_id=trace_id)
+        if origin_receipt.origin == "internal_retry":
+            return {}
+        reservation = self._reserve_user_turn(correlation.session_id, trace_id)
+        # ADR-0087: if this session is a native child (registered via
+        # SubagentStart), forward the parent correlation so the child's
+        # turn self-routes through the governed native-child path rather
+        # than as a generic external turn.
+        parent_scope = self._child_parent_scopes.get(correlation.session_id)
+        parent_kwargs: dict[str, str] = {}
+        if parent_scope is not None:
+            p_session, p_trace, worker_id, native_run_id = parent_scope
+            parent_kwargs = {
+                "parent_session_id": p_session,
+                "parent_trace_id": p_trace,
+                "native_worker_id": worker_id,
+                "native_run_id": native_run_id,
+            }
+        try:
+            result = self.adapter.pre_llm_call_handler(
+                session_id=correlation.session_id,
+                user_message=prompt,
+                model=correlation.model,
+                trace_id=trace_id,
+                reservation_token=str(reservation.get("reservation_token") or ""),
+                origin_receipt=origin_receipt,
+                **parent_kwargs,
+            )
+        except Exception as error:
+            try:
+                self._close_unused_reservation(
+                    correlation.session_id,
+                    trace_id,
+                    reservation,
+                )
+            except Exception as cleanup_error:
+                raise error from cleanup_error
+            raise
+        context = result.get("context") if isinstance(result, dict) else None
+        if not isinstance(context, str) or not context:
+            self._close_unused_reservation(
+                correlation.session_id,
+                trace_id,
+                reservation,
+            )
+            return {}
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "UserPromptSubmit",
+                "additionalContext": context[:MAX_CONTEXT_CHARS],
+            }
+        }
+
     def handle(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(payload, dict):
             raise HookInputError("hook input must be a JSON object")
@@ -1345,46 +1449,7 @@ class HookBridge:
         event = self._event_name(payload)
 
         if event == "UserPromptSubmit":
-            prompt = _required_string(payload, "prompt")
-            correlation = self._correlation(payload)
-            trace_id = correlation.trace_id or str(uuid4())
-            origin_receipt = self._user_prompt_origin(correlation, trace_id=trace_id)
-            if origin_receipt.origin == "internal_retry":
-                return {}
-            reservation = self._reserve_user_turn(correlation.session_id, trace_id)
-            try:
-                result = self.adapter.pre_llm_call_handler(
-                    session_id=correlation.session_id,
-                    user_message=prompt,
-                    model=correlation.model,
-                    trace_id=trace_id,
-                    reservation_token=str(reservation.get("reservation_token") or ""),
-                    origin_receipt=origin_receipt,
-                )
-            except Exception as error:
-                try:
-                    self._close_unused_reservation(
-                        correlation.session_id,
-                        trace_id,
-                        reservation,
-                    )
-                except Exception as cleanup_error:
-                    raise error from cleanup_error
-                raise
-            context = result.get("context") if isinstance(result, dict) else None
-            if not isinstance(context, str) or not context:
-                self._close_unused_reservation(
-                    correlation.session_id,
-                    trace_id,
-                    reservation,
-                )
-                return {}
-            return {
-                "hookSpecificOutput": {
-                    "hookEventName": "UserPromptSubmit",
-                    "additionalContext": context[:MAX_CONTEXT_CHARS],
-                }
-            }
+            return self._handle_user_prompt_submit(payload)
 
         if event == "PreToolUse":
             return self._handle_native_child_pre_tool_use(payload)

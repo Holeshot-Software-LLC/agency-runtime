@@ -155,7 +155,7 @@ _CONTRACT_PROPERTIES = {
     },
     "hosts": {
         "type": "array",
-        "items": {"enum": ["codex", "claude", "openclaw", "hermes"], "type": "string"},
+        "items": {"enum": ["codex", "claude", "openclaw", "hermes", "zcode"], "type": "string"},
         "minItems": 1,
         "maxItems": 4,
         "uniqueItems": True,
@@ -416,6 +416,12 @@ def _agent_document(
         "lifecycle_phases": list(contract.lifecycle_phases),
         "domains": list(domains),
         "stacks": list(dict.fromkeys(stacks)),
+        # The hiring inference already produced preferred_scenarios; reuse them
+        # as scope_qualifiers rather than issuing a second enrichment call in
+        # the synchronous hiring turn (would double hiring latency). Contractors
+        # are already fully typed (stacks/domains/capability_ids above derive
+        # from the causing unit); batch enrichment (scripts/enrich_workforce_
+        # contracts.py) refines qualifiers for the broader roster, not per-hire.
         "scope_qualifiers": list(contract.preferred_scenarios),
         "not_for": list(contract.avoided_scenarios + contract.forbidden_scenarios),
         "source": "agency-runtime",

@@ -127,6 +127,7 @@ def test_mcp_exposes_explain_selection_tool() -> None:
         "claude",
         "openclaw",
         "hermes",
+        "zcode",
     ]
     assert "host" in preflight["required"]
 

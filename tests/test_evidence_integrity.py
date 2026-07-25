@@ -292,6 +292,7 @@ def test_pre_verify_rejects_spoofed_evidence_on_later_attempt(tmp_path: Path) ->
         "agencies_delegated": "invented-agent via delegate_task",
         "skills_loaded": "fake-admin-skill",
         "actual_model_selected": "provider/fabricated-model",
+        "recruited_via": "inference",
         "why": "test",
         "how_it_shaped_outcome": "test",
     }

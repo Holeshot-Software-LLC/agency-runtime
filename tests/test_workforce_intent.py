@@ -109,7 +109,10 @@ def test_compact_schema_requires_controlled_capabilities_and_explicit_gap() -> N
 def test_compact_system_preserves_evidence_before_operational_planning() -> None:
     assert "analysis/discovery unit distinct from the dependent plan" in COMPACT_INTENT_SYSTEM
     assert "both planning and operations" in COMPACT_INTENT_SYSTEM
-    assert "Use threat-modeling only for prospective systems" in COMPACT_INTENT_SYSTEM
+    assert (
+        "add risk-analysis when rollback or decision criteria are requested"
+        in COMPACT_INTENT_SYSTEM
+    )
 
 
 def test_compiler_canonicalizes_noise_without_erasing_specialist_need() -> None:

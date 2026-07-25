@@ -452,18 +452,14 @@ class PendingInteraction:
 
 
 def _response_body(response_text: str) -> str:
+    from agency_runtime.core.header.contract import HEADER_FIELDS
+
     lines = str(response_text or "")[:MAX_TURN_SIGNAL_CHARS].splitlines()
-    if len(lines) >= 6 and all(":" in line for line in lines[:6]):
-        labels = tuple(line.split(":", 1)[0].strip() for line in lines[:6])
-        if labels == (
-            "Agency/Agencies loaded",
-            "Agency/Agencies delegated",
-            "Skills loaded",
-            "Actual Model selected",
-            "Why",
-            "How it shaped outcome",
-        ):
-            lines = lines[6:]
+    field_count = len(HEADER_FIELDS)
+    if len(lines) >= field_count and all(":" in line for line in lines[:field_count]):
+        labels = tuple(line.split(":", 1)[0].strip() for line in lines[:field_count])
+        if labels == tuple(label for _key, label in HEADER_FIELDS):
+            lines = lines[field_count:]
     return "\n".join(lines).strip()
 
 

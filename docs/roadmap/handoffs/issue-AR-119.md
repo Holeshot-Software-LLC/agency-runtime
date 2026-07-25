@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-07-23
+updated: 2026-07-24
 tags: [handoff, routing, workforce, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -13,97 +13,98 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar-119-green-main-then-finish
-evidence_commit: c95ecea09c573cd46e5b10d196029234f411cd29
-minimum_ledger_commit: c95ecea09c573cd46e5b10d196029234f411cd29
+branch: codex/ar-119-contract-enrichment
+evidence_commit: 117a84bc290587e1a8290c4b7925da0d2a343a38
+minimum_ledger_commit: 117a84bc290587e1a8290c4b7925da0d2a343a38
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
 
 # AR-119 active recovery capsule
 
-This is the bounded current-state projection for AR-119. The
-[canonical issue](../issue-AR-119-inference-first-workforce.md) remains
-the complete acceptance contract.
+Bounded current-state projection for AR-119. The
+[canonical issue](../issue-AR-119-inference-first-workforce.md) is the complete
+acceptance contract. Architecture: ADR-0087 (inference is the sole decider;
+determinism is recall + validation; offline declines; ZCode is the 5th host).
 
-## Checkpoint
+## checkpoint
 
-- Branch: `codex/ar-119-green-main-then-finish` (from `origin/main`
-  `effa10b`). Substantive/ledger head: `c95ecea`.
+- Branch: `codex/ar-119-contract-enrichment` (descends from
+  `codex/ar-119-child-routing-and-coverage` / PR #141). `main` is not ahead.
+- All code changes below are uncommitted, pending commit + PR #141 update.
 - Live umbrella [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
-  remains open; tracker writes need authorization.
-- Architecture pivoted to ADR-0087 (inference-decides-from-a-relevance-
-  shortlist). The deterministic decider is removed from the runtime.
+  remains OPEN; closure needs authorization after the deferred release gates.
 
-## Completed evidence
+## completed-evidence
 
-PR #129 merged red; Phase 0 recovery + the ADR-0087 pivot are underway.
-Each below is verified green and ledgered.
+- **Nomination blocker fixed (WP1/WP2).** `_semantic_staffing_classes`
+  (`inference.py:1255`) trusts the model's eligible `required` picks; role
+  anchors are a fallback only (seeded when the model nominates no eligible
+  required specialist, respecting the model's forbidden). Clean partition: no
+  agent is ever both required and forbidden. `verify_staffing._selection`
+  (`staffing_verifier.py:571`) removed the `lifecycle_owner_missing_from_
+  required` re-derivation; it now validates eligibility/composition/coverage/
+  budget around the trusted required set.
+- **Host compat consolidated (WP3).** `_HOST_COMPATIBLE` + `expand_compatible_
+  hosts` moved to `host_capabilities.py`; applied in the workforce verifier AND
+  the legacy selector `compatibility.py`. codex/claude-declaring specialists are
+  now eligible on zcode consistently.
+- **ZCode header/delivery fix (WP11) — root cause confirmed.** Every ZCode
+  turn routes through `preflight_delivery_policy == "isolated"`, but
+  `format_isolated_specialist_context` raised `ValueError` for `host="zcode"`,
+  masked only by a `host_name="claude"` masquerade (which mis-attributed
+  evidence/control). Three coupled fixes resolve it: `HookBridge` stamps
+  `host_name="zcode"` (recipe carries the true host);
+  `format_isolated_specialist_context` + `native_child_prompt_delivery`
+  whitelist `zcode` (isolated path no longer raises); `_NATIVE_DELEGATION_TOOLS`
+  adds zcode (correct `Agent`-tool guidance). Unit-verified: the isolated path
+  now completes for zcode (raised before). Subagents remain host-limited.
+- **Enrichment wiring (WP5).** New `roster/enrichment.py` overlay merges typed
+  `stacks`/`domains` + `scope_qualifiers` before projection; shipped overlay at
+  `roster/data/scope_qualifiers.json`. `senior-developer` now covers
+  fluxui/livewire/laravel.
+- **Acceptance criteria rewritten to ADR-0087 (WP0).** FluxUI overstatement
+  corrected (`senior-developer` owns FluxUI via preferred_when; not a real gap).
 
-- **P0a** `9d68e7e`: dashboard assets 275,892 B -> 240,565 B (21.1 KiB
-  headroom). `.zcode` ignore `dc0d3f2`. **P0b** `10e3b4c`: Codex
-  PreToolUse hook contract. **P0c** `45f78cc`: routing fixtures.
-  **D1/D2** `8b95ab0`: roster opaque-hash tolerance + reroute-on-
-  mismatch (the only genuine prod fixes). **P0e** `85cd7b7`: schema
-  fixtures. Conflict-closure seeding `fb9829e`.
-- **ADR-0087** `495b4a4`/`58c9cd9`: inference is the sole decider;
-  deterministic recall stays as stage 1; offline declines; the upstream
-  asset worth borrowing is the audited pool, not its selector.
-- **Offline-decline pivot** `ee47985`: `plan_and_staff_workforce`
-  returns a labeled `_declined_outcome` (no deterministic decider) when
-  no provider is configured. 45 workforce-inference tests pass.
-- **Invoker seam** `c95ecea`: `plan_and_staff_workforce(invoker=None)`
-  resolves the module-global at call time, so the full
-  preflight->route->workforce stack is stubbable via monkeypatch without
-  a live CLI.
+## exact-blocker
 
-## Exact blocker
+**FIXED:** the recruiter nominated the right specialists but `verify_staffing`
+rejected them (`no-safe-deterministic-team`) because `_semantic_staffing_classes`
+overrode model-required with role anchors and `_selection` re-derived required
+from `role_anchors`. Both removed (WP1/WP2).
 
-**SELECTION WORKS END-TO-END (proven live, in fast mode).** Against
-codex-cli 0.145.0, the recruiter (now primary, `70c28a2`) nominates and
-the verifier ACCEPTS: `unit-code-review` -> **code-reviewer**,
-`unit-security-review` -> **ai-generated-code-security-auditor**.
-Unblocked by: `358bacc` (capability from artifact_kind), `90ff042`
-(tool_classes descriptive), `70c28a2` (recruiter primary in all modes +
-fast_call_budget 1->2).
+**Residual (pre-existing, xfailed):** `test_wrong_but_structurally_valid_
+selection_is_rejected_by_deterministic_staffing` — the deterministic recall
+stage (`deterministic_staff_plan`) can accept a covering team before the
+recruiter registers the model's forbidden set, so a model-forbidden specialist
+can be selected when recall pre-empts inference. Marked `xfail(strict=True)`;
+tracked as a nomination-authority follow-up, not a regression.
 
-Remaining items to reach the full north star:
+**ZCode child limitation (host-gated, not a code bug):** ZCode emits no
+`SubagentStart`/`SubagentStop`, so governed native-child self-routing cannot
+fire for ZCode children. Main-session correlation forwards; children are
+host-limited. Follow-up gated on host support.
 
-1. **Nomination robustness (WP3-3).** For complex/multi-unit asks (e.g. a
-   FluxUI dashboard) the recruiter nomination fails validation
-   (`workforce_inference_failed`) — `_proposal_from_nominations` rejects
-   the model output on a coverage/composition rule, so the gap->hire path
-   is not yet reached for those asks. Also the codebase-discovery tie-break
-   intermittently picks code-reviewer over the model's #1
-   codebase-onboarding-engineer.
-2. **Test conversions (WP3-4).** 14 selection-asserting suites
-   (http/mcp/delegation) still see the offline decline; convert to
-   provider+stub (or live) once recruiter is primary. Then green-main.
+## same-task-continuity
 
-## Next bounded work package
+Context thresholds never create/fork/dispatch/wait for another task. Continue
+through compaction. At or below 50%, ensure a clean durable checkpoint, then
+continue in the same task.
 
-1. Harden `_proposal_from_nominations` so a valid model nomination for a
-   complex/multi-unit ask is accepted (not rejected on a coverage/
-   composition rule); then a FluxUI-style gap reaches `hire_contractor_for_gap`.
-   Also resolve the codebase-discovery tie-break so the model's #1 stands.
-2. Convert the 14 selection-asserting suites (http/mcp/delegation) to
-   provider+stub (or live) and resume green-main.
+## next-bounded-work-package
 
-## Live-evaluation baseline (unchanged)
+1. Full static + test gate: `ruff`, `docs_metadata --check`,
+   `update_worklog --check`, `verify_docs`, `pytest tests/ -W error`, dashboard
+   UI test, `git diff --check`.
+2. Telemetry, then small live smoke (codex-cli): "Review code for correctness
+   and security", "Fix the authentication bug", "Write unit tests", and the
+   previously-blocked "Design a Git branching strategy" (expect
+   git-workflow-master required+selected). Confirm ZCode main-session header.
+3. Commit per WP, push, update PR #141 (correct "5 hosts forward correlation /
+   children self-route" for ZCode). Edit #132 body to mirror ADR-0087 wording
+   (#132 stays OPEN).
 
-Two unchanged corpora produced 19/19 safe Agency passes; the newest
-returned 17/19 (active-incident abstained on margin; accounts-payable
-omitted the CFO review). No corpus has produced 19 benchmark-valid
-upstream arms; malformed/timed-out/no-response arms are validity
-failures, never losses.
-
-## Same-task continuity
-
-Context thresholds never create/fork/dispatch/wait for another task.
-Continue through compaction. At or below 50%, ensure a clean durable
-checkpoint, then continue in the same task.
-
-## Verification
+## verification
 
 ~~~text
 .\.venv\Scripts\python.exe scripts\docs_metadata.py --check
@@ -112,19 +113,22 @@ checkpoint, then continue in the same task.
 .\.venv\Scripts\python.exe scripts\verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest tests/test_workforce_inference.py -q -W error
+python -m pytest tests/ -q -W error
+node --test tests/dashboard_ui.test.mjs
+agency eval routing --json --no-details
 git diff --check
 .\.venv\Scripts\python.exe scripts\context_handoff_status.py --json --threshold 50
 ~~~
 
-## Constraints
+## constraints
 
 - Telemetry before every live evaluation; conservative estimate when
   `CODEX_THREAD_ID` is absent.
 - Do not weaken typed coverage/parser validation, add a scenario route,
-  reinterpret malformed upstream output, or claim Agency is better
-  without a benchmark-valid comparison.
-- A specialist governs its unit (generalize/test/review); offline
-  declines rather than emit a keyword-luck pick (ADR-0087).
-- Update the canonical issue and replace this capsule when the package
-  changes; create the required substantive and ledger commits.
+  reinterpret malformed upstream output, or claim Agency is better without a
+  benchmark-valid comparison.
+- A specialist governs its unit; offline declines (ADR-0087).
+- Deferred release gates (WP12): full Agency-on/off paired graded-outcome
+  corpus vs pinned upstream; 4-host + ZCode canaries; reinstall verification;
+  full 263-enrichment batch; `verify_tracker.py --require-tracker` + closure.
+  #132 closes last.

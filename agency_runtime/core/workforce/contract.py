@@ -35,7 +35,7 @@ _EMPLOYMENT_STATES = frozenset(
     {"contractor", "disabled", "employee", "merged", "retired", "suspended"}
 )
 _AUDIT_STATES = frozenset({"approved", "quarantined", "retired"})
-_HOSTS = frozenset({"claude", "codex", "hermes", "openclaw"})
+_HOSTS = frozenset({"claude", "codex", "hermes", "openclaw", "zcode"})
 _PLATFORMS = frozenset({"linux", "windows"})
 _RESIDENTS = frozenset({"agents-orchestrator", "chief-of-staff"})
 

@@ -71,7 +71,11 @@ def create_app(data_path):
 
 @pytest.mark.skipif(
     sys.platform == "linux",
-    reason="CI-environment: product-validator subprocess resolution differs on Linux; passes locally on Windows",
+    reason=(
+        "CI-environment: product-validator subprocess resolution differs on Linux "
+        "and on Python 3.14 (sys._base_executable venv-shim behavior); passes "
+        "locally on Windows Python <= 3.13"
+    ),
 )
 def test_fullstack_validator_runs_hidden_wsgi_security_and_accessibility_checks(
     tmp_path: Path,
@@ -153,7 +157,11 @@ def list_items(path, token):
 
 @pytest.mark.skipif(
     sys.platform == "linux",
-    reason="CI-environment: product-validator subprocess resolution differs on Linux; passes locally on Windows",
+    reason=(
+        "CI-environment: product-validator subprocess resolution differs on Linux "
+        "and on Python 3.14 (sys._base_executable venv-shim behavior); passes "
+        "locally on Windows Python <= 3.13"
+    ),
 )
 def test_authenticated_application_validator_probes_isolation_storage_and_recovery(
     tmp_path: Path,
@@ -228,7 +236,11 @@ print(json.dumps({"samples": samples, "p50_ms": ordered[len(ordered)//2], "p95_m
 
 @pytest.mark.skipif(
     sys.platform == "linux",
-    reason="CI-environment: product-validator subprocess resolution differs on Linux; passes locally on Windows",
+    reason=(
+        "CI-environment: product-validator subprocess resolution differs on Linux "
+        "and on Python 3.14 (sys._base_executable venv-shim behavior); passes "
+        "locally on Windows Python <= 3.13"
+    ),
 )
 def test_observability_validator_requires_real_recovery_telemetry_and_benchmark(
     tmp_path: Path,

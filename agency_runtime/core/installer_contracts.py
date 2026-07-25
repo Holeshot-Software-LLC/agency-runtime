@@ -99,6 +99,13 @@ HOSTS: dict[str, dict[str, Any]] = {
         "plugin_dir": "~/.agency-runtime/marketplaces/claude",
         "native_lifecycle": "claude plugin",
     },
+    "zcode": {
+        "binary": "zcode",
+        "root": "~/.zcode",
+        "current_markers": ["v2/config.json", "cli/config.json"],
+        "plugin_dir": "~/.agency-runtime/marketplaces/zcode",
+        "native_lifecycle": "zcode config hooks",
+    },
 }
 
 

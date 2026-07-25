@@ -47,6 +47,7 @@ def test_host_status_accepts_injected_inventory_inspectors(tmp_path: Path) -> No
         "openclaw",
         "codex",
         "claude",
+        "zcode",
     ]
     assert (
         next(status for status in statuses if status["host"] == "codex")["effective_enabled"]
