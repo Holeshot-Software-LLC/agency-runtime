@@ -179,6 +179,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7e8609d` | 2026-07-24 | feat(workforce): inference-first specialist selection (ADR-0087) + green main recovery (#140) | null | null |
 | `c6bc953` | 2026-07-24 | feat: ZCode 5th host + Codex/Claude child-routing plumbing + AR-120..125 acceptance evidence (#141) | AR-119 | null |
 | `4f69eeb` | 2026-07-25 | docs(readme): cleaner hub-and-spoke logo + intent-aware sample teams (#142) | AR-119 | null |
+| `a5400a7` | 2026-07-25 | fix(workforce): enrich security specialists + apply overlay at read-time in workforce_index_snapshot | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
