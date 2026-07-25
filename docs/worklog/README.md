@@ -185,6 +185,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c8872c9` | 2026-07-24 | feat(workforce): trust inference nominations, fix ZCode header, wire enrichment (ADR-0087) | AR-119 | null |
 | `8c10848` | 2026-07-24 | feat(workforce): deterministic typed-recall offline floor + stamped recruited-via header (ADR-0088) | AR-119 | null |
 | `2e89f6a` | 2026-07-24 | docs(readme): full public overhaul + project icon (ADR-0087/0088) | AR-119 | null |
+| `05671bb` | 2026-07-24 | fix(zcode): complete 5th-host integration gaps blocking CI (ADR-0087) | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
