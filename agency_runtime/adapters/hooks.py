@@ -990,11 +990,6 @@ class HookBridge:
             raise RuntimeError("native-child delivery size changed after grant preparation")
         return result
 
-    def _handle_claude_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Compatibility wrapper for the shared hook-owned delivery path."""
-
-        return self._handle_native_child_pre_tool_use(payload)
-
     def _handle_claude_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Give this child its own identity without assigning any specialist."""
 
@@ -1558,16 +1553,6 @@ class HookBridge:
         if resident_manager_host_mode(self.host) == "persistent" and acknowledged is not True:
             raise RuntimeError("resident-manager delivery acknowledgement failed")
 
-    def _is_authenticated_retry(
-        self,
-        prompt: str,
-        correlation: HookCorrelation,
-    ) -> bool:
-        """Compatibility projection; prompt content never grants retry authority."""
-
-        del prompt
-        return self._user_prompt_origin(correlation).origin == "internal_retry"
-
     def _user_prompt_origin(
         self,
         correlation: HookCorrelation,
@@ -1956,22 +1941,6 @@ class HookBridge:
             raise RuntimeError("terminal response action is invalid")
         return self._reject_completion(message, retry=True)
 
-    def _accept_exact_finalized_response(
-        self,
-        session_id: str,
-        trace_id: str,
-        final_response: str,
-    ) -> bool:
-        """Idempotently accept only an exact response finalized earlier."""
-        run = self._exact_terminal_finalization(
-            session_id,
-            trace_id,
-            final_response,
-        )
-        if run is None:
-            return False
-        return str(run.get("action") or "") == "accept"
-
     def _is_terminal_turn(self, session_id: str, trace_id: str) -> bool:
         """Return exact terminal state, failing closed on unreadable correlation."""
         getter = getattr(self.store, "get_run", None)
@@ -2045,29 +2014,6 @@ class HookBridge:
             # regardless of the caller's retry state. See AR-127.
             return _completion_rejection(reason, retry=False)
         return _completion_rejection(reason, retry=retry)
-
-    def _record_finalization(
-        self,
-        trace_id: str,
-        action: str,
-        *,
-        response_text: str = "",
-    ) -> str:
-        if not trace_id:
-            return ""
-        try:
-            from agency_runtime.core.header.finalize import response_hash
-
-            receipt = self.store.record_finalization(
-                trace_id=trace_id,
-                host=self.host,
-                action=action,
-                missing=[],
-                response_hash=response_hash(response_text) if response_text else "",
-            )
-        except Exception:
-            return ""
-        return _normalize_receipt_id(receipt)
 
     def _close_turn(self, session_id: str, trace_id: str, status: str) -> bool:
         if not session_id or not trace_id:

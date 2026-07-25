@@ -314,11 +314,17 @@ def test_hook_trace_recovery_retry_and_reservation_fail_closed(monkeypatch) -> N
     assert bridge._unambiguous_open_trace("session") == "open"
 
     bridge.store = SimpleNamespace()
-    assert not bridge._is_authenticated_retry("prompt", hooks.HookCorrelation("s", "t", "", "", ""))
+    assert (
+        bridge._user_prompt_origin(hooks.HookCorrelation("s", "t", "", "", "")).origin
+        != "internal_retry"
+    )
     bridge.store = SimpleNamespace(
         resolve_pending_internal_retry=lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError())
     )
-    assert not bridge._is_authenticated_retry("prompt", hooks.HookCorrelation("s", "t", "", "", ""))
+    assert (
+        bridge._user_prompt_origin(hooks.HookCorrelation("s", "t", "", "", "")).origin
+        != "internal_retry"
+    )
 
     bridge.store = SimpleNamespace()
     with pytest.raises(RuntimeError, match="cannot reserve"):
@@ -431,7 +437,7 @@ def test_hook_cleanup_and_terminal_helper_failures(monkeypatch) -> None:
         },
     )
     with pytest.raises(RuntimeError, match="inconsistent Agency turn"):
-        bridge._accept_exact_finalized_response("s", "t", "draft")
+        bridge._exact_terminal_finalization("s", "t", "draft")
 
     bridge.adapter = SimpleNamespace(evaluate_completion_policy=lambda *_args, **_kwargs: "bad")
     invalid = bridge._verify_final_response(
@@ -499,9 +505,6 @@ def test_hook_continuation_stop_and_closure_edge_paths(monkeypatch) -> None:
     )
     assert bridge._handle_stop({}) == {}
 
-    receipt_id = "00000000-0000-0000-0000-000000000001"
-    bridge.store = SimpleNamespace(record_finalization=lambda **_kwargs: receipt_id)
-    assert bridge._record_finalization("trace", "accept", response_text="draft") == receipt_id
     bridge.store = SimpleNamespace()
     assert not bridge._close_turn("session", "trace", "closed")
     bridge.store = SimpleNamespace(
@@ -1047,9 +1050,12 @@ def test_hook_claude_assignment_and_child_identity_fail_closed_matrix(monkeypatc
         {"agent_id": "bad id"},
         None,
     )
-    assert bridge._handle_claude_pre_tool_use({"tool_name": "Other", "session_id": "session"}) == {}
+    assert (
+        bridge._handle_native_child_pre_tool_use({"tool_name": "Other", "session_id": "session"})
+        == {}
+    )
     with pytest.raises(hooks.HookInputError, match="prompt"):
-        bridge._handle_claude_pre_tool_use(
+        bridge._handle_native_child_pre_tool_use(
             {
                 "tool_name": "Agent",
                 "session_id": "session",
@@ -1177,7 +1183,7 @@ def test_hook_post_tool_resident_and_terminal_defensive_matrix(monkeypatch) -> N
     helper_bridge = _bridge()
     finalize_module = importlib.import_module("agency_runtime.core.header.finalize")
     monkeypatch.setattr(finalize_module, "terminal_response_run", lambda *_args, **_kwargs: None)
-    assert not helper_bridge._accept_exact_finalized_response("session", "trace", "draft")
+    assert helper_bridge._exact_terminal_finalization("session", "trace", "draft") is None
     monkeypatch.setattr(
         finalize_module,
         "terminal_response_run",
@@ -1188,7 +1194,8 @@ def test_hook_post_tool_resident_and_terminal_defensive_matrix(monkeypatch) -> N
             "status": "completed",
         },
     )
-    assert helper_bridge._accept_exact_finalized_response("session", "trace", "draft")
+    exact_run = helper_bridge._exact_terminal_finalization("session", "trace", "draft")
+    assert exact_run is not None and str(exact_run.get("action") or "") == "accept"
     helper_bridge.store = SimpleNamespace(get_run=lambda _trace: None)
     assert not helper_bridge._is_terminal_turn("session", "trace")
 

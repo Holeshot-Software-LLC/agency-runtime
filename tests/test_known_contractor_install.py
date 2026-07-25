@@ -43,7 +43,7 @@ def test_known_contractors_install_atomically_with_truthful_package_evidence(
     assert first.existing == ()
     assert second.installed == ()
     assert second.existing == expected
-    assert store.count_active_roster() == len(expected)
+    assert store.count_enabled_roster(disabled_agents=()) == len(expected)
     workers = store.list_workforce_workers(state="contractor", limit=20, disabled_agents=())
     assert {item["agent_slug"] for item in workers} == set(expected)
     assert all(item["display_label"].startswith("Contractor · ") for item in workers)

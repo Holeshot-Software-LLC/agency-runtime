@@ -92,14 +92,14 @@ def test_batched_narrowing_preserves_empty_and_roster_bounds() -> None:
 
     assert candidate_narrow.pre_narrow("capacity", [], limit=1) == ([], [])
     assert candidate_narrow.pre_narrow("capacity", catalog, limit=0) == ([], [])
-    assert candidate_narrow.pre_narrow_many(["one", "two"], [], limit=1) == [
+    assert [candidate_narrow.pre_narrow(query, [], limit=1) for query in ("one", "two")] == [
         ([], []),
         ([], []),
     ]
-    assert candidate_narrow.pre_narrow_many(["one"], catalog, limit=0) == [([], [])]
+    assert candidate_narrow.pre_narrow("one", catalog, limit=0) == ([], [])
     with pytest.raises(ValueError, match="cannot contain more than 10000"):
-        candidate_narrow.pre_narrow_many(
-            ["capacity planning"],
+        candidate_narrow.pre_narrow(
+            "capacity planning",
             [{}] * (MAX_ACTIVE_ROSTER_SIZE + 1),
         )
 

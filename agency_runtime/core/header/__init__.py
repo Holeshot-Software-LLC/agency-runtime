@@ -8,13 +8,12 @@ from .contract import (
     parse_header,
     validate_header,
 )
-from .finalize import FinalizationResult, finalize, finalize_response
+from .finalize import FinalizationResult, finalize_response
 
 __all__ = [
     "HEADER_FIELDS",
     "FinalizationResult",
     "fill_header_fields",
-    "finalize",
     "finalize_header",
     "finalize_response",
     "format_header",

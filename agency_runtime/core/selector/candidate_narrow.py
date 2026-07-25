@@ -445,17 +445,3 @@ def pre_narrow(
         _compiled_catalog_score_inputs(catalog),
         limit,
     )
-
-
-def pre_narrow_many(
-    queries: list[str],
-    catalog: list[dict[str, Any]],
-    limit: int = 1,
-) -> list[tuple[list[dict[str, Any]], list[float]]]:
-    """Narrow independent queries while compiling a large catalog only once."""
-    if limit <= 0 or not catalog:
-        return [([], []) for _query in queries]
-    if len(catalog) > MAX_ACTIVE_ROSTER_SIZE:
-        raise ValueError(f"catalog cannot contain more than {MAX_ACTIVE_ROSTER_SIZE} agents")
-    compiled = _compiled_catalog_score_inputs(catalog)
-    return [_pre_narrow_compiled(str(query), catalog, compiled, limit) for query in queries]

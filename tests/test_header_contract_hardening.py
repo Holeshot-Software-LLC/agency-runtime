@@ -393,7 +393,7 @@ def test_finalization_empty_body_alias_and_recording_boundaries(
     assert recorder.calls[0]["host"] == "codex"
 
     header_only = contract.format_header(_fields())
-    result = finalizer.finalize(
+    result = finalizer.finalize_response(
         header_only,
         {"session_id": "s", "trace_id": "t"},
         recorder,

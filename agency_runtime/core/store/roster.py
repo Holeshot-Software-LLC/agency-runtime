@@ -1233,17 +1233,6 @@ class RosterStoreMixin:
         finally:
             conn.close()
 
-    def count_active_roster(self) -> int:
-        """Return the active roster cardinality without materializing its rows."""
-        conn = self._connect()
-        try:
-            row = conn.execute(
-                f"SELECT COUNT(*) AS count FROM {_ACTIVE_ROSTER_JOIN}"  # nosec B608
-            ).fetchone()
-            return int(row["count"])
-        finally:
-            conn.close()
-
     def has_active_roster_definition(self, slug: str) -> bool:
         """Return whether one immutable active definition exists.
 
