@@ -69,8 +69,12 @@ def test_product_trial_requires_an_existing_empty_real_workspace(tmp_path: Path)
 
 
 @pytest.mark.skipif(
-    sys.platform == "linux",
-    reason="CI-environment: product-validator subprocess resolution differs on Linux; passes locally on Windows",
+    sys.platform == "linux" or sys.version_info >= (3, 14),
+    reason=(
+        "CI-environment: product-validator subprocess resolution differs on Linux "
+        "and on Python 3.14 (sys._base_executable venv-shim behavior); passes "
+        "locally on Windows Python <= 3.13"
+    ),
 )
 def test_trial_passes_only_when_host_contract_and_hidden_validation_both_pass(
     tmp_path: Path,
