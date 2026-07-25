@@ -1,6 +1,6 @@
 ---
 title: "AR-120: Normalize and audit the complete workforce recruitment index"
-status: open
+status: done
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21

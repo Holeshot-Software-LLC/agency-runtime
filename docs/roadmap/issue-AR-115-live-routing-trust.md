@@ -1,6 +1,6 @@
 ---
 title: "AR-115: Make live routing and Agency headers trustworthy"
-status: open
+status: done
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21

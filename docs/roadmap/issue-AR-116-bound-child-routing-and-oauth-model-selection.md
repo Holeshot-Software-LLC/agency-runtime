@@ -1,6 +1,6 @@
 ---
 title: "AR-116: Bound native-child routing and add account-aware model selection"
-status: open
+status: done
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21

@@ -1,6 +1,6 @@
 ---
 title: "AR-123: Add complete workforce CLI and live dashboard operations"
-status: open
+status: done
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21
