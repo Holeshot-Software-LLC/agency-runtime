@@ -1,6 +1,6 @@
 ---
 title: "AR-127: Make ZCode Stop rejections actually block"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-25
 updated: 2026-07-25
@@ -19,7 +19,7 @@ type: issue
 epic: host-integrations
 issue_id: AR-127
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/151
 depends_on: []
 blocks: []
 ---
