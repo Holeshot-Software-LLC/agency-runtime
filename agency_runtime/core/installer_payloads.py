@@ -355,7 +355,15 @@ def zcode_hooks(
     """
 
     def handler(event: str, status_message: str) -> dict[str, Any]:
-        command, command_windows = _python_commands(
+        python_exe = sys.executable
+        bootstrap = str(Path(__file__).resolve().parent.parent / "_bootstrap.py")
+        # ZCode hooks: use type "process" (argument vector, no shell) — the
+        # most portable format per the ZCode hook docs. The prior type "command"
+        # with POSIX single-quotes / a non-standard commandWindows field failed
+        # silently on Windows because ZCode doesn't recognize commandWindows and
+        # the POSIX command syntax is invalid in cmd.exe.
+        args = [
+            bootstrap,
             "agency_runtime.cli",
             "hook",
             "zcode",
@@ -363,13 +371,12 @@ def zcode_hooks(
             event,
             *_config_args(config_path),
             *_runtime_control_args(runtime_control_path_value),
-        )
+        ]
         return {
-            "type": "command",
-            "command": command,
-            "commandWindows": command_windows,
-            "async": False,
-            "timeout": timeout_seconds,
+            "type": "process",
+            "command": python_exe,
+            "args": ["-I", "-S", *args],
+            "timeoutMs": timeout_seconds * 1000,
             "statusMessage": status_message,
         }
 
