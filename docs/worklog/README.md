@@ -178,6 +178,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `effa10b` | 2026-07-23 | Merge pull request #129 from Holeshot-Software-LLC/codex/ar-115-live-routing-trust | null | null |
 | `7e8609d` | 2026-07-24 | feat(workforce): inference-first specialist selection (ADR-0087) + green main recovery (#140) | null | null |
 | `c6bc953` | 2026-07-24 | feat: ZCode 5th host + Codex/Claude child-routing plumbing + AR-120..125 acceptance evidence (#141) | AR-119 | null |
+| `9a9beda` | 2026-07-25 | docs(readme): cleaner hub-and-spoke logo + intent-aware sample teams; reconcile squash-merge ledger | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
