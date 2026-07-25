@@ -19,6 +19,7 @@ import json
 import logging
 import secrets
 import socket
+import sys
 import traceback
 from collections.abc import Callable
 from contextlib import suppress
@@ -951,7 +952,18 @@ def serve(
         max_body_size=max_body_size,
         store_factory=create_store,
     )
-    print(f"Agency Runtime HTTP bearer token: {server.auth_token}")
+    # Only print the bearer token to an interactive terminal. When stdout is
+    # redirected or piped (service managers, nohup, log files) printing it
+    # would persist the token in plaintext, diverging from the "token never
+    # in logs" contract that dashboard service mode enforces. Operators running
+    # headless should read the token from the runtime descriptor instead.
+    if sys.stdout.isatty():
+        print(f"Agency Runtime HTTP bearer token: {server.auth_token}")
+    else:
+        logger.info(
+            "Agency Runtime HTTP bearer token withheld from non-TTY stdout; "
+            "read it from the runtime descriptor"
+        )
     actual_host, actual_port = server.server_address[:2]
     logger.info("Agency Runtime HTTP server listening on %s:%d", actual_host, actual_port)
     try:

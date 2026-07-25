@@ -1065,3 +1065,81 @@ def test_request_logging_escapes_terminal_controls(caplog) -> None:
     assert "\x1b" not in caplog.text
     assert "\nforged" not in caplog.text
     assert r"\x1b[31mred\nforged" in caplog.text
+
+
+def test_serve_withholds_bearer_token_from_non_tty_stdout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capfd, caplog
+) -> None:
+    """SEC-01: serve() must not print the bearer token when stdout is not a TTY
+    (redirected/piped), matching the dashboard service-mode 'token never in logs'
+    contract. Operators running headless read the token from the descriptor.
+    """
+    import agency_runtime.server.http as http_module
+
+    class FakeServer:
+        auth_token = "super-secret-bearer-token"
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        @property
+        def server_address(self):
+            return ("127.0.0.1", 9999)
+
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            pass
+
+    monkeypatch.setattr(http_module, "AgencyHTTPServer", FakeServer)
+    # capfd captures at FD level; sys.stdout.isatty() is False for the replaced
+    # stream, which is exactly the "redirected/piped" condition we protect.
+    monkeypatch.setenv("AGENCY_MASTER_CONTROL_PATH", str(tmp_path / "control.json"))
+    monkeypatch.setattr(http_module, "load_config", lambda: None)
+    caplog.set_level(logging.INFO, logger="agency_runtime.server.http")
+
+    http_module.serve(host="127.0.0.1", port=0, db_path=str(tmp_path / "agency.db"))
+
+    captured = capfd.readouterr()
+    # The token must not reach stdout (or stderr) under any condition.
+    assert "super-secret-bearer-token" not in captured.out
+    assert "super-secret-bearer-token" not in captured.err
+    # The "withheld" notice is logged for the operator.
+    assert "withheld" in caplog.text.lower()
+
+
+def test_serve_prints_bearer_token_to_tty_stdout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capfd
+) -> None:
+    """SEC-01 companion: when stdout IS a TTY the operator still gets the token,
+    as before. Guards against an over-correction that hides it everywhere."""
+    import sys
+
+    import agency_runtime.server.http as http_module
+
+    class FakeServer:
+        auth_token = "super-secret-bearer-token"
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        @property
+        def server_address(self):
+            return ("127.0.0.1", 9999)
+
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            pass
+
+    monkeypatch.setattr(http_module, "AgencyHTTPServer", FakeServer)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    monkeypatch.setenv("AGENCY_MASTER_CONTROL_PATH", str(tmp_path / "control.json"))
+    monkeypatch.setattr(http_module, "load_config", lambda: None)
+
+    http_module.serve(host="127.0.0.1", port=0, db_path=str(tmp_path / "agency.db"))
+
+    captured = capfd.readouterr()
+    assert "super-secret-bearer-token" in captured.out

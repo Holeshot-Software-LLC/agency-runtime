@@ -81,6 +81,7 @@ from agency_runtime.core.routing_snapshot import (
 )
 from agency_runtime.core.runtime_control import (
     RuntimeControlConflictError,
+    RuntimeControlError,
     read_runtime_control,
     runtime_control_path,
     set_master_enabled,
@@ -1118,6 +1119,16 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             self._json_error(HTTPStatus.CONFLICT, str(exc))
         except ConfigurationError as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+        except RuntimeControlError as exc:
+            # Security/validation failures of the master-switch trust contract
+            # carry path/identity detail that must not reach the client. Log the
+            # full message server-side; return a generic 400 without it.
+            logger.warning(
+                "dashboard GET runtime-control error for %s (%s)",
+                path,
+                type(exc).__name__,
+            )
+            self._json_error(HTTPStatus.BAD_REQUEST, "runtime control unavailable")
         except (KeyError, ValueError, RuntimeError) as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
@@ -1163,6 +1174,16 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             self._json_error(HTTPStatus.CONFLICT, str(exc))
         except ConfigurationError as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+        except RuntimeControlError as exc:
+            # Security/validation failures of the master-switch trust contract
+            # carry path/identity detail that must not reach the client. Log the
+            # full message server-side; return a generic 400 without it.
+            logger.warning(
+                "dashboard POST runtime-control error for %s (%s)",
+                path,
+                type(exc).__name__,
+            )
+            self._json_error(HTTPStatus.BAD_REQUEST, "runtime control unavailable")
         except (KeyError, ValueError, RuntimeError) as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
