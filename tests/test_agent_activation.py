@@ -106,7 +106,7 @@ def test_store_excludes_disabled_agents_without_deleting_roster(
     activation_runtime,
 ) -> None:
     store, _config_path = activation_runtime
-    assert store.count_enabled_roster() == store.count_active_roster() == 3
+    assert store.count_enabled_roster() == store.count_enabled_roster(disabled_agents=()) == 3
     state = read_config_state()
     apply_config_operations(
         [{"op": "set", "path": "agents.disabled", "value": ["code-reviewer"]}],
@@ -126,7 +126,7 @@ def test_store_excludes_disabled_agents_without_deleting_roster(
         "agents-orchestrator",
         "chief-of-staff",
     }
-    assert store.count_active_roster() == 3
+    assert store.count_enabled_roster(disabled_agents=()) == 3
     assert store.count_enabled_roster() == 2
     assert store.get_specialist_prompt("code-reviewer") is None
     assert store.get_roster_entry("code-reviewer") is not None

@@ -402,7 +402,7 @@ def test_store_roster_limit_is_applied_in_sql_and_default_remains_compatible(
     for slug in ("charlie", "alpha", "bravo"):
         _activate(store, slug)
 
-    assert store.count_active_roster() == 3
+    assert store.count_enabled_roster(disabled_agents=()) == 3
     assert [row["agent_slug"] for row in store.get_active_roster(limit=2)] == [
         "alpha",
         "bravo",

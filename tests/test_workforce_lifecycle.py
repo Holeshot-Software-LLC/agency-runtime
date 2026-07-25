@@ -533,7 +533,7 @@ def test_every_bundled_agent_bootstraps_one_worker_and_lineage_record(tmp_path: 
     agents = [dict(agent) for agent in BundledRoster()]
 
     assert store.activate_agents_if_missing(agents) == 263
-    assert store.count_active_roster() == 263
+    assert store.count_enabled_roster(disabled_agents=()) == 263
     with closing(store._connect()) as conn:
         assert conn.execute("SELECT COUNT(*) FROM agent_workers").fetchone()[0] == 263
         assert conn.execute("SELECT COUNT(*) FROM agent_version_lineage").fetchone()[0] == 263

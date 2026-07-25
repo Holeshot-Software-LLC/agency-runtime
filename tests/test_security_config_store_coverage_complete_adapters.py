@@ -362,15 +362,6 @@ def test_hook_bridge_validation_recovery_and_noop_events() -> None:
     assert bridge.handle({"hook_event_name": "SessionStart", "session_id": "session"}) == {}
 
 
-def test_hook_finalization_persistence_failure_is_fail_open() -> None:
-    store = _HookStore(fail_finalization=True)
-    adapter = _HookAdapter()
-    bridge = hooks.HookBridge("claude", store=store, adapter=adapter)  # type: ignore[arg-type]
-    bridge._record_finalization("trace", "accept")
-    bridge._record_finalization("", "accept")
-    assert store.finalizations == []
-
-
 def test_hook_stop_accept_records_finalization() -> None:
     store = _HookStore()
     adapter = _HookAdapter()

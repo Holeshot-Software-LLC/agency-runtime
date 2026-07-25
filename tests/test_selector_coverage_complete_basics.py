@@ -513,7 +513,7 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
     )
     assert "[DELEGATION OPPORTUNITY]" in opportunity
     assert "Detected work units:" not in opportunity
-    trivial_context = pipeline.route_and_build_context(
+    trivial_routing = pipeline.route(
         "session",
         "ok",
         [
@@ -523,6 +523,7 @@ def test_pipeline_uses_cached_reuse_and_renders_every_context_source(
         config=cfg,
         turn_state={"state_known": True},
     )
+    trivial_context = pipeline.build_routing_context(trivial_routing, cfg)
     assert "agents-orchestrator, chief-of-staff" in trivial_context
     assert "source=policy_fallback" in trivial_context
 

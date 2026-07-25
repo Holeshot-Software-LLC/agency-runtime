@@ -6,7 +6,6 @@ Public API:
     route(session_id, user_message, catalog) -> dict
     detect_work_units(message) -> dict
     build_routing_context(routing) -> str
-    route_and_build_context(session_id, user_message, catalog) -> str
 """
 
 from agency_runtime.core.selector.cache import (
@@ -25,7 +24,6 @@ from agency_runtime.core.selector.pipeline import (
     is_trivial,
     refine_query,
     route,
-    route_and_build_context,
 )
 from agency_runtime.core.selector.policy import (
     detect_actions,
@@ -61,7 +59,6 @@ __all__ = [
     "query_judge",
     "refine_query",
     "route",
-    "route_and_build_context",
     "routing_fingerprint",
     "score_agent",
     "session_check",

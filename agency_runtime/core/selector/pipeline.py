@@ -1359,31 +1359,6 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
     return "\n".join(parts)[:MAX_ROUTING_CONTEXT_CHARS]
 
 
-def route_and_build_context(
-    session_id: str,
-    user_message: str,
-    catalog: list[dict[str, Any]] | None = None,
-    config: AgencyConfig | None = None,
-    store: Store | None = None,
-    trace_id: str | None = None,
-    turn_classification: TurnClassification | None = None,
-    turn_state: TurnState | Mapping[str, Any] | None = None,
-) -> str:
-    """Run the full pipeline and return its routing context projection."""
-    cfg = _get_config(config)
-    routing = route(
-        session_id,
-        user_message,
-        catalog,
-        config=cfg,
-        store=store,
-        trace_id=trace_id,
-        turn_classification=turn_classification,
-        turn_state=turn_state,
-    )
-    return build_routing_context(routing, cfg)
-
-
 HEADER_INSTRUCTION = (
     "\n  Treat the current [AGENCY LOADED] capsule as the authoritative "
     "specialist context for this turn. Earlier-turn specialist capsules are "

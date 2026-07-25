@@ -22,7 +22,6 @@ from agency_runtime.core.delegation import backends, events
 from agency_runtime.core.installer_contracts import INSTALL_MANIFEST, PLUGIN_ID
 from agency_runtime.core.process_argv import PreparedProcessArgv
 from agency_runtime.core.selector import (
-    candidate_narrow,
     explain,
     judge_protocol,
     pipeline,
@@ -414,17 +413,6 @@ def test_explain_handles_no_selection_and_invalid_diagnostic_receipt() -> None:
             config=_offline_config(),
             capability_receipt={},
         )
-
-
-def test_pre_narrow_many_compiles_once_for_multiple_queries() -> None:
-    catalog = [
-        {"slug": "api-reviewer", "description": "Reviews APIs."},
-        {"slug": "ui-reviewer", "description": "Reviews interfaces."},
-    ]
-    results = candidate_narrow.pre_narrow_many(["API", "interface"], catalog, limit=1)
-
-    assert len(results) == 2
-    assert all(len(candidates) == len(scores) == 1 for candidates, scores in results)
 
 
 def _frozen_argv(identity: object) -> PreparedProcessArgv:

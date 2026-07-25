@@ -312,16 +312,6 @@ def finalize_response(
     return result
 
 
-def finalize(
-    draft_text: str,
-    trace_metadata: Mapping[str, Any] | None = None,
-    store: Any | None = None,
-    model: str = "",
-) -> FinalizationResult:
-    """Backward-compatible short alias for ``finalize_response``."""
-    return finalize_response(draft_text, trace_metadata=trace_metadata, store=store, model=model)
-
-
 def _record_finalization(
     store: Any,
     trace_id: str,
@@ -396,7 +386,6 @@ def _commit_terminal_finalization(
 __all__ = [
     "FinalizationResult",
     "accepted_response_run",
-    "finalize",
     "finalize_response",
     "response_hash",
     "terminal_response_run",
