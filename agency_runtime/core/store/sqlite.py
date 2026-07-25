@@ -328,6 +328,9 @@ def _restrict_path_permissions(path: Path, *, directory: bool) -> None:
         link_checker=_is_link_or_reparse_point,
         windows_acl=_restrict_windows_acl,
     )
+    # PERF-02: chmod/DACL rewrite changes trust state without changing inode
+    # or mtime, so any cached verdict for this path is now stale.
+    _invalidate_storage_trust_cache(path)
 
 
 def _default_db_path(config_path: str | Path | None = None) -> Path:
@@ -380,8 +383,46 @@ def _create_private_storage_parent(
     )
 
 
+# PERF-02: process-level cache of storage-file trust verdicts. The underlying
+# check (os.lstat + mode/link/inode tests, and on Windows the DACL/SDDL probe
+# via windows_directory_prevents_untrusted_writes) is the dominant per-connection
+# cost on the hook hot path, where every store method opens its own connection
+# and re-runs the trust check on db + -wal + -shm + parent. The verdict is a
+# pure function of the file identity, so it is cached keyed by
+# (path, st_ino, st_mtime_ns): an atomic replace (new inode) or a content/
+# permission change (new mtime) invalidates the entry automatically.
+_TRUST_CACHE_LOCK = threading.Lock()
+_trust_cache: dict[Path, tuple[int, int, bool]] = {}
+
+
+def _invalidate_storage_trust_cache(path: Path) -> None:
+    """Drop the cached trust verdict for ``path``.
+
+    Permission repair (chmod / DACL rewrite) changes trust state without
+    necessarily changing inode or mtime, so the repair path must call this to
+    force the next check to recompute against the new permissions.
+    """
+
+    with _TRUST_CACHE_LOCK:
+        _trust_cache.pop(path, None)
+
+
 def _storage_file_is_trusted(path: Path) -> bool:
-    return storage_file_is_trusted(path, is_windows=_IS_WINDOWS)
+    cached = _trust_cache.get(path)
+    try:
+        metadata = os.lstat(path)
+    except OSError:
+        # File missing: do not cache (it may appear later); fall through to
+        # the authoritative check which returns False for a missing path.
+        return storage_file_is_trusted(path, is_windows=_IS_WINDOWS)
+    ino = int(getattr(metadata, "st_ino", 0) or 0)
+    mtime_ns = int(getattr(metadata, "st_mtime_ns", 0) or 0)
+    if cached is not None and cached[0] == ino and cached[1] == mtime_ns:
+        return cached[2]
+    trusted = storage_file_is_trusted(path, is_windows=_IS_WINDOWS)
+    with _TRUST_CACHE_LOCK:
+        _trust_cache[path] = (ino, mtime_ns, trusted)
+    return trusted
 
 
 def _require_storage_target_trusted(

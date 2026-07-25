@@ -816,3 +816,51 @@ def test_created_storage_cleanup_refuses_identity_replacement(tmp_path: Path) ->
         store_security.cleanup_created_storage_paths([identity], is_windows=os.name == "nt")
 
     assert target.is_dir()
+
+
+def test_storage_trust_cache_returns_consistent_verdict(tmp_path: Path) -> None:
+    """PERF-02: the trust verdict is cached and reused for a stable file
+    identity (same inode + mtime), avoiding the lstat/DACL probe on every
+    store connection. This is the hook-hot-path optimization."""
+    db_path = tmp_path / "cached.db"
+    db_path.write_bytes(b"")
+    # Establish an owner-private file so the verdict is True on POSIX.
+    if os.name == "nt":
+        store_security.restrict_windows_acl(db_path, directory=False, is_windows=True)
+    else:
+        os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)
+
+    first = sqlite_store._storage_file_is_trusted(db_path)
+    second = sqlite_store._storage_file_is_trusted(db_path)
+    assert first is True
+    assert second is first  # cached, identical verdict
+    assert str(db_path) in {str(p) for p in sqlite_store._trust_cache}
+
+
+def test_storage_trust_cache_invalidates_after_permission_repair(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PERF-02 safety: the cache MUST invalidate when permissions change, so a
+    file that was repaired from untrusted to trusted is re-checked rather than
+    returning a stale negative verdict. Permission repair (chmod/DACL rewrite)
+    does not change inode or mtime, so invalidation is driven by the restrict
+    chokepoint, not the identity key."""
+    db_path = tmp_path / "repaired.db"
+    db_path.write_bytes(b"")
+
+    # Force an initial untrusted verdict into the cache.
+    monkeypatch.setattr(
+        sqlite_store,
+        "storage_file_is_trusted",
+        lambda *_args, **_kwargs: False,
+    )
+    assert sqlite_store._storage_file_is_trusted(db_path) is False
+    assert str(db_path) in {str(p) for p in sqlite_store._trust_cache}
+
+    # Simulate the repair chokepoint clearing the cache.
+    sqlite_store._invalidate_storage_trust_cache(db_path)
+    assert str(db_path) not in {str(p) for p in sqlite_store._trust_cache}
+
+    # After invalidation the real (authoritative) check runs again.
+    monkeypatch.undo()
+    assert sqlite_store._storage_file_is_trusted(db_path) is True

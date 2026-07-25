@@ -1354,3 +1354,79 @@ def test_public_model_receipt_requires_explicit_session_and_trace(tmp_path: Path
     assert receipt_id
     assert runtime.store.get_model_receipt("turn")["session_id"] == "session"
     assert runtime.store.get_open_traces_for_session("session") == ["turn"]
+
+
+def test_fresh_turn_builds_route_request_once_and_reuses_it(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """PERF-01: a fresh UserPromptSubmit must build the routing request exactly
+    once and reuse it via route(request=...). Previously the request was built
+    twice (once for the context fingerprint, once inside route()).
+    """
+
+    store = Store(tmp_path / "agency.db")
+    store._activate_prevalidated_agent(
+        {
+            "slug": "implementer",
+            "name": "Implementer",
+            "description": "Implements bounded changes.",
+            "prompt_body": "directive",
+            "version": "1.0.0",
+        }
+    )
+
+    build_calls = 0
+    real_build = pipeline.build_route_request
+
+    def counting_build(*args, **kwargs):
+        nonlocal build_calls
+        build_calls += 1
+        return real_build(*args, **kwargs)
+
+    # Stub route() so the test exercises only the request-build/reuse path,
+    # not the full selector (which needs a configured provider).
+    from agency_runtime.core.selector.delegation_detection import detect_work_units
+
+    captured_request_kwargs: list[dict[str, Any]] = []
+    message = "perform the task"
+
+    def stub_route(_session_id, _message, _catalog, **kwargs):
+        captured_request_kwargs.append(dict(kwargs))
+        return {
+            "selected_ids": [],
+            "confidence": 0.0,
+            "status": "applied",
+            "source": "test",
+            "query_hash": hashlib.sha256(message.encode()).hexdigest(),
+            "context_fingerprint": "c" * 64,
+            "work_units": detect_work_units(message),
+        }
+
+    monkeypatch.setattr(pipeline, "build_route_request", counting_build)
+    monkeypatch.setattr(pipeline, "route", stub_route)
+
+    origin_receipt = native_adapter_turn_origin(
+        "external_user",
+        host="codex",
+        event="adapter_preflight",
+        session_id="dedup-session",
+        trace_id="dedup-turn",
+    )
+    run_preflight(
+        store,
+        session_id="dedup-session",
+        user_message="perform the task",
+        host="codex",
+        trace_id="dedup-turn",
+        origin_receipt=origin_receipt,
+    )
+
+    # The request is built exactly once for the fresh turn.
+    assert build_calls == 1, (
+        f"expected build_route_request to fire once per fresh turn, got {build_calls}"
+    )
+    # And that single request is forwarded into route() via request=.
+    assert any(kwargs.get("request") is not None for kwargs in captured_request_kwargs), (
+        "route() must receive the pre-built request= kwarg"
+    )

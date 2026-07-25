@@ -506,6 +506,51 @@ def routing_context_fingerprint(
     ).context_fingerprint
 
 
+def build_route_request(
+    session_id: str,
+    user_message: str,
+    catalog: list[dict[str, Any]],
+    config: AgencyConfig,
+    *,
+    trace_id: str | None = None,
+    host: str = "unknown",
+    platform: str = "unknown",
+    available_tools: tuple[str, ...] | None = None,
+    capability_receipt: HostCapabilityReceipt | None = None,
+    capability_session_id: str = "",
+    capability_trace_id: str = "",
+    allow_installation_diagnostic: bool = False,
+    semantic_root_ids: tuple[str, ...] | None = None,
+    workforce_snapshot: WorkforceIndexSnapshot | None = None,
+) -> _RouteRequest:
+    """Build a ``_RouteRequest`` for reuse across one routing turn.
+
+    This is the public seam for callers (notably ``run_preflight``) that need
+    both the routing context fingerprint and the request itself, so that
+    ``route()`` can skip rebuilding it via the ``request=`` kwarg. The caller
+    is responsible for ensuring the request is built from the same catalog and
+    config that will be passed to ``route()``; a request built from a different
+    config (e.g. a deterministic offline config) must not be reused.
+    """
+
+    return _route_request(
+        session_id,
+        user_message,
+        catalog,
+        config,
+        trace_id=trace_id,
+        host=host,
+        platform=platform,
+        available_tools=available_tools,
+        capability_receipt=capability_receipt,
+        capability_session_id=capability_session_id,
+        capability_trace_id=capability_trace_id,
+        allow_installation_diagnostic=allow_installation_diagnostic,
+        semantic_root_ids=semantic_root_ids,
+        workforce_snapshot=workforce_snapshot,
+    )
+
+
 def _route_signals(request: _RouteRequest) -> _RouteSignals:
     validation = validate_policy(
         request.policy,
@@ -959,6 +1004,7 @@ def route(
     allow_installation_diagnostic: bool = False,
     semantic_root_ids: tuple[str, ...] | None = None,
     workforce_snapshot: WorkforceIndexSnapshot | None = None,
+    request: _RouteRequest | None = None,
 ) -> dict[str, Any]:
     """Run the full 8-layer routing pipeline.
 
@@ -969,6 +1015,13 @@ def route(
         config: Optional config override.
         turn_classification: Precomputed classification from the owning turn lifecycle.
         turn_state: Durable state used only when no precomputed classification is supplied.
+        request: Optional pre-built ``_RouteRequest`` mirroring the caller's
+            catalog/config/capability inputs. When supplied, the expensive
+            request build (catalog eligibility walk, policy load, context
+            fingerprint) is skipped. The caller is responsible for ensuring
+            the request was built from the same catalog/config/inputs being
+            passed in; a request built from a *different* config (e.g. a
+            deterministic offline config) must not be reused.
 
     Returns:
         Routing dict with keys: selected_ids, confidence, latency_ms, status,
@@ -982,21 +1035,25 @@ def route(
         turn_classification=turn_classification,
         turn_state=turn_state,
     )
-    request = _route_request(
-        session_id,
-        user_message,
-        catalog if catalog is not None else [],
-        cfg,
-        trace_id=trace_id or "route",
-        host=host,
-        platform=platform,
-        available_tools=available_tools,
-        capability_receipt=capability_receipt,
-        capability_session_id=capability_session_id,
-        capability_trace_id=capability_trace_id,
-        allow_installation_diagnostic=allow_installation_diagnostic,
-        semantic_root_ids=semantic_root_ids,
-        workforce_snapshot=workforce_snapshot,
+    request = (
+        request
+        if request is not None
+        else _route_request(
+            session_id,
+            user_message,
+            catalog if catalog is not None else [],
+            cfg,
+            trace_id=trace_id or "route",
+            host=host,
+            platform=platform,
+            available_tools=available_tools,
+            capability_receipt=capability_receipt,
+            capability_session_id=capability_session_id,
+            capability_trace_id=capability_trace_id,
+            allow_installation_diagnostic=allow_installation_diagnostic,
+            semantic_root_ids=semantic_root_ids,
+            workforce_snapshot=workforce_snapshot,
+        )
     )
     if not classification.selection_required:
         # Exact controls and a proven pure acknowledgement backed by explicitly
