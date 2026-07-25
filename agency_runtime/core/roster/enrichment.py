@@ -106,6 +106,10 @@ def enrichment_overlay() -> dict[str, dict[str, list[str]]]:
             ),
             "stacks": _identifiers(entry.get("stacks")),
             "domains": _identifiers(entry.get("domains")),
+            # task_types feeds capability_ids in project_workforce_contract; it
+            # must be governed ontology identifiers so enriched capabilities are
+            # valid CORE_CAPABILITY_IDS (e.g. threat-modeling for security specs).
+            "task_types": _identifiers(entry.get("task_types")),
         }
         if any(row.values()):
             overlay[slug] = row
@@ -135,3 +139,36 @@ def apply_enrichment(agent: dict[str, Any]) -> dict[str, Any]:
                 combined.append(item)
         agent[field] = combined
     return agent
+
+
+def apply_enrichment_to_contract(contract: Any) -> Any:
+    """Return an enriched copy of a WorkforceContract (read-time overlay).
+
+    The durable stored workforce contract is immutable; enrichment is applied at
+    read time (in workforce_index_snapshot) so the live route sees enriched
+    capability_ids/stacks/domains/scope_qualifiers without mutating the stored
+    version. Enrichment only supplements existing declared values. ``contract``
+    is a frozen dataclass; use ``dataclasses.replace`` to produce the overlay.
+    """
+
+    from dataclasses import replace
+
+    overlay = enrichment_overlay()
+    row = overlay.get(str(getattr(contract, "agent_id", "")))
+    if not row:
+        return contract
+    updates: dict[str, Any] = {}
+    for field, attr in (
+        ("stacks", "stacks"),
+        ("domains", "domains"),
+        ("scope_qualifiers", "scope_qualifiers"),
+        ("task_types", "capability_ids"),
+    ):
+        values = row.get(field)
+        if not values:
+            continue
+        existing = tuple(getattr(contract, attr, ()))
+        combined = tuple(dict.fromkeys((*existing, *values)))
+        if combined != existing:
+            updates[attr] = combined
+    return replace(contract, **updates) if updates else contract

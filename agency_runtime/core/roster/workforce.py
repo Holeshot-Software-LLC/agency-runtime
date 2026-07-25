@@ -104,16 +104,22 @@ def workforce_index_snapshot(
                 if standing == "active"
                 else standing
             )
-            contracts.append(
-                replace(
-                    contract,
-                    display_name=str(row["display_name"]),
-                    employment=employment,
-                    version=str(row["current_version"]),
-                    version_hash=str(row["current_hash"]),
-                    enabled=available,
-                )
+            enriched_contract = replace(
+                contract,
+                display_name=str(row["display_name"]),
+                employment=employment,
+                version=str(row["current_version"]),
+                version_hash=str(row["current_hash"]),
+                enabled=available,
             )
+            # ADR-0087 / AR-119: apply the enrichment overlay at read time so the
+            # live route sees enriched capability_ids/stacks/domains/scope_qualifiers
+            # without mutating the durable stored contract. Lazy import avoids a
+            # module-load cycle (enrichment reads bundled._resource).
+            from agency_runtime.core.roster.enrichment import apply_enrichment_to_contract
+
+            enriched_contract = apply_enrichment_to_contract(enriched_contract)
+            contracts.append(enriched_contract)
         conn.commit()
     canonical = tuple(contracts)
     records = tuple(project_recruiter_index_record(item) for item in canonical)
