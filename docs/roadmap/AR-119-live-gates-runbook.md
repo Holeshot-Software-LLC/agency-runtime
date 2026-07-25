@@ -23,10 +23,45 @@ inference-first selection, the offline typed-recall floor, the stamped
 selection-safety across all 272 workers, and the sharded CI (AR-117). The
 remaining gates that keep #132 (AR-119) and #138 (AR-125) open are **live
 execution gates** — they require a configured inference provider and, for
-canaries, real host sessions. None can run with `providers: 0`.
+canaries, real host sessions.
 
-This runbook is the exact, ordered procedure to close them once a provider is
-available.
+## Resolved: enrichment now reaches the live route (read-time overlay)
+
+A live `agency route` on a security-review ask previously abstained with
+`no_safe_sufficient_team` even when the recruiter nominated the right specialist
+as required and it was executable. Root cause: the planner emits units requiring
+capabilities like `threat-modeling`/`audit`/`risk-analysis` (valid
+`CORE_CAPABILITY_IDS`), but the security specialists' stored workforce contracts
+declared only `analysis`/`review`/`testing`.
+
+**Fixed** (PR #143): the enrichment overlay now adds these capabilities
+(`roster/data/scope_qualifiers.json`), the loader processes `task_types`
+(`roster/enrichment.py`), and `apply_enrichment_to_contract` applies the overlay
+**at read time** in `workforce_index_snapshot` (`roster/workforce.py`) — option 3
+from the original options list. This respects durable contract immutability (the
+stored version is untouched) while the live route sees enriched
+`capability_ids`/`stacks`/`domains`/`scope_qualifiers`.
+
+**Verified live:** `agency route "Review this Python authentication code for
+correctness and security"` now **accepts** reliably (3/3 runs) with a governed
+5-unit team: `codebase-onboarding-engineer` (discovery) → `code-reviewer`
+(correctness, 2 units) → `ai-generated-code-security-auditor` (security, 2
+units), confidence 1.0. All 95 workforce/selection/staffing tests + 124
+roster/hiring/cache tests pass.
+
+## Prerequisite: configure a provider
+
+Every live gate below requires at least one inference provider. The development
+config at `~/.agency-runtime/agency.yaml` has the codex-subscription provider
+(`gpt-5.6-luna`, low effort, transport codex); load it via `load_config()` (the
+direct `AgencyConfig()` constructor does not read the file). Also set
+`workforce.fast_call_budget = 2` (the default 1 exhausts the budget before the
+recruiter runs).
+
+---
+
+This runbook is the exact, ordered procedure to close the live gates once the
+enrichment-propagation blocker above is resolved and a provider is available.
 
 ## Prerequisite: configure a provider
 

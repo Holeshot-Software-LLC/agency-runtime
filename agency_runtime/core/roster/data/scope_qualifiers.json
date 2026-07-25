@@ -28,7 +28,23 @@
       "audit AI-generated code for security",
       "review a security patch for exploitability"
     ],
-    "stacks": []
+    "stacks": [],
+    "task_types": ["threat-modeling", "audit", "verification"]
+  },
+  "application-security-engineer": {
+    "scope_qualifiers": [
+      "review application security",
+      "threat-model an application"
+    ],
+    "stacks": [],
+    "task_types": ["threat-modeling", "audit", "verification", "risk-analysis"]
+  },
+  "senior-secops-engineer": {
+    "scope_qualifiers": [
+      "review SecOps and operational security"
+    ],
+    "stacks": [],
+    "task_types": ["threat-modeling", "audit", "verification"]
   },
   "software-test-engineer": {
     "scope_qualifiers": [
