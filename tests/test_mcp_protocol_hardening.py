@@ -474,7 +474,7 @@ def test_direct_tool_handlers_cover_status_search_record_and_errors(tmp_path: Pa
 
     status = mcp.handle_tool_call("agency.status", {}, store)
     assert status["roster_count"] == 0
-    assert set(status["hosts"]) == {"hermes", "openclaw", "codex", "claude"}
+    assert set(status["hosts"]) == {"hermes", "openclaw", "codex", "claude", "zcode"}
     assert (
         mcp.handle_tool_call("agency.search_agents", {"query": "security"}, store)["agents"] == []
     )

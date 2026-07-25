@@ -187,6 +187,7 @@ def test_dashboard_inference_snapshot_is_identity_bound_and_redacted(
         (
             {
                 "hosts": [
+                    _status("hermes"),
                     _status("codex"),
                     _status("codex"),
                     _status("openclaw"),
