@@ -46,7 +46,21 @@ def main() -> int:
         for entry in sys.path
         if entry and os.path.normcase(os.path.abspath(entry)) != os.path.normcase(package_parent)
     ]
-    sys.path[:] = [package_parent, *retained]
+    # Under -I -S (isolated, no site), the interpreter that launched this
+    # bootstrap had its site-packages stripped. For a production install the
+    # package and its deps share one site-packages dir; for a development venv
+    # install the deps live in the venv's site-packages, which -S removed.
+    # Restore the launching interpreter's site-packages so yaml and other
+    # installed dependencies are importable. This mirrors how the host's Python
+    # (which created this process) resolves installed packages.
+    import site
+
+    site_paths = [
+        site_dir
+        for site_dir in (*site.getsitepackages(), site.getusersitepackages())
+        if site_dir and os.path.isdir(site_dir)
+    ]
+    sys.path[:] = [package_parent, *site_paths, *retained]
     sys.argv = [module, *sys.argv[2:]]
     runpy.run_module(module, run_name="__main__", alter_sys=True)
     return 0
