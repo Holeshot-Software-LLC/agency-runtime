@@ -3207,3 +3207,45 @@ def test_dashboard_serves_authenticated_requests_on_ipv6_loopback(tmp_path: Path
 
     assert response.status == 200
     assert payload["status"] == "ok"
+
+
+@pytest.mark.parametrize(
+    "exc_cls",
+    [
+        "RuntimeControlSecurityError",
+        "RuntimeControlValidationError",
+    ],
+)
+def test_dashboard_runtime_control_error_does_not_leak_detail_to_client(
+    dashboard_server, monkeypatch: pytest.MonkeyPatch, exc_cls
+) -> None:
+    """L2-05: a RuntimeControlSecurityError / ValidationError carries path and
+    trust-contract detail that must not reach the client. The dashboard must
+    return a generic 400 without the message and log the type server-side.
+    """
+    from agency_runtime.core import runtime_control
+
+    exc_type = getattr(runtime_control, exc_cls)
+
+    def raising_reader(*, path):
+        raise exc_type(
+            "control path /home/secret/.agency-runtime/control.json failed "
+            "owner-private trust verification: insecure DACL SDDL"
+        )
+
+    monkeypatch.setattr(dashboard_module, "read_runtime_control", raising_reader)
+
+    # GET /api/runtime goes through _master_control -> read_runtime_control.
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 400
+    assert payload == {"error": "runtime control unavailable"}
+    # The sensitive detail must not appear in the response body.
+    body = json.dumps(payload)
+    assert "secret" not in body
+    assert "DACL" not in body
+    assert "trust" not in body
