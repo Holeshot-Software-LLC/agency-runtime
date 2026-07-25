@@ -227,25 +227,42 @@ and only after independently-verified successful assignments.
 
 ---
 
-## 🧪 Sample teams per ask
+## 🧪 What gets routed for an ask
 
-*(Representative — shaped by the governed roster and the verified routing
-behavior. Live output varies with provider and roster generation.)*
+Agency reads the **intent** of the ask and the **detected stack/domain** to
+pick specialists — it doesn't keyword-match. The same phrasing routes to a
+different specialist depending on the repository context, and a single ask often
+decomposes into a multi-specialist team. *(Representative — actual picks depend
+on the detected stack and the live roster.)*
 
-| Ask | Recruited via | Planned team (specialists) |
+**Same ask, different specialists by context:**
+
+| Ask (with context) | Recruited via | Specialist |
+|---|---|---|
+| "fix the auth bug" — in a Python repo | inference | `python-application-engineer` |
+| "fix the auth bug" — in a TypeScript repo | inference | `typescript-application-engineer` |
+| "fix the auth bug" — in a Go repo | inference | `go-application-engineer` |
+
+The router reads the repository's stacks, not the literal words.
+
+**One ask → a governed multi-specialist team (sequential units):**
+
+| Ask | Recruited via | Team decomposition |
 |---|---|---|
 | "Review this code for correctness and security" | inference | `code-reviewer` + `ai-generated-code-security-auditor` |
-| "Fix the authentication bug" | inference | `python-application-engineer` → test → review → security audit |
-| "Write unit tests" | inference | `software-test-engineer` + `technical-writer` (review) |
-| "Design a Git branching strategy" | inference | multi-unit: discovery → design → implement → review → test, incl. `git-workflow-master` |
+| "Design a Git branching strategy" | inference | discovery → design → implement → review → test, incl. `git-workflow-master` |
 | "Build a FluxUI dashboard" | inference | `senior-developer` (owns FluxUI/Livewire/Laravel) |
-| *(no provider configured)* "review this auth code" | deterministic | best typed-guess reviewer (e.g. `code-reviewer`) |
+| "Investigate and contain this production incident" | inference | discovery → analysis → recovery plan → operations |
 
-Try it yourself:
+**No provider configured?** Agency falls back to a deterministic typed-recall
+floor (stamped `Recruited via: deterministic`) — a best typed-guess specialist
+rather than nothing. Configure a provider for the intent-aware picks above.
+
+Try it yourself on your own repo:
 
 ```bash
-agency route "Review this authentication design and propose tests"
-agency explain "Review this authentication design and propose tests"
+agency route "review this authentication design and propose tests"
+agency explain "review this authentication design and propose tests"
 ```
 
 ---

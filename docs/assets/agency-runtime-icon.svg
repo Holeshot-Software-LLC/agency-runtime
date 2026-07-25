@@ -1,38 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Agency Runtime icon">
   <defs>
-    <linearGradient id="ar-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0f172a"/>
-      <stop offset="1" stop-color="#1e293b"/>
+    <linearGradient id="ar-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#111c2e"/>
     </linearGradient>
-    <linearGradient id="ar-accent" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="ar-hub" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#38bdf8"/>
       <stop offset="1" stop-color="#6366f1"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#ar-bg)"/>
-  <!-- roster grid of specialists behind the main agent -->
-  <g fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round">
-    <rect x="52" y="52" width="34" height="34" rx="7"/>
-    <rect x="94" y="52" width="34" height="34" rx="7"/>
-    <rect x="136" y="52" width="34" height="34" rx="7"/>
-    <rect x="52" y="94" width="34" height="34" rx="7"/>
-    <rect x="136" y="94" width="34" height="34" rx="7"/>
-    <rect x="52" y="136" width="34" height="34" rx="7"/>
-    <rect x="94" y="136" width="34" height="34" rx="7"/>
-    <rect x="136" y="136" width="34" height="34" rx="7"/>
+
+  <!-- rounded square backdrop -->
+  <rect x="10" y="10" width="236" height="236" rx="52" fill="url(#ar-bg)"/>
+
+  <!-- one coordinator recruiting a bench of specialists (hub-and-spoke) -->
+  <g fill="none" stroke="#38bdf8" stroke-width="7" stroke-linecap="round" opacity="0.45">
+    <!-- spokes radiating from center (128,128) to six specialist nodes -->
+    <line x1="128" y1="128" x2="128" y2="48"/>
+    <line x1="128" y1="128" x2="197" y2="80"/>
+    <line x1="128" y1="128" x2="208" y2="156"/>
+    <line x1="128" y1="128" x2="160" y2="210"/>
+    <line x1="128" y1="128" x2="96" y2="210"/>
+    <line x1="128" y1="128" x2="48" y2="156"/>
+    <line x1="128" y1="128" x2="59" y2="80"/>
   </g>
-  <!-- bracketed bench framing -->
-  <path d="M40 40 L40 182 M200 40 L200 182" fill="none" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
-  <!-- main agent node (foreground) -->
-  <circle cx="116" cy="115" r="30" fill="url(#ar-accent)"/>
-  <circle cx="116" cy="106" r="9" fill="#0f172a"/>
-  <path d="M98 132 q18 -22 36 0" fill="none" stroke="#0f172a" stroke-width="6" stroke-linecap="round"/>
-  <!-- delegation rays from the main agent to the bench -->
-  <g stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.55">
-    <path d="M116 115 L69 69"/>
-    <path d="M116 115 L153 69"/>
-    <path d="M116 115 L69 153"/>
-    <path d="M116 115 L153 153"/>
+
+  <!-- specialist nodes (the roster) -->
+  <g fill="#0b1220" stroke="#6366f1" stroke-width="5">
+    <circle cx="128" cy="48" r="14"/>
+    <circle cx="197" cy="80" r="14"/>
+    <circle cx="208" cy="156" r="14"/>
+    <circle cx="160" cy="210" r="14"/>
+    <circle cx="96" cy="210" r="14"/>
+    <circle cx="48" cy="156" r="14"/>
+    <circle cx="59" cy="80" r="14"/>
   </g>
-  <text x="128" y="208" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="34" font-weight="700" fill="#e2e8f0" text-anchor="middle">A</text>
+
+  <!-- central hub: the main agent / orchestrator -->
+  <circle cx="128" cy="128" r="30" fill="url(#ar-hub)"/>
 </svg>
