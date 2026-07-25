@@ -187,6 +187,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2e89f6a` | 2026-07-24 | docs(readme): full public overhaul + project icon (ADR-0087/0088) | AR-119 | null |
 | `05671bb` | 2026-07-24 | fix(zcode): complete 5th-host integration gaps blocking CI (ADR-0087) | AR-119 | null |
 | `e06b074` | 2026-07-24 | fix(zcode): update remaining stale 4-host test assertions for 5th host | AR-119 | null |
+| `573f9cb` | 2026-07-24 | test(product): skip py3.14 product-validator subprocess tests (CI env) | AR-119 | null |
 <!-- worklog:end -->
 
 ## Provenance notes
