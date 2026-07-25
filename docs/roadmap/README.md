@@ -144,6 +144,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-124` | [Integrate lifecycle assurance, native delegation, and provider evidence](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | done | p0 | routing | [#137](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/137) |
 | `AR-125` | [Prove workforce selection and one-shot application outcomes](issue-AR-125-workforce-and-one-shot-evaluation.md) | open | p0 | testing | [#138](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138) |
 | `AR-126` | [Keep context checkpoints in the current task](issue-AR-126-bounded-idempotent-context-handoffs.md) | done | p0 | documentation | [#139](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/139) |
+| `AR-127` | [Make ZCode Stop rejections actually block](issue-AR-127-zcode-stop-rejection-shape.md) | in_progress | p0 | host-integrations | _tracker pending_ |
 
 ## Traceability
 
@@ -277,6 +278,7 @@ not stable internal identifiers.
 | [AR-124](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | `4e0b0a7`, `743a982` | [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md) |
 | [AR-125](issue-AR-125-workforce-and-one-shot-evaluation.md) | `4e0b0a7`, `743a982`, `ca893fe`, `9d415bb`, `86fba47`, `8af4cf0`, `e697f23`, `85afc03`, `a27f340`, `9c6c1ae`, `d692379`, `ef24960`, `2f2cfbb`, `c158210`, `71f7775`, `4687a7b`, `47ff115`, `8a0e75d`, `1c91945`, `978e02c`, `a5844dc`, `c1efcaf`, `1d3059d`, `a6007af`, `06d12cf`, `fc9c453`, `90179d8`, `b8c1eca`, `8918040`, `6049510`, `48e3022`, `0dfe777`, `518d227` | [ADR-0080](../decisions/0080-plan-before-recruiting-from-the-whole-workforce.md), [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md) |
 | [AR-126](issue-AR-126-bounded-idempotent-context-handoffs.md) | `355c05a`, `b927266`, `4a19e23`, `3d0ee63`, `4f850c7` | [ADR-0084](../decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md), [ADR-0085](../decisions/0085-continue-in-task-after-context-checkpoints.md), [ADR-0086](../decisions/0086-use-checkpoint-only-context-telemetry.md) |
+| [AR-127](issue-AR-127-zcode-stop-rejection-shape.md) | `a28f7d5` | [ADR-0089](../decisions/0089-zcode-stop-rejections-use-decision-block.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

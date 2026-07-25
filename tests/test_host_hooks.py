@@ -1450,7 +1450,7 @@ def test_stop_continuation_claim_exception_fails_closed() -> None:
     assert len(adapter.verify_calls) == 1
 
 
-@pytest.mark.parametrize("host", ["codex", "claude"])
+@pytest.mark.parametrize("host", ["codex", "claude", "zcode"])
 @pytest.mark.parametrize("message", [None, ""])
 def test_missing_or_blank_stop_response_fails_closed_and_exhausts_one_retry(
     tmp_path: Path,
@@ -1479,14 +1479,69 @@ def test_missing_or_blank_stop_response_fails_closed_and_exhausts_one_retry(
     if host == "codex":
         assert first["continue"] is False
     else:
+        # Claude and ZCode both block via {"decision": "block", ...}. ZCode
+        # silently ignores the {"continue": False, "stopReason": ...} shape,
+        # so it must emit decision:block on every rejection. See AR-127.
         assert first["decision"] == "block"
     assert store.get_run("turn-empty")["status"] == "active"
 
     payload["stop_hook_active"] = True
     retry = bridge.handle(payload)
 
-    assert retry["continue"] is False
+    # The retry-exhausted terminal path emits the lifecycle shape for codex
+    # and claude, but ZCode must still emit decision:block there too.
+    if host == "zcode":
+        assert retry["decision"] == "block"
+    else:
+        assert retry["continue"] is False
     assert store.get_run("turn-empty")["status"] == "retry_exhausted"
+
+
+def test_zcode_stop_rejection_always_uses_decision_block_regardless_of_retry(
+    tmp_path: Path,
+) -> None:
+    """AR-127: ZCode only recognizes {"decision": "block", ...} on its Stop
+    event. The {"continue": False, "stopReason": ...} lifecycle shape is an
+    unknown field that ZCode silently ignores, collapsing a rejection into a
+    pass-through accept. ZCode must therefore emit decision:block on every
+    rejection path, including retry-exhausted and verifier-unavailable.
+    """
+    adapter = FakeAdapter()
+    adapter.verify_result = {
+        "action": "continue",
+        "message": "Correct the evidence header.",
+    }
+    store = FakeStore()
+    bridge = HookBridge("zcode", store=store, adapter=adapter)  # type: ignore[arg-type]
+
+    first = bridge.handle(
+        {
+            "hook_event_name": "Stop",
+            "session_id": "session-zcode",
+            "turn_id": "turn-zcode",
+            "stop_hook_active": False,
+            "last_assistant_message": "Draft without the Agency header.",
+        }
+    )
+    # First rejection (claimed continuation): must be decision:block.
+    assert first == {"decision": "block", "reason": first["reason"]}
+    assert "continue" not in first
+    assert "stopReason" not in first
+
+    exhausted = bridge.handle(
+        {
+            "hook_event_name": "Stop",
+            "session_id": "session-zcode",
+            "turn_id": "turn-zcode",
+            "stop_hook_active": True,
+            "last_assistant_message": "Still missing the Agency header.",
+        }
+    )
+    # Retry-exhausted terminal path: must ALSO be decision:block, never the
+    # lifecycle shape, or ZCode would silently accept the invalid response.
+    assert exhausted["decision"] == "block"
+    assert "continue" not in exhausted
+    assert "stopReason" not in exhausted
 
 
 def test_claude_session_end_closes_every_open_turn(tmp_path: Path) -> None:
@@ -1827,6 +1882,37 @@ def test_hook_boundary_fails_closed_on_oversized_input() -> None:
     result = json.loads(sink.getvalue())
     assert result["continue"] is False
     assert "Do not publish" in result["stopReason"]
+    assert "size limit" in errors.getvalue()
+
+
+def test_zcode_hook_boundary_fails_closed_with_decision_block() -> None:
+    """AR-127: the oversized/malformed-Stop boundary path must also emit
+    {"decision": "block", ...} for zcode, not the ignored lifecycle shape."""
+    source = io.BytesIO(
+        json.dumps(
+            {
+                "hook_event_name": "Stop",
+                "session_id": "session",
+                "last_assistant_message": "x" * MAX_HOOK_INPUT_BYTES,
+            }
+        ).encode()
+    )
+    sink = io.BytesIO()
+    errors = io.StringIO()
+
+    status = run_hook_stdio(
+        "zcode",
+        input_stream=source,
+        output_stream=sink,
+        error_stream=errors,
+    )
+
+    assert status == 0
+    result = json.loads(sink.getvalue())
+    assert result["decision"] == "block"
+    assert "Do not publish" in result["reason"]
+    assert "continue" not in result
+    assert "stopReason" not in result
     assert "size limit" in errors.getvalue()
 
 
