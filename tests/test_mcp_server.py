@@ -848,3 +848,22 @@ def test_mcp_stdio_rejects_oversized_input_without_unbounded_read() -> None:
     response = json.loads(sink.getvalue())
     assert response["error"]["code"] == -32700
     assert "input limit" in response["error"]["message"]
+
+
+def test_mcp_string_argument_without_max_length_is_rejected() -> None:
+    """SEC-05: a string argument whose schema omits maxLength must be rejected
+    rather than passed through with no length cap, so a future tool added
+    without maxLength cannot route an unbounded attacker string."""
+    from agency_runtime.server.mcp import _validate_argument
+
+    spec_without_cap = {"type": "string"}
+    error = _validate_argument("query", "anything", spec_without_cap)
+    assert error is not None
+    assert "no defined maximum length" in error
+
+    # A schema with an explicit cap validates normally within the limit.
+    spec_with_cap = {"type": "string", "maxLength": 8}
+    assert _validate_argument("query", "short", spec_with_cap) is None
+    assert "exceeds its maximum length" in _validate_argument(
+        "query", "too-long-value", spec_with_cap
+    )

@@ -429,10 +429,17 @@ def _invoke_git(
     try:
         Path(argv[0]).resolve(strict=True).relative_to(repo.resolve(strict=True))
     except ValueError:
+        # relative_to raises ValueError when the executable is NOT inside the
+        # repo — that is the safe case, so continue. (This reads inverted: the
+        # except clause is the safe path, the else clause below is the refuse
+        # path. Do not "fix" by swapping them — see test that places a fake git
+        # inside the repo and asserts refusal.)
         pass
     except (OSError, RuntimeError) as exc:
         return _git_refusal(f"Git operation refused: executable identity failed: {exc}")
     else:
+        # The executable resolved INSIDE the repo: a hostile repository planted
+        # its own git binary. Refuse rather than execute it.
         return _git_refusal(
             "Git operation refused: executable resolved inside the target repository"
         )

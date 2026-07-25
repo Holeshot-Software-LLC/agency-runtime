@@ -133,3 +133,40 @@ def test_broker_descriptor_schema_rejects_plaintext_and_extra_fields() -> None:
     )
     assert "token" not in descriptor
     assert json.loads(json.dumps(descriptor))["protected_token"] == "p" * 64
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/config",
+        "/api/hiring/approve",
+        "/api/maintenance/trim",
+        "/api/roster/action",
+        "/api/workforce/action",
+    ],
+)
+def test_broker_token_cannot_call_destructive_endpoints(path: str) -> None:
+    """SEC-02: the restricted broker token's path allowlist is the sole guard
+    preventing a restricted reader from invoking destructive/administrative
+    endpoints. Pin each genuinely-destructive POST route as broker-denied so a
+    future endpoint cannot accidentally be exposed to the broker scope."""
+    assert dashboard_runtime.dashboard_broker_request_allowed(path, "POST") is False
+    assert dashboard_runtime.dashboard_broker_request_allowed(path, "GET") is False
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/agents/toggle",
+        "/api/hosts/toggle",
+        "/api/route",
+        "/api/runtime/toggle",
+        "/api/search",
+    ],
+)
+def test_broker_token_allows_intended_control_endpoints(path: str) -> None:
+    """SEC-02 companion: document the endpoints the restricted broker token IS
+    intentionally allowed to call (operator control + read-only search/route).
+    Pinning these prevents an over-restrictive change from silently breaking
+    the broker's supported surface."""
+    assert dashboard_runtime.dashboard_broker_request_allowed(path, "POST") is True
