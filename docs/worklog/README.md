@@ -186,7 +186,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `184be93` | 2026-07-25 | fix(security): withhold bearer token from non-TTY stdout; suppress runtime-control error detail (SEC-01, L2-05) (#146) | null | null |
 | `a1c4c47` | 2026-07-25 | perf(hot-path): build route request once per turn; cache storage trust verdict (PERF-01, PERF-02) (#147) | null | null |
 | `ffd51d0` | 2026-07-25 | chore: remove 8 dead-code items with test ports (audit wave 3) (#148) | null | null |
-| `d0892db` | 2026-07-25 | fix(hardening): isolate bad host records; fail-closed MCP maxLength; broker allowlist tests; git-refusal clarity (audit wave 4) | null | null |
+| `e1ece24` | 2026-07-25 | fix(hardening): isolate bad host records; fail-closed MCP maxLength; broker allowlist tests; git-refusal clarity (audit wave 4) (#149) | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
