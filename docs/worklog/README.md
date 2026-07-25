@@ -184,7 +184,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e8b0ba3` | 2026-07-25 | fix(installer): ZCode hooks use type 'process' (shell-free) not 'command' (#145) | null | null |
 | `d9ce781` | 2026-07-25 | fix(zcode): Stop rejections emit decision:block on every path (AR-127) (#150) | null | null |
 | `184be93` | 2026-07-25 | fix(security): withhold bearer token from non-TTY stdout; suppress runtime-control error detail (SEC-01, L2-05) (#146) | null | null |
-| `f92297b` | 2026-07-25 | perf(hot-path): build route request once per turn; cache storage trust verdict (PERF-01, PERF-02) | null | null |
+| `a1c4c47` | 2026-07-25 | perf(hot-path): build route request once per turn; cache storage trust verdict (PERF-01, PERF-02) (#147) | null | null |
+| `c8c99c8` | 2026-07-25 | chore: remove 8 dead-code items with test ports (audit wave 3) | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
