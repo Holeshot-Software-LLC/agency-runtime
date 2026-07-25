@@ -649,6 +649,42 @@ def _activate_or_close_direct_native_child(
         raise
 
 
+def _route_arguments(
+    *,
+    config: AgencyConfig,
+    trace_id: str,
+    classification: TurnClassification,
+    host: str,
+    platform: str,
+    available_tools: tuple[str, ...],
+    capability_receipt: HostCapabilityReceipt,
+    workforce_snapshot: Any,
+    route_request: Any = None,
+) -> dict[str, Any]:
+    """Build the route() kwargs shared by every fresh-turn route site.
+
+    PERF-01: when a pre-built ``route_request`` is available it is forwarded so
+    ``route()`` skips the expensive catalog/policy/fingerprint rebuild. The
+    caller is responsible for popping ``request`` before swapping in a
+    different config (see the deterministic-config path below).
+    """
+
+    arguments: dict[str, Any] = {
+        "config": config,
+        "store": None,
+        "trace_id": trace_id,
+        "turn_classification": classification,
+        "host": host,
+        "platform": platform,
+        "available_tools": available_tools,
+        "capability_receipt": capability_receipt,
+        "workforce_snapshot": workforce_snapshot,
+    }
+    if route_request is not None:
+        arguments["request"] = route_request
+    return arguments
+
+
 def _resolve_preflight_routing(
     store: Store,
     *,
@@ -669,6 +705,7 @@ def _resolve_preflight_routing(
     workforce_snapshot: Any = None,
     parent_session_id: str = "",
     parent_trace_id: str = "",
+    route_request: Any = None,
 ) -> tuple[dict[str, Any], dict[str, Any] | None, TurnClassification]:
     """Reuse one validated source recipe or produce a safe current route."""
 
@@ -703,17 +740,17 @@ def _resolve_preflight_routing(
             classification,
             "continuation_guard_invalid",
         )
-    route_arguments = {
-        "config": config,
-        "store": None,
-        "trace_id": trace_id,
-        "turn_classification": classification,
-        "host": host,
-        "platform": platform,
-        "available_tools": available_tools,
-        "capability_receipt": capability_receipt,
-        "workforce_snapshot": workforce_snapshot,
-    }
+    route_arguments = _route_arguments(
+        config=config,
+        trace_id=trace_id,
+        classification=classification,
+        host=host,
+        platform=platform,
+        available_tools=available_tools,
+        capability_receipt=capability_receipt,
+        workforce_snapshot=workforce_snapshot,
+        route_request=route_request,
+    )
     if not parent_trace_id:
         return (
             pipeline.route(session_id, user_message, catalog, **route_arguments),
@@ -863,6 +900,10 @@ def _resolve_preflight_routing(
         ollama=replace(config.ollama, enabled=False),
     )
     route_arguments["config"] = deterministic_config
+    # PERF-01 carve-out: the pre-built request was constructed against the
+    # original config; the deterministic offline config changes the policy
+    # fingerprint baked into the request, so it cannot be reused here.
+    route_arguments.pop("request", None)
     routing = pipeline.route(session_id, user_message, catalog, **route_arguments)
     deterministic_candidates = list(routing.get("selected_ids", []))
     routing.update(
@@ -1158,6 +1199,7 @@ def _prepare_preflight_evidence(
     pipeline: Any,
     parent_session_id: str = "",
     parent_trace_id: str = "",
+    route_request: Any = None,
 ) -> tuple[
     dict[str, Any],
     dict[str, Any],
@@ -1192,6 +1234,7 @@ def _prepare_preflight_evidence(
         pipeline=pipeline,
         parent_session_id=parent_session_id,
         parent_trace_id=parent_trace_id,
+        route_request=route_request,
     )
     routing = dict(routing)
     routing["trace_id"] = trace_id
@@ -1520,10 +1563,19 @@ def run_preflight(
         )
         catalog = routing_snapshot.catalog
 
-        routing_fingerprint = pipeline.routing_context_fingerprint(
+        # PERF-01: build the routing request ONCE per fresh turn and reuse its
+        # context fingerprint AND the request itself downstream in route().
+        # Previously routing_context_fingerprint built the full _RouteRequest
+        # (catalog eligibility walk, policy load, canonicalize+sha256) just to
+        # discard everything but the fingerprint string, then route() rebuilt
+        # it identically. The request is valid for reuse because catalog, cfg,
+        # host/platform/capabilities, and capability_receipt are the same
+        # objects threaded by alias into the eventual route() call.
+        route_request = pipeline.build_route_request(
+            normalized_session,
+            user_message,
             catalog,
             cfg,
-            session_id=normalized_session,
             trace_id=turn_trace_id,
             host=normalized_host,
             platform=runtime_platform,
@@ -1531,6 +1583,7 @@ def run_preflight(
             capability_receipt=runtime_capabilities,
             workforce_snapshot=workforce_snapshot,
         )
+        routing_fingerprint = route_request.context_fingerprint
         policy_fingerprint = _context_policy_fingerprint(
             cfg,
             pipeline,
@@ -1547,6 +1600,7 @@ def run_preflight(
             "catalog": catalog,
             "config": cfg,
             "routing_fingerprint": routing_fingerprint,
+            "route_request": route_request,
             "policy_fingerprint": policy_fingerprint,
             "roster_generation": routing_snapshot.roster_generation,
             "workforce_snapshot": workforce_snapshot,
