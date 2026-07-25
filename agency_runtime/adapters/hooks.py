@@ -157,6 +157,7 @@ def _boundary_failure_result(
     raw_bytes: bytes = b"",
     oversized: bool = False,
     expected_event: str = "",
+    host: str = "",
 ) -> dict[str, Any]:
     """Block any oversized envelope and every recognizable malformed Stop."""
 
@@ -173,9 +174,13 @@ def _boundary_failure_result(
         return {}
     if not (oversized or expected_stop or parsed_stop or raw_stop):
         return {}
+    # ZCode only recognizes {"decision": "block", ...}; the lifecycle shape is
+    # silently ignored and would collapse this malformed-Stop block into a
+    # pass-through accept. See AR-127.
+    retry = host != "zcode"
     return _completion_rejection(
         _VERIFICATION_UNAVAILABLE,
-        retry=True,
+        retry=retry,
     )
 
 
@@ -2032,6 +2037,13 @@ class HookBridge:
             # The legacy decision:block form can be ignored by Codex exec,
             # leaving the model without correction context.
             return _completion_rejection(reason, retry=True)
+        if self.host == "zcode":
+            # ZCode's Stop event only recognizes {"decision": "block", ...};
+            # the {"continue": False, "stopReason": ...} lifecycle shape is an
+            # unknown field that it silently ignores, which would collapse a
+            # rejection into a pass-through accept. Always emit decision:block
+            # regardless of the caller's retry state. See AR-127.
+            return _completion_rejection(reason, retry=False)
         return _completion_rejection(reason, retry=retry)
 
     def _record_finalization(
@@ -2191,6 +2203,7 @@ def run_hook_stdio(
             raw_bytes=raw_bytes,
             oversized=oversized,
             expected_event=expected_event,
+            host=host,
         )
         outcome = "response publication blocked" if result else "host operation continues"
         print(f"agency hook {host}: {exc}; {outcome}", file=errors)
@@ -2200,6 +2213,7 @@ def run_hook_stdio(
             raw_bytes=raw_bytes,
             oversized=oversized,
             expected_event=expected_event,
+            host=host,
         )
         outcome = "response publication blocked" if result else "host operation continues"
         print(
