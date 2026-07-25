@@ -2744,6 +2744,47 @@ def test_dashboard_host_api_preserves_unknown_boolean_states(
     assert payload["hosts"][0]["enabled"] is None
 
 
+def test_dashboard_host_api_isolates_unrecognized_host_label(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """L2-06: one malformed host inspection record (a label normalize_host
+    rejects) must degrade to a placeholder, not fail the whole /api/hosts
+    payload with a 500."""
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "dashboard.db"))
+    store = Store(tmp_path / "dashboard.db")
+    token = "token"
+    records = [
+        {"host": "codex", "registered": True, "enabled": True},
+        {"host": "future-host-label", "registered": None, "enabled": None},
+    ]
+    server = DashboardHTTPServer(
+        store,
+        auth_token=token,
+        port=0,
+        host_inspector=lambda: records,
+        runtime_control_home=tmp_path,
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    wrapped = {"base": f"http://127.0.0.1:{server.server_address[1]}", "token": token}
+    try:
+        status, payload, _headers = _json_response(wrapped, "/api/hosts", token=token)
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    assert status == 200
+    hosts = payload["hosts"]
+    assert len(hosts) == 2
+    # The valid host inspects normally.
+    assert hosts[0]["host"] == "codex"
+    # The unrecognized label is isolated to a placeholder, not a 500.
+    assert hosts[1]["host"] == "future-host-label"
+    assert hosts[1]["error"] == "unrecognized host label"
+
+
 def test_dashboard_host_snapshot_reads_one_master_generation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -319,8 +319,15 @@ def _validate_argument(key: str, value: Any, spec: dict[str, Any]) -> str | None
         return f"argument '{key}' must be a boolean"
     if "enum" in spec and value not in spec["enum"]:
         return f"argument '{key}' must be one of: {', '.join(spec['enum'])}"
-    if isinstance(value, str) and len(value) > int(spec.get("maxLength", len(value))):
-        return f"argument '{key}' exceeds its maximum length"
+    if isinstance(value, str):
+        # SEC-05: fail closed when a string argument has no explicit maxLength.
+        # A missing cap would let an unbounded attacker string reach the
+        # routing/parsing layer. All current tool schemas set maxLength.
+        max_length = spec.get("maxLength")
+        if not isinstance(max_length, int) or isinstance(max_length, bool):
+            return f"argument '{key}' has no defined maximum length"
+        if len(value) > int(max_length):
+            return f"argument '{key}' exceeds its maximum length"
     if not isinstance(value, int) or isinstance(value, bool):
         return None
     if "minimum" in spec and value < spec["minimum"]:

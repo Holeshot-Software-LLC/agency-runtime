@@ -324,12 +324,20 @@ export function createActionController(core, config, renderer, live) {
 
   async function selectWorker(slug) {
     if (!slug || state.lifecycle.destroyed || state.lifecycle.suspended) return;
+    // L1-21: guard against the double-click race. Two rapid worker-card clicks
+    // fire two GETs; without a guard the second-returning response would render
+    // over the first. Track the latest in-flight selection and ignore stale
+    // responses so only the most recent click wins the detail render.
+    const token = Symbol.for(slug);
+    state.selectedWorkerInFlight = token;
     try {
       const payload = await api(`/api/workforce?worker=${encodeURIComponent(slug)}&limit=100`);
       if (state.lifecycle.destroyed || state.lifecycle.suspended) return;
+      if (state.selectedWorkerInFlight !== token) return;
       state.selectedWorkerDetail = payload.detail || null;
       renderer.renderWorkerDetail();
     } catch (error) {
+      if (state.selectedWorkerInFlight !== token) return;
       showNotice(error.message, true);
     }
   }

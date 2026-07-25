@@ -1533,15 +1533,31 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         inspector = self.server.host_inspector  # type: ignore[attr-defined]
         master = self._master_control()
         global_enabled = bool(master["enabled"])
-        hosts = [
-            inspect_host_status(
-                self.store,
-                str(item.get("host") or ""),
-                native_record=item,
-                global_enabled=global_enabled,
-            )
-            for item in inspector()
-        ]
+        # L2-06: isolate per-host inspection failures so one malformed record
+        # (e.g. a future host label normalize_host rejects) degrades to an
+        # unknown-host placeholder instead of failing the whole payload.
+        hosts = []
+        for item in inspector():
+            host_label = str(item.get("host") or "")
+            try:
+                hosts.append(
+                    inspect_host_status(
+                        self.store,
+                        host_label,
+                        native_record=item,
+                        global_enabled=global_enabled,
+                    )
+                )
+            except ValueError:
+                hosts.append(
+                    {
+                        "host": host_label,
+                        "registered": None,
+                        "enabled": None,
+                        "effective": None,
+                        "error": "unrecognized host label",
+                    }
+                )
         self._json_ok(
             {
                 "hosts": hosts,
