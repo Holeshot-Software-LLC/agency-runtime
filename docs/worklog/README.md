@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-24
+updated: 2026-07-25
 tags: []
 related: []
 supersedes: []
@@ -179,7 +179,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7e8609d` | 2026-07-24 | feat(workforce): inference-first specialist selection (ADR-0087) + green main recovery (#140) | null | null |
 | `c6bc953` | 2026-07-24 | feat: ZCode 5th host + Codex/Claude child-routing plumbing + AR-120..125 acceptance evidence (#141) | AR-119 | null |
 | `4f69eeb` | 2026-07-25 | docs(readme): cleaner hub-and-spoke logo + intent-aware sample teams (#142) | AR-119 | null |
-| `a5400a7` | 2026-07-25 | fix(workforce): enrich security specialists + apply overlay at read-time in workforce_index_snapshot | AR-119 | null |
+| `67c88a1` | 2026-07-25 | fix(workforce): enrich security specialists with threat-modeling/audit/risk-analysis capabilities (#143) | null | null |
+| `f61a8c2` | 2026-07-25 | fix(bootstrap): restore venv site-packages under -I -S so ZCode hooks actually fire (#144) | null | null |
+| `1b5fe26` | 2026-07-25 | fix(installer): ZCode hooks use type 'process' (shell-free) not 'command' | null | null |
+| `e8b0ba3` | 2026-07-25 | fix(installer): ZCode hooks use type 'process' (shell-free) not 'command' (#145) | null | null |
+| `e911012` | 2026-07-25 | Merge branch 'main' of https://github.com/Holeshot-Software-LLC/agency-runtime | null | null |
+| `a28f7d5` | 2026-07-25 | fix(zcode): Stop rejections emit decision:block on every path (AR-127) | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
