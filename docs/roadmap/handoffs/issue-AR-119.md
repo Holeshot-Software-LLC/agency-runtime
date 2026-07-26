@@ -9,11 +9,9 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
-  - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
-  - docs/roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md
-  - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
-  - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
+  - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
+  - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/analysis/2026-07-26-production-readiness-review.md
@@ -22,159 +20,133 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 093241033300da2347baa898728ef89f6f5df92f
-minimum_ledger_commit: 4d15b2befc667c4a704623157432867ab137db4f
+evidence_commit: 90ce2724574dd9bcf3406e2e5e8b89688586f620
+minimum_ledger_commit: 268bde48ca63285566b299a8822df359b69a86f6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
 
 # AR-119 active recovery capsule
 
-Bounded current-state projection for AR-119. The
+Bounded current-state projection for the production-readiness push. The
 [canonical issue](../issue-AR-119-inference-first-workforce.md) owns the full
-acceptance contract. ADR-0087 governs configured inference; ADR-0088 governs
-the deterministic typed-recall floor only when inference is not configured.
+acceptance contract; this capsule records only the active checkpoint.
 
 ## checkpoint
 
-- Main is locally ahead of origin/main at 5001d78 by the governed audit,
-  checkpoint, Waves 1 and 2, and ledger commits. No push, PR, or tracker mutation was
-  authorized.
-- The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
-  and excluded from commits.
-- Telemetry reported 34.6 percent remaining; the clean 0932410/4d15b2b pair
-  satisfies the required hard checkpoint before live evaluation.
-- The current package integrates AR-133 through AR-148 source work plus the
-  AR-140/AR-141 performance and compatibility slice.
-- The first complete post-checkpoint Python arm ran 43m39s and failed 34 tests.
-  Its exact owning 12-module reproducer now passes 424 tests in 70.71 seconds.
-- The second complete arm ran 43m27s: 7,521 passed, 61 skipped, 1 expected
-  failure, and 1 failed because a legacy injected wizard fixture omitted
-  ZCode. The canonical five-host fixture was repaired.
-- The third complete arm is green: 7,522 passed, 61 skipped, and 1 expected
-  failure in 42m43s. It is the authoritative current integrated Python result.
+- Main is locally ahead of `origin/main`; no push, PR, tracker mutation, tag,
+  publication, or release was authorized.
+- The user-owned untracked `docs/analysis/2026-07-25-deep-audit-findings.md`
+  remains unchanged and excluded from every commit.
+- Telemetry reported 45.2 percent remaining. The clean
+  `90ce272`/`268bde4` evidence-and-ledger pair precedes this bounded AR-156
+  checkpoint.
+- Security, optimization, and UI-to-Store traceability findings AR-128 through
+  AR-155 have governed local repairs or explicit remaining evidence gates.
+- The active package is AR-156's cost-bounded local verification runner and
+  process-tree cancellation boundary. Author and independent focused review are
+  green; full-corpus timing has not started.
 
 ## completed-evidence
 
-- The initial fresh Codex install from source preserved nine contractors,
-  registered and enabled Codex, started the owner dashboard, and remained
-  activation-required for normal-profile hook trust. That installation
-  predates the current source changes.
-- Wave 1 made MCP/broker control read-only, isolated subprocess environments,
-  revalidated Store trust, repaired MCP contracts and deterministic safe-gap
-  hiring, enforced schema 36, and restored the fixed asset budget.
-- Finalization now validates and commits one complete bounded batch atomically.
-- Schema 37 persists expiring single-use native-child scopes; separate parent
-  and child hook subprocess tests prove exact correlation, replay denial, and
-  planned-work fail-closed behavior.
-- ZCode now has an independent exact seven-event configuration, atomic
-  merge/rollback, status, toggle, hook, lineage, and smoke source contract.
-- Dashboard collections expose cursors, exact totals, revisions, and declared
-  live semantics. One coherent control snapshot is stage-validated before
-  commit; stale generations cannot overwrite newer state; focus and selection
-  survive refresh; safe request IDs are visible.
-- Content-free observations correlate dashboard, HTTP, MCP, hooks, and
-  slow/error Store work without prompt, token, SQL, exception-message, or path
-  fields. Hiring outcomes are present in normalized route receipts.
-- Revision-aware retrieval and both lazy CLI version entrypoints preserve
-  correctness hashes; `python -m` fell from about 647 ms to 112 ms. The final
-  immutable sparse-map 10,000-agent control measured 7,839.770 ms cold,
-  53.825 ms warm p95, and 167.817 MiB. This is local, not superiority evidence.
-- A later mixed-suite arm exposed insufficient cached-routing margin at
-  2.103 ms. Eligibility now supplies an opaque proof after its detached
-  full-roster comparison so fingerprinting does not immediately repeat that
-  scan. Five unchanged final-source controls produced deterministic median
-  p95 values of 1.345, 1.448, 1.318, 1.442, and 1.745 ms without changing
-  the 2.0 ms gate.
-- The complete run exposed a real ZCode wizard omission; the canonical
-  five-host detection/status list now includes ZCode. Dashboard request
-  handling also tolerates pre-header disconnects, authenticates before
-  evaluating broker scope, and records expected disconnect degradation.
-- Deprecated route/header compatibility wrappers and canonical identity,
-  bounded-value, filesystem-trust, and executable helpers are restored. A
-  proven-dead inference island removes 590 production lines and adds one replacement line; its owning public
-  plan/shortlist suite passes 52 tests with 1 skip and 1 expected failure.
-- Schema currentness now rejects weakened activation-ledger constraints,
-  same-name workforce authority triggers, and quoted-literal drift. Malformed
-  HMAC text returns invalid authority. Focused tests pass 58; the broader
-  Store/schema/roster/workforce package passes 434 with 2 skips.
-- Explicit 263- and 1,001-worker dashboard paging drains every row and exact
-  facet. A committed inter-page insert appears once in stable key order.
-- The exact 12-module integration arm that owned all 34 complete-run failures
-  now passes 424 tests. Focused routing/dashboard correctness passes 79 tests
-  and the unchanged production microbenchmark passes independently.
-- Both wizard coverage modules pass 36 tests with the canonical five-host
-  detection fixture.
-- The complete `python -m pytest tests/ -q -W error` gate passes 7,522 tests
-  with 61 skips and 1 expected failure.
-- The exact dashboard release-coverage command passes all 84 tests at 97.13
-  percent lines, 91.28 percent branches, and 96.32 percent functions without a
-  threshold or production-code change.
-- The first exact Python coverage arm failed four tests and the fixed 97
-  percent floor at 96.66 percent after 57m35s. Focused deterministic repairs
-  pass 33 tests; matched Store/MCP coverage adds 177 statements and closes 38
-  partial branches, while focused dashboard coverage adds 87 statements.
-- AR-146 repairs generated cursor validation; 29 dashboard server and 12
-  cursor/activity/observation tests pass.
-- AR-147 replaces flat Windows ACE extraction after a native-valid nested
-  conditional foreign full-control grant bypassed directory and executable
-  trust classification. The repaired focused security suite passes 402 tests
-  with 6 skips; integrated release evidence remains pending.
+- Three ordinary integrated Python runs culminated in 7,522 passed, 61 skipped,
+  and 1 expected failure in 42m43s. A later pre-final-trace run passed 7,604
+  with 61 skips and 1 expected failure in 34m20s. Neither is current-head final
+  evidence after the latest runner changes.
+- The exact pre-final-trace coverage arm passed 97.08 percent against the
+  unchanged 97 percent floor; the separate three-test performance arm passed.
+  Both require current-head confirmation.
+- Dashboard trace repairs AR-149 through AR-155 are committed. Source UI tests
+  pass 101 cases at 98.61 percent lines, 91.06 percent branches, and 97.90
+  percent functions. Packaged assets are 258,787 bytes against the unchanged
+  263,168-byte cap, leaving 4,381 bytes of headroom.
+- Packaged-contractor lookup now batches nine trusted reads into one. The local
+  Windows warm install median fell from 160.340 ms to 28.712 ms; the stable
+  snapshot median fell from 539.410 ms to 408.184 ms. This is local evidence,
+  not a cross-platform claim.
+- Pull requests again defer the unchanged seven-cell compatibility matrix to
+  `main` or manual dispatch. Historical comparison avoids 95.79 raw
+  runner-minutes and 24m29s elapsed per PR update; current hosted jobs are
+  blocked before steps by GitHub billing/spending state.
+- AR-156 uses the governed four-way 274-file partition, one contract-attested
+  private runtime, per-shard HOME/TEMP/basetemp, least-privilege environments,
+  contained cancellation, bounded head-and-tail logs, and one run manifest.
+  Unknown runtime collisions fail closed; attested stale runtimes self-heal.
+- Author evidence is 212 passed with 15 skips. Independent evidence is 211
+  passed with 15 skips, a 2-test real private-venv/cancellation smoke, and a
+  live facade result of exit 130 with the descendant reaped. Fresh-home direct
+  and module dry-runs are byte-identical, cover all 274 files, and create no
+  runtime, lock, receipt, log, scratch, venv, or Node state.
+- Fresh source status sees all five hosts and the configured provider. The
+  globally installed `agency` CLI is stale: it omits ZCode from status help and
+  rejects the current provider configuration. The Store has 0 specialist-load
+  receipts and 0 model receipts, so current manual subagents are not claimed as
+  Agency-selected specialists.
 
 ## exact-blocker
 
-- AR-143 has no production OS-backed, non-exporting operator-presence verifier.
-  Dashboard and model-facing paths are read-only and real CLI mutations fail
-  closed. Do not bypass this with static confirmation, credentials, mocks, or a
-  model-callable capability.
-- Because install is a persistent mutation, the current source cannot be
-  freshly installed or canaried autonomously until AR-143 has a genuine
-  human-presence backend. The earlier installation is not current-source proof.
-- Normal-profile Codex activation still requires user-owned terminal-TUI hook
-  review. No trust store may be read or changed by this task.
-- AR-138 needs fresh post-install desktop/mobile accessibility QA. AR-137 and
-  AR-144 are locally acceptance-complete but lack authorized tracker actions.
-- AR-119 and AR-125 still lack a benchmark-valid completed value corpus and
-  current production-candidate evidence across claimed host/OS surfaces.
-  Malformed or timed-out upstream arms remain invalid, never losses.
-- AR-145 still requires the exact aggregate 97 percent coverage rerun and
-  separate uninstrumented performance suite.
-- Tracker creation/closure, push, PR, hosted checks, tags, publication, and
-  release remain unauthorized outward actions.
+- AR-143 still has no production OS-backed operator-presence backend. Microsoft
+  documents a genuine Windows desktop path only from build 22000 using
+  `IUserConsentVerifierInterop` and an active app-owned HWND; it is not yet
+  implemented or human-canaried. A console/pseudoconsole HWND is insufficient.
+- Linux positive persistent mutations remain unsupported until a separately
+  governed non-exporting OS backend exists. macOS is not an advertised surface.
+- The current AR-143 record overstates expiry/replay testing for an immediate
+  result-only flow, and its prompt lacks a human-readable target/generation.
+- Persistent fresh installation remains fail-closed behind AR-143. Normal
+  Codex hook trust also requires user-owned terminal-TUI review; neither may be
+  bypassed while the user is remote.
+- AR-156 still needs three uncontaminated warm full-corpus timings proving at
+  least 30 percent median wall-clock improvement. The canonical current-head
+  serial, coverage, performance, docs, UI, artifact, and installed smoke gates
+  remain separate requirements.
+- AR-119/AR-125 still lack a benchmark-valid outcome corpus and current-artifact
+  host/OS evidence. Malformed, timed-out, or unknown upstream arms remain
+  invalid, never losses.
+- GitHub billing/spending state blocks hosted evidence. Tracker creation or
+  closure and all other outward actions remain unauthorized.
 
 ## same-task-continuity
 
-Context thresholds never create, fork, transfer, or stop this task. After this
+Context thresholds never create, transfer, pause, or stop this task. After this
 clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run routing, exact Python coverage, performance, and full release gates.
-2. Finish the AR-140 hot path only from reproduced general evidence.
-3. Build isolated artifacts and smoke every mutation-free current-source path.
-4. Keep real install and AR-125 claims behind their exact authority/evidence.
+1. Commit the reviewed AR-156 runner with this recovery capsule, then record it
+   in the required ledger-only commit.
+2. Run three uncontaminated warm parallel corpora and compare their median with
+   the recorded local serial controls; do not change the gate after observing.
+3. Run current-head canonical serial, four-way exact coverage, performance,
+   docs, UI, security, artifact, and isolated-install gates.
+4. Correct AR-143's evidence contract and either implement the documented
+   Windows 11 backend with tests or keep positive mutations explicitly blocked.
+5. Reinstall the reviewed artifact in isolation, dogfood routing/roster/hiring,
+   and report Agency activation only from exact receipts.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
-python -m pytest tests/ -q -W error
-python -m pytest focused split packages -q -W error
+python -m scripts.run_parallel_change_loop --dry-run
+python -m scripts.run_parallel_change_loop
+python -m pytest tests -q -W error
+python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
-python -m pytest tests/test_distribution_verifier_hardening.py tests/test_release_packaging.py -q -W error
-ruff check and format check
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
 python scripts/verify_docs.py
 git diff --check
 ~~~
 
 ## constraints
 
-- Telemetry immediately before every live evaluation or canary.
-- Never weaken typed coverage/parser validation, add scenario routes, increase
-  the fixed 15000 ms cold or one-call fast budgets after observing results, or
-  reinterpret malformed upstream output.
-- Do not claim Agency superiority without a benchmark-valid measured corpus.
-- Do not claim native loading, a model receipt, specialist load, delegation,
-  contractor hire, or host canary without exact corresponding evidence.
-- No push, PR, hosted Actions, publication, tracker creation/edit/closure, tag,
-  or release without explicit outward-action authorization.
+- Telemetry immediately before every live evaluation, benchmark corpus, or
+  canary; ensure a clean checkpoint when it is at or below 50 percent.
+- Preserve the fixed 15,000 ms cold and one-call fast AR-119 controls. Never
+  weaken coverage, parser, authority, timing, or asset thresholds after results.
+- Do not claim Agency superiority, activation, specialist loading, model
+  receipt, delegation, contractor hire, or host canary without exact evidence.
+- Do not delete or modify unknown/unattested paths. Preserve the user draft.
+- No push, PR, hosted dispatch, publication, tracker mutation, tag, release, or
+  trust-store action without explicit outward authorization.

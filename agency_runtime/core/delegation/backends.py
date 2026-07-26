@@ -11,6 +11,7 @@ import os
 import shutil as shutil
 import subprocess
 import sys
+import threading
 import time as time
 from collections.abc import Collection, Sequence
 from types import ModuleType
@@ -235,6 +236,7 @@ def _run_owned_binary_process(
     timeout: float,
     input_bytes: bytes | None = None,
     forbidden_roots: Sequence[str | os.PathLike[str]] = (),
+    cancel_event: threading.Event | None = None,
 ) -> subprocess.CompletedProcess[bytes]:
     """Run binary I/O through the core unless a legacy seam was patched."""
 
@@ -249,6 +251,7 @@ def _run_owned_binary_process(
             timeout=timeout,
             input_bytes=input_bytes,
             forbidden_roots=forbidden_roots,
+            cancel_event=cancel_event,
         )
     return _process._run_owned_binary_process(
         argv,
@@ -259,6 +262,7 @@ def _run_owned_binary_process(
         timeout=timeout,
         input_bytes=input_bytes,
         forbidden_roots=forbidden_roots,
+        cancel_event=cancel_event,
     )
 
 
@@ -296,6 +300,8 @@ def run_bounded_binary_process(
     max_input_bytes: int = DEFAULT_MAX_INPUT_BYTES,
     max_stdout_bytes: int = 64 * 1024,
     max_stderr_bytes: int = 64 * 1024,
+    retain_output_tail: bool = False,
+    cancel_event: threading.Event | None = None,
 ) -> BoundedBinaryProcessResult:
     """Run a byte-exact argv command with bounded I/O and tree cleanup."""
 
@@ -309,6 +315,8 @@ def run_bounded_binary_process(
         max_input_bytes=max_input_bytes,
         max_stdout_bytes=max_stdout_bytes,
         max_stderr_bytes=max_stderr_bytes,
+        retain_output_tail=retain_output_tail,
+        cancel_event=cancel_event,
     )
 
 

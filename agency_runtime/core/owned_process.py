@@ -685,7 +685,9 @@ class _OwnedProcessState:
     stdin_thread: threading.Thread | None = None
     stdin_preloaded: bool = False
     timeout_error: subprocess.TimeoutExpired | None = None
+    cancelled: bool = False
     descendants_detected: bool = False
+    residual_descendants: bool = False
     io_lingering: bool = False
     containment_error: str | None = None
 
@@ -1007,26 +1009,70 @@ def _establish_windows_containment(state: _OwnedProcessState) -> None:
         _release_owned_process(state)
 
 
-def _wait_for_owned_process(state: _OwnedProcessState, timeout: float) -> None:
-    try:
-        state.process.wait(timeout=timeout)
-    except subprocess.TimeoutExpired as exc:
-        _terminate_owned_process_tree(state.process, windows_job=state.windows_job)
-        state.timeout_error = exc
+def _wait_for_owned_process(
+    state: _OwnedProcessState,
+    timeout: float,
+    *,
+    cancel_event: threading.Event | None = None,
+) -> None:
+    """Wait within the timeout while polling an optional cross-thread cancellation."""
+
+    if cancel_event is None:
+        try:
+            state.process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            _terminate_owned_process_tree(state.process, windows_job=state.windows_job)
+            state.timeout_error = exc
+        return
+    deadline = time.monotonic() + timeout
+    while True:
+        if cancel_event.is_set():
+            state.cancelled = True
+            _terminate_owned_process_tree(state.process, windows_job=state.windows_job)
+            return
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            _terminate_owned_process_tree(state.process, windows_job=state.windows_job)
+            state.timeout_error = subprocess.TimeoutExpired(state.argv, timeout)
+            return
+        try:
+            state.process.wait(timeout=min(remaining, 0.05))
+            return
+        except subprocess.TimeoutExpired:
+            continue
 
 
-def _join_owned_process_io(state: _OwnedProcessState, timeout: float) -> None:
+def _join_owned_process_io(
+    state: _OwnedProcessState,
+    timeout: float,
+    *,
+    cancel_event: threading.Event | None = None,
+) -> None:
     for thread in state.threads():
         if not hasattr(thread, "ident") or thread.ident is not None:
-            thread.join(timeout=timeout)
+            if cancel_event is None:
+                thread.join(timeout=timeout)
+                continue
+            deadline = time.monotonic() + timeout
+            while thread.is_alive() and not cancel_event.is_set():
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                thread.join(timeout=min(remaining, 0.05))
 
 
-def _windows_job_has_active_processes(job: _WindowsJob | None) -> bool:
+def _windows_job_has_active_processes(
+    job: _WindowsJob | None,
+    *,
+    cancel_event: threading.Event | None = None,
+) -> bool:
     if job is None:
         return False
     active_processes = job.active_processes()
     deadline = time.monotonic() + _DRAIN_GRACE_SECONDS
     while active_processes and time.monotonic() < deadline:
+        if cancel_event is not None and cancel_event.is_set():
+            return True
         time.sleep(0.02)
         active_processes = job.active_processes()
     return active_processes is None or active_processes > 0
@@ -1047,7 +1093,36 @@ def _record_supervisor_outcome(state: _OwnedProcessState) -> None:
         state.containment_error = errors[-1]
 
 
-def _quiesce_owned_process(state: _OwnedProcessState) -> None:
+def _apply_owned_process_cancellation(
+    state: _OwnedProcessState,
+    cancel_event: threading.Event | None,
+) -> bool:
+    if cancel_event is None or not cancel_event.is_set():
+        return False
+    state.cancelled = True
+    _terminate_owned_process_tree(state.process, windows_job=state.windows_job)
+    return True
+
+
+def _owned_process_has_residual_descendants(state: _OwnedProcessState) -> bool:
+    """Check post-termination state without confusing prior descendants with residue."""
+
+    if _is_windows():
+        return _windows_job_has_active_processes(state.windows_job)
+    if getattr(state.process, "_agency_strong_containment", False):
+        # A strong Linux supervisor reports COMPLETE only after reaping its full
+        # descendant set.  _record_supervisor_outcome records a missing or
+        # invalid terminal receipt as a containment error.
+        return state.process.poll() is None
+    return _posix_process_group_active(state.process)
+
+
+def _quiesce_owned_process(
+    state: _OwnedProcessState,
+    *,
+    cancel_event: threading.Event | None = None,
+) -> None:
+    _apply_owned_process_cancellation(state, cancel_event)
     state.descendants_detected = bool(
         state.descendants_detected
         or (
@@ -1057,24 +1132,52 @@ def _quiesce_owned_process(state: _OwnedProcessState) -> None:
     )
     if state.timeout_error is None and not _is_windows() and state.descendants_detected:
         _terminate_owned_process_tree(state.process)
-    _join_owned_process_io(state, _DRAIN_GRACE_SECONDS)
+    if cancel_event is None:
+        _join_owned_process_io(state, _DRAIN_GRACE_SECONDS)
+    else:
+        _join_owned_process_io(
+            state,
+            _DRAIN_GRACE_SECONDS,
+            cancel_event=cancel_event,
+        )
+    if _apply_owned_process_cancellation(state, cancel_event):
+        _join_owned_process_io(state, 5)
     _record_supervisor_outcome(state)
-    state.descendants_detected = bool(
-        state.descendants_detected or _windows_job_has_active_processes(state.windows_job)
+    job_active = (
+        _windows_job_has_active_processes(state.windows_job)
+        if cancel_event is None
+        else _windows_job_has_active_processes(
+            state.windows_job,
+            cancel_event=cancel_event,
+        )
     )
+    state.descendants_detected = bool(state.descendants_detected or job_active)
+    if _apply_owned_process_cancellation(state, cancel_event):
+        _join_owned_process_io(state, 5)
     state.io_lingering = any(thread.is_alive() for thread in state.threads())
     if state.descendants_detected or state.io_lingering or state.containment_error:
         _terminate_owned_process_tree(state.process, windows_job=state.windows_job)
         _join_owned_process_io(state, 5)
+    if state.cancelled:
+        state.io_lingering = any(thread.is_alive() for thread in state.threads())
+        state.residual_descendants = _owned_process_has_residual_descendants(state)
 
 
 def _raise_for_incomplete_process(state: _OwnedProcessState, timeout: float) -> None:
     if state.timeout_error is not None:
         raise subprocess.TimeoutExpired(state.argv, timeout) from state.timeout_error
     if state.containment_error:
-        raise OSError(f"owned process containment failed: {state.containment_error}")
+        raise _capture.OwnedProcessContainmentError(
+            f"owned process containment failed: {state.containment_error}"
+        )
+    if state.cancelled:
+        if state.residual_descendants or state.io_lingering:
+            raise _capture.OwnedProcessContainmentError(
+                "owned process cancellation did not quiesce its complete process tree"
+            )
+        return
     if state.descendants_detected or state.io_lingering:
-        raise OSError(
+        raise _capture.OwnedProcessContainmentError(
             "owned process descendants outlived the parent process or I/O workers remained active"
         )
 
@@ -1107,22 +1210,36 @@ def _complete_owned_process(
     stderr: Any,
     timeout: float,
     start_io: Callable[[], None],
+    cancel_event: threading.Event | None = None,
 ) -> subprocess.CompletedProcess[Any]:
     try:
         _claim_linux_completion_owner(state.process)
         _claim_windows_containment(state)
         start_io()
-        _release_owned_process(state)
-        _wait_for_owned_process(state, timeout)
-        _quiesce_owned_process(state)
+        if cancel_event is not None and cancel_event.is_set():
+            state.cancelled = True
+            _terminate_owned_process_tree(
+                state.process,
+                windows_job=state.windows_job,
+            )
+            _quiesce_owned_process(state, cancel_event=cancel_event)
+        else:
+            _release_owned_process(state)
+            if cancel_event is None:
+                _wait_for_owned_process(state, timeout)
+                _quiesce_owned_process(state)
+            else:
+                _wait_for_owned_process(state, timeout, cancel_event=cancel_event)
+                _quiesce_owned_process(state, cancel_event=cancel_event)
         _raise_for_incomplete_process(state, timeout)
         completed = subprocess.CompletedProcess(
             state.argv,
-            int(state.process.returncode or 0),
+            130 if state.cancelled else int(state.process.returncode or 0),
             stdout=stdout.read(),
             stderr=stderr.read(),
         )
         completed.process_id = int(state.process.pid)
+        completed.cancelled = state.cancelled
         return completed
     except BaseException as exc:
         try:
@@ -1220,6 +1337,7 @@ def _run_owned_binary_process(
     timeout: float,
     input_bytes: bytes | None = None,
     forbidden_roots: Sequence[str | os.PathLike[str]] = (),
+    cancel_event: threading.Event | None = None,
 ) -> subprocess.CompletedProcess[bytes]:
     process_argv = _prepare_owned_process_argv(argv, forbidden_roots=forbidden_roots)
     process = _spawn_owned_binary_process(
@@ -1239,6 +1357,7 @@ def _run_owned_binary_process(
         stdout=stdout,
         stderr=stderr,
         timeout=timeout,
+        cancel_event=cancel_event,
         start_io=lambda: _start_owned_binary_io(
             state,
             stdout=stdout,
@@ -1316,8 +1435,10 @@ def run_bounded_binary_process(
     max_input_bytes: int = DEFAULT_MAX_INPUT_BYTES,
     max_stdout_bytes: int = 64 * 1024,
     max_stderr_bytes: int = 64 * 1024,
+    retain_output_tail: bool = False,
+    cancel_event: threading.Event | None = None,
 ) -> BoundedBinaryProcessResult:
-    """Run an argv-only command with bounded byte-exact input and output."""
+    """Run bounded byte-exact argv, optionally cancelling its contained process tree."""
 
     return _capture.run_bounded_binary_capture(
         argv,
@@ -1329,6 +1450,8 @@ def run_bounded_binary_process(
         max_input_bytes=max_input_bytes,
         max_stdout_bytes=max_stdout_bytes,
         max_stderr_bytes=max_stderr_bytes,
+        retain_output_tail=retain_output_tail,
+        cancel_event=cancel_event,
     )
 
 

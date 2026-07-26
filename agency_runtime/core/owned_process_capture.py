@@ -18,6 +18,10 @@ DEFAULT_MAX_INPUT_BYTES = 8 * 1024 * 1024
 _TEXT_INPUT_CHUNK_CHARS = 16 * 1024
 
 
+class OwnedProcessContainmentError(OSError):
+    """Signal that an owned process tree could not be proven quiescent."""
+
+
 def stream_text(value: Any) -> str:
     """Normalize real and mocked subprocess stream values to UTF-8 text."""
 
@@ -122,6 +126,60 @@ class BoundedBytesCapture:
         return 0
 
 
+class BoundedHeadTailBytesCapture:
+    """Thread-safe bounded sink retaining exact leading and trailing bytes."""
+
+    _marker = b"\n...[truncated by output limit]...\n"
+
+    def __init__(self, limit: int) -> None:
+        self._limit = limit
+        self._head_limit = limit // 2
+        self._tail_limit = limit - self._head_limit
+        self._head = bytearray()
+        self._tail = bytearray()
+        self._total = 0
+        self._lock = threading.Lock()
+
+    def write(self, value: Any) -> int:
+        payload = stream_bytes(value)
+        observed = len(payload)
+        with self._lock:
+            self._total += observed
+            head_remaining = self._head_limit - len(self._head)
+            if head_remaining > 0:
+                self._head.extend(payload[:head_remaining])
+                payload = payload[head_remaining:]
+            if payload:
+                self._tail.extend(payload)
+                if len(self._tail) > self._tail_limit:
+                    del self._tail[: len(self._tail) - self._tail_limit]
+        return observed
+
+    def bounded(self) -> tuple[bytes, bool]:
+        with self._lock:
+            head = bytes(self._head)
+            tail = bytes(self._tail)
+            total = self._total
+        if total <= self._limit:
+            return head + tail, False
+        if self._limit <= len(self._marker):
+            return self._marker[: self._limit], True
+        retained = self._limit - len(self._marker)
+        head_bytes = retained // 2
+        tail_bytes = retained - head_bytes
+        return head[:head_bytes] + self._marker + tail[-tail_bytes:], True
+
+    def read(self, limit: int = -1) -> bytes:
+        value, _truncated = self.bounded()
+        return value if limit < 0 else value[:limit]
+
+    def flush(self) -> None:
+        return None
+
+    def seek(self, _offset: int, _whence: int = 0) -> int:
+        return 0
+
+
 def read_process_stream(handle: Any, fallback: Any, limit: int) -> str:
     """Read at most one character beyond a process stream's configured cap."""
 
@@ -173,6 +231,20 @@ class BoundedBinaryProcessResult:
     timed_out: bool = False
     stdout_truncated: bool = False
     stderr_truncated: bool = False
+    cancelled: bool = False
+    failure_category: str | None = None
+
+
+def _binary_process_failure(exc: BaseException) -> tuple[int, bool, str]:
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return 124, True, "timeout"
+    if isinstance(exc, FileNotFoundError):
+        return 127, False, "not-found"
+    if isinstance(exc, PermissionError):
+        return 126, False, "permission"
+    if isinstance(exc, OwnedProcessContainmentError):
+        return 1, False, "containment"
+    return 1, False, "launch"
 
 
 def run_bounded_text_capture(
@@ -260,6 +332,8 @@ def run_bounded_binary_capture(
     max_input_bytes: int = DEFAULT_MAX_INPUT_BYTES,
     max_stdout_bytes: int = 64 * 1024,
     max_stderr_bytes: int = 64 * 1024,
+    retain_output_tail: bool = False,
+    cancel_event: threading.Event | None = None,
 ) -> BoundedBinaryProcessResult:
     """Apply bounded byte-exact I/O around one owned process runner."""
 
@@ -286,38 +360,52 @@ def run_bounded_binary_capture(
         raise TypeError("input_bytes must be bytes")
     if input_bytes is not None and len(input_bytes) > max_input_bytes:
         raise ValueError("input_bytes exceeds max_input_bytes")
-
-    stdout_capture = BoundedBytesCapture(max_stdout_bytes)
-    stderr_capture = BoundedBytesCapture(max_stderr_bytes)
-    try:
-        completed = process_runner(
-            normalized,
-            cwd=cwd,
-            stdout=stdout_capture,
-            stderr=stderr_capture,
-            timeout=float(timeout),
-            env=dict(os.environ if env is None else env),
-            input_bytes=input_bytes,
+    if not isinstance(retain_output_tail, bool):
+        raise TypeError("retain_output_tail must be a bool")
+    if cancel_event is not None and not isinstance(cancel_event, threading.Event):
+        raise TypeError("cancel_event must be a threading.Event")
+    if cancel_event is not None and cancel_event.is_set():
+        return BoundedBinaryProcessResult(
+            returncode=130,
+            stdout=b"",
+            stderr=b"",
+            cancelled=True,
+            failure_category="cancelled",
         )
+
+    capture_type = BoundedHeadTailBytesCapture if retain_output_tail else BoundedBytesCapture
+    stdout_capture = capture_type(max_stdout_bytes)
+    stderr_capture = capture_type(max_stderr_bytes)
+    try:
+        runner_kwargs = {
+            "cwd": cwd,
+            "stdout": stdout_capture,
+            "stderr": stderr_capture,
+            "timeout": float(timeout),
+            "env": dict(os.environ if env is None else env),
+            "input_bytes": input_bytes,
+        }
+        if cancel_event is not None:
+            runner_kwargs["cancel_event"] = cancel_event
+        completed = process_runner(normalized, **runner_kwargs)
         returncode = int(completed.returncode)
         timed_out = False
-    except subprocess.TimeoutExpired:
-        returncode = 124
-        timed_out = True
-    except FileNotFoundError:
-        returncode = 127
-        timed_out = False
-    except PermissionError:
-        returncode = 126
-        timed_out = False
-    except OSError:
-        returncode = 1
-        timed_out = False
+        cancelled = bool(getattr(completed, "cancelled", False))
+        failure_category = "cancelled" if cancelled else None
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        returncode, timed_out, failure_category = _binary_process_failure(exc)
+        cancelled = False
 
-    stdout = stdout_capture.read(max_stdout_bytes + 1)
-    stderr = stderr_capture.read(max_stderr_bytes + 1)
-    bounded_stdout, stdout_truncated = bounded_bytes(stdout, max_stdout_bytes)
-    bounded_stderr, stderr_truncated = bounded_bytes(stderr, max_stderr_bytes)
+    if retain_output_tail:
+        assert isinstance(stdout_capture, BoundedHeadTailBytesCapture)
+        assert isinstance(stderr_capture, BoundedHeadTailBytesCapture)
+        bounded_stdout, stdout_truncated = stdout_capture.bounded()
+        bounded_stderr, stderr_truncated = stderr_capture.bounded()
+    else:
+        stdout = stdout_capture.read(max_stdout_bytes + 1)
+        stderr = stderr_capture.read(max_stderr_bytes + 1)
+        bounded_stdout, stdout_truncated = bounded_bytes(stdout, max_stdout_bytes)
+        bounded_stderr, stderr_truncated = bounded_bytes(stderr, max_stderr_bytes)
     return BoundedBinaryProcessResult(
         returncode=returncode,
         stdout=bounded_stdout,
@@ -325,4 +413,6 @@ def run_bounded_binary_capture(
         timed_out=timed_out,
         stdout_truncated=stdout_truncated,
         stderr_truncated=stderr_truncated,
+        cancelled=cancelled,
+        failure_category=failure_category,
     )

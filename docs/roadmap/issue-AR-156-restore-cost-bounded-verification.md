@@ -11,7 +11,12 @@ related:
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - .github/workflows/ci.yml
   - scripts/select_test_shard.py
+  - scripts/run_parallel_change_loop.py
+  - scripts/parallel_change_loop_runtime.py
+  - scripts/parallel_change_loop_storage.py
+  - scripts/prepare_ci_runtime.py
   - tests/test_ci_sharding.py
+  - tests/test_parallel_change_loop.py
   - tests/test_release_packaging.py
 supersedes: []
 superseded_by: null
@@ -58,11 +63,16 @@ required dependency remains success-only. Preserve the complete seven-cell
 matrix unchanged on its governed events.
 
 Add a cross-platform local runner that uses the same deterministic file
-partitioner, creates an isolated private runtime and pytest base directory for
-each shard, executes the exact warning-strict non-performance corpus in four
-concurrent subprocesses, retains bounded logs, and returns failure unless every
-shard succeeds. Keep the serial command as the canonical final release gate
-until equivalence and repeated timing evidence justify changing that policy.
+partitioner and one stable, contract-attested, read-only Python runtime. Give
+each shard a separate HOME, TEMP, and pytest base directory; execute the exact
+warning-strict non-performance corpus in four contained subprocess trees;
+retain one coherent bounded head-and-tail log set; and return failure unless
+every shard succeeds. The runtime must rebuild safely when its interpreter,
+dependency bridge, Node identity, or isolation contract changes. Dry-run must
+remain deterministic and filesystem-resource-free. Keep the serial command,
+coverage arm, and uninstrumented performance arm as separate canonical release
+gates; the parallel runner is the developer change loop, not a weaker release
+substitute.
 
 ## Dependencies
 
@@ -80,8 +90,10 @@ quantitative claims to use recorded controls rather than inferred speedups.
 - Workflow contract tests pin the exact event/result policy and reject a future
   unconditional compatibility regression.
 - The local runner proves serial/sharded test collection equivalence, uses one
-  private runtime and base directory per shard, aggregates failures, and cleans
-  up safely.
+  shared attested runtime with a private HOME, TEMP, and base directory per
+  shard, aggregates failures, contains cancellation, and cleans up safely.
+- Dry-run creates no runtime, lock, venv, Node mirror, receipt, log, or scratch
+  state; real runs publish one run-bound bounded log set and manifest.
 - Three comparable warm local runs demonstrate at least 30 percent median
   wall-clock improvement before the parallel runner is recommended as the
   default change loop.
@@ -105,5 +117,22 @@ used 96.27. Restoring the documented cadence therefore avoids 95.79 raw
 runner-minutes (80.4 percent) and 24m29s elapsed (83.5 percent) per PR update in
 that comparison. These are recorded historical runs, not a claim that current
 hosted gates are green: current jobs are rejected before steps by the external
-GitHub billing/spending state. The local parallel change-loop implementation
-and three-run timing acceptance remain in progress.
+GitHub billing/spending state. The local parallel change loop now uses the
+governed four-way file partition, one immutable-contract private runtime,
+per-shard state roots, least-privilege environments, explicit process-tree
+cancellation, fixed bounded head-and-tail logs, and a run-bound manifest. It
+safely rebuilds only an attested Agency-owned runtime when interpreter or Node
+identity changes; unknown directory collisions fail closed and remain
+untouched. Direct and module dry-runs are byte-identical and leave both the
+projected runtime and global-lock parents unchanged.
+
+The author-focused package passes 212 tests with 15 skips; Ruff, format, and
+diff checks are green. An independent reviewer passed 211 tests with 15 skips,
+the targeted resource-free dry-run regression, an isolated real private-venv
+smoke, root-exited descendant cancellation, and a live facade probe that
+returned exit 130 with cancellation classified and the child reaped. Fresh-home
+direct and module previews were byte-identical, covered all 274 files exactly,
+and left the projected runtime, requested runtime home, and global lock parent
+unchanged. The three warm full-corpus timing runs remain before the local
+runner acceptance can close. The canonical serial, coverage, and performance
+gates remain required.

@@ -373,4 +373,16 @@ def prepare_private_node(
     return _create_private_node(target, manifest_path, source_path)
 
 
-__all__ = ["NodeResolver", "prepare_private_node"]
+def resolved_node_source_manifest(
+    *,
+    resolver: NodeResolver,
+) -> dict[str, int | str] | None:
+    """Return the byte-bound identity used to select a private Node mirror."""
+
+    source_path = _resolve_node_source(resolver)
+    if source_path is None:
+        return None
+    return _snapshot_node_source(source_path).manifest()
+
+
+__all__ = ["NodeResolver", "prepare_private_node", "resolved_node_source_manifest"]

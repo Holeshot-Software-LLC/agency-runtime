@@ -12,12 +12,14 @@ from __future__ import annotations
 
 import os
 import subprocess
+import threading
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from typing import Any
 
 from agency_runtime.core import owned_process_linux as _linux
 from agency_runtime.core.exception_notes import add_exception_note as _add_exception_note
+from agency_runtime.core.owned_process_capture import OwnedProcessContainmentError
 from agency_runtime.core.process_argv import PreparedProcessArgv
 
 
@@ -196,9 +198,11 @@ def _raise_for_incomplete_process(state: Any, timeout: float) -> None:
     if state.timeout_error is not None:
         raise subprocess.TimeoutExpired(state.argv, timeout) from state.timeout_error
     if state.containment_error:
-        raise OSError(f"owned process containment failed: {state.containment_error}")
+        raise OwnedProcessContainmentError(
+            f"owned process containment failed: {state.containment_error}"
+        )
     if state.descendants_detected or state.io_lingering:
-        raise OSError(
+        raise OwnedProcessContainmentError(
             "owned process descendants outlived the parent process or I/O workers remained active"
         )
 
@@ -251,7 +255,18 @@ def _complete_owned_process(
     stderr: Any,
     timeout: float,
     start_io: Callable[[], None],
+    cancel_event: threading.Event | None = None,
 ) -> subprocess.CompletedProcess[Any]:
+    process_core = getattr(api, "_process", None)
+    if cancel_event is not None and process_core is not None:
+        return process_core._complete_owned_process(
+            state,
+            stdout=stdout,
+            stderr=stderr,
+            timeout=timeout,
+            start_io=start_io,
+            cancel_event=cancel_event,
+        )
     try:
         process_core = getattr(api, "_process", None)
         claim = getattr(process_core, "_claim_linux_completion_owner", None)
@@ -366,6 +381,7 @@ def run_owned_binary_process(
     timeout: float,
     input_bytes: bytes | None = None,
     forbidden_roots: Sequence[str | os.PathLike[str]] = (),
+    cancel_event: threading.Event | None = None,
 ) -> subprocess.CompletedProcess[bytes]:
     """Run binary I/O using only explicitly injected legacy facade seams."""
 
@@ -419,4 +435,5 @@ def run_owned_binary_process(
         stderr=stderr,
         timeout=timeout,
         start_io=start_io,
+        cancel_event=cancel_event,
     )

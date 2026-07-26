@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from agency_runtime.core.process_argv import snapshot_persistent_artifact
-from scripts import ci_private_node, prepare_ci_runtime
+from scripts import ci_private_node, parallel_change_loop_storage, prepare_ci_runtime
 from tests import runtime_support
 
 
@@ -42,14 +42,18 @@ def test_prepare_ci_runtime_is_private_real_and_idempotent(tmp_path: Path) -> No
     assert first == second
     root = Path(first["AGENCY_CI_ROOT"])
     python = Path(first["AGENCY_CI_PYTHON"])
+    lock = root.parent / ".py3.10-linux.prepare.lock"
     assert root.is_dir() and not root.is_symlink()
     assert python.is_file() and not python.is_symlink()
+    assert lock.is_file() and not lock.is_symlink()
+    assert lock.read_bytes() == b"\0"
     assert python.resolve(strict=True).is_relative_to(root)
     assert snapshot_persistent_artifact(python, require_executable=True).resolved_path == str(
         python.resolve(strict=True)
     )
     if os.name != "nt":
         assert stat.S_IMODE(root.stat().st_mode) == 0o700
+        assert stat.S_IMODE(lock.stat().st_mode) == 0o600
         assert not stat.S_IMODE(python.stat().st_mode) & (stat.S_IWGRP | stat.S_IWOTH)
     completed = subprocess.run(
         [str(python), "-I", "-c", "import json; print(json.dumps({'ok': True}))"],
@@ -247,6 +251,122 @@ def test_prepare_ci_runtime_rejects_tampered_interpreter_without_following_link(
     with pytest.raises(RuntimeError, match="incomplete or unsafe"):
         prepare_ci_runtime.prepare_ci_runtime("tamper-test", home_dir=tmp_path)
     assert outside.read_bytes() == sentinel
+
+
+def test_prepare_ci_runtime_rejects_lock_symlink_without_touching_target(
+    tmp_path: Path,
+) -> None:
+    base = prepare_ci_runtime._private_directory(tmp_path / ".agency-runtime-ci")
+    victim = tmp_path / "lock-victim"
+    victim.write_bytes(b"do-not-touch")
+    lock = base / ".symlink-lock.prepare.lock"
+    try:
+        lock.symlink_to(victim)
+    except OSError as exc:
+        pytest.skip(f"symlinks are unavailable: {exc}")
+
+    with pytest.raises(RuntimeError, match="preparation lock"):
+        prepare_ci_runtime.prepare_ci_runtime(
+            "symlink-lock",
+            home_dir=tmp_path,
+            node_resolver=lambda _name: None,
+        )
+
+    assert victim.read_bytes() == b"do-not-touch"
+
+
+def test_isolated_runtime_attests_site_mode_and_rejects_wrong_reuse(tmp_path: Path) -> None:
+    values = prepare_ci_runtime.prepare_ci_runtime(
+        "isolated-mode",
+        home_dir=tmp_path,
+        node_resolver=lambda _name: None,
+        system_site_packages=False,
+    )
+    configuration = Path(values["AGENCY_CI_ROOT"]) / "venv" / "pyvenv.cfg"
+    assert "include-system-site-packages = false" in configuration.read_text("utf-8").lower()
+    with pytest.raises(RuntimeError, match="wrong isolation mode"):
+        prepare_ci_runtime.prepare_ci_runtime(
+            "isolated-mode",
+            home_dir=tmp_path,
+            node_resolver=lambda _name: None,
+            system_site_packages=True,
+        )
+
+
+def test_contract_rebuild_refuses_unknown_private_collision(tmp_path: Path) -> None:
+    base = prepare_ci_runtime._private_directory(tmp_path / ".agency-runtime-ci")
+    collision = prepare_ci_runtime._private_directory(base / "contract-collision")
+    sentinel = collision / "user-sentinel"
+    sentinel.write_bytes(b"do-not-delete")
+
+    with pytest.raises(RuntimeError, match="not Agency-owned"):
+        prepare_ci_runtime.prepare_ci_runtime(
+            "contract-collision",
+            home_dir=tmp_path,
+            node_resolver=lambda _name: None,
+            system_site_packages=False,
+            runtime_contract="a" * 64,
+        )
+
+    assert sentinel.read_bytes() == b"do-not-delete"
+
+
+def test_exact_receipt_publication_failure_rolls_back_for_retry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent = prepare_ci_runtime._private_directory(tmp_path / "receipt-parent")
+    receipt = parent / "receipt"
+    original = parallel_change_loop_storage.exact_private_file_is_valid
+    monkeypatch.setattr(
+        parallel_change_loop_storage,
+        "exact_private_file_is_valid",
+        lambda *_args, **_kwargs: False,
+    )
+    with pytest.raises(RuntimeError, match="could not be attested"):
+        parallel_change_loop_storage.create_exact_private_file(receipt, b"receipt\n")
+    assert not receipt.exists()
+
+    monkeypatch.setattr(parallel_change_loop_storage, "exact_private_file_is_valid", original)
+    parallel_change_loop_storage.create_exact_private_file(receipt, b"receipt\n")
+    assert receipt.read_bytes() == b"receipt\n"
+
+
+def test_shared_lock_cleanup_preserves_primary_and_exposes_bounded_standalone_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent = prepare_ci_runtime._private_directory(tmp_path / "lock-parent")
+    lock = parent / "shared.lock"
+    monkeypatch.setattr(
+        parallel_change_loop_storage,
+        "_unlock",
+        lambda _handle: (_ for _ in ()).throw(OSError("sensitive unlock detail")),
+    )
+
+    with (
+        pytest.raises(ValueError, match="primary") as primary,
+        parallel_change_loop_storage.private_runtime_lock(
+            lock,
+            wait_seconds=0,
+            busy_message="busy",
+        ),
+    ):
+        raise ValueError("primary")
+    assert any("parallel lock cleanup failed (OSError)" in note for note in primary.value.__notes__)
+    assert all("sensitive unlock detail" not in note for note in primary.value.__notes__)
+
+    with (
+        pytest.raises(parallel_change_loop_storage.PrivateRuntimeLockCleanupError) as cleanup,
+        parallel_change_loop_storage.private_runtime_lock(
+            lock,
+            wait_seconds=0,
+            busy_message="busy",
+        ),
+    ):
+        pass
+    assert cleanup.value.failure_category == "cleanup"
+    assert cleanup.value.cleanup_component == "lock"
 
 
 def test_private_node_copy_is_real_owner_only_and_idempotent(tmp_path: Path) -> None:

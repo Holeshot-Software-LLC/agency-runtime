@@ -11,6 +11,7 @@ import io
 import json
 import os
 import subprocess
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -1594,6 +1595,53 @@ def test_compat_completion_preserves_interrupt_when_cleanup_fails() -> None:
     assert any("cleanup failed: cleanup" in note for note in caught.value.__notes__)
 
 
+def test_core_completion_cancels_while_target_is_still_gated(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _Process(returncode=-1)
+    state = owned_process._OwnedProcessState(argv=_prepared(), process=process)
+    event = threading.Event()
+    releases: list[object] = []
+    terminations: list[object] = []
+    monkeypatch.setattr(owned_process, "_claim_linux_completion_owner", lambda _process: None)
+    monkeypatch.setattr(owned_process, "_claim_windows_containment", lambda _state: None)
+    monkeypatch.setattr(
+        owned_process,
+        "_release_owned_process",
+        lambda owned: releases.append(owned.process),
+    )
+    monkeypatch.setattr(
+        owned_process,
+        "_terminate_owned_process_tree",
+        lambda target, **_kwargs: terminations.append(target),
+    )
+    monkeypatch.setattr(
+        owned_process,
+        "_quiesce_owned_process",
+        lambda _state, *, cancel_event: None,
+    )
+    monkeypatch.setattr(owned_process, "_close_linux_supervisor_status", lambda _process: None)
+    monkeypatch.setattr(
+        owned_process,
+        "_close_atomic_windows_process_resources",
+        lambda _process: None,
+    )
+
+    completed = owned_process._complete_owned_process(
+        state,
+        stdout=io.BytesIO(),
+        stderr=io.BytesIO(),
+        timeout=1,
+        start_io=event.set,
+        cancel_event=event,
+    )
+
+    assert releases == []
+    assert terminations == [process]
+    assert completed.returncode == 130
+    assert completed.cancelled is True
+
+
 @pytest.mark.parametrize("binary", [False, True], ids=["text", "binary"])
 def test_compat_production_path_uses_state_owned_core_workers(binary: bool) -> None:
     process = _Process(returncode=0)
@@ -2279,6 +2327,41 @@ def test_central_containment_platform_and_quiescence_branches(
     assert state.descendants_detected is True
     assert terminated == [state.process, state.process]
     assert joins == [owned_process._DRAIN_GRACE_SECONDS, 5]
+
+
+def test_non_cancel_quiescence_preserves_initial_lingering_io_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class SettlingThread:
+        ident = 1
+
+        def __init__(self) -> None:
+            self.probes = 0
+
+        def join(self, *, timeout: float) -> None:
+            assert timeout in {owned_process._DRAIN_GRACE_SECONDS, 5}
+
+        def is_alive(self) -> bool:
+            self.probes += 1
+            return self.probes == 1
+
+    state = owned_process._OwnedProcessState(argv=_prepared(), process=_Process(returncode=0))
+    state.stdout_thread = SettlingThread()  # type: ignore[assignment]
+    monkeypatch.setattr(owned_process, "_is_windows", lambda: False)
+    monkeypatch.setattr(owned_process, "_posix_process_group_active", lambda _process: False)
+    monkeypatch.setattr(owned_process, "_record_supervisor_outcome", lambda _state: None)
+    monkeypatch.setattr(
+        owned_process,
+        "_windows_job_has_active_processes",
+        lambda _job: False,
+    )
+    monkeypatch.setattr(owned_process, "_terminate_owned_process_tree", lambda *_a, **_kw: None)
+
+    owned_process._quiesce_owned_process(state)
+
+    assert state.io_lingering is True
+    with pytest.raises(OSError, match="I/O workers remained active"):
+        owned_process._raise_for_incomplete_process(state, 1)
 
 
 @pytest.mark.parametrize("binary", [False, True])

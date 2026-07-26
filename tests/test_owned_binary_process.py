@@ -10,6 +10,7 @@ import signal
 import stat
 import subprocess
 import sys
+import threading
 import time
 from contextlib import suppress
 from dataclasses import replace
@@ -21,6 +22,7 @@ import pytest
 
 from agency_runtime.core import owned_process, process_argv
 from agency_runtime.core.delegation import backend_process, backends
+from agency_runtime.core.owned_process_capture import OwnedProcessContainmentError
 from agency_runtime.core.process_argv import PreparedProcessArgv
 from tests.runtime_support import trusted_test_interpreter
 
@@ -111,6 +113,42 @@ def _linux_pidfds_are_gone(descriptors: list[int]) -> bool:
             continue
         return False
     return True
+
+
+def _process_has_exited(pid: int) -> bool:
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        except PermissionError:
+            return False
+        return False
+    import ctypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel32.WaitForSingleObject.restype = ctypes.c_uint32
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.restype = ctypes.c_int
+    handle = kernel32.OpenProcess(0x00100000, 0, pid)
+    if not handle:
+        return True
+    try:
+        return kernel32.WaitForSingleObject(handle, 0) == 0
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def _wait_for_process_exit(pid: int, *, timeout: float = 5) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if _process_has_exited(pid):
+            return True
+        time.sleep(0.01)
+    return _process_has_exited(pid)
 
 
 def test_prepared_argv_bind_replaces_arguments_and_preserves_receipts() -> None:
@@ -594,18 +632,20 @@ def test_bounded_binary_runner_rejects_invalid_contracts(
 
 
 @pytest.mark.parametrize(
-    ("raised", "returncode", "timed_out"),
+    ("raised", "returncode", "timed_out", "category"),
     [
-        (subprocess.TimeoutExpired("tool", 1), 124, True),
-        (FileNotFoundError(), 127, False),
-        (PermissionError(), 126, False),
-        (OSError(), 1, False),
+        (subprocess.TimeoutExpired("tool", 1), 124, True, "timeout"),
+        (FileNotFoundError(), 127, False, "not-found"),
+        (PermissionError(), 126, False, "permission"),
+        (OwnedProcessContainmentError("secret"), 1, False, "containment"),
+        (OSError(), 1, False, "launch"),
     ],
 )
 def test_bounded_binary_runner_normalizes_process_failures(
     raised: Exception,
     returncode: int,
     timed_out: bool,
+    category: str,
 ) -> None:
     def fail(*_args: Any, **_kwargs: Any) -> Any:
         raise raised
@@ -618,7 +658,188 @@ def test_bounded_binary_runner_normalizes_process_failures(
 
     assert result.returncode == returncode
     assert result.timed_out is timed_out
+    assert result.failure_category == category
     assert result.stdout == result.stderr == b""
+
+
+def test_bounded_binary_runner_validates_and_propagates_cancellation() -> None:
+    with pytest.raises(TypeError, match=r"threading\.Event"):
+        owned_process.run_bounded_binary_process(
+            ["tool"],
+            process_runner=lambda *_args, **_kwargs: subprocess.CompletedProcess([], 0),
+            timeout=1,
+            cancel_event=object(),  # type: ignore[arg-type]
+        )
+
+    event = threading.Event()
+    observed: list[threading.Event] = []
+
+    def run(argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        observed.append(kwargs["cancel_event"])
+        completed = subprocess.CompletedProcess(argv, 130)
+        completed.cancelled = True
+        return completed
+
+    result = owned_process.run_bounded_binary_process(
+        ["tool"],
+        process_runner=run,
+        timeout=1,
+        cancel_event=event,
+    )
+
+    assert observed == [event]
+    assert result.returncode == 130
+    assert result.cancelled is True
+    assert result.timed_out is False
+    assert result.failure_category == "cancelled"
+
+
+@pytest.mark.parametrize(
+    ("payload", "limit", "tail", "truncated"),
+    [
+        (b"under-limit", 32, b"under-limit", False),
+        (b"HEAD" + b"x" * 100 + b"TAIL", 48, b"TAIL", True),
+        (b"HEAD" + b"x" * 100 + b"TAIL", 8, b"\n...[tru", True),
+    ],
+)
+def test_public_binary_facade_opt_in_capture_retains_bounded_tail(
+    monkeypatch: pytest.MonkeyPatch,
+    payload: bytes,
+    limit: int,
+    tail: bytes,
+    truncated: bool,
+) -> None:
+    def strict_runner(
+        argv: list[str],
+        *,
+        cwd: str | None,
+        stdout: Any,
+        stderr: Any,
+        timeout: float,
+        env: dict[str, str],
+        input_bytes: bytes | None,
+    ) -> subprocess.CompletedProcess[bytes]:
+        del cwd, timeout, env, input_bytes
+        stdout.write(payload)
+        stderr.write(payload)
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr(backends, "_run_owned_binary_process", strict_runner)
+    result = backends.run_bounded_binary_process(
+        ["tool"],
+        timeout=1,
+        max_stdout_bytes=limit,
+        max_stderr_bytes=limit,
+        retain_output_tail=True,
+    )
+
+    assert len(result.stdout) <= limit and len(result.stderr) <= limit
+    assert result.stdout.endswith(tail) and result.stderr.endswith(tail)
+    assert result.stdout_truncated is truncated
+    assert result.stderr_truncated is truncated
+
+
+def test_public_binary_facade_default_remains_head_only_and_legacy_runner_strict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def strict_runner(
+        argv: list[str],
+        *,
+        cwd: str | None,
+        stdout: Any,
+        stderr: Any,
+        timeout: float,
+        env: dict[str, str],
+        input_bytes: bytes | None,
+    ) -> subprocess.CompletedProcess[bytes]:
+        del cwd, timeout, env, input_bytes
+        stdout.write(b"HEAD" + b"x" * 100 + b"TAIL")
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr(backends, "_run_owned_binary_process", strict_runner)
+    result = backends.run_bounded_binary_process(
+        ["tool"],
+        timeout=1,
+        max_stdout_bytes=48,
+    )
+
+    assert result.stdout.startswith(b"HEAD")
+    assert not result.stdout.endswith(b"TAIL")
+    assert result.stdout_truncated is True
+
+
+def test_public_binary_facade_propagates_pre_and_inflight_cancellation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    event = threading.Event()
+    event.set()
+    pre_cancelled = backends.run_bounded_binary_process(["tool"], timeout=1, cancel_event=event)
+    assert pre_cancelled.failure_category == "cancelled"
+
+    event.clear()
+    observed: list[threading.Event] = []
+
+    def cancel_runner(argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        observed.append(kwargs["cancel_event"])
+        completed = subprocess.CompletedProcess(argv, 130)
+        completed.cancelled = True
+        return completed
+
+    monkeypatch.setattr(backends, "_run_owned_binary_process", cancel_runner)
+    in_flight = backends.run_bounded_binary_process(["tool"], timeout=1, cancel_event=event)
+    assert observed == [event]
+    assert in_flight.cancelled is True
+    assert in_flight.failure_category == "cancelled"
+
+
+def test_bounded_binary_runner_pre_cancel_does_not_spawn() -> None:
+    event = threading.Event()
+    event.set()
+
+    result = owned_process.run_bounded_binary_process(
+        ["tool"],
+        process_runner=lambda *_args, **_kwargs: pytest.fail("cancelled call spawned"),
+        timeout=1,
+        cancel_event=event,
+    )
+
+    assert result.returncode == 130
+    assert result.cancelled is True
+    assert result.stdout == result.stderr == b""
+
+
+@pytest.mark.parametrize(
+    ("residual_descendants", "io_lingering"),
+    [(True, False), (False, True)],
+)
+def test_cancelled_owned_process_rejects_failed_cleanup(
+    residual_descendants: bool,
+    io_lingering: bool,
+) -> None:
+    state = SimpleNamespace(
+        timeout_error=None,
+        containment_error=None,
+        cancelled=True,
+        descendants_detected=True,
+        residual_descendants=residual_descendants,
+        io_lingering=io_lingering,
+    )
+
+    with pytest.raises(OSError, match="did not quiesce"):
+        owned_process._raise_for_incomplete_process(state, 1)
+
+
+def test_cancelled_owned_process_allows_reaped_historical_descendant() -> None:
+    state = SimpleNamespace(
+        timeout_error=None,
+        containment_error=None,
+        cancelled=True,
+        descendants_detected=True,
+        residual_descendants=False,
+        io_lingering=False,
+    )
+
+    owned_process._raise_for_incomplete_process(state, 1)
 
 
 def test_bounded_binary_runner_copies_environment_and_truncates_exact_bytes() -> None:
@@ -778,6 +999,67 @@ def test_lightweight_public_runner_times_out_while_large_stdin_is_blocked() -> N
     assert result.returncode == 124
     assert result.timed_out is True
     assert time.monotonic() - started < 8
+
+
+def test_lightweight_public_runner_cancels_after_root_exit_and_reaps_descendant(
+    tmp_path: Path,
+) -> None:
+    child_pid_file = tmp_path / "child.pid"
+    root_exit_marker = tmp_path / "root-exit.marker"
+    command = _frozen_interpreter(
+        "-c",
+        (
+            "import os,pathlib,subprocess,sys;"
+            "child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)']);"
+            "pathlib.Path(sys.argv[1]).write_text(str(child.pid),encoding='ascii');"
+            "pathlib.Path(sys.argv[2]).write_text(str(os.getpid()),encoding='ascii')"
+        ),
+        str(child_pid_file),
+        str(root_exit_marker),
+    )
+    event = threading.Event()
+    results: list[Any] = []
+    errors: list[BaseException] = []
+
+    def invoke() -> None:
+        try:
+            results.append(
+                owned_process.run_bounded_binary_process(
+                    command,
+                    timeout=10,
+                    cancel_event=event,
+                )
+            )
+        except BaseException as exc:
+            errors.append(exc)
+
+    worker = threading.Thread(target=invoke, name="owned-process-cancellation-test")
+    worker.start()
+    deadline = time.monotonic() + 8
+    while time.monotonic() < deadline and not _pid_files_ready(
+        child_pid_file,
+        root_exit_marker,
+    ):
+        time.sleep(0.01)
+    assert _pid_files_ready(child_pid_file, root_exit_marker)
+    child_pid = int(child_pid_file.read_text(encoding="ascii"))
+    time.sleep(0.05)
+    assert worker.is_alive(), "owned runner completed before cancellation was requested"
+
+    started = time.monotonic()
+    event.set()
+    worker.join(timeout=8)
+
+    assert not worker.is_alive()
+    assert time.monotonic() - started < 8
+    assert errors == []
+    assert len(results) == 1
+    result = results[0]
+    assert result.returncode == 130
+    assert result.cancelled is True
+    assert result.timed_out is False
+    assert result.failure_category == "cancelled"
+    assert _wait_for_process_exit(child_pid)
 
 
 def test_lightweight_public_runner_rejects_descendant_held_pipe() -> None:
