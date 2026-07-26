@@ -203,6 +203,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3f80af7` | 2026-07-26 | docs(roadmap): checkpoint deep production review | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-26-3f80af7-deep-production-review-checkpoint.md) |
 | `a1efe31` | 2026-07-26 | refactor(workforce): remove dead private inference paths | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | [detail](2026-07-26-a1efe31-dead-private-inference-paths.md) |
 | `eec5207` | 2026-07-26 | perf(selector): preserve 10k routing headroom | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | [detail](2026-07-26-eec5207-10k-routing-headroom.md) |
+| `2437068` | 2026-07-26 | docs(roadmap): govern final traceability defects | [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md), [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md), [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md), [AR-152](../roadmap/issue-AR-152-bound-dashboard-live-listeners.md), [AR-153](../roadmap/issue-AR-153-complete-worker-detail-evidence.md), [AR-154](../roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md) | [detail](2026-07-26-2437068-final-traceability-defects.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
