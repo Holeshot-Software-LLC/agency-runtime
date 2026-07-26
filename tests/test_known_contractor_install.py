@@ -7,6 +7,7 @@ import json
 import uuid
 from contextlib import closing
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -16,6 +17,7 @@ from agency_runtime.core.roster.workforce import workforce_index_snapshot
 from agency_runtime.core.selector.compatibility import filter_eligible_catalog
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.workforce.hiring_contract import CONTRACTOR_PROMPT_TEMPLATE_HASH
+from agency_runtime.core.workforce.identity import stable_worker_id
 from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
 from agency_runtime.core.workforce.known_installer import (
     PACKAGED_CONTRACTOR_AUTHORITY,
@@ -67,6 +69,264 @@ def test_known_contractors_install_atomically_with_truthful_package_evidence(
             "reason": "maintainer-reviewed packaged contractor; no inference call was made",
             "receipts": [],
         }
+
+
+def test_workforce_slug_batch_is_bounded_canonical_and_rejects_duplicates(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    original_connect = store._connect
+
+    assert store.get_workforce_workers_by_slugs((), disabled_agents=()) == {}
+    for invalid in ("code-reviewer", b"code-reviewer", {"code-reviewer": True}, iter(())):
+        with pytest.raises(TypeError, match="collection of strings"):
+            store.get_workforce_workers_by_slugs(invalid, disabled_agents=())  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="must not contain duplicates"):
+        store.get_workforce_workers_by_slugs(
+            ("code-reviewer", " CODE-REVIEWER "), disabled_agents=()
+        )
+    with pytest.raises(ValueError, match="agent slug must be a string"):
+        store.get_workforce_workers_by_slugs(("code-reviewer", 7), disabled_agents=())  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="agent slug"):
+        store.get_workforce_workers_by_slugs(("unsafe') OR 1=1 --",), disabled_agents=())
+    with pytest.raises(ValueError, match="at most 64"):
+        store.get_workforce_workers_by_slugs(
+            tuple(f"worker-{index:02d}" for index in range(65)), disabled_agents=()
+        )
+
+    monkeypatch.setattr(
+        store,
+        "_connect",
+        lambda: pytest.fail("invalid or empty batches must not open SQLite"),
+    )
+    assert store.get_workforce_workers_by_slugs([], disabled_agents=()) == {}
+    monkeypatch.setattr(store, "_connect", original_connect)
+
+
+def test_workforce_slug_batch_returns_existing_missing_and_disabled_projection(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+
+    workers = store.get_workforce_workers_by_slugs(
+        ("missing-worker", "python-application-engineer", "software-test-engineer"),
+        disabled_agents=("software-test-engineer",),
+    )
+
+    assert tuple(workers) == ("python-application-engineer", "software-test-engineer")
+    assert workers["python-application-engineer"]["state"] == "contractor"
+    assert workers["python-application-engineer"]["enabled"] is True
+    assert workers["software-test-engineer"]["state"] == "disabled"
+    assert workers["software-test-engineer"]["enabled"] is False
+
+
+def test_workforce_slug_batch_uses_only_parameter_placeholders(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    calls: list[tuple[str, tuple[str, ...]]] = []
+
+    class Result:
+        @staticmethod
+        def fetchall() -> list[object]:
+            return []
+
+    class Connection:
+        def execute(self, sql: str, parameters: tuple[str, ...]) -> Result:
+            calls.append((sql, parameters))
+            return Result()
+
+        @staticmethod
+        def close() -> None:
+            return None
+
+    monkeypatch.setattr(store, "_connect", Connection)
+
+    assert (
+        store.get_workforce_workers_by_slugs(
+            ("worker.with-dot", "worker-with-dash"), disabled_agents=()
+        )
+        == {}
+    )
+    assert calls == [
+        (
+            "SELECT * FROM agent_workers WHERE agent_slug IN (?,?) ORDER BY agent_slug",
+            ("worker-with-dash", "worker.with-dot"),
+        )
+    ]
+
+
+def test_noop_known_contractor_install_uses_one_connection_and_one_lookup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+    original_connect = store._connect
+    connections = 0
+    statements: list[str] = []
+
+    def traced_connect() -> Any:
+        nonlocal connections
+        connections += 1
+        connection = original_connect()
+        connection.set_trace_callback(statements.append)
+        return connection
+
+    monkeypatch.setattr(store, "_connect", traced_connect)
+
+    result = install_known_contractors(store)
+
+    expected = tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
+    assert result.installed == ()
+    assert result.existing == expected
+    assert connections == 1
+    lookups = [
+        statement
+        for statement in statements
+        if "SELECT * FROM agent_workers WHERE agent_slug IN" in statement
+    ]
+    assert len(lookups) == 1
+    assert lookups[0].count(",") == len(expected) - 1
+
+
+@pytest.mark.parametrize(
+    "worker",
+    (
+        {"origin": "upstream", "current_hash": "a" * 64},
+        {"origin": "agency", "current_hash": "b" * 64},
+    ),
+)
+def test_known_contractor_batch_snapshot_preserves_identity_conflict_failure(
+    worker: dict[str, str],
+) -> None:
+    slug = next(iter(sorted(KNOWN_CONTRACTORS_BY_SLUG)))
+
+    class ConflictStore:
+        @staticmethod
+        def get_workforce_workers_by_slugs(
+            _slugs: tuple[str, ...],
+            *,
+            disabled_agents: tuple[()],
+        ) -> dict[str, dict[str, str]]:
+            assert disabled_agents == ()
+            return {slug: {"agent_slug": slug, **worker}}
+
+        @staticmethod
+        def stage_agency_workforce_agent(_agent: object) -> str:
+            raise AssertionError("identity conflict must fail before staging")
+
+    with pytest.raises(
+        RuntimeError,
+        match=f"known contractor identity conflicts with active worker: {slug}",
+    ):
+        install_known_contractors(ConflictStore())
+
+
+@pytest.mark.parametrize(
+    "snapshot",
+    (
+        {"unknown-contractor": {"agent_slug": "unknown-contractor"}},
+        {next(iter(sorted(KNOWN_CONTRACTORS_BY_SLUG))): object()},
+        {next(iter(sorted(KNOWN_CONTRACTORS_BY_SLUG))): {"agent_slug": "different-contractor"}},
+        {
+            next(iter(sorted(KNOWN_CONTRACTORS_BY_SLUG))).upper(): {
+                "agent_slug": next(iter(sorted(KNOWN_CONTRACTORS_BY_SLUG))).upper()
+            }
+        },
+    ),
+)
+def test_known_contractor_install_rejects_unbound_batch_snapshot(
+    snapshot: dict[object, object],
+) -> None:
+    class InvalidBatchStore:
+        @staticmethod
+        def get_workforce_workers_by_slugs(
+            _slugs: tuple[str, ...],
+            *,
+            disabled_agents: tuple[()],
+        ) -> dict[object, object]:
+            assert disabled_agents == ()
+            return snapshot
+
+    with pytest.raises(RuntimeError, match="known contractor worker snapshot is invalid"):
+        install_known_contractors(InvalidBatchStore())
+
+
+def test_known_contractor_install_retains_legacy_single_worker_reader() -> None:
+    slugs = tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
+
+    class LegacyStore:
+        def __init__(self) -> None:
+            self.lookups: list[str] = []
+
+        def get_workforce_worker(
+            self,
+            slug: str,
+            *,
+            disabled_agents: tuple[()],
+        ) -> dict[str, str]:
+            assert disabled_agents == ()
+            self.lookups.append(slug)
+            package = known_contractor_package(slug)
+            return {
+                "agent_slug": slug,
+                "origin": "agency",
+                "current_hash": package.compiled.prompt_hash,
+            }
+
+    store = LegacyStore()
+
+    result = install_known_contractors(store)
+
+    assert result.installed == ()
+    assert result.existing == slugs
+    assert store.lookups == list(slugs)
+
+
+def test_concurrent_worker_insert_after_batch_snapshot_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    slug = next(iter(sorted(KNOWN_CONTRACTORS_BY_SLUG)))
+    original_batch = store.get_workforce_workers_by_slugs
+
+    def racing_batch(
+        slugs: tuple[str, ...],
+        *,
+        disabled_agents: tuple[()],
+    ) -> dict[str, dict[str, Any]]:
+        snapshot = original_batch(slugs, disabled_agents=disabled_agents)
+        with closing(store._connect()) as connection, connection:
+            connection.execute(
+                "INSERT INTO agent_workers "
+                "(worker_id, agent_slug, display_name, origin, employment_class, standing, "
+                "current_agent_version_id, current_version, current_hash, revision, "
+                "created_at, updated_at) VALUES (?, ?, 'Concurrent worker', 'upstream', "
+                "'employee', 'active', ?, ?, ?, 0, ?, ?)",
+                (
+                    stable_worker_id(slug),
+                    slug,
+                    str(uuid.uuid4()),
+                    "concurrent-v1",
+                    "c" * 64,
+                    "2026-07-26T00:00:00Z",
+                    "2026-07-26T00:00:00Z",
+                ),
+            )
+        return snapshot
+
+    monkeypatch.setattr(store, "get_workforce_workers_by_slugs", racing_batch)
+
+    with pytest.raises(ValueError, match="staged contractor slug already has a workforce identity"):
+        install_known_contractors(store)
+    worker = original_batch((slug,), disabled_agents=())[slug]
+    assert worker["origin"] == "upstream"
+    assert worker["current_hash"] == "c" * 64
 
 
 def test_packaged_contractor_prompt_and_workforce_contract_are_exact_and_routable(

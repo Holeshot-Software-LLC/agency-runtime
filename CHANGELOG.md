@@ -39,7 +39,10 @@ changes rather than duplicating every commit.
 - `python -m agency_runtime.cli --version` now uses the same deferred-import
   entrypoint as the packaged console command. Stable routing startup also uses
   a bounded exact fallback-roster lookup and reuses its coherent snapshot when
-  the trusted roster generation proves no reconciliation change.
+  the trusted roster generation proves no reconciliation change. Packaged
+  contractor reconciliation reads its nine exact identities through one
+  bounded Store snapshot instead of reopening and revalidating SQLite for each
+  slug.
 - Semantic retrieval keeps compiled roster vectors immutable and probes the
   smaller sparse vector during cosine scoring, preserving exact selections
   while restoring material 10,000-agent warm-latency headroom.

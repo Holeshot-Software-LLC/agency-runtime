@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any
 
@@ -292,12 +293,23 @@ def install_known_contractors(store: Any) -> KnownContractorInstallResult:
 
     installed: list[str] = []
     existing: list[str] = []
-    for slug in sorted(KNOWN_CONTRACTORS_BY_SLUG):
+    slugs = tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
+    batch_reader = getattr(store, "get_workforce_workers_by_slugs", None)
+    if callable(batch_reader):
+        workers = batch_reader(slugs, disabled_agents=())
+        if not isinstance(workers, Mapping) or any(
+            slug not in slugs or not isinstance(worker, Mapping) or worker.get("agent_slug") != slug
+            for slug, worker in workers.items()
+        ):
+            raise RuntimeError("known contractor worker snapshot is invalid")
+    else:
+        workers = {}
+        for slug in slugs:
+            with suppress(KeyError):
+                workers[slug] = store.get_workforce_worker(slug, disabled_agents=())
+    for slug in slugs:
         package = known_contractor_package(slug)
-        try:
-            worker = store.get_workforce_worker(slug, disabled_agents=())
-        except KeyError:
-            worker = None
+        worker = workers.get(slug)
         if worker is not None:
             if (
                 worker["origin"] != "agency"

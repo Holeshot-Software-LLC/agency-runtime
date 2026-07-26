@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from collections.abc import Container, Mapping
+from collections.abc import Collection, Container, Mapping
 from contextlib import closing
 from dataclasses import dataclass
 from typing import Any
@@ -26,6 +26,7 @@ MAX_WORKFORCE_PAGE = 1_000
 MAX_HIRING_SUMMARY_PAGE = 200
 MAX_HIRING_COLLECTION_RESPONSE_BYTES = 1024 * 1024
 _HIRING_COLLECTION_METADATA_RESERVE_BYTES = 16 * 1024
+_MAX_WORKFORCE_SLUG_LOOKUP = 64
 _EMPLOYMENT_CLASSES = frozenset({"contractor", "employee"})
 _STANDINGS = frozenset({"active", "suspended", "retired", "merged"})
 _CASE_TYPES = frozenset({"hire", "amend"})
@@ -1692,6 +1693,36 @@ class WorkforceStoreMixin:
             raise KeyError("workforce worker not found")
         disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
         return _worker_projection(row, disabled)
+
+    def get_workforce_workers_by_slugs(
+        self,
+        slugs: Collection[str],
+        *,
+        disabled_agents: Container[str] | None = None,
+    ) -> dict[str, dict[str, Any]]:
+        """Return one bounded worker snapshot keyed by exact canonical slug."""
+
+        if isinstance(slugs, (str, bytes, bytearray, Mapping)) or not isinstance(slugs, Collection):
+            raise TypeError("workforce slugs must be a collection of strings")
+        if len(slugs) > _MAX_WORKFORCE_SLUG_LOOKUP:
+            raise ValueError(
+                f"workforce slugs must contain at most {_MAX_WORKFORCE_SLUG_LOOKUP} entries"
+            )
+        normalized = tuple(normalize_agent_slug(slug) for slug in slugs)
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("workforce slugs must not contain duplicates")
+        if not normalized:
+            return {}
+        ordered = tuple(sorted(normalized))
+        placeholders = ",".join("?" for _slug in ordered)
+        with closing(self._connect()) as conn:
+            rows = conn.execute(
+                "SELECT * FROM agent_workers "
+                f"WHERE agent_slug IN ({placeholders}) ORDER BY agent_slug",  # nosec B608
+                ordered,
+            ).fetchall()
+        disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
+        return {str(row["agent_slug"]): _worker_projection(row, disabled) for row in rows}
 
     def get_workforce_worker_detail(
         self,

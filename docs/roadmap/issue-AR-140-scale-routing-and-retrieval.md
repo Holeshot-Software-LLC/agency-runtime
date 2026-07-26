@@ -92,9 +92,10 @@ CLI dispatcher, reducing `python -m agency_runtime.cli --version` from about
 identities and reduced its measured check from 233.371 ms to 22.453 ms.
 Generation-proven snapshot reuse reduced stable operational capture from
 1,104.677 ms to 663.671 ms without a trust cache; any mutation forces a
-complete recapture. The affected suites pass 104 tests. Packaged-contractor
-reconciliation remains the dominant 400-450 ms cost, and the 1.585-second,
-276-query no-op starter reconciliation remains open.
+complete recapture. The affected suites pass 104 tests. At that checkpoint,
+packaged-contractor reconciliation remained the dominant 400-450 ms cost and
+the 1.585-second, 276-query no-op starter reconciliation remained open; the
+final bounded batch below supersedes that local cost state.
 
 The final audit reproduced host-scheduling variance in the 10,000-agent warm
 gate: one unchanged five-sample arm failed at 181.144 ms before an unchanged
@@ -107,3 +108,17 @@ the final representation measured 7,839.770 ms cold, 53.825 ms warm p95 across
 five samples, and 167.817 MiB peak. The 60-test semantic/selector/fallback suite
 passes, including revision-identity mutation rejection. No gate, sample count,
 trust validation, or exclusion changed.
+
+The remaining packaged-contractor startup cost now uses one bounded,
+parameterized worker snapshot for all nine canonical slugs instead of nine
+separately trusted SQLite connections. A paired 21-sample warm Windows control,
+alternating the legacy and batch paths against the same already-seeded Store
+with schema construction and warmup excluded, reduced no-op contractor install
+from 160.340 ms median / 169.247 ms p95 to 28.712 / 30.021 ms. The complete
+stable operational snapshot fell from 539.410 / 552.708 ms to 408.184 /
+415.685 ms. Installer opens and worker SELECTs fell from nine to one; the full
+snapshot fell from 13 to five opens and 15 to seven SELECTs. Exact snapshot
+key/value binding and Store uniqueness/transaction checks keep concurrent
+identity conflicts fail-closed. The broad workforce, preflight, and routing
+suite passes 370 tests with two skips and one expected failure. These remain
+local warm controls, not hosted or cross-platform evidence.
