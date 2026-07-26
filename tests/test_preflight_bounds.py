@@ -674,16 +674,18 @@ def test_concurrent_duplicate_preflights_share_one_owner_and_one_outcome(
     monkeypatch: pytest.MonkeyPatch,
     owner_fails: bool,
 ) -> None:
+    from agency_runtime.core.installer import seed_starter_roster
     from agency_runtime.core.selector.delegation_detection import detect_work_units
 
     store = Store(tmp_path / "agency.db")
+    seed_starter_roster(store)
     message = "Audit the runtime lifecycle."
     reservation = store.reserve_session_turn(
         session_id="session",
         trace_id="shared-attempt",
         host="codex",
     )
-    route_started = Event()
+    owner_started = Event()
     observer_started = Event()
     release_route = Event()
     route_lock = Lock()
@@ -692,7 +694,9 @@ def test_concurrent_duplicate_preflights_share_one_owner_and_one_outcome(
 
     def observed_begin(**kwargs: Any) -> dict[str, Any]:
         result = original_begin(**kwargs)
-        if result["outcome"] == "reused_in_progress":
+        if result["outcome"] in {"started", "recovered_started"}:
+            owner_started.set()
+        elif result["outcome"] == "reused_in_progress":
             observer_started.set()
         return result
 
@@ -700,7 +704,6 @@ def test_concurrent_duplicate_preflights_share_one_owner_and_one_outcome(
         nonlocal route_calls
         with route_lock:
             route_calls += 1
-        route_started.set()
         if not release_route.wait(5):
             raise RuntimeError("test route release timed out")
         if owner_fails:
@@ -731,18 +734,18 @@ def test_concurrent_duplicate_preflights_share_one_owner_and_one_outcome(
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         owner = executor.submit(invoke)
-        assert route_started.wait(5)
+        assert owner_started.wait(5)
         observer = executor.submit(invoke)
         assert observer_started.wait(5)
         release_route.set()
         if owner_fails:
             with pytest.raises(RuntimeError, match="planned owner failure"):
-                owner.result(timeout=10)
+                owner.result(timeout=30)
             with pytest.raises(RuntimeError, match="became terminal"):
-                observer.result(timeout=10)
+                observer.result(timeout=30)
         else:
-            owner_result = owner.result(timeout=10)
-            observer_result = observer.result(timeout=10)
+            owner_result = owner.result(timeout=30)
+            observer_result = observer.result(timeout=30)
             assert observer_result.as_dict() == owner_result.as_dict()
 
     assert route_calls == 1

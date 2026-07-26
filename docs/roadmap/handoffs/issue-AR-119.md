@@ -10,6 +10,8 @@ related:
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
+  - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
+  - docs/roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/analysis/2026-07-26-production-readiness-review.md
@@ -38,10 +40,9 @@ the deterministic typed-recall floor only when inference is not configured.
   authorized.
 - The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
   and excluded from commits.
-- Latest pre-checkpoint telemetry reported 6.1 percent remaining, requiring
-  this smallest safe dashboard coverage and recovery checkpoint before any
-  further live evaluation.
-- The current package integrates AR-133 through AR-144 source work plus the
+- Latest pre-checkpoint telemetry reported 26.1 percent remaining, requiring
+  this smallest safe AR-145/AR-146 recovery checkpoint before further gates.
+- The current package integrates AR-133 through AR-146 source work plus the
   AR-140/AR-141 performance and compatibility slice.
 - The first complete post-checkpoint Python arm ran 43m39s and failed 34 tests.
   Its exact owning 12-module reproducer now passes 424 tests in 70.71 seconds.
@@ -106,6 +107,13 @@ the deterministic typed-recall floor only when inference is not configured.
 - The exact dashboard release-coverage command passes all 84 tests at 97.13
   percent lines, 91.28 percent branches, and 96.32 percent functions without a
   threshold or production-code change.
+- The first exact Python coverage arm failed four tests and the fixed 97
+  percent floor at 96.66 percent after 57m35s. Focused deterministic repairs
+  pass 33 tests; matched Store/MCP coverage adds 177 statements and closes 38
+  partial branches, while focused dashboard coverage adds 87 statements.
+- AR-146 repairs the cursor validator that rejected every generated activity
+  cursor. Dashboard server coverage passes 29 tests and 12 existing
+  cursor/activity/observation regressions pass.
 
 ## exact-blocker
 
@@ -123,6 +131,8 @@ the deterministic typed-recall floor only when inference is not configured.
 - AR-119 and AR-125 still lack a benchmark-valid completed value corpus and
   current production-candidate evidence across claimed host/OS surfaces.
   Malformed or timed-out upstream arms remain invalid, never losses.
+- AR-145 still requires the exact aggregate 97 percent coverage rerun and
+  separate uninstrumented performance suite.
 - Tracker creation/closure, push, PR, hosted checks, tags, publication, and
   release remain unauthorized outward actions.
 
@@ -133,8 +143,8 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run the remaining delegation, full-roster, coverage, browser, documentation,
-   and release gates from the same source state and record every exact result.
+1. Run the exact Python aggregate coverage and separate performance gates from
+   this clean source checkpoint and record every exact result.
 2. Finish safe local AR-141 evidence without mechanical security rewrites.
 3. Keep fresh install and installed dogfood visibly blocked behind genuine
    operator presence; do not reinterpret the earlier install as current.

@@ -196,6 +196,30 @@ def _json_response(*args, **kwargs) -> tuple[int, dict, dict[str, str]]:
     return status, json.loads(raw), headers
 
 
+def _wait_for_dashboard_observation(
+    caplog: pytest.LogCaptureFixture,
+    request_id: str,
+    *,
+    timeout: float = 5.0,
+) -> dict[str, object]:
+    """Wait for a threaded dashboard request boundary to finish emitting."""
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        for record in caplog.records:
+            message = record.getMessage()
+            if not message.startswith("agency_observation "):
+                continue
+            observation = json.loads(message.split(" ", 1)[1])
+            if (
+                observation.get("surface") == "dashboard"
+                and observation.get("request_id") == request_id
+            ):
+                return observation
+        time.sleep(0.01)
+    pytest.fail(f"dashboard observation was not emitted for request {request_id}")
+
+
 def _raw_request(server: dict, payload: bytes) -> bytes:
     client = socket.create_connection(("127.0.0.1", server["port"]), timeout=2)
     client.settimeout(2)
@@ -1105,15 +1129,8 @@ def test_dashboard_correlates_requests_with_content_free_observations(
     assert payload == {"status": "ok", "request_id": request_id}
     assert headers["X-Agency-Request-ID"] == request_id
     assert headers["X-Request-ID"] == request_id
-    observations = [
-        json.loads(record.getMessage().split(" ", 1)[1])
-        for record in caplog.records
-        if record.getMessage().startswith("agency_observation ")
-    ]
-    dashboard = [
-        observation for observation in observations if observation["surface"] == "dashboard"
-    ]
-    assert dashboard[-1] == {
+    observation = _wait_for_dashboard_observation(caplog, request_id)
+    assert observation == {
         "schema_version": 1,
         "request_id": request_id,
         "correlation_digest": "",
@@ -1121,9 +1138,9 @@ def test_dashboard_correlates_requests_with_content_free_observations(
         "operation": "health",
         "outcome": "ok",
         "reason_code": "completed",
-        "duration_ms": dashboard[-1]["duration_ms"],
+        "duration_ms": observation["duration_ms"],
     }
-    assert 0 <= dashboard[-1]["duration_ms"] < 5_000
+    assert 0 <= observation["duration_ms"] < 5_000
 
     caplog.clear()
     invalid = "Bearer do-not-log-this"
@@ -1138,6 +1155,7 @@ def test_dashboard_correlates_requests_with_content_free_observations(
     assert payload == {"status": "ok"}
     assert generated.startswith("arq-")
     assert len(generated) == 36
+    _wait_for_dashboard_observation(caplog, generated)
     assert invalid not in "\n".join(record.getMessage() for record in caplog.records)
 
 

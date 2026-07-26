@@ -89,6 +89,33 @@ def _request(
             return exc.code, json.loads(exc.read())
 
 
+def _direct_dashboard_handler(
+    store: object,
+    path: str,
+) -> tuple[dashboard.DashboardHTTPHandler, list[dict[str, Any]]]:
+    handler = object.__new__(dashboard.DashboardHTTPHandler)
+    handler.path = path
+    handler.server = SimpleNamespace(
+        store=store,
+        config_path="C:\\agency.yaml",
+        host_inspector=lambda: [],
+    )
+    responses: list[dict[str, Any]] = []
+    handler._json_ok = responses.append
+    return handler, responses
+
+
+def _dashboard_state(*, disabled: tuple[str, ...] = ()) -> SimpleNamespace:
+    return SimpleNamespace(
+        path="C:\\agency.yaml",
+        persisted={},
+        effective={"agents": {"disabled": list(disabled)}},
+        revision="config-revision",
+        secret_presence={},
+        environment_overrides=[],
+    )
+
+
 def test_dashboard_exposes_authenticated_account_model_catalog(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -285,6 +312,313 @@ def test_dashboard_route_lab_pure_projection_edge_matrix(
     )
     assert projection["eligible_count"] == 0
     assert projection["rejections"] == [{"slug": "alpha", "reason": "unsupported host"}]
+
+
+def test_dashboard_activity_projection_strips_optional_content_fields() -> None:
+    source = {
+        "runs": [{"id": "run-1"}],
+        "routing": [{"id": "route-1", "work_units": ["private"], "status": "ok"}],
+        "delegations": [{"id": "delegation-1", "skip_reason": "private", "status": "completed"}],
+        "receipts": [],
+        "finalizations": [],
+        "specialists": [{"id": "specialist-1", "slug": "reviewer", "prompt_body": "private"}],
+    }
+
+    rendered = dashboard._dashboard_activity(source)
+
+    assert rendered["runs"] is source["runs"]
+    assert rendered["routing"] == [{"id": "route-1", "status": "ok"}]
+    assert rendered["delegations"] == [{"id": "delegation-1", "status": "completed"}]
+    assert rendered["specialists"] == [{"id": "specialist-1", "slug": "reviewer"}]
+
+
+def test_dashboard_collection_cursors_are_canonical_and_fail_closed() -> None:
+    assert dashboard._bounded_query_limit("/api/live?limit=invalid", default=17) == 17
+    assert dashboard._bounded_query_limit("/api/live?limit=-1", default=17) == 1
+    assert dashboard._bounded_query_limit("/api/live?limit=1000", default=17) == 200
+
+    kind = "activity.routing.v1"
+    cursor = dashboard._encode_collection_cursor(kind, "2026-07-26T00:00:00Z", "route-1")
+    assert dashboard._decode_collection_cursor(cursor, kind=kind, fields=2) == (
+        "2026-07-26T00:00:00Z",
+        "route-1",
+    )
+
+    invalid = (
+        "",
+        "invalid$",
+        "ew",
+        "__8",
+        dashboard._encode_collection_cursor("activity.runs.v1", "time", "id"),
+        dashboard._encode_collection_cursor(kind, "time"),
+        dashboard._encode_collection_cursor(kind, "", "id"),
+        dashboard._encode_collection_cursor(kind, "time", 7),
+    )
+    for value in invalid:
+        with pytest.raises(ValueError, match="collection cursor is invalid"):
+            dashboard._decode_collection_cursor(value, kind=kind, fields=2)
+
+
+def test_dashboard_delegation_graph_preserves_each_governed_dependency_source() -> None:
+    bound = dashboard._delegation_graph(
+        {
+            "signals": {"work_units": {"units": ["first", "second"]}},
+            "routing": {
+                "workforce_unit_bindings": [
+                    {"work_unit_id": "bound-1", "depends_on": []},
+                    {"work_unit_id": "bound-2", "depends_on": ["bound-1"]},
+                ]
+            },
+        }
+    )
+    assert bound == {
+        "nodes": [
+            {"id": "bound-1", "description": "first"},
+            {"id": "bound-2", "description": "second"},
+        ],
+        "edges": [{"from": "bound-1", "to": "bound-2", "reason": "explicit depends_on"}],
+    }
+
+    planned = dashboard._delegation_graph(
+        {
+            "signals": {"work_units": {"units": ["first", "second"]}},
+            "routing": {
+                "workforce_plan": {
+                    "units": [
+                        {"unit_id": "source-1", "depends_on": []},
+                        {"unit_id": "source-2", "depends_on": ["source-1", "missing"]},
+                    ]
+                }
+            },
+        }
+    )
+    assert [item["description"] for item in planned["nodes"]] == ["first", "second"]
+    assert planned["edges"] == [
+        {
+            "from": planned["nodes"][0]["id"],
+            "to": planned["nodes"][1]["id"],
+            "reason": "explicit depends_on",
+        }
+    ]
+
+    fallback = dashboard._delegation_graph(
+        {
+            "signals": {"work_units": {"units": ["first", "second"]}},
+            "routing": None,
+        }
+    )
+    assert [item["description"] for item in fallback["nodes"]] == ["first", "second"]
+    assert fallback["edges"] == []
+
+
+def test_dashboard_activity_collection_returns_a_stripped_keyset_page(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    incoming = dashboard._encode_collection_cursor(
+        "activity.routing.v1",
+        "2026-07-26T00:00:02Z",
+        "route-2",
+    )
+    calls: list[tuple[object, ...]] = []
+
+    def activity_page(kind: str, **kwargs: Any) -> dict[str, Any]:
+        calls.append((kind, kwargs))
+        return {
+            "rows": [
+                {
+                    "id": "route-1",
+                    "created_at": "2026-07-26T00:00:01Z",
+                    "work_units": ["private"],
+                    "status": "selected",
+                }
+            ],
+            "next_time": "2026-07-26T00:00:01Z",
+            "next_id": "route-1",
+            "page_count": 1,
+            "filtered_count": 2,
+            "total_count": 4,
+            "limit": 1,
+            "truncated": True,
+            "collection_revision": "activity-revision",
+        }
+
+    store = SimpleNamespace(dashboard_activity_page=activity_page)
+    handler, responses = _direct_dashboard_handler(
+        store,
+        f"/api/activity?kind=routing&limit=1&after={incoming}",
+    )
+    state = _dashboard_state()
+    binding = {
+        "store_path": "C:\\agency.db",
+        "desired_store_path": "C:\\agency.db",
+        "store_restart_required": False,
+    }
+    monkeypatch.setattr(dashboard, "read_config_state", lambda _path: state)
+    monkeypatch.setattr(dashboard, "_store_service_binding", lambda _store, _state: binding)
+
+    handler._handle_activity()
+
+    assert calls == [
+        (
+            "routing",
+            {
+                "limit": 1,
+                "after_time": "2026-07-26T00:00:02Z",
+                "after_id": "route-2",
+            },
+        )
+    ]
+    response = responses.pop()
+    assert response["schema_version"] == "agency.dashboard.activity_collection.v1"
+    assert response["items"] == [
+        {
+            "id": "route-1",
+            "created_at": "2026-07-26T00:00:01Z",
+            "status": "selected",
+        }
+    ]
+    assert response["truncated"] is True
+    assert response["filtered_count"] == 2
+    assert response["total_count"] == 4
+    assert dashboard._decode_collection_cursor(
+        response["next_cursor"],
+        kind="activity.routing.v1",
+        fields=2,
+    ) == ("2026-07-26T00:00:01Z", "route-1")
+
+
+def test_dashboard_control_contract_covers_restart_and_truncated_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state = _dashboard_state(disabled=("agent-000",))
+    binding = {
+        "store_path": "C:\\active.db",
+        "desired_store_path": "C:\\desired.db",
+        "store_restart_required": True,
+    }
+    monkeypatch.setattr(dashboard, "read_config_state", lambda _path: state)
+    monkeypatch.setattr(dashboard, "_store_service_binding", lambda _store, _state: binding)
+    monkeypatch.setattr(
+        dashboard,
+        "_require_store_service_binding",
+        lambda _store, _state: binding,
+    )
+
+    restart_handler, restart_responses = _direct_dashboard_handler(object(), "/api/control")
+    restart_handler._handle_control()
+    restart = restart_responses.pop()
+    assert restart["restart_required"] is True
+    assert "hosts" not in restart
+    restart_core = {
+        key: value
+        for key, value in restart.items()
+        if key not in {"sampled_at", "control_revision"}
+    }
+    assert restart["control_revision"] == dashboard._dashboard_revision(restart_core)
+
+    class ControlStore:
+        def get_active_roster_ui_page_snapshot(self, **_kwargs: Any) -> dict[str, Any]:
+            return {
+                "rows": [{"slug": f"agent-{index:03}"} for index in range(201)],
+                "total_count": 201,
+                "enabled_count": 200,
+                "generation": 7,
+            }
+
+        def roster_snapshot_page(self, **_kwargs: Any) -> dict[str, Any]:
+            return {
+                "rows": [{"snapshot_id": "snapshot-1"}],
+                "total_count": 1,
+                "truncated": False,
+                "next_created_at": "",
+                "next_snapshot_id": "",
+                "collection_revision": "snapshot-revision",
+            }
+
+    binding.update(
+        desired_store_path="C:\\active.db",
+        store_restart_required=False,
+    )
+    monkeypatch.setattr(
+        dashboard,
+        "ui_roster_projection",
+        lambda agent, disabled: {
+            "agent_slug": agent["slug"],
+            "enabled": agent["slug"] not in disabled,
+        },
+    )
+    monkeypatch.setattr(
+        dashboard,
+        "roster_operational_page",
+        lambda _store, **_kwargs: {"agents": [], "count": 0},
+    )
+    monkeypatch.setattr(
+        dashboard,
+        "candidate_review_snapshot",
+        lambda _store: {
+            "candidates": [],
+            "filtered_count": 0,
+            "total_count": 0,
+            "truncated": False,
+            "next_candidate_time": "",
+            "next_candidate_id": "",
+            "collection_revision": "review-revision",
+        },
+    )
+    handler, responses = _direct_dashboard_handler(ControlStore(), "/api/control")
+    handler._master_control = lambda: {"enabled": True, "generation": 3}
+    handler._host_payload = lambda _master: [{"host": "codex", "registered": True}]
+
+    handler._handle_control()
+
+    response = responses.pop()
+    assert response["restart_required"] is False
+    assert response["hosts"] == [{"host": "codex", "registered": True}]
+    assert response["roster"]["count"] == 200
+    assert response["roster"]["total_count"] == 201
+    assert response["roster"]["enabled_count"] == 200
+    assert response["roster"]["disabled_count"] == 1
+    assert response["roster"]["truncated"] is True
+    assert response["roster"]["next_cursor"] == "agent-199"
+    assert response["governance"]["snapshots"] == [{"snapshot_id": "snapshot-1"}]
+    core = {
+        key: value
+        for key, value in response.items()
+        if key not in {"sampled_at", "control_revision"}
+    }
+    assert response["control_revision"] == dashboard._dashboard_revision(core)
+
+
+def test_dashboard_post_runtime_control_failure_is_redacted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    secret = "private runtime-control path"
+    warnings: list[tuple[object, ...]] = []
+
+    def fail_route(_handler: object, _body: dict[str, Any]) -> None:
+        raise dashboard.RuntimeControlError(secret)
+
+    monkeypatch.setattr(dashboard.DashboardHTTPHandler, "_handle_route_lab", fail_route)
+    monkeypatch.setattr(dashboard.logger, "warning", lambda *args: warnings.append(args))
+    with _running_dashboard(tmp_path, monkeypatch) as server:
+        status, payload = _request(
+            server,
+            "/api/route",
+            method="POST",
+            body={"task": "review security"},
+        )
+
+    assert status == 400
+    assert payload == {"error": "runtime control unavailable"}
+    assert warnings == [
+        (
+            "dashboard POST runtime-control error for %s (%s)",
+            "route",
+            "RuntimeControlError",
+        )
+    ]
+    assert secret not in repr(warnings)
 
 
 def test_dashboard_rejects_bad_host_same_origin_mismatch_and_invalid_json(

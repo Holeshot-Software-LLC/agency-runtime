@@ -587,6 +587,28 @@ def test_eval_helpers_fail_closed_without_running_wall_clock_gates(
     monkeypatch.setattr(routing_eval, "_policy_metrics", lambda: ({}, []))
     monkeypatch.setattr(routing_eval, "_delegation_metrics", lambda: ({}, []))
     monkeypatch.setattr(routing_eval, "run_candidate_microbenchmark", lambda: {})
+    monkeypatch.setattr(
+        routing_eval,
+        "run_semantic_retrieval_scale_benchmark",
+        lambda: {
+            "version": "synthetic",
+            "query_sha256": "0" * 64,
+            "cold_includes_tracemalloc": True,
+            "tiers": [],
+        },
+    )
+    monkeypatch.setattr(
+        routing_eval,
+        "run_cli_version_startup_benchmark",
+        lambda: {
+            "version": "synthetic",
+            "iterations": 0,
+            "p50_ms": 0.0,
+            "p95_ms": 0.0,
+            "samples_ms": [],
+            "output_valid": True,
+        },
+    )
     monkeypatch.setattr(routing_eval, "_gates", lambda _metrics: [])
     report = routing_eval.run_routing_eval(include_details=False)
     assert report["passed"] is True
@@ -601,6 +623,119 @@ def test_generated_benchmark_catalog_reserves_resident_manager_slots() -> None:
         "chief-of-staff",
         "security-specialist-0000",
     ]
+
+
+def test_semantic_retrieval_scale_benchmark_uses_deterministic_measurements(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    selected = [{"slug": "performance-specialist-0000"}]
+    retrieval_calls: list[int] = []
+    ticks = iter((0.0, 0.001, 1.0, 1.001, 2.0, 2.001, 3.0, 3.001))
+
+    monkeypatch.setattr(
+        benchmarks,
+        "generated_catalog",
+        lambda size: [{"slug": f"catalog-entry-{size}"}],
+    )
+    monkeypatch.setattr(benchmarks, "clear_semantic_retrieval_cache", lambda: None)
+    monkeypatch.setattr(benchmarks.gc, "collect", lambda: 0)
+    monkeypatch.setattr(benchmarks.tracemalloc, "is_tracing", lambda: False)
+    monkeypatch.setattr(benchmarks.tracemalloc, "start", lambda: None)
+    monkeypatch.setattr(benchmarks.tracemalloc, "stop", lambda: None)
+    monkeypatch.setattr(
+        benchmarks.tracemalloc,
+        "get_traced_memory",
+        lambda: (0, 1024 * 1024),
+    )
+    monkeypatch.setattr(benchmarks.time, "perf_counter", lambda: next(ticks))
+
+    def retrieve(
+        _query: str,
+        _catalog: object,
+        *,
+        limit: int,
+    ) -> tuple[list[dict[str, str]], list[float]]:
+        retrieval_calls.append(limit)
+        return selected, [1.0]
+
+    monkeypatch.setattr(benchmarks, "semantic_retrieve", retrieve)
+
+    report = benchmarks.run_semantic_retrieval_scale_benchmark(
+        tiers=(263,),
+        warm_samples=3,
+    )
+
+    assert retrieval_calls == [40, 40, 40, 40]
+    assert report["passed"] is True
+    assert report["tiers"] == [
+        {
+            **report["tiers"][0],
+            "roster_size": 263,
+            "selected_count": 1,
+            "cold_ms": 1.0,
+            "warm_samples": 3,
+            "warm_p95_ms": 1.0,
+            "warm_samples_ms": [1.0, 1.0, 1.0],
+            "peak_mib": 1.0,
+            "deterministic": True,
+            "correctness": True,
+            "gates": {
+                "cold_latency": True,
+                "warm_latency": True,
+                "peak_memory": True,
+                "deterministic_correctness": True,
+            },
+            "passed": True,
+        }
+    ]
+
+
+def test_cli_version_startup_benchmark_uses_deterministic_subprocess_samples(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ticks = iter((0.0, 0.001, 1.0, 1.002, 2.0, 2.003))
+    commands: list[list[str]] = []
+    monkeypatch.setattr(benchmarks.time, "perf_counter", lambda: next(ticks))
+
+    def run(command: list[str], **kwargs: object) -> object:
+        commands.append(command)
+        assert kwargs == {
+            "check": False,
+            "capture_output": True,
+            "text": True,
+            "timeout": 5.0,
+        }
+        return SimpleNamespace(
+            returncode=0,
+            stdout=f"agency {benchmarks.__version__}\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(benchmarks.subprocess, "run", run)
+
+    report = benchmarks.run_cli_version_startup_benchmark(iterations=3)
+
+    assert len(commands) == 3
+    assert all(command[0] == benchmarks.sys.executable for command in commands)
+    assert report["samples_ms"] == [1.0, 2.0, 3.0]
+    assert report["p50_ms"] == 2.0
+    assert report["p95_ms"] == 3.0
+    assert report["output_valid"] is True
+    assert report["passed"] is True
+
+
+def test_benchmark_contracts_reject_invalid_dimensions_and_active_tracing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with pytest.raises(ValueError, match="warm_samples"):
+        benchmarks.run_semantic_retrieval_scale_benchmark(warm_samples=True)
+    with pytest.raises(ValueError, match="tiers"):
+        benchmarks.run_semantic_retrieval_scale_benchmark(tiers=())
+    monkeypatch.setattr(benchmarks.tracemalloc, "is_tracing", lambda: True)
+    with pytest.raises(RuntimeError, match="idle tracemalloc"):
+        benchmarks.run_semantic_retrieval_scale_benchmark(tiers=(263,))
+    with pytest.raises(ValueError, match="iterations"):
+        benchmarks.run_cli_version_startup_benchmark(iterations=True)
 
 
 def test_full_roster_probe_scaffolding_is_neutral_to_both_retrievers() -> None:
@@ -779,10 +914,46 @@ def test_routing_eval_exercises_accuracy_gates_with_synthetic_performance(
             "cache_hit_deterministic": True,
         },
     )
+    monkeypatch.setattr(
+        routing_eval,
+        "run_semantic_retrieval_scale_benchmark",
+        lambda: {
+            "version": "synthetic",
+            "query_sha256": "0" * 64,
+            "cold_includes_tracemalloc": True,
+            "tiers": [
+                {
+                    "roster_size": size,
+                    "cold_ms": 0.0,
+                    "warm_p95_ms": 0.0,
+                    "peak_mib": 0.0,
+                    "deterministic": True,
+                    "correctness": True,
+                }
+                for size in (263, 1000, 10000)
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        routing_eval,
+        "run_cli_version_startup_benchmark",
+        lambda: {
+            "version": "synthetic",
+            "iterations": 1,
+            "p50_ms": 0.0,
+            "p95_ms": 0.0,
+            "samples_ms": [0.0],
+            "output_valid": True,
+        },
+    )
 
     report = routing_eval.run_routing_eval(include_details=True)
 
     assert report["passed"] is True
+    synthetic_areas = {"retrieval_scale", "cli_startup"}
+    synthetic_gates = [gate for gate in report["gates"] if gate["area"] in synthetic_areas]
+    assert {gate["area"] for gate in synthetic_gates} == synthetic_areas
+    assert all(gate["passed"] for gate in synthetic_gates)
     assert report["details"]["routing"]
     assert report["details"]["policy"]
     assert report["details"]["delegation"]

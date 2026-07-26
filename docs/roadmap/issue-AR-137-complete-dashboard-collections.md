@@ -7,6 +7,7 @@ updated: 2026-07-26
 tags: [dashboard, workforce, pagination, ui, truth]
 related:
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
+  - docs/roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md
   - agency_runtime/server/dashboard.py
   - agency_runtime/dashboard/dashboard-live.js
 supersedes: []
@@ -17,7 +18,8 @@ issue_id: AR-137
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: []
+blocks:
+  - AR-146
 ---
 
 # AR-137: Make dashboard collections complete and paginated
@@ -69,3 +71,9 @@ stable key order, changes the collection revision, and preserves the declared
 live-keyset-after-exclusive contract. Local acceptance is satisfied; the item
 remains open only because tracker creation and closure are unauthorized
 outward actions.
+
+Post-implementation traceability coverage found that the cursor validator used
+a literal backslash-Z suffix, so generated activity cursors could not be
+consumed. AR-146 corrects the anchor and adds canonical round-trip, hostile
+cursor, and handler-to-Store keyset tests. Its focused server suite passes 29
+tests and the existing cursor/activity regressions pass 12.
