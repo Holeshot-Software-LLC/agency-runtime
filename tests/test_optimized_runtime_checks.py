@@ -162,10 +162,12 @@ def test_canary_invocation_rejects_incomplete_prerequisites_without_assert(
 
 
 def test_production_package_contains_no_optimization_sensitive_asserts() -> None:
-    package = Path(__file__).parents[1] / "agency_runtime"
+    repository = Path(__file__).parents[1]
+    production_roots = (repository / "agency_runtime", repository / "scripts")
     assertions = [
-        (path.relative_to(package), node.lineno)
-        for path in package.rglob("*.py")
+        (path.relative_to(repository), node.lineno)
+        for root in production_roots
+        for path in root.rglob("*.py")
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"), filename=str(path)))
         if isinstance(node, ast.Assert)
     ]

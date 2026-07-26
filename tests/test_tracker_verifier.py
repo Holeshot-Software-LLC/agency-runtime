@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 def _load_verifier():
     path = Path(__file__).parents[1] / "scripts" / "verify_tracker.py"
@@ -52,3 +54,11 @@ tracker_url: https://example.test/issues/1
     allowed = capsys.readouterr()
     assert "closure pending authorization" in allowed.err
     assert "tracker validation passed for 1 roadmap items" in allowed.out
+
+
+@pytest.mark.parametrize("payload", [{}, ["not-an-object"]])
+def test_tracker_verifier_rejects_malformed_remote_issue_collections(payload) -> None:
+    verifier = _load_verifier()
+
+    with pytest.raises(RuntimeError, match="tracker issue listing"):
+        verifier._remote_issue_objects(payload)

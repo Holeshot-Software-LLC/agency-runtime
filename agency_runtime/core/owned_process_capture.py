@@ -397,8 +397,10 @@ def run_bounded_binary_capture(
         cancelled = False
 
     if retain_output_tail:
-        assert isinstance(stdout_capture, BoundedHeadTailBytesCapture)
-        assert isinstance(stderr_capture, BoundedHeadTailBytesCapture)
+        if not isinstance(stdout_capture, BoundedHeadTailBytesCapture) or not isinstance(
+            stderr_capture, BoundedHeadTailBytesCapture
+        ):
+            raise RuntimeError("internal head-tail process capture contract was violated")
         bounded_stdout, stdout_truncated = stdout_capture.bounded()
         bounded_stderr, stderr_truncated = stderr_capture.bounded()
     else:

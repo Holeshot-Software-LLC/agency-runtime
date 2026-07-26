@@ -29,6 +29,7 @@ from agency_runtime.server.http import (
 from tests.runtime_support import stub_inference_invoker, write_provider_config
 
 AUTH_HEADERS = {"Authorization": "Bearer test-token"}
+_LOADED_HTTP_TIMEOUT_SECONDS = 15
 
 
 def _configure_inference(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -106,7 +107,7 @@ def _post(base: str, path: str, payload: dict) -> tuple[int, dict]:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=_LOADED_HTTP_TIMEOUT_SECONDS) as resp:
             return resp.status, json.loads(resp.read())
     except urllib.error.HTTPError as exc:
         with exc:
@@ -116,7 +117,7 @@ def _post(base: str, path: str, payload: dict) -> tuple[int, dict]:
 def _get(base: str, path: str) -> tuple[int, dict]:
     req = urllib.request.Request(f"{base}{path}", headers=AUTH_HEADERS, method="GET")
     try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=_LOADED_HTTP_TIMEOUT_SECONDS) as resp:
             return resp.status, json.loads(resp.read())
     except urllib.error.HTTPError as exc:
         with exc:

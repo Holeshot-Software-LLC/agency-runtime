@@ -13,10 +13,19 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from agency_runtime.core.bounded_io import read_bounded_regular_file
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.process_environment import least_privilege_subprocess_environment
 from scripts.ci_private_node import resolved_node_source_manifest
+from scripts.parallel_change_loop_storage import exact_private_file_is_valid
 
-RUNTIME_CONTRACT_VERSION = 1
+RUNTIME_CONTRACT_VERSION = 2
+RUNTIME_RECEIPT_NAME = ".agency-local-change-loop-runtime-v2"
+RUNTIME_RECEIPT_SCHEMA = "agency.local-change-loop-runtime.v2"
+_RUNTIME_RECEIPT_MAX_BYTES = 16 * 1024
+_CI_RUNTIME_CONTRACT_RECEIPT = ".agency-ci-runtime-contract-v1"
+_CI_RUNTIME_OWNER_RECEIPT = ".agency-ci-runtime-owner-v1"
+_CI_RUNTIME_OWNER_PAYLOAD = b"agency-ci-runtime-owner:v1\n"
 _SAFE_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}")
 
 
@@ -46,7 +55,123 @@ def _real_directory(path: Path, *, label: str) -> Path:
     return resolved
 
 
-def _dependency_paths(repo_root: Path) -> tuple[Path, ...]:
+def _same_path(left: Path, right: Path) -> bool:
+    left_value = str(left.resolve(strict=True))
+    right_value = str(right.resolve(strict=True))
+    if os.name == "nt":
+        return os.path.normcase(left_value) == os.path.normcase(right_value)
+    return left_value == right_value
+
+
+def _contains_real_pytest(root: Path) -> bool:
+    package = root / "pytest"
+    package_init = package / "__init__.py"
+    return bool(
+        package.is_dir()
+        and not package.is_symlink()
+        and package_init.is_file()
+        and not package_init.is_symlink()
+    )
+
+
+def _managed_runtime_root(environment: Mapping[str, str]) -> Path | None:
+    root_value = environment.get("AGENCY_CI_ROOT")
+    python_value = environment.get("AGENCY_CI_PYTHON")
+    if root_value is None and python_value is None:
+        return None
+    if not root_value or not python_value:
+        raise RuntimeError("managed CI runtime identity is incomplete")
+    root = _real_directory(Path(root_value), label="managed CI runtime root")
+    python = Path(python_value).expanduser()
+    if python.is_symlink():
+        raise RuntimeError("managed CI runtime Python must not be a symlink")
+    try:
+        python = python.resolve(strict=True)
+    except OSError as exc:
+        raise RuntimeError("managed CI runtime Python must exist") from exc
+    if (
+        not python.is_file()
+        or os.pathsep in str(python)
+        or not _same_path(python, Path(sys.executable))
+    ):
+        raise RuntimeError("managed CI runtime Python does not match the current interpreter")
+    try:
+        python.relative_to(root)
+    except ValueError as exc:
+        raise RuntimeError("managed CI runtime Python escaped its runtime root") from exc
+    return root
+
+
+def _managed_runtime_receipt(root: Path) -> dict[str, object]:
+    try:
+        raw = read_bounded_regular_file(
+            root / RUNTIME_RECEIPT_NAME,
+            limit=_RUNTIME_RECEIPT_MAX_BYTES,
+            label="parallel runtime receipt",
+        )
+        payload = safe_load_bounded_json(
+            raw,
+            maximum_bytes=_RUNTIME_RECEIPT_MAX_BYTES,
+            maximum_depth=4,
+            maximum_nodes=32,
+        )
+    except (OSError, TypeError, ValueError) as exc:
+        raise RuntimeError("managed CI runtime receipt is unavailable or invalid") from exc
+    if not exact_private_file_is_valid(root / RUNTIME_RECEIPT_NAME, raw):
+        raise RuntimeError("managed CI runtime receipt is not owner-trusted")
+    if not isinstance(payload, dict) or set(payload) != {
+        "dependency_paths",
+        "runtime_key",
+        "schema",
+    }:
+        raise RuntimeError("managed CI runtime receipt has an invalid shape")
+    return payload
+
+
+def _managed_dependency_paths(environment: Mapping[str, str]) -> tuple[Path, ...]:
+    root = _managed_runtime_root(environment)
+    if root is None:
+        return ()
+    payload = _managed_runtime_receipt(root)
+    runtime_key = payload.get("runtime_key")
+    if (
+        payload.get("schema") != RUNTIME_RECEIPT_SCHEMA
+        or not isinstance(runtime_key, str)
+        or not re.fullmatch(r"[a-f0-9]{64}", runtime_key)
+    ):
+        raise RuntimeError("managed CI runtime receipt identity is invalid")
+    if not exact_private_file_is_valid(
+        root / _CI_RUNTIME_OWNER_RECEIPT,
+        _CI_RUNTIME_OWNER_PAYLOAD,
+    ) or not exact_private_file_is_valid(
+        root / _CI_RUNTIME_CONTRACT_RECEIPT,
+        f"agency-ci-runtime-contract:v1:{runtime_key}\n".encode("ascii"),
+    ):
+        raise RuntimeError("managed CI runtime ownership receipts are invalid")
+    dependency_values = payload.get("dependency_paths")
+    if (
+        not isinstance(dependency_values, list)
+        or not 1 <= len(dependency_values) <= 8
+        or any(not isinstance(value, str) or not value for value in dependency_values)
+    ):
+        raise RuntimeError("managed CI runtime dependency paths are invalid")
+    dependencies: list[Path] = []
+    for index, value in enumerate(dependency_values):
+        dependency = _real_directory(
+            Path(value),
+            label=f"managed CI runtime dependency {index}",
+        )
+        if dependency not in dependencies:
+            dependencies.append(dependency)
+    if not any(_contains_real_pytest(root_path) for root_path in dependencies):
+        raise RuntimeError("managed CI runtime receipt does not provide pytest")
+    return tuple(dependencies)
+
+
+def _dependency_paths(
+    repo_root: Path,
+    environment: Mapping[str, str] | None = None,
+) -> tuple[Path, ...]:
     roots: list[Path] = [repo_root]
     for name in ("purelib", "platlib"):
         value = sysconfig.get_path(name)
@@ -54,10 +179,37 @@ def _dependency_paths(repo_root: Path) -> tuple[Path, ...]:
             candidate = _real_directory(Path(value), label=f"invoking Python {name}")
             if candidate not in roots:
                 roots.append(candidate)
-    if not any(
-        (root / "pytest" / "__init__.py").is_file() and not (root / "pytest").is_symlink()
-        for root in roots[1:]
-    ):
+    if not any(_contains_real_pytest(root) for root in roots[1:]):
+        # A change-loop child uses a private venv plus explicit dependency roots,
+        # so sysconfig points at the intentionally empty private site-packages.
+        # Pytest is already loaded by that child; recover only its verified package
+        # root instead of trusting an ambient PYTHONPATH value.
+        loaded_pytest = sys.modules.get("pytest")
+        loaded_path = getattr(loaded_pytest, "__file__", None)
+        if loaded_path:
+            package_init = Path(loaded_path).expanduser()
+            package_directory = package_init.parent
+            if (
+                package_init.name != "__init__.py"
+                or package_init.is_symlink()
+                or not package_init.is_file()
+                or package_directory.name != "pytest"
+                or package_directory.is_symlink()
+            ):
+                raise RuntimeError("the loaded pytest package path is not a real package")
+            candidate = _real_directory(
+                package_directory.parent,
+                label="loaded pytest dependency root",
+            )
+            if candidate not in roots:
+                roots.append(candidate)
+    if not any(_contains_real_pytest(root) for root in roots[1:]):
+        for candidate in _managed_dependency_paths(
+            os.environ if environment is None else environment
+        ):
+            if candidate not in roots:
+                roots.append(candidate)
+    if not any(_contains_real_pytest(root) for root in roots[1:]):
         raise RuntimeError("the invoking Python environment does not provide a real pytest package")
     return tuple(roots)
 
@@ -74,7 +226,7 @@ def build_runtime_contract(
 ) -> RuntimeContract:
     if not _SAFE_LABEL.fullmatch(label):
         raise ValueError("label must be a bounded filesystem-safe identifier")
-    dependencies = _dependency_paths(repo_root)
+    dependencies = _dependency_paths(repo_root, environment)
     search_path = environment.get("PATH", "")
 
     def node_resolver(name: str) -> str | None:
@@ -114,6 +266,22 @@ def build_runtime_contract(
         label=f"{label[: 80 - len(suffix)]}{suffix}",
         node_resolver=node_resolver,
         node_source=node_source,
+    )
+
+
+def runtime_receipt_payload(contract: RuntimeContract) -> bytes:
+    return (
+        json.dumps(
+            {
+                "dependency_paths": [str(path) for path in contract.dependency_paths],
+                "runtime_key": contract.key,
+                "schema": RUNTIME_RECEIPT_SCHEMA,
+            },
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+        + b"\n"
     )
 
 
@@ -193,8 +361,11 @@ def private_child_environment(
 
 __all__ = [
     "RUNTIME_CONTRACT_VERSION",
+    "RUNTIME_RECEIPT_NAME",
+    "RUNTIME_RECEIPT_SCHEMA",
     "RuntimeContract",
     "build_runtime_contract",
     "private_child_environment",
     "runtime_path",
+    "runtime_receipt_payload",
 ]

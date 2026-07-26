@@ -58,6 +58,17 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _remote_issue_objects(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        raise RuntimeError("tracker issue listing did not return a JSON array")
+    issues: list[dict[str, object]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            raise RuntimeError("tracker issue listing contains a non-object item")
+        issues.append(item)
+    return issues
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     errors: list[str] = []
@@ -70,20 +81,20 @@ def main(argv: list[str] | None = None) -> int:
             errors.append(f"duplicate local issue ID {issue_id}")
         local[issue_id] = meta
 
-    remote_items = gh(
-        "issue",
-        "list",
-        "--state",
-        "all",
-        "--limit",
-        "1000",
-        "--json",
-        "number,title,state,url,labels",
+    remote_items = _remote_issue_objects(
+        gh(
+            "issue",
+            "list",
+            "--state",
+            "all",
+            "--limit",
+            "1000",
+            "--json",
+            "number,title,state,url,labels",
+        )
     )
-    assert isinstance(remote_items, list)
     remote: dict[str, dict[str, object]] = {}
     for item in remote_items:
-        assert isinstance(item, dict)
         match = ID_RE.match(str(item.get("title", "")))
         if not match:
             continue

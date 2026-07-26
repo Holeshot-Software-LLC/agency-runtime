@@ -29,10 +29,12 @@ from agency_runtime.core.owned_process import (
 )
 from agency_runtime.core.private_paths import private_runtime_directory, remove_private_directory
 from scripts.parallel_change_loop_runtime import (
+    RUNTIME_RECEIPT_NAME,
     RuntimeContract,
     build_runtime_contract,
     private_child_environment,
     runtime_path,
+    runtime_receipt_payload,
 )
 from scripts.parallel_change_loop_storage import (
     bounded_head_tail,
@@ -62,9 +64,9 @@ PYTEST_FLAGS = (
     "no:cacheprovider",
     "-m",
     "not performance",
+    "--durations=25",
 )
 
-_RUNTIME_RECEIPT_NAME = ".agency-local-change-loop-runtime-v1"
 _LOG_ROOT_NAME = ".agency-local-change-loop-logs-v1"
 _LOG_ROOT_RECEIPT_NAME = ".agency-owned-root"
 _LOG_ROOT_RECEIPT = b"agency-runtime-local-change-loop-logs:v1\n"
@@ -263,14 +265,7 @@ def build_parallel_test_plan(
     environment = dict(os.environ if ambient_environment is None else ambient_environment)
     contract = build_runtime_contract(repo, label, environment)
     preparer = runtime_preparer or prepare_ci_runtime
-    receipt = (
-        json.dumps(
-            {"runtime_key": contract.key, "schema": "agency.local-change-loop-runtime.v1"},
-            separators=(",", ":"),
-            sort_keys=True,
-        ).encode("ascii")
-        + b"\n"
-    )
+    receipt = runtime_receipt_payload(contract)
     execution_lock_path = _repo_execution_lock_path(
         repo,
         create_parent=not dry_run,
@@ -298,7 +293,7 @@ def build_parallel_test_plan(
             contract.assert_node_unchanged()
             runtime_root = runtime_path(runtime, "AGENCY_CI_ROOT")
             python = runtime_path(runtime, "AGENCY_CI_PYTHON")
-            create_exact_private_file(runtime_root / _RUNTIME_RECEIPT_NAME, receipt)
+            create_exact_private_file(runtime_root / RUNTIME_RECEIPT_NAME, receipt)
             log_root = ensure_owned_directory(
                 runtime_root,
                 _LOG_ROOT_NAME,
@@ -663,7 +658,7 @@ def run_parallel_test_plan(
             busy_message="another parallel test run is active",
         ):
             if not exact_private_file_is_valid(
-                plan.stable_runtime_root / _RUNTIME_RECEIPT_NAME,
+                plan.stable_runtime_root / RUNTIME_RECEIPT_NAME,
                 plan.runtime_receipt,
             ) or not exact_private_file_is_valid(
                 plan.log_root / _LOG_ROOT_RECEIPT_NAME,
@@ -705,7 +700,8 @@ def run_parallel_test_plan(
                     primary_error = ParallelCleanupError("scratch")
             if primary_error is not None:
                 raise primary_error
-            assert outcome is not None
+            if outcome is None:
+                raise RuntimeError("parallel execution completed without a shard outcome")
             elapsed = time.monotonic() - started
             manifest = {
                 "elapsed_seconds": round(elapsed, 6),

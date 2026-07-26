@@ -15,7 +15,10 @@ from typing import Any
 
 import pytest
 
+from scripts import parallel_change_loop_runtime as runtime_subject
 from scripts import run_parallel_change_loop as subject
+
+_LOADED_CHILD_TIMEOUT_SECONDS = 180
 
 
 def _repository(tmp_path: Path, *, file_count: int = 8, body: str | None = None) -> Path:
@@ -90,6 +93,22 @@ def _filesystem_snapshot(root: Path) -> tuple[tuple[str, int, int, int, int], ..
             )
         )
     return tuple(snapshot)
+
+
+def _failed_shard_details(results: tuple[subject.ShardResult, ...]) -> str:
+    details: list[str] = []
+    for result in results:
+        if result.returncode == 0:
+            continue
+        try:
+            payload = result.log_path.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            payload = f"log unavailable: {type(exc).__name__}"
+        details.append(
+            f"shard={result.index} category={result.failure_category} "
+            f"timed_out={result.timed_out} cancelled={result.cancelled}\n{payload[-4096:]}"
+        )
+    return "\n".join(details)
 
 
 def _plan(tmp_path: Path, *, shard_count: int = 4, timeout: float = 17) -> subject.ParallelTestPlan:
@@ -323,12 +342,12 @@ def test_real_private_venv_executes_pytest_without_secret_or_global_plugins(
         shard_count=1,
         runtime_home=tmp_path,
         ambient_environment=ambient,
-        timeout_seconds=60,
+        timeout_seconds=_LOADED_CHILD_TIMEOUT_SECONDS,
     )
 
     exit_code, results = subject.run_parallel_test_plan(plan)
 
-    assert exit_code == 0 and results[0].returncode == 0
+    assert exit_code == 0 and results[0].returncode == 0, _failed_shard_details(results)
     assert not plan.scratch_root.exists()
     configuration = plan.stable_runtime_root / "venv" / "pyvenv.cfg"
     assert "include-system-site-packages = false" in configuration.read_text("utf-8").lower()
@@ -392,7 +411,7 @@ def test_killed_runner_scratch_is_recovered_by_next_real_execution(tmp_path: Pat
             "--shards",
             "1",
             "--timeout-seconds",
-            "60",
+            str(_LOADED_CHILD_TIMEOUT_SECONDS),
         ],
         cwd=script.parents[1],
         env=ambient,
@@ -401,7 +420,7 @@ def test_killed_runner_scratch_is_recovered_by_next_real_execution(tmp_path: Pat
         text=True,
     )
     try:
-        deadline = time.monotonic() + 30
+        deadline = time.monotonic() + 60
         while time.monotonic() < deadline and not preview.scratch_root.exists():
             if process.poll() is not None:
                 break
@@ -421,10 +440,10 @@ def test_killed_runner_scratch_is_recovered_by_next_real_execution(tmp_path: Pat
         shard_count=1,
         runtime_home=tmp_path,
         ambient_environment=ambient,
-        timeout_seconds=60,
+        timeout_seconds=_LOADED_CHILD_TIMEOUT_SECONDS,
     )
-    exit_code, _results = subject.run_parallel_test_plan(recovered)
-    assert exit_code == 0
+    exit_code, results = subject.run_parallel_test_plan(recovered)
+    assert exit_code == 0, _failed_shard_details(results)
     assert not recovered.scratch_root.exists()
 
 
@@ -449,6 +468,104 @@ def test_help_supports_direct_and_module_invocation() -> None:
     )
     assert direct.returncode == module.returncode == 0
     assert "--output-dir" not in direct.stdout
+
+
+def test_dependency_discovery_recovers_loaded_pytest_from_private_venv(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path, file_count=1)
+    private_site = tmp_path / "private-site"
+    private_site.mkdir()
+    dependency_root = tmp_path / "dependency-root"
+    pytest_package = dependency_root / "pytest"
+    pytest_package.mkdir(parents=True)
+    pytest_init = pytest_package / "__init__.py"
+    pytest_init.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(runtime_subject.sysconfig, "get_path", lambda _name: str(private_site))
+    monkeypatch.setitem(
+        runtime_subject.sys.modules,
+        "pytest",
+        type("LoadedPytest", (), {"__file__": str(pytest_init)})(),
+    )
+
+    assert runtime_subject._dependency_paths(repository) == (
+        repository,
+        private_site,
+        dependency_root,
+    )
+
+
+def test_dependency_discovery_recovers_attested_parent_runtime_for_direct_child(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path, file_count=1)
+    private_site = tmp_path / "private-site"
+    private_site.mkdir()
+    runtime_root = tmp_path / "runtime"
+    python = (
+        runtime_root
+        / "venv"
+        / ("Scripts" if os.name == "nt" else "bin")
+        / ("python.exe" if os.name == "nt" else "python")
+    )
+    python.parent.mkdir(parents=True)
+    python.write_bytes(b"python")
+    dependency_root = tmp_path / "dependency-root"
+    pytest_package = dependency_root / "pytest"
+    pytest_package.mkdir(parents=True)
+    (pytest_package / "__init__.py").write_text("", encoding="utf-8")
+    receipt = json.dumps(
+        {
+            "dependency_paths": [str(dependency_root)],
+            "runtime_key": "a" * 64,
+            "schema": runtime_subject.RUNTIME_RECEIPT_SCHEMA,
+        }
+    ).encode()
+
+    monkeypatch.setattr(runtime_subject.sysconfig, "get_path", lambda _name: str(private_site))
+    monkeypatch.setattr(runtime_subject.sys, "executable", str(python))
+    monkeypatch.setitem(
+        runtime_subject.sys.modules,
+        "pytest",
+        type("UnloadedPytest", (), {"__file__": None})(),
+    )
+    monkeypatch.setattr(
+        runtime_subject, "read_bounded_regular_file", lambda *_args, **_kwargs: receipt
+    )
+    monkeypatch.setattr(runtime_subject, "exact_private_file_is_valid", lambda *_args: True)
+
+    assert runtime_subject._dependency_paths(
+        repository,
+        {
+            "AGENCY_CI_PYTHON": str(python),
+            "AGENCY_CI_ROOT": str(runtime_root),
+        },
+    ) == (repository, private_site, dependency_root)
+
+
+def test_dependency_discovery_rejects_malformed_loaded_pytest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = _repository(tmp_path, file_count=1)
+    private_site = tmp_path / "private-site"
+    private_site.mkdir()
+    malformed_package = tmp_path / "not-pytest"
+    malformed_package.mkdir()
+    malformed_init = malformed_package / "__init__.py"
+    malformed_init.write_text("", encoding="utf-8")
+    monkeypatch.setattr(runtime_subject.sysconfig, "get_path", lambda _name: str(private_site))
+    monkeypatch.setitem(
+        runtime_subject.sys.modules,
+        "pytest",
+        type("MalformedPytest", (), {"__file__": str(malformed_init)})(),
+    )
+
+    with pytest.raises(RuntimeError, match="loaded pytest package path"):
+        runtime_subject._dependency_paths(repository, {})
 
 
 def test_direct_and_module_dry_run_are_identical_and_do_not_mutate_runtime_paths(

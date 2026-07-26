@@ -229,7 +229,9 @@ def _open_exclusive_private_file(
                     f"private CI Node exclusive-create rollback failed: {cleanup_error}",
                 )
         raise
-    assert identity is not None
+    if identity is None:
+        os.close(descriptor)
+        raise RuntimeError("private CI Node identity was not captured")
     return descriptor, identity
 
 
