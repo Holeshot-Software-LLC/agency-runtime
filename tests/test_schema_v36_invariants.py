@@ -11,6 +11,7 @@ from agency_runtime.core.store.schema import (
     NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL,
     NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
     SCHEMA_VERSION,
+    create_delegation_activation_invariant_triggers,
 )
 from agency_runtime.core.store.sqlite import Store
 
@@ -213,6 +214,118 @@ def test_schema_v37_currentness_rejects_same_name_noop_trigger(
         connection.close()
 
     assert store._current_schema_state() == (False, True)
+    repaired = Store(store.db_path)
+    assert repaired._current_schema_state() == (True, True)
+
+
+def test_schema_v37_currentness_rejects_weakened_consumption_table(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "weakened-consumption.db")
+    connection = store._connect()
+    try:
+        for name in DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES:
+            connection.execute(f"DROP TRIGGER IF EXISTS {name}")  # nosec B608
+        connection.execute("DROP TABLE delegation_activation_consumptions")
+        connection.execute(
+            "CREATE TABLE delegation_activation_consumptions ("
+            "id TEXT, grant_id TEXT, legacy_activation_receipt_id TEXT, "
+            "receipt_payload TEXT, session_id TEXT, trace_id TEXT, work_unit_id TEXT, "
+            "child_host TEXT CHECK (child_host IN "
+            "('claude', 'codex', 'hermes', 'openclaw', 'zcode')), "
+            "specialist_slug TEXT, specialist_version TEXT, "
+            "specialist_prompt_hash TEXT, worker_kind TEXT, worker_id TEXT, "
+            "native_run_id TEXT, consumed_at TEXT, consumed_unix INTEGER)"
+        )
+        connection.execute(
+            "CREATE INDEX idx_activation_consumptions_trace "
+            "ON delegation_activation_consumptions(trace_id, consumed_at)"
+        )
+        connection.execute(
+            "CREATE INDEX idx_activation_consumptions_work_unit "
+            "ON delegation_activation_consumptions(trace_id, work_unit_id, consumed_at)"
+        )
+        create_delegation_activation_invariant_triggers(connection)
+        connection.commit()
+    finally:
+        connection.close()
+
+    assert store._current_schema_state() == (False, True)
+    with pytest.raises(
+        RuntimeError,
+        match="delegation activation consumption schema is invalid",
+    ):
+        Store(store.db_path)
+
+
+def test_schema_v37_currentness_rejects_same_name_noop_workforce_guard(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "altered-workforce-trigger.db")
+    connection = store._connect()
+    try:
+        connection.execute("DROP TRIGGER agency_hiring_case_applied_authority")
+        connection.execute(
+            "CREATE TRIGGER agency_hiring_case_applied_authority "
+            "BEFORE UPDATE OF status ON agent_hiring_cases BEGIN SELECT 1; END"
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    assert store._current_schema_state() == (False, True)
+    repaired = Store(store.db_path)
+    assert repaired._current_schema_state() == (True, True)
+
+
+def test_schema_v37_currentness_preserves_quoted_remediation_literals(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "altered-remediation-literal.db")
+    trigger_name = "trg_agent_remediation_authority_candidate_update"
+    connection = store._connect()
+    try:
+        row = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = ?",
+            (trigger_name,),
+        ).fetchone()
+        assert row is not None
+        altered = str(row["sql"]).replace(
+            "dependency.dependency_kind = 'candidate'",
+            "dependency.dependency_kind = 'CANDIDATE'",
+        )
+        assert altered != str(row["sql"])
+        connection.execute(f"DROP TRIGGER {trigger_name}")  # nosec B608
+        connection.execute(altered)
+        connection.commit()
+    finally:
+        connection.close()
+
+    assert store._current_schema_state() == (False, True)
+    repaired = Store(store.db_path)
+    assert repaired._current_schema_state() == (True, True)
+
+
+def test_schema_v37_currentness_accepts_keyword_case_and_whitespace_only(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "formatted-workforce-trigger.db")
+    connection = store._connect()
+    try:
+        connection.execute("DROP TRIGGER agency_hiring_case_applied_authority")
+        connection.execute(
+            "create   trigger agency_hiring_case_applied_authority\n"
+            "before update of status on agent_hiring_cases\n"
+            "when NEW.status = 'applied' and not exists (\n"
+            "select 1 from agent_version_lineage as lineage\n"
+            "where lineage.hiring_case_id = NEW.id)\n"
+            "begin select raise(ABORT, 'agent hiring case lacks applied lineage'); end"
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    assert store._current_schema_state() == (True, True)
 
 
 def test_schema_v37_currentness_rejects_weakened_native_child_scope_checks(

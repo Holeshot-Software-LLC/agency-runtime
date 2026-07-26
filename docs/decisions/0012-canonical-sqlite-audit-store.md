@@ -6,6 +6,8 @@ created: 2026-07-10
 updated: 2026-07-16
 tags: [storage, audit, retention]
 related:
+  - docs/roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md
+  - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
   - docs/roadmap/issue-AR-62-identity-stable-sqlite-sidecar-trust-races.md
   - docs/roadmap/issue-AR-56-require-trusted-parents-for-sqlite-store-paths.md
   - docs/roadmap/issue-AR-55-make-sqlite-schema-state-inspection-snapshot-consistent.md

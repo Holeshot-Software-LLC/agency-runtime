@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
   - docs/roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md
   - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
+  - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/analysis/2026-07-26-production-readiness-review.md
@@ -42,7 +43,7 @@ the deterministic typed-recall floor only when inference is not configured.
 - The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
   and excluded from commits.
 - Current telemetry reports 67.2 percent remaining; no hard checkpoint is due.
-- The current package integrates AR-133 through AR-147 source work plus the
+- The current package integrates AR-133 through AR-148 source work plus the
   AR-140/AR-141 performance and compatibility slice.
 - The first complete post-checkpoint Python arm ran 43m39s and failed 34 tests.
   Its exact owning 12-module reproducer now passes 424 tests in 70.71 seconds.
@@ -90,11 +91,10 @@ the deterministic typed-recall floor only when inference is not configured.
   evaluating broker scope, and records expected disconnect degradation.
 - Deprecated route/header compatibility wrappers and canonical identity,
   bounded-value, filesystem-trust, and executable helpers are restored.
-- Independent current validation: authority 110 passed; native-hook/ZCode 167
-  passed; transaction/observability/MCP/HTTP 147 passed with 8 skips;
-  dashboard server 137 passed with 3 skips; browser UI 82 passed; and
-  distribution/release 101 passed. One combined five-minute arm timed out and
-  is not counted; every exact component passed after isolation.
+- Schema currentness now rejects weakened activation-ledger constraints,
+  same-name workforce authority triggers, and quoted-literal drift. Malformed
+  HMAC text returns invalid authority. Focused tests pass 58; the broader
+  Store/schema/roster/workforce package passes 434 with 2 skips.
 - Explicit 263- and 1,001-worker dashboard paging drains every row and exact
   facet. A committed inter-page insert appears once in stable key order.
 - The exact 12-module integration arm that owned all 34 complete-run failures

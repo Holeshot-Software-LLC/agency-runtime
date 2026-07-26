@@ -654,6 +654,34 @@ _REMEDIATION_AUTHORITY_INVALIDATION_TRIGGER_SQLS = (
     ),
 )
 
+DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS delegation_activation_consumptions (
+    id TEXT PRIMARY KEY,
+    grant_id TEXT NOT NULL UNIQUE,
+    legacy_activation_receipt_id TEXT NOT NULL UNIQUE,
+    receipt_payload TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    trace_id TEXT NOT NULL,
+    work_unit_id TEXT NOT NULL,
+    child_host TEXT NOT NULL
+        CHECK (child_host IN ('claude', 'codex', 'hermes', 'openclaw', 'zcode')),
+    specialist_slug TEXT NOT NULL,
+    specialist_version TEXT NOT NULL,
+    specialist_prompt_hash TEXT NOT NULL,
+    worker_kind TEXT NOT NULL CHECK (worker_kind <> ''),
+    worker_id TEXT NOT NULL CHECK (worker_id <> ''),
+    native_run_id TEXT NOT NULL CHECK (native_run_id <> ''),
+    consumed_at TEXT NOT NULL,
+    consumed_unix INTEGER NOT NULL CHECK (consumed_unix > 0),
+    FOREIGN KEY (trace_id) REFERENCES runs(trace_id),
+    FOREIGN KEY (legacy_activation_receipt_id)
+        REFERENCES delegation_activation_receipts(id) ON DELETE CASCADE
+)
+"""
+_LEGACY_DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL = (
+    DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL.replace(", 'zcode'", "")
+)
+
 NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS native_child_parent_scopes (
     id TEXT PRIMARY KEY
@@ -1711,6 +1739,114 @@ def ensure_column(
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
+_WORKFORCE_INVARIANT_SCHEMA_SQL = (
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_lineage_hiring_case_once "
+    "ON agent_version_lineage(hiring_case_id) WHERE hiring_case_id IS NOT NULL",
+    "CREATE TRIGGER IF NOT EXISTS agency_version_lineage_immutable_update "
+    "BEFORE UPDATE ON agent_version_lineage BEGIN "
+    "SELECT RAISE(ABORT, 'agent version lineage is immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_version_lineage_immutable_delete "
+    "BEFORE DELETE ON agent_version_lineage BEGIN "
+    "SELECT RAISE(ABORT, 'agent version lineage is immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_contract_projections_immutable_update "
+    "BEFORE UPDATE ON agent_recruitment_contract_projections BEGIN "
+    "SELECT RAISE(ABORT, 'agent recruitment contract projections are immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_contract_projections_immutable_delete "
+    "BEFORE DELETE ON agent_recruitment_contract_projections BEGIN "
+    "SELECT RAISE(ABORT, 'agent recruitment contract projections are immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_worker_events_immutable_update "
+    "BEFORE UPDATE ON agent_worker_events BEGIN "
+    "SELECT RAISE(ABORT, 'agent worker events are immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_worker_events_immutable_delete "
+    "BEFORE DELETE ON agent_worker_events BEGIN "
+    "SELECT RAISE(ABORT, 'agent worker events are immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_performance_events_immutable_update "
+    "BEFORE UPDATE ON agent_performance_events BEGIN "
+    "SELECT RAISE(ABORT, 'agent performance events are immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_workers_immutable_delete "
+    "BEFORE DELETE ON agent_workers BEGIN "
+    "SELECT RAISE(ABORT, 'agent workforce identity is immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_hiring_case_evidence_immutable "
+    "BEFORE UPDATE ON agent_hiring_cases "
+    "WHEN OLD.id IS NOT NEW.id "
+    "OR OLD.idempotency_key IS NOT NEW.idempotency_key "
+    "OR OLD.case_type IS NOT NEW.case_type "
+    "OR OLD.proposed_slug IS NOT NEW.proposed_slug "
+    "OR OLD.target_worker_id IS NOT NEW.target_worker_id "
+    "OR OLD.session_id IS NOT NEW.session_id "
+    "OR OLD.trace_id IS NOT NEW.trace_id "
+    "OR OLD.work_unit_id IS NOT NEW.work_unit_id "
+    "OR OLD.request_hash IS NOT NEW.request_hash "
+    "OR OLD.gap_evidence IS NOT NEW.gap_evidence "
+    "OR OLD.duplicate_evidence IS NOT NEW.duplicate_evidence "
+    "OR OLD.contract_evidence IS NOT NEW.contract_evidence "
+    "OR OLD.critic_evidence IS NOT NEW.critic_evidence "
+    "OR OLD.model_evidence IS NOT NEW.model_evidence "
+    "OR OLD.contract_hash IS NOT NEW.contract_hash "
+    "OR OLD.risk_tier IS NOT NEW.risk_tier "
+    "OR OLD.human_approval_required IS NOT NEW.human_approval_required "
+    "OR OLD.created_at IS NOT NEW.created_at "
+    "BEGIN SELECT RAISE(ABORT, 'agent hiring evidence is immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_hiring_cases_immutable_delete "
+    "BEFORE DELETE ON agent_hiring_cases BEGIN "
+    "SELECT RAISE(ABORT, 'agent hiring evidence is immutable'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_hiring_case_status_transition "
+    "BEFORE UPDATE OF status ON agent_hiring_cases "
+    "WHEN NEW.status != OLD.status AND NOT ("
+    "(OLD.status = 'proposed' AND NEW.status IN ('audited', 'rejected', 'folded')) "
+    "OR (OLD.status = 'audited' AND NEW.status IN ('applied', 'rejected', 'folded'))) "
+    "BEGIN SELECT RAISE(ABORT, 'invalid agent hiring status transition'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_hiring_case_applied_authority "
+    "BEFORE UPDATE OF status ON agent_hiring_cases "
+    "WHEN NEW.status = 'applied' AND NOT EXISTS ("
+    "SELECT 1 FROM agent_version_lineage AS lineage "
+    "WHERE lineage.hiring_case_id = NEW.id) "
+    "BEGIN SELECT RAISE(ABORT, 'agent hiring case lacks applied lineage'); END",
+    "CREATE TRIGGER IF NOT EXISTS agency_hiring_case_human_approval_once "
+    "BEFORE UPDATE OF human_approved_by, human_approved_at ON agent_hiring_cases "
+    "WHEN (NEW.human_approved_by IS NOT OLD.human_approved_by "
+    "OR NEW.human_approved_at IS NOT OLD.human_approved_at) "
+    "AND NOT (OLD.status = 'proposed' "
+    "AND OLD.human_approval_required = 1 "
+    "AND OLD.human_approved_by = '' "
+    "AND OLD.human_approved_at IS NULL "
+    "AND NEW.human_approved_by != '' "
+    "AND NEW.human_approved_at IS NOT NULL) "
+    "BEGIN SELECT RAISE(ABORT, 'agent hiring approval is immutable'); END",
+)
+
+
+def _workforce_invariant_schema_is_current(conn: sqlite3.Connection) -> bool:
+    expected = {
+        _schema_object_identity(statement): _canonical_schema_sql(statement)
+        for statement in _WORKFORCE_INVARIANT_SCHEMA_SQL
+    }
+    names = tuple(name for _kind, name in expected)
+    placeholders = ",".join("?" for _name in names)
+    observed = {
+        (str(row["type"]), str(row["name"])): _canonical_schema_sql(row["sql"])
+        for row in conn.execute(
+            f"SELECT type, name, sql FROM sqlite_master WHERE name IN ({placeholders})",  # nosec B608
+            names,
+        )
+    }
+    return observed == expected
+
+
+def create_workforce_invariant_schema(conn: sqlite3.Connection) -> None:
+    """Install the exact append-only and hiring-authority schema objects."""
+
+    for kind, name in reversed(
+        tuple(_schema_object_identity(statement) for statement in _WORKFORCE_INVARIANT_SCHEMA_SQL)
+    ):
+        if kind == "trigger":
+            conn.execute(f"DROP TRIGGER IF EXISTS {name}")  # nosec B608
+        elif kind == "index":
+            conn.execute(f"DROP INDEX IF EXISTS {name}")  # nosec B608
+    for statement in _WORKFORCE_INVARIANT_SCHEMA_SQL:
+        conn.execute(statement)
+
+
 def workforce_schema_is_current(conn: sqlite3.Connection) -> bool:
     """Return whether durable workforce structures and active bindings are complete."""
 
@@ -1766,32 +1902,7 @@ def workforce_schema_is_current(conn: sqlite3.Connection) -> bool:
             return False
     if not recruitment_contract_projection_history_is_current(conn):
         return False
-    required_objects = {
-        "agency_version_lineage_immutable_update",
-        "agency_version_lineage_immutable_delete",
-        "agency_contract_projections_immutable_update",
-        "agency_contract_projections_immutable_delete",
-        "agency_worker_events_immutable_update",
-        "agency_worker_events_immutable_delete",
-        "agency_performance_events_immutable_update",
-        "agency_workers_immutable_delete",
-        "agency_hiring_case_evidence_immutable",
-        "agency_hiring_cases_immutable_delete",
-        "agency_hiring_case_status_transition",
-        "agency_hiring_case_applied_authority",
-        "agency_hiring_case_human_approval_once",
-        "idx_agent_lineage_hiring_case_once",
-    }
-    observed = {
-        str(row["name"])
-        for row in conn.execute(
-            "SELECT name FROM sqlite_master WHERE name IN ("
-            + ",".join("?" for _ in required_objects)
-            + ")",
-            tuple(sorted(required_objects)),
-        )
-    }
-    if observed != required_objects:
+    if not _workforce_invariant_schema_is_current(conn):
         return False
     mismatch = conn.execute(
         "SELECT 1 FROM agent_active AS active "
@@ -1807,8 +1918,45 @@ def workforce_schema_is_current(conn: sqlite3.Connection) -> bool:
 
 
 def _canonical_schema_sql(value: object) -> str:
-    normalized = re.sub(r"\s+", " ", str(value or "").strip()).casefold()
-    return normalized.replace(" if not exists ", " ")
+    """Normalize SQL syntax while preserving quoted literal and identifier bytes."""
+
+    source = str(value or "").strip()
+    normalized: list[str] = []
+    quote_end = ""
+    index = 0
+    while index < len(source):
+        character = source[index]
+        if not quote_end:
+            if character.isspace():
+                index += 1
+                continue
+            optional_clause = re.match(
+                r"if\s+not\s+exists(?![a-z0-9_])",
+                source[index:],
+                flags=re.IGNORECASE,
+            )
+            if optional_clause is not None and (
+                index == 0 or not (source[index - 1].isalnum() or source[index - 1] == "_")
+            ):
+                index += optional_clause.end()
+                continue
+            if character in {"'", '"', "`", "["}:
+                quote_end = "]" if character == "[" else character
+                normalized.append(character)
+            else:
+                normalized.append(character.casefold())
+            index += 1
+            continue
+
+        normalized.append(character)
+        if character == quote_end:
+            if index + 1 < len(source) and source[index + 1] == quote_end:
+                normalized.append(source[index + 1])
+                index += 2
+                continue
+            quote_end = ""
+        index += 1
+    return "".join(normalized)
 
 
 def recruitment_contract_projection_history_is_current(
@@ -2248,6 +2396,7 @@ def verify_remediation_authority(
         or dependencies is None
         or len(dependencies) != dependency_count
         or not isinstance(authority_hmac, str)
+        or re.fullmatch(r"[a-f0-9]{64}", authority_hmac) is None
     ):
         return 0
     expected = _remediation_authority_hmac(
@@ -4061,32 +4210,7 @@ def migrate_delegation_activation_unit_identity(conn: sqlite3.Connection) -> Non
 def create_delegation_activation_consumption_schema(conn: sqlite3.Connection) -> None:
     """Create the append-only public child-consumption ledger."""
 
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS delegation_activation_consumptions (
-            id TEXT PRIMARY KEY,
-            grant_id TEXT NOT NULL UNIQUE,
-            legacy_activation_receipt_id TEXT NOT NULL UNIQUE,
-            receipt_payload TEXT NOT NULL,
-            session_id TEXT NOT NULL,
-            trace_id TEXT NOT NULL,
-            work_unit_id TEXT NOT NULL,
-            child_host TEXT NOT NULL
-                CHECK (child_host IN ('claude', 'codex', 'hermes', 'openclaw', 'zcode')),
-            specialist_slug TEXT NOT NULL,
-            specialist_version TEXT NOT NULL,
-            specialist_prompt_hash TEXT NOT NULL,
-            worker_kind TEXT NOT NULL CHECK (worker_kind <> ''),
-            worker_id TEXT NOT NULL CHECK (worker_id <> ''),
-            native_run_id TEXT NOT NULL CHECK (native_run_id <> ''),
-            consumed_at TEXT NOT NULL,
-            consumed_unix INTEGER NOT NULL CHECK (consumed_unix > 0),
-            FOREIGN KEY (trace_id) REFERENCES runs(trace_id),
-            FOREIGN KEY (legacy_activation_receipt_id)
-                REFERENCES delegation_activation_receipts(id) ON DELETE CASCADE
-        )
-        """
-    )
+    conn.execute(DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL)
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_activation_consumptions_trace "
         "ON delegation_activation_consumptions(trace_id, consumed_at)"
@@ -4109,9 +4233,11 @@ def migrate_delegation_activation_consumption_host_domain(
     if row is None:
         create_delegation_activation_consumption_schema(conn)
         return
-    normalized = "".join(str(row["sql"] or "").casefold().split())
-    if "'zcode'" in normalized:
+    normalized = _canonical_schema_sql(row["sql"])
+    if normalized == _canonical_schema_sql(DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL):
         return
+    if normalized != _canonical_schema_sql(_LEGACY_DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL):
+        raise RuntimeError("delegation activation consumption schema is invalid")
 
     legacy_table = "delegation_activation_consumptions_pre_v36"
     if (
@@ -4884,6 +5010,7 @@ def migrate_schema(
     from agency_runtime.core.store.workforce import backfill_workforce_identity
 
     backfill_workforce_identity(conn)
+    create_workforce_invariant_schema(conn)
     conn.execute("DELETE FROM schema_version")
     conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
     return purge_pending

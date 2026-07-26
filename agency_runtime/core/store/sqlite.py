@@ -48,6 +48,7 @@ from agency_runtime.core.store.schema import (
     ALL_TABLES,
     BOOLEAN_DOMAIN_TRIGGER_NAMES,
     BOOLEAN_DOMAIN_TRIGGER_SQL,
+    DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL,
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES,
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
     NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL,
@@ -60,6 +61,7 @@ from agency_runtime.core.store.schema import (
     SCHEMA_V1,
     SCHEMA_VERSION,
     STORE_CLOCK_SQL,
+    _canonical_schema_sql,
     agent_import_event_sequence_schema_is_current,
     ensure_column,
     ensure_remediation_authority_key_integrity,
@@ -214,7 +216,7 @@ def _native_worker_scope_index_is_current(conn: sqlite3.Connection) -> bool:
 
 
 def _normalized_schema_sql(value: object) -> str:
-    return "".join(str(value or "").casefold().split())
+    return _canonical_schema_sql(value)
 
 
 def _v36_authority_schema_is_current(
@@ -244,7 +246,7 @@ def _v36_authority_schema_is_current(
     consumption_sql = _normalized_schema_sql(
         consumption_row["sql"] if consumption_row is not None else ""
     )
-    if "check(child_hostin('claude','codex','hermes','openclaw','zcode'))" not in consumption_sql:
+    if consumption_sql != _normalized_schema_sql(DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL):
         return False
     invalid_boolean = conn.execute(
         "SELECT 1 FROM agent_sources WHERE enabled IS NULL OR enabled NOT IN (0, 1) "

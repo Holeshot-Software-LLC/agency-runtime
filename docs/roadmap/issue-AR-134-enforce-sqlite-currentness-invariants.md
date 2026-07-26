@@ -35,6 +35,10 @@ Dropping `agency_activation_consumption_insert_guard` and
 `idx_worker_runs_native_scope` did not make currentness fail. Direct ZCode
 activation consumption raises an integrity error. The declared guarded-delete
 name is a phantom contract and direct deletion succeeds.
+Deeper review also reproduced a constraint-stripped activation-consumption
+table that passed the old host-substring check, same-name no-op workforce
+authority triggers that passed name-only checks, and quoted-literal case drift
+that disappeared under the former schema normalizer.
 
 ## Approach
 
@@ -67,3 +71,10 @@ receipt deletion is denied while an authorized parent-retention cascade removes
 the dependent receipt. Eleven regressions prove fresh creation, v35 evidence
 preservation, idempotent upgrade, same-name weakened-object rejection, boolean
 domains, ZCode insertion, and retention behavior.
+Currentness now additionally compares the complete activation-consumption DDL
+and every workforce append-only/hiring-authority trigger and index. SQL
+normalization ignores syntax case and whitespace outside quotes but preserves
+literal and quoted-identifier bytes. Exact legacy v35 consumption DDL upgrades;
+unknown or tampered shapes fail closed. The expanded focused package passes 58
+tests and the broader Store/schema/roster/workforce package passes 434 with 2
+skips.

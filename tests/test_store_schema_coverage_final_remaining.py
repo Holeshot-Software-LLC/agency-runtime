@@ -438,6 +438,44 @@ def test_verify_authority_rejects_invalid_chronology_after_parsing() -> None:
     )
 
 
+def test_verify_authority_rejects_non_ascii_or_oversized_signature() -> None:
+    dependencies = _authority_dependencies()
+    receipt = schema.canonical_remediation_authority_receipt(dependencies)
+    arguments = (
+        b"k" * 32,
+        "resolution-event",
+        "queue-event",
+        _resolution_detail(),
+        receipt,
+        len(dependencies),
+        "2026-07-18T00:00:02+00:00",
+    )
+
+    for malformed in ("\u00e9" * 64, "0" * 65):
+        assert (
+            schema.verify_remediation_authority(
+                *arguments,
+                malformed,
+                "2026-07-18T00:00:00+00:00",
+                "2026-07-18T00:00:01+00:00",
+                "example",
+            )
+            == 0
+        )
+
+
+def test_schema_normalizer_preserves_optional_clause_text_inside_literals() -> None:
+    expected = schema._canonical_schema_sql(
+        "CREATE TRIGGER IF NOT EXISTS example BEFORE INSERT ON values_table "
+        "BEGIN SELECT 'IF NOT EXISTS'; END"
+    )
+    altered = schema._canonical_schema_sql(
+        "create trigger example before insert on values_table begin select 'if not exists'; end"
+    )
+
+    assert expected != altered
+
+
 def test_authority_material_refuses_a_missing_store_key() -> None:
     connection = _minimal_key_connection()
     try:

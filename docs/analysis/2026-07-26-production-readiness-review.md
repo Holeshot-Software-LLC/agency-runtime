@@ -28,6 +28,7 @@ related:
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
   - docs/roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md
   - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
+  - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
 supersedes: []
 superseded_by: null
 ---
@@ -108,14 +109,18 @@ No Critical finding was confirmed.
 | SEC-M1 | Delegated child PATH can retain dot, relative, repository, or unsafe caller entries even though the launcher itself is frozen. | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) |
 | SEC-M2 | Restricted agent brokerage does not independently prove desired Store path or restart-required state. | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) |
 | SEC-M3 | One finalization request can partially commit evidence before a later conflict and accepts some coercible identity fields. | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md) |
+| SEC-M4 | Activation-consumption currentness accepted a table missing primary, unique, foreign-key, non-null, and value constraints. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
+| SEC-M5 | Workforce append-only and hiring-authority currentness accepted same-name no-op triggers. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
+| SEC-M6 | Schema normalization case-folded quoted literals and could hide semantic trigger drift. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
 
 ### Low
 
 | ID | Finding | Owner |
 |---|---|---|
-| SEC-L1 | Legacy boolean columns lack explicit zero/one constraints and schema currentness omits critical object SQL. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
+| SEC-L1 | Legacy boolean columns lack explicit zero/one constraints. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
 | SEC-L2 | Some REST fields fail as generic server errors instead of bounded typed client errors. | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md) |
 | SEC-L3 | MCP status exposes an unnecessary absolute database path. | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) |
+| SEC-L4 | A 64-character non-ASCII remediation HMAC raises instead of returning invalid authority. | [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) |
 
 The dependency vulnerability scan could not be completed within the restricted
 network/policy boundary. No claim of dependency-CVE cleanliness is made.
@@ -291,9 +296,10 @@ These remain residual-review notes, not invented findings:
   conditional grant bypassed both directory and executable trust classifiers;
   complete balanced parsing now fails the reproduction closed. Exhaustive
   hosted Windows security verification remains required.
-- `schema.py`: dynamic currentness and host-domain defects were reproduced and
-  promoted to AR-134. All reviewed string-built DDL identifiers remain internal
-  constants; no injection path was found.
+- `schema.py`: deeper review reproduced weakened-table, same-name no-op
+  trigger, and quoted-literal normalization defects under AR-134. Exact DDL
+  comparison now covers those boundaries; reviewed interpolated identifiers
+  remain internal constants and no injection path was found.
 - Quarantined-prompt HMAC escape: no unsafe deserialization or string-built SQL
   was found and no authority bypass was reproduced. Full end-to-end adversarial
   roster lifecycle remains part of AR-125 evidence.
@@ -325,6 +331,7 @@ editing another worker's files.
 | 3 | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md) | Python release coverage | Exact fixed 97 percent gate and separate performance arm pass |
 | 3 | [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md) | Dashboard cursor chain | Generated cursor round-trips through handler and Store |
 | 3 | [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md) | Windows ACL trust | Native nested conditional grants fail every trust classifier closed |
+| 3 | [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Remediation HMAC input | Malformed signatures return invalid authority without an exception |
 | 4 | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Routing/retrieval/startup | Correctness-preserving size-tiered performance gates |
 | 4 | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility/refactor | Deprecation and canonical-helper contract tests |
 | 5 | [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | Product/host evaluation | Benchmark-valid complete corpus and installed apps |
