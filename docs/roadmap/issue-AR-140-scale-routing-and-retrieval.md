@@ -95,3 +95,15 @@ Generation-proven snapshot reuse reduced stable operational capture from
 complete recapture. The affected suites pass 104 tests. Packaged-contractor
 reconciliation remains the dominant 400-450 ms cost, and the 1.585-second,
 276-query no-op starter reconciliation remains open.
+
+The final audit reproduced host-scheduling variance in the 10,000-agent warm
+gate: one unchanged five-sample arm failed at 181.144 ms before an unchanged
+rerun passed at 127.495 ms. Profiling attributed 92.6 percent of warm time to
+cosine scoring: 3,750 eligible agents each walked roughly 109 dimensions even
+though the query had 49. Compiled vectors are now immutable feature-addressable
+maps and cosine walks the smaller vector. The exact selected-result hash remains
+`9214506c8a46c50e1cff4b2e0793127935c10f8f092d5a8597c8623cf4f69f60`;
+the final representation measured 7,839.770 ms cold, 53.825 ms warm p95 across
+five samples, and 167.817 MiB peak. The 60-test semantic/selector/fallback suite
+passes, including revision-identity mutation rejection. No gate, sample count,
+trust validation, or exclusion changed.

@@ -103,7 +103,8 @@ _FEATURE_CACHE_ENTRIES = 65_536
 _TEXT_CACHE_ENTRIES = 32_768
 _AgentSignature = tuple[tuple[str, tuple[str, ...]], ...]
 _CatalogSignatures = tuple[_AgentSignature, ...]
-_SparseVector = tuple[tuple[int, float], ...]
+_SparseItems = tuple[tuple[int, float], ...]
+_SparseVector = Mapping[int, float]
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,7 +169,7 @@ def _add(vector: dict[int, float], feature: str, weight: float) -> None:
 
 
 @lru_cache(maxsize=_TEXT_CACHE_ENTRIES)
-def _cached_text_embedding(values: tuple[str, ...], weight: float) -> _SparseVector:
+def _cached_text_embedding(values: tuple[str, ...], weight: float) -> _SparseItems:
     vector: dict[int, float] = {}
     for value in values:
         ordered = _tokens(value)
@@ -228,7 +229,7 @@ def _agent_signature(agent: dict[str, Any]) -> _AgentSignature:
 
 def _agent_embedding(
     signature: tuple[tuple[str, tuple[str, ...]], ...],
-) -> tuple[tuple[int, float], ...]:
+) -> _SparseVector:
     weights = dict(_FIELD_WEIGHTS)
     vector: dict[int, float] = {}
     seen_slug: tuple[str, ...] | None = None
@@ -238,7 +239,10 @@ def _agent_embedding(
                 continue
             seen_slug = values
         _merge_vectors(vector, _embed_texts(values, weight=weights[field]))
-    return _normalized(vector)
+    # Keep the compiled side addressable by feature. Warm retrieval queries are
+    # normally much smaller than an agent vector, so probing the compiled map
+    # avoids walking every agent feature for every candidate.
+    return MappingProxyType(dict(_normalized(vector)))
 
 
 def _agent_support(
@@ -334,9 +338,11 @@ def _catalog_index(
 
 def _cosine(
     left: Mapping[int, float],
-    right: _SparseVector,
+    right: Mapping[int, float],
 ) -> float:
-    return sum(left.get(index, 0.0) * weight for index, weight in right)
+    if len(left) <= len(right):
+        return sum(weight * right.get(index, 0.0) for index, weight in left.items())
+    return sum(weight * left.get(index, 0.0) for index, weight in right.items())
 
 
 def semantic_retrieve(

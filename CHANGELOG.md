@@ -40,6 +40,9 @@ changes rather than duplicating every commit.
   entrypoint as the packaged console command. Stable routing startup also uses
   a bounded exact fallback-roster lookup and reuses its coherent snapshot when
   the trusted roster generation proves no reconciliation change.
+- Semantic retrieval keeps compiled roster vectors immutable and probes the
+  smaller sparse vector during cosine scoring, preserving exact selections
+  while restoring material 10,000-agent warm-latency headroom.
 - SQLite currentness now compares complete activation-ledger constraints and
   workforce authority objects while preserving quoted SQL literal bytes.
   Malformed remediation HMAC text returns invalid authority instead of raising.

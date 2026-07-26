@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import operator
+
 import pytest
 
 from agency_runtime.core.selector import semantic_retrieval as subject
 from agency_runtime.core.selector.semantic_retrieval import (
+    RevisionedCatalog,
     clear_semantic_retrieval_cache,
     retrieve_candidate_union,
     semantic_retrieve,
@@ -80,6 +83,37 @@ def test_catalog_mutation_invalidates_embedding_content_key() -> None:
     catalog[0]["description"] = "visual design"
     second, _scores = semantic_retrieve("database", catalog)
     assert second == []
+
+
+def test_revision_cache_still_rejects_mutated_agent_identity() -> None:
+    clear_semantic_retrieval_cache()
+    catalog = RevisionedCatalog(
+        [_agent("specialist", "engineering", ["database indexing"])],
+        revision="exact-roster-revision",
+    )
+    first, _scores = semantic_retrieve("database", catalog)
+    assert first
+
+    catalog[0]["slug"] = "different-specialist"
+    with pytest.raises(ValueError, match="reused with different agent identities"):
+        semantic_retrieve("database", catalog)
+
+
+def test_sparse_cosine_uses_the_smaller_vector_without_changing_the_score() -> None:
+    query = {1: 0.5, 3: 0.25}
+    agent = {0: 0.1, 1: 0.4, 2: 0.2, 3: 0.8}
+
+    assert subject._cosine(query, agent) == pytest.approx(0.4)
+    assert subject._cosine(agent, query) == pytest.approx(0.4)
+
+
+def test_compiled_sparse_vectors_remain_immutable() -> None:
+    index = subject._catalog_index([_agent("specialist", "engineering", ["database indexing"])])
+    vector = index.embeddings[0]
+    feature = next(iter(vector))
+
+    with pytest.raises(TypeError):
+        operator.setitem(vector, feature, 0.0)
 
 
 def test_subword_overlap_alone_cannot_manufacture_semantic_signal() -> None:

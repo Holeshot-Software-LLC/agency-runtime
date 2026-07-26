@@ -77,9 +77,9 @@ the deterministic typed-recall floor only when inference is not configured.
   slow/error Store work without prompt, token, SQL, exception-message, or path
   fields. Hiring outcomes are present in normalized route receipts.
 - Revision-aware retrieval and both lazy CLI version entrypoints preserve
-  correctness hashes; `python -m` fell from about 647 ms to 112 ms. At 10,000
-  agents cold/warm-p95/peak were 8,817.588 ms, 84.193 ms, and
-  189.589 MiB. These are local controls, not general superiority evidence.
+  correctness hashes; `python -m` fell from about 647 ms to 112 ms. The final
+  immutable sparse-map 10,000-agent control measured 7,839.770 ms cold,
+  53.825 ms warm p95, and 167.817 MiB. This is local, not superiority evidence.
 - A later mixed-suite arm exposed insufficient cached-routing margin at
   2.103 ms. Eligibility now supplies an opaque proof after its detached
   full-roster comparison so fingerprinting does not immediately repeat that

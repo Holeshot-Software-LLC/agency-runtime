@@ -203,7 +203,7 @@ weakening the security decision. AR-143 remains open.
 | Cached routing microbenchmark | Initial p95 samples `2.193-3.579 ms` failed; the first remediation passed five controls at `1.531-1.795 ms`, but a mixed arm later exposed `2.103 ms`; after eliminating one redundant mutation-proof scan, five unchanged final-source controls were `1.318-1.745 ms` and the exact 12-module reproducer passed 424 tests | The fixed local 2.0 ms gate is restored with integrated headroom and no threshold change; supported-runner evidence remains outstanding |
 | Full local route | about 653 ms cold, 87-121 ms warm; internal route 53-57 ms | Warm end-to-end work remains materially larger than the microbenchmark |
 | Semantic retrieval, 263 agents | Initial 121-134 ms cold / 3.7-4.7 ms warm; current fixed control 316.006 ms cold / 2.031 ms warm p95 / 6.922 MiB | Revision-aware indexes pass the declared local tier budget |
-| Semantic retrieval, 10,000 agents | Initial 6-7.4 s cold / 199-414 ms warm / about 208 MiB; current 8,817.588 ms / 84.193 ms / 189.589 MiB | Warm scale and bounded memory improved; the fixed local tier gate passes |
+| Semantic retrieval, 10,000 agents | Initial 6-7.4 s cold / 199-414 ms warm / about 208 MiB; a later unchanged arm failed at 181.144 ms and its rerun passed at 127.495 ms; immutable sparse-map scoring now measures 7,839.770 ms cold / 53.825 ms warm p95 / 167.817 MiB | The exact selection hash is unchanged; scoring probes the 49-dimension query rather than about 109 dimensions per eligible agent, restoring material scheduling headroom without changing the gate |
 | CLI startup | Packaged lazy-entrypoint control is 116.244 ms p50 / 129.574 ms p95; the separate `python -m` path fell from about 647 ms to 112 ms after it was routed through that dispatcher | Both version surfaces now avoid the full compatibility/evaluation import graph |
 | Stable operational snapshot | 1,104.677 ms before the deeper slice; 663.671 ms after bounded fallback lookup and generation-proven reuse | About 40 percent faster, but 400-450 ms packaged-contractor reconciliation remains dominant |
 | Finalize batch | Initially up to 256 independent transactions; now one prevalidated `BEGIN IMMEDIATE` transaction | Partial-write exposure is removed in focused transaction tests |
@@ -214,6 +214,10 @@ deferred CLI imports. Positive authorization caching is explicitly excluded.
 The bounded fallback lookup still uses the trusted Store connection, complete
 active-definition join, and decoder; snapshot reuse requires an equal fresh
 monotonic generation and recaptures after every change.
+Profiling the 10,000-agent warm path attributed 92.6 percent of its time to
+cosine scoring and about 412,060 sparse probes per call. Immutable compiled
+maps reduce this to the smaller-vector probe set; score comparison had maximum
+delta 0.0 and the selected-result hash is unchanged.
 
 ### Maintainability and compatibility
 
