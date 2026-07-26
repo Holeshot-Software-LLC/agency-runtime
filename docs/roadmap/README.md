@@ -172,6 +172,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-152` | [Bound dashboard live-listener retention](issue-AR-152-bound-dashboard-live-listeners.md) | open | p1 | performance | pending authorization |
 | `AR-153` | [Complete and bound worker-detail evidence](issue-AR-153-complete-worker-detail-evidence.md) | open | p1 | dashboard | pending authorization |
 | `AR-154` | [Fail malformed initial dashboard pages closed](issue-AR-154-fail-malformed-initial-pages-closed.md) | open | p1 | dashboard | pending authorization |
+| `AR-155` | [Bound dashboard hiring evidence delivery](issue-AR-155-bound-dashboard-hiring-evidence.md) | open | p1 | dashboard | pending authorization |
 
 ## Traceability
 
@@ -333,6 +334,7 @@ not stable internal identifiers.
 | [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | `2437068`, `4620204` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
 | [AR-153](issue-AR-153-complete-worker-detail-evidence.md) | `2437068`, `4620204` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-154](issue-AR-154-fail-malformed-initial-pages-closed.md) | `2437068`, `4620204` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
+| [AR-155](issue-AR-155-bound-dashboard-hiring-evidence.md) | pending | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

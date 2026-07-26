@@ -20,6 +20,7 @@ tracker_url: null
 depends_on: []
 blocks:
   - AR-146
+  - AR-155
 ---
 
 # AR-137: Make dashboard collections complete and paginated

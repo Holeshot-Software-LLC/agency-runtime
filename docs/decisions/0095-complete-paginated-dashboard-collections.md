@@ -7,6 +7,7 @@ updated: 2026-07-26
 tags: [dashboard, pagination, ui, truth, operations]
 related:
   - docs/roadmap/issue-AR-137-complete-dashboard-collections.md
+  - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
   - docs/decisions/0032-adaptive-authenticated-dashboard-polling.md
 supersedes: []
 superseded_by: null
