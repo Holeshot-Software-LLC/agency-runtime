@@ -383,6 +383,18 @@ def test_persistent_root_acl_accepts_exact_or_canonical_private_form(
     assert not private._persistent_root_acl_is_present(tmp_path, "USER")
 
 
+def test_persistent_root_acl_rejects_nested_conditional_foreign_access(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    user = "S-1-5-21-1001"
+    foreign = "S-1-5-21-2002"
+    sddl = f'O:{user}D:P(A;OICI;FA;;;{user})(XA;OICI;FA;;;{foreign};(@User.Note=="(D;;;;;BU)"))'
+    monkeypatch.setattr(private, "read_windows_sddl", lambda _path: sddl)
+
+    assert private._persistent_root_acl_failure(tmp_path, user) == ("DACL not private or malformed")
+
+
 @pytest.mark.parametrize(
     ("sddl", "expected", "failure"),
     [

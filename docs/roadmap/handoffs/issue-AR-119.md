@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
   - docs/roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md
+  - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/analysis/2026-07-26-production-readiness-review.md
@@ -20,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: bcba556c17062f8d1dd58e07e104f8cd3d2a7ebc
-minimum_ledger_commit: 45634caf211814b4395a8b998e6bcda65427f129
+evidence_commit: c3ffe6a7fbe2d1797cef55022b4a6b65abac7d62
+minimum_ledger_commit: 3f888bd9073b39b565af06f722a64aee4b012812
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -40,9 +41,8 @@ the deterministic typed-recall floor only when inference is not configured.
   authorized.
 - The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
   and excluded from commits.
-- Latest pre-checkpoint telemetry reported 26.1 percent remaining, requiring
-  this smallest safe AR-145/AR-146 recovery checkpoint before further gates.
-- The current package integrates AR-133 through AR-146 source work plus the
+- Current telemetry reports 67.2 percent remaining; no hard checkpoint is due.
+- The current package integrates AR-133 through AR-147 source work plus the
   AR-140/AR-141 performance and compatibility slice.
 - The first complete post-checkpoint Python arm ran 43m39s and failed 34 tests.
   Its exact owning 12-module reproducer now passes 424 tests in 70.71 seconds.
@@ -114,6 +114,10 @@ the deterministic typed-recall floor only when inference is not configured.
 - AR-146 repairs the cursor validator that rejected every generated activity
   cursor. Dashboard server coverage passes 29 tests and 12 existing
   cursor/activity/observation regressions pass.
+- AR-147 replaces flat Windows ACE extraction after a native-valid nested
+  conditional foreign full-control grant bypassed directory and executable
+  trust classification. The repaired focused security suite passes 402 tests
+  with 6 skips; integrated release evidence remains pending.
 
 ## exact-blocker
 

@@ -27,6 +27,7 @@ related:
   - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
   - docs/roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md
+  - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
 supersedes: []
 superseded_by: null
 ---
@@ -98,6 +99,7 @@ No Critical finding was confirmed.
 | SEC-H3 | Positive Store path trust survives a permission-authority change. | Same inode/mtime returned trusted before and after authority loss; the authoritative checker ran only once. | [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md) |
 | SEC-H4 | Agency-planned native children fail open when Store/correlation evidence is unavailable. | Valid planned-shaped labels for Claude, Codex, and ZCode returned pass-through, permitting side effects before terminal evidence rejection. | [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md) |
 | SEC-H5 | The model-callable in-app Browser can use the owner dashboard bearer and automate every persistent mutation modal. | Static phrases and CAS prove shape/freshness, not human presence; global, host, agent, config, roster, workforce, hiring, and trimming operations remain reachable. | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) |
+| SEC-H6 | A flat Windows SDDL regex can omit an outer conditional access-granting ACE. | Windows accepted and round-tripped a foreign full-control callback ACE containing nested text; directory and executable classifiers returned trusted before the complete-parser repair. | [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md) |
 
 ### Medium
 
@@ -280,9 +282,11 @@ These remain residual-review notes, not invented findings:
 - `process_argv.py`: shell-free canonicalization and call discipline were
   traced; no new bypass was reproduced. The documented same-account race
   remains residual risk.
-- `windows_acl.py` / `windows_private_directory.py`: call sites and native
-  identity checks were traced; no ctypes defect was confirmed. Exhaustive
-  Windows ABI verification still needs the hosted Windows security gate.
+- `windows_acl.py` / `windows_private_directory.py`: deeper review confirmed a
+  high-severity parser omission, now owned by AR-147. A native-valid nested
+  conditional grant bypassed both directory and executable trust classifiers;
+  complete balanced parsing now fails the reproduction closed. Exhaustive
+  hosted Windows security verification remains required.
 - `schema.py`: dynamic currentness and host-domain defects were reproduced and
   promoted to AR-134. All reviewed string-built DDL identifiers remain internal
   constants; no injection path was found.
@@ -316,6 +320,7 @@ editing another worker's files.
 | 3 | [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md) | Dashboard release tests | Exact fixed coverage floors pass with behavioral callbacks |
 | 3 | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md) | Python release coverage | Exact fixed 97 percent gate and separate performance arm pass |
 | 3 | [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md) | Dashboard cursor chain | Generated cursor round-trips through handler and Store |
+| 3 | [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md) | Windows ACL trust | Native nested conditional grants fail every trust classifier closed |
 | 4 | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Routing/retrieval/startup | Correctness-preserving size-tiered performance gates |
 | 4 | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility/refactor | Deprecation and canonical-helper contract tests |
 | 5 | [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | Product/host evaluation | Benchmark-valid complete corpus and installed apps |

@@ -76,7 +76,11 @@ _TOKEN_PROBE_MESSAGE = (
 _OWNER_ONLY_SDDL = re.compile(
     r"^O:(?P<owner>S-[0-9-]+)(?:G:[^D]*)?D:(?P<control>[A-Z]*)(?P<aces>.*)$"
 )
-_SDDL_ACE = re.compile(r"\(([^()]*)\)")
+_SDDL_ACE_FLAGS = re.compile(r"^(?:(?:CI|OI|NP|IO|ID|CR|TP|SA|FA))*$")
+_SDDL_GUID = re.compile(
+    r"^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$",
+    re.IGNORECASE,
+)
 _SDDL_MUTATING_MASK = (
     0x10000000  # GENERIC_ALL
     | 0x40000000  # GENERIC_WRITE
@@ -102,8 +106,30 @@ _SDDL_NAMESPACE_REPLACEMENT_RIGHTS = frozenset({"DT", "FA", "GA", "SD", "WD", "W
 _SDDL_ANCESTOR_SAFE_RIGHTS = frozenset(
     {"CC", "CR", "DC", "FR", "FW", "FX", "GR", "GW", "GX", "LC", "LO", "RC", "RP", "SW", "WP"}
 )
-_SDDL_DENY_TYPES = frozenset({"D", "OD", "XD", "ZD"})
-_SDDL_ALLOW_TYPES = frozenset({"A", "OA"})
+_SDDL_DENY_TYPES = frozenset({"D", "OD", "XD"})
+_SDDL_ALLOW_TYPES = frozenset({"A", "OA", "XA", "ZA"})
+# Keep these tokens aligned with the public Sddl.h contract. Windows defines
+# callback-object deny/audit ACE structures, but no ZD/ZU textual SDDL tokens;
+# treating those invented strings as deny ACEs would accept malformed input.
+_SDDL_CONDITIONAL_TYPES = frozenset({"XA", "XD", "XU", "ZA"})
+_SDDL_STANDARD_TYPES = frozenset(
+    {
+        "A",
+        "AL",
+        "AU",
+        "D",
+        "FL",
+        "ML",
+        "OA",
+        "OD",
+        "OL",
+        "OU",
+        "SP",
+        "TL",
+    }
+)
+_SDDL_APPLICATION_DATA_TYPES = _SDDL_CONDITIONAL_TYPES | {"RA"}
+_SDDL_TYPES = _SDDL_STANDARD_TYPES | _SDDL_APPLICATION_DATA_TYPES
 _SDDL_DACL_CONTROL = re.compile(r"^(?:(?:P|AI|AR))*$")
 _TRUSTED_INSTALLER_SID = "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464"
 _TRUSTED_WINDOWS_OWNERS = frozenset(
@@ -970,12 +996,15 @@ def windows_restricted_host_boundary_is_trusted(path: Path) -> bool:
         return False
     if not user_sid or _sddl_owner(value) != user_sid or "D:" not in value:
         return False
-    dacl = value.split("D:", 1)[1]
+    parsed_dacl = _parse_sddl_dacl(value)
+    if parsed_dacl is None:
+        return False
+    _control, aces = parsed_dacl
     extras: set[str] = set()
     trusted = {*_TRUSTED_WINDOWS_PRINCIPALS, user_sid}
-    for encoded in _SDDL_ACE.findall(dacl):
-        fields = encoded.split(";")
-        if len(fields) != 6:
+    for encoded in aces:
+        fields = _parse_sddl_ace(encoded)
+        if fields is None:
             return False
         ace_type, _flags, rights, _object_guid, _inherit_guid, principal = fields
         if ace_type in _SDDL_DENY_TYPES:
@@ -1016,6 +1045,107 @@ def _sddl_owner(value: str) -> str:
     boundaries = [index for marker in ("G:", "D:") if (index := remainder.find(marker)) >= 0]
     end = min(boundaries) if boundaries else len(remainder)
     return remainder[:end]
+
+
+def _tokenize_sddl_aces(value: str) -> tuple[str, ...] | None:
+    """Split a complete SDDL ACE sequence without dropping nested content.
+
+    Conditional and resource-attribute ACEs append parenthesized application
+    data to the six ordinary fields. Parentheses inside quoted string values
+    are data, while all other parentheses participate in balancing. Any
+    unconsumed text, unterminated quote, or malformed nesting is rejected so a
+    security classifier cannot accept an access-granting ACE by omission.
+    """
+
+    if "\0" in value:
+        return None
+    aces: list[str] = []
+    offset = 0
+    while offset < len(value):
+        if value[offset] != "(":
+            return None
+        start = offset + 1
+        offset = start
+        depth = 1
+        quoted = False
+        while offset < len(value):
+            character = value[offset]
+            if character == '"':
+                # Windows claim strings can contain parentheses, but SDDL
+                # does not use doubled quotes as an escape convention. Empty
+                # strings are valid; a new quote immediately after a closing
+                # quote is an ambiguous, non-native shape and fails closed.
+                if not quoted and offset > 0 and value[offset - 1] == '"':
+                    return None
+                quoted = not quoted
+            elif not quoted:
+                if character == "(":
+                    depth += 1
+                elif character == ")":
+                    depth -= 1
+                    if depth == 0:
+                        aces.append(value[start:offset])
+                        offset += 1
+                        break
+            offset += 1
+        else:
+            return None
+    return tuple(aces)
+
+
+def _parse_sddl_dacl(value: str) -> tuple[str, tuple[str, ...]] | None:
+    """Return one complete, structurally valid DACL or fail closed."""
+
+    dacl_offset = value.find("D:")
+    if dacl_offset < 0:
+        return None
+    dacl = value[dacl_offset + 2 :]
+    ace_offset = dacl.find("(")
+    if ace_offset < 0:
+        control = dacl
+        encoded_aces = ""
+    else:
+        control = dacl[:ace_offset]
+        encoded_aces = dacl[ace_offset:]
+    if control == "NO_ACCESS_CONTROL" or _SDDL_DACL_CONTROL.fullmatch(control) is None:
+        return None
+    aces = _tokenize_sddl_aces(encoded_aces)
+    if aces is None:
+        return None
+    return control, aces
+
+
+def _parse_sddl_ace(encoded: str) -> tuple[str, str, str, str, str, str] | None:
+    """Parse one balanced ACE while treating application data as opaque.
+
+    The classifier needs only the access-bearing first six fields. It does not
+    evaluate conditional expressions; an untrusted conditional allow is
+    classified by its maximum stated rights. Requiring exactly one balanced
+    application-data group preserves valid callback/object callback and
+    resource-attribute ACEs without letting their nested text become fake ACEs.
+    """
+
+    fields = [field.strip() for field in encoded.split(";", 5)]
+    if len(fields) != 6:
+        return None
+    ace_type, flags, rights, object_guid, inherit_guid, principal_payload = fields
+    if (
+        ace_type not in _SDDL_TYPES
+        or _SDDL_ACE_FLAGS.fullmatch(flags) is None
+        or (object_guid and _SDDL_GUID.fullmatch(object_guid) is None)
+        or (inherit_guid and _SDDL_GUID.fullmatch(inherit_guid) is None)
+    ):
+        return None
+    principal, separator, application_data = principal_payload.partition(";")
+    principal = principal.strip()
+    if not principal or bool(separator) != (ace_type in _SDDL_APPLICATION_DATA_TYPES):
+        return None
+    if separator:
+        payload = application_data.strip()
+        nested = _tokenize_sddl_aces(payload)
+        if nested is None or len(nested) != 1 or not nested[0].strip():
+            return None
+    return ace_type, flags, rights, object_guid, inherit_guid, principal
 
 
 def _sddl_rights_can_mutate(value: str) -> bool:
@@ -1141,18 +1271,16 @@ def windows_directory_prevents_untrusted_writes(
     owner_is_trusted = owner_is_current or (not final_parent and owner in _TRUSTED_WINDOWS_OWNERS)
     if not owner_is_trusted or dacl_offset < 0:
         return False
-    dacl = value[dacl_offset + 2 :]
-    control = dacl.split("(", 1)[0]
-    if (
-        control == "NO_ACCESS_CONTROL"
-        or _SDDL_DACL_CONTROL.fullmatch(control) is None
-        or (require_protected_dacl and "P" not in control)
-    ):
+    parsed_dacl = _parse_sddl_dacl(value)
+    if parsed_dacl is None:
+        return False
+    control, aces = parsed_dacl
+    if require_protected_dacl and "P" not in control:
         return False
     trusted = {*_TRUSTED_WINDOWS_PRINCIPALS, owner, current_sid, *process_sids}
-    for encoded in _SDDL_ACE.findall(dacl):
-        fields = encoded.split(";")
-        if len(fields) != 6:
+    for encoded in aces:
+        fields = _parse_sddl_ace(encoded)
+        if fields is None:
             return False
         ace_type, flags, rights, _object_guid, _inherit_guid, principal = fields
         if ace_type in _SDDL_DENY_TYPES:
@@ -1234,14 +1362,14 @@ def windows_file_prevents_untrusted_mutation(
     owner_is_trusted = owner_is_current or owner in _TRUSTED_WINDOWS_OWNERS
     if not owner or not current_sid or not owner_is_trusted or dacl_offset < 0:
         return False
-    dacl = value[dacl_offset + 2 :]
-    control = dacl.split("(", 1)[0]
-    if control == "NO_ACCESS_CONTROL" or _SDDL_DACL_CONTROL.fullmatch(control) is None:
+    parsed_dacl = _parse_sddl_dacl(value)
+    if parsed_dacl is None:
         return False
+    _control, aces = parsed_dacl
     trusted = {*_TRUSTED_WINDOWS_PRINCIPALS, owner, current_sid, *process_sids}
-    for encoded in _SDDL_ACE.findall(dacl):
-        fields = encoded.split(";")
-        if len(fields) != 6:
+    for encoded in aces:
+        fields = _parse_sddl_ace(encoded)
+        if fields is None:
             return False
         ace_type, flags, rights, _object_guid, _inherit_guid, principal = fields
         if ace_type in _SDDL_DENY_TYPES or principal in trusted or "IO" in flags:

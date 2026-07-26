@@ -32,8 +32,16 @@ _FOREIGN_SID = "S-1-5-21-2002"
         (f"O:{_CURRENT_SID}D:(A;;0x00000040;;;{_FOREIGN_SID})", False, False),
         (f"O:{_CURRENT_SID}D:(A;;0x00010000;;;{_FOREIGN_SID})", False, False),
         (f"O:{_CURRENT_SID}D:(A;IO;FA;;;{_FOREIGN_SID})", False, True),
-        (f"O:{_CURRENT_SID}D:(XA;;FA;;;{_FOREIGN_SID})", False, False),
-        (f"O:{_CURRENT_SID}D:(XA;;FR;;;{_FOREIGN_SID})", False, True),
+        (
+            f'O:{_CURRENT_SID}D:(XA;;FA;;;{_FOREIGN_SID};(@User.Title=="PM"))',
+            False,
+            False,
+        ),
+        (
+            f'O:{_CURRENT_SID}D:(XA;;FR;;;{_FOREIGN_SID};(@User.Title=="PM"))',
+            False,
+            True,
+        ),
         (f"O:{_CURRENT_SID}D:(A;;ZZ;;;{_FOREIGN_SID})", False, False),
         (f"O:{_CURRENT_SID}D:(A;;KA;;;{_FOREIGN_SID})", False, False),
         (f"O:{_CURRENT_SID}D:NO_ACCESS_CONTROL", True, False),

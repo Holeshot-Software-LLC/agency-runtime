@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
   - docs/roadmap/issue-AR-22-concurrent-storage-acl-repair.md
   - docs/roadmap/issue-AR-61-capability-bound-restricted-windows-scratch.md
+  - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

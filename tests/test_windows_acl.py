@@ -106,6 +106,171 @@ def test_windows_executable_file_fails_closed_when_owner_alias_match_fails() -> 
     )
 
 
+def test_nested_conditional_allow_cannot_hide_untrusted_mutation() -> None:
+    current = "S-1-5-21-1-2-3-1001"
+    foreign = "S-1-5-21-1-2-3-2002"
+    # This is a valid quoted claim value. The former flat regex interpreted
+    # its parenthesized text as a deny ACE and silently omitted the outer
+    # foreign full-control callback ACE.
+    sddl = f'O:{current}D:P(XA;OICI;FA;;;{foreign};(@User.Note=="(D;;;;;BU)"))'
+    common = {
+        "is_windows": True,
+        "sddl_reader": lambda _path: sddl,
+        "current_sid_reader": lambda: current,
+        "trusted_sid_reader": frozenset,
+    }
+
+    assert not windows_directory_prevents_untrusted_writes(
+        Path("state"),
+        private_access=True,
+        **common,
+    )
+    assert not windows_file_prevents_untrusted_mutation(Path("tool.exe"), **common)
+
+
+def test_nested_conditional_read_and_object_callbacks_remain_supported() -> None:
+    current = "S-1-5-21-1-2-3-1001"
+    foreign = "S-1-5-21-1-2-3-2002"
+    object_guid = "00112233-4455-6677-8899-AABBCCDDEEFF"
+    condition = (
+        '(@User.Title=="PM" && (@User.Division=="Finance" || Member_of {SID(S-1-5-32-544)}))'
+    )
+    sddl = (
+        f"O:{current}D:P"
+        f"(OA;OICI;FA;{object_guid};;{current})"
+        f"(XA;OICI;FR;;;{foreign};{condition})"
+        f"(ZA;OICI;FA;{object_guid};;{current};{condition})"
+    )
+    common = {
+        "is_windows": True,
+        "sddl_reader": lambda _path: sddl,
+        "current_sid_reader": lambda: current,
+        "trusted_sid_reader": frozenset,
+    }
+
+    assert windows_directory_prevents_untrusted_writes(
+        Path("ancestor"),
+        final_parent=False,
+        **common,
+    )
+    assert windows_file_prevents_untrusted_mutation(Path("tool.exe"), **common)
+
+
+def test_doubled_quotes_fail_closed_instead_of_splitting_an_ace() -> None:
+    current = "S-1-5-21-1-2-3-1001"
+    sddl = f'O:{current}D:P(XA;OICI;FA;;;{current};(@User.Note=="say ""(D;;;;;BU)"""))'
+
+    assert windows_acl._parse_sddl_dacl(sddl) is None
+    assert not windows_directory_prevents_untrusted_writes(
+        Path("state"),
+        is_windows=True,
+        sddl_reader=lambda _path: sddl,
+        current_sid_reader=lambda: current,
+        trusted_sid_reader=frozenset,
+        private_access=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "dacl",
+    [
+        '(XA;OICI;FA;;;S-1-5-21-2002;(@User.Title=="PM")',
+        '(XA;OICI;FA;;;S-1-5-21-2002;(@User.Title=="PM")))',
+        '(XA;OICI;FA;;;S-1-5-21-2002;(@User.Title=="PM"))trailing',
+        "(XA;OICI;FA;;;S-1-5-21-2002)",
+        '(A;OICI;FA;;;S-1-5-21-2002;(@User.Title=="PM"))',
+        "(A;XIO;FA;;;S-1-5-21-2002)",
+        "(OA;OICI;FA;not-a-guid;;S-1-5-21-2002)",
+        "(A;OICI;FA;;;;)",
+        '(ZD;OICI;FA;;;S-1-5-21-2002;(@User.Title=="PM"))',
+        '(XA;OICI;FA;;;S-1-5-21-2002;(@User.Title=="unterminated))',
+        "(XA;OICI;FA;;;S-1-5-21-2002;())",
+        ('(XA;OICI;FA;;;S-1-5-21-2002;(@User.Title=="PM")(@User.Division=="Sales"))'),
+    ],
+)
+def test_acl_classifiers_reject_malformed_or_ambiguous_ace_sequences(dacl: str) -> None:
+    current = "S-1-5-21-1001"
+    sddl = f"O:{current}D:P{dacl}"
+    common = {
+        "is_windows": True,
+        "sddl_reader": lambda _path: sddl,
+        "current_sid_reader": lambda: current,
+        "trusted_sid_reader": frozenset,
+    }
+
+    assert not windows_directory_prevents_untrusted_writes(Path("state"), **common)
+    assert not windows_file_prevents_untrusted_mutation(Path("tool.exe"), **common)
+
+
+def test_complete_dacl_parser_accepts_empty_acl_and_rejects_missing_or_nul_state() -> None:
+    assert windows_acl._parse_sddl_dacl("O:S-1-5-21-1001D:P") == ("P", ())
+    assert windows_acl._parse_sddl_dacl("O:S-1-5-21-1001") is None
+    assert windows_acl._parse_sddl_dacl("O:S-1-5-21-1001D:P\0") is None
+    assert (
+        windows_acl._parse_sddl_dacl('O:S-1-5-21-1001D:P(XA;;FR;;;WD;(@User.Note==""))') is not None
+    )
+
+
+@pytest.mark.parametrize(
+    ("encoded", "expected_type"),
+    [
+        ("A;;FR;;;WD", "A"),
+        ("D;;FA;;;WD", "D"),
+        ("OA;;FR;00112233-4455-6677-8899-AABBCCDDEEFF;;WD", "OA"),
+        ("OD;;FA;;00112233-4455-6677-8899-AABBCCDDEEFF;WD", "OD"),
+        ("AU;SA;FR;;;WD", "AU"),
+        ("AL;FA;FR;;;WD", "AL"),
+        ("OU;SA;FR;;;WD", "OU"),
+        ("OL;FA;FR;;;WD", "OL"),
+        ("ML;;NW;;;LW", "ML"),
+        ("TL;;0x1;;;WD", "TL"),
+        ('XA;;FR;;;WD;(@User.Title=="PM")', "XA"),
+        ('XD;;FA;;;WD;(@User.Title=="PM")', "XD"),
+        ('XU;SA;FR;;;WD;(@User.Title=="PM")', "XU"),
+        (
+            'ZA;;FR;00112233-4455-6677-8899-AABBCCDDEEFF;;WD;(@User.Title=="PM")',
+            "ZA",
+        ),
+        ('RA;;;;;WD;("Project",TS,0,"Windows")', "RA"),
+        ("SP;;;;;S-1-17-1", "SP"),
+        ("FL;TP;FR;;;WD", "FL"),
+    ],
+)
+def test_sddl_ace_parser_covers_the_current_windows_sdk_type_set(
+    encoded: str,
+    expected_type: str,
+) -> None:
+    parsed = windows_acl._parse_sddl_ace(encoded)
+
+    assert parsed is not None
+    assert parsed[0] == expected_type
+
+
+def test_restricted_host_boundary_parses_complete_conditional_aces(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    owner = "S-1-5-21-42"
+    restricting = "S-1-5-5-1-2"
+    condition = '(@User.Title=="PM" && Member_of {SID(S-1-5-32-544)})'
+    safe = f"O:{owner}D:P(A;OICI;FA;;;{owner})(XA;OICI;FA;;;{restricting};{condition})"
+    monkeypatch.setattr(windows_acl, "current_process_user_sid", lambda **_kwargs: owner)
+    monkeypatch.setattr(
+        windows_acl,
+        "current_process_restricted_sids",
+        lambda **_kwargs: frozenset({restricting}),
+    )
+    monkeypatch.setattr(
+        windows_acl,
+        "current_process_can_mutate_path",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(windows_acl, "read_windows_sddl", lambda _path: safe)
+    assert windows_acl.windows_restricted_host_boundary_is_trusted(Path("host"))
+
+    monkeypatch.setattr(windows_acl, "read_windows_sddl", lambda _path: safe[:-1])
+    assert not windows_acl.windows_restricted_host_boundary_is_trusted(Path("host"))
+
+
 def test_restricted_token_is_rejected_before_acl_mutation() -> None:
     mutations: list[Path] = []
 
