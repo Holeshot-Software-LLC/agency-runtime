@@ -3138,6 +3138,25 @@ clinical-legal-boundary-review | helpful=[clinical-evidence-agent,legal-document
 The raw and derived files remain outside the repository at
 `C:\tmp\agency-runtime-ar119-019f8ee1-full-20260723-154100`.
 
+### Production-hardening checkpoint 2026-07-26
+
+The current local production package is represented by substantive/ledger pair
+`0932410`/`4d15b2b`, on top of the governed AR-128 through AR-148
+audit sequence. The earlier complete integrated Python run passed 7,522 tests
+with 61 skips and 1 expected failure. The first exact coverage arm subsequently
+failed at 96.66 percent with four test-contract failures; focused repairs are
+committed, but the exact aggregate rerun remains required.
+
+The final deep-review slice confirmed and repaired a high-severity nested
+Windows conditional-ACE trust bypass, three medium SQLite currentness defects,
+and one low malformed-HMAC availability defect. Measured stable operational
+routing fell from 1,104.677 ms to 663.671 ms and the module version entrypoint
+from about 647 ms to 112 ms without positive trust caching. Focused ACL,
+schema, Store/workforce, routing, UI, packaging, supply-chain, and dependency
+checks are locally green. These are source controls, not a fresh current-source
+installation, hosted portability result, valid matched outcome corpus, or
+production-readiness claim.
+
 ### Still required before AR-119 can close
 
 - Close the reproduced production blockers and regression packages in AR-128
@@ -3166,19 +3185,14 @@ The raw and derived files remain outside the repository at
 
 ### Next bounded work package
 
-Continue the matched selection package without advancing to contractor
-lifecycle work. Run one zero-call-validated instrumented matched confirmation
-for exactly `active-incident-containment` and
-`accounts-payable-cfo-separated`. Preserve both complete Agency outcomes before
-projection and capture both streams outside the repository. Keep the roster,
-tools, provider, model, low effort, one-call budget, and 15000 ms gate
-unchanged.
-
-If both pass, make no product change and return to a complete corpus after
-checkpointing. If either repeats, compare the complete plan/proposal with prior
-accepted outcomes and change only a genuinely general governed defect. Keep
-malformed upstream arms invalid, never losses. Do not raise the gate, add a
-call, weaken typed coverage, add a scenario route, or claim Agency is better.
+From this clean checkpoint, run the current-source routing contract evaluation,
+the exact aggregate coverage arm, the separate performance suite, and the full
+repository/release/security gates. Fix only reproduced general defects without
+changing thresholds or exclusions. Then build an isolated canonical artifact
+and exercise every mutation-free install, protocol, dashboard, and host
+contract that does not require genuine operator presence. Keep the 15000 ms
+cold and one-call fast matched controls fixed; malformed or timed-out upstream
+arms remain invalid, never losses.
 
 ### Context checkpoint constraints
 

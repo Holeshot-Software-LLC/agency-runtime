@@ -22,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: c3ffe6a7fbe2d1797cef55022b4a6b65abac7d62
-minimum_ledger_commit: 3f888bd9073b39b565af06f722a64aee4b012812
+evidence_commit: 093241033300da2347baa898728ef89f6f5df92f
+minimum_ledger_commit: 4d15b2befc667c4a704623157432867ab137db4f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -42,7 +42,8 @@ the deterministic typed-recall floor only when inference is not configured.
   authorized.
 - The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
   and excluded from commits.
-- Current telemetry reports 67.2 percent remaining; no hard checkpoint is due.
+- Telemetry reported 34.6 percent remaining; the clean 0932410/4d15b2b pair
+  satisfies the required hard checkpoint before live evaluation.
 - The current package integrates AR-133 through AR-148 source work plus the
   AR-140/AR-141 performance and compatibility slice.
 - The first complete post-checkpoint Python arm ran 43m39s and failed 34 tests.
@@ -146,13 +147,10 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run the exact Python aggregate coverage and separate performance gates from
-   this clean source checkpoint and record every exact result.
-2. Finish safe AR-141 evidence; retain AR-140's 400-450 ms contractor and
-   no-op starter N+1 costs until separately optimized and measured.
-3. Keep fresh install and installed dogfood visibly blocked behind genuine
-   operator presence; do not reinterpret the earlier install as current.
-4. Complete AR-125 only with benchmark-valid matched evidence.
+1. Run routing, exact Python coverage, performance, and full release gates.
+2. Finish safe AR-140/AR-141 work only from reproduced general evidence.
+3. Build isolated artifacts and smoke every mutation-free current-source path.
+4. Keep real install and AR-125 claims behind their exact authority/evidence.
 
 ## verification
 
