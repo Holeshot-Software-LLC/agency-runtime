@@ -49,8 +49,19 @@ def _search_limit(value: str) -> int:
     return parsed
 
 
-def _bind(parser: argparse.ArgumentParser, handlers: Handlers, name: str) -> None:
-    parser.set_defaults(func=handlers[name])
+def _bind(
+    parser: argparse.ArgumentParser,
+    handlers: Handlers,
+    name: str,
+    *,
+    operator_presence_family: str = "",
+    operator_presence_dry_run_exempt: bool = False,
+) -> None:
+    defaults: dict[str, object] = {"func": handlers[name]}
+    if operator_presence_family:
+        defaults["_operator_presence_family"] = operator_presence_family
+        defaults["_operator_presence_dry_run_exempt"] = operator_presence_dry_run_exempt
+    parser.set_defaults(**defaults)
 
 
 def _runtime_control_action(action: str) -> str:
@@ -117,7 +128,13 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         help="Maximum current-profile Codex activation check time in seconds",
     )
     install.add_argument("--json", action="store_true", help="Print machine-readable results")
-    _bind(install, handlers, "cmd_install")
+    _bind(
+        install,
+        handlers,
+        "cmd_install",
+        operator_presence_family="installation",
+        operator_presence_dry_run_exempt=True,
+    )
 
 
 def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
@@ -147,7 +164,13 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         help="Use the host plugin lifecycle instead of immediate soft control",
     )
     on_p.add_argument("--json", action="store_true", help="Print machine-readable results")
-    _bind(on_p, handlers, "cmd_on")
+    _bind(
+        on_p,
+        handlers,
+        "cmd_on",
+        operator_presence_family="runtime-control",
+        operator_presence_dry_run_exempt=True,
+    )
 
     off_p = sub.add_parser(
         _runtime_control_action("off"),
@@ -175,7 +198,13 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         help="Use the host plugin lifecycle instead of immediate soft control",
     )
     off_p.add_argument("--json", action="store_true", help="Print machine-readable results")
-    _bind(off_p, handlers, "cmd_off")
+    _bind(
+        off_p,
+        handlers,
+        "cmd_off",
+        operator_presence_family="runtime-control",
+        operator_presence_dry_run_exempt=True,
+    )
 
     status_p = sub.add_parser(
         _runtime_control_action("status"),
@@ -243,7 +272,12 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         help="Security and capability profile to configure",
     )
     configure.add_argument("--force", action="store_true", help="Overwrite existing config")
-    _bind(configure, handlers, "cmd_configure")
+    _bind(
+        configure,
+        handlers,
+        "cmd_configure",
+        operator_presence_family="configuration",
+    )
 
     doctor = sub.add_parser("doctor", help="Check DB, config, providers, and adapter availability")
     doctor.add_argument("--json", action="store_true", help="JSON output")
@@ -276,7 +310,12 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         "--prompt", action="store_true", help="Prompt without echo for a secret value"
     )
     config_input.add_argument("--clear", action="store_true", help="Clear a stored secret")
-    _bind(config_set, handlers, "cmd_config_set")
+    _bind(
+        config_set,
+        handlers,
+        "cmd_config_set",
+        operator_presence_family="configuration",
+    )
 
     config_provider = config_sub.add_parser(
         "provider",
@@ -335,16 +374,31 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         help="Environment variable containing the provider key",
     )
     provider_set.add_argument("--timeout", type=float, default=None, help="Timeout in seconds")
-    _bind(provider_set, handlers, "cmd_config_provider_set")
+    _bind(
+        provider_set,
+        handlers,
+        "cmd_config_provider_set",
+        operator_presence_family="configuration",
+    )
     provider_remove = provider_sub.add_parser("remove", help="Remove a named provider")
     provider_remove.add_argument("name", help="Provider name")
-    _bind(provider_remove, handlers, "cmd_config_provider_remove")
+    _bind(
+        provider_remove,
+        handlers,
+        "cmd_config_provider_remove",
+        operator_presence_family="configuration",
+    )
 
     config_validate = config_sub.add_parser("validate", help="Validate config + reachability")
     _bind(config_validate, handlers, "cmd_config_validate")
 
     config_reset = config_sub.add_parser("reset", help="Reset to defaults")
-    _bind(config_reset, handlers, "cmd_config_reset")
+    _bind(
+        config_reset,
+        handlers,
+        "cmd_config_reset",
+        operator_presence_family="configuration",
+    )
 
 
 def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
@@ -360,7 +414,13 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         action="store_true",
         help="Approve only candidates from explicitly trusted sources",
     )
-    _bind(sync, handlers, "cmd_sync")
+    _bind(
+        sync,
+        handlers,
+        "cmd_sync",
+        operator_presence_family="roster-governance",
+        operator_presence_dry_run_exempt=True,
+    )
 
     source = sub.add_parser("source", help="Manage roster sources")
     source_sub = source.add_subparsers(dest="source_command", required=True)
@@ -372,7 +432,12 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         action="store_true",
         help="Allow this source to be used with sync --auto-approve automation",
     )
-    _bind(source_add, handlers, "cmd_source_add")
+    _bind(
+        source_add,
+        handlers,
+        "cmd_source_add",
+        operator_presence_family="roster-governance",
+    )
     source_list = source_sub.add_parser("list", help="List roster sources")
     _bind(source_list, handlers, "cmd_source_list")
 
@@ -382,13 +447,28 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
     _bind(roster_list, handlers, "cmd_roster_list")
     roster_diff = roster_sub.add_parser("diff", help="Create/show diff for quarantined candidates")
     roster_diff.add_argument("--json", action="store_true", help="Print machine-readable results")
-    _bind(roster_diff, handlers, "cmd_roster_diff")
+    _bind(
+        roster_diff,
+        handlers,
+        "cmd_roster_diff",
+        operator_presence_family="roster-governance",
+    )
     roster_approve = roster_sub.add_parser("approve", help="Approve snapshot")
     roster_approve.add_argument("snapshot_id", help="Snapshot identifier to approve")
-    _bind(roster_approve, handlers, "cmd_roster_approve")
+    _bind(
+        roster_approve,
+        handlers,
+        "cmd_roster_approve",
+        operator_presence_family="roster-governance",
+    )
     roster_activate = roster_sub.add_parser("activate", help="Activate approved snapshot")
     roster_activate.add_argument("snapshot_id", help="Approved snapshot identifier to activate")
-    _bind(roster_activate, handlers, "cmd_roster_activate")
+    _bind(
+        roster_activate,
+        handlers,
+        "cmd_roster_activate",
+        operator_presence_family="roster-governance",
+    )
     roster_scans = roster_sub.add_parser(
         "scans",
         help="List complete and partial source-scan evidence",
@@ -444,7 +524,12 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         action="store_true",
         help="Print machine-readable snapshot details",
     )
-    _bind(roster_retire, handlers, "cmd_roster_retire")
+    _bind(
+        roster_retire,
+        handlers,
+        "cmd_roster_retire",
+        operator_presence_family="roster-governance",
+    )
     roster_rollback = roster_sub.add_parser(
         "rollback",
         help="Restore one immutable revision under an exact current-state check",
@@ -466,7 +551,12 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         action="store_true",
         help="Print the restored active record as JSON",
     )
-    _bind(roster_rollback, handlers, "cmd_roster_rollback")
+    _bind(
+        roster_rollback,
+        handlers,
+        "cmd_roster_rollback",
+        operator_presence_family="roster-governance",
+    )
 
     roster_upstream = roster_sub.add_parser(
         "upstream",
@@ -499,7 +589,13 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         action="store_true",
         help="Compare and validate without writing quarantine evidence",
     )
-    _bind(upstream_import, handlers, "cmd_roster_upstream_import")
+    _bind(
+        upstream_import,
+        handlers,
+        "cmd_roster_upstream_import",
+        operator_presence_family="roster-governance",
+        operator_presence_dry_run_exempt=True,
+    )
 
     roster_candidate = roster_sub.add_parser(
         "candidate",
@@ -516,7 +612,12 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         action="store_true",
         help="Fail closed unless an inference audit assistant is available",
     )
-    _bind(candidate_audit, handlers, "cmd_roster_candidate_audit")
+    _bind(
+        candidate_audit,
+        handlers,
+        "cmd_roster_candidate_audit",
+        operator_presence_family="roster-governance",
+    )
     candidate_findings = candidate_sub.add_parser(
         "findings",
         help="Show immutable audit history and findings",
@@ -535,7 +636,12 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
     )
     candidate_reject.add_argument("candidate_id", help="Candidate identifier")
     candidate_reject.add_argument("--reason", required=True, help="Bounded review reason")
-    _bind(candidate_reject, handlers, "cmd_roster_candidate_reject")
+    _bind(
+        candidate_reject,
+        handlers,
+        "cmd_roster_candidate_reject",
+        operator_presence_family="roster-governance",
+    )
     candidate_compare = candidate_sub.add_parser(
         "compare",
         help="Compare active and candidate metadata",
@@ -565,7 +671,12 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         default=None,
         help="Configuration file (defaults to env, installed service identity, or user config)",
     )
-    _bind(agent_enable, handlers, "cmd_agent_enable")
+    _bind(
+        agent_enable,
+        handlers,
+        "cmd_agent_enable",
+        operator_presence_family="agent-governance",
+    )
     agent_disable = agents_sub.add_parser(
         "disable",
         help="Disable a non-coordinator agent without deleting roster data",
@@ -576,7 +687,12 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         default=None,
         help="Configuration file (defaults to env, installed service identity, or user config)",
     )
-    _bind(agent_disable, handlers, "cmd_agent_disable")
+    _bind(
+        agent_disable,
+        handlers,
+        "cmd_agent_disable",
+        operator_presence_family="agent-governance",
+    )
 
     search = sub.add_parser("search", help="Search active roster")
     search.add_argument("query", help="Capability or specialist search text")
@@ -696,7 +812,12 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
         action_parser.add_argument(
             "--json", action="store_true", help="Print machine-readable output"
         )
-        _bind(action_parser, handlers, "cmd_workforce_transition")
+        _bind(
+            action_parser,
+            handlers,
+            "cmd_workforce_transition",
+            operator_presence_family="workforce-governance",
+        )
 
     merge = workforce_sub.add_parser("merge", help="Merge a worker into a coherent survivor")
     merge.set_defaults(workforce_action="merge")
@@ -712,7 +833,12 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
         help="Exact confirmation: MERGE <slug> INTO <survivor>",
     )
     merge.add_argument("--json", action="store_true", help="Print machine-readable output")
-    _bind(merge, handlers, "cmd_workforce_transition")
+    _bind(
+        merge,
+        handlers,
+        "cmd_workforce_transition",
+        operator_presence_family="workforce-governance",
+    )
 
     amend = workforce_sub.add_parser(
         "amend",
@@ -722,7 +848,12 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
     amend.add_argument("--approved-by", required=True, help="Auditable operator identity")
     amend.add_argument("--confirm", required=True, help="Exact confirmation: APPROVE <case-id>")
     amend.add_argument("--json", action="store_true", help="Print machine-readable output")
-    _bind(amend, handlers, "cmd_hiring_approve")
+    _bind(
+        amend,
+        handlers,
+        "cmd_hiring_approve",
+        operator_presence_family="hiring-governance",
+    )
 
     for action, handler in (("enable", "cmd_agent_enable"), ("disable", "cmd_agent_disable")):
         toggle = workforce_sub.add_parser(action, help=f"{action.title()} workforce routing")
@@ -735,7 +866,12 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
             help=f"Exact confirmation: {action.upper()} <slug>",
         )
         toggle.add_argument("--json", action="store_true", help="Print machine-readable output")
-        _bind(toggle, handlers, handler)
+        _bind(
+            toggle,
+            handlers,
+            handler,
+            operator_presence_family="workforce-governance",
+        )
 
     contractor = sub.add_parser("contractor", help="Inspect newly hired contractors")
     contractor_sub = contractor.add_subparsers(dest="contractor_command", required=True)
@@ -788,7 +924,12 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
         "--confirm", required=True, help="Exact confirmation: APPROVE <case-id>"
     )
     hiring_approve.add_argument("--json", action="store_true", help="Print machine-readable output")
-    _bind(hiring_approve, handlers, "cmd_hiring_approve")
+    _bind(
+        hiring_approve,
+        handlers,
+        "cmd_hiring_approve",
+        operator_presence_family="hiring-governance",
+    )
 
 
 def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
@@ -1074,7 +1215,13 @@ def _register_database(sub: Subparsers, handlers: Handlers) -> None:
     )
     db_trim.add_argument("--no-vacuum", action="store_true", help="Skip VACUUM after deleting rows")
     db_trim.add_argument("--json", action="store_true", help="Print machine-readable results")
-    _bind(db_trim, handlers, "cmd_db_trim")
+    _bind(
+        db_trim,
+        handlers,
+        "cmd_db_trim",
+        operator_presence_family="database-maintenance",
+        operator_presence_dry_run_exempt=True,
+    )
 
 
 def _register_native_protocols(sub: Subparsers, handlers: Handlers) -> None:
@@ -1121,7 +1268,15 @@ def _register_dashboard_service_actions(
         action_parser.add_argument(
             "--json", action="store_true", help="Print machine-readable results"
         )
-        _bind(action_parser, handlers, "cmd_dashboard_service")
+        if action == "status":
+            _bind(action_parser, handlers, "cmd_dashboard_service")
+        else:
+            _bind(
+                action_parser,
+                handlers,
+                "cmd_dashboard_service",
+                operator_presence_family="dashboard-service",
+            )
     install = service_sub.add_parser(
         "install", help="Register and start the current-user dashboard service"
     )
@@ -1129,13 +1284,24 @@ def _register_dashboard_service_actions(
         "--dry-run", action="store_true", help="Print the service plan without changing the host"
     )
     install.add_argument("--json", action="store_true", help="Print machine-readable results")
-    _bind(install, handlers, "cmd_dashboard_service")
+    _bind(
+        install,
+        handlers,
+        "cmd_dashboard_service",
+        operator_presence_family="dashboard-service",
+        operator_presence_dry_run_exempt=True,
+    )
     open_p = service_sub.add_parser("open", help="Resolve and open the live authenticated URL")
     open_p.add_argument(
         "--no-open", action="store_true", help="Print status without launching a browser"
     )
     open_p.add_argument("--json", action="store_true", help="Print machine-readable results")
-    _bind(open_p, handlers, "cmd_dashboard_service")
+    _bind(
+        open_p,
+        handlers,
+        "cmd_dashboard_service",
+        operator_presence_family="dashboard-service",
+    )
 
 
 def _register_services(sub: Subparsers, handlers: Handlers) -> None:

@@ -24,6 +24,7 @@ from agency_runtime.core.installer_payload_manifests import (
     build_codex_bundle,
     build_hermes_bundle,
     build_openclaw_bundle,
+    build_zcode_bundle,
     render_codex_plugin_version,
 )
 from agency_runtime.core.installer_payload_openclaw import render_openclaw_index
@@ -354,17 +355,16 @@ def zcode_hooks(
     "hooks" key (or workspace .zcode/config.json) and must set enabled: true.
     """
 
+    base_argv = runtime_python_argv("agency_runtime.cli")
+
     def handler(event: str, status_message: str) -> dict[str, Any]:
-        python_exe = sys.executable
-        bootstrap = str(Path(__file__).resolve().parent.parent / "_bootstrap.py")
         # ZCode hooks: use type "process" (argument vector, no shell) — the
         # most portable format per the ZCode hook docs. The prior type "command"
         # with POSIX single-quotes / a non-standard commandWindows field failed
         # silently on Windows because ZCode doesn't recognize commandWindows and
         # the POSIX command syntax is invalid in cmd.exe.
         args = [
-            bootstrap,
-            "agency_runtime.cli",
+            *base_argv[1:],
             "hook",
             "zcode",
             "--event",
@@ -374,35 +374,62 @@ def zcode_hooks(
         ]
         return {
             "type": "process",
-            "command": python_exe,
-            "args": ["-I", "-S", *args],
+            "command": base_argv[0],
+            "args": args,
+            "enabled": True,
             "timeoutMs": timeout_seconds * 1000,
             "statusMessage": status_message,
         }
 
     return {
         "hooks": {
-            "SessionStart": [
-                {"hooks": [handler("SessionStart", "Loading Agency Runtime managers")]}
-            ],
-            "UserPromptSubmit": [
-                {"hooks": [handler("UserPromptSubmit", "Routing with Agency Runtime")]}
-            ],
-            "PreToolUse": [
-                {
-                    "matcher": "Agent",
-                    "hooks": [
-                        handler("PreToolUse", "Binding exact Agency specialist to native child")
-                    ],
-                }
-            ],
-            "PostToolUse": [
-                {
-                    "matcher": "*",
-                    "hooks": [handler("PostToolUse", "Recording Agency Runtime evidence")],
-                }
-            ],
-            "Stop": [{"hooks": [handler("Stop", "Checking Agency Runtime response contract")]}],
+            "enabled": True,
+            "timeoutMs": timeout_seconds * 1000,
+            "events": {
+                "SessionStart": [
+                    {"hooks": [handler("SessionStart", "Loading Agency Runtime managers")]}
+                ],
+                "UserPromptSubmit": [
+                    {"hooks": [handler("UserPromptSubmit", "Routing with Agency Runtime")]}
+                ],
+                "PreToolUse": [
+                    {
+                        "matcher": "Agent",
+                        "hooks": [
+                            handler("PreToolUse", "Binding exact Agency specialist to native child")
+                        ],
+                    }
+                ],
+                "PermissionRequest": [
+                    {
+                        "matcher": "*",
+                        "hooks": [
+                            handler(
+                                "PermissionRequest",
+                                "Checking Agency Runtime tool permission",
+                            )
+                        ],
+                    }
+                ],
+                "PostToolUse": [
+                    {
+                        "matcher": "*",
+                        "hooks": [handler("PostToolUse", "Recording Agency Runtime evidence")],
+                    }
+                ],
+                "PostToolUseFailure": [
+                    {
+                        "matcher": "*",
+                        "hooks": [
+                            handler(
+                                "PostToolUseFailure",
+                                "Recording Agency Runtime tool failure",
+                            )
+                        ],
+                    }
+                ],
+                "Stop": [{"hooks": [handler("Stop", "Checking Agency Runtime response contract")]}],
+            },
         }
     }
 
@@ -504,6 +531,14 @@ def bundle_files(
             control_skill=_agency_control_skill("codex"),
             version_builder=_codex_plugin_version,
         )
+
+    if host == "zcode":
+        hooks = (
+            _zcode_hooks(timeout_seconds, config_path, runtime_control_path_value)
+            if config_path or runtime_control_path_value
+            else _zcode_hooks(timeout_seconds)
+        )
+        return build_zcode_bundle(hooks=hooks)
 
     hooks = (
         _claude_hooks(timeout_seconds, config_path, runtime_control_path_value)

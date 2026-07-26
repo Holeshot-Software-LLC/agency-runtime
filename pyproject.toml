@@ -57,7 +57,7 @@ Repository = "https://github.com/Holeshot-Software-LLC/agency-runtime.git"
 Security = "https://github.com/Holeshot-Software-LLC/agency-runtime/security/policy"
 
 [project.scripts]
-agency = "agency_runtime.cli.main:main"
+agency = "agency_runtime.cli.entrypoint:main"
 
 [tool.setuptools]
 include-package-data = true

@@ -14,6 +14,7 @@ from collections.abc import Container, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.workforce.capability_ontology import (
     CORE_CAPABILITY_IDS,
     normalize_capability_ids,
@@ -362,10 +363,7 @@ def project_workforce_contract(
 ) -> WorkforceContract:
     """Project one audited roster record into a bounded recruitment contract."""
 
-    agent_id = _identifier(
-        agent.get("agent_slug") or agent.get("slug"),
-        field="agent_id",
-    )
+    agent_id = _identifier(agent_identity(agent), field="agent_id")
     authority = _identifier(agent.get("authority"), field="authority")
     context_mode = _identifier(agent.get("context_mode"), field="context_mode")
     if authority not in _AUTHORITIES:

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from inspect import Parameter, signature
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.resident_managers import is_resident_manager_slug
 from agency_runtime.core.specialist_contracts import (
     MAX_DURABLE_SPECIALIST_REFERENCES,
@@ -54,7 +55,7 @@ class SpecialistPromptReference:
 
 
 def _slug(agent: Mapping[str, Any]) -> str:
-    return str(agent.get("agent_slug") or agent.get("slug") or "").strip()
+    return agent_identity(agent)
 
 
 def _bounded_text(value: Any, maximum: int) -> str:

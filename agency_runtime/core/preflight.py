@@ -14,6 +14,7 @@ from math import ceil
 from threading import Event, Thread, current_thread
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.host_capabilities import (
@@ -403,10 +404,7 @@ def _planned_parent_unit_routing(
         if isinstance(item, Mapping)
     }
     reference = references.get(primary)
-    catalog_by_slug = {
-        str(item.get("slug") or item.get("agent_slug") or "").strip().casefold(): item
-        for item in catalog
-    }
+    catalog_by_slug = {agent_identity(item).casefold(): item for item in catalog}
     agent = catalog_by_slug.get(primary)
     if reference is None or agent is None:
         return None

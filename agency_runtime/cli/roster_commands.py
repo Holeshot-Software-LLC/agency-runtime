@@ -16,6 +16,7 @@ from agency_runtime.core.agent_activation import (
     normalize_agent_slug,
     updated_disabled_agents,
 )
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration import (
     apply_config_operations,
@@ -1238,11 +1239,7 @@ def _policy_mapping(policy: dict[str, Any], key: str) -> dict[Any, Any]:
 
 def _active_roster_slugs(catalog: list[dict[str, Any]]) -> set[str]:
     """Collect canonical slugs from either supported catalog projection."""
-    return {
-        str(agent.get("slug") or agent.get("agent_slug"))
-        for agent in catalog
-        if agent.get("slug") or agent.get("agent_slug")
-    }
+    return {identity for agent in catalog if (identity := agent_identity(agent))}
 
 
 def _same_config_path(left: str, right: str) -> bool:

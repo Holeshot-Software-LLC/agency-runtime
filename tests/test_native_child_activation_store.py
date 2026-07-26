@@ -112,6 +112,23 @@ def test_public_grant_and_consumption_are_exact_separate_and_evidence_gated(
         evidence_contract_id="store-integration-v1",
         evidence_requirements=("delegation-execution", "specialist-load"),
     )
+    verification = {
+        "host": "codex",
+        "session_id": "session",
+        "trace_id": "trace",
+        "work_unit_id": unit,
+        "specialist_slug": slug,
+        "specialist_version": str(prepared["version"]),
+        "specialist_prompt_hash": str(prepared["prompt_hash"]),
+    }
+    assert store.verify_pending_delegation_activation(
+        activation_token=str(prepared["activation_token"]),
+        **verification,
+    )
+    assert not store.verify_pending_delegation_activation(
+        activation_token="forged-token",
+        **verification,
+    )
 
     connection = store._connect()
     try:
@@ -191,6 +208,10 @@ def test_public_grant_and_consumption_are_exact_separate_and_evidence_gated(
         )
 
     consumed = _consume(store, prepared, slug, unit)
+    assert not store.verify_pending_delegation_activation(
+        activation_token=str(prepared["activation_token"]),
+        **verification,
+    )
     public_receipt = consumed["activation_receipt"]
     assert public_receipt["grant_id"] == grant.grant_id
     assert public_receipt["child_run"] == {
@@ -263,6 +284,16 @@ def test_expired_grant_remains_unconsumed_and_creates_no_evidence(tmp_path: Path
     prepared = _prepare(store, slug, unit, ttl_seconds=1)
     time.sleep(2.0)
 
+    assert not store.verify_pending_delegation_activation(
+        activation_token=str(prepared["activation_token"]),
+        host="codex",
+        session_id="session",
+        trace_id="trace",
+        work_unit_id=unit,
+        specialist_slug=slug,
+        specialist_version=str(prepared["version"]),
+        specialist_prompt_hash=str(prepared["prompt_hash"]),
+    )
     with pytest.raises(ValueError, match="activation token expired"):
         _consume(store, prepared, slug, unit)
 

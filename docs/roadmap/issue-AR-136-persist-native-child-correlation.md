@@ -67,3 +67,13 @@ ADR-0094 defines receipt authority and fail-closed behavior.
   child-session join.
 - ZCode claims only planned PreTool/PostTool lineage until the host exposes a
   real child lifecycle identifier.
+
+## Implementation evidence
+
+Schema 37 persists bounded hashed native-child scopes with exact host, parent,
+child, expiry, and single-consumer controls. A failed prepared preflight is
+restored for retry, expired scopes can be reissued, ambiguity fails closed, and
+planned work cannot pass through on Store or correlation failure. Separate
+parent and child hook subprocess regressions prove one exact consumption,
+replay denial, forged-delivery rejection, and generic-unplanned pass-through.
+The integrated native-hook/ZCode slice passed 167 tests.

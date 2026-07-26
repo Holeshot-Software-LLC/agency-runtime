@@ -12,6 +12,7 @@ import logging
 import os
 import sys
 from collections.abc import Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any, BinaryIO, TextIO
 
@@ -30,6 +31,12 @@ from agency_runtime.core.delegation_status import (
 from agency_runtime.core.host_control import SUPPORTED_HOSTS
 from agency_runtime.core.native_child_prompt_delivery import (
     MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS,
+)
+from agency_runtime.core.observability import (
+    RuntimeBoundary,
+    correlate_current_observation,
+    current_observation_context,
+    mark_current_observation,
 )
 
 logger = logging.getLogger("agency_runtime.server.mcp")
@@ -61,6 +68,7 @@ _MAX_TASK_CHARS = 262_144
 _MAX_DRAFT_CHARS = 524_288
 _MAX_QUERY_CHARS = 16_384
 _MAX_SKILL_NAME_CHARS = 512
+_MAX_PARENT_SCOPE_TOKEN_CHARS = 256
 
 
 def _string(maximum: int, *, enum: Sequence[str] | None = None) -> dict[str, Any]:
@@ -95,8 +103,7 @@ MCP_TOOLS = [
             {
                 "session_id": _string(MAX_CORRELATION_ID_BYTES),
                 "trace_id": _string(MAX_CORRELATION_ID_BYTES),
-                "parent_session_id": _string(MAX_CORRELATION_ID_BYTES),
-                "parent_trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "parent_scope_token": _string(_MAX_PARENT_SCOPE_TOKEN_CHARS),
                 "host": _host_string(),
                 "user_message": _string(_MAX_TASK_CHARS),
             },
@@ -373,11 +380,15 @@ def _call_result(payload: dict[str, Any], *, is_error: bool = False) -> dict[str
         separators=(",", ":"),
         sort_keys=True,
     )
-    return {
+    result = {
         "content": [{"type": "text", "text": text}],
         "structuredContent": payload,
         "isError": is_error,
     }
+    request_id, _correlation_digest = current_observation_context()
+    if request_id:
+        result["_meta"] = {"agency/requestId": request_id}
+    return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -412,6 +423,45 @@ _INITIALIZED_REQUEST_HANDLERS = {
     "tools/list": "_dispatch_tools_list",
     "tools/call": "_dispatch_tools_call",
 }
+
+
+def _observation_operation(message: Any) -> str:
+    """Project caller-controlled JSON-RPC input onto one fixed operation."""
+
+    if not isinstance(message, dict):
+        return "invalid_request"
+    method = message.get("method")
+    if method == "initialize":
+        return "initialize"
+    if method == "notifications/initialized":
+        return "initialized"
+    if method == "ping":
+        return "ping"
+    if method == "tools/list":
+        return "tools.list"
+    if method != "tools/call":
+        return "unknown"
+    params = message.get("params")
+    name = params.get("name") if isinstance(params, dict) else None
+    return name if isinstance(name, str) and name in _TOOLS_BY_NAME else "tools.unknown"
+
+
+def _attach_tool_correlation(message: Any) -> None:
+    """Attach only a validated declared trace/session identity."""
+
+    if not isinstance(message, dict) or message.get("method") != "tools/call":
+        return
+    params = message.get("params")
+    arguments = params.get("arguments") if isinstance(params, dict) else None
+    if not isinstance(arguments, dict):
+        return
+    for field in ("trace_id", "session_id"):
+        value = arguments.get(field)
+        if not isinstance(value, str) or not value:
+            continue
+        with suppress(ValueError):
+            correlate_current_observation(value)
+        return
 
 
 class MCPServer:
@@ -538,8 +588,8 @@ class MCPServer:
                 store=runtime_store,
                 _master=master,
             )
-        except Exception:
-            logger.exception("MCP tool execution failed: %s", name)
+        except Exception as exc:
+            logger.error("MCP tool execution failed safely: %s (%s)", name, type(exc).__name__)
             payload = {"error": "Agency Runtime tool execution failed safely."}
         return _result(
             request.request_id,
@@ -547,6 +597,23 @@ class MCPServer:
         )
 
     def dispatch(self, message: Any) -> dict[str, Any] | None:
+        operation = _observation_operation(message)
+        with RuntimeBoundary(surface="mcp", operation=operation):
+            _attach_tool_correlation(message)
+            response = self._dispatch_observed(message)
+            if response is None:
+                mark_current_observation("ok", "notification_completed")
+            elif "error" in response:
+                mark_current_observation("denied", "jsonrpc_error")
+            else:
+                result = response.get("result")
+                if isinstance(result, dict) and result.get("isError") is True:
+                    mark_current_observation("error", "tool_error")
+                else:
+                    mark_current_observation("ok", "completed")
+            return response
+
+    def _dispatch_observed(self, message: Any) -> dict[str, Any] | None:
         request, error = _parse_request_envelope(message)
         if request is None:
             return error
@@ -638,14 +705,18 @@ def run_stdio(
             return 0
         raw_bytes = raw.encode("utf-8") if isinstance(raw, str) else raw
         if len(raw_bytes) > MAX_INPUT_BYTES:
-            _write_json(sink, _error(None, -32700, "Message exceeds server input limit"))
+            with RuntimeBoundary(surface="mcp", operation="decode"):
+                mark_current_observation("denied", "input_too_large")
+                _write_json(sink, _error(None, -32700, "Message exceeds server input limit"))
             return 1
         if not raw_bytes.strip():
             continue
         try:
             payload = safe_load_bounded_json(raw_bytes)
         except (BoundedJSONError, UnicodeDecodeError):
-            _write_json(sink, _error(None, -32700, "Parse error"))
+            with RuntimeBoundary(surface="mcp", operation="decode"):
+                mark_current_observation("denied", "parse_error")
+                _write_json(sink, _error(None, -32700, "Parse error"))
             continue
         response = server.dispatch_payload(payload)
         if response is not None:

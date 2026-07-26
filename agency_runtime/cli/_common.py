@@ -208,7 +208,7 @@ def enforce_local_only_config(data: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(adapters, dict):
         adapters = {}
         data["adapters"] = adapters
-    for name in ("litellm", "hermes", "openclaw", "codex", "claude"):
+    for name in ("litellm", "hermes", "openclaw", "codex", "claude", "zcode"):
         entry = adapters.get(name)
         if not isinstance(entry, dict):
             entry = {}

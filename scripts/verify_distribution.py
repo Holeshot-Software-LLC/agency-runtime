@@ -167,7 +167,7 @@ WHEEL_METADATA_FILES = {
     "licenses/LICENSE",
     "top_level.txt",
 }
-EXPECTED_CONSOLE_SCRIPTS = {"agency": "agency_runtime.cli.main:main"}
+EXPECTED_CONSOLE_SCRIPTS = {"agency": "agency_runtime.cli.entrypoint:main"}
 VERSION_PATTERN = re.compile(
     r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
     r"(?:(?:a|b|rc)(?:0|[1-9]\d*))?"

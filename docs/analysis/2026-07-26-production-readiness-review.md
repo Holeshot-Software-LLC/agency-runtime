@@ -129,18 +129,37 @@ dashboard interaction tests, and full Ruff/format/diff checks. AR-128 remains
 open because SEC-H5 was reproduced after its initial slice. Fresh installation,
 installed dogfood, the full release gate, and every later wave remain required.
 
+The second local remediation package now implements atomic finalization,
+schema-37 durable native-child scope, exact ZCode source integration, complete
+paginated dashboard contracts, coherent last-good UI refresh, safe request
+correlation across dashboard/HTTP/MCP/hooks/Store, truthful hiring outcomes,
+revision-aware retrieval, a lightweight CLI entrypoint, restored compatibility
+wrappers, and a fail-closed CLI operator-presence gate. Independent split
+verification passed 110 authority tests, 167 native-hook/ZCode tests, 147
+transaction/observability/protocol tests with 8 skips, 134 dashboard server
+tests with 3 skips, 82 browser interaction tests, and 101 distribution/release
+tests. One attempted combined arm timed out at five minutes and is not counted;
+its exact components passed when isolated.
+
+The production verdict remains negative for one decisive reason: there is no
+production OS-backed, non-exporting operator-presence verifier. Dashboard and
+model-facing surfaces are read-only, while real persistent CLI mutations now
+fail closed. Fresh reinstall from this source, installed host canaries, and
+normal-profile Codex trust therefore cannot be completed autonomously without
+weakening the security decision. AR-143 remains open.
+
 ## Optimization review
 
 ### Measured performance
 
 | Path | Evidence | Interpretation |
 |---|---|---|
-| Cached routing microbenchmark | p95 samples `2.193-3.579 ms` against a `2.0 ms` ceiling; 5/5 failed | Real narrow-gate regression; correctness and uncached <20 ms still passed |
+| Cached routing microbenchmark | Initial p95 samples `2.193-3.579 ms` failed; after remediation five unchanged median p95 controls were `1.531-1.795 ms`, and the 19-test routing-eval suite passed | The fixed local 2.0 ms gate is restored without a threshold change; supported-runner evidence remains outstanding |
 | Full local route | about 653 ms cold, 87-121 ms warm; internal route 53-57 ms | Warm end-to-end work remains materially larger than the microbenchmark |
-| Semantic retrieval, 263 agents | about 121-134 ms cold, 3.7-4.7 ms warm | Current bundled scale is usable but cold initialization is visible |
-| Semantic retrieval, 10,000 agents | about 6-7.4 s cold, 199-414 ms warm, about 208 MiB peak | Current algorithm does not scale to large catalogs |
-| CLI startup | about 840 ms | Heavy import/startup path is visible for hook-oriented commands |
-| Finalize batch | up to 256 independent connections/transactions | Latency and partial-write risk share one root cause |
+| Semantic retrieval, 263 agents | Initial 121-134 ms cold / 3.7-4.7 ms warm; current fixed control 316.006 ms cold / 2.031 ms warm p95 / 6.922 MiB | Revision-aware indexes pass the declared local tier budget |
+| Semantic retrieval, 10,000 agents | Initial 6-7.4 s cold / 199-414 ms warm / about 208 MiB; current 8,817.588 ms / 84.193 ms / 189.589 MiB | Warm scale and bounded memory improved; the fixed local tier gate passes |
+| CLI startup | Initial about 840 ms; current seven-process control 116.244 ms p50 / 129.574 ms p95 | Lightweight version entrypoint passes the 250 ms local p50 gate |
+| Finalize batch | Initially up to 256 independent transactions; now one prevalidated `BEGIN IMMEDIATE` transaction | Partial-write exposure is removed in focused transaction tests |
 
 Safe improvements are coherent request reuse, one query vector, immutable
 feature indexes keyed by exact roster revision, batched Store operations, and
@@ -148,11 +167,11 @@ deferred CLI imports. Positive authorization caching is explicitly excluded.
 
 ### Maintainability and compatibility
 
-- `route_and_build_context` and `header.finalize` were removed as unused inside
-  this repository without a deprecation window or declared breaking release.
-- POSIX trust checks, path/JSON helpers, bounded-string helpers, and agent
-  identity extraction are duplicated; `slug` versus `agent_slug` precedence is
-  not consistent.
+- `route_and_build_context` and `header.finalize` now have explicit deprecated
+  compatibility wrappers with a declared no-removal-before-0.3.0 contract.
+- Canonical identity, bounded-value, filesystem-trust, and executable helpers
+  replace the reviewed duplicate implementations, with compatibility tests for
+  `slug` versus `agent_slug` precedence.
 - Several private wrappers are test-only/dead, while route, preflight, hook,
   and schema functions are large enough to conceal authority and transaction
   boundaries.
@@ -195,13 +214,15 @@ private paths must never be logged. AR-142 owns this work.
 
 ## UI verdict
 
-The UI looks good enough for a demo visually: consistent dark design, working
-navigation, readable cards, responsive 375 px layout, and clean browser console.
-It is **not yet production-truthful** because complete-workforce views hide at
-least 63 bundled records, failures can leave stale panels without a marker,
-polling disrupts keyboard state, and ZCode is missing from one hard-coded host
-surface. Preserve the design; repair completeness, coherence, accessibility,
-and support diagnostics through AR-137 and AR-138.
+The visual design remains demo-quality: consistent dark design, working
+navigation, readable cards, responsive narrow layout, and a clean browser
+console in the pre-remediation installed smoke. Current source now declares
+collection truncation and exact totals, drains complete control collections,
+uses one coherent control revision, retains last-good state with an explicit
+stale marker and request ID, preserves keyboard interaction state, and includes
+ZCode in runtime host presentation. All 82 current browser interaction tests
+pass. This is source-level evidence, not a fresh installed-browser claim;
+post-install desktop/mobile and accessibility QA remains an AR-138 exit gate.
 
 ## Requested deeper-review areas
 

@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.roster.ingress import (
     _LIST_FIELDS,
     _METADATA_FIELDS,
@@ -3814,7 +3815,7 @@ def _active_fingerprint(active: Mapping[str, Mapping[str, Any]]) -> str:
 def _active_agent_fingerprint(agent: Mapping[str, Any] | None) -> str | None:
     if agent is None:
         return None
-    slug = str(agent.get("agent_slug") or agent.get("slug") or "")
+    slug = agent_identity(agent)
     if not slug:
         raise RosterSyncError("active agent fingerprint requires a slug")
     return _active_fingerprint({slug: agent})

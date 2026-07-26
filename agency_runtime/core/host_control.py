@@ -154,38 +154,45 @@ def handle_host_control_command(
     store: Store | None = None,
     source: str = "host-command",
 ) -> dict[str, Any]:
-    """Handle a host-native agency status/on/off command."""
+    """Handle a read-only model-facing host-native control command.
+
+    ``source`` remains accepted for wire compatibility with installed native
+    adapters. It is deliberately never used to authorize a mutation: a model
+    can invoke both the Hermes and OpenClaw command surfaces, and process
+    context is not operator presence.
+    """
     normalized = normalize_host(host)
     action = parse_host_control_arguments(raw_args).action
     runtime_store = store or Store()
-    if action in {"on", "off"}:
-        current = get_runtime_control(runtime_store, normalized)
-        control = set_runtime_control(
-            runtime_store,
-            normalized,
-            enabled=action == "on",
-            source=source,
-            expected_generation=int(current["generation"]),
-        )
-    else:
-        control = get_runtime_control(runtime_store, normalized)
+    control = get_runtime_control(runtime_store, normalized)
     from agency_runtime.core.runtime_control import master_enabled
 
     global_enabled = master_enabled()
     state = "enabled" if control["enabled"] else "disabled"
     effective = bool(global_enabled and control["enabled"])
     global_note = "" if global_enabled else " Agency is globally paused."
+    mutation_denied = action in {"on", "off"}
+    if mutation_denied:
+        message = (
+            f"Agency Runtime remains {state} for {normalized}; {action} was denied because "
+            "model-facing native controls are read-only and no operator-presence "
+            f"capability is available.{global_note}"
+        )
+    else:
+        message = f"Agency Runtime is {state} for {normalized}.{global_note}"
     return {
-        "ok": True,
+        "ok": not mutation_denied,
         "host": normalized,
         "action": action,
+        "mutation_denied": mutation_denied,
+        "error": "operator_presence_required" if mutation_denied else None,
         "runtime_enabled": bool(control["enabled"]),
         "master_enabled": global_enabled,
         "effective_enabled": effective,
         "updated_at": control.get("updated_at"),
         "source": control.get("source"),
         "generation": int(control.get("generation", 0)),
-        "message": f"Agency Runtime is {state} for {normalized}.{global_note}",
+        "message": message,
     }
 
 

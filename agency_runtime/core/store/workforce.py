@@ -36,6 +36,19 @@ _ACTIVATION_BOUND_OUTCOMES = frozenset(
 )
 
 
+def _collection_revision(label: str, rows: list[dict[str, Any]]) -> str:
+    """Hash the observable identity of one collection snapshot."""
+
+    document = json.dumps(
+        rows,
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    return hashlib.sha256(f"{label}\\0{document}".encode()).hexdigest()
+
+
 @dataclass(frozen=True, slots=True)
 class WorkforceContractReconciliation:
     """Result of re-projecting exact package-owned active revisions."""
@@ -1294,6 +1307,120 @@ class WorkforceStoreMixin:
             result.append(item)
         return result
 
+    def get_hiring_cases_page_snapshot(
+        self,
+        *,
+        status: str = "",
+        case_type: str = "",
+        limit: int = 100,
+        after_created_at: str = "",
+        after_id: str = "",
+    ) -> dict[str, Any]:
+        """Return one newest-first hiring page with snapshot-derived totals."""
+
+        if isinstance(limit, bool) or not isinstance(limit, int):
+            raise TypeError("hiring case limit must be an integer")
+        if not 1 <= limit <= MAX_WORKFORCE_PAGE:
+            raise ValueError("hiring case limit is invalid")
+        normalized_status = str(status or "").strip().casefold()
+        normalized_type = str(case_type or "").strip().casefold()
+        if normalized_status and normalized_status not in _CASE_STATUSES:
+            raise ValueError("hiring case status is invalid")
+        if normalized_type and normalized_type not in _CASE_TYPES:
+            raise ValueError("hiring case type is invalid")
+        cursor_time = str(after_created_at or "").strip()
+        cursor_id = str(after_id or "").strip()
+        if bool(cursor_time) != bool(cursor_id):
+            raise ValueError("hiring cursor is incomplete")
+
+        clauses: list[str] = []
+        values: list[Any] = []
+        if normalized_status:
+            clauses.append("status = ?")
+            values.append(normalized_status)
+        if normalized_type:
+            clauses.append("case_type = ?")
+            values.append(normalized_type)
+        filter_where = " WHERE " + " AND ".join(clauses) if clauses else ""
+        page_clauses = list(clauses)
+        page_values = list(values)
+        if cursor_time:
+            page_clauses.append("(created_at < ? OR (created_at = ? AND id < ?))")
+            page_values.extend((cursor_time, cursor_time, cursor_id))
+        page_where = " WHERE " + " AND ".join(page_clauses) if page_clauses else ""
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            total_count = int(
+                conn.execute("SELECT COUNT(*) AS count FROM agent_hiring_cases").fetchone()["count"]
+            )
+            filtered_count = int(
+                conn.execute(
+                    "SELECT COUNT(*) AS count FROM agent_hiring_cases" + filter_where,
+                    values,
+                ).fetchone()["count"]
+            )
+            status_counts = {
+                str(row["status"]): int(row["count"])
+                for row in conn.execute(
+                    "SELECT status, COUNT(*) AS count FROM agent_hiring_cases GROUP BY status"
+                ).fetchall()
+            }
+            type_counts = {
+                str(row["case_type"]): int(row["count"])
+                for row in conn.execute(
+                    "SELECT case_type, COUNT(*) AS count FROM agent_hiring_cases GROUP BY case_type"
+                ).fetchall()
+            }
+            revision_rows = [
+                dict(row)
+                for row in conn.execute(
+                    "SELECT id, status, case_type, proposed_slug, target_worker_id, "
+                    "created_at, decided_at, applied_at, human_approved_at "
+                    "FROM agent_hiring_cases ORDER BY created_at DESC, id DESC"
+                ).fetchall()
+            ]
+            stored_rows = conn.execute(
+                "SELECT * FROM agent_hiring_cases"
+                + page_where
+                + " ORDER BY created_at DESC, id DESC LIMIT ?",
+                (*page_values, limit + 1),
+            ).fetchall()
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+        cases: list[dict[str, Any]] = []
+        for stored in stored_rows[:limit]:
+            item = dict(stored)
+            for field in (
+                "gap_evidence",
+                "duplicate_evidence",
+                "contract_evidence",
+                "critic_evidence",
+                "model_evidence",
+            ):
+                item[field] = _decoded(item[field])
+            item["human_approval_required"] = bool(item["human_approval_required"])
+            cases.append(item)
+        return {
+            "rows": cases,
+            "total_count": total_count,
+            "filtered_count": filtered_count,
+            "status_counts": status_counts,
+            "type_counts": type_counts,
+            "truncated": len(stored_rows) > limit,
+            "next_created_at": str(cases[-1]["created_at"])
+            if len(stored_rows) > limit and cases
+            else "",
+            "next_id": str(cases[-1]["id"]) if len(stored_rows) > limit and cases else "",
+            "collection_revision": _collection_revision("hiring.v1", revision_rows),
+        }
+
     def register_workforce_worker(
         self,
         *,
@@ -1657,6 +1784,77 @@ class WorkforceStoreMixin:
                         if len(result) == limit:
                             break
         return result
+
+    def get_workforce_page_snapshot(
+        self,
+        *,
+        state: str = "",
+        limit: int = 100,
+        after_slug: str = "",
+        disabled_agents: Container[str] | None = None,
+    ) -> dict[str, Any]:
+        """Return one stable slug-keyset workforce page and complete facets."""
+
+        if isinstance(limit, bool) or not isinstance(limit, int):
+            raise TypeError("workforce limit must be an integer")
+        if not 1 <= limit <= MAX_WORKFORCE_PAGE:
+            raise ValueError("workforce limit is invalid")
+        normalized_state = str(state or "").strip().casefold()
+        allowed_states = _STANDINGS | _EMPLOYMENT_CLASSES | {"disabled"}
+        if normalized_state and normalized_state not in allowed_states:
+            raise ValueError("workforce state is invalid")
+        after = normalize_agent_slug(after_slug) if after_slug else ""
+        disabled = (
+            self.get_disabled_agent_slugs()
+            if disabled_agents is None
+            else frozenset(disabled_agents)
+        )
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            projected = [
+                _worker_projection(row, disabled)
+                for row in conn.execute(
+                    "SELECT * FROM agent_workers ORDER BY agent_slug"
+                ).fetchall()
+            ]
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+        counts: dict[str, int] = {}
+        for item in projected:
+            key = str(item["state"])
+            counts[key] = counts.get(key, 0) + 1
+        filtered = [
+            item for item in projected if not normalized_state or item["state"] == normalized_state
+        ]
+        remaining = [item for item in filtered if str(item["agent_slug"]) > after]
+        page = remaining[: limit + 1]
+        rows = page[:limit]
+        revision_rows = [
+            {
+                "agent_slug": str(item["agent_slug"]),
+                "current_version": str(item["current_version"]),
+                "revision": int(item["revision"]),
+                "state": str(item["state"]),
+                "worker_id": str(item["worker_id"]),
+            }
+            for item in projected
+        ]
+        return {
+            "rows": rows,
+            "total_count": len(projected),
+            "filtered_count": len(filtered),
+            "counts": counts,
+            "truncated": len(page) > limit,
+            "next_slug": str(rows[-1]["agent_slug"]) if len(page) > limit and rows else "",
+            "collection_revision": _collection_revision("workforce.v1", revision_rows),
+        }
 
     def transition_workforce_worker(
         self,

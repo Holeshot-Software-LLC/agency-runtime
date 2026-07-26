@@ -97,6 +97,7 @@ def test_eligibility_cache_reuses_equivalent_projection_and_invalidates() -> Non
     first = compatibility.filter_eligible_catalog(first_projection, **kwargs)
     second = compatibility.filter_eligible_catalog(second_projection, **kwargs)
     assert second == first
+    assert second.eligible_ids == frozenset({"performance-benchmarker"})
     assert second.eligible[0] is second_projection[0]
     equivalent = deepcopy(source)
     rebound = compatibility.filter_eligible_catalog(equivalent, **kwargs)
@@ -107,6 +108,7 @@ def test_eligibility_cache_reuses_equivalent_projection_and_invalidates() -> Non
     source[0]["required_tools"] = ["missing"]
     rejected = compatibility.filter_eligible_catalog(list(source), **kwargs)
     assert rejected.eligible == ()
+    assert rejected.eligible_ids == frozenset()
     assert rejected.rejected == (
         {
             "slug": "performance-benchmarker",
@@ -127,6 +129,7 @@ def test_equivalent_rebinding_preserves_row_eligibility_with_duplicate_slugs() -
 
     assert first.eligible == (source[0],)
     assert rebound.eligible == (equivalent[0],)
+    assert rebound.eligible_ids == frozenset({"duplicate"})
     assert rebound.eligible[0] is equivalent[0]
     assert rebound.rejected == ({"slug": "duplicate", "reason": "audit_status:quarantined"},)
 
@@ -248,3 +251,25 @@ def test_cache_lru_races_return_validated_results(
             "reason": "tool_capabilities_unproven:unknown",
         },
     )
+
+
+def test_routing_cache_fast_clone_remains_recursively_detached() -> None:
+    value = {
+        "selected_ids": ["performance-benchmarker"],
+        "compatibility": {"selected_ids": ["performance-benchmarker"]},
+        "proof": ("bounded", {"signals": ["one"]}),
+    }
+    cache.cache_put("detached", value)
+    value["selected_ids"].append("caller-mutation")
+
+    first = cache.cache_get("detached")
+    assert first is not None
+    first["compatibility"]["selected_ids"].append("read-mutation")
+    first["proof"][1]["signals"].append("nested-read-mutation")
+
+    assert cache.cache_get("detached") == {
+        "selected_ids": ["performance-benchmarker"],
+        "compatibility": {"selected_ids": ["performance-benchmarker"]},
+        "proof": ("bounded", {"signals": ["one"]}),
+        "cache_hit": True,
+    }

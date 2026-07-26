@@ -55,3 +55,15 @@ AR-142 defines server-side request instrumentation. AR-137 owns pagination.
 - Polling preserves keyboard focus, open details, and selection.
 - Automated accessibility, desktop, and 375 px mobile tests pass.
 - Browser console and network failures surface a safe request ID.
+
+## Implementation evidence
+
+One /api/control response now binds configuration, hosts, roster, governance,
+Store identity, and a control revision. The client validates the complete
+snapshot before mutating state, rejects stale generations, aborts obsolete
+requests, retains last-good state with an explicit stale marker and safe request
+ID, preserves focus/selection/disclosure state, and commits workforce plus
+control state before one render. Browser IDs are canonical UUIDv4 values and
+the server echoes the shared Agency request ID. The current interaction suite
+passes all 82 tests and the server suite passes 134 with 3 skips. Fresh
+post-install desktop/mobile browser QA remains required.

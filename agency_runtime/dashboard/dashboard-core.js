@@ -2,11 +2,12 @@ export const LIVE_INTERVAL_MS = 2500;
 export const CONTROL_INTERVAL_MS = 15000;
 
 export class APIError extends Error {
-  constructor(message, status, retryAfter = null) {
+  constructor(message, status, retryAfter = null, requestId = "") {
     super(message);
     this.name = "APIError";
     this.status = status;
     this.retryAfter = retryAfter;
+    this.requestId = requestId;
   }
 }
 
@@ -16,6 +17,7 @@ export function createState() {
     master: null,
     overview: null,
     activity: {},
+    activityCollections: {},
     hosts: [],
     roster: [],
     rosterPage: null,
@@ -25,7 +27,9 @@ export function createState() {
     rosterReview: null,
     workforce: [],
     workforceCounts: {},
+    workforcePage: null,
     hiring: [],
+    hiringPage: null,
     selectedWorkerDetail: null,
     snapshots: [],
     config: null,
@@ -55,6 +59,11 @@ export function createState() {
       timer: null,
       controller: null,
       inFlight: false,
+      generation: 0,
+      revision: "",
+      sampledAt: null,
+      stale: false,
+      errorRequestId: "",
     },
     full: {
       controller: null,
@@ -67,6 +76,12 @@ export function createState() {
     },
     connection: {
       generation: 0,
+    },
+    requests: {
+      operationalRoster: { controller: null, generation: 0 },
+      remediation: { controller: null, generation: 0 },
+      workforce: { controller: null, generation: 0 },
+      workerDetail: { controller: null, generation: 0 },
     },
     lifecycle: {
       bound: false,
@@ -101,6 +116,7 @@ export function createCore(runtime = globalThis) {
     fetch,
     history,
     sessionStorage,
+    crypto,
     HTMLElement,
     HTMLInputElement,
     AbortController,
@@ -238,21 +254,54 @@ export function createCore(runtime = globalThis) {
   }
 
   async function api(path, options = {}) {
-    const headers = { Authorization: `Bearer ${state.token}`, ...(options.headers || {}) };
+    const requestId = crypto?.randomUUID?.();
+    if (
+      typeof requestId !== "string"
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)
+    ) {
+      throw new Error("Secure browser request IDs are unavailable.");
+    }
+    const headers = {
+      Authorization: `Bearer ${state.token}`,
+      "X-Agency-Request-ID": requestId,
+      ...(options.headers || {}),
+    };
     if (options.body !== undefined) headers["Content-Type"] = "application/json";
-    const response = await fetch(path, {
-      ...options,
-      headers,
-      cache: "no-store",
-      credentials: "omit",
-    });
+    let response;
+    try {
+      response = await fetch(path, {
+        ...options,
+        headers,
+        cache: "no-store",
+        credentials: "omit",
+      });
+    } catch (error) {
+      if (error?.name === "AbortError") throw error;
+      runtime.console?.error?.(`Agency dashboard request ${requestId} failed before response.`);
+      throw new APIError(
+        String(error?.message || "Network request failed."),
+        0,
+        null,
+        requestId,
+      );
+    }
     let payload;
     try { payload = await response.json(); } catch { payload = { error: `HTTP ${response.status}` }; }
+    const responseId = String(
+      payload?.request_id
+        || response.headers.get("X-Agency-Request-ID")
+        || response.headers.get("X-Request-ID")
+        || requestId,
+    );
     if (!response.ok) {
+      runtime.console?.error?.(
+        `Agency dashboard request ${responseId} failed with HTTP ${response.status}.`,
+      );
       throw new APIError(
         payload.error || `HTTP ${response.status}`,
         response.status,
         response.headers.get("Retry-After"),
+        responseId,
       );
     }
     return payload;
@@ -284,6 +333,56 @@ export function createCore(runtime = globalThis) {
     if (state.confirmation) finishConfirmation(false);
   }
 
+  function interactionDescriptor(node) {
+    if (!node) return null;
+    if (node.id) return { kind: "id", value: node.id };
+    for (const field of ["preserveKey", "worker"]) {
+      const value = String(node.dataset?.[field] || "");
+      if (value) return { kind: field, value };
+    }
+    return null;
+  }
+
+  function findInteractionNode(descriptor) {
+    if (!descriptor) return null;
+    if (descriptor.kind === "id") return byId(descriptor.value);
+    return [...document.querySelectorAll("[data-preserve-key], [data-worker]")]
+      .find((node) => String(node.dataset?.[descriptor.kind] || "") === descriptor.value)
+      || null;
+  }
+
+  function captureInteractionState() {
+    const active = document.activeElement;
+    const focus = interactionDescriptor(active);
+    const selection = active && Number.isInteger(active.selectionStart)
+      ? [active.selectionStart, active.selectionEnd]
+      : null;
+    const open = [...document.querySelectorAll("details[open]")]
+      .map(interactionDescriptor)
+      .filter(Boolean);
+    return { focus, open, selection };
+  }
+
+  function restoreInteractionState(snapshot) {
+    if (!snapshot) return;
+    snapshot.open.forEach((descriptor) => {
+      const node = findInteractionNode(descriptor);
+      if (node) node.open = true;
+    });
+    const active = findInteractionNode(snapshot.focus);
+    if (!active) return;
+    active.focus?.({ preventScroll: true });
+    if (snapshot.selection && typeof active.setSelectionRange === "function") {
+      active.setSelectionRange(...snapshot.selection);
+    }
+  }
+
+  function renderPreservingInteraction(render) {
+    const snapshot = captureInteractionState();
+    render();
+    restoreInteractionState(snapshot);
+  }
+
   return {
     runtime,
     document,
@@ -310,6 +409,9 @@ export function createCore(runtime = globalThis) {
     listen,
     disposeListeners,
     disposeCore,
+    captureInteractionState,
+    restoreInteractionState,
+    renderPreservingInteraction,
     nestedValue,
     stableValue,
     comparable,

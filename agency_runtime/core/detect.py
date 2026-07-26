@@ -69,6 +69,7 @@ class AdapterDetection:
     openclaw: bool = False
     codex: bool = False
     claude: bool = False
+    zcode: bool = False
 
 
 @dataclass
@@ -95,6 +96,7 @@ class DetectionResult:
                 self.adapters.openclaw,
                 self.adapters.codex,
                 self.adapters.claude,
+                self.adapters.zcode,
             ]
         )
 
@@ -265,6 +267,7 @@ def detect_adapters() -> AdapterDetection:
         openclaw="openclaw" in installed,
         codex="codex" in installed,
         claude="claude" in installed,
+        zcode="zcode" in installed,
     )
 
 
@@ -537,6 +540,7 @@ def _generated_adapters_config(
         "openclaw": {"enabled": _adapter_enabled(profile, adapters.openclaw)},
         "codex": {"enabled": _adapter_enabled(profile, adapters.codex)},
         "claude": {"enabled": _adapter_enabled(profile, adapters.claude)},
+        "zcode": {"enabled": _adapter_enabled(profile, adapters.zcode)},
     }
 
 

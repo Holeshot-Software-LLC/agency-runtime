@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig, DelegationConfig, OllamaConfig
 from agency_runtime.core.host_capabilities import (
     HostCapabilityReceipt,
@@ -229,10 +230,7 @@ def _project_assignment_agent(
         if strict:
             raise ValueError("assignment candidate is not a mapping")
         return None
-    slug = _clean(
-        raw.get("slug") or raw.get("agent_slug"),
-        MAX_AGENT_SLUG_CHARS,
-    ).casefold()
+    slug = _clean(agent_identity(raw), MAX_AGENT_SLUG_CHARS).casefold()
     if is_resident_manager_slug(slug) or not slug or slug in seen:
         if strict:
             raise ValueError("assignment candidate identity is invalid")
@@ -361,10 +359,7 @@ def _selected_assignment_agents_from_catalog(
     selected_set = frozenset(selected)
     by_slug: dict[str, Mapping[str, Any]] = {}
     for raw in catalog:
-        slug = _clean(
-            raw.get("slug") or raw.get("agent_slug"),
-            MAX_AGENT_SLUG_CHARS,
-        ).casefold()
+        slug = _clean(agent_identity(raw), MAX_AGENT_SLUG_CHARS).casefold()
         if slug in selected_set and slug not in by_slug:
             by_slug[slug] = raw
             if len(by_slug) == len(selected_set):
@@ -395,16 +390,11 @@ def _assignment_catalog(
     catalog: Sequence[Mapping[str, Any]],
 ) -> tuple[list[dict[str, Any]], dict[str, Mapping[str, Any]]]:
     catalog_list = [
-        dict(agent)
-        for agent in catalog
-        if not is_resident_manager_slug(agent.get("slug") or agent.get("agent_slug"))
+        dict(agent) for agent in catalog if not is_resident_manager_slug(agent_identity(agent))
     ]
     catalog_by_slug: dict[str, Mapping[str, Any]] = {}
     for raw in catalog_list:
-        slug = _clean(
-            raw.get("slug") or raw.get("agent_slug"),
-            MAX_AGENT_SLUG_CHARS,
-        ).casefold()
+        slug = _clean(agent_identity(raw), MAX_AGENT_SLUG_CHARS).casefold()
         if slug and slug not in catalog_by_slug:
             catalog_by_slug[slug] = raw
     return catalog_list, catalog_by_slug
@@ -480,12 +470,7 @@ def _deterministic_unit_selection(
     scored = [
         (_agent_score(unit, slug, agent), index, slug)
         for index, agent in enumerate(catalog_list)
-        if (
-            slug := _clean(
-                agent.get("slug") or agent.get("agent_slug"),
-                MAX_AGENT_SLUG_CHARS,
-            ).casefold()
-        )
+        if (slug := _clean(agent_identity(agent), MAX_AGENT_SLUG_CHARS).casefold())
         and not is_resident_manager_slug(slug)
         and _supports_unit_deliverable(unit, agent)
     ]
@@ -516,11 +501,7 @@ def _eligible_unit_catalog(
     eligible = [
         agent
         for agent in catalog_list
-        if _clean(
-            agent.get("slug") or agent.get("agent_slug"),
-            MAX_AGENT_SLUG_CHARS,
-        ).casefold()
-        not in rejected
+        if _clean(agent_identity(agent), MAX_AGENT_SLUG_CHARS).casefold() not in rejected
     ]
     eligible_list, eligible_by_slug = _assignment_catalog(eligible)
     return eligible_list, eligible_by_slug
@@ -620,12 +601,7 @@ def _route_exact_unit(
         slug
         for agent in catalog_list
         if _supports_unit_deliverable(unit, agent)
-        and (
-            slug := _clean(
-                agent.get("slug") or agent.get("agent_slug"),
-                MAX_AGENT_SLUG_CHARS,
-            ).casefold()
-        )
+        and (slug := _clean(agent_identity(agent), MAX_AGENT_SLUG_CHARS).casefold())
     )
     if not semantic_root_ids:
         return work_unit_id, []

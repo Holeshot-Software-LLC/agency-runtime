@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import errno
 import os
 import stat
 from collections.abc import Callable
 from dataclasses import dataclass
-from itertools import pairwise
 from pathlib import Path
 
 from agency_runtime.core.bounded_io import (
@@ -15,6 +13,17 @@ from agency_runtime.core.bounded_io import (
     restrict_posix_path_permissions,
 )
 from agency_runtime.core.exception_notes import add_exception_note
+from agency_runtime.core.filesystem_trust import (
+    absolute_path as _absolute_path,
+)
+from agency_runtime.core.filesystem_trust import (
+    directory_chain as _directory_chain,
+)
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point,
+    posix_directory_chain_is_trusted,
+    posix_directory_has_default_acl,
+)
 from agency_runtime.core.path_authority import private_path_authority_covers
 from agency_runtime.core.windows_acl import (
     restrict_windows_acl as _restrict_windows_acl,
@@ -93,37 +102,6 @@ def cleanup_created_storage_paths(
             os.rmdir(identity.path)
         else:
             os.unlink(identity.path)
-
-
-def _absolute_path(path: Path) -> Path:
-    return Path(os.path.abspath(path.expanduser()))
-
-
-def posix_directory_has_default_acl(path: Path) -> bool:
-    """Fail closed on a Linux default ACL that could expose new sidecars."""
-
-    getxattr = getattr(os, "getxattr", None)
-    if not callable(getxattr):
-        return False
-    try:
-        return bool(getxattr(path, "system.posix_acl_default", follow_symlinks=False))
-    except OSError as exc:
-        return exc.errno not in {
-            errno.ENODATA,
-            getattr(errno, "ENOATTR", errno.ENODATA),
-            errno.ENOTSUP,
-            getattr(errno, "EOPNOTSUPP", errno.ENOTSUP),
-        }
-
-
-def _directory_chain(path: Path) -> tuple[Path, ...]:
-    normalized = _absolute_path(path)
-    anchor = Path(normalized.anchor)
-    parts = normalized.parts[1:]
-    return (
-        anchor,
-        *(anchor.joinpath(*parts[:index]) for index in range(1, len(parts) + 1)),
-    )
 
 
 def assert_storage_parent_chain(path: Path, *, allow_missing: bool) -> None:
@@ -217,28 +195,14 @@ def storage_parent_is_trusted(
     uid = int(uid_getter()) if effective_uid is None and callable(uid_getter) else effective_uid
     if uid is None:
         return False
-    trusted_owners = {0, int(uid)}
-    final = chain[-1][1]
-    if any(int(metadata.st_uid) not in trusted_owners for _path, metadata in chain):
-        return False
-    if final_parent and int(final.st_uid) != int(uid):
-        return False
-    if final_parent and stat.S_IMODE(final.st_mode) & (stat.S_IRWXG | stat.S_IRWXO):
-        return False
-    if final_parent and posix_directory_has_default_acl(normalized):
-        return False
-
-    # A sticky shared ancestor such as /tmp protects a child owned by this
-    # account (or root); a writable non-sticky ancestor permits namespace
-    # replacement even when the final directory itself is private.
-    for (_parent_path, parent), (_child_path, child) in pairwise(chain):
-        writable_by_others = stat.S_IMODE(parent.st_mode) & (stat.S_IWGRP | stat.S_IWOTH)
-        if not writable_by_others:
-            continue
-        if parent.st_mode & stat.S_ISVTX and int(child.st_uid) in trusted_owners:
-            continue
-        return False
-    return True
+    return posix_directory_chain_is_trusted(
+        chain,
+        effective_uid=uid,
+        final_path=normalized,
+        final_owner_must_match=final_parent,
+        forbidden_final_mode=(stat.S_IRWXG | stat.S_IRWXO) if final_parent else 0,
+        default_acl_probe=posix_directory_has_default_acl if final_parent else None,
+    )
 
 
 def storage_creation_boundary_is_trusted(
@@ -482,16 +446,6 @@ def is_link_or_reparse_point(path: Path) -> bool:
     except FileNotFoundError:
         return False
     return metadata_is_link_or_reparse_point(metadata)
-
-
-def metadata_is_link_or_reparse_point(metadata: os.stat_result) -> bool:
-    """Classify one lstat result without repeating a filesystem lookup."""
-
-    if stat.S_ISLNK(metadata.st_mode):
-        return True
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return bool(attributes & reparse_flag)
 
 
 def sqlite_storage_paths(db_path: Path) -> tuple[Path, ...]:

@@ -288,7 +288,7 @@ def test_routing_eval_meets_published_thresholds() -> None:
     report = run_routing_eval()
 
     assert report["schema"] == "agency-runtime.routing-eval"
-    assert report["version"] == "1.2.0"
+    assert report["version"] == "1.3.0"
     assert report["corpus"]["version"] == "1.3.0"
     assert report["passed"] is True
     assert all(gate["passed"] for gate in report["gates"])
@@ -308,6 +308,12 @@ def test_routing_eval_meets_published_thresholds() -> None:
     assert report["metrics"]["performance"]["concurrent_calls"] >= 32
     assert report["metrics"]["performance"]["concurrent_overlap"] >= 2
     assert report["metrics"]["performance"]["concurrent_probe_synchronized"] is True
+    assert report["metrics"]["retrieval_scale"]["agents_10000_correct"] is True
+    assert report["metrics"]["retrieval_scale"]["agents_10000_cold_ms"] <= 20_000.0
+    assert report["metrics"]["retrieval_scale"]["agents_10000_warm_p95_ms"] <= 150.0
+    assert report["metrics"]["retrieval_scale"]["agents_10000_peak_mib"] <= 256.0
+    assert report["metrics"]["cli_startup"]["output_valid"] is True
+    assert report["metrics"]["cli_startup"]["version_p50_ms"] <= 250.0
 
 
 @pytest.mark.performance

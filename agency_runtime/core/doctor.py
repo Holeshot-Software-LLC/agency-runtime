@@ -592,6 +592,7 @@ def _adapter_checks(cfg: AgencyConfig) -> list[CheckResult]:
         ("openclaw", cfg.adapters.openclaw.enabled),
         ("codex", cfg.adapters.codex.enabled),
         ("claude", cfg.adapters.claude.enabled),
+        ("zcode", cfg.adapters.zcode.enabled),
     )
     try:
         host_installations = {

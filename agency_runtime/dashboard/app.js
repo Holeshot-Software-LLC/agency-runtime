@@ -10,11 +10,7 @@ export function createDashboard(runtime = globalThis) {
   const config = createConfigController(core);
   let actions;
   const renderer = createRenderer(core, config, {
-    rosterAction: (...args) => actions.rosterAction(...args),
-    toggleAgent: (...args) => actions.toggleAgent(...args),
-    toggleHost: (...args) => actions.toggleHost(...args),
     selectWorker: (...args) => actions.selectWorker(...args),
-    hiringApprove: (...args) => actions.hiringApprove(...args),
   });
   const live = createLiveController(core, config, renderer);
   actions = createActionController(core, config, renderer, live);
@@ -64,6 +60,7 @@ export function createDashboard(runtime = globalThis) {
     live.cancelControlRequest();
     live.cancelFullRefresh();
     live.cancelMutationRequests();
+    live.cancelViewRequests();
   }
 
   function handleVisibilityChange() {
@@ -110,6 +107,77 @@ export function createDashboard(runtime = globalThis) {
     if (!event.persisted) destroy();
   }
 
+  function configureReadOnlySurface() {
+    const manualProviderModel = byId("provider-builder-model");
+    if (manualProviderModel && !manualProviderModel.getAttribute("aria-label")) {
+      manualProviderModel.setAttribute(
+        "aria-label",
+        "Manual provider model or router alias",
+      );
+    }
+    if (!byId("config-adapter-zcode")) {
+      const adapterGrid = document.querySelector(".adapter-grid");
+      if (adapterGrid) {
+        const label = document.createElement("label");
+        const select = document.createElement("select");
+        label.setAttribute("for", "config-adapter-zcode");
+        label.textContent = "ZCode";
+        select.id = "config-adapter-zcode";
+        select.setAttribute("data-config-path", "adapters.zcode.enabled");
+        [
+          ["auto", "Auto"],
+          ["true", "Enabled"],
+          ["false", "Disabled"],
+        ].forEach(([value, text]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = text;
+          select.append(option);
+        });
+        label.append(select);
+        adapterGrid.append(label);
+      }
+    }
+    const hiddenMutationControls = [
+      "trim-button",
+      "provider-builder-save",
+      "provider-builder-remove",
+      "config-reset-button",
+      "config-save-button",
+      "workforce-action-submit",
+    ];
+    hiddenMutationControls.forEach((id) => {
+      const control = byId(id);
+      if (!control) return;
+      control.disabled = true;
+      control.hidden = true;
+      control.setAttribute("aria-hidden", "true");
+    });
+    ["trim-days", "trim-confirm"].forEach((id) => {
+      const control = byId(id);
+      if (control) control.disabled = true;
+    });
+    const master = byId("master-toggle");
+    if (master) {
+      master.disabled = true;
+      master.setAttribute("aria-disabled", "true");
+    }
+    const workforceForm = byId("workforce-action-form");
+    if (workforceForm) workforceForm.hidden = true;
+    const confirmation = byId("confirmation-modal");
+    if (confirmation) confirmation.hidden = true;
+    const configForm = byId("config-form");
+    if (configForm) configForm.setAttribute("aria-label", "Effective configuration (read-only)");
+    document.querySelectorAll(
+      "#config-form input, #config-form select, #config-form textarea, #config-form button",
+    ).forEach((control) => {
+      control.disabled = true;
+    });
+    const changeCount = byId("config-change-count");
+    if (changeCount) changeCount.textContent = "Read-only monitoring";
+    return true;
+  }
+
   function bindEvents() {
     if (state.lifecycle.bound || state.lifecycle.destroyed) return false;
     state.lifecycle.bound = true;
@@ -122,10 +190,10 @@ export function createDashboard(runtime = globalThis) {
       });
     });
     renderer.configureEvidenceTabs();
+    configureReadOnlySurface();
     listen(byId("refresh-button"), "click", live.refreshAll);
     listen(byId("route-button"), "click", actions.runRoute);
     listen(byId("route-host"), "change", renderer.renderRouteHosts);
-    listen(byId("trim-button"), "click", actions.trimRuntime);
     listen(byId("roster-search-form"), "submit", live.searchRoster);
     listen(byId("roster-search-clear"), "click", live.clearRosterSearch);
     const operationalFilters = byId("roster-operations-form");
@@ -141,27 +209,6 @@ export function createDashboard(runtime = globalThis) {
     const remediationHistory = byId("review-history-more");
     if (remediationHistory) {
       listen(remediationHistory, "click", () => live.loadMoreRemediation("history"));
-    }
-    listen(byId("trim-days"), "input", () => {
-      byId("trim-days").dataset.dirty = "true";
-    });
-    listen(byId("config-form"), "submit", actions.saveConfig);
-    const workforceActionForm = byId("workforce-action-form");
-    if (workforceActionForm) listen(workforceActionForm, "submit", actions.workforceAction);
-    listen(byId("config-form"), "input", config.updateConfigDirtyState);
-    listen(byId("config-form"), "change", config.updateConfigDirtyState);
-    const providerSave = byId("provider-builder-save");
-    if (providerSave) {
-      listen(providerSave, "click", () => {
-        try {
-          const provider = config.upsertProviderDraft();
-          core.showNotice(
-            `Provider ${provider.name} staged with model/router ${provider.model || "default"}.`,
-          );
-        } catch (error) {
-          core.showNotice(error.message, true);
-        }
-      });
     }
     const providerType = byId("provider-builder-type");
     const providerTransport = byId("provider-builder-transport");
@@ -192,42 +239,11 @@ export function createDashboard(runtime = globalThis) {
         void config.loadWorkforceModels({ refresh: true });
       });
     }
-    const providerRemove = byId("provider-builder-remove");
-    if (providerRemove) {
-      listen(providerRemove, "click", () => {
-        try {
-          config.removeSelectedProvider();
-          core.showNotice("Provider removal staged.");
-        } catch (error) {
-          core.showNotice(error.message, true);
-        }
-      });
-    }
-    listen(byId("config-reset-button"), "click", () => {
-      const snapshot = state.pendingConfig || state.config;
-      if (snapshot) config.renderConfig(snapshot);
-    });
-    listen(byId("confirmation-cancel"), "click", () => core.finishConfirmation(false));
-    listen(byId("confirmation-accept"), "click", () => core.finishConfirmation(true));
-    listen(byId("confirmation-input"), "keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        core.finishConfirmation(true);
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        core.finishConfirmation(false);
-      }
-    });
-    listen(document, "keydown", core.handleModalKeyboard);
     const liveToggle = byId("live-toggle");
     if (liveToggle) {
       state.live.enabled = liveToggle.getAttribute("aria-pressed") !== "false";
       live.syncLiveToggle();
       listen(liveToggle, "click", () => setLiveEnabled(!state.live.enabled));
-    }
-    const masterToggle = byId("master-toggle");
-    if (masterToggle) {
-      listen(masterToggle, "click", () => actions.toggleMaster(state.master?.enabled === false));
     }
     listen(document, "visibilitychange", handleVisibilityChange);
     listen(window, "pagehide", handlePageHide);
@@ -260,6 +276,7 @@ export function createDashboard(runtime = globalThis) {
     handlePageShow,
     handlePageHide,
     bindEvents,
+    configureReadOnlySurface,
     start,
     destroy,
   };

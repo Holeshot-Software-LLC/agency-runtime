@@ -19,11 +19,15 @@ import logging
 import math
 import re
 import uuid
+import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from agency_runtime.core.agent_identity import agent_identity
+from agency_runtime.core.bounded_values import bounded_unique_strings
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.config_binding import config_for_store
 from agency_runtime.core.delegation.events import (
@@ -65,6 +69,7 @@ from agency_runtime.core.selector.policy import (
     policy_path_for_config,
     validate_policy,
 )
+from agency_runtime.core.selector.semantic_retrieval import RevisionedCatalog
 from agency_runtime.core.selector.stickiness import session_check, session_put
 from agency_runtime.core.turn_intent import (
     TurnClassification,
@@ -109,23 +114,12 @@ def _bounded_signal_text(value: Any, limit: int = MAX_ROUTING_SIGNAL_CHARS) -> s
     return str(value or "")[: max(0, limit)]
 
 
-def _bounded_unique_strings(
-    values: Any,
-    *,
-    limit: int = MAX_ROUTING_SIGNAL_ITEMS,
-    chars: int = MAX_ROUTING_TOKEN_CHARS,
-) -> list[str]:
-    if not isinstance(values, (list, tuple)):
-        return []
-    result: list[str] = []
-    seen: set[str] = set()
-    for item in values[:limit]:
-        value = " ".join(str(item or "").split())[:chars]
-        if not value or value in seen:
-            continue
-        seen.add(value)
-        result.append(value)
-    return result
+_bounded_unique_strings = partial(
+    bounded_unique_strings,
+    limit=MAX_ROUTING_SIGNAL_ITEMS,
+    chars=MAX_ROUTING_TOKEN_CHARS,
+    collapse_whitespace=True,
+)
 
 
 def _bounded_work_units(value: Any) -> dict[str, Any]:
@@ -406,10 +400,7 @@ def _route_request(
         capability_status=capabilities.status,
     )
     eligible_catalog = list(eligibility.eligible)
-    eligible_slugs = {
-        str(agent.get("slug") or agent.get("agent_slug") or "").strip()
-        for agent in eligible_catalog
-    }
+    eligible_slugs = set(eligibility.eligible_ids)
     bounded_semantic_roots = (
         None
         if semantic_root_ids is None
@@ -420,13 +411,13 @@ def _route_request(
             and slug in eligible_slugs
         )
     )
-    policy_active_ids = frozenset(
-        slug
-        for agent in catalog[:MAX_ACTIVE_ROSTER_SIZE]
-        if (
-            slug := str(agent.get("slug") or agent.get("agent_slug") or "").strip()[
-                :MAX_ROUTING_TOKEN_CHARS
-            ]
+    policy_active_ids = (
+        frozenset(eligible_slugs)
+        if len(eligible_catalog) == len(catalog)
+        else frozenset(
+            slug
+            for agent in catalog[:MAX_ACTIVE_ROSTER_SIZE]
+            if (slug := agent_identity(agent)[:MAX_ROUTING_TOKEN_CHARS])
         )
     )
     policy = load_policy(policy_path_for_config(config))
@@ -714,17 +705,20 @@ def _reuse_routing(
 def _semantic_catalog(
     request: _RouteRequest,
     signals: _RouteSignals,
-) -> list[dict[str, Any]]:
+) -> RevisionedCatalog:
     """Exclude DEFAULT-only identities from ordinary semantic selection."""
     fallback_ids = set(signals.fallback_companion_ids)
-    return [
-        agent
-        for agent in request.catalog
-        if (
-            (slug := str(agent.get("slug") or agent.get("agent_slug") or "")) not in fallback_ids
-            and (request.semantic_root_ids is None or slug in request.semantic_root_ids)
-        )
-    ]
+    return RevisionedCatalog(
+        (
+            agent
+            for agent in request.catalog
+            if (
+                (slug := agent_identity(agent)) not in fallback_ids
+                and (request.semantic_root_ids is None or slug in request.semantic_root_ids)
+            )
+        ),
+        revision=request.context_fingerprint,
+    )
 
 
 def _merge_computed_routing(
@@ -1507,6 +1501,40 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
 
     parts.append(HEADER_INSTRUCTION)
     return "\n".join(parts)[:MAX_ROUTING_CONTEXT_CHARS]
+
+
+def route_and_build_context(
+    session_id: str,
+    user_message: str,
+    catalog: list[dict[str, Any]] | None = None,
+    config: AgencyConfig | None = None,
+    store: Store | None = None,
+    trace_id: str | None = None,
+    turn_classification: TurnClassification | None = None,
+    turn_state: TurnState | Mapping[str, Any] | None = None,
+) -> str:
+    """Deprecated compatibility wrapper for the former combined selector API."""
+
+    warnings.warn(
+        (
+            "route_and_build_context() is deprecated; call route() and then "
+            "build_routing_context(). It will not be removed before agency-runtime 0.3.0."
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    cfg = _get_config(config, store)
+    routing = route(
+        session_id,
+        user_message,
+        catalog,
+        config=cfg,
+        store=store,
+        trace_id=trace_id,
+        turn_classification=turn_classification,
+        turn_state=turn_state,
+    )
+    return build_routing_context(routing, cfg)
 
 
 HEADER_INSTRUCTION = (

@@ -18,6 +18,7 @@ from functools import lru_cache
 from heapq import nsmallest
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 
 _WORD_RE = re.compile(r"[a-z0-9]+(?:\+\+|#)?", re.IGNORECASE)
@@ -404,7 +405,7 @@ def _pre_narrow_compiled(
             _compiled_inputs=score_inputs,
             _query_phrases=query_phrases,
         )
-        slug = str(agent.get("slug") or agent.get("agent_slug") or "")
+        slug = agent_identity(agent)
         if score > 0:
             positive.append((score, slug, index, agent))
         else:

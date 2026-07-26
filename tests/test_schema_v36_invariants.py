@@ -8,6 +8,8 @@ import pytest
 from agency_runtime.core.native_child_activation import CANONICAL_NATIVE_CHILD_HOSTS
 from agency_runtime.core.store.schema import (
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES,
+    NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL,
+    NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
     SCHEMA_VERSION,
 )
 from agency_runtime.core.store.sqlite import Store
@@ -51,7 +53,7 @@ def _insert_consumption(
     return "receipt-v36", "consumption-v36"
 
 
-def test_schema_v36_accepts_zcode_and_guards_append_only_consumption(
+def test_schema_v37_accepts_zcode_and_guards_append_only_consumption(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "v36.db")
@@ -79,10 +81,10 @@ def test_schema_v36_accepts_zcode_and_guards_append_only_consumption(
     finally:
         connection.close()
     assert remaining == 0
-    assert version == SCHEMA_VERSION == 36
+    assert version == SCHEMA_VERSION == 37
 
 
-def test_schema_v36_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
+def test_schema_v37_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "upgrade.db"
@@ -133,7 +135,41 @@ def test_schema_v36_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
         finally:
             connection.close()
         assert tuple(row) == ("claude", "code-reviewer")
-        assert version == SCHEMA_VERSION == 36
+        assert version == SCHEMA_VERSION == 37
+
+
+def test_schema_v37_upgrade_adds_native_child_scope_authority_idempotently(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "v36-to-v37.db"
+    store = Store(path)
+    connection = store._connect()
+    try:
+        connection.execute("DROP TABLE native_child_parent_scopes")
+        connection.execute("UPDATE schema_version SET version = 36")
+        connection.commit()
+    finally:
+        connection.close()
+
+    for _attempt in range(2):
+        reopened = Store(path)
+        assert reopened._current_schema_state() == (True, True)
+        connection = reopened._connect()
+        try:
+            version = connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+            columns = {
+                str(row["name"])
+                for row in connection.execute("PRAGMA table_info(native_child_parent_scopes)")
+            }
+            trigger = connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'trigger' "
+                "AND name = 'agency_native_child_parent_scope_consume_once'"
+            ).fetchone()
+        finally:
+            connection.close()
+        assert {"token_hash", "parent_trace_id", "consumed_unix"}.issubset(columns)
+        assert trigger is not None
+        assert version == SCHEMA_VERSION == 37
 
 
 @pytest.mark.parametrize(
@@ -142,10 +178,11 @@ def test_schema_v36_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
         "DROP TRIGGER agency_activation_consumption_insert_guard",
         "DROP INDEX idx_worker_runs_native_scope",
         "DROP TRIGGER agency_agent_sources_boolean_insert_guard",
+        "DROP TRIGGER agency_native_child_parent_scope_consume_once",
     ],
-    ids=["consumption-guard", "native-run-unique-index", "boolean-guard"],
+    ids=["consumption-guard", "native-run-unique-index", "boolean-guard", "child-scope-guard"],
 )
-def test_schema_v36_currentness_rejects_missing_critical_objects(
+def test_schema_v37_currentness_rejects_missing_critical_objects(
     tmp_path: Path,
     statement: str,
 ) -> None:
@@ -160,7 +197,7 @@ def test_schema_v36_currentness_rejects_missing_critical_objects(
     assert store._current_schema_state() == (False, True)
 
 
-def test_schema_v36_currentness_rejects_same_name_noop_trigger(
+def test_schema_v37_currentness_rejects_same_name_noop_trigger(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "altered-trigger.db")
@@ -171,6 +208,31 @@ def test_schema_v36_currentness_rejects_same_name_noop_trigger(
             "CREATE TRIGGER agency_agent_sources_boolean_insert_guard "
             "BEFORE INSERT ON agent_sources BEGIN SELECT 1; END"
         )
+        connection.commit()
+    finally:
+        connection.close()
+
+    assert store._current_schema_state() == (False, True)
+
+
+def test_schema_v37_currentness_rejects_weakened_native_child_scope_checks(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "weakened-child-scope.db")
+    weakened = NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL.replace(
+        "host TEXT NOT NULL CHECK (host IN ('claude', 'codex'))",
+        "host TEXT NOT NULL",
+    )
+    assert weakened != NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL
+    connection = store._connect()
+    try:
+        connection.execute("DROP TABLE native_child_parent_scopes")
+        connection.executescript(weakened)
+        connection.execute(
+            "CREATE INDEX idx_native_child_parent_scopes_expiry "
+            "ON native_child_parent_scopes(expires_unix, consumed_unix)"
+        )
+        connection.execute(NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL)
         connection.commit()
     finally:
         connection.close()

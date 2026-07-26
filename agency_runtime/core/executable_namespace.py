@@ -2,55 +2,29 @@
 
 from __future__ import annotations
 
-import errno
 import os
 import stat
 from collections.abc import Callable
-from itertools import pairwise
 from pathlib import Path
 
+from agency_runtime.core.filesystem_trust import (
+    absolute_path as _absolute_path,
+)
+from agency_runtime.core.filesystem_trust import (
+    directory_chain as _directory_chain,
+)
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse_point,
+)
+from agency_runtime.core.filesystem_trust import (
+    posix_directory_chain_is_trusted,
+    posix_directory_has_default_acl,
+)
 from agency_runtime.core.path_authority import private_path_authority_covers
 from agency_runtime.core.windows_acl import windows_directory_prevents_untrusted_writes
 
 WindowsNamespaceProbe = Callable[[Path, bool], bool]
 DefaultACLProbe = Callable[[Path], bool]
-
-
-def _absolute_path(path: Path) -> Path:
-    return Path(os.path.abspath(path.expanduser()))
-
-
-def _directory_chain(path: Path) -> tuple[Path, ...]:
-    normalized = _absolute_path(path)
-    anchor = Path(normalized.anchor)
-    parts = normalized.parts[1:]
-    return (
-        anchor,
-        *(anchor.joinpath(*parts[:index]) for index in range(1, len(parts) + 1)),
-    )
-
-
-def _metadata_is_link_or_reparse_point(metadata: os.stat_result) -> bool:
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse)
-
-
-def posix_directory_has_default_acl(path: Path) -> bool:
-    """Fail closed when a default ACL could grant executable-parent writes."""
-
-    getxattr = getattr(os, "getxattr", None)
-    if not callable(getxattr):
-        return False
-    try:
-        return bool(getxattr(path, "system.posix_acl_default", follow_symlinks=False))
-    except OSError as exc:
-        return exc.errno not in {
-            errno.ENODATA,
-            getattr(errno, "ENOATTR", errno.ENODATA),
-            errno.ENOTSUP,
-            getattr(errno, "EOPNOTSUPP", errno.ENOTSUP),
-        }
 
 
 def executable_namespace_is_trusted(
@@ -106,27 +80,15 @@ def executable_namespace_is_trusted(
     uid = int(uid_getter()) if effective_uid is None and callable(uid_getter) else effective_uid
     if uid is None:
         return False
-    trusted_owners = {0, int(uid)}
-    if any(int(metadata.st_uid) not in trusted_owners for _candidate, metadata in chain):
-        return False
-
-    final = chain[-1][1]
-    if stat.S_IMODE(final.st_mode) & (stat.S_IWGRP | stat.S_IWOTH):
-        return False
     acl_probe = default_acl_probe or posix_directory_has_default_acl
-    try:
-        if acl_probe(normalized):
-            return False
-    except Exception:
-        return False
-
-    for (_ancestor_path, ancestor), (_child_path, child) in pairwise(chain):
-        writable = stat.S_IMODE(ancestor.st_mode) & (stat.S_IWGRP | stat.S_IWOTH)
-        if writable and not (
-            ancestor.st_mode & stat.S_ISVTX and int(child.st_uid) in trusted_owners
-        ):
-            return False
-    return True
+    return posix_directory_chain_is_trusted(
+        chain,
+        effective_uid=uid,
+        final_path=normalized,
+        final_owner_must_match=False,
+        forbidden_final_mode=stat.S_IWGRP | stat.S_IWOTH,
+        default_acl_probe=acl_probe,
+    )
 
 
 def assert_executable_namespace(

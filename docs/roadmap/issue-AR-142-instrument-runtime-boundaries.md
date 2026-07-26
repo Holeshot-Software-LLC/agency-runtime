@@ -55,3 +55,17 @@ AR-132 defines hiring semantics. AR-136 defines planned-child failure reasons.
 - Every route receipt contains a truthful hiring outcome.
 - Logs redact control characters, tokens, prompt text, credentials, and private
   filesystem paths; retention remains finite and documented.
+
+## Implementation evidence
+
+A strict content-free observation envelope now covers browser/dashboard, HTTP,
+MCP, hook, and slow/error Store boundaries with a random request ID, hashed
+correlation, fixed operation/outcome/reason labels, duration, and optional Store
+generation. Dashboard responses echo X-Agency-Request-ID; untrusted request
+targets and exception messages do not enter fault logs. Every normalized route
+receipt projects a truthful created, declined, mixed, or no_attempt hiring
+outcome. Redaction, nested correlation, slow/locked SQLite, HTTP, MCP, hook,
+dashboard, and receipt tests pass. Troubleshooting documentation states that
+envelopes are ephemeral standard logs unless an operator configures an
+external finite-retention sink; durable Store evidence retains its configured
+finite policy.

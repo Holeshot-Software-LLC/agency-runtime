@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
 import secrets
 import subprocess
@@ -117,6 +118,43 @@ def test_mcp_server_rejects_tampered_or_unverifiable_injected_store_identity(
         )
 
 
+def test_mcp_tool_result_and_logs_share_content_free_request_identity(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    server = MCPServer(store=_seed_store(tmp_path))
+    server.initialize_responded = True
+    server.initialized = True
+    secret = "Bearer never-log-this"
+
+    response = server.dispatch(
+        {
+            "jsonrpc": "2.0",
+            "id": secret,
+            "method": "tools/call",
+            "params": {
+                "name": "agency.search_agents",
+                "arguments": {"query": "code"},
+            },
+        }
+    )
+
+    assert response is not None
+    result = response["result"]
+    request_id = result["_meta"]["agency/requestId"]
+    observation = next(
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("agency_observation ")
+    )
+    assert secret not in observation
+    payload = json.loads(observation.split(" ", 1)[1])
+    assert payload["request_id"] == request_id
+    assert payload["surface"] == "mcp"
+    assert payload["operation"] == "agency.search_agents"
+
+
 def test_mcp_exposes_explain_selection_tool() -> None:
     tools = {tool["name"]: tool for tool in MCP_TOOLS}
 
@@ -130,6 +168,142 @@ def test_mcp_exposes_explain_selection_tool() -> None:
         "zcode",
     ]
     assert "host" in preflight["required"]
+    assert "parent_scope_token" in preflight["properties"]
+    assert "parent_session_id" not in preflight["properties"]
+    assert "parent_trace_id" not in preflight["properties"]
+
+
+def test_mcp_preflight_consumes_exact_parent_scope_instead_of_caller_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class _ScopeStore:
+        @staticmethod
+        def consume_native_child_parent_scope(**kwargs):
+            captured["scope"] = kwargs
+            return {
+                "parent_session_id": "parent-session",
+                "parent_trace_id": "parent-trace",
+                "worker_id": "agent-42",
+                "native_run_id": "codex-agent:agent-42",
+            }
+
+    def fake_preflight(_store, **kwargs):
+        captured["preflight"] = kwargs
+        return SimpleNamespace(
+            context="governed context",
+            session_id=kwargs["session_id"],
+            trace_id=kwargs["trace_id"],
+            loaded_specialists=(),
+            selected_specialists=(),
+            delegation_plan=(),
+        )
+
+    monkeypatch.setattr("agency_runtime.core.preflight.run_preflight", fake_preflight)
+    result = mcp_tools._preflight(
+        {
+            "session_id": "codex-child:agent-42",
+            "trace_id": "child-trace",
+            "host": "codex",
+            "user_message": "Review the implementation.",
+            "parent_scope_token": "one-use-parent-token",
+        },
+        _ScopeStore(),
+    )
+
+    assert result["context"] == "governed context"
+    assert captured["scope"] == {
+        "parent_scope_token": "one-use-parent-token",
+        "host": "codex",
+        "child_session_id": "codex-child:agent-42",
+        "child_trace_id": "child-trace",
+    }
+    preflight = captured["preflight"]
+    assert preflight["parent_session_id"] == "parent-session"
+    assert preflight["parent_trace_id"] == "parent-trace"
+    assert preflight["native_worker_id"] == "agent-42"
+    assert preflight["native_run_id"] == "codex-agent:agent-42"
+
+
+def test_mcp_preflight_failure_restores_parent_scope_for_one_successful_retry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "parent-scope-retry.db")
+    connection = store._connect()
+    try:
+        connection.execute(
+            "INSERT INTO runs "
+            "(id, trace_id, session_id, host, started_at, status, user_message, "
+            "metadata, preflight_state, preflight_result) VALUES "
+            "('parent-run', 'parent-trace', 'parent-session', 'codex', "
+            "'2026-07-26T00:00:00Z', 'active', '', '{}', 'ready', '{}')"
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    issued = store.create_native_child_parent_scope(
+        host="codex",
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+        work_unit_id="unit-0123456789",
+        worker_kind="generic-worker",
+        worker_id="agent-42",
+        native_run_id="codex-agent:agent-42",
+        child_session_id="codex-child:agent-42",
+    )
+    calls = 0
+
+    def retrying_preflight(_store, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise ValueError("transient child preflight failure")
+        return SimpleNamespace(
+            context="retry completed",
+            session_id=kwargs["session_id"],
+            trace_id=kwargs["trace_id"],
+            loaded_specialists=(),
+            selected_specialists=(),
+            delegation_plan=(),
+        )
+
+    monkeypatch.setattr("agency_runtime.core.preflight.run_preflight", retrying_preflight)
+    arguments = {
+        "session_id": "codex-child:agent-42",
+        "trace_id": "child-trace",
+        "host": "codex",
+        "user_message": "Review the implementation.",
+        "parent_scope_token": str(issued["parent_scope_token"]),
+    }
+
+    assert mcp_tools._preflight(arguments, store) == {"error": "transient child preflight failure"}
+    retried = mcp_tools._preflight(arguments, store)
+
+    assert retried["context"] == "retry completed"
+    assert calls == 2
+    assert "already consumed" in mcp_tools._preflight(arguments, store)["error"]
+
+
+def test_mcp_preflight_parent_scope_failure_is_sanitized() -> None:
+    class _UnavailableStore:
+        @staticmethod
+        def consume_native_child_parent_scope(**_kwargs):
+            raise OSError("sensitive database detail")
+
+    result = mcp_tools._preflight(
+        {
+            "session_id": "codex-child:agent-42",
+            "trace_id": "child-trace",
+            "host": "codex",
+            "user_message": "Review the implementation.",
+            "parent_scope_token": "one-use-parent-token",
+        },
+        _UnavailableStore(),
+    )
+
+    assert result == {"error": "native child parent scope verification is unavailable"}
 
 
 def test_mcp_fails_closed_after_config_derived_store_target_drift(

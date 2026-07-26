@@ -152,7 +152,7 @@ def _configured_secret_environment_names(config: object | None) -> set[str]:
     for provider in getattr(config, "providers", ()) or ():
         include(provider)
     adapters = getattr(config, "adapters", None)
-    for adapter_name in ("litellm", "hermes", "openclaw", "codex", "claude"):
+    for adapter_name in ("litellm", "hermes", "openclaw", "codex", "claude", "zcode"):
         include(getattr(adapters, adapter_name, None))
     return names
 

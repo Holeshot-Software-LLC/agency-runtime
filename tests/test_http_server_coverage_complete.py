@@ -655,6 +655,7 @@ def test_serve_uses_config_defaults_and_closes_after_interrupt(
     monkeypatch.setattr(http, "load_config", lambda: cfg)
     monkeypatch.setattr(http, "AgencyHTTPServer", _Server)
     monkeypatch.setattr(http, "Store", lambda path=None: events.append(("store", path)) or object())
+    monkeypatch.setattr(http.sys.stdout, "isatty", lambda: True)
     http.serve(db_path=tmp_path / "agency.db")
     assert events[-1] == ("close", None)
     assert "bearer token: token" in capsys.readouterr().out

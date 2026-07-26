@@ -48,6 +48,8 @@ from agency_runtime.core import (
 from agency_runtime.core import (
     installer_registration as _registration,
 )
+from agency_runtime.core import installer_zcode as _zcode
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig, load_config
 from agency_runtime.core.installer_contracts import (
     HOOK_TIMEOUT_BUFFER_SECONDS,
@@ -124,6 +126,10 @@ _bundle_files = _payloads.bundle_files
 _safe_relative = _filesystem.safe_relative
 _atomic_install_tree = _filesystem.atomic_install_tree
 _validate_owned_backup = _filesystem.validate_owned_backup
+_zcode_config_path = _zcode.zcode_config_path
+_inspect_zcode_registration = _zcode.inspect_zcode_registration
+_register_zcode_config = _zcode.register_zcode_config
+_toggle_zcode_registration = _zcode.toggle_zcode_registration
 
 # Lifecycle orchestration compatibility surface.
 _openclaw_gateway_live = _registration.openclaw_gateway_live
@@ -152,10 +158,7 @@ def reconcile_starter_roster(store: Store) -> BundledRosterReconciliation:
         if callable(activate_one):
             added = sum(bool(activate_one(entry)) for entry in STARTER_ROSTER)
         else:
-            active = {
-                str(agent.get("agent_slug") or agent.get("slug") or "")
-                for agent in store.get_active_roster()
-            }
+            active = {agent_identity(agent) for agent in store.get_active_roster()}
             added = 0
             for entry in STARTER_ROSTER:
                 if str(entry["slug"]) in active:
@@ -225,10 +228,7 @@ def ensure_no_match_fallback_roster(store: Store) -> int:
     """Idempotently add only missing governed fallback dependencies."""
 
     required = set(NO_MATCH_FALLBACK_SLUGS)
-    active = {
-        str(entry.get("agent_slug") or entry.get("slug") or "")
-        for entry in store.get_active_roster()
-    }
+    active = {agent_identity(entry) for entry in store.get_active_roster()}
     return sum(
         bool(store.activate_agent_if_missing(entry))
         for entry in STARTER_ROSTER

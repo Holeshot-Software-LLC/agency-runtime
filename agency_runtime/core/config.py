@@ -321,6 +321,7 @@ class AdaptersConfig:
     openclaw: AdapterEntryConfig = field(default_factory=AdapterEntryConfig)
     codex: AdapterEntryConfig = field(default_factory=AdapterEntryConfig)
     claude: AdapterEntryConfig = field(default_factory=AdapterEntryConfig)
+    zcode: AdapterEntryConfig = field(default_factory=AdapterEntryConfig)
 
 
 @dataclass(frozen=True, slots=True)
@@ -442,6 +443,7 @@ def _build_adapters(raw: dict[str, Any]) -> AdaptersConfig:
         openclaw=_build_adapter_entry(raw.get("openclaw", {})),
         codex=_build_adapter_entry(raw.get("codex", {})),
         claude=_build_adapter_entry(raw.get("claude", {})),
+        zcode=_build_adapter_entry(raw.get("zcode", {})),
     )
 
 
@@ -800,6 +802,7 @@ def _enforce_profile_constraints(cfg: AgencyConfig) -> AgencyConfig:
         openclaw=disabled(cfg.adapters.openclaw),
         codex=disabled(cfg.adapters.codex),
         claude=disabled(cfg.adapters.claude),
+        zcode=disabled(cfg.adapters.zcode),
     )
     return replace(
         cfg,
@@ -1117,6 +1120,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "openclaw": {"enabled": cfg.adapters.openclaw.enabled},
             "codex": {"enabled": cfg.adapters.codex.enabled},
             "claude": {"enabled": cfg.adapters.claude.enabled},
+            "zcode": {"enabled": cfg.adapters.zcode.enabled},
         },
         "profile": cfg.profile,
         "companion_policy_path": cfg.companion_policy_path,

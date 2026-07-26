@@ -9,7 +9,13 @@ from agency_runtime.core.delegation.lifecycle import (
     build_dependency_graph,
     normalize_work_units,
 )
-from agency_runtime.core.evals.benchmarks import run_candidate_microbenchmark
+from agency_runtime.core.evals.benchmarks import (
+    CLI_VERSION_STARTUP_P50_MS_MAX,
+    SEMANTIC_RETRIEVAL_BUDGETS,
+    run_candidate_microbenchmark,
+    run_cli_version_startup_benchmark,
+    run_semantic_retrieval_scale_benchmark,
+)
 from agency_runtime.core.evals.data.routing_v1 import (
     CATALOG,
     DELEGATION_CASES,
@@ -27,10 +33,11 @@ from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.selector.pipeline import route
 from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
+from agency_runtime.core.selector.semantic_retrieval import clear_semantic_retrieval_cache
 from agency_runtime.core.selector.stickiness import clear_session_routing
 
 SCHEMA = "agency-runtime.routing-eval"
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 TOP_K = 3
 
 THRESHOLDS: dict[str, dict[str, float]] = {
@@ -69,6 +76,18 @@ THRESHOLDS: dict[str, dict[str, float]] = {
         "concurrent_probe_synchronized_min": 1.0,
         "deterministic_min": 1.0,
         "cache_hit_deterministic_min": 1.0,
+    },
+    "retrieval_scale": {
+        **{
+            f"agents_{size}_{metric}": threshold
+            for size, budget in SEMANTIC_RETRIEVAL_BUDGETS.items()
+            for metric, threshold in budget.items()
+        },
+        **{f"agents_{size}_correct_min": 1.0 for size in SEMANTIC_RETRIEVAL_BUDGETS},
+    },
+    "cli_startup": {
+        "version_p50_ms_max": CLI_VERSION_STARTUP_P50_MS_MAX,
+        "output_valid_min": 1.0,
     },
 }
 
@@ -344,18 +363,46 @@ def _gates(metrics: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     return results
 
 
+def _retrieval_scale_metrics(report: dict[str, Any]) -> dict[str, Any]:
+    metrics: dict[str, Any] = {
+        "benchmark_version": report["version"],
+        "query_sha256": report["query_sha256"],
+        "cold_includes_tracemalloc": report["cold_includes_tracemalloc"],
+        "tiers": report["tiers"],
+    }
+    for row in report["tiers"]:
+        size = int(row["roster_size"])
+        metrics[f"agents_{size}_cold_ms"] = row["cold_ms"]
+        metrics[f"agents_{size}_warm_p95_ms"] = row["warm_p95_ms"]
+        metrics[f"agents_{size}_peak_mib"] = row["peak_mib"]
+        metrics[f"agents_{size}_correct"] = bool(row["deterministic"] and row["correctness"])
+    return metrics
+
+
 def run_routing_eval(*, include_details: bool = True) -> dict[str, Any]:
     """Run the offline deterministic routing evaluation and performance probe."""
+    clear_semantic_retrieval_cache()
     routing, routing_details = _routing_metrics()
     policy, policy_details = _policy_metrics()
     delegation, delegation_details = _delegation_metrics()
     benchmark = run_candidate_microbenchmark()
+    retrieval_benchmark = run_semantic_retrieval_scale_benchmark()
+    cli_benchmark = run_cli_version_startup_benchmark()
     performance = dict(benchmark)
     metrics = {
         "routing": routing,
         "policy": policy,
         "delegation": delegation,
         "performance": performance,
+        "retrieval_scale": _retrieval_scale_metrics(retrieval_benchmark),
+        "cli_startup": {
+            "benchmark_version": cli_benchmark["version"],
+            "iterations": cli_benchmark["iterations"],
+            "version_p50_ms": cli_benchmark["p50_ms"],
+            "version_p95_ms": cli_benchmark["p95_ms"],
+            "samples_ms": cli_benchmark["samples_ms"],
+            "output_valid": cli_benchmark["output_valid"],
+        },
     }
     gates = _gates(metrics)
     report: dict[str, Any] = {

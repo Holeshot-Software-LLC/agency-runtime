@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import errno
 import hashlib
 import os
 import stat
@@ -10,7 +9,6 @@ import tempfile
 import time
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager, suppress
-from itertools import pairwise
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -31,6 +29,21 @@ from agency_runtime.core.configuration_contracts import (
     ConfigValidationError,
 )
 from agency_runtime.core.configuration_identity import resolve_config_identity_path
+from agency_runtime.core.filesystem_trust import (
+    absolute_path as _absolute,
+)
+from agency_runtime.core.filesystem_trust import (
+    directory_chain as _directory_chain,
+)
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse,
+)
+from agency_runtime.core.filesystem_trust import (
+    posix_directory_chain_is_trusted,
+)
+from agency_runtime.core.filesystem_trust import (
+    posix_directory_has_default_acl as _posix_directory_has_default_acl,
+)
 from agency_runtime.core.path_authority import private_path_authority_covers
 from agency_runtime.core.windows_acl import (
     WindowsACLSafetyError,
@@ -43,41 +56,6 @@ PathCheck = Callable[[Path], bool]
 NamespaceProbe = Callable[[Path, bool, bool], bool]
 
 _WINDOWS_REPLACE_RETRY_DELAYS = (0.002, 0.004, 0.008, 0.016, 0.032, 0.064)
-
-
-def _absolute(path: Path) -> Path:
-    return Path(os.path.abspath(path.expanduser()))
-
-
-def _directory_chain(path: Path) -> tuple[Path, ...]:
-    normalized = _absolute(path)
-    anchor = Path(normalized.anchor)
-    parts = normalized.parts[1:]
-    return (
-        anchor,
-        *(anchor.joinpath(*parts[:index]) for index in range(1, len(parts) + 1)),
-    )
-
-
-def _posix_directory_has_default_acl(path: Path) -> bool:
-    getxattr = getattr(os, "getxattr", None)
-    if not callable(getxattr):
-        return False
-    try:
-        return bool(getxattr(path, "system.posix_acl_default", follow_symlinks=False))
-    except OSError as exc:
-        return exc.errno not in {
-            errno.ENODATA,
-            getattr(errno, "ENOATTR", errno.ENODATA),
-            errno.ENOTSUP,
-            getattr(errno, "EOPNOTSUPP", errno.ENOTSUP),
-        }
-
-
-def _metadata_is_link_or_reparse(metadata: os.stat_result) -> bool:
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse)
 
 
 def _effective_posix_uid(metadata: os.stat_result) -> int | None:
@@ -144,21 +122,17 @@ def config_namespace_is_trusted(
     uid = _effective_posix_uid(existing[-1][1]) if effective_uid is None else effective_uid
     if uid is None:
         return False
-    trusted_owners = {0, int(uid)}
-    if any(int(metadata.st_uid) not in trusted_owners for _candidate, metadata in existing):
-        return False
-    for (_ancestor_path, ancestor), (_child_path, child) in pairwise(existing):
-        writable = stat.S_IMODE(ancestor.st_mode) & (stat.S_IWGRP | stat.S_IWOTH)
-        if writable and not (
-            ancestor.st_mode & stat.S_ISVTX and int(child.st_uid) in trusted_owners
-        ):
-            return False
-    boundary_path, boundary = existing[-1]
+    boundary_path, _boundary = existing[-1]
     # A final/prospective parent may be readable and traversable (0755), but it
     # may not let another account create, delete, or rename the config name.
-    if stat.S_IMODE(boundary.st_mode) & (stat.S_IWGRP | stat.S_IWOTH):
-        return False
-    return not _posix_directory_has_default_acl(boundary_path)
+    return posix_directory_chain_is_trusted(
+        existing,
+        effective_uid=uid,
+        final_path=boundary_path,
+        final_owner_must_match=False,
+        forbidden_final_mode=stat.S_IWGRP | stat.S_IWOTH,
+        default_acl_probe=_posix_directory_has_default_acl,
+    )
 
 
 def assert_config_namespace(

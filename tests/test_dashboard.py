@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import shutil
 import socket
@@ -16,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from http.client import HTTPConnection
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 import yaml
@@ -32,10 +34,13 @@ from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.workforce.known_installer import install_known_contractors
 from agency_runtime.server import dashboard as dashboard_module
 from agency_runtime.server.dashboard import (
+    DashboardHTTPHandler,
     DashboardHTTPServer,
     _HostInspectionCoordinator,
     _provider_health,
 )
+
+_PRODUCTION_READ_ONLY_MUTATION_PATHS = DashboardHTTPHandler._READ_ONLY_MUTATION_PATHS
 
 
 def _verified_codex_record() -> dict[str, object]:
@@ -51,6 +56,10 @@ def _verified_codex_record() -> dict[str, object]:
 
 @pytest.fixture()
 def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    # Legacy handler tests keep exercising their validation/transaction logic
+    # directly through HTTP. AR-143's production default is read-only and is
+    # pinned independently by the exhaustive bearer-scope test below.
+    monkeypatch.setattr(DashboardHTTPHandler, "_READ_ONLY_MUTATION_PATHS", frozenset())
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
     monkeypatch.setenv("AGENCY_JUDGE_TIMEOUT", "0.05")
     monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "dashboard.db"))
@@ -155,12 +164,15 @@ def _request(
     token: str | None = None,
     origin: str | None = None,
     content_type: str = "application/json",
+    request_id: str | None = None,
 ) -> tuple[int, bytes, dict[str, str]]:
     headers: dict[str, str] = {}
     if token is not None:
         headers["Authorization"] = f"Bearer {token}"
     if origin is not None:
         headers["Origin"] = origin
+    if request_id is not None:
+        headers["X-Agency-Request-ID"] = request_id
     data = None
     if body is not None:
         data = json.dumps(body).encode("utf-8")
@@ -203,6 +215,67 @@ def _nested_keys(value: object) -> set[str]:
     if isinstance(value, list):
         return {key for nested in value for key in _nested_keys(nested)}
     return set()
+
+
+_READ_ONLY_DASHBOARD_MUTATIONS = {
+    "/api/agents/toggle": {"slug": "security-reviewer", "enabled": False},
+    "/api/config": {"expected_revision": "missing", "operations": []},
+    "/api/hiring/approve": {"case_id": "case-1", "approved_by": "operator"},
+    "/api/hosts/toggle": {"host": "codex", "enabled": False},
+    "/api/maintenance/trim": {"older_than_days": 30},
+    "/api/roster/action": {"action": "approve", "snapshot_id": "snapshot-1"},
+    "/api/runtime/toggle": {"enabled": False},
+    "/api/workforce/action": {"action": "suspend", "worker": "security-reviewer"},
+}
+
+
+def _dashboard_authority_bytes(server: dict) -> dict[str, bytes]:
+    store = server["store"]
+    paths = [
+        Path(store.db_path),
+        Path(f"{store.db_path}-wal"),
+        Path(f"{store.db_path}-shm"),
+        Path(store.config_path),
+        Path(server["home"]) / ".agency-runtime" / "control.json",
+    ]
+    return {str(path): path.read_bytes() for path in paths if path.is_file()}
+
+
+@pytest.mark.parametrize("path,body", _READ_ONLY_DASHBOARD_MUTATIONS.items())
+@pytest.mark.parametrize("token_name", ["token", "broker_token"])
+def test_every_dashboard_mutation_is_denied_for_every_bearer_without_state_change(
+    dashboard_server: dict,
+    monkeypatch: pytest.MonkeyPatch,
+    path: str,
+    body: dict,
+    token_name: str,
+) -> None:
+    mutation_paths = frozenset(_READ_ONLY_DASHBOARD_MUTATIONS)
+    assert mutation_paths == _PRODUCTION_READ_ONLY_MUTATION_PATHS
+    monkeypatch.setattr(
+        DashboardHTTPHandler,
+        "_READ_ONLY_MUTATION_PATHS",
+        _PRODUCTION_READ_ONLY_MUTATION_PATHS,
+    )
+    before = _dashboard_authority_bytes(dashboard_server)
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        path,
+        method="POST",
+        body=body,
+        token=dashboard_server[token_name],
+    )
+
+    assert status == 403
+    assert payload == {
+        "error": (
+            "dashboard is read-only; persistent mutations require an approved "
+            "user-presence boundary"
+        )
+    }
+    assert _dashboard_authority_bytes(dashboard_server) == before
+    assert mutation_paths == DashboardHTTPHandler._READ_ONLY_MUTATION_PATHS
 
 
 @pytest.mark.parametrize("mutation", ["trim", "roster-approve", "host-toggle"])
@@ -586,22 +659,21 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"registration unknown" in script
     assert b"enablement unknown" in script
     assert b"runtime off" in script
-    assert b"directionKnown" in script
-    assert b'inspection_status === "complete"' in script
+    assert b"Monitoring only; host controls are unavailable here." in script
+    assert b"Read-only monitoring" in script
     assert b"Delegation dependency graph" in script
     assert b"receipt.signals?.work_units?.units" in script
     assert b'["id", "Decision"]' in script
     assert b"hostLocation(host)" in script
-    assert b"Number.isInteger(days)" in script
     assert b"await refreshRuntimeEvidence()" in script
     assert b"collectConfigChanges" in script
     assert b"total_count" in script
     assert b"next_cursor" in script
     assert b"/api/agents/lookup?slug=" in script
     assert b"/api/config" in script
-    assert b"SAVE SENSITIVE CONFIG" in script
-    assert b"APPLY LOCAL-ONLY PROFILE" in script
-    assert b"requestConfirmation" in script
+    for mutation_path in _READ_ONLY_DASHBOARD_MUTATIONS.keys() - {"/api/config"}:
+        assert mutation_path.encode() not in script
+    assert b"APPLY LOCAL-ONLY PROFILE" not in script
     assert b"window.prompt" not in script
     assert b"visibilitychange" in script
     assert b"AbortController" in script
@@ -864,6 +936,60 @@ def test_dashboard_api_requires_per_launch_token(dashboard_server):
     assert payload == {"error": "authentication required"}
 
 
+def test_dashboard_correlates_requests_with_content_free_observations(
+    dashboard_server,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    request_id = str(uuid4())
+
+    status, payload, headers = _json_response(
+        dashboard_server,
+        "/api/health",
+        token=dashboard_server["token"],
+        request_id=request_id,
+    )
+
+    assert status == 200
+    assert payload == {"status": "ok", "request_id": request_id}
+    assert headers["X-Agency-Request-ID"] == request_id
+    assert headers["X-Request-ID"] == request_id
+    observations = [
+        json.loads(record.getMessage().split(" ", 1)[1])
+        for record in caplog.records
+        if record.getMessage().startswith("agency_observation ")
+    ]
+    dashboard = [
+        observation for observation in observations if observation["surface"] == "dashboard"
+    ]
+    assert dashboard[-1] == {
+        "schema_version": 1,
+        "request_id": request_id,
+        "correlation_digest": "",
+        "surface": "dashboard",
+        "operation": "health",
+        "outcome": "ok",
+        "reason_code": "completed",
+        "duration_ms": dashboard[-1]["duration_ms"],
+    }
+    assert 0 <= dashboard[-1]["duration_ms"] < 5_000
+
+    caplog.clear()
+    invalid = "Bearer do-not-log-this"
+    status, payload, headers = _json_response(
+        dashboard_server,
+        "/api/health",
+        token=dashboard_server["token"],
+        request_id=invalid,
+    )
+    generated = headers["X-Agency-Request-ID"]
+    assert status == 200
+    assert payload == {"status": "ok"}
+    assert generated.startswith("arq-")
+    assert len(generated) == 36
+    assert invalid not in "\n".join(record.getMessage() for record in caplog.records)
+
+
 def test_dashboard_broker_token_is_scoped_to_bounded_control_endpoints(
     dashboard_server,
 ) -> None:
@@ -922,6 +1048,7 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
         "revision",
         "overview",
         "activity",
+        "activity_collections",
         "master",
         "config_path",
         "config_revision",
@@ -953,6 +1080,12 @@ def test_dashboard_live_snapshot_is_authenticated_stable_and_changes_with_activi
         "finalizations",
         "specialists",
     }
+    assert set(first["activity_collections"]) == set(first["activity"])
+    assert all(
+        collection["page_count"] == len(first["activity"][kind])
+        and collection["total_count"] >= collection["page_count"]
+        for kind, collection in first["activity_collections"].items()
+    )
     assert headers["Cache-Control"] == "no-store"
     assert headers["X-Frame-Options"] == "DENY"
     assert headers["X-Content-Type-Options"] == "nosniff"
@@ -1238,14 +1371,14 @@ def test_dashboard_live_snapshot_reads_activity_once(
     dashboard_server,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    original = Store.recent_dashboard_activity
+    original = Store.dashboard_activity_snapshot
     calls: list[int] = []
 
     def counted(self: Store, *, limit: int = 50):
         calls.append(limit)
         return original(self, limit=limit)
 
-    monkeypatch.setattr(Store, "recent_dashboard_activity", counted)
+    monkeypatch.setattr(Store, "dashboard_activity_snapshot", counted)
 
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -2005,13 +2138,18 @@ def test_dashboard_config_write_requires_confirmation_and_is_atomic(dashboard_se
     }
 
 
-def test_concurrent_dashboards_keep_custom_config_reads_and_writes_isolated(
+def test_concurrent_dashboards_keep_custom_config_reads_isolated(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     poison_path = tmp_path / "process-default.yaml"
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(poison_path))
     paths = [tmp_path / "first.yaml", tmp_path / "second.yaml"]
+    for index, path in enumerate(paths):
+        path.write_text(
+            yaml.safe_dump({"observability": {"retention_days": 41 + index}}),
+            encoding="utf-8",
+        )
     tokens = ["first-token", "second-token"]
     servers: list[DashboardHTTPServer] = []
     threads: list[threading.Thread] = []
@@ -2037,36 +2175,18 @@ def test_concurrent_dashboards_keep_custom_config_reads_and_writes_isolated(
                 }
             )
 
-        def update(index: int) -> tuple[int, dict]:
+        def read(index: int) -> tuple[int, dict]:
             client = clients[index]
             token = str(client["token"])
-            status, initial, _headers = _json_response(
-                client,
-                "/api/config",
-                token=token,
-            )
-            assert status == 200
             status, payload, _headers = _json_response(
                 client,
                 "/api/config",
-                method="POST",
-                body={
-                    "expected_revision": initial["revision"],
-                    "operations": [
-                        {
-                            "op": "set",
-                            "path": "observability.retention_days",
-                            "value": 41 + index,
-                        }
-                    ],
-                    "confirmations": ["SAVE CONFIG"],
-                },
                 token=token,
             )
             return status, payload
 
         with ThreadPoolExecutor(max_workers=2) as executor:
-            results = list(executor.map(update, range(2)))
+            results = list(executor.map(read, range(2)))
 
         assert [status for status, _payload in results] == [200, 200]
         assert [

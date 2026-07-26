@@ -50,6 +50,23 @@ class _OSFacade:
         return getattr(self._real_os, name)
 
 
+@pytest.fixture(autouse=True)
+def _verify_operator_presence_below_shared_seam(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep tests non-interactive while exercising the real shared CLI boundary."""
+
+    from agency_runtime.core import operator_presence
+
+    monkeypatch.setattr(
+        operator_presence,
+        "_request_os_operator_presence",
+        lambda _prompt: operator_presence._PresenceResult(
+            status=operator_presence._PresenceStatus.VERIFIED,
+            mechanism="pytest-result-only-verifier",
+            detail="verified",
+        ),
+    )
+
+
 @pytest.fixture
 def os_facade() -> type[_OSFacade]:
     """Return the process-safe OS facade used by platform simulation tests."""

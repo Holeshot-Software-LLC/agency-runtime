@@ -14,6 +14,8 @@ from dataclasses import asdict, dataclass, is_dataclass
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
+
 _CACHE_TTL_SECONDS = float(600)
 _CACHE_MAX_ENTRIES = 128
 
@@ -69,11 +71,7 @@ _RECENT_FINGERPRINT_ACTIVE: OrderedDict[int, _RecentActiveIds] = OrderedDict()
 
 
 def _active_ids(catalog: list[dict[str, Any]]) -> frozenset[str]:
-    return frozenset(
-        str(agent.get("slug") or agent.get("agent_slug") or "")
-        for agent in catalog
-        if agent.get("slug") or agent.get("agent_slug")
-    )
+    return frozenset(identity for agent in catalog if (identity := agent_identity(agent)))
 
 
 def _remember_fingerprint_active(
@@ -397,6 +395,31 @@ def catalog_active_ids(
     return active
 
 
+def _clone_cache_value(value: Any) -> Any:
+    """Detach JSON-like routing evidence without deepcopy bookkeeping.
+
+    Routing results are bounded JSON-compatible containers. A specialized
+    clone avoids the memo table and dynamic dispatch cost that deepcopy pays
+    for every scalar on the cache-hit path, while retaining a defensive
+    fallback for compatibility callers that cache an opaque value.
+    """
+
+    value_type = type(value)
+    if value is None or value_type in {str, int, float, bool, bytes}:
+        return value
+    if value_type is list:
+        return [_clone_cache_value(item) for item in value]
+    if value_type is tuple:
+        return tuple(_clone_cache_value(item) for item in value)
+    if value_type is dict:
+        return {key: _clone_cache_value(item) for key, item in value.items()}
+    if value_type is set:
+        return {_clone_cache_value(item) for item in value}
+    if value_type is frozenset:
+        return frozenset(_clone_cache_value(item) for item in value)
+    return deepcopy(value)
+
+
 def cache_get(key: str, ttl: float = _CACHE_TTL_SECONDS) -> dict[str, Any] | None:
     with _CACHE_LOCK:
         if key not in _ROUTING_CACHE:
@@ -407,14 +430,14 @@ def cache_get(key: str, ttl: float = _CACHE_TTL_SECONDS) -> dict[str, Any] | Non
             del _ROUTING_CACHE[key]
             return None
         _ROUTING_CACHE.move_to_end(key)
-        result = deepcopy({k: v for k, v in entry.items() if not k.startswith("_")})
+        result = _clone_cache_value({k: v for k, v in entry.items() if not k.startswith("_")})
     result["cache_hit"] = True
     return result
 
 
 def cache_put(key: str, value: dict[str, Any], max_entries: int = _CACHE_MAX_ENTRIES) -> None:
     with _CACHE_LOCK:
-        _ROUTING_CACHE[key] = {**deepcopy(value), "_ts": time.monotonic()}
+        _ROUTING_CACHE[key] = {**_clone_cache_value(value), "_ts": time.monotonic()}
         _ROUTING_CACHE.move_to_end(key)
         while len(_ROUTING_CACHE) > max(0, max_entries):
             _ROUTING_CACHE.popitem(last=False)

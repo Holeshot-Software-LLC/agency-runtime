@@ -153,23 +153,70 @@ def test_same_adapter_observes_human_off_status_on_at_successive_boundaries(
     ]
 
 
-def test_host_command_supports_status_off_and_on_across_store_restarts(
+def test_host_native_command_status_is_read_only_and_on_off_fail_closed(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "agency.db"
     store = Store(path)
 
-    assert handle_host_control_command("hermes", "status", store=store)["runtime_enabled"] is True
-    assert handle_host_control_command("hermes", "off", store=store)["runtime_enabled"] is False
-    assert Store(path).get_host_control("hermes")["enabled"] is False
-    assert handle_host_control_command("hermes", "on", store=Store(path))["runtime_enabled"] is True
+    def persisted_controls() -> list[tuple[object, ...]]:
+        connection = sqlite3.connect(path)
+        try:
+            return list(
+                connection.execute(
+                    "SELECT host, enabled, generation, updated_at, source "
+                    "FROM host_controls ORDER BY host"
+                )
+            )
+        finally:
+            connection.close()
+
+    initial = store.get_host_control("hermes")
+    initial_rows = persisted_controls()
+    status = handle_host_control_command("hermes", "status", store=store)
+    denied_off = handle_host_control_command(
+        "hermes",
+        "off",
+        store=store,
+        source="forged-model-source",
+    )
+
+    assert status["ok"] is True
+    assert status["mutation_denied"] is False
+    assert status["error"] is None
+    assert status["runtime_enabled"] is True
+    assert denied_off["ok"] is False
+    assert denied_off["mutation_denied"] is True
+    assert denied_off["error"] == "operator_presence_required"
+    assert denied_off["runtime_enabled"] is True
+    assert "remains enabled" in denied_off["message"]
+    assert Store(path).get_host_control("hermes") == initial
+    assert persisted_controls() == initial_rows
+
+    disabled = set_runtime_control(
+        store,
+        "hermes",
+        enabled=False,
+        source="operator-test",
+        expected_generation=0,
+    )
+    disabled_rows = persisted_controls()
+    denied_on = handle_host_control_command("hermes", "on", store=Store(path))
+
+    assert denied_on["ok"] is False
+    assert denied_on["mutation_denied"] is True
+    assert denied_on["error"] == "operator_presence_required"
+    assert denied_on["runtime_enabled"] is False
+    assert "remains disabled" in denied_on["message"]
+    assert Store(path).get_host_control("hermes") == disabled
+    assert persisted_controls() == disabled_rows
     assert (
         handle_host_control_command(
             "hermes",
             "/agency runtime status",
             store=store,
         )["runtime_enabled"]
-        is True
+        is False
     )
     for invalid in (
         "disable now",

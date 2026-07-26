@@ -16,6 +16,7 @@ from agency_runtime.core.agent_activation import (
     PROTECTED_AGENT_SLUGS,
     agent_is_enabled,
 )
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.host_capabilities import execution_contract_projection
 
 UI_NAME_CHARS = 128
@@ -77,7 +78,7 @@ def selector_roster_projection(
 ) -> dict[str, Any]:
     """Return the canonical selector input used by every direct and broker path."""
 
-    slug = str(agent.get("agent_slug") or agent.get("slug") or "")
+    slug = agent_identity(agent)
     projection = {
         "agent_slug": slug,
         "name": _selector_text(agent.get("name")),
@@ -103,7 +104,7 @@ def ui_roster_projection(
 ) -> dict[str, Any]:
     """Return only fields rendered by the live dashboard roster cards."""
 
-    slug = str(agent.get("agent_slug") or agent.get("slug") or "")
+    slug = agent_identity(agent)
     return {
         "agent_slug": slug,
         "name": _ui_text(agent.get("name"), UI_NAME_CHARS),

@@ -10,6 +10,14 @@ await import(pathToFileURL(CHARTS_PATH).href);
 const AgencyCharts = globalThis.AgencyCharts;
 const APP_PATH = fileURLToPath(new URL("../agency_runtime/dashboard/app.js", import.meta.url));
 const APP_URL = pathToFileURL(APP_PATH).href;
+const ACTIONS_SOURCE = readFileSync(
+  fileURLToPath(new URL("../agency_runtime/dashboard/dashboard-actions.js", import.meta.url)),
+  "utf8",
+);
+const RENDER_SOURCE = readFileSync(
+  fileURLToPath(new URL("../agency_runtime/dashboard/dashboard-render.js", import.meta.url)),
+  "utf8",
+);
 const APP_CSS_PATH = fileURLToPath(new URL("../agency_runtime/dashboard/app.css", import.meta.url));
 const APP_CSS_SOURCE = readFileSync(APP_CSS_PATH, "utf8");
 const INDEX_PATH = fileURLToPath(new URL("../agency_runtime/dashboard/index.html", import.meta.url));
@@ -52,6 +60,24 @@ function jsonResponse(status, payload) {
     status,
     headers: { get: () => null },
     json: async () => payload,
+  };
+}
+
+function controlSnapshot({
+  config = {},
+  hosts = [],
+  roster = { agents: [] },
+  governance = { snapshots: [] },
+  restartRequired = false,
+} = {}) {
+  return {
+    schema_version: "agency.dashboard.control.v1",
+    config,
+    control_revision: "test-control-revision",
+    governance,
+    hosts,
+    restart_required: restartRequired,
+    roster,
   };
 }
 
@@ -278,6 +304,11 @@ function createAppHarness(fetchImpl) {
     HTMLInputElement,
     URLSearchParams,
     console,
+    crypto: {
+      randomUUID() {
+        return "00000000-0000-4000-8000-000000000001";
+      },
+    },
     document,
     fetch: fetchImpl,
     history: { replaceState: (...args) => historyCalls.push(args) },
@@ -336,12 +367,15 @@ test("app.js API requests keep credentials in-memory and fail closed on malforme
 
   assert.equal((await harness.api.api("/ok", {
     body: "{}",
-    headers: { "X-Request-ID": "test-request" },
+    headers: { "X-Agency-Request-ID": "00000000-0000-4000-8000-000000000002" },
     method: "POST",
   })).ok, true);
   assert.equal(calls[0].options.headers.Authorization, "Bearer fragment-only-secret");
   assert.equal(calls[0].options.headers["Content-Type"], "application/json");
-  assert.equal(calls[0].options.headers["X-Request-ID"], "test-request");
+  assert.equal(
+    calls[0].options.headers["X-Agency-Request-ID"],
+    "00000000-0000-4000-8000-000000000002",
+  );
   assert.equal(calls[0].options.cache, "no-store");
   assert.equal(calls[0].options.credentials, "omit");
 
@@ -433,19 +467,7 @@ test("app.js renders provider configuration without reflecting stored API keys",
   assert.equal(operations[0].action, "replace");
   assert.equal(operations[0].value, "replacement-secret");
 
-  assert.deepEqual(
-    [...harness.api.requiredConfigConfirmations([
-      operations[0],
-      { op: "set", path: "profile", value: "local-only" },
-      { op: "set", path: "observability.capture_content", value: true },
-    ])],
-    [
-      "SAVE CONFIG",
-      "SAVE SENSITIVE CONFIG",
-      "APPLY LOCAL-ONLY PROFILE",
-      "ENABLE CONTENT CAPTURE",
-    ],
-  );
+  assert.equal(harness.api.saveConfig, undefined);
   assert.throws(
     () => harness.api.appendSecretOperation([], "judge.api_key", "new", true),
     /either a new value or clear/i,
@@ -696,18 +718,12 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   assert.match(text, /42% overlap/);
   assert.match(text, /Use the governed TypeScript contract/);
   assert.match(text, /known contractor installed/);
-  assert.deepEqual(
-    harness.node("workforce-action-kind").options.map((option) => option.value),
-    ["promote", "disable", "suspend", "retire", "merge"],
-  );
-  assert.equal(harness.node("workforce-action-form").hidden, false);
+  assert.deepEqual(harness.node("workforce-action-kind").options, []);
+  assert.equal(harness.node("workforce-action-form").hidden, true);
 
   harness.api.state.selectedWorkerDetail.worker.state = "disabled";
   harness.api.renderWorkerDetail();
-  assert.deepEqual(
-    harness.node("workforce-action-kind").options.map((option) => option.value),
-    ["enable", "suspend", "retire", "merge"],
-  );
+  assert.deepEqual(harness.node("workforce-action-kind").options, []);
 
   harness.api.state.selectedWorkerDetail.worker.state = "retired";
   harness.api.renderWorkerDetail();
@@ -804,41 +820,6 @@ test("provider builder validates, updates, removes, and reports discovery fallba
   assert.match(failed.node("provider-builder-model-status").textContent, /catalog offline/i);
 });
 
-test("bound provider staging controls report successful and rejected edits", async () => {
-  const harness = createAppHarness(() => { throw new Error("no fetch expected"); });
-  const providers = new FakeNode("config-providers");
-  providers.dataset.configPath = "providers";
-  providers.dataset.valueType = "json";
-  providers.labels = [{ textContent: "Providers" }];
-  providers.value = "[]";
-  harness.nodes.set("config-providers", providers);
-  harness.select("[data-config-path]", [providers]);
-  harness.api.state.configBaseline = new Map([["providers", "[]"]]);
-  harness.node("provider-builder-name").value = "primary";
-  harness.node("provider-builder-type").value = "http";
-  harness.node("provider-builder-timeout").value = "15";
-  harness.api.bindEvents();
-
-  harness.node("provider-builder-save").listeners.get("click")[0]();
-  assert.match(harness.node("notice").textContent, /Provider primary staged/i);
-  harness.node("provider-builder-name").value = "";
-  harness.node("provider-builder-save").listeners.get("click")[0]();
-  assert.match(harness.node("notice").textContent, /name is required/i);
-
-  harness.api.syncProviderSecretOptions();
-  harness.node("config-provider-secret-index").value = "0";
-  harness.node("provider-builder-remove").listeners.get("click")[0]();
-  assert.match(harness.node("notice").textContent, /removal staged/i);
-  harness.node("config-provider-secret-index").value = "";
-  harness.node("provider-builder-remove").listeners.get("click")[0]();
-  assert.match(harness.node("notice").textContent, /select a provider/i);
-  harness.node("provider-builder-type").listeners.get("change")[0]();
-  harness.node("provider-builder-transport").listeners.get("change")[0]();
-  harness.node("provider-builder-model-select").listeners.get("change")[0]();
-  harness.node("provider-builder-model-refresh").listeners.get("click")[0]();
-  await Promise.resolve();
-});
-
 test("provider configuration defensive branches stay bounded", async () => {
   const missingName = createAppHarness(() => { throw new Error("no fetch"); });
   missingName.missing("provider-builder-name");
@@ -909,7 +890,7 @@ test("provider configuration defensive branches stay bounded", async () => {
   broken.node("provider-builder-type").value = "cli";
   broken.node("provider-builder-transport").value = "codex";
   assert.equal(await broken.api.loadProviderModels(), false);
-  assert.equal(broken.node("provider-builder-model-status").textContent, "Model discovery failed.");
+  assert.equal(broken.node("provider-builder-model-status").textContent, "Network request failed.");
 
   const invalidProviders = createAppHarness(() => { throw new Error("no fetch"); });
   invalidProviders.node("provider-builder-name").value = "provider";
@@ -1114,6 +1095,7 @@ test("Route Lab offers only verified enabled execution hosts and preserves expli
     verifiedHost("claude", ["repository-read"]),
     verifiedHost("claude", ["duplicate-must-not-replace"]),
     verifiedHost("openclaw", ["repository-read", "native-delegation"]),
+    verifiedHost("zcode", ["repository-read", "native-delegation"]),
     verifiedHost("unknown"),
     {
       effective_enabled: true,
@@ -1128,7 +1110,7 @@ test("Route Lab offers only verified enabled execution hosts and preserves expli
   assert.equal(harness.api.renderRouteHosts(), "claude");
   assert.deepEqual(
     harness.node("route-host").children.map((option) => option.value),
-    ["claude", "openclaw"],
+    ["claude", "openclaw", "zcode"],
   );
   assert.equal(harness.node("route-host").disabled, false);
   assert.equal(harness.node("route-button").disabled, false);
@@ -1151,6 +1133,27 @@ test("Route Lab offers only verified enabled execution hosts and preserves expli
   optional.api.state.master = { enabled: true, generation: 1 };
   optional.api.state.hosts = [verifiedHost("codex")];
   assert.equal(optional.api.renderRouteHosts(), "codex");
+});
+
+test("read-only settings surface materializes the ZCode adapter field", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("read-only surface setup does not fetch");
+  });
+  const grid = new FakeNode("adapter-grid");
+  harness.missing("config-adapter-zcode");
+  harness.select(".adapter-grid", [grid]);
+
+  assert.equal(harness.api.configureReadOnlySurface(), true);
+  assert.equal(grid.children.length, 1);
+  const [label] = grid.children;
+  assert.equal(label.textContent, "ZCode");
+  const [select] = label.children;
+  assert.equal(select.id, "config-adapter-zcode");
+  assert.equal(select.getAttribute("data-config-path"), "adapters.zcode.enabled");
+  assert.deepEqual(
+    select.children.map((option) => [option.value, option.textContent]),
+    [["auto", "Auto"], ["true", "Enabled"], ["false", "Disabled"]],
+  );
 });
 
 test("Route Lab renders authoritative host evidence and bounded eligibility rejections", () => {
@@ -1628,35 +1631,10 @@ test("app.js roster and empty evidence renderers expose actionable, scoped contr
   assert.ok(rosterNodes.some((node) => node.textContent === "no capability tags"));
   assert.ok(rosterNodes.some((node) => node.className === "agent-card disabled"));
   const agentButtons = rosterNodes.filter((node) => node.type === "button");
-  assert.equal(agentButtons.length, 3);
-  assert.ok(agentButtons.some((node) => node.textContent === "enable"));
-  assert.equal(agentButtons.filter((node) => node.disabled).length, 1);
-  assert.deepEqual(agentButtons.map((node) => node.getAttribute("aria-label")), [
-    "Disable Security Reviewer (security-reviewer) specialist",
-    "Enable generalist specialist",
-    "chief-of-staff is protected and always enabled",
-  ]);
-  assert.equal(agentButtons[2].textContent, "always enabled");
-  assert.equal(agentButtons[2].getAttribute("aria-busy"), null);
-  const disableButton = agentButtons.find((node) => node.textContent === "disable" && !node.disabled);
-  const disabling = disableButton.listeners.get("click")[0]();
-  assert.equal(disableButton.disabled, true);
-  assert.equal(disableButton.getAttribute("aria-busy"), "true");
-  await answerConfirmation(
-    harness,
-    disabling,
-    "DISABLE security-reviewer",
-    false,
-  );
-  assert.equal(disableButton.disabled, false);
-  assert.equal(disableButton.getAttribute("aria-busy"), null);
-  assert.match(harness.node("notice").textContent, /agent action cancelled/i);
+  assert.equal(agentButtons.length, 0);
   const snapshotNodes = descendants(harness.node("snapshot-list"));
   const snapshotButtons = snapshotNodes.filter((node) => node.type === "button");
-  assert.deepEqual(snapshotButtons.map((node) => node.getAttribute("aria-label")), [
-    "Approve roster snapshot pending",
-    "Activate roster snapshot approved",
-  ]);
+  assert.deepEqual(snapshotButtons, []);
 
   harness.api.state.activity = {};
   harness.api.renderEvidence("delegations");
@@ -2035,10 +2013,10 @@ test("app.js cancels stale full refresh generations before they can render", asy
   });
 
   const refresh = harness.api.refreshAll();
-  assert.equal(requests.length, 1);
+  assert.equal(requests.length, 2);
   assert.deepEqual(
     requests.map((request) => request.path),
-    ["/api/config"],
+    ["/api/live?limit=100", "/api/control"],
   );
   const activeGeneration = harness.api.state.full.generation;
 
@@ -2077,6 +2055,14 @@ test("app.js initial refresh reuses the live fast path and preserves control-pla
       effective: { observability: { retention_days: 45, capture_content: true } },
       environment_overrides: {},
     }],
+    ["/api/control", controlSnapshot({
+      config: {
+        revision: "config-revision",
+        effective: { observability: { retention_days: 45, capture_content: true } },
+        environment_overrides: {},
+      },
+      roster: { agents: [{ agent_slug: "security-reviewer" }] },
+    })],
   ]);
   const calls = [];
   const harness = createAppHarness(async (path) => {
@@ -2086,11 +2072,8 @@ test("app.js initial refresh reuses the live fast path and preserves control-pla
 
   assert.equal(await harness.api.refreshAll(), true);
   assert.deepEqual(calls, [
-    "/api/config",
     "/api/live?limit=100",
-    "/api/hosts",
-    "/api/roster?limit=100",
-    "/api/snapshots",
+    "/api/control",
   ]);
   assert.equal(harness.api.state.live.revision, "initial-live");
   assert.equal(harness.api.state.overview.roster_count, 1);
@@ -2114,6 +2097,12 @@ test("app.js control-plane refresh is single-flight and updates only current res
     ["/api/roster?limit=100", { agents: [{ agent_slug: "reviewer" }, { agent_slug: "tester" }] }],
     ["/api/snapshots", { snapshots: [{ snapshot_id: "snapshot-1" }] }],
     ["/api/config", { effective: {}, revision: "control-config" }],
+    ["/api/control", controlSnapshot({
+      config: { effective: {}, revision: "control-config" },
+      hosts: [{ host: "codex", discovered: true }],
+      roster: { agents: [{ agent_slug: "reviewer" }, { agent_slug: "tester" }] },
+      governance: { snapshots: [{ snapshot_id: "snapshot-1" }] },
+    })],
   ]);
   const calls = [];
   const harness = createAppHarness(async (path) => {
@@ -2123,12 +2112,7 @@ test("app.js control-plane refresh is single-flight and updates only current res
   harness.api.state.activeView = "hosts";
 
   await harness.api.refreshControlPlane();
-  assert.deepEqual(calls, [
-    "/api/config",
-    "/api/hosts",
-    "/api/roster?limit=100",
-    "/api/snapshots",
-  ]);
+  assert.deepEqual(calls, ["/api/control"]);
   assert.equal(harness.api.state.hosts[0].host, "codex");
   assert.equal(harness.api.state.roster.length, 2);
   assert.equal(harness.api.state.overview.roster_count, 2);
@@ -2141,23 +2125,26 @@ test("app.js control-plane refresh is single-flight and updates only current res
 
   harness.api.state.control.inFlight = true;
   await harness.api.refreshControlPlane();
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 1);
 });
 
 test("store identity drift stays visible and disables routing, roster, and host controls", async () => {
   const calls = [];
   const harness = createAppHarness(async (path) => {
     calls.push(path);
-    if (path === "/api/config") {
-      return jsonResponse(200, {
-        effective: {},
-        revision: "restart-config",
-        service_binding: {
-          store_path: "C:\\runtime\\active.db",
-          desired_store_path: "C:\\runtime\\next.db",
-          store_restart_required: true,
+    if (path === "/api/control") {
+      return jsonResponse(200, controlSnapshot({
+        config: {
+          effective: {},
+          revision: "restart-config",
+          service_binding: {
+            store_path: "C:\\runtime\\active.db",
+            desired_store_path: "C:\\runtime\\next.db",
+            store_restart_required: true,
+          },
         },
-      });
+        restartRequired: true,
+      }));
     }
     if (path === "/api/live?limit=100") {
       return jsonResponse(200, {
@@ -2172,7 +2159,7 @@ test("store identity drift stays visible and disables routing, roster, and host 
   });
 
   assert.equal(await harness.api.refreshAll(), true);
-  assert.deepEqual(calls, ["/api/config", "/api/live?limit=100"]);
+  assert.deepEqual(calls, ["/api/live?limit=100", "/api/control"]);
   assert.equal(harness.api.serviceRestartRequired(), true);
   assert.equal(harness.node("store-restart-banner").hidden, false);
   assert.match(harness.node("store-restart-paths").textContent, /active\.db/i);
@@ -2187,9 +2174,9 @@ test("store identity drift stays visible and disables routing, roster, and host 
   assert.equal(calls.length, callsBeforeBlockedSearch);
   await harness.api.refreshControlPlane();
   assert.deepEqual(calls, [
-    "/api/config",
     "/api/live?limit=100",
-    "/api/config",
+    "/api/control",
+    "/api/control",
   ]);
 
   harness.api.state.hosts = [{
@@ -2198,9 +2185,9 @@ test("store identity drift stays visible and disables routing, roster, and host 
   }];
   harness.api.renderRouteHosts();
   harness.api.renderHosts();
-  const hostButton = descendants(harness.node("host-grid"))
-    .find((node) => node.textContent === "Restart required");
-  assert.equal(hostButton.disabled, true);
+  const hostButtons = descendants(harness.node("host-grid"))
+    .filter((node) => node.type === "button");
+  assert.deepEqual(hostButtons, []);
 
   harness.api.state.roster = [{
     agent_slug: "reviewer",
@@ -2219,14 +2206,11 @@ test("store identity drift stays visible and disables routing, roster, and host 
     .filter((node) => node.type === "button");
   const snapshotButtons = descendants(harness.node("snapshot-list"))
     .filter((node) => node.type === "button");
-  assert.ok(rosterButtons.length > 0 && rosterButtons.every((node) => node.disabled));
-  assert.ok(snapshotButtons.length > 0 && snapshotButtons.every((node) => node.disabled));
+  assert.deepEqual(rosterButtons, []);
+  assert.deepEqual(snapshotButtons, []);
 
   const callsBeforeBlockedActions = calls.length;
   await harness.api.runRoute();
-  await harness.api.toggleHost("codex", false, 1);
-  await harness.api.toggleAgent("reviewer", false);
-  await harness.api.rosterAction("approve", "snapshot-restart");
   assert.match(harness.node("notice").textContent, /restart the dashboard service/i);
   assert.equal(calls.length, callsBeforeBlockedActions);
 
@@ -2376,64 +2360,6 @@ test("app.js routing lab posts bounded tasks and reconciles live evidence", asyn
   assert.equal(harness.node("route-button").getAttribute("aria-busy"), null);
 });
 
-test("app.js saves validated config only after the exact typed confirmation", async () => {
-  const calls = [];
-  const harness = createAppHarness(async (path, options) => {
-    calls.push({ path, options });
-    if (path === "/api/config") {
-      return jsonResponse(200, {
-        effective: { observability: { capture_content: false, retention_days: 31 } },
-        restart_required_paths: [],
-        revision: "saved-config",
-      });
-    }
-    if (path === "/api/live?limit=100") {
-      return jsonResponse(200, {
-        activity: { delegations: [], routing: [] },
-        overview: { status: "ok" },
-        revision: "after-config",
-        schema_version: 1,
-      });
-    }
-    throw new Error(`unexpected path ${path}`);
-  });
-  const retention = new FakeNode("config-retention");
-  retention.dataset.configPath = "observability.retention_days";
-  retention.dataset.valueType = "integer";
-  retention.labels = [{ textContent: "Retention days" }];
-  retention.value = "31";
-  harness.nodes.set("config-retention", retention);
-  harness.select("[data-config-path]", [retention]);
-  harness.api.state.config = { revision: "original-config" };
-  harness.api.state.configBaseline.set("observability.retention_days", "30");
-
-  let prevented = false;
-  const saving = harness.api.saveConfig({ preventDefault() { prevented = true; } });
-  await Promise.resolve();
-  assert.equal(prevented, true);
-  assert.equal(harness.api.state.confirmation.phrase, "SAVE CONFIG");
-  harness.node("confirmation-input").value = "SAVE CONFIG";
-  harness.api.finishConfirmation(true);
-  await saving;
-
-  assert.equal(calls.length, 2);
-  const payload = JSON.parse(calls[0].options.body);
-  assert.equal(payload.expected_revision, "original-config");
-  assert.deepEqual(payload.confirmations, ["SAVE CONFIG"]);
-  assert.deepEqual(payload.operations, [{
-    op: "set",
-    path: "observability.retention_days",
-    value: 31,
-  }]);
-  assert.equal(harness.api.state.config.revision, "saved-config");
-  assert.equal(harness.api.state.overview.retention_days, 31);
-  assert.equal(harness.node("setting-retention").textContent, "31 days");
-  assert.equal(harness.node("setting-capture").textContent, "Disabled");
-  assert.equal(harness.node("privacy-chip").textContent, "Metadata only");
-  assert.equal(harness.node("config-save-button").getAttribute("aria-busy"), null);
-  assert.match(harness.node("notice").textContent, /saved and active/i);
-});
-
 test("app.js binds lifecycle controls for live pause, page cleanup, and late fragments", () => {
   const harness = createAppHarness(() => {
     throw new Error("registered listeners are not allowed to fetch in this test");
@@ -2452,8 +2378,8 @@ test("app.js binds lifecycle controls for live pause, page cleanup, and late fra
   assert.equal(harness.windowListeners.get("pagehide").length, 1);
   assert.equal(harness.windowListeners.get("pageshow").length, 1);
 
-  harness.node("trim-days").listeners.get("input")[0]();
-  assert.equal(harness.node("trim-days").dataset.dirty, "true");
+  assert.equal(harness.node("trim-days").listeners.has("input"), false);
+  assert.equal(harness.node("trim-days").disabled, true);
   harness.node("live-toggle").listeners.get("click")[0]();
   assert.equal(harness.api.state.live.enabled, false);
   assert.equal(harness.node("live-status").dataset.state, "paused");
@@ -2825,8 +2751,9 @@ test("app.js handles control-plane and full-refresh error classes", async () => 
     throw new Error("network unavailable");
   });
   assert.equal(await unavailable.api.refreshAll(), undefined);
-  assert.equal(unavailable.node("connection-label").textContent, "Unavailable");
-  assert.match(unavailable.node("notice").textContent, /network unavailable/i);
+  assert.equal(unavailable.node("connection-label").textContent, "Control data stale");
+  assert.match(unavailable.node("notice").textContent, /control refresh failed/i);
+  assert.match(unavailable.node("notice").textContent, /request id/i);
   await assert.rejects(
     unavailable.api.refreshAll({ surfaceErrors: false }),
     /network unavailable/i,
@@ -2855,298 +2782,6 @@ test("app.js reports post-mutation reconciliation failures without hiding succes
   await allTerminal.api.reconcileAll("Host updated.");
   assert.equal(allTerminal.api.state.live.terminal, true);
   assert.match(allTerminal.node("notice").textContent, /token expired/i);
-});
-
-test("app.js validates and completes runtime trimming", async () => {
-  const calls = [];
-  const payloads = new Map([
-    ["/api/live?limit=100", {
-      activity: {}, overview: { status: "ok" }, revision: "trimmed", schema_version: 1,
-    }],
-    ["/api/hosts", { hosts: [] }],
-    ["/api/roster?limit=100", { agents: [] }],
-    ["/api/snapshots", { snapshots: [] }],
-    ["/api/config", { effective: {}, revision: "config" }],
-  ]);
-  const harness = createAppHarness(async (path, options) => {
-    calls.push({ path, options });
-    if (path === "/api/maintenance/trim") {
-      return jsonResponse(200, { db_size_after_bytes: 1536 });
-    }
-    return jsonResponse(200, payloads.get(path));
-  });
-
-  await harness.api.trimRuntime();
-  assert.match(harness.node("notice").textContent, /exact confirmation phrase/i);
-  harness.node("trim-confirm").value = "TRIM RUNTIME DATA";
-  harness.node("trim-days").value = "0";
-  await harness.api.trimRuntime();
-  assert.match(harness.node("notice").textContent, /integer from 1 through 3650/i);
-
-  harness.node("trim-days").value = "45";
-  harness.node("trim-days").dataset.dirty = "true";
-  await harness.api.trimRuntime();
-  assert.deepEqual(JSON.parse(calls[0].options.body), {
-    confirm: "TRIM RUNTIME DATA",
-    older_than_days: 45,
-    vacuum: false,
-  });
-  assert.equal(harness.node("trim-confirm").value, "");
-  assert.equal(harness.node("trim-days").dataset.dirty, undefined);
-  assert.equal(harness.node("trim-button").disabled, false);
-  assert.equal(harness.node("trim-button").getAttribute("aria-busy"), null);
-  assert.match(harness.node("notice").textContent, /database is 1.5 KB/i);
-
-  const failed = createAppHarness(async () => jsonResponse(500, { error: "trim failed" }));
-  failed.node("trim-confirm").value = "TRIM RUNTIME DATA";
-  failed.node("trim-days").value = "30";
-  await failed.api.trimRuntime();
-  assert.match(failed.node("notice").textContent, /trim failed/i);
-  assert.equal(failed.node("trim-button").disabled, false);
-});
-
-async function answerConfirmation(harness, pending, phrase, accepted = true) {
-  await Promise.resolve();
-  if (accepted) harness.node("confirmation-input").value = phrase;
-  harness.api.finishConfirmation(accepted);
-  await pending;
-}
-
-test("app.js confirms, cancels, and completes roster, host, and agent actions", async () => {
-  const calls = [];
-  const payloads = new Map([
-    ["/api/live?limit=100", {
-      activity: {}, overview: { status: "ok" }, revision: "mutated", schema_version: 1,
-    }],
-    ["/api/hosts", { hosts: [] }],
-    ["/api/roster?limit=100", { agents: [] }],
-    ["/api/snapshots", { snapshots: [] }],
-    ["/api/config", { effective: {}, revision: "config" }],
-  ]);
-  const harness = createAppHarness(async (path, options) => {
-    calls.push({ path, options });
-    if (
-      path === "/api/roster/action"
-      || path === "/api/hosts/toggle"
-      || path === "/api/agents/toggle"
-    ) {
-      return jsonResponse(200, { ok: true });
-    }
-    return jsonResponse(200, payloads.get(path));
-  });
-
-  await answerConfirmation(
-    harness,
-    harness.api.rosterAction("approve", "snapshot-1"),
-    "APPROVE snapshot-1",
-    false,
-  );
-  assert.match(harness.node("notice").textContent, /roster action cancelled/i);
-  assert.equal(calls.length, 0);
-
-  await answerConfirmation(
-    harness,
-    harness.api.rosterAction("approve", "snapshot-1"),
-    "APPROVE snapshot-1",
-  );
-  assert.equal(calls[0].path, "/api/roster/action");
-  assert.deepEqual(JSON.parse(calls[0].options.body), {
-    action: "approve",
-    confirm: "APPROVE snapshot-1",
-    snapshot_id: "snapshot-1",
-  });
-  assert.match(harness.node("notice").textContent, /snapshot snapshot-1 approved/i);
-
-  calls.length = 0;
-  await harness.api.toggleHost("codex", false);
-  assert.match(harness.node("notice").textContent, /host control state is stale/i);
-  assert.equal(calls.length, 0);
-
-  await answerConfirmation(
-    harness,
-    harness.api.toggleHost("codex", false, 0),
-    "DISABLE codex",
-    false,
-  );
-  assert.match(harness.node("notice").textContent, /host action cancelled/i);
-  assert.equal(calls.length, 0);
-
-  await answerConfirmation(
-    harness,
-    harness.api.toggleHost("codex", false, 0),
-    "DISABLE codex",
-  );
-  assert.equal(calls[0].path, "/api/hosts/toggle");
-  assert.deepEqual(JSON.parse(calls[0].options.body), {
-    confirm: "DISABLE codex",
-    enabled: false,
-    expected_generation: 0,
-    host: "codex",
-  });
-  assert.match(harness.node("notice").textContent, /codex runtime disabled/i);
-
-  calls.length = 0;
-  harness.api.state.config = { revision: "activation-revision" };
-  harness.api.state.controlConfigRevision = "activation-revision";
-  await answerConfirmation(
-    harness,
-    harness.api.toggleAgent("security-reviewer", false),
-    "DISABLE security-reviewer",
-    false,
-  );
-  assert.match(harness.node("notice").textContent, /agent action cancelled/i);
-  assert.equal(calls.length, 0);
-
-  await answerConfirmation(
-    harness,
-    harness.api.toggleAgent("security-reviewer", false),
-    "DISABLE security-reviewer",
-  );
-  assert.equal(calls[0].path, "/api/agents/toggle");
-  assert.deepEqual(JSON.parse(calls[0].options.body), {
-    confirm: "DISABLE security-reviewer",
-    enabled: false,
-    expected_revision: "activation-revision",
-    slug: "security-reviewer",
-  });
-  assert.match(harness.node("notice").textContent, /security-reviewer disabled/i);
-
-  calls.length = 0;
-  await answerConfirmation(
-    harness,
-    harness.api.toggleAgent("security-reviewer", true),
-    "ENABLE security-reviewer",
-  );
-  assert.equal(calls[0].path, "/api/agents/toggle");
-  assert.match(harness.node("notice").textContent, /security-reviewer enabled/i);
-
-  calls.length = 0;
-  const suspendedAction = harness.api.toggleAgent("security-reviewer", false);
-  harness.api.state.lifecycle.suspended = true;
-  await answerConfirmation(
-    harness,
-    suspendedAction,
-    "DISABLE security-reviewer",
-  );
-  harness.api.state.lifecycle.suspended = false;
-  assert.equal(calls.length, 0);
-
-  const failed = createAppHarness(async () => jsonResponse(500, { error: "mutation failed" }));
-  await answerConfirmation(
-    failed,
-    failed.api.rosterAction("activate", "snapshot-2"),
-    "ACTIVATE snapshot-2",
-  );
-  assert.match(failed.node("notice").textContent, /mutation failed/i);
-  await answerConfirmation(
-    failed,
-    failed.api.toggleHost("claude", true, 0),
-    "ENABLE claude",
-  );
-  assert.match(failed.node("notice").textContent, /mutation failed/i);
-  await answerConfirmation(
-    failed,
-    failed.api.toggleAgent("code-reviewer", true),
-    "ENABLE code-reviewer",
-  );
-  assert.match(failed.node("notice").textContent, /mutation failed/i);
-});
-
-test("app.js ignores an agent mutation response after its request is cancelled", async () => {
-  const response = deferred();
-  const harness = createAppHarness(async (path) => {
-    assert.equal(path, "/api/agents/toggle");
-    return response.promise;
-  });
-  harness.api.state.config = { revision: "activation-revision" };
-
-  const action = harness.api.toggleAgent("code-reviewer", true);
-  await Promise.resolve();
-  harness.node("confirmation-input").value = "ENABLE code-reviewer";
-  harness.api.finishConfirmation(true);
-  await Promise.resolve();
-  harness.api.cancelMutationRequests();
-  response.resolve(jsonResponse(200, { ok: true }));
-  await action;
-
-  assert.doesNotMatch(harness.node("notice").textContent, /code-reviewer enabled/i);
-});
-
-test("dirty settings preserve editor inputs while successive agent toggles advance CAS", async () => {
-  const toggleRevisions = [];
-  let revision = "revision-0";
-  const harness = createAppHarness(async (path, options = {}) => {
-    if (path === "/api/agents/toggle") {
-      const body = JSON.parse(options.body);
-      toggleRevisions.push(body.expected_revision);
-      assert.equal(body.expected_revision, revision);
-      revision = `revision-${toggleRevisions.length}`;
-      return jsonResponse(200, { config: { revision } });
-    }
-    if (path === "/api/live?limit=100") {
-      return jsonResponse(200, {
-        activity: {}, overview: { status: "ok" }, revision, schema_version: 1,
-      });
-    }
-    if (path === "/api/hosts") return jsonResponse(200, { hosts: [] });
-    if (path === "/api/roster?limit=100") return jsonResponse(200, { agents: [] });
-    if (path === "/api/snapshots") return jsonResponse(200, { snapshots: [] });
-    if (path === "/api/config") return jsonResponse(200, { effective: {}, revision });
-    throw new Error(`unexpected request: ${path}`);
-  });
-  const retention = new FakeNode("config-retention");
-  retention.dataset.configPath = "observability.retention_days";
-  retention.dataset.valueType = "integer";
-  retention.value = "31";
-  harness.nodes.set("config-retention", retention);
-  harness.select("[data-config-path]", [retention]);
-  harness.api.state.activeView = "settings";
-  harness.api.state.config = { revision: "revision-0" };
-  harness.api.state.controlConfigRevision = "revision-0";
-  harness.api.state.configBaseline.set("observability.retention_days", "30");
-  harness.api.state.configDirty = true;
-
-  await answerConfirmation(
-    harness,
-    harness.api.toggleAgent("code-reviewer", false),
-    "DISABLE code-reviewer",
-  );
-  assert.equal(harness.api.state.config.revision, "revision-0");
-  assert.equal(harness.api.state.controlConfigRevision, "revision-1");
-  assert.equal(harness.api.state.pendingConfig.revision, "revision-1");
-  assert.equal(retention.value, "31");
-
-  await answerConfirmation(
-    harness,
-    harness.api.toggleAgent("security-reviewer", false),
-    "DISABLE security-reviewer",
-  );
-  assert.deepEqual(toggleRevisions, ["revision-0", "revision-1"]);
-  assert.equal(harness.api.state.controlConfigRevision, "revision-2");
-  assert.equal(harness.api.state.pendingConfig.revision, "revision-2");
-  assert.equal(harness.api.state.configDirty, true);
-  assert.equal(retention.value, "31");
-});
-
-test("app.js preserves config edits after save failures", async () => {
-  const harness = createAppHarness(async () => jsonResponse(409, { error: "revision conflict" }));
-  const retention = new FakeNode("config-retention");
-  retention.dataset.configPath = "observability.retention_days";
-  retention.dataset.valueType = "integer";
-  retention.value = "31";
-  harness.nodes.set("config-retention", retention);
-  harness.select("[data-config-path]", [retention]);
-  harness.api.state.config = { revision: "original" };
-  harness.api.state.configBaseline.set("observability.retention_days", "30");
-
-  const saving = harness.api.saveConfig({ preventDefault() {} });
-  await Promise.resolve();
-  harness.node("confirmation-input").value = "SAVE CONFIG";
-  harness.api.finishConfirmation(true);
-  await saving;
-  assert.match(harness.node("notice").textContent, /revision conflict/i);
-  assert.equal(harness.api.state.configDirty, true);
-  assert.equal(harness.node("config-save-button").disabled, false);
 });
 
 test("app.js supports every evidence-tab keyboard command", () => {
@@ -3180,123 +2815,6 @@ test("app.js supports every evidence-tab keyboard command", () => {
   assert.equal(invoke(tabs[1], "Enter"), true);
   assert.equal(invoke(tabs[1], " "), true);
   assert.equal(invoke(tabs[1], "Escape"), false);
-});
-
-test("app.js wires reset, confirmation keyboard, and DOM startup handlers", async () => {
-  const payloads = new Map([
-    ["/api/live?limit=100", {
-      activity: {}, overview: { status: "ok" }, revision: "startup", schema_version: 1,
-    }],
-    ["/api/hosts", { hosts: [] }],
-    ["/api/roster?limit=100", { agents: [] }],
-    ["/api/snapshots", { snapshots: [] }],
-    ["/api/config", { effective: {}, revision: "startup-config" }],
-  ]);
-  const harness = createAppHarness(async (path) => jsonResponse(200, payloads.get(path)));
-  harness.sessionValues.set("agency-dashboard-token", "startup-token");
-  harness.api.bindEvents();
-
-  harness.api.state.pendingConfig = { effective: {}, revision: "pending-reset" };
-  harness.node("config-reset-button").listeners.get("click")[0]();
-  assert.equal(harness.api.state.config.revision, "pending-reset");
-
-  let enterPrevented = false;
-  const accepted = harness.api.requestConfirmation("ENTER", "Press Enter.");
-  harness.node("confirmation-input").value = "ENTER";
-  harness.node("confirmation-input").listeners.get("keydown")[0]({
-    key: "Enter",
-    preventDefault() { enterPrevented = true; },
-  });
-  assert.equal(enterPrevented, true);
-  assert.equal(await accepted, true);
-
-  let escapePrevented = false;
-  const cancelled = harness.api.requestConfirmation("ESCAPE", "Press Escape.");
-  harness.node("confirmation-input").listeners.get("keydown")[0]({
-    key: "Escape",
-    preventDefault() { escapePrevented = true; },
-  });
-  assert.equal(escapePrevented, true);
-  assert.equal(await cancelled, false);
-
-  await harness.documentListeners.get("DOMContentLoaded")[0]();
-  assert.equal(harness.api.state.live.revision, "startup");
-  assert.equal(harness.node("connection-label").textContent, "Authenticated");
-  assert.notEqual(harness.api.state.clockTimer, null);
-});
-
-test("app.js executes every bound click, timer, and fragment callback", async () => {
-  const payloads = new Map([
-    ["/api/live?limit=100", {
-      activity: {}, overview: { status: "ok" }, revision: "callback", schema_version: 1,
-    }],
-    ["/api/hosts", { hosts: [] }],
-    ["/api/roster?limit=100", { agents: [] }],
-    ["/api/snapshots", { snapshots: [] }],
-    ["/api/config", { effective: {}, revision: "callback-config" }],
-  ]);
-  const harness = createAppHarness(async (path) => jsonResponse(200, payloads.get(path)));
-
-  harness.api.showNotice("Temporary");
-  const noticeTimer = harness.api.showNotice.timer;
-  harness.timers.tasks.get(noticeTimer).callback();
-  assert.equal(harness.node("notice").hidden, true);
-
-  harness.api.state.hosts = [{
-    executable_discovered: true,
-    host: "codex",
-    inspection_status: "complete",
-    runtime_control_generation: 0,
-    runtime_enabled: true,
-  }];
-  harness.api.renderHosts();
-  const hostButton = descendants(harness.node("host-grid"))
-    .find((node) => node.type === "button");
-  hostButton.listeners.get("click")[0]();
-  await Promise.resolve();
-  harness.api.finishConfirmation(false);
-
-  harness.api.state.snapshots = [{ approved: false, snapshot_id: "pending" }];
-  harness.api.renderRoster();
-  const rosterButton = descendants(harness.node("snapshot-list"))
-    .find((node) => node.type === "button");
-  rosterButton.listeners.get("click")[0]();
-  await Promise.resolve();
-  harness.api.finishConfirmation(false);
-
-  const tab = new FakeNode();
-  tab.classList.add("active");
-  tab.dataset.evidence = "delegations";
-  harness.select(".subnav-item", [tab]);
-  harness.api.state.activity = { delegations: [] };
-  harness.api.configureEvidenceTabs();
-  tab.listeners.get("click")[0]();
-
-  const nav = new FakeNode("nav-roster");
-  nav.classList.add("active");
-  nav.dataset.view = "roster";
-  const panel = new FakeNode("panel-roster");
-  panel.dataset.viewPanel = "roster";
-  harness.select(".nav-item", [nav]);
-  harness.select(".nav-item.active", [nav]);
-  harness.select(".view", [panel]);
-  harness.api.bindEvents();
-  nav.listeners.get("click")[0]();
-  assert.equal(harness.api.state.activeView, "roster");
-
-  const cancelled = harness.api.requestConfirmation("CANCEL", "Cancel it.");
-  harness.node("confirmation-cancel").listeners.get("click")[0]();
-  assert.equal(await cancelled, false);
-  const accepted = harness.api.requestConfirmation("ACCEPT", "Accept it.");
-  harness.node("confirmation-input").value = "ACCEPT";
-  harness.node("confirmation-accept").listeners.get("click")[0]();
-  assert.equal(await accepted, true);
-
-  harness.sessionValues.set("agency-dashboard-token", "fragment-token");
-  harness.windowListeners.get("hashchange")[0]();
-  await Promise.resolve();
-  await Promise.resolve();
-  assert.equal(harness.api.state.token, "fragment-token");
 });
 
 test("app.js exercises defensive configuration and optional-DOM branches", () => {
@@ -3430,10 +2948,7 @@ test("app.js renders sparse and changing runtime evidence defensively", () => {
   ];
   harness.api.renderHosts();
   const buttons = descendants(harness.node("host-grid")).filter((node) => node.type === "button");
-  assert.deepEqual(buttons.map((button) => button.textContent), ["State unknown", "Disable", "Enable"]);
-  assert.equal(buttons[0].disabled, true);
-  assert.equal(buttons[1].className.includes("danger"), true);
-  assert.equal(buttons[2].className.includes("solid"), true);
+  assert.deepEqual(buttons, []);
 
   harness.api.state.activity = {
     finalizations: [{ action: "", missing: [], trace_id: "new" }],
@@ -3635,135 +3150,6 @@ test("app.js refreshes sparse payloads while live updates are paused", async () 
   assert.equal(emptyConfig.api.state.overview.roster_count, 0);
 });
 
-test("app.js covers route and save validation, cancellation, and restart messages", async () => {
-  const routeFailure = createAppHarness(async () => jsonResponse(500, { error: "route failed" }));
-  routeFailure.node("route-task").value = "Review this";
-  routeFailure.node("route-host").value = "codex";
-  await routeFailure.api.runRoute();
-  assert.equal(routeFailure.node("route-status").textContent, "FAILED");
-  assert.match(routeFailure.node("notice").textContent, /route failed/i);
-
-  const invalid = createAppHarness(() => {
-    throw new Error("validation must stop the request");
-  });
-  const invalidControl = new FakeNode("count");
-  invalidControl.dataset.configPath = "count";
-  invalidControl.dataset.valueType = "integer";
-  invalidControl.value = "bad";
-  invalid.select("[data-config-path]", [invalidControl]);
-  await invalid.api.saveConfig({ preventDefault() {} });
-  assert.match(invalid.node("notice").textContent, /integer/i);
-
-  const unchanged = createAppHarness(() => {
-    throw new Error("unchanged config must not fetch");
-  });
-  unchanged.select("[data-config-path]", []);
-  await unchanged.api.saveConfig({ preventDefault() {} });
-  assert.equal(unchanged.api.state.confirmation, null);
-
-  const cancelled = createAppHarness(() => {
-    throw new Error("cancelled config must not fetch");
-  });
-  const changed = new FakeNode("profile");
-  changed.dataset.configPath = "profile";
-  changed.value = "balanced";
-  cancelled.select("[data-config-path]", [changed]);
-  cancelled.api.state.configBaseline.set("profile", '"old"');
-  const cancelledSave = cancelled.api.saveConfig({ preventDefault() {} });
-  await Promise.resolve();
-  cancelled.api.finishConfirmation(false);
-  await cancelledSave;
-  assert.match(cancelled.node("notice").textContent, /save cancelled/i);
-
-  const payloads = new Map([
-    ["/api/live?limit=100", {
-      activity: {}, overview: { status: "ok" }, revision: "saved", schema_version: 1,
-    }],
-  ]);
-  const restarted = createAppHarness(async (path) => {
-    if (path === "/api/config") {
-      return jsonResponse(200, {
-        effective: { profile: "balanced" },
-        restart_required_paths: ["judge.model"],
-        revision: "new",
-      });
-    }
-    return jsonResponse(200, payloads.get(path));
-  });
-  const profile = new FakeNode("profile");
-  profile.dataset.configPath = "profile";
-  profile.value = "balanced";
-  restarted.nodes.set("profile", profile);
-  restarted.select("[data-config-path]", [profile]);
-  restarted.api.state.configBaseline.set("profile", '"old"');
-  const saving = restarted.api.saveConfig({ preventDefault() {} });
-  await Promise.resolve();
-  restarted.node("confirmation-input").value = "SAVE CONFIG";
-  restarted.api.finishConfirmation(true);
-  await saving;
-  assert.match(restarted.node("notice").textContent, /restart required for: judge.model/i);
-
-  const noRestart = createAppHarness(async (path) => {
-    if (path === "/api/config") {
-      return jsonResponse(200, { effective: { profile: "fast" }, revision: "newer" });
-    }
-    return jsonResponse(200, payloads.get(path));
-  });
-  const fastProfile = new FakeNode("profile");
-  fastProfile.dataset.configPath = "profile";
-  fastProfile.value = "fast";
-  noRestart.nodes.set("profile", fastProfile);
-  noRestart.select("[data-config-path]", [fastProfile]);
-  noRestart.api.state.configBaseline.set("profile", '"old"');
-  const saveWithoutRestart = noRestart.api.saveConfig({ preventDefault() {} });
-  await Promise.resolve();
-  noRestart.node("confirmation-input").value = "SAVE CONFIG";
-  noRestart.api.finishConfirmation(true);
-  await saveWithoutRestart;
-  assert.match(noRestart.node("notice").textContent, /saved and active/i);
-});
-
-test("app.js covers enabled-host success and tab/reset fallbacks", async () => {
-  const payloads = new Map([
-    ["/api/live?limit=100", {
-      activity: {}, overview: { status: "ok" }, revision: "enabled", schema_version: 1,
-    }],
-    ["/api/hosts", { hosts: [] }],
-    ["/api/roster?limit=100", { agents: [] }],
-    ["/api/snapshots", { snapshots: [] }],
-    ["/api/config", { effective: {}, revision: "config" }],
-  ]);
-  const host = createAppHarness(async (path) => {
-    if (path === "/api/hosts/toggle") return jsonResponse(200, {});
-    return jsonResponse(200, payloads.get(path));
-  });
-  await answerConfirmation(host, host.api.toggleHost("claude", true, 0), "ENABLE claude");
-  assert.match(host.node("notice").textContent, /claude runtime enabled/i);
-
-  const tabs = createAppHarness(() => {
-    throw new Error("this test does not fetch");
-  });
-  const tabList = new FakeNode("tab-list");
-  const tab = new FakeNode();
-  tab.dataset.evidence = "";
-  tab.parentElement = tabList;
-  tabs.node("evidence-body").closestNode = new FakeNode("panel");
-  tabs.select(".subnav-item", [tab]);
-  tabs.api.configureEvidenceTabs();
-  assert.equal(tab.id, "evidence-tab-0");
-  assert.equal(tab.getAttribute("aria-selected"), "false");
-  assert.equal(tabs.node("evidence-body").closestNode.getAttribute("aria-labelledby"), tab.id);
-
-  const reset = createAppHarness(() => {
-    throw new Error("this test does not fetch");
-  });
-  reset.api.bindEvents();
-  reset.api.state.pendingConfig = null;
-  reset.api.state.config = { effective: {}, revision: "current" };
-  reset.node("config-reset-button").listeners.get("click")[0]();
-  assert.equal(reset.api.state.config.revision, "current");
-});
-
 test("ES-module bootstrap and lifecycle teardown are deterministic", async () => {
   const harness = createAppHarness(() => {
     throw new Error("teardown must abort before fetching");
@@ -3872,149 +3258,26 @@ test("connection and reconciliation generations reject stale async completions",
   assert.equal(staleReconcile.node("notice").textContent, "completed");
 });
 
-test("aborted mutations cannot render stale route, trim, config, roster, or host results", async () => {
-  const requests = [];
-  const harness = createAppHarness((path) => {
-    const pending = deferred();
-    requests.push({ path, pending });
-    return pending.promise;
-  });
-  const takeRequest = (path) => {
-    const index = requests.findIndex((request) => request.path === path);
-    assert.notEqual(index, -1, `missing request for ${path}`);
-    return requests.splice(index, 1)[0].pending;
-  };
-
-  harness.node("route-task").value = "inspect a stale route";
-  harness.node("route-host").value = "codex";
-  const routing = harness.api.runRoute();
-  await Promise.resolve();
-  const routeRequest = takeRequest("/api/route");
-  assert.equal(harness.node("route-button").disabled, true);
-  assert.equal(harness.node("route-button").getAttribute("aria-busy"), "true");
-  harness.api.cancelMutationRequests();
-  assert.equal(harness.node("refresh-button").disabled, false);
-  routeRequest.resolve(jsonResponse(200, { status: "complete", selected: [{ slug: "late" }] }));
-  await routing;
-  assert.equal(harness.node("route-result").className, "");
-  assert.equal(harness.node("route-status").textContent, "CANCELLED");
-  assert.equal(harness.node("route-button").getAttribute("aria-busy"), null);
-
-  harness.node("trim-confirm").value = "TRIM RUNTIME DATA";
-  harness.node("trim-days").value = "30";
-  const trimming = harness.api.trimRuntime();
-  await Promise.resolve();
-  const trimRequest = takeRequest("/api/maintenance/trim");
-  assert.equal(harness.node("trim-button").disabled, true);
-  assert.equal(harness.node("trim-button").getAttribute("aria-busy"), "true");
-  harness.api.cancelMutationRequests();
-  trimRequest.resolve(jsonResponse(200, { db_size_after_bytes: 1 }));
-  await trimming;
-  assert.equal(harness.node("trim-confirm").value, "TRIM RUNTIME DATA");
-  assert.equal(harness.node("trim-button").getAttribute("aria-busy"), null);
-
-  const profile = new FakeNode("config-profile");
-  profile.dataset.configPath = "profile";
-  profile.value = "power";
-  harness.select("[data-config-path]", [profile]);
-  harness.api.state.configBaseline.set("profile", '"standard"');
-  harness.api.state.config = { revision: "before" };
-
-  const suspendedSave = harness.api.saveConfig({ preventDefault() {} });
-  await Promise.resolve();
-  harness.api.state.lifecycle.suspended = true;
-  harness.node("confirmation-input").value = "SAVE CONFIG";
-  harness.api.finishConfirmation(true);
-  await suspendedSave;
-  assert.equal(requests.length, 0);
-  harness.api.state.lifecycle.suspended = false;
-
-  const saving = harness.api.saveConfig({ preventDefault() {} });
-  await Promise.resolve();
-  harness.node("confirmation-input").value = "SAVE CONFIG";
-  harness.api.finishConfirmation(true);
-  await Promise.resolve();
-  const configRequest = takeRequest("/api/config");
-  assert.equal(harness.node("config-save-button").disabled, true);
-  assert.equal(harness.node("config-save-button").getAttribute("aria-busy"), "true");
-  harness.api.cancelMutationRequests();
-  configRequest.resolve(jsonResponse(200, { effective: { profile: "late" }, revision: "late" }));
-  await saving;
-  assert.equal(harness.api.state.config.revision, "before");
-  assert.equal(harness.node("config-save-button").disabled, false);
-  assert.equal(harness.node("config-save-button").getAttribute("aria-busy"), null);
-
-  const suspendedRoster = harness.api.rosterAction("approve", "suspended");
-  await Promise.resolve();
-  harness.api.state.lifecycle.suspended = true;
-  harness.node("confirmation-input").value = "APPROVE suspended";
-  harness.api.finishConfirmation(true);
-  await suspendedRoster;
-  harness.api.state.lifecycle.suspended = false;
-
-  const roster = harness.api.rosterAction("approve", "late-roster");
-  await Promise.resolve();
-  harness.node("confirmation-input").value = "APPROVE late-roster";
-  harness.api.finishConfirmation(true);
-  await Promise.resolve();
-  const rosterRequest = takeRequest("/api/roster/action");
-  harness.api.cancelMutationRequests();
-  rosterRequest.resolve(jsonResponse(200, {}));
-  await roster;
-
-  const suspendedHost = harness.api.toggleHost("codex", false, 0);
-  await Promise.resolve();
-  harness.api.state.lifecycle.suspended = true;
-  harness.node("confirmation-input").value = "DISABLE codex";
-  harness.api.finishConfirmation(true);
-  await suspendedHost;
-  harness.api.state.lifecycle.suspended = false;
-
-  const host = harness.api.toggleHost("codex", false, 0);
-  await Promise.resolve();
-  harness.node("confirmation-input").value = "DISABLE codex";
-  harness.api.finishConfirmation(true);
-  await Promise.resolve();
-  const hostRequest = takeRequest("/api/hosts/toggle");
-  harness.api.cancelMutationRequests();
-  hostRequest.resolve(jsonResponse(200, {}));
-  await host;
-
-  assert.equal(requests.length, 0);
-  assert.equal(harness.api.state.mutation.active, 0);
-  assert.equal(harness.api.state.mutation.controllers.size, 0);
-  assert.equal(harness.node("notice").textContent, "");
-});
-
 test("paged roster metadata drives global counts and accessible truncation disclosure", async () => {
   const hostileCursor = 'page/<img src=x onerror="compromised=true">';
-  const payloads = new Map([
-    ["/api/live?limit=100", {
-      activity: {},
-      overview: { status: "ok" },
-      revision: "paged-roster",
-      schema_version: 1,
-    }],
-    ["/api/hosts", { hosts: [] }],
-    ["/api/roster?limit=100", {
-      agents: [
-        { agent_slug: "first", capabilities: [] },
-        { agent_slug: "second", capabilities: [] },
-      ],
-      count: 2,
-      total_count: 6,
-      enabled_count: 4,
-      disabled_count: 2,
-      limit: 2,
-      truncated: true,
-      next_cursor: hostileCursor,
-    }],
-    ["/api/snapshots", { snapshots: [] }],
-    ["/api/config", { effective: {}, revision: "paged-config" }],
-  ]);
-  const harness = createAppHarness(async (path) => jsonResponse(200, payloads.get(path)));
-
-  assert.equal(await harness.api.refreshAll(), true);
+  const harness = createAppHarness(() => {
+    throw new Error("paged roster projection does not fetch");
+  });
+  harness.api.applyRosterPage({
+    agents: [
+      { agent_slug: "first", capabilities: [] },
+      { agent_slug: "second", capabilities: [] },
+    ],
+    count: 2,
+    total_count: 6,
+    enabled_count: 4,
+    disabled_count: 2,
+    limit: 2,
+    truncated: true,
+    next_cursor: hostileCursor,
+  });
+  harness.api.state.overview = { roster_count: 4 };
+  harness.api.renderOverview();
   assert.deepEqual(harness.api.state.rosterPage, {
     agents: harness.api.state.roster,
     count: 2,
@@ -4117,95 +3380,6 @@ test("paged roster metadata drives global counts and accessible truncation discl
   assert.equal(optionalStatus.node("roster-count").textContent, "0 enabled · 0 total");
 });
 
-test("exact roster search reaches and toggles an agent beyond the first thousand", async () => {
-  const calls = [];
-  let targetEnabled = true;
-  const initialRoster = {
-    agents: [{ agent_slug: "agent-0000", capabilities: [] }],
-    count: 1000,
-    total_count: 1002,
-    enabled_count: 1002,
-    disabled_count: 0,
-    limit: 1000,
-    truncated: true,
-    next_cursor: "agent-0999",
-  };
-  const harness = createAppHarness(async (path, options = {}) => {
-    calls.push({ path, options });
-    if (path === "/api/live?limit=100") {
-      return jsonResponse(200, {
-        activity: {}, overview: { status: "ok" }, revision: "roster-search", schema_version: 1,
-      });
-    }
-    if (path === "/api/hosts") return jsonResponse(200, { hosts: [] });
-    if (path === "/api/snapshots") return jsonResponse(200, { snapshots: [] });
-    if (path === "/api/config") {
-      return jsonResponse(200, { effective: {}, revision: "activation-revision" });
-    }
-    if (path === "/api/roster?limit=100") return jsonResponse(200, initialRoster);
-    if (path === "/api/agents/lookup?slug=agent-1000") {
-      return jsonResponse(200, {
-        agents: [{
-          agent_slug: "agent-1000",
-          capabilities: ["deep-review"],
-          enabled: targetEnabled,
-        }],
-        count: 1,
-        total_count: 1002,
-        enabled_count: targetEnabled ? 1002 : 1001,
-        disabled_count: targetEnabled ? 0 : 1,
-        limit: 1,
-        truncated: false,
-        next_cursor: null,
-      });
-    }
-    if (path === "/api/agents/toggle") {
-      targetEnabled = JSON.parse(options.body).enabled;
-      return jsonResponse(200, { ok: true });
-    }
-    throw new Error(`unexpected request: ${path}`);
-  });
-
-  harness.api.state.activeView = "roster";
-  harness.node("roster-search-slug").value = " Agent-1000 ";
-  let prevented = false;
-  assert.equal(await harness.api.searchRoster({ preventDefault() { prevented = true; } }), true);
-  assert.equal(prevented, true);
-  assert.equal(harness.api.state.rosterFilter, "agent-1000");
-  assert.equal(harness.node("roster-search-slug").value, "agent-1000");
-  assert.equal(harness.node("roster-search-clear").hidden, false);
-  assert.match(harness.node("roster-page-status").textContent, /exact governed specialist match/i);
-  assert.ok(calls.some(({ path }) => path === "/api/agents/lookup?slug=agent-1000"));
-
-  const disable = descendants(harness.node("roster-grid"))
-    .find((node) => node.type === "button" && node.textContent === "disable");
-  const toggling = disable.listeners.get("click")[0]();
-  await Promise.resolve();
-  harness.node("confirmation-input").value = "DISABLE agent-1000";
-  harness.api.finishConfirmation(true);
-  await toggling;
-  const toggleCall = calls.find(({ path }) => path === "/api/agents/toggle");
-  assert.deepEqual(JSON.parse(toggleCall.options.body), {
-    confirm: "DISABLE agent-1000",
-    enabled: false,
-    expected_revision: "activation-revision",
-    slug: "agent-1000",
-  });
-  assert.equal(harness.api.state.roster[0].enabled, false);
-  assert.match(harness.node("notice").textContent, /agent-1000 disabled/i);
-
-  assert.equal(await harness.api.clearRosterSearch(), true);
-  assert.equal(harness.api.state.rosterFilter, "");
-  assert.equal(harness.node("roster-search-clear").hidden, true);
-
-  const requestsBeforeInvalid = calls.length;
-  harness.node("roster-search-slug").value = '<img src=x onerror="compromised=true">';
-  assert.equal(await harness.api.searchRoster({ preventDefault() {} }), false);
-  assert.equal(calls.length, requestsBeforeInvalid);
-  assert.match(harness.node("notice").textContent, /agent slug must use/i);
-  assert.equal(harness.context.compromised, undefined);
-});
-
 test("roster search markup permits the normalization performed before lookup", () => {
   const searchInput = INDEX_SOURCE.match(/<input id="roster-search-slug"[^>]*>/)?.[0] || "";
   assert.doesNotMatch(searchInput, /\s(?:pattern|minlength)=/);
@@ -4231,7 +3405,8 @@ test("roster search rolls back failed lookups and refuses inactive lifecycles", 
   assert.equal(await harness.api.applyRosterFilter("target-agent"), false);
   assert.equal(harness.api.state.rosterFilter, "current-agent");
   assert.equal(harness.node("roster-search-slug").value, "current-agent");
-  assert.match(harness.node("notice").textContent, /lookup unavailable/i);
+  assert.match(harness.node("notice").textContent, /control refresh failed/i);
+  assert.match(harness.node("notice").textContent, /request id/i);
   assert.ok(calls > 0);
 
   const callsAfterFailure = calls;
@@ -4241,145 +3416,6 @@ test("roster search rolls back failed lookups and refuses inactive lifecycles", 
   harness.api.state.lifecycle.suspended = true;
   assert.equal(await harness.api.applyRosterFilter("target-agent"), false);
   assert.equal(calls, callsAfterFailure);
-});
-
-test("Agency master control is accessible, confirmed, CAS-bound, and live-reconciled", async () => {
-  const calls = [];
-  const enabledMaster = {
-    schema_version: 1,
-    enabled: true,
-    generation: 9,
-    updated_at: "2026-07-16T12:00:00Z",
-    source: "dashboard",
-  };
-  const disabledMaster = {
-    ...enabledMaster,
-    enabled: false,
-    generation: 8,
-    updated_at: "2026-07-16T11:59:00Z",
-  };
-  const harness = createAppHarness(async (path, options = {}) => {
-    calls.push({ path, options });
-    if (path === "/api/runtime/toggle") {
-      return jsonResponse(200, { ok: true, changed: true, master: disabledMaster });
-    }
-    if (path === "/api/live?limit=100") {
-      return jsonResponse(200, {
-        schema_version: 1,
-        revision: "master-disabled",
-        sampled_at: "2026-07-16T11:59:00Z",
-        overview: { status: "ok" },
-        activity: {},
-        master: disabledMaster,
-      });
-    }
-    if (path === "/api/hosts") {
-      return jsonResponse(200, { hosts: [verifiedHost("codex")], master: disabledMaster });
-    }
-    if (path === "/api/roster?limit=100") return jsonResponse(200, { agents: [] });
-    if (path === "/api/snapshots") return jsonResponse(200, { snapshots: [] });
-    if (path === "/api/config") return jsonResponse(200, { effective: {}, revision: "master" });
-    throw new Error(`unexpected request: ${path}`);
-  });
-
-  harness.node("route-host").value = "codex";
-  harness.api.applyMasterState({ ...enabledMaster, generation: 7 });
-  assert.equal(harness.node("master-toggle").getAttribute("aria-pressed"), "true");
-  assert.equal(harness.node("master-toggle").getAttribute("aria-label"), "Disable Agency Runtime globally");
-  assert.equal(harness.node("master-label").textContent, "Agency on");
-  assert.equal(harness.node("master-generation").textContent, "GEN 7");
-  assert.equal(harness.node("runtime-paused-banner").hidden, true);
-  assert.equal(harness.node("route-button").disabled, false);
-
-  await answerConfirmation(
-    harness,
-    harness.api.toggleMaster(false),
-    "DISABLE AGENCY",
-  );
-
-  const toggleCall = calls.find(({ path }) => path === "/api/runtime/toggle");
-  assert.deepEqual(JSON.parse(toggleCall.options.body), {
-    enabled: false,
-    confirm: "DISABLE AGENCY",
-    expected_generation: 7,
-  });
-  assert.equal(harness.api.state.master.enabled, false);
-  assert.equal(harness.api.state.master.generation, 8);
-  assert.equal(harness.node("master-toggle").getAttribute("aria-pressed"), "false");
-  assert.equal(harness.node("master-toggle").getAttribute("aria-label"), "Enable Agency Runtime globally");
-  assert.equal(harness.node("master-label").textContent, "Agency off");
-  assert.equal(harness.node("runtime-paused-banner").hidden, false);
-  assert.equal(harness.node("route-button").disabled, true);
-  assert.equal(harness.node("route-button").getAttribute("aria-disabled"), "true");
-  assert.equal(harness.node("route-status").textContent, "BYPASSED");
-  assert.equal(harness.node("shell").classList.contains("agency-paused"), true);
-  assert.match(harness.node("master-summary").textContent, /configuration remain available/i);
-
-  harness.api.applyLiveSnapshot({
-    schema_version: 1,
-    revision: "master-enabled",
-    sampled_at: "2026-07-16T12:00:00Z",
-    overview: { status: "ok" },
-    activity: {},
-    master: enabledMaster,
-  });
-  assert.equal(harness.api.state.master.enabled, true);
-  assert.equal(harness.node("runtime-paused-banner").hidden, true);
-  assert.equal(harness.node("route-button").disabled, false);
-  assert.equal(harness.node("route-status").textContent, "IDLE");
-  assert.equal(harness.node("shell").classList.contains("agency-paused"), false);
-
-  assert.equal(harness.api.applyMasterState(disabledMaster), false);
-  assert.equal(harness.api.state.master.enabled, true);
-});
-
-test("Agency master control stays neutral until valid state arrives", async () => {
-  const harness = createAppHarness(() => {
-    throw new Error("loading-state controls must not fetch");
-  });
-
-  harness.api.syncMasterControl();
-  assert.equal(harness.node("master-toggle").getAttribute("aria-pressed"), null);
-  assert.equal(
-    harness.node("master-toggle").getAttribute("aria-label"),
-    "Agency master state loading",
-  );
-  assert.equal(harness.node("master-toggle").dataset.state, "loading");
-  assert.equal(harness.node("master-label").textContent, "Agency status");
-  assert.equal(harness.node("master-generation").textContent, "LOADING");
-  assert.equal(harness.node("runtime-paused-banner").hidden, true);
-  assert.equal(harness.node("route-button").disabled, true);
-  assert.equal(harness.node("route-button").getAttribute("aria-disabled"), "true");
-  assert.equal(harness.node("shell").dataset.agencyState, "loading");
-
-  harness.api.bindEvents();
-  await harness.node("master-toggle").listeners.get("click")[0]();
-  assert.match(harness.node("notice").textContent, /master state is still loading/i);
-
-  for (const invalid of [
-    "invalid",
-    { enabled: "yes", generation: 0 },
-    { enabled: true, generation: 0.5 },
-    { enabled: true, generation: -1 },
-  ]) {
-    assert.throws(
-      () => harness.api.applyMasterState(invalid),
-      /unsupported agency master-state response/i,
-    );
-  }
-
-  harness.api.applyMasterState({
-    schema_version: 1,
-    enabled: false,
-    generation: 1,
-    updated_at: "2026-07-16T12:00:00Z",
-    source: "dashboard",
-  });
-  const cancelled = harness.node("master-toggle").listeners.get("click")[0]();
-  await Promise.resolve();
-  harness.api.finishConfirmation(false);
-  await cancelled;
-  assert.match(harness.node("notice").textContent, /master action cancelled/i);
 });
 
 test("same-revision live snapshots render only when master state changes visibly", () => {
@@ -4442,80 +3478,6 @@ test("Route Lab reconciles a server-side master bypass without rendering a recei
       message ? /disabled concurrently/i : /routing was bypassed/i,
     );
   }
-});
-
-test("Agency master mutation failures preserve the known state and surface the conflict", async () => {
-  const harness = createAppHarness(async () => jsonResponse(409, { error: "generation conflict" }));
-  harness.api.applyMasterState({
-    schema_version: 1,
-    enabled: false,
-    generation: 4,
-    updated_at: "2026-07-16T12:00:00Z",
-    source: "dashboard",
-  });
-
-  await answerConfirmation(harness, harness.api.toggleMaster(true), "ENABLE AGENCY");
-
-  assert.equal(harness.api.state.master.enabled, false);
-  assert.match(harness.node("notice").textContent, /generation conflict/i);
-  assert.equal(harness.node("master-toggle").getAttribute("aria-busy"), null);
-});
-
-test("Agency master enable success, lifecycle cancellation, and stale responses are bounded", async () => {
-  const enabledMaster = {
-    schema_version: 1,
-    enabled: true,
-    generation: 2,
-    updated_at: "2026-07-16T12:00:00Z",
-    source: "dashboard",
-  };
-  const success = createAppHarness(async (path) => {
-    if (path === "/api/runtime/toggle") {
-      return jsonResponse(200, { ok: true, changed: true, master: enabledMaster });
-    }
-    if (path === "/api/live?limit=100") {
-      return jsonResponse(200, {
-        schema_version: 1,
-        revision: "enabled-master",
-        overview: { status: "ok" },
-        activity: {},
-        master: enabledMaster,
-      });
-    }
-    if (path === "/api/hosts") return jsonResponse(200, { hosts: [], master: enabledMaster });
-    if (path === "/api/roster?limit=100") return jsonResponse(200, { agents: [] });
-    if (path === "/api/snapshots") return jsonResponse(200, { snapshots: [] });
-    if (path === "/api/config") return jsonResponse(200, { effective: {}, revision: "enabled" });
-    throw new Error(`unexpected request: ${path}`);
-  });
-  success.api.applyMasterState({ ...enabledMaster, enabled: false, generation: 1 });
-  await answerConfirmation(success, success.api.toggleMaster(true), "ENABLE AGENCY");
-  assert.equal(success.api.state.master.enabled, true);
-  assert.match(success.node("notice").textContent, /enabled globally/i);
-
-  const suspended = createAppHarness(() => {
-    throw new Error("suspended master mutation must not fetch");
-  });
-  suspended.api.applyMasterState({ ...enabledMaster, enabled: false, generation: 1 });
-  const suspendedAction = suspended.api.toggleMaster(true);
-  await Promise.resolve();
-  suspended.api.state.lifecycle.suspended = true;
-  suspended.node("confirmation-input").value = "ENABLE AGENCY";
-  suspended.api.finishConfirmation(true);
-  await suspendedAction;
-
-  const response = deferred();
-  const stale = createAppHarness(() => response.promise);
-  stale.api.applyMasterState({ ...enabledMaster, enabled: false, generation: 1 });
-  const staleAction = stale.api.toggleMaster(true);
-  await Promise.resolve();
-  stale.node("confirmation-input").value = "ENABLE AGENCY";
-  stale.api.finishConfirmation(true);
-  await Promise.resolve();
-  stale.api.cancelMutationRequests();
-  response.resolve(jsonResponse(200, { ok: true, master: enabledMaster }));
-  await staleAction;
-  assert.equal(stale.api.state.master.enabled, false);
 });
 
 test("Route Lab performs no request while Agency is globally bypassed", async () => {
@@ -4825,7 +3787,7 @@ test("operational dashboard renders governed roster, quarantine, and inference e
   delete harness.api.state.rosterOperations.matched_count;
   harness.api.state.rosterReview.upstream = { packaged_source_revision: "upstream-minimal" };
   harness.api.renderRoster();
-  assert.match(harness.node("roster-page-status").textContent, /showing 4 specialists/i);
+  assert.match(harness.node("roster-page-status").textContent, /showing 4 of 4 specialists/i);
   assert.match(harness.node("upstream-status").textContent, /remote freshness unverified/i);
   assert.match(harness.node("upstream-status").textContent, /status unknown/i);
 
@@ -5105,4 +4067,62 @@ test("operational dashboard markup and accessibility policies stay discoverable"
   assert.match(APP_CSS_SOURCE, /\.provider-chain-row/);
   assert.match(APP_CSS_SOURCE, /@media \(forced-colors: active\)/);
   assert.match(APP_CSS_SOURCE, /@media \(prefers-reduced-motion: reduce\)/);
+});
+
+test("authenticated dashboard is a read-only monitoring surface with no mutation request client", () => {
+  const mutationEndpoints = [
+    "/api/agents/toggle",
+    "/api/config\"",
+    "/api/hiring/approve",
+    "/api/hosts/toggle",
+    "/api/maintenance/trim",
+    "/api/roster/action",
+    "/api/runtime/toggle",
+    "/api/workforce/action",
+  ];
+  for (const endpoint of mutationEndpoints) assert.doesNotMatch(ACTIONS_SOURCE, new RegExp(endpoint));
+  for (const callback of ["toggleAgent", "toggleHost", "rosterAction", "hiringApprove"]) {
+    assert.doesNotMatch(RENDER_SOURCE, new RegExp(`callbacks\\.${callback}`));
+  }
+
+  const harness = createAppHarness(() => {
+    throw new Error("read-only surface must not request mutations");
+  });
+  const configControls = [new FakeNode("config-input"), new FakeNode("config-select")];
+  harness.select(
+    "#config-form input, #config-form select, #config-form textarea, #config-form button",
+    configControls,
+  );
+  assert.equal(harness.api.bindEvents(), true);
+  for (const name of [
+    "trimRuntime", "saveConfig", "rosterAction", "toggleAgent", "toggleHost",
+    "toggleMaster", "workforceAction", "hiringApprove",
+  ]) assert.equal(harness.api[name], undefined);
+  for (const id of [
+    "trim-button", "provider-builder-save", "provider-builder-remove",
+    "config-reset-button", "config-save-button", "workforce-action-submit",
+  ]) {
+    assert.equal(harness.node(id).disabled, true);
+    assert.equal(harness.node(id).hidden, true);
+    assert.equal(harness.node(id).listeners.size, 0);
+  }
+  for (const control of configControls) assert.equal(control.disabled, true);
+  assert.equal(harness.node("master-toggle").disabled, true);
+  assert.equal(harness.node("master-toggle").listeners.size, 0);
+  assert.equal(harness.node("workforce-action-form").hidden, true);
+  assert.equal(harness.node("confirmation-modal").hidden, true);
+  assert.equal(harness.node("config-change-count").textContent, "Read-only monitoring");
+
+  harness.api.applyMasterState({
+    schema_version: 1,
+    enabled: true,
+    generation: 4,
+    updated_at: "2026-07-26T00:00:00Z",
+    source: "test",
+  });
+  assert.equal(harness.node("master-toggle").disabled, true);
+  assert.equal(
+    harness.node("master-toggle").attributes.get("aria-label"),
+    "Agency Runtime is enabled (read-only monitoring)",
+  );
 });

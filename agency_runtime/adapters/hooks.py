@@ -34,6 +34,11 @@ from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
 )
+from agency_runtime.core.observability import (
+    RuntimeBoundary,
+    correlate_current_observation,
+    mark_current_observation,
+)
 from agency_runtime.core.retry_receipts import (
     attach_retry_receipt as _attach_retry_receipt,
 )
@@ -131,6 +136,7 @@ _CODEX_SPAWN_TOOL_NAMES = frozenset(
 _CLAUDE_AGENT_TOOL_NAME = "Agent"
 _CLAUDE_CHILD_IDENTITY_MARKER = "[AGENCY NATIVE CHILD IDENTITY v1]"
 _NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN = "x" * 43
+_PLANNED_NATIVE_WORK_UNIT_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
 
 
 def _bounded_completion_reason(reason: object) -> str:
@@ -159,7 +165,15 @@ def _boundary_failure_result(
     expected_event: str = "",
     host: str = "",
 ) -> dict[str, Any]:
-    """Block any oversized envelope and every recognizable malformed Stop."""
+    """Block Agency-owned child launches and recognizable malformed Stop events."""
+
+    if isinstance(payload, dict) and _agency_owned_native_child_pre_tool_use(payload, host):
+        return _pre_tool_use_denial(_VERIFICATION_UNAVAILABLE, host=host)
+    # Installed PreToolUse handlers are matcher-bound to the native child tool.
+    # If the envelope is too large to parse, continuing would bypass the exact
+    # specialist and one-use grant checks for an Agency-planned launch.
+    if oversized and expected_event == "PreToolUse":
+        return _pre_tool_use_denial(_VERIFICATION_UNAVAILABLE, host=host)
 
     parsed_stop = isinstance(payload, dict) and payload.get("hook_event_name") == "Stop"
     raw_stop = bool(_STOP_EVENT_DISCRIMINATOR.search(raw_bytes))
@@ -257,6 +271,33 @@ def _first_string(mapping: dict[str, Any], *keys: str) -> str:
     return ""
 
 
+def _planned_native_work_unit_id(host: str, payload: dict[str, Any]) -> str:
+    """Return only a canonical Agency-planned native-child label."""
+
+    if payload.get("hook_event_name") != "PreToolUse":
+        return ""
+    tool_name = _optional_string(payload, "tool_name")
+    args = _dict_or_empty(payload.get("tool_input"))
+    if host == "codex":
+        if tool_name not in _CODEX_SPAWN_TOOL_NAMES:
+            return ""
+        return internal_work_unit_from_codex_task_name(args.get("task_name"))
+    if host not in {"claude", "zcode"} or tool_name != _CLAUDE_AGENT_TOOL_NAME:
+        return ""
+    native_label = _first_string(args, "description")
+    return native_label if _PLANNED_NATIVE_WORK_UNIT_PATTERN.fullmatch(native_label) else ""
+
+
+def _agency_owned_native_child_pre_tool_use(payload: dict[str, Any], host: str) -> bool:
+    """Recognize a planned label or an already injected exact-delivery envelope."""
+
+    if _planned_native_work_unit_id(host, payload):
+        return True
+    args = _dict_or_empty(payload.get("tool_input"))
+    task_field = "message" if host == "codex" else "prompt"
+    return parse_native_child_prompt_delivery(args.get(task_field)) is not None
+
+
 def _response_work_unit(response: Any) -> str:
     if not isinstance(response, dict):
         return ""
@@ -302,14 +343,17 @@ def _zcode_native_child_identity(agent_id: object) -> NativeChildRunIdentity:
     )
 
 
-def _pre_tool_use_denial(reason: object) -> dict[str, Any]:
+def _pre_tool_use_denial(reason: object, *, host: str = "") -> dict[str, Any]:
     """Block a planned child that cannot receive its exact specialist."""
 
+    bounded = _bounded_completion_reason(reason)
+    if host == "zcode":
+        return {"decision": "block", "reason": bounded}
     return {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "permissionDecision": "deny",
-            "permissionDecisionReason": _bounded_completion_reason(reason),
+            "permissionDecisionReason": bounded,
         }
     }
 
@@ -328,6 +372,8 @@ def _native_child_tool_identity(
             identity = (
                 _claude_native_child_identity(agent_id)
                 if host == "claude"
+                else _zcode_native_child_identity(agent_id)
+                if host == "zcode"
                 else _codex_native_child_identity(agent_id)
             )
         except ValueError:
@@ -399,7 +445,7 @@ def _canonical_tool_call(
         return canonical_specialist, args
 
     canonical_delegate = _DELEGATION_TOOL_NAMES.get(tool_name)
-    if host == "claude" and tool_name == "Agent":
+    if host in {"claude", "zcode"} and tool_name == "Agent":
         canonical_delegate = "delegate_task"
     elif host == "codex" and tool_name == "Agent":
         canonical_delegate = "spawn_agent"
@@ -444,11 +490,6 @@ class HookBridge:
         self._store = store
         self._adapter = adapter
         self._master = _master
-        # Map child session_id -> (parent_session_id, parent_trace_id,
-        # worker_id, native_run_id) populated by SubagentStart so that a
-        # child's UserPromptSubmit can forward parent correlation to the
-        # workforce routing path (ADR-0087: every child self-routes).
-        self._child_parent_scopes: dict[str, tuple[str, str, str, str]] = {}
 
     @property
     def store(self) -> Store:
@@ -592,6 +633,37 @@ class HookBridge:
         correlation = self._correlation(payload)
         trace_id = correlation.trace_id or self._unambiguous_open_trace(correlation.session_id)
         return correlation.session_id, trace_id, correlation.work_unit_id
+
+    def _issue_native_child_parent_scope(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        identity: NativeChildRunIdentity,
+    ) -> dict[str, Any] | None:
+        """Persist one explicit cross-process join receipt when parent evidence is exact."""
+
+        if self.host not in {"codex", "claude"} or not session_id or not trace_id:
+            return None
+        issuer = getattr(self.store, "create_native_child_parent_scope", None)
+        if not callable(issuer):
+            return None
+        child_session_id = f"{self.host}-child:{identity.worker_id}"
+        try:
+            receipt = issuer(
+                host=self.host,
+                parent_session_id=session_id,
+                parent_trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                worker_kind=identity.worker_kind,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+                child_session_id=child_session_id,
+            )
+        except Exception:
+            return None
+        return receipt if isinstance(receipt, dict) else None
 
     def _resolve_codex_task_name(
         self,
@@ -837,6 +909,52 @@ class HookBridge:
             identity,
         )
 
+    def _verify_existing_native_child_delivery(
+        self,
+        delivery: NativeChildPromptDelivery,
+        assignment: NativeChildAssignment | None,
+    ) -> dict[str, Any]:
+        """Authenticate an idempotent hook replay against its pending Store grant."""
+
+        verifier = getattr(self.store, "verify_pending_delegation_activation", None)
+        identity_matches = assignment is not None and (
+            delivery.host == self.host
+            and delivery.parent_session_id == assignment.session_id
+            and delivery.parent_trace_id == assignment.trace_id
+            and delivery.tool_use_id == assignment.tool_use_id
+            and delivery.work_unit_id == assignment.work_unit_id
+            and delivery.specialist_slug == assignment.specialist_slug
+            and delivery.specialist_version == assignment.specialist_version
+            and delivery.specialist_prompt_hash == assignment.specialist_prompt_hash
+            and work_unit_goal_hash(delivery.original_task) == assignment.goal_hash
+        )
+        if not identity_matches or not callable(verifier):
+            return _pre_tool_use_denial(
+                "Agency refused an unverified native-child prompt delivery; start a "
+                "fresh Agency preflight.",
+                host=self.host,
+            )
+        try:
+            verified = verifier(
+                activation_token=delivery.activation_token,
+                host=delivery.host,
+                session_id=delivery.parent_session_id,
+                trace_id=delivery.parent_trace_id,
+                work_unit_id=delivery.work_unit_id,
+                specialist_slug=delivery.specialist_slug,
+                specialist_version=delivery.specialist_version,
+                specialist_prompt_hash=delivery.specialist_prompt_hash,
+            )
+        except Exception:
+            verified = False
+        if verified is not True:
+            return _pre_tool_use_denial(
+                "Agency refused an invalid, expired, consumed, or unavailable "
+                "native-child activation grant; start a fresh Agency preflight.",
+                host=self.host,
+            )
+        return {}
+
     def _handle_native_child_pre_tool_use(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Inject one exact prompt while leaving the native scheduler in control."""
 
@@ -851,18 +969,26 @@ class HookBridge:
         task = args.get(task_field)
         if not isinstance(task, str) or not task:
             raise HookInputError(f"{tool_name} tool_input.{task_field} is required")
-        if parse_native_child_prompt_delivery(task) is not None:
-            return {}
+        delivery = parse_native_child_prompt_delivery(task)
         assignment = self._resolve_native_child_assignment(
             payload=payload,
             tool_input=tool_input,
         )
+        if delivery is not None:
+            return self._verify_existing_native_child_delivery(delivery, assignment)
         if assignment is None:
+            if _planned_native_work_unit_id(self.host, payload):
+                return _pre_tool_use_denial(
+                    "Agency could not verify this planned native child in the evidence "
+                    "Store; it was not launched as an untyped substitute.",
+                    host=self.host,
+                )
             return {}
         if work_unit_goal_hash(task) != assignment.goal_hash:
             return _pre_tool_use_denial(
                 "Agency refused this native child because its task does not exactly match "
-                "the persisted work-unit goal. Use the exact goal from the delegation plan."
+                "the persisted work-unit goal. Use the exact goal from the delegation plan.",
+                host=self.host,
             )
         try:
             activation_contract = native_child_activation_contract(
@@ -874,14 +1000,16 @@ class HookBridge:
         except ValueError:
             return _pre_tool_use_denial(
                 "Agency could not verify this native child's planned mutation and evidence "
-                "boundary. Use the exact current delegation plan."
+                "boundary. Use the exact current delegation plan.",
+                host=self.host,
             )
         prompt_reader = getattr(self.store, "get_versioned_specialist_prompt", None)
         preparer = getattr(self.store, "prepare_delegation_activation", None)
         if not callable(prompt_reader) or not callable(preparer):
             return _pre_tool_use_denial(
                 "Agency could not access the exact planned specialist; the native child "
-                "was not launched as an untyped substitute."
+                "was not launched as an untyped substitute.",
+                host=self.host,
             )
         prompt = prompt_reader(
             assignment.specialist_slug,
@@ -899,7 +1027,8 @@ class HookBridge:
         ):
             return _pre_tool_use_denial(
                 f"Agency could not verify {assignment.specialist_slug}'s exact selected "
-                "prompt version; the planned native child was not launched."
+                "prompt version; the planned native child was not launched.",
+                host=self.host,
             )
         projected_task = render_native_child_prompt_delivery(
             task,
@@ -934,7 +1063,8 @@ class HookBridge:
         ):
             return _pre_tool_use_denial(
                 "Agency's exact child context exceeds the host hook limit; split the "
-                "work unit or use a smaller audited specialist prompt."
+                "work unit or use a smaller audited specialist prompt.",
+                host=self.host,
             )
         try:
             activation = preparer(
@@ -967,7 +1097,8 @@ class HookBridge:
         except (RuntimeError, ValueError):
             return _pre_tool_use_denial(
                 f"Agency could not issue {assignment.specialist_slug}'s one-use activation; "
-                "the planned native child was not launched."
+                "the planned native child was not launched.",
+                host=self.host,
             )
         updated_input = {
             **args,
@@ -1010,14 +1141,12 @@ class HookBridge:
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
             )
-        child_session_id = f"claude-child:{identity.worker_id}"
-        if session_id and trace_id:
-            self._child_parent_scopes[child_session_id] = (
-                session_id,
-                trace_id,
-                identity.worker_id,
-                identity.native_run_id,
-            )
+        parent_scope = self._issue_native_child_parent_scope(
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=work_unit_id,
+            identity=identity,
+        )
         context_lines = [
             _CLAUDE_CHILD_IDENTITY_MARKER,
             "This identity belongs only to the current native child. It does not "
@@ -1031,17 +1160,21 @@ class HookBridge:
             "required. Otherwise make no Agency specialist claim until independently "
             "calling agency.preflight with the complete delegated assignment.",
         ]
-        if session_id and trace_id:
+        if parent_scope is not None:
             context_lines.append(
-                "Pass "
-                f"parent_session_id={json.dumps(session_id, ensure_ascii=True)} and "
-                f"parent_trace_id={json.dumps(trace_id, ensure_ascii=True)} so the shared "
-                "parent budget, cache, and singleflight controls apply."
+                "To join the parent budget, cache, and singleflight controls exactly once, "
+                "call agency.preflight before substantive unplanned work with "
+                f"session_id={json.dumps(parent_scope['child_session_id'], ensure_ascii=True)}, "
+                f"host={json.dumps(self.host)}, the complete delegated assignment as "
+                "user_message, and "
+                f"parent_scope_token={json.dumps(parent_scope['parent_scope_token'], ensure_ascii=True)}. "
+                "Do not send parent_session_id or parent_trace_id; the Store receipt owns "
+                "that authority."
             )
         else:
             context_lines.append(
-                "Parent correlation is unavailable; omit both parent_session_id and "
-                "parent_trace_id from the child preflight."
+                "An exact parent-scope receipt is unavailable. Route independently and do "
+                "not claim or reuse parent budget, cache, lineage, or specialist evidence."
             )
         context = "\n".join(context_lines)
         return {
@@ -1071,8 +1204,6 @@ class HookBridge:
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
             )
-        child_session_id = f"claude-child:{identity.worker_id}"
-        self._child_parent_scopes.pop(child_session_id, None)
         return {}
 
     def _handle_codex_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1095,14 +1226,13 @@ class HookBridge:
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
             )
+        parent_scope = self._issue_native_child_parent_scope(
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=work_unit_id,
+            identity=identity,
+        )
         child_session_id = f"codex-child:{identity.worker_id}"
-        if session_id and trace_id:
-            self._child_parent_scopes[child_session_id] = (
-                session_id,
-                trace_id,
-                identity.worker_id,
-                identity.native_run_id,
-            )
         context_lines = [
             _CLAUDE_CHILD_IDENTITY_MARKER,
             "This identity belongs only to the current native Codex child. It "
@@ -1120,16 +1250,17 @@ class HookBridge:
             "user_message and "
             f"session_id={json.dumps(child_session_id, ensure_ascii=True)}.",
         ]
-        if session_id and trace_id:
+        if parent_scope is not None:
             context_lines.append(
-                "Pass "
-                f"parent_session_id={json.dumps(session_id, ensure_ascii=True)} and "
-                f"parent_trace_id={json.dumps(trace_id, ensure_ascii=True)} in that same call."
+                "To join the parent controls exactly once, include "
+                f"parent_scope_token={json.dumps(parent_scope['parent_scope_token'], ensure_ascii=True)} "
+                "in that same agency.preflight call. Do not send parent_session_id or "
+                "parent_trace_id; the Store receipt owns that authority."
             )
         else:
             context_lines.append(
-                "Parent correlation is unavailable; omit both parent_session_id and "
-                "parent_trace_id from the child preflight."
+                "An exact parent-scope receipt is unavailable. Route independently and do "
+                "not claim or reuse parent budget, cache, lineage, or specialist evidence."
             )
         context_lines.append(
             "Apply only the returned child-turn context. Do not claim parent Agency "
@@ -1163,8 +1294,6 @@ class HookBridge:
                 worker_id=identity.worker_id,
                 native_run_id=identity.native_run_id,
             )
-        child_session_id = f"codex-child:{identity.worker_id}"
-        self._child_parent_scopes.pop(child_session_id, None)
         return {}
 
     def _consume_native_child_prompt_delivery(
@@ -1179,7 +1308,7 @@ class HookBridge:
         """Consume a hook-issued grant only after authoritative native execution."""
 
         args = _dict_or_empty(tool_input)
-        raw_task = args.get("prompt" if self.host == "claude" else "message")
+        raw_task = args.get("prompt" if self.host in {"claude", "zcode"} else "message")
         task = raw_task if isinstance(raw_task, str) else ""
         delivery = parse_native_child_prompt_delivery(task)
         if delivery is None:
@@ -1306,8 +1435,8 @@ class HookBridge:
                     trace_id=trace_id,
                 )
             )
-        if self.host == "claude" and tool_name == _CLAUDE_AGENT_TOOL_NAME:
-            assignment = self._resolve_claude_child_assignment(
+        if self.host in {"claude", "zcode"} and tool_name == _CLAUDE_AGENT_TOOL_NAME:
+            assignment = self._resolve_native_child_assignment(
                 payload=payload,
                 tool_input=tool_input,
                 trace_id=trace_id,
@@ -1336,10 +1465,16 @@ class HookBridge:
             elif not isinstance(tool_response, dict) or not _first_string(
                 tool_response, "native_run_id"
             ):
-                tool_response, _identity = self._claude_post_tool_response(
-                    payload,
-                    tool_response,
-                )
+                if self.host == "claude":
+                    tool_response, _identity = self._claude_post_tool_response(
+                        payload,
+                        tool_response,
+                    )
+                else:
+                    tool_response, _identity = _native_child_tool_identity(
+                        "zcode",
+                        tool_response,
+                    )
         elif self.host == "codex" and tool_name in _CODEX_SPAWN_TOOL_NAMES:
             if delivery is not None and delivery_activated:
                 canonical_args["agent"] = delivery.specialist_slug
@@ -1386,20 +1521,6 @@ class HookBridge:
         if origin_receipt.origin == "internal_retry":
             return {}
         reservation = self._reserve_user_turn(correlation.session_id, trace_id)
-        # ADR-0087: if this session is a native child (registered via
-        # SubagentStart), forward the parent correlation so the child's
-        # turn self-routes through the governed native-child path rather
-        # than as a generic external turn.
-        parent_scope = self._child_parent_scopes.get(correlation.session_id)
-        parent_kwargs: dict[str, str] = {}
-        if parent_scope is not None:
-            p_session, p_trace, worker_id, native_run_id = parent_scope
-            parent_kwargs = {
-                "parent_session_id": p_session,
-                "parent_trace_id": p_trace,
-                "native_worker_id": worker_id,
-                "native_run_id": native_run_id,
-            }
         try:
             result = self.adapter.pre_llm_call_handler(
                 session_id=correlation.session_id,
@@ -1408,7 +1529,6 @@ class HookBridge:
                 trace_id=trace_id,
                 reservation_token=str(reservation.get("reservation_token") or ""),
                 origin_receipt=origin_receipt,
-                **parent_kwargs,
             )
         except Exception as error:
             try:
@@ -2076,7 +2196,7 @@ def _write_output(stream: BinaryIO | TextIO, payload: dict[str, Any]) -> None:
     stream.flush()
 
 
-def run_hook_stdio(
+def _run_hook_stdio(
     host: str,
     *,
     store: Store | None = None,
@@ -2111,12 +2231,14 @@ def run_hook_stdio(
         # its contents are deliberately neither parsed nor validated.
         with suppress(Exception):
             source.read(MAX_HOOK_INPUT_BYTES + 1)
+        mark_current_observation("bypassed", "runtime_disabled")
         _write_output(sink, {})
         return 0
 
     payload: Any = None
     raw_bytes = b""
     oversized = False
+    planned = False
     try:
         raw = source.read(MAX_HOOK_INPUT_BYTES + 1)
         raw_bytes = raw.encode("utf-8") if isinstance(raw, str) else raw
@@ -2128,6 +2250,17 @@ def run_hook_stdio(
             raise HookInputError("hook input must be one JSON object")
         if expected_event and payload.get("hook_event_name") != expected_event:
             raise HookInputError("hook event does not match the registered command")
+        for field in ("turn_id", "trace_id", "tool_use_id", "session_id"):
+            correlation_value = _optional_string(payload, field)
+            if not correlation_value:
+                continue
+            with suppress(ValueError):
+                correlate_current_observation(correlation_value)
+            break
+        planned = bool(
+            _planned_native_work_unit_id(host, payload)
+            or _agency_owned_native_child_pre_tool_use(payload, host)
+        )
         active_store = store
         if active_store is None and (db_path or config_path):
             active_store = (
@@ -2136,6 +2269,16 @@ def run_hook_stdio(
         result = HookBridge(host, store=active_store, _master=master).handle(payload)
         if not isinstance(result, dict):
             raise RuntimeError("hook bridge returned a non-object result")
+        blocked = result.get("continue") is False or result.get("decision") == "block"
+        if blocked:
+            mark_current_observation(
+                "denied",
+                "planned_hook_denied" if planned else "hook_denied",
+            )
+        elif result:
+            mark_current_observation("ok", "hook_response")
+        else:
+            mark_current_observation("ok", "pass_through")
     except (
         HookInputError,
         BoundedJSONError,
@@ -2152,7 +2295,11 @@ def run_hook_stdio(
             host=host,
         )
         outcome = "response publication blocked" if result else "host operation continues"
-        print(f"agency hook {host}: {exc}; {outcome}", file=errors)
+        mark_current_observation(
+            "denied" if result else "degraded",
+            "planned_hook_failure" if planned else "boundary_failure",
+        )
+        print(f"agency hook {host}: {type(exc).__name__}; {outcome}", file=errors)
     except Exception as exc:  # Defensive boundary around adapters and storage.
         result = _boundary_failure_result(
             payload,
@@ -2162,6 +2309,10 @@ def run_hook_stdio(
             host=host,
         )
         outcome = "response publication blocked" if result else "host operation continues"
+        mark_current_observation(
+            "denied" if result else "degraded",
+            "planned_hook_failure" if planned else "boundary_failure",
+        )
         print(
             f"agency hook {host}: {type(exc).__name__}; {outcome}",
             file=errors,
@@ -2169,6 +2320,45 @@ def run_hook_stdio(
 
     _write_output(sink, result)
     return 0
+
+
+def _hook_observation_operation(host: str, expected_event: str) -> str:
+    """Return one fixed label without logging caller-controlled host/event text."""
+
+    known_hosts = {"claude", "codex", "zcode"}
+    known_events = _CODEX_EVENTS | _CLAUDE_EVENTS
+    host_label = host if host in known_hosts else "unknown"
+    event_label = expected_event.casefold() if expected_event in known_events else "event"
+    return f"{host_label}.{event_label}"
+
+
+def run_hook_stdio(
+    host: str,
+    *,
+    store: Store | None = None,
+    db_path: str | None = None,
+    config_path: str | None = None,
+    runtime_control_path: str | None = None,
+    expected_event: str = "",
+    input_stream: BinaryIO | TextIO | None = None,
+    output_stream: BinaryIO | TextIO | None = None,
+    error_stream: TextIO | None = None,
+) -> int:
+    """Observe one host-hook boundary without admitting envelope content."""
+
+    operation = _hook_observation_operation(host, expected_event)
+    with RuntimeBoundary(surface="hook", operation=operation):
+        return _run_hook_stdio(
+            host,
+            store=store,
+            db_path=db_path,
+            config_path=config_path,
+            runtime_control_path=runtime_control_path,
+            expected_event=expected_event,
+            input_stream=input_stream,
+            output_stream=output_stream,
+            error_stream=error_stream,
+        )
 
 
 __all__ = [

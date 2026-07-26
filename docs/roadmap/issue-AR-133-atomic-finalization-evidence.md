@@ -59,3 +59,14 @@ checks at connection entry.
 - Host and actual model derive from installed context and durable receipts.
 - Replay, conflict, interruption, and concurrent-finalization tests pass.
 - HTTP and MCP return stable sanitized client errors for invalid batches.
+
+## Implementation evidence
+
+Finalization now validates the entire bounded request before opening one
+BEGIN IMMEDIATE transaction, writes every evidence row and the final receipt
+through transaction-scoped helpers, and rolls the complete batch back on
+conflict, replay, interruption, or invalid lineage. Execution identities are
+strict strings with canonical bounds, caller-supplied host/model attribution
+is absent, and HTTP/MCP return typed sanitized failures. The focused atomic
+batch suite passed 21 tests with 2 skips; the integrated
+transaction/observability/MCP/HTTP slice passed 147 tests with 8 skips.

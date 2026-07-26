@@ -1055,16 +1055,47 @@ def test_unhandled_get_errors_do_not_leak_exception_details(http_server, monkeyp
     assert "secret-token" not in caplog.text
 
 
-def test_request_logging_escapes_terminal_controls(caplog) -> None:
+def test_request_logging_drops_caller_controlled_access_text(caplog) -> None:
     caplog.set_level(logging.INFO, logger="agency_runtime.server.http")
     handler = object.__new__(AgencyHTTPHandler)
     handler.client_address = ("127.0.0.1", 12345)
 
     handler.log_message("request %s", "GET /\x1b[31mred\nforged")
 
-    assert "\x1b" not in caplog.text
-    assert "\nforged" not in caplog.text
-    assert r"\x1b[31mred\nforged" in caplog.text
+    assert caplog.text == ""
+
+
+def test_http_response_exposes_safe_request_id_and_content_free_observation(
+    http_server,
+    caplog,
+) -> None:
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    secret_path = "private-Bearer-never-log-this"
+    request = urllib.request.Request(
+        f"{http_server['base']}/{secret_path}",
+        headers=AUTH_HEADERS,
+        method="GET",
+    )
+
+    with pytest.raises(urllib.error.HTTPError) as caught:
+        urllib.request.urlopen(request, timeout=5)
+    with caught.value as response:
+        request_id = response.headers["X-Agency-Request-ID"]
+        assert response.code == 404
+
+    assert request_id.startswith("arq-")
+    observation = next(
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("agency_observation ")
+    )
+    assert secret_path not in observation
+    payload = json.loads(observation.split(" ", 1)[1])
+    assert payload["request_id"] == request_id
+    assert payload["surface"] == "http"
+    assert payload["operation"] == "unknown"
+    assert payload["outcome"] == "denied"
+    assert payload["reason_code"] == "http_404"
 
 
 def test_serve_withholds_bearer_token_from_non_tty_stdout(

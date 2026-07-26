@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 36
+SCHEMA_VERSION = 37
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
@@ -653,6 +653,56 @@ _REMEDIATION_AUTHORITY_INVALIDATION_TRIGGER_SQLS = (
         "AND dependency.dependency_id = OLD.audit_id",
     ),
 )
+
+NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS native_child_parent_scopes (
+    id TEXT PRIMARY KEY
+        CHECK (typeof(id) = 'text' AND length(CAST(id AS BLOB)) BETWEEN 1 AND 128),
+    token_hash TEXT NOT NULL UNIQUE
+        CHECK (typeof(token_hash) = 'text' AND length(token_hash) = 64
+               AND token_hash NOT GLOB '*[^0-9a-f]*'),
+    host TEXT NOT NULL CHECK (host IN ('claude', 'codex')),
+    parent_session_id TEXT NOT NULL
+        CHECK (typeof(parent_session_id) = 'text'
+               AND length(CAST(parent_session_id AS BLOB)) BETWEEN 1 AND 512),
+    parent_trace_id TEXT NOT NULL
+        CHECK (typeof(parent_trace_id) = 'text'
+               AND length(CAST(parent_trace_id AS BLOB)) BETWEEN 1 AND 512),
+    work_unit_id TEXT NOT NULL DEFAULT ''
+        CHECK (typeof(work_unit_id) = 'text'
+               AND length(CAST(work_unit_id AS BLOB)) <= 160),
+    worker_kind TEXT NOT NULL CHECK (worker_kind = 'generic-worker'),
+    worker_id TEXT NOT NULL
+        CHECK (typeof(worker_id) = 'text'
+               AND length(CAST(worker_id AS BLOB)) BETWEEN 1 AND 256),
+    native_run_id TEXT NOT NULL
+        CHECK (typeof(native_run_id) = 'text'
+               AND length(CAST(native_run_id AS BLOB)) BETWEEN 1 AND 256),
+    child_session_id TEXT NOT NULL
+        CHECK (typeof(child_session_id) = 'text'
+               AND length(CAST(child_session_id AS BLOB)) BETWEEN 1 AND 512),
+    child_trace_id TEXT NOT NULL DEFAULT ''
+        CHECK (typeof(child_trace_id) = 'text'
+               AND length(CAST(child_trace_id AS BLOB)) <= 512),
+    issued_unix INTEGER NOT NULL CHECK (typeof(issued_unix) = 'integer'),
+    expires_unix INTEGER NOT NULL
+        CHECK (typeof(expires_unix) = 'integer'
+               AND expires_unix > issued_unix
+               AND expires_unix <= issued_unix + 600),
+    created_at TEXT NOT NULL,
+    consumed_at TEXT,
+    consumed_unix INTEGER,
+    CHECK (
+        (consumed_at IS NULL AND consumed_unix IS NULL AND child_trace_id = '')
+        OR
+        (consumed_at IS NOT NULL AND typeof(consumed_unix) = 'integer'
+         AND child_trace_id != '' AND consumed_unix >= issued_unix
+         AND consumed_unix <= expires_unix)
+    ),
+    UNIQUE(host, parent_trace_id, worker_id, native_run_id),
+    FOREIGN KEY (parent_trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
+);
+"""
 
 SCHEMA_V1 = """
 -- Run tracking
@@ -1335,6 +1385,57 @@ CREATE TABLE IF NOT EXISTS child_routing_leases (
     created_at TEXT NOT NULL
 );
 
+-- Single-use bearer receipts transfer exact parent scope across independent
+-- native-hook/MCP processes. Prompt and assignment content never enter this
+-- projection.
+CREATE TABLE IF NOT EXISTS native_child_parent_scopes (
+    id TEXT PRIMARY KEY
+        CHECK (typeof(id) = 'text' AND length(CAST(id AS BLOB)) BETWEEN 1 AND 128),
+    token_hash TEXT NOT NULL UNIQUE
+        CHECK (typeof(token_hash) = 'text' AND length(token_hash) = 64
+               AND token_hash NOT GLOB '*[^0-9a-f]*'),
+    host TEXT NOT NULL CHECK (host IN ('claude', 'codex')),
+    parent_session_id TEXT NOT NULL
+        CHECK (typeof(parent_session_id) = 'text'
+               AND length(CAST(parent_session_id AS BLOB)) BETWEEN 1 AND 512),
+    parent_trace_id TEXT NOT NULL
+        CHECK (typeof(parent_trace_id) = 'text'
+               AND length(CAST(parent_trace_id AS BLOB)) BETWEEN 1 AND 512),
+    work_unit_id TEXT NOT NULL DEFAULT ''
+        CHECK (typeof(work_unit_id) = 'text'
+               AND length(CAST(work_unit_id AS BLOB)) <= 160),
+    worker_kind TEXT NOT NULL CHECK (worker_kind = 'generic-worker'),
+    worker_id TEXT NOT NULL
+        CHECK (typeof(worker_id) = 'text'
+               AND length(CAST(worker_id AS BLOB)) BETWEEN 1 AND 256),
+    native_run_id TEXT NOT NULL
+        CHECK (typeof(native_run_id) = 'text'
+               AND length(CAST(native_run_id AS BLOB)) BETWEEN 1 AND 256),
+    child_session_id TEXT NOT NULL
+        CHECK (typeof(child_session_id) = 'text'
+               AND length(CAST(child_session_id AS BLOB)) BETWEEN 1 AND 512),
+    child_trace_id TEXT NOT NULL DEFAULT ''
+        CHECK (typeof(child_trace_id) = 'text'
+               AND length(CAST(child_trace_id AS BLOB)) <= 512),
+    issued_unix INTEGER NOT NULL CHECK (typeof(issued_unix) = 'integer'),
+    expires_unix INTEGER NOT NULL
+        CHECK (typeof(expires_unix) = 'integer'
+               AND expires_unix > issued_unix
+               AND expires_unix <= issued_unix + 600),
+    created_at TEXT NOT NULL,
+    consumed_at TEXT,
+    consumed_unix INTEGER,
+    CHECK (
+        (consumed_at IS NULL AND consumed_unix IS NULL AND child_trace_id = '')
+        OR
+        (consumed_at IS NOT NULL AND typeof(consumed_unix) = 'integer'
+         AND child_trace_id != '' AND consumed_unix >= issued_unix
+         AND consumed_unix <= expires_unix)
+    ),
+    UNIQUE(host, parent_trace_id, worker_id, native_run_id),
+    FOREIGN KEY (parent_trace_id) REFERENCES runs(trace_id) ON DELETE CASCADE
+);
+
 -- Read-path indexes used by hooks, the dashboard, and retention jobs.
 CREATE INDEX IF NOT EXISTS idx_runs_trace_id ON runs(trace_id);
 CREATE INDEX IF NOT EXISTS idx_runs_session_started ON runs(session_id, started_at DESC);
@@ -1367,6 +1468,8 @@ CREATE INDEX IF NOT EXISTS idx_trace_tombstones_retired ON trace_tombstones(reti
 CREATE INDEX IF NOT EXISTS idx_child_routing_cache_expiry ON child_routing_cache(expires_at);
 CREATE INDEX IF NOT EXISTS idx_child_routing_leases_parent
 ON child_routing_leases(parent_trace_id, expires_at);
+CREATE INDEX IF NOT EXISTS idx_native_child_parent_scopes_expiry
+ON native_child_parent_scopes(expires_unix, consumed_unix);
 CREATE INDEX IF NOT EXISTS idx_agent_source_scans_source_created
 ON agent_source_scans(source_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_source_scan_entries_slug
@@ -1502,6 +1605,7 @@ ALL_TABLES: tuple[str, ...] = (
     "child_routing_cache",
     "child_routing_usage",
     "child_routing_leases",
+    "native_child_parent_scopes",
     "agent_sources",
     "agent_downloads",
     "agent_candidates",
@@ -1570,6 +1674,7 @@ RUNTIME_TABLE_TIMESTAMPS: dict[str, str] = {
     "child_routing_cache": "child_routing_cache.created_at",
     "child_routing_usage": "child_routing_usage.updated_at",
     "child_routing_leases": "child_routing_leases.created_at",
+    "native_child_parent_scopes": "native_child_parent_scopes.created_at",
     "resident_manager_bindings": "resident_manager_bindings.updated_at",
     "agent_performance_events": "agent_performance_events.created_at",
 }
@@ -1583,6 +1688,7 @@ RUNTIME_DELETE_ORDER: tuple[str, ...] = (
     "skills_loaded",
     "specialists_loaded",
     "resident_manager_bindings",
+    "native_child_parent_scopes",
     "child_routing_leases",
     "child_routing_cache",
     "child_routing_usage",
@@ -4134,6 +4240,44 @@ def create_delegation_activation_invariant_triggers(conn: sqlite3.Connection) ->
         conn.execute(statement)
 
 
+NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME = "agency_native_child_parent_scope_consume_once"
+NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL = (
+    "CREATE TRIGGER agency_native_child_parent_scope_consume_once "
+    "BEFORE UPDATE ON native_child_parent_scopes WHEN NOT ("
+    "NEW.id IS OLD.id AND NEW.token_hash IS OLD.token_hash "
+    "AND NEW.host IS OLD.host "
+    "AND NEW.parent_session_id IS OLD.parent_session_id "
+    "AND NEW.parent_trace_id IS OLD.parent_trace_id "
+    "AND NEW.work_unit_id IS OLD.work_unit_id "
+    "AND NEW.worker_kind IS OLD.worker_kind AND NEW.worker_id IS OLD.worker_id "
+    "AND NEW.native_run_id IS OLD.native_run_id "
+    "AND NEW.child_session_id IS OLD.child_session_id "
+    "AND NEW.issued_unix IS OLD.issued_unix "
+    "AND NEW.expires_unix IS OLD.expires_unix "
+    "AND NEW.created_at IS OLD.created_at AND (("
+    "OLD.consumed_at IS NULL AND OLD.consumed_unix IS NULL "
+    "AND OLD.child_trace_id = '' AND NEW.consumed_at IS NOT NULL "
+    "AND typeof(NEW.consumed_unix) = 'integer' AND NEW.child_trace_id != ''"
+    ") OR ("
+    "OLD.consumed_at IS NOT NULL AND typeof(OLD.consumed_unix) = 'integer' "
+    "AND OLD.child_trace_id != '' AND NEW.consumed_at IS NULL "
+    "AND NEW.consumed_unix IS NULL AND NEW.child_trace_id = '' AND ("
+    "NOT EXISTS (SELECT 1 FROM runs WHERE session_id = OLD.child_session_id "
+    "AND trace_id = OLD.child_trace_id) OR EXISTS (SELECT 1 FROM runs "
+    "WHERE session_id = OLD.child_session_id AND trace_id = OLD.child_trace_id "
+    "AND status = 'preflight_failed'))"
+    "))) BEGIN "
+    "SELECT RAISE(ABORT, 'native child parent scope is immutable or consumed'); END"
+)
+
+
+def create_native_child_parent_scope_trigger(conn: sqlite3.Connection) -> None:
+    """Allow one success or an exact failed-preflight retry transition."""
+
+    conn.execute(f"DROP TRIGGER IF EXISTS {NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME}")
+    conn.execute(NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL)
+
+
 def _boolean_domain_trigger_sql() -> dict[str, str]:
     statements: dict[str, str] = {}
     for operation in ("INSERT", "UPDATE OF enabled, trusted_for_auto_approve"):
@@ -4707,6 +4851,7 @@ def migrate_schema(
             "AND status IN ('started', 'running', 'delegated', 'completed')"
         )
     create_delegation_activation_invariant_triggers(conn)
+    create_native_child_parent_scope_trigger(conn)
     create_boolean_domain_triggers(conn)
     create_activity_triggers(conn)
     create_agent_import_event_sequence_schema(

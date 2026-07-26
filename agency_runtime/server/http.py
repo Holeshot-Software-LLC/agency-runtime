@@ -36,14 +36,25 @@ from agency_runtime.core.agent_activation import normalize_agent_slug
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.config import load_config
 from agency_runtime.core.correlation import validate_correlation_id
-from agency_runtime.core.header.finalize import finalize_response
+from agency_runtime.core.header.finalize import finalize_response_batch
+from agency_runtime.core.observability import (
+    RuntimeBoundary,
+    correlate_current_observation,
+    current_observation_context,
+    mark_current_observation,
+    new_request_id,
+)
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.routing_snapshot import capture_operational_routing_snapshot
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.explain import explain_route
 from agency_runtime.core.specialist_context import SpecialistPromptDeliveryError
+from agency_runtime.core.store.finalization_batch import (
+    FinalizationEvidenceConflictError,
+    FinalizationEvidenceError,
+    validate_finalization_evidence_items,
+)
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.core.turn_correlation import active_turn_error
 
 logger = logging.getLogger("agency_runtime.server.http")
 
@@ -55,8 +66,6 @@ DEFAULT_PORT = 7800
 _MAX_BODY = 1024 * 1024
 _DEFAULT_REQUEST_TIMEOUT = 15.0
 _DEFAULT_MAX_CONCURRENT_REQUESTS = 64
-_MAX_CONTEXT_ITEMS = 128
-_MAX_CONTEXT_TEXT = 2048
 _MAX_ROSTER_RESPONSE_AGENTS = 1000
 _MAX_ROSTER_CURSOR_BYTES = 1024
 _MAX_CONTENT_LENGTH_DIGITS = 20
@@ -99,17 +108,27 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
     # ── Method dispatch ──────────────────────────────────────────────
 
     def do_OPTIONS(self) -> None:
-        self._json_error(HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed")
+        with RuntimeBoundary(surface="http", operation="options"):
+            self._json_error(
+                HTTPStatus.METHOD_NOT_ALLOWED,
+                "cross-origin requests are not allowed",
+            )
 
     def do_GET(self) -> None:
+        path = _normalise_path(self.path)
+        operation = _observation_operation("GET", path)
+        with RuntimeBoundary(surface="http", operation=operation):
+            self._dispatch_GET(path, operation)
+
+    def _dispatch_GET(self, path: str, operation: str) -> None:
         if not self._validate_request_boundary():
             return
-        path = _normalise_path(self.path)
         try:
             from agency_runtime.core.runtime_control import read_enforcement_runtime_control
 
             master, _master_transport = read_enforcement_runtime_control()
             if not master["enabled"]:
+                mark_current_observation("bypassed", "runtime_disabled")
                 if path == "/status":
                     self._json_ok(
                         {
@@ -129,7 +148,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
                         }
                     )
                 else:
-                    self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+                    self._json_error(HTTPStatus.NOT_FOUND, "unknown path")
                 return
             if path in {"/status", "/roster"}:
                 from agency_runtime.core.config_binding import assert_store_config_binding
@@ -140,15 +159,20 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             elif path == "/roster":
                 self._handle_roster()
             else:
-                self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+                self._json_error(HTTPStatus.NOT_FOUND, "unknown path")
         except Exception as exc:
-            _log_unhandled_request_error("GET", path, exc)
+            _log_unhandled_request_error("GET", operation, exc)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     def do_POST(self) -> None:
+        path = _normalise_path(self.path)
+        operation = _observation_operation("POST", path)
+        with RuntimeBoundary(surface="http", operation=operation):
+            self._dispatch_POST(path, operation)
+
+    def _dispatch_POST(self, path: str, operation: str) -> None:
         if not self._validate_request_boundary(require_json=True):
             return
-        path = _normalise_path(self.path)
         try:
             body = self._read_json_body()
             if body is None:
@@ -157,6 +181,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
 
             master, _master_transport = read_enforcement_runtime_control()
             if not master["enabled"]:
+                mark_current_observation("bypassed", "runtime_disabled")
                 payload = {"runtime_enabled": False, "bypassed": True}
                 if path == "/finalize":
                     payload.update(
@@ -168,7 +193,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
                 if path in {"/preflight", "/explain", "/finalize", "/search"}:
                     self._json_ok(payload)
                 else:
-                    self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+                    self._json_error(HTTPStatus.NOT_FOUND, "unknown path")
                 return
             if path in {"/preflight", "/explain", "/finalize", "/search"}:
                 from agency_runtime.core.config_binding import assert_store_config_binding
@@ -183,9 +208,9 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             elif path == "/search":
                 self._handle_search(body)
             else:
-                self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
+                self._json_error(HTTPStatus.NOT_FOUND, "unknown path")
         except Exception as exc:
-            _log_unhandled_request_error("POST", path, exc)
+            _log_unhandled_request_error("POST", operation, exc)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     # ── Body parsing ─────────────────────────────────────────────────
@@ -296,9 +321,17 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
+        request_id, _correlation_digest = current_observation_context()
+        self.send_header("X-Agency-Request-ID", request_id or new_request_id())
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+        if int(status) >= 500:
+            mark_current_observation("error", f"http_{int(status)}", only_if_unset=True)
+        elif int(status) >= 400:
+            mark_current_observation("denied", f"http_{int(status)}", only_if_unset=True)
+        else:
+            mark_current_observation("ok", "completed", only_if_unset=True)
 
     def _json_ok(self, payload: dict[str, Any]) -> None:
         self._send_json(HTTPStatus.OK, payload)
@@ -363,6 +396,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             return
 
         trace_id = str(uuid4())
+        correlate_current_observation(trace_id)
         origin_receipt = native_adapter_turn_origin(
             "external_user",
             host="http",
@@ -422,151 +456,65 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         self._json_ok(payload)
 
     def _handle_finalize(self, body: dict[str, Any]) -> None:
-        draft_text = str(body.get("draft_text", ""))
-        raw_trace_id = body.get("trace_id")
-        raw_session_id = body.get("session_id")
-        host = str(body.get("host", "unknown")) or "unknown"
-        skills_loaded = body.get("skills_loaded") or []
-        delegations = body.get("delegations") or []
-
-        if not draft_text:
-            self._json_error(HTTPStatus.BAD_REQUEST, "draft_text is required")
-            return
-        if (
-            not isinstance(skills_loaded, list)
-            or len(skills_loaded) > _MAX_CONTEXT_ITEMS
-            or any(
-                not isinstance(skill, str) or len(skill) > _MAX_CONTEXT_TEXT
-                for skill in skills_loaded
-            )
-        ):
-            self._json_error(HTTPStatus.BAD_REQUEST, "skills_loaded must be a bounded string list")
-            return
-        delegation_fields = {
-            "agent",
-            "recommended_agent",
-            "status",
-            "backend",
-            "work_unit_id",
-            "skip_reason",
-            "error",
+        allowed_fields = {
+            "draft_text",
+            "trace_id",
+            "session_id",
+            "host",
+            "skills_loaded",
+            "delegations",
         }
-        if (
-            not isinstance(delegations, list)
-            or len(delegations) > _MAX_CONTEXT_ITEMS
-            or any(not isinstance(delegation, dict) for delegation in delegations)
-            or any(
-                not isinstance(delegation[field], str) or len(delegation[field]) > _MAX_CONTEXT_TEXT
-                for delegation in delegations
-                for field in delegation_fields & delegation.keys()
-            )
-        ):
-            self._json_error(HTTPStatus.BAD_REQUEST, "delegations must be a bounded object list")
+        if set(body) - allowed_fields:
+            self._json_error(HTTPStatus.BAD_REQUEST, "finalization request contains unknown fields")
             return
-
+        draft_text = body.get("draft_text")
+        skills_loaded = body.get("skills_loaded", [])
+        delegations = body.get("delegations", [])
+        if not isinstance(draft_text, str) or not draft_text:
+            self._json_error(HTTPStatus.BAD_REQUEST, "draft_text must be a non-empty string")
+            return
+        supplied_host = body.get("host", "")
+        if (
+            not isinstance(supplied_host, str)
+            or len(supplied_host) > 64
+            or any(ord(character) < 32 for character in supplied_host)
+        ):
+            self._json_error(HTTPStatus.BAD_REQUEST, "host must be a bounded string")
+            return
         if (skills_loaded or delegations) and not self.server.allow_context_writes:  # type: ignore[attr-defined]
             self._json_error(
                 HTTPStatus.FORBIDDEN,
                 "caller-provided evidence is disabled on this server",
             )
             return
-        allowed_delegation_statuses = {
-            "delegated",
-            "completed",
-            "skipped",
-            "failed",
-        }
-        for delegation in delegations:
-            agent = str(delegation.get("agent", delegation.get("recommended_agent", ""))).strip()
-            work_unit_id = str(delegation.get("work_unit_id", "")).strip()
-            backend = str(delegation.get("backend", "")).strip()
-            status = str(delegation.get("status", "")).strip()
-            worker_kind = str(delegation.get("executed_worker_kind", "")).strip()
-            worker_id = str(delegation.get("executed_worker_id", "")).strip()
-            native_run_id = str(delegation.get("native_run_id", "")).strip()
-            if not agent or not work_unit_id or not backend:
-                self._json_error(
-                    HTTPStatus.BAD_REQUEST,
-                    "delegations require agent, work_unit_id, and backend",
-                )
-                return
-            if status in {"delegated", "completed"} and not all(
-                (worker_kind, worker_id, native_run_id)
-            ):
-                self._json_error(
-                    HTTPStatus.BAD_REQUEST,
-                    "positive delegations require executed_worker_kind, "
-                    "executed_worker_id, and native_run_id",
-                )
-                return
-            if status not in allowed_delegation_statuses:
-                self._json_error(
-                    HTTPStatus.BAD_REQUEST,
-                    "delegation status must be delegated, completed, skipped, or failed",
-                )
-                return
         try:
-            trace_id = validate_correlation_id(
-                raw_trace_id,
-                field="trace_id",
+            validate_finalization_evidence_items(
+                skills_loaded=skills_loaded,
+                delegations=delegations,
             )
-            session_id = validate_correlation_id(
-                raw_session_id,
-                field="session_id",
-            )
+        except FinalizationEvidenceError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
+        try:
+            trace_id = validate_correlation_id(body.get("trace_id"), field="trace_id")
+            session_id = validate_correlation_id(body.get("session_id"), field="session_id")
         except ValueError as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
             return
-        if correlation_error := active_turn_error(self.store, session_id, trace_id):
-            self._json_error(HTTPStatus.CONFLICT, correlation_error)
+        try:
+            result = finalize_response_batch(
+                draft_text,
+                trace_metadata={"trace_id": trace_id, "session_id": session_id},
+                store=self.store,
+                skills_loaded=skills_loaded,
+                delegations=delegations,
+            )
+        except FinalizationEvidenceConflictError as exc:
+            self._json_error(HTTPStatus.CONFLICT, str(exc))
             return
-        from agency_runtime.core.resident_managers import resident_manager_boundary_error
-
-        for delegation in delegations:
-            delegated_agent = delegation.get("agent", delegation.get("recommended_agent", ""))
-            if boundary_error := resident_manager_boundary_error(
-                delegated_agent,
-                operation="be recorded as a delegated worker",
-            ):
-                self._json_error(HTTPStatus.BAD_REQUEST, boundary_error)
-                return
-
-        # Only explicitly trusted internal servers may promote caller-provided
-        # context into canonical storage.
-        session_key = session_id
-        for skill in skills_loaded:
-            self.store.record_skill_loaded(
-                session_key,
-                str(skill),
-                trace_id=trace_id,
-            )
-        for delegation in delegations:
-            self.store.record_delegation(
-                trace_id=trace_id,
-                session_id=session_key,
-                host=host,
-                recommended_agent=str(
-                    delegation.get("agent", delegation.get("recommended_agent", ""))
-                ),
-                work_unit_id=str(delegation["work_unit_id"]),
-                status=str(delegation["status"]),
-                backend=str(delegation.get("backend", "")),
-                executed_worker_kind=str(delegation.get("executed_worker_kind", "")),
-                executed_worker_id=str(delegation.get("executed_worker_id", "")),
-                native_run_id=str(delegation.get("native_run_id", "")),
-                skip_reason=str(delegation.get("skip_reason", "")),
-                error=str(delegation.get("error", "")),
-            )
-
-        result = finalize_response(
-            draft_text,
-            trace_metadata={
-                "trace_id": trace_id,
-                "host": host,
-                "session_id": session_key,
-            },
-            store=self.store,
-        )
+        except FinalizationEvidenceError as exc:
+            self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
+            return
         self._json_ok(
             {
                 "action": result["action"],
@@ -574,6 +522,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
                 "missing": result["missing"],
                 "trace_id": trace_id,
                 "session_id": session_id,
+                "evidence_receipt": result["evidence_receipt"],
             }
         )
 
@@ -650,11 +599,9 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
     # ── Logging ──────────────────────────────────────────────────────
 
     def log_message(self, format: str, *args: Any) -> None:
-        logger.info(
-            "%s - %s",
-            self.address_string(),
-            _escape_log_text(format % args, limit=2048),
-        )
+        # The stdlib access line includes the caller-controlled request target.
+        # RuntimeBoundary is the canonical, content-free access observation.
+        del format, args
 
 
 # ---------------------------------------------------------------------------
@@ -840,6 +787,20 @@ def _normalise_path(raw_path: str) -> str:
     return path.rstrip("/") or "/"
 
 
+def _observation_operation(method: str, path: str) -> str:
+    """Map a caller-controlled target onto one fixed observation label."""
+
+    known = {
+        ("GET", "/roster"): "roster",
+        ("GET", "/status"): "status",
+        ("POST", "/explain"): "explain",
+        ("POST", "/finalize"): "finalize",
+        ("POST", "/preflight"): "preflight",
+        ("POST", "/search"): "search",
+    }
+    return known.get((method, path), "unknown")
+
+
 def _bounded_roster_limit(raw_path: str) -> int:
     """Return an explicit, compatible bound for roster response materialization."""
     return _bounded_roster_page(raw_path)[0]
@@ -900,14 +861,14 @@ def _escape_log_text(value: object, *, limit: int) -> str:
     return text.encode("unicode_escape", errors="backslashreplace").decode("ascii")
 
 
-def _log_unhandled_request_error(method: str, path: str, exc: Exception) -> None:
+def _log_unhandled_request_error(method: str, operation: str, exc: Exception) -> None:
     """Log traceback shape without leaking exception messages or payload values."""
     frames = traceback.extract_tb(exc.__traceback__)
     frame_refs = ", ".join(f"{Path(frame.filename).name}:{frame.lineno}" for frame in frames[-5:])
     logger.error(
         "unhandled error on %s %s: %s at %s",
         method,
-        _escape_log_text(path, limit=512),
+        operation,
         type(exc).__name__,
         _escape_log_text(frame_refs or "unknown", limit=1024),
     )

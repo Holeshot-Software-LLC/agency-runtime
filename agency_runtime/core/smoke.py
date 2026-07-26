@@ -8,9 +8,11 @@ plugin templates in a temporary HOME.
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import shutil
 import subprocess
+import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -19,7 +21,12 @@ from typing import Any
 from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.evals.delegation import run_delegation_eval
-from agency_runtime.core.installer import HOSTS, detect_installed_agents, install_agent_adapter
+from agency_runtime.core.installer import (
+    HOSTS,
+    detect_installed_agents,
+    install_agent_adapter,
+    toggle_agency,
+)
 from agency_runtime.core.installer_contracts import ADAPTER_LAUNCHER_MANIFEST
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.private_paths import ensure_private_directory, private_temporary_directory
@@ -37,12 +44,14 @@ class _FakeHookContext:
     def __init__(self) -> None:
         self.hooks: dict[str, Any] = {}
         self.commands: dict[str, Any] = {}
+        self.command_options: dict[str, dict[str, Any]] = {}
 
     def register_hook(self, name: str, fn: Any) -> None:
         self.hooks[name] = fn
 
-    def register_command(self, name: str, fn: Any, **_kwargs: Any) -> None:
+    def register_command(self, name: str, fn: Any, **kwargs: Any) -> None:
         self.commands[name] = fn
+        self.command_options[name] = dict(kwargs)
 
 
 def _load_plugin_json(path: Path, *, label: str) -> Any:
@@ -96,6 +105,38 @@ def _prepare_fake_host_home(home: Path, host: str) -> None:
         ensure_private_directory(home / ".codex")
     elif host == "claude":
         ensure_private_directory(home / ".claude")
+    elif host == "zcode":
+        config_dir = ensure_private_directory(home / ".zcode" / "cli", product_owned=False)
+        (config_dir / "config.json").write_text(
+            json.dumps(
+                {
+                    "theme": "preserved-by-agency-smoke",
+                    "hooks": {
+                        "enabled": True,
+                        "timeoutMs": 30_000,
+                        "events": {
+                            "SessionStart": [
+                                {
+                                    "hooks": [
+                                        {
+                                            "type": "process",
+                                            "command": str(Path(sys.executable).resolve()),
+                                            "args": ["-c", "pass"],
+                                            "enabled": True,
+                                            "timeoutMs": 1_000,
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
 
 
 def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
@@ -117,6 +158,7 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
         "before_agent_finalize",
         "api.registerCommand",
         'name: "agency"',
+        'description: "Agency Runtime read-only status; persistent on/off commands are denied"',
         "agency_runtime.adapters.openclaw.node_bridge",
         "execFile",
     }
@@ -298,6 +340,113 @@ def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
     }
 
 
+def _smoke_zcode_bundle(host: str, plugin_path: Path, tmp_home: Path) -> dict[str, Any]:
+    """Exercise the generated ZCode fragment and direct config lifecycle."""
+
+    from agency_runtime.core.installer_zcode import ZCODE_EVENTS, zcode_config_path
+
+    fragment = _load_plugin_json(plugin_path, label="ZCode hook fragment")
+    hooks = fragment.get("hooks")
+    if not isinstance(hooks, dict) or set(hooks.get("events", {})) != set(ZCODE_EVENTS):
+        raise RuntimeError("ZCode bundle has an invalid hooks.events contract")
+    if hooks.get("enabled") is not True:
+        raise RuntimeError("ZCode bundle must declare hooks enabled")
+    plugin_root = plugin_path.parent
+    interpreter, bootstrap = _installed_launcher_paths(plugin_root)
+    config_path = zcode_config_path(home_dir=tmp_home)
+    before_repeat = read_bounded_regular_file(
+        config_path,
+        limit=1024 * 1024,
+        label="installed ZCode config",
+    )
+    config = safe_load_bounded_json(before_repeat)
+    if config.get("theme") != "preserved-by-agency-smoke":
+        raise RuntimeError("ZCode install did not preserve unrelated config")
+    configured_hooks = config.get("hooks", {})
+    configured_events = configured_hooks.get("events", {})
+    for event in ZCODE_EVENTS:
+        registrations = configured_events.get(event)
+        if not isinstance(registrations, list):
+            raise RuntimeError(f"ZCode config is missing {event}")
+        agency_handlers = [
+            handler
+            for registration in registrations
+            if isinstance(registration, dict)
+            for handler in registration.get("hooks", [])
+            if isinstance(handler, dict)
+            and handler.get("type") == "process"
+            and "agency_runtime.cli" in handler.get("args", [])
+        ]
+        if len(agency_handlers) != 1:
+            raise RuntimeError(f"ZCode {event} does not have one Agency process handler")
+        handler = agency_handlers[0]
+        args = handler.get("args")
+        expected_prefix = ["-I", "-S", bootstrap, "agency_runtime.cli", "hook", "zcode"]
+        if handler.get("command") != interpreter or args[:6] != expected_prefix:
+            raise RuntimeError(f"ZCode {event} is not bound to the installed launcher")
+        event_index = args.index("--event")
+        if args[event_index + 1] != event:
+            raise RuntimeError(f"ZCode {event} handler argv is not event-bound")
+
+    repeated = install_agent_adapter(host, home_dir=tmp_home)
+    after_repeat = read_bounded_regular_file(
+        config_path,
+        limit=1024 * 1024,
+        label="repeated ZCode config",
+    )
+    if not repeated.get("ok") or not repeated.get("filesystem", {}).get("unchanged"):
+        raise RuntimeError("repeated ZCode install was not idempotent")
+    if after_repeat != before_repeat:
+        raise RuntimeError("repeated ZCode install rewrote unchanged config")
+
+    disabled = toggle_agency(host, False, home_dir=tmp_home)
+    enabled = toggle_agency(host, True, home_dir=tmp_home)
+    if not disabled.get("ok") or disabled.get("enabled") is not False:
+        raise RuntimeError("ZCode per-handler disable postcondition failed")
+    if not enabled.get("ok") or enabled.get("enabled") is not True:
+        raise RuntimeError("ZCode per-handler enable postcondition failed")
+
+    session_handler = next(
+        handler
+        for registration in configured_events["SessionStart"]
+        for handler in registration.get("hooks", [])
+        if "agency_runtime.cli" in handler.get("args", [])
+    )
+    prepared = freeze_process_argv(
+        prepare_process_argv([session_handler["command"], *session_handler["args"]])
+    )
+    revalidate_process_argv(prepared)
+    invocation = subprocess.run(
+        prepared,
+        input=json.dumps(
+            {
+                "hookEventName": "SessionStart",
+                "sessionId": "zcode-smoke",
+                "cwd": str(tmp_home),
+            }
+        ),
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    if invocation.returncode != 0:
+        raise RuntimeError(
+            (invocation.stderr or invocation.stdout or "ZCode hook invocation failed").strip()
+        )
+    if invocation.stdout.strip():
+        safe_load_bounded_json(invocation.stdout.strip())
+    return {
+        "host": host,
+        "plugin_path": str(plugin_path),
+        "format": "zcode-config-hooks",
+        "hooks": list(ZCODE_EVENTS),
+        "preserved_existing_config": True,
+        "idempotent": True,
+        "toggle_verified": True,
+        "process_hook_invoked": True,
+    }
+
+
 def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     _prepare_fake_host_home(tmp_home, host)
     result = install_agent_adapter(host, home_dir=tmp_home)
@@ -314,7 +463,10 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     if host == "openclaw":
         return _smoke_openclaw_plugin(host, plugin_path)
 
-    if host in {"codex", "claude", "zcode"}:
+    if host == "zcode":
+        return _smoke_zcode_bundle(host, plugin_path, tmp_home)
+
+    if host in {"codex", "claude"}:
         return _smoke_marketplace_bundle(host, plugin_path)
 
     spec = importlib.util.spec_from_file_location(f"agency_runtime_smoke_{host}", plugin_path)
@@ -338,9 +490,18 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
         raise RuntimeError(f"missing hooks: {', '.join(missing)}")
     if set(ctx.commands) != {"agency"}:
         raise RuntimeError("missing Hermes agency control command")
+    description = str(ctx.command_options["agency"].get("description") or "")
+    if "read-only status" not in description or "on/off commands are denied" not in description:
+        raise RuntimeError("Hermes agency command does not declare its read-only authority")
     status = ctx.commands["agency"]("status")
     if "Agency Runtime is enabled for hermes." not in status:
         raise RuntimeError(f"Hermes agency status command returned an invalid response: {status!r}")
+    denied = ctx.commands["agency"]("off")
+    if "remains enabled" not in denied or "was denied" not in denied:
+        raise RuntimeError(f"Hermes agency mutation command did not fail closed: {denied!r}")
+    repeated_status = ctx.commands["agency"]("status")
+    if "Agency Runtime is enabled for hermes." not in repeated_status:
+        raise RuntimeError("Hermes agency mutation command changed persistent state")
     ctx.hooks["post_api_request"](response={}, model="task-general", session_id=f"smoke-{host}")
     return {"host": host, "plugin_path": str(plugin_path), "adapter": "HermesBridge"}
 

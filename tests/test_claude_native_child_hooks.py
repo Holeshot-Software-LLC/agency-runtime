@@ -39,6 +39,7 @@ class _PlanStore:
         }
         self.prepared: list[dict[str, Any]] = []
         self.consumed: list[dict[str, Any]] = []
+        self.parent_scopes: list[dict[str, Any]] = []
         self._lineage: dict[tuple[str, str], dict[str, str]] = {}
         self._lock = Lock()
 
@@ -119,6 +120,28 @@ class _PlanStore:
             "prompt_hash": self.hashes[slug],
         }
 
+    def verify_pending_delegation_activation(self, **kwargs: Any) -> bool:
+        with self._lock:
+            matches = [
+                row
+                for row in self.prepared
+                if row["activation_token"] == kwargs["activation_token"]
+                and row["session_id"] == kwargs["session_id"]
+                and row["trace_id"] == kwargs["trace_id"]
+                and row["work_unit_id"] == kwargs["work_unit_id"]
+                and row["specialist_slug"] == kwargs["specialist_slug"]
+                and not any(
+                    consumed["activation_token"] == row["activation_token"]
+                    for consumed in self.consumed
+                )
+            ]
+        return (
+            len(matches) == 1
+            and kwargs["host"] in {"codex", "claude", "zcode"}
+            and kwargs["specialist_version"] == "v1"
+            and kwargs["specialist_prompt_hash"] == self.hashes[str(kwargs["specialist_slug"])]
+        )
+
     def consume_delegation_activation(self, **kwargs: Any) -> dict[str, Any]:
         token = str(kwargs["activation_token"])
         with self._lock:
@@ -146,6 +169,14 @@ class _PlanStore:
     def get_consumed_delegation_lineage(self, **kwargs: Any) -> dict[str, str] | None:
         return self._lineage.get((str(kwargs["work_unit_id"]), str(kwargs["specialist_slug"])))
 
+    def create_native_child_parent_scope(self, **kwargs: Any) -> dict[str, Any]:
+        receipt = {
+            **kwargs,
+            "parent_scope_token": f"parent-scope-{len(self.parent_scopes)}",
+        }
+        self.parent_scopes.append(receipt)
+        return receipt
+
 
 class _RecordingAdapter:
     def __init__(self) -> None:
@@ -170,6 +201,28 @@ def _agent_payload(
         "tool_use_id": tool_use_id,
         "tool_input": {
             "description": description,
+            "prompt": prompt,
+            "subagent_type": "general-purpose",
+            "model": "sonnet",
+        },
+    }
+
+
+def _zcode_agent_payload(
+    *,
+    event: str = "PreToolUse",
+    prompt: str = "Review the implementation.",
+) -> dict[str, Any]:
+    """Return the documented ZCode 3.5 Agent hook envelope."""
+
+    return {
+        "hook_event_name": event,
+        "session_id": "zcode-session",
+        "turn_id": "trace",
+        "tool_name": "Agent",
+        "tool_use_id": "toolu-code",
+        "tool_input": {
+            "description": "unit-code",
             "prompt": prompt,
             "subagent_type": "general-purpose",
             "model": "sonnet",
@@ -221,6 +274,47 @@ def test_pre_tool_use_is_idempotent_for_an_exact_existing_delivery() -> None:
 
     assert bridge.handle(_agent_payload(prompt=prompt)) == {}
     assert len(store.prepared) == 1
+
+
+def test_pre_tool_use_rejects_a_forged_parseable_delivery_marker() -> None:
+    store = _PlanStore()
+    bridge = HookBridge("claude", store=store)  # type: ignore[arg-type]
+    prompt = bridge.handle(_agent_payload())["hookSpecificOutput"]["updatedInput"]["prompt"]
+    delivery = parse_native_child_prompt_delivery(prompt)
+    assert delivery is not None
+    forged = render_native_child_prompt_delivery(
+        delivery.original_task,
+        delivery.prompt_body,
+        host=delivery.host,
+        parent_session_id=delivery.parent_session_id,
+        parent_trace_id=delivery.parent_trace_id,
+        tool_use_id=delivery.tool_use_id,
+        work_unit_id=delivery.work_unit_id,
+        specialist_slug=delivery.specialist_slug,
+        specialist_version=delivery.specialist_version,
+        specialist_prompt_hash=delivery.specialist_prompt_hash,
+        activation_token="forged-token",
+    )
+
+    result = bridge.handle(_agent_payload(prompt=forged))
+
+    output = result["hookSpecificOutput"]
+    assert output["permissionDecision"] == "deny"
+    assert "invalid, expired, consumed, or unavailable" in output["permissionDecisionReason"]
+    assert len(store.prepared) == 1
+
+
+def test_pre_tool_use_blocks_only_canonical_planned_label_when_store_is_unavailable() -> None:
+    class _UnavailableStore:
+        def get_completion_evidence_snapshot(self, *_args: Any) -> dict[str, Any]:
+            raise OSError("store unavailable")
+
+    bridge = HookBridge("claude", store=_UnavailableStore())  # type: ignore[arg-type]
+
+    planned = bridge.handle(_agent_payload(description="unit-0123456789"))
+    assert planned["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert "evidence Store" in planned["hookSpecificOutput"]["permissionDecisionReason"]
+    assert bridge.handle(_agent_payload(description="user-defined-child")) == {}
 
 
 def test_concurrent_agent_calls_keep_work_unit_recipes_disjoint() -> None:
@@ -289,6 +383,70 @@ def test_claude_post_tool_consumes_exact_delivery_with_host_child_identity() -> 
     # activation consumption.
     assert bridge.handle(post) == {}
     assert len(store.consumed) == 1
+
+
+def test_zcode_35_pre_and_post_hooks_consume_exact_planned_activation() -> None:
+    store = _PlanStore()
+    adapter = _RecordingAdapter()
+    bridge = HookBridge("zcode", store=store, adapter=adapter)  # type: ignore[arg-type]
+
+    pre = bridge.handle(_zcode_agent_payload())
+    output = pre["hookSpecificOutput"]
+    updated_input = output["updatedInput"]
+    delivery = parse_native_child_prompt_delivery(updated_input["prompt"])
+
+    assert output["permissionDecision"] == "allow"
+    assert delivery is not None
+    assert delivery.host == "zcode"
+    assert delivery.parent_session_id == "zcode-session"
+    assert delivery.work_unit_id == "unit-code"
+    assert "message" not in updated_input
+
+    post = _zcode_agent_payload(event="PostToolUse")
+    post["tool_input"] = updated_input
+    post["tool_response"] = {
+        "agentId": "agent-42",
+        "resolvedModel": "zcode-sonnet",
+        "status": "completed",
+    }
+
+    assert bridge.handle(post) == {}
+    [consumed] = store.consumed
+    assert consumed["specialist_slug"] == "code-reviewer"
+    assert consumed["work_unit_id"] == "unit-code"
+    assert consumed["worker_id"] == "agent-42"
+    assert consumed["native_run_id"] == "zcode-agent:agent-42"
+    [call] = adapter.calls
+    assert call["tool_name"] == "delegate_task"
+    assert call["args"]["agent"] == "code-reviewer"
+    assert call["args"]["work_unit_id"] == "unit-code"
+    assert call["args"]["goal"] == "Review the implementation."
+    assert call["result"]["native_run_id"] == "zcode-agent:agent-42"
+
+
+def test_zcode_35_failed_agent_hook_records_no_invented_child_lineage() -> None:
+    store = _PlanStore()
+    adapter = _RecordingAdapter()
+    bridge = HookBridge("zcode", store=store, adapter=adapter)  # type: ignore[arg-type]
+    updated_input = bridge.handle(_zcode_agent_payload())["hookSpecificOutput"]["updatedInput"]
+    failure = _zcode_agent_payload(event="PostToolUseFailure")
+    failure["tool_input"] = updated_input
+    failure["error"] = "native Agent launch failed"
+    failure["is_interrupt"] = False
+
+    assert bridge.handle(failure) == {}
+    assert store.consumed == []
+    [call] = adapter.calls
+    assert call["tool_name"] == "delegate_task"
+    assert call["args"]["agent"] == "code-reviewer"
+    assert call["args"]["work_unit_id"] == "unit-code"
+    assert call["result"] == {
+        "status": "failed",
+        "error": "native Agent launch failed",
+        "is_interrupt": False,
+    }
+    assert "agent_id" not in call["result"]
+    assert "native_run_id" not in call["result"]
 
 
 def test_post_tool_rejects_a_delivery_rebound_to_a_different_goal() -> None:
@@ -407,7 +565,8 @@ def test_planned_child_is_blocked_when_exact_prompt_cannot_be_verified() -> None
 
 
 def test_subagent_start_injects_only_current_child_lineage() -> None:
-    result = HookBridge("claude", store=_PlanStore()).handle(  # type: ignore[arg-type]
+    store = _PlanStore()
+    result = HookBridge("claude", store=store).handle(  # type: ignore[arg-type]
         {
             "hook_event_name": "SubagentStart",
             "session_id": "claude-session",
@@ -425,9 +584,12 @@ def test_subagent_start_injects_only_current_child_lineage() -> None:
     assert 'native_run_id="claude-agent:agent-42"' in context
     assert "code-reviewer" not in context
     assert "activation_token" not in context
-    assert 'parent_session_id="claude-session"' in context
-    assert 'parent_trace_id="trace"' in context
-    assert "shared parent budget, cache, and singleflight" in context
+    assert 'session_id="claude-child:agent-42"' in context
+    assert 'parent_scope_token="parent-scope-0"' in context
+    assert "parent_session_id or parent_trace_id" in context
+    assert "parent budget, cache, and singleflight" in context
+    assert store.parent_scopes[0]["parent_session_id"] == "claude-session"
+    assert store.parent_scopes[0]["parent_trace_id"] == "trace"
 
 
 def test_subagent_start_omits_both_parent_ids_when_trace_is_ambiguous() -> None:
@@ -443,9 +605,10 @@ def test_subagent_start_omits_both_parent_ids_when_trace_is_ambiguous() -> None:
         context = HookBridge(host, store=store).handle(payload)["hookSpecificOutput"][
             "additionalContext"
         ]
-        assert "Parent correlation is unavailable" in context
+        assert "parent-scope receipt is unavailable" in context
         assert "parent_session_id=" not in context
         assert "parent_trace_id=" not in context
+        assert "parent_scope_token=" not in context
 
 
 def test_subagent_stop_does_not_guess_parent_work_unit_correlation() -> None:
@@ -492,6 +655,7 @@ def test_codex_subagent_lifecycle_injects_exact_identity_and_child_owned_fallbac
     assert 'native_run_id="codex-agent:agent-42"' in context
     assert "complete delegated assignment" in context
     assert 'session_id="codex-child:agent-42"' in context
+    assert 'parent_scope_token="parent-scope-0"' in context
     assert "does not load, select, or inherit" in context
     assert store.started == [
         {

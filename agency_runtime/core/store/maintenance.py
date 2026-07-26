@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import stat
 from collections.abc import Mapping
@@ -31,6 +32,41 @@ from agency_runtime.core.store.schema import (
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 from agency_runtime.core.store.security import metadata_is_link_or_reparse_point
 from agency_runtime.core.store.trace_identity import correlation_pair_digests
+
+_DASHBOARD_ACTIVITY_PAGE_SPECS: Mapping[str, tuple[str, str, str]] = {
+    "runs": ("runs", "runs.started_at", "runs.id"),
+    "receipts": ("model_receipts", "model_receipts.recorded_at", "model_receipts.id"),
+    "delegations": (
+        "delegation_events",
+        "COALESCE(delegation_events.completed_at, delegation_events.started_at)",
+        "delegation_events.id",
+    ),
+    "finalizations": (
+        "finalization_events",
+        "finalization_events.created_at",
+        "finalization_events.id",
+    ),
+    "specialists": ("specialists_loaded", "specialist.loaded_at", "specialist.id"),
+    "routing": ("routing_decisions", "routing_decisions.created_at", "routing_decisions.id"),
+}
+
+
+def _activity_cursor_time(name: str, row: Mapping[str, Any]) -> str:
+    if name == "delegations":
+        return str(row.get("completed_at") or row.get("started_at") or "")
+    return str(
+        row.get(
+            {
+                "runs": "started_at",
+                "receipts": "recorded_at",
+                "finalizations": "created_at",
+                "specialists": "loaded_at",
+                "routing": "created_at",
+            }[name]
+        )
+        or ""
+    )
+
 
 # Even an explicit age-zero trim must not reap a normal long-running agent
 # turn. Open graphs become retention candidates only after a full day without
@@ -107,6 +143,107 @@ class MaintenanceStoreMixin:
 
         return self._recent_activity(DASHBOARD_ACTIVITY_QUERIES, limit=limit)
 
+    def dashboard_activity_snapshot(self, *, limit: int = 50) -> dict[str, Any]:
+        """Read every bounded dashboard activity window from one SQLite snapshot."""
+
+        bounded = bounded_limit(limit)
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            activity: dict[str, list[dict[str, Any]]] = {}
+            collections: dict[str, dict[str, Any]] = {}
+            for name, sql in DASHBOARD_ACTIVITY_QUERIES.items():
+                stored = [dict(row) for row in conn.execute(sql, (bounded + 1,)).fetchall()]
+                page = normalize_activity_rows(name, stored[:bounded])
+                table, _timestamp, _identity = _DASHBOARD_ACTIVITY_PAGE_SPECS[name]
+                total = int(
+                    conn.execute(
+                        f"SELECT COUNT(*) AS count FROM {table}"  # nosec B608
+                    ).fetchone()["count"]
+                )
+                truncated = len(stored) > bounded
+                activity[name] = page
+                collections[name] = {
+                    "page_count": len(page),
+                    "filtered_count": total,
+                    "total_count": total,
+                    "limit": bounded,
+                    "truncated": truncated,
+                    "next_time": _activity_cursor_time(name, page[-1])
+                    if truncated and page
+                    else "",
+                    "next_id": str(page[-1].get("id") or "") if truncated and page else "",
+                }
+            conn.commit()
+            return {"activity": activity, "collections": collections}
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            try:
+                self._repair_storage_permissions()
+            finally:
+                conn.close()
+
+    def dashboard_activity_page(
+        self,
+        kind: str,
+        *,
+        limit: int = 50,
+        after_time: str = "",
+        after_id: str = "",
+    ) -> dict[str, Any]:
+        """Return one metadata-only activity collection via a live keyset cursor."""
+
+        name = str(kind or "").strip().casefold()
+        if name not in DASHBOARD_ACTIVITY_QUERIES:
+            raise ValueError("activity collection is invalid")
+        bounded = bounded_limit(limit)
+        cursor_time = str(after_time or "").strip()
+        cursor_id = str(after_id or "").strip()
+        if bool(cursor_time) != bool(cursor_id):
+            raise ValueError("activity cursor is incomplete")
+        base = DASHBOARD_ACTIVITY_QUERIES[name].rsplit(" ORDER BY ", 1)[0]
+        table, timestamp, identity = _DASHBOARD_ACTIVITY_PAGE_SPECS[name]
+        where = ""
+        values: list[Any] = []
+        if cursor_time:
+            where = f" WHERE ({timestamp} < ? OR ({timestamp} = ? AND {identity} < ?))"  # nosec B608
+            values.extend((cursor_time, cursor_time, cursor_id))
+        sql = (
+            base + where + f" ORDER BY {timestamp} DESC, {identity} DESC LIMIT ?"  # nosec B608
+        )
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            stored = [dict(row) for row in conn.execute(sql, (*values, bounded + 1)).fetchall()]
+            total = int(
+                conn.execute(
+                    f"SELECT COUNT(*) AS count FROM {table}"  # nosec B608
+                ).fetchone()["count"]
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            try:
+                self._repair_storage_permissions()
+            finally:
+                conn.close()
+        rows = normalize_activity_rows(name, stored[:bounded])
+        truncated = len(stored) > bounded
+        return {
+            "rows": rows,
+            "page_count": len(rows),
+            "filtered_count": total,
+            "total_count": total,
+            "limit": bounded,
+            "truncated": truncated,
+            "next_time": _activity_cursor_time(name, rows[-1]) if truncated and rows else "",
+            "next_id": str(rows[-1].get("id") or "") if truncated and rows else "",
+        }
+
     def _recent_activity(
         self,
         queries: Mapping[str, str],
@@ -144,6 +281,72 @@ class MaintenanceStoreMixin:
             return [normalize_snapshot(row) for row in rows]
         finally:
             conn.close()
+
+    def roster_snapshot_page(
+        self,
+        *,
+        limit: int = 50,
+        after_created_at: str = "",
+        after_snapshot_id: str = "",
+    ) -> dict[str, Any]:
+        """Return one newest-first roster-snapshot page with an exact total."""
+
+        bounded = bounded_limit(limit)
+        cursor_time = str(after_created_at or "").strip()
+        cursor_id = str(after_snapshot_id or "").strip()
+        if bool(cursor_time) != bool(cursor_id):
+            raise ValueError("snapshot cursor is incomplete")
+        where = ""
+        values: list[Any] = []
+        if cursor_time:
+            where = " WHERE (created_at < ? OR (created_at = ? AND snapshot_id < ?))"
+            values.extend((cursor_time, cursor_time, cursor_id))
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            total = int(
+                conn.execute("SELECT COUNT(*) AS count FROM agent_snapshots").fetchone()["count"]
+            )
+            revision_rows = [
+                dict(row)
+                for row in conn.execute(
+                    "SELECT snapshot_id, created_at, approved, activated, agent_count "
+                    "FROM agent_snapshots ORDER BY created_at DESC, snapshot_id DESC"
+                ).fetchall()
+            ]
+            rows = conn.execute(
+                "SELECT snapshot_id, created_at, agent_count, approved, activated, "
+                "added_count AS added, changed_count AS changed, removed_count AS removed "
+                "FROM agent_snapshots"
+                + where
+                + " ORDER BY created_at DESC, snapshot_id DESC LIMIT ?",
+                (*values, bounded + 1),
+            ).fetchall()
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+        page = [normalize_snapshot(row) for row in rows[:bounded]]
+        revision_document = json.dumps(
+            revision_rows,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        truncated = len(rows) > bounded
+        return {
+            "rows": page,
+            "total_count": total,
+            "truncated": truncated,
+            "next_created_at": str(page[-1]["created_at"]) if truncated and page else "",
+            "next_snapshot_id": str(page[-1]["snapshot_id"]) if truncated and page else "",
+            "collection_revision": hashlib.sha256(
+                f"roster-snapshots.v1\\0{revision_document}".encode()
+            ).hexdigest(),
+        }
 
     def record_routing_decision(
         self,

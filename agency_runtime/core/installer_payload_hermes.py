@@ -517,7 +517,11 @@ def register(ctx):
     ctx.register_hook("pre_verify", _pre_verify)
     ctx.register_hook("transform_llm_output", _transform_llm_output)
     ctx.register_hook("on_session_end", _on_session_end)
-    ctx.register_command("agency", _agency_command, description="Agency Runtime status, on, or off")
+    ctx.register_command(
+        "agency",
+        _agency_command,
+        description="Agency Runtime read-only status; persistent on/off commands are denied",
+    )
 '''
 
 

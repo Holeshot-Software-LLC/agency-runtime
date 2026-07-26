@@ -14,12 +14,15 @@ import math
 import re
 import threading
 from collections import OrderedDict
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from heapq import nlargest
 from itertools import pairwise
+from types import MappingProxyType
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 
@@ -96,14 +99,37 @@ _STRONG_SUPPORT_FIELDS = frozenset(
 _VECTOR_DIMENSIONS = 2_048
 _MIN_SEMANTIC_SCORE = 0.08
 _CATALOG_CACHE_ENTRIES = 2
-_CATALOG_CACHE: OrderedDict[
-    tuple[tuple[tuple[str, tuple[str, ...]], ...], ...],
-    tuple[
-        tuple[tuple[tuple[int, float], ...], ...],
-        tuple[frozenset[str], ...],
-        tuple[frozenset[str], ...],
-    ],
-] = OrderedDict()
+_FEATURE_CACHE_ENTRIES = 65_536
+_TEXT_CACHE_ENTRIES = 32_768
+_AgentSignature = tuple[tuple[str, tuple[str, ...]], ...]
+_CatalogSignatures = tuple[_AgentSignature, ...]
+_SparseVector = tuple[tuple[int, float], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _CatalogIndex:
+    """Immutable semantic features and collision-free support postings."""
+
+    identities: tuple[str, ...]
+    embeddings: tuple[_SparseVector, ...]
+    support_postings: Mapping[str, tuple[int, ...]]
+    strong_support_postings: Mapping[str, tuple[int, ...]]
+
+
+class RevisionedCatalog(list[dict[str, Any]]):
+    """List-compatible catalog bound to one exact routing revision."""
+
+    __slots__ = ("revision",)
+
+    def __init__(self, values: Iterable[dict[str, Any]], *, revision: str) -> None:
+        if not isinstance(revision, str) or not revision.strip() or len(revision) > 256:
+            raise ValueError("catalog revision must be non-empty text of at most 256 characters")
+        super().__init__(values)
+        self.revision = revision.strip()
+
+
+_CATALOG_CACHE: OrderedDict[_CatalogSignatures, _CatalogIndex] = OrderedDict()
+_REVISION_CATALOG_CACHE: OrderedDict[str, _CatalogIndex] = OrderedDict()
 _CATALOG_CACHE_LOCK = threading.RLock()
 
 
@@ -121,6 +147,7 @@ def _values(value: object) -> tuple[str, ...]:
     return (str(value),)
 
 
+@lru_cache(maxsize=_TEXT_CACHE_ENTRIES)
 def _tokens(text: str) -> tuple[str, ...]:
     return tuple(
         token
@@ -129,6 +156,7 @@ def _tokens(text: str) -> tuple[str, ...]:
     )
 
 
+@lru_cache(maxsize=_FEATURE_CACHE_ENTRIES)
 def _feature_index(feature: str) -> int:
     digest = hashlib.blake2b(feature.encode("utf-8"), digest_size=8).digest()
     return int.from_bytes(digest, "big") % _VECTOR_DIMENSIONS
@@ -139,7 +167,8 @@ def _add(vector: dict[int, float], feature: str, weight: float) -> None:
     vector[index] = vector.get(index, 0.0) + weight
 
 
-def _embed_texts(values: Sequence[str], *, weight: float) -> dict[int, float]:
+@lru_cache(maxsize=_TEXT_CACHE_ENTRIES)
+def _cached_text_embedding(values: tuple[str, ...], weight: float) -> _SparseVector:
     vector: dict[int, float] = {}
     for value in values:
         ordered = _tokens(value)
@@ -152,10 +181,15 @@ def _embed_texts(values: Sequence[str], *, weight: float) -> dict[int, float]:
                 _add(vector, f"g:{padded[index : index + 3]}", weight * 0.12)
         for left, right in pairwise(ordered):
             _add(vector, f"b:{left}:{right}", weight * 0.8)
-    return vector
+    return tuple(vector.items())
 
 
-def _support_terms(values: Sequence[str]) -> frozenset[str]:
+def _embed_texts(values: Sequence[str], *, weight: float) -> dict[int, float]:
+    return dict(_cached_text_embedding(tuple(values), weight))
+
+
+@lru_cache(maxsize=_TEXT_CACHE_ENTRIES)
+def _support_terms(values: tuple[str, ...]) -> frozenset[str]:
     """Return collision-free evidence that can support one semantic match.
 
     Character n-grams improve ranking once a real relationship is present, but
@@ -188,7 +222,7 @@ def _normalized(vector: dict[int, float]) -> tuple[tuple[int, float], ...]:
     return tuple(sorted((index, weight / magnitude) for index, weight in vector.items()))
 
 
-def _agent_signature(agent: dict[str, Any]) -> tuple[tuple[str, tuple[str, ...]], ...]:
+def _agent_signature(agent: dict[str, Any]) -> _AgentSignature:
     return tuple((field, _values(agent.get(field))) for field in _SIGNATURE_FIELDS)
 
 
@@ -225,39 +259,84 @@ def _agent_support(
     return frozenset(terms), frozenset(strong_terms)
 
 
-def _catalog_embeddings(
+def _postings(terms: Sequence[frozenset[str]]) -> Mapping[str, tuple[int, ...]]:
+    mutable: dict[str, list[int]] = {}
+    for index, row_terms in enumerate(terms):
+        for term in row_terms:
+            mutable.setdefault(term, []).append(index)
+    return MappingProxyType({term: tuple(indexes) for term, indexes in mutable.items()})
+
+
+def _compile_catalog_index(
+    signatures: _CatalogSignatures,
+    identities: tuple[str, ...],
+) -> _CatalogIndex:
+    support = tuple(_agent_support(signature) for signature in signatures)
+    return _CatalogIndex(
+        identities=identities,
+        embeddings=tuple(_agent_embedding(signature) for signature in signatures),
+        support_postings=_postings(tuple(item[0] for item in support)),
+        strong_support_postings=_postings(tuple(item[1] for item in support)),
+    )
+
+
+def _catalog_index(
     catalog: Sequence[dict[str, Any]],
-) -> tuple[
-    tuple[tuple[tuple[int, float], ...], ...],
-    tuple[frozenset[str], ...],
-    tuple[frozenset[str], ...],
-]:
+    *,
+    catalog_revision: str = "",
+) -> _CatalogIndex:
+    """Return features keyed by exact revision or mutation-safe content.
+
+    Production routing supplies its context fingerprint as ``catalog_revision``.
+    That fingerprint already binds configuration, policy, capability context,
+    and the complete roster snapshot. Direct library callers that do not have
+    such an authority continue to use the full content key.
+    """
+
+    revision = catalog_revision.strip()
+    identities = tuple(agent_identity(agent) for agent in catalog)
+    if revision:
+        with _CATALOG_CACHE_LOCK:
+            cached = _REVISION_CATALOG_CACHE.get(revision)
+            if cached is not None:
+                if cached.identities != identities:
+                    raise ValueError("catalog revision was reused with different agent identities")
+                _REVISION_CATALOG_CACHE.move_to_end(revision)
+                return cached
+
     signatures = tuple(_agent_signature(agent) for agent in catalog)
     with _CATALOG_CACHE_LOCK:
-        cached = _CATALOG_CACHE.get(signatures)
-        if cached is not None:
+        compiled = _CATALOG_CACHE.get(signatures)
+        if compiled is not None:
             _CATALOG_CACHE.move_to_end(signatures)
-            return cached
-    support = tuple(_agent_support(signature) for signature in signatures)
-    compiled = (
-        tuple(_agent_embedding(signature) for signature in signatures),
-        tuple(item[0] for item in support),
-        tuple(item[1] for item in support),
-    )
+    if compiled is None:
+        compiled = _compile_catalog_index(signatures, identities)
+    elif compiled.identities != identities:
+        # Identity is part of every signature, so this is only a defensive
+        # collision guard against an internal cache corruption.
+        raise RuntimeError("semantic catalog cache identity mismatch")
+
     with _CATALOG_CACHE_LOCK:
         _CATALOG_CACHE[signatures] = compiled
         _CATALOG_CACHE.move_to_end(signatures)
+        if revision:
+            extant = _REVISION_CATALOG_CACHE.get(revision)
+            if extant is not None and extant.identities != identities:
+                raise ValueError("catalog revision was reused with different agent identities")
+            _REVISION_CATALOG_CACHE[revision] = compiled
+            _REVISION_CATALOG_CACHE.move_to_end(revision)
         while len(_CATALOG_CACHE) > _CATALOG_CACHE_ENTRIES:
             _CATALOG_CACHE.popitem(last=False)
+        while len(_REVISION_CATALOG_CACHE) > _CATALOG_CACHE_ENTRIES:
+            _REVISION_CATALOG_CACHE.popitem(last=False)
     return compiled
 
 
 def _cosine(
-    left: tuple[tuple[int, float], ...],
-    right: tuple[tuple[int, float], ...],
+    left: Mapping[int, float],
+    right: _SparseVector,
 ) -> float:
-    left_map = dict(left)
-    return sum(left_map.get(index, 0.0) * weight for index, weight in right)
+    return sum(left.get(index, 0.0) * weight for index, weight in right)
 
 
 def semantic_retrieve(
@@ -265,6 +344,7 @@ def semantic_retrieve(
     catalog: Sequence[dict[str, Any]],
     *,
     limit: int = 40,
+    catalog_revision: str = "",
 ) -> tuple[list[dict[str, Any]], list[float]]:
     """Return positive deterministic embedding matches from the full roster."""
 
@@ -272,30 +352,25 @@ def semantic_retrieve(
         return [], []
     if len(catalog) > MAX_ACTIVE_ROSTER_SIZE:
         raise ValueError(f"catalog cannot contain more than {MAX_ACTIVE_ROSTER_SIZE} agents")
-    query_vector = _normalized(_embed_texts((query,), weight=1.0))
+    query_vector = dict(_normalized(_embed_texts((query,), weight=1.0)))
     query_support = _support_terms((query,))
     if not query_vector or not query_support:
         return [], []
-    embeddings, support_terms, strong_support_terms = _catalog_embeddings(catalog)
+    revision = catalog_revision or str(getattr(catalog, "revision", "") or "")
+    index = _catalog_index(catalog, catalog_revision=revision)
+    supported: set[int] = set()
+    strongly_supported: set[int] = set()
+    for term in query_support:
+        supported.update(index.support_postings.get(term, ()))
+        strongly_supported.update(index.strong_support_postings.get(term, ()))
+    candidate_indexes = sorted(supported.intersection(strongly_supported))
     scored = [
-        (score, str(agent.get("slug") or agent.get("agent_slug") or ""), index, agent)
-        for index, (agent, vector, support, strong_support) in enumerate(
-            zip(
-                catalog,
-                embeddings,
-                support_terms,
-                strong_support_terms,
-                strict=True,
-            )
+        (score, agent_identity(agent), row_index, agent)
+        for row_index in candidate_indexes
+        if (
+            (agent := catalog[row_index]) is not None
+            and (score := _cosine(query_vector, index.embeddings[row_index])) >= _MIN_SEMANTIC_SCORE
         )
-        if not query_support.isdisjoint(support)
-        # A lone word in narrative prose or an output template is too weak to
-        # establish domain intent. It may improve ranking only after the query
-        # also matches an identity, capability, category, task, preference, or
-        # tool field. This rejects polysemes such as food "cook" matching an
-        # Unreal build receipt while preserving "Unreal cook pipeline".
-        if not query_support.isdisjoint(strong_support)
-        if (score := _cosine(query_vector, vector)) >= _MIN_SEMANTIC_SCORE
     ]
     ranked = nlargest(
         min(limit, len(scored)),
@@ -331,7 +406,7 @@ class CandidateUnion:
 
 
 def _agent_id(agent: dict[str, Any]) -> str:
-    return str(agent.get("slug") or agent.get("agent_slug") or "").strip()
+    return agent_identity(agent)
 
 
 def _hard_negatives(
@@ -370,12 +445,14 @@ def retrieve_candidate_union(
         [str, list[dict[str, Any]], int],
         tuple[list[dict[str, Any]], list[float]],
     ] = pre_narrow,
+    catalog_revision: str = "",
 ) -> CandidateUnion:
     """Combine positive lexical and embedding recall without zero-score padding."""
 
     if limit <= 0 or not catalog:
         return CandidateUnion((), (), (), len(catalog), 0, 0, 0)
-    bounded_catalog = list(catalog)
+    inferred_revision = catalog_revision or str(getattr(catalog, "revision", "") or "")
+    bounded_catalog = catalog if isinstance(catalog, list) else list(catalog)
     lexical_agents, lexical_scores = lexical_retriever(query, bounded_catalog, limit)
     lexical = [
         (agent, score)
@@ -383,7 +460,12 @@ def retrieve_candidate_union(
         if score > 0
     ]
     lexical_ids = tuple(slug for agent, _score in lexical if (slug := _agent_id(agent)))
-    semantic_agents, semantic_scores = semantic_retrieve(query, bounded_catalog, limit=limit)
+    semantic_agents, semantic_scores = semantic_retrieve(
+        query,
+        bounded_catalog,
+        limit=limit,
+        catalog_revision=inferred_revision,
+    )
     combined: dict[str, tuple[dict[str, Any], float, bool, bool]] = {}
     for agent, score in lexical:
         slug = _agent_id(agent)
@@ -447,10 +529,16 @@ def clear_semantic_retrieval_cache() -> None:
 
     with _CATALOG_CACHE_LOCK:
         _CATALOG_CACHE.clear()
+        _REVISION_CATALOG_CACHE.clear()
+    _tokens.cache_clear()
+    _feature_index.cache_clear()
+    _cached_text_embedding.cache_clear()
+    _support_terms.cache_clear()
 
 
 __all__ = [
     "CandidateUnion",
+    "RevisionedCatalog",
     "clear_semantic_retrieval_cache",
     "retrieve_candidate_union",
     "semantic_retrieve",

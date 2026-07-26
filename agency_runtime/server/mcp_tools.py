@@ -52,6 +52,62 @@ def _noncanonical_identifier(arguments: dict[str, Any], *fields: str) -> str | N
     return None
 
 
+def _consume_parent_scope(
+    store: Any,
+    *,
+    parent_scope_token: str,
+    host: str,
+    session_id: str,
+    trace_id: str,
+) -> tuple[dict[str, Any], str]:
+    if not parent_scope_token:
+        return {}, ""
+    consumer = getattr(store, "consume_native_child_parent_scope", None)
+    if not callable(consumer):
+        return {}, "native child parent scope verification is unavailable"
+    try:
+        consumed = consumer(
+            parent_scope_token=parent_scope_token,
+            host=host,
+            child_session_id=session_id,
+            child_trace_id=trace_id,
+        )
+    except ValueError as exc:
+        return {}, str(exc)
+    except Exception:
+        return {}, "native child parent scope verification is unavailable"
+    if not isinstance(consumed, dict):
+        return {}, "native child parent scope verification is unavailable"
+    return consumed, ""
+
+
+def _restore_parent_scope(
+    store: Any,
+    *,
+    parent_scope_token: str,
+    host: str,
+    session_id: str,
+    trace_id: str,
+) -> bool:
+    restorer = getattr(
+        store,
+        "restore_native_child_parent_scope_after_failed_preflight",
+        None,
+    )
+    if not callable(restorer):
+        return False
+    try:
+        restorer(
+            parent_scope_token=parent_scope_token,
+            host=host,
+            child_session_id=session_id,
+            child_trace_id=trace_id,
+        )
+    except Exception:
+        return False
+    return True
+
+
 def _preflight(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     from agency_runtime.core.preflight import run_preflight
     from agency_runtime.core.turn_origin import native_adapter_turn_origin
@@ -65,6 +121,19 @@ def _preflight(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
             "error": "host must identify one execution host: codex, claude, openclaw, hermes, or zcode"
         }
     trace_id = str(arguments.get("trace_id") or "").strip() or str(uuid4())
+    user_message = arguments.get("user_message")
+    if not isinstance(user_message, str) or not user_message.strip():
+        return {"error": "user_message is required for Agency preflight routing"}
+    parent_scope_token = str(arguments.get("parent_scope_token") or "").strip()
+    parent_scope, parent_scope_error = _consume_parent_scope(
+        store,
+        parent_scope_token=parent_scope_token,
+        host=host,
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+    if parent_scope_error:
+        return {"error": parent_scope_error}
     origin_receipt = native_adapter_turn_origin(
         "external_user",
         host=host,
@@ -72,19 +141,42 @@ def _preflight(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         session_id=session_id,
         trace_id=trace_id,
     )
+    preflight_succeeded = False
     try:
         result = run_preflight(
             store,
             session_id=session_id,
             host=host,
-            user_message=arguments["user_message"],
+            user_message=user_message,
             trace_id=trace_id,
             origin_receipt=origin_receipt,
-            parent_session_id=str(arguments.get("parent_session_id") or "").strip(),
-            parent_trace_id=str(arguments.get("parent_trace_id") or "").strip(),
+            parent_session_id=str(parent_scope.get("parent_session_id") or ""),
+            parent_trace_id=str(parent_scope.get("parent_trace_id") or ""),
+            native_worker_id=str(parent_scope.get("worker_id") or ""),
+            native_run_id=str(parent_scope.get("native_run_id") or ""),
         )
-    except ValueError as exc:
-        return {"error": str(exc)}
+        preflight_succeeded = True
+    except BaseException as exc:
+        restored = (
+            not parent_scope_token
+            or not parent_scope
+            or _restore_parent_scope(
+                store,
+                parent_scope_token=parent_scope_token,
+                host=host,
+                session_id=session_id,
+                trace_id=trace_id,
+            )
+        )
+        if not restored:
+            if isinstance(exc, Exception):
+                return {"error": "native child parent scope retry is unavailable"}
+            raise
+        if isinstance(exc, ValueError):
+            return {"error": str(exc)}
+        raise
+    if not preflight_succeeded:  # pragma: no cover - defensive narrowing
+        return {"error": "Agency preflight did not complete"}
     return {
         "context": result.context or "No routing suggestion.",
         "session_id": result.session_id,

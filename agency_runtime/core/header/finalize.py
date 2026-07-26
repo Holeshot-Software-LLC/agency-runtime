@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping
 from hashlib import sha256
 from typing import Any, TypedDict
@@ -22,6 +23,10 @@ class FinalizationResult(TypedDict):
     action: str
     text: str
     missing: list[str]
+
+
+class FinalizationBatchResult(FinalizationResult):
+    evidence_receipt: dict[str, Any] | None
 
 
 TERMINAL_ACTION_STATUS = {
@@ -155,8 +160,8 @@ def finalize_response(
     auto-fill, and ``continue`` when there is no substantive draft body yet.
     """
     metadata = dict(trace_metadata or {})
-    session_id = _metadata_value(metadata, "session_id", "session", default="")
-    trace_id = _metadata_value(metadata, "trace_id", "trace", default="")
+    session_id = metadata.get("session_id", metadata.get("session", ""))
+    trace_id = metadata.get("trace_id", metadata.get("trace", ""))
     host = _metadata_value(metadata, "host", "runtime", default="unknown") or "unknown"
     requested_model = model or _metadata_value(metadata, "requested_model", "model", default="")
 
@@ -312,6 +317,84 @@ def finalize_response(
     return result
 
 
+def finalize_response_batch(
+    draft_text: str,
+    trace_metadata: Mapping[str, Any],
+    store: Any,
+    *,
+    skills_loaded: object,
+    delegations: object,
+    model: str = "",
+) -> FinalizationBatchResult:
+    """Finalize caller evidence and the terminal response in one Store transaction."""
+
+    metadata = dict(trace_metadata)
+    session_id = _metadata_value(metadata, "session_id", "session", default="")
+    trace_id = _metadata_value(metadata, "trace_id", "trace", default="")
+    runner = getattr(store, "finalize_evidence_batch", None)
+    if not callable(runner):
+        return {
+            "action": "continue",
+            "text": draft_text,
+            "missing": ["evidence_persistence"],
+            "evidence_receipt": None,
+        }
+
+    def finalize_in_transaction(
+        transaction_store: Any, authoritative_host: str
+    ) -> FinalizationResult:
+        return finalize_response(
+            draft_text,
+            trace_metadata={
+                **metadata,
+                "session_id": str(session_id),
+                "trace_id": str(trace_id),
+                "host": authoritative_host,
+            },
+            store=transaction_store,
+            model=model,
+        )
+
+    envelope = runner(
+        session_id=session_id,
+        trace_id=trace_id,
+        skills_loaded=skills_loaded,
+        delegations=delegations,
+        finalizer=finalize_in_transaction,
+    )
+    finalization = dict(envelope["finalization"])
+    return {
+        "action": finalization["action"],
+        "text": finalization["text"],
+        "missing": list(finalization["missing"]),
+        "evidence_receipt": envelope["receipt"],
+    }
+
+
+def finalize(
+    draft_text: str,
+    trace_metadata: Mapping[str, Any] | None = None,
+    store: Any | None = None,
+    model: str = "",
+) -> FinalizationResult:
+    """Deprecated compatibility alias for :func:``finalize_response``."""
+
+    warnings.warn(
+        (
+            "finalize() is deprecated; call finalize_response(). "
+            "It will not be removed before agency-runtime 0.3.0."
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return finalize_response(
+        draft_text,
+        trace_metadata=trace_metadata,
+        store=store,
+        model=model,
+    )
+
+
 def _record_finalization(
     store: Any,
     trace_id: str,
@@ -384,9 +467,12 @@ def _commit_terminal_finalization(
 
 
 __all__ = [
+    "FinalizationBatchResult",
     "FinalizationResult",
     "accepted_response_run",
+    "finalize",
     "finalize_response",
+    "finalize_response_batch",
     "response_hash",
     "terminal_response_run",
 ]

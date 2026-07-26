@@ -157,10 +157,21 @@ def _hiring(value: object) -> dict[str, Any]:
                 "calls_used": _bounded_count(item.get("calls_used"), maximum=8),
             }
         )
+    attempted_count = sum(item["status"] != "not_attempted" for item in events)
+    workforce_changes = sum(item["status"] in {"amended", "hired"} for item in events)
+    if not attempted_count:
+        outcome = "no_attempt"
+    elif workforce_changes == attempted_count:
+        outcome = "changed"
+    elif workforce_changes:
+        outcome = "mixed"
+    else:
+        outcome = "declined"
     return {
+        "outcome": outcome,
         "events": events,
-        "attempted_count": sum(item["status"] != "not_attempted" for item in events),
-        "workforce_changes": sum(item["status"] in {"amended", "hired"} for item in events),
+        "attempted_count": attempted_count,
+        "workforce_changes": workforce_changes,
         "calls_used": min(sum(item["calls_used"] for item in events), 128),
         "truncated": len(raw) > len(events),
     }
@@ -350,7 +361,10 @@ def _routing_effect_codes(
     statuses = {item["status"] for item in hiring["events"]}
     append("hiring_attempted", bool(hiring["attempted_count"]))
     append("workforce_changed", bool(hiring["workforce_changes"]))
-    append("hiring_not_attempted", "not_attempted" in statuses)
+    append(
+        "hiring_not_attempted",
+        hiring["outcome"] == "no_attempt" or "not_attempted" in statuses,
+    )
     append("hiring_declined", bool(statuses - {"amended", "hired", "not_attempted"}))
     return codes
 
@@ -403,8 +417,7 @@ def project_durable_routing_receipt(routing: Mapping[str, Any]) -> dict[str, Any
         compatibility=compatibility,
         eligibility=eligibility,
     )
-    if isinstance(routing.get("hiring_events"), (list, tuple)):
-        receipt["hiring"] = _hiring(routing.get("hiring_events"))
+    receipt["hiring"] = _hiring(routing.get("hiring_events"))
     if origin_receipt_digest:
         receipt["origin_receipt_digest"] = origin_receipt_digest
     return receipt
@@ -468,8 +481,9 @@ def normalize_durable_routing_receipt(value: object) -> dict[str, Any] | None:
         "effect_codes": _codes(value.get("effect_codes")),
     }
     raw_hiring = value.get("hiring")
-    if isinstance(raw_hiring, Mapping):
-        normalized["hiring"] = _hiring(raw_hiring.get("events"))
+    normalized["hiring"] = _hiring(
+        raw_hiring.get("events") if isinstance(raw_hiring, Mapping) else None
+    )
     origin_digest = str(value.get("origin_receipt_digest") or "").strip().casefold()
     if _DIGEST.fullmatch(origin_digest) is not None:
         normalized["origin_receipt_digest"] = origin_digest

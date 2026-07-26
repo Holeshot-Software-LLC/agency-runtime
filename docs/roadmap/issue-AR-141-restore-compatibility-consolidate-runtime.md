@@ -55,3 +55,14 @@ Complete P0 behavioral fixes before mechanical consolidation.
 - POSIX trust, path identity, bounded string, and JSON helpers have one owner.
 - Dead-code removals have repository-wide call-graph and behavior evidence.
 - Refactors preserve coverage, routing outcomes, and release artifacts.
+
+## Implementation evidence
+
+Thin route_and_build_context() and header finalize() wrappers are restored with
+tested deprecation warnings through 0.2.x. Agent identity precedence, bounded
+values, filesystem trust, and executable namespace projection now have
+canonical helpers used by the changed runtime paths. Compatibility tests pass
+4, header/selector tests 91, roster/unit-assignment tests 43, and release
+verification passes. The item remains open because repository-wide dead-code
+removal evidence and the remaining JSON/helper consolidation have not been
+completed.

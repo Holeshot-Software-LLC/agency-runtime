@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass
+from functools import partial
 from hashlib import sha256
 from time import monotonic, sleep
 from typing import Any
 
 from agency_runtime.core.agent_activation import agent_is_enabled
+from agency_runtime.core.bounded_values import bounded_unique_strings
 from agency_runtime.core.config import AgencyConfig, DelegationConfig
 from agency_runtime.core.host_capabilities import project_host_capability_receipt
 from agency_runtime.core.preflight_versions import (
@@ -50,24 +52,11 @@ _MAX_ROUTING_LABEL_CHARS = 64
 _MAX_ROUTING_COUNT = 1_000_000
 
 
-def _bounded_unique_strings(
-    value: Any,
-    *,
-    limit: int = _MAX_ROUTING_IDS,
-    chars: int = _MAX_ROUTING_ID_CHARS,
-) -> list[str]:
-    if not isinstance(value, (list, tuple)):
-        return []
-    result: list[str] = []
-    seen: set[str] = set()
-    for item in value:
-        normalized = str(item or "").strip()[:chars]
-        if normalized and normalized not in seen:
-            seen.add(normalized)
-            result.append(normalized)
-            if len(result) >= limit:
-                break
-    return result
+_bounded_unique_strings = partial(
+    bounded_unique_strings,
+    limit=_MAX_ROUTING_IDS,
+    chars=_MAX_ROUTING_ID_CHARS,
+)
 
 
 def _bounded_label(value: Any) -> str:

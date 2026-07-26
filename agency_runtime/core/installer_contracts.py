@@ -103,7 +103,7 @@ HOSTS: dict[str, dict[str, Any]] = {
         "binary": "zcode",
         "root": "~/.zcode",
         "current_markers": ["v2/config.json", "cli/config.json"],
-        "plugin_dir": "~/.agency-runtime/marketplaces/zcode",
+        "plugin_dir": "~/.agency-runtime/host-plugins/zcode/agency-preflight",
         "native_lifecycle": "zcode config hooks",
     },
 }

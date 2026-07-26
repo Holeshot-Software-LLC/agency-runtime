@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.unit_assignment import (
     MAX_WORK_UNIT_CHARS,
     MUTATION_SCOPES,
@@ -173,7 +174,7 @@ def _catalog_by_slug(
 ) -> dict[str, Mapping[str, Any]]:
     result: dict[str, Mapping[str, Any]] = {}
     for item in catalog:
-        slug = str(item.get("slug") or item.get("agent_slug") or "").strip().casefold()
+        slug = agent_identity(item).casefold()
         if slug and slug not in result:
             result[slug] = item
     return result

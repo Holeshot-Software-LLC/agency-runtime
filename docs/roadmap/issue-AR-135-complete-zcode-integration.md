@@ -67,3 +67,13 @@ cross-process child correlation.
   `zcode-agent:*` lineage.
 - Every claimed ZCode hook event has the documented host-native response shape.
 - Tests cover fresh home, existing config preservation, rollback, and drift.
+
+## Implementation evidence
+
+The source implementation now owns ZCode independently: it renders the exact
+3.5.2 seven-event configuration, merges and restores config.json atomically,
+tracks ownership and drift, plans no Claude-native commands, exposes canonical
+status/toggle/smoke contracts, and records ZCode pre/post/failure activation
+lineage. Fresh-home, preservation, rollback, drift, schema, UI, and smoke tests
+pass, including the 167-test integrated native-hook/ZCode slice. This item
+remains open because a real installed ZCode restart/load canary has not run.

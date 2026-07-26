@@ -11,6 +11,7 @@ export function createLiveController(core, config, renderer) {
     api,
     showNotice,
     nestedValue,
+    renderPreservingInteraction,
   } = core;
   const AGENT_SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]{1,127}$/;
 
@@ -83,13 +84,14 @@ export function createLiveController(core, config, renderer) {
         !known
           ? "Agency master state loading"
           : enabled
-            ? "Disable Agency Runtime globally"
-            : "Enable Agency Runtime globally",
+            ? "Agency Runtime is enabled (read-only monitoring)"
+            : "Agency Runtime is disabled (read-only monitoring)",
       );
       toggle.dataset.state = !known ? "loading" : enabled ? "enabled" : "disabled";
-      if (toggle.getAttribute("aria-busy") !== "true") toggle.disabled = !known;
+      toggle.disabled = true;
+      toggle.setAttribute("aria-disabled", "true");
       toggle.title = known
-        ? `Generation ${master.generation} · ${enabled ? "Agency is active" : "Agency is bypassed"}`
+        ? `Generation ${master.generation} · ${enabled ? "Agency is active" : "Agency is bypassed"} · read-only`
         : "Loading Agency master state";
     }
     if (byId("master-label")) {
@@ -176,12 +178,46 @@ export function createLiveController(core, config, renderer) {
   }
 
   function cancelControlRequest() {
+    state.control.generation += 1;
     window.clearTimeout(state.control.timer);
     state.control.timer = null;
     const controller = state.control.controller;
     state.control.controller = null;
     state.control.inFlight = false;
     if (controller) controller.abort();
+  }
+
+  function beginViewRequest(name) {
+    const request = state.requests[name];
+    if (!request) throw new Error(`Unknown dashboard request scope: ${name}`);
+    request.generation += 1;
+    request.controller?.abort();
+    request.controller = new AbortController();
+    return { controller: request.controller, generation: request.generation };
+  }
+
+  function viewRequestIsCurrent(name, request) {
+    const current = state.requests[name];
+    return !state.lifecycle.destroyed
+      && !state.lifecycle.suspended
+      && !request.controller.signal.aborted
+      && current?.controller === request.controller
+      && current.generation === request.generation;
+  }
+
+  function finishViewRequest(name, request) {
+    const current = state.requests[name];
+    if (current?.controller !== request.controller) return false;
+    current.controller = null;
+    return true;
+  }
+
+  function cancelViewRequests() {
+    Object.values(state.requests).forEach((request) => {
+      request.generation += 1;
+      request.controller?.abort();
+      request.controller = null;
+    });
   }
 
   function cancelFullRefresh() {
@@ -285,13 +321,14 @@ export function createLiveController(core, config, renderer) {
         && state.activeView === "overview"
         && chartWindow !== state.live.chartWindow
       ) renderer.renderCharts();
-      if (masterChanged && render) renderer.renderActiveView();
+      if (masterChanged && render) renderPreservingInteraction(renderer.renderActiveView);
       return masterChanged;
     }
     state.live.revision = String(payload.revision || "");
     state.overview = { ...(state.overview || {}), ...(payload.overview || {}) };
     state.activity = payload.activity || {};
-    if (render) renderer.renderActiveView();
+    state.activityCollections = payload.activity_collections || {};
+    if (render) renderPreservingInteraction(renderer.renderActiveView);
     return true;
   }
 
@@ -355,6 +392,104 @@ export function createLiveController(core, config, renderer) {
     return Number.isInteger(value) && value >= minimum ? value : fallback;
   }
 
+  async function completeCollection(
+    initial,
+    {
+      basePath,
+      itemField,
+      revisionField,
+      signal,
+      maximumPages = 100,
+      cursorParameter = "after",
+    },
+  ) {
+    if (!initial || typeof initial !== "object") return initial || {};
+    const rows = Array.isArray(initial[itemField]) ? [...initial[itemField]] : [];
+    const revision = String(initial[revisionField] || "");
+    let cursor = initial.truncated === true ? String(initial.next_cursor || "") : "";
+    const seenCursors = new Set();
+    let pageCount = 1;
+    while (cursor) {
+      if (pageCount >= maximumPages || seenCursors.has(cursor)) {
+        throw new Error(`The ${itemField} collection exceeded its safe paging boundary.`);
+      }
+      seenCursors.add(cursor);
+      const separator = basePath.includes("?") ? "&" : "?";
+      const page = await api(
+        `${basePath}${separator}${cursorParameter}=${encodeURIComponent(cursor)}`,
+        { signal },
+      );
+      if (revision && String(page[revisionField] || "") !== revision) {
+        throw new Error(`The ${itemField} collection changed while it was being paged.`);
+      }
+      rows.push(...(Array.isArray(page[itemField]) ? page[itemField] : []));
+      cursor = page.truncated === true ? String(page.next_cursor || "") : "";
+      if (page.truncated === true && !cursor) {
+        throw new Error(`The ${itemField} collection omitted its next cursor.`);
+      }
+      pageCount += 1;
+    }
+    return {
+      ...initial,
+      [itemField]: rows,
+      count: rows.length,
+      page_count: rows.length,
+      truncated: false,
+      next_cursor: null,
+      pages_loaded: pageCount,
+    };
+  }
+
+  async function completeRosterPage(initial, signal) {
+    if (state.rosterFilter || initial?.truncated !== true) return initial;
+    return completeCollection(initial, {
+      basePath: "/api/roster?limit=200",
+      itemField: "agents",
+      revisionField: "roster_revision",
+      signal,
+    });
+  }
+
+  async function completeGovernanceSnapshot(initial, signal) {
+    if (!initial || typeof initial !== "object") return initial || {};
+    const withSnapshots = await completeCollection(initial, {
+      basePath: "/api/snapshots?limit=200",
+      itemField: "snapshots",
+      revisionField: "collection_revision",
+      signal,
+    });
+    const reviews = await completeCollection(withSnapshots.reviews || {}, {
+      basePath: "/api/roster/reviews?limit=100",
+      itemField: "candidates",
+      revisionField: "collection_revision",
+      cursorParameter: "candidate_cursor",
+      signal,
+    });
+    return { ...withSnapshots, reviews };
+  }
+
+  async function fetchWorkforceCollections(signal) {
+    const [workforceFirst, hiringFirst] = await Promise.all([
+      api("/api/workforce?limit=200", { signal }),
+      api("/api/hiring?limit=200", { signal }),
+    ]);
+    const [workforce, hiring] = await Promise.all([
+      completeCollection(workforceFirst, {
+        basePath: "/api/workforce?limit=200",
+        itemField: "workers",
+        revisionField: "collection_revision",
+        signal,
+      }),
+      completeCollection(hiringFirst, {
+        basePath: "/api/hiring?limit=200",
+        itemField: "hiring_cases",
+        revisionField: "collection_revision",
+        signal,
+      }),
+    ]);
+    return { workforce, hiring };
+  }
+
   function applyRosterPage(payload = {}) {
     const agents = Array.isArray(payload.agents) ? payload.agents : [];
     const count = pageInteger(payload.count, agents.length);
@@ -401,6 +536,16 @@ export function createLiveController(core, config, renderer) {
     return `/api/roster/operations?${query.toString()}`;
   }
 
+  async function fetchOperationalRoster(filters, signal) {
+    const first = await api(operationalRosterPath(filters), { signal });
+    return completeCollection(first, {
+      basePath: operationalRosterPath(filters),
+      itemField: "agents",
+      revisionField: "roster_revision",
+      signal,
+    });
+  }
+
   async function applyOperationalFilters(event) {
     event?.preventDefault?.();
     if (config.serviceRestartRequired()) {
@@ -409,18 +554,23 @@ export function createLiveController(core, config, renderer) {
     }
     if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
     const filters = operationalFilterValues();
+    const request = beginViewRequest("operationalRoster");
     try {
-      const payload = await api(operationalRosterPath(filters));
-      if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+      const payload = await fetchOperationalRoster(filters, request.controller.signal);
+      if (!viewRequestIsCurrent("operationalRoster", request)) return false;
       state.rosterFilters = filters;
       state.rosterOperations = payload;
       state.rosterFilter = "";
       if (byId("roster-search-slug")) byId("roster-search-slug").value = "";
-      renderer.renderRoster();
+      renderPreservingInteraction(renderer.renderRoster);
       return true;
     } catch (error) {
-      showNotice(error.message, true);
+      if (error?.name !== "AbortError" && viewRequestIsCurrent("operationalRoster", request)) {
+        showNotice(error.message, true);
+      }
       return false;
+    } finally {
+      finishViewRequest("operationalRoster", request);
     }
   }
 
@@ -444,6 +594,7 @@ export function createLiveController(core, config, renderer) {
       : "next_remediation_history_cursor";
     const cursor = String(current[cursorField] || "");
     if (!cursor) return false;
+    const request = beginViewRequest("remediation");
     const button = byId(`review-${kind}-more`);
     if (button) {
       button.disabled = true;
@@ -455,8 +606,10 @@ export function createLiveController(core, config, renderer) {
         limit: String(pageInteger(current.limit, 25, 1)),
         [`${kind}_cursor`]: cursor,
       });
-      const payload = await api(`/api/roster/reviews?${query.toString()}`);
-      if (!state.lifecycle.destroyed && !state.lifecycle.suspended) {
+      const payload = await api(`/api/roster/reviews?${query.toString()}`, {
+        signal: request.controller.signal,
+      });
+      if (viewRequestIsCurrent("remediation", request)) {
         const itemField = kind === "pending" ? "remediation_attempts" : "remediation_history";
         const existing = Array.isArray(current[itemField]) ? current[itemField] : [];
         const incoming = Array.isArray(payload[itemField]) ? payload[itemField] : [];
@@ -481,16 +634,19 @@ export function createLiveController(core, config, renderer) {
           next.remediation_history_has_more = payload.remediation_history_has_more === true;
         }
         state.rosterReview = next;
-        renderer.renderRoster();
+        renderPreservingInteraction(renderer.renderRoster);
         loaded = true;
       }
     } catch (error) {
-      showNotice(error.message, true);
+      if (error?.name !== "AbortError" && viewRequestIsCurrent("remediation", request)) {
+        showNotice(error.message, true);
+      }
     }
-    if (button) {
+    if (button && viewRequestIsCurrent("remediation", request)) {
       button.disabled = false;
       button.removeAttribute("aria-busy");
     }
+    finishViewRequest("remediation", request);
     return loaded;
   }
 
@@ -542,6 +698,132 @@ export function createLiveController(core, config, renderer) {
     return applyRosterFilter("");
   }
 
+  async function legacyControlSnapshot(signal) {
+    const configSnapshot = await api("/api/config", { signal });
+    if (configSnapshot?.service_binding?.store_restart_required === true) {
+      return {
+        schema_version: "agency.dashboard.control.legacy",
+        config: configSnapshot,
+        service_binding: configSnapshot.service_binding,
+        restart_required: true,
+        control_revision: "legacy-unversioned",
+      };
+    }
+    const [hosts, rosterFirst, governance] = await Promise.all([
+      api("/api/hosts", { signal }),
+      api(rosterRequestPath(), { signal }),
+      api("/api/snapshots", { signal }),
+    ]);
+    const roster = await completeRosterPage(rosterFirst, signal);
+    return {
+      schema_version: "agency.dashboard.control.legacy",
+      config: configSnapshot,
+      hosts: hosts.hosts || [],
+      master: hosts.master,
+      roster,
+      governance: await completeGovernanceSnapshot(governance, signal),
+      service_binding: configSnapshot.service_binding,
+      restart_required: false,
+      control_revision: "legacy-unversioned",
+    };
+  }
+
+  async function fetchControlSnapshot(signal) {
+    let snapshot;
+    try {
+      snapshot = await api("/api/control", { signal });
+    } catch (error) {
+      if (error?.name === "AbortError") throw error;
+      if (!(error instanceof APIError) || ![0, 404].includes(error.status)) throw error;
+      return legacyControlSnapshot(signal);
+    }
+    if (snapshot?.schema_version !== "agency.dashboard.control.v1") {
+      if (
+        signal?.aborted
+        || state.lifecycle.destroyed
+        || state.lifecycle.suspended
+      ) throw new runtime.DOMException("Aborted", "AbortError");
+      return legacyControlSnapshot(signal);
+    }
+    if (!snapshot.restart_required) {
+      snapshot.roster = await completeRosterPage(snapshot.roster, signal);
+      snapshot.governance = await completeGovernanceSnapshot(
+        snapshot.governance,
+        signal,
+      );
+      if (state.rosterFilter) {
+        snapshot.roster = await api(rosterRequestPath(), { signal });
+      }
+      if (Object.keys(state.rosterFilters || {}).length) {
+        snapshot.governance = {
+          ...(snapshot.governance || {}),
+          operations: await fetchOperationalRoster(state.rosterFilters, signal),
+        };
+      }
+    }
+    return snapshot;
+  }
+
+  function setControlFresh(snapshot) {
+    state.control.revision = String(snapshot.control_revision || "legacy-unversioned");
+    state.control.sampledAt = snapshot.sampled_at || new Date().toISOString();
+    state.control.stale = false;
+    state.control.errorRequestId = "";
+    const shell = document.querySelector(".shell");
+    if (shell) shell.dataset.controlState = "fresh";
+  }
+
+  function markControlStale(error) {
+    state.control.stale = true;
+    state.control.errorRequestId = String(error?.requestId || "");
+    const shell = document.querySelector(".shell");
+    if (shell) shell.dataset.controlState = "stale";
+    setConnection(false, "Control data stale");
+    const revision = state.control.revision
+      ? ` Last good revision ${state.control.revision.slice(0, 12)}.`
+      : " No complete control revision has loaded.";
+    const request = state.control.errorRequestId
+      ? ` Request ID ${state.control.errorRequestId}.`
+      : "";
+    showNotice(`Control refresh failed; retained the last good state.${revision}${request}`, true);
+  }
+
+  function applyControlSnapshot(snapshot, { render = true } = {}) {
+    if (!snapshot || typeof snapshot !== "object") {
+      throw new Error("Dashboard control response is invalid.");
+    }
+    if (!snapshot.config || typeof snapshot.config !== "object") {
+      throw new Error("Dashboard control response omitted configuration.");
+    }
+    const restartRequired = snapshot.restart_required === true
+      || snapshot.config.service_binding?.store_restart_required === true;
+    if (
+      !restartRequired
+      && (
+        !Array.isArray(snapshot.hosts)
+        || !snapshot.roster
+        || typeof snapshot.roster !== "object"
+        || !snapshot.governance
+        || typeof snapshot.governance !== "object"
+      )
+    ) {
+      throw new Error("Dashboard control response is incomplete.");
+    }
+    config.applyConfigSnapshot(snapshot.config);
+    setControlFresh(snapshot);
+    if (restartRequired || config.serviceRestartRequired()) {
+      if (render) renderPreservingInteraction(renderer.renderActiveControlView);
+      return true;
+    }
+    state.hosts = snapshot.hosts;
+    applyMasterState(snapshot.master);
+    const rosterPage = applyRosterPage(snapshot.roster);
+    applyGovernanceSnapshot(snapshot.governance);
+    state.overview = { ...(state.overview || {}), roster_count: rosterPage.enabled_count };
+    if (render) renderPreservingInteraction(renderer.renderActiveControlView);
+    return true;
+  }
+
   async function refreshControlPlane() {
     state.control.timer = null;
     if (
@@ -551,37 +833,35 @@ export function createLiveController(core, config, renderer) {
       || document.visibilityState === "hidden"
     ) return;
     const controller = new AbortController();
+    const generation = state.control.generation + 1;
+    state.control.generation = generation;
     state.control.controller = controller;
     state.control.inFlight = true;
     try {
-      const configSnapshot = await api("/api/config", { signal: controller.signal });
-      if (state.control.controller !== controller || state.lifecycle.suspended) return;
-      config.applyConfigSnapshot(configSnapshot);
-      if (config.serviceRestartRequired()) {
-        renderer.renderActiveControlView();
-        return;
-      }
-      const [hosts, roster, snapshots] = await Promise.all([
-        api("/api/hosts", { signal: controller.signal }),
-        api(rosterRequestPath(), { signal: controller.signal }),
-        api("/api/snapshots", { signal: controller.signal }),
+      const [snapshot, workforce] = await Promise.all([
+        fetchControlSnapshot(controller.signal),
+        state.activeView === "workforce"
+          ? fetchWorkforceCollections(controller.signal)
+          : Promise.resolve(null),
       ]);
-      if (state.control.controller !== controller || state.lifecycle.suspended) return;
-      state.hosts = hosts.hosts || [];
-      applyMasterState(hosts.master);
-      const rosterPage = applyRosterPage(roster);
-      applyGovernanceSnapshot(snapshots);
-      if (state.activeView === "workforce") await refreshWorkforce({ signal: controller.signal });
-      state.overview = { ...(state.overview || {}), roster_count: rosterPage.enabled_count };
-      renderer.renderActiveControlView();
+      if (
+        state.control.controller !== controller
+        || state.control.generation !== generation
+        || state.lifecycle.suspended
+      ) return;
+      applyControlSnapshot(snapshot, { render: false });
+      if (workforce) commitWorkforceCollections(workforce, { render: false });
+      renderPreservingInteraction(renderer.renderActiveControlView);
     } catch (error) {
       if (
         state.control.controller === controller
         && !state.lifecycle.destroyed
         && !state.lifecycle.suspended
         && error?.name !== "AbortError"
-        && terminalLiveFailure(error)
-      ) handleLiveFailure(error);
+      ) {
+        if (terminalLiveFailure(error)) handleLiveFailure(error);
+        else markControlStale(error);
+      }
     } finally {
       if (state.control.controller === controller) {
         state.control.controller = null;
@@ -602,64 +882,48 @@ export function createLiveController(core, config, renderer) {
     cancelLiveRequest();
     cancelControlRequest();
     try {
-      const configSnapshot = await api("/api/config", { signal: controller.signal });
-      if (
-        generation !== state.full.generation
-        || state.full.controller !== controller
-        || state.lifecycle.suspended
-      ) return false;
-      config.applyConfigSnapshot(configSnapshot);
-      if (config.serviceRestartRequired()) {
-        const live = await api("/api/live?limit=100", { signal: controller.signal });
-        if (
-          generation !== state.full.generation
-          || state.full.controller !== controller
-          || state.lifecycle.suspended
-        ) return false;
-        applyLiveSnapshot(live, { render: false });
-        setConnection(true, "Restart required");
-        setLiveStatus("Service restart required", "paused", { announce: true });
-        renderer.renderActiveView();
-        return true;
-      }
-      const [live, hosts, roster, snapshots] = await Promise.all([
+      const [live, control, workforce] = await Promise.all([
         api("/api/live?limit=100", { signal: controller.signal }),
-        api("/api/hosts", { signal: controller.signal }),
-        api(rosterRequestPath(), { signal: controller.signal }),
-        api("/api/snapshots", { signal: controller.signal }),
+        fetchControlSnapshot(controller.signal),
+        state.activeView === "workforce"
+          ? fetchWorkforceCollections(controller.signal)
+          : Promise.resolve(null),
       ]);
       if (
         generation !== state.full.generation
         || state.full.controller !== controller
         || state.lifecycle.suspended
       ) return false;
-      state.hosts = hosts.hosts || [];
-      applyMasterState(hosts.master);
-      const rosterPage = applyRosterPage(roster);
-      applyGovernanceSnapshot(snapshots);
-      if (state.activeView === "workforce") await refreshWorkforce({ signal: controller.signal });
-      const effective = configSnapshot.effective || configSnapshot.config || {};
+      applyControlSnapshot(control, { render: false });
+      if (workforce) commitWorkforceCollections(workforce, { render: false });
+      const effective = control.config.effective || control.config.config || {};
       state.overview = {
-        roster_count: rosterPage.enabled_count,
+        ...(state.overview || {}),
+        roster_count: state.rosterPage?.enabled_count ?? state.overview?.roster_count,
         retention_days: nestedValue(effective, "observability.retention_days"),
         capture_content: nestedValue(effective, "observability.capture_content") === true,
       };
       state.activity = {};
       state.live.revision = "";
       applyLiveSnapshot(live, { render: false });
-      setConnection(true, "Authenticated");
-      setLiveStatus(
-        state.live.enabled ? "Live · authenticated" : "Live updates paused",
-        state.live.enabled ? "live" : "paused",
-      );
-      renderer.renderActiveView();
+      if (control.restart_required || config.serviceRestartRequired()) {
+        setConnection(true, "Restart required");
+        setLiveStatus("Service restart required", "paused", { announce: true });
+      } else {
+        setConnection(true, "Authenticated");
+        setLiveStatus(
+          state.live.enabled ? "Live · authenticated" : "Live updates paused",
+          state.live.enabled ? "live" : "paused",
+        );
+      }
+      renderPreservingInteraction(renderer.renderActiveView);
       return true;
     } catch (error) {
       if (error?.name === "AbortError") return false;
       if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
       setConnection(false, "Unavailable");
       if (terminalLiveFailure(error)) handleLiveFailure(error);
-      else if (surfaceErrors) showNotice(error.message, true);
+      else if (surfaceErrors) markControlStale(error);
       if (!surfaceErrors) throw error;
     } finally {
       if (state.full.controller === controller) {
@@ -688,16 +952,39 @@ export function createLiveController(core, config, renderer) {
   }
 
   async function refreshWorkforce({ signal } = {}) {
-    const [workforce, hiring] = await Promise.all([
-      api("/api/workforce?limit=1000", { signal }),
-      api("/api/hiring?limit=100", { signal }),
-    ]);
-    if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
-    state.workforce = workforce.workers || [];
-    state.workforceCounts = workforce.counts || {};
-    state.hiring = hiring.hiring_cases || [];
-    if (state.activeView === "workforce") renderer.renderWorkforce();
-    return true;
+    if (signal) {
+      const collections = await fetchWorkforceCollections(signal);
+      if (signal.aborted || state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+      commitWorkforceCollections(collections, { render: true });
+      return true;
+    }
+    const request = beginViewRequest("workforce");
+    try {
+      const collections = await fetchWorkforceCollections(request.controller.signal);
+      if (!viewRequestIsCurrent("workforce", request)) return false;
+      commitWorkforceCollections(collections, { render: true });
+      return true;
+    } catch (error) {
+      if (error?.name !== "AbortError" && viewRequestIsCurrent("workforce", request)) {
+        showNotice(error.message, true);
+      }
+      return false;
+    } finally {
+      finishViewRequest("workforce", request);
+    }
+  }
+
+  function commitWorkforceCollections({ workforce, hiring }, { render = true } = {}) {
+    state.workforce = Array.isArray(workforce?.workers) ? workforce.workers : [];
+    state.workforceCounts = workforce?.counts || {};
+    const { workers: _workers, ...workforcePage } = workforce || {};
+    state.workforcePage = workforcePage;
+    state.hiring = Array.isArray(hiring?.hiring_cases) ? hiring.hiring_cases : [];
+    const { hiring_cases: _cases, ...hiringPage } = hiring || {};
+    state.hiringPage = hiringPage;
+    if (render && state.activeView === "workforce") {
+      renderPreservingInteraction(renderer.renderWorkforce);
+    }
   }
 
   async function reconcileRuntimeEvidence(successMessage) {
@@ -736,8 +1023,12 @@ export function createLiveController(core, config, renderer) {
     applyMasterState,
     cancelLiveRequest,
     cancelControlRequest,
+    beginViewRequest,
+    viewRequestIsCurrent,
+    finishViewRequest,
     cancelFullRefresh,
     cancelMutationRequests,
+    cancelViewRequests,
     pauseForMutation,
     resumeAfterMutation,
     beginMutation,
@@ -751,6 +1042,10 @@ export function createLiveController(core, config, renderer) {
     handleLiveFailure,
     runLivePoll,
     scheduleControlRefresh,
+    completeCollection,
+    fetchControlSnapshot,
+    applyControlSnapshot,
+    markControlStale,
     applyRosterPage,
     applyGovernanceSnapshot,
     operationalFilterValues,

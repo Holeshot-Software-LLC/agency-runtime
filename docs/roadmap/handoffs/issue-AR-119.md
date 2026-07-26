@@ -8,6 +8,7 @@ tags: [handoff, routing, workforce, evaluation, recovery, production-readiness]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
+  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/analysis/2026-07-26-production-readiness-review.md
@@ -16,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: c5e3575beacfb3170d2f2b0092c0e7379347011f
-minimum_ledger_commit: de47a8c690280f07757437cd5aed11d416d7b9a1
+evidence_commit: 24948a0e6b27edc59e7f7806bd7a067cc4a693b4
+minimum_ledger_commit: b72106f39101e1a8241e9b890681e5ce861340b5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -26,115 +27,104 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 
 Bounded current-state projection for AR-119. The
 [canonical issue](../issue-AR-119-inference-first-workforce.md) owns the full
-acceptance contract. ADR-0087 governs configured inference; ADR-0088 adds the
-truthfully stamped deterministic typed-recall floor only when inference is not
-configured.
+acceptance contract. ADR-0087 governs configured inference; ADR-0088 governs
+the deterministic typed-recall floor only when inference is not configured.
 
 ## checkpoint
 
-- `origin/main` remains `5001d78`; local `main` was four governed commits
-  ahead at `22c9f33` before the current Wave 1 implementation checkpoint.
-- The pre-existing untracked
-  `docs/analysis/2026-07-25-deep-audit-findings.md` is preserved unchanged and
-  excluded from checkpoint commits until its hypotheses are independently
-  verified and promoted through roadmap governance.
-- Live umbrella [#132](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132)
-  remains open. AR-125 also remains open; tracker mutation and closure are not
-  authorized by this local package.
+- Main is locally ahead of origin/main at 5001d78 by the governed audit,
+  checkpoint, Wave 1, and ledger commits. No push, PR, or tracker mutation was
+  authorized.
+- The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
+  and excluded from commits.
+- Telemetry reported 26.7 percent remaining and requires this clean local
+  substantive/ledger checkpoint before further live evaluation.
+- The current package integrates AR-133 through AR-143 source work plus the
+  AR-140/AR-141 performance and compatibility slice.
 
 ## completed-evidence
 
-- Fresh Codex installation removed and re-added the managed plugin, retained a
-  backup at `20260726T020704.952997Z`, installed bundle digest
-  `f6a49f839765a94be5de481a73fa5483bfa9bb1df17d59f862fe0bc985b38366`,
-  preserved 9 governed contractors, and started the owner-scoped dashboard from
-  immutable launcher root `runtime-sha256-3caf93fd3dc3acb9bb5c001f91908c074b61b1246b5fc847018f7c62844edc2a`.
-- Installation truth is partial, not promoted: Codex is registered and enabled,
-  while normal-profile hook trust is `activation-required`; no trust store was
-  read or changed and no host restart was claimed.
-- `agency doctor --json --verbose` passed config, SQLite integrity, schema 35,
-  the 272-agent roster, authenticated Codex judge, and its one-provider chain.
-  Overall status is `DEGRADED` solely because normal-profile Codex hook trust is
-  unverified.
-- The freshly installed dashboard service is registered, definition-current,
-  reachable, and authenticated on loopback. Browser QA found a clean console,
-  no page-level overflow at a 390 px viewport, accessible section navigation,
-  272 active specialists, and truthful Codex `activation-required` / ZCode
-  `staged-not-registered` labels.
-- The current task's already-loaded MCP process fails closed for both preflight
-  and status with only a generic diagnostic. This is not evidence about the
-  refreshed plugin in a new Codex task; the isolated canary and a fresh-task
-  check remain required.
-- Independent security, optimization, UI-to-HTTP, HTTP-to-service, CLI/MCP,
-  host-hook, Store-to-SQL, and schema traces are complete. The governed report
-  is `docs/analysis/2026-07-26-production-readiness-review.md` and the reproduced
-  remediation queue is AR-128 through AR-142.
-- A telemetry-gated installed Routing Lab replay produced the canonical
-  `required_agents_missing` / `no_safe_sufficient_team` gap and no hire. Direct
-  reproduction proved the hiring allowlist omits that legitimate reason.
-- Focused probes reproduced three unreachable MCP tools, a 206-byte release
-  asset overage, stale Store trust, incomplete schema currentness, ZCode
-  install/activation failure, process-local child correlation, and planned
-  delegation fail-open behavior. No Critical security finding was confirmed.
-- Wave 1 plus schema 36 is locally coherent: MCP/broker reads are bounded and
-  read-only, subprocess environments are least-privilege, Store trust is
-  revalidated, canonical safe staffing gaps can hire cumulatively, critical
-  SQLite objects are exact-current, and packaged assets are 263,151 bytes
-  against the unchanged 263,168-byte ceiling.
-- Independent checkpoint verification passed 785 Python tests with 9 skips, 97
-  dashboard interaction tests, full Ruff and format checks across 543 files,
-  and `git diff --check`.
-- A second security pass reproduced a new High: the model-callable in-app
-  Browser can automate the owner dashboard's static-confirmation mutations.
-  AR-143 and ADR-0096 now govern genuine operator presence; AR-128 remains open.
-- AR-136 now includes the forged parseable activation-marker bypass. AR-135
-  records the exact local ZCode 3.5.2 seven-event config/payload contract and
-  rejects invented marketplace commands.
+- The initial fresh Codex install from source preserved nine contractors,
+  registered and enabled Codex, started the owner dashboard, and remained
+  activation-required for normal-profile hook trust. That installation
+  predates the current source changes.
+- Wave 1 made MCP/broker control read-only, isolated subprocess environments,
+  revalidated Store trust, repaired MCP contracts and deterministic safe-gap
+  hiring, enforced schema 36, and restored the fixed asset budget.
+- Finalization now validates and commits one complete bounded batch atomically.
+- Schema 37 persists expiring single-use native-child scopes; separate parent
+  and child hook subprocess tests prove exact correlation, replay denial, and
+  planned-work fail-closed behavior.
+- ZCode now has an independent exact seven-event configuration, atomic
+  merge/rollback, status, toggle, hook, lineage, and smoke source contract.
+- Dashboard collections expose cursors, exact totals, revisions, and declared
+  live semantics. One coherent control snapshot is stage-validated before
+  commit; stale generations cannot overwrite newer state; focus and selection
+  survive refresh; safe request IDs are visible.
+- Content-free observations correlate dashboard, HTTP, MCP, hooks, and
+  slow/error Store work without prompt, token, SQL, exception-message, or path
+  fields. Hiring outcomes are present in normalized route receipts.
+- Revision-aware retrieval and the lightweight CLI entrypoint reduced the fixed
+  local controls while preserving correctness hashes. At 10,000 agents the
+  measured cold/warm-p95/peak values were 8,817.588 ms, 84.193 ms, and
+  189.589 MiB. These are local controls, not general superiority evidence.
+- Five unchanged 1,000-agent cached-routing controls produced median p95 values
+  from 1.531 through 1.795 ms after mutation-safe hot-path optimization. The
+  complete 19-test routing-eval suite passed without changing the 2.0 ms gate.
+- Deprecated route/header compatibility wrappers and canonical identity,
+  bounded-value, filesystem-trust, and executable helpers are restored.
+- Independent current validation: authority 110 passed; native-hook/ZCode 167
+  passed; transaction/observability/MCP/HTTP 147 passed with 8 skips;
+  dashboard server 134 passed with 3 skips; browser UI 82 passed; and
+  distribution/release 101 passed. One combined five-minute arm timed out and
+  is not counted; every exact component passed after isolation.
 
 ## exact-blocker
 
-- Normal-profile Codex activation requires user-owned terminal-TUI hook review
-  and a subsequent fresh task. The installer correctly refuses to automate or
-  bypass that trust decision.
-- AR-128 through AR-139 plus AR-143 include P0 production blockers and must
-  close before renewed production claims. AR-140 through AR-142 own measured
-  performance, compatibility/consolidation, and cross-layer instrumentation.
-- AR-119/AR-125 still lack a benchmark-valid completed value corpus and current
-  production-candidate evidence across all claimed host/OS surfaces. Historical
-  malformed or timed-out upstream arms remain validity failures, never losses.
-- Tracker creation for AR-128 through AR-142, push/PR/hosted checks, and
-  normal-profile Codex trust remain authorization or user-presence boundaries.
+- AR-143 has no production OS-backed, non-exporting operator-presence verifier.
+  Dashboard and model-facing paths are read-only and real CLI mutations fail
+  closed. Do not bypass this with static confirmation, credentials, mocks, or a
+  model-callable capability.
+- Because install is a persistent mutation, the current source cannot be
+  freshly installed or canaried autonomously until AR-143 has a genuine
+  human-presence backend. The earlier installation is not current-source proof.
+- Normal-profile Codex activation still requires user-owned terminal-TUI hook
+  review. No trust store may be read or changed by this task.
+- AR-137 still needs explicit 263/1,001-row workforce and concurrent-insert
+  pagination regressions. AR-138 needs fresh post-install desktop/mobile QA.
+- AR-119 and AR-125 still lack a benchmark-valid completed value corpus and
+  current production-candidate evidence across claimed host/OS surfaces.
+  Malformed or timed-out upstream arms remain invalid, never losses.
+- Tracker creation/closure, push, PR, hosted checks, tags, publication, and
+  release remain unauthorized outward actions.
 
 ## same-task-continuity
 
-Context thresholds never create, fork, transfer, or stop this task. At or below
-50 percent, create a durable local recovery/ledger pair and continue in the
-same persistent goal through normal compaction.
+Context thresholds never create, fork, transfer, or stop this task. After this
+clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Create the current substantive/ledger checkpoint without touching the
-   preserved untracked 2026-07-25 draft.
-2. Implement AR-143's read-only dashboard/operator-boundary correction, then
-   AR-133 atomic finalization and AR-135/AR-136 ZCode/native lineage as isolated
-   packages.
-3. Continue complete dashboard collections/coherence/instrumentation, then
-   performance and compatibility work.
-4. Reinstall canonical source, run installed protocol/UI/hiring/native dogfood,
-   complete AR-125, and finish the full repository/release gates.
+1. Create the substantive and immediate worklog ledger commits without adding
+   the preserved untracked draft.
+2. Add the missing large-corpus/concurrent dashboard pagination regressions and
+   finish remaining safe local AR-137/AR-141 work.
+3. Run the full repository, documentation, routing, dashboard, and release
+   gates from the clean checkpoint.
+4. Keep fresh install and live host/browser dogfood visibly blocked behind
+   genuine user presence; do not reinterpret the earlier install as current.
+5. Complete AR-125 only with benchmark-valid matched evidence.
 
 ## verification
 
 ~~~text
-git pull --ff-only origin main                         # already up to date
-agency install --agent codex --dry-run --json          # complete plan
-agency install --agent codex --json                    # partial: activation-required
-agency doctor --json --verbose                         # DEGRADED: hook trust only
-in-app dashboard desktop/mobile/authenticated smoke    # clean console, no overflow
-focused MCP protocol / release / Store / hook probes   # reproduced blockers
-combined Wave 1 checkpoint suite                       # 785 passed, 9 skipped
-node --test tests/dashboard_ui.test.mjs                # 97 passed
 python scripts/context_handoff_status.py --json --threshold 50
+python -m pytest focused split packages -q -W error
+node tests/dashboard_ui.test.mjs
+python -m pytest tests/test_distribution_verifier_hardening.py tests/test_release_packaging.py -q -W error
+ruff check and format check
+python scripts/verify_docs.py
+git diff --check
 ~~~
 
 ## constraints
@@ -145,6 +135,6 @@ python scripts/context_handoff_status.py --json --threshold 50
   reinterpret malformed upstream output.
 - Do not claim Agency superiority without a benchmark-valid measured corpus.
 - Do not claim native loading, a model receipt, specialist load, delegation,
-  contractor hire, or host canary without the exact corresponding evidence.
+  contractor hire, or host canary without exact corresponding evidence.
 - No push, PR, hosted Actions, publication, tracker creation/edit/closure, tag,
   or release without explicit outward-action authorization.

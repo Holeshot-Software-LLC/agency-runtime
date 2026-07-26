@@ -22,6 +22,7 @@ from collections.abc import Mapping, Sequence
 from itertools import combinations
 from typing import Any, Final
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.evals.full_roster_cases import (
     COMPATIBILITY_CASES,
     RETRIEVAL_CASES,
@@ -129,7 +130,7 @@ def _ratio(numerator: int, denominator: int) -> float:
 
 
 def _agent_id(agent: Mapping[str, Any]) -> str:
-    return str(agent.get("agent_slug") or agent.get("slug") or "").strip()
+    return agent_identity(agent)
 
 
 def _strings(value: object) -> tuple[str, ...]:

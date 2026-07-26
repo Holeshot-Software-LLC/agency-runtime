@@ -63,3 +63,16 @@ dashboard exception in ADR-0090.
 - Positive mutations remain only behind a positively attested operator boundary.
 - Any future presence capability rejects missing, expired, replayed, target,
   payload, and generation mismatches and succeeds exactly once.
+
+## Implementation evidence
+
+The dashboard JavaScript contains no mutation client or actionable mutation
+controls, and every former mutation endpoint rejects both owner and broker
+bearers without dispatch. A single CLI pre-dispatch guard covers every
+persistent mutation family and binds a secret-free canonical request digest,
+target, generation, and post-verification recheck. Missing, expired, mismatched,
+and replayed proofs fail before the handler. The authority slice passes 110
+tests. AR-143 remains a production blocker: the production OS verifier is
+deliberately unavailable/fail-closed because no non-exporting Windows Hello or
+equivalent user-consent backend has been implemented. No credential-returning
+or model-bypass substitute is accepted.

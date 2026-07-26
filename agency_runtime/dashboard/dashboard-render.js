@@ -1,4 +1,4 @@
-const EXECUTION_HOSTS = ["codex", "claude", "openclaw", "hermes"];
+const EXECUTION_HOSTS = ["codex", "claude", "openclaw", "hermes", "zcode"];
 
 const EVIDENCE_COLUMNS = {
   specialists: [["slug", "Specialist"], ["session_id", "Session"], ["trace_id", "Trace"], ["state", "Evidence state"], ["loaded_at", "Activated"], ["expired_at", "Expired"]],
@@ -30,17 +30,6 @@ export function createRenderer(core, config, callbacks) {
   function reducedMotionPreferred() {
     return typeof window.matchMedia === "function"
       && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }
-
-  function runButtonAction(button, action) {
-    button.disabled = true;
-    button.setAttribute("aria-busy", "true");
-    return Promise.resolve()
-      .then(action)
-      .finally(() => {
-        button.disabled = false;
-        button.removeAttribute("aria-busy");
-      });
   }
 
   function markUpdated(node, className = "is-updated") {
@@ -277,7 +266,6 @@ export function createRenderer(core, config, callbacks) {
   function renderHosts() {
     const grid = byId("host-grid");
     grid.replaceChildren();
-    const serviceBlocked = config.serviceRestartRequired();
     state.hosts.forEach((host) => {
       const card = el("article", "host-card");
       const heading = el("div", "host-row");
@@ -299,44 +287,7 @@ export function createRenderer(core, config, callbacks) {
       if (host.hook_trust_action) {
         card.append(el("p", "host-action", host.hook_trust_action));
       }
-      if (host.executable_discovered === true) {
-        const actions = el("div", "card-actions");
-        const inspectionCurrent = !host.inspection_status || host.inspection_status === "complete";
-        const generationKnown = Number.isInteger(host.runtime_control_generation)
-          && host.runtime_control_generation >= 0;
-        const directionKnown = !serviceBlocked
-          && inspectionCurrent
-          && typeof host.runtime_enabled === "boolean"
-          && generationKnown;
-        const enabled = host.runtime_enabled === true;
-        const label = directionKnown
-          ? (enabled ? "Disable" : "Enable")
-          : serviceBlocked
-            ? "Restart required"
-            : (!inspectionCurrent ? "Inspection stale" : "State unknown");
-        const button = el("button", `button compact ${enabled ? "danger" : "solid"}`, label);
-        button.type = "button";
-        button.disabled = !directionKnown;
-        button.setAttribute("aria-label", directionKnown
-          ? `${label} ${host.host} runtime`
-          : `${host.host} runtime action unavailable: ${label}`);
-        if (directionKnown) {
-          button.addEventListener("click", () => runButtonAction(
-            button,
-            () => callbacks.toggleHost(
-              host.host,
-              !enabled,
-              host.runtime_control_generation,
-            ),
-          ));
-        } else {
-          button.title = serviceBlocked
-            ? "Restart the dashboard service to use host controls."
-            : "A current host inspection is required before this action is available.";
-        }
-        actions.append(button);
-        card.append(actions);
-      }
+      card.append(el("small", "read-only-note", "Monitoring only; host controls are unavailable here."));
       grid.append(card);
     });
     if (!grid.children.length) {
@@ -432,6 +383,7 @@ export function createRenderer(core, config, callbacks) {
     );
     card.append(identity);
     const details = el("details", "agent-governance-detail");
+    details.dataset.preserveKey = `agent:${agent.agent_slug}:governance`;
     details.append(el("summary", "", "Contract, compatibility & history"));
     const metadata = el("dl", "agent-metadata");
     [
@@ -503,6 +455,7 @@ export function createRenderer(core, config, callbacks) {
       const candidate = entry.candidate || {};
       const audit = entry.latest_audit || {};
       const details = el("details", "review-card");
+      details.dataset.preserveKey = `candidate:${candidate.id || candidate.slug || "unknown"}`;
       const summary = el("summary");
       const copy = el("span");
       copy.append(
@@ -543,6 +496,7 @@ export function createRenderer(core, config, callbacks) {
       const receipt = entry.receipt || {};
       const slug = entry.slug || "unknown";
       const details = el("details", "review-card remediation-card");
+      details.dataset.preserveKey = `remediation:${entry.event_id || slug}`;
       details.setAttribute("aria-label", `Remediation attempt for ${slug}`);
       const summary = el("summary");
       const copy = el("span");
@@ -587,6 +541,7 @@ export function createRenderer(core, config, callbacks) {
     remediationHistory.forEach((entry) => {
       const slug = entry.slug || "unknown";
       const details = el("details", "review-card remediation-card remediation-history-card");
+      details.dataset.preserveKey = `remediation-history:${entry.event_id || slug}`;
       details.setAttribute("aria-label", `Resolved remediation for ${slug}`);
       const summary = el("summary");
       const copy = el("span");
@@ -666,15 +621,21 @@ export function createRenderer(core, config, callbacks) {
       : null;
     const roster = operations ? operations.agents : state.roster;
     const page = operations || state.rosterPage;
-    const pageCount = Number.isInteger(page?.count)
+    const pageCount = Number.isInteger(page?.page_count)
+      ? page.page_count
+      : Number.isInteger(page?.count)
       ? page.count
       : roster.length;
     const totalCount = Number.isInteger(page?.total_count)
       ? page.total_count
       : pageCount;
+    const filteredCount = Number.isInteger(page?.filtered_count)
+      ? page.filtered_count
+      : Number.isInteger(page?.matched_count)
+      ? page.matched_count
+      : totalCount;
     const truncated = page?.truncated === true;
     const filter = state.rosterFilter;
-    const serviceBlocked = config.serviceRestartRequired();
     const enabledCount = Number.isInteger(page?.enabled_count)
       ? page.enabled_count
       : totalCount;
@@ -692,7 +653,7 @@ export function createRenderer(core, config, callbacks) {
         pageStatus.textContent = `Showing ${pageCount} of ${totalCount} governed specialists; ${remaining} are not shown. Find any specialist by its exact agent slug.`;
       } else if (operations && Object.keys(state.rosterFilters || {}).length) {
         pageStatus.hidden = false;
-        pageStatus.textContent = `Showing ${operations.matched_count ?? pageCount} specialists matching the active operational filters.`;
+        pageStatus.textContent = `Showing ${pageCount} of ${filteredCount} specialists matching the active operational filters · ${totalCount} global specialists.`;
       } else pageStatus.textContent = "";
     }
     const facets = operations?.facets || state.rosterOperations?.facets || {};
@@ -717,37 +678,8 @@ export function createRenderer(core, config, callbacks) {
       if (!tags.children.length) tags.append(el("span", "token", "no capability tags"));
       card.append(tags);
       appendOperationalAgentDetails(card, agent);
-      const controls = el("div", "card-actions");
       const status = protectedAgent ? "protected" : enabled ? "enabled" : "disabled";
-      controls.append(el("span", `host-state ${enabled ? "verified" : "runtime-disabled"}`, status));
-      const button = el(
-        "button",
-        `button compact ${enabled ? "ghost" : "solid"}`,
-        protectedAgent ? "always enabled" : enabled ? "disable" : "enable",
-      );
-      button.type = "button";
-      button.disabled = protectedAgent || serviceBlocked;
-      const identity = agent.name && agent.name !== agent.agent_slug
-        ? `${agent.name} (${agent.agent_slug})`
-        : agent.agent_slug;
-      button.setAttribute(
-        "aria-label",
-        protectedAgent
-          ? `${identity} is protected and always enabled`
-          : `${enabled ? "Disable" : "Enable"} ${identity} specialist`,
-      );
-      if (serviceBlocked) {
-        button.title = "Restart the dashboard service to use roster controls.";
-      } else if (protectedAgent) {
-        button.title = "The default coordinators are always enabled.";
-      } else {
-        button.addEventListener("click", () => runButtonAction(
-          button,
-          () => callbacks.toggleAgent(agent.agent_slug, !enabled),
-        ));
-      }
-      controls.append(button);
-      card.append(controls);
+      card.append(el("span", `host-state ${enabled ? "verified" : "runtime-disabled"}`, status));
       grid.append(card);
     });
     const list = byId("snapshot-list");
@@ -762,25 +694,6 @@ export function createRenderer(core, config, callbacks) {
       const status = snapshot.activated ? "activated" : snapshot.approved ? "approved" : "pending";
       const controls = el("div", "card-actions");
       controls.append(el("span", `host-state ${snapshot.activated ? "verified" : ""}`, status));
-      if (!snapshot.activated) {
-        const action = snapshot.approved ? "activate" : "approve";
-        const button = el("button", "button compact ghost", action);
-        button.type = "button";
-        button.disabled = serviceBlocked;
-        button.setAttribute(
-          "aria-label",
-          `${action[0].toUpperCase()}${action.slice(1)} roster snapshot ${snapshot.snapshot_id}`,
-        );
-        if (serviceBlocked) {
-          button.title = "Restart the dashboard service to use roster controls.";
-        } else {
-          button.addEventListener("click", () => runButtonAction(
-            button,
-            () => callbacks.rosterAction(action, snapshot.snapshot_id),
-          ));
-        }
-        controls.append(button);
-      }
       row.append(copy, controls);
       list.append(row);
     });
@@ -803,13 +716,21 @@ export function createRenderer(core, config, callbacks) {
     }
     const context = byId("evidence-context");
     const rows = state.activity[kind] || [];
+    const collection = state.activityCollections?.[kind] || {};
+    const filteredCount = Number.isInteger(collection.filtered_count)
+      ? collection.filtered_count
+      : rows.length;
+    const totalCount = Number.isInteger(collection.total_count)
+      ? collection.total_count
+      : filteredCount;
+    const pageSummary = `Showing ${rows.length} of ${filteredCount} filtered · ${totalCount} total`;
     let contextMessage;
     if (kind === "specialists") {
       const current = rows.filter((row) => row.state === "current").length;
       const historical = rows.length - current;
-      contextMessage = `${current} current-turn activation${current === 1 ? "" : "s"} · ${historical} historical activation${historical === 1 ? "" : "s"}. Current-turn rows are unexpired and trace-correlated; historical rows remain as immutable audit evidence.`;
+      contextMessage = `${pageSummary}. ${current} current-turn activation${current === 1 ? "" : "s"} · ${historical} historical activation${historical === 1 ? "" : "s"}. Current-turn rows are unexpired and trace-correlated; historical rows remain as immutable audit evidence.`;
     } else {
-      contextMessage = "Bounded metadata-only runtime evidence. Payload content and worker output are not included.";
+      contextMessage = `${pageSummary}. Bounded metadata-only runtime evidence; payload content and worker output are not included.`;
     }
     if (context && context.textContent !== contextMessage) context.textContent = contextMessage;
     const trh = el("tr");
@@ -1096,38 +1017,9 @@ export function createRenderer(core, config, callbacks) {
     root.append(group);
   }
 
-  function workforceActions(worker) {
-    const stateValue = String(worker.state || "").toLowerCase();
-    const employment = String(worker.employment_class || "").toLowerCase();
-    if (stateValue === "retired" || stateValue === "merged") return [];
-    if (stateValue === "suspended") {
-      return [
-        ["resume", "Resume worker"],
-        ["retire", "Retire worker"],
-        ["merge", "Merge into another worker"],
-      ];
-    }
-    if (stateValue === "disabled") {
-      return [
-        ["enable", "Enable worker"],
-        ["suspend", "Suspend worker"],
-        ["retire", "Retire worker"],
-        ["merge", "Merge into another worker"],
-      ];
-    }
-    const actions = [];
-    if (employment === "contractor") actions.push(["promote", "Promote contractor"]);
-    actions.push(
-      ["disable", "Disable worker"],
-      ["suspend", "Suspend worker"],
-      ["retire", "Retire worker"],
-      ["merge", "Merge into another worker"],
-    );
-    return actions;
-  }
-
   function appendWorkerHistory(root, detail) {
     const history = el("details", "workforce-history");
+    history.dataset.preserveKey = `worker:${detail.worker?.agent_slug || "unknown"}:history`;
     history.append(el("summary", "", "Recent lifecycle and outcome evidence"));
     const list = el("div", "workforce-history-list");
     const rows = [
@@ -1240,6 +1132,7 @@ export function createRenderer(core, config, callbacks) {
     const prompt = detail.compiled_prompt;
     if (prompt?.preview) {
       const promptDetails = el("details", "compiled-prompt-preview");
+      promptDetails.dataset.preserveKey = `worker:${worker.agent_slug}:prompt`;
       promptDetails.append(
         el("summary", "", "Compiled prompt preview"),
         el("small", "", "Version " + String(prompt.version || "unknown") + " · " + String(prompt.hash || "no hash")),
@@ -1258,17 +1151,7 @@ export function createRenderer(core, config, callbacks) {
     );
     root.append(evidence);
     appendWorkerHistory(root, detail);
-    byId("workforce-action-worker").value = worker.agent_slug || "";
-    byId("workforce-action-revision").value = String(worker.revision ?? "");
-    const actionSelect = byId("workforce-action-kind");
-    const actions = workforceActions(worker);
-    actionSelect.replaceChildren();
-    actions.forEach(([value, label]) => {
-      const option = el("option", "", label);
-      option.value = value;
-      actionSelect.append(option);
-    });
-    form.hidden = actions.length === 0;
+    form.hidden = true;
   }
 
   function renderWorkforce() {
@@ -1280,7 +1163,17 @@ export function createRenderer(core, config, callbacks) {
     setMetric("workforce-suspended", counts.suspended || 0);
     setMetric("workforce-retired", counts.retired || 0);
     setMetric("workforce-merged", counts.merged || 0);
-    setMetric("workforce-count", workers.length);
+    const workforcePage = state.workforcePage || {};
+    const workforceFiltered = Number.isInteger(workforcePage.filtered_count)
+      ? workforcePage.filtered_count
+      : workers.length;
+    const workforceTotal = Number.isInteger(workforcePage.total_count)
+      ? workforcePage.total_count
+      : workforceFiltered;
+    setMetric(
+      "workforce-count",
+      `${workers.length} shown · ${workforceFiltered} filtered · ${workforceTotal} total`,
+    );
     const grid = byId("workforce-grid");
     if (grid) {
       grid.replaceChildren();
@@ -1305,7 +1198,17 @@ export function createRenderer(core, config, callbacks) {
       });
     }
     const hiring = Array.isArray(state.hiring) ? state.hiring : [];
-    setMetric("hiring-count", hiring.length);
+    const hiringPage = state.hiringPage || {};
+    const hiringFiltered = Number.isInteger(hiringPage.filtered_count)
+      ? hiringPage.filtered_count
+      : hiring.length;
+    const hiringTotal = Number.isInteger(hiringPage.total_count)
+      ? hiringPage.total_count
+      : hiringFiltered;
+    setMetric(
+      "hiring-count",
+      `${hiring.length} shown · ${hiringFiltered} filtered · ${hiringTotal} total`,
+    );
     const hiringList = byId("hiring-list");
     if (hiringList) {
       hiringList.replaceChildren();
@@ -1325,6 +1228,7 @@ export function createRenderer(core, config, callbacks) {
           ["Model receipts", item.model_evidence],
         ].forEach(([label, value]) => {
           const details = el("details", "hiring-evidence");
+          details.dataset.preserveKey = `hiring:${item.id || item.proposed_slug}:${label}`;
           details.append(el("summary", "", label));
           const pre = el("pre");
           pre.textContent = JSON.stringify(value || {}, null, 2);
@@ -1332,16 +1236,7 @@ export function createRenderer(core, config, callbacks) {
           card.append(details);
         });
         if (item.status === "proposed" && item.human_approval_required === true) {
-          const approve = el(
-            "button",
-            "button ghost",
-            item.case_type === "amend"
-              ? "Approve and apply amendment"
-              : "Approve reviewed contractor",
-          );
-          approve.type = "button";
-          listen(approve, "click", () => callbacks.hiringApprove(item.id));
-          card.append(approve);
+          card.append(el("small", "read-only-note", "Human approval is pending outside this dashboard."));
         }
         hiringList.append(card);
       });

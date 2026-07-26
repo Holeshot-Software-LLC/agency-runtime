@@ -132,6 +132,8 @@ def _inventory_command(host: str) -> list[str]:
         return [binary, "plugins", "list"]
     if host == "openclaw":
         return [binary, "plugins", "list", "--json"]
+    if host == "zcode":
+        raise ValueError("ZCode inventory is read directly from its hooks config")
     return [binary, "plugin", "list", "--json"]
 
 
@@ -684,6 +686,36 @@ def _probe_native_host(
     )
 
 
+def _probe_zcode_config(
+    state: _HostInspection,
+    *,
+    home_dir: str | Path | None,
+) -> None:
+    from agency_runtime.core.installer_zcode import inspect_zcode_registration
+
+    facts = inspect_zcode_registration(state.target, home_dir=home_dir)
+    state.registered = bool(facts["registered"])
+    state.enabled = bool(facts["enabled"]) if state.registered else False
+    state.loaded = None
+    state.native_record = (
+        {
+            "name": PLUGIN_ID,
+            "version": facts.get("version"),
+            "enabled": state.enabled,
+            "configPath": facts["config_path"],
+        }
+        if state.registered
+        else None
+    )
+    state.evidence.extend(
+        [
+            f"zcode-config:{'registered' if state.registered else 'absent'}",
+            f"zcode-global-hooks:{facts.get('global_hooks_enabled')}",
+            f"zcode-config-drift:{bool(facts.get('drifted'))}",
+        ]
+    )
+
+
 def _normalize_registration(state: _HostInspection, *, can_execute: bool) -> None:
     # Staged files are not native registration.  A failed inventory remains
     # unknown, while an install surface that could not be queried is absent.
@@ -812,7 +844,9 @@ def _inspect_host(
         home_dir=home_dir,
         binary_resolver=binary_resolver,
     )
-    if state.executable and can_execute:
+    if host == "zcode":
+        _probe_zcode_config(state, home_dir=home_dir)
+    elif state.executable and can_execute:
         _probe_native_host(
             state,
             home_dir=home_dir,

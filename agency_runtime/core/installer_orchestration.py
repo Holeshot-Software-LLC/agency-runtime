@@ -279,11 +279,14 @@ def _new_install_result(
 
 def _staged_install_result(
     result: dict[str, Any],
+    host: str,
     executable: str | None,
     *,
     home_dir: str | Path | None,
     command_runner: CommandRunner | None,
 ) -> dict[str, Any] | None:
+    if host == "zcode":
+        return None
     if not executable:
         result.update(
             {
@@ -436,14 +439,31 @@ def _registration_failure_result(
 
 
 def _registration_success_result(result: dict[str, Any], host: str) -> dict[str, Any]:
+    zcode_inventory = (
+        next(
+            (
+                step
+                for step in reversed(result.get("native_steps", []))
+                if step.get("name") == "config_inventory"
+            ),
+            None,
+        )
+        if host == "zcode"
+        else None
+    )
+    enabled = bool(zcode_inventory.get("enabled")) if isinstance(zcode_inventory, dict) else True
     result.update(
         {
             "status": "registered",
             "maturity": (
-                "runtime-verified" if host == "openclaw" else "enabled-runtime-unverified"
+                "runtime-verified"
+                if host == "openclaw"
+                else "enabled-runtime-unverified"
+                if enabled
+                else "registered-disabled"
             ),
             "registered": True,
-            "enabled": True,
+            "enabled": enabled,
             "loaded": True if host == "openclaw" else None,
             # Runtime inspection proves loading only.  No supported native
             # installer command currently exercises an end-to-end canary.
@@ -574,6 +594,7 @@ def install_agent_adapter(
     )
     staged = _staged_install_result(
         result,
+        host,
         executable,
         home_dir=home_dir,
         command_runner=command_runner,
@@ -779,9 +800,12 @@ def _refresh_rollback_registration(
     home_dir: str | Path | None,
     command_runner: CommandRunner | None,
 ) -> dict[str, Any]:
-    if not executable or not _can_execute_native(
-        home_dir=home_dir,
-        command_runner=command_runner,
+    if host != "zcode" and (
+        not executable
+        or not _can_execute_native(
+            home_dir=home_dir,
+            command_runner=command_runner,
+        )
     ):
         result["maturity"] = "filesystem-restored-native-unverified"
         return result
@@ -795,9 +819,21 @@ def _refresh_rollback_registration(
     result["native_steps"] = steps
     result["native_refreshed"] = native_ok
     if native_ok:
-        result["maturity"] = (
-            "runtime-verified" if host == "openclaw" else "enabled-runtime-unverified"
-        )
+        if host == "zcode":
+            inventory = next(
+                (step for step in reversed(steps) if step.get("name") == "config_inventory"),
+                {},
+            )
+            result["registered"] = True
+            result["enabled"] = bool(inventory.get("enabled"))
+            result["loaded"] = None
+            result["maturity"] = (
+                "enabled-runtime-unverified" if result["enabled"] else "registered-disabled"
+            )
+        else:
+            result["maturity"] = (
+                "runtime-verified" if host == "openclaw" else "enabled-runtime-unverified"
+            )
         return result
     result.update(
         {
@@ -878,6 +914,8 @@ def rollback_agent_adapter(
 def _toggle_command(host: str, enabled: bool) -> list[str]:
     selector = f"{PLUGIN_ID}@{MARKETPLACE_ID}"
     binary = str(HOSTS[host]["binary"])
+    if host == "zcode":
+        raise ValueError("ZCode native control uses its owned config transaction")
     if host in {"hermes", "openclaw"}:
         return [binary, "plugins", "enable" if enabled else "disable", PLUGIN_ID]
     if host == "claude":
@@ -992,6 +1030,15 @@ def toggle_agency(
     """Toggle Agency Runtime using only the host's native lifecycle."""
     if host not in HOSTS:
         return _unknown_host_result(host)
+    if host == "zcode":
+        from agency_runtime.core.installer_zcode import toggle_zcode_registration
+
+        return toggle_zcode_registration(
+            _plugin_target(host, home_dir=home_dir),
+            enabled,
+            home_dir=home_dir,
+            dry_run=dry_run,
+        )
     binary_path = _resolve_binary(host, binary_resolver)
     if not binary_path:
         return {

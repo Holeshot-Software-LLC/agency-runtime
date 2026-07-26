@@ -136,6 +136,20 @@ routing and provider choice, and AR-118 reconciles activation evidence.
 
 ### Proven locally in the current slice
 
+- Wave 2 source work now covers atomic finalization, schema-37 native-child
+  scope, exact ZCode integration, coherent/paginated dashboard state,
+  content-free cross-layer observations, truthful hiring projection,
+  revision-aware retrieval, lightweight CLI startup, compatibility wrappers,
+  and fail-closed operator-presence enforcement.
+- Independent split evidence is 110 authority tests, 167 native-hook/ZCode
+  tests, 147 transaction/observability/protocol tests with 8 skips, 134
+  dashboard server tests with 3 skips, 82 browser interaction tests, and 101
+  distribution/release tests. One five-minute combined arm timed out without a
+  result and is excluded; its exact components passed in isolation.
+- Production remains blocked by AR-143 because no genuine OS-backed
+  operator-presence verifier exists. The current source cannot be freshly
+  installed through a model-executed CLI without bypassing that security
+  boundary, so the earlier install is not promoted as current-source evidence.
 - Wave 1 security/protocol/schema/hiring/release corrections pass a combined
   785-test Python checkpoint suite with 9 skips and the 97-test dashboard
   interaction suite. Full Ruff, format, and diff checks are clean.

@@ -803,7 +803,7 @@ export default definePluginEntry({{
 
     api.registerCommand({{
       name: "agency",
-      description: "Agency Runtime status, on, or off",
+      description: "Agency Runtime read-only status; persistent on/off commands are denied",
       acceptsArgs: true,
       requireAuth: true,
       handler: async (ctx) => {{

@@ -2,20 +2,33 @@
 
 from __future__ import annotations
 
+import gc
+import hashlib
+import json
 import math
 import statistics
+import subprocess
+import sys
 import threading
 import time
+import tracemalloc
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
+from agency_runtime import __version__
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig, JudgeConfig, OllamaConfig
 from agency_runtime.core.selector.cache import clear_cache
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
 from agency_runtime.core.selector.compatibility import clear_eligibility_cache
 from agency_runtime.core.selector.pipeline import route
+from agency_runtime.core.selector.semantic_retrieval import (
+    RevisionedCatalog,
+    clear_semantic_retrieval_cache,
+    semantic_retrieve,
+)
 from agency_runtime.core.selector.stickiness import clear_session_routing
 from agency_runtime.core.turn_intent import TurnState, classify_turn_intent
 
@@ -23,6 +36,19 @@ _BENCHMARK_BATCHES = 5
 _WARMUP_CALLS = 4
 _MIN_CACHE_SAMPLES = 128
 _CONCURRENCY_PROBE_TIMEOUT_SECONDS = 5.0
+SEMANTIC_RETRIEVAL_BENCHMARK_VERSION = "1.0.0"
+SEMANTIC_RETRIEVAL_WARM_SAMPLES = 5
+SEMANTIC_RETRIEVAL_BUDGETS: dict[int, dict[str, float]] = {
+    # Cold latency is measured while tracemalloc records index allocations.
+    # Budgets retain runner headroom but reject the reproduced pre-AR-140
+    # 10,000-row result (24.4 s cold and 200.6 ms warm on the same host).
+    263: {"cold_ms_max": 1_500.0, "warm_p95_ms_max": 15.0, "peak_mib_max": 16.0},
+    1_000: {"cold_ms_max": 5_000.0, "warm_p95_ms_max": 40.0, "peak_mib_max": 64.0},
+    10_000: {"cold_ms_max": 20_000.0, "warm_p95_ms_max": 150.0, "peak_mib_max": 256.0},
+}
+CLI_VERSION_STARTUP_BENCHMARK_VERSION = "1.0.0"
+CLI_VERSION_STARTUP_P50_MS_MAX = 250.0
+_SEMANTIC_SCALE_QUERY = "profile production API latency with benchmarks"
 
 
 @dataclass
@@ -188,6 +214,163 @@ def _percentile(values: list[float], percentile: float) -> float:
     return ordered[index]
 
 
+def _catalog_revision(catalog: list[dict[str, Any]]) -> str:
+    payload = json.dumps(catalog, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def run_semantic_retrieval_scale_benchmark(
+    *,
+    tiers: tuple[int, ...] = tuple(SEMANTIC_RETRIEVAL_BUDGETS),
+    warm_samples: int = SEMANTIC_RETRIEVAL_WARM_SAMPLES,
+) -> dict[str, Any]:
+    """Measure deterministic cold/warm retrieval and index memory by size.
+
+    The catalog generator, query, exact content revision, result hash, sample
+    count, percentile definition, and budgets are all versioned in the report.
+    Cold timing intentionally includes tracemalloc overhead so the latency and
+    memory observations describe the same compilation. These are regression
+    gates, not claims that one machine or implementation is superior.
+    """
+
+    if isinstance(warm_samples, bool) or not isinstance(warm_samples, int) or warm_samples < 3:
+        raise ValueError("warm_samples must be an integer of at least three")
+    if not tiers or any(
+        isinstance(size, bool)
+        or not isinstance(size, int)
+        or size not in SEMANTIC_RETRIEVAL_BUDGETS
+        for size in tiers
+    ):
+        raise ValueError("tiers must contain supported semantic retrieval sizes")
+    if tracemalloc.is_tracing():
+        raise RuntimeError("semantic retrieval scale benchmark requires an idle tracemalloc")
+
+    rows: list[dict[str, Any]] = []
+    for size in tiers:
+        source = generated_catalog(size)
+        revision = _catalog_revision(source)
+        catalog = RevisionedCatalog(source, revision=revision)
+        clear_semantic_retrieval_cache()
+        gc.collect()
+
+        tracemalloc.start()
+        try:
+            started = time.perf_counter()
+            selected, scores = semantic_retrieve(
+                _SEMANTIC_SCALE_QUERY,
+                catalog,
+                limit=40,
+            )
+            cold_ms = (time.perf_counter() - started) * 1000
+            _current_bytes, peak_bytes = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        selected_ids = tuple(agent_identity(agent) for agent in selected)
+        expected_scores = tuple(scores)
+        warm_latencies_ms: list[float] = []
+        deterministic = True
+        for _sample in range(warm_samples):
+            started = time.perf_counter()
+            repeated, repeated_scores = semantic_retrieve(
+                _SEMANTIC_SCALE_QUERY,
+                catalog,
+                limit=40,
+            )
+            warm_latencies_ms.append((time.perf_counter() - started) * 1000)
+            deterministic = deterministic and (
+                tuple(agent_identity(agent) for agent in repeated) == selected_ids
+                and tuple(repeated_scores) == expected_scores
+            )
+
+        warm_p95_ms = _percentile(warm_latencies_ms, 0.95)
+        peak_mib = peak_bytes / (1024 * 1024)
+        budget = SEMANTIC_RETRIEVAL_BUDGETS[size]
+        correctness = bool(
+            selected_ids
+            and selected_ids[0].startswith("performance-specialist-")
+            and len(selected_ids) == len(set(selected_ids))
+        )
+        gates = {
+            "cold_latency": cold_ms <= budget["cold_ms_max"],
+            "warm_latency": warm_p95_ms <= budget["warm_p95_ms_max"],
+            "peak_memory": peak_mib <= budget["peak_mib_max"],
+            "deterministic_correctness": deterministic and correctness,
+        }
+        rows.append(
+            {
+                "roster_size": size,
+                "catalog_revision": revision,
+                "selected_count": len(selected_ids),
+                "selected_ids_sha256": hashlib.sha256(
+                    "\0".join(selected_ids).encode("utf-8")
+                ).hexdigest(),
+                "cold_ms": round(cold_ms, 3),
+                "warm_samples": warm_samples,
+                "warm_p95_ms": round(warm_p95_ms, 3),
+                "warm_samples_ms": [round(value, 3) for value in warm_latencies_ms],
+                "peak_mib": round(peak_mib, 3),
+                "deterministic": deterministic,
+                "correctness": correctness,
+                "budgets": dict(budget),
+                "gates": gates,
+                "passed": all(gates.values()),
+            }
+        )
+
+    return {
+        "schema": "agency-runtime.semantic-retrieval-benchmark",
+        "version": SEMANTIC_RETRIEVAL_BENCHMARK_VERSION,
+        "query_sha256": hashlib.sha256(_SEMANTIC_SCALE_QUERY.encode("utf-8")).hexdigest(),
+        "cold_includes_tracemalloc": True,
+        "tiers": rows,
+        "passed": all(row["passed"] for row in rows),
+    }
+
+
+def run_cli_version_startup_benchmark(*, iterations: int = 7) -> dict[str, Any]:
+    """Measure a fresh interpreter invoking the installed version entry point."""
+
+    if isinstance(iterations, bool) or not isinstance(iterations, int) or iterations < 3:
+        raise ValueError("iterations must be an integer of at least three")
+    command = [
+        sys.executable,
+        "-c",
+        ("from agency_runtime.cli.entrypoint import main;raise SystemExit(main(['--version']))"),
+    ]
+    expected = f"agency {__version__}"
+    samples_ms: list[float] = []
+    valid = True
+    for _sample in range(iterations):
+        started = time.perf_counter()
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5.0,
+        )
+        samples_ms.append((time.perf_counter() - started) * 1000)
+        valid = valid and (
+            completed.returncode == 0
+            and completed.stdout.strip() == expected
+            and not completed.stderr
+        )
+    p50_ms = statistics.median(samples_ms)
+    p95_ms = _percentile(samples_ms, 0.95)
+    return {
+        "schema": "agency-runtime.cli-version-startup-benchmark",
+        "version": CLI_VERSION_STARTUP_BENCHMARK_VERSION,
+        "iterations": iterations,
+        "p50_ms": round(p50_ms, 3),
+        "p95_ms": round(p95_ms, 3),
+        "samples_ms": [round(value, 3) for value in samples_ms],
+        "p50_ms_max": CLI_VERSION_STARTUP_P50_MS_MAX,
+        "output_valid": valid,
+        "passed": bool(valid and p50_ms <= CLI_VERSION_STARTUP_P50_MS_MAX),
+    }
+
+
 def run_candidate_microbenchmark(
     *,
     roster_size: int = 1000,
@@ -349,4 +532,13 @@ def run_candidate_microbenchmark(
     }
 
 
-__all__ = ["generated_catalog", "run_candidate_microbenchmark"]
+__all__ = [
+    "CLI_VERSION_STARTUP_BENCHMARK_VERSION",
+    "CLI_VERSION_STARTUP_P50_MS_MAX",
+    "SEMANTIC_RETRIEVAL_BENCHMARK_VERSION",
+    "SEMANTIC_RETRIEVAL_BUDGETS",
+    "generated_catalog",
+    "run_candidate_microbenchmark",
+    "run_cli_version_startup_benchmark",
+    "run_semantic_retrieval_scale_benchmark",
+]

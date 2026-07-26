@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import hmac
 import json
+import secrets
 import time
 import uuid
 from contextlib import closing
+from hashlib import sha256
 from typing import Any
 
 from agency_runtime.core.correlation import validate_correlation_id
@@ -13,6 +16,9 @@ from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 
 _MAX_CACHE_DOCUMENT_BYTES = 256 * 1024
 _ZERO_TTL_COALESCING_GRACE_SECONDS = 1.0
+_MAX_PARENT_SCOPE_TOKEN_CHARS = 256
+_MAX_PARENT_SCOPE_TTL_SECONDS = 600
+_STORE_UNIX_SQL = "CAST(STRFTIME('%s', 'NOW') AS INTEGER)"
 
 
 def _cache_key(value: object) -> str:
@@ -24,6 +30,286 @@ def _cache_key(value: object) -> str:
 
 class ChildRoutingStoreMixin:
     """Coordinate cache, singleflight leases, and parent-scoped call budgets."""
+
+    def create_native_child_parent_scope(
+        self,
+        *,
+        host: str,
+        parent_session_id: str,
+        parent_trace_id: str,
+        work_unit_id: str,
+        worker_kind: str,
+        worker_id: str,
+        native_run_id: str,
+        child_session_id: str,
+        ttl_seconds: int = _MAX_PARENT_SCOPE_TTL_SECONDS,
+    ) -> dict[str, Any]:
+        """Issue one bounded bearer receipt for an explicit child preflight."""
+
+        normalized_host = str(host or "").strip().casefold()
+        if normalized_host not in {"codex", "claude"}:
+            raise ValueError("native child parent scope host is unsupported")
+        parent_session = validate_correlation_id(
+            parent_session_id,
+            field="parent_session_id",
+        )
+        parent_trace = validate_correlation_id(parent_trace_id, field="parent_trace_id")
+        unit = validate_correlation_id(
+            work_unit_id,
+            field="work_unit_id",
+            required=False,
+        )
+        if len(unit) > 160:
+            raise ValueError("work_unit_id exceeds the 160-character limit")
+        if str(worker_kind or "").strip() != "generic-worker":
+            raise ValueError("native child parent scope requires generic-worker identity")
+        worker = validate_correlation_id(worker_id, field="worker_id")
+        native = validate_correlation_id(native_run_id, field="native_run_id")
+        child_session = validate_correlation_id(child_session_id, field="child_session_id")
+        if len(worker) > 256 or len(native) > 256:
+            raise ValueError("native child identity exceeds the 256-character limit")
+        if isinstance(ttl_seconds, bool) or not isinstance(ttl_seconds, int):
+            raise ValueError("native child parent scope TTL must be an integer")
+        if not 1 <= ttl_seconds <= _MAX_PARENT_SCOPE_TTL_SECONDS:
+            raise ValueError(
+                "native child parent scope TTL must be between 1 and "
+                f"{_MAX_PARENT_SCOPE_TTL_SECONDS}"
+            )
+        token = secrets.token_urlsafe(32)
+        token_hash = sha256(token.encode("ascii")).hexdigest()
+        scope_id = str(uuid.uuid4())
+        with closing(self._connect()) as conn:
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                clock = conn.execute(
+                    f"SELECT {_STORE_UNIX_SQL} AS unix_time"  # nosec B608
+                ).fetchone()
+                issued_unix = int(clock["unix_time"])
+                parent = conn.execute(
+                    "SELECT status, preflight_state FROM runs "
+                    "WHERE session_id = ? AND trace_id = ? LIMIT 1",
+                    (parent_session, parent_trace),
+                ).fetchone()
+                if (
+                    parent is None
+                    or str(parent["status"] or "") not in {"active", "evidence_only"}
+                    or str(parent["preflight_state"] or "") != "ready"
+                ):
+                    raise ValueError(
+                        "native child parent scope requires one ready active parent turn"
+                    )
+                prior = conn.execute(
+                    "SELECT id, consumed_at, expires_unix, child_session_id, "
+                    "child_trace_id FROM native_child_parent_scopes "
+                    "WHERE host = ? AND parent_trace_id = ? AND worker_id = ? "
+                    "AND native_run_id = ? LIMIT 1",
+                    (normalized_host, parent_trace, worker, native),
+                ).fetchone()
+                if prior is not None:
+                    child_status = None
+                    if prior["consumed_at"] is not None and prior["child_trace_id"]:
+                        child = conn.execute(
+                            "SELECT status FROM runs WHERE session_id = ? AND trace_id = ? LIMIT 1",
+                            (str(prior["child_session_id"]), str(prior["child_trace_id"])),
+                        ).fetchone()
+                        child_status = str(child["status"] or "") if child is not None else ""
+                    replaceable = int(prior["expires_unix"]) < issued_unix or (
+                        prior["consumed_at"] is not None and child_status == "preflight_failed"
+                    )
+                    if not replaceable:
+                        raise ValueError(
+                            "native child parent scope already exists for this exact child"
+                        )
+                    conn.execute(
+                        "DELETE FROM native_child_parent_scopes WHERE id = ?",
+                        (str(prior["id"]),),
+                    )
+                conn.execute(
+                    "INSERT INTO native_child_parent_scopes "
+                    "(id, token_hash, host, parent_session_id, parent_trace_id, "
+                    "work_unit_id, worker_kind, worker_id, native_run_id, "
+                    "child_session_id, child_trace_id, issued_unix, expires_unix, "
+                    f"created_at, consumed_at, consumed_unix) VALUES "  # nosec B608
+                    f"(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, "  # nosec B608
+                    f"{STORE_CLOCK_SQL}, NULL, NULL)",  # nosec B608
+                    (
+                        scope_id,
+                        token_hash,
+                        normalized_host,
+                        parent_session,
+                        parent_trace,
+                        unit,
+                        "generic-worker",
+                        worker,
+                        native,
+                        child_session,
+                        issued_unix,
+                        issued_unix + ttl_seconds,
+                    ),
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+        return {
+            "parent_scope_token": token,
+            "host": normalized_host,
+            "parent_session_id": parent_session,
+            "parent_trace_id": parent_trace,
+            "work_unit_id": unit,
+            "worker_kind": "generic-worker",
+            "worker_id": worker,
+            "native_run_id": native,
+            "child_session_id": child_session,
+            "expires_unix": issued_unix + ttl_seconds,
+        }
+
+    def consume_native_child_parent_scope(
+        self,
+        *,
+        parent_scope_token: str,
+        host: str,
+        child_session_id: str,
+        child_trace_id: str,
+    ) -> dict[str, Any]:
+        """Consume one exact parent scope atomically in a later process."""
+
+        token = str(parent_scope_token or "").strip()
+        if not token or len(token) > _MAX_PARENT_SCOPE_TOKEN_CHARS:
+            raise ValueError("parent_scope_token is invalid")
+        normalized_host = str(host or "").strip().casefold()
+        if normalized_host not in {"codex", "claude"}:
+            raise ValueError("native child parent scope host is unsupported")
+        child_session = validate_correlation_id(child_session_id, field="child_session_id")
+        child_trace = validate_correlation_id(child_trace_id, field="child_trace_id")
+        token_hash = sha256(token.encode("utf-8", errors="surrogatepass")).hexdigest()
+        with closing(self._connect()) as conn:
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                rows = conn.execute(
+                    "SELECT scope.*, run.status AS parent_status, "
+                    "run.preflight_state AS parent_preflight_state, "
+                    f"{_STORE_UNIX_SQL} AS store_now_unix "  # nosec B608
+                    "FROM native_child_parent_scopes AS scope JOIN runs AS run "
+                    "ON run.trace_id = scope.parent_trace_id "
+                    "AND run.session_id = scope.parent_session_id "
+                    "WHERE scope.token_hash = ? AND scope.host = ? "
+                    "AND scope.child_session_id = ? AND scope.consumed_at IS NULL "
+                    "ORDER BY scope.rowid LIMIT 2",
+                    (token_hash, normalized_host, child_session),
+                ).fetchall()
+                if len(rows) != 1 or not hmac.compare_digest(
+                    str(rows[0]["token_hash"] or ""),
+                    token_hash,
+                ):
+                    raise ValueError(
+                        "native child parent scope is invalid, ambiguous, or already consumed"
+                    )
+                scope = rows[0]
+                store_now = int(scope["store_now_unix"])
+                if (
+                    str(scope["parent_status"] or "") not in {"active", "evidence_only"}
+                    or str(scope["parent_preflight_state"] or "") != "ready"
+                    or store_now < int(scope["issued_unix"])
+                    or store_now > int(scope["expires_unix"])
+                ):
+                    raise ValueError(
+                        "native child parent scope is expired or its parent is not ready"
+                    )
+                live_scopes = conn.execute(
+                    "SELECT COUNT(*) AS count FROM native_child_parent_scopes "
+                    "WHERE host = ? AND child_session_id = ? AND consumed_at IS NULL "
+                    "AND issued_unix <= ? AND expires_unix >= ?",
+                    (normalized_host, child_session, store_now, store_now),
+                ).fetchone()
+                if live_scopes is None or int(live_scopes["count"]) != 1:
+                    raise ValueError(
+                        "native child parent scope is invalid, ambiguous, or already consumed"
+                    )
+                consumed = conn.execute(
+                    "UPDATE native_child_parent_scopes SET "
+                    f"consumed_at = {STORE_CLOCK_SQL}, consumed_unix = ?, "  # nosec B608
+                    "child_trace_id = ? WHERE id = ? AND consumed_at IS NULL "
+                    "AND consumed_unix IS NULL AND child_trace_id = '' "
+                    "AND issued_unix <= ? AND expires_unix >= ?",
+                    (
+                        store_now,
+                        child_trace,
+                        scope["id"],
+                        store_now,
+                        store_now,
+                    ),
+                )
+                if consumed.rowcount != 1:
+                    raise ValueError(
+                        "native child parent scope is invalid, expired, or already consumed"
+                    )
+                conn.commit()
+                return {
+                    "host": str(scope["host"]),
+                    "parent_session_id": str(scope["parent_session_id"]),
+                    "parent_trace_id": str(scope["parent_trace_id"]),
+                    "work_unit_id": str(scope["work_unit_id"]),
+                    "worker_kind": str(scope["worker_kind"]),
+                    "worker_id": str(scope["worker_id"]),
+                    "native_run_id": str(scope["native_run_id"]),
+                    "child_session_id": str(scope["child_session_id"]),
+                    "child_trace_id": child_trace,
+                }
+            except Exception:
+                conn.rollback()
+                raise
+
+    def restore_native_child_parent_scope_after_failed_preflight(
+        self,
+        *,
+        parent_scope_token: str,
+        host: str,
+        child_session_id: str,
+        child_trace_id: str,
+    ) -> None:
+        """Restore one consumed receipt only when its child preflight did not succeed."""
+
+        token = str(parent_scope_token or "").strip()
+        if not token or len(token) > _MAX_PARENT_SCOPE_TOKEN_CHARS:
+            raise ValueError("parent_scope_token is invalid")
+        normalized_host = str(host or "").strip().casefold()
+        if normalized_host not in {"codex", "claude"}:
+            raise ValueError("native child parent scope host is unsupported")
+        child_session = validate_correlation_id(child_session_id, field="child_session_id")
+        child_trace = validate_correlation_id(child_trace_id, field="child_trace_id")
+        token_hash = sha256(token.encode("utf-8", errors="surrogatepass")).hexdigest()
+        with closing(self._connect()) as conn:
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                row = conn.execute(
+                    "SELECT id, token_hash FROM native_child_parent_scopes "
+                    "WHERE token_hash = ? AND host = ? AND child_session_id = ? "
+                    "AND child_trace_id = ? AND consumed_at IS NOT NULL "
+                    "AND consumed_unix IS NOT NULL LIMIT 1",
+                    (token_hash, normalized_host, child_session, child_trace),
+                ).fetchone()
+                if row is None or not hmac.compare_digest(str(row["token_hash"] or ""), token_hash):
+                    raise ValueError("native child parent scope cannot be retried")
+                child = conn.execute(
+                    "SELECT status FROM runs WHERE session_id = ? AND trace_id = ? LIMIT 1",
+                    (child_session, child_trace),
+                ).fetchone()
+                if child is not None and str(child["status"] or "") != "preflight_failed":
+                    raise ValueError("successful native child parent scope cannot be retried")
+                restored = conn.execute(
+                    "UPDATE native_child_parent_scopes SET consumed_at = NULL, "
+                    "consumed_unix = NULL, child_trace_id = '' WHERE id = ? "
+                    "AND consumed_at IS NOT NULL AND consumed_unix IS NOT NULL "
+                    "AND child_trace_id = ?",
+                    (str(row["id"]), child_trace),
+                )
+                if restored.rowcount != 1:
+                    raise ValueError("native child parent scope cannot be retried")
+                conn.commit()
+            except BaseException:
+                conn.rollback()
+                raise
 
     def reserve_child_routing(
         self,

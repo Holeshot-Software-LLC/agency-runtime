@@ -309,9 +309,13 @@ def _openclaw_plugin_harness_source() -> str:
             "  bridgeCalls.push(payload);\n"
             "  if (payload.action === 'control') {\n"
             "    if (failControl) throw new Error('control unavailable');\n"
-            "    if (payload.command === 'off') runtimeControlEnabled = false;\n"
-            "    if (payload.command === 'on') runtimeControlEnabled = true;\n"
-            "    return { runtime_enabled: runtimeControlEnabled, message: 'control updated' };\n"
+            "    const denied = payload.command === 'off' || payload.command === 'on';\n"
+            "    return {\n"
+            "      ok: !denied, mutation_denied: denied,\n"
+            "      error: denied ? 'operator_presence_required' : null,\n"
+            "      runtime_enabled: runtimeControlEnabled,\n"
+            "      message: denied ? 'control denied; runtime remains unchanged' : 'control status',\n"
+            "    };\n"
             "  }\n"
             "  if (payload.action !== 'outbound_gate') return {};\n"
             "  if (failOutboundSync) throw new Error('outbound unavailable');\n"
@@ -358,11 +362,12 @@ def _openclaw_plugin_harness_source() -> str:
             "              revisionId: '00000000-0000-0000-0000-000000000001',\n"
             "            };\n"
             "      } else if (payload.action === 'control') {\n"
-            "        if (payload.command === 'off') runtimeControlEnabled = false;\n"
-            "        if (payload.command === 'on') runtimeControlEnabled = true;\n"
+            "        const denied = payload.command === 'off' || payload.command === 'on';\n"
             "        result = {\n"
+            "          ok: !denied, mutation_denied: denied,\n"
+            "          error: denied ? 'operator_presence_required' : null,\n"
             "          runtime_enabled: runtimeControlEnabled,\n"
-            "          message: 'control updated',\n"
+            "          message: denied ? 'control denied; runtime remains unchanged' : 'control status',\n"
             "        };\n"
             "      } else if (payload.action === 'outbound_gate') {\n"
             "        outboundQueries += 1;\n"
@@ -686,7 +691,12 @@ const disabledUnknownPayload = await outbound(
 );
 if (disabledUnknownPayload?.cancel || !disabledUnknownPayload?.payload?.text
     || outboundQueries !== 1) process.exit(113);
-await registeredCommand.handler({ args: "on", sessionKey: "restore-unknown-control-session" });
+const deniedUnknownRestore = await registeredCommand.handler({
+  args: "on", sessionKey: "restore-unknown-control-session",
+});
+if (!deniedUnknownRestore?.text?.includes("denied") || runtimeControlEnabled !== false) process.exit(116);
+runtimeControlEnabled = true;
+await registeredCommand.handler({ args: "status", sessionKey: "restore-unknown-control-session" });
 const uncorrelated = await outbound(
   { payload: { text: natural }, kind: "final", sessionKey: "session" },
   {},
@@ -813,9 +823,11 @@ const lateReplay = messageSeal(
 if (lateReplay?.cancel !== true) process.exit(78);
 failOutboundSync = false;
 
-// Explicit soft-disable bypasses Agency evidence enforcement, while the
-// installer-owned final-only OpenClaw delivery configuration remains applied.
-await registeredCommand.handler({ args: "off" });
+// An external operator control may disable Agency. The model-facing native
+// command reports that state but cannot perform the mutation itself.
+runtimeControlEnabled = false;
+const deniedDisable = await registeredCommand.handler({ args: "off" });
+if (!deniedDisable?.text?.includes("denied") || runtimeControlEnabled !== false) process.exit(117);
 const disabledBlock = await outbound(
   { payload: { text: "native block" }, kind: "block", sessionKey: "disabled" },
   { sessionKey: "disabled" },
@@ -833,9 +845,11 @@ const disabledMessage = messageSeal(
   { sessionKey: "disabled" },
 );
 if (disabledBlockMessage?.content !== "native block" || disabledMessage?.content !== "native final") process.exit(63);
+runtimeControlEnabled = true;
 const enabledControl = await registeredCommand.handler({
   args: "on", sessionKey: "control-session",
 });
+if (!enabledControl?.text?.includes("denied") || runtimeControlEnabled !== true) process.exit(118);
 const forgedControlReply = await outbound(
   {
     payload: { text: enabledControl.text }, kind: "final",
@@ -1083,9 +1097,16 @@ if (messageSeal(
   { content: staleDisabledToolMarker, sessionKey: "disabled-tool-session" },
   { sessionKey: "disabled-tool-session" },
 )?.cancel !== true) process.exit(106);
-await registeredCommand.handler({ args: "on", sessionKey: "restore-tool-control-session" });
+const deniedToolRestore = await registeredCommand.handler({
+  args: "on", sessionKey: "restore-tool-control-session",
+});
+if (!deniedToolRestore?.text?.includes("denied") || runtimeControlEnabled !== false) process.exit(119);
+runtimeControlEnabled = true;
+await registeredCommand.handler({ args: "status", sessionKey: "restore-tool-control-session" });
 
-await registeredCommand.handler({ args: "off" });
+runtimeControlEnabled = false;
+const deniedMediaDisable = await registeredCommand.handler({ args: "off" });
+if (!deniedMediaDisable?.text?.includes("denied") || runtimeControlEnabled !== false) process.exit(120);
 const disabledPureMedia = outbound(
   {
     payload: { mediaUrls: ["", "disabled.png"] }, kind: "final",
@@ -1128,7 +1149,10 @@ const enableRefreshAfter = bridgeCalls.filter(
 if (enableRefreshAfter - enableRefreshBefore !== 1) process.exit(109);
 if (staleEnabledToolMedia?.then || staleEnabledToolMedia?.cancel !== true
     || staleEnabledToolMedia?.payload) process.exit(110);
-await registeredCommand.handler({ args: "on", sessionKey: "restore-control-session" });
+const deniedFinalRestore = await registeredCommand.handler({
+  args: "on", sessionKey: "restore-control-session",
+});
+if (!deniedFinalRestore?.text?.includes("denied") || runtimeControlEnabled !== true) process.exit(121);
 """
     script = tmp_path / "openclaw-outbound-gate.mjs"
     script.write_text(source, encoding="utf-8")

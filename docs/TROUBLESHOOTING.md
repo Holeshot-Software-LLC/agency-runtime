@@ -702,6 +702,25 @@ python -m pytest tests -q
 agency eval routing --json --no-details
 ```
 
+## Trace a failed runtime request
+
+Browser, dashboard, HTTP, MCP, hook, and slow/error Store boundaries emit the
+same metadata-only agency_observation envelope when INFO logging is enabled.
+Use the request ID shown by the dashboard or returned in the
+X-Agency-Request-ID header to correlate the fixed surface, operation, outcome,
+reason code, duration, and optional Store generation. Request envelopes have
+no field for prompts, tool arguments, bearer tokens, credentials, exception
+messages, SQL text or values, or filesystem paths; correlation IDs are retained
+only as one-way SHA-256 digests.
+
+Agency Runtime does not create a new persistent observation-log database.
+These envelopes go only to the process's configured standard logging sink and
+therefore add no unbounded runtime-owned retention. If an operator routes that
+sink into a file or log service, that external sink must have an explicit
+finite rotation/retention policy. Durable SQLite evidence remains governed by
+observability.retention_days and can be previewed and trimmed with the commands
+below.
+
 ## SQLite is large or locked
 
 Use a dry run before retention:

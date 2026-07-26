@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.host_capabilities import (
     EXECUTION_HOSTS,
     INFERENCE_SURFACES,
@@ -44,7 +45,7 @@ _EligibilityIdentityKey = tuple[int, str, str, str, str, tuple[str, ...] | None]
 
 
 def _slug(agent: dict[str, Any]) -> str:
-    return str(agent.get("slug") or agent.get("agent_slug") or "").strip()
+    return agent_identity(agent)
 
 
 def _strings(value: object) -> tuple[str, ...]:
@@ -59,6 +60,7 @@ class EligibilityResult:
 
     eligible: tuple[dict[str, Any], ...]
     rejected: tuple[dict[str, str], ...]
+    eligible_ids: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +165,7 @@ def _bind_equivalent_identity(
     result = EligibilityResult(
         tuple(catalog[index] for index in cached.eligible_positions),
         cached.result.rejected,
+        cached.result.eligible_ids,
     )
     entry = _EligibilityCacheEntry(
         catalog,
@@ -368,6 +371,7 @@ def filter_eligible_catalog(
 
     eligible: list[dict[str, Any]] = []
     rejected: list[dict[str, str]] = []
+    eligible_ids: set[str] = set()
     for agent in catalog:
         agent_slug = _slug(agent)
         reason = _eligibility_reason(agent, eligibility_context)
@@ -375,11 +379,16 @@ def filter_eligible_catalog(
             rejected.append({"slug": agent_slug, "reason": reason})
         else:
             eligible.append(agent)
+            eligible_ids.add(agent_slug)
     return _cache_eligibility_result(
         catalog,
         cache_key=cache_key,
         identity_key=identity_key,
-        result=EligibilityResult(tuple(eligible), tuple(rejected)),
+        result=EligibilityResult(
+            tuple(eligible),
+            tuple(rejected),
+            frozenset(eligible_ids),
+        ),
     )
 
 

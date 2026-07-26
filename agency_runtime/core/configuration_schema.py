@@ -598,7 +598,7 @@ def _validate_adapter_entry(value: Any, name: str) -> dict[str, Any]:
 
 def _validate_adapters(value: Any) -> dict[str, Any]:
     section = _mapping(value, "adapters")
-    allowed = {"litellm", "hermes", "openclaw", "codex", "claude"}
+    allowed = {"litellm", "hermes", "openclaw", "codex", "claude", "zcode"}
     if set(section) - allowed:
         raise _error("adapters", "contains unsupported fields")
     return {name: _validate_adapter_entry(item, name) for name, item in section.items()}

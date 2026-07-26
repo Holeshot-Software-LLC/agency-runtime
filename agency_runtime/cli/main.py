@@ -17,6 +17,7 @@ from agency_runtime.core.config import load_config
 from agency_runtime.core.detect import ProviderDetection, detect_all
 from agency_runtime.core.display import safe_display_token
 from agency_runtime.core.http_safety import open_no_redirect
+from agency_runtime.core.operator_presence import enforce_for_namespace
 from agency_runtime.core.provider_validation import validate_provider
 from agency_runtime.core.selector.policy import load_policy
 
@@ -461,6 +462,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        enforce_for_namespace(args)
         return int(args.func(args))
     except (KeyError, OSError, ValueError, RuntimeError) as exc:
         print(f"agency: error: {safe_display_token(str(exc), limit=500)}", file=sys.stderr)

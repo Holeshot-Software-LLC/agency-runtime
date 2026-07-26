@@ -365,7 +365,10 @@ def test_generated_plugin_reports_install_and_import_failures(
         smoke._smoke_generated_plugin("hermes", tmp_path)
 
 
-@pytest.mark.parametrize("failure", ["hooks", "commands", "status"])
+@pytest.mark.parametrize(
+    "failure",
+    ["hooks", "commands", "description", "status", "mutation"],
+)
 def test_generated_hermes_plugin_validates_runtime_contract(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -394,7 +397,22 @@ def test_generated_hermes_plugin_validates_runtime_contract(
                 ctx.register_hook(name, lambda **_kwargs: None)
         if failure != "commands":
             result = "wrong" if failure == "status" else "Agency Runtime is enabled for hermes."
-            ctx.register_command("agency", lambda _args: result)
+            description = (
+                "Agency Runtime status, on, or off"
+                if failure == "description"
+                else "Agency Runtime read-only status; persistent on/off commands are denied"
+            )
+
+            def command(args: str) -> str:
+                if args == "off":
+                    return (
+                        "control updated"
+                        if failure == "mutation"
+                        else "Agency Runtime remains enabled for hermes; off was denied."
+                    )
+                return result
+
+            ctx.register_command("agency", command, description=description)
 
     module.register = register
     module._get_adapter = lambda: SimpleNamespace()
@@ -408,7 +426,9 @@ def test_generated_hermes_plugin_validates_runtime_contract(
     message = {
         "hooks": "missing hooks",
         "commands": "control command",
+        "description": "read-only authority",
         "status": "invalid response",
+        "mutation": "did not fail closed",
     }
     with pytest.raises(RuntimeError, match=message[failure]):
         smoke._smoke_generated_plugin("hermes", tmp_path)

@@ -177,6 +177,16 @@ def _seed_open_graph(store: Store, *, status: str) -> None:
             ("e" * 64, 4_102_444_800.0, _OLD),
         )
         connection.execute(
+            "INSERT INTO native_child_parent_scopes "
+            "(id, token_hash, host, parent_session_id, parent_trace_id, work_unit_id, "
+            "worker_kind, worker_id, native_run_id, child_session_id, child_trace_id, "
+            "issued_unix, expires_unix, created_at, consumed_at, consumed_unix) "
+            "VALUES ('scope', ?, 'claude', 'session', 'trace', 'unit', "
+            "'generic-worker', 'scope-worker', 'claude-agent:scope-worker', "
+            "'claude-child:scope-worker', '', 1, 601, ?, NULL, NULL)",
+            ("9" * 64, _OLD),
+        )
+        connection.execute(
             "INSERT INTO agent_workers "
             "(worker_id, agent_slug, display_name, origin, employment_class, standing, "
             "current_agent_version_id, current_version, current_hash, revision, "

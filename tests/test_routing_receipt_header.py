@@ -154,9 +154,52 @@ def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:
     assert receipt["eligibility"]["rejected_count"] == 40
     assert len(receipt["eligibility"]["rejections"]) == 32
     assert receipt["eligibility"]["sample_truncated"] is True
+    assert receipt["hiring"] == {
+        "outcome": "no_attempt",
+        "events": [],
+        "attempted_count": 0,
+        "workforce_changes": 0,
+        "calls_used": 0,
+        "truncated": False,
+    }
+    assert "hiring_not_attempted" in receipt["effect_codes"]
     assert secret not in json.dumps(receipt)
     assert "INJECT" not in json.dumps(receipt)
     assert normalize_durable_routing_receipt({"receipt_version": 999}) is None
+
+
+def test_routing_receipt_projects_changed_declined_and_mixed_hiring_outcomes() -> None:
+    routing = _routing("Implement and review the change.", "trace-hiring")
+
+    routing["hiring_events"] = [
+        {
+            "unit_id": "unit-build",
+            "status": "hired",
+            "reason_codes": ["safe_gap_hired"],
+            "calls_used": 1,
+        }
+    ]
+    assert project_durable_routing_receipt(routing)["hiring"]["outcome"] == "changed"
+
+    routing["hiring_events"] = [
+        {
+            "unit_id": "unit-build",
+            "status": "declined",
+            "reason_codes": ["policy_denied"],
+            "calls_used": 0,
+        }
+    ]
+    assert project_durable_routing_receipt(routing)["hiring"]["outcome"] == "declined"
+
+    routing["hiring_events"].append(
+        {
+            "unit_id": "unit-review",
+            "status": "amended",
+            "reason_codes": ["safe_gap_amended"],
+            "calls_used": 1,
+        }
+    )
+    assert project_durable_routing_receipt(routing)["hiring"]["outcome"] == "mixed"
 
 
 def test_disabled_higher_ranked_specialist_is_visible_in_header_evidence() -> None:

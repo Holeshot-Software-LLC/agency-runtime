@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import errno
 import hashlib
 import json
@@ -68,6 +70,13 @@ from agency_runtime.core.host_capabilities import (
     project_host_capability_receipt,
 )
 from agency_runtime.core.host_control import HostControlConflictError
+from agency_runtime.core.observability import (
+    RuntimeBoundary,
+    current_observation_context,
+    mark_current_observation,
+    new_request_id,
+    normalize_request_id,
+)
 from agency_runtime.core.roster.inference import resolve_inference_audit_policy
 from agency_runtime.core.roster.selector_projection import (
     selector_roster_projection,
@@ -142,6 +151,8 @@ _BROKER_POLICY_RESPONSE_BYTES = 2 * 1024 * 1024 - 64 * 1024
 _ROUTE_LAB_HOST_INVENTORY_LIMIT = len(EXECUTION_HOSTS) * 2
 _ROUTE_LAB_REJECTION_LIMIT = 50
 _ROUTE_LAB_REJECTION_TEXT_BYTES = 256
+_DASHBOARD_COLLECTION_PAGE_MAX = 200
+_COLLECTION_CURSOR_RE = re.compile(r"[A-Za-z0-9_-]{1,1024}\\Z")
 _EXPECTED_CLIENT_DISCONNECT_ERRNOS = frozenset(
     value
     for value in (
@@ -453,13 +464,14 @@ def _roster_operations_query(
 _REMEDIATION_CURSOR_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,511}\Z")
 
 
-def _review_query(raw_path: str) -> tuple[int, str | None, str, str]:
+def _review_query(raw_path: str) -> tuple[int, str | None, str, str, str]:
     values = _single_query_values(
         raw_path,
         allowed=frozenset(
             {
                 "limit",
                 "candidate_id",
+                "candidate_cursor",
                 "pending_cursor",
                 "history_cursor",
             }
@@ -479,7 +491,7 @@ def _review_query(raw_path: str) -> tuple[int, str | None, str, str]:
         if value and _REMEDIATION_CURSOR_RE.fullmatch(value) is None:
             raise ValueError(f"{field.replace('_', ' ')} is invalid")
         cursors.append(value)
-    return limit, candidate_id or None, *cursors
+    return limit, candidate_id or None, values.get("candidate_cursor", ""), *cursors
 
 
 def _inference_query_limit(raw_path: str) -> int:
@@ -953,6 +965,156 @@ def _bounded_query_limit(raw_path: str, *, default: int) -> int:
     return max(1, min(value, 200))
 
 
+def _encode_collection_cursor(kind: str, *values: str) -> str:
+    document = json.dumps(
+        [kind, *values],
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return base64.urlsafe_b64encode(document).decode("ascii").rstrip("=")
+
+
+def _decode_collection_cursor(raw: str, *, kind: str, fields: int) -> tuple[str, ...]:
+    value = str(raw or "").strip()
+    if not value or _COLLECTION_CURSOR_RE.fullmatch(value) is None:
+        raise ValueError("collection cursor is invalid")
+    try:
+        padding = "=" * (-len(value) % 4)
+        decoded = base64.b64decode(
+            value + padding,
+            altchars=b"-_",
+            validate=True,
+        )
+        payload = json.loads(decoded.decode("utf-8"))
+    except (UnicodeDecodeError, binascii.Error, json.JSONDecodeError) as exc:
+        raise ValueError("collection cursor is invalid") from exc
+    if (
+        not isinstance(payload, list)
+        or len(payload) != fields + 1
+        or payload[0] != kind
+        or any(not isinstance(item, str) or not item for item in payload[1:])
+        or _encode_collection_cursor(kind, *payload[1:]) != value
+    ):
+        raise ValueError("collection cursor is invalid")
+    return tuple(payload[1:])
+
+
+def _activity_collection_contract(
+    collections: Mapping[str, Mapping[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for name, raw in collections.items():
+        page = dict(raw)
+        next_time = str(page.pop("next_time", "") or "")
+        next_id = str(page.pop("next_id", "") or "")
+        page["next_cursor"] = (
+            _encode_collection_cursor(f"activity.{name}.v1", next_time, next_id)
+            if page.get("truncated") is True
+            else None
+        )
+        page["ordering"] = "event_time:desc,id:desc"
+        page["cursor_semantics"] = "live-keyset-after-exclusive"
+        result[name] = page
+    return result
+
+
+def _candidate_review_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
+    result = dict(payload)
+    next_time = str(result.pop("next_candidate_time", "") or "")
+    next_id = str(result.pop("next_candidate_id", "") or "")
+    result["next_cursor"] = (
+        _encode_collection_cursor("roster-reviews.v1", next_time, next_id)
+        if result.get("truncated") is True
+        else None
+    )
+    result["page_count"] = len(result.get("candidates", []))
+    result["ordering"] = "quarantined_at:desc,id:desc"
+    result["cursor_semantics"] = "live-keyset-after-exclusive"
+    return result
+
+
+def _roster_snapshot_contract(page: Mapping[str, Any], *, limit: int) -> dict[str, Any]:
+    rows = list(page.get("rows", []))
+    next_time = str(page.get("next_created_at") or "")
+    next_id = str(page.get("next_snapshot_id") or "")
+    return {
+        "snapshots": rows,
+        "count": len(rows),
+        "page_count": len(rows),
+        "filtered_count": int(page.get("total_count", len(rows))),
+        "total_count": int(page.get("total_count", len(rows))),
+        "limit": limit,
+        "truncated": page.get("truncated") is True,
+        "next_cursor": _encode_collection_cursor("roster-snapshots.v1", next_time, next_id)
+        if page.get("truncated") is True
+        else None,
+        "collection_revision": str(page.get("collection_revision") or ""),
+        "ordering": "created_at:desc,snapshot_id:desc",
+        "cursor_semantics": "live-keyset-after-exclusive",
+    }
+
+
+def _collection_query(
+    raw_path: str,
+    *,
+    allowed_filters: frozenset[str],
+    default_limit: int,
+) -> tuple[int, str, dict[str, str]]:
+    values = _single_query_values(
+        raw_path,
+        allowed=allowed_filters | {"limit", "after"},
+        maximum_fields=len(allowed_filters) + 2,
+    )
+    limit = _strict_query_limit(
+        values,
+        default=default_limit,
+        maximum=_DASHBOARD_COLLECTION_PAGE_MAX,
+        label="collection result limit",
+    )
+    after = values.pop("after", "")
+    values.pop("limit", None)
+    return limit, after, values
+
+
+def _dashboard_observation_operation(method: str, path: str) -> str:
+    """Map an untrusted request target onto one fixed observation label."""
+
+    if path in _ASSETS:
+        return "asset"
+    known = {
+        ("GET", "/api/activity"): "activity",
+        ("GET", "/api/agents/lookup"): "agent_lookup",
+        ("GET", "/api/config"): "config",
+        ("GET", "/api/control"): "control",
+        ("GET", "/api/health"): "health",
+        ("GET", "/api/hiring"): "hiring",
+        ("GET", "/api/hosts"): "hosts",
+        ("GET", "/api/inference"): "inference",
+        ("GET", "/api/live"): "live",
+        ("GET", "/api/overview"): "overview",
+        ("GET", "/api/policy"): "policy",
+        ("GET", "/api/providers/models"): "provider_models",
+        ("GET", "/api/roster"): "roster",
+        ("GET", "/api/roster/operations"): "roster_operations",
+        ("GET", "/api/roster/reviews"): "roster_reviews",
+        ("GET", "/api/runtime"): "runtime",
+        ("GET", "/api/snapshots"): "snapshots",
+        ("GET", "/api/workforce"): "workforce",
+        ("POST", "/api/route"): "route",
+        ("POST", "/api/search"): "search",
+        ("POST", "/api/agents/toggle"): "agent_toggle",
+        ("POST", "/api/config"): "config_update",
+        ("POST", "/api/hiring/approve"): "hiring_approve",
+        ("POST", "/api/hosts/toggle"): "host_toggle",
+        ("POST", "/api/maintenance/trim"): "maintenance_trim",
+        ("POST", "/api/roster/action"): "roster_action",
+        ("POST", "/api/runtime/toggle"): "runtime_toggle",
+        ("POST", "/api/workforce/action"): "workforce_action",
+    }
+    return known.get((method, path), "unknown")
+
+
 def _delegation_graph(receipt: dict[str, Any]) -> dict[str, Any]:
     """Build the same dependency graph used by delegation lifecycle dispatch."""
     from agency_runtime.core.delegation.lifecycle import (
@@ -1027,6 +1189,19 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
 
     server_version = "AgencyRuntimeDashboard/0.1"
 
+    _READ_ONLY_MUTATION_PATHS = frozenset(
+        {
+            "/api/agents/toggle",
+            "/api/config",
+            "/api/hiring/approve",
+            "/api/hosts/toggle",
+            "/api/maintenance/trim",
+            "/api/roster/action",
+            "/api/runtime/toggle",
+            "/api/workforce/action",
+        }
+    )
+
     @property
     def auth_token(self) -> str:
         return self.server.auth_token  # type: ignore[attr-defined]
@@ -1046,6 +1221,25 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         """Return the immutable master-switch identity owned by this server."""
 
         return self.server.runtime_control_path  # type: ignore[attr-defined]
+
+    def _dashboard_request_identity(self) -> tuple[str, bool]:
+        """Return one bounded content-free request ID and whether the client supplied it."""
+
+        cached = getattr(self, "_cached_dashboard_request_identity", None)
+        if cached is not None:
+            return cached
+        raw = str(
+            self.headers.get("X-Agency-Request-ID") or self.headers.get("X-Request-ID") or ""
+        ).strip()
+        try:
+            identity = normalize_request_id(raw)
+            supplied = True
+        except ValueError:
+            identity = new_request_id()
+            supplied = False
+        result = (identity, supplied)
+        self._cached_dashboard_request_identity = result
+        return result
 
     def _master_control(self) -> dict[str, Any]:
         """Read master state through the authenticated writer's strict boundary.
@@ -1077,10 +1271,29 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 raise
 
     def do_OPTIONS(self) -> None:
-        self._json_error(HTTPStatus.METHOD_NOT_ALLOWED, "cross-origin requests are not allowed")
+        request_id, _supplied = self._dashboard_request_identity()
+        with RuntimeBoundary(
+            surface="dashboard",
+            operation="options",
+            request_id=request_id,
+        ):
+            self._json_error(
+                HTTPStatus.METHOD_NOT_ALLOWED,
+                "cross-origin requests are not allowed",
+            )
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path.rstrip("/") or "/"
+        request_id, _supplied = self._dashboard_request_identity()
+        operation = _dashboard_observation_operation("GET", path)
+        with RuntimeBoundary(
+            surface="dashboard",
+            operation=operation,
+            request_id=request_id,
+        ):
+            self._dispatch_GET(path, operation)
+
+    def _dispatch_GET(self, path: str, operation: str) -> None:
         if path in _ASSETS:
             self._serve_asset(path)
             return
@@ -1098,6 +1311,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/roster/reviews": self._handle_roster_reviews,
                 "/api/agents/lookup": self._handle_agent_lookup,
                 "/api/activity": self._handle_activity,
+                "/api/control": self._handle_control,
                 "/api/hosts": self._handle_hosts,
                 "/api/inference": self._handle_inference,
                 "/api/workforce": self._handle_workforce,
@@ -1125,7 +1339,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             # full message server-side; return a generic 400 without it.
             logger.warning(
                 "dashboard GET runtime-control error for %s (%s)",
-                path,
+                operation,
                 type(exc).__name__,
             )
             self._json_error(HTTPStatus.BAD_REQUEST, "runtime control unavailable")
@@ -1134,15 +1348,41 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         except Exception as exc:  # defensive boundary; details stay in logs
             if self._close_expected_client_disconnect(exc):
                 return
-            logger.exception("dashboard GET failed for %s (%s)", path, type(exc).__name__)
+            logger.exception(
+                "dashboard GET failed for %s (%s)",
+                operation,
+                type(exc).__name__,
+            )
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path.rstrip("/") or "/"
+        request_id, _supplied = self._dashboard_request_identity()
+        operation = _dashboard_observation_operation("POST", path)
+        with RuntimeBoundary(
+            surface="dashboard",
+            operation=operation,
+            request_id=request_id,
+        ):
+            self._dispatch_POST(path, operation)
+
+    def _dispatch_POST(self, path: str, operation: str) -> None:
         if not path.startswith("/api/"):
             self._json_error(HTTPStatus.NOT_FOUND, f"unknown path: {path}")
             return
-        if not self._authorise_api_request(require_json=True):
+        mutation = path in self._READ_ONLY_MUTATION_PATHS
+        if not self._authorise_api_request(
+            require_json=True,
+            allow_broker_for_read_only_denial=mutation,
+        ):
+            return
+        if mutation:
+            self._drain_bounded_request_body()
+            self._json_error(
+                HTTPStatus.FORBIDDEN,
+                "dashboard is read-only; persistent mutations require an approved "
+                "user-presence boundary",
+            )
             return
         try:
             body = self._read_json_body()
@@ -1180,7 +1420,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             # full message server-side; return a generic 400 without it.
             logger.warning(
                 "dashboard POST runtime-control error for %s (%s)",
-                path,
+                operation,
                 type(exc).__name__,
             )
             self._json_error(HTTPStatus.BAD_REQUEST, "runtime control unavailable")
@@ -1189,10 +1429,19 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         except Exception as exc:  # defensive boundary; details stay in logs
             if self._close_expected_client_disconnect(exc):
                 return
-            logger.exception("dashboard POST failed for %s (%s)", path, type(exc).__name__)
+            logger.exception(
+                "dashboard POST failed for %s (%s)",
+                operation,
+                type(exc).__name__,
+            )
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
-    def _authorise_api_request(self, *, require_json: bool = False) -> bool:
+    def _authorise_api_request(
+        self,
+        *,
+        require_json: bool = False,
+        allow_broker_for_read_only_denial: bool = False,
+    ) -> bool:
         if not self._valid_host_header():
             self._json_error(HTTPStatus.BAD_REQUEST, "invalid Host header")
             return False
@@ -1227,8 +1476,9 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 broker_expected,
             )
         )
+        broker_scope_allowed = dashboard_broker_request_allowed(self.path, self.command)
         if not owner_authorized and not (
-            broker_authorized and dashboard_broker_request_allowed(self.path, self.command)
+            broker_authorized and (broker_scope_allowed or allow_broker_for_read_only_denial)
         ):
             self._json_error(HTTPStatus.UNAUTHORIZED, "authentication required")
             return False
@@ -1256,9 +1506,12 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         data = asset.read_bytes()
         self.send_response(HTTPStatus.OK)
         self._send_security_headers(content_type=content_type, cache_control="no-store")
+        request_id, _correlation_digest = current_observation_context()
+        self.send_header("X-Agency-Request-ID", request_id or new_request_id())
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+        mark_current_observation("ok", "completed", only_if_unset=True)
 
     def _send_security_headers(self, *, content_type: str, cache_control: str) -> None:
         self.send_header("Content-Type", content_type)
@@ -1277,9 +1530,15 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
+        request_id, supplied = self._dashboard_request_identity()
+        response_payload = (
+            {**payload, "request_id": request_id}
+            if supplied and "request_id" not in payload
+            else payload
+        )
         try:
             data = json.dumps(
-                payload,
+                response_payload,
                 allow_nan=False,
                 ensure_ascii=False,
                 separators=(",", ":"),
@@ -1291,13 +1550,22 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         self._send_security_headers(
             content_type="application/json; charset=utf-8", cache_control="no-store"
         )
+        self.send_header("X-Request-ID", request_id)
+        self.send_header("X-Agency-Request-ID", request_id)
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+        if int(status) >= 500:
+            mark_current_observation("error", f"http_{int(status)}", only_if_unset=True)
+        elif int(status) >= 400:
+            mark_current_observation("denied", f"http_{int(status)}", only_if_unset=True)
+        else:
+            mark_current_observation("ok", "completed", only_if_unset=True)
 
     def _handle_overview(self) -> None:
         stats = self.store.database_stats()
-        activity = _dashboard_activity(self.store.recent_dashboard_activity(limit=200))
+        activity_snapshot = self.store.dashboard_activity_snapshot(limit=200)
+        activity = _dashboard_activity(activity_snapshot["activity"])
         cfg = load_config(self.config_path)
         state = read_config_state(self.config_path)
         binding = _store_service_binding(self.store, state)
@@ -1319,7 +1587,9 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         state = read_config_state(self.config_path)
         binding = _store_service_binding(self.store, state)
         limit = _bounded_query_limit(self.path, default=100)
-        activity = _dashboard_activity(self.store.recent_dashboard_activity(limit=limit))
+        activity_snapshot = self.store.dashboard_activity_snapshot(limit=limit)
+        activity = _dashboard_activity(activity_snapshot["activity"])
+        activity_collections = _activity_collection_contract(activity_snapshot["collections"])
         inference = inference_operational_snapshot(
             load_config(self.config_path),
             activity,
@@ -1332,6 +1602,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "inference": inference,
             },
             "activity": activity,
+            "activity_collections": activity_collections,
             "master": self._master_control(),
         }
         self._json_ok(
@@ -1341,6 +1612,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "revision": _dashboard_revision(core),
                 "overview": core["overview"],
                 "activity": core["activity"],
+                "activity_collections": activity_collections,
                 "master": core["master"],
                 "service_binding": binding,
                 **_store_response_identity(state, binding),
@@ -1350,16 +1622,72 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
     def _handle_activity(self) -> None:
         state = read_config_state(self.config_path)
         binding = _store_service_binding(self.store, state)
-        limit = _bounded_query_limit(self.path, default=50)
+        limit, after, filters = _collection_query(
+            self.path,
+            allowed_filters=frozenset({"kind"}),
+            default_limit=50,
+        )
+        kind = str(filters.get("kind") or "").strip().casefold()
+        if kind:
+            cursor = (
+                _decode_collection_cursor(after, kind=f"activity.{kind}.v1", fields=2)
+                if after
+                else ("", "")
+            )
+            page = self.store.dashboard_activity_page(
+                kind,
+                limit=limit,
+                after_time=cursor[0],
+                after_id=cursor[1],
+            )
+            next_time = str(page.pop("next_time") or "")
+            next_id = str(page.pop("next_id") or "")
+            next_cursor = (
+                _encode_collection_cursor(
+                    f"activity.{kind}.v1",
+                    next_time,
+                    next_id,
+                )
+                if page["truncated"]
+                else None
+            )
+            self._json_ok(
+                {
+                    "schema_version": "agency.dashboard.activity_collection.v1",
+                    "kind": kind,
+                    "items": _dashboard_activity({kind: page.pop("rows")})[kind],
+                    **page,
+                    "next_cursor": next_cursor,
+                    "ordering": "event_time:desc,id:desc",
+                    "cursor_semantics": "live-keyset-after-exclusive",
+                    "service_binding": binding,
+                    **_store_response_identity(state, binding),
+                }
+            )
+            return
+        snapshot = self.store.dashboard_activity_snapshot(limit=limit)
+        collections = _activity_collection_contract(snapshot["collections"])
         self._json_ok(
             {
-                **_dashboard_activity(self.store.recent_dashboard_activity(limit=limit)),
+                "schema_version": "agency.dashboard.activity_window.v1",
+                **_dashboard_activity(snapshot["activity"]),
+                "collections": collections,
                 "service_binding": binding,
                 **_store_response_identity(state, binding),
             }
         )
 
     def _handle_snapshots(self) -> None:
+        limit, after, _filters = _collection_query(
+            self.path,
+            allowed_filters=frozenset(),
+            default_limit=50,
+        )
+        cursor = (
+            _decode_collection_cursor(after, kind="roster-snapshots.v1", fields=2)
+            if after
+            else ("", "")
+        )
         state = read_config_state(self.config_path)
         binding = _require_store_service_binding(self.store, state)
         effective = state.effective.get("agents", {})
@@ -1370,14 +1698,104 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             self.store,
             disabled_agents=disabled,
         )
-        reviews = candidate_review_snapshot(self.store)
+        reviews = _candidate_review_contract(candidate_review_snapshot(self.store))
+        snapshots = _roster_snapshot_contract(
+            self.store.roster_snapshot_page(
+                limit=limit,
+                after_created_at=cursor[0],
+                after_snapshot_id=cursor[1],
+            ),
+            limit=limit,
+        )
         self._json_ok(
             {
-                "snapshots": self.store.list_roster_snapshots(),
+                **snapshots,
                 "operations": operations,
                 "reviews": reviews,
                 "service_binding": binding,
                 **_store_response_identity(state, binding),
+            }
+        )
+
+    def _handle_control(self) -> None:
+        """Return one revision-bound control-plane generation for atomic UI commit."""
+
+        state = read_config_state(self.config_path)
+        binding = _store_service_binding(self.store, state)
+        config_payload = _config_payload(state, service_binding=binding)
+        if binding["store_restart_required"]:
+            core = {
+                "schema_version": "agency.dashboard.control.v1",
+                "config": config_payload,
+                "service_binding": binding,
+                "restart_required": True,
+            }
+        else:
+            binding = _require_store_service_binding(self.store, state)
+            effective = state.effective.get("agents", {})
+            disabled = (
+                frozenset(effective.get("disabled", []))
+                if isinstance(effective, dict)
+                else frozenset()
+            )
+            roster_snapshot = self.store.get_active_roster_ui_page_snapshot(
+                limit=_DASHBOARD_COLLECTION_PAGE_MAX,
+                disabled_agents=disabled,
+            )
+            roster_rows = roster_snapshot["rows"]
+            roster_agents = [
+                ui_roster_projection(agent, disabled)
+                for agent in roster_rows[:_DASHBOARD_COLLECTION_PAGE_MAX]
+            ]
+            roster_total = int(roster_snapshot["total_count"])
+            roster_enabled = int(roster_snapshot["enabled_count"])
+            roster_payload = {
+                "agents": roster_agents,
+                "count": len(roster_agents),
+                "page_count": len(roster_agents),
+                "filtered_count": roster_total,
+                "total_count": roster_total,
+                "enabled_count": roster_enabled,
+                "disabled_count": roster_total - roster_enabled,
+                "limit": _DASHBOARD_COLLECTION_PAGE_MAX,
+                "truncated": len(roster_rows) > len(roster_agents),
+                "next_cursor": roster_agents[-1]["agent_slug"]
+                if len(roster_rows) > len(roster_agents) and roster_agents
+                else None,
+                "roster_revision": _roster_revision(int(roster_snapshot["generation"])),
+                "ordering": "agent_slug:asc",
+                "cursor_semantics": "live-keyset-after-exclusive",
+            }
+            operations = roster_operational_page(
+                self.store,
+                disabled_agents=disabled,
+            )
+            snapshot_page = _roster_snapshot_contract(
+                self.store.roster_snapshot_page(limit=_DASHBOARD_COLLECTION_PAGE_MAX),
+                limit=_DASHBOARD_COLLECTION_PAGE_MAX,
+            )
+            governance = {
+                **snapshot_page,
+                "operations": operations,
+                "reviews": _candidate_review_contract(candidate_review_snapshot(self.store)),
+            }
+            master = self._master_control()
+            core = {
+                "schema_version": "agency.dashboard.control.v1",
+                "config": config_payload,
+                "hosts": self._host_payload(master),
+                "master": master,
+                "roster": roster_payload,
+                "governance": governance,
+                "service_binding": binding,
+                "restart_required": False,
+            }
+        revision = _dashboard_revision(core)
+        self._json_ok(
+            {
+                **core,
+                "sampled_at": _utc_now(),
+                "control_revision": revision,
             }
         )
 
@@ -1405,21 +1823,28 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         )
 
     def _handle_roster_reviews(self) -> None:
-        limit, candidate_id, pending_cursor, history_cursor = _review_query(self.path)
+        limit, candidate_id, candidate_cursor, pending_cursor, history_cursor = _review_query(
+            self.path
+        )
+        candidate_after = (
+            _decode_collection_cursor(candidate_cursor, kind="roster-reviews.v1", fields=2)
+            if candidate_cursor
+            else ("", "")
+        )
         state = read_config_state(self.config_path)
         binding = _require_store_service_binding(self.store, state)
-        self._json_ok(
-            {
-                **candidate_review_snapshot(
-                    self.store,
-                    limit=limit,
-                    candidate_id=candidate_id,
-                    pending_cursor=pending_cursor,
-                    history_cursor=history_cursor,
-                ),
-                **_store_response_identity(state, binding),
-            }
+        payload = _candidate_review_contract(
+            candidate_review_snapshot(
+                self.store,
+                limit=limit,
+                candidate_id=candidate_id,
+                candidate_cursor_time=candidate_after[0],
+                candidate_cursor_id=candidate_after[1],
+                pending_cursor=pending_cursor,
+                history_cursor=history_cursor,
+            )
         )
+        self._json_ok({**payload, **_store_response_identity(state, binding)})
 
     def _handle_inference(self) -> None:
         limit = _inference_query_limit(self.path)
@@ -1440,16 +1865,26 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
     def _handle_workforce(self) -> None:
         """Return workforce summaries or one complete evidence-bound worker."""
 
-        query = parse_qs(urlparse(self.path).query)
-        state_filter = str(query.get("state", [""])[0]).strip().casefold()
-        worker = str(query.get("worker", [""])[0]).strip()
-        limit = _bounded_query_limit(self.path, default=100)
+        limit, after, filters = _collection_query(
+            self.path,
+            allowed_filters=frozenset({"state", "worker"}),
+            default_limit=100,
+        )
+        state_filter = str(filters.get("state") or "").strip().casefold()
+        worker = str(filters.get("worker") or "").strip()
+        if worker and (after or state_filter):
+            raise ValueError("worker detail cannot be combined with collection filters")
         state = read_config_state(self.config_path)
         binding = _require_store_service_binding(self.store, state)
+        effective = state.effective.get("agents", {})
+        disabled = (
+            frozenset(effective.get("disabled", [])) if isinstance(effective, dict) else frozenset()
+        )
         if worker:
             detail = self.store.get_workforce_worker_detail(
                 worker,
                 evidence_limit=limit,
+                disabled_agents=disabled,
             )
             snapshot = workforce_index_snapshot(self.store)
             slug = str(detail["worker"]["agent_slug"])
@@ -1483,55 +1918,100 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             )
             payload: dict[str, Any] = {"detail": detail}
         else:
-            workers = self.store.list_workforce_workers(
+            snapshot = self.store.get_workforce_page_snapshot(
                 state=state_filter,
                 limit=limit,
+                after_slug=after,
+                disabled_agents=disabled,
             )
-            all_workers = self.store.list_workforce_workers(limit=1000)
-            counts: dict[str, int] = {}
-            for item in all_workers:
-                key = str(item["state"])
-                counts[key] = counts.get(key, 0) + 1
+            workers = snapshot["rows"]
             payload = {
+                "schema_version": "agency.dashboard.workforce_collection.v1",
                 "count": len(workers),
-                "total": len(all_workers),
-                "counts": counts,
+                "page_count": len(workers),
+                "filtered_count": snapshot["filtered_count"],
+                "total_count": snapshot["total_count"],
+                "total": snapshot["total_count"],
+                "counts": snapshot["counts"],
                 "workers": workers,
+                "limit": limit,
+                "truncated": snapshot["truncated"],
+                "next_cursor": snapshot["next_slug"] if snapshot["truncated"] else None,
+                "collection_revision": snapshot["collection_revision"],
+                "ordering": "agent_slug:asc",
+                "cursor_semantics": "live-keyset-after-exclusive",
             }
         self._json_ok({**payload, **_store_response_identity(state, binding)})
 
     def _handle_hiring(self) -> None:
         """Return one hiring case or a bounded evidence list."""
 
-        query = parse_qs(urlparse(self.path).query)
-        case_id = str(query.get("case_id", [""])[0]).strip()
-        status = str(query.get("status", [""])[0]).strip().casefold()
-        case_type = str(query.get("type", [""])[0]).strip().casefold()
-        limit = _bounded_query_limit(self.path, default=100)
+        limit, after, filters = _collection_query(
+            self.path,
+            allowed_filters=frozenset({"case_id", "status", "type"}),
+            default_limit=100,
+        )
+        case_id = str(filters.get("case_id") or "").strip()
+        status = str(filters.get("status") or "").strip().casefold()
+        case_type = str(filters.get("type") or "").strip().casefold()
+        if case_id and (after or status or case_type):
+            raise ValueError("hiring case detail cannot be combined with collection filters")
         state = read_config_state(self.config_path)
         binding = _require_store_service_binding(self.store, state)
-        payload = (
-            {"hiring_case": self.store.get_hiring_case(case_id)}
-            if case_id
-            else {
-                "hiring_cases": self.store.list_hiring_cases(
-                    status=status,
-                    case_type=case_type,
-                    limit=limit,
+        if case_id:
+            payload = {"hiring_case": self.store.get_hiring_case(case_id)}
+        else:
+            cursor = (
+                _decode_collection_cursor(after, kind="hiring.v1", fields=2) if after else ("", "")
+            )
+            snapshot = self.store.get_hiring_cases_page_snapshot(
+                status=status,
+                case_type=case_type,
+                limit=limit,
+                after_created_at=cursor[0],
+                after_id=cursor[1],
+            )
+            cases = snapshot["rows"]
+            payload = {
+                "schema_version": "agency.dashboard.hiring_collection.v1",
+                "hiring_cases": cases,
+                "count": len(cases),
+                "page_count": len(cases),
+                "filtered_count": snapshot["filtered_count"],
+                "total_count": snapshot["total_count"],
+                "status_counts": snapshot["status_counts"],
+                "type_counts": snapshot["type_counts"],
+                "limit": limit,
+                "truncated": snapshot["truncated"],
+                "next_cursor": _encode_collection_cursor(
+                    "hiring.v1",
+                    snapshot["next_created_at"],
+                    snapshot["next_id"],
                 )
+                if snapshot["truncated"]
+                else None,
+                "collection_revision": snapshot["collection_revision"],
+                "ordering": "created_at:desc,id:desc",
+                "cursor_semantics": "live-keyset-after-exclusive",
             }
-        )
-        if "hiring_cases" in payload:
-            payload["count"] = len(payload["hiring_cases"])
         self._json_ok({**payload, **_store_response_identity(state, binding)})
 
     def _handle_hosts(self) -> None:
-        from agency_runtime.core.host_control import inspect_host_status
-
         state = read_config_state(self.config_path)
         binding = _require_store_service_binding(self.store, state)
-        inspector = self.server.host_inspector  # type: ignore[attr-defined]
         master = self._master_control()
+        self._json_ok(
+            {
+                "hosts": self._host_payload(master),
+                "master": master,
+                **_store_response_identity(state, binding),
+            }
+        )
+
+    def _host_payload(self, master: Mapping[str, Any]) -> list[dict[str, Any]]:
+        from agency_runtime.core.host_control import inspect_host_status
+
+        inspector = self.server.host_inspector  # type: ignore[attr-defined]
         global_enabled = bool(master["enabled"])
         # L2-06: isolate per-host inspection failures so one malformed record
         # (e.g. a future host label normalize_host rejects) degrades to an
@@ -1558,13 +2038,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                         "error": "unrecognized host label",
                     }
                 )
-        self._json_ok(
-            {
-                "hosts": hosts,
-                "master": master,
-                **_store_response_identity(state, binding),
-            }
-        )
+        return hosts
 
     def _handle_runtime_toggle(self, body: dict[str, Any]) -> None:
         """Apply the authenticated global master switch with generation CAS."""

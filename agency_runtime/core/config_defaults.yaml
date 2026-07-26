@@ -114,6 +114,8 @@ adapters:
     enabled: auto
   claude:
     enabled: auto
+  zcode:
+    enabled: auto
 
 profile: standard
 companion_policy_path: null

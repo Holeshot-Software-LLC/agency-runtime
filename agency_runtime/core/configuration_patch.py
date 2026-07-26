@@ -193,6 +193,7 @@ _SET_VALIDATORS = {
     "adapters.openclaw.enabled": lambda item: _enabled(item, "adapters.openclaw.enabled"),
     "adapters.codex.enabled": lambda item: _enabled(item, "adapters.codex.enabled"),
     "adapters.claude.enabled": lambda item: _enabled(item, "adapters.claude.enabled"),
+    "adapters.zcode.enabled": lambda item: _enabled(item, "adapters.zcode.enabled"),
     "companion_policy_path": lambda item: (
         None
         if item is None
@@ -367,7 +368,7 @@ def _enforce_local_only(document: dict[str, Any]) -> bool:
     if not isinstance(adapters, dict):
         adapters = {}
         document["adapters"] = adapters
-    for name in ("litellm", "hermes", "openclaw", "codex", "claude"):
+    for name in ("litellm", "hermes", "openclaw", "codex", "claude", "zcode"):
         entry = adapters.setdefault(name, {})
         if not isinstance(entry, dict):
             entry = {}

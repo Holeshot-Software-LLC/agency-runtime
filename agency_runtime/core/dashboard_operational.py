@@ -511,6 +511,8 @@ def candidate_review_snapshot(
     *,
     limit: int = 25,
     candidate_id: str | None = None,
+    candidate_cursor_time: str = "",
+    candidate_cursor_id: str = "",
     pending_cursor: str = "",
     history_cursor: str = "",
 ) -> dict[str, Any]:
@@ -519,6 +521,12 @@ def candidate_review_snapshot(
     bounded_limit = _bounded_limit(limit, MAX_REVIEW_RESULTS, "candidate result limit")
     if candidate_id is not None and not _CANDIDATE_ID.fullmatch(candidate_id):
         raise ValueError("candidate id is invalid")
+    cursor_time = str(candidate_cursor_time or "").strip()
+    cursor_id = str(candidate_cursor_id or "").strip()
+    if bool(cursor_time) != bool(cursor_id):
+        raise ValueError("candidate cursor is incomplete")
+    if candidate_id is not None and cursor_time:
+        raise ValueError("candidate detail cannot include a collection cursor")
     conn = store._connect()
     try:
         conn.execute("BEGIN")
@@ -538,13 +546,20 @@ def candidate_review_snapshot(
         remediation_count = int(remediation["pending_count"])
         queue_count = candidate_queue_count + remediation_count
         if candidate_id is None:
+            cursor_where = (
+                "AND (quarantined_at < ? OR (quarantined_at = ? AND id < ?)) "
+                if cursor_time
+                else ""
+            )
+            cursor_values = (cursor_time, cursor_time, cursor_id) if cursor_time else ()
             rows = conn.execute(
                 "SELECT id, slug, name, description, division, categories, capabilities, "
                 "tool_affinity, prompt_path, source_version, version, hash, status, "
                 "quarantined_at FROM agent_candidates "
                 "WHERE status IN ('pending', 'approved') "
-                "ORDER BY quarantined_at DESC, rowid DESC LIMIT ?",
-                (bounded_limit + 1,),
+                + cursor_where
+                + "ORDER BY quarantined_at DESC, id DESC LIMIT ?",
+                (*cursor_values, bounded_limit + 1),
             ).fetchall()
         else:
             rows = conn.execute(
@@ -556,6 +571,14 @@ def candidate_review_snapshot(
             if not rows:
                 raise KeyError(f"candidate not found: {candidate_id}")
         projected = [_candidate_item(conn, dict(row)) for row in rows[:bounded_limit]]
+        candidate_revision_rows = [
+            dict(row)
+            for row in conn.execute(
+                "SELECT id, status, quarantined_at, hash FROM agent_candidates "
+                "WHERE status IN ('pending', 'approved') "
+                "ORDER BY quarantined_at DESC, id DESC"
+            ).fetchall()
+        ]
         upstream = _upstream_projection(conn, queue_count)
         conn.commit()
     except Exception:
@@ -582,6 +605,26 @@ def candidate_review_snapshot(
         "next_remediation_history_cursor": str(remediation["next_history_cursor"]),
         "limit": bounded_limit,
         "truncated": candidate_id is None and len(rows) > bounded_limit,
+        "filtered_count": candidate_queue_count,
+        "total_count": candidate_queue_count,
+        "next_candidate_time": str(projected[-1]["candidate"]["quarantined_at"])
+        if candidate_id is None and len(rows) > bounded_limit and projected
+        else "",
+        "next_candidate_id": str(projected[-1]["candidate"]["id"])
+        if candidate_id is None and len(rows) > bounded_limit and projected
+        else "",
+        "collection_revision": hashlib.sha256(
+            (
+                "roster-reviews.v1\\0"
+                + json.dumps(
+                    candidate_revision_rows,
+                    allow_nan=False,
+                    ensure_ascii=True,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                )
+            ).encode()
+        ).hexdigest(),
         "candidate_id": candidate_id,
         "upstream": upstream,
     }

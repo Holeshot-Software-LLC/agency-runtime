@@ -161,7 +161,7 @@ def _wheel(
     path: Path,
     package_payload: bytes,
     *,
-    entry_point: str = "agency_runtime.cli.main:main",
+    entry_point: str = "agency_runtime.cli.entrypoint:main",
     entry_points_payload: bytes | None = None,
     metadata_payload: bytes | None = None,
     wheel_payload: bytes | None = None,
@@ -264,7 +264,7 @@ def _sdist_generated(
             "agency_runtime.egg-info/PKG-INFO": package_info,
             "agency_runtime.egg-info/dependency_links.txt": b"",
             "agency_runtime.egg-info/entry_points.txt": (
-                b"[console_scripts]\nagency = agency_runtime.cli.main:main\n"
+                b"[console_scripts]\nagency = agency_runtime.cli.entrypoint:main\n"
             ),
             "agency_runtime.egg-info/requires.txt": b"pyyaml<7,>=6.0\n",
             "agency_runtime.egg-info/top_level.txt": b"agency_runtime\n",
@@ -340,7 +340,7 @@ def _artifacts(
     payloads: dict[str, bytes],
     *,
     package_payload: bytes | None = None,
-    entry_point: str = "agency_runtime.cli.main:main",
+    entry_point: str = "agency_runtime.cli.entrypoint:main",
     extra_wheel: dict[str, bytes] | None = None,
     metadata_payload: bytes | None = None,
 ) -> Path:
@@ -803,7 +803,7 @@ def test_entry_point_defaults_cannot_inherit_the_required_agency_mapping(
         dist / f"agency_runtime-{VERSION}-py3-none-any.whl",
         payloads[PACKAGE_PATH],
         entry_points_payload=(
-            b"[DEFAULT]\nagency = agency_runtime.cli.main:main\n[console_scripts]\n"
+            b"[DEFAULT]\nagency = agency_runtime.cli.entrypoint:main\n[console_scripts]\n"
         ),
     )
 
@@ -914,7 +914,7 @@ def test_generated_sdist_metadata_is_semantically_validated(
         payloads,
         extra={
             "agency_runtime.egg-info/entry_points.txt": (
-                b"[DEFAULT]\nagency = agency_runtime.cli.main:main\n[console_scripts]\n"
+                b"[DEFAULT]\nagency = agency_runtime.cli.entrypoint:main\n[console_scripts]\n"
             )
         },
     )

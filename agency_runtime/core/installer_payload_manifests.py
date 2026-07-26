@@ -182,3 +182,15 @@ def build_claude_bundle(
         f"{plugin_prefix}/skills/agency/SKILL.md": control_skill,
     }
     return files, f"{plugin_prefix}/.claude-plugin/plugin.json"
+
+
+def build_zcode_bundle(*, hooks: Mapping[str, Any]) -> tuple[dict[str, str], str]:
+    """Build the owned fragment merged into ZCode's user configuration.
+
+    ZCode 3.5.2 consumes hooks directly from the user cli config. It has no
+    repository-proven marketplace/plugin CLI contract, so the managed bundle
+    contains only the declarative fragment used by the config transaction.
+    """
+
+    primary = "zcode-hooks.json"
+    return {primary: json.dumps(hooks, indent=2) + "\n"}, primary

@@ -159,6 +159,147 @@ def _require_execution_correlation(
         raise ValueError("executed delegation evidence requires non-empty " + ", ".join(missing))
 
 
+def _prepare_delegation_transition(
+    conn: Any,
+    existing: Any,
+    *,
+    status: str,
+    backend: str,
+    error: str,
+    recommended_agent: str,
+    executed_worker_kind: str,
+    executed_worker_id: str,
+    native_run_id: str,
+    skip_reason: str,
+    host: str,
+    now: str,
+) -> dict[str, Any]:
+    """Validate and project one transition without mutating durable state."""
+
+    normalized_status = _normalize_delegation_status(status)
+    current_status = _normalize_delegation_status(existing["status"])
+    safe_host = _bounded_delegation_field(host, maximum=_MAX_DELEGATION_HOST_CHARS)
+    safe_backend = _bounded_delegation_field(
+        backend,
+        maximum=_MAX_DELEGATION_BACKEND_CHARS,
+    )
+    safe_recommended_agent = _bounded_delegation_field(
+        recommended_agent,
+        maximum=_MAX_DELEGATION_AGENT_CHARS,
+    )
+    safe_worker_kind = _bounded_delegation_field(
+        executed_worker_kind,
+        maximum=_MAX_DELEGATION_WORKER_KIND_CHARS,
+    )
+    safe_worker_id = _bounded_delegation_field(
+        executed_worker_id,
+        maximum=_MAX_DELEGATION_WORKER_ID_CHARS,
+    )
+    safe_native_run_id = _bounded_delegation_field(
+        native_run_id,
+        maximum=_MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+    )
+    incoming_receipt = (
+        safe_backend,
+        safe_worker_kind,
+        safe_worker_id,
+        safe_native_run_id,
+    )
+    existing_receipt = (
+        str(existing["backend"] or ""),
+        str(existing["executed_worker_kind"] or ""),
+        str(existing["executed_worker_id"] or ""),
+        str(existing["native_run_id"] or ""),
+    )
+    _require_execution_correlation(
+        status=normalized_status,
+        trace_id=str(existing["trace_id"] or ""),
+        session_id=str(existing["session_id"] or ""),
+        work_unit_id=str(existing["work_unit_id"] or ""),
+        backend=safe_backend,
+        worker_kind=safe_worker_kind,
+        worker_id=safe_worker_id,
+        native_run_id=safe_native_run_id,
+    )
+    authoritative_lineage_correction = _matches_consumed_activation_lineage(
+        conn,
+        existing,
+        worker_kind=safe_worker_kind,
+        worker_id=safe_worker_id,
+        native_run_id=safe_native_run_id,
+    )
+    if (
+        current_status in _EXECUTED_DELEGATION_STATUSES
+        and normalized_status in _EXECUTED_DELEGATION_STATUSES
+        and incoming_receipt != existing_receipt
+        and not authoritative_lineage_correction
+    ):
+        raise ValueError("executed delegation correlation conflicts with existing receipt")
+    effective_status = _dominant_delegation_status(current_status, normalized_status)
+    recommendation_can_initialize = (
+        current_status == "suggested" and normalized_status == "suggested"
+    )
+    incoming_wins = effective_status == normalized_status and (
+        _DELEGATION_STATUS_PRIORITY.get(normalized_status, 0)
+        >= _DELEGATION_STATUS_PRIORITY.get(current_status, 0)
+    )
+    effective_backend = (
+        safe_backend or str(existing["backend"] or "")
+        if incoming_wins
+        else str(existing["backend"] or "")
+    )
+    effective_worker_kind = (
+        safe_worker_kind or str(existing["executed_worker_kind"] or "")
+        if incoming_wins
+        else str(existing["executed_worker_kind"] or "")
+    )
+    effective_worker_id = (
+        safe_worker_id or str(existing["executed_worker_id"] or "")
+        if incoming_wins
+        else str(existing["executed_worker_id"] or "")
+    )
+    effective_native_run_id = (
+        safe_native_run_id or str(existing["native_run_id"] or "")
+        if incoming_wins
+        else str(existing["native_run_id"] or "")
+    )
+    _require_execution_correlation(
+        status=effective_status,
+        trace_id=str(existing["trace_id"] or ""),
+        session_id=str(existing["session_id"] or ""),
+        work_unit_id=str(existing["work_unit_id"] or ""),
+        backend=effective_backend,
+        worker_kind=effective_worker_kind,
+        worker_id=effective_worker_id,
+        native_run_id=effective_native_run_id,
+    )
+    effective_error = (
+        error or str(existing["error"] or "") if incoming_wins else str(existing["error"] or "")
+    )
+    effective_skip_reason = (
+        skip_reason or str(existing["skip_reason"] or "")
+        if incoming_wins
+        else str(existing["skip_reason"] or "")
+    )
+    completed_at = existing["completed_at"]
+    if effective_status in _TERMINAL_DELEGATION_STATUSES and effective_status != current_status:
+        completed_at = now
+    return {
+        "status": effective_status,
+        "host": safe_host,
+        "backend": safe_backend,
+        "worker_kind": safe_worker_kind,
+        "worker_id": safe_worker_id,
+        "native_run_id": safe_native_run_id,
+        "error": effective_error,
+        "recommended_agent": safe_recommended_agent,
+        "skip_reason": effective_skip_reason,
+        "completed_at": completed_at,
+        "incoming_wins": incoming_wins,
+        "recommendation_can_initialize": recommendation_can_initialize,
+    }
+
+
 class EvidenceStoreMixin(PreflightStoreMixin):
     """Evidence-domain behavior composed into the canonical SQLite store."""
 
@@ -1499,114 +1640,20 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         now: str,
     ) -> None:
         """Merge one callback into a canonical work-unit row."""
-        normalized_status = _normalize_delegation_status(status)
-        current_status = _normalize_delegation_status(existing["status"])
-        safe_host = _bounded_delegation_field(host, maximum=_MAX_DELEGATION_HOST_CHARS)
-        safe_backend = _bounded_delegation_field(
-            backend,
-            maximum=_MAX_DELEGATION_BACKEND_CHARS,
-        )
-        safe_recommended_agent = _bounded_delegation_field(
-            recommended_agent,
-            maximum=_MAX_DELEGATION_AGENT_CHARS,
-        )
-        safe_worker_kind = _bounded_delegation_field(
-            executed_worker_kind,
-            maximum=_MAX_DELEGATION_WORKER_KIND_CHARS,
-        )
-        safe_worker_id = _bounded_delegation_field(
-            executed_worker_id,
-            maximum=_MAX_DELEGATION_WORKER_ID_CHARS,
-        )
-        safe_native_run_id = _bounded_delegation_field(
-            native_run_id,
-            maximum=_MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
-        )
-        incoming_receipt = (
-            safe_backend,
-            safe_worker_kind,
-            safe_worker_id,
-            safe_native_run_id,
-        )
-        existing_receipt = (
-            str(existing["backend"] or ""),
-            str(existing["executed_worker_kind"] or ""),
-            str(existing["executed_worker_id"] or ""),
-            str(existing["native_run_id"] or ""),
-        )
-        _require_execution_correlation(
-            status=normalized_status,
-            trace_id=str(existing["trace_id"] or ""),
-            session_id=str(existing["session_id"] or ""),
-            work_unit_id=str(existing["work_unit_id"] or ""),
-            backend=safe_backend,
-            worker_kind=safe_worker_kind,
-            worker_id=safe_worker_id,
-            native_run_id=safe_native_run_id,
-        )
-        authoritative_lineage_correction = _matches_consumed_activation_lineage(
+        transition = _prepare_delegation_transition(
             conn,
             existing,
-            worker_kind=safe_worker_kind,
-            worker_id=safe_worker_id,
-            native_run_id=safe_native_run_id,
+            status=status,
+            backend=backend,
+            error=error,
+            recommended_agent=recommended_agent,
+            executed_worker_kind=executed_worker_kind,
+            executed_worker_id=executed_worker_id,
+            native_run_id=native_run_id,
+            skip_reason=skip_reason,
+            host=host,
+            now=now,
         )
-        if (
-            current_status in _EXECUTED_DELEGATION_STATUSES
-            and normalized_status in _EXECUTED_DELEGATION_STATUSES
-            and incoming_receipt != existing_receipt
-            and not authoritative_lineage_correction
-        ):
-            raise ValueError("executed delegation correlation conflicts with existing receipt")
-        effective_status = _dominant_delegation_status(current_status, normalized_status)
-        recommendation_can_initialize = (
-            current_status == "suggested" and normalized_status == "suggested"
-        )
-        incoming_wins = effective_status == normalized_status and (
-            _DELEGATION_STATUS_PRIORITY.get(normalized_status, 0)
-            >= _DELEGATION_STATUS_PRIORITY.get(current_status, 0)
-        )
-        effective_backend = (
-            safe_backend or str(existing["backend"] or "")
-            if incoming_wins
-            else str(existing["backend"] or "")
-        )
-        effective_worker_kind = (
-            safe_worker_kind or str(existing["executed_worker_kind"] or "")
-            if incoming_wins
-            else str(existing["executed_worker_kind"] or "")
-        )
-        effective_worker_id = (
-            safe_worker_id or str(existing["executed_worker_id"] or "")
-            if incoming_wins
-            else str(existing["executed_worker_id"] or "")
-        )
-        effective_native_run_id = (
-            safe_native_run_id or str(existing["native_run_id"] or "")
-            if incoming_wins
-            else str(existing["native_run_id"] or "")
-        )
-        _require_execution_correlation(
-            status=effective_status,
-            trace_id=str(existing["trace_id"] or ""),
-            session_id=str(existing["session_id"] or ""),
-            work_unit_id=str(existing["work_unit_id"] or ""),
-            backend=effective_backend,
-            worker_kind=effective_worker_kind,
-            worker_id=effective_worker_id,
-            native_run_id=effective_native_run_id,
-        )
-        effective_error = (
-            error or str(existing["error"] or "") if incoming_wins else str(existing["error"] or "")
-        )
-        effective_skip_reason = (
-            skip_reason or str(existing["skip_reason"] or "")
-            if incoming_wins
-            else str(existing["skip_reason"] or "")
-        )
-        completed_at = existing["completed_at"]
-        if effective_status in _TERMINAL_DELEGATION_STATUSES and effective_status != current_status:
-            completed_at = now
         conn.execute(
             "UPDATE delegation_events SET status = ?, "
             "host = CASE WHEN ? THEN COALESCE(NULLIF(?, ''), host) ELSE host END, "
@@ -1622,22 +1669,22 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             "WHEN ? THEN COALESCE(NULLIF(?, ''), '') ELSE recommended_agent END, "
             "skip_reason = ?, completed_at = ? WHERE id = ?",
             (
-                effective_status,
-                int(incoming_wins),
-                safe_host,
-                int(incoming_wins),
-                safe_backend,
-                int(incoming_wins),
-                safe_worker_kind,
-                int(incoming_wins),
-                safe_worker_id,
-                int(incoming_wins),
-                safe_native_run_id,
-                effective_error,
-                int(recommendation_can_initialize),
-                safe_recommended_agent,
-                effective_skip_reason,
-                completed_at,
+                transition["status"],
+                int(transition["incoming_wins"]),
+                transition["host"],
+                int(transition["incoming_wins"]),
+                transition["backend"],
+                int(transition["incoming_wins"]),
+                transition["worker_kind"],
+                int(transition["incoming_wins"]),
+                transition["worker_id"],
+                int(transition["incoming_wins"]),
+                transition["native_run_id"],
+                transition["error"],
+                int(transition["recommendation_can_initialize"]),
+                transition["recommended_agent"],
+                transition["skip_reason"],
+                transition["completed_at"],
                 existing["id"],
             ),
         )

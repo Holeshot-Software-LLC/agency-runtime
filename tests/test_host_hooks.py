@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
+import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -1660,6 +1662,103 @@ def test_agency_hook_codex_runs_as_an_actual_stdin_process(tmp_path: Path) -> No
     assert RESIDENT_MANAGER_KERNEL in output["hookSpecificOutput"]["additionalContext"]
 
 
+def test_two_real_hook_processes_preserve_parent_scope_for_one_consumer(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "cross-process-parent-scope.db"
+    store = Store(db_path)
+    by_slug = {str(agent["slug"]): agent for agent in bundled_roster()}
+    store._activate_prevalidated_agent(by_slug["agents-orchestrator"])
+    store._activate_prevalidated_agent(by_slug["chief-of-staff"])
+    parent = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": "cross-process-parent",
+                "turn_id": "cross-process-parent-turn",
+                "model": "gpt-5.6-codex",
+                "prompt": "ping",
+            }
+        ),
+    )
+    assert parent.returncode == 0, parent.stderr
+    assert Store(db_path).get_run("cross-process-parent-turn")["preflight_state"] == "ready"
+
+    child_start = _run_hook(
+        "codex",
+        db_path,
+        json.dumps(
+            {
+                "hook_event_name": "SubagentStart",
+                "session_id": "cross-process-parent",
+                "agent_id": "agent-42",
+                "agent_type": "worker",
+            }
+        ),
+    )
+    assert child_start.returncode == 0, child_start.stderr
+    context = json.loads(child_start.stdout)["hookSpecificOutput"]["additionalContext"]
+    token_match = re.search(r'parent_scope_token=("[^"]+")', context)
+    assert token_match is not None
+    token = json.loads(token_match.group(1))
+
+    consumer = """
+import json
+import sys
+from agency_runtime.core.store.sqlite import Store
+
+request = json.load(sys.stdin)
+try:
+    scope = Store(request["db_path"]).consume_native_child_parent_scope(
+        parent_scope_token=request["token"],
+        host="codex",
+        child_session_id="codex-child:agent-42",
+        child_trace_id="cross-process-child-turn",
+    )
+except Exception as exc:
+    print(json.dumps({"ok": False, "error": str(exc)}))
+    raise SystemExit(2)
+print(json.dumps({"ok": True, "scope": scope}, sort_keys=True))
+"""
+    request = json.dumps({"db_path": str(db_path), "token": token})
+    consumed = subprocess.run(
+        [sys.executable, "-c", consumer],
+        input=request,
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).parents[1],
+        timeout=30,
+        check=False,
+    )
+    replay = subprocess.run(
+        [sys.executable, "-c", consumer],
+        input=request,
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).parents[1],
+        timeout=30,
+        check=False,
+    )
+
+    assert consumed.returncode == 0, consumed.stderr
+    scope = json.loads(consumed.stdout)["scope"]
+    assert scope == {
+        "host": "codex",
+        "parent_session_id": "cross-process-parent",
+        "parent_trace_id": "cross-process-parent-turn",
+        "work_unit_id": "",
+        "worker_kind": "generic-worker",
+        "worker_id": "agent-42",
+        "native_run_id": "codex-agent:agent-42",
+        "child_session_id": "codex-child:agent-42",
+        "child_trace_id": "cross-process-child-turn",
+    }
+    assert replay.returncode == 2
+    assert "already consumed" in json.loads(replay.stdout)["error"]
+
+
 def test_codex_stdio_stop_corrects_then_accepts_exact_turn_header(tmp_path: Path) -> None:
     db_path = tmp_path / "codex-finalization.db"
     store = Store(db_path)
@@ -1882,7 +1981,7 @@ def test_hook_boundary_fails_closed_on_oversized_input() -> None:
     result = json.loads(sink.getvalue())
     assert result["continue"] is False
     assert "Do not publish" in result["stopReason"]
-    assert "size limit" in errors.getvalue()
+    assert "HookInputError" in errors.getvalue()
 
 
 def test_zcode_hook_boundary_fails_closed_with_decision_block() -> None:
@@ -1913,7 +2012,7 @@ def test_zcode_hook_boundary_fails_closed_with_decision_block() -> None:
     assert "Do not publish" in result["reason"]
     assert "continue" not in result
     assert "stopReason" not in result
-    assert "size limit" in errors.getvalue()
+    assert "HookInputError" in errors.getvalue()
 
 
 def test_hook_boundary_allows_positively_identified_oversized_non_stop() -> None:
@@ -1941,6 +2040,84 @@ def test_hook_boundary_allows_positively_identified_oversized_non_stop() -> None
 
     assert json.loads(sink.getvalue()) == {}
     assert "host operation continues" in errors.getvalue()
+
+
+@pytest.mark.parametrize("host", ["codex", "zcode"])
+def test_hook_boundary_blocks_oversized_native_child_pre_tool_use(host: str) -> None:
+    sink = io.BytesIO()
+
+    assert (
+        run_hook_stdio(
+            host,
+            expected_event="PreToolUse",
+            input_stream=io.BytesIO(b"x" * (MAX_HOOK_INPUT_BYTES + 1)),
+            output_stream=sink,
+        )
+        == 0
+    )
+
+    result = json.loads(sink.getvalue())
+    if host == "zcode":
+        assert result["decision"] == "block"
+    else:
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+
+def test_hook_boundary_blocks_planned_child_when_bridge_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    from agency_runtime.adapters import hooks as hooks_module
+
+    class _FailingBridge:
+        def handle(self, _payload: dict[str, Any]) -> dict[str, Any]:
+            raise OSError("store unavailable")
+
+    monkeypatch.setattr(
+        hooks_module,
+        "HookBridge",
+        lambda *_args, **_kwargs: _FailingBridge(),
+    )
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    source = io.BytesIO(
+        json.dumps(
+            {
+                "hook_event_name": "PreToolUse",
+                "session_id": "session",
+                "turn_id": "trace",
+                "tool_name": "spawn_agent",
+                "tool_use_id": "tool-use",
+                "tool_input": {
+                    "task_name": "unit_0123456789",
+                    "message": "Review the implementation.",
+                },
+            }
+        ).encode()
+    )
+    sink = io.BytesIO()
+
+    assert (
+        run_hook_stdio(
+            "codex",
+            expected_event="PreToolUse",
+            input_stream=source,
+            output_stream=sink,
+        )
+        == 0
+    )
+
+    result = json.loads(sink.getvalue())
+    assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+    observation = next(
+        json.loads(record.getMessage().split(" ", 1)[1])
+        for record in caplog.records
+        if record.getMessage().startswith("agency_observation ")
+    )
+    assert observation["surface"] == "hook"
+    assert observation["operation"] == "codex.pretooluse"
+    assert observation["outcome"] == "denied"
+    assert observation["reason_code"] == "planned_hook_failure"
+    assert observation["correlation_digest"]
 
 
 def test_expected_stop_discriminator_blocks_when_event_field_is_beyond_input_bound() -> None:
@@ -1982,7 +2159,10 @@ def test_expected_non_stop_discriminator_allows_oversized_tool_output() -> None:
 
 
 def test_hook_boundary_fails_open_on_duplicate_json_fields() -> None:
-    source = io.BytesIO(b'{"action":"before","action":"after"}')
+    secret = "Bearer-never-log-this"
+    source = io.BytesIO(
+        json.dumps({"secret": secret}).rstrip("}").encode() + b',"secret":"duplicate"}'
+    )
     sink = io.BytesIO()
     errors = io.StringIO()
 
@@ -1995,7 +2175,8 @@ def test_hook_boundary_fails_open_on_duplicate_json_fields() -> None:
 
     assert status == 0
     assert json.loads(sink.getvalue()) == {}
-    assert "duplicate object key" in errors.getvalue()
+    assert "BoundedJSONError" in errors.getvalue()
+    assert secret not in errors.getvalue()
 
 
 def test_hook_boundary_never_emits_nonfinite_json() -> None:

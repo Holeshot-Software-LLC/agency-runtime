@@ -38,10 +38,14 @@ from agency_runtime.core.native_child_activation import (
     serialize_native_child_activation_grant,
     serialize_native_child_activation_receipt,
 )
-from agency_runtime.core.roster.revisions import content_identity_matches
+from agency_runtime.core.roster.revisions import (
+    content_digest_identity,
+    content_identity_matches,
+)
 from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.preflight import _decode_preflight_recipe
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
+from agency_runtime.core.store.version_identity import normalize_version_identity
 
 _MAX_ACTIVATION_TOKEN_CHARS = 256
 _WORK_UNIT_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}$")
@@ -589,6 +593,101 @@ class DelegationActivationStoreMixin:
         except Exception:
             conn.rollback()
             raise
+        finally:
+            conn.close()
+
+    def verify_pending_delegation_activation(
+        self,
+        *,
+        activation_token: str,
+        host: str,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        specialist_slug: str,
+        specialist_version: str,
+        specialist_prompt_hash: str,
+    ) -> bool:
+        """Authenticate one current unconsumed grant without consuming it."""
+
+        token = str(activation_token or "").strip()
+        if not token or len(token) > _MAX_ACTIVATION_TOKEN_CHARS:
+            raise ValueError("activation_token is invalid")
+        normalized_host = str(host or "").strip().casefold()
+        if normalized_host not in {"codex", "claude", "zcode"}:
+            raise ValueError("native child host is unsupported")
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        unit = _work_unit_identity(work_unit_id, required=True)
+        slug = _identity(
+            specialist_slug,
+            maximum=MAX_DELEGATION_AGENT_CHARS,
+            field="specialist_slug",
+            required=True,
+        )
+        version = str(specialist_version or "").strip()
+        if not version or normalize_version_identity(version) != version:
+            raise ValueError("specialist_version is invalid")
+        prompt_hash = str(specialist_prompt_hash or "").strip()
+        if content_digest_identity(prompt_hash) is None:
+            raise ValueError("specialist_prompt_hash is invalid")
+        token_hash = sha256(token.encode("utf-8", errors="surrogatepass")).hexdigest()
+
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT receipt.*, run.status AS run_status, "
+                "run.preflight_state AS run_preflight_state, run.host AS run_host, "
+                f"{_STORE_UNIX_SQL} AS store_now_unix FROM "  # nosec B608
+                "delegation_activation_receipts AS receipt JOIN runs AS run "
+                "ON run.trace_id = receipt.trace_id AND run.session_id = receipt.session_id "
+                "WHERE receipt.session_id = ? AND receipt.trace_id = ? "
+                "AND receipt.work_unit_id = ? AND receipt.specialist_slug = ? "
+                "AND receipt.specialist_version = ? AND receipt.specialist_prompt_hash = ? "
+                "AND receipt.child_host = ? AND receipt.consumed_at IS NULL "
+                "ORDER BY receipt.rowid LIMIT 2",
+                (
+                    normalized_session,
+                    normalized_trace,
+                    unit,
+                    slug,
+                    version,
+                    prompt_hash,
+                    normalized_host,
+                ),
+            ).fetchall()
+            if len(rows) != 1:
+                return False
+            receipt = rows[0]
+            if not hmac.compare_digest(str(receipt["token_hash"] or ""), token_hash):
+                return False
+            if (
+                str(receipt["run_status"] or "") not in {"active", "evidence_only"}
+                or str(receipt["run_preflight_state"] or "") != "ready"
+                or str(receipt["run_host"] or "").strip().casefold() != normalized_host
+            ):
+                return False
+            grant = _stored_public_grant(receipt)
+            store_now = int(receipt["store_now_unix"])
+            if store_now < grant.issued_at or store_now > grant.expires_at:
+                return False
+            if (
+                grant.host != normalized_host
+                or grant.parent_session_id != normalized_session
+                or grant.parent_trace_id != normalized_trace
+                or grant.work_unit_id != unit
+                or grant.specialist.slug != slug
+                or grant.specialist.version != version
+                or grant.specialist.content_hash != prompt_hash
+            ):
+                return False
+            self._reject_disabled_specialist(
+                conn,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                specialist_slug=slug,
+            )
+            return True
         finally:
             conn.close()
 

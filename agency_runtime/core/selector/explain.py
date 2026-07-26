@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.config_binding import config_for_store
 from agency_runtime.core.host_capabilities import (
@@ -55,10 +56,6 @@ def _clamp_limit(limit: int | None) -> int:
     return max(1, min(value, _MAX_LIMIT))
 
 
-def _agent_slug(agent: dict[str, Any]) -> str:
-    return str(agent.get("slug") or agent.get("agent_slug") or "")
-
-
 def _agent_summary(
     agent: dict[str, Any] | None, *, score: float | None = None, selected: bool = False
 ) -> dict[str, Any]:
@@ -66,7 +63,7 @@ def _agent_summary(
     if agent:
         payload.update(
             {
-                "slug": _agent_slug(agent),
+                "slug": agent_identity(agent),
                 "name": str(agent.get("name", "")),
                 "division": str(agent.get("division", "")),
                 "description": bounded_receipt_text(
@@ -114,8 +111,8 @@ def _selected_explanations(
     companion_ids: list[str],
     fallback_ids: list[str],
 ) -> list[dict[str, Any]]:
-    catalog_by_slug = {_agent_slug(agent): agent for agent in catalog}
-    score_by_slug = {_agent_slug(agent): float(score) for agent, score in candidate_rows}
+    catalog_by_slug = {agent_identity(agent): agent for agent in catalog}
+    score_by_slug = {agent_identity(agent): float(score) for agent, score in candidate_rows}
     selected: list[dict[str, Any]] = []
     for slug in selected_ids:
         summary = _agent_summary(
@@ -141,7 +138,7 @@ def _considered_explanations(
         _agent_summary(
             agent,
             score=float(score),
-            selected=_agent_slug(agent) in selected_ids,
+            selected=agent_identity(agent) in selected_ids,
         )
         for agent, score in candidate_rows
     ]
@@ -157,7 +154,7 @@ def _rejected_explanations(
 ) -> list[dict[str, Any]]:
     rejected: list[dict[str, Any]] = []
     for agent, score in candidate_rows:
-        if _agent_slug(agent) in selected_ids:
+        if agent_identity(agent) in selected_ids:
             continue
         entry = _agent_summary(agent, score=float(score), selected=False)
         entry["reason"] = _rejection_reason(
@@ -266,7 +263,7 @@ def explain_route(
     refined_query = refine_query(user_message, cfg)
     expanded_query = expand_query(refined_query)
     policy = load_policy(policy_path_for_config(cfg))
-    active_slugs = {str(agent.get("slug") or agent.get("agent_slug") or "") for agent in catalog}
+    active_slugs = {agent_identity(agent) for agent in catalog}
     matched_actions, companion_ids = detect_actions(
         user_message,
         policy,
@@ -276,7 +273,7 @@ def explain_route(
     # them out of the candidate receipt so an abstention cannot look like a
     # semantic match simply because fallback prompts are installed.
     policy_fallbacks = set(detect_fallback_companions(policy))
-    semantic_catalog = [agent for agent in catalog if _agent_slug(agent) not in policy_fallbacks]
+    semantic_catalog = [agent for agent in catalog if agent_identity(agent) not in policy_fallbacks]
     # Route Lab and CLI explanations are diagnostic turns, but they still need
     # an authoritative statement that the absence of prior state is known. A
     # bare classifier call represents *missing/untrusted* state and therefore

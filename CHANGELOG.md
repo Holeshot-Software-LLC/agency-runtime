@@ -25,6 +25,15 @@ changes rather than duplicating every commit.
 
 ## Unreleased
 
+### Deprecated
+
+- The public `route_and_build_context(...)` convenience API is restored as a
+  thin compatibility wrapper around `route(...)` and
+  `build_routing_context(...)`. The public `header.finalize(...)` alias is
+  likewise restored over `finalize_response(...)`. Both emit
+  `DeprecationWarning`, remain supported throughout the 0.2.x compatibility
+  cycle, and will not be removed before 0.3.0.
+
 ### Fixed
 
 - Unsafe deterministic and inferred selection candidates now have to clear the

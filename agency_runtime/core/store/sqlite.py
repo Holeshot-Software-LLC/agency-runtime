@@ -24,9 +24,11 @@ from agency_runtime.core.exception_notes import add_exception_note
 from agency_runtime.core.store.child_routing import ChildRoutingStoreMixin
 from agency_runtime.core.store.delegation_activation import DelegationActivationStoreMixin
 from agency_runtime.core.store.evidence import EvidenceStoreMixin
+from agency_runtime.core.store.finalization_batch import FinalizationBatchStoreMixin
 from agency_runtime.core.store.initialization_lock import storage_initialization_lock
 from agency_runtime.core.store.maintenance import MaintenanceStoreMixin
 from agency_runtime.core.store.native_child import NativeChildStoreMixin
+from agency_runtime.core.store.observed_sqlite import ObservedSQLiteConnection
 from agency_runtime.core.store.preflight import _decode_preflight_recipe
 from agency_runtime.core.store.projections import (
     API_BASE_LIMIT,
@@ -48,6 +50,9 @@ from agency_runtime.core.store.schema import (
     BOOLEAN_DOMAIN_TRIGGER_SQL,
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES,
     DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
+    NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL,
+    NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME,
+    NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
     NATIVE_WORKER_SCOPE_INDEX_SQL,
     REMEDIATION_AUTHORITY_KEY_NAME,
     RUNTIME_DELETE_ORDER,
@@ -219,10 +224,13 @@ def _v36_authority_schema_is_current(
     expected_triggers = {
         **DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
         **BOOLEAN_DOMAIN_TRIGGER_SQL,
+        NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME: NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
     }
     if not set(DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES).issubset(triggers):
         return False
     if not set(BOOLEAN_DOMAIN_TRIGGER_NAMES).issubset(triggers):
+        return False
+    if NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME not in triggers:
         return False
     if any(
         _normalized_schema_sql(triggers.get(name)) != _normalized_schema_sql(statement)
@@ -285,6 +293,24 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         "specialists_loaded": {"activation_receipt_id"},
         "finalization_events": {"policy_response_hash"},
         "host_controls": {"generation"},
+        "native_child_parent_scopes": {
+            "id",
+            "token_hash",
+            "host",
+            "parent_session_id",
+            "parent_trace_id",
+            "work_unit_id",
+            "worker_kind",
+            "worker_id",
+            "native_run_id",
+            "child_session_id",
+            "child_trace_id",
+            "issued_unix",
+            "expires_unix",
+            "created_at",
+            "consumed_at",
+            "consumed_unix",
+        },
     }
     for table, expected in required_columns.items():
         table_row = conn.execute(
@@ -296,6 +322,19 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         observed = {str(row["name"]) for row in conn.execute(f"PRAGMA table_info({table})")}
         if not expected.issubset(observed):
             return False
+
+    scope_table_row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'native_child_parent_scopes'"
+    ).fetchone()
+    observed_scope_sql = _normalized_schema_sql(
+        scope_table_row["sql"] if scope_table_row is not None else ""
+    ).replace("ifnotexists", "")
+    expected_scope_ddl = (
+        "CREATE TABLE" + NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL.split("CREATE TABLE", 1)[1]
+    )
+    expected_scope_sql = _normalized_schema_sql(expected_scope_ddl).replace("ifnotexists", "")
+    if observed_scope_sql.rstrip(";") != expected_scope_sql.rstrip(";"):
+        return False
 
     expected_indexes = {
         "idx_activation_receipts_trace": (
@@ -313,6 +352,10 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         "idx_worker_runs_native_scope": (
             "worker_runs",
             ("host", "session_id", "trace_id", "worker_id", "native_run_id"),
+        ),
+        "idx_native_child_parent_scopes_expiry": (
+            "native_child_parent_scopes",
+            ("expires_unix", "consumed_unix"),
         ),
     }
     for name, (table, columns) in expected_indexes.items():
@@ -354,6 +397,22 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
     }.issubset(unique_column_sets):
         return False
 
+    scope_unique_column_sets = {
+        tuple(
+            str(column["name"])
+            for column in conn.execute(
+                f"PRAGMA index_info({row['name']})"  # nosec B608
+            )
+        )
+        for row in conn.execute("PRAGMA index_list(native_child_parent_scopes)")
+        if int(row["unique"] or 0) == 1
+    }
+    if not {
+        ("token_hash",),
+        ("host", "parent_trace_id", "worker_id", "native_run_id"),
+    }.issubset(scope_unique_column_sets):
+        return False
+
     foreign_keys = {
         (str(row["from"]), str(row["table"]), str(row["to"]))
         for row in conn.execute("PRAGMA foreign_key_list(delegation_activation_receipts)")
@@ -362,6 +421,12 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         ("trace_id", "runs", "trace_id"),
         ("delegation_event_id", "delegation_events", "id"),
     }.issubset(foreign_keys):
+        return False
+    scope_foreign_keys = {
+        (str(row["from"]), str(row["table"]), str(row["to"]))
+        for row in conn.execute("PRAGMA foreign_key_list(native_child_parent_scopes)")
+    }
+    if ("parent_trace_id", "runs", "trace_id") not in scope_foreign_keys:
         return False
 
     expected_activity_triggers = {
@@ -507,6 +572,7 @@ _RUNTIME_DELETE_ORDER = RUNTIME_DELETE_ORDER
 
 
 class Store(
+    FinalizationBatchStoreMixin,
     ChildRoutingStoreMixin,
     DelegationActivationStoreMixin,
     NativeChildStoreMixin,
@@ -959,7 +1025,11 @@ class Store(
         self._assert_storage_paths_safe()
         self._assert_storage_files_trusted()
         expected_identity = self._database_identity()
-        conn = sqlite3.connect(str(self.db_path), timeout=5.0)
+        conn = sqlite3.connect(
+            str(self.db_path),
+            timeout=5.0,
+            factory=ObservedSQLiteConnection,
+        )
         try:
             self._require_database_identity(expected_identity)
             _enable_recursive_triggers(conn)
@@ -1043,6 +1113,7 @@ class Store(
                 self.db_path.as_uri() + "?mode=ro",
                 uri=True,
                 timeout=5.0,
+                factory=ObservedSQLiteConnection,
             )
             try:
                 self._require_database_identity(expected_identity)

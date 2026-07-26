@@ -287,9 +287,11 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         "on_session_end",
     } <= set(ctx.hooks)
     assert set(ctx.commands) == {"agency"}
-    assert "disabled" in ctx.commands["agency"]("off")
-    assert "disabled" in ctx.commands["agency"]("status")
-    assert "enabled" in ctx.commands["agency"]("on")
+    initial_control = Store(tmp_path / "hermes.db").get_host_control("hermes")
+    assert "remains enabled" in ctx.commands["agency"]("off")
+    assert "enabled" in ctx.commands["agency"]("status")
+    assert "remains enabled" in ctx.commands["agency"]("on")
+    assert Store(tmp_path / "hermes.db").get_host_control("hermes") == initial_control
     # An uncorrelated post-API hook is ignored instead of fabricating a run.
     assert ctx.hooks["post_api_request"](response={}, model="task-general", session_id="s1") is None
     receipt = Store(tmp_path / "hermes.db").get_model_receipt_for_session("s1")
@@ -868,10 +870,22 @@ def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
     assert activity["finalizations"][0]["trace_id"] == "bridge-turn"
     assert activity["finalizations"][0]["action"] == "retry_exhausted"
     assert store.get_run("bridge-turn")["status"] == "retry_exhausted"
-    assert disabled["runtime_enabled"] is False
-    assert status["runtime_enabled"] is False
+    assert disabled["ok"] is False
+    assert disabled["error"] == "operator_presence_required"
+    assert disabled["runtime_enabled"] is True
+    assert status["ok"] is True
+    assert status["runtime_enabled"] is True
+    assert enabled["ok"] is False
+    assert enabled["error"] == "operator_presence_required"
     assert enabled["runtime_enabled"] is True
     assert enabled_status["runtime_enabled"] is True
+    assert store.get_host_control("openclaw") == {
+        "host": "openclaw",
+        "enabled": True,
+        "generation": 0,
+        "updated_at": None,
+        "source": "default",
+    }
     assert "chief-of-staff" not in store.get_specialists_for_session("bridge")
 
 

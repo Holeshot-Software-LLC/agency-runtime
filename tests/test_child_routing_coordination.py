@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import time
 from contextlib import closing
 from dataclasses import replace
 from hashlib import sha256
@@ -35,6 +36,218 @@ from agency_runtime.core.workforce.routing_projection import (
 
 def _key(value: str) -> str:
     return sha256(value.encode()).hexdigest()
+
+
+def _ready_parent(
+    store: Store,
+    *,
+    session_id: str = "parent-session",
+    trace_id: str = "parent-trace",
+    host: str = "codex",
+) -> None:
+    connection = store._connect()
+    try:
+        connection.execute(
+            "INSERT INTO runs "
+            "(id, trace_id, session_id, host, started_at, status, user_message, "
+            "metadata, preflight_state, preflight_result) "
+            "VALUES (?, ?, ?, ?, '2026-07-26T00:00:00Z', 'active', '', '{}', "
+            "'ready', '{}')",
+            (f"run:{trace_id}", trace_id, session_id, host),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def test_native_child_parent_scope_survives_store_process_boundary_once(tmp_path) -> None:
+    path = tmp_path / "scope.db"
+    issuer = Store(path)
+    _ready_parent(issuer)
+    issued = issuer.create_native_child_parent_scope(
+        host="codex",
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+        work_unit_id="unit-0123456789",
+        worker_kind="generic-worker",
+        worker_id="agent-42",
+        native_run_id="codex-agent:agent-42",
+        child_session_id="codex-child:agent-42",
+    )
+    assert str(issued["parent_scope_token"]).encode() not in path.read_bytes()
+    connection = issuer._connect()
+    try:
+        with pytest.raises(sqlite3.IntegrityError, match="immutable or consumed"):
+            connection.execute("UPDATE native_child_parent_scopes SET worker_id = 'forged-worker'")
+        connection.rollback()
+    finally:
+        connection.close()
+
+    consumer = Store(path)
+    with pytest.raises(ValueError, match="invalid, ambiguous, or already consumed"):
+        consumer.consume_native_child_parent_scope(
+            parent_scope_token=str(issued["parent_scope_token"]),
+            host="claude",
+            child_session_id="codex-child:agent-42",
+            child_trace_id="child-trace",
+        )
+    with pytest.raises(ValueError, match="invalid, ambiguous, or already consumed"):
+        consumer.consume_native_child_parent_scope(
+            parent_scope_token=str(issued["parent_scope_token"]),
+            host="codex",
+            child_session_id="codex-child:another-agent",
+            child_trace_id="child-trace",
+        )
+
+    consumed = consumer.consume_native_child_parent_scope(
+        parent_scope_token=str(issued["parent_scope_token"]),
+        host="codex",
+        child_session_id="codex-child:agent-42",
+        child_trace_id="child-trace",
+    )
+    assert consumed == {
+        "host": "codex",
+        "parent_session_id": "parent-session",
+        "parent_trace_id": "parent-trace",
+        "work_unit_id": "unit-0123456789",
+        "worker_kind": "generic-worker",
+        "worker_id": "agent-42",
+        "native_run_id": "codex-agent:agent-42",
+        "child_session_id": "codex-child:agent-42",
+        "child_trace_id": "child-trace",
+    }
+    with pytest.raises(ValueError, match="invalid, ambiguous, or already consumed"):
+        issuer.consume_native_child_parent_scope(
+            parent_scope_token=str(issued["parent_scope_token"]),
+            host="codex",
+            child_session_id="codex-child:agent-42",
+            child_trace_id="replay-trace",
+        )
+
+
+def test_failed_child_preflight_restores_scope_but_success_cannot_reopen_it(tmp_path) -> None:
+    store = Store(tmp_path / "scope-retry.db")
+    _ready_parent(store)
+    issued = store.create_native_child_parent_scope(
+        host="codex",
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace",
+        work_unit_id="unit-0123456789",
+        worker_kind="generic-worker",
+        worker_id="agent-retry",
+        native_run_id="codex-agent:agent-retry",
+        child_session_id="codex-child:agent-retry",
+    )
+    token = str(issued["parent_scope_token"])
+    store.consume_native_child_parent_scope(
+        parent_scope_token=token,
+        host="codex",
+        child_session_id="codex-child:agent-retry",
+        child_trace_id="failed-child-trace",
+    )
+    store.restore_native_child_parent_scope_after_failed_preflight(
+        parent_scope_token=token,
+        host="codex",
+        child_session_id="codex-child:agent-retry",
+        child_trace_id="failed-child-trace",
+    )
+    store.consume_native_child_parent_scope(
+        parent_scope_token=token,
+        host="codex",
+        child_session_id="codex-child:agent-retry",
+        child_trace_id="successful-child-trace",
+    )
+    _ready_parent(
+        store,
+        session_id="codex-child:agent-retry",
+        trace_id="successful-child-trace",
+    )
+
+    with pytest.raises(ValueError, match=r"successful.*cannot be retried"):
+        store.restore_native_child_parent_scope_after_failed_preflight(
+            parent_scope_token=token,
+            host="codex",
+            child_session_id="codex-child:agent-retry",
+            child_trace_id="successful-child-trace",
+        )
+
+
+def test_native_child_parent_scope_ambiguity_and_timeout_fail_closed(tmp_path) -> None:
+    store = Store(tmp_path / "scope-guards.db")
+    _ready_parent(store, trace_id="parent-trace-a")
+    _ready_parent(store, trace_id="parent-trace-b")
+    first = store.create_native_child_parent_scope(
+        host="claude",
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace-a",
+        work_unit_id="",
+        worker_kind="generic-worker",
+        worker_id="agent-a",
+        native_run_id="claude-agent:agent-a",
+        child_session_id="claude-child:shared",
+        ttl_seconds=1,
+    )
+    store.create_native_child_parent_scope(
+        host="claude",
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace-b",
+        work_unit_id="",
+        worker_kind="generic-worker",
+        worker_id="agent-b",
+        native_run_id="claude-agent:agent-b",
+        child_session_id="claude-child:shared",
+        ttl_seconds=1,
+    )
+    with pytest.raises(ValueError, match="ambiguous"):
+        store.consume_native_child_parent_scope(
+            parent_scope_token=str(first["parent_scope_token"]),
+            host="claude",
+            child_session_id="claude-child:shared",
+            child_trace_id="child-trace",
+        )
+
+    time.sleep(2.0)
+    _ready_parent(store, trace_id="parent-trace-c")
+    current = store.create_native_child_parent_scope(
+        host="claude",
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace-c",
+        work_unit_id="",
+        worker_kind="generic-worker",
+        worker_id="agent-c",
+        native_run_id="claude-agent:agent-c",
+        child_session_id="claude-child:shared",
+    )
+    assert (
+        store.consume_native_child_parent_scope(
+            parent_scope_token=str(current["parent_scope_token"]),
+            host="claude",
+            child_session_id="claude-child:shared",
+            child_trace_id="current-child-trace",
+        )["parent_trace_id"]
+        == "parent-trace-c"
+    )
+
+    _ready_parent(store, trace_id="parent-trace-expiring")
+    expiring = store.create_native_child_parent_scope(
+        host="codex",
+        parent_session_id="parent-session",
+        parent_trace_id="parent-trace-expiring",
+        work_unit_id="",
+        worker_kind="generic-worker",
+        worker_id="agent-expiring",
+        native_run_id="codex-agent:agent-expiring",
+        child_session_id="codex-child:agent-expiring",
+        ttl_seconds=1,
+    )
+    time.sleep(2.0)
+    with pytest.raises(ValueError, match="expired"):
+        store.consume_native_child_parent_scope(
+            parent_scope_token=str(expiring["parent_scope_token"]),
+            host="codex",
+            child_session_id="codex-child:agent-expiring",
+            child_trace_id="child-trace",
+        )
 
 
 def _planned_parent_unit_fixture() -> tuple[str, list[dict], dict]:

@@ -14,6 +14,7 @@ from typing import Any
 
 # These imports are deliberate facade attributes.  Sibling modules resolve
 # them dynamically so downstream monkeypatches keep working after the split.
+from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.bounded_json import safe_load_bounded_json  # noqa: F401
 from agency_runtime.core.cli_transport import (  # noqa: F401
     SUPPORTED_CLI_TRANSPORTS,
@@ -55,7 +56,7 @@ _TOKEN_FALLBACK_CONFIDENCE_SCORE_SPAN = 15.0
 
 def _agent_id(agent: dict[str, Any]) -> str:
     """Return the catalog identity accepted across selector entry points."""
-    return str(agent.get("slug") or agent.get("agent_slug") or "")
+    return agent_identity(agent)
 
 
 def _judge_candidates(

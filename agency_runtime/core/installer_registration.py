@@ -617,12 +617,26 @@ def _register_marketplace_host(
     return register(session, plugin_present=plugin_present)
 
 
+def _register_zcode(
+    session: _RegistrationSession,
+    force_refresh: bool,
+) -> _RegistrationResult:
+    from agency_runtime.core.installer_zcode import register_zcode_config
+
+    return register_zcode_config(
+        session.target,
+        home_dir=session.home_dir,
+        force_refresh=force_refresh,
+    )
+
+
 _RegistrationHandler = Callable[[_RegistrationSession, bool], _RegistrationResult]
 _REGISTRATION_HANDLERS: dict[str, _RegistrationHandler] = {
     "hermes": _register_hermes,
     "openclaw": _register_openclaw,
     "codex": _register_marketplace_host,
     "claude": _register_marketplace_host,
+    "zcode": _register_zcode,
 }
 
 
@@ -734,6 +748,20 @@ def native_command_plan(host: str, target: Path) -> list[dict[str, Any]]:
             },
         ]
 
+    if host == "zcode":
+        return [
+            {
+                "name": "config_merge",
+                "kind": "owned_json_merge",
+                "path": "~/.zcode/cli/config.json",
+            },
+            {
+                "name": "config_inventory",
+                "kind": "exact_config_postcondition",
+                "path": "~/.zcode/cli/config.json",
+            },
+        ]
+
     commands: list[dict[str, Any]] = [
         {"name": "inventory_before", "argv": [binary, "plugin", "list", "--json"]},
         {
@@ -796,7 +824,7 @@ def plan_agent_adapter(
     executable = _resolve_binary(host, binary_resolver)
     root_exists, current_root, markers = _root_state(host, home_dir=home_dir)
     fs_plan = _atomic_install_tree(target, files, host=host, dry_run=True, home_dir=home_dir)
-    command_plan = _native_command_plan(host, target) if executable else []
+    command_plan = _native_command_plan(host, target) if executable or host == "zcode" else []
     gateway_gate: dict[str, Any] | None = None
     plan_ok = True
     exit_code = 0
@@ -834,7 +862,8 @@ def plan_agent_adapter(
         "plugin_path": str(target / primary),
         "filesystem": fs_plan,
         "native_lifecycle": HOSTS[host]["native_lifecycle"],
-        "commands_will_run": bool(executable),
+        "commands_will_run": bool(executable and host != "zcode"),
+        "config_mutations_will_run": host == "zcode" and (root_exists or current_root),
         "native_command_plan": command_plan,
         "gateway_safety_gate": gateway_gate,
         "restart_policy": "never automatic; OpenClaw install pauses when a live gateway is proven",
