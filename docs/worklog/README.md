@@ -189,6 +189,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e1ece24` | 2026-07-25 | fix(hardening): isolate bad host records; fail-closed MCP maxLength; broker allowlist tests; git-refusal clarity (audit wave 4) (#149) | null | null |
 | `5001d78` | 2026-07-25 | docs(ar-127): backfill tracker issue #151, mark done, reconcile worklog ledger (#152) | [AR-127](../roadmap/issue-AR-127-zcode-stop-rejection-shape.md) | null |
 | `c5e3575` | 2026-07-25 | docs(roadmap): checkpoint production-readiness audit bootstrap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-25-c5e3575-production-readiness-audit-bootstrap.md) |
+| `a32e4e6` | 2026-07-25 | docs(roadmap): govern production-readiness audit backlog | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-128 through AR-142](../roadmap/README.md) | [detail](2026-07-25-a32e4e6-production-readiness-audit-backlog.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
