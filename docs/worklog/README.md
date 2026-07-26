@@ -201,6 +201,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0c0299a` | 2026-07-26 | perf(runtime): reduce stable routing startup work | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | [detail](2026-07-26-0c0299a-stable-routing-startup.md) |
 | `0932410` | 2026-07-26 | fix(store): enforce exact schema authority contracts | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md), [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | [detail](2026-07-26-0932410-exact-schema-authority-contracts.md) |
 | `3f80af7` | 2026-07-26 | docs(roadmap): checkpoint deep production review | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-26-3f80af7-deep-production-review-checkpoint.md) |
+| `a1efe31` | 2026-07-26 | refactor(workforce): remove dead private inference paths | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | [detail](2026-07-26-a1efe31-dead-private-inference-paths.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
