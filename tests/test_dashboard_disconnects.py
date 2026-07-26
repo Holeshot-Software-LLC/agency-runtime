@@ -10,6 +10,7 @@ import pytest
 
 from agency_runtime.server import dashboard as dashboard_module
 from agency_runtime.server.http import AgencyHTTPHandler
+from agency_runtime.server.http_transport import is_expected_client_disconnect
 
 
 def _raise(exc: BaseException) -> None:
@@ -36,7 +37,7 @@ def _handler(path: str) -> dashboard_module.DashboardHTTPHandler:
     ids=["broken-pipe", "connection-aborted", "connection-reset"],
 )
 def test_expected_client_disconnect_recognizes_builtin_exceptions(exc: OSError) -> None:
-    assert dashboard_module._is_expected_client_disconnect(exc) is True
+    assert is_expected_client_disconnect(exc) is True
 
 
 @pytest.mark.parametrize(
@@ -50,7 +51,7 @@ def test_expected_client_disconnect_recognizes_platform_errno(error_name: str) -
     exc = OSError("platform disconnect")
     exc.errno = error_number
 
-    assert dashboard_module._is_expected_client_disconnect(exc) is True
+    assert is_expected_client_disconnect(exc) is True
 
 
 @pytest.mark.parametrize("winerror", [10053, 10054, 10058])
@@ -58,7 +59,7 @@ def test_expected_client_disconnect_recognizes_windows_socket_codes(winerror: in
     exc = OSError("Windows socket disconnect")
     exc.winerror = winerror
 
-    assert dashboard_module._is_expected_client_disconnect(exc) is True
+    assert is_expected_client_disconnect(exc) is True
 
 
 def test_expected_client_disconnect_rejects_unrelated_failures() -> None:
@@ -66,8 +67,8 @@ def test_expected_client_disconnect_rejects_unrelated_failures() -> None:
     exc.errno = errno.EACCES
     exc.winerror = 5
 
-    assert dashboard_module._is_expected_client_disconnect(RuntimeError("bug")) is False
-    assert dashboard_module._is_expected_client_disconnect(exc) is False
+    assert is_expected_client_disconnect(RuntimeError("bug")) is False
+    assert is_expected_client_disconnect(exc) is False
 
 
 @pytest.mark.parametrize(
@@ -137,9 +138,14 @@ def test_outer_request_boundary_quiets_disconnect_during_500_response(
     handler = _handler("/api/live")
     log_exception = Mock()
     error_response = Mock(side_effect=ConnectionResetError("client left before 500"))
+    observations: list[object] = []
     handler._handle_live = lambda: _raise(TypeError("server defect"))
     handler._json_error = error_response
     monkeypatch.setattr(dashboard_module.logger, "exception", log_exception)
+    monkeypatch.setattr(
+        "agency_runtime.core.observability.emit_observation",
+        observations.append,
+    )
     monkeypatch.setattr(
         AgencyHTTPHandler,
         "handle_one_request",
@@ -154,6 +160,14 @@ def test_outer_request_boundary_quiets_disconnect_during_500_response(
         HTTPStatus.INTERNAL_SERVER_ERROR,
         "internal server error",
     )
+    assert len(observations) == 1
+    observation = observations[0]
+    assert (
+        observation.surface,
+        observation.operation,
+        observation.outcome,
+        observation.reason_code,
+    ) == ("dashboard", "live", "degraded", "client_disconnected")
 
 
 def test_outer_request_boundary_propagates_unrelated_os_error(

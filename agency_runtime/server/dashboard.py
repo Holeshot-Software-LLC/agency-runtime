@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import base64
 import binascii
-import errno
 import hashlib
 import json
 import logging
@@ -158,37 +157,6 @@ _ROUTE_LAB_REJECTION_TEXT_BYTES = 256
 _DASHBOARD_COLLECTION_PAGE_MAX = 200
 MAX_WORKFORCE_DETAIL_RESPONSE_BYTES = 2 * 1024 * 1024
 _COLLECTION_CURSOR_RE = re.compile(r"[A-Za-z0-9_-]{1,1024}\Z")
-_EXPECTED_CLIENT_DISCONNECT_ERRNOS = frozenset(
-    value
-    for value in (
-        getattr(errno, "ECONNABORTED", None),
-        getattr(errno, "ECONNRESET", None),
-        getattr(errno, "EPIPE", None),
-        getattr(errno, "ESHUTDOWN", None),
-        getattr(errno, "ENOTCONN", None),
-    )
-    if value is not None
-)
-_EXPECTED_CLIENT_DISCONNECT_WINERRORS = frozenset(
-    {
-        10053,  # WSAECONNABORTED
-        10054,  # WSAECONNRESET
-        10058,  # WSAESHUTDOWN
-    }
-)
-
-
-def _is_expected_client_disconnect(exc: BaseException) -> bool:
-    """Return whether response I/O failed because the client went away."""
-
-    if isinstance(exc, (BrokenPipeError, ConnectionAbortedError, ConnectionResetError)):
-        return True
-    if not isinstance(exc, OSError):
-        return False
-    return (
-        exc.errno in _EXPECTED_CLIENT_DISCONNECT_ERRNOS
-        or getattr(exc, "winerror", None) in _EXPECTED_CLIENT_DISCONNECT_WINERRORS
-    )
 
 
 class DashboardRestartRequiredError(RuntimeError):
@@ -1298,14 +1266,6 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
 
         return read_runtime_control(path=self.runtime_control_path)
 
-    def _close_expected_client_disconnect(self, exc: BaseException) -> bool:
-        """Close one abandoned connection without turning it into a server fault."""
-
-        if not _is_expected_client_disconnect(exc):
-            return False
-        self.close_connection = True
-        return True
-
     def handle_one_request(self) -> None:
         """Start fresh request state and suppress expected response-I/O disconnects."""
 
@@ -1370,7 +1330,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             operation=operation,
             request_id=request_id,
         ):
-            self._dispatch_GET(path, operation)
+            self._dispatch_with_disconnect_observation(lambda: self._dispatch_GET(path, operation))
 
     def _dispatch_GET(self, path: str, operation: str) -> None:
         if path in _ASSETS:
@@ -1447,7 +1407,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             operation=operation,
             request_id=request_id,
         ):
-            self._dispatch_POST(path, operation)
+            self._dispatch_with_disconnect_observation(lambda: self._dispatch_POST(path, operation))
 
     def _dispatch_POST(self, path: str, operation: str) -> None:
         if not path.startswith("/api/"):

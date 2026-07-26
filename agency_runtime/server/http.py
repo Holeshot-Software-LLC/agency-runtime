@@ -55,6 +55,7 @@ from agency_runtime.core.store.finalization_batch import (
     validate_finalization_evidence_items,
 )
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.server.http_transport import is_expected_client_disconnect
 
 logger = logging.getLogger("agency_runtime.server.http")
 
@@ -101,6 +102,33 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         )
         super().setup()
 
+    def _close_expected_client_disconnect(self, exc: BaseException) -> bool:
+        """Close one abandoned connection without treating it as a server fault."""
+
+        if not is_expected_client_disconnect(exc):
+            return False
+        self.close_connection = True
+        return True
+
+    def handle_one_request(self) -> None:
+        """Suppress expected disconnects from pre-dispatch and response I/O."""
+
+        try:
+            super().handle_one_request()
+        except OSError as exc:
+            if not self._close_expected_client_disconnect(exc):
+                raise
+
+    def _dispatch_with_disconnect_observation(self, dispatch: Callable[[], None]) -> None:
+        """Keep response-I/O disconnect evidence inside the active request boundary."""
+
+        try:
+            dispatch()
+        except OSError as exc:
+            if not self._close_expected_client_disconnect(exc):
+                raise
+            mark_current_observation("degraded", "client_disconnected")
+
     @property
     def store(self) -> Store:
         return self.server.store  # type: ignore[attr-defined]
@@ -118,7 +146,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         path = _normalise_path(self.path)
         operation = _observation_operation("GET", path)
         with RuntimeBoundary(surface="http", operation=operation):
-            self._dispatch_GET(path, operation)
+            self._dispatch_with_disconnect_observation(lambda: self._dispatch_GET(path, operation))
 
     def _dispatch_GET(self, path: str, operation: str) -> None:
         if not self._validate_request_boundary():
@@ -161,6 +189,9 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             else:
                 self._json_error(HTTPStatus.NOT_FOUND, "unknown path")
         except Exception as exc:
+            if self._close_expected_client_disconnect(exc):
+                mark_current_observation("degraded", "client_disconnected")
+                return
             _log_unhandled_request_error("GET", operation, exc)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
@@ -168,7 +199,7 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
         path = _normalise_path(self.path)
         operation = _observation_operation("POST", path)
         with RuntimeBoundary(surface="http", operation=operation):
-            self._dispatch_POST(path, operation)
+            self._dispatch_with_disconnect_observation(lambda: self._dispatch_POST(path, operation))
 
     def _dispatch_POST(self, path: str, operation: str) -> None:
         if not self._validate_request_boundary(require_json=True):
@@ -210,6 +241,9 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             else:
                 self._json_error(HTTPStatus.NOT_FOUND, "unknown path")
         except Exception as exc:
+            if self._close_expected_client_disconnect(exc):
+                mark_current_observation("degraded", "client_disconnected")
+                return
             _log_unhandled_request_error("POST", operation, exc)
             self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
 
