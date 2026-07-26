@@ -133,6 +133,26 @@ smoke, root-exited descendant cancellation, and a live facade probe that
 returned exit 130 with cancellation classified and the child reaped. Fresh-home
 direct and module previews were byte-identical, covered all 274 files exactly,
 and left the projected runtime, requested runtime home, and global lock parent
-unchanged. The three warm full-corpus timing runs remain before the local
-runner acceptance can close. The canonical serial, coverage, and performance
-gates remain required.
+unchanged.
+
+Three attempted complete samples are rejected rather than used for a speed
+claim. Run `55394bca385e0c9e71205c3b804c7502` completed 3 of 4 shards in
+847.171 seconds after its private environment could not rediscover the attested
+pytest bridge. Run `4a53ed511c884e37e563e3b56e392e34` completed 3 of 4 in
+752.807 seconds, and run `b561e08fea5229da01507f7839f744b8`
+completed 2 of 4 in 793.328 seconds; nested Windows self-hosts produced no
+output before their deadlines, while one loopback client exhausted an exact
+5-second header budget under load. No failed arm is benchmark evidence.
+
+Commit `d2ab19b` binds the dependency bridge to owner-trusted runtime receipts
+and records bounded slow-test telemetry. A controlled same-runtime A/B then
+isolated Windows path geometry: a short root passed in 2.47 seconds, while the
+long-root arm reached 180 seconds without stdout or stderr. Commit `7d11313`
+therefore keeps the 60-second child bound, rejects critical runtime paths above
+240 characters, allocates nested self-hosts below a short private root, and
+proves the real runner and worker PIDs are reaped during crash recovery. The
+focused package passes 20 tests in 16.11 seconds; both private-runtime self-host
+tests pass in 7.96 seconds even with a deliberately long outer temp path. Three
+green comparable warm runs and a matched one-shard control still remain before
+the local runner acceptance can close. The canonical serial, coverage, and
+performance gates remain required.
