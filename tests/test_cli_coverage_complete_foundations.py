@@ -5,16 +5,20 @@ from __future__ import annotations
 import runpy
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from agency_runtime import __version__
 from agency_runtime.cli import _common
 from agency_runtime.cli import delegation_commands as delegation
+from agency_runtime.cli import entrypoint as cli_entrypoint
 from agency_runtime.cli import main as cli
 from agency_runtime.cli import service_commands as services
 from agency_runtime.core.delegation import backends as backend_module
 from agency_runtime.core.delegation.backend_contracts import BackendError
+from tests.runtime_support import trusted_test_interpreter
 
 
 def _args(**overrides):
@@ -541,7 +545,37 @@ def test_facade_thin_wrappers_forward_to_cohesive_modules(monkeypatch):
 
 
 def test_python_module_entrypoint_exits_with_main_status(monkeypatch):
-    monkeypatch.setattr(cli, "main", lambda: 23)
+    monkeypatch.setattr(cli_entrypoint, "main", lambda: 23)
     with pytest.raises(SystemExit) as exc:
         runpy.run_module("agency_runtime.cli.__main__", run_name="__main__")
     assert exc.value.code == 23
+
+
+def test_python_module_version_probe_keeps_the_full_cli_graph_unloaded() -> None:
+    source_root = Path(__file__).resolve().parents[1]
+    script = f"""
+import runpy
+import sys
+sys.path.insert(0, {str(source_root)!r})
+sys.argv = ["agency", "--version"]
+try:
+    runpy.run_module("agency_runtime.cli.__main__", run_name="__main__")
+except SystemExit as exc:
+    assert exc.code == 0
+else:
+    raise AssertionError("module entry point did not exit")
+assert "agency_runtime.cli.main" not in sys.modules
+assert "agency_runtime.cli.eval_commands" not in sys.modules
+assert "agency_runtime.core.evals.upstream_selection" not in sys.modules
+assert "yaml" not in sys.modules
+"""
+    completed = subprocess.run(
+        [str(trusted_test_interpreter()), "-I", "-S", "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout == f"agency {__version__}\n"

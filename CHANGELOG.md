@@ -36,6 +36,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- `python -m agency_runtime.cli --version` now uses the same deferred-import
+  entrypoint as the packaged console command. Stable routing startup also uses
+  a bounded exact fallback-roster lookup and reuses its coherent snapshot when
+  the trusted roster generation proves no reconciliation change.
 - Unsafe deterministic and inferred selection candidates now have to clear the
   configured confidence floor before caching, prompt hydration, or activation.
   Agency runtime/dashboard questions prefer the purpose-built multi-agent

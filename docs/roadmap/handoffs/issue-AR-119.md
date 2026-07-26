@@ -74,9 +74,9 @@ the deterministic typed-recall floor only when inference is not configured.
 - Content-free observations correlate dashboard, HTTP, MCP, hooks, and
   slow/error Store work without prompt, token, SQL, exception-message, or path
   fields. Hiring outcomes are present in normalized route receipts.
-- Revision-aware retrieval and the lightweight CLI entrypoint reduced the fixed
-  local controls while preserving correctness hashes. At 10,000 agents the
-  measured cold/warm-p95/peak values were 8,817.588 ms, 84.193 ms, and
+- Revision-aware retrieval and both lazy CLI version entrypoints preserve
+  correctness hashes; `python -m` fell from about 647 ms to 112 ms. At 10,000
+  agents cold/warm-p95/peak were 8,817.588 ms, 84.193 ms, and
   189.589 MiB. These are local controls, not general superiority evidence.
 - A later mixed-suite arm exposed insufficient cached-routing margin at
   2.103 ms. Eligibility now supplies an opaque proof after its detached
@@ -111,9 +111,8 @@ the deterministic typed-recall floor only when inference is not configured.
   percent floor at 96.66 percent after 57m35s. Focused deterministic repairs
   pass 33 tests; matched Store/MCP coverage adds 177 statements and closes 38
   partial branches, while focused dashboard coverage adds 87 statements.
-- AR-146 repairs the cursor validator that rejected every generated activity
-  cursor. Dashboard server coverage passes 29 tests and 12 existing
-  cursor/activity/observation regressions pass.
+- AR-146 repairs generated cursor validation; 29 dashboard server and 12
+  cursor/activity/observation tests pass.
 - AR-147 replaces flat Windows ACE extraction after a native-valid nested
   conditional foreign full-control grant bypassed directory and executable
   trust classification. The repaired focused security suite passes 402 tests
@@ -149,7 +148,8 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 1. Run the exact Python aggregate coverage and separate performance gates from
    this clean source checkpoint and record every exact result.
-2. Finish safe local AR-141 evidence without mechanical security rewrites.
+2. Finish safe AR-141 evidence; retain AR-140's 400-450 ms contractor and
+   no-op starter N+1 costs until separately optimized and measured.
 3. Keep fresh install and installed dogfood visibly blocked behind genuine
    operator presence; do not reinterpret the earlier install as current.
 4. Complete AR-125 only with benchmark-valid matched evidence.

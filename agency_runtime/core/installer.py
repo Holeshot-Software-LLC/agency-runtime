@@ -228,9 +228,17 @@ def ensure_no_match_fallback_roster(store: Store) -> int:
     """Idempotently add only missing governed fallback dependencies."""
 
     required = set(NO_MATCH_FALLBACK_SLUGS)
-    active = {agent_identity(entry) for entry in store.get_active_roster()}
+    active_slug_reader = getattr(store, "get_active_roster_slugs", None)
+    active = (
+        set(active_slug_reader(required))
+        if callable(active_slug_reader)
+        else {agent_identity(entry) for entry in store.get_active_roster()}
+    )
+    missing = required - active
+    if not missing:
+        return 0
     return sum(
         bool(store.activate_agent_if_missing(entry))
         for entry in STARTER_ROSTER
-        if str(entry.get("slug") or "") in required and str(entry.get("slug") or "") not in active
+        if str(entry.get("slug") or "") in missing
     )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from collections.abc import Callable, Container, Mapping, Sequence
+from collections.abc import Callable, Collection, Container, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -56,6 +56,7 @@ from agency_runtime.core.workforce.contract import (
 _JSON_LIST_FIELDS = ("categories", "capabilities", "tool_affinity")
 _MAX_ACTIVE_ROSTER_LIMIT = MAX_ACTIVE_ROSTER_SIZE
 _MAX_ACTIVE_ROSTER_CURSOR_BYTES = MAX_ACTIVE_ROSTER_CURSOR_BYTES
+_MAX_ACTIVE_ROSTER_SLUG_LOOKUP = 16
 _SQLITE_PARAMETER_CHUNK = 900
 _UI_CAPABILITY_COLUMNS = tuple(f"capability_{index}" for index in range(4))
 _UI_ROSTER_PROJECTION = ", ".join(
@@ -1252,6 +1253,56 @@ class RosterStoreMixin:
                 (normalized,),
             ).fetchone()
             return row is not None
+        finally:
+            conn.close()
+
+    def get_active_roster_slugs(self, slugs: Collection[str]) -> frozenset[str]:
+        """Return a bounded set of complete active definitions without a full scan.
+
+        The exact active-roster join and decoder are retained so a malformed
+        fallback contract cannot be mistaken for a usable active definition.
+        Callers must request a small, predeclared identity set; this is not an
+        alternate unbounded roster projection.
+        """
+
+        if isinstance(slugs, (str, bytes, bytearray, Mapping)) or not isinstance(slugs, Collection):
+            raise TypeError("slugs must be a collection of strings")
+        if len(slugs) > _MAX_ACTIVE_ROSTER_SLUG_LOOKUP:
+            raise ValueError(f"slugs must contain at most {_MAX_ACTIVE_ROSTER_SLUG_LOOKUP} entries")
+        normalized = tuple(sorted({normalize_agent_slug(slug) for slug in slugs}))
+        if not normalized:
+            return frozenset()
+        placeholders = ",".join("?" for _slug in normalized)
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
+                f"FROM {_ACTIVE_ROSTER_JOIN} "  # nosec B608
+                f"WHERE a.agent_slug IN ({placeholders}) ORDER BY a.agent_slug",  # nosec B608
+                normalized,
+            ).fetchall()
+            decoded = _decoded_roster_rows(rows)
+            return frozenset(str(row["agent_slug"]) for row in decoded)
+        finally:
+            conn.close()
+
+    def get_roster_generation(self) -> int:
+        """Return the current monotonic roster generation through a trusted open."""
+
+        conn = self._connect()
+        try:
+            counter = conn.execute(
+                "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+            ).fetchone()
+            if counter is None or isinstance(counter["value"], bool):
+                raise RuntimeError("roster generation counter is unavailable")
+            try:
+                generation = int(counter["value"])
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise RuntimeError("roster generation counter is invalid") from exc
+            if generation < 0:
+                raise RuntimeError("roster generation counter is invalid")
+            return generation
         finally:
             conn.close()
 

@@ -38,6 +38,10 @@ integrated arm later measured 2.103 ms, proving that its margin was not
 sufficient. Semantic retrieval was about 6-7.4 seconds cold and 199-414 ms
 warm at 10,000 agents with roughly 208 MiB peak memory. These are local
 benchmark observations, not cross-platform release evidence.
+Deeper profiling found a separate stable-state cost: the operational routing
+snapshot took 1,104.677 ms, including a 233.371 ms full-roster fallback
+presence check, while `python -m agency_runtime.cli --version` imported the
+heavy compatibility facade and took about 647 ms.
 
 ## Approach
 
@@ -45,6 +49,10 @@ Profile before changing controls; reuse coherent route requests, compute query
 vectors once, cache immutable feature indexes by exact roster revision, batch
 Store reads, and defer heavy CLI imports. Add size-tiered memory and latency
 gates that preserve routing correctness and existing cold/one-call controls.
+For stable startup, query only the two governed fallback identities through the
+complete active-definition join, and reuse the already captured immutable
+snapshot only when a fresh trusted roster generation proves reconciliation
+made no routing-visible change.
 
 ## Dependencies
 
@@ -77,3 +85,13 @@ unchanged 2.0 ms contract. Correctness, compatibility, roster, semantic,
 selector, and the isolated 101-test distribution/release package pass. These
 are fixed local controls, not cross-platform superiority or supported-runner
 evidence.
+
+The bounded stable-state slice routes the module entrypoint through the lazy
+CLI dispatcher, reducing `python -m agency_runtime.cli --version` from about
+647 ms to 112 ms. The complete-definition fallback lookup is capped at 16
+identities and reduced its measured check from 233.371 ms to 22.453 ms.
+Generation-proven snapshot reuse reduced stable operational capture from
+1,104.677 ms to 663.671 ms without a trust cache; any mutation forces a
+complete recapture. The affected suites pass 104 tests. Packaged-contractor
+reconciliation remains the dominant 400-450 ms cost, and the 1.585-second,
+276-query no-op starter reconciliation remains open.

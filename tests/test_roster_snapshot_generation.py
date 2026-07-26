@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -42,8 +44,10 @@ def test_roster_generation_tracks_only_effective_membership_changes(
     agent = _agent("alpha-reviewer")
 
     assert _roster_generation(store) == 0
+    assert store.get_roster_generation() == 0
     store._activate_prevalidated_agent(agent)
     assert _roster_generation(store) == 1
+    assert store.get_roster_generation() == 1
 
     assert store._activate_prevalidated_agent_if_missing(agent) is False
     assert _roster_generation(store) == 1
@@ -52,6 +56,23 @@ def test_roster_generation_tracks_only_effective_membership_changes(
     assert _roster_generation(store) == 1
     store.deactivate_agent("alpha-reviewer")
     assert _roster_generation(store) == 2
+    assert store.get_roster_generation() == 2
+
+
+def test_active_roster_slug_lookup_is_bounded_and_uses_complete_definitions(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store._activate_prevalidated_agent(_agent("alpha-reviewer"))
+
+    assert store.get_active_roster_slugs(()) == frozenset()
+    assert store.get_active_roster_slugs({"missing-reviewer", "alpha-reviewer"}) == frozenset(
+        {"alpha-reviewer"}
+    )
+    with pytest.raises(TypeError, match="collection of strings"):
+        store.get_active_roster_slugs("alpha-reviewer")
+    with pytest.raises(ValueError, match="at most 16"):
+        store.get_active_roster_slugs(tuple(f"reviewer-{index}" for index in range(17)))
 
 
 def test_roster_snapshots_share_generation_counts_and_projection_boundaries(

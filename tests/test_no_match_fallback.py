@@ -91,9 +91,23 @@ def test_fallback_ensure_skips_noop_writes_and_restores_external_removal(
         return conn
 
     monkeypatch.setattr(store, "_connect", traced_connect)
+    monkeypatch.setattr(
+        store,
+        "get_active_roster",
+        lambda **_kwargs: pytest.fail(
+            "fallback presence checks must not decode the complete active roster"
+        ),
+    )
 
     assert ensure_no_match_fallback_roster(store) == 0
     assert not any(statement == "BEGIN IMMEDIATE" for statement in statements)
+    presence_queries = [
+        statement
+        for statement in statements
+        if "FROM agent_active AS a JOIN agent_versions AS v" in statement
+        and "WHERE a.agent_slug IN" in statement
+    ]
+    assert len(presence_queries) == 1
 
     conn = original_connect()
     try:
@@ -110,7 +124,7 @@ def test_fallback_ensure_skips_noop_writes_and_restores_external_removal(
     assert sum(statement == "BEGIN IMMEDIATE" for statement in statements) == len(
         NO_MATCH_FALLBACK_SLUGS
     )
-    assert {entry["agent_slug"] for entry in store.get_active_roster()} >= set(
+    assert store.get_active_roster_slugs(NO_MATCH_FALLBACK_SLUGS) == frozenset(
         NO_MATCH_FALLBACK_SLUGS
     )
 

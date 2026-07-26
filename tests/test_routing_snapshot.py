@@ -29,6 +29,7 @@ from agency_runtime.core.config import (
 from agency_runtime.core.delegation.operational import empty_delegation_plan_projection
 from agency_runtime.core.routing_snapshot import (
     RoutingSnapshot,
+    capture_operational_routing_snapshot,
     capture_routing_snapshot,
     catalog_for_routing,
 )
@@ -101,6 +102,55 @@ def test_catalog_snapshot_supports_keyword_compatible_store_facades() -> None:
 
     assert catalog_for_routing(KeywordStore(), frozenset({"reviewer"})) == []
     assert observed == [frozenset({"reviewer"})]
+
+
+def test_operational_snapshot_reuses_one_stable_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import installer
+    from agency_runtime.core import routing_snapshot as subject
+
+    snapshot = RoutingSnapshot(_config(), _catalog(), roster_generation=7)
+    captures: list[AgencyConfig | None] = []
+    monkeypatch.setattr(
+        subject,
+        "capture_routing_snapshot",
+        lambda _store, config=None: captures.append(config) or snapshot,
+    )
+    monkeypatch.setattr(installer, "reconcile_packaged_contractors", lambda _store: (0, 9))
+    monkeypatch.setattr(installer, "ensure_no_match_fallback_roster", lambda _store: 0)
+    store = SimpleNamespace(get_roster_generation=lambda: 7)
+
+    result = capture_operational_routing_snapshot(store)
+
+    assert result is snapshot
+    assert captures == [None]
+
+
+def test_operational_snapshot_recaptures_after_generation_change(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import installer
+    from agency_runtime.core import routing_snapshot as subject
+
+    initial = RoutingSnapshot(_config(), _catalog(), roster_generation=7)
+    refreshed = RoutingSnapshot(_config(), _catalog(), roster_generation=8)
+    snapshots = iter((initial, refreshed))
+    captures: list[AgencyConfig | None] = []
+
+    def capture(_store: object, config: AgencyConfig | None = None) -> RoutingSnapshot:
+        captures.append(config)
+        return next(snapshots)
+
+    monkeypatch.setattr(subject, "capture_routing_snapshot", capture)
+    monkeypatch.setattr(installer, "reconcile_packaged_contractors", lambda _store: (1, 8))
+    monkeypatch.setattr(installer, "ensure_no_match_fallback_roster", lambda _store: 0)
+    store = SimpleNamespace(get_roster_generation=lambda: 8)
+
+    result = capture_operational_routing_snapshot(store)
+
+    assert result is refreshed
+    assert captures == [None, initial.config]
 
 
 def test_public_runtime_route_passes_one_snapshot_to_selector(

@@ -107,6 +107,13 @@ def capture_operational_routing_snapshot(
         reconcile_packaged_contractors(store)
         if can_activate:
             ensure_no_match_fallback_roster(store)
+    generation_getter = getattr(store, "get_roster_generation", None)
+    if callable(generation_getter):
+        generation = generation_getter()
+        if isinstance(generation, bool) or not isinstance(generation, int) or generation < 0:
+            raise RuntimeError("roster generation counter is invalid")
+        if generation == snapshot.roster_generation:
+            return snapshot
     return capture_routing_snapshot(store, snapshot.config)
 
 
