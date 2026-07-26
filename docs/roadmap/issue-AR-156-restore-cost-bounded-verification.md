@@ -87,3 +87,23 @@ quantitative claims to use recorded controls rather than inferred speedups.
   default change loop.
 - After GitHub billing or spending state is repaired, one PR run and one
   `main` or manual run provide hosted URLs and exact job evidence.
+
+## Implementation evidence
+
+The workflow again skips only the unchanged seven-cell compatibility matrix on
+pull requests and requires it to succeed on `push` and manual dispatch. The
+aggregate quality job is event-aware and rejects failed, cancelled, missing,
+malformed, unexpectedly skipped, or unexpected job results. Every PR coverage,
+performance, portability, artifact, security, documentation, and dashboard
+gate remains required. The release/workflow contract suite passes 57 tests and
+the pinned offline workflow security audit reports no findings.
+
+Comparable successful hosted history shows the governed PR cadence completing
+in 4m50s and consuming 23.33 raw runner-minutes. The later unconditional matrix
+completed in 29m19s and consumed 119.12 raw runner-minutes, of which the matrix
+used 96.27. Restoring the documented cadence therefore avoids 95.79 raw
+runner-minutes (80.4 percent) and 24m29s elapsed (83.5 percent) per PR update in
+that comparison. These are recorded historical runs, not a claim that current
+hosted gates are green: current jobs are rejected before steps by the external
+GitHub billing/spending state. The local parallel change-loop implementation
+and three-run timing acceptance remain in progress.

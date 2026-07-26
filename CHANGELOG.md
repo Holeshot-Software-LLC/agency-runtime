@@ -36,6 +36,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Pull requests no longer repeat the unchanged seven-cell Python compatibility
+  matrix already enforced on `main` and manual dispatch. The aggregate quality
+  gate now requires an intentional PR skip, requires matrix success on governed
+  events, and rejects every missing, cancelled, failed, malformed, or otherwise
+  unexpected dependency result.
 - `python -m agency_runtime.cli --version` now uses the same deferred-import
   entrypoint as the packaged console command. Stable routing startup also uses
   a bounded exact fallback-roster lookup and reuses its coherent snapshot when
