@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-25
+updated: 2026-07-26
 tags: []
 related: []
 supersedes: []
@@ -191,6 +191,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c5e3575` | 2026-07-25 | docs(roadmap): checkpoint production-readiness audit bootstrap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-25-c5e3575-production-readiness-audit-bootstrap.md) |
 | `a32e4e6` | 2026-07-25 | docs(roadmap): govern production-readiness audit backlog | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-128 through AR-142](../roadmap/README.md) | [detail](2026-07-25-a32e4e6-production-readiness-audit-backlog.md) |
 | `24948a0` | 2026-07-26 | fix(runtime): harden production readiness wave one | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md), [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md), [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md), [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md), [AR-132](../roadmap/issue-AR-132-hire-deterministic-safe-gaps.md), [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md), [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md), [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md), [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md), [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | [detail](2026-07-26-24948a0-production-readiness-wave-one.md) |
+| `c741b24` | 2026-07-26 | fix(runtime): complete production readiness hardening wave two | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-133 through AR-143](../roadmap/README.md) | [detail](2026-07-26-c741b24-production-readiness-wave-two.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
