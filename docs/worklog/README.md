@@ -187,6 +187,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a1c4c47` | 2026-07-25 | perf(hot-path): build route request once per turn; cache storage trust verdict (PERF-01, PERF-02) (#147) | null | null |
 | `ffd51d0` | 2026-07-25 | chore: remove 8 dead-code items with test ports (audit wave 3) (#148) | null | null |
 | `e1ece24` | 2026-07-25 | fix(hardening): isolate bad host records; fail-closed MCP maxLength; broker allowlist tests; git-refusal clarity (audit wave 4) (#149) | null | null |
+| `5001d78` | 2026-07-25 | docs(ar-127): backfill tracker issue #151, mark done, reconcile worklog ledger (#152) | [AR-127](../roadmap/issue-AR-127-zcode-stop-rejection-shape.md) | null |
+| `c5e3575` | 2026-07-25 | docs(roadmap): checkpoint production-readiness audit bootstrap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-25-c5e3575-production-readiness-audit-bootstrap.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
