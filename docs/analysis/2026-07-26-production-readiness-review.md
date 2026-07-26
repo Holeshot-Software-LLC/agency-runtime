@@ -159,8 +159,11 @@ The second complete Python run improved to 7,521 passed, 61 skipped, 1
 expected failure, and 1 failed in 43m27s. Its sole failure was a legacy test
 fixture whose injected adapter namespace omitted the new canonical ZCode
 field; production failed visibly instead of silently dropping the host. The
-fixture now models all five hosts and both wizard modules pass 36 tests. A
-third complete run remains required; the one-failure result is not a pass.
+fixture now models all five hosts and both wizard modules pass 36 tests. The
+third complete run from the clean repair checkpoint is green: 7,522 passed,
+61 skipped, and 1 expected failure in 42m43s. This supersedes neither failed
+run as history; it is the first complete integrated pass for the current
+source.
 
 The production verdict remains negative for one decisive reason: there is no
 production OS-backed, non-exporting operator-presence verifier. Dashboard and

@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 0b9849c97d8d22190512ab0a613376e889251659
-minimum_ledger_commit: 23916e43a4a301e4ba099546beb44ebc04ae4947
+evidence_commit: ad0a1bae25bb0e472febcf669154927f2ef6df78
+minimum_ledger_commit: d040452f996d48de02029dadaf53af5452d2b3ac
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -37,17 +37,18 @@ the deterministic typed-recall floor only when inference is not configured.
   authorized.
 - The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
   and excluded from commits.
-- Latest telemetry reported 37.0 percent remaining and requires this bounded
-  fixture/report repair to end in a clean substantive/ledger checkpoint before
-  the next complete run.
+- Latest telemetry reported 31.6 percent remaining. The clean ad0a1ba/d040452
+  substantive/ledger checkpoint preceded the third complete run; record its
+  result in the next bounded checkpoint before remaining gates.
 - The current package integrates AR-133 through AR-143 source work plus the
   AR-140/AR-141 performance and compatibility slice.
 - The first complete post-checkpoint Python arm ran 43m39s and failed 34 tests.
   Its exact owning 12-module reproducer now passes 424 tests in 70.71 seconds.
 - The second complete arm ran 43m27s: 7,521 passed, 61 skipped, 1 expected
   failure, and 1 failed because a legacy injected wizard fixture omitted
-  ZCode. The canonical five-host fixture is repaired; a third full arm remains
-  required.
+  ZCode. The canonical five-host fixture was repaired.
+- The third complete arm is green: 7,522 passed, 61 skipped, and 1 expected
+  failure in 42m43s. It is the authoritative current integrated Python result.
 
 ## completed-evidence
 
@@ -99,6 +100,8 @@ the deterministic typed-recall floor only when inference is not configured.
   and the unchanged production microbenchmark passes independently.
 - Both wizard coverage modules pass 36 tests with the canonical five-host
   detection fixture.
+- The complete `python -m pytest tests/ -q -W error` gate passes 7,522 tests
+  with 61 skips and 1 expected failure.
 
 ## exact-blocker
 
@@ -126,19 +129,18 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Rerun the complete Python suite a third time from this clean local
-   checkpoint; no split or owning-module result may override it.
-2. Run the browser, routing, documentation, and release gates from the same
+1. Run the browser, routing, documentation, and release gates from the same
    source state and record every exact result.
-3. Finish safe local AR-141 evidence without mechanical security rewrites.
-4. Keep fresh install and installed dogfood visibly blocked behind genuine
+2. Finish safe local AR-141 evidence without mechanical security rewrites.
+3. Keep fresh install and installed dogfood visibly blocked behind genuine
    operator presence; do not reinterpret the earlier install as current.
-5. Complete AR-125 only with benchmark-valid matched evidence.
+4. Complete AR-125 only with benchmark-valid matched evidence.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
+python -m pytest tests/ -q -W error
 python -m pytest focused split packages -q -W error
 node tests/dashboard_ui.test.mjs
 python -m pytest tests/test_distribution_verifier_hardening.py tests/test_release_packaging.py -q -W error
