@@ -1,0 +1,56 @@
+---
+title: "AR-137: Make dashboard collections complete and paginated"
+status: open
+category: roadmap
+created: 2026-07-26
+updated: 2026-07-26
+tags: [dashboard, workforce, pagination, ui, truth]
+related:
+  - docs/decisions/0095-complete-paginated-dashboard-collections.md
+  - agency_runtime/server/dashboard.py
+  - agency_runtime/dashboard/dashboard-live.js
+supersedes: []
+superseded_by: null
+type: issue
+epic: dashboard
+issue_id: AR-137
+priority: p0
+tracker_url: null
+depends_on: []
+blocks: []
+---
+
+# AR-137: Make dashboard collections complete and paginated
+
+## Problem
+
+The workforce UI requests 1,000 rows, the server silently caps generic queries
+at 200, and the bundled roster already contains 263 manifest agents. Counts and
+filtered lists can therefore look complete while hiding valid workers. Similar
+fixed caps affect hiring and roster review views.
+
+## Current state
+
+Responses provide no cursor or truncation marker, and some UI totals are
+calculated from the returned page. Worker detail is also constrained by an
+uncoordinated 100-row filtered view.
+
+## Approach
+
+Expose stable cursor pagination, explicit `truncated` and `next_cursor` fields,
+and independently calculated total/facet counts for every collection. Teach
+the UI to page or deliberately virtualize without presenting page size as the
+population size.
+
+## Dependencies
+
+ADR-0095 defines collection completeness. AR-138 owns asynchronous UI state.
+
+## Acceptance
+
+- Workforces of 263, 1,001, and filtered subsets expose exact totals and all
+  rows through stable pagination.
+- Hiring, roster, activity, and workforce views declare truncation consistently.
+- Paging remains deterministic under concurrent inserts using documented
+  cursor semantics.
+- UI labels distinguish page count, filtered total, and global total.

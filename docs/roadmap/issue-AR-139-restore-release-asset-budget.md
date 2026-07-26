@@ -1,0 +1,51 @@
+---
+title: "AR-139: Restore the installed release asset budget"
+status: open
+category: roadmap
+created: 2026-07-26
+updated: 2026-07-26
+tags: [release, packaging, dashboard, assets, performance]
+related:
+  - docs/RELEASE_CHECKLIST.md
+  - tests/test_release_packaging.py
+  - agency_runtime/dashboard
+supersedes: []
+superseded_by: null
+type: issue
+epic: release
+issue_id: AR-139
+priority: p0
+tracker_url: null
+depends_on: []
+blocks: []
+---
+
+# AR-139: Restore the installed release asset budget
+
+## Problem
+
+The packaged dashboard asset payload is 263,374 bytes against the strict
+263,168-byte release ceiling, blocking release by 206 bytes.
+
+## Current state
+
+The independent release-packaging suite passes 14 tests and fails only this
+exact budget. Raising the limit after observing the result would weaken a
+release control rather than repair the regression.
+
+## Approach
+
+Remove at least 207 bytes of redundant generated/static payload without
+minifying away source reviewability, changing the budget, or dropping required
+content. Verify canonical Git-blob packaging and installed rendering.
+
+## Dependencies
+
+None.
+
+## Acceptance
+
+- Canonical packaged assets remain strictly below the existing ceiling.
+- Dashboard behavior, CSP, accessibility, source maps if governed, and exact
+  manifest membership remain intact.
+- Release packaging and deterministic artifact tests pass from a clean tree.

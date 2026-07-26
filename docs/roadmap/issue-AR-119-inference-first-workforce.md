@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-25
+updated: 2026-07-26
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -16,6 +16,7 @@ related:
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
+  - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -52,6 +53,12 @@ Fresh-task recovery uses the bounded
 [AR-119 active recovery capsule](handoffs/issue-AR-119.md). The capsule is the
 current bootstrap projection; this issue remains the complete historical and
 acceptance contract.
+
+The independent production-readiness review is now captured in
+[the 2026-07-26 audit report](../analysis/2026-07-26-production-readiness-review.md).
+Its reproduced remediation queue is AR-128 through AR-142. Those items are
+required corrective slices of this production push; the earlier untracked
+2026-07-25 working draft is not governing evidence.
 
 ## Approach
 
@@ -3109,6 +3116,10 @@ The raw and derived files remain outside the repository at
 
 ### Still required before AR-119 can close
 
+- Close the reproduced production blockers and regression packages in AR-128
+  through AR-142. In particular, contractor gap-to-hire, native-child
+  correlation, ZCode end-to-end parity, and MCP protocol repair are direct
+  prerequisites to truthful workforce and host evidence.
 - Complete a benchmark-valid run of the implemented matched held-out selection
   benchmark against the pinned source-visible upstream Agency Agents baseline.
   Two complete corpora have now established all 19 Agency arms safe and passing
@@ -3147,8 +3158,8 @@ call, weaken typed coverage, add a scenario route, or claim Agency is better.
 
 ### Context checkpoint constraints
 
-- Continue on `codex/ar-115-live-routing-trust`; do not reset, discard, or
-  silently rewrite the accumulated AR-119 work.
+- Continue on `main` from the current local recovery checkpoint; do not reset,
+  discard, or silently rewrite the accumulated AR-119 work.
 - Keep tracker issue #132 open and do not claim the north-star goal complete.
 - Do not push or trigger hosted GitHub Actions during intermediate packages;
   the user requested one consolidated hosted verification near the end.

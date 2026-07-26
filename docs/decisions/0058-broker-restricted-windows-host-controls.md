@@ -1,9 +1,9 @@
 ---
 title: "Broker restricted Windows host controls through the authenticated dashboard"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-16
-updated: 2026-07-17
+updated: 2026-07-26
 tags: [operations, cli, dashboard, windows, security]
 related:
   - docs/roadmap/issue-AR-74-broker-restricted-windows-host-controls.md
@@ -12,11 +12,13 @@ related:
   - docs/decisions/0031-optional-user-dashboard-service-and-shared-configuration.md
   - docs/decisions/0053-durable-fail-enabled-master-control.md
   - docs/decisions/0057-generation-checked-host-control-mutations.md
+  - docs/decisions/0090-model-facing-control-paths-are-read-only.md
+  - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0090-model-facing-control-paths-are-read-only.md
 id: ADR-0058
 type: decision
 deciders: [maintainers]

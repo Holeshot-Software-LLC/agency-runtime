@@ -1,9 +1,9 @@
 ---
 title: "Broker restricted Windows agent controls through narrow dashboard operations"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-16
-updated: 2026-07-17
+updated: 2026-07-26
 tags: [roster-governance, cli, dashboard, windows, security]
 related:
   - docs/roadmap/issue-AR-75-broker-restricted-windows-agent-controls.md
@@ -11,11 +11,13 @@ related:
   - docs/decisions/0046-config-backed-agent-activation-policy.md
   - docs/decisions/0058-broker-restricted-windows-host-controls.md
   - docs/decisions/0060-restricted-windows-cli-read-and-fail-safe.md
+  - docs/decisions/0090-model-facing-control-paths-are-read-only.md
+  - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0090-model-facing-control-paths-are-read-only.md
 id: ADR-0059
 type: decision
 deciders: [maintainers]

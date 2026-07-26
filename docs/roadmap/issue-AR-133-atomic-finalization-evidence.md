@@ -1,0 +1,61 @@
+---
+title: "AR-133: Make finalization evidence atomic, complete, and bounded"
+status: open
+category: roadmap
+created: 2026-07-26
+updated: 2026-07-26
+tags: [evidence, sqlite, http, mcp, transactions]
+related:
+  - docs/THREAT_MODEL.md
+  - docs/decisions/0093-atomic-finalization-evidence-batches.md
+  - agency_runtime/server/http.py
+  - agency_runtime/core/store
+supersedes: []
+superseded_by: null
+type: issue
+epic: observability
+issue_id: AR-133
+priority: p0
+tracker_url: null
+depends_on: []
+blocks: []
+---
+
+# AR-133: Make finalization evidence atomic, complete, and bounded
+
+## Problem
+
+One finalization request can perform hundreds of independent Store connections
+and commits. A later duplicate or conflicting lineage failure leaves earlier
+records committed, while some execution identity fields are coerced rather
+than type-validated at the boundary.
+
+## Current state
+
+The individual Store methods are bounded and parameterized, but request-level
+atomicity is absent. Malformed `executed_worker_kind`, `executed_worker_id`, or
+`native_run_id` values can become generic server failures instead of a clean
+client rejection. MCP also accepts caller-supplied host/model attribution that
+is not authoritative evidence.
+
+## Approach
+
+Validate the complete bounded batch before opening one `BEGIN IMMEDIATE`
+transaction, insert every evidence record through transaction-scoped helpers,
+then finalize or roll back as one unit. Reject unknown fields, duplicate keys,
+conflicting lineage, wrong types, oversized identifiers, and caller-spoofed
+host/model attribution before mutation.
+
+## Dependencies
+
+ADR-0093 defines the transaction boundary. AR-130 retains authoritative trust
+checks at connection entry.
+
+## Acceptance
+
+- A failed finalization request persists no partial evidence.
+- Valid maximum-size batches use one connection and one transaction.
+- All execution identity fields are strictly typed and bounded.
+- Host and actual model derive from installed context and durable receipts.
+- Replay, conflict, interruption, and concurrent-finalization tests pass.
+- HTTP and MCP return stable sanitized client errors for invalid batches.

@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-07-23
+updated: 2026-07-26
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -40,6 +40,9 @@ Status meanings:
 - ADR-0062 Isolate Directive Specialists and Route Each Work Unit Before Hydration → ADR-0069 Enforce Specialist Conflicts Before Prompt Composition
 - ADR-0063 Import External Rosters Through Declared Manifests into Quarantine → ADR-0066 Package the Audited Upstream Roster and Synchronize Quarantined Deltas
 - ADR-0080 Plan before recruiting from the whole workforce → ADR-0083 Use capability-indexed recall and bounded inference
+- ADR-0058 Broker restricted Windows host controls through the authenticated dashboard → ADR-0090 Model-facing control paths are read-only
+- ADR-0059 Broker restricted Windows agent controls through narrow dashboard operations → ADR-0090 Model-facing control paths are read-only
+- ADR-0061 Validate brokered control transition receipts against deterministic CAS semantics → ADR-0090 Model-facing control paths are read-only
 
 ## Architecture and integrations
 
@@ -81,6 +84,7 @@ Status meanings:
 | [ADR-0079](0079-route-native-children-once-and-bound-unplanned-reroutes.md) | Route native children once and bound unplanned reroutes | Accepted |
 | [ADR-0080](0080-plan-before-recruiting-from-the-whole-workforce.md) | Plan before recruiting from the whole workforce | Superseded |
 | [ADR-0083](0083-use-capability-indexed-recall-and-bounded-inference.md) | Use capability-indexed recall and bounded inference | Accepted |
+| [ADR-0094](0094-durable-native-child-correlation.md) | Correlate native children durably and fail Agency-planned work closed | Accepted |
 
 ## Evidence and observability
 
@@ -96,6 +100,7 @@ Status meanings:
 | [ADR-0045](0045-turn-scoped-specialist-activation.md) | Use turn-scoped specialist activation with immutable session history | Accepted |
 | [ADR-0047](0047-reconcile-litellm-model-and-router-evidence.md) | Reconcile LiteLLM actual-model and router evidence separately | Accepted |
 | [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Accepted |
+| [ADR-0093](0093-atomic-finalization-evidence-batches.md) | Commit one finalization evidence batch atomically | Accepted |
 
 ## State and roster governance
 
@@ -137,16 +142,20 @@ Status meanings:
 | [ADR-0055](0055-freeze-executable-identity-before-launch.md) | Freeze every launch-critical executable identity before process creation | Accepted |
 | [ADR-0056](0056-capability-bound-restricted-windows-scratch.md) | Use capability-bound ephemeral scratch for restricted Windows hosts | Accepted |
 | [ADR-0057](0057-generation-checked-host-control-mutations.md) | Require generation-checked atomic host-control mutations | Accepted |
-| [ADR-0058](0058-broker-restricted-windows-host-controls.md) | Broker restricted Windows host controls through the authenticated dashboard | Accepted |
-| [ADR-0059](0059-broker-restricted-windows-agent-controls.md) | Broker restricted Windows agent controls through narrow dashboard operations | Accepted |
+| [ADR-0058](0058-broker-restricted-windows-host-controls.md) | Broker restricted Windows host controls through the authenticated dashboard | Superseded |
+| [ADR-0059](0059-broker-restricted-windows-agent-controls.md) | Broker restricted Windows agent controls through narrow dashboard operations | Superseded |
 | [ADR-0060](0060-restricted-windows-cli-read-and-fail-safe.md) | Broker restricted CLI reads narrowly and fail unsafe operations before execution | Accepted |
-| [ADR-0061](0061-validate-brokered-control-transition-receipts.md) | Validate brokered control transition receipts against deterministic CAS semantics | Accepted |
+| [ADR-0061](0061-validate-brokered-control-transition-receipts.md) | Validate brokered control transition receipts against deterministic CAS semantics | Superseded |
 | [ADR-0073](0073-own-subprocess-trees-atomically.md) | Own subprocess trees atomically across Windows and Linux | Accepted |
 | [ADR-0074](0074-build-byte-deterministic-release-artifacts.md) | Build byte-deterministic release artifacts from canonical Git blobs | Accepted |
 | [ADR-0075](0075-preserve-config-trust-under-wsl-systemd.md) | Preserve configuration trust while adapting systemd hardening on WSL | Accepted |
 | [ADR-0076](0076-bind-isolated-canaries-to-explicit-agency-modes.md) | Bind isolated canaries to explicit Agency modes | Accepted |
 | [ADR-0077](0077-prove-codex-activation-behaviorally.md) | Prove Codex hook activation behaviorally without bypassing trust | Accepted |
 | [ADR-0082](0082-schedule-assurance-by-artifact-lifecycle.md) | Schedule assurance by artifact lifecycle | Accepted |
+| [ADR-0090](0090-model-facing-control-paths-are-read-only.md) | Model-facing control paths are read-only | Accepted |
+| [ADR-0091](0091-least-privilege-subprocess-environments.md) | Build every subprocess environment from least privilege | Accepted |
+| [ADR-0092](0092-do-not-cache-positive-filesystem-trust.md) | Do not cache positive filesystem trust without complete authority identity | Accepted |
+| [ADR-0095](0095-complete-paginated-dashboard-collections.md) | Dashboard collection views expose complete paginated truth | Accepted |
 
 ## Documentation governance
 

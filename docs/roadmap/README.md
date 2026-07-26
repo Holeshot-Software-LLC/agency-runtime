@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-23
+updated: 2026-07-26
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -145,6 +145,21 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-125` | [Prove workforce selection and one-shot application outcomes](issue-AR-125-workforce-and-one-shot-evaluation.md) | open | p0 | testing | [#138](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138) |
 | `AR-126` | [Keep context checkpoints in the current task](issue-AR-126-bounded-idempotent-context-handoffs.md) | done | p0 | documentation | [#139](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/139) |
 | `AR-127` | [Make ZCode Stop rejections actually block](issue-AR-127-zcode-stop-rejection-shape.md) | done | p0 | host-integrations | [#151](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/151) |
+| `AR-128` | [Seal model-facing control authority](issue-AR-128-seal-model-facing-control-authority.md) | open | p0 | security | pending authorization |
+| `AR-129` | [Isolate subprocess environments](issue-AR-129-isolate-subprocess-environments.md) | open | p0 | security | pending authorization |
+| `AR-130` | [Revalidate Store trust at authoritative boundaries](issue-AR-130-revalidate-store-trust.md) | open | p0 | security | pending authorization |
+| `AR-131` | [Complete MCP and CLI host contracts](issue-AR-131-complete-mcp-cli-host-contracts.md) | open | p0 | host-integrations | pending authorization |
+| `AR-132` | [Hire deterministic safe staffing gaps](issue-AR-132-hire-deterministic-safe-gaps.md) | open | p0 | routing | pending authorization |
+| `AR-133` | [Make finalization evidence atomic, complete, and bounded](issue-AR-133-atomic-finalization-evidence.md) | open | p0 | observability | pending authorization |
+| `AR-134` | [Enforce SQLite currentness and retention invariants](issue-AR-134-enforce-sqlite-currentness-invariants.md) | open | p0 | operations | pending authorization |
+| `AR-135` | [Complete ZCode native integration end to end](issue-AR-135-complete-zcode-integration.md) | open | p0 | host-integrations | pending authorization |
+| `AR-136` | [Persist native-child correlation and fail planned work closed](issue-AR-136-persist-native-child-correlation.md) | open | p0 | routing | pending authorization |
+| `AR-137` | [Make dashboard collections complete and paginated](issue-AR-137-complete-dashboard-collections.md) | open | p0 | dashboard | pending authorization |
+| `AR-138` | [Make dashboard refresh coherent, accessible, and observable](issue-AR-138-coherent-observable-dashboard-ui.md) | open | p1 | dashboard | pending authorization |
+| `AR-139` | [Restore the installed release asset budget](issue-AR-139-restore-release-asset-budget.md) | open | p0 | release | pending authorization |
+| `AR-140` | [Scale routing, retrieval, and CLI startup](issue-AR-140-scale-routing-and-retrieval.md) | open | p1 | performance | pending authorization |
+| `AR-141` | [Restore compatibility and consolidate runtime duplication](issue-AR-141-restore-compatibility-consolidate-runtime.md) | open | p1 | maintenance | pending authorization |
+| `AR-142` | [Instrument runtime boundaries and hiring outcomes](issue-AR-142-instrument-runtime-boundaries.md) | open | p1 | observability | pending authorization |
 
 ## Traceability
 
@@ -279,6 +294,21 @@ not stable internal identifiers.
 | [AR-125](issue-AR-125-workforce-and-one-shot-evaluation.md) | `4e0b0a7`, `743a982`, `ca893fe`, `9d415bb`, `86fba47`, `8af4cf0`, `e697f23`, `85afc03`, `a27f340`, `9c6c1ae`, `d692379`, `ef24960`, `2f2cfbb`, `c158210`, `71f7775`, `4687a7b`, `47ff115`, `8a0e75d`, `1c91945`, `978e02c`, `a5844dc`, `c1efcaf`, `1d3059d`, `a6007af`, `06d12cf`, `fc9c453`, `90179d8`, `b8c1eca`, `8918040`, `6049510`, `48e3022`, `0dfe777`, `518d227` | [ADR-0080](../decisions/0080-plan-before-recruiting-from-the-whole-workforce.md), [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md) |
 | [AR-126](issue-AR-126-bounded-idempotent-context-handoffs.md) | `355c05a`, `b927266`, `4a19e23`, `3d0ee63`, `4f850c7` | [ADR-0084](../decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md), [ADR-0085](../decisions/0085-continue-in-task-after-context-checkpoints.md), [ADR-0086](../decisions/0086-use-checkpoint-only-context-telemetry.md) |
 | [AR-127](issue-AR-127-zcode-stop-rejection-shape.md) | `d9ce781`, `5001d78` | [ADR-0089](../decisions/0089-zcode-stop-rejections-use-decision-block.md) |
+| [AR-128](issue-AR-128-seal-model-facing-control-authority.md) | pending | [ADR-0090](../decisions/0090-model-facing-control-paths-are-read-only.md) |
+| [AR-129](issue-AR-129-isolate-subprocess-environments.md) | pending | [ADR-0091](../decisions/0091-least-privilege-subprocess-environments.md) |
+| [AR-130](issue-AR-130-revalidate-store-trust.md) | pending | [ADR-0092](../decisions/0092-do-not-cache-positive-filesystem-trust.md) |
+| [AR-131](issue-AR-131-complete-mcp-cli-host-contracts.md) | pending | [ADR-0090](../decisions/0090-model-facing-control-paths-are-read-only.md) |
+| [AR-132](issue-AR-132-hire-deterministic-safe-gaps.md) | pending | [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md) |
+| [AR-133](issue-AR-133-atomic-finalization-evidence.md) | pending | [ADR-0093](../decisions/0093-atomic-finalization-evidence-batches.md) |
+| [AR-134](issue-AR-134-enforce-sqlite-currentness-invariants.md) | pending | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
+| [AR-135](issue-AR-135-complete-zcode-integration.md) | pending | [ADR-0024](../decisions/0024-native-host-packages-and-minimal-bridges.md), [ADR-0028](../decisions/0028-host-support-maturity-and-reversible-install.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md) |
+| [AR-136](issue-AR-136-persist-native-child-correlation.md) | pending | [ADR-0094](../decisions/0094-durable-native-child-correlation.md) |
+| [AR-137](issue-AR-137-complete-dashboard-collections.md) | pending | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
+| [AR-138](issue-AR-138-coherent-observable-dashboard-ui.md) | pending | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
+| [AR-139](issue-AR-139-restore-release-asset-budget.md) | pending | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-140](issue-AR-140-scale-routing-and-retrieval.md) | pending | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
+| [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | pending | None; compatibility and mechanical consolidation |
+| [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | pending | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

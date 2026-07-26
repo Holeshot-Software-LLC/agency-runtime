@@ -1,19 +1,21 @@
 ---
 title: "Validate brokered control transition receipts against deterministic CAS semantics"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-16
-updated: 2026-07-17
+updated: 2026-07-26
 tags: [security, operations, evidence, concurrency, dashboard]
 related:
   - docs/roadmap/issue-AR-77-validate-brokered-control-transition-receipts.md
   - docs/decisions/0053-durable-fail-enabled-master-control.md
   - docs/decisions/0057-generation-checked-host-control-mutations.md
   - docs/decisions/0058-broker-restricted-windows-host-controls.md
+  - docs/decisions/0090-model-facing-control-paths-are-read-only.md
+  - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0090-model-facing-control-paths-are-read-only.md
 id: ADR-0061
 type: decision
 deciders: [maintainers]

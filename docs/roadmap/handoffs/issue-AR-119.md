@@ -10,13 +10,14 @@ related:
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
+  - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 5001d7873c80efeceaf5eeb0d347e3e559e619e3
-minimum_ledger_commit: 5001d7873c80efeceaf5eeb0d347e3e559e619e3
+evidence_commit: c5e3575beacfb3170d2f2b0092c0e7379347011f
+minimum_ledger_commit: de47a8c690280f07757437cd5aed11d416d7b9a1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -31,8 +32,8 @@ configured.
 
 ## checkpoint
 
-- `main` and `origin/main` are aligned at `5001d78`; `git pull --ff-only origin
-  main` reported already up to date on 2026-07-25.
+- `origin/main` remains `5001d78`; local `main` is two clean-checkpoint commits
+  ahead at `de47a8c` after the up-to-date pull.
 - The pre-existing untracked
   `docs/analysis/2026-07-25-deep-audit-findings.md` is preserved unchanged and
   excluded from checkpoint commits until its hypotheses are independently
@@ -64,23 +65,31 @@ configured.
   and status with only a generic diagnostic. This is not evidence about the
   refreshed plugin in a new Codex task; the isolated canary and a fresh-task
   check remain required.
-- Local roster search found governed fits for the requested audits:
-  `application-security-engineer`, `performance-benchmarker`, and
-  `application-integration-verifier`. A configured-provider route containing
-  private repository audit detail was denied by the execution boundary, so no
-  inference selection or delegation receipt is claimed. Three native isolated
-  read-only review workers are running with those explicit specialist contracts.
+- Independent security, optimization, UI-to-HTTP, HTTP-to-service, CLI/MCP,
+  host-hook, Store-to-SQL, and schema traces are complete. The governed report
+  is `docs/analysis/2026-07-26-production-readiness-review.md` and the reproduced
+  remediation queue is AR-128 through AR-142.
+- A telemetry-gated installed Routing Lab replay produced the canonical
+  `required_agents_missing` / `no_safe_sufficient_team` gap and no hire. Direct
+  reproduction proved the hiring allowlist omits that legitimate reason.
+- Focused probes reproduced three unreachable MCP tools, a 206-byte release
+  asset overage, stale Store trust, incomplete schema currentness, ZCode
+  install/activation failure, process-local child correlation, and planned
+  delegation fail-open behavior. No Critical security finding was confirmed.
 
 ## exact-blocker
 
 - Normal-profile Codex activation requires user-owned terminal-TUI hook review
   and a subsequent fresh task. The installer correctly refuses to automate or
   bypass that trust decision.
+- AR-128 through AR-139 include P0 production blockers and must close before
+  renewed production claims. AR-140 through AR-142 own measured performance,
+  compatibility/consolidation, and cross-layer instrumentation.
 - AR-119/AR-125 still lack a benchmark-valid completed value corpus and current
   production-candidate evidence across all claimed host/OS surfaces. Historical
   malformed or timed-out upstream arms remain validity failures, never losses.
-- The security, optimization, and per-layer UI-to-SQL trace audits are in
-  progress. No unverified audit hypothesis is a finding or remediation mandate.
+- Tracker creation for AR-128 through AR-142, push/PR/hosted checks, and
+  normal-profile Codex trust remain authorization or user-presence boundaries.
 
 ## same-task-continuity
 
@@ -90,17 +99,14 @@ same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Finish the first specialist wave and dispatch separate trace workers for
-   HTTP-to-service, service-to-store, store-to-SQL/schema, and host/delegation
-   authority boundaries.
-2. Consolidate only reproduced findings into a severity report and governed
-   AR issue records; keep suggestions and residual risks separate.
-3. Immediately after telemetry, exercise the synthetic dashboard Routing Lab
-   task and exact-confirmed isolated Codex canary; record source, package,
-   plugin-cache, model, routing, activation, and finalization identities.
-4. Implement prioritized verified findings in bounded slices with focused tests,
-   reinstall after each installed-surface change, and finish with the complete
-   repository/release gates.
+1. Commit the governed audit/report/ADR package and its worklog ledger without
+   touching the preserved untracked 2026-07-25 draft.
+2. Implement Wave 1 in isolated scopes: AR-128 through AR-132 and AR-139, with
+   regression tests before each behavioral change.
+3. Reinstall the current source and run protocol, dashboard, hiring, and
+   authority smokes after the installed-surface changes.
+4. Continue Waves 2-4 from the task table, then return to the AR-125 corpus and
+   complete repository/release gates.
 
 ## verification
 
@@ -110,6 +116,7 @@ agency install --agent codex --dry-run --json          # complete plan
 agency install --agent codex --json                    # partial: activation-required
 agency doctor --json --verbose                         # DEGRADED: hook trust only
 in-app dashboard desktop/mobile/authenticated smoke    # clean console, no overflow
+focused MCP protocol / release / Store / hook probes   # reproduced blockers
 python scripts/context_handoff_status.py --json --threshold 50
 ~~~
 
