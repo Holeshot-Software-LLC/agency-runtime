@@ -8,6 +8,7 @@ tags: [security, sqlite, filesystem, trust, performance]
 related:
   - docs/THREAT_MODEL.md
   - docs/decisions/0092-do-not-cache-positive-filesystem-trust.md
+  - docs/roadmap/issue-AR-140-scale-routing-and-retrieval.md
   - agency_runtime/core/store/sqlite.py
 supersedes: []
 superseded_by: null
@@ -43,7 +44,9 @@ transaction batching and coherent request scopes, never by reusing stale trust.
 
 ## Dependencies
 
-ADR-0092 governs filesystem trust caching. AR-133 owns transaction batching.
+ADR-0092 governs filesystem trust caching. AR-133 owns atomic finalization;
+AR-140 owns measured connection and startup batching that must preserve this
+issue's revalidation boundary.
 
 ## Acceptance
 
@@ -58,6 +61,8 @@ ADR-0092 governs filesystem trust caching. AR-133 owns transaction batching.
 Positive trust caching has been removed. Every Store connection re-runs the
 authoritative platform check, including same-inode/same-mtime authority
 regressions. Focused Store security suites and the combined checkpoint suite
-pass. The measured Windows connection cost remains visible; AR-133 must recover
-it through transaction batching before this item's performance acceptance can
-close.
+pass. AR-140 later replaced nine separately trusted packaged-contractor reads
+with one bounded snapshot: the measured stable operational snapshot fell from
+539.410 ms to 408.184 ms while every Store connection retained authoritative
+trust validation. Supported-runner and final current-artifact evidence remain;
+no positive trust cache was reintroduced.

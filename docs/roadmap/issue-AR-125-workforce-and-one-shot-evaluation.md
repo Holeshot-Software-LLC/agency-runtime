@@ -37,7 +37,8 @@ applications with independent integration and release verification.
 
 Add independent per-worker semantic cases, pairwise composition properties,
 meaningful lifecycle teams, configured-inference corpora, six product-level
-applications, installed artifacts, four-host contracts, and Agency-on/off trials.
+applications, installed artifacts, five-host contracts (Codex, Claude, Hermes,
+OpenClaw, and ZCode), and Agency-on/off trials.
 
 ## Dependencies
 
@@ -48,4 +49,5 @@ All preceding AR-119 slices provide the behavior this evidence must grade.
 - [ ] Every worker passes positive, hard-negative, qualifier, shadow, and eligibility cases.
 - [ ] Pairwise invariants and curated lifecycle teams pass.
 - [ ] All representative one-shot applications pass outcome-based grading.
-- [ ] Windows/Linux artifacts and all four host contracts pass before release.
+- [ ] Windows/Linux artifacts and all five host contracts, including ZCode,
+  pass before release.

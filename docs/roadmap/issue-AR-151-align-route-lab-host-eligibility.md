@@ -50,3 +50,13 @@ AR-137 and ADR-0095 govern complete bounded host collections.
 - Browser eligibility and the authoritative POST handler agree on valid hosts.
 - The UI renders an explicit bounded reason for ambiguous inventory.
 - UI-to-POST contract and full dashboard suites pass.
+
+## Implementation evidence
+
+Commit `6a3bdaa` makes Route Lab derive eligibility from the complete bounded
+host inventory and disables submission for duplicate or oversized evidence
+with an explicit unavailable reason; the POST boundary remains authoritative.
+Client/server contract regressions cover valid, duplicate, and oversized host
+sets. The shared focused package passed 168 Python tests with 3 skips, four
+post-review regressions, and 101 dashboard UI tests. Installed-browser and full
+current-head evidence remain.

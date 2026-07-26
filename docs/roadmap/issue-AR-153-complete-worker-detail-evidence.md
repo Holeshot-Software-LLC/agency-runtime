@@ -52,3 +52,13 @@ evidence attribution.
 - Lineage work and response size are explicitly bounded or paginated.
 - Counts, records, and truncation indicators agree from SQL through UI.
 - Focused Store, dashboard, and full warning-strict suites pass.
+
+## Implementation evidence
+
+Commit `6a3bdaa` filters hiring cases by worker identity before applying the
+evidence limit, bounds lineage and worker-detail delivery, and carries exact
+total/truncation metadata through Store, HTTP, and UI. Response-size invariant
+failures remain server-side and return a generic error rather than leaking
+private evidence. The shared focused package passed 168 Python tests with 3
+skips, four post-review regressions, and 101 dashboard UI tests. Full
+warning-strict and artifact evidence remain.

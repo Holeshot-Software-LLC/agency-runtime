@@ -49,3 +49,13 @@ AR-138 and ADR-0032 define the coherent refresh and adaptive polling contract.
 - The inverse response order cannot compose incompatible revisions.
 - Last-good state, abort handling, focus preservation, and stale indicators remain correct.
 - Exact dashboard UI coverage floors and server integration tests pass.
+
+## Implementation evidence
+
+Commit `6a3bdaa` coordinates control, full, and view-scoped work under one
+monotonic commit epoch and lifecycle-bound request scopes. Mutation-resistant
+UI regressions prove that either cross-scope completion order preserves the
+newest compatible state, including last-good and focus behavior. The shared
+focused package passed 168 Python tests with 3 skips, four post-review
+regressions, and 101 dashboard UI tests. Final current-artifact and aggregate
+release evidence remain.

@@ -29,6 +29,13 @@ related:
   - docs/roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md
   - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
   - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
+  - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
+  - docs/roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md
+  - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md
+  - docs/roadmap/issue-AR-152-bound-dashboard-live-listeners.md
+  - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
+  - docs/roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md
+  - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
 supersedes: []
 superseded_by: null
 ---
@@ -40,8 +47,9 @@ superseded_by: null
 Agency Runtime is **not production-ready yet**, but the reason is now narrow and
 explicit. The initial dogfood and independent layer traces reproduced ten
 P0/high-integrity defects; every one has a local fail-closed repair and focused
-evidence. A final independent pass then found six UI-to-Store defects under
-AR-149 through AR-154; their implementation is in the final validation cycle.
+evidence. A final independent pass then found seven UI-to-Store defects under
+AR-149 through AR-155; commit `6a3bdaa` repairs them and its focused validation
+is green, while final current-head aggregate and artifact checks remain.
 The decisive remaining product blocker is AR-143: there is no production
 OS-backed, non-exporting operator-presence verifier, so positive persistent
 setup and control mutations intentionally remain unavailable. Hosted, tracker,
@@ -135,12 +143,16 @@ the production verdict. MCP and restricted broker paths are read-only; every
 MCP string is bounded; subprocess environments are least-privilege; Store trust
 is revalidated; schema 36 enforces currentness/retention/boolean/ZCode
 invariants; canonical staffing gaps can hire deterministically; and packaged
-dashboard assets are 17 bytes below the unchanged ceiling.
+dashboard assets initially returned under the unchanged ceiling by 17 bytes.
+AR-139's later maintainable consolidation supersedes that narrow margin:
+258,787 bytes against 263,168, leaving 4,381 bytes of headroom.
 
 Independent checkpoint verification passed 785 Python tests with 9 skips, 97
-dashboard interaction tests, and full Ruff/format/diff checks. AR-128 remains
-open because SEC-H5 was reproduced after its initial slice. Fresh installation,
-installed dogfood, the full release gate, and every later wave remain required.
+dashboard interaction tests, and full Ruff/format/diff checks. AR-128 is locally
+complete as the read-only model-facing boundary; the later SEC-H5 reproduction
+is owned by still-open AR-143 because no positive OS-backed presence verifier
+exists. Fresh installation, installed dogfood, the full release gate, and every
+later wave remain required.
 
 The second local remediation package now implements atomic finalization,
 schema-37 durable native-child scope, exact ZCode source integration, complete
@@ -178,7 +190,7 @@ third complete run from the clean repair checkpoint is green: 7,522 passed,
 run as history; it is the first complete integrated pass for the current
 source.
 
-The exact branch-aware release-coverage arm then exposed four additional test
+The first exact branch-aware release-coverage arm exposed four additional test
 contract failures and failed the fixed aggregate floor at 96.66 percent: 7,515
 passed, 61 skipped, 3 performance tests deliberately deselected, and 1 expected
 failure in 57m35s. AR-145 preserves that failed evidence. Coverage scheduling
@@ -187,8 +199,12 @@ an accuracy test accidentally ran new wall-clock benchmarks under
 instrumentation. Focused repairs now pass 33 integrated tests. Matched
 authority/persistence coverage adds 177 statements and closes 38 partial
 branches across finalization, maintenance, observed SQLite, and MCP; the
-dashboard package adds 87 statements. The exact aggregate rerun remains
-required and no threshold or exclusion changed.
+dashboard package adds 87 statements. A later pre-final-trace checkpoint passed
+the ordinary warning-strict suite with 7,604 tests, 61 skips, and 1 expected
+failure, then passed the exact coverage arm at 97.08 percent against the
+unchanged 97 percent floor and the separate three-test performance arm. That
+evidence predates later dashboard and performance commits, so the final
+current-head aggregate remains required; no threshold or exclusion changed.
 
 The production verdict remains negative for one decisive reason: there is no
 production OS-backed, non-exporting operator-presence verifier. Dashboard and
@@ -247,14 +263,14 @@ owns compatibility and consolidation.
 
 | Layer | Verified chain | Finding disposition |
 |---|---|---|
-| Browser controls -> JS | Every shipped control resolves to a handler; section links, inert text, focus, mobile, reduced-motion, and forced-colors contracts are covered. | Initial ZCode/race/stale/focus/name defects were repaired under AR-135/138. Final cross-scope commit, ambiguous-host, listener-retention, and malformed-page defects are repaired under AR-150/151/152/154 and await the final aggregate rerun. |
+| Browser controls -> JS | Every shipped control resolves to a handler; section links, inert text, focus, mobile, reduced-motion, and forced-colors contracts are covered. | Initial ZCode/race/stale/focus/name defects were repaired under AR-135/138. AR-150/151/152/154 are committed and pass focused race, eligibility, listener-soak, and malformed-page regressions; final current-head aggregate and artifact checks remain. |
 | JS -> dashboard HTTP | One authenticated same-origin bounded envelope, complete paging, exact totals, revisions, and read-only authority are explicit. | Initial caps/revision composition were repaired under AR-137/146. Route Lab now rejects duplicate/oversized inventories before POST under AR-151. |
-| HTTP -> services | Route destinations, strict request typing, atomic finalization, and content-free boundary envelopes map correctly. | AR-149 fixes per-connection request-ID reuse and pre-dispatch error correlation; final integrated evidence is pending. |
+| HTTP -> services | Route destinations, strict request typing, atomic finalization, and content-free boundary envelopes map correctly. | AR-149's persistent-connection request identity and pre-dispatch error correlation are committed and focused-green; final current-head integrated evidence remains. |
 | MCP/CLI -> services | Every registered tool has a bounded schema and handler; CLI facade/host bindings include ZCode and model-facing mutations are absent. | Initial unreachable-tool, bound, enum, spoofable-label, and output defects were repaired under AR-131/133/135. |
 | Host install/hooks -> routing | All five source adapters have exact generators, events, correlation recipes, and deterministic contract tests. | Initial ZCode, process-local correlation, planned-work pass-through, and missing failure observation defects were repaired under AR-135/136/142; installed-host proof remains blocked/gated. |
-| Services -> Store | Public method/call-site arity remains clean; trust, finalization, hiring, and request observations bind authoritative state. | AR-153 fixes worker-detail filtering after limit and unbounded lineage; arrays now carry exact total/truncation metadata. |
+| Services -> Store | Public method/call-site arity remains clean; trust, finalization, hiring, and request observations bind authoritative state. | AR-153 filters before limiting and bounds lineage; AR-155 keeps full hiring evidence behind exact lookup and enforces collection byte budgets. Both are committed and focused-green. |
 | Store -> SQL/schema | SQL remains parameterized with internal-only identifier interpolation; exact DDL covers host, trigger, index, boolean, and HMAC authority. | Initial schema/currentness defects were repaired under AR-134/148; no injection path was reproduced. |
-| Return path -> UI/header | Authoritative durable evidence wins; unavailable remains explicit; collection/page and worker-detail truth are bounded. | Initial spoofing/truncation/stale defects were repaired; AR-150/153/154 close the final overwrite/count/page gaps. |
+| Return path -> UI/header | Authoritative durable evidence wins; unavailable remains explicit; collection/page and worker-detail truth are bounded. | Initial spoofing/truncation/stale defects were repaired; committed AR-150/153/154/155 close the final overwrite, count, page, and evidence-delivery gaps in focused tests. |
 
 ### ZCode concentration
 
@@ -284,9 +300,12 @@ ZCode in runtime host presentation. The initial 82-test run exposed a genuine
 release-gate hole: function coverage was 92.95 percent against the fixed 96
 percent floor. AR-144 adds behavioral callback coverage; the exact command now
 passes all 84 tests at 97.13 percent lines, 91.28 percent branches, and 96.32
-percent functions without changing thresholds or production code. This is
-source-level evidence, not a fresh installed-browser claim; post-install
-desktop/mobile and accessibility QA remains an AR-138 exit gate.
+percent functions without changing thresholds or production code. The later
+AR-149 through AR-155 and AR-139 source passes all 101 dashboard tests at 98.61
+percent lines, 91.06 percent branches, and 97.90 percent functions, again
+without changing the coverage floors. This is source-level evidence, not a
+fresh installed-browser claim; post-install desktop/mobile and accessibility
+QA remains an AR-138 exit gate.
 
 The collection trace found a separate production defect: a literal
 backslash-Z regex suffix rejected every opaque cursor generated by the
@@ -322,14 +341,14 @@ installed, or hosted scope without promoting contract tests to live proof.
 
 | State | Tasks | Remaining proof |
 |---|---|---|
-| Locally repaired | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) through [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md), excluding AR-143 | Final current-commit aggregate/artifact checks; install-dependent issues remain blocked from positive canary proof. |
+| Locally repaired | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) through [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | Final current-commit aggregate/artifact checks; install-dependent issues remain blocked from positive canary proof. |
 | Locally measured | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Local correctness/performance and the packaged-contractor batch are green; supported-runner evidence and further end-to-end profiling remain. |
 | Partially complete | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility and a dead island with 590 deletions/one replacement line are repaired; independently reviewed large-function/helper consolidation remains. |
 | Locally repaired | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md), [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md), [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Final current-commit aggregate and artifact checks. |
-| Final validation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md) through [AR-154](../roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md) | Exact Python coverage/performance/full-suite rerun plus focused cross-layer and browser/artifact QA. |
+| Final validation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md) through [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | AR-149 through AR-155 are committed and focused-green; exact current-head Python coverage/performance/full-suite plus browser/artifact QA remain. |
 | Product blocker | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | Implement and human-canary a real OS-backed, non-exporting, single-use presence verifier. |
 | Outcome evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | Benchmark-valid completed corpus and current-artifact host/OS outcomes; malformed/timed-out arms stay invalid. |
-| Administrative/host | AR-128 through AR-154 tracker rows, normal-profile Codex trust, hosted matrices, absent-host canaries | Explicit user/outward authorization and real installed environments. |
+| Administrative/host | AR-128 through AR-155 tracker rows, normal-profile Codex trust, hosted matrices, absent-host canaries | Explicit user/outward authorization and real installed environments. |
 
 ## Production exit gate
 

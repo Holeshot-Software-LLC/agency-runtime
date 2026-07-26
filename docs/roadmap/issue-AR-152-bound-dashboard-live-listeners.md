@@ -49,3 +49,12 @@ AR-138 and ADR-0032 own dashboard refresh lifecycle and performance behavior.
 - Worker-detail interaction remains keyboard and pointer accessible.
 - Dashboard teardown removes the bounded listener set exactly once.
 - The soak regression and exact dashboard UI coverage gate pass.
+
+## Implementation evidence
+
+Commit `6a3bdaa` replaces per-render worker closures with a stable delegated
+listener whose disposer is registered once and removed idempotently at
+teardown. Repeated-revision soak and keyboard/pointer regressions keep the
+listener set bounded while preserving worker-detail behavior. The dashboard UI
+suite passed all 101 tests; full current-artifact and aggregate release evidence
+remain.

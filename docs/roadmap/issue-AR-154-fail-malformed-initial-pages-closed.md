@@ -50,3 +50,12 @@ AR-137, AR-146, and ADR-0095 define the complete collection and cursor contract.
 - Multi-page data without an initial revision is rejected before composition.
 - Malformed pages cannot replace last-good dashboard state.
 - Cursor, activity, observation, and exact dashboard UI coverage tests pass.
+
+## Implementation evidence
+
+Commit `6a3bdaa` validates exact initial-page schemas, requires a cursor for
+every truncated page, and requires the revision needed to compose multi-page
+state. Malformed initial and later pages now preserve last-good state and expose
+the bounded stale/error projection. The shared focused package passed 168
+Python tests with 3 skips, four post-review regressions, and 101 dashboard UI
+tests. Final current-artifact and aggregate release evidence remain.

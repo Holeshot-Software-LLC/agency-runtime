@@ -62,3 +62,14 @@ same summary-versus-exact-evidence distinction for worker detail.
 - Exact-case lookup retains every governed evidence document without truncation.
 - The UI fetches exact evidence only on explicit inspection and rejects stale responses.
 - Store, dashboard, UI, coverage, and full warning-strict release gates pass.
+
+## Implementation evidence
+
+Commit `6a3bdaa` projects fixed-field collection summaries with
+`evidence_included=false`, retains every governed document only behind exact
+case lookup with `evidence_included=true`, and binds explicit inspection to the
+active lifecycle and selected case. Store and HTTP enforce the unchanged 1 MiB
+hiring-collection response budget; invariant failures return a generic 500 and
+do not expose private payloads. The shared focused package passed 168 Python
+tests with 3 skips, four post-review regressions, and 101 dashboard UI tests.
+Full current-artifact and warning-strict evidence remain.

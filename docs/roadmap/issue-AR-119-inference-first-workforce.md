@@ -160,9 +160,10 @@ routing and provider choice, and AR-118 reconciles activation evidence.
   and a forged native activation-marker bypass. AR-143 and AR-136 keep those
   production gates explicitly open.
 
-- All four supported native hosts receive host-correct delegation guidance:
-  Codex `spawn_agent`, Claude `Agent`, Hermes `delegate_task`, and OpenClaw
-  `sessions_spawn`.
+- All five supported hosts receive host-correct guidance: Codex `spawn_agent`,
+  Claude `Agent`, Hermes `delegate_task`, OpenClaw `sessions_spawn`, and ZCode's
+  main-session Agency activation. ZCode native-child self-routing remains
+  host-limited because ZCode emits no child lifecycle events.
 - An isolated route cannot claim an Agency specialist when no exact typed unit
   plan exists. It abstains, preserves diagnostic candidates, and leaves the
   native host free to use an untyped fallback without counting it as Agency
@@ -3140,12 +3141,21 @@ The raw and derived files remain outside the repository at
 
 ### Production-hardening checkpoint 2026-07-26
 
-The current local production package is represented by substantive/ledger pair
-`0932410`/`4d15b2b`, on top of the governed AR-128 through AR-148
-audit sequence. The earlier complete integrated Python run passed 7,522 tests
-with 61 skips and 1 expected failure. The first exact coverage arm subsequently
-failed at 96.66 percent with four test-contract failures; focused repairs are
-committed, but the exact aggregate rerun remains required.
+The local implementation sequence now includes governed AR-128 through AR-155
+slices. Commit/ledger pair `6a3bdaa`/`871ec14` specifically repairs AR-149
+through AR-155 and passes 168 focused Python tests with 3 skips, four
+post-review regressions, and 101 dashboard UI tests. These local repairs do not
+close tracker, current-artifact, installed-host, or hosted gates, and AR-143
+still deliberately lacks a positive production operator-presence backend.
+
+The earlier complete integrated Python run passed 7,522 tests with 61 skips and
+1 expected failure. The first exact coverage arm then failed at 96.66 percent
+with four test-contract failures. A later pre-final-trace checkpoint preserved
+that failed history and passed the ordinary warning-strict suite with 7,604
+tests, 61 skips, and 1 expected failure; its exact coverage arm passed at 97.08
+percent against the unchanged 97 percent floor, and its separate three-test
+performance arm passed. Later implementation commits mean a final current-head
+aggregate rerun is still required.
 
 The final deep-review slice confirmed and repaired a high-severity nested
 Windows conditional-ACE trust bypass, three medium SQLite currentness defects,
@@ -3159,10 +3169,11 @@ production-readiness claim.
 
 ### Still required before AR-119 can close
 
-- Close the reproduced production blockers and regression packages in AR-128
-  through AR-142. In particular, contractor gap-to-hire, native-child
-  correlation, ZCode end-to-end parity, and MCP protocol repair are direct
-  prerequisites to truthful workforce and host evidence.
+- Preserve the local repairs across AR-128 through AR-142 and AR-144 through
+  AR-155 while completing their remaining tracker, current-artifact,
+  installed-host, and hosted evidence. AR-143 remains the direct production
+  blocker until a genuine OS-backed operator-presence verifier exists; local
+  fail-closed behavior is not positive mutation proof.
 - Complete a benchmark-valid run of the implemented matched held-out selection
   benchmark against the pinned source-visible upstream Agency Agents baseline.
   Two complete corpora have now established all 19 Agency arms safe and passing
@@ -3181,7 +3192,8 @@ production-readiness claim.
 - Run the full local quality, coverage, documentation, packaging, Windows, and
   Linux matrix; then perform the deferred hosted checks once at the end.
 - Create the final PR, merge it, reinstall the merged artifact, and run live
-  canaries on Codex, Claude, OpenClaw, and Hermes before closing issue #132.
+  canaries on Codex, Claude, Hermes, OpenClaw, and ZCode before closing issue
+  #132.
 
 ### Next bounded work package
 
@@ -3208,12 +3220,12 @@ arms remain invalid, never losses.
 
 ## Acceptance
 
-> **ADR-0087 frame.** The acceptance items below are read under the
-> inference-decides architecture: inference selects the best eligible
-> specialist per typed unit, declares a real gap, or hires a governed
-> contractor on the gap. Deterministic code validates eligibility,
-> composition, coverage, and budget — it is **not** the selection decider.
-> When no provider is configured, Agency declines (no specialist injected).
+> **ADR-0087 plus ADR-0088 frame.** With a configured provider, inference
+> selects the best eligible specialist per typed unit, declares a real gap, or
+> hires a governed contractor; deterministic code only recalls candidates and
+> validates eligibility, composition, coverage, and budget. With no configured
+> provider, ADR-0088 permits the explicitly stamped deterministic typed-recall
+> floor to form an obvious safe team or abstain without injecting a specialist.
 > ZCode is the fifth execution host; its main session carries the Agency
 > banner, but ZCode native children are host-limited (ZCode emits no
 > `SubagentStart`/`SubagentStop`), so governed native-child self-routing is a
@@ -3224,11 +3236,12 @@ arms remain invalid, never losses.
 - [ ] No generic native child is counted as Agency participation; recommendation without activation is rejected as incomplete evidence.
 - [ ] Broad intent, ambiguity, adversarial, disabled-worker, conflict, and multi-agent corpora exercise the entire audited workforce rather than a single security-review case.
 - [ ] Every employee and contractor has validated capability IDs in the same versioned contract and recruiter index, and bounded recruiter output cannot escape its supplied candidate cards.
+- [ ] Without a configured provider, deterministic typed recall either forms a safe compatible team stamped `inference_mode="deterministic"` and `decision_source="deterministic"`, or abstains with no specialist; it never becomes the decider when inference is configured.
 - [ ] Parent routing is bounded, cached for continuations, reused by children, and passes explicit cold, warm, and fan-out latency budgets.
 - [ ] Plan, candidate, recruiter, and parent-unit caches use complete versioned identities and invalidate on request, host, roster, contract, policy, provider, model, taxonomy, or schema changes as applicable.
 - [ ] A genuine roster gap passes automated quarantine and uses a least-privileged probationary contractor in the causing turn; malicious or incoherent candidates are rejected without blocking safe host fallback.
 - [ ] Paired Agency-on/off trials prove specialist participation and a better independently graded outcome for the same host and model.
 - [ ] A pinned held-out comparison materially beats the source-visible upstream Agency Agents routing baseline without any forbidden or incompatible selection regression.
 - [ ] Every completion gate in tracker issue #132 has direct current evidence.
-- [ ] The final hosted matrix, installed artifacts, four host contracts, and live canaries pass.
+- [ ] The final hosted matrix, installed artifacts, five host contracts, and live canaries pass.
 - [ ] The merged and reinstalled artifact is verified before this item closes.

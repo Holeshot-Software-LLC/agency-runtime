@@ -51,3 +51,13 @@ evidence to remain attributable to the exact operation.
 - Every boundary within one request uses the same ID.
 - Response headers, error paths, and Store instrumentation remain correlated.
 - The dashboard server and full warning-strict suites pass.
+
+## Implementation evidence
+
+Commit `6a3bdaa` resets request-scoped identity before each persistent-connection
+dispatch, preserves that identity through the request, and correlates bounded
+pre-dispatch protocol errors without echoing request content. A real keep-alive
+regression proves sequential requests receive distinct IDs. The shared focused
+package passed 168 Python tests with 3 skips, four post-review regressions, and
+101 dashboard UI tests. Full current-artifact and warning-strict release gates
+remain before closure.
