@@ -1,5 +1,12 @@
 export const LIVE_INTERVAL_MS = 2500;
 export const CONTROL_INTERVAL_MS = 15000;
+export const HIRING_EVIDENCE_DOCUMENTS = Object.freeze([
+  ["gap_evidence", "Gap evidence"],
+  ["duplicate_evidence", "Duplicate analysis"],
+  ["contract_evidence", "Contract evidence"],
+  ["critic_evidence", "Independent critic"],
+  ["model_evidence", "Model receipts"],
+]);
 
 export class APIError extends Error {
   constructor(message, status, retryAfter = null, requestId = "") {
@@ -22,6 +29,7 @@ export function createState() {
     roster: [],
     rosterPage: null,
     rosterFilter: "",
+    rosterFilterCommitted: "",
     rosterOperations: null,
     rosterFilters: {},
     rosterReview: null,
@@ -30,6 +38,8 @@ export function createState() {
     workforcePage: null,
     hiring: [],
     hiringPage: null,
+    hiringEvidence: null,
+    hiringEvidenceLoadingCaseId: "",
     selectedWorkerDetail: null,
     snapshots: [],
     config: null,
@@ -77,12 +87,21 @@ export function createState() {
     connection: {
       generation: 0,
     },
+    commit: {
+      generation: 0,
+    },
     requests: {
       operationalRoster: { controller: null, generation: 0 },
       remediation: { controller: null, generation: 0 },
       workforce: { controller: null, generation: 0 },
       workerDetail: { controller: null, generation: 0 },
+      hiringEvidence: { controller: null, generation: 0 },
     },
+    remediationExtent: {
+      pending: false,
+      history: false,
+    },
+    rosterFilterIntentGeneration: 0,
     lifecycle: {
       bound: false,
       destroyed: false,

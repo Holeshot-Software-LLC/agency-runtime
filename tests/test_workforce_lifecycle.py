@@ -13,8 +13,14 @@ from agency_runtime.core.roster.bundled import BundledRoster
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
 from agency_runtime.core.store.schema import SCHEMA_VERSION
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.store.workforce import (
+    MAX_HIRING_COLLECTION_RESPONSE_BYTES,
+    MAX_HIRING_SUMMARY_PAGE,
+    MAX_WORKFORCE_DOCUMENT_BYTES,
+)
 from agency_runtime.core.workforce import project_workforce_contract, stable_worker_id
 from agency_runtime.core.workforce.known_installer import install_known_contractors
+from agency_runtime.core.workforce.promotion import promotion_readiness
 
 
 def _agent(slug: str) -> dict[str, object]:
@@ -383,18 +389,431 @@ def test_operator_evidence_queries_return_bounded_decoded_lifecycle_history(
 
     assert [item["id"] for item in cases] == [case["id"]]
     assert cases[0]["gap_evidence"] == {"missing": ["typescript application delivery"]}
+    assert cases[0]["evidence_included"] is True
     assert detail["worker"]["worker_id"] == worker["worker_id"]
     assert detail["recruitment_contract"]["worker_id"] == worker["worker_id"]
     assert detail["lineage"][0]["relation"] == "generated"
+    assert detail["evidence_limit"] == 10
+    assert detail["lineage_total_count"] == 1
+    assert detail["lineage_truncated"] is False
     assert detail["events"][0]["event_type"] == "registered"
     assert detail["events"][0]["evidence"] == {}
+    assert detail["events_total_count"] == 1
+    assert detail["events_truncated"] is False
     assert detail["outcomes"] == []
+    assert detail["outcomes_total_count"] == 0
+    assert detail["outcomes_truncated"] is False
     assert [item["id"] for item in detail["hiring_cases"]] == [case["id"]]
+    assert detail["hiring_cases_total_count"] == 1
+    assert detail["hiring_cases_truncated"] is False
+    assert set(detail["hiring_cases"][0]) == {
+        "id",
+        "case_type",
+        "status",
+        "proposed_slug",
+        "target_worker_id",
+        "work_unit_id",
+        "risk_tier",
+        "human_approval_required",
+        "human_approved_by",
+        "human_approved_at",
+        "created_at",
+        "decided_at",
+        "applied_at",
+        "evidence_included",
+    }
+    assert detail["hiring_cases"][0]["evidence_included"] is False
+    exact_case = store.get_hiring_case(case["id"])
+    assert exact_case["gap_evidence"] == {"missing": ["typescript application delivery"]}
+    assert exact_case["evidence_included"] is True
 
     with pytest.raises(ValueError, match="status"):
         store.list_hiring_cases(status="unknown")
     with pytest.raises(ValueError, match="evidence limit"):
         store.get_workforce_worker_detail(worker["worker_id"], evidence_limit=0)
+
+
+def test_worker_detail_filters_hiring_cases_before_applying_evidence_limit(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    target_agent = _agency_contractor("bounded-worker-detail-target")
+    target_version_id = store.stage_agency_workforce_agent(target_agent)
+    target_case, target_contract = _audited_hiring_case(store, target_agent)
+    target_worker = store.register_workforce_worker(
+        agent_slug=str(target_agent["slug"]),
+        display_name=str(target_agent["display_name"]),
+        origin="agency",
+        employment_class="contractor",
+        agent_version_id=target_version_id,
+        recruitment_contract=target_contract,
+        relation="generated",
+        hiring_case_id=target_case["id"],
+    )
+    unrelated_case_ids = {
+        str(_audited_hiring_case(store, _agency_contractor(f"unrelated-worker-{index}"))[0]["id"])
+        for index in range(3)
+    }
+
+    detail = store.get_workforce_worker_detail(target_worker["worker_id"], evidence_limit=1)
+
+    assert [item["id"] for item in detail["hiring_cases"]] == [target_case["id"]]
+    assert unrelated_case_ids.isdisjoint(item["id"] for item in detail["hiring_cases"])
+    assert detail["hiring_cases_total_count"] == 1
+    assert detail["hiring_cases_truncated"] is False
+
+
+def test_worker_detail_caps_lineage_and_reports_exact_total(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    store._activate_prevalidated_agent(_agent("code-reviewer"))
+    worker = store.get_workforce_worker("code-reviewer", disabled_agents=())
+    current_lineage = _current_lineage(store, "code-reviewer")
+    parent_version_id = str(current_lineage["agent_version_id"])
+    with closing(store._connect()) as conn, conn:
+        for index in range(3):
+            version_id = f"bounded-lineage-version-{index}"
+            version = f"bounded-lineage-v{index}"
+            version_hash = hashlib.sha256(version.encode("utf-8")).hexdigest()
+            conn.execute(
+                "INSERT INTO agent_versions "
+                "(id, agent_slug, version, source_version, source_id, hash, content, "
+                "metadata, created_at) VALUES (?, 'code-reviewer', ?, '', '', ?, NULL, "
+                "'{}', ?)",
+                (version_id, version, version_hash, f"2099-01-0{index + 1}T00:00:00Z"),
+            )
+            conn.execute(
+                "INSERT INTO agent_version_lineage "
+                "(id, worker_id, agent_version_id, parent_version_id, relation, "
+                "recruitment_contract, recruitment_contract_hash, hiring_case_id, created_at) "
+                "VALUES (?, ?, ?, ?, 'agency_amendment', ?, ?, NULL, ?)",
+                (
+                    f"bounded-lineage-{index}",
+                    worker["worker_id"],
+                    version_id,
+                    parent_version_id,
+                    current_lineage["recruitment_contract"],
+                    current_lineage["recruitment_contract_hash"],
+                    f"2099-01-0{index + 1}T00:00:00Z",
+                ),
+            )
+            parent_version_id = version_id
+        conn.execute(
+            "INSERT INTO agent_version_lineage "
+            "(id, worker_id, agent_version_id, parent_version_id, relation, "
+            "recruitment_contract, recruitment_contract_hash, hiring_case_id, created_at) "
+            "VALUES ('bounded-lineage-orphan', ?, 'missing-agent-version', ?, "
+            "'agency_amendment', ?, ?, NULL, '2099-01-04T00:00:00Z')",
+            (
+                worker["worker_id"],
+                parent_version_id,
+                current_lineage["recruitment_contract"],
+                current_lineage["recruitment_contract_hash"],
+            ),
+        )
+
+    detail = store.get_workforce_worker_detail(worker["worker_id"], evidence_limit=2)
+
+    assert [item["id"] for item in detail["lineage"]] == [
+        "bounded-lineage-2",
+        "bounded-lineage-1",
+    ]
+    assert detail["lineage_total_count"] == 4
+    assert detail["lineage_truncated"] is True
+
+
+def test_worker_detail_projects_worker_and_evidence_from_one_read_snapshot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store._activate_prevalidated_agent(_agent("code-reviewer"))
+    before = store.get_workforce_worker("code-reviewer", disabled_agents=())
+    original_connect = store._connect
+    instrumented_connection_issued = False
+    mutation_completed = False
+
+    class _CursorAfterWorkerFetch:
+        def __init__(self, cursor):
+            self._cursor = cursor
+
+        def fetchone(self):
+            nonlocal mutation_completed
+            row = self._cursor.fetchone()
+            if not mutation_completed:
+                mutation_completed = True
+                store.transition_workforce_worker(
+                    before["worker_id"],
+                    action="suspend",
+                    expected_revision=int(before["revision"]),
+                    reason="deterministic concurrent snapshot mutation",
+                    disabled_agents=(),
+                )
+            return row
+
+        def __getattr__(self, name):
+            return getattr(self._cursor, name)
+
+    class _ConnectionWithWorkerFetchHook:
+        def __init__(self, connection):
+            self._connection = connection
+
+        def execute(self, statement, parameters=()):
+            cursor = self._connection.execute(statement, parameters)
+            if (
+                "SELECT * FROM agent_workers WHERE worker_id = ? OR agent_slug = ? LIMIT 1"
+                in statement
+            ):
+                return _CursorAfterWorkerFetch(cursor)
+            return cursor
+
+        def __getattr__(self, name):
+            return getattr(self._connection, name)
+
+    def _connect_with_one_hook():
+        nonlocal instrumented_connection_issued
+        connection = original_connect()
+        if instrumented_connection_issued:
+            return connection
+        instrumented_connection_issued = True
+        return _ConnectionWithWorkerFetchHook(connection)
+
+    monkeypatch.setattr(store, "_connect", _connect_with_one_hook)
+
+    detail = store.get_workforce_worker_detail(
+        "code-reviewer",
+        disabled_agents=(),
+        include_history_documents=False,
+    )
+    after = store.get_workforce_worker("code-reviewer", disabled_agents=())
+
+    assert mutation_completed is True
+    assert detail["worker"]["revision"] == before["revision"]
+    assert detail["worker"]["standing"] == "active"
+    assert all(item["event_type"] != "suspend" for item in detail["events"])
+    assert after["revision"] == int(before["revision"]) + 1
+    assert after["standing"] == "suspended"
+
+
+def test_worker_detail_hiring_summary_cannot_embed_full_evidence_documents(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store._activate_prevalidated_agent(_agent("code-reviewer"))
+    worker = store.get_workforce_worker("code-reviewer", disabled_agents=())
+    large_document = {"payload": "x" * (MAX_WORKFORCE_DOCUMENT_BYTES - 64)}
+    contract_document, contract_hash = _contract_document(large_document)
+    case = store.create_hiring_case(
+        case_type="amend",
+        proposed_slug="code-reviewer",
+        target_worker_id=worker["worker_id"],
+        work_unit_id="bounded-worker-detail-evidence",
+        request_hash="a" * 64,
+        gap_evidence=large_document,
+        duplicate_evidence=large_document,
+        contract_evidence=contract_document,
+        critic_evidence=large_document,
+        model_evidence=large_document,
+        contract_hash=contract_hash,
+    )
+
+    detail = store.get_workforce_worker_detail(worker["worker_id"], evidence_limit=1)
+    summary = detail["hiring_cases"][0]
+    serialized_summary = json.dumps(summary, sort_keys=True, separators=(",", ":")).encode()
+    full_case = store.get_hiring_case(case["id"])
+    full_evidence_bytes = sum(
+        len(json.dumps(full_case[field], sort_keys=True, separators=(",", ":")).encode())
+        for field in (
+            "gap_evidence",
+            "duplicate_evidence",
+            "contract_evidence",
+            "critic_evidence",
+            "model_evidence",
+        )
+    )
+
+    assert summary["id"] == case["id"]
+    assert summary["evidence_included"] is False
+    assert not {
+        "gap_evidence",
+        "duplicate_evidence",
+        "contract_evidence",
+        "critic_evidence",
+        "model_evidence",
+    }.intersection(summary)
+    assert len(serialized_summary) < 2_048
+    assert full_evidence_bytes > 4 * MAX_WORKFORCE_DOCUMENT_BYTES
+
+
+def test_hiring_collection_snapshot_is_a_bounded_200_row_summary(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    large_document = {"payload": "collection-evidence-" * 13_100}
+    exact_case_id = ""
+    evidence_fields = {
+        "gap_evidence",
+        "duplicate_evidence",
+        "contract_evidence",
+        "critic_evidence",
+        "model_evidence",
+    }
+    for index in range(MAX_HIRING_SUMMARY_PAGE):
+        evidence = large_document if index == 0 else {"case": index}
+        contract, contract_hash = _contract_document(evidence)
+        case = store.create_hiring_case(
+            case_type="hire",
+            proposed_slug=f"bounded-hire-{index}",
+            work_unit_id=f"bounded-hiring-unit-{index}",
+            request_hash=hashlib.sha256(f"bounded-hiring-{index}".encode()).hexdigest(),
+            gap_evidence=evidence,
+            duplicate_evidence=evidence,
+            contract_evidence=contract,
+            critic_evidence=evidence,
+            model_evidence=evidence,
+            contract_hash=contract_hash,
+        )
+        if index == 0:
+            exact_case_id = str(case["id"])
+
+    snapshot = store.get_hiring_cases_page_snapshot(limit=MAX_HIRING_SUMMARY_PAGE)
+    serialized_snapshot = json.dumps(
+        snapshot,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+    assert len(snapshot["rows"]) == MAX_HIRING_SUMMARY_PAGE
+    assert snapshot["total_count"] == MAX_HIRING_SUMMARY_PAGE
+    assert snapshot["filtered_count"] == MAX_HIRING_SUMMARY_PAGE
+    assert snapshot["truncated"] is False
+    assert len(serialized_snapshot) <= MAX_HIRING_COLLECTION_RESPONSE_BYTES
+    assert all(item["evidence_included"] is False for item in snapshot["rows"])
+    assert all(not evidence_fields.intersection(item) for item in snapshot["rows"])
+
+    exact_case = store.get_hiring_case(exact_case_id)
+    assert exact_case["evidence_included"] is True
+    assert all(exact_case[field] == large_document for field in evidence_fields)
+    with pytest.raises(ValueError, match="limit"):
+        store.get_hiring_cases_page_snapshot(limit=MAX_HIRING_SUMMARY_PAGE + 1)
+
+
+def test_worker_dashboard_history_projection_omits_documents_and_keeps_proof_scalar(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+    store._activate_prevalidated_agent(_agent("code-reviewer"))
+    contractor = store.get_workforce_worker(
+        "typescript-application-engineer",
+        disabled_agents=(),
+    )
+    verifier = store.get_workforce_worker("code-reviewer", disabled_agents=())
+    store.create_run(trace_id="summary-trace", session_id="summary-session", host="codex")
+    with closing(store._connect()) as conn, conn:
+        conn.executemany(
+            "INSERT INTO delegation_activation_receipts "
+            "(id, token_hash, session_id, trace_id, work_unit_id, specialist_slug, "
+            "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
+            "native_run_id, created_at, consumed_at) VALUES "
+            "(?, ?, 'summary-session', 'summary-trace', ?, ?, ?, ?, "
+            "'native-child', ?, ?, '2026-07-26T00:00:00+00:00', "
+            "'2026-07-26T00:00:01+00:00')",
+            [
+                (
+                    "summary-contractor-activation",
+                    "1" * 64,
+                    "summary-unit",
+                    contractor["agent_slug"],
+                    contractor["current_version"],
+                    contractor["current_hash"],
+                    "summary-contractor-child",
+                    "codex:summary-contractor-child",
+                ),
+                (
+                    "summary-verifier-activation",
+                    "2" * 64,
+                    "summary-review-unit",
+                    verifier["agent_slug"],
+                    verifier["current_version"],
+                    verifier["current_hash"],
+                    "summary-verifier-child",
+                    "codex:summary-verifier-child",
+                ),
+            ],
+        )
+        event_sequence = int(
+            conn.execute(
+                "SELECT COALESCE(MAX(event_sequence), 0) + 1 FROM agent_worker_events"
+            ).fetchone()[0]
+        )
+        conn.execute(
+            "INSERT INTO agent_worker_events "
+            "(id, event_sequence, worker_id, event_type, from_class, to_class, "
+            "from_standing, to_standing, version, actor, surface, reason, evidence, "
+            "created_at) VALUES (?, ?, ?, 'audit', 'contractor', 'contractor', "
+            "'active', 'active', ?, 'test', 'test', 'large private audit evidence', ?, "
+            "'2026-07-26T00:00:02+00:00')",
+            (
+                str(uuid.uuid4()),
+                event_sequence,
+                contractor["worker_id"],
+                contractor["current_version"],
+                json.dumps(
+                    {"payload": "private-event-sentinel-" * 10_000},
+                    separators=(",", ":"),
+                ),
+            ),
+        )
+
+    outcome = store.record_workforce_outcome(
+        contractor["worker_id"],
+        idempotency_key="3" * 64,
+        event_type="acceptance",
+        outcome="passed",
+        score=1.0,
+        evidence_hash="4" * 64,
+        evidence_refs={
+            "payload": "private-outcome-sentinel-" * 9_000,
+            "independent_verifier_worker_id": verifier["worker_id"],
+            "independent_verification_receipt_id": "summary-verifier-activation",
+        },
+        activation_receipt_id="summary-contractor-activation",
+        auto_promote_successes=0,
+        disabled_agents=(),
+    )
+    full = store.get_workforce_worker_detail(
+        contractor["worker_id"],
+        evidence_limit=10,
+        disabled_agents=(),
+    )
+    summary = store.get_workforce_worker_detail(
+        contractor["worker_id"],
+        evidence_limit=10,
+        disabled_agents=(),
+        include_history_documents=False,
+    )
+
+    assert full["events"][0]["evidence"]["payload"].startswith("private-event-sentinel-")
+    assert full["outcomes"][0]["evidence_refs"] == outcome["evidence_refs"]
+    assert all("evidence" not in item for item in summary["events"])
+    assert all("evidence_refs" not in item for item in summary["outcomes"])
+    assert summary["outcomes"][0]["_promotion_evidence_qualified"] is True
+    assert summary["events_total_count"] == full["events_total_count"]
+    assert summary["outcomes_total_count"] == full["outcomes_total_count"]
+    assert promotion_readiness(
+        full["worker"],
+        full["outcomes"],
+        required_successes=1,
+    )["verified_work_units"] == ["summary-unit"]
+    serialized_summary = json.dumps(summary, separators=(",", ":")).encode("utf-8")
+    assert b"private-event-sentinel" not in serialized_summary
+    assert b"private-outcome-sentinel" not in serialized_summary
+    with pytest.raises(TypeError, match="include_history_documents"):
+        store.get_workforce_worker_detail(
+            contractor["worker_id"],
+            include_history_documents=1,
+        )
 
 
 def test_promotion_and_disable_overlay_keep_contractor_history(tmp_path: Path) -> None:
@@ -482,7 +901,10 @@ def test_hiring_evidence_is_idempotent_proof_gated_and_immutable(tmp_path: Path)
         "contract_hash": contract_hash,
     }
     first = store.create_hiring_case(**kwargs)
-    assert store.create_hiring_case(**kwargs)["id"] == first["id"]
+    replay = store.create_hiring_case(**kwargs)
+    assert first["evidence_included"] is True
+    assert replay["evidence_included"] is True
+    assert replay["id"] == first["id"]
     with pytest.raises(ValueError, match="critic"):
         store.transition_hiring_case(first["id"], status="audited")
 

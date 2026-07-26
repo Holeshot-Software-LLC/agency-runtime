@@ -14,8 +14,9 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from datetime import datetime
-from http.client import HTTPConnection
+from http.client import HTTPConnection, HTTPResponse
 from pathlib import Path
 from uuid import uuid4
 
@@ -31,9 +32,16 @@ from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.ingress import MAX_LIST_ITEMS
 from agency_runtime.core.roster.sync import quarantine_candidate
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.store.workforce import (
+    MAX_HIRING_COLLECTION_RESPONSE_BYTES,
+    MAX_HIRING_SUMMARY_PAGE,
+    WorkforcePayloadBudgetError,
+)
 from agency_runtime.core.workforce.known_installer import install_known_contractors
+from agency_runtime.core.workforce.promotion import promotion_readiness
 from agency_runtime.server import dashboard as dashboard_module
 from agency_runtime.server.dashboard import (
+    MAX_WORKFORCE_DETAIL_RESPONSE_BYTES,
     DashboardHTTPHandler,
     DashboardHTTPServer,
     _HostInspectionCoordinator,
@@ -914,6 +922,271 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
     assert suspended["worker"]["state"] == "suspended"
 
 
+def test_dashboard_hiring_collection_stays_bounded_and_exact_case_keeps_evidence(
+    dashboard_server,
+) -> None:
+    store = dashboard_server["store"]
+    large_document = {"payload": "http-exact-evidence-" * 12_000}
+    evidence_fields = {
+        "gap_evidence",
+        "duplicate_evidence",
+        "contract_evidence",
+        "critic_evidence",
+        "model_evidence",
+    }
+    exact_case_id = ""
+    for index in range(MAX_HIRING_SUMMARY_PAGE):
+        evidence = large_document if index == 0 else {"case": index}
+        contract_document = json.dumps(
+            evidence,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        case = store.create_hiring_case(
+            case_type="hire",
+            proposed_slug=f"http-bounded-hire-{index}",
+            work_unit_id=f"http-bounded-hiring-unit-{index}",
+            request_hash=hashlib.sha256(f"http-bounded-hiring-{index}".encode()).hexdigest(),
+            gap_evidence=evidence,
+            duplicate_evidence=evidence,
+            contract_evidence=evidence,
+            critic_evidence=evidence,
+            model_evidence=evidence,
+            contract_hash=hashlib.sha256(contract_document.encode("utf-8")).hexdigest(),
+        )
+        if index == 0:
+            exact_case_id = str(case["id"])
+
+    status, raw_collection, headers = _request(
+        dashboard_server,
+        f"/api/hiring?limit={MAX_HIRING_SUMMARY_PAGE}",
+        token=dashboard_server["token"],
+    )
+    collection = json.loads(raw_collection)
+
+    assert status == 200
+    assert len(raw_collection) <= MAX_HIRING_COLLECTION_RESPONSE_BYTES
+    assert int(headers["Content-Length"]) == len(raw_collection)
+    assert collection["count"] == collection["total_count"] == MAX_HIRING_SUMMARY_PAGE
+    assert all(item["evidence_included"] is False for item in collection["hiring_cases"])
+    assert all(not evidence_fields.intersection(item) for item in collection["hiring_cases"])
+    assert b"http-exact-evidence" not in raw_collection
+
+    status, raw_exact, _headers = _request(
+        dashboard_server,
+        f"/api/hiring?case_id={exact_case_id}",
+        token=dashboard_server["token"],
+    )
+    exact = json.loads(raw_exact)["hiring_case"]
+    assert status == 200
+    assert len(raw_exact) > MAX_HIRING_COLLECTION_RESPONSE_BYTES
+    assert exact["evidence_included"] is True
+    assert all(exact[field] == large_document for field in evidence_fields)
+
+
+def test_dashboard_hiring_response_budget_failure_is_a_generic_500(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_sentinel = "private-budget-invariant-detail"
+
+    def oversized_snapshot(**_kwargs):
+        return {
+            "rows": [{"id": "oversized", "payload": private_sentinel * 50_000}],
+            "total_count": 1,
+            "filtered_count": 1,
+            "status_counts": {"proposed": 1},
+            "type_counts": {"hire": 1},
+            "truncated": False,
+            "next_created_at": "",
+            "next_id": "",
+            "collection_revision": "oversized-test-revision",
+        }
+
+    monkeypatch.setattr(
+        dashboard_server["store"],
+        "get_hiring_cases_page_snapshot",
+        oversized_snapshot,
+    )
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/hiring?limit=200",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 500
+    assert payload == {"error": "internal server error"}
+    assert private_sentinel not in json.dumps(payload)
+
+    def rejected_snapshot(**_kwargs):
+        raise WorkforcePayloadBudgetError(private_sentinel)
+
+    monkeypatch.setattr(
+        dashboard_server["store"],
+        "get_hiring_cases_page_snapshot",
+        rejected_snapshot,
+    )
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/hiring?limit=200",
+        token=dashboard_server["token"],
+    )
+    assert status == 500
+    assert payload == {"error": "internal server error"}
+
+
+def test_dashboard_worker_detail_omits_history_documents_with_readiness_parity(
+    dashboard_server,
+) -> None:
+    store = dashboard_server["store"]
+    install_known_contractors(store)
+    contractor = store.get_workforce_worker(
+        "typescript-application-engineer",
+        disabled_agents=(),
+    )
+    verifier = store.get_workforce_worker("security-reviewer", disabled_agents=())
+    store.create_run(
+        trace_id="dashboard-summary-trace",
+        session_id="dashboard-summary-session",
+        host="codex",
+    )
+    with closing(store._connect()) as conn, conn:
+        conn.executemany(
+            "INSERT INTO delegation_activation_receipts "
+            "(id, token_hash, session_id, trace_id, work_unit_id, specialist_slug, "
+            "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
+            "native_run_id, created_at, consumed_at) VALUES "
+            "(?, ?, 'dashboard-summary-session', 'dashboard-summary-trace', ?, ?, ?, ?, "
+            "'native-child', ?, ?, '2026-07-26T00:00:00+00:00', "
+            "'2026-07-26T00:00:01+00:00')",
+            [
+                (
+                    "dashboard-contractor-activation",
+                    "5" * 64,
+                    "dashboard-summary-unit",
+                    contractor["agent_slug"],
+                    contractor["current_version"],
+                    contractor["current_hash"],
+                    "dashboard-contractor-child",
+                    "codex:dashboard-contractor-child",
+                ),
+                (
+                    "dashboard-verifier-activation",
+                    "6" * 64,
+                    "dashboard-summary-review",
+                    verifier["agent_slug"],
+                    verifier["current_version"],
+                    verifier["current_hash"],
+                    "dashboard-verifier-child",
+                    "codex:dashboard-verifier-child",
+                ),
+            ],
+        )
+        event_sequence = int(
+            conn.execute(
+                "SELECT COALESCE(MAX(event_sequence), 0) + 1 FROM agent_worker_events"
+            ).fetchone()[0]
+        )
+        conn.execute(
+            "INSERT INTO agent_worker_events "
+            "(id, event_sequence, worker_id, event_type, from_class, to_class, "
+            "from_standing, to_standing, version, actor, surface, reason, evidence, "
+            "created_at) VALUES (?, ?, ?, 'audit', 'contractor', 'contractor', "
+            "'active', 'active', ?, 'test', 'dashboard', 'large private audit evidence', ?, "
+            "'2026-07-26T00:00:02+00:00')",
+            (
+                str(uuid4()),
+                event_sequence,
+                contractor["worker_id"],
+                contractor["current_version"],
+                json.dumps(
+                    {"payload": "dashboard-private-event-" * 10_000},
+                    separators=(",", ":"),
+                ),
+            ),
+        )
+    recorded = store.record_workforce_outcome(
+        contractor["worker_id"],
+        idempotency_key="7" * 64,
+        event_type="acceptance",
+        outcome="passed",
+        score=1.0,
+        evidence_hash="8" * 64,
+        evidence_refs={
+            "payload": "dashboard-private-outcome-" * 9_000,
+            "independent_verifier_worker_id": verifier["worker_id"],
+            "independent_verification_receipt_id": "dashboard-verifier-activation",
+        },
+        activation_receipt_id="dashboard-contractor-activation",
+        auto_promote_successes=0,
+        disabled_agents=(),
+    )
+    full = store.get_workforce_worker_detail(
+        contractor["worker_id"],
+        disabled_agents=(),
+    )
+    expected_readiness = promotion_readiness(
+        full["worker"],
+        full["outcomes"],
+        required_successes=0,
+    )
+    assert full["outcomes"][0]["evidence_refs"] == recorded["evidence_refs"]
+
+    status, raw, headers = _request(
+        dashboard_server,
+        f"/api/workforce?worker={contractor['worker_id']}&limit=100",
+        token=dashboard_server["token"],
+    )
+    detail = json.loads(raw)["detail"]
+
+    assert status == 200
+    assert len(raw) <= MAX_WORKFORCE_DETAIL_RESPONSE_BYTES
+    assert int(headers["Content-Length"]) == len(raw)
+    assert detail["promotion_readiness"] == expected_readiness
+    assert all("evidence" not in item for item in detail["events"])
+    assert all("evidence_refs" not in item for item in detail["outcomes"])
+    assert all("_promotion_evidence_qualified" not in item for item in detail["outcomes"])
+    assert detail["events_total_count"] == full["events_total_count"]
+    assert detail["outcomes_total_count"] == full["outcomes_total_count"]
+    assert b"dashboard-private-event" not in raw
+    assert b"dashboard-private-outcome" not in raw
+
+
+def test_dashboard_worker_detail_response_budget_failure_is_a_generic_500(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.ERROR, logger="agency_runtime.server.dashboard")
+    store = dashboard_server["store"]
+    worker = store.get_workforce_worker("security-reviewer", disabled_agents=())
+    private_sentinel = "oversized-worker-private-sentinel"
+
+    def oversized_worker_detail(_worker, **_kwargs):
+        return {
+            "worker": worker,
+            "outcomes": [],
+            "private_payload": private_sentinel + ("x" * MAX_WORKFORCE_DETAIL_RESPONSE_BYTES),
+        }
+
+    monkeypatch.setattr(
+        store,
+        "get_workforce_worker_detail",
+        oversized_worker_detail,
+    )
+    status, raw, _headers = _request(
+        dashboard_server,
+        "/api/workforce?worker=security-reviewer&limit=200",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 500
+    assert json.loads(raw) == {"error": "internal server error"}
+    assert private_sentinel.encode("utf-8") not in raw
+    assert private_sentinel not in "\n".join(record.getMessage() for record in caplog.records)
+
+
 def test_dashboard_workforce_toggle_records_operator_reason(dashboard_server) -> None:
     install_known_contractors(dashboard_server["store"])
     token = dashboard_server["token"]
@@ -1157,6 +1430,172 @@ def test_dashboard_correlates_requests_with_content_free_observations(
     assert len(generated) == 36
     _wait_for_dashboard_observation(caplog, generated)
     assert invalid not in "\n".join(record.getMessage() for record in caplog.records)
+
+
+def test_dashboard_keep_alive_requests_use_independent_request_ids(
+    dashboard_server,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    request_ids = (
+        "arq-11111111111111111111111111111111",
+        "arq-22222222222222222222222222222222",
+    )
+    generated_ids = iter(request_ids)
+    monkeypatch.setattr(dashboard_module, "new_request_id", lambda: next(generated_ids))
+    monkeypatch.setattr(
+        "agency_runtime.core.store.observed_sqlite.SLOW_SQLITE_MILLISECONDS",
+        0.0,
+    )
+
+    connection = HTTPConnection("127.0.0.1", dashboard_server["port"], timeout=5)
+    response_ids: list[str] = []
+    sockets: list[object] = []
+    try:
+        for expected_request_id in request_ids:
+            connection.request(
+                "GET",
+                "/api/overview",
+                headers={"Authorization": f"Bearer {dashboard_server['token']}"},
+            )
+            response = connection.getresponse()
+            payload = json.loads(response.read())
+            assert response.status == 200
+            assert response.will_close is False
+            assert "request_id" not in payload
+            response_ids.append(response.headers["X-Agency-Request-ID"])
+            sockets.append(connection.sock)
+            _wait_for_dashboard_observation(caplog, expected_request_id)
+    finally:
+        connection.close()
+
+    assert response_ids == list(request_ids)
+    assert sockets[0] is not None
+    assert sockets[0] is sockets[1]
+    observations = [
+        json.loads(record.getMessage().split(" ", 1)[1])
+        for record in caplog.records
+        if record.getMessage().startswith("agency_observation ")
+    ]
+    dashboard_observations = [
+        item
+        for item in observations
+        if item["surface"] == "dashboard" and item["operation"] == "overview"
+    ]
+    assert [item["request_id"] for item in dashboard_observations] == list(request_ids)
+    for request_id in request_ids:
+        assert any(
+            item["surface"] == "store" and item["request_id"] == request_id for item in observations
+        )
+
+
+def test_dashboard_keep_alive_protocol_error_uses_a_fresh_request_id(
+    dashboard_server,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    request_ids = (
+        "arq-33333333333333333333333333333333",
+        "arq-44444444444444444444444444444444",
+    )
+    generated_ids = iter(request_ids)
+    monkeypatch.setattr(dashboard_module, "new_request_id", lambda: next(generated_ids))
+
+    connection = HTTPConnection("127.0.0.1", dashboard_server["port"], timeout=5)
+    try:
+        connection.request(
+            "GET",
+            "/api/health",
+            headers={"Authorization": f"Bearer {dashboard_server['token']}"},
+        )
+        first_response = connection.getresponse()
+        assert first_response.status == 200
+        assert json.loads(first_response.read()) == {"status": "ok"}
+        assert first_response.headers["X-Agency-Request-ID"] == request_ids[0]
+        assert first_response.will_close is False
+        first_socket = connection.sock
+        _wait_for_dashboard_observation(caplog, request_ids[0])
+
+        connection.request("TRACE", "/api/health")
+        assert connection.sock is first_socket
+        error_response = connection.getresponse()
+        error_payload = json.loads(error_response.read())
+        assert error_response.status == 501
+        assert error_payload == {"error": "request rejected"}
+        assert error_response.headers["Content-Type"] == "application/json; charset=utf-8"
+        assert error_response.headers["Cache-Control"] == "no-store"
+        assert error_response.headers["Connection"] == "close"
+        assert error_response.headers["X-Request-ID"] == request_ids[1]
+        assert error_response.headers["X-Agency-Request-ID"] == request_ids[1]
+        assert error_response.will_close is True
+        observation = _wait_for_dashboard_observation(caplog, request_ids[1])
+        assert observation["operation"] == "protocol_error"
+        assert observation["outcome"] == "error"
+        assert observation["reason_code"] == "http_501"
+    finally:
+        connection.close()
+
+
+def test_dashboard_malformed_keep_alive_request_cannot_reuse_prior_headers(
+    dashboard_server,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    supplied_request_id = "arq-55555555555555555555555555555555"
+    parser_request_id = "arq-66666666666666666666666666666666"
+    monkeypatch.setattr(dashboard_module, "new_request_id", lambda: parser_request_id)
+    private_sentinel = b"private-parser-detail-must-not-return"
+
+    client = socket.create_connection(("127.0.0.1", dashboard_server["port"]), timeout=5)
+    client.settimeout(5)
+    try:
+        client.sendall(
+            (
+                "GET /api/health HTTP/1.1\r\n"
+                f"Host: 127.0.0.1:{dashboard_server['port']}\r\n"
+                f"Authorization: Bearer {dashboard_server['token']}\r\n"
+                f"X-Agency-Request-ID: {supplied_request_id}\r\n"
+                "\r\n"
+            ).encode("ascii")
+        )
+        first_response = HTTPResponse(client, method="GET")
+        first_response.begin()
+        assert first_response.status == 200
+        assert json.loads(first_response.read()) == {
+            "status": "ok",
+            "request_id": supplied_request_id,
+        }
+        assert first_response.headers["X-Agency-Request-ID"] == supplied_request_id
+        assert first_response.will_close is False
+        _wait_for_dashboard_observation(caplog, supplied_request_id)
+
+        client.sendall(
+            b"GET /api/health HTTP/1.1\r\n"
+            b"X-Oversized: " + private_sentinel + (b"x" * 65_537) + b"\r\n\r\n"
+        )
+        error_response = HTTPResponse(client, method="GET")
+        error_response.begin()
+        error_body = error_response.read()
+        assert error_response.status == 431
+        assert json.loads(error_body) == {"error": "request rejected"}
+        assert error_response.headers["Content-Type"] == "application/json; charset=utf-8"
+        assert error_response.headers["Connection"] == "close"
+        assert error_response.headers["X-Request-ID"] == parser_request_id
+        assert error_response.headers["X-Agency-Request-ID"] == parser_request_id
+        assert supplied_request_id.encode("ascii") not in error_body
+        assert private_sentinel not in error_body
+        observation = _wait_for_dashboard_observation(caplog, parser_request_id)
+        assert observation["operation"] == "protocol_error"
+        assert observation["outcome"] == "denied"
+        assert observation["reason_code"] == "http_431"
+        assert private_sentinel.decode("ascii") not in "\n".join(
+            record.getMessage() for record in caplog.records
+        )
+    finally:
+        client.close()
 
 
 def test_dashboard_broker_token_is_scoped_to_bounded_control_endpoints(

@@ -23,6 +23,9 @@ from agency_runtime.core.workforce.promotion import promotion_readiness
 
 MAX_WORKFORCE_DOCUMENT_BYTES = 256 * 1024
 MAX_WORKFORCE_PAGE = 1_000
+MAX_HIRING_SUMMARY_PAGE = 200
+MAX_HIRING_COLLECTION_RESPONSE_BYTES = 1024 * 1024
+_HIRING_COLLECTION_METADATA_RESERVE_BYTES = 16 * 1024
 _EMPLOYMENT_CLASSES = frozenset({"contractor", "employee"})
 _STANDINGS = frozenset({"active", "suspended", "retired", "merged"})
 _CASE_TYPES = frozenset({"hire", "amend"})
@@ -31,9 +34,28 @@ _CASE_TRANSITIONS = {
     "proposed": frozenset({"audited", "rejected", "folded"}),
     "audited": frozenset({"rejected", "folded"}),
 }
+_HIRING_CASE_SUMMARY_FIELDS = (
+    "id",
+    "case_type",
+    "status",
+    "proposed_slug",
+    "target_worker_id",
+    "work_unit_id",
+    "risk_tier",
+    "human_approval_required",
+    "human_approved_by",
+    "human_approved_at",
+    "created_at",
+    "decided_at",
+    "applied_at",
+)
 _ACTIVATION_BOUND_OUTCOMES = frozenset(
     {"assignment", "artifact", "review", "test", "acceptance", "failure"}
 )
+
+
+class WorkforcePayloadBudgetError(RuntimeError):
+    """Signal that an internal bounded workforce projection exceeded its contract."""
 
 
 def _collection_revision(label: str, rows: list[dict[str, Any]]) -> str:
@@ -146,6 +168,15 @@ def _worker_projection(row: Mapping[str, Any], disabled: Container[str] = ()) ->
         if result["employment_class"] == "contractor"
         else str(result["display_name"])
     )
+    return result
+
+
+def _hiring_case_summary(row: Mapping[str, Any]) -> dict[str, Any]:
+    """Project bounded lifecycle metadata; exact-case APIs own full evidence."""
+
+    result = {field: row[field] for field in _HIRING_CASE_SUMMARY_FIELDS}
+    result["human_approval_required"] = bool(result["human_approval_required"])
+    result["evidence_included"] = False
     return result
 
 
@@ -1255,6 +1286,7 @@ class WorkforceStoreMixin:
         ):
             result[field] = _decoded(result[field])
         result["human_approval_required"] = bool(result["human_approval_required"])
+        result["evidence_included"] = True
         return result
 
     def list_hiring_cases(
@@ -1304,6 +1336,7 @@ class WorkforceStoreMixin:
             ):
                 item[field] = _decoded(item[field])
             item["human_approval_required"] = bool(item["human_approval_required"])
+            item["evidence_included"] = True
             result.append(item)
         return result
 
@@ -1316,11 +1349,11 @@ class WorkforceStoreMixin:
         after_created_at: str = "",
         after_id: str = "",
     ) -> dict[str, Any]:
-        """Return one newest-first hiring page with snapshot-derived totals."""
+        """Return one newest-first fixed-field summary page with snapshot-derived totals."""
 
         if isinstance(limit, bool) or not isinstance(limit, int):
             raise TypeError("hiring case limit must be an integer")
-        if not 1 <= limit <= MAX_WORKFORCE_PAGE:
+        if not 1 <= limit <= MAX_HIRING_SUMMARY_PAGE:
             raise ValueError("hiring case limit is invalid")
         normalized_status = str(status or "").strip().casefold()
         normalized_type = str(case_type or "").strip().casefold()
@@ -1382,7 +1415,10 @@ class WorkforceStoreMixin:
                 ).fetchall()
             ]
             stored_rows = conn.execute(
-                "SELECT * FROM agent_hiring_cases"
+                "SELECT id, case_type, status, proposed_slug, target_worker_id, "
+                "work_unit_id, risk_tier, human_approval_required, human_approved_by, "
+                "human_approved_at, created_at, decided_at, applied_at "
+                "FROM agent_hiring_cases"
                 + page_where
                 + " ORDER BY created_at DESC, id DESC LIMIT ?",
                 (*page_values, limit + 1),
@@ -1394,19 +1430,19 @@ class WorkforceStoreMixin:
         finally:
             conn.close()
 
-        cases: list[dict[str, Any]] = []
-        for stored in stored_rows[:limit]:
-            item = dict(stored)
-            for field in (
-                "gap_evidence",
-                "duplicate_evidence",
-                "contract_evidence",
-                "critic_evidence",
-                "model_evidence",
-            ):
-                item[field] = _decoded(item[field])
-            item["human_approval_required"] = bool(item["human_approval_required"])
-            cases.append(item)
+        cases = [_hiring_case_summary(stored) for stored in stored_rows[:limit]]
+        serialized_cases = json.dumps(
+            cases,
+            allow_nan=False,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        if len(serialized_cases) > (
+            MAX_HIRING_COLLECTION_RESPONSE_BYTES - _HIRING_COLLECTION_METADATA_RESERVE_BYTES
+        ):
+            raise WorkforcePayloadBudgetError(
+                "hiring collection summary exceeds its response budget"
+            )
         return {
             "rows": cases,
             "total_count": total_count,
@@ -1663,20 +1699,29 @@ class WorkforceStoreMixin:
         *,
         evidence_limit: int = 100,
         disabled_agents: Container[str] | None = None,
+        include_history_documents: bool = True,
     ) -> dict[str, Any]:
-        """Return one worker with contract, lineage, lifecycle, and outcome evidence."""
+        """Return one worker with newest bounded evidence and exact collection totals."""
 
         if isinstance(evidence_limit, bool) or not isinstance(evidence_limit, int):
             raise TypeError("workforce evidence limit must be an integer")
         if not 1 <= evidence_limit <= MAX_WORKFORCE_PAGE:
             raise ValueError("workforce evidence limit is invalid")
-        worker = self.get_workforce_worker(
-            worker_id_or_slug,
-            disabled_agents=disabled_agents,
-        )
-        worker_id = str(worker["worker_id"])
-        slug = str(worker["agent_slug"])
+        if not isinstance(include_history_documents, bool):
+            raise TypeError("include_history_documents must be a boolean")
+        value = _bounded_text(worker_id_or_slug, field="worker identity", maximum=256)
+        disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
         with closing(self._connect()) as conn:
+            conn.execute("BEGIN")
+            worker_row = conn.execute(
+                "SELECT * FROM agent_workers WHERE worker_id = ? OR agent_slug = ? LIMIT 1",
+                (value, value.casefold()),
+            ).fetchone()
+            if worker_row is None:
+                raise KeyError("workforce worker not found")
+            worker = _worker_projection(worker_row, disabled)
+            worker_id = str(worker["worker_id"])
+            slug = str(worker["agent_slug"])
             current = conn.execute(
                 "SELECT COALESCE(projection.recruitment_contract, "
                 "lineage.recruitment_contract) AS recruitment_contract, "
@@ -1701,51 +1746,139 @@ class WorkforceStoreMixin:
                 current["recruitment_contract_hash"]
             ):
                 raise RuntimeError("stored workforce recruitment contract hash is invalid")
+            lineage_source = (
+                " FROM agent_version_lineage AS lineage "
+                "INNER JOIN agent_versions AS version ON version.id = lineage.agent_version_id "
+                "WHERE lineage.worker_id = ?"
+            )
+            lineage_total_count = int(
+                conn.execute(
+                    "SELECT COUNT(*) AS count" + lineage_source,
+                    (worker_id,),
+                ).fetchone()["count"]
+            )
             lineage = [
                 dict(row)
                 for row in conn.execute(
                     "SELECT lineage.id, lineage.agent_version_id, lineage.parent_version_id, "
                     "lineage.relation, lineage.recruitment_contract_hash, "
                     "lineage.hiring_case_id, lineage.created_at, version.version, version.hash "
-                    "FROM agent_version_lineage AS lineage JOIN agent_versions AS version "
-                    "ON version.id = lineage.agent_version_id WHERE lineage.worker_id = ? "
-                    "ORDER BY lineage.created_at, lineage.rowid",
-                    (worker_id,),
+                    + lineage_source
+                    + " "
+                    "ORDER BY lineage.created_at DESC, lineage.rowid DESC LIMIT ?",
+                    (worker_id, evidence_limit),
                 ).fetchall()
             ]
-            events = []
-            for row in conn.execute(
-                "SELECT * FROM agent_worker_events WHERE worker_id = ? "
-                "ORDER BY event_sequence DESC LIMIT ?",
-                (worker_id, evidence_limit),
-            ).fetchall():
-                item = dict(row)
-                item["evidence"] = _decoded(item["evidence"])
-                events.append(item)
-            outcomes = []
-            for row in conn.execute(
-                "SELECT * FROM agent_performance_events WHERE worker_id = ? "
-                "ORDER BY created_at DESC, rowid DESC LIMIT ?",
-                (worker_id, evidence_limit),
-            ).fetchall():
-                item = dict(row)
-                item["evidence_refs"] = _decoded(item["evidence_refs"])
-                outcomes.append(item)
-            case_ids = {str(row["hiring_case_id"]) for row in lineage if row.get("hiring_case_id")}
+            events_total_count = int(
+                conn.execute(
+                    "SELECT COUNT(*) AS count FROM agent_worker_events WHERE worker_id = ?",
+                    (worker_id,),
+                ).fetchone()["count"]
+            )
+            if include_history_documents:
+                events = []
+                for row in conn.execute(
+                    "SELECT * FROM agent_worker_events WHERE worker_id = ? "
+                    "ORDER BY event_sequence DESC LIMIT ?",
+                    (worker_id, evidence_limit),
+                ).fetchall():
+                    item = dict(row)
+                    item["evidence"] = _decoded(item["evidence"])
+                    events.append(item)
+            else:
+                events = [
+                    dict(row)
+                    for row in conn.execute(
+                        "SELECT id, event_sequence, worker_id, event_type, from_class, "
+                        "to_class, from_standing, to_standing, version, "
+                        "merged_into_worker_id, hiring_case_id, actor, surface, session_id, "
+                        "trace_id, reason, created_at FROM agent_worker_events "
+                        "WHERE worker_id = ? ORDER BY event_sequence DESC LIMIT ?",
+                        (worker_id, evidence_limit),
+                    ).fetchall()
+                ]
+            outcomes_total_count = int(
+                conn.execute(
+                    "SELECT COUNT(*) AS count FROM agent_performance_events WHERE worker_id = ?",
+                    (worker_id,),
+                ).fetchone()["count"]
+            )
+            if include_history_documents:
+                outcomes = []
+                for row in conn.execute(
+                    "SELECT * FROM agent_performance_events WHERE worker_id = ? "
+                    "ORDER BY created_at DESC, rowid DESC LIMIT ?",
+                    (worker_id, evidence_limit),
+                ).fetchall():
+                    item = dict(row)
+                    item["evidence_refs"] = _decoded(item["evidence_refs"])
+                    outcomes.append(item)
+            else:
+                outcomes = []
+                for row in conn.execute(
+                    "SELECT id, worker_id, version, version_hash, session_id, trace_id, "
+                    "work_unit_id, activation_receipt_id, event_type, outcome, score, "
+                    "evidence_hash, created_at, CASE WHEN "
+                    "NULLIF(TRIM(CAST(json_extract(evidence_refs, "
+                    "'$.independent_verifier_worker_id') AS TEXT)), '') IS NOT NULL "
+                    "AND TRIM(CAST(json_extract(evidence_refs, "
+                    "'$.independent_verifier_worker_id') AS TEXT)) <> worker_id "
+                    "AND NULLIF(TRIM(CAST(json_extract(evidence_refs, "
+                    "'$.independent_verification_receipt_id') AS TEXT)), '') IS NOT NULL "
+                    "AND json_type(evidence_refs, "
+                    "'$.independent_verification_validated') = 'true' "
+                    "THEN 1 ELSE 0 END AS _promotion_evidence_qualified "
+                    "FROM agent_performance_events WHERE worker_id = ? "
+                    "ORDER BY created_at DESC, rowid DESC LIMIT ?",
+                    (worker_id, evidence_limit),
+                ).fetchall():
+                    item = dict(row)
+                    item["_promotion_evidence_qualified"] = bool(
+                        item["_promotion_evidence_qualified"]
+                    )
+                    outcomes.append(item)
+            case_where = (
+                " WHERE hiring.target_worker_id = ? OR hiring.proposed_slug = ? "
+                "OR EXISTS (SELECT 1 FROM agent_version_lineage AS lineage "
+                "WHERE lineage.worker_id = ? AND lineage.hiring_case_id = hiring.id)"
+            )
+            case_values = (worker_id, slug, worker_id)
+            hiring_cases_total_count = int(
+                conn.execute(
+                    "SELECT COUNT(*) AS count FROM agent_hiring_cases AS hiring" + case_where,
+                    case_values,
+                ).fetchone()["count"]
+            )
             cases = [
-                item
-                for item in self.list_hiring_cases(limit=evidence_limit)
-                if str(item["id"]) in case_ids
-                or str(item["target_worker_id"] or "") == worker_id
-                or str(item["proposed_slug"]) == slug
-            ][:evidence_limit]
+                _hiring_case_summary(row)
+                for row in conn.execute(
+                    "SELECT hiring.id, hiring.case_type, hiring.status, hiring.proposed_slug, "
+                    "hiring.target_worker_id, hiring.work_unit_id, hiring.risk_tier, "
+                    "hiring.human_approval_required, hiring.human_approved_by, "
+                    "hiring.human_approved_at, hiring.created_at, hiring.decided_at, "
+                    "hiring.applied_at FROM agent_hiring_cases AS hiring"
+                    + case_where
+                    + " ORDER BY hiring.created_at DESC, hiring.rowid DESC LIMIT ?",
+                    (*case_values, evidence_limit),
+                ).fetchall()
+            ]
+            conn.commit()
         return {
             "worker": worker,
             "recruitment_contract": contract,
+            "evidence_limit": evidence_limit,
             "lineage": lineage,
+            "lineage_total_count": lineage_total_count,
+            "lineage_truncated": lineage_total_count > len(lineage),
             "events": events,
+            "events_total_count": events_total_count,
+            "events_truncated": events_total_count > len(events),
             "outcomes": outcomes,
+            "outcomes_total_count": outcomes_total_count,
+            "outcomes_truncated": outcomes_total_count > len(outcomes),
             "hiring_cases": cases,
+            "hiring_cases_total_count": hiring_cases_total_count,
+            "hiring_cases_truncated": hiring_cases_total_count > len(cases),
         }
 
     def list_workforce_workers(
@@ -2136,8 +2269,11 @@ class WorkforceStoreMixin:
 
 
 __all__ = [
+    "MAX_HIRING_COLLECTION_RESPONSE_BYTES",
+    "MAX_HIRING_SUMMARY_PAGE",
     "MAX_WORKFORCE_DOCUMENT_BYTES",
     "MAX_WORKFORCE_PAGE",
+    "WorkforcePayloadBudgetError",
     "WorkforceStoreMixin",
     "record_native_assignment_outcome",
     "stable_worker_id",

@@ -1,4 +1,9 @@
-import { APIError, CONTROL_INTERVAL_MS, LIVE_INTERVAL_MS } from "./dashboard-core.js";
+import {
+  APIError,
+  CONTROL_INTERVAL_MS,
+  HIRING_EVIDENCE_DOCUMENTS,
+  LIVE_INTERVAL_MS,
+} from "./dashboard-core.js";
 
 export function createLiveController(core, config, renderer) {
   const {
@@ -14,6 +19,8 @@ export function createLiveController(core, config, renderer) {
     renderPreservingInteraction,
   } = core;
   const AGENT_SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]{1,127}$/;
+  const COLLECTION_CURSOR_PATTERN = /^[A-Za-z0-9_-]{1,1024}$/;
+  const COLLECTION_PAGE_ITEM_LIMIT = 200;
 
   function setConnection(connected, label) {
     document.querySelector(".rail-foot")?.classList.toggle("connected", connected);
@@ -187,13 +194,48 @@ export function createLiveController(core, config, renderer) {
     if (controller) controller.abort();
   }
 
+  function clearRemediationBusyState() {
+    for (const kind of ["pending", "history"]) {
+      const button = byId(`review-${kind}-more`);
+      if (!button) continue;
+      button.disabled = false;
+      if (typeof button.removeAttribute === "function") button.removeAttribute("aria-busy");
+      else button.setAttribute?.("aria-busy", "false");
+    }
+  }
+
+  function clearHiringEvidenceBusyState() {
+    state.hiringEvidenceLoadingCaseId = "";
+    (document.querySelectorAll?.("[data-hiring-evidence-case]") || []).forEach((button) => {
+      button.disabled = false;
+      if (typeof button.removeAttribute === "function") button.removeAttribute("aria-busy");
+      else button.setAttribute?.("aria-busy", "false");
+    });
+  }
+
+  function abortViewRequests() {
+    Object.values(state.requests).forEach((request) => {
+      request.generation += 1;
+      request.controller?.abort();
+      request.controller = null;
+    });
+    clearRemediationBusyState();
+    clearHiringEvidenceBusyState();
+  }
+
   function beginViewRequest(name) {
     const request = state.requests[name];
     if (!request) throw new Error(`Unknown dashboard request scope: ${name}`);
-    request.generation += 1;
-    request.controller?.abort();
+    cancelFullRefresh();
+    cancelControlRequest();
+    state.commit.generation += 1;
+    abortViewRequests();
     request.controller = new AbortController();
-    return { controller: request.controller, generation: request.generation };
+    return {
+      controller: request.controller,
+      generation: request.generation,
+      commitGeneration: state.commit.generation,
+    };
   }
 
   function viewRequestIsCurrent(name, request) {
@@ -202,22 +244,23 @@ export function createLiveController(core, config, renderer) {
       && !state.lifecycle.suspended
       && !request.controller.signal.aborted
       && current?.controller === request.controller
-      && current.generation === request.generation;
+      && current.generation === request.generation
+      && state.commit.generation === request.commitGeneration;
   }
 
   function finishViewRequest(name, request) {
     const current = state.requests[name];
     if (current?.controller !== request.controller) return false;
     current.controller = null;
+    if (!Object.values(state.requests).some((item) => item.controller)) {
+      scheduleControlRefresh(0);
+    }
     return true;
   }
 
   function cancelViewRequests() {
-    Object.values(state.requests).forEach((request) => {
-      request.generation += 1;
-      request.controller?.abort();
-      request.controller = null;
-    });
+    state.commit.generation += 1;
+    abortViewRequests();
   }
 
   function cancelFullRefresh() {
@@ -392,6 +435,71 @@ export function createLiveController(core, config, renderer) {
     return Number.isInteger(value) && value >= minimum ? value : fallback;
   }
 
+  function encodedCollectionCursorIsValid(value, kind, fields) {
+    if (!COLLECTION_CURSOR_PATTERN.test(value) || typeof kind !== "string" || !kind) return false;
+    const decode = runtime.atob || globalThis.atob;
+    const encode = runtime.btoa || globalThis.btoa;
+    if (typeof decode !== "function" || typeof encode !== "function") return false;
+    try {
+      const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+      const padding = (4 - (value.length % 4)) % 4;
+      const payload = JSON.parse(decode(base64 + "=".repeat(padding)));
+      if (
+        !Array.isArray(payload)
+        || payload.length !== fields + 1
+        || payload[0] !== kind
+        || payload.slice(1).some((item) => typeof item !== "string" || !item)
+      ) return false;
+      return encode(JSON.stringify(payload))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "") === value;
+    } catch {
+      return false;
+    }
+  }
+
+  function collectionCursorIsValid(value, contract, kind, fields) {
+    if (typeof value !== "string") return false;
+    if (contract === "slug") return AGENT_SLUG_PATTERN.test(value);
+    if (contract === "encoded") return encodedCollectionCursorIsValid(value, kind, fields);
+    throw new Error(`Unknown dashboard collection cursor contract: ${contract}`);
+  }
+
+  function validateCollectionPage(page, {
+    itemField,
+    revisionField,
+    cursorContract,
+    cursorFields,
+    cursorKind,
+  }) {
+    if (!page || typeof page !== "object" || Array.isArray(page)) {
+      throw new Error(`The ${itemField} collection returned an invalid page.`);
+    }
+    if (!Array.isArray(page[itemField]) || page[itemField].length > COLLECTION_PAGE_ITEM_LIMIT) {
+      throw new Error(`The ${itemField} collection returned invalid items.`);
+    }
+    if (typeof page.truncated !== "boolean") {
+      throw new Error(`The ${itemField} collection returned an invalid truncation flag.`);
+    }
+    if (typeof page[revisionField] !== "string" || !page[revisionField].trim()) {
+      throw new Error(`The ${itemField} collection omitted its paging revision.`);
+    }
+    if (page.truncated) {
+      if (!collectionCursorIsValid(
+        page.next_cursor,
+        cursorContract,
+        cursorKind,
+        cursorFields,
+      )) {
+        throw new Error(`The ${itemField} collection returned an invalid next cursor.`);
+      }
+    } else if (page.next_cursor !== null) {
+      throw new Error(`The ${itemField} collection returned an unexpected next cursor.`);
+    }
+    return page;
+  }
+
   async function completeCollection(
     initial,
     {
@@ -401,12 +509,22 @@ export function createLiveController(core, config, renderer) {
       signal,
       maximumPages = 100,
       cursorParameter = "after",
+      cursorContract = "slug",
+      cursorFields = 2,
+      cursorKind = "",
     },
   ) {
-    if (!initial || typeof initial !== "object") return initial || {};
-    const rows = Array.isArray(initial[itemField]) ? [...initial[itemField]] : [];
-    const revision = String(initial[revisionField] || "");
-    let cursor = initial.truncated === true ? String(initial.next_cursor || "") : "";
+    const pageContract = {
+      itemField,
+      revisionField,
+      cursorContract,
+      cursorFields,
+      cursorKind,
+    };
+    validateCollectionPage(initial, pageContract);
+    const rows = [...initial[itemField]];
+    const revision = initial[revisionField];
+    let cursor = initial.truncated ? initial.next_cursor : "";
     const seenCursors = new Set();
     let pageCount = 1;
     while (cursor) {
@@ -419,14 +537,12 @@ export function createLiveController(core, config, renderer) {
         `${basePath}${separator}${cursorParameter}=${encodeURIComponent(cursor)}`,
         { signal },
       );
-      if (revision && String(page[revisionField] || "") !== revision) {
+      validateCollectionPage(page, pageContract);
+      if (page[revisionField] !== revision) {
         throw new Error(`The ${itemField} collection changed while it was being paged.`);
       }
-      rows.push(...(Array.isArray(page[itemField]) ? page[itemField] : []));
-      cursor = page.truncated === true ? String(page.next_cursor || "") : "";
-      if (page.truncated === true && !cursor) {
-        throw new Error(`The ${itemField} collection omitted its next cursor.`);
-      }
+      rows.push(...page[itemField]);
+      cursor = page.truncated ? page.next_cursor : "";
       pageCount += 1;
     }
     return {
@@ -440,10 +556,9 @@ export function createLiveController(core, config, renderer) {
     };
   }
 
-  async function completeRosterPage(initial, signal) {
-    if (state.rosterFilter || initial?.truncated !== true) return initial;
+  async function completeRosterPage(initial, signal, basePath = "/api/roster?limit=200") {
     return completeCollection(initial, {
-      basePath: "/api/roster?limit=200",
+      basePath,
       itemField: "agents",
       revisionField: "roster_revision",
       signal,
@@ -451,12 +566,16 @@ export function createLiveController(core, config, renderer) {
   }
 
   async function completeGovernanceSnapshot(initial, signal) {
-    if (!initial || typeof initial !== "object") return initial || {};
+    if (!initial || typeof initial !== "object" || Array.isArray(initial)) {
+      throw new Error("The governance collection returned an invalid page.");
+    }
     const withSnapshots = await completeCollection(initial, {
       basePath: "/api/snapshots?limit=200",
       itemField: "snapshots",
       revisionField: "collection_revision",
       signal,
+      cursorContract: "encoded",
+      cursorKind: "roster-snapshots.v1",
     });
     const reviews = await completeCollection(withSnapshots.reviews || {}, {
       basePath: "/api/roster/reviews?limit=100",
@@ -464,6 +583,8 @@ export function createLiveController(core, config, renderer) {
       revisionField: "collection_revision",
       cursorParameter: "candidate_cursor",
       signal,
+      cursorContract: "encoded",
+      cursorKind: "roster-reviews.v1",
     });
     return { ...withSnapshots, reviews };
   }
@@ -485,6 +606,8 @@ export function createLiveController(core, config, renderer) {
         itemField: "hiring_cases",
         revisionField: "collection_revision",
         signal,
+        cursorContract: "encoded",
+        cursorKind: "hiring.v1",
       }),
     ]);
     return { workforce, hiring };
@@ -508,13 +631,51 @@ export function createLiveController(core, config, renderer) {
     return rosterPage;
   }
 
+  function remediationRowsMatchPrefix(firstPage, loaded) {
+    if (!Array.isArray(firstPage) || !Array.isArray(loaded) || firstPage.length > loaded.length) {
+      return false;
+    }
+    return firstPage.every((item, index) => (
+      typeof item?.event_id === "string"
+      && item.event_id
+      && item.event_id === loaded[index]?.event_id
+    ));
+  }
+
+  function preserveRemediationExtent(next, current, kind) {
+    if (state.remediationExtent[kind] !== true) return;
+    const itemField = kind === "pending" ? "remediation_attempts" : "remediation_history";
+    const cursorField = kind === "pending"
+      ? "next_remediation_pending_cursor"
+      : "next_remediation_history_cursor";
+    const hasMoreField = kind === "pending"
+      ? "remediation_pending_has_more"
+      : "remediation_history_has_more";
+    const firstPage = next[itemField];
+    const loaded = current?.[itemField];
+    if (!remediationRowsMatchPrefix(firstPage, loaded)) {
+      state.remediationExtent[kind] = false;
+      return;
+    }
+    const seen = new Set(firstPage.map((item) => item.event_id));
+    next[itemField] = [
+      ...firstPage,
+      ...loaded.filter((item) => !seen.has(item.event_id)),
+    ];
+    next[cursorField] = current[cursorField];
+    next[hasMoreField] = current[hasMoreField] === true;
+  }
+
   function applyGovernanceSnapshot(payload = {}) {
     state.snapshots = Array.isArray(payload.snapshots) ? payload.snapshots : [];
     if (payload.operations && typeof payload.operations === "object") {
       state.rosterOperations = payload.operations;
     }
     if (payload.reviews && typeof payload.reviews === "object") {
-      state.rosterReview = payload.reviews;
+      const reviews = { ...payload.reviews };
+      preserveRemediationExtent(reviews, state.rosterReview, "pending");
+      preserveRemediationExtent(reviews, state.rosterReview, "history");
+      state.rosterReview = reviews;
     }
     return {
       operations: state.rosterOperations,
@@ -554,6 +715,11 @@ export function createLiveController(core, config, renderer) {
     }
     if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
     const filters = operationalFilterValues();
+    state.rosterFilterIntentGeneration += 1;
+    state.rosterFilter = state.rosterFilterCommitted;
+    if (byId("roster-search-slug")) {
+      byId("roster-search-slug").value = state.rosterFilterCommitted;
+    }
     const request = beginViewRequest("operationalRoster");
     try {
       const payload = await fetchOperationalRoster(filters, request.controller.signal);
@@ -561,12 +727,18 @@ export function createLiveController(core, config, renderer) {
       state.rosterFilters = filters;
       state.rosterOperations = payload;
       state.rosterFilter = "";
+      state.rosterFilterCommitted = "";
       if (byId("roster-search-slug")) byId("roster-search-slug").value = "";
       renderPreservingInteraction(renderer.renderRoster);
       return true;
     } catch (error) {
-      if (error?.name !== "AbortError" && viewRequestIsCurrent("operationalRoster", request)) {
-        showNotice(error.message, true);
+      if (viewRequestIsCurrent("operationalRoster", request)) {
+        if (error?.name !== "AbortError") showNotice(error.message, true);
+        state.rosterFilter = state.rosterFilterCommitted;
+        if (byId("roster-search-slug")) {
+          byId("roster-search-slug").value = state.rosterFilterCommitted;
+        }
+        renderPreservingInteraction(renderer.renderRoster);
       }
       return false;
     } finally {
@@ -634,6 +806,7 @@ export function createLiveController(core, config, renderer) {
           next.remediation_history_has_more = payload.remediation_history_has_more === true;
         }
         state.rosterReview = next;
+        state.remediationExtent[kind] = true;
         renderPreservingInteraction(renderer.renderRoster);
         loaded = true;
       }
@@ -644,7 +817,8 @@ export function createLiveController(core, config, renderer) {
     }
     if (button && viewRequestIsCurrent("remediation", request)) {
       button.disabled = false;
-      button.removeAttribute("aria-busy");
+      if (typeof button.removeAttribute === "function") button.removeAttribute("aria-busy");
+      else button.setAttribute?.("aria-busy", "false");
     }
     finishViewRequest("remediation", request);
     return loaded;
@@ -677,16 +851,26 @@ export function createLiveController(core, config, renderer) {
       return false;
     }
     if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
-    const previous = state.rosterFilter;
+    const intentGeneration = state.rosterFilterIntentGeneration + 1;
+    state.rosterFilterIntentGeneration = intentGeneration;
     state.rosterFilter = slug;
     byId("roster-search-slug").value = slug;
     const refreshed = await refreshAll();
-    if (!refreshed && !state.lifecycle.destroyed && !state.lifecycle.suspended) {
-      state.rosterFilter = previous;
-      byId("roster-search-slug").value = previous;
+    if (
+      intentGeneration !== state.rosterFilterIntentGeneration
+      || state.lifecycle.destroyed
+      || state.lifecycle.suspended
+    ) return false;
+    if (refreshed) {
+      state.rosterFilterCommitted = slug;
+      return true;
+    }
+    if (!state.lifecycle.destroyed && !state.lifecycle.suspended) {
+      state.rosterFilter = state.rosterFilterCommitted;
+      byId("roster-search-slug").value = state.rosterFilterCommitted;
       renderer.renderRoster();
     }
-    return refreshed === true;
+    return false;
   }
 
   function searchRoster(event) {
@@ -752,7 +936,12 @@ export function createLiveController(core, config, renderer) {
         signal,
       );
       if (state.rosterFilter) {
-        snapshot.roster = await api(rosterRequestPath(), { signal });
+        const filteredRoster = await api(rosterRequestPath(), { signal });
+        snapshot.roster = await completeRosterPage(
+          filteredRoster,
+          signal,
+          rosterRequestPath(),
+        );
       }
       if (Object.keys(state.rosterFilters || {}).length) {
         snapshot.governance = {
@@ -828,11 +1017,14 @@ export function createLiveController(core, config, renderer) {
     state.control.timer = null;
     if (
       state.control.inFlight
+      || state.full.inFlight
+      || Object.values(state.requests).some((request) => request.controller)
       || state.lifecycle.destroyed
       || state.lifecycle.suspended
       || document.visibilityState === "hidden"
     ) return;
     const controller = new AbortController();
+    const commitGeneration = state.commit.generation;
     const generation = state.control.generation + 1;
     state.control.generation = generation;
     state.control.controller = controller;
@@ -847,6 +1039,7 @@ export function createLiveController(core, config, renderer) {
       if (
         state.control.controller !== controller
         || state.control.generation !== generation
+        || state.commit.generation !== commitGeneration
         || state.lifecycle.suspended
       ) return;
       applyControlSnapshot(snapshot, { render: false });
@@ -872,7 +1065,9 @@ export function createLiveController(core, config, renderer) {
   }
 
   async function refreshAll({ surfaceErrors = true } = {}) {
+    cancelViewRequests();
     cancelFullRefresh();
+    const commitGeneration = state.commit.generation;
     const controller = new AbortController();
     const generation = state.full.generation + 1;
     state.full.generation = generation;
@@ -892,6 +1087,7 @@ export function createLiveController(core, config, renderer) {
       if (
         generation !== state.full.generation
         || state.full.controller !== controller
+        || state.commit.generation !== commitGeneration
         || state.lifecycle.suspended
       ) return false;
       applyControlSnapshot(control, { render: false });
@@ -951,10 +1147,94 @@ export function createLiveController(core, config, renderer) {
     }
   }
 
+  function normalizeHiringEvidenceCaseId(value) {
+    if (typeof value !== "string") {
+      throw new Error("Hiring case ID must be a string.");
+    }
+    const caseId = value.trim();
+    if (
+      !caseId
+      || caseId !== value
+      || caseId.length > 512
+      || /[\u0000-\u001f\u007f]/.test(caseId)
+    ) {
+      throw new Error("Hiring case ID is invalid.");
+    }
+    return caseId;
+  }
+
+  function validateHiringEvidenceResponse(payload, expectedCaseId) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      throw new Error("The exact hiring evidence response is invalid.");
+    }
+    const hiringCase = payload.hiring_case;
+    if (!hiringCase || typeof hiringCase !== "object" || Array.isArray(hiringCase)) {
+      throw new Error("The exact hiring evidence response omitted its case object.");
+    }
+    if (hiringCase.id !== expectedCaseId) {
+      throw new Error("The exact hiring evidence response returned the wrong case.");
+    }
+    if (hiringCase.evidence_included !== true) {
+      throw new Error("The exact hiring evidence response lacks its full-evidence marker.");
+    }
+    HIRING_EVIDENCE_DOCUMENTS.forEach(([field, label]) => {
+      const documentValue = hiringCase[field];
+      if (!documentValue || typeof documentValue !== "object" || Array.isArray(documentValue)) {
+        throw new Error(`The exact hiring evidence response omitted ${label.toLowerCase()}.`);
+      }
+    });
+    return hiringCase;
+  }
+
+  async function loadHiringEvidence(value) {
+    let caseId;
+    try {
+      caseId = normalizeHiringEvidenceCaseId(value);
+    } catch (error) {
+      showNotice(error.message, true);
+      return false;
+    }
+    if (state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+    const request = beginViewRequest("hiringEvidence");
+    state.hiringEvidenceLoadingCaseId = caseId;
+    if (state.activeView === "workforce") {
+      renderPreservingInteraction(renderer.renderWorkforce);
+    }
+    try {
+      const payload = await api(
+        `/api/hiring?case_id=${encodeURIComponent(caseId)}`,
+        { signal: request.controller.signal },
+      );
+      if (!viewRequestIsCurrent("hiringEvidence", request)) return false;
+      state.hiringEvidence = validateHiringEvidenceResponse(payload, caseId);
+      return true;
+    } catch (error) {
+      if (
+        error?.name !== "AbortError"
+        && viewRequestIsCurrent("hiringEvidence", request)
+      ) showNotice(error.message, true);
+      return false;
+    } finally {
+      if (viewRequestIsCurrent("hiringEvidence", request)) {
+        state.hiringEvidenceLoadingCaseId = "";
+        if (state.activeView === "workforce") {
+          renderPreservingInteraction(renderer.renderWorkforce);
+        }
+      }
+      finishViewRequest("hiringEvidence", request);
+    }
+  }
+
   async function refreshWorkforce({ signal } = {}) {
     if (signal) {
+      const commitGeneration = state.commit.generation;
       const collections = await fetchWorkforceCollections(signal);
-      if (signal.aborted || state.lifecycle.destroyed || state.lifecycle.suspended) return false;
+      if (
+        signal.aborted
+        || state.commit.generation !== commitGeneration
+        || state.lifecycle.destroyed
+        || state.lifecycle.suspended
+      ) return false;
       commitWorkforceCollections(collections, { render: true });
       return true;
     }
@@ -1061,6 +1341,7 @@ export function createLiveController(core, config, renderer) {
     refreshControlPlane,
     refreshAll,
     refreshRuntimeEvidence,
+    loadHiringEvidence,
     refreshWorkforce,
     reconcileRuntimeEvidence,
     reconcileAll,

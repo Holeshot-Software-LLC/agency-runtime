@@ -70,15 +70,72 @@ function controlSnapshot({
   governance = { snapshots: [] },
   restartRequired = false,
 } = {}) {
+  const normalizedRoster = {
+    agents: [],
+    next_cursor: null,
+    roster_revision: "test-roster-revision",
+    truncated: false,
+    ...roster,
+  };
+  const normalizedReviews = {
+    candidates: [],
+    collection_revision: "test-review-revision",
+    next_cursor: null,
+    truncated: false,
+    ...(governance.reviews || {}),
+  };
+  const normalizedGovernance = {
+    collection_revision: "test-snapshot-revision",
+    next_cursor: null,
+    snapshots: [],
+    truncated: false,
+    ...governance,
+    reviews: normalizedReviews,
+  };
   return {
     schema_version: "agency.dashboard.control.v1",
     config,
     control_revision: "test-control-revision",
-    governance,
+    governance: normalizedGovernance,
     hosts,
     restart_required: restartRequired,
-    roster,
+    roster: normalizedRoster,
   };
+}
+
+function emptyRosterPage(revision = "test-roster-revision") {
+  return {
+    agents: [],
+    next_cursor: null,
+    roster_revision: revision,
+    truncated: false,
+  };
+}
+
+function emptyReviewPage(revision = "test-review-revision") {
+  return {
+    candidates: [],
+    collection_revision: revision,
+    next_cursor: null,
+    truncated: false,
+  };
+}
+
+function emptyGovernancePage(revision = "test-snapshot-revision") {
+  return {
+    collection_revision: revision,
+    next_cursor: null,
+    reviews: emptyReviewPage(),
+    snapshots: [],
+    truncated: false,
+  };
+}
+
+function encodedCursor(kind, ...fields) {
+  return btoa(JSON.stringify([kind, ...fields]))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 function verifiedHost(host = "codex", capabilities = ["repository-read", "test-execution"]) {
@@ -101,7 +158,42 @@ function verifiedHost(host = "codex", capabilities = ["repository-read", "test-e
       status: "native-installation-verified",
       surface: host,
       unknown_tools: [],
+      session_id: "",
+      trace_id: "",
+      observed_at: "",
     },
+  };
+}
+
+function hiringCaseSummary(id, overrides = {}) {
+  return {
+    applied_at: null,
+    case_type: "hire",
+    created_at: "2026-07-26T12:00:00Z",
+    decided_at: null,
+    evidence_included: false,
+    human_approval_required: false,
+    human_approved_at: null,
+    human_approved_by: null,
+    id,
+    proposed_slug: `candidate-${id}`,
+    risk_tier: "standard",
+    status: "proposed",
+    target_worker_id: null,
+    work_unit_id: `work-${id}`,
+    ...overrides,
+  };
+}
+
+function fullHiringCase(id, marker = id) {
+  return {
+    ...hiringCaseSummary(id),
+    evidence_included: true,
+    contract_evidence: { marker: `${marker}-contract` },
+    critic_evidence: { marker: `${marker}-critic` },
+    duplicate_evidence: { marker: `${marker}-duplicate` },
+    gap_evidence: { marker: `${marker}-gap` },
+    model_evidence: { marker: `${marker}-model` },
   };
 }
 
@@ -683,18 +775,33 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
       required_successes: 2,
       verified_successes: 1,
     },
-    events: [{
-      created_at: "2026-07-22T12:00:00Z",
-      event_type: "generated",
-      reason: "known contractor installed",
-    }],
-    outcomes: [{
-      created_at: "2026-07-22T13:00:00Z",
+    events: Array.from({ length: 7 }, (_, index) => ({
+      created_at: `2026-07-22T12:00:${String(59 - index).padStart(2, "0")}Z`,
+      event_type: index ? "reviewed" : "generated",
+      reason: index ? `lifecycle evidence ${index}` : "known contractor installed",
+    })),
+    outcomes: Array.from({ length: 7 }, (_, index) => ({
+      created_at: `2026-07-22T13:00:0${index}Z`,
       event_type: "acceptance",
-      outcome: "passed",
+      outcome: index ? `passed-${index}` : "passed",
+    })),
+    hiring_cases: [{
+      case_type: "hire",
+      created_at: "2026-07-22T10:00:00Z",
+      id: "hiring-case-1",
+      proposed_slug: "typescript-application-engineer",
+      status: "applied",
     }],
-    hiring_cases: [{}],
-    lineage: [{}],
+    hiring_cases_total_count: 4,
+    hiring_cases_truncated: true,
+    lineage: [{
+      agent_version_id: "version-id-1",
+      created_at: "2026-07-22T11:00:00Z",
+      relation: "generated",
+      version: "contractor-v1",
+    }],
+    lineage_total_count: 7,
+    lineage_truncated: true,
   };
   harness.api.state.workforceCounts = {
     contractor: 1,
@@ -718,8 +825,31 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   assert.match(text, /42% overlap/);
   assert.match(text, /Use the governed TypeScript contract/);
   assert.match(text, /known contractor installed/);
+  assert.match(text, /1 of 7 version records \(bounded\)/);
+  assert.match(text, /1 of 4 hiring records \(bounded\)/);
+  assert.match(text, /Loaded version lineage evidence/);
+  assert.match(text, /contractor-v1/);
+  assert.match(text, /Loaded hiring case metadata/);
+  assert.match(text, /applied · typescript-application-engineer/);
+  assert.match(text, /Showing 12 of 14 loaded lifecycle and outcome records/);
   assert.deepEqual(harness.node("workforce-action-kind").options, []);
   assert.equal(harness.node("workforce-action-form").hidden, true);
+
+  harness.api.state.selectedWorkerDetail.lineage_total_count = "7";
+  harness.api.state.selectedWorkerDetail.lineage_truncated = true;
+  harness.api.state.selectedWorkerDetail.hiring_cases_total_count = 0;
+  harness.api.renderWorkerDetail();
+  const malformedMetadataText = descendants(harness.node("workforce-detail"))
+    .map((item) => item.textContent)
+    .join(" ");
+  assert.match(
+    malformedMetadataText,
+    /1 version records shown \(bounded; total unavailable\)/,
+  );
+  assert.match(
+    malformedMetadataText,
+    /1 hiring records shown \(bounded; total unavailable\)/,
+  );
 
   harness.api.state.selectedWorkerDetail.worker.state = "disabled";
   harness.api.renderWorkerDetail();
@@ -729,6 +859,305 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   harness.api.renderWorkerDetail();
   assert.equal(harness.node("workforce-action-kind").options.length, 0);
   assert.equal(harness.node("workforce-action-form").hidden, true);
+});
+
+test("workforce cards use one delegated click listener across repeated live renders", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    return jsonResponse(200, {
+      detail: {
+        worker: {
+          agent_slug: "worker-one",
+          current_version: "1.0.0",
+          display_label: "Worker One",
+          revision: 1,
+          state: "employee",
+          worker_id: "worker-one-id",
+        },
+      },
+    });
+  });
+  harness.api.state.workforce = [{
+    agent_slug: "worker-one",
+    current_version: "1.0.0",
+    display_label: "Worker One",
+    revision: 1,
+    state: "employee",
+  }];
+  assert.equal(harness.api.bindEvents(), true);
+
+  for (let index = 0; index < 50; index += 1) harness.api.renderWorkforce();
+
+  const grid = harness.node("workforce-grid");
+  assert.equal(grid.listeners.get("click").length, 1);
+  assert.equal(harness.api.bindEvents(), false);
+  assert.equal(grid.listeners.get("click").length, 1);
+  assert.ok(grid.children.every((card) => !card.listeners.has("click")));
+
+  const card = grid.children[0];
+  const nestedLabel = card.children[0].children[0];
+  nestedLabel.closestNode = card;
+  grid.listeners.get("click")[0]({ target: nestedLabel });
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(calls[0], "/api/workforce?worker=worker-one&limit=100");
+  assert.equal(harness.api.state.selectedWorkerDetail.worker.agent_slug, "worker-one");
+  assert.equal(harness.api.destroy(), true);
+  assert.equal(grid.listeners.get("click").length, 0);
+});
+
+test("hiring summaries load full exact evidence through one delegated control", async () => {
+  const calls = [];
+  const exact = fullHiringCase("case-a", "exact-a");
+  const harness = createAppHarness(async (path, options) => {
+    calls.push({ path, signal: options.signal });
+    return jsonResponse(200, { hiring_case: exact });
+  });
+  assert.equal(harness.api.bindEvents(), true);
+  harness.api.state.activeView = "workforce";
+  harness.api.state.hiring = [hiringCaseSummary("case-a", {
+    gap_evidence: { marker: "collection-gap-must-not-render" },
+    duplicate_evidence: { marker: "collection-duplicate-must-not-render" },
+  })];
+  harness.api.renderWorkforce();
+
+  const hiringList = harness.node("hiring-list");
+  let renderedText = descendants(hiringList).map((node) => node.textContent).join(" ");
+  assert.match(renderedText, /Metadata summary only/);
+  assert.doesNotMatch(renderedText, /collection-gap-must-not-render/);
+  assert.doesNotMatch(renderedText, /collection-duplicate-must-not-render/);
+  let loadControls = descendants(hiringList)
+    .filter((node) => node.dataset?.hiringEvidenceCase === "case-a");
+  assert.equal(loadControls.length, 1);
+  assert.equal(loadControls[0].textContent, "Load full evidence");
+  assert.equal(loadControls[0].getAttribute("aria-expanded"), "false");
+
+  loadControls[0].closestNode = loadControls[0];
+  hiringList.listeners.get("click")[0]({ target: loadControls[0] });
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].path, "/api/hiring?case_id=case-a");
+  assert.equal(calls[0].signal.aborted, false);
+  assert.equal(harness.api.state.hiringEvidence.id, "case-a");
+  renderedText = descendants(hiringList).map((node) => node.textContent).join(" ");
+  for (const marker of [
+    "exact-a-gap",
+    "exact-a-duplicate",
+    "exact-a-contract",
+    "exact-a-critic",
+    "exact-a-model",
+  ]) assert.match(renderedText, new RegExp(marker));
+  assert.match(renderedText, /Full evidence loaded from the exact hiring-case response/);
+  assert.equal(
+    descendants(hiringList).filter((node) => node.className === "hiring-evidence").length,
+    5,
+  );
+  loadControls = descendants(hiringList)
+    .filter((node) => node.dataset?.hiringEvidenceCase === "case-a");
+  assert.equal(loadControls.length, 1);
+  assert.equal(loadControls[0].getAttribute("aria-expanded"), "true");
+
+  const preserveNodes = descendants(hiringList)
+    .filter((node) => node.dataset?.preserveKey || node.dataset?.worker);
+  const syncPreserveNodes = () => {
+    preserveNodes.splice(
+      0,
+      preserveNodes.length,
+      ...descendants(hiringList)
+        .filter((node) => node.dataset?.preserveKey || node.dataset?.worker),
+    );
+  };
+  const replaceChildren = hiringList.replaceChildren.bind(hiringList);
+  hiringList.replaceChildren = (...children) => {
+    replaceChildren(...children);
+    syncPreserveNodes();
+  };
+  const append = hiringList.append.bind(hiringList);
+  hiringList.append = (...children) => {
+    append(...children);
+    syncPreserveNodes();
+  };
+  harness.select("[data-preserve-key], [data-worker]", preserveNodes);
+  const openEvidence = descendants(hiringList)
+    .find((node) => node.dataset?.preserveKey?.endsWith(":gap_evidence"));
+  const focusedLoad = loadControls[0];
+  openEvidence.id = "";
+  openEvidence.open = true;
+  focusedLoad.id = "";
+  harness.document.activeElement = focusedLoad;
+  harness.select("details[open]", [openEvidence]);
+
+  harness.api.renderPreservingInteraction(harness.api.renderWorkforce);
+
+  const restoredEvidence = descendants(hiringList)
+    .find((node) => node.dataset?.preserveKey?.endsWith(":gap_evidence"));
+  const restoredLoad = descendants(hiringList)
+    .find((node) => node.dataset?.hiringEvidenceCase === "case-a");
+  assert.equal(restoredEvidence.open, true);
+  assert.equal(restoredLoad.focusCount, 1);
+});
+
+test("exact hiring evidence rejects malformed, summary, and wrong-case responses", async () => {
+  const missingModel = fullHiringCase("case-a", "missing-model");
+  delete missingModel.model_evidence;
+  const missingEvidenceMarker = fullHiringCase("case-a", "missing-marker");
+  delete missingEvidenceMarker.evidence_included;
+  const payloads = [
+    null,
+    {},
+    { hiring_case: fullHiringCase("case-b", "wrong-case") },
+    { hiring_case: missingModel },
+    { hiring_case: missingEvidenceMarker },
+    { hiring_case: { ...fullHiringCase("case-a", "summary"), evidence_included: false } },
+  ];
+  for (const payload of payloads) {
+    const harness = createAppHarness(async () => jsonResponse(200, payload));
+    harness.api.state.activeView = "workforce";
+    harness.api.state.hiring = [hiringCaseSummary("case-a")];
+    assert.equal(await harness.api.loadHiringEvidence("case-a"), false);
+    assert.equal(harness.api.state.hiringEvidence, null);
+    assert.match(harness.node("notice").textContent, /exact hiring evidence response/i);
+  }
+
+  let invalidCalls = 0;
+  const invalid = createAppHarness(async () => {
+    invalidCalls += 1;
+    return jsonResponse(200, {});
+  });
+  assert.equal(await invalid.api.loadHiringEvidence(7), false);
+  assert.equal(await invalid.api.loadHiringEvidence(" case-a "), false);
+  assert.equal(invalidCalls, 0);
+  assert.match(invalid.node("notice").textContent, /case id/i);
+});
+
+test("a stale exact hiring response cannot replace a newer case", async () => {
+  const caseA = deferred();
+  const caseB = deferred();
+  const calls = [];
+  const harness = createAppHarness((path, options) => {
+    calls.push({ path, signal: options.signal });
+    if (path.endsWith("case-a")) return caseA.promise;
+    if (path.endsWith("case-b")) return caseB.promise;
+    throw new Error(`unexpected exact hiring path ${path}`);
+  });
+  harness.api.state.activeView = "workforce";
+  harness.api.state.hiring = [hiringCaseSummary("case-a"), hiringCaseSummary("case-b")];
+
+  const staleA = harness.api.loadHiringEvidence("case-a");
+  const newerB = harness.api.loadHiringEvidence("case-b");
+  assert.equal(calls[0].signal.aborted, true);
+  assert.equal(calls[1].signal.aborted, false);
+
+  caseB.resolve(jsonResponse(200, { hiring_case: fullHiringCase("case-b", "newer-b") }));
+  assert.equal(await newerB, true);
+  assert.equal(harness.api.state.hiringEvidence.id, "case-b");
+  caseA.resolve(jsonResponse(200, { hiring_case: fullHiringCase("case-a", "stale-a") }));
+  assert.equal(await staleA, false);
+  assert.equal(harness.api.state.hiringEvidence.id, "case-b");
+  const renderedText = descendants(harness.node("hiring-list"))
+    .map((node) => node.textContent).join(" ");
+  assert.match(renderedText, /newer-b-gap/);
+  assert.doesNotMatch(renderedText, /stale-a-gap/);
+});
+
+test("failed exact hiring loads preserve the last-good full case", async () => {
+  const harness = createAppHarness(async (path) => {
+    if (path.endsWith("case-a")) {
+      return jsonResponse(200, { hiring_case: fullHiringCase("case-a", "last-good-a") });
+    }
+    if (path.endsWith("case-b")) {
+      return jsonResponse(503, { error: "exact case unavailable" });
+    }
+    throw new Error(`unexpected last-good hiring path ${path}`);
+  });
+  harness.api.state.activeView = "workforce";
+  harness.api.state.hiring = [hiringCaseSummary("case-a"), hiringCaseSummary("case-b")];
+
+  assert.equal(await harness.api.loadHiringEvidence("case-a"), true);
+  assert.equal(harness.api.state.hiringEvidence.id, "case-a");
+  assert.equal(await harness.api.loadHiringEvidence("case-b"), false);
+  assert.equal(harness.api.state.hiringEvidence.id, "case-a");
+  assert.match(harness.node("notice").textContent, /exact case unavailable/i);
+  const renderedText = descendants(harness.node("hiring-list"))
+    .map((node) => node.textContent).join(" ");
+  assert.match(renderedText, /last-good-a-gap/);
+});
+
+test("hiring evidence controls retain one delegated listener across repeated renders", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("listener retention does not fetch");
+  });
+  assert.equal(harness.api.bindEvents(), true);
+  harness.api.state.activeView = "workforce";
+  harness.api.state.hiring = [hiringCaseSummary("case-a"), hiringCaseSummary("case-b")];
+  harness.api.state.hiringEvidence = fullHiringCase("case-a", "loaded-a");
+
+  for (let index = 0; index < 50; index += 1) harness.api.renderWorkforce();
+
+  const hiringList = harness.node("hiring-list");
+  assert.equal(hiringList.listeners.get("click").length, 1);
+  assert.equal(harness.api.bindEvents(), false);
+  assert.equal(hiringList.listeners.get("click").length, 1);
+  const controls = descendants(hiringList)
+    .filter((node) => node.dataset?.hiringEvidenceCase);
+  assert.equal(controls.length, 2);
+  assert.ok(controls.every((control) => !control.listeners.has("click")));
+});
+
+test("destroy aborts an exact hiring load and removes its delegated listener", async () => {
+  const pending = deferred();
+  let requestSignal;
+  const harness = createAppHarness((_path, options) => {
+    requestSignal = options.signal;
+    return pending.promise;
+  });
+  assert.equal(harness.api.bindEvents(), true);
+  harness.api.state.activeView = "workforce";
+  harness.api.state.hiring = [hiringCaseSummary("case-a")];
+  harness.api.renderWorkforce();
+
+  const hiringList = harness.node("hiring-list");
+  const trackedControls = descendants(hiringList)
+    .filter((node) => node.dataset?.hiringEvidenceCase);
+  const syncTrackedControls = () => {
+    trackedControls.splice(
+      0,
+      trackedControls.length,
+      ...descendants(hiringList).filter((node) => node.dataset?.hiringEvidenceCase),
+    );
+  };
+  const replaceChildren = hiringList.replaceChildren.bind(hiringList);
+  hiringList.replaceChildren = (...children) => {
+    replaceChildren(...children);
+    syncTrackedControls();
+  };
+  const append = hiringList.append.bind(hiringList);
+  hiringList.append = (...children) => {
+    append(...children);
+    syncTrackedControls();
+  };
+  harness.select("[data-hiring-evidence-case]", trackedControls);
+
+  const load = harness.api.loadHiringEvidence("case-a");
+  assert.equal(requestSignal.aborted, false);
+  assert.equal(harness.api.state.hiringEvidenceLoadingCaseId, "case-a");
+  assert.equal(trackedControls[0].disabled, true);
+  assert.equal(trackedControls[0].getAttribute("aria-busy"), "true");
+  assert.equal(harness.api.destroy(), true);
+  assert.equal(requestSignal.aborted, true);
+  assert.equal(harness.api.state.requests.hiringEvidence.controller, null);
+  assert.equal(harness.api.state.hiringEvidenceLoadingCaseId, "");
+  assert.equal(trackedControls[0].disabled, false);
+  assert.equal(trackedControls[0].getAttribute("aria-busy"), null);
+  assert.equal(hiringList.listeners.get("click").length, 0);
+
+  pending.resolve(jsonResponse(200, { hiring_case: fullHiringCase("case-a", "too-late") }));
+  assert.equal(await load, false);
+  assert.equal(harness.api.state.hiringEvidence, null);
 });
 
 test("provider builder validates, updates, removes, and reports discovery fallbacks", async () => {
@@ -1064,7 +1493,7 @@ test("host views disclose empty inventories and unknown runtime controls truthfu
   assert.ok(labels.includes("Run /hooks, then verify activation."));
 });
 
-test("Route Lab offers only verified enabled execution hosts and preserves explicit choice", () => {
+test("Route Lab offers only unambiguous bounded execution hosts and preserves explicit choice", () => {
   const missing = createAppHarness(() => {
     throw new Error("missing optional Route Lab controls do not fetch");
   });
@@ -1094,8 +1523,8 @@ test("Route Lab offers only verified enabled execution hosts and preserves expli
     },
     verifiedHost("claude", ["repository-read"]),
     verifiedHost("claude", ["duplicate-must-not-replace"]),
-    verifiedHost("openclaw", ["repository-read", "native-delegation"]),
-    verifiedHost("zcode", ["repository-read", "native-delegation"]),
+    verifiedHost("openclaw", ["native-delegation", "repository-read"]),
+    verifiedHost("zcode", ["native-delegation", "repository-read"]),
     verifiedHost("unknown"),
     {
       effective_enabled: true,
@@ -1107,14 +1536,14 @@ test("Route Lab offers only verified enabled execution hosts and preserves expli
       },
     },
   ];
-  assert.equal(harness.api.renderRouteHosts(), "claude");
+  assert.equal(harness.api.renderRouteHosts(), "openclaw");
   assert.deepEqual(
     harness.node("route-host").children.map((option) => option.value),
-    ["claude", "openclaw", "zcode"],
+    ["openclaw", "zcode"],
   );
   assert.equal(harness.node("route-host").disabled, false);
   assert.equal(harness.node("route-button").disabled, false);
-  assert.match(harness.node("route-host-help").textContent, /choose the current native host/i);
+  assert.match(harness.node("route-host-help").textContent, /ambiguous duplicate host/i);
 
   harness.node("route-host").value = "openclaw";
   assert.equal(harness.api.renderRouteHosts(), "openclaw");
@@ -1133,6 +1562,58 @@ test("Route Lab offers only verified enabled execution hosts and preserves expli
   optional.api.state.master = { enabled: true, generation: 1 };
   optional.api.state.hosts = [verifiedHost("codex")];
   assert.equal(optional.api.renderRouteHosts(), "codex");
+});
+
+test("Route Lab UI refuses duplicate and oversized host inventories before POST", async () => {
+  let calls = 0;
+  const duplicate = createAppHarness(async () => {
+    calls += 1;
+    throw new Error("ambiguous host inventory must not reach Route Lab");
+  });
+  duplicate.api.state.master = { enabled: true, generation: 1 };
+  duplicate.api.state.hosts = [verifiedHost("codex"), verifiedHost("codex")];
+  duplicate.node("route-task").value = "Review this bounded host contract";
+
+  assert.equal(duplicate.api.renderRouteHosts(), "");
+  assert.equal(duplicate.node("route-button").disabled, true);
+  assert.match(duplicate.node("route-host-help").textContent, /ambiguous duplicate host/i);
+  await duplicate.api.runRoute();
+  assert.equal(calls, 0);
+  assert.match(duplicate.node("notice").textContent, /verified, enabled execution host/i);
+
+  const oversized = createAppHarness(() => {
+    throw new Error("oversized host inventory must not fetch");
+  });
+  oversized.api.state.master = { enabled: true, generation: 1 };
+  oversized.api.state.hosts = [
+    verifiedHost("codex"),
+    ...Array.from({ length: 10 }, (_, index) => ({ host: `unknown-${index}` })),
+  ];
+  assert.equal(oversized.api.renderRouteHosts(), "");
+  assert.equal(oversized.node("route-button").disabled, true);
+  assert.match(oversized.node("route-host-help").textContent, /safe Route Lab bound/i);
+
+  for (const [field, invalidValue] of [
+    ["contract_version", "2"],
+    ["source", "native-adapter-event"],
+    ["evidence", [" duplicated evidence "]],
+    ["capabilities", ["not-a-governed-native-capability"]],
+  ]) {
+    let malformedCalls = 0;
+    const malformed = createAppHarness(async () => {
+      malformedCalls += 1;
+      throw new Error("malformed capability evidence must not reach Route Lab");
+    });
+    const host = verifiedHost("codex");
+    host.execution_capabilities[field] = invalidValue;
+    malformed.api.state.master = { enabled: true, generation: 1 };
+    malformed.api.state.hosts = [host];
+    malformed.node("route-task").value = "Reject malformed host evidence";
+    assert.equal(malformed.api.renderRouteHosts(), "");
+    assert.equal(malformed.node("route-button").disabled, true);
+    await malformed.api.runRoute();
+    assert.equal(malformedCalls, 0);
+  }
 });
 
 test("read-only settings surface materializes the ZCode adapter field", () => {
@@ -2259,8 +2740,8 @@ test("late control and full-refresh responses cannot cross restart generations",
     if (path === "/api/snapshots") staleControl.api.state.lifecycle.suspended = true;
     const payloads = new Map([
       ["/api/hosts", { hosts: [] }],
-      ["/api/roster?limit=100", { agents: [] }],
-      ["/api/snapshots", { snapshots: [] }],
+      ["/api/roster?limit=100", emptyRosterPage("stale-control-roster")],
+      ["/api/snapshots", emptyGovernancePage("stale-control-snapshots")],
     ]);
     return jsonResponse(200, payloads.get(path));
   });
@@ -2296,13 +2777,155 @@ test("late control and full-refresh responses cannot cross restart generations",
       ["/api/config", { effective: {} }],
       ["/api/live?limit=100", { revision: "obsolete-full", schema_version: 1 }],
       ["/api/hosts", { hosts: [] }],
-      ["/api/roster?limit=100", { agents: [] }],
-      ["/api/snapshots", { snapshots: [] }],
+      ["/api/roster?limit=100", emptyRosterPage("stale-full-roster")],
+      ["/api/snapshots", emptyGovernancePage("stale-full-snapshots")],
     ]);
     return jsonResponse(200, payloads.get(path));
   });
   assert.equal(await staleFull.api.refreshAll(), false);
   assert.equal(staleFull.api.state.live.revision, "");
+});
+
+test("view-scoped intent wins deferred races with control and full refreshes", async () => {
+  const newerOperations = {
+    agents: [{ agent_slug: "newer-agent", capabilities: [], enabled: true }],
+    count: 1,
+    enabled_count: 1,
+    matched_count: 1,
+    next_cursor: null,
+    roster_revision: "newer-operation-revision",
+    total_count: 1,
+    truncated: false,
+  };
+  const staleOperations = {
+    agents: [{ agent_slug: "stale-agent", capabilities: [], enabled: true }],
+    count: 1,
+    enabled_count: 1,
+    matched_count: 1,
+    next_cursor: null,
+    roster_revision: "stale-operation-revision",
+    total_count: 1,
+    truncated: false,
+  };
+  const staleSnapshot = controlSnapshot({
+    config: { effective: {}, revision: "stale-control" },
+    governance: {
+      operations: staleOperations,
+      reviews: { candidates: [] },
+      snapshots: [],
+    },
+    roster: { agents: [], truncated: false },
+  });
+
+  const controlPending = deferred();
+  const filterPending = deferred();
+  const controlCalls = [];
+  let controlOperationCalls = 0;
+  const controlRace = createAppHarness((path, options) => {
+    controlCalls.push({ path, signal: options.signal });
+    if (path === "/api/control") return controlPending.promise;
+    if (path.startsWith("/api/roster/operations")) {
+      controlOperationCalls += 1;
+      return controlOperationCalls === 1
+        ? filterPending.promise
+        : Promise.resolve(jsonResponse(200, staleOperations));
+    }
+    throw new Error(`unexpected control-race path ${path}`);
+  });
+  controlRace.api.state.activeView = "roster";
+  const staleControl = controlRace.api.refreshControlPlane();
+  await Promise.resolve();
+  controlRace.node("roster-filter-query").value = "newer";
+  const newerFilter = controlRace.api.applyOperationalFilters();
+  assert.equal(controlCalls[0].signal.aborted, true);
+  filterPending.resolve(jsonResponse(200, newerOperations));
+  assert.equal(await newerFilter, true);
+  controlPending.resolve(jsonResponse(200, staleSnapshot));
+  await staleControl;
+  assert.equal(controlRace.api.state.rosterOperations.agents[0].agent_slug, "newer-agent");
+  assert.deepEqual(controlRace.api.state.rosterFilters, { query: "newer" });
+
+  const livePending = deferred();
+  const fullControlPending = deferred();
+  const fullFilterPending = deferred();
+  const fullCalls = [];
+  let fullOperationCalls = 0;
+  const fullRace = createAppHarness((path, options) => {
+    fullCalls.push({ path, signal: options.signal });
+    if (path === "/api/live?limit=100") return livePending.promise;
+    if (path === "/api/control") return fullControlPending.promise;
+    if (path.startsWith("/api/roster/operations")) {
+      fullOperationCalls += 1;
+      return fullOperationCalls === 1
+        ? fullFilterPending.promise
+        : Promise.resolve(jsonResponse(200, staleOperations));
+    }
+    throw new Error(`unexpected full-race path ${path}`);
+  });
+  fullRace.api.state.activeView = "roster";
+  const staleFullRefresh = fullRace.api.refreshAll();
+  await Promise.resolve();
+  fullRace.node("roster-filter-query").value = "newer";
+  const fullRaceFilter = fullRace.api.applyOperationalFilters();
+  assert.ok(fullCalls.slice(0, 2).every((call) => call.signal.aborted));
+  fullFilterPending.resolve(jsonResponse(200, newerOperations));
+  assert.equal(await fullRaceFilter, true);
+  livePending.resolve(jsonResponse(200, { revision: "stale-live", schema_version: 1 }));
+  fullControlPending.resolve(jsonResponse(200, staleSnapshot));
+  assert.equal(await staleFullRefresh, false);
+  assert.equal(fullRace.api.state.rosterOperations.agents[0].agent_slug, "newer-agent");
+  assert.deepEqual(fullRace.api.state.rosterFilters, { query: "newer" });
+  assert.equal(fullRace.api.state.live.revision, "");
+});
+
+test("a newer view request aborts every globally invalidated scope and clears remediation busy state", async () => {
+  const remediationPending = deferred();
+  const rosterPending = deferred();
+  const calls = [];
+  const harness = createAppHarness((path, options) => {
+    calls.push({ path, signal: options.signal });
+    if (path.includes("pending_cursor")) return remediationPending.promise;
+    if (path.startsWith("/api/roster/operations")) return rosterPending.promise;
+    throw new Error(`unexpected cross-view path ${path}`);
+  });
+  harness.api.state.rosterReview = {
+    remediation_attempts: [{ event_id: "pending-1" }],
+    next_remediation_pending_cursor: "pending-1",
+    remediation_pending_has_more: true,
+  };
+
+  const olderRemediation = harness.api.loadMoreRemediation("pending");
+  await Promise.resolve();
+  assert.equal(harness.node("review-pending-more").disabled, true);
+  assert.equal(harness.node("review-pending-more").getAttribute("aria-busy"), "true");
+
+  const newerRoster = harness.api.applyOperationalFilters();
+  await Promise.resolve();
+  assert.equal(calls[0].signal.aborted, true);
+  assert.equal(harness.api.state.requests.remediation.controller, null);
+  assert.notEqual(harness.api.state.requests.operationalRoster.controller, null);
+  assert.equal(harness.node("review-pending-more").disabled, false);
+  assert.equal(harness.node("review-pending-more").getAttribute("aria-busy"), null);
+
+  rosterPending.resolve(jsonResponse(200, {
+    agents: [{ agent_slug: "newer-agent", capabilities: [], enabled: true }],
+    next_cursor: null,
+    roster_revision: "newer-roster-revision",
+    truncated: false,
+  }));
+  assert.equal(await newerRoster, true);
+  remediationPending.resolve(jsonResponse(200, {
+    remediation_attempts: [{ event_id: "stale-pending" }],
+    next_remediation_pending_cursor: "",
+    remediation_pending_has_more: false,
+  }));
+  assert.equal(await olderRemediation, false);
+  assert.deepEqual(
+    harness.api.state.rosterReview.remediation_attempts.map((item) => item.event_id),
+    ["pending-1"],
+  );
+  assert.ok(Object.values(harness.api.state.requests).every((request) => !request.controller));
+  assert.ok([...harness.timers.tasks.values()].some((task) => task.delay === 0));
 });
 
 test("app.js routing lab posts bounded tasks and reconciles live evidence", async () => {
@@ -2683,8 +3306,8 @@ test("app.js reconnects from stored credentials and surfaces missing tokens", as
       schema_version: 1,
     }],
     ["/api/hosts", { hosts: [] }],
-    ["/api/roster?limit=100", { agents: [] }],
-    ["/api/snapshots", { snapshots: [] }],
+    ["/api/roster?limit=100", emptyRosterPage("connected-roster")],
+    ["/api/snapshots", emptyGovernancePage("connected-snapshots")],
     ["/api/config", { effective: {}, revision: "config" }],
   ]);
   const connected = createAppHarness(async (path) => jsonResponse(200, payloads.get(path)));
@@ -3205,7 +3828,7 @@ test("app.js covers cancellation, stale control responses, and fallback retry", 
   assert.equal(hiddenClock.api.state.clockTimer, null);
 });
 
-test("app.js refreshes sparse payloads while live updates are paused", async () => {
+test("app.js rejects sparse collection payloads while paused and preserves last-good state", async () => {
   const payloads = new Map([
     ["/api/live?limit=100", { schema_version: 1 }],
     ["/api/hosts", {}],
@@ -3215,15 +3838,21 @@ test("app.js refreshes sparse payloads while live updates are paused", async () 
   ]);
   const harness = createAppHarness(async (path) => jsonResponse(200, payloads.get(path)));
   harness.api.state.live.enabled = false;
-  assert.equal(await harness.api.refreshAll(), true);
-  assert.equal(harness.api.state.hosts.length, 0);
-  assert.equal(harness.api.state.roster.length, 0);
-  assert.equal(harness.api.state.snapshots.length, 0);
+  harness.api.setLiveStatus("Live updates paused", "paused");
+  harness.api.state.hosts = [{ host: "last-good-host" }];
+  harness.api.state.roster = [{ agent_slug: "last-good-agent" }];
+  harness.api.state.snapshots = [{ snapshot_id: "last-good-snapshot" }];
+  assert.equal(await harness.api.refreshAll(), undefined);
+  assert.equal(harness.api.state.hosts[0].host, "last-good-host");
+  assert.equal(harness.api.state.roster[0].agent_slug, "last-good-agent");
+  assert.equal(harness.api.state.snapshots[0].snapshot_id, "last-good-snapshot");
   assert.equal(harness.node("live-status").textContent, "Live updates paused");
   assert.equal(harness.node("live-status").dataset.state, "paused");
 
   const emptyConfigPayloads = new Map(payloads);
   emptyConfigPayloads.set("/api/config", {});
+  emptyConfigPayloads.set("/api/roster?limit=100", emptyRosterPage("empty-config-roster"));
+  emptyConfigPayloads.set("/api/snapshots", emptyGovernancePage("empty-config-snapshots"));
   const emptyConfig = createAppHarness(async (path) => (
     jsonResponse(200, emptyConfigPayloads.get(path))
   ));
@@ -3231,6 +3860,32 @@ test("app.js refreshes sparse payloads while live updates are paused", async () 
   assert.equal(emptyConfig.api.state.overview.capture_content, false);
   assert.equal(emptyConfig.api.state.overview.retention_days, undefined);
   assert.equal(emptyConfig.api.state.overview.roster_count, 0);
+});
+
+test("app.js rejects null governance without replacing the last-good control state", async () => {
+  const malformed = controlSnapshot();
+  malformed.governance = null;
+  const harness = createAppHarness(async (path) => {
+    assert.equal(path, "/api/control");
+    return jsonResponse(200, malformed);
+  });
+  harness.api.state.hosts = [{ host: "last-good-host" }];
+  harness.api.state.roster = [{ agent_slug: "last-good-agent" }];
+  harness.api.state.snapshots = [{ snapshot_id: "last-good-snapshot" }];
+  harness.api.state.rosterReview = {
+    candidates: [{ candidate: { id: "last-good-review" } }],
+  };
+
+  await harness.api.refreshControlPlane();
+
+  assert.deepEqual(harness.api.state.hosts, [{ host: "last-good-host" }]);
+  assert.deepEqual(harness.api.state.roster, [{ agent_slug: "last-good-agent" }]);
+  assert.deepEqual(harness.api.state.snapshots, [{ snapshot_id: "last-good-snapshot" }]);
+  assert.deepEqual(harness.api.state.rosterReview, {
+    candidates: [{ candidate: { id: "last-good-review" } }],
+  });
+  assert.equal(harness.api.state.control.stale, true);
+  assert.match(harness.node("notice").textContent, /retained the last good state/i);
 });
 
 test("ES-module bootstrap and lifecycle teardown are deterministic", async () => {
@@ -3463,6 +4118,151 @@ test("paged roster metadata drives global counts and accessible truncation discl
   assert.equal(optionalStatus.node("roster-count").textContent, "0 enabled · 0 total");
 });
 
+test("collection completion fails closed on missing initial cursor or revision", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    return jsonResponse(200, {
+      collection_revision: "revision-1",
+      next_cursor: null,
+      truncated: false,
+      workers: [{ agent_slug: "worker-two" }],
+    });
+  });
+  const options = {
+    basePath: "/api/workforce?limit=200",
+    itemField: "workers",
+    revisionField: "collection_revision",
+  };
+
+  await assert.rejects(
+    harness.api.completeCollection({
+      collection_revision: "revision-1",
+      truncated: true,
+      workers: [],
+    }, options),
+    /invalid next cursor/i,
+  );
+  await assert.rejects(
+    harness.api.completeCollection({
+      next_cursor: "cursor-1",
+      truncated: true,
+      workers: [],
+    }, options),
+    /omitted its paging revision/i,
+  );
+  assert.equal(calls.length, 0);
+
+  const completed = await harness.api.completeCollection({
+    collection_revision: "revision-1",
+    next_cursor: "cursor-1",
+    truncated: true,
+    workers: [{ agent_slug: "worker-one" }],
+  }, options);
+  assert.equal(calls[0], "/api/workforce?limit=200&after=cursor-1");
+  assert.deepEqual(
+    completed.workers.map((worker) => worker.agent_slug),
+    ["worker-one", "worker-two"],
+  );
+  assert.equal(completed.truncated, false);
+  assert.equal(completed.pages_loaded, 2);
+
+  const changed = createAppHarness(async () => jsonResponse(200, {
+    collection_revision: "revision-2",
+    next_cursor: null,
+    truncated: false,
+    workers: [],
+  }));
+  await assert.rejects(
+    changed.api.completeCollection({
+      collection_revision: "revision-1",
+      next_cursor: "cursor-1",
+      truncated: true,
+      workers: [],
+    }, options),
+    /changed while it was being paged/i,
+  );
+
+  for (const [page, message] of [
+    [null, /invalid page/i],
+    [[], /invalid page/i],
+    [{
+      collection_revision: "revision-1", next_cursor: null, truncated: false, workers: {},
+    }, /invalid items/i],
+    [{
+      collection_revision: "revision-1", next_cursor: null, truncated: "false", workers: [],
+    }, /invalid truncation flag/i],
+    [{ next_cursor: null, truncated: false, workers: [] }, /paging revision/i],
+    [{
+      collection_revision: "revision-1", next_cursor: "A-noncanonical-slug", truncated: true, workers: [],
+    }, /invalid next cursor/i],
+    [{
+      collection_revision: "revision-1", next_cursor: "x".repeat(129), truncated: true, workers: [],
+    }, /invalid next cursor/i],
+    [{
+      collection_revision: "revision-1", next_cursor: "unexpected", truncated: false, workers: [],
+    }, /unexpected next cursor/i],
+  ]) {
+    await assert.rejects(harness.api.completeCollection(page, options), message);
+  }
+  for (const cursor of [
+    "invalid=padding",
+    "x".repeat(1025),
+    encodedCursor("wrong.v1", "time", "id"),
+  ]) {
+    await assert.rejects(
+      harness.api.completeCollection({
+        collection_revision: "revision-1",
+        next_cursor: cursor,
+        truncated: true,
+        workers: [],
+      }, { ...options, cursorContract: "encoded", cursorKind: "hiring.v1" }),
+      /invalid next cursor/i,
+    );
+  }
+  const hiringCursor = encodedCursor("hiring.v1", "2026-07-26T12:00:00Z", "case-1");
+  const encodedHarness = createAppHarness(async () => jsonResponse(200, {
+    collection_revision: "hiring-revision-1",
+    hiring_cases: [{ id: "case-2" }],
+    next_cursor: null,
+    truncated: false,
+  }));
+  const completedHiring = await encodedHarness.api.completeCollection({
+    collection_revision: "hiring-revision-1",
+    hiring_cases: [{ id: "case-1" }],
+    next_cursor: hiringCursor,
+    truncated: true,
+  }, {
+    basePath: "/api/hiring?limit=200",
+    cursorContract: "encoded",
+    cursorKind: "hiring.v1",
+    itemField: "hiring_cases",
+    revisionField: "collection_revision",
+  });
+  assert.deepEqual(completedHiring.hiring_cases.map((item) => item.id), ["case-1", "case-2"]);
+
+  const lastGood = createAppHarness(async (path) => jsonResponse(200, path.startsWith("/api/workforce")
+    ? {
+        collection_revision: "revision-bad",
+        next_cursor: null,
+        truncated: false,
+        workers: "not-an-array",
+      }
+    : {
+        collection_revision: "revision-hiring",
+        hiring_cases: [],
+        next_cursor: null,
+        truncated: false,
+      }));
+  lastGood.api.state.workforce = [{ agent_slug: "last-good-worker" }];
+  lastGood.api.state.workforceCounts = { employee: 1 };
+  lastGood.api.state.hiring = [{ id: "last-good-case" }];
+  assert.equal(await lastGood.api.refreshWorkforce(), false);
+  assert.deepEqual(lastGood.api.state.workforce, [{ agent_slug: "last-good-worker" }]);
+  assert.deepEqual(lastGood.api.state.workforceCounts, { employee: 1 });
+  assert.deepEqual(lastGood.api.state.hiring, [{ id: "last-good-case" }]);
+});
+
 test("roster search markup permits the normalization performed before lookup", () => {
   const searchInput = INDEX_SOURCE.match(/<input id="roster-search-slug"[^>]*>/)?.[0] || "";
   assert.doesNotMatch(searchInput, /\s(?:pattern|minlength)=/);
@@ -3483,6 +4283,7 @@ test("roster search rolls back failed lookups and refuses inactive lifecycles", 
   });
   harness.api.state.activeView = "roster";
   harness.api.state.rosterFilter = "current-agent";
+  harness.api.state.rosterFilterCommitted = "current-agent";
   harness.node("roster-search-slug").value = "current-agent";
 
   assert.equal(await harness.api.applyRosterFilter("target-agent"), false);
@@ -3499,6 +4300,255 @@ test("roster search rolls back failed lookups and refuses inactive lifecycles", 
   harness.api.state.lifecycle.suspended = true;
   assert.equal(await harness.api.applyRosterFilter("target-agent"), false);
   assert.equal(calls, callsAfterFailure);
+});
+
+test("a stale roster search cannot roll back a newer successful search", async () => {
+  const staleLive = deferred();
+  let firstLiveSignal;
+  let liveCalls = 0;
+  let filterALookups = 0;
+  const harness = createAppHarness((path, options) => {
+    if (path === "/api/live?limit=100") {
+      liveCalls += 1;
+      if (liveCalls === 1) {
+        firstLiveSignal = options.signal;
+        return staleLive.promise;
+      }
+      return Promise.resolve(jsonResponse(200, {
+        revision: "filter-b-live",
+        schema_version: 1,
+      }));
+    }
+    if (path === "/api/control") {
+      return Promise.resolve(jsonResponse(200, controlSnapshot()));
+    }
+    if (path === "/api/agents/lookup?slug=filter-a") {
+      filterALookups += 1;
+      return Promise.resolve(jsonResponse(200, {
+        ...emptyRosterPage("filter-a-revision"),
+        agents: [{ agent_slug: "filter-a", capabilities: [], enabled: true }],
+      }));
+    }
+    if (path === "/api/agents/lookup?slug=filter-b") {
+      return Promise.resolve(jsonResponse(200, {
+        ...emptyRosterPage("filter-b-revision"),
+        agents: [{ agent_slug: "filter-b", capabilities: [], enabled: true }],
+      }));
+    }
+    throw new Error(`unexpected roster-filter race path ${path}`);
+  });
+
+  const staleA = harness.api.applyRosterFilter("filter-a");
+  for (let index = 0; index < 20 && filterALookups === 0; index += 1) {
+    await Promise.resolve();
+  }
+  assert.equal(filterALookups, 1);
+
+  const newerB = harness.api.applyRosterFilter("filter-b");
+  assert.equal(firstLiveSignal.aborted, true);
+  assert.equal(await newerB, true);
+  assert.equal(harness.api.state.rosterFilter, "filter-b");
+  assert.equal(harness.api.state.rosterFilterCommitted, "filter-b");
+  assert.equal(harness.node("roster-search-slug").value, "filter-b");
+  assert.equal(harness.api.state.roster[0].agent_slug, "filter-b");
+
+  staleLive.resolve(jsonResponse(200, {
+    revision: "filter-a-live",
+    schema_version: 1,
+  }));
+  assert.equal(await staleA, false);
+  assert.equal(harness.api.state.rosterFilter, "filter-b");
+  assert.equal(harness.api.state.rosterFilterCommitted, "filter-b");
+  assert.equal(harness.node("roster-search-slug").value, "filter-b");
+  assert.equal(harness.api.state.roster[0].agent_slug, "filter-b");
+});
+
+test("a failed current roster search restores committed data instead of a pending intent", async () => {
+  const staleLive = deferred();
+  let liveCalls = 0;
+  let filterALookups = 0;
+  const harness = createAppHarness((path) => {
+    if (path === "/api/live?limit=100") {
+      liveCalls += 1;
+      return liveCalls === 1
+        ? staleLive.promise
+        : Promise.resolve(jsonResponse(200, {
+          revision: "filter-b-live",
+          schema_version: 1,
+        }));
+    }
+    if (path === "/api/control") {
+      return Promise.resolve(jsonResponse(200, controlSnapshot()));
+    }
+    if (path === "/api/agents/lookup?slug=filter-a") {
+      filterALookups += 1;
+      return Promise.resolve(jsonResponse(200, {
+        ...emptyRosterPage("filter-a-revision"),
+        agents: [{ agent_slug: "filter-a", capabilities: [], enabled: true }],
+      }));
+    }
+    if (path === "/api/agents/lookup?slug=filter-b") {
+      return Promise.resolve(jsonResponse(503, { error: "filter B unavailable" }));
+    }
+    throw new Error(`unexpected committed-filter race path ${path}`);
+  });
+  harness.api.state.rosterFilter = "filter-c";
+  harness.api.state.rosterFilterCommitted = "filter-c";
+  harness.api.state.roster = [{ agent_slug: "filter-c", capabilities: [], enabled: true }];
+  harness.api.state.rosterPage = {
+    count: 1,
+    disabled_count: 0,
+    enabled_count: 1,
+    next_cursor: null,
+    total_count: 1,
+    truncated: false,
+  };
+  harness.node("roster-search-slug").value = "filter-c";
+
+  const staleA = harness.api.applyRosterFilter("filter-a");
+  for (let index = 0; index < 20 && filterALookups === 0; index += 1) {
+    await Promise.resolve();
+  }
+  assert.equal(filterALookups, 1);
+
+  assert.equal(await harness.api.applyRosterFilter("filter-b"), false);
+  assert.equal(harness.api.state.rosterFilter, "filter-c");
+  assert.equal(harness.api.state.rosterFilterCommitted, "filter-c");
+  assert.equal(harness.node("roster-search-slug").value, "filter-c");
+  assert.equal(harness.api.state.roster[0].agent_slug, "filter-c");
+
+  staleLive.resolve(jsonResponse(200, {
+    revision: "filter-a-live",
+    schema_version: 1,
+  }));
+  assert.equal(await staleA, false);
+  assert.equal(harness.api.state.rosterFilter, "filter-c");
+  assert.equal(harness.api.state.rosterFilterCommitted, "filter-c");
+  assert.equal(harness.node("roster-search-slug").value, "filter-c");
+  assert.equal(harness.api.state.roster[0].agent_slug, "filter-c");
+});
+
+test("operational roster intent supersedes a pending exact search in either response order", async () => {
+  for (const responseOrder of ["exact-first", "operational-first"]) {
+    const staleLive = deferred();
+    const operationalPage = deferred();
+    let filterALookups = 0;
+    const harness = createAppHarness((path) => {
+      if (path === "/api/live?limit=100") return staleLive.promise;
+      if (path === "/api/control") {
+        return Promise.resolve(jsonResponse(200, controlSnapshot()));
+      }
+      if (path === "/api/agents/lookup?slug=filter-a") {
+        filterALookups += 1;
+        return Promise.resolve(jsonResponse(200, {
+          ...emptyRosterPage("filter-a-revision"),
+          agents: [{ agent_slug: "filter-a", capabilities: [], enabled: true }],
+        }));
+      }
+      if (path === "/api/roster/operations?limit=100") return operationalPage.promise;
+      throw new Error(`unexpected operational-filter race path ${path}`);
+    });
+    harness.api.state.rosterFilter = "filter-c";
+    harness.api.state.rosterFilterCommitted = "filter-c";
+    harness.api.state.roster = [{ agent_slug: "filter-c", capabilities: [], enabled: true }];
+    harness.node("roster-search-slug").value = "filter-c";
+
+    const staleA = harness.api.applyRosterFilter("filter-a");
+    for (let index = 0; index < 20 && filterALookups === 0; index += 1) {
+      await Promise.resolve();
+    }
+    assert.equal(filterALookups, 1, responseOrder);
+
+    const newerOperational = harness.api.applyOperationalFilters();
+    assert.equal(harness.api.state.rosterFilter, "filter-c", responseOrder);
+    assert.equal(harness.node("roster-search-slug").value, "filter-c", responseOrder);
+    if (responseOrder === "exact-first") {
+      staleLive.resolve(jsonResponse(200, {
+        revision: "filter-a-live",
+        schema_version: 1,
+      }));
+      assert.equal(await staleA, false, responseOrder);
+      operationalPage.resolve(jsonResponse(200, {
+        agents: [{ agent_slug: "operational-b", capabilities: [], enabled: true }],
+        next_cursor: null,
+        roster_revision: "operational-b-revision",
+        truncated: false,
+      }));
+      assert.equal(await newerOperational, true, responseOrder);
+    } else {
+      operationalPage.resolve(jsonResponse(200, {
+        agents: [{ agent_slug: "operational-b", capabilities: [], enabled: true }],
+        next_cursor: null,
+        roster_revision: "operational-b-revision",
+        truncated: false,
+      }));
+      assert.equal(await newerOperational, true, responseOrder);
+      staleLive.resolve(jsonResponse(200, {
+        revision: "filter-a-live",
+        schema_version: 1,
+      }));
+      assert.equal(await staleA, false, responseOrder);
+    }
+
+    assert.equal(harness.api.state.rosterFilter, "", responseOrder);
+    assert.equal(harness.api.state.rosterFilterCommitted, "", responseOrder);
+    assert.equal(harness.node("roster-search-slug").value, "", responseOrder);
+    assert.equal(
+      harness.api.state.rosterOperations.agents[0].agent_slug,
+      "operational-b",
+      responseOrder,
+    );
+  }
+});
+
+test("a failed operational roster intent restores the committed exact roster", async () => {
+  const staleLive = deferred();
+  const operationalPage = deferred();
+  let filterALookups = 0;
+  const harness = createAppHarness((path) => {
+    if (path === "/api/live?limit=100") return staleLive.promise;
+    if (path === "/api/control") {
+      return Promise.resolve(jsonResponse(200, controlSnapshot()));
+    }
+    if (path === "/api/agents/lookup?slug=filter-a") {
+      filterALookups += 1;
+      return Promise.resolve(jsonResponse(200, {
+        ...emptyRosterPage("filter-a-revision"),
+        agents: [{ agent_slug: "filter-a", capabilities: [], enabled: true }],
+      }));
+    }
+    if (path === "/api/roster/operations?limit=100") return operationalPage.promise;
+    throw new Error(`unexpected failed-operational-filter path ${path}`);
+  });
+  harness.api.state.rosterFilter = "filter-c";
+  harness.api.state.rosterFilterCommitted = "filter-c";
+  harness.api.state.roster = [{ agent_slug: "filter-c", capabilities: [], enabled: true }];
+  harness.node("roster-search-slug").value = "filter-c";
+
+  const staleA = harness.api.applyRosterFilter("filter-a");
+  for (let index = 0; index < 20 && filterALookups === 0; index += 1) {
+    await Promise.resolve();
+  }
+  assert.equal(filterALookups, 1);
+
+  const failedOperational = harness.api.applyOperationalFilters();
+  assert.equal(harness.api.state.rosterFilter, "filter-c");
+  operationalPage.resolve(jsonResponse(503, { error: "operational B unavailable" }));
+  assert.equal(await failedOperational, false);
+  assert.equal(harness.api.state.rosterFilter, "filter-c");
+  assert.equal(harness.api.state.rosterFilterCommitted, "filter-c");
+  assert.equal(harness.node("roster-search-slug").value, "filter-c");
+  assert.equal(harness.api.state.roster[0].agent_slug, "filter-c");
+
+  staleLive.resolve(jsonResponse(200, {
+    revision: "filter-a-live",
+    schema_version: 1,
+  }));
+  assert.equal(await staleA, false);
+  assert.equal(harness.api.state.rosterFilter, "filter-c");
+  assert.equal(harness.api.state.rosterFilterCommitted, "filter-c");
+  assert.equal(harness.node("roster-search-slug").value, "filter-c");
+  assert.equal(harness.api.state.roster[0].agent_slug, "filter-c");
 });
 
 test("same-revision live snapshots render only when master state changes visibly", () => {
@@ -4072,10 +5122,65 @@ test("remediation queue controls page pending and history independently", async 
   );
 });
 
+test("queued control refresh preserves the remediation extent already loaded by the operator", async () => {
+  const firstReviewPage = {
+    candidates: [],
+    collection_revision: "review-revision-1",
+    limit: 1,
+    next_cursor: null,
+    next_remediation_history_cursor: "",
+    next_remediation_pending_cursor: "pending-1",
+    remediation_attempts: [{ event_id: "pending-1", slug: "first-repair" }],
+    remediation_history: [],
+    remediation_history_has_more: false,
+    remediation_pending_has_more: true,
+    truncated: false,
+  };
+  const snapshot = controlSnapshot({ governance: {
+    operations: { agents: [] },
+    reviews: firstReviewPage,
+    snapshots: [],
+  } });
+  const harness = createAppHarness(async (path) => {
+    if (path.includes("pending_cursor")) {
+      return jsonResponse(200, {
+        remediation_attempts: [{ event_id: "pending-2", slug: "second-repair" }],
+        remediation_history: [],
+        remediation_history_has_more: false,
+        remediation_pending_has_more: false,
+        next_remediation_history_cursor: "",
+        next_remediation_pending_cursor: "",
+      });
+    }
+    if (path === "/api/control") return jsonResponse(200, snapshot);
+    throw new Error(`unexpected remediation extent path ${path}`);
+  });
+  harness.api.state.rosterReview = structuredClone(firstReviewPage);
+
+  assert.equal(await harness.api.loadMoreRemediation("pending"), true);
+  assert.deepEqual(
+    harness.api.state.rosterReview.remediation_attempts.map((item) => item.event_id),
+    ["pending-1", "pending-2"],
+  );
+  const scheduled = [...harness.timers.tasks.entries()]
+    .find(([, task]) => task.delay === 0);
+  assert.ok(scheduled);
+  harness.timers.tasks.delete(scheduled[0]);
+  await scheduled[1].callback();
+
+  assert.deepEqual(
+    harness.api.state.rosterReview.remediation_attempts.map((item) => item.event_id),
+    ["pending-1", "pending-2"],
+  );
+  assert.equal(harness.api.state.rosterReview.next_remediation_pending_cursor, "");
+  assert.equal(harness.api.state.rosterReview.remediation_pending_has_more, false);
+});
+
 test("operational roster filters are bounded, reversible, and lifecycle safe", async () => {
   const calls = [];
   const response = {
     agents: [], count: 0, matched_count: 0, total_count: 0, enabled_count: 0,
+    next_cursor: null, roster_revision: "filtered-roster-revision",
     truncated: false, facets: {},
   };
   const harness = createAppHarness(async (path) => {

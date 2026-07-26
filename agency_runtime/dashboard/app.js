@@ -8,12 +8,9 @@ export function createDashboard(runtime = globalThis) {
   const core = createCore(runtime);
   const { document, window, state, byId, listen } = core;
   const config = createConfigController(core);
-  let actions;
-  const renderer = createRenderer(core, config, {
-    selectWorker: (...args) => actions.selectWorker(...args),
-  });
+  const renderer = createRenderer(core, config);
   const live = createLiveController(core, config, renderer);
-  actions = createActionController(core, config, renderer, live);
+  const actions = createActionController(core, config, renderer, live);
 
   async function connectFromLocation() {
     const generation = ++state.connection.generation;
@@ -209,6 +206,22 @@ export function createDashboard(runtime = globalThis) {
     const remediationHistory = byId("review-history-more");
     if (remediationHistory) {
       listen(remediationHistory, "click", () => live.loadMoreRemediation("history"));
+    }
+    const workforceGrid = byId("workforce-grid");
+    if (workforceGrid) {
+      listen(workforceGrid, "click", (event) => {
+        const card = event.target?.closest?.("[data-worker]");
+        const slug = String(card?.dataset?.worker || "");
+        if (slug) void actions.selectWorker(slug);
+      });
+    }
+    const hiringList = byId("hiring-list");
+    if (hiringList) {
+      listen(hiringList, "click", (event) => {
+        const control = event.target?.closest?.("[data-hiring-evidence-case]");
+        const caseId = String(control?.dataset?.hiringEvidenceCase || "");
+        if (caseId && !control.disabled) void live.loadHiringEvidence(caseId);
+      });
     }
     const providerType = byId("provider-builder-type");
     const providerTransport = byId("provider-builder-transport");

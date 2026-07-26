@@ -1,4 +1,22 @@
+import { HIRING_EVIDENCE_DOCUMENTS } from "./dashboard-core.js";
+
 const EXECUTION_HOSTS = ["codex", "claude", "openclaw", "hermes", "zcode"];
+const ROUTE_LAB_HOST_INVENTORY_LIMIT = EXECUTION_HOSTS.length * 2;
+const ROUTE_LAB_CAPABILITY_LIMIT = 64;
+const ROUTE_LAB_EVIDENCE_LIMIT = 8;
+const ROUTE_LAB_TOKEN_PATTERN = /^[a-z0-9][a-z0-9._+-]{0,63}$/;
+const ROUTE_LAB_NATIVE_CAPABILITIES = new Set([
+  "code-execution",
+  "native-delegation",
+  "package-management",
+  "repository-read",
+  "repository-write",
+  "runtime-evidence",
+  "shell-execution",
+  "source-control",
+  "test-execution",
+]);
+const ROUTE_LAB_PLATFORMS = new Set(["windows", "linux"]);
 
 const EVIDENCE_COLUMNS = {
   specialists: [["slug", "Specialist"], ["session_id", "Session"], ["trace_id", "Trace"], ["state", "Evidence state"], ["loaded_at", "Activated"], ["expired_at", "Expired"]],
@@ -9,7 +27,60 @@ const EVIDENCE_COLUMNS = {
   finalizations: [["trace_id", "Trace"], ["host", "Host"], ["action", "Action"], ["missing", "Missing"], ["created_at", "Created"]],
 };
 
-export function createRenderer(core, config, callbacks) {
+function routeLabTokensAreValid(values, { allowed = null, limit = ROUTE_LAB_CAPABILITY_LIMIT } = {}) {
+  if (!Array.isArray(values) || values.length > limit) return false;
+  if (values.some((value) => (
+    typeof value !== "string"
+    || !ROUTE_LAB_TOKEN_PATTERN.test(value)
+    || (allowed && !allowed.has(value))
+  ))) return false;
+  return values.every((value, index) => index === 0 || values[index - 1] < value);
+}
+
+function routeLabEvidenceIsValid(values) {
+  if (!Array.isArray(values) || values.length > ROUTE_LAB_EVIDENCE_LIMIT) return false;
+  const seen = new Set();
+  return values.every((value) => {
+    if (typeof value !== "string" || !value || value.length > 256) return false;
+    if (value.trim().replace(/\s+/g, " ") !== value || seen.has(value)) return false;
+    seen.add(value);
+    return true;
+  });
+}
+
+function routeLabReceiptIsValid(receipt, host) {
+  return receipt !== null
+    && typeof receipt === "object"
+    && !Array.isArray(receipt)
+    && receipt.contract_version === "1"
+    && receipt.surface === host
+    && receipt.execution_host === host
+    && receipt.inference_surface === ""
+    && ROUTE_LAB_PLATFORMS.has(receipt.platform)
+    && receipt.status === "native-installation-verified"
+    && receipt.source === "native-installation-evidence"
+    && routeLabTokensAreValid(receipt.capabilities, { allowed: ROUTE_LAB_NATIVE_CAPABILITIES })
+    && routeLabTokensAreValid(receipt.unknown_tools)
+    && routeLabEvidenceIsValid(receipt.evidence)
+    && receipt.session_id === ""
+    && receipt.trace_id === ""
+    && receipt.observed_at === "";
+}
+
+function hiringEvidenceIsComplete(value, caseId) {
+  return Boolean(value)
+    && typeof value === "object"
+    && !Array.isArray(value)
+    && value.id === caseId
+    && value.evidence_included === true
+    && HIRING_EVIDENCE_DOCUMENTS.every(([field]) => (
+      Boolean(value[field])
+      && typeof value[field] === "object"
+      && !Array.isArray(value[field])
+    ));
+}
+
+export function createRenderer(core, config) {
   const {
     runtime,
     document,
@@ -304,18 +375,29 @@ export function createRenderer(core, config, callbacks) {
     if (!select) return "";
     const previous = String(select.value || "");
     const byHost = new Map();
-    state.hosts.forEach((host) => {
-      const name = typeof host?.host === "string" ? host.host.trim().toLowerCase() : "";
-      const receipt = host?.execution_capabilities;
-      if (
-        EXECUTION_HOSTS.includes(name)
-        && !byHost.has(name)
-        && host.effective_enabled === true
-        && receipt?.status === "native-installation-verified"
-        && receipt.execution_host === name
-        && Array.isArray(receipt.capabilities)
-      ) byHost.set(name, host);
-    });
+    const duplicates = new Set();
+    const inventoryBounded = Array.isArray(state.hosts)
+      && state.hosts.length <= ROUTE_LAB_HOST_INVENTORY_LIMIT;
+    if (inventoryBounded) {
+      state.hosts.forEach((host) => {
+        const name = typeof host?.host === "string" ? host.host.trim().toLowerCase() : "";
+        if (!EXECUTION_HOSTS.includes(name)) return;
+        if (byHost.has(name)) {
+          duplicates.add(name);
+          byHost.delete(name);
+          return;
+        }
+        if (duplicates.has(name)) return;
+        byHost.set(name, host);
+      });
+      for (const [name, host] of byHost) {
+        const receipt = host?.execution_capabilities;
+        if (
+          host.effective_enabled !== true
+          || !routeLabReceiptIsValid(receipt, name)
+        ) byHost.delete(name);
+      }
+    }
     const available = EXECUTION_HOSTS.filter((host) => byHost.has(host));
     select.replaceChildren();
     if (!available.length) {
@@ -338,7 +420,11 @@ export function createRenderer(core, config, callbacks) {
     select.disabled = serviceBlocked || !masterEnabled || !available.length;
     const help = byId("route-host-help");
     if (help) {
-      help.textContent = !available.length
+      help.textContent = !inventoryBounded
+        ? "Host inventory exceeded the safe Route Lab bound. Refresh host discovery before retrying."
+        : duplicates.size
+          ? "Ambiguous duplicate host evidence was excluded. Refresh host discovery before retrying."
+          : !available.length
         ? "No current native installation receipt can authorize Route Lab. Install and enable a supported host, then refresh."
         : available.length === 1
           ? `Using the current ${available[0]} installation and capability receipt.`
@@ -1037,7 +1123,8 @@ export function createRenderer(core, config, callbacks) {
     if (!rows.length) {
       list.append(el("small", "", "No assignment or outcome evidence has been recorded yet."));
     } else {
-      rows.slice(0, 12).forEach((item) => {
+      const visible = rows.slice(0, 12);
+      visible.forEach((item) => {
         const row = el("div", "workforce-history-row");
         row.append(
           el("strong", "", item.kind),
@@ -1046,9 +1133,67 @@ export function createRenderer(core, config, callbacks) {
         );
         list.append(row);
       });
+      if (visible.length < rows.length) {
+        list.append(el(
+          "small",
+          "workforce-history-bound",
+          `Showing ${visible.length} of ${rows.length} loaded lifecycle and outcome records.`,
+        ));
+      }
     }
     history.append(list);
     root.append(history);
+  }
+
+  function appendWorkerLineage(root, detail) {
+    const records = Array.isArray(detail.lineage) ? detail.lineage : [];
+    const section = el("details", "workforce-history workforce-lineage");
+    section.dataset.preserveKey = `worker:${detail.worker?.agent_slug || "unknown"}:lineage`;
+    section.append(el("summary", "", "Loaded version lineage evidence"));
+    const list = el("div", "workforce-history-list");
+    if (!records.length) {
+      list.append(el("small", "", "No version lineage evidence is loaded."));
+    } else {
+      records.forEach((item) => {
+        const row = el("div", "workforce-history-row");
+        row.append(
+          el("strong", "", item.version || item.agent_version_id || "unknown version"),
+          el("span", "", item.relation || "unknown relation"),
+          el("time", "", formatTime(item.created_at)),
+        );
+        list.append(row);
+      });
+    }
+    section.append(list);
+    root.append(section);
+  }
+
+  function appendWorkerHiringCases(root, detail) {
+    const records = Array.isArray(detail.hiring_cases) ? detail.hiring_cases : [];
+    const section = el("details", "workforce-history workforce-hiring-cases");
+    section.dataset.preserveKey = `worker:${detail.worker?.agent_slug || "unknown"}:hiring`;
+    section.append(el("summary", "", "Loaded hiring case metadata"));
+    const list = el("div", "workforce-history-list");
+    if (!records.length) {
+      list.append(el("small", "", "No hiring case metadata is loaded."));
+    } else {
+      records.forEach((item) => {
+        const row = el("div", "workforce-history-row");
+        row.append(
+          el("strong", "", item.case_type || "hiring"),
+          el(
+            "span",
+            "",
+            [item.status || "unknown status", item.proposed_slug || item.id || "unknown case"]
+              .join(" · "),
+          ),
+          el("time", "", formatTime(item.created_at)),
+        );
+        list.append(row);
+      });
+    }
+    section.append(list);
+    root.append(section);
   }
 
   function renderWorkerDetail() {
@@ -1143,13 +1288,31 @@ export function createRenderer(core, config, callbacks) {
       root.append(promptDetails);
     }
     const evidence = el("div", "workforce-evidence-summary");
+    const evidenceLabel = (key, label) => {
+      const rows = Array.isArray(detail[key]) ? detail[key] : [];
+      const rawTotal = detail[`${key}_total_count`];
+      const exactTotal = typeof rawTotal === "number"
+        && Number.isSafeInteger(rawTotal)
+        && rawTotal >= rows.length;
+      const truncated = detail[`${key}_truncated`] === true;
+      if (!exactTotal) {
+        return truncated
+          ? `${rows.length} ${label} shown (bounded; total unavailable)`
+          : `${rows.length} ${label}`;
+      }
+      const bounded = truncated || rawTotal > rows.length;
+      const count = bounded ? `${rows.length} of ${rawTotal}` : String(rawTotal);
+      return `${count} ${label}${bounded ? " (bounded)" : ""}`;
+    };
     evidence.append(
-      el("strong", "", `${detail.lineage?.length || 0} version records`),
-      el("span", "", `${detail.events?.length || 0} lifecycle events`),
-      el("span", "", `${detail.outcomes?.length || 0} recorded outcomes`),
-      el("span", "", `${detail.hiring_cases?.length || 0} hiring records`),
+      el("strong", "", evidenceLabel("lineage", "version records")),
+      el("span", "", evidenceLabel("events", "lifecycle events")),
+      el("span", "", evidenceLabel("outcomes", "recorded outcomes")),
+      el("span", "", evidenceLabel("hiring_cases", "hiring records")),
     );
     root.append(evidence);
+    appendWorkerLineage(root, detail);
+    appendWorkerHiringCases(root, detail);
     appendWorkerHistory(root, detail);
     form.hidden = true;
   }
@@ -1193,7 +1356,6 @@ export function createRenderer(core, config, callbacks) {
           el("span", "workforce-card-slug", worker.agent_slug),
           el("small", "", `v${worker.current_version || "unknown"} · revision ${worker.revision ?? 0}`),
         );
-        listen(card, "click", () => callbacks.selectWorker(worker.agent_slug));
         grid.append(card);
       });
     }
@@ -1214,24 +1376,62 @@ export function createRenderer(core, config, callbacks) {
       hiringList.replaceChildren();
       if (!hiring.length) hiringList.append(el("div", "empty-state", "No hiring cases have been recorded."));
       hiring.forEach((item) => {
+        const caseId = typeof item?.id === "string" ? item.id : "";
+        const exactEvidence = hiringEvidenceIsComplete(state.hiringEvidence, caseId)
+          ? state.hiringEvidence
+          : null;
+        const loading = Boolean(caseId)
+          && state.hiringEvidenceLoadingCaseId === caseId;
         const card = el("article", `hiring-card status-${item.status || "unknown"}`);
+        card.dataset.preserveKey = `hiring:${caseId || item.proposed_slug || "unknown"}:card`;
         const head = el("div", "hiring-card-head");
         head.append(
           el("strong", "", item.proposed_slug || "Unnamed candidate"),
           el("span", "worker-state", `${item.case_type || "hire"} · ${item.status || "unknown"}`),
         );
-        card.append(head, el("small", "", `Risk: ${item.risk_tier || "standard"} · work unit ${item.work_unit_id || "—"}`));
-        [
-          ["Gap evidence", item.gap_evidence],
-          ["Duplicate analysis", item.duplicate_evidence],
-          ["Independent critic", item.critic_evidence],
-          ["Model receipts", item.model_evidence],
-        ].forEach(([label, value]) => {
+        card.append(
+          head,
+          el(
+            "small",
+            "",
+            `Case ${caseId || "unavailable"} · Risk: ${item.risk_tier || "standard"} · work unit ${item.work_unit_id || "—"}`,
+          ),
+          el(
+            "small",
+            "read-only-note",
+            "Metadata summary only · full evidence is not loaded from this collection.",
+          ),
+        );
+        const actions = el("div", "card-actions");
+        const load = el("button", "button ghost compact", "Load full evidence");
+        load.type = "button";
+        load.dataset.preserveKey = `hiring:${caseId || "unavailable"}:load`;
+        if (caseId) load.dataset.hiringEvidenceCase = caseId;
+        load.disabled = !caseId || loading;
+        load.setAttribute("aria-busy", String(loading));
+        load.setAttribute("aria-expanded", String(Boolean(exactEvidence)));
+        load.setAttribute(
+          "aria-label",
+          caseId
+            ? `Load full evidence for hiring case ${caseId}`
+            : "Full hiring evidence is unavailable because the case ID is missing",
+        );
+        actions.append(load);
+        card.append(actions);
+        if (exactEvidence) {
+          card.append(el(
+            "small",
+            "read-only-note",
+            "Full evidence loaded from the exact hiring-case response.",
+          ));
+        }
+        HIRING_EVIDENCE_DOCUMENTS.forEach(([field, label]) => {
+          if (!exactEvidence) return;
           const details = el("details", "hiring-evidence");
-          details.dataset.preserveKey = `hiring:${item.id || item.proposed_slug}:${label}`;
+          details.dataset.preserveKey = `hiring:${caseId}:evidence:${field}`;
           details.append(el("summary", "", label));
           const pre = el("pre");
-          pre.textContent = JSON.stringify(value || {}, null, 2);
+          pre.textContent = JSON.stringify(exactEvidence[field], null, 2);
           details.append(pre);
           card.append(details);
         });

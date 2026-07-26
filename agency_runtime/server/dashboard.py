@@ -103,6 +103,10 @@ from agency_runtime.core.selector.receipt_projection import (
     bounded_receipt_text,
 )
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.store.workforce import (
+    MAX_HIRING_COLLECTION_RESPONSE_BYTES,
+    WorkforcePayloadBudgetError,
+)
 from agency_runtime.core.workforce.comparison import nearest_workers
 from agency_runtime.core.workforce.hiring import apply_approved_hiring_case
 from agency_runtime.core.workforce.promotion import promotion_readiness
@@ -152,6 +156,7 @@ _ROUTE_LAB_HOST_INVENTORY_LIMIT = len(EXECUTION_HOSTS) * 2
 _ROUTE_LAB_REJECTION_LIMIT = 50
 _ROUTE_LAB_REJECTION_TEXT_BYTES = 256
 _DASHBOARD_COLLECTION_PAGE_MAX = 200
+MAX_WORKFORCE_DETAIL_RESPONSE_BYTES = 2 * 1024 * 1024
 _COLLECTION_CURSOR_RE = re.compile(r"[A-Za-z0-9_-]{1,1024}\Z")
 _EXPECTED_CLIENT_DISCONNECT_ERRNOS = frozenset(
     value
@@ -1115,6 +1120,47 @@ def _dashboard_observation_operation(method: str, path: str) -> str:
     return known.get((method, path), "unknown")
 
 
+def _dashboard_promotion_projection(
+    worker: Mapping[str, Any],
+    outcomes: Sequence[Mapping[str, Any]],
+    *,
+    required_successes: int,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Compute readiness from Store-proven scalars, then discard the private proof bit."""
+
+    public: list[dict[str, Any]] = []
+    readiness_inputs: list[dict[str, Any]] = []
+    worker_id = str(worker.get("worker_id") or "")
+    verifier = (
+        "dashboard-projected-verifier-2"
+        if worker_id == "dashboard-projected-verifier"
+        else "dashboard-projected-verifier"
+    )
+    for outcome in outcomes:
+        item = dict(outcome)
+        item.pop("evidence_refs", None)
+        qualified = item.pop("_promotion_evidence_qualified", False) is True
+        public.append(item)
+        if qualified:
+            readiness_inputs.append(
+                {
+                    **item,
+                    "evidence_refs": {
+                        "independent_verifier_worker_id": verifier,
+                        "independent_verification_receipt_id": "dashboard-projected-receipt",
+                        "independent_verification_validated": True,
+                    },
+                }
+            )
+        else:
+            readiness_inputs.append(item)
+    return public, promotion_readiness(
+        worker,
+        readiness_inputs,
+        required_successes=required_successes,
+    )
+
+
 def _delegation_graph(receipt: dict[str, Any]) -> dict[str, Any]:
     """Build the same dependency graph used by delegation lifecycle dispatch."""
     from agency_runtime.core.delegation.lifecycle import (
@@ -1261,13 +1307,47 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         return True
 
     def handle_one_request(self) -> None:
-        """Keep expected response-I/O disconnects out of socketserver error logs."""
+        """Start fresh request state and suppress expected response-I/O disconnects."""
 
+        self.__dict__.pop("_cached_dashboard_request_identity", None)
+        # ``BaseHTTPRequestHandler`` reuses one instance for an HTTP/1.1
+        # connection and does not clear ``headers`` before parsing the next
+        # request.  A parse failure must not let the protocol-error response
+        # consult a previous request's client-supplied identity.
+        self.__dict__.pop("headers", None)
         try:
             super().handle_one_request()
         except OSError as exc:
             if not self._close_expected_client_disconnect(exc):
                 raise
+
+    def send_error(
+        self,
+        code: int,
+        message: str | None = None,
+        explain: str | None = None,
+    ) -> None:
+        """Return a content-free JSON error for pre-dispatch HTTP failures."""
+
+        # The stdlib messages may interpolate the untrusted request line,
+        # method, or parser detail.  The status and request ID are sufficient
+        # to correlate the failure without reflecting that content.
+        del message, explain
+        try:
+            status = HTTPStatus(code)
+        except (TypeError, ValueError):
+            status = HTTPStatus.INTERNAL_SERVER_ERROR
+        request_id, _supplied = self._dashboard_request_identity()
+        with RuntimeBoundary(
+            surface="dashboard",
+            operation="protocol_error",
+            request_id=request_id,
+        ):
+            self._send_json(
+                status,
+                {"error": "request rejected"},
+                close_connection=True,
+            )
 
     def do_OPTIONS(self) -> None:
         request_id, _supplied = self._dashboard_request_identity()
@@ -1342,6 +1422,9 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 type(exc).__name__,
             )
             self._json_error(HTTPStatus.BAD_REQUEST, "runtime control unavailable")
+        except WorkforcePayloadBudgetError:
+            logger.error("dashboard GET response budget exceeded for %s", operation)
+            self._json_error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal server error")
         except (KeyError, ValueError, RuntimeError) as exc:
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
@@ -1533,7 +1616,14 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         self.send_header("Cross-Origin-Resource-Policy", "same-origin")
         self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 
-    def _send_json(self, status: int, payload: dict[str, Any]) -> None:
+    def _send_json(
+        self,
+        status: int,
+        payload: dict[str, Any],
+        *,
+        close_connection: bool = False,
+        maximum_bytes: int | None = None,
+    ) -> None:
         request_id, supplied = self._dashboard_request_identity()
         response_payload = (
             {**payload, "request_id": request_id}
@@ -1550,15 +1640,27 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         except (TypeError, ValueError):
             status = HTTPStatus.INTERNAL_SERVER_ERROR
             data = b'{"error":"internal serialization error"}'
+        if maximum_bytes is not None and len(data) > maximum_bytes:
+            logger.error(
+                "dashboard response exceeded its byte budget (%d > %d)",
+                len(data),
+                maximum_bytes,
+            )
+            status = HTTPStatus.INTERNAL_SERVER_ERROR
+            data = b'{"error":"internal server error"}'
         self.send_response(status)
         self._send_security_headers(
             content_type="application/json; charset=utf-8", cache_control="no-store"
         )
         self.send_header("X-Request-ID", request_id)
         self.send_header("X-Agency-Request-ID", request_id)
+        if close_connection:
+            self.close_connection = True
+            self.send_header("Connection", "close")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
-        self.wfile.write(data)
+        if getattr(self, "command", None) != "HEAD":
+            self.wfile.write(data)
         if int(status) >= 500:
             mark_current_observation("error", f"http_{int(status)}", only_if_unset=True)
         elif int(status) >= 400:
@@ -1889,6 +1991,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 worker,
                 evidence_limit=limit,
                 disabled_agents=disabled,
+                include_history_documents=False,
             )
             snapshot = workforce_index_snapshot(self.store)
             slug = str(detail["worker"]["agent_slug"])
@@ -1905,7 +2008,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             prompt = self.store.get_specialist_prompt(slug, disabled_agents=())
             config = load_config(self.config_path)
             detail["closest_workers"] = comparisons
-            detail["promotion_readiness"] = promotion_readiness(
+            detail["outcomes"], detail["promotion_readiness"] = _dashboard_promotion_projection(
                 detail["worker"],
                 detail["outcomes"],
                 required_successes=config.workforce.auto_promote_successes,
@@ -1945,10 +2048,18 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "ordering": "agent_slug:asc",
                 "cursor_semantics": "live-keyset-after-exclusive",
             }
-        self._json_ok({**payload, **_store_response_identity(state, binding)})
+        response = {**payload, **_store_response_identity(state, binding)}
+        if worker:
+            self._send_json(
+                HTTPStatus.OK,
+                response,
+                maximum_bytes=MAX_WORKFORCE_DETAIL_RESPONSE_BYTES,
+            )
+        else:
+            self._json_ok(response)
 
     def _handle_hiring(self) -> None:
-        """Return one hiring case or a bounded evidence list."""
+        """Return one full-evidence case or a bounded fixed-field summary page."""
 
         limit, after, filters = _collection_query(
             self.path,
@@ -1998,7 +2109,15 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "ordering": "created_at:desc,id:desc",
                 "cursor_semantics": "live-keyset-after-exclusive",
             }
-        self._json_ok({**payload, **_store_response_identity(state, binding)})
+        response = {**payload, **_store_response_identity(state, binding)}
+        if case_id:
+            self._json_ok(response)
+        else:
+            self._send_json(
+                HTTPStatus.OK,
+                response,
+                maximum_bytes=MAX_HIRING_COLLECTION_RESPONSE_BYTES,
+            )
 
     def _handle_hosts(self) -> None:
         state = read_config_state(self.config_path)
