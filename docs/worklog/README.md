@@ -215,6 +215,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c5d5631` | 2026-07-26 | feat(testing): add secure parallel change loop | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-c5d5631-secure-parallel-change-loop.md) |
 | `d2ab19b` | 2026-07-26 | fix(testing): harden parallel loop self-hosting | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-d2ab19b-parallel-self-host-hardening.md) |
 | `7d11313` | 2026-07-26 | fix(testing): bound Windows self-host paths | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-7d11313-windows-self-host-paths.md) |
+| `74468aa` | 2026-07-26 | docs(roadmap): record parallel evidence and HTTP gap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md), [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-07-26-74468aa-parallel-evidence-http-gap.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
