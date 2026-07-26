@@ -118,9 +118,10 @@ def test_genuine_request_failure_still_logs_and_returns_500(
 
     getattr(handler, request_method)()
 
+    operation = dashboard_module._dashboard_observation_operation(request_method[3:], path)
     log_exception.assert_called_once_with(
         f"dashboard {request_method[3:]} failed for %s (%s)",
-        path,
+        operation,
         "TypeError",
     )
     handler._json_error.assert_called_once_with(

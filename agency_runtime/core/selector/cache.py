@@ -44,6 +44,7 @@ class _FingerprintEntry:
     policy_snapshot: _MutationSnapshot
     fingerprint: str
     active_ids: frozenset[str]
+    catalog_validation_token: object | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -242,10 +243,29 @@ def _snapshot_matches(
         return False
 
 
+def _catalog_snapshot_matches(
+    catalog: list[dict[str, Any]],
+    cached: _FingerprintEntry,
+    validation_token: object | None,
+) -> bool:
+    """Reuse eligibility's proof or conservatively recheck caller-owned data."""
+
+    return bool(
+        (validation_token is not None and validation_token is cached.catalog_validation_token)
+        or _snapshot_matches(
+            catalog,
+            cached.catalog_snapshot,
+            lambda: _catalog_guard(catalog),
+        )
+    )
+
+
 def routing_fingerprint(
     catalog: list[dict[str, Any]],
     config: Any,
     policy: dict[str, Any],
+    *,
+    _catalog_validation_token: object | None = None,
 ) -> str:
     """Fingerprint every input that can change a routing decision.
 
@@ -261,10 +281,10 @@ def routing_fingerprint(
         and cached.catalog is catalog
         and cached.config is config
         and cached.policy is policy
-        and _snapshot_matches(
+        and _catalog_snapshot_matches(
             catalog,
-            cached.catalog_snapshot,
-            lambda: _catalog_guard(catalog),
+            cached,
+            _catalog_validation_token,
         )
         and _snapshot_matches(
             policy,
@@ -292,10 +312,10 @@ def routing_fingerprint(
         equivalent is not None
         and equivalent.config is config
         and equivalent.policy is policy
-        and _snapshot_matches(
+        and _catalog_snapshot_matches(
             catalog,
-            equivalent.catalog_snapshot,
-            lambda: _catalog_guard(catalog),
+            equivalent,
+            _catalog_validation_token,
         )
         and _snapshot_matches(
             policy,
@@ -326,6 +346,7 @@ def routing_fingerprint(
         policy_snapshot=_mutation_snapshot(policy, lambda: _policy_mutation_guard(policy)),
         fingerprint=fingerprint,
         active_ids=_active_ids(catalog),
+        catalog_validation_token=_catalog_validation_token,
     )
     with _CACHE_LOCK:
         _FINGERPRINT_CACHE[memo_key] = entry

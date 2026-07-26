@@ -62,6 +62,10 @@ bounded keyset cursors, exact page/filtered/global totals, collection revisions,
 and declared live-cursor semantics. The browser drains complete control
 collections deliberately and renders totals separately from the current page;
 worker detail no longer depends on a truncated filtered view. Dashboard server
-tests pass 134 with 3 skips and browser interaction tests pass 82. The item
-remains open until explicit 263/1,001-row workforce and concurrent-insert
-pagination regressions are recorded.
+tests pass 137 with 3 skips and browser interaction tests pass 82. Explicit
+263- and 1,001-worker regressions drain every page with exact global and
+filtered facets. A committed inter-page insertion appears exactly once in
+stable key order, changes the collection revision, and preserves the declared
+live-keyset-after-exclusive contract. Local acceptance is satisfied; the item
+remains open only because tracker creation and closure are unauthorized
+outward actions.

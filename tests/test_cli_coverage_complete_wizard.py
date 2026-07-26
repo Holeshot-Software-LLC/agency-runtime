@@ -33,6 +33,7 @@ def detection(**changes):
             openclaw=False,
             codex=True,
             claude=False,
+            zcode=False,
         ),
         "cli_providers": {
             "codex": SimpleNamespace(installed=True, usable=True),
@@ -176,6 +177,7 @@ def test_interactive_wizard_gives_subscription_cli_a_realistic_default_timeout(
     assert result["judge"]["timeout"] == subject.DEFAULT_PROVIDER_TIMEOUT
     assert result["providers"][0]["timeout"] == subject.DEFAULT_CLI_PROVIDER_TIMEOUT
     assert result["providers"][1]["timeout"] == subject.DEFAULT_PROVIDER_TIMEOUT
+    assert result["adapters"]["zcode"]["enabled"] == "auto"
 
 
 def test_legacy_judge_and_provider_entry_variants():

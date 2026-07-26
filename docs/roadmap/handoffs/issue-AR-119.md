@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 24948a0e6b27edc59e7f7806bd7a067cc4a693b4
-minimum_ledger_commit: b72106f39101e1a8241e9b890681e5ce861340b5
+evidence_commit: c741b240ca66604a8fa859b1e7add8e16f02339c
+minimum_ledger_commit: 14ef56759c461794adbb22e15f1ac6a5cf236124
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -33,14 +33,19 @@ the deterministic typed-recall floor only when inference is not configured.
 ## checkpoint
 
 - Main is locally ahead of origin/main at 5001d78 by the governed audit,
-  checkpoint, Wave 1, and ledger commits. No push, PR, or tracker mutation was
+  checkpoint, Waves 1 and 2, and ledger commits. No push, PR, or tracker mutation was
   authorized.
 - The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
   and excluded from commits.
-- Telemetry reported 26.7 percent remaining and requires this clean local
-  substantive/ledger checkpoint before further live evaluation.
+- Latest telemetry reported 62.9 percent remaining; the prior clean
+  c741b24/14ef567 substantive/ledger checkpoint remains valid and same-task
+  continuation is permitted.
 - The current package integrates AR-133 through AR-143 source work plus the
   AR-140/AR-141 performance and compatibility slice.
+- The first complete post-checkpoint Python arm ran 43m39s and failed: 7,486
+  passed, 61 skipped, 1 expected failure, and 34 failed. The exact owning
+  12-module reproducer now passes 424 tests in 70.71 seconds after bounded
+  repairs; a second complete Python arm remains required.
 
 ## completed-evidence
 
@@ -68,16 +73,28 @@ the deterministic typed-recall floor only when inference is not configured.
   local controls while preserving correctness hashes. At 10,000 agents the
   measured cold/warm-p95/peak values were 8,817.588 ms, 84.193 ms, and
   189.589 MiB. These are local controls, not general superiority evidence.
-- Five unchanged 1,000-agent cached-routing controls produced median p95 values
-  from 1.531 through 1.795 ms after mutation-safe hot-path optimization. The
-  complete 19-test routing-eval suite passed without changing the 2.0 ms gate.
+- A later mixed-suite arm exposed insufficient cached-routing margin at
+  2.103 ms. Eligibility now supplies an opaque proof after its detached
+  full-roster comparison so fingerprinting does not immediately repeat that
+  scan. Five unchanged final-source controls produced deterministic median
+  p95 values of 1.345, 1.448, 1.318, 1.442, and 1.745 ms without changing
+  the 2.0 ms gate.
+- The complete run exposed a real ZCode wizard omission; the canonical
+  five-host detection/status list now includes ZCode. Dashboard request
+  handling also tolerates pre-header disconnects, authenticates before
+  evaluating broker scope, and records expected disconnect degradation.
 - Deprecated route/header compatibility wrappers and canonical identity,
   bounded-value, filesystem-trust, and executable helpers are restored.
 - Independent current validation: authority 110 passed; native-hook/ZCode 167
   passed; transaction/observability/MCP/HTTP 147 passed with 8 skips;
-  dashboard server 134 passed with 3 skips; browser UI 82 passed; and
+  dashboard server 137 passed with 3 skips; browser UI 82 passed; and
   distribution/release 101 passed. One combined five-minute arm timed out and
   is not counted; every exact component passed after isolation.
+- Explicit 263- and 1,001-worker dashboard paging drains every row and exact
+  facet. A committed inter-page insert appears once in stable key order.
+- The exact 12-module integration arm that owned all 34 complete-run failures
+  now passes 424 tests. Focused routing/dashboard correctness passes 79 tests
+  and the unchanged production microbenchmark passes independently.
 
 ## exact-blocker
 
@@ -90,8 +107,8 @@ the deterministic typed-recall floor only when inference is not configured.
   human-presence backend. The earlier installation is not current-source proof.
 - Normal-profile Codex activation still requires user-owned terminal-TUI hook
   review. No trust store may be read or changed by this task.
-- AR-137 still needs explicit 263/1,001-row workforce and concurrent-insert
-  pagination regressions. AR-138 needs fresh post-install desktop/mobile QA.
+- AR-138 needs fresh post-install desktop/mobile accessibility QA. AR-137 is
+  locally acceptance-complete but lacks authorized tracker creation/closure.
 - AR-119 and AR-125 still lack a benchmark-valid completed value corpus and
   current production-candidate evidence across claimed host/OS surfaces.
   Malformed or timed-out upstream arms remain invalid, never losses.
@@ -105,14 +122,13 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Create the substantive and immediate worklog ledger commits without adding
-   the preserved untracked draft.
-2. Add the missing large-corpus/concurrent dashboard pagination regressions and
-   finish remaining safe local AR-137/AR-141 work.
-3. Run the full repository, documentation, routing, dashboard, and release
-   gates from the clean checkpoint.
-4. Keep fresh install and live host/browser dogfood visibly blocked behind
-   genuine user presence; do not reinterpret the earlier install as current.
+1. Rerun the complete Python suite from this clean local checkpoint; no split
+   or owning-module result may override it.
+2. Run the browser, routing, documentation, and release gates from the same
+   source state and record every exact result.
+3. Finish safe local AR-141 evidence without mechanical security rewrites.
+4. Keep fresh install and installed dogfood visibly blocked behind genuine
+   operator presence; do not reinterpret the earlier install as current.
 5. Complete AR-125 only with benchmark-valid matched evidence.
 
 ## verification

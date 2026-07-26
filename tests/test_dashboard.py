@@ -217,6 +217,41 @@ def _nested_keys(value: object) -> set[str]:
     return set()
 
 
+def _insert_workforce_rows(
+    store: Store,
+    rows: list[tuple[str, str]],
+) -> None:
+    """Materialize deterministic workforce-page fixtures in one transaction."""
+
+    observed_at = "2026-07-26T00:00:00+00:00"
+    values = [
+        (
+            f"worker-id-{slug}",
+            slug,
+            slug.replace("-", " ").title(),
+            employment,
+            f"version-id-{slug}",
+            hashlib.sha256(slug.encode("utf-8")).hexdigest(),
+            observed_at,
+            observed_at,
+        )
+        for slug, employment in rows
+    ]
+    conn = store._connect()
+    try:
+        conn.executemany(
+            "INSERT INTO agent_workers "
+            "(worker_id, agent_slug, display_name, origin, employment_class, standing, "
+            "current_agent_version_id, current_version, current_hash, revision, "
+            "created_at, updated_at) VALUES "
+            "(?, ?, ?, 'upstream', ?, 'active', ?, '1.0.0', ?, 0, ?, ?)",
+            values,
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 _READ_ONLY_DASHBOARD_MUTATIONS = {
     "/api/agents/toggle": {"slug": "security-reviewer", "enabled": False},
     "/api/config": {"expected_revision": "missing", "operations": []},
@@ -892,6 +927,122 @@ def test_dashboard_workforce_toggle_records_operator_reason(dashboard_server) ->
     event = detail["detail"]["events"][0]
     assert event["event_type"] == "disable"
     assert event["reason"] == "temporarily excluded after an unsafe near-neighbor result"
+
+
+@pytest.mark.parametrize("total_count", [263, 1001])
+def test_dashboard_workforce_pages_expose_exact_large_population_and_facets(
+    dashboard_server,
+    total_count: int,
+) -> None:
+    store = dashboard_server["store"]
+    baseline = store.get_workforce_page_snapshot(limit=1)
+    assert baseline["total_count"] == 1
+    additions = [
+        (
+            f"scale-worker-{index:04d}",
+            "contractor" if index % 3 == 0 else "employee",
+        )
+        for index in range(total_count - 1)
+    ]
+    _insert_workforce_rows(store, additions)
+    expected_contractors = sum(employment == "contractor" for _slug, employment in additions)
+
+    def drain(*, state: str = "") -> tuple[list[str], set[str]]:
+        after = ""
+        slugs: list[str] = []
+        revisions: set[str] = set()
+        while True:
+            path = "/api/workforce?limit=73"
+            if state:
+                path += f"&state={state}"
+            if after:
+                path += f"&after={after}"
+            status, payload, _headers = _json_response(
+                dashboard_server,
+                path,
+                token=dashboard_server["token"],
+            )
+            assert status == 200
+            page = [str(worker["agent_slug"]) for worker in payload["workers"]]
+            assert page == sorted(page)
+            assert not set(page).intersection(slugs)
+            assert payload["count"] == payload["page_count"] == len(page)
+            assert payload["total_count"] == payload["total"] == total_count
+            assert payload["counts"]["contractor"] == expected_contractors
+            assert payload["counts"]["employee"] == total_count - expected_contractors
+            assert payload["ordering"] == "agent_slug:asc"
+            assert payload["cursor_semantics"] == "live-keyset-after-exclusive"
+            revisions.add(str(payload["collection_revision"]))
+            slugs.extend(page)
+            if not payload["truncated"]:
+                assert payload["next_cursor"] is None
+                break
+            assert payload["next_cursor"] == page[-1]
+            after = str(payload["next_cursor"])
+        return slugs, revisions
+
+    all_slugs, all_revisions = drain()
+    assert len(all_slugs) == len(set(all_slugs)) == total_count
+    assert all_slugs == sorted(all_slugs)
+    assert len(all_revisions) == 1
+
+    contractor_slugs, contractor_revisions = drain(state="contractor")
+    assert len(contractor_slugs) == expected_contractors
+    assert contractor_slugs == sorted(contractor_slugs)
+    assert contractor_revisions == all_revisions
+
+
+def test_dashboard_workforce_live_keyset_is_deterministic_across_interpage_insert(
+    dashboard_server,
+) -> None:
+    store = dashboard_server["store"]
+    _insert_workforce_rows(
+        store,
+        [(f"live-worker-{index:04d}", "employee") for index in range(204)],
+    )
+    status, first, _headers = _json_response(
+        dashboard_server,
+        "/api/workforce?limit=50",
+        token=dashboard_server["token"],
+    )
+    assert status == 200
+    assert first["total_count"] == 205
+    assert first["truncated"] is True
+    first_slugs = [str(worker["agent_slug"]) for worker in first["workers"]]
+    cursor = str(first["next_cursor"])
+    assert cursor == first_slugs[-1]
+
+    inserted_slug = f"{cursor}-inserted"
+    _insert_workforce_rows(store, [(inserted_slug, "employee")])
+
+    collected = list(first_slugs)
+    later_revisions: set[str] = set()
+    after = cursor
+    while True:
+        status, payload, _headers = _json_response(
+            dashboard_server,
+            f"/api/workforce?limit=50&after={after}",
+            token=dashboard_server["token"],
+        )
+        assert status == 200
+        assert payload["total_count"] == 206
+        assert payload["cursor_semantics"] == "live-keyset-after-exclusive"
+        page = [str(worker["agent_slug"]) for worker in payload["workers"]]
+        assert page == sorted(page)
+        assert all(slug > after for slug in page)
+        assert not set(page).intersection(collected)
+        collected.extend(page)
+        later_revisions.add(str(payload["collection_revision"]))
+        if not payload["truncated"]:
+            assert payload["next_cursor"] is None
+            break
+        after = str(payload["next_cursor"])
+
+    assert inserted_slug in collected
+    assert len(collected) == len(set(collected)) == 206
+    assert collected == sorted(collected)
+    assert later_revisions
+    assert str(first["collection_revision"]) not in later_revisions
 
 
 def test_dashboard_javascript_parses_when_node_is_available() -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import stat
 from collections.abc import Iterator
 from dataclasses import replace
@@ -2441,13 +2442,33 @@ def test_approval_rejects_tampered_download_state(tmp_path):
         conn.close()
 
 
-def test_snapshot_rejects_invalid_persisted_activation_state(tmp_path):
+def test_snapshot_schema_rejects_invalid_persisted_activation_state(tmp_path):
     store = Store(tmp_path / "agency.db")
     source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
     candidate_id = quarantine_candidate(_agent("state-agent"), source_id, store)
     snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
     conn = store._connect()
     try:
+        with pytest.raises(sqlite3.IntegrityError, match="agent snapshot boolean is invalid"):
+            conn.execute(
+                "UPDATE agent_snapshots SET activated = 2 WHERE snapshot_id = ?",
+                (snapshot["snapshot_id"],),
+            )
+    finally:
+        conn.close()
+
+
+def test_snapshot_reader_rejects_legacy_invalid_activation_state(tmp_path):
+    store = Store(tmp_path / "agency.db")
+    source_id = store.add_agent_source(str(tmp_path / "fixture"), "fixture")
+    candidate_id = quarantine_candidate(_agent("state-agent"), source_id, store)
+    snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
+    conn = store._connect()
+    try:
+        # Simulate an already-corrupt legacy database while retaining the
+        # production trigger as the primary write-time invariant.
+        conn.execute("DROP TRIGGER agency_agent_snapshots_boolean_update_guard")
+        conn.execute("PRAGMA ignore_check_constraints=ON")
         conn.execute(
             "UPDATE agent_snapshots SET activated = 2 WHERE snapshot_id = ?",
             (snapshot["snapshot_id"],),

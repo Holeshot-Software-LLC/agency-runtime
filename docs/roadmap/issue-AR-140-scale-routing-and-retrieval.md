@@ -32,10 +32,12 @@ milliseconds even when the narrow microbenchmark is fast.
 
 ## Current state
 
-Measured cached p95 samples were 2.193-3.579 ms; uncached correctness and the
-20 ms ceiling passed. Semantic retrieval was about 6-7.4 seconds cold and
-199-414 ms warm at 10,000 agents with roughly 208 MiB peak memory. These are
-local benchmark observations, not cross-platform release evidence.
+Initial cached p95 samples were 2.193-3.579 ms; uncached correctness and the
+20 ms ceiling passed. A first optimization restored isolated results but an
+integrated arm later measured 2.103 ms, proving that its margin was not
+sufficient. Semantic retrieval was about 6-7.4 seconds cold and 199-414 ms
+warm at 10,000 agents with roughly 208 MiB peak memory. These are local
+benchmark observations, not cross-platform release evidence.
 
 ## Approach
 
@@ -64,11 +66,14 @@ local results were: 263 agents 316.006 ms cold / 2.031 ms warm p95 / 6.922 MiB;
 1,000 agents 1,293.429 ms / 7.412 ms / 21.329 MiB; and 10,000 agents
 8,817.588 ms / 84.193 ms / 189.589 MiB. The lightweight version entrypoint
 measured 116.244 ms p50 and 129.574 ms p95 across seven fresh processes.
-The cached-routing path removed redundant full-roster identity work and now
-uses a recursively detached JSON-like cache clone. Five unchanged 1,000-agent
-controls produced median cache-hit p95 values of 1.531, 1.595, 1.646, 1.795,
-and 1.750 ms; the complete 19-test routing evaluation suite passed without
-changing the 2.0 ms contract. Correctness, compatibility, roster, semantic,
+The cached-routing path removed redundant full-roster identity work, uses a
+recursively detached JSON-like cache clone, and reuses an opaque eligibility
+validation proof instead of repeating the same detached roster comparison in
+fingerprinting. Mutation changes issue a new proof; opaque inputs fall back to
+the prior conservative checks. Five unchanged 1,000-agent controls produced
+deterministic median cache-hit p95 values of 1.345, 1.448, 1.318, 1.442, and
+1.745 ms. The exact 12-module mixed reproducer passes 424 tests, including the
+unchanged 2.0 ms contract. Correctness, compatibility, roster, semantic,
 selector, and the isolated 101-test distribution/release package pass. These
 are fixed local controls, not cross-platform superiority or supported-runner
 evidence.

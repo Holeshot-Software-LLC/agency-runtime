@@ -383,7 +383,7 @@ def test_http_global_off_finalize_preserves_exact_draft_before_runtime_work(
     for name in (
         "run_preflight",
         "explain_route",
-        "finalize_response",
+        "finalize_response_batch",
         "validate_correlation_id",
     ):
         monkeypatch.setattr(http_server, name, _unexpected)
@@ -701,11 +701,10 @@ def test_cli_global_direct_write_uses_compare_and_swap(
     assert result["fresh_session_required"] is True
 
 
-def test_cli_global_broker_fallback_preserves_cas_and_confirmation(
+def test_cli_global_broker_read_fails_closed_before_mutation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     current = _master(True)
-    updated = _master(False, 8, source="dashboard")
     calls: list[tuple[str, str, dict[str, Any] | None]] = []
 
     def unreadable() -> dict[str, Any]:
@@ -721,11 +720,7 @@ def test_cli_global_broker_fallback_preserves_cas_and_confirmation(
         calls.append((path, method, payload))
         if path == "/api/runtime":
             assert timeout == 0.25
-        return (
-            {"master": current}
-            if method == "GET"
-            else {"ok": True, "changed": True, "master": updated}
-        )
+        return {"master": current}
 
     monkeypatch.setattr(runtime_control, "read_effective_runtime_control", unreadable)
     monkeypatch.setattr(
@@ -739,32 +734,19 @@ def test_cli_global_broker_fallback_preserves_cas_and_confirmation(
         broker,
     )
 
-    result = install_commands._global_control_result(
-        Namespace(native=False, dry_run=False),
-        enabled=False,
-    )
+    with pytest.raises(RuntimeError, match="restricted model-facing process"):
+        install_commands._global_control_result(
+            Namespace(native=False, dry_run=False),
+            enabled=False,
+        )
 
-    assert calls == [
-        ("/api/runtime", "GET", None),
-        (
-            "/api/runtime/toggle",
-            "POST",
-            {
-                "enabled": False,
-                "expected_generation": 7,
-                "confirm": "DISABLE AGENCY",
-            },
-        ),
-    ]
-    assert result["transport"] == "dashboard"
-    assert result["master"] == updated
+    assert calls == [("/api/runtime", "GET", None)]
 
 
-def test_cli_global_enable_uses_writer_broker_after_effective_direct_read(
+def test_cli_global_direct_write_refusal_does_not_escalate_to_broker(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     current = _master(False, 8)
-    updated = _master(True, 9, source="dashboard")
     calls: list[tuple[str, str, dict[str, Any] | None]] = []
     monkeypatch.setattr(
         runtime_control,
@@ -782,7 +764,7 @@ def test_cli_global_enable_uses_writer_broker_after_effective_direct_read(
         payload: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         calls.append((path, method, payload))
-        return {"ok": True, "changed": True, "master": updated}
+        return {"master": current}
 
     monkeypatch.setattr(runtime_control, "set_master_enabled", unwritable)
     monkeypatch.setattr(
@@ -790,25 +772,13 @@ def test_cli_global_enable_uses_writer_broker_after_effective_direct_read(
         broker,
     )
 
-    result = install_commands._global_control_result(
-        Namespace(native=False, dry_run=False),
-        enabled=True,
-    )
-
-    assert calls == [
-        (
-            "/api/runtime/toggle",
-            "POST",
-            {
-                "enabled": True,
-                "expected_generation": 8,
-                "confirm": "ENABLE AGENCY",
-            },
+    with pytest.raises(RuntimeError, match="restricted model-facing process"):
+        install_commands._global_control_result(
+            Namespace(native=False, dry_run=False),
+            enabled=True,
         )
-    ]
-    assert result["previous_enabled"] is False
-    assert result["enabled"] is True
-    assert result["transport"] == "dashboard"
+
+    assert calls == []
 
 
 def test_cli_global_cas_conflict_is_not_hidden_by_broker_retry(

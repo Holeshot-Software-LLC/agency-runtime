@@ -1913,11 +1913,37 @@ _V20_COLUMNS = {
     "specialists_loaded": {"activation_receipt_id"},
     "finalization_events": {"policy_response_hash"},
     "host_controls": {"generation"},
+    "native_child_parent_scopes": {
+        "id",
+        "token_hash",
+        "host",
+        "parent_session_id",
+        "parent_trace_id",
+        "work_unit_id",
+        "worker_kind",
+        "worker_id",
+        "native_run_id",
+        "child_session_id",
+        "child_trace_id",
+        "issued_unix",
+        "expires_unix",
+        "created_at",
+        "consumed_at",
+        "consumed_unix",
+    },
 }
 _V20_INDEXES = {
     "idx_activation_receipts_trace": ("trace_id", "created_at"),
     "idx_activation_receipts_work_unit": ("trace_id", "work_unit_id", "consumed_at"),
     "idx_finalization_trace_policy_response": ("trace_id", "action", "policy_response_hash"),
+    "idx_worker_runs_native_scope": (
+        "host",
+        "session_id",
+        "trace_id",
+        "worker_id",
+        "native_run_id",
+    ),
+    "idx_native_child_parent_scopes_expiry": ("expires_unix", "consumed_unix"),
 }
 
 
@@ -1927,6 +1953,8 @@ class _V20SchemaConnection:
 
     def execute(self, statement: str, parameters: tuple[Any, ...] = ()) -> _Result:
         normalized = " ".join(statement.split())
+        if "type = 'table'" in normalized and "name = 'native_child_parent_scopes'" in normalized:
+            return _Result(row={"sql": store_sqlite.NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL})
         if "type = 'table'" in normalized:
             table = str(parameters[0])
             if self.stage == "missing-table" and table == "delegation_activation_receipts":
@@ -1935,6 +1963,8 @@ class _V20SchemaConnection:
         if normalized.startswith("PRAGMA table_info("):
             table = normalized.removeprefix("PRAGMA table_info(").removesuffix(")")
             return _Result(rows=[{"name": name} for name in _V20_COLUMNS[table]])
+        if "type = 'index'" in normalized and "name = 'idx_worker_runs_native_scope'" in normalized:
+            return _Result(row={"sql": store_sqlite.NATIVE_WORKER_SCOPE_INDEX_SQL})
         if "type = 'index'" in normalized:
             return _Result(row={"present": 1})
         if normalized.startswith("PRAGMA index_info("):
@@ -1951,9 +1981,26 @@ class _V20SchemaConnection:
                     "specialist_version",
                     "specialist_prompt_hash",
                 ),
+                "scope_unique_token": ("token_hash",),
+                "scope_unique_binding": (
+                    "host",
+                    "parent_trace_id",
+                    "worker_id",
+                    "native_run_id",
+                ),
             }[name]
             return _Result(rows=[{"name": column} for column in columns])
         if normalized.startswith("PRAGMA index_list("):
+            table = normalized.removeprefix("PRAGMA index_list(").removesuffix(")")
+            if table == "worker_runs":
+                return _Result(rows=[{"name": "idx_worker_runs_native_scope", "unique": 1}])
+            if table == "native_child_parent_scopes":
+                return _Result(
+                    rows=[
+                        {"name": "scope_unique_token", "unique": 1},
+                        {"name": "scope_unique_binding", "unique": 1},
+                    ]
+                )
             rows = (
                 []
                 if self.stage == "missing-unique"

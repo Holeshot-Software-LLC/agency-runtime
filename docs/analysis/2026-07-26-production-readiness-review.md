@@ -136,10 +136,25 @@ correlation across dashboard/HTTP/MCP/hooks/Store, truthful hiring outcomes,
 revision-aware retrieval, a lightweight CLI entrypoint, restored compatibility
 wrappers, and a fail-closed CLI operator-presence gate. Independent split
 verification passed 110 authority tests, 167 native-hook/ZCode tests, 147
-transaction/observability/protocol tests with 8 skips, 134 dashboard server
+transaction/observability/protocol tests with 8 skips, 137 dashboard server
 tests with 3 skips, 82 browser interaction tests, and 101 distribution/release
 tests. One attempted combined arm timed out at five minutes and is not counted;
 its exact components passed when isolated.
+
+The first complete integrated Python run after the hard checkpoint did not
+pass: 7,486 passed, 61 skipped, 1 expected failure, and 34 failed in 43m39s.
+The failures span stale authority expectations and genuine cross-suite
+regressions in dashboard, host/control, schema/HTTP, and routing performance.
+The failed expectations were reconciled to the current fail-closed authority
+and schema contracts. The run also exposed and repaired three production
+defects: ZCode was absent from the interactive configuration wizard, dashboard
+disconnect handling assumed request headers existed and classified expected
+client disconnects as server faults, and cached routing repeated a full-roster
+mutation comparison already proven by eligibility filtering. The unchanged
+routing gate then produced five deterministic final-source cache-hit p95
+controls of `1.345`, `1.448`, `1.318`, `1.442`, and `1.745 ms`. The exact
+12-module integrated reproducer now passes 424 tests in 70.71 seconds. This is a
+repaired intermediate gate; a second complete Python run is still required.
 
 The production verdict remains negative for one decisive reason: there is no
 production OS-backed, non-exporting operator-presence verifier. Dashboard and
@@ -154,7 +169,7 @@ weakening the security decision. AR-143 remains open.
 
 | Path | Evidence | Interpretation |
 |---|---|---|
-| Cached routing microbenchmark | Initial p95 samples `2.193-3.579 ms` failed; after remediation five unchanged median p95 controls were `1.531-1.795 ms`, and the 19-test routing-eval suite passed | The fixed local 2.0 ms gate is restored without a threshold change; supported-runner evidence remains outstanding |
+| Cached routing microbenchmark | Initial p95 samples `2.193-3.579 ms` failed; the first remediation passed five controls at `1.531-1.795 ms`, but a mixed arm later exposed `2.103 ms`; after eliminating one redundant mutation-proof scan, five unchanged final-source controls were `1.318-1.745 ms` and the exact 12-module reproducer passed 424 tests | The fixed local 2.0 ms gate is restored with integrated headroom and no threshold change; supported-runner evidence remains outstanding |
 | Full local route | about 653 ms cold, 87-121 ms warm; internal route 53-57 ms | Warm end-to-end work remains materially larger than the microbenchmark |
 | Semantic retrieval, 263 agents | Initial 121-134 ms cold / 3.7-4.7 ms warm; current fixed control 316.006 ms cold / 2.031 ms warm p95 / 6.922 MiB | Revision-aware indexes pass the declared local tier budget |
 | Semantic retrieval, 10,000 agents | Initial 6-7.4 s cold / 199-414 ms warm / about 208 MiB; current 8,817.588 ms / 84.193 ms / 189.589 MiB | Warm scale and bounded memory improved; the fixed local tier gate passes |

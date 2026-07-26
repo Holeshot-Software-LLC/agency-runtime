@@ -11,7 +11,7 @@ import threading
 from collections import OrderedDict
 from collections.abc import Container, Iterable, Mapping, Sequence
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
 
@@ -61,6 +61,13 @@ class EligibilityResult:
     eligible: tuple[dict[str, Any], ...]
     rejected: tuple[dict[str, str], ...]
     eligible_ids: frozenset[str] = frozenset()
+    # Internal cache-coherence receipt, never an authorization capability.
+    # A new identity is issued only after a detached full-catalog proof.
+    _catalog_validation_token: object | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,6 +120,12 @@ def _cache_eligibility_result(
         # metadata must not make an otherwise valid route fail; skip reuse when
         # no detached proof can be created.
         return result
+    result = EligibilityResult(
+        result.eligible,
+        result.rejected,
+        result.eligible_ids,
+        object(),
+    )
     eligible_identities = {id(agent) for agent in result.eligible}
     entry = _EligibilityCacheEntry(
         catalog,
@@ -166,6 +179,7 @@ def _bind_equivalent_identity(
         tuple(catalog[index] for index in cached.eligible_positions),
         cached.result.rejected,
         cached.result.eligible_ids,
+        cached.result._catalog_validation_token,
     )
     entry = _EligibilityCacheEntry(
         catalog,

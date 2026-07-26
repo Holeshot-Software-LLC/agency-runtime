@@ -175,7 +175,9 @@ def test_http_preflight_value_error_and_invalid_delegation_status(monkeypatch) -
             ],
         },
     )
-    assert "delegation status must be" in observed[-1][1]
+    assert observed[-1][1] == (
+        "delegations[0].status must be delegated, completed, skipped, or failed"
+    )
 
 
 def test_base_adapter_defensive_store_and_delegation_paths(monkeypatch) -> None:
@@ -531,7 +533,10 @@ def test_hook_stdio_rejects_mismatched_registered_event() -> None:
         error_stream=errors,
     )
     assert status == 0
-    assert "does not match" in errors.getvalue()
+    assert errors.getvalue() == (
+        "agency hook codex: HookInputError; response publication blocked\n"
+    )
+    assert json.loads(output.getvalue())["continue"] is False
 
 
 def test_openclaw_private_fail_closed_helpers() -> None:

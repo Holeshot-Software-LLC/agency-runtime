@@ -134,27 +134,25 @@ def test_dashboard_miscellaneous_get_post_and_options_routes(
         assert _request(server, "/api/health") == (200, {"status": "ok"})
         assert _request(server, "/api/roster")[0] == 200
         assert _request(server, "/api/snapshots")[0] == 200
-        assert _request(server, "/api/activity?limit=invalid")[0] == 200
+        status, payload = _request(server, "/api/activity?limit=invalid")
+        assert status == 400
+        assert payload["error"] == "collection result limit must be an integer"
         assert _request(server, "/api/unknown")[0] == 404
         assert _request(server, "/outside", method="POST", body={})[0] == 404
         assert _request(server, "/api/unknown", method="POST", body={})[0] == 404
 
-        status, payload = _request(
-            server,
-            "/api/config",
-            method="POST",
-            body={"operations": {}, "confirmations": []},
-        )
-        assert status == 400
-        assert "operations" in payload["error"]
-        status, payload = _request(
-            server,
-            "/api/config",
-            method="POST",
-            body={"operations": [], "confirmations": [1]},
-        )
-        assert status == 400
-        assert "confirmations" in payload["error"]
+        for body in (
+            {"operations": {}, "confirmations": []},
+            {"operations": [], "confirmations": [1]},
+        ):
+            status, payload = _request(
+                server,
+                "/api/config",
+                method="POST",
+                body=body,
+            )
+            assert status == 403
+            assert "read-only" in payload["error"]
 
 
 def test_dashboard_confirmation_helper_and_default_host_inspector(
@@ -364,33 +362,26 @@ def test_dashboard_route_lab_rejects_oversized_task(
 
 
 @pytest.mark.parametrize(
-    ("body", "message"),
+    "body",
     [
-        ({}, "confirmation phrase"),
-        ({"confirm": "TRIM RUNTIME DATA", "older_than_days": True}, "older_than_days"),
-        (
-            {"confirm": "TRIM RUNTIME DATA", "older_than_days": 30, "dry_run": "yes"},
-            "dry_run",
-        ),
-        (
-            {"confirm": "TRIM RUNTIME DATA", "older_than_days": 30, "vacuum": "yes"},
-            "vacuum",
-        ),
+        {},
+        {"confirm": "TRIM RUNTIME DATA", "older_than_days": True},
+        {"confirm": "TRIM RUNTIME DATA", "older_than_days": 30, "dry_run": "yes"},
+        {"confirm": "TRIM RUNTIME DATA", "older_than_days": 30, "vacuum": "yes"},
     ],
 )
-def test_dashboard_trim_validates_each_destructive_field(
+def test_dashboard_trim_is_denied_before_payload_validation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     body: dict[str, Any],
-    message: str,
 ) -> None:
     with _running_dashboard(tmp_path, monkeypatch) as server:
         status, payload = _request(server, "/api/maintenance/trim", method="POST", body=body)
-        assert status == 400
-        assert message in payload["error"]
+        assert status == 403
+        assert "read-only" in payload["error"]
 
 
-def test_dashboard_roster_actions_validate_and_dispatch_both_branches(
+def test_dashboard_roster_actions_are_denied_before_dispatch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -406,68 +397,49 @@ def test_dashboard_roster_actions_validate_and_dispatch_both_branches(
         lambda _store, snapshot, **_kwargs: calls.append(("activate", snapshot)),
     )
     with _running_dashboard(tmp_path, monkeypatch) as server:
-        assert _request(server, "/api/roster/action", method="POST", body={})[0] == 400
-        assert (
-            _request(
-                server,
-                "/api/roster/action",
-                method="POST",
-                body={"action": "approve", "snapshot_id": "one", "confirm": "wrong"},
-            )[0]
-            == 400
-        )
-        for action in ("approve", "activate"):
+        bodies = [
+            {},
+            {"action": "approve", "snapshot_id": "one", "confirm": "wrong"},
+            {"action": "approve", "snapshot_id": "one", "confirm": "APPROVE one"},
+            {"action": "activate", "snapshot_id": "one", "confirm": "ACTIVATE one"},
+        ]
+        for body in bodies:
             status, payload = _request(
                 server,
                 "/api/roster/action",
                 method="POST",
-                body={
-                    "action": action,
-                    "snapshot_id": "one",
-                    "confirm": f"{action.upper()} one",
-                },
+                body=body,
             )
-            assert status == 200
-            assert payload["action"] == action
-    assert calls == [("approve", "one"), ("activate", "one")]
+            assert status == 403
+            assert "read-only" in payload["error"]
+    assert calls == []
 
 
-def test_dashboard_host_toggle_validates_fields_and_handles_missing_native_record(
+def test_dashboard_host_toggle_is_denied_before_payload_validation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     with _running_dashboard(tmp_path, monkeypatch) as server:
-        invalid = [
-            ({}, "unknown host"),
-            ({"host": "codex", "enabled": "yes"}, "boolean"),
-            (
-                {
-                    "host": "codex",
-                    "enabled": False,
-                    "expected_generation": 0,
-                    "confirm": "wrong",
-                },
-                "confirmation",
-            ),
-        ]
-        for body, message in invalid:
-            status, payload = _request(server, "/api/hosts/toggle", method="POST", body=body)
-            assert status == 400
-            assert message in payload["error"]
-        status, payload = _request(
-            server,
-            "/api/hosts/toggle",
-            method="POST",
-            body={
+        bodies = [
+            {},
+            {"host": "codex", "enabled": "yes"},
+            {
+                "host": "codex",
+                "enabled": False,
+                "expected_generation": 0,
+                "confirm": "wrong",
+            },
+            {
                 "host": "codex",
                 "enabled": False,
                 "expected_generation": 0,
                 "confirm": "DISABLE codex",
             },
-        )
-        assert status == 200
-        assert payload["status"]["host"] == "codex"
-        assert payload["status"]["runtime_enabled"] is False
+        ]
+        for body in bodies:
+            status, payload = _request(server, "/api/hosts/toggle", method="POST", body=body)
+            assert status == 403
+            assert "read-only" in payload["error"]
 
 
 def test_dashboard_json_serialization_failure_is_redacted() -> None:
@@ -489,8 +461,8 @@ def test_dashboard_get_and_post_unexpected_failures_are_redacted(
     with _running_dashboard(tmp_path, monkeypatch) as server:
         monkeypatch.setattr(
             Store,
-            "list_roster_snapshots",
-            lambda _self: (_ for _ in ()).throw(TypeError("private get detail")),
+            "roster_snapshot_page",
+            lambda _self, **_kwargs: (_ for _ in ()).throw(TypeError("private get detail")),
         )
         status, payload = _request(server, "/api/snapshots")
         assert status == 500

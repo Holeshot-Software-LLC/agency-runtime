@@ -74,6 +74,9 @@ The source implementation now owns ZCode independently: it renders the exact
 3.5.2 seven-event configuration, merges and restores config.json atomically,
 tracks ownership and drift, plans no Claude-native commands, exposes canonical
 status/toggle/smoke contracts, and records ZCode pre/post/failure activation
-lineage. Fresh-home, preservation, rollback, drift, schema, UI, and smoke tests
-pass, including the 167-test integrated native-hook/ZCode slice. This item
-remains open because a real installed ZCode restart/load canary has not run.
+lineage. The interactive configuration wizard now includes ZCode in its
+canonical detected-host status and persisted adapter selection; the complete
+suite exposed that missing presentation path. Fresh-home, preservation,
+rollback, drift, schema, UI, and smoke tests pass, including the 167-test
+integrated native-hook/ZCode slice. This item remains open because a real
+installed ZCode restart/load canary has not run.

@@ -199,7 +199,11 @@ def test_cache_and_stickiness_reject_ids_outside_current_catalog(monkeypatch) ->
 
     # Force a context collision to prove the defensive ID validation works even
     # if a future fingerprint regression or hash collision occurs.
-    monkeypatch.setattr(pipeline_module, "routing_fingerprint", lambda *_args: "same")
+    monkeypatch.setattr(
+        pipeline_module,
+        "routing_fingerprint",
+        lambda *_args, **_kwargs: "same",
+    )
     monkeypatch.setattr(pipeline_module, "query_judge", fake_judge)
     monkeypatch.setattr(pipeline_module, "load_policy", lambda *_args: {})
     config = _offline_config()

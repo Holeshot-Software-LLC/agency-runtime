@@ -1228,9 +1228,8 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         cached = getattr(self, "_cached_dashboard_request_identity", None)
         if cached is not None:
             return cached
-        raw = str(
-            self.headers.get("X-Agency-Request-ID") or self.headers.get("X-Request-ID") or ""
-        ).strip()
+        headers = getattr(self, "headers", None) or {}
+        raw = str(headers.get("X-Agency-Request-ID") or headers.get("X-Request-ID") or "").strip()
         try:
             identity = normalize_request_id(raw)
             supplied = True
@@ -1347,6 +1346,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
             if self._close_expected_client_disconnect(exc):
+                mark_current_observation("degraded", "client_disconnected")
                 return
             logger.exception(
                 "dashboard GET failed for %s (%s)",
@@ -1428,6 +1428,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # defensive boundary; details stay in logs
             if self._close_expected_client_disconnect(exc):
+                mark_current_observation("degraded", "client_disconnected")
                 return
             logger.exception(
                 "dashboard POST failed for %s (%s)",
@@ -1476,7 +1477,10 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 broker_expected,
             )
         )
-        broker_scope_allowed = dashboard_broker_request_allowed(self.path, self.command)
+        broker_scope_allowed = broker_authorized and dashboard_broker_request_allowed(
+            self.path,
+            self.command,
+        )
         if not owner_authorized and not (
             broker_authorized and (broker_scope_allowed or allow_broker_for_read_only_denial)
         ):

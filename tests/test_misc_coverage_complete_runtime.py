@@ -9,7 +9,11 @@ from urllib.request import ProxyHandler, Request
 import pytest
 
 from agency_runtime.core import process_argv as process_argv_module
-from agency_runtime.core.host_control import inspect_all_host_statuses, inspect_host_status
+from agency_runtime.core.host_control import (
+    SUPPORTED_HOSTS,
+    inspect_all_host_statuses,
+    inspect_host_status,
+)
 from agency_runtime.core.http_safety import _NoRedirectHandler, open_no_redirect
 from agency_runtime.core.process_argv import prepare_process_argv
 from agency_runtime.core.provider_validation import _join_api_path
@@ -42,13 +46,7 @@ def test_host_status_accepts_injected_inventory_inspectors(tmp_path: Path) -> No
     assert codex["effective_enabled"] is True
     assert codex["evidence"] == ["injected"]
     assert inspector_calls == 2
-    assert [status["host"] for status in statuses] == [
-        "hermes",
-        "openclaw",
-        "codex",
-        "claude",
-        "zcode",
-    ]
+    assert [status["host"] for status in statuses] == list(SUPPORTED_HOSTS)
     assert (
         next(status for status in statuses if status["host"] == "codex")["effective_enabled"]
         is True

@@ -421,7 +421,12 @@ def _route_request(
         )
     )
     policy = load_policy(policy_path_for_config(config))
-    base_fingerprint = routing_fingerprint(eligible_catalog, config, policy)
+    base_fingerprint = routing_fingerprint(
+        eligible_catalog,
+        config,
+        policy,
+        _catalog_validation_token=eligibility._catalog_validation_token,
+    )
     fingerprint = hashlib.sha256(
         "\0".join(
             (

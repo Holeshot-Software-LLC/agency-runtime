@@ -157,6 +157,7 @@ def _interactive_wizard(
         ("openclaw", a.openclaw),
         ("codex", a.codex),
         ("claude", a.claude),
+        ("zcode", a.zcode),
     ]:
         icon = "✅" if detected else "❌"
         print(f"  {icon} {name}: {'detected' if detected else 'not detected'}")

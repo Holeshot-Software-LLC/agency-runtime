@@ -98,6 +98,7 @@ def test_eligibility_cache_reuses_equivalent_projection_and_invalidates() -> Non
     second = compatibility.filter_eligible_catalog(second_projection, **kwargs)
     assert second == first
     assert second.eligible_ids == frozenset({"performance-benchmarker"})
+    assert second._catalog_validation_token is first._catalog_validation_token
     assert second.eligible[0] is second_projection[0]
     equivalent = deepcopy(source)
     rebound = compatibility.filter_eligible_catalog(equivalent, **kwargs)
@@ -109,6 +110,7 @@ def test_eligibility_cache_reuses_equivalent_projection_and_invalidates() -> Non
     rejected = compatibility.filter_eligible_catalog(list(source), **kwargs)
     assert rejected.eligible == ()
     assert rejected.eligible_ids == frozenset()
+    assert rejected._catalog_validation_token is not first._catalog_validation_token
     assert rejected.rejected == (
         {
             "slug": "performance-benchmarker",
@@ -168,6 +170,7 @@ def test_opaque_irrelevant_metadata_skips_identity_caches_without_failing() -> N
     assert selected[0]["slug"] == "performance-benchmarker"
     assert scores[0] > 0
     assert eligible.eligible == tuple(source)
+    assert eligible._catalog_validation_token is None
     assert id(source) not in candidate_narrow._IDENTITY_CATALOG_CACHE
     assert not compatibility._ELIGIBILITY_CACHE
     assert not compatibility._ELIGIBILITY_IDENTITY_CACHE
@@ -273,3 +276,79 @@ def test_routing_cache_fast_clone_remains_recursively_detached() -> None:
         "proof": ("bounded", {"signals": ["one"]}),
         "cache_hit": True,
     }
+
+
+def test_eligibility_token_skips_only_the_redundant_catalog_snapshot_check(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _catalog()
+    config = object()
+    policy: dict[str, object] = {}
+    eligibility = compatibility.filter_eligible_catalog(
+        source,
+        host="codex",
+        platform="windows",
+        available_tools={"profiler"},
+    )
+    projection = list(eligibility.eligible)
+    token = eligibility._catalog_validation_token
+    fingerprint = cache.routing_fingerprint(
+        projection,
+        config,
+        policy,
+        _catalog_validation_token=token,
+    )
+    real_snapshot_matches = cache._snapshot_matches
+    catalog_checks = 0
+    policy_checks = 0
+
+    def count_snapshot_matches(value, snapshot, fallback):
+        nonlocal catalog_checks, policy_checks
+        if isinstance(value, list):
+            catalog_checks += 1
+        elif value is policy:
+            policy_checks += 1
+        return real_snapshot_matches(value, snapshot, fallback)
+
+    monkeypatch.setattr(cache, "_snapshot_matches", count_snapshot_matches)
+    assert (
+        cache.routing_fingerprint(
+            list(eligibility.eligible),
+            config,
+            policy,
+            _catalog_validation_token=token,
+        )
+        == fingerprint
+    )
+    assert catalog_checks == 0
+    assert policy_checks == 1
+
+    policy["actions"] = {"review": {"triggers": ["authentication"]}}
+    assert (
+        cache.routing_fingerprint(
+            list(eligibility.eligible),
+            config,
+            policy,
+            _catalog_validation_token=token,
+        )
+        != fingerprint
+    )
+    policy.clear()
+
+    source[0]["description"] = "Writes documentation"
+    changed = compatibility.filter_eligible_catalog(
+        source,
+        host="codex",
+        platform="windows",
+        available_tools={"profiler"},
+    )
+    assert changed._catalog_validation_token is not token
+    assert (
+        cache.routing_fingerprint(
+            list(changed.eligible),
+            config,
+            policy,
+            _catalog_validation_token=changed._catalog_validation_token,
+        )
+        != fingerprint
+    )
