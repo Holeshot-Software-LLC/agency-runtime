@@ -46,6 +46,7 @@ CANONICAL_NATIVE_CHILD_HOSTS: Final[tuple[str, ...]] = (
     "codex",
     "hermes",
     "openclaw",
+    "zcode",
 )
 NATIVE_CHILD_MUTATION_MODES: Final[tuple[str, ...]] = (
     "read_only",

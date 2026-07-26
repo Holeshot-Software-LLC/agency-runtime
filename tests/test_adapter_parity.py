@@ -747,13 +747,12 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
         "--config",
         expected_config_path,
     ]
-    assert f"`ENABLE {host}`" in skill
-    assert f"`DISABLE {host}`" in skill
     assert "`agency.host_status`" in skill
-    assert "`agency.host_control`" in skill
-    assert "`runtime_control_generation`" in skill
-    assert "`expected_generation`" in skill
-    assert "first call `agency.host_status` immediately before" in skill
+    assert "`agency.host_control`" not in skill
+    assert f"`agency on --agent {host}`" in skill
+    assert f"`agency off --agent {host}`" in skill
+    assert "owner-authenticated dashboard UI" in skill
+    assert "normal user shell" in skill
     assert result["maturity"] == "staged-not-registered"
 
 

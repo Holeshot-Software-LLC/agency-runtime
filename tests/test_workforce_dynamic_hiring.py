@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import hashlib
+from copy import deepcopy
 from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from agency_runtime.core.config import AgencyConfig, ProviderEntry, WorkforceConfig
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
-from agency_runtime.core.selector.pipeline import route
+from agency_runtime.core.selector.pipeline import _hireable_gap_units, route
+from agency_runtime.core.selector.receipt_projection import project_durable_routing_receipt
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.structured_provider import StructuredProviderResult
 from agency_runtime.core.workforce.contract import (
@@ -28,6 +32,7 @@ from agency_runtime.core.workforce.inference import (
 )
 from agency_runtime.core.workforce.planning_contracts import WorkUnit, parse_work_unit_plan
 from agency_runtime.core.workforce.staffing_verifier import (
+    AbstentionReason,
     StaffingBudget,
     StaffingContext,
     build_deterministic_proposal,
@@ -209,6 +214,38 @@ def _hiring_response(*, disabled: bool = False, external_mutation: bool = False)
         },
         "contract": _contract(external_mutation=external_mutation),
     }
+
+
+def _photonic_unit() -> WorkUnit:
+    return replace(
+        _unit(),
+        unit_id="unit-photonic-build",
+        outcome="Implement a portable photonic compiler build plugin",
+        domains=("photonic-build-systems",),
+        acceptance_evidence=("photonic plugin builds on Windows and Linux",),
+    )
+
+
+def _hiring_response_for(unit: WorkUnit) -> dict[str, Any]:
+    if unit.unit_id == _unit().unit_id:
+        return _hiring_response()
+    response = deepcopy(_hiring_response())
+    response["gap_evidence"].update(
+        uncovered_work_unit=unit.unit_id,
+        missing_capabilities=["photonic-build-systems"],
+        required_scope="Narrow portable photonic compiler build plugin implementation.",
+        expected_reuse="Reusable for future photonic compiler packages.",
+    )
+    contract = response["contract"]
+    contract.update(
+        slug="photonic-build-engineer",
+        role="Photonic Build Engineer",
+        narrow_scope="Portable TypeScript build plugins for photonic compiler toolchains.",
+        outcomes_owned=["photonic-build-implementation"],
+        capabilities=["photonic-build-systems", "implementation"],
+        preferred_scenarios=["A photonic compiler needs portable TypeScript build integration."],
+    )
+    return response
 
 
 def _amendment_unit() -> WorkUnit:
@@ -652,6 +689,8 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
         },
         context=context,
         budget=StaffingBudget(),
+        semantic_required={implementation.unit_id: frozenset({existing.agent_id})},
+        semantic_acceptable={review.unit_id: frozenset({existing.agent_id})},
     )
     staffing = verify_staffing(
         plan,
@@ -660,6 +699,11 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
         context=context,
         budget=StaffingBudget(),
     )
+    assert {
+        "required_agents_missing",
+        "no_safe_sufficient_team",
+        "recruiter_abstained",
+    } <= {item.code for item in staffing.abstention_reasons}
     inferred = WorkforceRoutingOutcome(
         status="abstained",
         mode="balanced",
@@ -684,6 +728,17 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
         abstention_codes=tuple(item.code for item in staffing.abstention_reasons),
         calls_used=1,
     )
+    unsafe = replace(
+        inferred,
+        staffing=replace(
+            staffing,
+            abstention_reasons=(
+                *staffing.abstention_reasons,
+                AbstentionReason("forbidden_agent_selected", implementation.unit_id),
+            ),
+        ),
+    )
+    assert _hireable_gap_units(unsafe) == ()
     real_hire = hiring_module.hire_contractor_for_gap
 
     def fake_hire(*args, **kwargs):
@@ -711,6 +766,198 @@ def test_route_hires_and_assigns_real_gap_in_same_preflight(tmp_path: Path, monk
 
     assert result["status"] == "accepted"
     assert result["hiring_event"]["status"] == "hired"
+    assert result["hiring_event"]["unit_id"] == implementation.unit_id
+    assert result["hiring_events"] == [result["hiring_event"]]
     assert result["hiring_event"]["worker"] == "quantum-build-engineer"
     assert "quantum-build-engineer" in result["selected_ids"]
     assert store.get_workforce_worker("quantum-build-engineer")["state"] == "contractor"
+    receipt = project_durable_routing_receipt(result)
+    assert receipt["hiring"]["attempted_count"] == 1
+    assert receipt["hiring"]["workforce_changes"] == 1
+    assert receipt["hiring"]["events"][0]["status"] == "hired"
+
+
+@pytest.mark.parametrize(
+    ("max_hires", "max_daily", "expected_statuses", "expected_calls", "accepted"),
+    [
+        (0, 3, ("not_attempted", "not_attempted"), (), False),
+        (1, 3, ("hired", "not_attempted"), ("unit-quantum-build",), False),
+        (
+            2,
+            3,
+            ("hired", "hired"),
+            ("unit-quantum-build", "unit-photonic-build"),
+            True,
+        ),
+        (2, 0, ("abstained", "not_attempted"), ("unit-quantum-build",), False),
+    ],
+)
+def test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful(
+    tmp_path: Path,
+    monkeypatch,
+    max_hires: int,
+    max_daily: int,
+    expected_statuses: tuple[str, ...],
+    expected_calls: tuple[str, ...],
+    accepted: bool,
+) -> None:
+    from agency_runtime.core.workforce import hiring as hiring_module
+    from agency_runtime.core.workforce import inference as inference_module
+
+    store = Store(tmp_path / "agency.db")
+    existing = _install_existing(store)
+    snapshot = workforce_index_snapshot(store, disabled_agents=())
+    quantum = _unit()
+    photonic = _photonic_unit()
+    review = WorkUnit(
+        unit_id="unit-independent-review",
+        outcome="Independently review both compiler build plugins",
+        artifact_kind="review-report",
+        lifecycle_phase="review",
+        domains=("software-engineering",),
+        languages=(),
+        frameworks=(),
+        required_capabilities=("review",),
+        authority="review",
+        mutation_scope="read_only",
+        risks=("build-regression",),
+        trust_boundaries=("repository",),
+        claims=(),
+        depends_on=(quantum.unit_id, photonic.unit_id),
+        resources=("implementation artifacts",),
+        required_tools=("repository-read",),
+        platforms=("windows", "linux"),
+        acceptance_evidence=("independent review report",),
+        parallelization="sequential",
+    )
+    plan = parse_work_unit_plan(
+        {
+            "schema_version": 2,
+            "request_summary": "Implement and review quantum and photonic build plugins.",
+            "units": [asdict(quantum), asdict(photonic), asdict(review)],
+        }
+    )
+    session_id = f"multi-gap-{max_hires}-{max_daily}"
+    trace_id = f"multi-gap-trace-{max_hires}-{max_daily}"
+    capability = native_adapter_capability_receipt(
+        "codex",
+        platform="windows",
+        session_id=session_id,
+        trace_id=trace_id,
+        available_tools=("repository-read", "native-delegation"),
+    )
+    context = StaffingContext(
+        "codex",
+        "windows",
+        frozenset(capability.capabilities),
+        snapshot.generation,
+    )
+    rankings = {
+        quantum.unit_id: [(existing.agent_id, 0.9)],
+        photonic.unit_id: [(existing.agent_id, 0.9)],
+        review.unit_id: [(existing.agent_id, 0.9)],
+    }
+    proposal = build_deterministic_proposal(
+        plan,
+        snapshot.contracts,
+        rankings,
+        context=context,
+        budget=StaffingBudget(),
+        semantic_required={
+            quantum.unit_id: frozenset({existing.agent_id}),
+            photonic.unit_id: frozenset({existing.agent_id}),
+        },
+        semantic_acceptable={review.unit_id: frozenset({existing.agent_id})},
+    )
+    staffing = verify_staffing(
+        plan,
+        proposal,
+        snapshot.contracts,
+        context=context,
+        budget=StaffingBudget(),
+    )
+    for unit_id in (quantum.unit_id, photonic.unit_id):
+        codes = {item.code for item in staffing.abstention_reasons if item.unit_id == unit_id}
+        assert {"required_agents_missing", "no_safe_sufficient_team"} <= codes
+    inferred = WorkforceRoutingOutcome(
+        status="abstained",
+        mode="balanced",
+        inference_mode="inferred",
+        plan=plan,
+        proposal=proposal,
+        staffing=staffing,
+        attempts=(
+            WorkforceInferenceAttempt(
+                stage="recruiter",
+                provider_name="task-agency-router",
+                provider_type="litellm",
+                requested_model="recruiter-model",
+                model_group="task-agency-router",
+                actual_model="resolved-recruiter",
+                model_receipt_source="response.body.model",
+                status="applied",
+                reason_code="structured_response_applied",
+                latency_ms=10,
+            ),
+        ),
+        abstention_codes=tuple(item.code for item in staffing.abstention_reasons),
+        calls_used=1,
+    )
+    real_hire = hiring_module.hire_contractor_for_gap
+    calls: list[str] = []
+
+    def fake_hire(request, unit, contracts, **kwargs):
+        calls.append(unit.unit_id)
+        return real_hire(
+            request,
+            unit,
+            contracts,
+            **kwargs,
+            invoker=_invoker(
+                _hiring_response_for(unit),
+                {"approved": True, "reason_codes": []},
+            ),
+        )
+
+    monkeypatch.setattr(inference_module, "plan_and_staff_workforce", lambda *_a, **_k: inferred)
+    monkeypatch.setattr(hiring_module, "hire_contractor_for_gap", fake_hire)
+    config = _config()
+    config = replace(
+        config,
+        workforce=replace(
+            config.workforce,
+            max_hires_per_task=max_hires,
+            max_hires_per_day=max_daily,
+        ),
+    )
+    result = route(
+        session_id,
+        "Implement and review quantum and photonic build plugins.",
+        store.get_active_roster_as_catalog(disabled_agents=()),
+        config=config,
+        store=store,
+        trace_id=trace_id,
+        host="codex",
+        platform="windows",
+        capability_receipt=capability,
+        workforce_snapshot=snapshot,
+    )
+
+    assert tuple(item["unit_id"] for item in result["hiring_events"]) == (
+        quantum.unit_id,
+        photonic.unit_id,
+    )
+    assert tuple(item["status"] for item in result["hiring_events"]) == expected_statuses
+    assert tuple(calls) == expected_calls
+    assert (result["status"] == "accepted") is accepted
+    if max_hires == 0:
+        assert {tuple(item["reason_codes"]) for item in result["hiring_events"]} == {
+            ("task_hiring_limit_reached",)
+        }
+    if max_hires == 1:
+        assert result["hiring_events"][1]["reason_codes"] == ["task_hiring_limit_reached"]
+    if max_daily == 0:
+        assert result["hiring_events"][0]["reason_codes"] == ["daily_hiring_limit_reached"]
+        assert result["hiring_events"][1]["reason_codes"] == ["daily_hiring_limit_reached"]
+    receipt = project_durable_routing_receipt(result)
+    assert [item["status"] for item in receipt["hiring"]["events"]] == list(expected_statuses)

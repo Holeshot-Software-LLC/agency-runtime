@@ -14,14 +14,14 @@ from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation_status import (
     MAX_DELEGATION_BACKEND_CHARS,
     MAX_DELEGATION_HOST_CHARS,
+    MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
     MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+    MAX_DELEGATION_WORKER_ID_CHARS,
 )
 from agency_runtime.core.store.projections import project_delegation_detail
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 from agency_runtime.core.store.workforce import record_native_assignment_outcome
 
-_MAX_WORKER_ID_CHARS = 256
-_MAX_NATIVE_RUN_ID_CHARS = 256
 _OUTCOME_EXIT_CODES = {
     "ok": 0,
     "error": 1,
@@ -176,12 +176,12 @@ class NativeChildStoreMixin:
         )
         normalized_worker = _identity(
             worker_id,
-            maximum=_MAX_WORKER_ID_CHARS,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
             field="worker_id",
         )
         normalized_run = _identity(
             native_run_id,
-            maximum=_MAX_NATIVE_RUN_ID_CHARS,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
             field="native_run_id",
         )
         normalized_unit = (
@@ -544,12 +544,12 @@ class NativeChildStoreMixin:
         ).lower()
         normalized_run = _identity(
             native_run_id,
-            maximum=_MAX_NATIVE_RUN_ID_CHARS,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
             field="native_run_id",
         )
         normalized_worker = _identity(
             worker_id,
-            maximum=_MAX_WORKER_ID_CHARS,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
             field="worker_id",
         )
         normalized_unit = (

@@ -612,5 +612,7 @@ def test_mcp_status_counts_roster_without_materializing_rows(tmp_path: Path) -> 
     result = mcp_tools._status({}, StatusStore())
 
     assert result["roster_count"] == 54_321
-    assert result["db_path"] == str(tmp_path / "mcp-status.db")
+    assert result["storage"] == {"backend": "sqlite", "binding": "verified"}
+    assert "db_path" not in result
+    assert str(tmp_path / "mcp-status.db") not in repr(result)
     assert set(result["hosts"]) == {"hermes", "openclaw", "codex", "claude", "zcode"}

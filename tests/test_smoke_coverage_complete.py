@@ -193,7 +193,7 @@ def test_marketplace_smoke_reports_shallow_plugin_path(
     hooks_path.write_text("{}", encoding="utf-8")
     mcp_path.write_text("{}", encoding="utf-8")
     skill_path.write_text(
-        "agency.host_status agency.host_control runtime_control_generation expected_generation",
+        "agency.host_status owner-authenticated dashboard UI normal user shell",
         encoding="utf-8",
     )
 

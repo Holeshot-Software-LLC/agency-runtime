@@ -19,7 +19,10 @@ from agency_runtime.core.agent_activation import agent_is_enabled
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation_status import (
     MAX_DELEGATION_AGENT_CHARS,
+    MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
     MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+    MAX_DELEGATION_WORKER_ID_CHARS,
+    MAX_DELEGATION_WORKER_KIND_CHARS,
 )
 from agency_runtime.core.native_child_activation import (
     MAX_NATIVE_CHILD_ACTIVATION_TTL_SECONDS,
@@ -40,9 +43,6 @@ from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.preflight import _decode_preflight_recipe
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 
-_MAX_WORKER_KIND_CHARS = 64
-_MAX_WORKER_ID_CHARS = 256
-_MAX_NATIVE_RUN_ID_CHARS = 256
 _MAX_ACTIVATION_TOKEN_CHARS = 256
 _WORK_UNIT_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,159}$")
 _STORE_UNIX_SQL = "CAST(STRFTIME('%s', 'NOW') AS INTEGER)"
@@ -405,13 +405,13 @@ class DelegationActivationStoreMixin:
         unit = _work_unit_identity(work_unit_id, required=True)
         kind = _identity(
             worker_kind,
-            maximum=_MAX_WORKER_KIND_CHARS,
+            maximum=MAX_DELEGATION_WORKER_KIND_CHARS,
             field="worker_kind",
             required=True,
         )
         if kind != "generic-worker":
             raise ValueError("delegated specialist retrieval uses generic-worker attribution")
-        worker = _identity(worker_id, maximum=_MAX_WORKER_ID_CHARS, field="worker_id")
+        worker = _identity(worker_id, maximum=MAX_DELEGATION_WORKER_ID_CHARS, field="worker_id")
         ttl = _activation_ttl(ttl_seconds)
         mutation_scope = build_native_child_mutation_scope(
             mode=mutation_mode,
@@ -624,13 +624,13 @@ class DelegationActivationStoreMixin:
             )
         worker = _identity(
             worker_id,
-            maximum=_MAX_WORKER_ID_CHARS,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
             field="worker_id",
             required=True,
         )
         native = _identity(
             native_run_id,
-            maximum=_MAX_NATIVE_RUN_ID_CHARS,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
             field="native_run_id",
             required=True,
         )

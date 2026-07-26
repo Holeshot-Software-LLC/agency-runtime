@@ -54,3 +54,13 @@ ADR-0091 defines the cross-platform process environment contract.
 - Required platform, proxy, locale, and selected-host variables remain usable.
 - Windows and POSIX tests prove the exact child environment and executable
   resolution behavior.
+
+## Implementation evidence
+
+Installer and delegated children now share one least-privilege environment
+builder. Ambient unrelated credentials and cross-host auth roots are removed,
+PATH is canonicalized to existing absolute non-repository directories, unsafe
+explicit overrides fail closed, and delegated processes receive private
+HOME/TEMP roots. Focused process suites and the combined checkpoint suite pass.
+The item remains open until the full release gate and fresh installed-host
+smoke complete.

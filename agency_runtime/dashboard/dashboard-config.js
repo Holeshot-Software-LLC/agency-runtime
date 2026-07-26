@@ -1,5 +1,3 @@
-"use strict";
-
 export function createConfigController(core) {
   const codexReasoningEfforts = ["low", "medium", "high", "xhigh", "max", "ultra"];
   const {

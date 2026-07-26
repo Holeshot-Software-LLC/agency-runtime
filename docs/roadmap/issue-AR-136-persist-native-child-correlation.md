@@ -30,6 +30,11 @@ but each installed hook event runs in a fresh process. Planned-shaped native
 delegations also pass through unchanged when Store or correlation resolution
 fails, allowing side effects before evidence is enforced.
 
+A parseable native activation marker is additionally trusted before Store
+verification. Because the envelope is encoded and hash-consistent but not
+authenticated, a forged marker on a canonical planned label can skip the
+PreTool denial and reach side effects before PostTool evidence fails.
+
 ## Current state
 
 Same-instance tests forward parent session, trace, worker, and run IDs. A new
@@ -56,3 +61,9 @@ ADR-0094 defines receipt authority and fail-closed behavior.
 - Generic non-Agency delegations remain pass-through.
 - Parent budgets, cache, singleflight, activation, and terminal lineage use the
   same durable scope.
+- A forged but parseable delivery never bypasses pending-grant verification.
+- Codex and Claude use an explicit durable child receipt because their
+  documented UserPromptSubmit payload cannot be guessed into an automatic
+  child-session join.
+- ZCode claims only planned PreTool/PostTool lineage until the host exposes a
+  real child lifecycle identifier.

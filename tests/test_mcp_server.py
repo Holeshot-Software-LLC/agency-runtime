@@ -144,7 +144,8 @@ def test_mcp_fails_closed_after_config_derived_store_target_drift(
     store = Store(config_path=config_path)
 
     status = handle_tool_call("agency.status", {}, store=store)
-    assert status["db_path"] == str(original_db)
+    assert status["storage"] == {"backend": "sqlite", "binding": "verified"}
+    assert "db_path" not in status
 
     state = read_config_state(config_path)
     apply_config_operations(
@@ -158,23 +159,17 @@ def test_mcp_fails_closed_after_config_derived_store_target_drift(
     assert store.db_path == original_db
 
 
-def test_mcp_exposes_host_status_and_exact_confirmed_control_tools() -> None:
+def test_mcp_exposes_read_only_host_status_without_control_tool() -> None:
     tools = {tool["name"]: tool for tool in MCP_TOOLS}
 
-    assert {"agency.host_status", "agency.host_control"} <= set(tools)
-    control = tools["agency.host_control"]["inputSchema"]
-    assert control["properties"]["enabled"]["type"] == "boolean"
-    assert control["properties"]["expected_generation"] == {"type": "integer", "minimum": 0}
-    assert "expected_generation" in control["required"]
-    assert control["properties"]["host"]["enum"] == [
-        "hermes",
-        "openclaw",
-        "codex",
-        "claude",
-    ]
+    assert "agency.host_status" in tools
+    assert "agency.host_control" not in tools
+    host = tools["agency.host_status"]["inputSchema"]["properties"]["host"]
+    assert host["enum"] == ["codex", "claude", "openclaw", "hermes", "zcode"]
+    assert host["maxLength"] == len("openclaw")
 
 
-def test_mcp_host_control_requires_exact_confirmation_and_persists(
+def test_mcp_host_control_is_unknown_and_cannot_persist(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "agency.db")
@@ -184,43 +179,12 @@ def test_mcp_host_control_requires_exact_confirmation_and_persists(
         {"host": "codex", "enabled": False, "expected_generation": 0, "confirm": "yes"},
         store=store,
     )
-    assert "confirmation must exactly match" in rejected["error"]
+    assert rejected == {"error": "unknown tool: agency.host_control"}
     assert store.get_host_control("codex")["enabled"] is True
 
-    changed = handle_tool_call(
-        "agency.host_control",
-        {
-            "host": "codex",
-            "enabled": False,
-            "expected_generation": 0,
-            "confirm": "DISABLE codex",
-        },
-        store=store,
-    )
-    assert changed["ok"] is True
-    assert changed["enabled"] is False
-    assert changed["generation"] == 1
-    assert Store(tmp_path / "agency.db").get_host_control("codex")["enabled"] is False
 
-    stale = handle_tool_call(
-        "agency.host_control",
-        {
-            "host": "codex",
-            "enabled": True,
-            "expected_generation": 0,
-            "confirm": "ENABLE codex",
-        },
-        store=store,
-    )
-    assert stale["conflict"] is True
-    assert stale["current"]["generation"] == 1
-    assert stale["current"]["enabled"] is False
-
-
-@pytest.mark.parametrize("expected_generation", [True, -1, None])
-def test_mcp_direct_dispatch_rejects_invalid_host_control_generation(
+def test_mcp_direct_dispatch_has_no_host_control_handler(
     tmp_path: Path,
-    expected_generation: object,
 ) -> None:
     store = Store(tmp_path / "agency.db")
 
@@ -229,13 +193,13 @@ def test_mcp_direct_dispatch_rejects_invalid_host_control_generation(
         {
             "host": "codex",
             "enabled": False,
-            "expected_generation": expected_generation,
+            "expected_generation": 0,
             "confirm": "DISABLE codex",
         },
         store,
     )
 
-    assert result == {"error": "expected_generation must be a non-negative integer"}
+    assert result == {"error": "unknown tool: agency.host_control"}
     assert store.get_host_control("codex")["enabled"] is True
 
 
@@ -267,6 +231,16 @@ def test_mcp_host_status_reports_native_and_runtime_layers(
     assert status["effective_enabled"] is False
 
 
+def test_mcp_status_never_exposes_absolute_store_path(tmp_path: Path) -> None:
+    store = Store(tmp_path / "secret-location" / "agency.db")
+
+    status = handle_tool_call("agency.status", {}, store=store)
+
+    assert status["storage"] == {"backend": "sqlite", "binding": "verified"}
+    assert "db_path" not in status
+    assert str(store.db_path) not in repr(status)
+
+
 def test_canary_mode_blocks_every_mutating_mcp_surface(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -282,12 +256,6 @@ def test_canary_mode_blocks_every_mutating_mcp_surface(
         "agency.record_skill_loaded": {"skill_name": "x"},
         "agency.delegate": {"agent": "x", "task": "work"},
         "agency.finalize": {"draft_text": "draft"},
-        "agency.host_control": {
-            "host": "codex",
-            "enabled": False,
-            "expected_generation": 0,
-            "confirm": "DISABLE codex",
-        },
     }
     for name, arguments in calls.items():
         result = handle_tool_call(name, arguments, store=store)
@@ -600,7 +568,7 @@ def test_mcp_finalize_returns_header_text(tmp_path: Path) -> None:
     assert result["action"] == "accept"
     assert result["missing"] == []
     assert "Agency/Agencies loaded: code-reviewer" in result["text"]
-    assert "task-general -> unavailable" in result["text"]
+    assert "unknown -> unavailable" in result["text"]
     assert result["text"].endswith("Done.")
     conn = store._connect()
     try:

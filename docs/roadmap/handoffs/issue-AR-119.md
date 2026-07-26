@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-07-25
+updated: 2026-07-26
 tags: [handoff, routing, workforce, evaluation, recovery, production-readiness]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -32,8 +32,8 @@ configured.
 
 ## checkpoint
 
-- `origin/main` remains `5001d78`; local `main` is two clean-checkpoint commits
-  ahead at `de47a8c` after the up-to-date pull.
+- `origin/main` remains `5001d78`; local `main` was four governed commits
+  ahead at `22c9f33` before the current Wave 1 implementation checkpoint.
 - The pre-existing untracked
   `docs/analysis/2026-07-25-deep-audit-findings.md` is preserved unchanged and
   excluded from checkpoint commits until its hypotheses are independently
@@ -76,15 +76,29 @@ configured.
   asset overage, stale Store trust, incomplete schema currentness, ZCode
   install/activation failure, process-local child correlation, and planned
   delegation fail-open behavior. No Critical security finding was confirmed.
+- Wave 1 plus schema 36 is locally coherent: MCP/broker reads are bounded and
+  read-only, subprocess environments are least-privilege, Store trust is
+  revalidated, canonical safe staffing gaps can hire cumulatively, critical
+  SQLite objects are exact-current, and packaged assets are 263,151 bytes
+  against the unchanged 263,168-byte ceiling.
+- Independent checkpoint verification passed 785 Python tests with 9 skips, 97
+  dashboard interaction tests, full Ruff and format checks across 543 files,
+  and `git diff --check`.
+- A second security pass reproduced a new High: the model-callable in-app
+  Browser can automate the owner dashboard's static-confirmation mutations.
+  AR-143 and ADR-0096 now govern genuine operator presence; AR-128 remains open.
+- AR-136 now includes the forged parseable activation-marker bypass. AR-135
+  records the exact local ZCode 3.5.2 seven-event config/payload contract and
+  rejects invented marketplace commands.
 
 ## exact-blocker
 
 - Normal-profile Codex activation requires user-owned terminal-TUI hook review
   and a subsequent fresh task. The installer correctly refuses to automate or
   bypass that trust decision.
-- AR-128 through AR-139 include P0 production blockers and must close before
-  renewed production claims. AR-140 through AR-142 own measured performance,
-  compatibility/consolidation, and cross-layer instrumentation.
+- AR-128 through AR-139 plus AR-143 include P0 production blockers and must
+  close before renewed production claims. AR-140 through AR-142 own measured
+  performance, compatibility/consolidation, and cross-layer instrumentation.
 - AR-119/AR-125 still lack a benchmark-valid completed value corpus and current
   production-candidate evidence across all claimed host/OS surfaces. Historical
   malformed or timed-out upstream arms remain validity failures, never losses.
@@ -99,14 +113,15 @@ same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Commit the governed audit/report/ADR package and its worklog ledger without
-   touching the preserved untracked 2026-07-25 draft.
-2. Implement Wave 1 in isolated scopes: AR-128 through AR-132 and AR-139, with
-   regression tests before each behavioral change.
-3. Reinstall the current source and run protocol, dashboard, hiring, and
-   authority smokes after the installed-surface changes.
-4. Continue Waves 2-4 from the task table, then return to the AR-125 corpus and
-   complete repository/release gates.
+1. Create the current substantive/ledger checkpoint without touching the
+   preserved untracked 2026-07-25 draft.
+2. Implement AR-143's read-only dashboard/operator-boundary correction, then
+   AR-133 atomic finalization and AR-135/AR-136 ZCode/native lineage as isolated
+   packages.
+3. Continue complete dashboard collections/coherence/instrumentation, then
+   performance and compatibility work.
+4. Reinstall canonical source, run installed protocol/UI/hiring/native dogfood,
+   complete AR-125, and finish the full repository/release gates.
 
 ## verification
 
@@ -117,6 +132,8 @@ agency install --agent codex --json                    # partial: activation-req
 agency doctor --json --verbose                         # DEGRADED: hook trust only
 in-app dashboard desktop/mobile/authenticated smoke    # clean console, no overflow
 focused MCP protocol / release / Store / hook probes   # reproduced blockers
+combined Wave 1 checkpoint suite                       # 785 passed, 9 skipped
+node --test tests/dashboard_ui.test.mjs                # 97 passed
 python scripts/context_handoff_status.py --json --threshold 50
 ~~~
 

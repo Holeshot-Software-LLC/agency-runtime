@@ -23,6 +23,7 @@ related:
   - docs/roadmap/issue-AR-140-scale-routing-and-retrieval.md
   - docs/roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md
   - docs/roadmap/issue-AR-142-instrument-runtime-boundaries.md
+  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
 supersedes: []
 superseded_by: null
 ---
@@ -93,6 +94,7 @@ No Critical finding was confirmed.
 | SEC-H2 | Installer host commands inherit the complete parent environment. | A sentinel unrelated credential reached the third-party CLI environment. | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) |
 | SEC-H3 | Positive Store path trust survives a permission-authority change. | Same inode/mtime returned trusted before and after authority loss; the authoritative checker ran only once. | [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md) |
 | SEC-H4 | Agency-planned native children fail open when Store/correlation evidence is unavailable. | Valid planned-shaped labels for Claude, Codex, and ZCode returned pass-through, permitting side effects before terminal evidence rejection. | [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md) |
+| SEC-H5 | The model-callable in-app Browser can use the owner dashboard bearer and automate every persistent mutation modal. | Static phrases and CAS prove shape/freshness, not human presence; global, host, agent, config, roster, workforce, hiring, and trimming operations remain reachable. | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) |
 
 ### Medium
 
@@ -112,6 +114,20 @@ No Critical finding was confirmed.
 
 The dependency vulnerability scan could not be completed within the restricted
 network/policy boundary. No claim of dependency-CVE cleanliness is made.
+
+### Remediation checkpoint
+
+The first bounded implementation package is locally green but does not change
+the production verdict. MCP and restricted broker paths are read-only; every
+MCP string is bounded; subprocess environments are least-privilege; Store trust
+is revalidated; schema 36 enforces currentness/retention/boolean/ZCode
+invariants; canonical staffing gaps can hire deterministically; and packaged
+dashboard assets are 17 bytes below the unchanged ceiling.
+
+Independent checkpoint verification passed 785 Python tests with 9 skips, 97
+dashboard interaction tests, and full Ruff/format/diff checks. AR-128 remains
+open because SEC-H5 was reproduced after its initial slice. Fresh installation,
+installed dogfood, the full release gate, and every later wave remain required.
 
 ## Optimization review
 
@@ -223,6 +239,7 @@ editing another worker's files.
 | 2 | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) | SQLite migration/currentness | Fresh/upgraded/tampered schema tests |
 | 2 | [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md) | ZCode install/hooks/status | Fresh install through activation/lineage smoke |
 | 2 | [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md) | Hook subprocesses | Two-process correlation and outage denial |
+| 2 | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | Dashboard/CLI control authority | Model-callable surfaces cannot mutate |
 | 3 | [AR-137](../roadmap/issue-AR-137-complete-dashboard-collections.md) | Dashboard collections | 263/1,001 row exact paging/count tests |
 | 3 | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | Dashboard async/a11y | Race, stale, focus, mobile, accessibility tests |
 | 3 | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md) | Cross-layer telemetry | One redacted request trace across every boundary |

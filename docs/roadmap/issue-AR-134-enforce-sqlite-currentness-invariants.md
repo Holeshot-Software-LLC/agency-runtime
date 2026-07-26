@@ -57,3 +57,13 @@ proof required by it.
 - Migration preserves existing evidence and is idempotent.
 - Boolean domains reject values outside zero and one.
 - Delete behavior matches one documented, tested retention contract.
+
+## Implementation evidence
+
+Schema 36 adds the canonical ZCode host domain, exact normalized SQL
+currentness for critical triggers and the native-scope unique index, boolean
+domain guards, and the previously phantom guarded-delete trigger. Direct child
+receipt deletion is denied while an authorized parent-retention cascade removes
+the dependent receipt. Eleven regressions prove fresh creation, v35 evidence
+preservation, idempotent upgrade, same-name weakened-object rejection, boolean
+domains, ZCode insertion, and retention behavior.

@@ -8,6 +8,8 @@ tags: [security, operations, dashboard, mcp, controls]
 related:
   - docs/THREAT_MODEL.md
   - docs/decisions/0090-model-facing-control-paths-are-read-only.md
+  - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
+  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - agency_runtime/core/dashboard_runtime.py
   - agency_runtime/cli/agent_control_broker.py
   - agency_runtime/server/mcp.py
@@ -19,7 +21,7 @@ issue_id: AR-128
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: []
+blocks: [AR-143]
 ---
 
 # AR-128: Seal model-facing control authority
@@ -60,3 +62,14 @@ mutation decisions while retaining their useful read-only brokerage controls.
 - Every Store-backed broker response proves active path, desired path, and
   `store_restart_required=false`.
 - Adversarial protocol tests cover every formerly reachable mutation.
+
+## Implementation evidence
+
+The MCP registry, generated skill, restricted broker, and restricted CLI
+fallbacks are now read-only. MCP bounds derive from canonical host and Store
+identifier constants, Store-backed broker responses prove active/desired/restart
+identity, and focused plus combined protocol tests pass.
+
+AR-128 remains open because the owner dashboard is model-callable through the
+in-app Browser. AR-143 and ADR-0096 own the newly reproduced user-presence gap;
+the existing modal and bearer cannot be counted as proof of operator intent.

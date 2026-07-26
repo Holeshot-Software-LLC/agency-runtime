@@ -98,6 +98,8 @@ def _page(
         "config_revision": config_revision or _revision(),
         "roster_revision": roster_revision or ("b" * 64),
         "store_path": store_path or _store_path(),
+        "desired_store_path": store_path or _store_path(),
+        "store_restart_required": False,
         "environment_overrides": {},
         "projection": "selector",
     }
@@ -147,6 +149,8 @@ def _operation_snapshot() -> dict[str, Any]:
         "config_path": _absolute_config_path(),
         "config_revision": _revision(),
         "store_path": _store_path(),
+        "desired_store_path": _store_path(),
+        "store_restart_required": False,
         "roster_revision": "b" * 64,
         "environment_overrides": {},
     }
@@ -727,12 +731,6 @@ def test_broker_lookup_rejects_an_empty_exact_result(
         broker._lookup_agent("alpha-reviewer")
 
 
-@pytest.mark.parametrize("value", [None, [7]])
-def test_broker_disabled_agents_rejects_non_string_collections(value: Any) -> None:
-    with pytest.raises(ValueError, match="invalid disabled agent"):
-        broker._disabled_agents(value)
-
-
 def test_broker_projects_compact_activation_rows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -834,121 +832,9 @@ def test_exact_lookup_rejects_a_state_impossible_under_roster_totals(
         broker._lookup_agent("alpha-reviewer")
 
 
-@pytest.mark.parametrize(
-    ("before_enabled", "requested_enabled", "changed", "result_revision", "disabled"),
-    [
-        (True, False, True, _revision("c"), ["alpha-reviewer"]),
-        (True, True, False, _revision(), []),
-    ],
-)
-def test_broker_agent_toggle_accepts_exact_changed_and_noop_receipts(
-    monkeypatch: pytest.MonkeyPatch,
-    before_enabled: bool,
-    requested_enabled: bool,
-    changed: bool,
-    result_revision: str,
-    disabled: list[str],
-) -> None:
-    requests: list[tuple[str, str, Any]] = []
-
-    def request(path: str, *, method: str = "GET", payload: Any = None) -> dict[str, Any]:
-        requests.append((path, method, payload))
-        if method == "GET":
-            return _page(
-                [_row("alpha-reviewer", enabled=before_enabled)],
-                limit=1,
-                filter_slug="alpha-reviewer",
-            )
-        return {
-            "ok": True,
-            "slug": "alpha-reviewer",
-            "enabled": requested_enabled,
-            "changed": changed,
-            "store_path": _store_path(),
-            "config": {
-                "path": _absolute_config_path(),
-                "revision": result_revision,
-                "effective": {"agents": {"disabled": disabled}},
-            },
-        }
-
-    monkeypatch.setattr(broker, "dashboard_api_request", request)
-
-    assert broker.broker_set_agent_enabled(
-        "alpha-reviewer",
-        enabled=requested_enabled,
-    ) == ("alpha-reviewer", changed, _absolute_config_path())
-    verb = "ENABLE" if requested_enabled else "DISABLE"
-    assert requests == [
-        ("/api/agents/lookup?slug=alpha-reviewer", "GET", None),
-        (
-            "/api/agents/toggle",
-            "POST",
-            {
-                "slug": "alpha-reviewer",
-                "enabled": requested_enabled,
-                "confirm": f"{verb} alpha-reviewer",
-                "expected_revision": _revision(),
-                "reason": "operator activation toggle",
-            },
-        ),
-    ]
-
-
-@pytest.mark.parametrize(
-    ("mutation", "message"),
-    [
-        ({"ok": False}, "response is invalid"),
-        ({"slug": "beta-reviewer"}, "identity"),
-        ({"enabled": 0}, "identity"),
-        ({"changed": False}, "change state"),
-        ({"config": []}, "config evidence"),
-        ({"config_path": _absolute_config_path("other.yaml")}, "config identity"),
-        ({"config_revision": _revision()}, "config identity"),
-        ({"disabled": []}, "effective state"),
-        ({"disabled": ["alpha-reviewer", "alpha-reviewer"]}, "disabled agent"),
-        ({"disabled": ["chief-of-staff"]}, "disabled agent"),
-    ],
-)
-def test_broker_agent_toggle_rejects_inconsistent_receipts(
-    monkeypatch: pytest.MonkeyPatch,
-    mutation: dict[str, Any],
-    message: str,
-) -> None:
-    response: dict[str, Any] = {
-        "ok": True,
-        "slug": "alpha-reviewer",
-        "enabled": False,
-        "changed": True,
-        "store_path": _store_path(),
-        "config": {
-            "path": _absolute_config_path(),
-            "revision": _revision("c"),
-            "effective": {"agents": {"disabled": ["alpha-reviewer"]}},
-        },
-    }
-    if "config_path" in mutation:
-        response["config"]["path"] = mutation["config_path"]
-    elif "config_revision" in mutation:
-        response["config"]["revision"] = mutation["config_revision"]
-    elif "disabled" in mutation:
-        response["config"]["effective"]["agents"]["disabled"] = mutation["disabled"]
-    else:
-        response.update(mutation)
-
-    def request(path: str, **_kwargs: Any) -> dict[str, Any]:
-        if path.startswith("/api/agents/lookup"):
-            return _page(
-                [_row("alpha-reviewer")],
-                limit=1,
-                filter_slug="alpha-reviewer",
-            )
-        return response
-
-    monkeypatch.setattr(broker, "dashboard_api_request", request)
-
-    with pytest.raises(ValueError, match=message):
-        broker.broker_set_agent_enabled("alpha-reviewer", enabled=False)
+def test_agent_broker_exports_no_mutation_surface() -> None:
+    assert not hasattr(broker, "broker_set_agent_enabled")
+    assert "broker_set_agent_enabled" not in broker.__all__
 
 
 def test_restricted_read_commands_use_the_broker_without_a_split_store(
@@ -1173,18 +1059,13 @@ def test_restricted_roster_operations_reject_dashboard_config_identity_drift(
     )
     monkeypatch.setattr(
         broker,
-        "broker_set_agent_enabled",
-        lambda *_args, **_kwargs: ("alpha-reviewer", True, service_path),
-    )
-    monkeypatch.setattr(
-        broker,
         "broker_explain_selection",
         lambda **_kwargs: (service_path, {}),
     )
 
     with pytest.raises(RuntimeError, match="does not match the CLI config identity"):
         roster_commands._activation_rows()
-    with pytest.raises(RuntimeError, match="does not match the CLI config identity"):
+    with pytest.raises(RuntimeError, match="restricted model-facing process"):
         roster_commands._set_agent_enabled("alpha-reviewer", enabled=False)
     with pytest.raises(RuntimeError, match="does not match the CLI config identity"):
         roster_commands._routing_operation(session_id="session", task="review", limit=1)
@@ -1215,15 +1096,10 @@ def test_explicit_agent_config_is_never_redirected_to_the_dashboard(
         "broker_activation_rows",
         lambda: calls.append("list") or (str(explicit), []),
     )
-    monkeypatch.setattr(
-        broker,
-        "broker_set_agent_enabled",
-        lambda *_args, **_kwargs: calls.append("toggle") or ("alpha-reviewer", True, ""),
-    )
 
     with pytest.raises(RuntimeError, match="explicit agent config cannot be redirected"):
         roster_commands._activation_rows(str(explicit))
-    with pytest.raises(RuntimeError, match="explicit agent config cannot be redirected"):
+    with pytest.raises(RuntimeError, match="restricted model-facing process"):
         roster_commands._set_agent_enabled(
             "alpha-reviewer",
             enabled=False,
@@ -1232,7 +1108,7 @@ def test_explicit_agent_config_is_never_redirected_to_the_dashboard(
     assert calls == []
 
 
-def test_default_agent_activation_reads_and_writes_use_the_restricted_broker(
+def test_default_agent_activation_reads_but_cannot_write_through_restricted_broker(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -1259,16 +1135,6 @@ def test_default_agent_activation_reads_and_writes_use_the_restricted_broker(
             ],
         ),
     )
-    monkeypatch.setattr(
-        broker,
-        "broker_set_agent_enabled",
-        lambda slug, *, enabled, reason="": (
-            str(slug),
-            not enabled,
-            str(default_path),
-        ),
-    )
-
     assert roster_commands._activation_rows() == (
         str(default_path),
         [
@@ -1281,11 +1147,8 @@ def test_default_agent_activation_reads_and_writes_use_the_restricted_broker(
             }
         ],
     )
-    assert roster_commands._set_agent_enabled("alpha-reviewer", enabled=False) == (
-        "alpha-reviewer",
-        True,
-        str(default_path),
-    )
+    with pytest.raises(RuntimeError, match="restricted model-facing process"):
+        roster_commands._set_agent_enabled("alpha-reviewer", enabled=False)
 
 
 def test_restricted_delegation_store_returns_controlled_error_without_execution(
@@ -1521,7 +1384,7 @@ def _host_identity() -> dict[str, Any]:
     }
 
 
-def test_host_broker_accepts_an_exact_noop_receipt_without_generation_change(
+def test_host_broker_allows_preview_without_a_mutation_request(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     requests: list[tuple[str, str, Any]] = []
@@ -1539,39 +1402,20 @@ def test_host_broker_accepts_an_exact_noop_receipt_without_generation_change(
                 for host in SUPPORTED_HOSTS
             ]
             return {"hosts": hosts, "master": _master(), **_host_identity()}
-        return {
-            "ok": True,
-            "host": "codex",
-            "enabled": True,
-            "generation": 2,
-            "updated_at": "2026-07-16T12:00:00Z",
-            "source": "dashboard",
-            "status": _host_status(),
-            **_host_identity(),
-        }
+        raise AssertionError("read-only preview attempted a mutation")
 
     monkeypatch.setattr(dashboard_runtime, "dashboard_api_request", request)
 
-    result = install_commands._dashboard_soft_control_result(
+    result = install_commands._dashboard_soft_control_preview(
         "codex",
         enabled=True,
-        dry_run=False,
     )
 
     assert result["generation"] == result["previous_generation"] == 2
-    assert requests[-1] == (
-        "/api/hosts/toggle",
-        "POST",
-        {
-            "host": "codex",
-            "enabled": True,
-            "expected_generation": 2,
-            "confirm": "ENABLE codex",
-        },
-    )
+    assert requests == [("/api/hosts", "GET", None)]
 
 
-def test_master_broker_accepts_an_exact_noop_receipt_without_generation_change(
+def test_master_mutation_does_not_fall_back_to_the_model_facing_broker(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
@@ -1596,14 +1440,11 @@ def test_master_broker_accepts_an_exact_noop_receipt_without_generation_change(
         },
     )
 
-    result = install_commands._global_control_result(
-        Namespace(native=False, dry_run=False),
-        enabled=True,
-    )
-
-    assert result["changed"] is False
-    assert result["master"]["generation"] == 7
-    assert result["transport"] == "dashboard"
+    with pytest.raises(RuntimeError, match="restricted model-facing process"):
+        install_commands._global_control_result(
+            Namespace(native=False, dry_run=False),
+            enabled=True,
+        )
 
 
 def test_host_soft_control_brokers_only_the_exact_restricted_token_error(
@@ -1617,12 +1458,6 @@ def test_host_soft_control_brokers_only_the_exact_restricted_token_error(
             PermissionError("ordinary filesystem refusal")
         ),
     )
-    monkeypatch.setattr(
-        install_commands,
-        "_dashboard_soft_control_result",
-        lambda *_args, **_kwargs: calls.append("broker") or {},
-    )
-
     with pytest.raises(PermissionError, match="ordinary filesystem refusal"):
         install_commands._restricted_aware_soft_control_result(
             object(),

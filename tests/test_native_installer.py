@@ -447,14 +447,13 @@ def test_native_timeout_terminates_descendant_process_tree(
     _no_live_dashboard_service: tuple[Path, Path],
 ) -> None:
     marker = tmp_path / "orphan-child-ran.txt"
-    monkeypatch.setenv("AGENCY_INSTALLER_TREE_MARKER", str(marker))
     child_code = (
-        "import os, time; from pathlib import Path; time.sleep(1.0); "
-        "Path(os.environ['AGENCY_INSTALLER_TREE_MARKER']).write_text('orphan', encoding='utf-8')"
+        "import sys, time; from pathlib import Path; time.sleep(1.0); "
+        "Path(sys.argv[1]).write_text('orphan', encoding='utf-8')"
     )
     parent_code = (
         "import subprocess, sys, time; "
-        f"subprocess.Popen([sys.executable, '-c', {child_code!r}]); "
+        f"subprocess.Popen([sys.executable, '-c', {child_code!r}, {str(marker)!r}]); "
         "time.sleep(5)"
     )
 

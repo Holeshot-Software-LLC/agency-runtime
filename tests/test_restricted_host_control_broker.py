@@ -200,7 +200,7 @@ def test_dashboard_inference_snapshot_is_identity_bound_and_redacted(
         (
             {
                 "hosts": [
-                    _status("hermes", master_enabled=False),
+                    _status(SUPPORTED_HOSTS[0], master_enabled=False),
                     *[_status(host) for host in SUPPORTED_HOSTS[1:]],
                 ],
                 "master": _master(),
@@ -220,7 +220,7 @@ def test_dashboard_host_snapshot_rejects_incomplete_or_inconsistent_payloads(
         install_commands._dashboard_host_snapshot(None)
 
 
-def test_dashboard_soft_control_supports_dry_run_and_generation_checked_mutation(
+def test_dashboard_soft_control_preview_is_read_only(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     requests: list[tuple[str, str, Any]] = []
@@ -229,174 +229,32 @@ def test_dashboard_soft_control_supports_dry_run_and_generation_checked_mutation
         requests.append((path, method, payload))
         if path == "/api/hosts":
             return _snapshot()
-        return {
-            "ok": True,
-            "host": "codex",
-            "enabled": False,
-            "generation": 3,
-            "updated_at": "after",
-            "source": "dashboard",
-            "status": {
-                **_status("codex", enabled=False, generation=3),
-                "runtime_control_updated_at": "after",
-            },
-            **_identity(),
-        }
+        raise AssertionError("read-only preview attempted a mutation")
 
     monkeypatch.setattr(dashboard_runtime, "dashboard_api_request", request)
 
-    dry_run = install_commands._dashboard_soft_control_result("codex", enabled=False, dry_run=True)
-    changed = install_commands._dashboard_soft_control_result("codex", enabled=False, dry_run=False)
+    dry_run = install_commands._dashboard_soft_control_preview("codex", enabled=False)
 
     assert dry_run["dry_run"] is True
-    assert dry_run["runtime_enabled"] is False
-    assert changed["generation"] == 3
-    assert changed["previous_generation"] == 2
-    assert changed["transport"] == "dashboard"
-    assert requests[-1] == (
-        "/api/hosts/toggle",
-        "POST",
-        {
-            "host": "codex",
-            "enabled": False,
-            "expected_generation": 2,
-            "confirm": "DISABLE codex",
-        },
-    )
+    assert dry_run["runtime_enabled"] is True
+    assert dry_run["generation"] == dry_run["previous_generation"] == 2
+    assert requests == [("/api/hosts", "GET", None)]
 
 
-@pytest.mark.parametrize(
-    ("toggle", "message"),
-    [
-        ({"ok": False, "host": "codex"}, "identity"),
-        ({"ok": True, "host": "claude"}, "identity"),
-        ({"ok": True, "host": "codex", "enabled": 0}, "state"),
-        ({"ok": True, "host": "codex", "enabled": True}, "state"),
-        ({"ok": True, "host": "codex", "enabled": False, "generation": True}, "invalid"),
-        (
-            {
-                "ok": True,
-                "host": "codex",
-                "enabled": False,
-                "generation": 3,
-                "status": _status("claude", enabled=False, generation=3),
-            },
-            "identity",
-        ),
-        (
-            {
-                "ok": True,
-                "host": "codex",
-                "enabled": False,
-                "generation": 3,
-                "status": _status("codex", enabled=True, generation=3),
-            },
-            "inconsistent",
-        ),
-        (
-            {
-                "ok": True,
-                "host": "codex",
-                "enabled": False,
-                "generation": 2,
-                "status": _status("codex", enabled=False, generation=2),
-            },
-            "inconsistent",
-        ),
-        (
-            {
-                "ok": True,
-                "host": "codex",
-                "enabled": False,
-                "generation": 4,
-                "status": _status("codex", enabled=False, generation=4),
-            },
-            "inconsistent",
-        ),
-        (
-            {
-                "ok": True,
-                "host": "codex",
-                "enabled": False,
-                "generation": 3,
-                "status": _status("codex", enabled=False, generation=4),
-            },
-            "inconsistent",
-        ),
-        (
-            {
-                "ok": True,
-                "host": "codex",
-                "enabled": False,
-                "generation": 3,
-                "status": _status("codex", enabled=False, generation=3),
-                "config_revision": "sha256:" + ("b" * 64),
-            },
-            "Store identity changed",
-        ),
-        (
-            {
-                "ok": True,
-                "host": "codex",
-                "enabled": False,
-                "generation": 3,
-                "updated_at": "after",
-                "source": "dashboard",
-                "status": _status("codex", enabled=False, generation=3),
-            },
-            "provenance",
-        ),
-    ],
-)
-def test_dashboard_soft_control_rejects_mismatched_toggle_receipts(
-    monkeypatch: pytest.MonkeyPatch,
-    toggle: dict[str, Any],
-    message: str,
-) -> None:
-    monkeypatch.setattr(
-        dashboard_runtime,
-        "dashboard_api_request",
-        lambda path, **_kwargs: _snapshot() if path == "/api/hosts" else {**_identity(), **toggle},
-    )
-    with pytest.raises(ValueError, match=message):
-        install_commands._dashboard_soft_control_result("codex", enabled=False, dry_run=False)
-
-
-def test_restricted_cli_host_control_uses_broker_and_contains_failures(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_restricted_cli_host_mutation_fails_with_operator_guidance() -> None:
     emitted: list[dict[str, Any]] = []
     dependencies = install_commands.InstallDependencies(
         store_factory=_restricted_store,
         emit_json=emitted.append,
     )
-    monkeypatch.setattr(
-        install_commands,
-        "_dashboard_soft_control_result",
-        lambda host, **_kwargs: {
-            "ok": True,
-            "exit_code": 0,
-            "host": host,
-            "runtime_enabled": False,
-        },
-    )
-    assert install_commands.cmd_off(_args(), dependencies=dependencies) == 0
-    assert emitted[-1]["host"] == "codex"
-
-    monkeypatch.setattr(
-        install_commands,
-        "_dashboard_soft_control_result",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("broker malformed")),
-    )
     assert install_commands.cmd_off(_args(), dependencies=dependencies) == 1
     assert emitted[-1]["ok"] is False
-    assert emitted[-1]["error"] == "broker malformed"
+    assert "restricted model-facing process" in emitted[-1]["error"]
 
 
-def test_host_control_brokers_a_restricted_store_operation_after_construction(
+def test_host_control_after_restricted_store_error_allows_only_dry_run_preview(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls: list[str] = []
     monkeypatch.setattr(
         install_commands,
         "_soft_control_result",
@@ -406,18 +264,19 @@ def test_host_control_brokers_a_restricted_store_operation_after_construction(
     )
     monkeypatch.setattr(
         install_commands,
-        "_dashboard_soft_control_result",
-        lambda host, **_kwargs: calls.append(host) or {"ok": True, "host": host},
+        "_dashboard_soft_control_preview",
+        lambda host, **_kwargs: {"ok": True, "host": host, "dry_run": True},
     )
 
-    result = install_commands._restricted_aware_soft_control_result(
-        object(),
-        "codex",
-        enabled=False,
-        dry_run=False,
-        restricted_store=False,
-    )
-    direct_broker = install_commands._restricted_aware_soft_control_result(
+    with pytest.raises(RuntimeError, match="restricted model-facing process"):
+        install_commands._restricted_aware_soft_control_result(
+            object(),
+            "codex",
+            enabled=False,
+            dry_run=False,
+            restricted_store=False,
+        )
+    preview = install_commands._restricted_aware_soft_control_result(
         None,
         "claude",
         enabled=True,
@@ -425,9 +284,7 @@ def test_host_control_brokers_a_restricted_store_operation_after_construction(
         restricted_store=True,
     )
 
-    assert result == {"ok": True, "host": "codex"}
-    assert direct_broker == {"ok": True, "host": "claude"}
-    assert calls == ["codex", "claude"]
+    assert preview == {"ok": True, "host": "claude", "dry_run": True}
 
 
 def test_restricted_cli_status_correlates_host_and_inference_broker_snapshots(
@@ -530,7 +387,7 @@ def test_restricted_cli_status_reports_broker_failure_without_traceback(
         assert "service absent" in capsys.readouterr().out
 
 
-def test_master_broker_requires_exact_shape_state_and_generation(
+def test_master_mutation_does_not_fall_back_to_restricted_broker(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from agency_runtime.core import runtime_control
@@ -548,59 +405,16 @@ def test_master_broker_requires_exact_shape_state_and_generation(
             runtime_control.RuntimeControlSecurityError("restricted")
         ),
     )
-    valid = {
-        "ok": True,
-        "changed": True,
-        "master": _master(False, generation=8),
-    }
-    monkeypatch.setattr(dashboard_runtime, "dashboard_api_request", lambda *_args, **_kw: valid)
-
-    result = install_commands._global_control_result(
-        _args(global_control=True),
-        enabled=False,
-    )
-
-    assert result["master"]["generation"] == 8
-    assert result["transport"] == "dashboard"
-
-
-@pytest.mark.parametrize(
-    "response",
-    [
-        {"changed": True, "master": _master(False, generation=8)},
-        {"ok": True, "changed": 1, "master": _master(False, generation=8)},
-        {"ok": True, "changed": False, "master": _master(False, generation=8)},
-        {"ok": True, "changed": True, "master": _master(True, generation=8)},
-        {"ok": True, "changed": True, "master": _master(False, generation=7)},
-        {"ok": True, "changed": True, "master": _master(False, generation=9)},
-    ],
-)
-def test_master_broker_rejects_invalid_transition_receipts(
-    monkeypatch: pytest.MonkeyPatch,
-    response: dict[str, Any],
-) -> None:
-    from agency_runtime.core import runtime_control
-
-    monkeypatch.setattr(
-        install_commands,
-        "_read_master_control_with_broker",
-        lambda: (_master(True, generation=7), "direct"),
-    )
-    monkeypatch.setattr(
-        runtime_control,
-        "set_master_enabled",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(
-            runtime_control.RuntimeControlSecurityError("restricted")
-        ),
-    )
+    broker_calls: list[str] = []
     monkeypatch.setattr(
         dashboard_runtime,
         "dashboard_api_request",
-        lambda *_args, **_kwargs: response,
+        lambda *_args, **_kwargs: broker_calls.append("called") or {},
     )
 
-    with pytest.raises(ValueError, match="master-control response"):
+    with pytest.raises(RuntimeError, match="restricted model-facing process"):
         install_commands._global_control_result(_args(global_control=True), enabled=False)
+    assert broker_calls == []
 
 
 def test_master_read_broker_rejects_extra_top_level_fields(

@@ -41,9 +41,15 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 35
+SCHEMA_VERSION = 36
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
+NATIVE_WORKER_SCOPE_INDEX_SQL = (
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_worker_runs_native_scope "
+    "ON worker_runs(host, session_id, trace_id, worker_id, native_run_id) "
+    "WHERE session_id <> '' AND trace_id <> '' "
+    "AND worker_id <> '' AND native_run_id <> ''"
+)
 _MAX_REMEDIATION_AUTHORITY_ID_BYTES = 512
 _MAX_REMEDIATION_AUTHORITY_DETAIL_BYTES = 256 * 1024
 _MAX_REMEDIATION_AUTHORITY_RECEIPT_BYTES = 256 * 1024
@@ -854,7 +860,7 @@ CREATE TABLE IF NOT EXISTS delegation_activation_consumptions (
     trace_id TEXT NOT NULL,
     work_unit_id TEXT NOT NULL,
     child_host TEXT NOT NULL
-        CHECK (child_host IN ('claude', 'codex', 'hermes', 'openclaw')),
+        CHECK (child_host IN ('claude', 'codex', 'hermes', 'openclaw', 'zcode')),
     specialist_slug TEXT NOT NULL,
     specialist_version TEXT NOT NULL,
     specialist_prompt_hash TEXT NOT NULL,
@@ -907,8 +913,9 @@ CREATE TABLE IF NOT EXISTS agent_sources (
     url TEXT NOT NULL UNIQUE,
     name TEXT,
     added_at TEXT NOT NULL,
-    enabled INTEGER DEFAULT 1,
-    trusted_for_auto_approve INTEGER DEFAULT 0
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+    trusted_for_auto_approve INTEGER NOT NULL DEFAULT 0
+        CHECK (trusted_for_auto_approve IN (0, 1))
 );
 
 CREATE TABLE IF NOT EXISTS agent_downloads (
@@ -1048,8 +1055,8 @@ CREATE TABLE IF NOT EXISTS agent_snapshots (
     created_at TEXT NOT NULL,
     agent_count INTEGER,
     manifest TEXT,
-    activated INTEGER DEFAULT 0,
-    approved INTEGER NOT NULL DEFAULT 0,
+    activated INTEGER NOT NULL DEFAULT 0 CHECK (activated IN (0, 1)),
+    approved INTEGER NOT NULL DEFAULT 0 CHECK (approved IN (0, 1)),
     added_count INTEGER NOT NULL DEFAULT 0,
     changed_count INTEGER NOT NULL DEFAULT 0,
     removed_count INTEGER NOT NULL DEFAULT 0
@@ -3959,7 +3966,7 @@ def create_delegation_activation_consumption_schema(conn: sqlite3.Connection) ->
             trace_id TEXT NOT NULL,
             work_unit_id TEXT NOT NULL,
             child_host TEXT NOT NULL
-                CHECK (child_host IN ('claude', 'codex', 'hermes', 'openclaw')),
+                CHECK (child_host IN ('claude', 'codex', 'hermes', 'openclaw', 'zcode')),
             specialist_slug TEXT NOT NULL,
             specialist_version TEXT NOT NULL,
             specialist_prompt_hash TEXT NOT NULL,
@@ -3984,17 +3991,132 @@ def create_delegation_activation_consumption_schema(conn: sqlite3.Connection) ->
     )
 
 
-DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES = (
-    "agency_activation_grant_public_immutable",
-    "agency_activation_consumption_insert_guard",
-    "agency_activation_consumption_immutable_update",
-    "agency_activation_consumption_guarded_delete",
-    "agency_activation_consumed_requires_receipt",
-    "agency_specialist_activation_insert_receipt_guard",
-    "agency_specialist_activation_update_receipt_guard",
-    "agency_delegation_activation_insert_receipt_guard",
-    "agency_delegation_activation_update_receipt_guard",
+def migrate_delegation_activation_consumption_host_domain(
+    conn: sqlite3.Connection,
+) -> None:
+    """Add every canonical native-child host without discarding receipts."""
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'delegation_activation_consumptions'"
+    ).fetchone()
+    if row is None:
+        create_delegation_activation_consumption_schema(conn)
+        return
+    normalized = "".join(str(row["sql"] or "").casefold().split())
+    if "'zcode'" in normalized:
+        return
+
+    legacy_table = "delegation_activation_consumptions_pre_v36"
+    if (
+        conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (legacy_table,),
+        ).fetchone()
+        is not None
+    ):
+        raise RuntimeError("stale v36 activation-consumption migration table exists")
+
+    drop_delegation_activation_invariant_triggers(conn)
+    conn.execute("DROP INDEX IF EXISTS idx_activation_consumptions_trace")
+    conn.execute("DROP INDEX IF EXISTS idx_activation_consumptions_work_unit")
+    conn.execute(
+        "ALTER TABLE delegation_activation_consumptions "
+        "RENAME TO delegation_activation_consumptions_pre_v36"
+    )
+    create_delegation_activation_consumption_schema(conn)
+    columns = (
+        "id, grant_id, legacy_activation_receipt_id, receipt_payload, session_id, "
+        "trace_id, work_unit_id, child_host, specialist_slug, specialist_version, "
+        "specialist_prompt_hash, worker_kind, worker_id, native_run_id, consumed_at, "
+        "consumed_unix"
+    )
+    conn.execute(
+        f"INSERT INTO delegation_activation_consumptions ({columns}) "  # nosec B608
+        f"SELECT {columns} FROM {legacy_table}"  # nosec B608
+    )
+    conn.execute(f"DROP TABLE {legacy_table}")  # nosec B608
+
+
+_VALID_ACTIVATION_RECEIPT_SQL = (
+    "SELECT 1 FROM delegation_activation_receipts AS grant "
+    "LEFT JOIN delegation_activation_consumptions AS consumption "
+    "ON consumption.legacy_activation_receipt_id = grant.id "
+    "AND consumption.grant_id = grant.grant_id "
+    "WHERE grant.id = NEW.activation_receipt_id AND grant.consumed_at IS NOT NULL "
+    "AND (grant.grant_id = '' OR consumption.id IS NOT NULL)"
 )
+
+
+def _delegation_activation_invariant_trigger_sql() -> dict[str, str]:
+    statements = {
+        "agency_activation_grant_public_immutable": (
+            "CREATE TRIGGER agency_activation_grant_public_immutable "
+            "BEFORE UPDATE OF token_hash, grant_id, grant_payload, grant_issued_unix, "
+            "grant_expires_unix, child_host ON delegation_activation_receipts "
+            "WHEN OLD.grant_id <> '' BEGIN "
+            "SELECT RAISE(ABORT, 'public activation grant is immutable'); END"
+        ),
+        "agency_activation_consumption_insert_guard": (
+            "CREATE TRIGGER agency_activation_consumption_insert_guard "
+            "BEFORE INSERT ON delegation_activation_consumptions WHEN NOT EXISTS ("
+            "SELECT 1 FROM delegation_activation_receipts AS grant "
+            "WHERE grant.id = NEW.legacy_activation_receipt_id "
+            "AND grant.grant_id = NEW.grant_id AND grant.grant_id <> '' "
+            "AND grant.session_id = NEW.session_id AND grant.trace_id = NEW.trace_id "
+            "AND grant.work_unit_id = NEW.work_unit_id "
+            "AND grant.child_host = NEW.child_host "
+            "AND grant.specialist_slug = NEW.specialist_slug "
+            "AND grant.specialist_version = NEW.specialist_version "
+            "AND grant.specialist_prompt_hash = NEW.specialist_prompt_hash "
+            "AND grant.worker_kind = NEW.worker_kind AND grant.consumed_at IS NULL "
+            "AND NEW.consumed_unix >= grant.grant_issued_unix "
+            "AND NEW.consumed_unix <= grant.grant_expires_unix) BEGIN "
+            "SELECT RAISE(ABORT, 'activation consumption does not match an active grant'); END"
+        ),
+        "agency_activation_consumption_immutable_update": (
+            "CREATE TRIGGER agency_activation_consumption_immutable_update "
+            "BEFORE UPDATE ON delegation_activation_consumptions BEGIN "
+            "SELECT RAISE(ABORT, 'activation consumption receipt is immutable'); END"
+        ),
+        "agency_activation_consumption_guarded_delete": (
+            "CREATE TRIGGER agency_activation_consumption_guarded_delete "
+            "BEFORE DELETE ON delegation_activation_consumptions WHEN EXISTS ("
+            "SELECT 1 FROM delegation_activation_receipts AS grant "
+            "WHERE grant.id = OLD.legacy_activation_receipt_id "
+            "AND grant.grant_id = OLD.grant_id) BEGIN "
+            "SELECT RAISE(ABORT, 'activation consumption receipt is append-only'); END"
+        ),
+        "agency_activation_consumed_requires_receipt": (
+            "CREATE TRIGGER agency_activation_consumed_requires_receipt "
+            "BEFORE UPDATE OF consumed_at ON delegation_activation_receipts "
+            "WHEN OLD.grant_id <> '' AND OLD.consumed_at IS NULL "
+            "AND NEW.consumed_at IS NOT NULL AND NOT EXISTS ("
+            "SELECT 1 FROM delegation_activation_consumptions AS consumption "
+            "WHERE consumption.legacy_activation_receipt_id = OLD.id "
+            "AND consumption.grant_id = OLD.grant_id) BEGIN "
+            "SELECT RAISE(ABORT, 'activation evidence requires a consumption receipt'); END"
+        ),
+    }
+    for table, prefix in (
+        ("specialists_loaded", "specialist"),
+        ("delegation_events", "delegation"),
+    ):
+        for operation in ("INSERT", "UPDATE OF activation_receipt_id"):
+            operation_name = "insert" if operation == "INSERT" else "update"
+            name = f"agency_{prefix}_activation_{operation_name}_receipt_guard"
+            statements[name] = (
+                f"CREATE TRIGGER {name} BEFORE {operation} ON {table} "
+                "WHEN NEW.activation_receipt_id IS NOT NULL "
+                "AND NEW.activation_receipt_id <> '' "
+                f"AND NOT EXISTS ({_VALID_ACTIVATION_RECEIPT_SQL}) BEGIN "
+                "SELECT RAISE(ABORT, 'activation evidence requires a valid receipt'); END"
+            )
+    return statements
+
+
+DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL = _delegation_activation_invariant_trigger_sql()
+DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES = tuple(DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL)
 
 
 def drop_delegation_activation_invariant_triggers(conn: sqlite3.Connection) -> None:
@@ -4008,68 +4130,55 @@ def create_delegation_activation_invariant_triggers(conn: sqlite3.Connection) ->
     """Enforce immutable public receipts and evidence-gated projections."""
 
     drop_delegation_activation_invariant_triggers(conn)
-    conn.execute(
-        "CREATE TRIGGER agency_activation_grant_public_immutable "
-        "BEFORE UPDATE OF token_hash, grant_id, grant_payload, grant_issued_unix, "
-        "grant_expires_unix, child_host ON delegation_activation_receipts "
-        "WHEN OLD.grant_id <> '' BEGIN "
-        "SELECT RAISE(ABORT, 'public activation grant is immutable'); END"
-    )
-    conn.execute(
-        "CREATE TRIGGER agency_activation_consumption_insert_guard "
-        "BEFORE INSERT ON delegation_activation_consumptions WHEN NOT EXISTS ("
-        "SELECT 1 FROM delegation_activation_receipts AS grant "
-        "WHERE grant.id = NEW.legacy_activation_receipt_id "
-        "AND grant.grant_id = NEW.grant_id AND grant.grant_id <> '' "
-        "AND grant.session_id = NEW.session_id AND grant.trace_id = NEW.trace_id "
-        "AND grant.work_unit_id = NEW.work_unit_id "
-        "AND grant.child_host = NEW.child_host "
-        "AND grant.specialist_slug = NEW.specialist_slug "
-        "AND grant.specialist_version = NEW.specialist_version "
-        "AND grant.specialist_prompt_hash = NEW.specialist_prompt_hash "
-        "AND grant.worker_kind = NEW.worker_kind AND grant.consumed_at IS NULL "
-        "AND NEW.consumed_unix >= grant.grant_issued_unix "
-        "AND NEW.consumed_unix <= grant.grant_expires_unix) BEGIN "
-        "SELECT RAISE(ABORT, 'activation consumption does not match an active grant'); END"
-    )
-    conn.execute(
-        "CREATE TRIGGER agency_activation_consumption_immutable_update "
-        "BEFORE UPDATE ON delegation_activation_consumptions BEGIN "
-        "SELECT RAISE(ABORT, 'activation consumption receipt is immutable'); END"
-    )
-    conn.execute(
-        "CREATE TRIGGER agency_activation_consumed_requires_receipt "
-        "BEFORE UPDATE OF consumed_at ON delegation_activation_receipts "
-        "WHEN OLD.grant_id <> '' AND OLD.consumed_at IS NULL "
-        "AND NEW.consumed_at IS NOT NULL AND NOT EXISTS ("
-        "SELECT 1 FROM delegation_activation_consumptions AS consumption "
-        "WHERE consumption.legacy_activation_receipt_id = OLD.id "
-        "AND consumption.grant_id = OLD.grant_id) BEGIN "
-        "SELECT RAISE(ABORT, 'activation evidence requires a consumption receipt'); END"
-    )
+    for statement in DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL.values():
+        conn.execute(statement)
 
-    valid_receipt = (
-        "SELECT 1 FROM delegation_activation_receipts AS grant "
-        "LEFT JOIN delegation_activation_consumptions AS consumption "
-        "ON consumption.legacy_activation_receipt_id = grant.id "
-        "AND consumption.grant_id = grant.grant_id "
-        "WHERE grant.id = NEW.activation_receipt_id AND grant.consumed_at IS NOT NULL "
-        "AND (grant.grant_id = '' OR consumption.id IS NOT NULL)"
-    )
-    for table, prefix in (
-        ("specialists_loaded", "specialist"),
-        ("delegation_events", "delegation"),
-    ):
-        for operation in ("INSERT", "UPDATE OF activation_receipt_id"):
-            operation_name = "insert" if operation == "INSERT" else "update"
-            conn.execute(
-                f"CREATE TRIGGER agency_{prefix}_activation_{operation_name}_receipt_guard "  # nosec B608
-                f"BEFORE {operation} ON {table} "  # nosec B608
-                "WHEN NEW.activation_receipt_id IS NOT NULL "
-                "AND NEW.activation_receipt_id <> '' "
-                f"AND NOT EXISTS ({valid_receipt}) BEGIN "  # nosec B608
-                "SELECT RAISE(ABORT, 'activation evidence requires a valid receipt'); END"
-            )
+
+def _boolean_domain_trigger_sql() -> dict[str, str]:
+    statements: dict[str, str] = {}
+    for operation in ("INSERT", "UPDATE OF enabled, trusted_for_auto_approve"):
+        suffix = "insert" if operation == "INSERT" else "update"
+        name = f"agency_agent_sources_boolean_{suffix}_guard"
+        statements[name] = (
+            f"CREATE TRIGGER {name} BEFORE {operation} ON agent_sources "
+            "WHEN NEW.enabled IS NULL OR NEW.enabled NOT IN (0, 1) "
+            "OR NEW.trusted_for_auto_approve IS NULL "
+            "OR NEW.trusted_for_auto_approve NOT IN (0, 1) BEGIN "
+            "SELECT RAISE(ABORT, 'agent source boolean is invalid'); END"
+        )
+    for operation in ("INSERT", "UPDATE OF activated, approved"):
+        suffix = "insert" if operation == "INSERT" else "update"
+        name = f"agency_agent_snapshots_boolean_{suffix}_guard"
+        statements[name] = (
+            f"CREATE TRIGGER {name} BEFORE {operation} ON agent_snapshots "
+            "WHEN NEW.activated IS NULL OR NEW.activated NOT IN (0, 1) "
+            "OR NEW.approved IS NULL OR NEW.approved NOT IN (0, 1) BEGIN "
+            "SELECT RAISE(ABORT, 'agent snapshot boolean is invalid'); END"
+        )
+    return statements
+
+
+BOOLEAN_DOMAIN_TRIGGER_SQL = _boolean_domain_trigger_sql()
+BOOLEAN_DOMAIN_TRIGGER_NAMES: tuple[str, ...] = tuple(BOOLEAN_DOMAIN_TRIGGER_SQL)
+
+
+def create_boolean_domain_triggers(conn: sqlite3.Connection) -> None:
+    """Enforce legacy boolean domains without a destructive table rewrite."""
+
+    invalid = conn.execute(
+        "SELECT 1 FROM agent_sources WHERE enabled IS NULL OR enabled NOT IN (0, 1) "
+        "OR trusted_for_auto_approve IS NULL OR trusted_for_auto_approve NOT IN (0, 1) "
+        "UNION ALL SELECT 1 FROM agent_snapshots WHERE activated IS NULL "
+        "OR activated NOT IN (0, 1) OR approved IS NULL OR approved NOT IN (0, 1) "
+        "LIMIT 1"
+    ).fetchone()
+    if invalid is not None:
+        raise RuntimeError("legacy roster boolean domain is invalid")
+
+    for trigger_name in BOOLEAN_DOMAIN_TRIGGER_NAMES:
+        conn.execute(f"DROP TRIGGER IF EXISTS {trigger_name}")  # nosec B608
+    for statement in BOOLEAN_DOMAIN_TRIGGER_SQL.values():
+        conn.execute(statement)
 
 
 def create_activity_triggers(conn: sqlite3.Connection) -> None:
@@ -4403,12 +4512,7 @@ def migrate_schema(
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_worker_runs_trace ON worker_runs(session_id, trace_id)"
     )
-    conn.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS idx_worker_runs_native_scope "
-        "ON worker_runs(host, session_id, trace_id, worker_id, native_run_id) "
-        "WHERE session_id <> '' AND trace_id <> '' "
-        "AND worker_id <> '' AND native_run_id <> ''"
-    )
+    conn.execute(NATIVE_WORKER_SCOPE_INDEX_SQL)
     ensure_column(
         conn,
         "delegation_activation_receipts",
@@ -4590,6 +4694,7 @@ def migrate_schema(
         )
     migrate_specialist_identity(conn)
     migrate_delegation_activation_unit_identity(conn)
+    migrate_delegation_activation_consumption_host_domain(conn)
     create_delegation_activation_consumption_schema(conn)
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_activation_grants_public_id "
@@ -4602,6 +4707,7 @@ def migrate_schema(
             "AND status IN ('started', 'running', 'delegated', 'completed')"
         )
     create_delegation_activation_invariant_triggers(conn)
+    create_boolean_domain_triggers(conn)
     create_activity_triggers(conn)
     create_agent_import_event_sequence_schema(
         conn,

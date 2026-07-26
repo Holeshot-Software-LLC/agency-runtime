@@ -963,26 +963,229 @@ def _record_workforce_model_receipts(
         )
 
 
-def _single_hireable_gap_unit(outcome: Any) -> str:
-    """Return one proven uncovered unit only when verifier evidence is structurally clean."""
+def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
+    """Return proven uncovered units in plan order when their evidence is clean."""
 
     allowed = {
         "coverage_evidence_mismatch",
         "independent_assurance_missing",
         "no_safe_sufficient_team",
+        "required_agents_missing",
         "recruiter_abstained",
     }
     reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
-    codes = {str(getattr(item, "code", "") or "") for item in reasons}
-    if not codes or not codes <= allowed:
-        return ""
-    units = {
-        str(getattr(item, "unit_id", "") or "")
+    global_codes = {
+        str(getattr(item, "code", "") or "")
         for item in reasons
-        if getattr(item, "code", "") == "no_safe_sufficient_team"
+        if not str(getattr(item, "unit_id", "") or "")
     }
-    units.discard("")
-    return next(iter(units)) if len(units) == 1 else ""
+    if global_codes - allowed:
+        return ()
+    plan = getattr(outcome, "plan", None)
+    plan_units = tuple(getattr(plan, "units", ()) or ())
+    result: list[str] = []
+    for unit in plan_units:
+        unit_id = str(getattr(unit, "unit_id", "") or "")
+        unit_codes = {
+            str(getattr(item, "code", "") or "")
+            for item in reasons
+            if str(getattr(item, "unit_id", "") or "") == unit_id
+        }
+        if unit_id and "no_safe_sufficient_team" in unit_codes and unit_codes <= allowed:
+            result.append(unit_id)
+    return tuple(result)
+
+
+def _gap_unit_reason_codes(outcome: Any, unit_id: str) -> tuple[str, ...]:
+    """Return stable verifier reason codes for one gap without free-form detail."""
+
+    reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
+    return tuple(
+        dict.fromkeys(
+            str(getattr(item, "code", "") or "")
+            for item in reasons
+            if str(getattr(item, "unit_id", "") or "") == unit_id
+            and str(getattr(item, "code", "") or "")
+        )
+    )
+
+
+def _hiring_event(
+    unit_id: str,
+    hiring: Any | None = None,
+    *,
+    status: str = "not_attempted",
+    reason_codes: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    """Project one bounded, content-free workforce-gap outcome."""
+
+    if hiring is None:
+        return {
+            "unit_id": unit_id,
+            "status": status,
+            "reason_codes": list(reason_codes),
+            "case_id": "",
+            "worker": "",
+            "version": "",
+            "notification": "",
+            "calls_used": 0,
+        }
+    return {
+        "unit_id": unit_id,
+        "status": str(hiring.status),
+        "reason_codes": list(hiring.reason_codes),
+        "case_id": "" if hiring.hiring_case is None else str(hiring.hiring_case["id"]),
+        "worker": "" if hiring.worker is None else str(hiring.worker["agent_slug"]),
+        "version": "" if hiring.worker is None else str(hiring.worker["current_version"]),
+        "notification": str(hiring.notification),
+        "calls_used": len(hiring.attempts),
+    }
+
+
+def _all_gap_units(outcome: Any) -> tuple[str, ...]:
+    reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
+    gap_ids = {
+        str(getattr(reason, "unit_id", "") or "")
+        for reason in reasons
+        if str(getattr(reason, "code", "") or "") == "no_safe_sufficient_team"
+    }
+    plan = getattr(outcome, "plan", None)
+    return tuple(
+        unit_id
+        for unit in tuple(getattr(plan, "units", ()) or ())
+        if (unit_id := str(getattr(unit, "unit_id", "") or "")) in gap_ids
+    )
+
+
+def _complete_gap_hiring_events(
+    outcome: Any,
+    initial_gap_units: tuple[str, ...],
+    events_by_unit: dict[str, dict[str, Any]],
+    attempted_units: set[str],
+    *,
+    hiring_allowed: bool,
+    daily_limit_reached: bool,
+    max_hires: int,
+    store_available: bool,
+) -> list[dict[str, Any]]:
+    current_hireable = set(_hireable_gap_units(outcome))
+    for unit_id in initial_gap_units:
+        if unit_id in events_by_unit:
+            continue
+        reason_codes = _gap_unit_reason_codes(outcome, unit_id)
+        if not hiring_allowed:
+            if not store_available:
+                reasons = ("hiring_store_unavailable",)
+            elif outcome.inference_mode != "inferred":
+                reasons = ("hiring_requires_inferred_gap",)
+            else:
+                reasons = ("hiring_inference_not_applied",)
+        elif unit_id not in current_hireable:
+            reasons = (
+                ("gap_resolved_by_prior_hire",)
+                if not reason_codes
+                else ("gap_evidence_not_hireable", *reason_codes)
+            )
+        elif daily_limit_reached:
+            reasons = ("daily_hiring_limit_reached",)
+        elif len(attempted_units) >= max_hires:
+            reasons = ("task_hiring_limit_reached",)
+        else:
+            reasons = ("gap_evidence_not_hireable", *reason_codes)
+        events_by_unit[unit_id] = _hiring_event(unit_id, reason_codes=reasons)
+    return [events_by_unit[unit_id] for unit_id in initial_gap_units]
+
+
+def _run_gap_hiring(
+    outcome: Any,
+    request: _RouteRequest,
+    config: AgencyConfig,
+    store: Store | None,
+    active_snapshot: WorkforceIndexSnapshot,
+    active_catalog: list[dict[str, Any]],
+) -> tuple[Any, WorkforceIndexSnapshot, list[dict[str, Any]], list[dict[str, Any]]]:
+    from agency_runtime.core.roster.workforce import workforce_index_snapshot
+    from agency_runtime.core.workforce.hiring import (
+        hire_contractor_for_gap,
+        restaff_after_hire,
+    )
+    from agency_runtime.core.workforce.staffing_verifier import StaffingContext
+
+    initial_gap_units = _all_gap_units(outcome)
+    events_by_unit: dict[str, dict[str, Any]] = {}
+    attempted_units: set[str] = set()
+    applied_inference = any(
+        str(getattr(item, "status", "") or "") == "applied" for item in outcome.attempts
+    )
+    hiring_allowed = bool(
+        store is not None
+        and outcome.inference_mode == "inferred"
+        and outcome.plan is not None
+        and applied_inference
+    )
+    daily_limit_reached = False
+    while hiring_allowed:
+        hireable = tuple(
+            unit_id for unit_id in _hireable_gap_units(outcome) if unit_id not in attempted_units
+        )
+        if not hireable or len(attempted_units) >= config.workforce.max_hires_per_task:
+            break
+        unit_id = hireable[0]
+        attempted_units.add(unit_id)
+        unit = next(item for item in outcome.plan.units if item.unit_id == unit_id)
+        hiring = hire_contractor_for_gap(
+            request.user_message,
+            unit,
+            active_snapshot.contracts,
+            store=store,
+            config=config,
+            session_id=request.session_id,
+            trace_id=request.trace_id,
+        )
+        events_by_unit[unit_id] = _hiring_event(unit_id, hiring)
+        _record_workforce_model_receipts(
+            store,
+            hiring,
+            session_id=request.session_id,
+            trace_id=request.trace_id,
+            host=request.host,
+        )
+        if "daily_hiring_limit_reached" in hiring.reason_codes:
+            daily_limit_reached = True
+            break
+        if not hiring.workforce_changed or hiring.worker is None:
+            continue
+        active_snapshot = workforce_index_snapshot(
+            store,
+            disabled_agents=frozenset(config.agents.disabled),
+        )
+        staffing_context = StaffingContext(
+            request.host,
+            request.platform,
+            frozenset(request.available_tools),
+            active_snapshot.generation,
+            None,
+        )
+        outcome = restaff_after_hire(
+            outcome,
+            active_snapshot.contracts,
+            hired_agent_id=str(hiring.worker["agent_slug"]),
+            causing_unit_id=unit_id,
+            context=staffing_context,
+            config=config,
+        )
+        active_catalog = store.get_active_roster_as_catalog(disabled_agents=())
+    events = _complete_gap_hiring_events(
+        outcome,
+        initial_gap_units,
+        events_by_unit,
+        attempted_units,
+        hiring_allowed=hiring_allowed,
+        daily_limit_reached=daily_limit_reached,
+        max_hires=config.workforce.max_hires_per_task,
+        store_available=store is not None,
+    )
+    return outcome, active_snapshot, active_catalog, events
 
 
 def route(
@@ -1142,12 +1345,6 @@ def route(
     # performs a visible deterministic fallback. Both modes operate on a fresh
     # selection for new, revised, or explicitly rerouted intent.
     if request.workforce_snapshot is not None:
-        from agency_runtime.core.roster.workforce import workforce_index_snapshot
-        from agency_runtime.core.workforce.hiring import (
-            ContractorHiringOutcome,
-            hire_contractor_for_gap,
-            restaff_after_hire,
-        )
         from agency_runtime.core.workforce.inference import plan_and_staff_workforce
         from agency_runtime.core.workforce.routing_projection import (
             project_workforce_routing,
@@ -1182,56 +1379,14 @@ def route(
         )
         active_snapshot = request.workforce_snapshot
         active_catalog = request.workforce_catalog
-        hiring: ContractorHiringOutcome | None = None
-        gap_unit_id = _single_hireable_gap_unit(outcome)
-        applied_inference = any(
-            str(getattr(item, "status", "") or "") == "applied" for item in outcome.attempts
+        outcome, active_snapshot, active_catalog, hiring_events = _run_gap_hiring(
+            outcome,
+            request,
+            cfg,
+            store,
+            active_snapshot,
+            active_catalog,
         )
-        if (
-            store is not None
-            and gap_unit_id
-            and outcome.inference_mode == "inferred"
-            and outcome.plan is not None
-            and applied_inference
-        ):
-            gap_unit = next(item for item in outcome.plan.units if item.unit_id == gap_unit_id)
-            hiring = hire_contractor_for_gap(
-                request.user_message,
-                gap_unit,
-                active_snapshot.contracts,
-                store=store,
-                config=cfg,
-                session_id=request.session_id,
-                trace_id=request.trace_id,
-            )
-            _record_workforce_model_receipts(
-                store,
-                hiring,
-                session_id=request.session_id,
-                trace_id=request.trace_id,
-                host=request.host,
-            )
-            if hiring.workforce_changed and hiring.worker is not None:
-                active_snapshot = workforce_index_snapshot(
-                    store,
-                    disabled_agents=frozenset(cfg.agents.disabled),
-                )
-                staffing_context = StaffingContext(
-                    request.host,
-                    request.platform,
-                    frozenset(request.available_tools),
-                    active_snapshot.generation,
-                    None,
-                )
-                outcome = restaff_after_hire(
-                    outcome,
-                    active_snapshot.contracts,
-                    hired_agent_id=str(hiring.worker["agent_slug"]),
-                    causing_unit_id=gap_unit_id,
-                    context=staffing_context,
-                    config=cfg,
-                )
-                active_catalog = store.get_active_roster_as_catalog(disabled_agents=())
         routing = project_workforce_routing(
             outcome,
             active_catalog,
@@ -1239,16 +1394,11 @@ def route(
             roster_count=active_snapshot.worker_count,
             contract_fingerprint=active_snapshot.contract_fingerprint,
         )
-        if hiring is not None:
-            routing["hiring_event"] = {
-                "status": hiring.status,
-                "reason_codes": list(hiring.reason_codes),
-                "case_id": "" if hiring.hiring_case is None else str(hiring.hiring_case["id"]),
-                "worker": "" if hiring.worker is None else str(hiring.worker["agent_slug"]),
-                "version": "" if hiring.worker is None else str(hiring.worker["current_version"]),
-                "notification": hiring.notification,
-                "calls_used": len(hiring.attempts),
-            }
+        if hiring_events:
+            routing["hiring_events"] = hiring_events
+            # Preserve the original single-event surface for existing API/UI
+            # clients while the plural field carries the complete task outcome.
+            routing["hiring_event"] = hiring_events[0]
         routing = _attach_workforce_signals(routing, request, signals)
         _remember_routing(routing, request)
         return _finalize_classified_request(

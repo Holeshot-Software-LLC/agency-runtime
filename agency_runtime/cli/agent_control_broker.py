@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import urllib.parse
 from collections.abc import Mapping
 from pathlib import Path
@@ -12,7 +13,6 @@ from typing import Any
 
 from agency_runtime.core.agent_activation import (
     PROTECTED_AGENT_SLUGS,
-    agent_is_enabled,
     normalize_agent_slug,
 )
 from agency_runtime.core.dashboard_runtime import dashboard_api_request
@@ -113,13 +113,22 @@ def _config_identity(
     return path, revision
 
 
-def _store_identity(value: Mapping[str, Any], field: str = "store_path") -> str:
-    path = value.get(field)
+def _store_identity(value: Mapping[str, Any]) -> str:
+    """Validate an active Store that still matches the desired config target."""
+
+    path = value.get("store_path")
+    desired = value.get("desired_store_path")
     if (
         not isinstance(path, str)
+        or not isinstance(desired, str)
         or not path
+        or not desired
         or len(path.encode("utf-8")) > _MAX_PATH_BYTES
+        or len(desired.encode("utf-8")) > _MAX_PATH_BYTES
         or not Path(path).is_absolute()
+        or not Path(desired).is_absolute()
+        or os.path.normcase(os.path.abspath(path)) != os.path.normcase(os.path.abspath(desired))
+        or value.get("store_restart_required") is not False
     ):
         raise ValueError("dashboard agent response has invalid store path")
     return path
@@ -132,6 +141,8 @@ def _operation_identity(value: Any) -> dict[str, str]:
         "config_path",
         "config_revision",
         "store_path",
+        "desired_store_path",
+        "store_restart_required",
         "roster_revision",
         "environment_overrides",
     }:
@@ -729,78 +740,9 @@ def _lookup_agent(slug: str) -> tuple[dict[str, Any], str, str, str]:
     return selected, page["path"], page["revision"], page["store_path"]
 
 
-def _disabled_agents(value: Any) -> tuple[str, ...]:
-    if not isinstance(value, list) or len(value) > _MAX_AGENTS:
-        raise ValueError("dashboard agent-toggle response has invalid disabled agents")
-    normalized: list[str] = []
-    seen: set[str] = set()
-    for raw in value:
-        if not isinstance(raw, str):
-            raise ValueError("dashboard agent-toggle response has invalid disabled agent")
-        slug = normalize_agent_slug(raw)
-        if slug != raw or slug in seen or slug in PROTECTED_AGENT_SLUGS:
-            raise ValueError("dashboard agent-toggle response has invalid disabled agent")
-        seen.add(slug)
-        normalized.append(slug)
-    return tuple(normalized)
-
-
-def broker_set_agent_enabled(
-    slug: object,
-    *,
-    enabled: bool,
-    reason: str = "operator activation toggle",
-) -> tuple[str, bool, str]:
-    """Apply one exact revision-checked activation mutation through the broker."""
-
-    normalized = normalize_agent_slug(slug)
-    previous, config_path, revision, store_path = _lookup_agent(normalized)
-    verb = "ENABLE" if enabled else "DISABLE"
-    response = dashboard_api_request(
-        "/api/agents/toggle",
-        method="POST",
-        payload={
-            "slug": normalized,
-            "enabled": enabled,
-            "confirm": f"{verb} {normalized}",
-            "expected_revision": revision,
-            "reason": reason,
-        },
-    )
-    if not isinstance(response, Mapping) or response.get("ok") is not True:
-        raise ValueError("dashboard agent-toggle response is invalid")
-    if response.get("slug") != normalized or response.get("enabled") is not enabled:
-        raise ValueError("dashboard agent-toggle response identity is invalid")
-    changed = response.get("changed")
-    if not isinstance(changed, bool) or changed is not (previous["enabled"] is not enabled):
-        raise ValueError("dashboard agent-toggle response change state is invalid")
-    config = response.get("config")
-    if not isinstance(config, Mapping):
-        raise ValueError("dashboard agent-toggle response has invalid config evidence")
-    result_path, result_revision = _config_identity(
-        config,
-        path_field="path",
-        revision_field="revision",
-    )
-    result_store_path = _store_identity(response)
-    if (
-        result_path != config_path
-        or result_store_path != store_path
-        or ((result_revision != revision) is not changed)
-    ):
-        raise ValueError("dashboard agent-toggle response config identity is inconsistent")
-    effective = config.get("effective")
-    agents = effective.get("agents") if isinstance(effective, Mapping) else None
-    disabled = _disabled_agents(agents.get("disabled") if isinstance(agents, Mapping) else None)
-    if agent_is_enabled(normalized, disabled) is not enabled:
-        raise ValueError("dashboard agent-toggle response effective state is inconsistent")
-    return normalized, changed, config_path
-
-
 __all__ = [
     "broker_activation_rows",
     "broker_explain_selection",
     "broker_policy_snapshot",
     "broker_search_agents",
-    "broker_set_agent_enabled",
 ]

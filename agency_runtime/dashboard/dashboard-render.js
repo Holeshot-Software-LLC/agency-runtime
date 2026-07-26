@@ -1,5 +1,3 @@
-"use strict";
-
 const EXECUTION_HOSTS = ["codex", "claude", "openclaw", "hermes"];
 
 const EVIDENCE_COLUMNS = {

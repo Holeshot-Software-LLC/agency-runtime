@@ -20,7 +20,16 @@ from agency_runtime.core.delegation_status import (
     MAX_DELEGATION_HOST_CHARS as _MAX_DELEGATION_HOST_CHARS,
 )
 from agency_runtime.core.delegation_status import (
+    MAX_DELEGATION_NATIVE_RUN_ID_CHARS as _MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+)
+from agency_runtime.core.delegation_status import (
     MAX_DELEGATION_WORK_UNIT_ID_CHARS as _MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+)
+from agency_runtime.core.delegation_status import (
+    MAX_DELEGATION_WORKER_ID_CHARS as _MAX_DELEGATION_WORKER_ID_CHARS,
+)
+from agency_runtime.core.delegation_status import (
+    MAX_DELEGATION_WORKER_KIND_CHARS as _MAX_DELEGATION_WORKER_KIND_CHARS,
 )
 from agency_runtime.core.delegation_status import (
     TERMINAL_DELEGATION_STATUSES as _TERMINAL_DELEGATION_STATUSES,
@@ -66,9 +75,6 @@ class HostControlConflictError(RuntimeError):
     """A host-control compare-and-swap observed a newer generation."""
 
 
-_MAX_DELEGATION_WORKER_KIND_CHARS = 64
-_MAX_DELEGATION_WORKER_ID_CHARS = 256
-_MAX_DELEGATION_NATIVE_RUN_ID_CHARS = 256
 _EXECUTED_DELEGATION_STATUSES = frozenset({"started", "running", "delegated", "completed"})
 
 

@@ -146,17 +146,18 @@ pretending success.
 
 ## A host toggle reports a generation conflict
 
-Host soft controls use optimistic concurrency across CLI, dashboard, MCP, and
-generated host commands. Status includes `runtime_control_generation`, and a
+Host soft controls use optimistic concurrency across the operator CLI and
+owner dashboard. Status includes `runtime_control_generation`, and a
 mutation succeeds only when that generation is still current. A stale request
 is not retried automatically because doing so would overwrite a newer operator
 choice.
 
-Refresh `agency status --agent <host>` or the dashboard host card, review the
-new state, then retry deliberately. Dashboard requests return HTTP 409. MCP
-`agency.host_control` callers must first call `agency.host_status` and pass
-its generation as `expected_generation`. Idempotent requests do not advance
-the generation; a real transition advances it exactly once.
+Refresh `agency status --agent <host>`, review the new state, then retry
+deliberately from a normal operator shell. Dashboard requests currently return
+HTTP 409, but dashboard mutation remains blocked from production by AR-143's
+user-presence requirement. MCP exposes read-only `agency.host_status` and no
+control tool. Idempotent requests do not advance the generation; a real
+transition advances it exactly once.
 
 ## The Agency-wide switch did not change the current conversation
 
@@ -178,23 +179,19 @@ a clean A/B comparison.
 The canonical state is `~/.agency-runtime/run/control.json`. Do not edit, move,
 or delete it: missing, malformed, or unverifiable state intentionally fails
 enabled. On a restricted Windows host, a direct write may be unavailable even
-though the runtime can prove a canonical read-only state. Start the installed
-dashboard service and retry so the CLI can use its authenticated loopback
-broker, or run the command from an unrestricted shell owned by the same user:
+though the runtime can prove a canonical read-only state. The broker is
+intentionally read-only; run the command from a normal operator shell:
 
 ```bash
-agency dashboard service status --json
-agency dashboard service start
 agency off --global
 ```
 
-The same least-privilege broker is used for `agency status` and host-scoped
-`agency on|off --agent <host>` only when the exact restricted-token Store
-boundary refuses direct access. The service must return every supported host
-exactly once with a single validated master snapshot. Host mutations use the
-reported generation once and do not retry a 409 conflict. If status or a host
-toggle returns a bounded broker error, inspect or restart the service and retry
-deliberately from fresh status; do not relax the Store DACL:
+The same least-privilege broker supports `agency status` and host-scoped
+status when the exact restricted-token Store boundary refuses direct access.
+The service must return every supported host exactly once with a validated
+master and Store snapshot, but it never proxies a mutation. If status returns
+a bounded broker error, inspect or restart the service; do not relax the Store
+DACL:
 
 ```bash
 agency dashboard service status --json
@@ -224,9 +221,8 @@ Direct owner-private Store access remains the normal path. Only the exact
 restricted-token refusal may switch the default installed identity to the
 authenticated dashboard. Agent and roster listing traverse compact bounded
 pages containing only slug, name, division, enabled, and protected state.
-Agent enable/disable performs one exact-agent lookup and one revision-bound
-mutation; protected `agents-orchestrator` and `chief-of-staff` cannot be
-disabled.
+Exact-agent lookup remains read-only. Agent enable/disable is unavailable from
+the restricted model-facing process; use a normal operator boundary instead.
 
 Search, route, explain, and policy are computed inside the dashboard service
 against its full routing metadata. The restricted CLI receives only bounded
@@ -251,11 +247,9 @@ nonzero diagnostic before backend execution or evidence claims. Run those
 commands from an unrestricted shell owned by the same user rather than
 weakening the Store DACL.
 
-If a brokered toggle is rejected, inspect fresh status before retrying. The CLI
-accepts only the exact requested state and deterministic generation transition:
-a no-op keeps the generation, and a real change increments it once. It never
-retries a stale, opposite, jumping, malformed, or impossible receipt on the
-operator's behalf.
+If a restricted mutation is rejected, do not weaken the Store DACL or attempt
+to turn read brokerage into mutation authority. Inspect status, then use the
+supported operator boundary.
 
 ## Restricted Windows scratch is unavailable
 

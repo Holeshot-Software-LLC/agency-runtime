@@ -52,3 +52,12 @@ ADR-0092 governs filesystem trust caching. AR-133 owns transaction batching.
 - Every Store connection fails closed after a trust regression.
 - Stable-path regression tests cover same-inode and same-mtime transitions.
 - Performance remains within the measured hook budget through safe batching.
+
+## Implementation evidence
+
+Positive trust caching has been removed. Every Store connection re-runs the
+authoritative platform check, including same-inode/same-mtime authority
+regressions. Focused Store security suites and the combined checkpoint suite
+pass. The measured Windows connection cost remains visible; AR-133 must recover
+it through transaction batching before this item's performance acceptance can
+close.

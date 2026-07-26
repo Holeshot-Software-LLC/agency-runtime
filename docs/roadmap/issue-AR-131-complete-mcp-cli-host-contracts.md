@@ -56,3 +56,13 @@ AR-128 owns mutation authority. AR-135 owns ZCode installation behavior.
 - Accepted delegation identifiers persist exactly without truncation.
 - Generated tool and skill surfaces match the runtime registry exactly.
 - Invalid, unknown, oversized, and mutation requests fail closed.
+
+## Implementation evidence
+
+All published MCP strings are bounded, host schemas derive from the canonical
+five-host registry, delegation bounds match exact Store persistence limits, and
+protocol-level preflight/status requests now dispatch successfully. Host
+mutation and caller-supplied finalize host/model fields are absent, noncanonical
+identifiers fail before Store normalization, generated skills match the
+read-only registry, and status no longer exposes an absolute database path.
+Fresh installation is still required to replace the stale installed skill.

@@ -1,5 +1,3 @@
-"use strict";
-
 import { APIError, CONTROL_INTERVAL_MS, LIVE_INTERVAL_MS } from "./dashboard-core.js";
 
 export function createLiveController(core, config, renderer) {

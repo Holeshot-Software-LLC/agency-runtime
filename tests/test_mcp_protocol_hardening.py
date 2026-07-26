@@ -222,7 +222,9 @@ def test_argument_validator_supports_permissive_and_in_range_schemas() -> None:
         }
     }
 
-    assert mcp._validate_tool_arguments(permissive, {"extension": "ok"}) is None
+    assert mcp._validate_tool_arguments(permissive, {"extension": "ok"}) == (
+        "argument 'extension' has no defined maximum length"
+    )
     assert mcp._validate_tool_arguments(bounded, {"value": 5}) is None
 
 
@@ -241,16 +243,6 @@ def test_argument_validator_supports_permissive_and_in_range_schemas() -> None:
             "must be a string",
         ),
         ("agency.explain_selection", {"task": "x", "limit": True}, "must be an integer"),
-        (
-            "agency.host_control",
-            {
-                "host": "codex",
-                "enabled": "yes",
-                "expected_generation": 0,
-                "confirm": "ENABLE codex",
-            },
-            "must be a boolean",
-        ),
         ("agency.host_status", {"host": "missing"}, "must be one of"),
         (
             "agency.preflight",
@@ -304,6 +296,95 @@ def test_tools_call_rejects_invalid_dispatch_params(
     assert response is not None
     assert response["error"]["code"] == -32602
     assert fragment in response["error"]["message"]
+
+
+def test_every_published_string_is_bounded_and_hosts_share_one_vocabulary() -> None:
+    host_enums: list[tuple[str, ...]] = []
+    for tool in mcp.MCP_TOOLS:
+        for spec in tool["inputSchema"]["properties"].values():
+            if spec.get("type") == "string":
+                assert isinstance(spec.get("maxLength"), int) and spec["maxLength"] > 0
+            if "enum" in spec and set(spec["enum"]) == set(mcp.SUPPORTED_HOSTS):
+                host_enums.append(tuple(spec["enum"]))
+
+    assert host_enums
+    assert all(values == tuple(mcp.SUPPORTED_HOSTS) for values in host_enums)
+
+
+@pytest.mark.parametrize(
+    ("name", "arguments"),
+    [
+        (
+            "agency.preflight",
+            {"session_id": "session", "host": "codex", "user_message": "review this"},
+        ),
+        ("agency.host_status", {"host": "zcode"}),
+    ],
+)
+def test_valid_host_tools_reach_protocol_dispatch(
+    name: str,
+    arguments: dict[str, object],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[tuple[str, dict[str, object]]] = []
+
+    def handle(tool_name: str, values: dict[str, object], *_args: object, **_kwargs: object):
+        observed.append((tool_name, values))
+        return {"ok": True}
+
+    monkeypatch.setattr(mcp, "handle_tool_call", handle)
+    server = mcp.MCPServer(store=object())
+    _initialize(server)
+    response = server.dispatch(
+        {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {"name": name, "arguments": arguments},
+        }
+    )
+
+    assert response is not None
+    assert response["result"]["isError"] is False
+    assert observed == [(name, arguments)]
+
+
+def test_mutation_tool_and_finalize_identity_spoofing_fail_at_protocol_boundary() -> None:
+    server = mcp.MCPServer(store=object())
+    _initialize(server)
+
+    mutation = server.dispatch(
+        {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "tools/call",
+            "params": {"name": "agency.host_control", "arguments": {}},
+        }
+    )
+    assert mutation is not None
+    assert mutation["error"]["code"] == -32602
+    assert "Unknown tool" in mutation["error"]["message"]
+
+    spoof = server.dispatch(
+        {
+            "jsonrpc": "2.0",
+            "id": 9,
+            "method": "tools/call",
+            "params": {
+                "name": "agency.finalize",
+                "arguments": {
+                    "session_id": "session",
+                    "trace_id": "trace",
+                    "draft_text": "done",
+                    "host": "spoofed",
+                    "model": "spoofed",
+                },
+            },
+        }
+    )
+    assert spoof is not None
+    assert spoof["result"]["isError"] is True
+    assert "unexpected argument" in spoof["result"]["structuredContent"]["error"]
 
 
 def test_tool_exceptions_are_logged_and_sanitized(

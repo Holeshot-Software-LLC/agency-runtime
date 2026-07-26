@@ -818,49 +818,64 @@ def test_created_storage_cleanup_refuses_identity_replacement(tmp_path: Path) ->
     assert target.is_dir()
 
 
-def test_storage_trust_cache_returns_consistent_verdict(tmp_path: Path) -> None:
-    """PERF-02: the trust verdict is cached and reused for a stable file
-    identity (same inode + mtime), avoiding the lstat/DACL probe on every
-    store connection. This is the hook-hot-path optimization."""
-    db_path = tmp_path / "cached.db"
-    db_path.write_bytes(b"")
-    # Establish an owner-private file so the verdict is True on POSIX.
-    if os.name == "nt":
-        store_security.restrict_windows_acl(db_path, directory=False, is_windows=True)
-    else:
-        os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)
-
-    first = sqlite_store._storage_file_is_trusted(db_path)
-    second = sqlite_store._storage_file_is_trusted(db_path)
-    assert first is True
-    assert second is first  # cached, identical verdict
-    assert str(db_path) in {str(p) for p in sqlite_store._trust_cache}
-
-
-def test_storage_trust_cache_invalidates_after_permission_repair(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_storage_trust_revalidates_a_stable_file_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """PERF-02 safety: the cache MUST invalidate when permissions change, so a
-    file that was repaired from untrusted to trusted is re-checked rather than
-    returning a stale negative verdict. Permission repair (chmod/DACL rewrite)
-    does not change inode or mtime, so invalidation is driven by the restrict
-    chokepoint, not the identity key."""
-    db_path = tmp_path / "repaired.db"
+    """A stable inode and mtime never substitute for current authority."""
+
+    db_path = tmp_path / "stable.db"
     db_path.write_bytes(b"")
+    identity = db_path.stat()
+    verdicts = iter((True, False))
+    observed: list[tuple[Path, bool]] = []
 
-    # Force an initial untrusted verdict into the cache.
-    monkeypatch.setattr(
-        sqlite_store,
-        "storage_file_is_trusted",
-        lambda *_args, **_kwargs: False,
-    )
-    assert sqlite_store._storage_file_is_trusted(db_path) is False
-    assert str(db_path) in {str(p) for p in sqlite_store._trust_cache}
+    def authority(path: Path, *, is_windows: bool) -> bool:
+        observed.append((path, is_windows))
+        return next(verdicts)
 
-    # Simulate the repair chokepoint clearing the cache.
-    sqlite_store._invalidate_storage_trust_cache(db_path)
-    assert str(db_path) not in {str(p) for p in sqlite_store._trust_cache}
+    monkeypatch.setattr(sqlite_store, "storage_file_is_trusted", authority)
 
-    # After invalidation the real (authoritative) check runs again.
-    monkeypatch.undo()
     assert sqlite_store._storage_file_is_trusted(db_path) is True
+    assert sqlite_store._storage_file_is_trusted(db_path) is False
+    confirmed = db_path.stat()
+    assert (confirmed.st_ino, confirmed.st_mtime_ns) == (identity.st_ino, identity.st_mtime_ns)
+    assert observed == [(db_path, os.name == "nt"), (db_path, os.name == "nt")]
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX mode regression contract")
+def test_posix_mode_regression_with_same_inode_and_mtime_fails_closed(tmp_path: Path) -> None:
+    db_path = tmp_path / "mode-regression.db"
+    db_path.write_bytes(b"")
+    os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)
+    before = db_path.stat()
+
+    assert sqlite_store._storage_file_is_trusted(db_path) is True
+    os.chmod(db_path, 0o666)
+    os.utime(db_path, ns=(before.st_atime_ns, before.st_mtime_ns))
+    after = db_path.stat()
+
+    assert (after.st_ino, after.st_mtime_ns) == (before.st_ino, before.st_mtime_ns)
+    assert sqlite_store._storage_file_is_trusted(db_path) is False
+
+
+def test_existing_store_connection_fails_after_authority_regression(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    authoritative = sqlite_store.storage_file_is_trusted
+    regressed = False
+
+    def current_authority(path: Path, *, is_windows: bool) -> bool:
+        if regressed and path == store.db_path:
+            return False
+        return authoritative(path, is_windows=is_windows)
+
+    monkeypatch.setattr(sqlite_store, "storage_file_is_trusted", current_authority)
+    connection = store._connect()
+    connection.close()
+    regressed = True
+
+    with pytest.raises(PermissionError, match="not a trusted single-link file"):
+        store._connect()

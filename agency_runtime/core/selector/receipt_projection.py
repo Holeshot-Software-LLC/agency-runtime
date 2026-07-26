@@ -13,6 +13,7 @@ RECEIPT_DESCRIPTION_BYTES = 4096
 ROUTING_RECEIPT_VERSION = 1
 
 _MAX_IDS = 16
+_MAX_HIRING_EVENTS = 16
 _MAX_PROVIDER_ATTEMPTS = 16
 _MAX_REJECTION_SAMPLES = 32
 _MAX_REASON_COUNTS = 32
@@ -133,6 +134,36 @@ def _provider_attempts(value: object) -> list[dict[str, Any]]:
             }
         )
     return attempts
+
+
+def _hiring(value: object) -> dict[str, Any]:
+    raw = value if isinstance(value, (list, tuple)) else []
+    events: list[dict[str, Any]] = []
+    for item in raw[:_MAX_HIRING_EVENTS]:
+        if not isinstance(item, Mapping):
+            continue
+        unit_id = _identity(item.get("unit_id"))
+        status = _code(item.get("status"))
+        if not unit_id or not status:
+            continue
+        events.append(
+            {
+                "unit_id": unit_id,
+                "status": status,
+                "reason_codes": _codes(item.get("reason_codes")),
+                "case_id": _identity(item.get("case_id")),
+                "worker": _identity(item.get("worker")),
+                "version": _identity(item.get("version")),
+                "calls_used": _bounded_count(item.get("calls_used"), maximum=8),
+            }
+        )
+    return {
+        "events": events,
+        "attempted_count": sum(item["status"] != "not_attempted" for item in events),
+        "workforce_changes": sum(item["status"] in {"amended", "hired"} for item in events),
+        "calls_used": min(sum(item["calls_used"] for item in events), 128),
+        "truncated": len(raw) > len(events),
+    }
 
 
 def _retrieval(value: object) -> dict[str, Any]:
@@ -272,6 +303,10 @@ def _routing_reason_codes(
             if isinstance(shadow, Mapping):
                 agent_id = _code(shadow.get("agent_id"))
                 append(f"disabled_candidate:{agent_id}" if agent_id else "")
+    hiring = _hiring(routing.get("hiring_events"))
+    for event in hiring["events"]:
+        for reason in event["reason_codes"]:
+            append(f"hiring:{_reason_family(reason)}")
     return codes
 
 
@@ -311,6 +346,12 @@ def _routing_effect_codes(
         "delegation_plan_prepared",
         isinstance(work_units, Mapping) and work_units.get("delegate") is True,
     )
+    hiring = _hiring(routing.get("hiring_events"))
+    statuses = {item["status"] for item in hiring["events"]}
+    append("hiring_attempted", bool(hiring["attempted_count"]))
+    append("workforce_changed", bool(hiring["workforce_changes"]))
+    append("hiring_not_attempted", "not_attempted" in statuses)
+    append("hiring_declined", bool(statuses - {"amended", "hired", "not_attempted"}))
     return codes
 
 
@@ -362,6 +403,8 @@ def project_durable_routing_receipt(routing: Mapping[str, Any]) -> dict[str, Any
         compatibility=compatibility,
         eligibility=eligibility,
     )
+    if isinstance(routing.get("hiring_events"), (list, tuple)):
+        receipt["hiring"] = _hiring(routing.get("hiring_events"))
     if origin_receipt_digest:
         receipt["origin_receipt_digest"] = origin_receipt_digest
     return receipt
@@ -424,6 +467,9 @@ def normalize_durable_routing_receipt(value: object) -> dict[str, Any] | None:
         "reason_codes": _codes(value.get("reason_codes")),
         "effect_codes": _codes(value.get("effect_codes")),
     }
+    raw_hiring = value.get("hiring")
+    if isinstance(raw_hiring, Mapping):
+        normalized["hiring"] = _hiring(raw_hiring.get("events"))
     origin_digest = str(value.get("origin_receipt_digest") or "").strip().casefold()
     if _DIGEST.fullmatch(origin_digest) is not None:
         normalized["origin_receipt_digest"] = origin_digest

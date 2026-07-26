@@ -3,55 +3,22 @@
 from __future__ import annotations
 
 import json
-import os
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
+
+from agency_runtime.core.process_environment import (
+    INTEGRATION_HOME_BY_NAME,
+    SAFE_SUBPROCESS_ENVIRONMENT_NAMES,
+    least_privilege_subprocess_environment,
+)
 
 ERROR_PREVIEW_CHARS = 2_000
 MAX_TASK_CHARS = 16 * 1024
 MAX_SPECIALIST_CHARS = 256
 TASK_REDACTION = "<task>"
-SAFE_DELEGATION_ENVIRONMENT_NAMES = frozenset(
-    {
-        "ALL_PROXY",
-        "COMSPEC",
-        "CURL_CA_BUNDLE",
-        "HOME",
-        "HOMEDRIVE",
-        "HOMEPATH",
-        "HTTPS_PROXY",
-        "HTTP_PROXY",
-        "LANG",
-        "LC_ALL",
-        "LC_CTYPE",
-        "LOGNAME",
-        "NODE_EXTRA_CA_CERTS",
-        "NO_PROXY",
-        "PATH",
-        "PATHEXT",
-        "PROGRAMDATA",
-        "REQUESTS_CA_BUNDLE",
-        "SHELL",
-        "SSL_CERT_DIR",
-        "SSL_CERT_FILE",
-        "SYSTEMDRIVE",
-        "SYSTEMROOT",
-        "TEMP",
-        "TMP",
-        "TMPDIR",
-        "USER",
-        "USERNAME",
-        "USERPROFILE",
-        "WINDIR",
-    }
-)
-AUTH_HOME_BY_BACKEND = {
-    "claude": ("CLAUDE_CONFIG_DIR", ".claude"),
-    "codex": ("CODEX_HOME", ".codex"),
-    "hermes": ("HERMES_HOME", ".hermes"),
-    "openclaw": ("OPENCLAW_HOME", ".openclaw"),
-}
+SAFE_DELEGATION_ENVIRONMENT_NAMES = SAFE_SUBPROCESS_ENVIRONMENT_NAMES
+AUTH_HOME_BY_BACKEND = INTEGRATION_HOME_BY_NAME
 
 
 def delegation_environment(
@@ -59,22 +26,17 @@ def delegation_environment(
     extra_env: Mapping[str, str],
     *,
     environ: Mapping[str, str] | None = None,
+    current_directory: str | Path | None = None,
+    forbidden_roots: Sequence[str | Path] = (),
 ) -> dict[str, str]:
     """Build the least-privilege environment required by one host CLI."""
-    source = os.environ if environ is None else environ
-    safe = {
-        key: value
-        for key, value in source.items()
-        if key.upper() in SAFE_DELEGATION_ENVIRONMENT_NAMES and isinstance(value, str)
-    }
-    auth_home = AUTH_HOME_BY_BACKEND.get(backend_name.strip().lower())
-    if auth_home is not None:
-        variable, default_name = auth_home
-        user_home = source.get("USERPROFILE") or source.get("HOME") or str(Path.home())
-        safe[variable] = source.get(variable, str(Path(user_home) / default_name))
-    safe["NO_COLOR"] = "1"
-    safe.update(extra_env)
-    return safe
+    return least_privilege_subprocess_environment(
+        backend_name,
+        environ=environ,
+        extra_env=extra_env,
+        current_directory=current_directory,
+        forbidden_roots=forbidden_roots,
+    )
 
 
 def sensitive_variants(values: Iterable[str]) -> tuple[str, ...]:

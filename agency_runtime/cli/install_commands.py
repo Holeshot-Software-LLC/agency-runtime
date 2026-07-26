@@ -970,74 +970,31 @@ def _direct_inference_snapshot(
     return direct_inference_snapshot(runtime_store, dependencies.load_config())
 
 
-def _dashboard_soft_control_result(
+def _dashboard_soft_control_preview(
     agent: str,
     *,
     enabled: bool,
-    dry_run: bool,
 ) -> dict[str, Any]:
-    """Apply or preview one host transition through the authenticated broker."""
+    """Preview one host transition through the read-only authenticated broker."""
 
-    from agency_runtime.core.dashboard_runtime import dashboard_api_request
     from agency_runtime.core.host_control import normalize_host
 
     host = normalize_host(agent)
-    statuses, _master, identity = _dashboard_host_snapshot_with_identity(host)
+    statuses, _master, _identity = _dashboard_host_snapshot_with_identity(host)
     previous = statuses[0]
     previous_generation = _broker_generation(previous, "runtime_control_generation")
-    if dry_run:
-        control_enabled = bool(previous["runtime_enabled"])
-        generation = previous_generation
-        updated_at = previous.get("runtime_control_updated_at")
-        source = previous.get("runtime_control_source")
-    else:
-        verb = "ENABLE" if enabled else "DISABLE"
-        response = dashboard_api_request(
-            "/api/hosts/toggle",
-            method="POST",
-            payload={
-                "host": host,
-                "enabled": enabled,
-                "expected_generation": previous_generation,
-                "confirm": f"{verb} {host}",
-            },
-        )
-        if response.get("ok") is not True or response.get("host") != host:
-            raise ValueError("dashboard host-control response identity is invalid")
-        if _broker_store_identity(response) != identity:
-            raise ValueError("dashboard host-control Store identity changed during mutation")
-        if not isinstance(response.get("enabled"), bool) or response["enabled"] is not enabled:
-            raise ValueError("dashboard host-control response state is invalid")
-        generation = _broker_generation(response, "generation")
-        status = _broker_host_status(response.get("status"), expected_host=host)
-        expected_generation = previous_generation + (
-            1 if previous["runtime_enabled"] is not enabled else 0
-        )
-        if (
-            status["runtime_enabled"] is not enabled
-            or _broker_generation(status, "runtime_control_generation") != generation
-            or generation != expected_generation
-        ):
-            raise ValueError("dashboard host-control response is internally inconsistent")
-        control_enabled = enabled
-        updated_at = response.get("updated_at")
-        source = response.get("source")
-        if updated_at != status.get("runtime_control_updated_at") or source != status.get(
-            "runtime_control_source"
-        ):
-            raise ValueError("dashboard host-control response provenance is inconsistent")
     return {
         "ok": True,
         "exit_code": 0,
         "host": host,
         "enabled": enabled,
-        "runtime_enabled": enabled if dry_run else control_enabled,
+        "runtime_enabled": bool(previous["runtime_enabled"]),
         "previous_runtime_enabled": bool(previous["runtime_enabled"]),
-        "generation": generation,
+        "generation": previous_generation,
         "previous_generation": previous_generation,
-        "updated_at": updated_at,
-        "source": source,
-        "dry_run": dry_run,
+        "updated_at": previous.get("runtime_control_updated_at"),
+        "source": previous.get("runtime_control_source"),
+        "dry_run": True,
         "transport": "dashboard",
         "native_lifecycle": "persistent soft control",
         "restart_required": False,
@@ -1052,17 +1009,27 @@ def _restricted_aware_soft_control_result(
     dry_run: bool,
     restricted_store: bool,
 ) -> dict[str, Any]:
-    """Use the broker only for an exact restricted-token Store refusal."""
+    """Keep restricted model-facing processes read-only at the control boundary."""
 
     from agency_runtime.core.windows_acl import require_restricted_windows_token
 
     if restricted_store:
-        return _dashboard_soft_control_result(agent, enabled=enabled, dry_run=dry_run)
+        if dry_run:
+            return _dashboard_soft_control_preview(agent, enabled=enabled)
+        raise RuntimeError(
+            "host mutation is unavailable from a restricted model-facing process; "
+            "use the owner-authenticated dashboard UI or run this command from a normal user shell"
+        )
     try:
         return _soft_control_result(runtime_store, agent, enabled=enabled, dry_run=dry_run)
     except Exception as exc:
         require_restricted_windows_token(exc)
-        return _dashboard_soft_control_result(agent, enabled=enabled, dry_run=dry_run)
+        if dry_run:
+            return _dashboard_soft_control_preview(agent, enabled=enabled)
+        raise RuntimeError(
+            "host mutation is unavailable from a restricted model-facing process; "
+            "use the owner-authenticated dashboard UI or run this command from a normal user shell"
+        ) from exc
 
 
 def _failed_control_result(agent: str, exc: Exception) -> dict[str, Any]:
@@ -1119,47 +1086,6 @@ def _read_master_control_with_broker() -> tuple[dict[str, Any], str]:
         ) from direct_error
 
 
-def _dashboard_master_control_result(
-    current: dict[str, Any],
-    *,
-    enabled: bool,
-) -> dict[str, Any]:
-    """Apply one exact generation-checked transition through the owner service."""
-
-    from agency_runtime.core.dashboard_runtime import dashboard_api_request
-    from agency_runtime.core.runtime_control import validate_runtime_control_document
-
-    verb = "ENABLE" if enabled else "DISABLE"
-    response = dashboard_api_request(
-        "/api/runtime/toggle",
-        method="POST",
-        payload={
-            "enabled": enabled,
-            "expected_generation": int(current["generation"]),
-            "confirm": f"{verb} AGENCY",
-        },
-    )
-    expected_changed = bool(current["enabled"]) is not enabled
-    if (
-        not isinstance(response, Mapping)
-        or set(response) != {"ok", "changed", "master"}
-        or response.get("ok") is not True
-        or not isinstance(response.get("changed"), bool)
-        or response["changed"] is not expected_changed
-    ):
-        raise ValueError("dashboard master-control response is invalid")
-    master = validate_runtime_control_document(response.get("master"))
-    expected_generation = int(current["generation"]) + (1 if expected_changed else 0)
-    if (
-        master["enabled"] is not enabled
-        or int(master["generation"]) != expected_generation
-        or (expected_changed and master["source"] != "dashboard")
-        or (not expected_changed and master != current)
-    ):
-        raise ValueError("dashboard master-control response is internally inconsistent")
-    return master
-
-
 def _global_control_result(
     args: argparse.Namespace,
     *,
@@ -1180,8 +1106,10 @@ def _global_control_result(
         master = current
         writer = reader
     elif reader == "dashboard":
-        master = _dashboard_master_control_result(current, enabled=enabled)
-        writer = "dashboard"
+        raise RuntimeError(
+            "global mutation is unavailable from a restricted model-facing process; "
+            "use the owner-authenticated dashboard UI or run this command from a normal user shell"
+        )
     else:
         try:
             master = set_master_enabled(
@@ -1190,9 +1118,11 @@ def _global_control_result(
                 source="cli",
             )
             writer = "direct"
-        except RuntimeControlSecurityError:
-            master = _dashboard_master_control_result(current, enabled=enabled)
-            writer = "dashboard"
+        except RuntimeControlSecurityError as exc:
+            raise RuntimeError(
+                "global mutation is unavailable from a restricted model-facing process; "
+                "use the owner-authenticated dashboard UI or run this command from a normal user shell"
+            ) from exc
         expected_generation = int(current["generation"]) + (
             1 if bool(current["enabled"]) is not enabled else 0
         )

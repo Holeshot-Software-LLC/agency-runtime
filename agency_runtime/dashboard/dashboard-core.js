@@ -1,5 +1,3 @@
-"use strict";
-
 export const LIVE_INTERVAL_MS = 2500;
 export const CONTROL_INTERVAL_MS = 15000;
 
@@ -80,7 +78,7 @@ export function createState() {
 
 export function nestedValue(root, path) {
   return path.split(".").reduce((value, part) => (
-    value !== null && value !== undefined && Object.hasOwn(value, part) ? value[part] : undefined
+    value != null && Object.hasOwn(value, part) ? value[part] : undefined
   ), root);
 }
 
@@ -115,7 +113,7 @@ export function createCore(runtime = globalThis) {
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
-    if (text !== undefined && text !== null) node.textContent = String(text);
+    if (text != null) node.textContent = String(text);
     return node;
   }
 

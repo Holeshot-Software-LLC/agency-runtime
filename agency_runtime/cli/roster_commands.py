@@ -836,22 +836,10 @@ def _set_agent_enabled(
         return normalized, changed, str(path)
     except Exception as direct_error:
         require_restricted_windows_token(direct_error)
-        if config_argument is not None:
-            raise RuntimeError(
-                "an explicit agent config cannot be redirected through the dashboard broker"
-            ) from direct_error
-        try:
-            from agency_runtime.cli.agent_control_broker import broker_set_agent_enabled
-
-            result = broker_set_agent_enabled(slug, enabled=enabled, reason=reason)
-            if not _same_config_path(result[2], str(path)):
-                raise ValueError("dashboard service config does not match the CLI config identity")
-            return result
-        except (OSError, RuntimeError, ValueError) as broker_error:
-            raise RuntimeError(
-                "agent activation control is inaccessible from this restricted process and the "
-                f"dashboard service could not broker it: {broker_error}"
-            ) from direct_error
+        raise RuntimeError(
+            "agent activation mutation is unavailable from a restricted model-facing process; "
+            "use the owner-authenticated dashboard UI or run this command from a normal user shell"
+        ) from direct_error
 
 
 def cmd_agent_enable(args: argparse.Namespace) -> int:

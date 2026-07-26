@@ -12,13 +12,14 @@ from collections.abc import Callable
 from typing import Any
 
 from agency_runtime.core.host_capabilities import (
+    EXECUTION_HOSTS,
     host_capability_receipt_from_native_evidence,
 )
 from agency_runtime.core.runtime_control_command import parse_host_control_arguments
 from agency_runtime.core.store.evidence import HostControlConflictError
 from agency_runtime.core.store.sqlite import Store
 
-SUPPORTED_HOSTS: tuple[str, ...] = ("hermes", "openclaw", "codex", "claude", "zcode")
+SUPPORTED_HOSTS: tuple[str, ...] = EXECUTION_HOSTS
 
 
 def normalize_host(host: str) -> str:

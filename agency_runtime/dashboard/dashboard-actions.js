@@ -1,5 +1,3 @@
-"use strict";
-
 export function createActionController(core, config, renderer, live) {
   const {
     state,

@@ -159,14 +159,21 @@ def test_broker_token_cannot_call_destructive_endpoints(path: str) -> None:
     [
         "/api/agents/toggle",
         "/api/hosts/toggle",
-        "/api/route",
         "/api/runtime/toggle",
+    ],
+)
+def test_broker_token_denies_every_mutating_control_endpoint(path: str) -> None:
+    assert dashboard_runtime.dashboard_broker_request_allowed(path, "POST") is False
+    assert dashboard_runtime.dashboard_broker_request_allowed(path, "GET") is False
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/route",
         "/api/search",
     ],
 )
-def test_broker_token_allows_intended_control_endpoints(path: str) -> None:
-    """SEC-02 companion: document the endpoints the restricted broker token IS
-    intentionally allowed to call (operator control + read-only search/route).
-    Pinning these prevents an over-restrictive change from silently breaking
-    the broker's supported surface."""
+def test_broker_token_allows_read_only_post_shaped_computations(path: str) -> None:
     assert dashboard_runtime.dashboard_broker_request_allowed(path, "POST") is True
+    assert dashboard_runtime.dashboard_broker_request_allowed(path, "GET") is False

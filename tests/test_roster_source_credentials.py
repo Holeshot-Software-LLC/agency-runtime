@@ -1747,7 +1747,7 @@ def test_schema_v30_redacts_legacy_source_credentials_and_tombstones_behavior(
     finally:
         conn.close()
 
-    assert version == SCHEMA_VERSION == 35
+    assert version == SCHEMA_VERSION == 36
     assert source["url"].startswith(redaction.identity + "-")
     assert source["name"] == "Legacy source redacted (disabled)"
     assert source["enabled"] == 0

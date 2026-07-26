@@ -1,5 +1,3 @@
-"use strict";
-
 import { createActionController } from "./dashboard-actions.js";
 import { createConfigController } from "./dashboard-config.js";
 import { APIError, createCore } from "./dashboard-core.js";
@@ -22,8 +20,7 @@ export function createDashboard(runtime = globalThis) {
   actions = createActionController(core, config, renderer, live);
 
   async function connectFromLocation() {
-    const generation = state.connection.generation + 1;
-    state.connection.generation = generation;
+    const generation = ++state.connection.generation;
     try {
       core.installToken();
       state.live.terminal = false;
@@ -99,7 +96,6 @@ export function createDashboard(runtime = globalThis) {
   function destroy() {
     if (state.lifecycle.destroyed) return false;
     state.lifecycle.destroyed = true;
-    state.lifecycle.suspended = true;
     state.connection.generation += 1;
     suspendRuntime();
     core.disposeCore();

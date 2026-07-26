@@ -16,7 +16,21 @@ from dataclasses import dataclass
 from typing import Any, BinaryIO, TextIO
 
 from agency_runtime import __version__
+from agency_runtime.core.agent_activation import MAX_AGENT_SLUG_CHARS
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
+from agency_runtime.core.correlation import MAX_CORRELATION_ID_BYTES
+from agency_runtime.core.delegation_status import (
+    MAX_DELEGATION_AGENT_CHARS,
+    MAX_DELEGATION_BACKEND_CHARS,
+    MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+    MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+    MAX_DELEGATION_WORKER_ID_CHARS,
+    MAX_DELEGATION_WORKER_KIND_CHARS,
+)
+from agency_runtime.core.host_control import SUPPORTED_HOSTS
+from agency_runtime.core.native_child_prompt_delivery import (
+    MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS,
+)
 
 logger = logging.getLogger("agency_runtime.server.mcp")
 
@@ -40,9 +54,24 @@ _CANARY_MUTATING_TOOLS = frozenset(
         "agency.delegate",
         "agency.decline_delegation",
         "agency.finalize",
-        "agency.host_control",
     }
 )
+
+_MAX_TASK_CHARS = 262_144
+_MAX_DRAFT_CHARS = 524_288
+_MAX_QUERY_CHARS = 16_384
+_MAX_SKILL_NAME_CHARS = 512
+
+
+def _string(maximum: int, *, enum: Sequence[str] | None = None) -> dict[str, Any]:
+    result: dict[str, Any] = {"type": "string", "maxLength": maximum}
+    if enum is not None:
+        result["enum"] = list(enum)
+    return result
+
+
+def _host_string() -> dict[str, Any]:
+    return _string(max(len(host) for host in SUPPORTED_HOSTS), enum=SUPPORTED_HOSTS)
 
 
 def _schema(properties: dict[str, Any], required: list[str] | None = None) -> dict[str, Any]:
@@ -64,15 +93,12 @@ MCP_TOOLS = [
         "description": "Run agency specialist routing preflight for a user message.",
         "inputSchema": _schema(
             {
-                "session_id": {"type": "string", "maxLength": 512},
-                "trace_id": {"type": "string", "maxLength": 512},
-                "parent_session_id": {"type": "string", "maxLength": 512},
-                "parent_trace_id": {"type": "string", "maxLength": 512},
-                "host": {
-                    "type": "string",
-                    "enum": ["codex", "claude", "openclaw", "hermes", "zcode"],
-                },
-                "user_message": {"type": "string", "maxLength": 262_144},
+                "session_id": _string(MAX_CORRELATION_ID_BYTES),
+                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "parent_session_id": _string(MAX_CORRELATION_ID_BYTES),
+                "parent_trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "host": _host_string(),
+                "user_message": _string(_MAX_TASK_CHARS),
             },
             ["session_id", "host", "user_message"],
         ),
@@ -80,7 +106,7 @@ MCP_TOOLS = [
     {
         "name": "agency.search_agents",
         "description": "Search the active agent roster.",
-        "inputSchema": _schema({"query": {"type": "string", "maxLength": 16_384}}, ["query"]),
+        "inputSchema": _schema({"query": _string(_MAX_QUERY_CHARS)}, ["query"]),
         "annotations": {"readOnlyHint": True, "idempotentHint": True},
     },
     {
@@ -88,8 +114,8 @@ MCP_TOOLS = [
         "description": "Explain why specialists were selected for a task.",
         "inputSchema": _schema(
             {
-                "session_id": {"type": "string", "maxLength": 512},
-                "task": {"type": "string", "maxLength": 262_144},
+                "session_id": _string(MAX_CORRELATION_ID_BYTES),
+                "task": _string(_MAX_TASK_CHARS),
                 "limit": {"type": "integer", "minimum": 1, "maximum": 50},
             },
             ["task"],
@@ -102,12 +128,12 @@ MCP_TOOLS = [
         ),
         "inputSchema": _schema(
             {
-                "slug": {"type": "string", "maxLength": 128},
-                "session_id": {"type": "string", "maxLength": 512},
-                "trace_id": {"type": "string", "maxLength": 512},
-                "work_unit_id": {"type": "string", "maxLength": 160},
-                "worker_kind": {"type": "string", "maxLength": 64},
-                "worker_id": {"type": "string", "maxLength": 256},
+                "slug": _string(MAX_AGENT_SLUG_CHARS),
+                "session_id": _string(MAX_CORRELATION_ID_BYTES),
+                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "work_unit_id": _string(MAX_DELEGATION_WORK_UNIT_ID_CHARS),
+                "worker_kind": _string(MAX_DELEGATION_WORKER_KIND_CHARS),
+                "worker_id": _string(MAX_DELEGATION_WORKER_ID_CHARS),
             },
             ["slug", "session_id", "trace_id", "work_unit_id"],
         ),
@@ -117,13 +143,13 @@ MCP_TOOLS = [
         "description": "Consume an isolated activation grant or load a direct specialist prompt.",
         "inputSchema": _schema(
             {
-                "slug": {"type": "string", "maxLength": 256},
-                "session_id": {"type": "string", "maxLength": 512},
-                "trace_id": {"type": "string", "maxLength": 512},
-                "activation_token": {"type": "string", "maxLength": 256},
-                "work_unit_id": {"type": "string", "maxLength": 160},
-                "worker_id": {"type": "string", "maxLength": 256},
-                "native_run_id": {"type": "string", "maxLength": 256},
+                "slug": _string(MAX_AGENT_SLUG_CHARS),
+                "session_id": _string(MAX_CORRELATION_ID_BYTES),
+                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "activation_token": _string(MAX_NATIVE_CHILD_ACTIVATION_TOKEN_CHARS),
+                "work_unit_id": _string(MAX_DELEGATION_WORK_UNIT_ID_CHARS),
+                "worker_id": _string(MAX_DELEGATION_WORKER_ID_CHARS),
+                "native_run_id": _string(MAX_DELEGATION_NATIVE_RUN_ID_CHARS),
             },
             ["slug", "session_id", "trace_id"],
         ),
@@ -133,9 +159,9 @@ MCP_TOOLS = [
         "description": "Record that a skill was loaded in the current session.",
         "inputSchema": _schema(
             {
-                "session_id": {"type": "string", "maxLength": 512},
-                "trace_id": {"type": "string", "maxLength": 512},
-                "skill_name": {"type": "string", "maxLength": 512},
+                "session_id": _string(MAX_CORRELATION_ID_BYTES),
+                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "skill_name": _string(_MAX_SKILL_NAME_CHARS),
             },
             ["session_id", "trace_id", "skill_name"],
         ),
@@ -145,15 +171,15 @@ MCP_TOOLS = [
         "description": "Record an observed delegation executed by a named backend.",
         "inputSchema": _schema(
             {
-                "agent": {"type": "string", "maxLength": 512},
-                "task": {"type": "string", "maxLength": 262_144},
-                "backend": {"type": "string", "maxLength": 512},
-                "trace_id": {"type": "string", "maxLength": 512},
-                "session_id": {"type": "string", "maxLength": 512},
-                "work_unit_id": {"type": "string", "maxLength": 512},
-                "worker_kind": {"type": "string", "maxLength": 64},
-                "worker_id": {"type": "string", "maxLength": 256},
-                "native_run_id": {"type": "string", "maxLength": 256},
+                "agent": _string(MAX_DELEGATION_AGENT_CHARS),
+                "task": _string(_MAX_TASK_CHARS),
+                "backend": _string(MAX_DELEGATION_BACKEND_CHARS),
+                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "session_id": _string(MAX_CORRELATION_ID_BYTES),
+                "work_unit_id": _string(MAX_DELEGATION_WORK_UNIT_ID_CHARS),
+                "worker_kind": _string(MAX_DELEGATION_WORKER_KIND_CHARS),
+                "worker_id": _string(MAX_DELEGATION_WORKER_ID_CHARS),
+                "native_run_id": _string(MAX_DELEGATION_NATIVE_RUN_ID_CHARS),
             },
             [
                 "agent",
@@ -176,11 +202,11 @@ MCP_TOOLS = [
         ),
         "inputSchema": _schema(
             {
-                "agent": {"type": "string", "maxLength": 128},
-                "reason": {"type": "string", "minLength": 1, "maxLength": 512},
-                "trace_id": {"type": "string", "maxLength": 512},
-                "session_id": {"type": "string", "maxLength": 512},
-                "work_unit_id": {"type": "string", "maxLength": 160},
+                "agent": _string(MAX_DELEGATION_AGENT_CHARS),
+                "reason": {**_string(512), "minLength": 1},
+                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "session_id": _string(MAX_CORRELATION_ID_BYTES),
+                "work_unit_id": _string(MAX_DELEGATION_WORK_UNIT_ID_CHARS),
             },
             ["agent", "reason", "session_id", "trace_id", "work_unit_id"],
         ),
@@ -190,11 +216,9 @@ MCP_TOOLS = [
         "description": "Finalize the agency header on a draft response.",
         "inputSchema": _schema(
             {
-                "draft_text": {"type": "string", "maxLength": 524_288},
-                "trace_id": {"type": "string", "maxLength": 512},
-                "session_id": {"type": "string", "maxLength": 512},
-                "host": {"type": "string", "maxLength": 128},
-                "model": {"type": "string", "maxLength": 512},
+                "draft_text": _string(_MAX_DRAFT_CHARS),
+                "trace_id": _string(MAX_CORRELATION_ID_BYTES),
+                "session_id": _string(MAX_CORRELATION_ID_BYTES),
             },
             ["draft_text", "session_id", "trace_id"],
         ),
@@ -209,37 +233,15 @@ MCP_TOOLS = [
         "name": "agency.host_status",
         "description": "Inspect native and soft-control state for one supported host.",
         "inputSchema": _schema(
-            {
-                "host": {
-                    "type": "string",
-                    "enum": ["hermes", "openclaw", "codex", "claude"],
-                }
-            },
+            {"host": _host_string()},
             ["host"],
         ),
         "annotations": {"readOnlyHint": True, "idempotentHint": True},
     },
-    {
-        "name": "agency.host_control",
-        "description": "Enable or disable Agency Runtime for one host after exact confirmation.",
-        "inputSchema": _schema(
-            {
-                "host": {
-                    "type": "string",
-                    "enum": ["hermes", "openclaw", "codex", "claude"],
-                },
-                "enabled": {"type": "boolean"},
-                "expected_generation": {"type": "integer", "minimum": 0},
-                "confirm": {"type": "string", "maxLength": 128},
-            },
-            ["host", "enabled", "expected_generation", "confirm"],
-        ),
-        "annotations": {"idempotentHint": True},
-    },
 ]
 
 _TOOLS_BY_NAME = {tool["name"]: tool for tool in MCP_TOOLS}
-_STORE_CONTROL_PLANE_TOOLS = frozenset({"agency.host_status", "agency.host_control"})
+_STORE_CONTROL_PLANE_TOOLS = frozenset({"agency.host_status"})
 
 
 def _runtime_disabled_tool_result(
@@ -328,6 +330,13 @@ def _validate_argument(key: str, value: Any, spec: dict[str, Any]) -> str | None
             return f"argument '{key}' has no defined maximum length"
         if len(value) > int(max_length):
             return f"argument '{key}' exceeds its maximum length"
+        min_length = spec.get("minLength")
+        if min_length is not None and (
+            not isinstance(min_length, int)
+            or isinstance(min_length, bool)
+            or len(value) < min_length
+        ):
+            return f"argument '{key}' is below its minimum length"
     if not isinstance(value, int) or isinstance(value, bool):
         return None
     if "minimum" in spec and value < spec["minimum"]:

@@ -1737,9 +1737,9 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         return snapshot, {
             "config_path": str(after.path),
             "config_revision": after.revision,
-            "store_path": str(binding["store_path"]),
             "roster_revision": _routing_catalog_revision(snapshot.catalog),
             "environment_overrides": after.environment_overrides,
+            **binding,
         }
 
     def _handle_policy(self) -> None:

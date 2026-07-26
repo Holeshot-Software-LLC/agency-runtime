@@ -56,7 +56,7 @@ acceptance contract.
 
 The independent production-readiness review is now captured in
 [the 2026-07-26 audit report](../analysis/2026-07-26-production-readiness-review.md).
-Its reproduced remediation queue is AR-128 through AR-142. Those items are
+Its reproduced remediation queue is AR-128 through AR-143. Those items are
 required corrective slices of this production push; the earlier untracked
 2026-07-25 working draft is not governing evidence.
 
@@ -135,6 +135,16 @@ routing and provider choice, and AR-118 reconciles activation evidence.
 ## Execution checkpoint
 
 ### Proven locally in the current slice
+
+- Wave 1 security/protocol/schema/hiring/release corrections pass a combined
+  785-test Python checkpoint suite with 9 skips and the 97-test dashboard
+  interaction suite. Full Ruff, format, and diff checks are clean.
+- Canonical safe gaps now hire in stable order with cumulative task/daily
+  limits and durable plural outcomes; installed configured-provider dogfood is
+  still required before this umbrella item can claim contractor execution.
+- The second security pass reproduced model-callable owner-dashboard mutations
+  and a forged native activation-marker bypass. AR-143 and AR-136 keep those
+  production gates explicitly open.
 
 - All four supported native hosts receive host-correct delegation guidance:
   Codex `spawn_agent`, Claude `Agent`, Hermes `delegate_task`, and OpenClaw

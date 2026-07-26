@@ -6,6 +6,7 @@ from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
 
+from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.resident_managers import resident_manager_boundary_error
 from agency_runtime.core.routing_snapshot import (
@@ -29,9 +30,26 @@ _NATIVE_GENERIC_WORKER_KINDS = frozenset(
 
 
 def _correlation(arguments: dict[str, Any]) -> tuple[str, str] | None:
-    session_id = str(arguments.get("session_id") or "").strip()
-    trace_id = str(arguments.get("trace_id") or "").strip()
-    return (session_id, trace_id) if session_id and trace_id else None
+    try:
+        session_id = validate_correlation_id(arguments.get("session_id"), field="session_id")
+        trace_id = validate_correlation_id(arguments.get("trace_id"), field="trace_id")
+    except ValueError:
+        return None
+    if session_id != arguments.get("session_id") or trace_id != arguments.get("trace_id"):
+        return None
+    return session_id, trace_id
+
+
+def _noncanonical_identifier(arguments: dict[str, Any], *fields: str) -> str | None:
+    """Reject identifiers the Store would otherwise normalize or truncate."""
+
+    for field in fields:
+        raw = arguments.get(field)
+        if raw in (None, ""):
+            continue
+        if not isinstance(raw, str) or " ".join(raw.split()) != raw:
+            return field
+    return None
 
 
 def _preflight(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
@@ -109,6 +127,15 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     if correlation is None:
         return {"error": "session_id and trace_id are required to load active specialist evidence"}
     session_id, trace_id = correlation
+    if field := _noncanonical_identifier(
+        arguments,
+        "slug",
+        "activation_token",
+        "work_unit_id",
+        "worker_id",
+        "native_run_id",
+    ):
+        return {"error": f"{field} must be an exact canonical identifier"}
     if error := active_turn_error(store, session_id, trace_id):
         return {"error": error}
     slug = str(arguments["slug"]).strip()
@@ -196,6 +223,14 @@ def _prepare_delegation(arguments: dict[str, Any], store: Any) -> dict[str, Any]
     if correlation is None:
         return {"error": "session_id and trace_id are required to prepare delegation"}
     session_id, trace_id = correlation
+    if field := _noncanonical_identifier(
+        arguments,
+        "slug",
+        "work_unit_id",
+        "worker_kind",
+        "worker_id",
+    ):
+        return {"error": f"{field} must be an exact canonical identifier"}
     if error := active_turn_error(store, session_id, trace_id):
         return {"error": error}
     slug = str(arguments.get("slug") or "").strip()
@@ -245,6 +280,16 @@ def _delegate(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     if correlation is None:
         return {"error": "session_id and trace_id are required to record delegation execution"}
     session_id, trace_id = correlation
+    if field := _noncanonical_identifier(
+        arguments,
+        "agent",
+        "backend",
+        "work_unit_id",
+        "worker_kind",
+        "worker_id",
+        "native_run_id",
+    ):
+        return {"error": f"{field} must be an exact canonical identifier"}
     if error := active_turn_error(store, session_id, trace_id):
         return {"error": error}
     agent = str(arguments.get("agent") or "").strip()
@@ -320,6 +365,8 @@ def _decline_delegation(arguments: dict[str, Any], store: Any) -> dict[str, Any]
     if correlation is None:
         return {"error": "session_id and trace_id are required to decline delegation"}
     session_id, trace_id = correlation
+    if field := _noncanonical_identifier(arguments, "agent", "work_unit_id"):
+        return {"error": f"{field} must be an exact canonical identifier"}
     if error := active_turn_error(store, session_id, trace_id):
         return {"error": error}
     agent = str(arguments.get("agent") or "").strip()
@@ -389,10 +436,10 @@ def _finalize(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         trace_metadata={
             "trace_id": trace_id,
             "session_id": session_id,
-            "host": arguments.get("host") or "mcp",
+            "host": "mcp",
         },
         store=store,
-        model=arguments.get("model", ""),
+        model="",
     )
     return dict(result)
 
@@ -402,7 +449,7 @@ def _status(_arguments: dict[str, Any], store: Any) -> dict[str, Any]:
 
     return {
         "roster_count": store.count_enabled_roster(),
-        "db_path": str(store.db_path),
+        "storage": {"backend": "sqlite", "binding": "verified"},
         "hosts": {host: get_runtime_control(store, host) for host in SUPPORTED_HOSTS},
     }
 
@@ -411,42 +458,6 @@ def _host_status(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     from agency_runtime.core.host_control import inspect_host_status
 
     return inspect_host_status(store, str(arguments["host"]))
-
-
-def _host_control(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
-    from agency_runtime.core.host_control import (
-        HostControlConflictError,
-        get_runtime_control,
-        set_runtime_control,
-    )
-
-    host = str(arguments["host"])
-    enabled = bool(arguments["enabled"])
-    expected = f"{'ENABLE' if enabled else 'DISABLE'} {host}"
-    if arguments["confirm"] != expected:
-        return {"error": f"confirmation must exactly match: {expected}"}
-    expected_generation = arguments.get("expected_generation")
-    if (
-        isinstance(expected_generation, bool)
-        or not isinstance(expected_generation, int)
-        or expected_generation < 0
-    ):
-        return {"error": "expected_generation must be a non-negative integer"}
-    try:
-        control = set_runtime_control(
-            store,
-            host,
-            enabled=enabled,
-            source="mcp",
-            expected_generation=expected_generation,
-        )
-    except HostControlConflictError as exc:
-        return {
-            "error": str(exc),
-            "conflict": True,
-            "current": get_runtime_control(store, host),
-        }
-    return {"ok": True, **control}
 
 
 _TOOL_HANDLERS: dict[str, ToolHandler] = {
@@ -461,7 +472,6 @@ _TOOL_HANDLERS: dict[str, ToolHandler] = {
     "agency.finalize": _finalize,
     "agency.status": _status,
     "agency.host_status": _host_status,
-    "agency.host_control": _host_control,
 }
 
 

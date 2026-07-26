@@ -259,14 +259,11 @@ def _smoke_marketplace_bundle(host: str, plugin_path: Path) -> dict[str, Any]:
         raise RuntimeError("Codex manifest does not declare its hooks component")
     validated_hooks = _validate_codex_hooks(hooks) if host == "codex" else sorted(hooks["hooks"])
     skill = skill_path.read_text(encoding="utf-8")
-    control_tokens = {
-        "agency.host_status",
-        "agency.host_control",
-        "runtime_control_generation",
-        "expected_generation",
-    }
+    control_tokens = {"agency.host_status", "owner-authenticated dashboard UI", "normal user shell"}
     if any(token not in skill for token in control_tokens):
         raise RuntimeError(f"{host} control skill is incomplete")
+    if "agency.host_control" in skill:
+        raise RuntimeError(f"{host} control skill exposes model-facing mutation authority")
     server = mcp.get("mcpServers", {}).get("agency-runtime", {})
     args = server.get("args")
     try:

@@ -44,6 +44,11 @@ from agency_runtime.core.store.receipt_authority import MODEL_RECEIPT_AUTHORITY_
 from agency_runtime.core.store.roster import RosterStoreMixin
 from agency_runtime.core.store.schema import (
     ALL_TABLES,
+    BOOLEAN_DOMAIN_TRIGGER_NAMES,
+    BOOLEAN_DOMAIN_TRIGGER_SQL,
+    DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES,
+    DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
+    NATIVE_WORKER_SCOPE_INDEX_SQL,
     REMEDIATION_AUTHORITY_KEY_NAME,
     RUNTIME_DELETE_ORDER,
     RUNTIME_TABLE_TIMESTAMPS,
@@ -187,6 +192,62 @@ def _optional_response_hash(value: object) -> str:
     return _require_response_hash(normalized) if normalized else ""
 
 
+def _native_worker_scope_index_is_current(conn: sqlite3.Connection) -> bool:
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'index' "
+        "AND name = 'idx_worker_runs_native_scope' AND tbl_name = 'worker_runs'"
+    ).fetchone()
+    indexes = {
+        str(index["name"]): int(index["unique"] or 0)
+        for index in conn.execute("PRAGMA index_list(worker_runs)")
+    }
+    sql = _normalized_schema_sql(row["sql"] if row is not None else "")
+    expected = _normalized_schema_sql(NATIVE_WORKER_SCOPE_INDEX_SQL)
+    return indexes.get("idx_worker_runs_native_scope") == 1 and sql.replace(
+        "ifnotexists", ""
+    ) == expected.replace("ifnotexists", "")
+
+
+def _normalized_schema_sql(value: object) -> str:
+    return "".join(str(value or "").casefold().split())
+
+
+def _v36_authority_schema_is_current(
+    conn: sqlite3.Connection,
+    triggers: dict[str, str],
+) -> bool:
+    expected_triggers = {
+        **DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
+        **BOOLEAN_DOMAIN_TRIGGER_SQL,
+    }
+    if not set(DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES).issubset(triggers):
+        return False
+    if not set(BOOLEAN_DOMAIN_TRIGGER_NAMES).issubset(triggers):
+        return False
+    if any(
+        _normalized_schema_sql(triggers.get(name)) != _normalized_schema_sql(statement)
+        for name, statement in expected_triggers.items()
+    ):
+        return False
+    consumption_row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'delegation_activation_consumptions'"
+    ).fetchone()
+    consumption_sql = _normalized_schema_sql(
+        consumption_row["sql"] if consumption_row is not None else ""
+    )
+    if "check(child_hostin('claude','codex','hermes','openclaw','zcode'))" not in consumption_sql:
+        return False
+    invalid_boolean = conn.execute(
+        "SELECT 1 FROM agent_sources WHERE enabled IS NULL OR enabled NOT IN (0, 1) "
+        "OR trusted_for_auto_approve IS NULL OR trusted_for_auto_approve NOT IN (0, 1) "
+        "UNION ALL SELECT 1 FROM agent_snapshots WHERE activated IS NULL "
+        "OR activated NOT IN (0, 1) OR approved IS NULL OR approved NOT IN (0, 1) "
+        "LIMIT 1"
+    ).fetchone()
+    return invalid_boolean is None
+
+
 def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
     """Verify the current schema contract.
 
@@ -249,6 +310,10 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
             "finalization_events",
             ("trace_id", "action", "policy_response_hash"),
         ),
+        "idx_worker_runs_native_scope": (
+            "worker_runs",
+            ("host", "session_id", "trace_id", "worker_id", "native_run_id"),
+        ),
     }
     for name, (table, columns) in expected_indexes.items():
         index_row = conn.execute(
@@ -263,6 +328,9 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         )
         if observed != columns:
             return False
+
+    if not _native_worker_scope_index_is_current(conn):
+        return False
 
     unique_column_sets = {
         tuple(
@@ -296,20 +364,19 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
     }.issubset(foreign_keys):
         return False
 
-    expected_triggers = {
+    expected_activity_triggers = {
         "agency_delegation_activation_receipts_insert_activity",
         "agency_delegation_activation_receipts_update_activity",
     }
     trigger_rows = conn.execute(
-        "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' "
-        "AND tbl_name = 'delegation_activation_receipts'"
+        "SELECT name, sql FROM sqlite_master WHERE type = 'trigger'"
     ).fetchall()
     triggers = {str(row["name"]): str(row["sql"] or "").casefold() for row in trigger_rows}
-    for name in expected_triggers:
+    for name in expected_activity_triggers:
         sql = triggers.get(name, "")
         if not sql or "update runs set last_activity_at" not in sql or "new.trace_id" not in sql:
             return False
-    return True
+    return _v36_authority_schema_is_current(conn, triggers)
 
 
 def _restrict_windows_acl(path: Path, *, directory: bool) -> bool:
@@ -328,9 +395,6 @@ def _restrict_path_permissions(path: Path, *, directory: bool) -> None:
         link_checker=_is_link_or_reparse_point,
         windows_acl=_restrict_windows_acl,
     )
-    # PERF-02: chmod/DACL rewrite changes trust state without changing inode
-    # or mtime, so any cached verdict for this path is now stale.
-    _invalidate_storage_trust_cache(path)
 
 
 def _default_db_path(config_path: str | Path | None = None) -> Path:
@@ -383,46 +447,10 @@ def _create_private_storage_parent(
     )
 
 
-# PERF-02: process-level cache of storage-file trust verdicts. The underlying
-# check (os.lstat + mode/link/inode tests, and on Windows the DACL/SDDL probe
-# via windows_directory_prevents_untrusted_writes) is the dominant per-connection
-# cost on the hook hot path, where every store method opens its own connection
-# and re-runs the trust check on db + -wal + -shm + parent. The verdict is a
-# pure function of the file identity, so it is cached keyed by
-# (path, st_ino, st_mtime_ns): an atomic replace (new inode) or a content/
-# permission change (new mtime) invalidates the entry automatically.
-_TRUST_CACHE_LOCK = threading.Lock()
-_trust_cache: dict[Path, tuple[int, int, bool]] = {}
-
-
-def _invalidate_storage_trust_cache(path: Path) -> None:
-    """Drop the cached trust verdict for ``path``.
-
-    Permission repair (chmod / DACL rewrite) changes trust state without
-    necessarily changing inode or mtime, so the repair path must call this to
-    force the next check to recompute against the new permissions.
-    """
-
-    with _TRUST_CACHE_LOCK:
-        _trust_cache.pop(path, None)
-
-
 def _storage_file_is_trusted(path: Path) -> bool:
-    cached = _trust_cache.get(path)
-    try:
-        metadata = os.lstat(path)
-    except OSError:
-        # File missing: do not cache (it may appear later); fall through to
-        # the authoritative check which returns False for a missing path.
-        return storage_file_is_trusted(path, is_windows=_IS_WINDOWS)
-    ino = int(getattr(metadata, "st_ino", 0) or 0)
-    mtime_ns = int(getattr(metadata, "st_mtime_ns", 0) or 0)
-    if cached is not None and cached[0] == ino and cached[1] == mtime_ns:
-        return cached[2]
-    trusted = storage_file_is_trusted(path, is_windows=_IS_WINDOWS)
-    with _TRUST_CACHE_LOCK:
-        _trust_cache[path] = (ino, mtime_ns, trusted)
-    return trusted
+    """Revalidate file authority at every Store connection boundary."""
+
+    return storage_file_is_trusted(path, is_windows=_IS_WINDOWS)
 
 
 def _require_storage_target_trusted(

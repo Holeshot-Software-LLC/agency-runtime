@@ -54,8 +54,16 @@ def _run_owned_process(*args: Any, **kwargs: Any) -> subprocess.CompletedProcess
 def _delegation_environment(
     backend_name: str,
     extra_env: dict[str, str],
+    *,
+    current_directory: str | Path | None = None,
+    forbidden_roots: Sequence[str | Path] = (),
 ) -> dict[str, str]:
-    return _compatibility()._delegation_environment(backend_name, extra_env)
+    return _compatibility()._delegation_environment(
+        backend_name,
+        extra_env,
+        current_directory=current_directory,
+        forbidden_roots=forbidden_roots,
+    )
 
 
 def _sensitive_variants(values: Iterable[str]) -> tuple[str, ...]:
@@ -107,9 +115,26 @@ def _run_backend_process(
     """Run one delegate with an exclusive, owner-private temporary directory."""
 
     with private_temporary_directory(prefix="delegate-process") as temp_path:
-        env = _delegation_environment(backend_name, extra_env)
+        env = _delegation_environment(
+            backend_name,
+            extra_env,
+            current_directory=cwd,
+            forbidden_roots=forbidden_roots,
+        )
         private_temp = str(temp_path)
-        env.update({"TEMP": private_temp, "TMP": private_temp, "TMPDIR": private_temp})
+        private_home = temp_path / "home"
+        private_home.mkdir(mode=0o700)
+        env.update(
+            {
+                "HOME": str(private_home),
+                "USERPROFILE": str(private_home),
+                "TEMP": private_temp,
+                "TMP": private_temp,
+                "TMPDIR": private_temp,
+            }
+        )
+        env.pop("HOMEDRIVE", None)
+        env.pop("HOMEPATH", None)
         return _run_owned_process(
             argv,
             cwd=cwd,

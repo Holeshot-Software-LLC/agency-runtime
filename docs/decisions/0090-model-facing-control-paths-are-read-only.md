@@ -1,6 +1,6 @@
 ---
 title: "Model-facing control paths are read-only"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-26
 updated: 2026-07-26
@@ -18,7 +18,7 @@ supersedes:
   - docs/decisions/0058-broker-restricted-windows-host-controls.md
   - docs/decisions/0059-broker-restricted-windows-agent-controls.md
   - docs/decisions/0061-validate-brokered-control-transition-receipts.md
-superseded_by: null
+superseded_by: docs/decisions/0096-require-operator-presence-for-persistent-controls.md
 id: ADR-0090
 type: decision
 deciders: [maintainers]

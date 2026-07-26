@@ -43,6 +43,7 @@ Status meanings:
 - ADR-0058 Broker restricted Windows host controls through the authenticated dashboard → ADR-0090 Model-facing control paths are read-only
 - ADR-0059 Broker restricted Windows agent controls through narrow dashboard operations → ADR-0090 Model-facing control paths are read-only
 - ADR-0061 Validate brokered control transition receipts against deterministic CAS semantics → ADR-0090 Model-facing control paths are read-only
+- ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls
 
 ## Architecture and integrations
 
@@ -152,10 +153,11 @@ Status meanings:
 | [ADR-0076](0076-bind-isolated-canaries-to-explicit-agency-modes.md) | Bind isolated canaries to explicit Agency modes | Accepted |
 | [ADR-0077](0077-prove-codex-activation-behaviorally.md) | Prove Codex hook activation behaviorally without bypassing trust | Accepted |
 | [ADR-0082](0082-schedule-assurance-by-artifact-lifecycle.md) | Schedule assurance by artifact lifecycle | Accepted |
-| [ADR-0090](0090-model-facing-control-paths-are-read-only.md) | Model-facing control paths are read-only | Accepted |
+| [ADR-0090](0090-model-facing-control-paths-are-read-only.md) | Model-facing control paths are read-only | Superseded |
 | [ADR-0091](0091-least-privilege-subprocess-environments.md) | Build every subprocess environment from least privilege | Accepted |
 | [ADR-0092](0092-do-not-cache-positive-filesystem-trust.md) | Do not cache positive filesystem trust without complete authority identity | Accepted |
 | [ADR-0095](0095-complete-paginated-dashboard-collections.md) | Dashboard collection views expose complete paginated truth | Accepted |
+| [ADR-0096](0096-require-operator-presence-for-persistent-controls.md) | Require genuine operator presence for persistent controls | Accepted |
 
 ## Documentation governance
 

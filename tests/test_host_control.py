@@ -91,7 +91,7 @@ def test_disabled_host_short_circuits_every_adapter_boundary_and_persists(
 
 
 @pytest.mark.parametrize("adapter_cls", HOST_ADAPTERS)
-def test_same_adapter_observes_mcp_off_status_on_at_successive_boundaries(
+def test_same_adapter_observes_human_off_status_on_at_successive_boundaries(
     adapter_cls: type,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -110,17 +110,15 @@ def test_same_adapter_observes_mcp_off_status_on_at_successive_boundaries(
         },
     )
 
-    disabled = handle_tool_call(
-        "agency.host_control",
-        {
-            "host": host,
-            "enabled": False,
-            "expected_generation": 0,
-            "confirm": f"DISABLE {host}",
-        },
-        store=store,
+    from agency_runtime.core.host_control import set_runtime_control
+
+    disabled = set_runtime_control(
+        store,
+        host,
+        enabled=False,
+        source="human-test",
+        expected_generation=0,
     )
-    assert disabled["ok"] is True
     assert disabled["enabled"] is False
     before = _non_control_counts(store)
     adapter.post_tool_call_handler(
@@ -136,17 +134,13 @@ def test_same_adapter_observes_mcp_off_status_on_at_successive_boundaries(
         store=store,
     )
     assert status["runtime_enabled"] is False
-    enabled = handle_tool_call(
-        "agency.host_control",
-        {
-            "host": host,
-            "enabled": True,
-            "expected_generation": 1,
-            "confirm": f"ENABLE {host}",
-        },
-        store=store,
+    enabled = set_runtime_control(
+        store,
+        host,
+        enabled=True,
+        source="human-test",
+        expected_generation=1,
     )
-    assert enabled["ok"] is True
     assert enabled["enabled"] is True
     adapter.post_tool_call_handler(
         tool_name="skill_view",

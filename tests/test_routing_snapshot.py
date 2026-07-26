@@ -296,6 +296,8 @@ def _operation_identity() -> dict[str, Any]:
         "config_path": str((Path.cwd() / "agency.yaml").resolve()),
         "config_revision": "sha256:" + "a" * 64,
         "store_path": str((Path.cwd() / "agency.db").resolve()),
+        "desired_store_path": str((Path.cwd() / "agency.db").resolve()),
+        "store_restart_required": False,
         "roster_revision": "b" * 64,
         "environment_overrides": {},
     }

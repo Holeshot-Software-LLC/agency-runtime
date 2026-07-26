@@ -160,6 +160,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-140` | [Scale routing, retrieval, and CLI startup](issue-AR-140-scale-routing-and-retrieval.md) | open | p1 | performance | pending authorization |
 | `AR-141` | [Restore compatibility and consolidate runtime duplication](issue-AR-141-restore-compatibility-consolidate-runtime.md) | open | p1 | maintenance | pending authorization |
 | `AR-142` | [Instrument runtime boundaries and hiring outcomes](issue-AR-142-instrument-runtime-boundaries.md) | open | p1 | observability | pending authorization |
+| `AR-143` | [Require genuine operator presence for persistent controls](issue-AR-143-require-operator-presence-for-controls.md) | open | p0 | security | pending authorization |
 
 ## Traceability
 
@@ -309,6 +310,7 @@ not stable internal identifiers.
 | [AR-140](issue-AR-140-scale-routing-and-retrieval.md) | `a32e4e6` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | `a32e4e6` | None; compatibility and mechanical consolidation |
 | [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
+| [AR-143](issue-AR-143-require-operator-presence-for-controls.md) | pending | [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

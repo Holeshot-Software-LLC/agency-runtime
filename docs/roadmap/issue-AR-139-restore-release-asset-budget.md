@@ -49,3 +49,11 @@ None.
 - Dashboard behavior, CSP, accessibility, source maps if governed, and exact
   manifest membership remain intact.
 - Release packaging and deterministic artifact tests pass from a clean tree.
+
+## Implementation evidence
+
+Redundant ES-module strict declarations and duplicate lifecycle/null-check
+bytes were removed without minification or a ceiling change. Canonical dashboard
+assets are 263,151 bytes, 17 bytes below the 263,168-byte ceiling. Release
+packaging passes 15 tests and the dashboard interaction suite passes 97 tests.
+Fresh installed rendering and final clean-tree release construction remain.

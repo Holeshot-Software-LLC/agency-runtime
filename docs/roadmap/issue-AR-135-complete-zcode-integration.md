@@ -38,6 +38,14 @@ activation-consumption host constraints and some canonical tool/worker maps.
 Status inspects staged files rather than the active ZCode config-hook
 registration. Failure hooks are incomplete.
 
+Local ZCode 3.5.2 contract inspection confirms direct reversible management of
+`~/.zcode/cli/config.json`, not an invented marketplace CLI. Hooks use
+`hooks.enabled`, `hooks.timeoutMs`, and `hooks.events` with exactly
+SessionStart, UserPromptSubmit, PreToolUse, PermissionRequest, PostToolUse,
+PostToolUseFailure, and Stop. Agent input uses `prompt`; success returns
+`agentId`, while failure exposes no agent identity and must close prepared
+activation without fabricating lineage.
+
 ## Approach
 
 Use one canonical five-host registry across bundle generation, native command

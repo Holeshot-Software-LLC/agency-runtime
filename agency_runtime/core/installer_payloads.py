@@ -416,7 +416,7 @@ def agency_control_skill(host: str) -> str:
     forms = ", ".join(f"`{form}`" for form in RUNTIME_CONTROL_CONVERSATION_FORMS)
     return f"""---
 name: agency
-description: Inspect, enable, or disable Agency Runtime for this host.
+description: Inspect Agency Runtime for this host and route mutations to the operator.
 ---
 
 # Agency Runtime control
@@ -426,19 +426,13 @@ and broad words such as `status`, `ping`, or `heartbeat` are ordinary user
 requests, not runtime controls.
 
 - For status, call `agency.host_status` with `host` set to `{host}`.
-- For on or off, first call `agency.host_status` immediately before the
-  mutation and read its exact `runtime_control_generation`.
-- For on, call `agency.host_control` with `host` set to `{host}`, `enabled`
-  set to `true`, `expected_generation` set to that exact generation, and
-  `confirm` set exactly to `ENABLE {host}`.
-- For off, call `agency.host_control` with `host` set to `{host}`, `enabled`
-  set to `false`, `expected_generation` set to that exact generation, and
-  `confirm` set exactly to `DISABLE {host}`.
+- For on or off, do not call a mutation tool. Model-facing Agency tools are
+  read-only. Tell the operator to use the owner-authenticated dashboard UI or
+  run `agency on --agent {host}` / `agency off --agent {host}` from a normal user shell.
 
-Report the returned soft-control state. Do not claim that native plugin
-registration changed, and do not claim a live canary unless the returned
-evidence explicitly proves one. If the mutation reports a generation conflict,
-report the current state instead of retrying with an unverified value.
+Report only returned soft-control state. Do not claim that native plugin
+registration changed, a mutation occurred, or a live canary passed unless
+owner-side evidence explicitly proves it.
 """
 
 

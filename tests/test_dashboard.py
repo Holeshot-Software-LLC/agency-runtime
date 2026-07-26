@@ -875,6 +875,17 @@ def test_dashboard_broker_token_is_scoped_to_bounded_control_endpoints(
     assert status == 200
     assert payload["master"]["enabled"] is True
 
+    for path in ("/api/agents/toggle", "/api/hosts/toggle", "/api/runtime/toggle"):
+        status, payload, _headers = _json_response(
+            dashboard_server,
+            path,
+            method="POST",
+            body={},
+            token=dashboard_server["broker_token"],
+        )
+        assert status == 401
+        assert payload == {"error": "authentication required"}
+
     status, payload, _headers = _json_response(
         dashboard_server,
         "/api/config",

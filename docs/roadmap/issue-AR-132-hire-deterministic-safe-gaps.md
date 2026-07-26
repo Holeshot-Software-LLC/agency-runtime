@@ -56,3 +56,12 @@ instrumentation.
 - Caps zero, one, two, and daily exhaustion behave distinctly and truthfully.
 - Multiple clean gaps are handled in deterministic order up to the cap.
 - Full-route tests cover inference nomination through durable hiring receipt.
+
+## Implementation evidence
+
+The route now recognizes the canonical safe reason closure, processes multiple
+clean gaps in plan order, re-staffs after each workforce change, enforces task
+and daily limits cumulatively, and records bounded plural hired, declined, and
+not-attempted outcomes while retaining the singular compatibility field.
+Full-route cap-zero/one/two/daily and unsafe-reason regressions pass. A fresh
+installed Route Lab dogfood must still prove the real configured provider path.

@@ -21,6 +21,7 @@ from agency_runtime.core.installer_contracts import (
     CommandRunner,
     NativeCommandResult,
 )
+from agency_runtime.core.process_environment import least_privilege_subprocess_environment
 
 
 def _facade():
@@ -171,18 +172,13 @@ def detect_installed_agents(
 
 
 def _command_environment(host: str, *, home_dir: str | Path | None = None) -> dict[str, str]:
-    env = dict(os.environ)
-    explicit = _explicit_home(home_dir)
-    if explicit is not None:
-        env["HOME"] = str(explicit)
-        env["USERPROFILE"] = str(explicit)
-        env["HERMES_HOME"] = str(explicit / ".hermes")
-        # OpenClaw treats OPENCLAW_HOME as the user-home root and derives its
-        # default state directory as <OPENCLAW_HOME>/.openclaw.
-        env["OPENCLAW_HOME"] = str(explicit)
-        env["CODEX_HOME"] = str(explicit / ".codex")
-        env["CLAUDE_CONFIG_DIR"] = str(explicit / ".claude")
-    return env
+    if host not in HOSTS:
+        raise ValueError(f"unsupported host environment: {host}")
+    return least_privilege_subprocess_environment(
+        host,
+        home_dir=home_dir,
+        current_directory=Path.cwd(),
+    )
 
 
 def prepare_native_argv(

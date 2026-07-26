@@ -52,6 +52,19 @@ _CONTROL_ENDPOINT_METHODS = {
     "/api/runtime": "GET",
     "/api/runtime/toggle": "POST",
 }
+_BROKER_ENDPOINT_METHODS = {
+    # The broker descriptor is delivered to model-facing restricted processes.
+    # It may reach bounded diagnostic/selection operations, including the two
+    # POST-shaped computations below, but it is never mutation authority.
+    "/api/agents/lookup": "GET",
+    "/api/hosts": "GET",
+    "/api/inference": "GET",
+    "/api/policy": "GET",
+    "/api/roster": "GET",
+    "/api/route": "POST",
+    "/api/search": "POST",
+    "/api/runtime": "GET",
+}
 _QUERY_CONTROL_ENDPOINTS = {"/api/agents/lookup", "/api/roster"}
 _LOCK_TIMEOUT_SECONDS = 5.0
 _MAX_LOCK_TIMEOUT_SECONDS = 300.0
@@ -575,13 +588,14 @@ def _dashboard_control_target(path: str) -> tuple[str, str]:
 
 
 def dashboard_broker_request_allowed(path: str, method: str) -> bool:
-    """Return whether a host-scoped broker token may call this exact operation."""
+    """Return whether a model-facing broker token may call this read operation."""
 
     try:
-        _endpoint, expected_method = _dashboard_control_target(path)
+        endpoint, _expected_method = _dashboard_control_target(path)
     except ValueError:
         return False
-    return str(method or "").strip().upper() == expected_method
+    broker_method = _BROKER_ENDPOINT_METHODS.get(endpoint)
+    return broker_method is not None and str(method or "").strip().upper() == broker_method
 
 
 def _dashboard_request_descriptor(
