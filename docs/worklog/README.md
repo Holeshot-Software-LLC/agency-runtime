@@ -209,6 +209,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6a3bdaa` | 2026-07-26 | fix(dashboard): seal traced response contracts | [AR-149 through AR-155](../roadmap/README.md) | [detail](2026-07-26-6a3bdaa-traced-dashboard-response-contracts.md) |
 | `babc45a` | 2026-07-26 | docs(roadmap): govern cost-bounded verification | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-babc45a-cost-bounded-verification-governance.md) |
 | `92adf2f` | 2026-07-26 | perf(dashboard): restore durable asset headroom | [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | null |
+| `8236a16` | 2026-07-26 | perf(workforce): batch packaged contractor lookup | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
