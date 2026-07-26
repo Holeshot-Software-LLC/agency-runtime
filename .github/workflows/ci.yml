@@ -148,7 +148,7 @@ jobs:
           pattern: coverage-shard-*
           path: ${{ runner.temp }}/coverage-shards
           merge-multiple: true
-      - name: Require combined 100% line and branch coverage
+      - name: Require combined 97% line and branch coverage
         run: |
           python -m coverage combine "${RUNNER_TEMP}/coverage-shards"
           python -m coverage report --fail-under=97

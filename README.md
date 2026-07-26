@@ -331,17 +331,24 @@ cd agency-runtime
 python -m pip install .
 
 agency --version
-agency configure --non-interactive --profile standard
 agency install --all --dry-run
-agency install --all
-agency smoke --all --json
 agency doctor
 ```
 
-The installer discovers supported hosts and registers only the ones it can
-identify. It does not restart a host automatically.
+This unreleased source currently keeps every persistent setup and control
+mutation fail-closed because its production OS-backed operator-presence verifier
+has not been implemented. Dry runs, status, diagnostics, routing, and the
+read-only dashboard remain available; positive `configure`, `install`, service,
+host, agent, and retention mutations return a controlled unavailable result.
+Do not substitute a static confirmation, bearer token, environment variable, or
+model-callable credential for genuine operator presence. See
+[AR-143](docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md).
 
-**Codex** requires you to approve command hooks: Agency installs the plugin,
+After that release blocker is implemented, the installer will discover
+supported hosts and register only the ones it can identify. It does not restart
+a host automatically.
+
+**Codex** will also require you to approve command hooks: Agency installs the plugin,
 reports `activation_required`, and gives the exact next step. Run `codex`,
 choose **Trust all and continue** at the startup hook review (or `/hooks` inside
 the terminal UI and trust the Agency events), then:
@@ -350,16 +357,16 @@ the terminal UI and trust the Agency events), then:
 agency install --agent codex --verify-activation
 ```
 
-Install or roll back one host (ZCode included):
+The intended post-gate install and rollback commands include ZCode:
 
 ```bash
 agency install --agent zcode
 agency install --agent codex --rollback
 ```
 
-The dashboard installs by default as a per-user service (no admin access). To
-install only the runtime and hosts: `agency install --all --no-dashboard`.
-Managed files and backups live under `~/.agency-runtime/`.
+When positive installation is enabled, the dashboard installs by default as a
+per-user service (no admin access). `agency install --all --no-dashboard` omits
+it. Managed files and backups live under `~/.agency-runtime/`.
 
 ---
 
@@ -378,25 +385,29 @@ agency explain "review this authentication design" --session-id demo
 agency eval routing --json --no-details
 ```
 
-Enable/disable Agency per host or globally (plugins/config/history stay):
+Inspect the persistent host and global states without changing them:
 
 ```bash
-agency off --agent codex && agency on --agent codex
-agency off --global && agency on --global
+agency status --agent codex
+agency status
+agency off --agent codex --dry-run --json
 ```
 
-Every specialist is enabled by default; disable any optional one without deleting
-it (`agency agents disable code-reviewer`). `agents-orchestrator` and
-`chief-of-staff` are the protected coordination pair and cannot be disabled.
+The data contracts retain reversible host, global, and per-agent controls, but
+positive CLI mutations remain unavailable until AR-143 has a production
+operator-presence backend. The dashboard and every model-facing surface are
+read-only. `agents-orchestrator` and `chief-of-staff` remain the protected
+coordination pair.
 
 ---
 
 ## 📊 Operations dashboard
 
 The optional local dashboard shows live routing, delegation, provider health,
-model receipts, host status, roster changes, and recent turns, plus the full
-contractor lifecycle (hire / amend / promote / disable). It is local-only and
-bounded; see [docs/decisions/0029-…](docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md).
+model receipts, host status, roster and workforce evidence, and recent turns.
+It is a local-only, bounded, read-only observability surface; every former
+mutation endpoint rejects both owner and broker bearers. See
+[ADR-0096](docs/decisions/0096-require-operator-presence-for-persistent-controls.md).
 
 ---
 

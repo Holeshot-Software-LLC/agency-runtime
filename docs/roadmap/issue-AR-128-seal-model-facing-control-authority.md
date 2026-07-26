@@ -1,6 +1,6 @@
 ---
 title: "AR-128: Seal model-facing control authority"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-07-26
@@ -35,19 +35,18 @@ therefore acts as mutation authority rather than read authority.
 
 ## Current state
 
-The loopback, origin, token, CAS, and response-validation controls prevent an
-unrelated remote caller and stale writes. They do not distinguish a human
-gesture from a compromised model, tool result, hook, or MCP client that already
-holds the broker capability. The agent-control client also validates the active
-Store path without proving desired Store identity and restart state.
+The original broker and Store-identity defects are repaired. MCP, generated
+host, restricted CLI, and dashboard surfaces expose only bounded reads and
+computations; every former dashboard mutation rejects without dispatch. The
+separate absence of a positive OS-backed operator path is owned by AR-143.
 
 ## Approach
 
-Make every broker capability issued to model-facing processes read-only. Keep
-mutations on the owner-authenticated dashboard UI or an explicitly invoked
-normal-user CLI boundary. Remove model-callable host mutation tools, preserve
-read-only status tools, centralize exact active/desired/restart Store identity
-validation, and retain CAS at the human mutation boundary.
+Make every broker capability issued to model-facing processes read-only. Remove
+model-callable mutation tools and dashboard mutation clients, preserve read-only
+status tools, and centralize exact active/desired/restart Store identity
+validation. Leave any future positive CLI mutation behind AR-143's independent
+OS-backed operator-presence boundary.
 
 ## Dependencies
 
@@ -58,18 +57,17 @@ mutation decisions while retaining their useful read-only brokerage controls.
 
 - Model-facing broker tokens cannot reach any mutating route.
 - MCP exposes no host, agent, or runtime mutation tool.
-- Human dashboard and normal-user CLI mutations remain generation checked.
+- No dashboard bearer can mutate; future positive CLI mutations remain
+  generation checked behind genuine operator presence.
 - Every Store-backed broker response proves active path, desired path, and
   `store_restart_required=false`.
 - Adversarial protocol tests cover every formerly reachable mutation.
 
 ## Implementation evidence
 
-The MCP registry, generated skill, restricted broker, and restricted CLI
-fallbacks are now read-only. MCP bounds derive from canonical host and Store
-identifier constants, Store-backed broker responses prove active/desired/restart
-identity, and focused plus combined protocol tests pass.
-
-AR-128 remains open because the owner dashboard is model-callable through the
-in-app Browser. AR-143 and ADR-0096 own the newly reproduced user-presence gap;
-the existing modal and bearer cannot be counted as proof of operator intent.
+The MCP registry, generated skill, restricted broker, restricted CLI fallbacks,
+and owner dashboard are now read-only. MCP bounds derive from canonical host and
+Store identifier constants, Store-backed broker responses prove
+active/desired/restart identity, and focused plus combined protocol tests pass.
+AR-128 is locally complete; AR-143 separately owns the deliberately unavailable
+positive operator-presence path.

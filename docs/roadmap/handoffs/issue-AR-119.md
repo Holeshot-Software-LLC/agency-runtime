@@ -92,7 +92,7 @@ the deterministic typed-recall floor only when inference is not configured.
   evaluating broker scope, and records expected disconnect degradation.
 - Deprecated route/header compatibility wrappers and canonical identity,
   bounded-value, filesystem-trust, and executable helpers are restored. A
-  proven-dead inference island removes 591 production lines; its owning public
+  proven-dead inference island removes 590 production lines and adds one replacement line; its owning public
   plan/shortlist suite passes 52 tests with 1 skip and 1 expected failure.
 - Schema currentness now rejects weakened activation-ledger constraints,
   same-name workforce authority triggers, and quoted-literal drift. Malformed

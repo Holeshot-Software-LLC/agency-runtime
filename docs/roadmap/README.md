@@ -145,7 +145,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-125` | [Prove workforce selection and one-shot application outcomes](issue-AR-125-workforce-and-one-shot-evaluation.md) | open | p0 | testing | [#138](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138) |
 | `AR-126` | [Keep context checkpoints in the current task](issue-AR-126-bounded-idempotent-context-handoffs.md) | done | p0 | documentation | [#139](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/139) |
 | `AR-127` | [Make ZCode Stop rejections actually block](issue-AR-127-zcode-stop-rejection-shape.md) | done | p0 | host-integrations | [#151](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/151) |
-| `AR-128` | [Seal model-facing control authority](issue-AR-128-seal-model-facing-control-authority.md) | open | p0 | security | pending authorization |
+| `AR-128` | [Seal model-facing control authority](issue-AR-128-seal-model-facing-control-authority.md) | done | p0 | security | pending authorization |
 | `AR-129` | [Isolate subprocess environments](issue-AR-129-isolate-subprocess-environments.md) | open | p0 | security | pending authorization |
 | `AR-130` | [Revalidate Store trust at authoritative boundaries](issue-AR-130-revalidate-store-trust.md) | open | p0 | security | pending authorization |
 | `AR-131` | [Complete MCP and CLI host contracts](issue-AR-131-complete-mcp-cli-host-contracts.md) | open | p0 | host-integrations | pending authorization |

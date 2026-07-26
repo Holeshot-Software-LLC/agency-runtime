@@ -125,19 +125,19 @@ normal-profile readiness.
 
 ## `agency off` did not unregister the plugin
 
-That is expected unless `--native` was requested. The default command is an
-immediate persistent soft control:
+The persistent soft-control contract remains reversible, but this unreleased
+source requires OS-backed operator presence before any positive mutation:
 
 ```bash
 agency status --agent <host>
-agency off --agent <host>
-agency on --agent <host>
+agency off --agent <host> --dry-run --json
 ```
 
-It is checked at every adapter boundary and preserves native registration so
-the CLI, dashboard, or host control surface can turn the runtime back on.
-`status` reports native enablement, runtime soft control, and effective state
-separately; `unverified` is not the same as disabled.
+The committed state is checked at every adapter boundary and preserves native
+registration. `status` reports native enablement, runtime soft control, and
+effective state separately; `unverified` is not the same as disabled. Positive
+CLI mutations currently return an operator-presence-unavailable result, and the
+dashboard is intentionally read-only.
 
 Use `agency off --agent <host> --native` only when you intend to change the
 host's plugin registry. Native control requires an inventory postcondition and
@@ -146,18 +146,17 @@ pretending success.
 
 ## A host toggle reports a generation conflict
 
-Host soft controls use optimistic concurrency across the operator CLI and
-owner dashboard. Status includes `runtime_control_generation`, and a
-mutation succeeds only when that generation is still current. A stale request
-is not retried automatically because doing so would overwrite a newer operator
-choice.
+The dormant host soft-control contract uses optimistic concurrency. Status
+includes `runtime_control_generation`, and any future positive mutation may
+succeed only when that generation is still current. A stale request must never
+be retried automatically because doing so would overwrite a newer choice.
 
-Refresh `agency status --agent <host>`, review the new state, then retry
-deliberately from a normal operator shell. Dashboard requests currently return
-HTTP 409, but dashboard mutation remains blocked from production by AR-143's
-user-presence requirement. MCP exposes read-only `agency.host_status` and no
-control tool. Idempotent requests do not advance the generation; a real
-transition advances it exactly once.
+Refresh `agency status --agent <host>` and review the new state. Dashboard
+mutation endpoints reject without dispatch, MCP exposes read-only
+`agency.host_status`, and the CLI fails closed until AR-143 supplies a production
+presence verifier. The generation rules remain covered as a dormant Store
+contract: idempotent requests do not advance it and a real transition advances
+it exactly once.
 
 ## The Agency-wide switch did not change the current conversation
 
@@ -180,10 +179,11 @@ The canonical state is `~/.agency-runtime/run/control.json`. Do not edit, move,
 or delete it: missing, malformed, or unverifiable state intentionally fails
 enabled. On a restricted Windows host, a direct write may be unavailable even
 though the runtime can prove a canonical read-only state. The broker is
-intentionally read-only; run the command from a normal operator shell:
+intentionally read-only. A normal operator shell still cannot bypass the
+missing production presence verifier; use a dry run only:
 
 ```bash
-agency off --global
+agency off --global --dry-run --json
 ```
 
 The same least-privilege broker supports `agency status` and host-scoped
@@ -201,8 +201,7 @@ agency off --agent codex --dry-run --json
 ```
 
 `--global` is a distinct scope and cannot be combined with `--agent` or
-`--native`. A stale generation means another CLI or dashboard changed the
-switch first; inspect `agency status` and retry deliberately.
+`--native`. No current dashboard path can change the switch.
 
 ## Restricted Windows CLI cannot open the Store
 

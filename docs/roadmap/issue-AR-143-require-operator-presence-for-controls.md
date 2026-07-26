@@ -34,11 +34,12 @@ uniform caller-attestation boundary.
 
 ## Current state
 
-AR-128 makes MCP and the restricted dashboard broker read-only, which removes
-their direct confused-deputy authority. The owner dashboard still authorizes
-configuration, trimming, roster, host, agent, master-control, workforce, and
-hiring mutations. Browser automation can read the displayed confirmation,
-submit it with the already-loaded owner token, and persist the change.
+The original owner-dashboard vulnerability is now fail-closed: the shipped
+browser has no mutation client and every former endpoint rejects both owner and
+broker bearers without dispatch. One CLI pre-dispatch guard covers every
+persistent mutation family, but its production OS verifier deliberately returns
+unavailable. The product therefore has safe read-only operation and no positive
+persistent setup/control path yet.
 
 ## Approach
 

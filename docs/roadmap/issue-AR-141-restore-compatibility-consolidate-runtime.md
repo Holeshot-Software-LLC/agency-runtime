@@ -70,7 +70,7 @@ completed.
 A repository-wide static reachability audit then proved that seven named
 private inference helpers and their private-only dependency chain had no
 production, export, dynamic-dispatch, or string-entrypoint path. The bounded
-removal deletes 591 production lines and ports the remaining shortlist fixtures
+removal deletes 590 production lines while adding one replacement line and ports the remaining shortlist fixtures
 to canonical public plan documents. Its owning suite passes 52 tests with one
 skip and one expected failure; Ruff and diff checks pass. This satisfies the
 dead-code-removal acceptance slice. The issue remains open for the separately

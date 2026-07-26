@@ -54,8 +54,9 @@ product contract:
 
 - The operations dashboard binds only to loopback. It is not designed for
   remote exposure, reverse proxying, shared workstations, or multi-user access.
-- The dashboard token is temporary bearer authority. Anyone who obtains the
-  active URL or token can invoke the dashboard API as that local user.
+- The dashboard token is temporary bearer authority for authenticated reads and
+  bounded computations. It is not proof of human presence; every dashboard
+  mutation rejects both owner and broker bearers without dispatch.
 - Service mode rotates that token on every worker start and keeps it in an
   owner-restricted runtime descriptor. Service definitions, process arguments,
   logs, and status results must never contain it. A stale descriptor is not
@@ -69,9 +70,11 @@ product contract:
   to rewrite the mode or ACL of a pre-existing parent directory. Target files
   and SQLite sidecars remain owner-only, Windows DACL failure is fatal, and
   database symlink or reparse-point targets are rejected before open.
-- Dashboard and CLI configuration mutations share one allowlisted, typed,
-  revision-checked, owner-only atomic writer. Direct credentials are write-only;
-  prefer environment-variable references and hidden CLI input.
+- Persistent CLI mutations pass one allowlisted, typed, revision-checked
+  pre-dispatch operator-presence guard. This unreleased source has no production
+  OS-backed verifier, so positive mutations intentionally fail closed. Direct
+  credentials remain write-only; prefer environment-variable references and
+  hidden CLI input when configuration is enabled.
 - Credentialed remote providers require HTTPS. Literal loopback HTTP is the
   only exception; URLs with embedded user information, queries, or fragments
   are rejected, and authenticated requests never follow redirects.

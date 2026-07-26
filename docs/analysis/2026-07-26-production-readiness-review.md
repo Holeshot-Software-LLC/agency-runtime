@@ -37,14 +37,16 @@ superseded_by: null
 
 ## Executive verdict
 
-Agency Runtime is **not production-ready yet**. The architecture contains many
-strong controls and the installed dashboard is visually polished, but fresh
-dogfooding and independent layer traces reproduced ten P0/high-integrity
-defects. The most consequential are model-accessible persistent mutation,
-ambient credential inheritance, stale Store trust, broken MCP tools, a
-contractor path that cannot hire its canonical gap, incomplete ZCode support,
-process-local native-child correlation, and planned delegation that fails open
-before side effects.
+Agency Runtime is **not production-ready yet**, but the reason is now narrow and
+explicit. The initial dogfood and independent layer traces reproduced ten
+P0/high-integrity defects; every one has a local fail-closed repair and focused
+evidence. A final independent pass then found six UI-to-Store defects under
+AR-149 through AR-154; their implementation is in the final validation cycle.
+The decisive remaining product blocker is AR-143: there is no production
+OS-backed, non-exporting operator-presence verifier, so positive persistent
+setup and control mutations intentionally remain unavailable. Hosted, tracker,
+normal-profile trust, and benchmark-valid outcome evidence are separate open
+release gates.
 
 This is not a conclusion drawn from the earlier untracked
 `2026-07-25-deep-audit-findings.md` draft. That draft remains preserved as a
@@ -93,37 +95,38 @@ No Critical finding was confirmed.
 
 ### High
 
-| ID | Finding | Reproduced impact | Owner |
+| ID | Initial finding and reproduced impact | Current status | Owner |
 |---|---|---|---|
-| SEC-H1 | Model-facing MCP and restricted broker paths can perform persistent host/agent/runtime mutations using public static confirmation text. | A caller holding the model-facing capability can read generation and construct the published phrase; CAS prevents staleness, not confused-deputy authority. | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) |
-| SEC-H2 | Installer host commands inherit the complete parent environment. | A sentinel unrelated credential reached the third-party CLI environment. | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) |
-| SEC-H3 | Positive Store path trust survives a permission-authority change. | Same inode/mtime returned trusted before and after authority loss; the authoritative checker ran only once. | [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md) |
-| SEC-H4 | Agency-planned native children fail open when Store/correlation evidence is unavailable. | Valid planned-shaped labels for Claude, Codex, and ZCode returned pass-through, permitting side effects before terminal evidence rejection. | [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md) |
-| SEC-H5 | The model-callable in-app Browser can use the owner dashboard bearer and automate every persistent mutation modal. | Static phrases and CAS prove shape/freshness, not human presence; global, host, agent, config, roster, workforce, hiring, and trimming operations remain reachable. | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) |
-| SEC-H6 | A flat Windows SDDL regex can omit an outer conditional access-granting ACE. | Windows accepted and round-tripped a foreign full-control callback ACE containing nested text; directory and executable classifiers returned trusted before the complete-parser repair. | [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md) |
+| SEC-H1 | Model-facing MCP and restricted broker paths could mutate with public confirmation text; CAS proved freshness, not authority. | **Repaired:** MCP, broker, generated-host, and dashboard paths are read-only and former endpoints reject before dispatch. | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) |
+| SEC-H2 | Installer host commands inherited the complete parent environment; an unrelated sentinel credential reached a third-party CLI. | **Repaired:** delegated and installer launches use bounded allowlisted environments. | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) |
+| SEC-H3 | Positive Store path trust survived a same-identity permission-authority change. | **Repaired:** authoritative boundaries revalidate trust; no positive authority cache remains. | [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md) |
+| SEC-H4 | Planned native children passed through when Store/correlation evidence was unavailable. | **Repaired:** durable expiring one-use scopes fail planned work closed before side effects. | [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md) |
+| SEC-H5 | Browser automation could use the owner bearer and static modal text for persistent mutation. | **Mitigated/fail-closed:** dashboard mutation is removed and CLI mutation rejects; production remains blocked until a real OS-presence backend exists. | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) |
+| SEC-H6 | A flat Windows SDDL regex omitted an outer conditional access-granting ACE and misclassified trust. | **Repaired:** balanced quote-aware parsing consumes the complete DACL and rejects malformed/unknown shapes. | [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md) |
 
 ### Medium
 
-| ID | Finding | Owner |
-|---|---|---|
-| SEC-M1 | Delegated child PATH can retain dot, relative, repository, or unsafe caller entries even though the launcher itself is frozen. | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) |
-| SEC-M2 | Restricted agent brokerage does not independently prove desired Store path or restart-required state. | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) |
-| SEC-M3 | One finalization request can partially commit evidence before a later conflict and accepts some coercible identity fields. | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md) |
-| SEC-M4 | Activation-consumption currentness accepted a table missing primary, unique, foreign-key, non-null, and value constraints. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
-| SEC-M5 | Workforce append-only and hiring-authority currentness accepted same-name no-op triggers. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
-| SEC-M6 | Schema normalization case-folded quoted literals and could hide semantic trigger drift. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
+| ID | Initial finding | Current status | Owner |
+|---|---|---|---|
+| SEC-M1 | Delegated child PATH retained unsafe caller entries. | **Repaired:** PATH and environment are reconstructed from the bounded launch contract. | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) |
+| SEC-M2 | Restricted brokerage did not prove desired Store path/restart state. | **Repaired:** every Store response binds active, desired, and restart truth. | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) |
+| SEC-M3 | Finalization could partially commit and coerce identity fields. | **Repaired:** one prevalidated bounded transaction commits all-or-nothing with strict identities. | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md) |
+| SEC-M4 | Activation-consumption currentness accepted weakened constraints. | **Repaired:** exact normalized DDL covers security-critical table constraints. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
+| SEC-M5 | Workforce/hiring currentness accepted same-name no-op triggers. | **Repaired:** exact authority objects and triggers are compared. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
+| SEC-M6 | Schema normalization case-folded quoted literals. | **Repaired:** quoted literal bytes retain semantic case. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
 
 ### Low
 
-| ID | Finding | Owner |
-|---|---|---|
-| SEC-L1 | Legacy boolean columns lack explicit zero/one constraints. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
-| SEC-L2 | Some REST fields fail as generic server errors instead of bounded typed client errors. | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md) |
-| SEC-L3 | MCP status exposes an unnecessary absolute database path. | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) |
-| SEC-L4 | A 64-character non-ASCII remediation HMAC raises instead of returning invalid authority. | [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) |
+| ID | Initial finding | Current status | Owner |
+|---|---|---|---|
+| SEC-L1 | Legacy boolean columns lacked explicit zero/one constraints. | **Repaired** by exact schema currentness. | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) |
+| SEC-L2 | Some REST fields surfaced generic server errors. | **Repaired** with strict bounded request typing. | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md) |
+| SEC-L3 | MCP status exposed an unnecessary absolute database path. | **Repaired** by the bounded public projection. | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) |
+| SEC-L4 | Non-ASCII remediation HMAC text raised instead of returning invalid authority. | **Repaired:** malformed text fails closed without exception. | [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) |
 
-The dependency vulnerability scan could not be completed within the restricted
-network/policy boundary. No claim of dependency-CVE cleanliness is made.
+The final local dependency audit completed against the declared runtime
+dependency set and reported no known vulnerabilities. This is point-in-time
+local evidence, not a substitute for hosted dependency review.
 
 ### Remediation checkpoint
 
@@ -229,7 +232,7 @@ delta 0.0 and the selected-result hash is unchanged.
 - A repository-wide static reachability audit proved seven private inference
   helpers and their closed dependency chain unreachable from production,
   exports, dynamic dispatch, and string entrypoints. Removing that island
-  deletes 591 production lines; the ported public-plan suite passes 52 tests
+  deletes 590 production lines while adding one replacement line; the ported public-plan suite passes 52 tests
   with one skip and one expected failure.
 - Route, preflight, hook, and schema functions remain large enough to conceal
   authority and transaction boundaries.
@@ -242,33 +245,32 @@ owns compatibility and consolidation.
 
 ## Traceability review
 
-| Layer | Verified chain | Confirmed defects |
+| Layer | Verified chain | Finding disposition |
 |---|---|---|
-| Browser controls -> JS | 134 controls resolved to handlers; section links work; no DOM-XSS primitive found; mobile layout has no overflow | ZCode missing from hard-coded Route Lab hosts; older reads can win; stale refreshes are silent; polling loses focus/open state; one accessible-name gap |
-| JS -> dashboard HTTP | Shared authenticated JSON envelope, same-origin and response bounds are present | Workforce asks for 1,000 but server silently caps 200; filtered totals can be false; parallel responses can compose revisions |
-| HTTP -> services | Route table and core destinations map correctly; mutation CAS and locked Store rechecks are strong | REST typing is inconsistent; no uniform safe request ID/latency/outcome; finalization batch is not atomic |
-| MCP/CLI -> services | All twelve tool names have handlers; CLI parser/facade binding tests pass | Three valid tools are unreachable due missing `maxLength`; delegate bounds drift; host enum omits ZCode; finalize accepts spoofable host/requested-model labels; output contracts are untyped |
-| Host install/hooks -> routing | Codex/Claude/other contract paths exist and focused tests pass | ZCode installs Claude files and cannot register; ZCode activation/lineage is broken; parent correlation is process-local; planned work fails open; failure hooks/observations are incomplete |
-| Services -> Store | 118 public Store methods and 221 production calls showed no signature/arity mismatch | Trust cache stale; finalization partial commits; hiring outcome not projected |
-| Store -> SQL/schema | Parameterized SQL and internal-only identifier interpolation were confirmed; integrity passed | ZCode excluded by host CHECK; currentness ignores a critical trigger/index; guarded-delete declaration is false; boolean checks incomplete |
-| Return path -> UI/header | Durable model receipt wins and missing receipt renders unavailable rather than fabricated | Caller may spoof non-authoritative requested host/model label; collection truncation and stale UI can misrepresent state |
+| Browser controls -> JS | Every shipped control resolves to a handler; section links, inert text, focus, mobile, reduced-motion, and forced-colors contracts are covered. | Initial ZCode/race/stale/focus/name defects were repaired under AR-135/138. Final cross-scope commit, ambiguous-host, listener-retention, and malformed-page defects are repaired under AR-150/151/152/154 and await the final aggregate rerun. |
+| JS -> dashboard HTTP | One authenticated same-origin bounded envelope, complete paging, exact totals, revisions, and read-only authority are explicit. | Initial caps/revision composition were repaired under AR-137/146. Route Lab now rejects duplicate/oversized inventories before POST under AR-151. |
+| HTTP -> services | Route destinations, strict request typing, atomic finalization, and content-free boundary envelopes map correctly. | AR-149 fixes per-connection request-ID reuse and pre-dispatch error correlation; final integrated evidence is pending. |
+| MCP/CLI -> services | Every registered tool has a bounded schema and handler; CLI facade/host bindings include ZCode and model-facing mutations are absent. | Initial unreachable-tool, bound, enum, spoofable-label, and output defects were repaired under AR-131/133/135. |
+| Host install/hooks -> routing | All five source adapters have exact generators, events, correlation recipes, and deterministic contract tests. | Initial ZCode, process-local correlation, planned-work pass-through, and missing failure observation defects were repaired under AR-135/136/142; installed-host proof remains blocked/gated. |
+| Services -> Store | Public method/call-site arity remains clean; trust, finalization, hiring, and request observations bind authoritative state. | AR-153 fixes worker-detail filtering after limit and unbounded lineage; arrays now carry exact total/truncation metadata. |
+| Store -> SQL/schema | SQL remains parameterized with internal-only identifier interpolation; exact DDL covers host, trigger, index, boolean, and HMAC authority. | Initial schema/currentness defects were repaired under AR-134/148; no injection path was reproduced. |
+| Return path -> UI/header | Authoritative durable evidence wins; unavailable remains explicit; collection/page and worker-detail truth are bounded. | Initial spoofing/truncation/stale defects were repaired; AR-150/153/154 close the final overwrite/count/page gaps. |
 
 ### ZCode concentration
 
-ZCode is not a production-supported surface in the current build despite public
-CLI/README claims. Its dedicated generator is unreachable, registration omits
-it, native commands fall through to Claude, smoke fixtures miss it, activation
-schema rejects it, post-tool parsing reads the wrong field, tool identity uses
-Codex defaults, and active config registration is not inspected. AR-135 treats
-this as one end-to-end parity correction rather than isolated patches.
+The initial build did not support ZCode despite public CLI/README claims: its
+generator was unreachable, registration omitted it, commands fell through to
+Claude, fixtures missed it, schema rejected it, and parsing/identity were wrong.
+AR-135 repairs the complete seven-event source chain and its integrated tests.
+ZCode remains contract-tested, not installed or live-canary verified.
 
 ### Instrumentation
 
-Core trace/session/work-unit evidence is strong after persistence. The missing
-piece is live boundary correlation: browser, HTTP, MCP, hook, and Store events
-need one content-free request ID, bounded reason, outcome, duration, and exact
-generation where relevant. Prompt content, tokens, credentials, SQL values, and
-private paths must never be logged. AR-142 owns this work.
+Core trace/session/work-unit evidence and browser/HTTP/MCP/hook/Store boundary
+envelopes now carry one content-free request ID, bounded reason, outcome,
+duration, and exact generation where relevant. AR-149 closes the final
+HTTP/1.1 keep-alive and pre-dispatch error gap. Prompt content, tokens,
+credentials, SQL values, and private paths remain excluded.
 
 ## UI verdict
 
@@ -314,35 +316,20 @@ These remain residual-review notes, not invented findings:
 
 ## Execution queue
 
-This table is the subagent-ready task artifact. A worker takes one AR item,
-reads its issue and linked ADRs, adds focused regression tests first, implements
-only that scope, runs proportionate checks, and returns exact evidence without
-editing another worker's files.
+This remains the subagent-ready task artifact. Workers take one open proof below,
+read the linked issue/ADRs, preserve failed evidence, and return exact local,
+installed, or hosted scope without promoting contract tests to live proof.
 
-| Wave | Task | Primary surface | Completion proof |
-|---|---|---|---|
-| 1 | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) | MCP/broker/control authority | Model token cannot mutate; human UI/CLI still can |
-| 1 | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) | Installer/delegation env | Sentinel credential and unsafe PATH probes denied |
-| 1 | [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md) | Store filesystem trust | Same-identity permission transition fails closed |
-| 1 | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | MCP schemas/CLI parity | Real protocol success and global schema meta-test |
-| 1 | [AR-132](../roadmap/issue-AR-132-hire-deterministic-safe-gaps.md) | Workforce route/hiring | Full safe-gap route hires/restaffs with durable receipt |
-| 1 | [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | Release assets | Existing strict budget passes without limit change |
-| 2 | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md) | HTTP/MCP/Store | One all-or-nothing bounded transaction |
-| 2 | [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md) | SQLite migration/currentness | Fresh/upgraded/tampered schema tests |
-| 2 | [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md) | ZCode install/hooks/status | Fresh install through activation/lineage smoke |
-| 2 | [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md) | Hook subprocesses | Two-process correlation and outage denial |
-| 2 | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | Dashboard/CLI control authority | Model-callable surfaces cannot mutate |
-| 3 | [AR-137](../roadmap/issue-AR-137-complete-dashboard-collections.md) | Dashboard collections | 263/1,001 row exact paging/count tests |
-| 3 | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | Dashboard async/a11y | Race, stale, focus, mobile, accessibility tests |
-| 3 | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md) | Cross-layer telemetry | One redacted request trace across every boundary |
-| 3 | [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md) | Dashboard release tests | Exact fixed coverage floors pass with behavioral callbacks |
-| 3 | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md) | Python release coverage | Exact fixed 97 percent gate and separate performance arm pass |
-| 3 | [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md) | Dashboard cursor chain | Generated cursor round-trips through handler and Store |
-| 3 | [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md) | Windows ACL trust | Native nested conditional grants fail every trust classifier closed |
-| 3 | [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Remediation HMAC input | Malformed signatures return invalid authority without an exception |
-| 4 | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Routing/retrieval/startup | Correctness-preserving size-tiered performance gates |
-| 4 | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility/refactor | Deprecation and canonical-helper contract tests |
-| 5 | [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | Product/host evaluation | Benchmark-valid complete corpus and installed apps |
+| State | Tasks | Remaining proof |
+|---|---|---|
+| Locally repaired | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) through [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md), excluding AR-143 | Final current-commit aggregate/artifact checks; install-dependent issues remain blocked from positive canary proof. |
+| Locally measured | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Local correctness/performance is green; packaged-contractor reconciliation and supported-runner evidence remain. |
+| Partially complete | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility and a dead island with 590 deletions/one replacement line are repaired; independently reviewed large-function/helper consolidation remains. |
+| Locally repaired | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md), [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md), [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Final current-commit aggregate and artifact checks. |
+| Final validation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md) through [AR-154](../roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md) | Exact Python coverage/performance/full-suite rerun plus focused cross-layer and browser/artifact QA. |
+| Product blocker | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | Implement and human-canary a real OS-backed, non-exporting, single-use presence verifier. |
+| Outcome evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | Benchmark-valid completed corpus and current-artifact host/OS outcomes; malformed/timed-out arms stay invalid. |
+| Administrative/host | AR-128 through AR-154 tracker rows, normal-profile Codex trust, hosted matrices, absent-host canaries | Explicit user/outward authorization and real installed environments. |
 
 ## Production exit gate
 

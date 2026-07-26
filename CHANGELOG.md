@@ -71,8 +71,8 @@ changes rather than duplicating every commit.
   both the CLI and dashboard. Account model discovery reports supported levels,
   and the isolated inference process receives the selected override without
   inheriting unrelated host configuration.
-- A durable Agency-wide master switch shared by `agency on|off --global` and
-  the authenticated dashboard. Host adapters and protocol surfaces consult it
+- A durable Agency-wide master-switch contract projected by the authenticated
+  read-only dashboard. Host adapters and protocol surfaces consult it
   before Store creation, correlation, routing, prompt activation, delegation,
   model evidence, or finalization, enabling clean fresh-session A/B testing
   without unregistering integrations or erasing history.
@@ -80,8 +80,8 @@ changes rather than duplicating every commit.
   `chief-of-staff`, with explicit manager authority and an explainable no-match
   or justified-abstention fallback that does not append their complete upstream
   prompts on every turn.
-- Reversible config-backed per-agent availability controls in the CLI and
-  authenticated dashboard, with preserved roster history and protected default
+- Reversible config-backed per-agent availability contracts, with preserved
+  roster history and protected default
   coordinators. Bounded exact-slug lookup keeps every governed agent reachable
   beyond the first dashboard page without raising response or DOM limits.
 - Durable configuration identity shared by CLI and dashboard across reboots,
@@ -93,14 +93,13 @@ changes rather than duplicating every commit.
   and OpenClaw, with explicit discovery-to-canary maturity.
 - A dependency-light MCP stdio server and native Codex/Claude hook bridges.
 - An optional, idempotent LiteLLM SDK callback and proxy callback object.
-- A loopback-only authenticated operations dashboard with route inspection,
-  evidence views, roster controls, host controls, and retention maintenance.
+- A loopback-only authenticated read-only operations dashboard with route
+  inspection, evidence views, roster projections, and host status.
 - Optional current-user dashboard services for Windows Task Scheduler and Linux
   `systemd --user`, installed by default with a mutation-free
   `agency install --no-dashboard` opt-out and explicit lifecycle commands.
-- Structured dashboard configuration backed by the same typed, locked, atomic
-  writer as CLI configuration, including ordered providers and write-only
-  secrets.
+- Structured redacted dashboard configuration projections over the same typed
+  configuration contract used by CLI configuration.
 - A responsive Signal Observatory with live bounded activity, accessible
   source-owned charts, animated event transitions, and reduced-motion and
   forced-colors support, plus a packaged first-party favicon that keeps browser
@@ -130,11 +129,9 @@ changes rather than duplicating every commit.
 - Windows and Ubuntu CI matrices plus isolated wheel smoke checks.
 - Guided add/move/remove configuration for an authoritative four-entry provider
   chain, including authenticated Codex and Claude CLI judge transports.
-- Persistent host-scoped soft controls shared by CLI, dashboard, MCP, and
-  generated host command/skill surfaces, plus explicit `--native` lifecycle
-  control.
-- Generation-checked host soft controls whose committed revision is shared by
-  CLI, dashboard, MCP, and generated host surfaces.
+- Persistent host-scoped soft-control status shared by CLI, dashboard, MCP, and
+  generated host command/skill surfaces, plus a dormant generation-checked
+  mutation contract behind operator presence.
 - A nonmutating host-canary readiness report and exact-confirmed, nonce-bound
   live workflow with content-free fingerprinted attestations.
 - A self-contained threat model, release gate, code of conduct, issue
@@ -150,6 +147,15 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Dashboard, MCP, generated-host, and restricted-broker surfaces are now
+  strictly read-only. Every former dashboard mutation rejects both bearer roles
+  before dispatch, and the browser ships no mutation client. Persistent CLI
+  mutations require a method/payload/generation-bound single-use OS-presence
+  proof; because no production verifier exists yet, positive mutations fail
+  closed instead of accepting static confirmation or model-callable authority.
+- The exact branch-aware Python release gate remains fixed at 97 percent and now
+  measures 97.08 percent on the pre-final-trace checkpoint. The dashboard gate
+  remains 95 percent lines, 90 percent branches, and 96 percent functions.
 - Codex installation now remains `activation-required` after native
   registration until the user approves Agency hooks through `/hooks` and
   `agency install --agent codex --verify-activation` proves routing,
@@ -174,7 +180,7 @@ changes rather than duplicating every commit.
   bytes, checks wheel/sdist metadata parity, and rejects
   noncanonical ZIP, gzip, tar, comment, extra-field, PAX, padding, gap, and
   trailing-byte layouts.
-- The warning-strict 100% line-and-branch gate now includes the canonical
+- The warning-strict 97% aggregate line-and-branch gate now includes the canonical
   builder, bounded container normalizer, command-scoped clean-checkout probe,
   shared declarative release contract, trusted Git transport, and independent
   distribution verifier.
@@ -513,7 +519,7 @@ changes rather than duplicating every commit.
   lifecycle actions additionally require a token-bound identity, a strict
   semantic definition match, and an exact pre-mutation requery.
 - Dashboard requests require a per-launch bearer token, valid loopback host,
-  same origin, JSON mutation bodies, and exact confirmation phrases.
+  and same origin; all former mutations reject before dispatch for both roles.
 - Background dashboard tokens rotate per start and live only in an owner-only
   runtime descriptor; service definitions, argv, logs, and status output remain
   credential-free.

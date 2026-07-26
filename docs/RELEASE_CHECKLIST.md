@@ -86,17 +86,21 @@ or adding an index-install claim.
       config transactionally, and proves exact-payload one-use dispatch sealing
       in the generated-plugin harness. Registration-only inspection is not
       promoted to live delivery proof.
-- [ ] Agent enable/disable works through CLI and dashboard against the same
-      explicit, environment-selected, installed-service, or default config
-      identity after restart; both protected coordinators remain enabled.
-- [ ] `agency on|off --global` and the dashboard mutate one durable master
-      generation; every host and protocol surface bypasses before Store or
-      correlation when off, and fresh-session Agency-on / Agency-off canaries
-      prove the intended A/B behavior without changing native registration.
-- [ ] Host-scoped status exposes one committed generation across CLI,
-      dashboard, MCP, and generated host commands; stale concurrent mutations
-      conflict instead of overwriting, no-ops preserve the generation, and
-      multi-host CLI failures retain every per-host result.
+- [ ] Dashboard, MCP, generated-host, and restricted-broker surfaces are
+      read-only; every former mutation endpoint rejects both bearer roles before
+      dispatch and the shipped browser contains no mutation client or control.
+- [ ] Every persistent CLI mutation fails closed without an OS-backed,
+      non-exporting, short-lived, single-use operator-presence proof bound to the
+      exact method, target, payload digest, generation, and expiry.
+- [ ] Before any positive mutation is called production-ready, the supported OS
+      presence backend proves success, replay/expiry/mismatch rejection, and the
+      exact postcondition under a real human interaction. Static confirmations,
+      bearer tokens, environment credentials, and model-callable capabilities
+      are not acceptable substitutes.
+- [ ] Global and host status expose one committed generation across read-only
+      CLI, dashboard, MCP, and generated host surfaces; the dormant Store
+      mutation contract still proves stale-conflict, no-op, and single-increment
+      invariants without exposing a positive unauthorized path.
 - [ ] Generic CLI behavior is tested with an explicit argv command; an
       unconfigured backend remains unavailable.
 - [ ] Each native child receives a fresh bounded Agency preflight for its exact
@@ -189,8 +193,8 @@ agency eval compare --input path/to/paired-observations.jsonl
       keep live-host, isolated, contract-only, and simulated evidence separate;
       directional eligibility is not published as a superiority conclusion.
 - [ ] Measured runtime code reaches the configured coverage thresholds
-      (95% lines / 90% branches / 96% functions for dashboard UI; 100% for
-      Python); any unreachable platform-only exclusion is narrow, documented,
+      (95% lines / 90% branches / 96% functions for dashboard UI; 97% aggregate
+      line-and-branch coverage for Python); any unreachable platform-only exclusion is narrow, documented,
       and reviewed rather than hidden through a broad omit rule.
 
 ## 4. Security and privacy
@@ -205,8 +209,8 @@ zizmor --pedantic --strict-collection --offline .
 - [ ] No tracked secret, credential file, database, build output, generated host
       state, sibling path, or machine-specific absolute path is present.
 - [ ] Dashboard tests enforce loopback binding, per-launch authentication,
-      `Host`/origin checks, JSON mutations, exact confirmations, and restrictive
-      response headers.
+      `Host`/origin checks, restrictive response headers, and fail-closed
+      rejection of every former mutation for both bearer roles.
 - [ ] Metadata-only capture and 30-day runtime retention remain the defaults.
 - [ ] Opt-in content paths are bounded and redacted; limitations are documented.
 - [ ] Native commands use argv execution, timeouts, bounded output, atomic
@@ -374,9 +378,10 @@ account to replace the launcher or a newly created child.
       hardening, manager-unavailable truth, start/stop/restart, uninstall,
       readiness, persistent-launcher drift refusal, and `--no-dashboard`
       without touching a real user manager.
-- [ ] Dashboard configuration tests cover typed writes, redaction, write-only
-      secrets, optimistic-concurrency conflicts, local-only enforcement, and
-      sensitive confirmation phrases through both CLI and API.
+- [ ] Dashboard configuration tests cover bounded redacted read-only projections,
+      local-only enforcement, and rejection of every former configuration write.
+      CLI write contracts remain typed and revision-checked behind the separate
+      operator-presence boundary.
 - [ ] Dashboard live tests cover authenticated schema and metadata boundaries,
       stable revisions, one bounded activity read, stale-response cancellation,
       visibility lifecycle, terminal authentication, and capped retry behavior.
@@ -385,36 +390,29 @@ account to replace the launcher or a newly created child.
       routing contracts; conflict/requirement metadata; and bounded revision
       history without exporting specialist prompts.
 - [ ] Dashboard review and inference tests cover immutable quarantine findings
-      and status history, active-versus-candidate comparison, audit-gated
-      mutations, ordered provider configuration, recent failure evidence, and
+      and status history, active-versus-candidate comparison, read-only audit
+      status, ordered redacted provider projections, recent failure evidence, and
       requested/router/actual-provider/model separation. Remote freshness and
       provider readiness remain labelled non-probed unless separate live
       evidence exists.
-- [ ] Dashboard master-control tests cover enabled/disabled rendering,
-      generation-checked mutation, exact confirmation, stale revisions, live
-      propagation, and the fresh-session A/B notice.
-- [ ] Dashboard host-control tests cover committed generations, atomic
-      concurrent writers, HTTP 409 conflicts, no-op stability, counter
-      exhaustion, refresh-and-retry behavior, and MCP/CLI parity.
-- [ ] Restricted Windows CLI tests prove status and host soft control broker
-      only an exact restricted-token Store refusal through the authenticated
-      dashboard; endpoint/method pairs, complete host snapshots, master state,
-      host identity, booleans, and generations are validated, and malformed,
-      unavailable, or stale results return nonzero without automatic retry.
-- [ ] Brokered master and host mutation receipts prove success, requested and
-      effective state, changed truth, and the exact legal no-op or
-      single-increment generation; opposite, jumping, overflowing, and
-      impossible effective states fail without retry.
-- [ ] Restricted Windows agent tests prove list and toggle broker only the
-      default installed identity through bounded revision-stable pages, exact
-      lookup, and one config-revision mutation. Explicit config paths are not
-      redirected, duplicate or inconsistent pages fail closed, and protected
-      coordinators remain immutable.
+- [ ] Dashboard master and host tests cover truthful enabled/disabled rendering,
+      committed generations, live propagation, and the fresh-session A/B notice,
+      while every mutation route rejects before dispatch with no state change.
+- [ ] Restricted Windows CLI tests prove status brokerage only after an exact
+      restricted-token Store refusal; endpoint/method pairs, complete host
+      snapshots, master state, host identity, booleans, and generations are
+      validated, and malformed or stale results fail without automatic retry.
+- [ ] No brokered master, host, or agent mutation exists. Tests prove those
+      endpoint/method pairs fail closed and cannot emit a success receipt.
+- [ ] Restricted Windows agent tests prove list and exact lookup broker only the
+      default installed identity through bounded revision-stable pages. Explicit
+      config paths are not redirected, duplicate or inconsistent pages fail
+      closed, and no toggle is proxied.
 - [ ] Restricted Windows selector tests prove search, route, explain, and
       policy use one complete validated read-only catalog, while delegation,
       setup, arbitrary Store calls, and generic config mutation fail with
       controlled nonzero diagnostics before execution or evidence claims.
-- [ ] Dashboard browser QA covers desktop and mobile layout, live controls,
+- [ ] Dashboard browser QA covers desktop and mobile layout, live status,
       chart summaries, keyboard naming, reduced motion, forced colors, no
       horizontal page overflow, and a clean console.
 - [ ] Every dashboard asset is present in wheel and source artifacts, passes the
@@ -444,27 +442,28 @@ outward-facing actions and require explicit authorization.
 
 ## Current blockers
 
-`AR-03` and `AR-04` are locally complete. The exact-confirmed Windows Codex
-0.144.1 isolated-profile canary exited `0`, produced a valid six-line header,
-and persisted one correlated routing/finalization attestation; isolated
-conversation controls exercised disable and enable while ending enabled. The
-canary used a one-invocation trust bypass and recorded no model receipt. It does
-not establish durable real-profile trust, which remains an explicit `/hooks`
-review and new-session step, and it does not establish Linux Codex maturity.
+The 2026-07-26 pre-final-trace checkpoint passed the ordinary warning-strict
+suite (7,604 passed, 61 skipped, 1 expected failure), the exact Python coverage
+arm (97.08 percent with the fixed 97 percent floor), the separate three-test
+performance arm, dashboard coverage, routing, delegation, full-roster,
+release-hygiene, Bandit, dependency, and offline-workflow gates. The earlier
+2.166 ms cache arm and one non-reproduced lifecycle failure remain preserved as
+failed evidence. AR-149 through AR-154 were found afterward, so affected gates
+and artifacts must be rerun from their implementation checkpoint.
 
-The source-readiness blockers are closed. Warning-strict coverage, security,
-performance, dashboard, wheel/source, isolated Windows/WSL install, hosted
-Python, dependency, artifact, and CodeQL capability workflows passed for the
-reviewed head. CodeQL recorded unavailable native analysis and the compensating
-source and dependency controls passed. Pull request #18 merged into `main`, the
-required ledgers are reconciled, and the associated tracker items are closed.
-Claude Code, Hermes, and OpenClaw were absent and remain contract-only. A public
-tag and package publication remain separate authorization-gated actions.
+AR-143 is the decisive local production blocker. Every dashboard and
+model-facing mutation is read-only and every persistent CLI mutation fails
+closed, but no production Windows Hello or equivalent non-exporting
+operator-presence verifier exists. Current-source positive install, service
+registration, configuration, control, retention, and installed-host canaries
+therefore cannot be completed autonomously without weakening ADR-0096.
 
-The current review branch adds turn-scoped evidence and fallback coordination,
-agent activation controls, reconciled LiteLLM router/model evidence, the durable
-master switch, unit-aware event-driven delegation, executable identity
-hardening, and the related storage and host boundary repairs. Those changes are
-not part of the prior reviewed-head evidence above until the complete matrix,
-artifact smoke, installed-host canary, tracker reconciliation, and merge gates
-pass for the new commit.
+Normal-profile Codex readiness still requires user-owned terminal-TUI `/hooks`
+review and a new session. AR-119 and AR-125 still require a benchmark-valid
+completed outcome corpus and current-artifact host/OS evidence; absent Claude
+Code, Hermes, OpenClaw, ZCode, and Linux canaries remain contract-only.
+
+AR-128 through AR-154 require authorized same-repository tracker synchronization.
+Hosted Windows/Linux matrices, push, PR, tag, publication, and release remain
+outward actions requiring explicit authorization. Historical PR #18 evidence
+does not establish the current commit.
