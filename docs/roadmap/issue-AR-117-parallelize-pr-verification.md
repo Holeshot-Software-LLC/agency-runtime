@@ -3,7 +3,7 @@ title: "AR-117: Parallelize PR verification without weakening coverage"
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-07-26
 tags: [testing, ci, coverage, performance]
 related:
   - .github/workflows/ci.yml
@@ -18,7 +18,7 @@ issue_id: AR-117
 priority: p1
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/130
 depends_on: [AR-113]
-blocks: []
+blocks: [AR-156]
 ---
 
 # AR-117: Parallelize PR verification without weakening coverage
