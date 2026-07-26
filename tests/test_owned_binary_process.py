@@ -24,7 +24,7 @@ from agency_runtime.core import owned_process, process_argv
 from agency_runtime.core.delegation import backend_process, backends
 from agency_runtime.core.owned_process_capture import OwnedProcessContainmentError
 from agency_runtime.core.process_argv import PreparedProcessArgv
-from tests.runtime_support import trusted_test_interpreter
+from tests.runtime_support import trusted_test_interpreter, wait_for_process_exit
 
 
 def _owned_pipe_pair(read_descriptor: int, write_descriptor: int) -> Any:
@@ -113,42 +113,6 @@ def _linux_pidfds_are_gone(descriptors: list[int]) -> bool:
             continue
         return False
     return True
-
-
-def _process_has_exited(pid: int) -> bool:
-    if os.name != "nt":
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            return True
-        except PermissionError:
-            return False
-        return False
-    import ctypes
-
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel32.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
-    kernel32.OpenProcess.restype = ctypes.c_void_p
-    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    kernel32.WaitForSingleObject.restype = ctypes.c_uint32
-    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
-    kernel32.CloseHandle.restype = ctypes.c_int
-    handle = kernel32.OpenProcess(0x00100000, 0, pid)
-    if not handle:
-        return True
-    try:
-        return kernel32.WaitForSingleObject(handle, 0) == 0
-    finally:
-        kernel32.CloseHandle(handle)
-
-
-def _wait_for_process_exit(pid: int, *, timeout: float = 5) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if _process_has_exited(pid):
-            return True
-        time.sleep(0.01)
-    return _process_has_exited(pid)
 
 
 def test_prepared_argv_bind_replaces_arguments_and_preserves_receipts() -> None:
@@ -1059,7 +1023,7 @@ def test_lightweight_public_runner_cancels_after_root_exit_and_reaps_descendant(
     assert result.cancelled is True
     assert result.timed_out is False
     assert result.failure_category == "cancelled"
-    assert _wait_for_process_exit(child_pid)
+    assert wait_for_process_exit(child_pid)
 
 
 def test_lightweight_public_runner_rejects_descendant_held_pipe() -> None:

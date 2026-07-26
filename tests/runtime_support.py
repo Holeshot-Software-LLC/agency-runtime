@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,52 @@ def trusted_test_interpreter() -> Path:
 
     configured = os.environ.get("AGENCY_CI_PYTHON")
     return Path(configured or getattr(sys, "_base_executable", sys.executable)).resolve()
+
+
+def trusted_base_test_interpreter() -> Path:
+    """Return the real base interpreter instead of a Windows venv redirector."""
+
+    return Path(getattr(sys, "_base_executable", sys.executable)).resolve(strict=True)
+
+
+def process_has_exited(pid: int) -> bool:
+    """Query one process without sending it a terminating signal."""
+
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        except PermissionError:
+            return False
+        return False
+    import ctypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel32.WaitForSingleObject.restype = ctypes.c_uint32
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.restype = ctypes.c_int
+    handle = kernel32.OpenProcess(0x00100000, 0, pid)
+    if not handle:
+        return True
+    try:
+        return kernel32.WaitForSingleObject(handle, 0) == 0
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def wait_for_process_exit(pid: int, *, timeout: float = 5) -> bool:
+    """Wait boundedly for one process identity to stop."""
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if process_has_exited(pid):
+            return True
+        time.sleep(0.01)
+    return process_has_exited(pid)
 
 
 def ensure_private_test_directory(path: Path, *, parents: bool = False) -> Path:
@@ -76,8 +123,11 @@ __all__ = [
     "ensure_private_test_directory",
     "harden_private_test_file",
     "is_agency_product_environment_key",
+    "process_has_exited",
     "stub_inference_invoker",
+    "trusted_base_test_interpreter",
     "trusted_test_interpreter",
+    "wait_for_process_exit",
     "write_provider_config",
 ]
 

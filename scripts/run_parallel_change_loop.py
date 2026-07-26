@@ -56,6 +56,7 @@ MAX_LOG_BYTES = 64 * 1024 * 1024
 DEFAULT_TIMEOUT_SECONDS = 45 * 60
 MIN_TIMEOUT_SECONDS = 0.1
 MAX_TIMEOUT_SECONDS = 24 * 60 * 60
+MAX_WINDOWS_CRITICAL_PATH_CHARS = 240
 PYTEST_FLAGS = (
     "-q",
     "-W",
@@ -247,6 +248,31 @@ def _projected_runtime(
     return runtime, root, python
 
 
+def _validate_windows_runtime_geometry(
+    runtime_root: Path,
+    python: Path,
+    *,
+    shard_count: int,
+    is_windows: bool = os.name == "nt",
+) -> None:
+    if not is_windows:
+        return
+    scratch_root = runtime_root / _SCRATCH_ROOT_NAME
+    paths = {
+        "private Python": python,
+        "pytest base directory": (
+            scratch_root / f"shard-{shard_count - 1:02d}" / "tmp" / "pytest-change-loop"
+        ),
+    }
+    for label, path in paths.items():
+        length = len(str(path))
+        if length > MAX_WINDOWS_CRITICAL_PATH_CHARS:
+            raise ValueError(
+                f"{label} path length {length} exceeds the supported Windows "
+                f"limit {MAX_WINDOWS_CRITICAL_PATH_CHARS}; use a shorter runtime home"
+            )
+
+
 def build_parallel_test_plan(
     *,
     repo_root: Path,
@@ -266,15 +292,21 @@ def build_parallel_test_plan(
     contract = build_runtime_contract(repo, label, environment)
     preparer = runtime_preparer or prepare_ci_runtime
     receipt = runtime_receipt_payload(contract)
+    projected_runtime, projected_root, projected_python = _projected_runtime(
+        contract,
+        runtime_home=runtime_home,
+    )
+    _validate_windows_runtime_geometry(
+        projected_root,
+        projected_python,
+        shard_count=shard_count,
+    )
     execution_lock_path = _repo_execution_lock_path(
         repo,
         create_parent=not dry_run,
     )
     if dry_run:
-        runtime, runtime_root, python = _projected_runtime(
-            contract,
-            runtime_home=runtime_home,
-        )
+        runtime, runtime_root, python = projected_runtime, projected_root, projected_python
         contract.assert_node_unchanged()
         log_root = runtime_root / _LOG_ROOT_NAME
     else:
@@ -293,6 +325,11 @@ def build_parallel_test_plan(
             contract.assert_node_unchanged()
             runtime_root = runtime_path(runtime, "AGENCY_CI_ROOT")
             python = runtime_path(runtime, "AGENCY_CI_PYTHON")
+            _validate_windows_runtime_geometry(
+                runtime_root,
+                python,
+                shard_count=shard_count,
+            )
             create_exact_private_file(runtime_root / RUNTIME_RECEIPT_NAME, receipt)
             log_root = ensure_owned_directory(
                 runtime_root,

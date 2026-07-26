@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import stat
@@ -15,10 +16,28 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core.private_paths import ensure_private_directory, remove_private_directory
 from scripts import parallel_change_loop_runtime as runtime_subject
 from scripts import run_parallel_change_loop as subject
+from scripts.parallel_change_loop_storage import capture_private_directory_identity
+from tests.runtime_support import trusted_base_test_interpreter, wait_for_process_exit
 
-_LOADED_CHILD_TIMEOUT_SECONDS = 180
+_SELF_HOST_CHILD_TIMEOUT_SECONDS = 60
+
+
+@pytest.fixture()
+def self_host_runtime_home(tmp_path: Path):
+    configured_root = os.environ.get("AGENCY_CI_ROOT")
+    if os.name != "nt" or not configured_root:
+        yield tmp_path
+        return
+    digest = hashlib.sha256(str(tmp_path).encode()).hexdigest()[:16]
+    home = ensure_private_directory(Path(configured_root) / "h" / digest)
+    identity = capture_private_directory_identity(home)
+    try:
+        yield home
+    finally:
+        remove_private_directory(identity)
 
 
 def _repository(tmp_path: Path, *, file_count: int = 8, body: str | None = None) -> Path:
@@ -154,6 +173,25 @@ def test_plan_uses_one_runtime_exact_shards_and_least_privilege_environment(
         } & {name.upper() for name in shard.environment}
         assert not any(
             name.casefold() == "pythonpath" for name in shard.environment if name != "PYTHONPATH"
+        )
+
+
+def test_windows_runtime_geometry_rejects_critical_paths_beyond_safe_budget() -> None:
+    short_root = Path("C:/agency-ci/runtime")
+    subject._validate_windows_runtime_geometry(
+        short_root,
+        short_root / "venv" / "Scripts" / "python.exe",
+        shard_count=4,
+        is_windows=True,
+    )
+    long_root = Path("C:/") / ("nested-" * 35)
+
+    with pytest.raises(ValueError, match="use a shorter runtime home"):
+        subject._validate_windows_runtime_geometry(
+            long_root,
+            long_root / "venv" / "Scripts" / "python.exe",
+            shard_count=1,
+            is_windows=True,
         )
 
 
@@ -323,6 +361,7 @@ def test_invalid_limits_and_dry_execution_fail_before_start(tmp_path: Path) -> N
 
 def test_real_private_venv_executes_pytest_without_secret_or_global_plugins(
     tmp_path: Path,
+    self_host_runtime_home: Path,
 ) -> None:
     repository = _repository(
         tmp_path,
@@ -340,9 +379,9 @@ def test_real_private_venv_executes_pytest_without_secret_or_global_plugins(
     plan = subject.build_parallel_test_plan(
         repo_root=repository,
         shard_count=1,
-        runtime_home=tmp_path,
+        runtime_home=self_host_runtime_home,
         ambient_environment=ambient,
-        timeout_seconds=_LOADED_CHILD_TIMEOUT_SECONDS,
+        timeout_seconds=_SELF_HOST_CHILD_TIMEOUT_SECONDS,
     )
 
     exit_code, results = subject.run_parallel_test_plan(plan)
@@ -385,33 +424,55 @@ def test_fixed_runtime_self_heals_when_node_identity_changes(tmp_path: Path) -> 
     assert Path(second.shards[0].environment["AGENCY_CI_NODE"]).read_bytes() == node.read_bytes()
 
 
-def test_killed_runner_scratch_is_recovered_by_next_real_execution(tmp_path: Path) -> None:
+def test_killed_runner_scratch_is_recovered_by_next_real_execution(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
     repository = _repository(
         tmp_path,
         file_count=1,
-        body="import time\ndef test_wait():\n    time.sleep(30)\n",
+        body=(
+            "import os, time\n"
+            "from pathlib import Path\n"
+            "def test_wait():\n"
+            "    Path('runner-child.pid').write_text(str(os.getpid()), encoding='ascii')\n"
+            "    time.sleep(30)\n"
+        ),
     )
+    child_pid_path = repository / "runner-child.pid"
     ambient = dict(os.environ)
+    dependency_paths = runtime_subject._dependency_paths(
+        Path(__file__).resolve().parents[1],
+        ambient,
+    )
+    ambient["PYTHONPATH"] = os.pathsep.join(str(path) for path in dependency_paths)
     preview = subject.build_parallel_test_plan(
         repo_root=repository,
         shard_count=1,
-        runtime_home=tmp_path,
+        runtime_home=self_host_runtime_home,
         ambient_environment=ambient,
         dry_run=True,
     )
     script = Path(subject.__file__).resolve()
+    bootstrap = (
+        "import runpy,sys,pytest;"
+        "sys.argv=[sys.argv[1],*sys.argv[2:]];"
+        "runpy.run_path(sys.argv[0],run_name='__main__')"
+    )
     process = subprocess.Popen(
         [
-            sys.executable,
+            str(trusted_base_test_interpreter()),
+            "-c",
+            bootstrap,
             str(script),
             "--repo-root",
             str(repository),
             "--runtime-home",
-            str(tmp_path),
+            str(self_host_runtime_home),
             "--shards",
             "1",
             "--timeout-seconds",
-            str(_LOADED_CHILD_TIMEOUT_SECONDS),
+            str(_SELF_HOST_CHILD_TIMEOUT_SECONDS),
         ],
         cwd=script.parents[1],
         env=ambient,
@@ -419,28 +480,33 @@ def test_killed_runner_scratch_is_recovered_by_next_real_execution(tmp_path: Pat
         stderr=subprocess.PIPE,
         text=True,
     )
+    child_pid: int | None = None
     try:
         deadline = time.monotonic() + 60
-        while time.monotonic() < deadline and not preview.scratch_root.exists():
+        while time.monotonic() < deadline and not child_pid_path.exists():
             if process.poll() is not None:
                 break
             time.sleep(0.05)
         assert preview.scratch_root.exists()
+        assert child_pid_path.exists()
+        child_pid = int(child_pid_path.read_text(encoding="ascii"))
         process.kill()
-        process.communicate(timeout=10)
     finally:
         if process.poll() is None:
             process.kill()
-            process.communicate(timeout=10)
+        process.communicate(timeout=10)
+    assert child_pid is not None
+    assert wait_for_process_exit(process.pid, timeout=10)
+    assert wait_for_process_exit(child_pid, timeout=10)
     (repository / "tests" / "test_0.py").write_text(
         "def test_recovered():\n    assert True\n", encoding="utf-8"
     )
     recovered = subject.build_parallel_test_plan(
         repo_root=repository,
         shard_count=1,
-        runtime_home=tmp_path,
+        runtime_home=self_host_runtime_home,
         ambient_environment=ambient,
-        timeout_seconds=_LOADED_CHILD_TIMEOUT_SECONDS,
+        timeout_seconds=_SELF_HOST_CHILD_TIMEOUT_SECONDS,
     )
     exit_code, results = subject.run_parallel_test_plan(recovered)
     assert exit_code == 0, _failed_shard_details(results)
