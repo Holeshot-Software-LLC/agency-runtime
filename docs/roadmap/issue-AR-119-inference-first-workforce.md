@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-23
+updated: 2026-07-25
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -13,6 +13,7 @@ related:
   - docs/decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md
   - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
+  - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
 supersedes: []
@@ -59,19 +60,22 @@ capabilities against an immutable versioned projection of the entire workforce;
 and give the native host exact specialist recipes without replacing its
 scheduler.
 
-> **ADR-0087 (accepted) governs this approach.** Inference is the sole
+> **ADR-0087 plus its ADR-0088 offline amendment govern this approach.**
+> Inference is the sole
 > specialist decider when a provider is configured: plan the intent, run
 > broad typed recall (zero false negatives), then let inference pick the best
 > eligible specialist per unit, declare a real gap, or hire a governed
 > contractor on the gap. Deterministic code is **recall plus validation only**
 > — it never selects the best specialist and never overrides the model's
 > eligible required nomination with role anchors. When no provider is
-> configured, the runtime **declines** (injects no Agency specialist) rather
-> than emit a keyword-luck pick. The earlier wording below ("verify staffing
+> configured, ADR-0088 now permits a clearly stamped deterministic typed-recall
+> floor for obvious safe matches and otherwise abstains. The earlier wording
+> below ("verify staffing
 > deterministically", "high-margin complete local result needs no recruiter
 > call") predates ADR-0087 and is retained for provenance; the deterministic
-> decider it implied was removed from the runtime. See
-> [ADR-0087](../decisions/0087-inference-decides-from-a-relevance-shortlist.md).
+> decider it implied was removed from the configured-inference path. See
+> [ADR-0087](../decisions/0087-inference-decides-from-a-relevance-shortlist.md)
+> and [ADR-0088](../decisions/0088-deterministic-typed-recall-offline-floor.md).
 
 A high-margin complete local result needs no recruiter call. Balanced and strict
 modes may ask inference to resolve an ambiguous bounded shortlist, but the model
