@@ -166,6 +166,12 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-146` | [Repair dashboard collection cursor validation](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | open | p0 | dashboard | pending authorization |
 | `AR-147` | [Parse complete Windows ACL descriptors](issue-AR-147-parse-complete-windows-acl-descriptors.md) | open | p0 | security | pending authorization |
 | `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | open | p1 | security | pending authorization |
+| `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | open | p0 | observability | pending authorization |
+| `AR-150` | [Coordinate dashboard refresh commit epochs](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | open | p0 | dashboard | pending authorization |
+| `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | open | p1 | dashboard | pending authorization |
+| `AR-152` | [Bound dashboard live-listener retention](issue-AR-152-bound-dashboard-live-listeners.md) | open | p1 | performance | pending authorization |
+| `AR-153` | [Complete and bound worker-detail evidence](issue-AR-153-complete-worker-detail-evidence.md) | open | p1 | dashboard | pending authorization |
+| `AR-154` | [Fail malformed initial dashboard pages closed](issue-AR-154-fail-malformed-initial-pages-closed.md) | open | p1 | dashboard | pending authorization |
 
 ## Traceability
 
@@ -321,6 +327,12 @@ not stable internal identifiers.
 | [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-147](issue-AR-147-parse-complete-windows-acl-descriptors.md) | `63cf796` | [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | `0932410` | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
+| [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | pending | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
+| [AR-150](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | pending | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
+| [AR-151](issue-AR-151-align-route-lab-host-eligibility.md) | pending | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
+| [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | pending | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
+| [AR-153](issue-AR-153-complete-worker-detail-evidence.md) | pending | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
+| [AR-154](issue-AR-154-fail-malformed-initial-pages-closed.md) | pending | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
