@@ -306,7 +306,7 @@ not stable internal identifiers.
 | [AR-131](issue-AR-131-complete-mcp-cli-host-contracts.md) | `a32e4e6`, `24948a0` | [ADR-0090](../decisions/0090-model-facing-control-paths-are-read-only.md) |
 | [AR-132](issue-AR-132-hire-deterministic-safe-gaps.md) | `a32e4e6`, `24948a0` | [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md) |
 | [AR-133](issue-AR-133-atomic-finalization-evidence.md) | `a32e4e6`, `c741b24` | [ADR-0093](../decisions/0093-atomic-finalization-evidence-batches.md) |
-| [AR-134](issue-AR-134-enforce-sqlite-currentness-invariants.md) | `a32e4e6`, `24948a0`, `c741b24` | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
+| [AR-134](issue-AR-134-enforce-sqlite-currentness-invariants.md) | `a32e4e6`, `24948a0`, `c741b24`, `0932410` | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
 | [AR-135](issue-AR-135-complete-zcode-integration.md) | `a32e4e6`, `24948a0`, `c741b24`, `0b9849c`, `ad0a1ba` | [ADR-0024](../decisions/0024-native-host-packages-and-minimal-bridges.md), [ADR-0028](../decisions/0028-host-support-maturity-and-reversible-install.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md) |
 | [AR-136](issue-AR-136-persist-native-child-correlation.md) | `a32e4e6`, `24948a0`, `c741b24` | [ADR-0094](../decisions/0094-durable-native-child-correlation.md) |
 | [AR-137](issue-AR-137-complete-dashboard-collections.md) | `a32e4e6`, `c741b24`, `0b9849c` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
@@ -320,7 +320,7 @@ not stable internal identifiers.
 | [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a` | None; release-test determinism and behavioral coverage |
 | [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-147](issue-AR-147-parse-complete-windows-acl-descriptors.md) | `63cf796` | [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
-| [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | pending | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
+| [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | `0932410` | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
