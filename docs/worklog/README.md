@@ -208,6 +208,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e62230c` | 2026-07-26 | docs(roadmap): govern bounded hiring evidence | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-07-26-e62230c-bounded-hiring-evidence-governance.md) |
 | `6a3bdaa` | 2026-07-26 | fix(dashboard): seal traced response contracts | [AR-149 through AR-155](../roadmap/README.md) | [detail](2026-07-26-6a3bdaa-traced-dashboard-response-contracts.md) |
 | `babc45a` | 2026-07-26 | docs(roadmap): govern cost-bounded verification | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-babc45a-cost-bounded-verification-governance.md) |
+| `92adf2f` | 2026-07-26 | perf(dashboard): restore durable asset headroom | [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
