@@ -130,12 +130,19 @@ def _failed_shard_details(results: tuple[subject.ShardResult, ...]) -> str:
     return "\n".join(details)
 
 
-def _plan(tmp_path: Path, *, shard_count: int = 4, timeout: float = 17) -> subject.ParallelTestPlan:
+def _plan(
+    tmp_path: Path,
+    runtime_home: Path,
+    *,
+    shard_count: int = 4,
+    timeout: float = 17,
+) -> subject.ParallelTestPlan:
     repository = _repository(tmp_path, file_count=max(8, shard_count))
     return subject.build_parallel_test_plan(
         repo_root=repository,
         shard_count=shard_count,
-        runtime_preparer=_runtime_preparer(tmp_path / "runtimes"),
+        runtime_home=runtime_home,
+        runtime_preparer=_runtime_preparer(runtime_home / "runtimes"),
         ambient_environment=_ambient(),
         timeout_seconds=timeout,
     )
@@ -143,12 +150,14 @@ def _plan(tmp_path: Path, *, shard_count: int = 4, timeout: float = 17) -> subje
 
 def test_plan_uses_one_runtime_exact_shards_and_least_privilege_environment(
     tmp_path: Path,
+    self_host_runtime_home: Path,
 ) -> None:
     labels: list[str] = []
     repository = _repository(tmp_path)
     plan = subject.build_parallel_test_plan(
         repo_root=repository,
-        runtime_preparer=_runtime_preparer(tmp_path / "runtimes", labels),
+        runtime_home=self_host_runtime_home,
+        runtime_preparer=_runtime_preparer(self_host_runtime_home / "runtimes", labels),
         ambient_environment=_ambient(),
     )
 
@@ -195,7 +204,10 @@ def test_windows_runtime_geometry_rejects_critical_paths_beyond_safe_budget() ->
         )
 
 
-def test_dry_run_is_deterministic_resource_free_and_concurrent_safe(tmp_path: Path) -> None:
+def test_dry_run_is_deterministic_resource_free_and_concurrent_safe(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
     repository = _repository(tmp_path)
 
     def preparer(*_args: object, **_kwargs: object) -> dict[str, str]:
@@ -204,6 +216,7 @@ def test_dry_run_is_deterministic_resource_free_and_concurrent_safe(tmp_path: Pa
     def build(_index: int) -> dict[str, Any]:
         plan = subject.build_parallel_test_plan(
             repo_root=repository,
+            runtime_home=self_host_runtime_home,
             runtime_preparer=preparer,
             ambient_environment=_ambient(),
             dry_run=True,
@@ -222,8 +235,9 @@ def test_dry_run_is_deterministic_resource_free_and_concurrent_safe(tmp_path: Pa
 
 def test_execution_uses_balanced_capture_and_replaces_one_coherent_log_set(
     tmp_path: Path,
+    self_host_runtime_home: Path,
 ) -> None:
-    plan = _plan(tmp_path)
+    plan = _plan(tmp_path, self_host_runtime_home)
     stale = plan.log_root / "pytest-shard-99.latest.log"
     stale.write_bytes(b"stale")
     observations: list[dict[str, Any]] = []
@@ -277,13 +291,17 @@ def test_contradictory_receipts_never_aggregate_as_success(result: subject.Shard
     assert subject._shard_succeeded(result) is False
 
 
-def test_plan_is_single_use_and_repo_lock_rejects_concurrent_labels(tmp_path: Path) -> None:
+def test_plan_is_single_use_and_repo_lock_rejects_concurrent_labels(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
     repository = _repository(tmp_path)
-    preparer = _runtime_preparer(tmp_path / "runtimes")
+    preparer = _runtime_preparer(self_host_runtime_home / "runtimes")
     first = subject.build_parallel_test_plan(
         repo_root=repository,
         shard_count=1,
         label="first-label",
+        runtime_home=self_host_runtime_home,
         runtime_preparer=preparer,
         ambient_environment=_ambient(),
     )
@@ -291,6 +309,7 @@ def test_plan_is_single_use_and_repo_lock_rejects_concurrent_labels(tmp_path: Pa
         repo_root=repository,
         shard_count=1,
         label="second-label",
+        runtime_home=self_host_runtime_home,
         runtime_preparer=preparer,
         ambient_environment=_ambient(),
     )
@@ -322,9 +341,10 @@ def test_plan_is_single_use_and_repo_lock_rejects_concurrent_labels(tmp_path: Pa
 
 def test_keyboard_interrupt_cancels_and_cleanup_failure_is_visible(
     tmp_path: Path,
+    self_host_runtime_home: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    plan = _plan(tmp_path, shard_count=1)
+    plan = _plan(tmp_path, self_host_runtime_home, shard_count=1)
     original_remove = subject.remove_private_directory
     monkeypatch.setattr(
         subject,
@@ -342,8 +362,11 @@ def test_keyboard_interrupt_cancels_and_cleanup_failure_is_visible(
     monkeypatch.setattr(subject, "remove_private_directory", original_remove)
 
 
-def test_invalid_limits_and_dry_execution_fail_before_start(tmp_path: Path) -> None:
-    plan = _plan(tmp_path, shard_count=1)
+def test_invalid_limits_and_dry_execution_fail_before_start(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
+    plan = _plan(tmp_path, self_host_runtime_home, shard_count=1)
     for value in (True, 0, subject.MAX_LOG_BYTES + 1):
         with pytest.raises(ValueError, match="maximum_log_bytes"):
             subject.run_parallel_test_plan(plan, maximum_log_bytes=value)  # type: ignore[arg-type]
@@ -351,7 +374,8 @@ def test_invalid_limits_and_dry_execution_fail_before_start(tmp_path: Path) -> N
     dry = subject.build_parallel_test_plan(
         repo_root=plan.repo_root,
         shard_count=1,
-        runtime_preparer=_runtime_preparer(tmp_path / "dry-runtime"),
+        runtime_home=self_host_runtime_home,
+        runtime_preparer=_runtime_preparer(self_host_runtime_home / "dry-runtime"),
         ambient_environment=_ambient(),
         dry_run=True,
     )
@@ -392,7 +416,10 @@ def test_real_private_venv_executes_pytest_without_secret_or_global_plugins(
     assert "include-system-site-packages = false" in configuration.read_text("utf-8").lower()
 
 
-def test_fixed_runtime_self_heals_when_node_identity_changes(tmp_path: Path) -> None:
+def test_fixed_runtime_self_heals_when_node_identity_changes(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
     repository = _repository(tmp_path, file_count=1)
     binary = tmp_path / "host-bin"
     binary.mkdir()
@@ -403,7 +430,7 @@ def test_fixed_runtime_self_heals_when_node_identity_changes(tmp_path: Path) -> 
     first = subject.build_parallel_test_plan(
         repo_root=repository,
         shard_count=1,
-        runtime_home=tmp_path,
+        runtime_home=self_host_runtime_home,
         ambient_environment=ambient,
     )
     sentinel = first.stable_runtime_root / "old-runtime-sentinel"
@@ -414,7 +441,7 @@ def test_fixed_runtime_self_heals_when_node_identity_changes(tmp_path: Path) -> 
     second = subject.build_parallel_test_plan(
         repo_root=repository,
         shard_count=1,
-        runtime_home=tmp_path,
+        runtime_home=self_host_runtime_home,
         ambient_environment=ambient,
     )
 
@@ -636,10 +663,10 @@ def test_dependency_discovery_rejects_malformed_loaded_pytest(
 
 def test_direct_and_module_dry_run_are_identical_and_do_not_mutate_runtime_paths(
     tmp_path: Path,
+    self_host_runtime_home: Path,
 ) -> None:
     repository = _repository(tmp_path, file_count=4)
-    runtime_home = tmp_path / "runtime-home"
-    runtime_home.mkdir()
+    runtime_home = self_host_runtime_home
     contract = subject.build_runtime_contract(repository, "local-change-loop", os.environ)
     runtime_parent = subject.ci_runtime_root_path(
         contract.label,
