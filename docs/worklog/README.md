@@ -212,6 +212,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8236a16` | 2026-07-26 | perf(workforce): batch packaged contractor lookup | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | null |
 | `fbbc512` | 2026-07-26 | ci: restore cost-bounded pull request cadence | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | null |
 | `90ce272` | 2026-07-26 | docs(audit): reconcile production evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md), [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md), [AR-149 through AR-155](../roadmap/README.md) | null |
+| `c5d5631` | 2026-07-26 | feat(testing): add secure parallel change loop | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-c5d5631-secure-parallel-change-loop.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
