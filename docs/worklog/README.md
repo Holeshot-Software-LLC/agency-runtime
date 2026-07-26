@@ -197,6 +197,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bcba556` | 2026-07-26 | docs(roadmap): record complete python gate | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-26-bcba556-complete-python-gate.md) |
 | `567bd23` | 2026-07-26 | test(dashboard): restore ui release coverage | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md) | [detail](2026-07-26-567bd23-dashboard-ui-release-coverage.md) |
 | `c3ffe6a` | 2026-07-26 | fix(release): restore coverage contracts and cursor paging | [AR-137](../roadmap/issue-AR-137-complete-dashboard-collections.md), [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md) | [detail](2026-07-26-c3ffe6a-coverage-contracts-cursor-paging.md) |
+| `63cf796` | 2026-07-26 | fix(security): parse complete Windows ACL descriptors | [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md) | [detail](2026-07-26-63cf796-complete-windows-acl-parsing.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

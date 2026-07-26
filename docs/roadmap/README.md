@@ -318,7 +318,7 @@ not stable internal identifiers.
 | [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | `567bd23` | None; behavioral release-test coverage only |
 | [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a` | None; release-test determinism and behavioral coverage |
 | [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
-| [AR-147](issue-AR-147-parse-complete-windows-acl-descriptors.md) | pending | [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
+| [AR-147](issue-AR-147-parse-complete-windows-acl-descriptors.md) | `63cf796` | [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
