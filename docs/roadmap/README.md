@@ -312,7 +312,7 @@ not stable internal identifiers.
 | [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | `a32e4e6`, `c741b24` | None; compatibility and mechanical consolidation |
 | [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6`, `c741b24`, `0b9849c` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-143](issue-AR-143-require-operator-presence-for-controls.md) | `24948a0`, `c741b24`, `0b9849c` | [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md) |
-| [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | pending | None; behavioral release-test coverage only |
+| [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | `567bd23` | None; behavioral release-test coverage only |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

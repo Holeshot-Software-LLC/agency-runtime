@@ -195,6 +195,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0b9849c` | 2026-07-26 | fix(runtime): repair integrated production regressions | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md), [AR-137](../roadmap/issue-AR-137-complete-dashboard-collections.md), [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md), [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | [detail](2026-07-26-0b9849c-integrated-production-regressions.md) |
 | `ad0a1ba` | 2026-07-26 | test(cli): align wizard fixture with zcode | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md) | [detail](2026-07-26-ad0a1ba-zcode-wizard-fixture.md) |
 | `bcba556` | 2026-07-26 | docs(roadmap): record complete python gate | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-26-bcba556-complete-python-gate.md) |
+| `567bd23` | 2026-07-26 | test(dashboard): restore ui release coverage | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md) | [detail](2026-07-26-567bd23-dashboard-ui-release-coverage.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
