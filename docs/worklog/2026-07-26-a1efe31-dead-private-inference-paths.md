@@ -30,9 +30,10 @@ recruiter, critic, deterministic floor, schemas, or exports.
 
 A repository-wide exact-name and dynamic-entrypoint audit first proved seven
 private helpers and their closed dependency chain reachable only from their
-definitions and private tests. The change removes that 591-line production
-island and ports remaining shortlist fixtures to canonical public plan
-documents before deleting tests that asserted only the dead internals.
+definitions and private tests. The change removes 590 production lines while
+adding one replacement line, then ports remaining shortlist fixtures to
+canonical public plan documents before deleting tests that asserted only the
+dead internals.
 
 ## Challenges encountered
 
