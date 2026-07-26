@@ -66,3 +66,12 @@ canonical helpers used by the changed runtime paths. Compatibility tests pass
 verification passes. The item remains open because repository-wide dead-code
 removal evidence and the remaining JSON/helper consolidation have not been
 completed.
+
+A repository-wide static reachability audit then proved that seven named
+private inference helpers and their private-only dependency chain had no
+production, export, dynamic-dispatch, or string-entrypoint path. The bounded
+removal deletes 591 production lines and ports the remaining shortlist fixtures
+to canonical public plan documents. Its owning suite passes 52 tests with one
+skip and one expected failure; Ruff and diff checks pass. This satisfies the
+dead-code-removal acceptance slice. The issue remains open for the separately
+reviewed JSON/helper consolidation and large-function decomposition work.

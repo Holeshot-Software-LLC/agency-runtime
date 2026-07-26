@@ -19,7 +19,6 @@ from agency_runtime.core.workforce.fallback import (
     deterministic_staff_plan,
 )
 from agency_runtime.core.workforce.inference import (
-    _normalized_plan_response,
     _proposal_from_nominations,
     _semantic_staffing_classes,
     _typed_shortlists,
@@ -109,7 +108,7 @@ def _captured_typescript_plan():
                 "implementation-change",
                 "implementation",
                 ["software-engineering"],
-                ["analysis", "design"],
+                ["implementation"],
                 "modify",
                 "workspace_write",
                 ["repository-read", "repository-write", "code-execution"],
@@ -120,7 +119,7 @@ def _captured_typescript_plan():
                 "Add automated feature tests and failure-path tests",
                 "test-code",
                 "testing",
-                ["software-engineering"],
+                ["quality-assurance"],
                 ["testing"],
                 "modify",
                 "workspace_write",
@@ -132,13 +131,12 @@ def _captured_typescript_plan():
                 "Independently review implementation and tests",
                 "review-report",
                 "review",
-                ["quality-assurance"],
+                ["software-engineering"],
                 ["review"],
                 "review",
                 "read_only",
                 ["repository-read"],
                 depends_on=["unit-implement", "unit-tests"],
-                languages=["typescript"],
             ),
             _unit(
                 "unit-results",
@@ -154,7 +152,7 @@ def _captured_typescript_plan():
             ),
         ],
     }
-    return parse_work_unit_plan(_normalized_plan_response(raw))
+    return parse_work_unit_plan(raw)
 
 
 def test_active_incident_plan_has_a_safe_sufficient_audited_team() -> None:
@@ -241,49 +239,47 @@ def test_active_incident_plan_has_a_safe_sufficient_audited_team() -> None:
 def test_runtime_integration_shortlists_anchor_each_lifecycle_owner() -> None:
     snapshot = _snapshot()
     plan = parse_work_unit_plan(
-        _normalized_plan_response(
-            {
-                "schema_version": 2,
-                "request_summary": "Diagnose a runtime routing failure and verify the fix.",
-                "units": [
-                    _unit(
-                        "unit-routing-evidence",
-                        "Inspect Agency runtime routing evidence",
-                        "analysis",
-                        "discovery",
-                        ["software-engineering"],
-                        ["analysis"],
-                        "review",
-                        "read_only",
-                        ["repository-read", "runtime-evidence"],
-                    ),
-                    _unit(
-                        "unit-live-integration",
-                        "Run live integration tests and interpret the completed evidence",
-                        "test-evidence",
-                        "testing",
-                        ["quality-assurance"],
-                        ["verification"],
-                        "review",
-                        "read_only",
-                        ["runtime-evidence", "test-execution"],
-                        depends_on=["unit-routing-evidence"],
-                    ),
-                    _unit(
-                        "unit-staffing-audit",
-                        "Audit the workforce staffing decision",
-                        "review-report",
-                        "review",
-                        ["workforce-governance"],
-                        ["review"],
-                        "review",
-                        "read_only",
-                        ["runtime-evidence"],
-                        depends_on=["unit-routing-evidence"],
-                    ),
-                ],
-            }
-        )
+        {
+            "schema_version": 2,
+            "request_summary": "Diagnose a runtime routing failure and verify the fix.",
+            "units": [
+                _unit(
+                    "unit-routing-evidence",
+                    "Inspect Agency runtime routing evidence",
+                    "analysis",
+                    "discovery",
+                    ["software-engineering"],
+                    ["analysis"],
+                    "review",
+                    "read_only",
+                    ["repository-read", "runtime-evidence"],
+                ),
+                _unit(
+                    "unit-live-integration",
+                    "Run live integration tests and interpret the completed evidence",
+                    "test-evidence",
+                    "testing",
+                    ["quality-assurance"],
+                    ["verification"],
+                    "review",
+                    "read_only",
+                    ["runtime-evidence", "test-execution"],
+                    depends_on=["unit-routing-evidence"],
+                ),
+                _unit(
+                    "unit-staffing-audit",
+                    "Audit the workforce staffing decision",
+                    "review-report",
+                    "review",
+                    ["workforce-governance"],
+                    ["review"],
+                    "review",
+                    "read_only",
+                    ["runtime-evidence"],
+                    depends_on=["unit-routing-evidence"],
+                ),
+            ],
+        }
     )
 
     shortlists = {row["unit_id"]: row for row in _typed_shortlists(plan, snapshot.contracts)}
@@ -327,25 +323,23 @@ def test_runtime_request_recovers_codebase_anchor_from_generic_analysis() -> Non
 def test_documentation_unit_selects_existing_technical_writer_without_false_gap() -> None:
     snapshot = _snapshot()
     plan = parse_work_unit_plan(
-        _normalized_plan_response(
-            {
-                "schema_version": 2,
-                "request_summary": "Write accurate repository documentation.",
-                "units": [
-                    _unit(
-                        "unit-documentation",
-                        "Write an accurate README for the implemented Python CLI",
-                        "documentation",
-                        "documentation",
-                        ["software-engineering"],
-                        ["documentation"],
-                        "modify",
-                        "workspace_write",
-                        ["repository-read", "repository-write"],
-                    )
-                ],
-            }
-        )
+        {
+            "schema_version": 2,
+            "request_summary": "Write accurate repository documentation.",
+            "units": [
+                _unit(
+                    "unit-documentation",
+                    "Write an accurate README for the implemented Python CLI",
+                    "documentation",
+                    "documentation",
+                    ["software-engineering"],
+                    ["documentation"],
+                    "modify",
+                    "workspace_write",
+                    ["repository-read", "repository-write"],
+                )
+            ],
+        }
     )
     shortlist = _typed_shortlists(plan, snapshot.contracts)[0]
 

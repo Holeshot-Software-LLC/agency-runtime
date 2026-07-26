@@ -222,9 +222,13 @@ monotonic generation and recaptures after every change.
 - Canonical identity, bounded-value, filesystem-trust, and executable helpers
   replace the reviewed duplicate implementations, with compatibility tests for
   `slug` versus `agent_slug` precedence.
-- Several private wrappers are test-only/dead, while route, preflight, hook,
-  and schema functions are large enough to conceal authority and transaction
-  boundaries.
+- A repository-wide static reachability audit proved seven private inference
+  helpers and their closed dependency chain unreachable from production,
+  exports, dynamic dispatch, and string entrypoints. Removing that island
+  deletes 591 production lines; the ported public-plan suite passes 52 tests
+  with one skip and one expected failure.
+- Route, preflight, hook, and schema functions remain large enough to conceal
+  authority and transaction boundaries.
 - Decomposition is useful only after P0 behavior is locked by regression tests;
   no large mechanical rewrite should share a commit with a security fix.
 

@@ -91,7 +91,9 @@ the deterministic typed-recall floor only when inference is not configured.
   handling also tolerates pre-header disconnects, authenticates before
   evaluating broker scope, and records expected disconnect degradation.
 - Deprecated route/header compatibility wrappers and canonical identity,
-  bounded-value, filesystem-trust, and executable helpers are restored.
+  bounded-value, filesystem-trust, and executable helpers are restored. A
+  proven-dead inference island removes 591 production lines; its owning public
+  plan/shortlist suite passes 52 tests with 1 skip and 1 expected failure.
 - Schema currentness now rejects weakened activation-ledger constraints,
   same-name workforce authority triggers, and quoted-literal drift. Malformed
   HMAC text returns invalid authority. Focused tests pass 58; the broader
@@ -148,7 +150,7 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 ## next-bounded-work-package
 
 1. Run routing, exact Python coverage, performance, and full release gates.
-2. Finish safe AR-140/AR-141 work only from reproduced general evidence.
+2. Finish the AR-140 hot path only from reproduced general evidence.
 3. Build isolated artifacts and smoke every mutation-free current-source path.
 4. Keep real install and AR-125 claims behind their exact authority/evidence.
 

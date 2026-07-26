@@ -10,7 +10,6 @@ import re
 import secrets
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
-from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
@@ -24,10 +23,7 @@ from agency_runtime.core.workforce.cache import (
     workforce_cache_identity,
     workforce_cache_put,
 )
-from agency_runtime.core.workforce.capability_ontology import (
-    ARTIFACT_CAPABILITY,
-    CORE_CAPABILITY_IDS,
-)
+from agency_runtime.core.workforce.capability_ontology import CORE_CAPABILITY_IDS
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.intent import (
     COMPACT_INTENT_RESPONSE_SCHEMA,
@@ -39,9 +35,6 @@ from agency_runtime.core.workforce.intent import (
 from agency_runtime.core.workforce.lifecycle_roles import (
     role_anchors as _role_anchors,
 )
-from agency_runtime.core.workforce.lifecycle_roles import (
-    semantic_tokens as _semantic_tokens,
-)
 from agency_runtime.core.workforce.plan_policy import plan_policy_violations
 from agency_runtime.core.workforce.planning_contracts import (
     MAX_LABEL_CHARS,
@@ -51,7 +44,6 @@ from agency_runtime.core.workforce.planning_contracts import (
     RecruiterProposal,
     WorkUnit,
     WorkUnitPlan,
-    parse_work_unit_plan,
 )
 from agency_runtime.core.workforce.staffing_verifier import (
     StaffingBudget,
@@ -68,62 +60,7 @@ if TYPE_CHECKING:
     from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 
 MAX_REQUEST_BYTES = 64 * 1024
-MAX_DETAIL_CARDS = 12
 MAX_UNIT_SHORTLIST = 4
-_INFERENCE_INDEX_FIELDS = (
-    "worker_id",
-    "agent_id",
-    "display_name",
-    "archetype",
-    "outcomes",
-    "capability_ids",
-    "artifact_kinds",
-    "lifecycle_phases",
-    "domains",
-    "stacks",
-    "scope_qualifiers",
-    "not_for",
-    "authority",
-    "context_mode",
-    "tool_classes",
-    "substitution_group",
-    "independence_class",
-    "version",
-)
-_INFERENCE_RELATIONSHIP_FIELDS = (
-    "substitutes_for",
-    "complements",
-    "same_context_conflicts",
-    "selection_exclusive",
-    "requires",
-    "must_follow",
-    "must_review_independently",
-)
-_INFERENCE_OVERRIDE_FIELDS = (
-    "employment",
-    "origin",
-    "hosts",
-    "platforms",
-    "audit_status",
-    "enabled",
-)
-_INFERENCE_DEFAULTS = {
-    "employment": "employee",
-    "origin": "upstream",
-    "hosts": ("claude", "codex", "hermes", "openclaw"),
-    "platforms": ("linux", "windows"),
-    "audit_status": "approved",
-    "enabled": True,
-}
-_RECRUITER_DIRECTORY_FIELDS = (
-    "agent_id",
-    "primary_outcome",
-    "capability_ids",
-    "domains",
-    "stacks",
-    "enabled",
-    "employment",
-)
 _PLANNING_CAPABILITIES = tuple(sorted(CORE_CAPABILITY_IDS))
 _WORKFORCE_ROUTING_POLICY_VERSION = "1"
 _CACHE_CREDENTIAL_KEY = secrets.token_bytes(32)
@@ -860,28 +797,6 @@ def _context_document(context: StaffingContext) -> dict[str, Any]:
     }
 
 
-def _planning_taxonomy(
-    snapshot: WorkforceIndexSnapshot,
-    context: StaffingContext,
-) -> dict[str, Any]:
-    return {
-        "known_domains": sorted(
-            {item for contract in snapshot.contracts for item in contract.domains}
-        ),
-        "known_stacks": sorted(
-            {item for contract in snapshot.contracts for item in contract.stacks}
-        ),
-        "required_capabilities": list(_PLANNING_CAPABILITIES),
-        "platforms": [context.platform],
-        "available_tools": sorted(context.available_tools),
-        "rules": [
-            "reuse exact known domain and stack identifiers when semantically correct",
-            "create a new domain or stack only when the request proves a genuine workforce gap",
-            "required tools must be an exact subset of available_tools",
-        ],
-    }
-
-
 def _known_intent_vocabulary(
     snapshot: WorkforceIndexSnapshot,
 ) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
@@ -952,74 +867,6 @@ def _parse_compact_plan(
     return plan
 
 
-def _query_tokens(plan: WorkUnitPlan | None, request: str) -> frozenset[str]:
-    values = [request]
-    if plan is not None:
-        values.extend(
-            value
-            for unit in plan.units
-            for value in (
-                unit.outcome,
-                unit.artifact_kind,
-                unit.lifecycle_phase,
-                *unit.domains,
-                *unit.languages,
-                *unit.frameworks,
-                *unit.required_capabilities,
-            )
-        )
-    return _semantic_tokens(*values)
-
-
-@lru_cache(maxsize=8)
-def _detail_corpus(
-    contracts: tuple[WorkforceContract, ...],
-) -> tuple[tuple[str, frozenset[str], str], ...]:
-    rows: list[tuple[str, frozenset[str], str]] = []
-    for contract in contracts:
-        document = _json_prompt(contract.to_dict())
-        rows.append(
-            (
-                contract.agent_id,
-                _semantic_tokens(
-                    contract.display_name,
-                    *contract.outcomes,
-                    *contract.scope_qualifiers,
-                    *contract.artifact_kinds,
-                    *contract.lifecycle_phases,
-                    *contract.domains,
-                    *contract.stacks,
-                ),
-                document,
-            )
-        )
-    return tuple(rows)
-
-
-def _detail_cards(
-    snapshot: WorkforceIndexSnapshot,
-    *,
-    request: str,
-    plan: WorkUnitPlan | None,
-    required_ids: Sequence[str] = (),
-) -> list[dict[str, Any]]:
-    query = _query_tokens(plan, request)
-    ranked: list[tuple[int, str, str]] = []
-    documents: dict[str, str] = {}
-    for agent_id, tokens, document in _detail_corpus(snapshot.contracts):
-        documents[agent_id] = document
-        ranked.append((len(query & tokens), agent_id, document))
-    ranked.sort(key=lambda item: (-item[0], item[1]))
-    selected = list(dict.fromkeys(agent_id for agent_id in required_ids if agent_id in documents))
-    limit = max(MAX_DETAIL_CARDS, len(selected))
-    selected.extend(
-        agent_id
-        for _score, agent_id, _document in ranked
-        if agent_id not in selected and len(selected) < limit
-    )
-    return [json.loads(documents[agent_id]) for agent_id in selected]
-
-
 def _typed_shortlists(
     plan: WorkUnitPlan,
     contracts: Sequence[WorkforceContract],
@@ -1077,90 +924,6 @@ def _typed_shortlists(
     return result
 
 
-@lru_cache(maxsize=8)
-def _inference_index(contracts: tuple[WorkforceContract, ...]) -> dict[str, Any]:
-    """Return the complete recruiter contract using lossless default compression."""
-
-    workers: list[list[Any]] = []
-    relationship_overrides: list[list[Any]] = []
-    worker_overrides: list[list[Any]] = []
-    for contract in contracts:
-        document = contract.to_dict()
-        composition = document["composition"]
-        row = {
-            **document,
-            "substitution_group": composition["substitution_group"],
-            "independence_class": composition["independence_class"],
-        }
-        workers.append([row[field] for field in _INFERENCE_INDEX_FIELDS])
-        relationships = [composition[field] for field in _INFERENCE_RELATIONSHIP_FIELDS]
-        if any(relationships):
-            relationship_overrides.append([contract.agent_id, *relationships])
-        override = {
-            "employment": contract.employment,
-            "origin": contract.origin,
-            "hosts": tuple(sorted(contract.hosts)),
-            "platforms": tuple(sorted(contract.platforms)),
-            "audit_status": contract.audit.status,
-            "enabled": contract.enabled,
-        }
-        if any(
-            override[field] != _INFERENCE_DEFAULTS[field] for field in _INFERENCE_OVERRIDE_FIELDS
-        ):
-            worker_overrides.append(
-                [
-                    contract.agent_id,
-                    *[override[field] for field in _INFERENCE_OVERRIDE_FIELDS],
-                ]
-            )
-    return {
-        "encoding": (
-            "Each worker row inherits defaults. worker_overrides replace all override_fields "
-            "for that slug. relationship_overrides supplies nonempty typed relationships."
-        ),
-        "defaults": _INFERENCE_DEFAULTS,
-        "fields": list(_INFERENCE_INDEX_FIELDS),
-        "workers": workers,
-        "relationship_fields": ["agent_id", *_INFERENCE_RELATIONSHIP_FIELDS],
-        "relationship_overrides": relationship_overrides,
-        "override_fields": ["agent_id", *_INFERENCE_OVERRIDE_FIELDS],
-        "worker_overrides": worker_overrides,
-    }
-
-
-@lru_cache(maxsize=8)
-def _recruiter_directory(contracts: tuple[WorkforceContract, ...]) -> dict[str, Any]:
-    """Return the complete semantic directory sent on recruiter calls.
-
-    The runtime retains the lossless contract index and exact versions.
-    Inference receives every worker's semantic identity plus full exact
-    contracts for the typed shortlist. Deterministic verification remains the
-    authority for eligibility, composition, version binding, and activation.
-    """
-
-    rows: list[list[Any]] = []
-    for contract in contracts:
-        values = {
-            "agent_id": contract.agent_id,
-            "primary_outcome": contract.outcomes[0] if contract.outcomes else "",
-            "capability_ids": contract.capability_ids,
-            "domains": contract.domains,
-            "stacks": contract.stacks,
-            "enabled": contract.enabled,
-            "employment": contract.employment,
-        }
-        rows.append([values[field] for field in _RECRUITER_DIRECTORY_FIELDS])
-    return {
-        "encoding": (
-            "Every worker is present for whole-roster discovery. Full exact contracts for "
-            "typed candidates are in detail_cards; deterministic verification remains "
-            "authoritative for capabilities, tools, hosts, platforms, versions, and composition."
-        ),
-        "fields": list(_RECRUITER_DIRECTORY_FIELDS),
-        "workers": rows,
-    }
-
-
 def staffing_budget_for_config(config: AgencyConfig) -> StaffingBudget:
     return StaffingBudget(
         max_work_units=config.workforce.max_work_units,
@@ -1171,55 +934,6 @@ def staffing_budget_for_config(config: AgencyConfig) -> StaffingBudget:
         min_confidence=config.workforce.min_confidence,
         min_margin=config.workforce.min_margin,
     )
-
-
-def _missing_team_detail(
-    plan: WorkUnitPlan,
-    proposal: RecruiterProposal,
-    contracts: Sequence[WorkforceContract],
-) -> str:
-    units = {unit.unit_id: unit for unit in plan.units}
-    roster = {contract.agent_id: contract for contract in contracts}
-    details: list[str] = []
-    for row in proposal.units:
-        if row.selected:
-            continue
-        required = set(typed_staffing_requirements(units[row.unit_id]))
-        reasons = {item.agent_id: "+".join(item.reason_codes) for item in row.negative_evidence}
-        coverage_candidates = []
-        for candidate in row.ranked_semantic:
-            uncovered = sorted(
-                required
-                - set(
-                    typed_staffing_coverage(
-                        units[row.unit_id],
-                        roster[candidate.agent_id],
-                    )
-                )
-            )
-            coverage_candidates.append(
-                (
-                    len(uncovered),
-                    candidate.rank,
-                    (
-                        f"{candidate.agent_id}(missing={'+'.join(uncovered) or 'none'},"
-                        f"status={reasons.get(candidate.agent_id, 'eligible')})"
-                    ),
-                )
-            )
-        coverage_candidates.sort()
-        forbidden = [
-            f"{agent_id}({reasons.get(agent_id, 'ineligible')})" for agent_id in row.forbidden[:4]
-        ]
-        evidence = []
-        if coverage_candidates:
-            evidence.append(
-                "best_coverage=" + "|".join(item[2] for item in coverage_candidates[:4])
-            )
-        if forbidden:
-            evidence.append(f"forbidden={'|'.join(forbidden)}")
-        details.append(f"{row.unit_id}:{','.join(evidence) or 'no-ranked-candidates'}")
-    return ";".join(details)
 
 
 def _calibrated_rankings(
@@ -1512,281 +1226,6 @@ class _NominationAccumulator:
         )
 
 
-_PLAN_SET_FIELDS = frozenset(
-    {
-        "acceptance_evidence",
-        "claims",
-        "depends_on",
-        "domains",
-        "frameworks",
-        "languages",
-        "platforms",
-        "required_capabilities",
-        "required_tools",
-        "resources",
-        "risks",
-        "trust_boundaries",
-    }
-)
-
-_REPOSITORY_RECONNAISSANCE = frozenset({"codebase", "repo", "repository"})
-
-
-def _canonicalize_planning_activity(unit: dict[str, Any]) -> tuple[str, str]:
-    artifact = str(unit.get("artifact_kind") or "")
-    lifecycle = str(unit.get("lifecycle_phase") or "")
-    mutation = str(unit.get("mutation_scope") or "")
-    declared_capabilities = unit.get("required_capabilities")
-    discovery_tokens = _semantic_tokens(
-        str(unit.get("outcome") or ""),
-        *(str(item) for item in declared_capabilities if isinstance(declared_capabilities, list)),
-    )
-    if artifact in ARTIFACT_CAPABILITY:
-        # Artifact and lifecycle already express the activity. Letting a model
-        # add generic capabilities such as "analysis" and "design" to an
-        # implementation unit can make every correctly scoped implementer
-        # deterministically ineligible. Keep semantic specialization in the
-        # domain/stack fields and derive this broad capability mechanically.
-        unit["required_capabilities"] = [ARTIFACT_CAPABILITY[artifact]]
-    domains = unit.get("domains")
-    if (
-        artifact == "implementation-change"
-        and isinstance(domains, list)
-        and "software-engineering" in domains
-        and set(domains) & {"accessibility", "product"}
-    ):
-        # Product names the surface being changed, not an additional code
-        # implementation authority. Product review or planning remains a
-        # separate typed unit when the request actually asks for it.
-        unit["domains"] = [item for item in domains if item not in {"accessibility", "product"}]
-    read_only_review = mutation == "read_only" and (
-        artifact in {"review-report", "test-evidence"}
-        or (
-            artifact == "analysis"
-            and lifecycle == "discovery"
-            and bool(
-                discovery_tokens
-                & {
-                    "defect",
-                    "diagnose",
-                    "diagnosis",
-                    "diagnostic",
-                    "evidence",
-                    "failure",
-                    "incident",
-                    "inspect",
-                    "investigation",
-                    "repository",
-                    "trace",
-                    "verification",
-                }
-            )
-        )
-    )
-    if read_only_review:
-        unit["authority"] = "review"
-    elif artifact in {"implementation-change", "test-code"} and mutation == "workspace_write":
-        unit["authority"] = "modify"
-    return artifact, lifecycle
-
-
-def _normalize_repository_discovery_stacks(
-    unit: dict[str, Any],
-    *,
-    artifact: str,
-    lifecycle: str,
-) -> None:
-    """Keep observed repository languages distinct from required specialist stacks."""
-
-    if (
-        artifact != "analysis"
-        or lifecycle != "discovery"
-        or str(unit.get("mutation_scope") or "") != "read_only"
-    ):
-        return
-    domains = unit.get("domains")
-    if not isinstance(domains, list) or set(domains) - {"software-engineering"}:
-        return
-    outcome = str(unit.get("outcome") or "")
-    tokens = _semantic_tokens(outcome)
-    repository_scope = (
-        bool(tokens & _REPOSITORY_RECONNAISSANCE)
-        or {
-            "code",
-            "path",
-        }
-        <= tokens
-    )
-    if not repository_scope:
-        return
-    unit["languages"] = []
-    unit["frameworks"] = []
-
-
-def _normalize_assurance_taxonomy(
-    unit: dict[str, Any],
-    *,
-    artifact: str,
-    lifecycle: str,
-    dependencies: object,
-    inherited: Mapping[str, Mapping[str, set[str]]],
-) -> None:
-    if not (
-        isinstance(dependencies, list)
-        and dependencies
-        and (
-            artifact in {"review-report", "test-code", "test-evidence"}
-            or lifecycle in {"review", "testing"}
-        )
-    ):
-        return
-    for field in ("domains", "languages", "frameworks"):
-        items = unit.get(field)
-        if not isinstance(items, list):
-            continue
-        carried = set().union(
-            *(inherited.get(str(dependency), {}).get(field, set()) for dependency in dependencies)
-        )
-        if artifact == "review-report" and field == "domains":
-            # A review unit needs the subject domain, not a generic QA label.
-            # Preserve an explicit specialist domain (for example security)
-            # and recover the reviewed artifact's domain from dependencies.
-            explicit = [
-                item for item in items if item != "quality-assurance" and item not in carried
-            ]
-            if "workforce-governance" in items:
-                # Selection criticism reviews the staffing decision itself. The
-                # application's inherited domains are evidence context, not
-                # expertise that the selection critic must personally cover.
-                # Subject-matter review remains a separate work unit so this
-                # exception cannot turn the critic into a generic reviewer.
-                unit[field] = list(dict.fromkeys(explicit or ["workforce-governance"]))
-                continue
-            if "accessibility" in items:
-                # Accessibility is its own audited review surface. Requiring
-                # the reviewed application's engineering domain on the same
-                # unit forces an unrelated code reviewer to co-author the
-                # accessibility assessment.
-                unit[field] = ["accessibility"]
-                continue
-            subject_domains = sorted(item for item in carried if item != "quality-assurance")
-            unit[field] = list(dict.fromkeys((*explicit, *(subject_domains or sorted(carried)))))
-            continue
-        if artifact in {"test-code", "test-evidence"} and field == "domains":
-            explicit = [
-                item for item in items if item != "quality-assurance" and item not in carried
-            ]
-            unit[field] = list(dict.fromkeys(("quality-assurance", *explicit)))
-            continue
-        reduced = [
-            item
-            for item in items
-            if (field == "domains" and item == "quality-assurance") or item not in carried
-        ]
-        if reduced or field != "domains":
-            unit[field] = reduced
-
-
-def _stable_dependency_order(units: list[Any]) -> list[Any]:
-    """Order one valid acyclic model graph while leaving invalid graphs untouched."""
-
-    by_id: dict[str, Mapping[str, Any]] = {}
-    for unit in units:
-        if not isinstance(unit, Mapping):
-            return units
-        unit_id = unit.get("unit_id")
-        dependencies = unit.get("depends_on")
-        if (
-            not isinstance(unit_id, str)
-            or not unit_id
-            or unit_id in by_id
-            or not isinstance(dependencies, list)
-            or not all(isinstance(item, str) for item in dependencies)
-        ):
-            return units
-        by_id[unit_id] = unit
-    known_ids = set(by_id)
-    if any(set(unit["depends_on"]) - known_ids for unit in by_id.values()):
-        return units
-    pending = list(by_id.values())
-    ordered: list[Mapping[str, Any]] = []
-    emitted: set[str] = set()
-    while pending:
-        ready = [unit for unit in pending if set(unit["depends_on"]) <= emitted]
-        if not ready:
-            return units
-        for unit in ready:
-            ordered.append(unit)
-            emitted.add(str(unit["unit_id"]))
-            pending.remove(unit)
-    # Structured providers occasionally return a valid acyclic graph in
-    # presentation order instead of dependency order. Stable topological
-    # normalization preserves the graph and keeps invalid references closed.
-    return list(ordered)
-
-
-def _normalized_plan_response(value: Mapping[str, Any]) -> Mapping[str, Any]:
-    """Canonicalize redundant model fields into deterministic staffing facts."""
-
-    units = value.get("units")
-    if not isinstance(units, list):
-        return value
-    units = _stable_dependency_order(units)
-    normalized_units: list[Any] = []
-    inherited_taxonomy: dict[str, dict[str, set[str]]] = {}
-    for unit in units:
-        if not isinstance(unit, Mapping):
-            normalized_units.append(unit)
-            continue
-        normalized = dict(unit)
-        for field in _PLAN_SET_FIELDS:
-            items = normalized.get(field)
-            if isinstance(items, list) and all(isinstance(item, str) for item in items):
-                normalized[field] = list(dict.fromkeys(items))
-        unit_id = str(normalized.get("unit_id") or "")
-        dependencies = normalized.get("depends_on")
-        artifact, lifecycle = _canonicalize_planning_activity(normalized)
-        _normalize_repository_discovery_stacks(
-            normalized,
-            artifact=artifact,
-            lifecycle=lifecycle,
-        )
-        _normalize_assurance_taxonomy(
-            normalized,
-            artifact=artifact,
-            lifecycle=lifecycle,
-            dependencies=dependencies,
-            inherited=inherited_taxonomy,
-        )
-        if unit_id and isinstance(dependencies, list):
-            inherited_taxonomy[unit_id] = {}
-            for field in ("domains", "languages", "frameworks"):
-                items = normalized.get(field)
-                if isinstance(items, list):
-                    inherited_taxonomy[unit_id][field] = set(items).union(
-                        *(
-                            inherited_taxonomy.get(str(dependency), {}).get(field, set())
-                            for dependency in dependencies
-                        )
-                    )
-        normalized_units.append(normalized)
-    return {**value, "units": normalized_units}
-
-
-def _parse_policy_validated_plan(
-    value: Mapping[str, Any],
-    *,
-    request: str,
-) -> WorkUnitPlan:
-    """Parse and reject incomplete inferred plans before spending recruiter calls."""
-
-    plan = parse_work_unit_plan(_normalized_plan_response(value))
-    violations = plan_policy_violations(request, plan)
-    if violations:
-        raise ValueError("workforce plan is incomplete: " + ",".join(violations))
-    return plan
-
-
 def _empty_staffing(code: str) -> StaffingDecision:
     from agency_runtime.core.workforce.staffing_verifier import AbstentionReason
 
@@ -1943,34 +1382,6 @@ def _recruit_ambiguous_plan(
 
 def _inference_declared(config: AgencyConfig) -> bool:
     return bool(config.providers) or _legacy_provider(config) is not None
-
-
-def _deterministic_outcome(
-    request: str,
-    snapshot: WorkforceIndexSnapshot,
-    *,
-    config: AgencyConfig,
-    context: StaffingContext,
-) -> WorkforceRoutingOutcome:
-    from agency_runtime.core.workforce.fallback import deterministic_plan_and_staff
-
-    fallback = deterministic_plan_and_staff(
-        request,
-        snapshot,
-        config=config,
-        context=context,
-    )
-    return WorkforceRoutingOutcome(
-        status="accepted" if fallback.accepted else "abstained",
-        mode=config.workforce.mode,
-        inference_mode="deterministic",
-        plan=fallback.plan,
-        proposal=fallback.proposal,
-        staffing=fallback.staffing,
-        attempts=(),
-        abstention_codes=fallback.reason_codes,
-        calls_used=0,
-    )
 
 
 def _deterministic_floor_outcome(
