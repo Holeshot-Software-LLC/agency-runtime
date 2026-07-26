@@ -144,6 +144,17 @@ completed 2 of 4 in 793.328 seconds; nested Windows self-hosts produced no
 output before their deadlines, while one loopback client exhausted an exact
 5-second header budget under load. No failed arm is benchmark evidence.
 
+A fourth unchanged sample, `5552d9c9102719741115319ce1e7b223`, completed 3
+of 4 shards in 694.726 seconds internally (696.011 seconds wall clock). Its
+only failing shard contained eight runner self-host tests whose valid fixtures
+inherited the already-long shard pytest root and correctly hit the new
+240-character guard. The other shards passed in 436.14, 625.77, and 432.06
+seconds; this rejected run is duration telemetry only, not benchmark evidence.
+Commit `49aafe1` moves valid fixture homes below the same bounded private root
+used by the production self-host while retaining a dedicated over-budget
+negative case. The package passes 19 tests in 16.08 seconds normally and 19 in
+16.45 seconds from a 195-character outer pytest root.
+
 Commit `d2ab19b` binds the dependency bridge to owner-trusted runtime receipts
 and records bounded slow-test telemetry. A controlled same-runtime A/B then
 isolated Windows path geometry: a short root passed in 2.47 seconds, while the

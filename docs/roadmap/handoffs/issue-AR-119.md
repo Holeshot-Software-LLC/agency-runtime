@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 7d113135a7f0ccd2e7b68286468ff64995453a1f
-minimum_ledger_commit: 0818bd9f3e4a6bbb28ff19f0b2aaabb0d4d0f57e
+evidence_commit: 49aafe1a148d5b34faebe894e71ccaa74351350d
+minimum_ledger_commit: c89c36528afec88202b4df771a63dfc9f8b8faf5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -39,9 +39,9 @@ acceptance contract; this capsule records only the active checkpoint.
   publication, or release was authorized.
 - The user-owned untracked `docs/analysis/2026-07-25-deep-audit-findings.md`
   remains unchanged and excluded from every commit.
-- Telemetry reported 73.8 percent remaining. The clean
-  `7d11313`/`0818bd9` Windows-path repair-and-ledger pair precedes this
-  bounded AR-156 checkpoint.
+- Telemetry reported 85.8 percent remaining after normal compaction. The clean
+  `49aafe1`/`c89c365` bounded-test-home repair-and-ledger pair precedes this
+  checkpoint.
 - Security, optimization, and UI-to-Store traceability findings AR-128 through
   AR-155 have governed local repairs or explicit remaining evidence gates.
 - AR-156's self-host path cause is repaired and focused evidence is green.
@@ -74,24 +74,27 @@ acceptance contract; this capsule records only the active checkpoint.
   contained cancellation, bounded head-and-tail logs, and one run manifest.
   Unknown runtime collisions fail closed; attested stale runtimes self-heal.
 - Runtime-contract v2 restores nested pytest only from exact owner-trusted
-  receipts. Three complete attempts remain rejected: 3/4 in 847.171 seconds,
-  3/4 in 752.807 seconds, and 2/4 in 793.328 seconds. They found one receipt
-  defect, one Windows path hang, and one overloaded 5-second loopback deadline;
-  none is used for a speed conclusion.
+  receipts. Four complete attempts remain rejected: 3/4 in 847.171 seconds,
+  3/4 in 752.807 seconds, 2/4 in 793.328 seconds, and 3/4 in 694.726 seconds.
+  They found one receipt defect, one Windows path hang, one overloaded
+  loopback deadline, and one long test-fixture root; none is speed evidence.
 - A same-runtime A/B passed under a short root in 2.47 seconds and timed out
   under the long root at 180 seconds with no output. The runner now rejects
   critical Windows paths above 240 characters and keeps nested homes short.
   Focused evidence is 20 passes in 16.11 seconds and both real private-runtime
   self-hosts pass in 7.96 seconds with a long outer pytest path. Crash recovery
   verifies both the real runner and child PIDs are gone before reuse.
+- Commit `49aafe1` keeps valid runner-test homes below the Windows path ceiling.
+  The runner package passes 19 tests in 16.08 seconds normally and 19 in 16.45
+  seconds from a deliberately 195-character outer pytest root.
 - Fresh source status sees all five hosts and the configured provider. The
   globally installed `agency` CLI is stale: it omits ZCode from status help and
   rejects the current provider configuration. The Store has 0 specialist-load
   receipts and 0 model receipts, so current manual subagents are not claimed as
   Agency-selected specialists.
-- AR-157 records the newly confirmed public HTTP disconnect gap. The dashboard
-  already treats an aborted response as transport completion, but the public
-  API can log it as an application fault and attempt a second response.
+- AR-157's shared public/dashboard disconnect boundary is implemented in
+  `12640d0`; the focused package passes 154 tests with 3 skips. Current-head
+  coverage and warning-strict release gates remain before closure.
 
 ## exact-blocker
 
@@ -101,8 +104,19 @@ acceptance contract; this capsule records only the active checkpoint.
   implemented or human-canaried. A console/pseudoconsole HWND is insufficient.
 - Linux positive persistent mutations remain unsupported until a separately
   governed non-exporting OS backend exists. macOS is not an advertised surface.
-- The current AR-143 record overstates expiry/replay testing for an immediate
-  result-only flow, and its prompt lacks a human-readable target/generation.
+- The shared AR-143 guard binds and rechecks only the parsed namespace. It does
+  not prepare the authoritative mutation or bind Store identity, resolved
+  target state, and generation through the committing transaction.
+- Its native prompt exposes only command, family, and opaque digest; it does not
+  yet show the resolved state transition and consequence required for informed
+  human co-authorization.
+- Positional low-entropy secrets enter an unkeyed deterministic digest, while
+  deferred stdin/prompt values are read after the guard. The positive redesign
+  must prepare deferred values and avoid exporting a secret-guessing oracle.
+- A no-UI Windows activation-factory probe succeeded, but the reviewed ctypes
+  draft was rejected before commit: callback pins could be released while
+  native code retained them, and timeout cleanup could close a running async
+  operation. Positive mutations remain disabled.
 - Persistent fresh installation remains fail-closed behind AR-143. Normal
   Codex hook trust also requires user-owned terminal-TUI review; neither may be
   bypassed while the user is remote.
@@ -110,8 +124,6 @@ acceptance contract; this capsule records only the active checkpoint.
   matched one-shard control proving at least 30 percent median wall-clock
   improvement. The canonical current-head serial, coverage, performance, docs,
   UI, artifact, and installed smoke gates remain separate requirements.
-- AR-157 needs the public HTTP boundary to classify client disconnects once,
-  stop writing, mark the request degraded, and preserve genuine error logging.
 - AR-119/AR-125 still lack a benchmark-valid outcome corpus and current-artifact
   host/OS evidence. Malformed, timed-out, or unknown upstream arms remain
   invalid, never losses.
@@ -125,15 +137,16 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Complete AR-157's shared disconnect boundary and focused regressions.
+1. Run an unchanged full parallel corpus; preserve its run-bound logs and reject
+   any non-green sample rather than changing the gate after observing it.
 2. Run three green comparable warm parallel corpora plus a matched one-shard
    control; do not change the gate after observing.
 3. Use the recorded duration output to rebalance only if exact file coverage,
    isolation, and release gates remain unchanged.
 4. Run current-head canonical serial, four-way exact coverage, performance,
    docs, UI, security, artifact, and isolated-install gates.
-5. Correct AR-143's evidence contract and either implement the documented
-   Windows 11 backend with tests or keep positive mutations explicitly blocked.
+5. Implement AR-143 through a prepare-verify-revalidate-commit seam, beginning
+   with roster rollback, and keep every unmigrated positive mutation blocked.
 6. Reinstall the reviewed artifact in isolation, dogfood routing/roster/hiring,
    and report Agency activation only from exact receipts.
 

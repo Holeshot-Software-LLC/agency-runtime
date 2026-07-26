@@ -11,6 +11,11 @@ related:
   - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md
   - agency_runtime/server/dashboard.py
   - agency_runtime/dashboard/dashboard-actions.js
+  - agency_runtime/core/operator_presence.py
+  - agency_runtime/cli/main.py
+  - agency_runtime/cli/roster_commands.py
+  - agency_runtime/core/store/roster.py
+  - tests/test_cli_operator_presence.py
 supersedes: []
 superseded_by: null
 type: issue
@@ -46,10 +51,21 @@ persistent setup/control path yet.
 Make the dashboard read-only and reject every mutation endpoint for both owner
 and broker bearers. Preserve monitoring and diagnostic value without implying
 that a modal is user presence. Audit every CLI and host-native mutation entry
-under model-facing identities. Do not restore remote or browser mutations until
-an OS-backed, short-lived, single-use operator-presence capability is bound to
-the exact method, target, payload digest, generation, and expiry and consumed
-atomically.
+under model-facing identities. A positive CLI path must prepare its exact
+authoritative mutation before verification, seal the method, resolved resource
+identity, payload binding, and every applicable revision/CAS token, obtain one
+native verification result, revalidate the sealed state inside the mutation
+lock, and commit through the same resource owner exactly once. Its trusted
+native prompt must show a bounded human-readable action, exact target,
+current-to-target transition, and material consequence. The direct verifier
+result is consumed synchronously in that call stack and is never exported as an
+authorization bearer.
+Deferred input must be read into the prepared mutation before verification.
+Secret-bearing payloads must be bound internally without exporting a stable
+secret-dependent digest that becomes an offline guessing oracle; the prompt
+shows secret presence and effect, never the secret value.
+If a future design introduces a transferable capability, it must additionally
+be short-lived, audience-bound, single-use, and atomically replay-protected.
 
 ## Dependencies
 
@@ -62,18 +78,48 @@ dashboard exception in ADR-0090.
 - Authenticated browser automation cannot complete a persistent mutation.
 - Every CLI and host-native mutation entry fails closed for a model-facing identity.
 - Positive mutations remain only behind a positively attested operator boundary.
-- Any future presence capability rejects missing, expired, replayed, target,
-  payload, and generation mismatches and succeeds exactly once.
+- The positive path prepares before verification and rejects resource, target,
+  payload, or applicable revision/CAS changes inside the committing boundary.
+- The trusted native prompt makes the exact action, target, current-to-target
+  transition, and material consequence intelligible without decoding a digest.
+- Deferred stdin/prompt input is prepared before verification, and secret
+  payload binding exposes neither the value nor a deterministic guessing oracle.
+- A direct native result is consumed once in the same call stack; any future
+  transferable capability also rejects missing, expired, replayed, and
+  audience-mismatched use atomically.
 
 ## Implementation evidence
 
 The dashboard JavaScript contains no mutation client or actionable mutation
 controls, and every former mutation endpoint rejects both owner and broker
 bearers without dispatch. A single CLI pre-dispatch guard covers every
-persistent mutation family and binds a secret-free canonical request digest,
-target, generation, and post-verification recheck. Missing, expired, mismatched,
-and replayed proofs fail before the handler. The authority slice passes 110
-tests. AR-143 remains a production blocker: the production OS verifier is
-deliberately unavailable/fail-closed because no non-exporting Windows Hello or
-equivalent user-consent backend has been implemented. No credential-returning
-or model-bypass substitute is accepted.
+persistent mutation family and binds a deterministic digest of the parsed
+namespace, then rechecks that namespace immediately before handler dispatch.
+It does not yet prepare the authoritative mutation, freeze the Store identity,
+or bind resolved target state and generation inside the committing
+transaction. The verifier call is synchronous, but the returned
+`OperatorPresenceReceipt` is merely a constructible informational Python value,
+is discarded by the CLI, and must never authorize a commit. Current tests cover
+unavailable/cancelled results and namespace mutation—not expiry or replay of a
+bearer capability. The current prompt also exposes only command/family/digest,
+not the resolved transition needed for informed approval.
+
+The current digest is not safe to reuse as the positive authority contract:
+positional low-entropy secrets form an unkeyed offline-guessable commitment,
+while `--stdin` and interactive prompt values are read only after the guard and
+are not bound at all. Because the verifier remains unavailable, this creates no
+positive mutation path today; the prepared-mutation redesign must close both
+gaps before enabling one.
+
+Windows SDK inspection and a no-UI activation-factory probe confirm that
+Windows 11 exposes a desktop path through
+`IUserConsentVerifierInterop::RequestVerificationForWindowAsync`, but it needs
+an active app-owned HWND. A draft ctypes backend was rejected before commit:
+its callback lifetime could outlive Python pins and its timeout cleanup could
+close a still-running async operation. AR-143 therefore remains a production
+blocker. The production verifier is deliberately unavailable/fail-closed, no
+positive mutation is enabled, and no credential-returning or model-bypass
+substitute is accepted. `agency roster rollback` is the first planned prepared
+mutation because its Store transaction already enforces version/hash CAS. Its
+prepared binding must include Store identity, roster generation, current
+version/hash, target version/hash, and target activation-authority evidence.

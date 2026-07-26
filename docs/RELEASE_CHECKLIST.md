@@ -89,14 +89,22 @@ or adding an index-install claim.
 - [ ] Dashboard, MCP, generated-host, and restricted-broker surfaces are
       read-only; every former mutation endpoint rejects both bearer roles before
       dispatch and the shipped browser contains no mutation client or control.
-- [ ] Every persistent CLI mutation fails closed without an OS-backed,
-      non-exporting, short-lived, single-use operator-presence proof bound to the
-      exact method, target, payload digest, generation, and expiry.
+- [ ] Every persistent CLI mutation fails closed unless it prepares the exact
+      authoritative method, resolved resource identity, payload binding, and all
+      applicable revision/CAS tokens before an OS-backed non-exporting
+      verification, then revalidates that state inside the committing boundary.
+- [ ] The trusted native prompt displays one bounded human-readable action,
+      exact target, current-to-target transition, and material consequence;
+      approval never depends on interpreting an opaque digest alone.
+- [ ] Deferred stdin/prompt input is ingested before verification. Secret
+      payload binding is one-time and internal; neither a secret value nor a
+      stable secret-dependent guessing oracle crosses the trusted boundary.
 - [ ] Before any positive mutation is called production-ready, the supported OS
-      presence backend proves success, replay/expiry/mismatch rejection, and the
-      exact postcondition under a real human interaction. Static confirmations,
-      bearer tokens, environment credentials, and model-callable capabilities
-      are not acceptable substitutes.
+      presence backend proves success, mismatch/race rejection, one same-stack
+      commit, and the exact postcondition under a real human interaction. Any
+      transferable capability additionally proves audience, expiry, and atomic
+      replay rejection. Static confirmations, bearer tokens, environment
+      credentials, and model-callable capabilities are not acceptable substitutes.
 - [ ] Global and host status expose one committed generation across read-only
       CLI, dashboard, MCP, and generated host surfaces; the dormant Store
       mutation contract still proves stale-conflict, no-op, and single-increment

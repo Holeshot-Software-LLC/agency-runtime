@@ -74,5 +74,17 @@ failure responses.
 
 ## Implementation evidence
 
-Pending implementation and current-head verification. Tracker creation remains
-pending explicit outward authorization.
+Commit `12640d0` adds one shared classifier for built-in, POSIX-errno, and
+Windows Winsock disconnect variants. Public GET/POST primary writes now close
+quietly without logging or retrying. A guard inside each runtime boundary also
+catches an abandoned defensive 500, marks the observation
+`degraded/client_disconnected`, and stops; the outer request handler covers
+parser and other pre-dispatch I/O. Dashboard handlers use the same classifier.
+Unrelated OS errors still propagate, while genuine application failures log
+once and attempt exactly one sanitized 500.
+
+The public and dashboard disconnect suites pass 26 tests. The complete focused
+HTTP/dashboard server package passes 154 tests with 3 skips in 75.41 seconds;
+Ruff, format, and diff checks pass. Current-head coverage and warning-strict
+release gates remain before closure. Tracker creation remains pending explicit
+outward authorization.
