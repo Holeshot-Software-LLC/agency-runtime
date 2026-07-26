@@ -24,6 +24,7 @@ related:
   - docs/roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md
   - docs/roadmap/issue-AR-142-instrument-runtime-boundaries.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
+  - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
 supersedes: []
 superseded_by: null
 ---
@@ -244,9 +245,13 @@ console in the pre-remediation installed smoke. Current source now declares
 collection truncation and exact totals, drains complete control collections,
 uses one coherent control revision, retains last-good state with an explicit
 stale marker and request ID, preserves keyboard interaction state, and includes
-ZCode in runtime host presentation. All 82 current browser interaction tests
-pass. This is source-level evidence, not a fresh installed-browser claim;
-post-install desktop/mobile and accessibility QA remains an AR-138 exit gate.
+ZCode in runtime host presentation. The initial 82-test run exposed a genuine
+release-gate hole: function coverage was 92.95 percent against the fixed 96
+percent floor. AR-144 adds behavioral callback coverage; the exact command now
+passes all 84 tests at 97.13 percent lines, 91.28 percent branches, and 96.32
+percent functions without changing thresholds or production code. This is
+source-level evidence, not a fresh installed-browser claim; post-install
+desktop/mobile and accessibility QA remains an AR-138 exit gate.
 
 ## Requested deeper-review areas
 
@@ -288,6 +293,7 @@ editing another worker's files.
 | 3 | [AR-137](../roadmap/issue-AR-137-complete-dashboard-collections.md) | Dashboard collections | 263/1,001 row exact paging/count tests |
 | 3 | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | Dashboard async/a11y | Race, stale, focus, mobile, accessibility tests |
 | 3 | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md) | Cross-layer telemetry | One redacted request trace across every boundary |
+| 3 | [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md) | Dashboard release tests | Exact fixed coverage floors pass with behavioral callbacks |
 | 4 | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Routing/retrieval/startup | Correctness-preserving size-tiered performance gates |
 | 4 | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility/refactor | Deprecation and canonical-helper contract tests |
 | 5 | [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | Product/host evaluation | Benchmark-valid complete corpus and installed apps |

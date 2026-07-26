@@ -2392,6 +2392,89 @@ test("app.js binds lifecycle controls for live pause, page cleanup, and late fra
   assert.equal(harness.api.state.full.inFlight, false);
 });
 
+test("app.js executes bound navigation, provider, workforce, hash, and startup callbacks", async () => {
+  const calls = [];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    if (path.startsWith("/api/workforce")) {
+      return jsonResponse(200, {
+        collection_revision: "workers-v1",
+        counts: {},
+        hiring_cases: [],
+        truncated: false,
+        workers: [],
+      });
+    }
+    if (path.startsWith("/api/hiring")) {
+      return jsonResponse(200, {
+        collection_revision: "hiring-v1",
+        hiring_cases: [],
+        truncated: false,
+      });
+    }
+    return jsonResponse(200, { models: [] });
+  });
+  const overviewNav = new FakeNode("nav-overview");
+  overviewNav.classList.add("active");
+  overviewNav.dataset.view = "overview";
+  const workforceNav = new FakeNode("nav-workforce");
+  workforceNav.dataset.view = "workforce";
+  const overviewPanel = new FakeNode("view-overview");
+  overviewPanel.dataset.viewPanel = "overview";
+  const workforcePanel = new FakeNode("view-workforce");
+  workforcePanel.dataset.viewPanel = "workforce";
+  harness.select(".nav-item", [overviewNav, workforceNav]);
+  harness.select(".nav-item.active", [overviewNav]);
+  harness.select(".view", [overviewPanel, workforcePanel]);
+
+  assert.equal(await harness.api.start(), false);
+  overviewNav.listeners.get("click")[0]();
+  workforceNav.listeners.get("click")[0]();
+  harness.node("provider-builder-type").listeners.get("change")[0]();
+  harness.node("provider-builder-transport").listeners.get("change")[0]();
+  harness.node("workforce-model-refresh").listeners.get("click")[0]();
+  harness.windowListeners.get("hashchange")[0]();
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(harness.api.state.activeView, "workforce");
+  assert.ok(calls.some((path) => path.startsWith("/api/workforce")));
+  assert.ok(calls.some((path) => path.startsWith("/api/hiring")));
+});
+
+test("Route Lab and worker-detail failures remain visible and lifecycle bounded", async () => {
+  const routeHarness = createAppHarness(async () => {
+    throw new Error("route transport unavailable");
+  });
+  routeHarness.api.state.master = { enabled: true, generation: 1 };
+  routeHarness.api.state.hosts = [verifiedHost("codex")];
+  routeHarness.api.renderRouteHosts();
+  routeHarness.node("route-task").value = "Review the service";
+  routeHarness.node("route-host").value = "codex";
+
+  await routeHarness.api.runRoute();
+  assert.equal(routeHarness.node("route-status").textContent, "FAILED");
+  assert.match(routeHarness.node("notice").textContent, /route transport unavailable/i);
+  assert.equal(routeHarness.node("route-button").disabled, false);
+  const noticeTimer = [...routeHarness.timers.tasks.values()]
+    .find((task) => task.delay === 6000);
+  assert.ok(noticeTimer);
+  noticeTimer.callback();
+  assert.equal(routeHarness.node("notice").hidden, true);
+
+  const workerHarness = createAppHarness(async (path) => {
+    if (path.includes("worker=worker-one")) {
+      return jsonResponse(200, { detail: { agent_slug: "worker-one" } });
+    }
+    throw new Error("worker detail unavailable");
+  });
+  await workerHarness.api.selectWorker("");
+  await workerHarness.api.selectWorker("worker-one");
+  assert.equal(workerHarness.api.state.selectedWorkerDetail.agent_slug, "worker-one");
+  await workerHarness.api.selectWorker("worker-two");
+  assert.match(workerHarness.node("notice").textContent, /worker detail unavailable/i);
+});
+
 test("app.js keeps inactive views out of the live render path and hides panels semantically", () => {
   const harness = createAppHarness(() => {
     throw new Error("this test does not fetch");

@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
+  - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/analysis/2026-07-26-production-readiness-review.md
@@ -17,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: ad0a1bae25bb0e472febcf669154927f2ef6df78
-minimum_ledger_commit: d040452f996d48de02029dadaf53af5452d2b3ac
+evidence_commit: bcba556c17062f8d1dd58e07e104f8cd3d2a7ebc
+minimum_ledger_commit: 45634caf211814b4395a8b998e6bcda65427f129
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -37,10 +38,10 @@ the deterministic typed-recall floor only when inference is not configured.
   authorized.
 - The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
   and excluded from commits.
-- Latest telemetry reported 31.6 percent remaining. The clean ad0a1ba/d040452
-  substantive/ledger checkpoint preceded the third complete run; record its
-  result in the next bounded checkpoint before remaining gates.
-- The current package integrates AR-133 through AR-143 source work plus the
+- Latest pre-checkpoint telemetry reported 6.1 percent remaining, requiring
+  this smallest safe dashboard coverage and recovery checkpoint before any
+  further live evaluation.
+- The current package integrates AR-133 through AR-144 source work plus the
   AR-140/AR-141 performance and compatibility slice.
 - The first complete post-checkpoint Python arm ran 43m39s and failed 34 tests.
   Its exact owning 12-module reproducer now passes 424 tests in 70.71 seconds.
@@ -102,6 +103,9 @@ the deterministic typed-recall floor only when inference is not configured.
   detection fixture.
 - The complete `python -m pytest tests/ -q -W error` gate passes 7,522 tests
   with 61 skips and 1 expected failure.
+- The exact dashboard release-coverage command passes all 84 tests at 97.13
+  percent lines, 91.28 percent branches, and 96.32 percent functions without a
+  threshold or production-code change.
 
 ## exact-blocker
 
@@ -114,8 +118,8 @@ the deterministic typed-recall floor only when inference is not configured.
   human-presence backend. The earlier installation is not current-source proof.
 - Normal-profile Codex activation still requires user-owned terminal-TUI hook
   review. No trust store may be read or changed by this task.
-- AR-138 needs fresh post-install desktop/mobile accessibility QA. AR-137 is
-  locally acceptance-complete but lacks authorized tracker creation/closure.
+- AR-138 needs fresh post-install desktop/mobile accessibility QA. AR-137 and
+  AR-144 are locally acceptance-complete but lack authorized tracker actions.
 - AR-119 and AR-125 still lack a benchmark-valid completed value corpus and
   current production-candidate evidence across claimed host/OS surfaces.
   Malformed or timed-out upstream arms remain invalid, never losses.
@@ -129,8 +133,8 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run the browser, routing, documentation, and release gates from the same
-   source state and record every exact result.
+1. Run the remaining delegation, full-roster, coverage, browser, documentation,
+   and release gates from the same source state and record every exact result.
 2. Finish safe local AR-141 evidence without mechanical security rewrites.
 3. Keep fresh install and installed dogfood visibly blocked behind genuine
    operator presence; do not reinterpret the earlier install as current.
@@ -142,7 +146,7 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 python scripts/context_handoff_status.py --json --threshold 50
 python -m pytest tests/ -q -W error
 python -m pytest focused split packages -q -W error
-node tests/dashboard_ui.test.mjs
+node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 python -m pytest tests/test_distribution_verifier_hardening.py tests/test_release_packaging.py -q -W error
 ruff check and format check
 python scripts/verify_docs.py

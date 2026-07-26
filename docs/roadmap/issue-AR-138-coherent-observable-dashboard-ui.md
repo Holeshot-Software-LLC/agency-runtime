@@ -8,6 +8,7 @@ tags: [dashboard, ui, accessibility, concurrency, observability]
 related:
   - agency_runtime/dashboard
   - agency_runtime/server/dashboard.py
+  - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
   - docs/decisions/0032-adaptive-authenticated-dashboard-polling.md
 supersedes: []
 superseded_by: null
@@ -17,7 +18,8 @@ issue_id: AR-138
 priority: p1
 tracker_url: null
 depends_on: []
-blocks: []
+blocks:
+  - AR-144
 ---
 
 # AR-138: Make dashboard refresh coherent, accessible, and observable
@@ -64,6 +66,7 @@ snapshot before mutating state, rejects stale generations, aborts obsolete
 requests, retains last-good state with an explicit stale marker and safe request
 ID, preserves focus/selection/disclosure state, and commits workforce plus
 control state before one render. Browser IDs are canonical UUIDv4 values and
-the server echoes the shared Agency request ID. The current interaction suite
-passes all 82 tests and the server suite passes 134 with 3 skips. Fresh
+the server echoes the shared Agency request ID. The exact release-coverage
+suite passes all 84 tests at 97.13 percent lines, 91.28 percent branches, and
+96.32 percent functions; the server suite passes 134 with 3 skips. Fresh
 post-install desktop/mobile browser QA remains required.
