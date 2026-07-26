@@ -153,8 +153,14 @@ client disconnects as server faults, and cached routing repeated a full-roster
 mutation comparison already proven by eligibility filtering. The unchanged
 routing gate then produced five deterministic final-source cache-hit p95
 controls of `1.345`, `1.448`, `1.318`, `1.442`, and `1.745 ms`. The exact
-12-module integrated reproducer now passes 424 tests in 70.71 seconds. This is a
-repaired intermediate gate; a second complete Python run is still required.
+12-module integrated reproducer now passes 424 tests in 70.71 seconds.
+
+The second complete Python run improved to 7,521 passed, 61 skipped, 1
+expected failure, and 1 failed in 43m27s. Its sole failure was a legacy test
+fixture whose injected adapter namespace omitted the new canonical ZCode
+field; production failed visibly instead of silently dropping the host. The
+fixture now models all five hosts and both wizard modules pass 36 tests. A
+third complete run remains required; the one-failure result is not a pass.
 
 The production verdict remains negative for one decisive reason: there is no
 production OS-backed, non-exporting operator-presence verifier. Dashboard and

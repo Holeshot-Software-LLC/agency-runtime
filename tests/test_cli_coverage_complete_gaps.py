@@ -180,6 +180,7 @@ def _wizard_detection(*, provider=None):
             openclaw=False,
             codex=False,
             claude=False,
+            zcode=False,
         ),
         cli_providers={},
     )

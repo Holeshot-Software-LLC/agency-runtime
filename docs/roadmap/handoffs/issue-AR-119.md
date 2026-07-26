@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: c741b240ca66604a8fa859b1e7add8e16f02339c
-minimum_ledger_commit: 14ef56759c461794adbb22e15f1ac6a5cf236124
+evidence_commit: 0b9849c97d8d22190512ab0a613376e889251659
+minimum_ledger_commit: 23916e43a4a301e4ba099546beb44ebc04ae4947
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -37,15 +37,17 @@ the deterministic typed-recall floor only when inference is not configured.
   authorized.
 - The pre-existing untracked 2026-07-25 deep-audit draft is preserved unchanged
   and excluded from commits.
-- Latest telemetry reported 62.9 percent remaining; the prior clean
-  c741b24/14ef567 substantive/ledger checkpoint remains valid and same-task
-  continuation is permitted.
+- Latest telemetry reported 37.0 percent remaining and requires this bounded
+  fixture/report repair to end in a clean substantive/ledger checkpoint before
+  the next complete run.
 - The current package integrates AR-133 through AR-143 source work plus the
   AR-140/AR-141 performance and compatibility slice.
-- The first complete post-checkpoint Python arm ran 43m39s and failed: 7,486
-  passed, 61 skipped, 1 expected failure, and 34 failed. The exact owning
-  12-module reproducer now passes 424 tests in 70.71 seconds after bounded
-  repairs; a second complete Python arm remains required.
+- The first complete post-checkpoint Python arm ran 43m39s and failed 34 tests.
+  Its exact owning 12-module reproducer now passes 424 tests in 70.71 seconds.
+- The second complete arm ran 43m27s: 7,521 passed, 61 skipped, 1 expected
+  failure, and 1 failed because a legacy injected wizard fixture omitted
+  ZCode. The canonical five-host fixture is repaired; a third full arm remains
+  required.
 
 ## completed-evidence
 
@@ -95,6 +97,8 @@ the deterministic typed-recall floor only when inference is not configured.
 - The exact 12-module integration arm that owned all 34 complete-run failures
   now passes 424 tests. Focused routing/dashboard correctness passes 79 tests
   and the unchanged production microbenchmark passes independently.
+- Both wizard coverage modules pass 36 tests with the canonical five-host
+  detection fixture.
 
 ## exact-blocker
 
@@ -122,8 +126,8 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Rerun the complete Python suite from this clean local checkpoint; no split
-   or owning-module result may override it.
+1. Rerun the complete Python suite a third time from this clean local
+   checkpoint; no split or owning-module result may override it.
 2. Run the browser, routing, documentation, and release gates from the same
    source state and record every exact result.
 3. Finish safe local AR-141 evidence without mechanical security rewrites.
