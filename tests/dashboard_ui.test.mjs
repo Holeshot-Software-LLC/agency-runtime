@@ -2324,12 +2324,12 @@ test("app.js evidence tabs implement roving keyboard focus and labelled panels",
 
 test("app UI honors reduced motion, canonical CSS, and live toggle semantics", () => {
   assert.equal((APP_CSS_SOURCE.match(/^:root\s*{/gm) || []).length, 1);
-  assert.equal((APP_CSS_SOURCE.match(/@media \(max-width: 980px\)/g) || []).length, 1);
-  assert.equal((APP_CSS_SOURCE.match(/@media \(max-width: 620px\)/g) || []).length, 1);
-  assert.match(APP_CSS_SOURCE, /\.button:disabled\s*{[^}]*cursor: not-allowed;/);
+  assert.equal((APP_CSS_SOURCE.match(/@media\s*\(max-width:\s*980px\)/g) || []).length, 1);
+  assert.equal((APP_CSS_SOURCE.match(/@media\s*\(max-width:\s*620px\)/g) || []).length, 1);
+  assert.match(APP_CSS_SOURCE, /\.button:disabled\s*{[^}]*cursor:\s*not-allowed;/);
   assert.match(
     APP_CSS_SOURCE,
-    /\.button:disabled\[aria-busy="true"\], \.button\.is-pending\s*{[^}]*cursor: wait;/,
+    /\.button:disabled\[aria-busy="true"\],\s*\.button\.is-pending\s*{[^}]*cursor:\s*wait;?/,
   );
   const mutedDim = APP_CSS_SOURCE.match(/--muted-dim:\s*(#[0-9a-f]{6})/i)?.[1];
   assert.ok(mutedDim);
@@ -4650,7 +4650,7 @@ test("master control markup and motion treatment preserve accessibility", () => 
   assert.match(APP_CSS_SOURCE, /\.master-control\[aria-pressed="false"\]/);
   assert.match(APP_CSS_SOURCE, /\.master-control\[data-state="loading"\]/);
   assert.match(APP_CSS_SOURCE, /\.agency-paused \.route-form/);
-  assert.match(APP_CSS_SOURCE, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(APP_CSS_SOURCE, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
 });
 
 test("operational dashboard renders governed roster, quarantine, and inference evidence", () => {
@@ -5253,8 +5253,8 @@ test("operational dashboard markup and accessibility policies stay discoverable"
   assert.match(APP_CSS_SOURCE, /\.remediation-card/);
   assert.match(APP_CSS_SOURCE, /\.remediation-guard/);
   assert.match(APP_CSS_SOURCE, /\.provider-chain-row/);
-  assert.match(APP_CSS_SOURCE, /@media \(forced-colors: active\)/);
-  assert.match(APP_CSS_SOURCE, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(APP_CSS_SOURCE, /@media\s*\(forced-colors:\s*active\)/);
+  assert.match(APP_CSS_SOURCE, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
 });
 
 test("authenticated dashboard is a read-only monitoring surface with no mutation request client", () => {

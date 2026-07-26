@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -758,11 +759,11 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
 
     status, stylesheet, _headers = _request(dashboard_server, "/app.css")
     assert status == 200
-    assert b"overflow-wrap: anywhere" in stylesheet
+    assert re.search(rb"overflow-wrap:\s*anywhere", stylesheet)
     assert b".host-row>div" in stylesheet
     assert b".rail::-webkit-scrollbar" in stylesheet
-    assert b"prefers-reduced-motion: reduce" in stylesheet
-    assert b"forced-colors: active" in stylesheet
+    assert re.search(rb"prefers-reduced-motion:\s*reduce", stylesheet)
+    assert re.search(rb"forced-colors:\s*active", stylesheet)
     assert b":focus-visible" in stylesheet
 
     assert b'class="skip-link"' in raw

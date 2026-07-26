@@ -53,7 +53,19 @@ None.
 ## Implementation evidence
 
 Redundant ES-module strict declarations and duplicate lifecycle/null-check
-bytes were removed without minification or a ceiling change. Canonical dashboard
-assets are 263,151 bytes, 17 bytes below the 263,168-byte ceiling. Release
-packaging passes 15 tests and the dashboard interaction suite passes 97 tests.
-Fresh installed rendering and final clean-tree release construction remain.
+bytes first restored the ceiling with only 17 bytes of margin. The final
+maintainable pass consolidates repeated model discovery, record validation,
+lifecycle checks, definition/token rendering, and worker-history rendering;
+normalizes the seven JavaScript modules to tab indentation; and removes only
+CSS declarations exactly superseded later in the same top-level cascade. It
+adds no build dependency, opaque minifier, generated bundle, or content cut.
+
+Canonical dashboard assets are now 258,787 bytes against the unchanged
+263,168-byte ceiling: 4,381 bytes of margin and a 21,169-byte reduction from
+the 279,956-byte pre-repair build. The dashboard interaction suite passes all
+101 tests at 98.61 percent line, 91.06 percent branch, and 97.90 percent
+function coverage. Release-resource, served-shell, ES-module allowlist, syntax,
+Ruff, format, and diff checks pass. Desktop and 390x844 Chromium smoke preserve
+the sampled computed layout, seven navigation controls, skip link, single
+visible view, and zero horizontal overflow. Fresh artifact-installed rendering
+and final clean-tree release construction remain.
