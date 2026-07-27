@@ -12,6 +12,7 @@ import json
 import re
 from collections.abc import Container, Mapping, Sequence
 from dataclasses import asdict, dataclass
+from functools import lru_cache
 from typing import Any
 
 from agency_runtime.core.agent_identity import agent_identity
@@ -545,6 +546,7 @@ def parse_workforce_contract(value: object) -> WorkforceContract:
     return projected
 
 
+@lru_cache(maxsize=512)
 def _canonical_json(contract: WorkforceContract) -> bytes:
     return json.dumps(
         contract.to_dict(),

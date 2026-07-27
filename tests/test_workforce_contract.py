@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from pathlib import Path
 
 import pytest
 
+from agency_runtime.core.workforce import contract as workforce_contract
 from agency_runtime.core.workforce.capability_ontology import CORE_CAPABILITY_IDS
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
@@ -200,6 +201,31 @@ def test_full_index_fingerprint_is_order_independent_and_content_sensitive() -> 
         )
     with pytest.raises(ValueError, match="duplicate worker ids"):
         workforce_index_fingerprint([first, first])
+
+
+def test_canonical_contract_cache_is_bounded_and_does_not_mask_mutation() -> None:
+    first = project_workforce_contract(_manifest_agents()[0])
+    canonical = workforce_contract._canonical_json
+    canonical.cache_clear()
+    try:
+        baseline = canonical(first)
+        assert canonical(first) == baseline
+        assert canonical.cache_info().hits == 1
+
+        changed = replace(first, enabled=False, employment="disabled")
+        assert canonical(changed) != baseline
+
+        for index in range(512):
+            canonical(replace(first, display_name=f"cache-entry-{index}"))
+
+        bounded = canonical.cache_info()
+        assert bounded.maxsize == 512
+        assert bounded.currsize == 512
+        misses_before_evicted_read = bounded.misses
+        assert canonical(first) == baseline
+        assert canonical.cache_info().misses == misses_before_evicted_read + 1
+    finally:
+        canonical.cache_clear()
 
 
 def test_full_index_fingerprint_rejects_dangling_relationships() -> None:

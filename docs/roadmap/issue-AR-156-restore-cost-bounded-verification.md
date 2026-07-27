@@ -418,3 +418,12 @@ sweeps executed more than 2,400 passing cases. The runner's v3 manifest also
 separates planning, launch, process wall time, timing reads, identity-bound
 scratch cleanup, and publication so the next optimization is based on exact
 phase evidence rather than residual wall-time inference.
+
+A focused production-spine profile then removed two more sources of accidental
+test cost without deleting assertions: the immutable workforce-safety snapshot
+is projected once, and the MCP direct-handler test creates the exact real
+active/ready Store turn it needs instead of running an unrelated cold preflight.
+Together with bounded immutable contract serialization reuse, the reproduced
+workforce and MCP hotspots fell from 5.45 and 4.08 seconds to 2.66 and 0.81
+seconds. All 98 touched tests passed with one platform skip; the named spine
+still requires one current-head measurement before an overall timing claim.

@@ -9,7 +9,6 @@ from pathlib import Path
 import pytest
 
 import agency_runtime.server.mcp as mcp
-from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -31,6 +30,22 @@ def _initialize(server: mcp.MCPServer, *, version: str = mcp.LATEST_PROTOCOL_VER
         server.dispatch({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
         is None
     )
+
+
+def _ready_turn(store: Store, *, session_id: str, trace_id: str) -> None:
+    store.create_run(trace_id=trace_id, session_id=session_id, host="mcp")
+    connection = store._connect()
+    try:
+        changed = connection.execute(
+            "UPDATE runs SET preflight_state = 'ready' WHERE trace_id = ?",
+            (trace_id,),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    assert changed.rowcount == 1
+    run = store.get_run(trace_id)
+    assert run is not None and run["preflight_state"] == "ready"
 
 
 @pytest.mark.parametrize(
@@ -559,13 +574,7 @@ def test_direct_tool_handlers_cover_status_search_record_and_errors(tmp_path: Pa
     assert (
         mcp.handle_tool_call("agency.search_agents", {"query": "security"}, store)["agents"] == []
     )
-    run_preflight(
-        store,
-        session_id="s",
-        trace_id="turn",
-        user_message="Review this code for quality and security",
-        host="mcp",
-    )
+    _ready_turn(store, session_id="s", trace_id="turn")
     assert (
         "not found"
         in mcp.handle_tool_call(

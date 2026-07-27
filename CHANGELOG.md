@@ -37,6 +37,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Workforce fingerprints now reuse a bounded cache of immutable canonical
+  contract bytes. Focused tests also reuse one immutable roster projection and
+  construct the exact ready MCP turn they exercise instead of performing an
+  unrelated full preflight.
 - Multi-host smoke now prepares one attested private launcher closure and reuses
   it across isolated host checks instead of re-hashing the same installed
   runtime once per host.

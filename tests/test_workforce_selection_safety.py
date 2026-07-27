@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
+from functools import lru_cache
 
 import pytest
 
@@ -40,6 +41,7 @@ from agency_runtime.core.workforce.staffing_verifier import (
 )
 
 
+@lru_cache(maxsize=1)
 def _snapshot() -> WorkforceIndexSnapshot:
     contracts = tuple(project_workforce_contract(agent) for agent in BundledRoster()) + tuple(
         project_workforce_contract(

@@ -122,3 +122,11 @@ key/value binding and Store uniqueness/transaction checks keep concurrent
 identity conflicts fail-closed. The broad workforce, preflight, and routing
 suite passes 370 tests with two skips and one expected failure. These remain
 local warm controls, not hosted or cross-platform evidence.
+
+A later production-spine profile found 74,256 repeated serializations across
+only 544 immutable workforce contracts. A 512-entry least-recently-used cache
+now owns the canonical bytes; the frozen, tuple-only contract remains the full
+cache key, replacement creates a distinct key, and eviction is covered. The
+exact exhaustive workforce-evidence hotspot fell from 5.45 to 2.66 seconds on
+the measured Windows host without changing a fingerprint or selection
+contract. This is a bounded same-machine result, not supported-runner evidence.
