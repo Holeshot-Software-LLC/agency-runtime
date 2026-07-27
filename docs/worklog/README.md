@@ -252,6 +252,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `77ec4f6` | 2026-07-27 | feat(canary): prove exact Codex child activation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [detail](2026-07-27-77ec4f6-exact-codex-child-activation.md) |
 | `54d82a9` | 2026-07-27 | docs(production): record exact Codex activation recheck | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [detail](2026-07-27-54d82a9-exact-codex-activation-recheck.md) |
 | `9aa317c` | 2026-07-27 | fix(dashboard): collapse mobile header flex basis | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
+| `630db7b` | 2026-07-27 | docs(production): record responsive dashboard live QA | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
