@@ -248,6 +248,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `dfe6f46` | 2026-07-27 | docs(production): record failed Codex activation proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | [detail](2026-07-27-dfe6f46-failed-codex-activation-proof.md) |
 | `30d5fc0` | 2026-07-27 | feat(install): add attended Codex refresh transaction | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | [detail](2026-07-27-30d5fc0-attended-codex-refresh.md) |
 | `85428e6` | 2026-07-27 | docs(production): record attended Codex refresh proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | [detail](2026-07-27-85428e6-attended-codex-refresh-proof.md) |
+| `cb06c73` | 2026-07-27 | docs(production): record Codex activation canary gap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [detail](2026-07-27-cb06c73-codex-activation-canary-gap.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
