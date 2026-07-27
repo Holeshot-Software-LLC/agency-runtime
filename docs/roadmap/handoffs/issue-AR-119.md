@@ -35,8 +35,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: b520fa765ffdef93ad499a088f79d247ce910e75
-minimum_ledger_commit: e67e41a5fd90e4e12f6652bde264628ab97c083b
+evidence_commit: 99b51bdc24da0020b1154967f4e555d152703594
+minimum_ledger_commit: 6392eb313340b891a5f3d7488f4ca47c0a1c913a
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -49,9 +49,9 @@ the full acceptance history.
 
 ## checkpoint
 
-- Clean local recovery pair: substantive `b520fa7`, ledger `e67e41a`.
-- No newer commit identity is asserted here; the current evidence below must be
-  sealed by the next real recovery pair.
+- Clean local recovery pair: substantive `99b51bd`, ledger `6392eb3`.
+- This pair seals exact-head Windows package/install, Codex freshness,
+  authenticated dashboard, and post-fix regulated-gap live evidence.
 - Branch is `main`, locally ahead of `origin/main`. No push, PR, tag, release,
   publication, hosted dispatch, tracker mutation, or repository-setting change
   was authorized.
