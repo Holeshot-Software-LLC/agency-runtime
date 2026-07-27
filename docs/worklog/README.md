@@ -258,6 +258,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b95d78a` | 2026-07-27 | docs(roadmap): close locally accepted audit items | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md), [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md), [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md), [AR-137](../roadmap/issue-AR-137-complete-dashboard-collections.md), [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md) | [detail](2026-07-27-b95d78a-close-local-audit-items.md) |
 | `283e3f9` | 2026-07-27 | docs(checkpoint): seal final-candidate preparation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `bba2b43` | 2026-07-27 | refactor(security): consolidate runtime authority helpers | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | [detail](2026-07-27-bba2b43-runtime-authority-helpers.md) |
+| `4e39d4c` | 2026-07-27 | fix(codex): bind hook trust inventory | [AR-182](../roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md) | [detail](2026-07-27-4e39d4c-codex-hook-trust-inventory.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
