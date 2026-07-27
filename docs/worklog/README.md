@@ -239,6 +239,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b520fa7` | 2026-07-27 | fix(testing): align hardened full-gate contracts | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [detail](2026-07-27-b520fa7-full-gate-contracts.md) |
 | `e0dca70` | 2026-07-27 | docs(checkpoint): seal full-gate contract repair | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `60543e1` | 2026-07-27 | ci: run exhaustive Python verification on demand | [AR-177](../roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md) | [detail](2026-07-27-60543e1-manual-exhaustive-ci.md) |
+| `6cb8406` | 2026-07-27 | docs(evaluation): defer one-shot applications post-production | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md), [AR-178](../roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md) | [detail](2026-07-27-6cb8406-deferred-one-shot-evaluation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
