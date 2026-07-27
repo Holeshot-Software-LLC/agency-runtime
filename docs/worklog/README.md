@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-07-26
+updated: 2026-07-27
 tags: []
 related: []
 supersedes: []
@@ -224,6 +224,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `11241e6` | 2026-07-26 | perf(testing): bind measured Windows sharding | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-11241e6-bound-windows-sharding.md) |
 | `aad2901` | 2026-07-26 | test(observability): disambiguate surface evidence | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md), [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-07-26-aad2901-disambiguate-surface-evidence.md) |
 | `85549a4` | 2026-07-26 | perf(testing): add measured Windows shard profile | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-85549a4-measured-windows-profile.md) |
+| `10eb595` | 2026-07-27 | perf(testing): enforce measured shard defaults | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
