@@ -46,7 +46,14 @@ def test_slow_sqlite_observation_never_contains_sql_values_or_paths(
     finally:
         conn.close()
 
-    store_event = next(item for item in _observations(caplog) if item["surface"] == "store")
+    store_event = next(
+        item
+        for item in _observations(caplog)
+        if item.get("surface") == "store"
+        and item.get("request_id") == boundary.request_id
+        and item.get("operation") == "sqlite.select"
+        and item.get("reason_code") == "slow_query"
+    )
     serialized = json.dumps(store_event)
     assert store_event["request_id"] == boundary.request_id
     assert store_event["operation"] == "sqlite.select"
@@ -81,7 +88,12 @@ def test_sqlite_busy_observation_is_bounded_and_value_free(
         contender.close()
 
     event = next(
-        item for item in reversed(_observations(caplog)) if item["reason_code"] == "sqlite_busy"
+        item
+        for item in reversed(_observations(caplog))
+        if item.get("surface") == "store"
+        and item.get("operation") == "sqlite.insert"
+        and item.get("outcome") == "error"
+        and item.get("reason_code") == "sqlite_busy"
     )
     serialized = json.dumps(event)
     assert event["operation"] == "sqlite.insert"

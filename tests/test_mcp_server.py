@@ -17,6 +17,7 @@ import pytest
 from agency_runtime.core import private_paths
 from agency_runtime.core.config_binding import StoreConfigBindingError
 from agency_runtime.core.configuration import apply_config_operations, read_config_state
+from agency_runtime.core.observability import RuntimeBoundary
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.private_paths import PrivateDirectoryIdentity
 from agency_runtime.core.process_argv import isolated_python_argv
@@ -123,6 +124,8 @@ def test_mcp_tool_result_and_logs_share_content_free_request_identity(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    with RuntimeBoundary(surface="store", operation="sqlite.commit"):
+        pass
     server = MCPServer(store=_seed_store(tmp_path))
     server.initialize_responded = True
     server.initialized = True
@@ -143,13 +146,20 @@ def test_mcp_tool_result_and_logs_share_content_free_request_identity(
     assert response is not None
     result = response["result"]
     request_id = result["_meta"]["agency/requestId"]
-    observation = next(
+    messages = [
         record.getMessage()
         for record in caplog.records
         if record.getMessage().startswith("agency_observation ")
+    ]
+    assert messages
+    assert all(secret not in message for message in messages)
+    payload = next(
+        item
+        for item in (json.loads(message.split(" ", 1)[1]) for message in messages)
+        if item.get("surface") == "mcp"
+        and item.get("operation") == "agency.search_agents"
+        and item.get("request_id") == request_id
     )
-    assert secret not in observation
-    payload = json.loads(observation.split(" ", 1)[1])
     assert payload["request_id"] == request_id
     assert payload["surface"] == "mcp"
     assert payload["operation"] == "agency.search_agents"

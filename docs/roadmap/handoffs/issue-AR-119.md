@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
+  - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
@@ -21,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 62d90ca68c07514bbb39fd78df3142061a8495b8
-minimum_ledger_commit: 5ba8b13b7cacd416517dc062b6b549619ff72ba9
+evidence_commit: 11241e61721abf4e7438d529e3c70323d9334b53
+minimum_ledger_commit: cc85d3050a5dd1a48cc257181ff4826035c3804c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -39,8 +40,8 @@ acceptance contract; this capsule records only the active checkpoint.
   publication, or release was authorized.
 - The user-owned untracked `docs/analysis/2026-07-25-deep-audit-findings.md`
   remains unchanged and excluded from every commit.
-- Telemetry reported 62.7 percent remaining. The clean `62d90ca`/`5ba8b13`
-  timing-self-test pair precedes this benchmark checkpoint.
+- Telemetry reported 42.9 percent remaining. The clean `11241e6`/`cc85d30`
+  bound-sharding pair precedes this benchmark checkpoint.
 - Security, optimization, and UI-to-Store traceability findings AR-128 through
   AR-155 have governed local repairs or explicit remaining evidence gates.
 - AR-156 now has one valid four-shard baseline, one diagnostic-only v1 timing
@@ -85,8 +86,9 @@ acceptance contract; this capsule records only the active checkpoint.
 - Four behavior-preserving test setup reductions kept 77 passes and 5 skips
   while a matched local Windows slice fell from 84.38 to 48.06 seconds
   (43.04 percent). Full-corpus speed remains unclaimed.
-- Doctor/smoke tests retain full all-host and one real poisoned-profile Hermes
-  boundary while removing real-home probes, full-roster seeds, and one duplicate run.
+- Two v2 controls passed 4/4 in 690.599 and 710.037 seconds. A third rejected
+  3/4 after AR-158's MCP test selected a preceding Store slow-query observation;
+  the controller published no complete artifact and the fixed corpus must restart.
 - Fresh source status sees all five hosts and the configured provider. The
   globally installed `agency` CLI is stale: it omits ZCode from status help and
   rejects the current provider configuration. The Store has 0 specialist-load

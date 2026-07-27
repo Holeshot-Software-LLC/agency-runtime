@@ -3,7 +3,7 @@ title: "Derive runtime claims from authoritative correlated evidence"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-16
+updated: 2026-07-26
 tags: [evidence, tracing, delegation]
 related:
   - docs/roadmap/issue-AR-45-bind-store-privacy-to-explicit-config.md
@@ -14,6 +14,7 @@ related:
   - docs/roadmap/issue-AR-27-authoritative-delegation-stop-enforcement.md
   - docs/roadmap/issue-AR-33-openclaw-final-outbound-seal.md
   - docs/roadmap/issue-AR-69-require-correlation-complete-cli-delegation-evidence.md
+  - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

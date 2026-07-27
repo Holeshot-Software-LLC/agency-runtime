@@ -24,6 +24,7 @@ from agency_runtime.adapters.hooks import (
 )
 from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import finalize_response, response_hash
+from agency_runtime.core.observability import RuntimeBoundary
 from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
 from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.store.sqlite import Store
@@ -2079,6 +2080,8 @@ def test_hook_boundary_blocks_planned_child_when_bridge_fails(
         lambda *_args, **_kwargs: _FailingBridge(),
     )
     caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    with RuntimeBoundary(surface="store", operation="sqlite.commit"):
+        pass
     source = io.BytesIO(
         json.dumps(
             {
@@ -2108,10 +2111,15 @@ def test_hook_boundary_blocks_planned_child_when_bridge_fails(
 
     result = json.loads(sink.getvalue())
     assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
-    observation = next(
+    observations = [
         json.loads(record.getMessage().split(" ", 1)[1])
         for record in caplog.records
         if record.getMessage().startswith("agency_observation ")
+    ]
+    observation = next(
+        item
+        for item in observations
+        if item.get("surface") == "hook" and item.get("operation") == "codex.pretooluse"
     )
     assert observation["surface"] == "hook"
     assert observation["operation"] == "codex.pretooluse"

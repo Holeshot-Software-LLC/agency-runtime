@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from agency_runtime.core.configuration import apply_config_operations, read_config_state
+from agency_runtime.core.observability import RuntimeBoundary
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.roster.bundled import BundledRoster
 from agency_runtime.core.store.sqlite import Store
@@ -1092,6 +1093,8 @@ def test_http_response_exposes_safe_request_id_and_content_free_observation(
     caplog,
 ) -> None:
     caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    with RuntimeBoundary(surface="store", operation="sqlite.commit"):
+        pass
     secret_path = "private-Bearer-never-log-this"
     request = urllib.request.Request(
         f"{http_server['base']}/{secret_path}",
@@ -1107,19 +1110,25 @@ def test_http_response_exposes_safe_request_id_and_content_free_observation(
 
     assert request_id.startswith("arq-")
     deadline = time.monotonic() + 1
-    observations: list[str] = []
+    observations: list[dict[str, object]] = []
     while time.monotonic() < deadline and not observations:
-        observations = [
+        messages = [
             record.getMessage()
             for record in caplog.records
             if record.getMessage().startswith("agency_observation ")
         ]
+        assert all(secret_path not in message for message in messages)
+        observations = [
+            item
+            for item in (json.loads(message.split(" ", 1)[1]) for message in messages)
+            if item.get("surface") == "http"
+            and item.get("operation") == "unknown"
+            and item.get("request_id") == request_id
+        ]
         if not observations:
             time.sleep(0.01)
     assert observations
-    observation = observations[0]
-    assert secret_path not in observation
-    payload = json.loads(observation.split(" ", 1)[1])
+    payload = observations[0]
     assert payload["request_id"] == request_id
     assert payload["surface"] == "http"
     assert payload["operation"] == "unknown"

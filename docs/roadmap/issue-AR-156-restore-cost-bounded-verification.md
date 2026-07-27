@@ -7,6 +7,7 @@ updated: 2026-07-26
 tags: [testing, ci, performance, cost, developer-experience]
 related:
   - docs/roadmap/issue-AR-117-parallelize-pr-verification.md
+  - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
   - docs/NORTH_STAR_ACCEPTANCE.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - .github/workflows/ci.yml
@@ -30,7 +31,7 @@ epic: testing
 issue_id: AR-156
 priority: p1
 tracker_url: null
-depends_on: [AR-117]
+depends_on: [AR-117, AR-158]
 blocks: []
 ---
 
@@ -217,6 +218,16 @@ also revalidates source immediately after shard execution before publishing.
 The profile/runner/sharding contract package passes 52 warning-strict tests;
 Ruff, format, and diff checks pass. Independent review approved the producer to
 loader chain for the three clean source-byte control runs.
+
+Two clean v2 controls passed all four shards: run
+`e688daea27910329dd1b21604ff68298` took 690.599 seconds and run
+`7c310844fb167f0fc2263a9cdd6e9b32` took 710.037 seconds. Their byte-balanced
+shards ranged from 278.89 to 652.58 seconds. The third attempt,
+`2c655b34b1e22d55a42b52db93c491f3`, is rejected at 3/4: a legitimate slow
+Store observation preceded the MCP observation and exposed AR-158's ambiguous
+first-record test selector. No complete artifact was published. Because the
+test fix changes the exact corpus content, the first two artifacts remain valid
+diagnostics but cannot be mixed into the replacement profile's three samples.
 
 Four test-only cost corrections retain the exact exercised contracts while
 removing unrelated setup: HTTP fixture shutdown polls at 10 ms, adapter parity
