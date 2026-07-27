@@ -117,8 +117,13 @@ plugin `0.1.0+codex.a106953cb0c7` installed/enabled with exact policies.
 
 This supersedes the older existing-install failure below, but not its historical
 evidence. It is not fresh missing-host bootstrap, signed delivery, or activation
-proof. Loaded state, hook-trust evidence, and current-profile canary remain open
-until a fresh Codex process proves them behaviorally.
+proof. After renewed exact hook trust, a current-profile run proved a valid
+Agency header, routing, expected specialist selection, four planned
+delegations, and Stop finalization. It correctly failed because isolated child
+activation was absent. A delegation-enabled 240-second diagnostic planned five
+units but timed out without child activation or finalization. AR-180 owns the
+canary-design/host-surface gap. No attestation was persisted, so production
+remains **NO-GO**.
 
 The exact `29da6eca2b0dd73b37a91e6bfdb29881face5d56` source was exported into
 clean private Windows and WSL/Linux build roots because the primary checkout

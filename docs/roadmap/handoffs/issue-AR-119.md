@@ -28,6 +28,7 @@ related:
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
+  - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - docs/analysis/2026-07-26-production-readiness-review.md
@@ -98,9 +99,10 @@ the full acceptance history.
 ## exact-blocker
 
 - Generic and missing-host installation remain unavailable, but exact existing-
-  install Codex refresh is now a positive prepared transaction. Registration is
-  proven; `loaded`, hook trust, and canary remain unverified until a fresh Codex
-  process passes the current-profile canary.
+  install Codex refresh is now a positive prepared transaction. Renewed trust
+  proves hooks, header, routing, expected selection, delegation planning, and
+  Stop finalization. AR-180 remains open because no isolated child activation or
+  accepted terminal turn was proven; no canary attestation exists.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
@@ -124,9 +126,8 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run the exact refreshed-candidate current-profile Codex canary from a fresh
-   process and preserve loaded/specialist/finalization evidence or the exact
-   failure without reinterpretation.
+1. Under AR-180, define a one-unit bounded activation probe and prove the Codex
+   non-interactive native-child surface before another live attempt.
 2. Add signed-delivery provenance and independent Windows default-policy
    verification. Publisher/legal/signing inputs remain owner/external gates.
 3. Design fresh missing-host bootstrap separately if it is a claimed v1 surface.

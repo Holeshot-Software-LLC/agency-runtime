@@ -1,0 +1,89 @@
+---
+title: "AR-180: Prove Codex specialist activation in the live canary"
+status: open
+category: roadmap
+created: 2026-07-27
+updated: 2026-07-27
+tags: [codex, canary, activation, delegation, production-readiness]
+related:
+  - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
+  - docs/decisions/0077-prove-codex-activation-behaviorally.md
+  - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
+  - agency_runtime/core/canary.py
+  - agency_runtime/core/canary_backends.py
+  - agency_runtime/core/canary_proof.py
+  - tests/test_host_canary.py
+supersedes: []
+superseded_by: null
+type: issue
+epic: host-integrations
+issue_id: AR-180
+priority: p0
+tracker_url: null
+depends_on: [AR-143]
+blocks: [AR-119]
+---
+
+# AR-180: Prove Codex specialist activation in the live canary
+
+## Problem
+
+The current-profile Codex canary requires the expected `code-reviewer` to have
+activation evidence, but its prompt forbids all tool use. Codex uses isolated
+specialist delivery: selection creates a native delegation plan, while prompt
+retrieval and activation occur only at a real native child boundary. The
+canary can therefore prove hooks, routing, and finalization without being able
+to satisfy its own specialist-activation gate.
+
+## Current state
+
+After the attended existing-install refresh and renewed exact hook trust, a
+current-profile canary produced a valid Agency header, one correlated route,
+four planned delegations, the expected specialist selection, and one
+finalization. It correctly failed because no specialist was loaded and the
+terminal turn was not accepted. A bounded diagnostic that explicitly allowed
+required native delegation planned five units but timed out after 240 seconds;
+it produced no child activation or finalization. The failed run was closed and
+no canary attestation was persisted.
+
+This proves the refreshed hooks execute. It does not prove native child launch,
+specialist prompt delivery, activation receipt consumption, or an accepted
+terminal turn. Tracker creation is pending authorization.
+
+## Approach
+
+Define a deterministic, time-bounded Codex activation probe whose requested
+work has one safe isolated unit and one eligible specialist. Prove first that
+the non-interactive Codex surface exposes the required native delegation tool.
+Then require exactly one child launch, exact work-unit correlation, pre-LLM
+specialist delivery, one-use activation consumption, child completion, parent
+finalization, and a valid response header. Reject absent tools, topology drift,
+extra children, timeouts, unconsumed grants, parent-only prompt loading, and
+uncorrelated evidence. Keep shell, filesystem writes, external services, and
+hook-trust bypass disabled.
+
+## Dependencies
+
+ADR-0077 owns behavioral activation proof. ADR-0104 supplies the exact installed
+candidate. The host must expose a non-interactive native-child surface that the
+canary can invoke safely; if it does not, activation needs a different attended
+probe instead of weakening the evidence gate.
+
+## Acceptance
+
+- [ ] The canary request deterministically produces exactly one bounded work unit
+  and one expected specialist without semantic-plan fanout.
+- [ ] Current-profile Codex exposes and invokes the supported native child tool
+  without hook-trust bypass, shell access, file writes, or external services.
+- [ ] PreToolUse, SubagentStart, PostToolUse, SubagentStop, and Stop evidence is
+  correlated to one session, trace, work unit, child, and install identity.
+- [ ] The expected specialist prompt is delivered only to the child and its
+  one-use activation grant is consumed exactly once.
+- [ ] Child completion and parent finalization are accepted, the Agency header
+  is valid, and the installation-bound current-profile attestation persists.
+- [ ] Missing tools, extra delegation, timeout, drift, replay, or incomplete
+  evidence fails and closes only the exact canary run.
+- [ ] Focused tests cover positive, unavailable-tool, timeout, and correlation-
+  failure paths before another live attempt.

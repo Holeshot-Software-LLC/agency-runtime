@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
   - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
+  - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
@@ -36,7 +37,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-179]
+depends_on: [AR-115, AR-116, AR-118, AR-179, AR-180]
 blocks: [AR-178]
 ---
 
@@ -3315,11 +3316,15 @@ Post-install status proves new install ID
 `0c3696e1...084f3`, retained backup `20260727T160533.282423Z`, and native
 version `0.1.0+codex.a106953cb0c7` installed/enabled under exact policy.
 
-This is installation and registration evidence only. The freshly registered
-plugin still reports `loaded=null`, unverified hook trust, and no canary until a
-new Codex process supplies behavioral evidence. Fresh missing-host bootstrap,
-signed delivery, the roster-rollback canary, four other host canaries, and the
-manual exact-head release gate remain open.
+This is installation and registration evidence only. After renewed trust for
+the refreshed exact hook commands, a fresh process proved a valid Agency
+header, routing, expected `code-reviewer` selection, four planned delegations,
+and Stop finalization. It correctly rejected the turn because no isolated child
+activation was recorded. A delegation-enabled diagnostic planned five units
+but timed out after 240 seconds without child activation or finalization. AR-180
+owns the now-reproduced activation-canary gap. No attestation was persisted.
+Fresh missing-host bootstrap, signed delivery, the roster-rollback canary, four
+other host canaries, and the manual exact-head release gate remain open.
 
 ### Still required before AR-119 can close
 

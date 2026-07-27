@@ -14,6 +14,7 @@ related:
   - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
+  - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - agency_runtime/server/dashboard.py
   - agency_runtime/dashboard/dashboard-actions.js
   - agency_runtime/core/operator_presence.py
@@ -33,7 +34,7 @@ issue_id: AR-143
 priority: p0
 tracker_url: null
 depends_on: [AR-128, AR-160, AR-161]
-blocks: []
+blocks: [AR-180]
 ---
 
 # AR-143: Require genuine operator presence for persistent controls
@@ -236,8 +237,11 @@ registration drift can exist without a version change.
   plugin `0.1.0+codex.a106953cb0c7` installed and enabled with exact
   `AVAILABLE`/`ON_INSTALL` policies.
 - That attended success proves existing-install publication and registration,
-  not activation. `loaded`, hook trust, and canary remain unverified until a
-  fresh Codex process passes the current-profile canary.
+  not activation. After renewed exact hook trust, a fresh Codex process proved
+  the Agency header, routing, expected specialist selection, delegation plan,
+  and Stop finalization. It correctly rejected the turn because isolated child
+  activation was absent. AR-180 owns that now-reproduced canary gap; no
+  attestation was persisted.
 - The admitted Codex transaction is deliberately existing-only. Missing-host,
   missing-marketplace, absent-plugin, disabled-plugin, or ambiguous-inventory
   states still fail before Windows Hello and require a separately reviewed fresh
