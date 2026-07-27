@@ -338,20 +338,20 @@ not stable internal identifiers.
 | [AR-130](issue-AR-130-revalidate-store-trust.md) | `a32e4e6`, `24948a0`, `90ce272` | [ADR-0092](../decisions/0092-do-not-cache-positive-filesystem-trust.md) |
 | [AR-131](issue-AR-131-complete-mcp-cli-host-contracts.md) | `a32e4e6`, `24948a0` | [ADR-0090](../decisions/0090-model-facing-control-paths-are-read-only.md) |
 | [AR-132](issue-AR-132-hire-deterministic-safe-gaps.md) | `a32e4e6`, `24948a0` | [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md) |
-| [AR-133](issue-AR-133-atomic-finalization-evidence.md) | `a32e4e6`, `c741b24` | [ADR-0093](../decisions/0093-atomic-finalization-evidence-batches.md) |
-| [AR-134](issue-AR-134-enforce-sqlite-currentness-invariants.md) | `a32e4e6`, `24948a0`, `c741b24`, `0932410` | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
+| [AR-133](issue-AR-133-atomic-finalization-evidence.md) | `a32e4e6`, `c741b24`, `b95d78a` | [ADR-0093](../decisions/0093-atomic-finalization-evidence-batches.md) |
+| [AR-134](issue-AR-134-enforce-sqlite-currentness-invariants.md) | `a32e4e6`, `24948a0`, `c741b24`, `0932410`, `b95d78a` | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
 | [AR-135](issue-AR-135-complete-zcode-integration.md) | `a32e4e6`, `24948a0`, `c741b24`, `0b9849c`, `ad0a1ba` | [ADR-0024](../decisions/0024-native-host-packages-and-minimal-bridges.md), [ADR-0028](../decisions/0028-host-support-maturity-and-reversible-install.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md) |
-| [AR-136](issue-AR-136-persist-native-child-correlation.md) | `a32e4e6`, `24948a0`, `c741b24` | [ADR-0094](../decisions/0094-durable-native-child-correlation.md) |
-| [AR-137](issue-AR-137-complete-dashboard-collections.md) | `a32e4e6`, `c741b24`, `0b9849c` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
+| [AR-136](issue-AR-136-persist-native-child-correlation.md) | `a32e4e6`, `24948a0`, `c741b24`, `b95d78a` | [ADR-0094](../decisions/0094-durable-native-child-correlation.md) |
+| [AR-137](issue-AR-137-complete-dashboard-collections.md) | `a32e4e6`, `c741b24`, `0b9849c`, `b95d78a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-138](issue-AR-138-coherent-observable-dashboard-ui.md) | `a32e4e6`, `c741b24`, `9aa317c`, `630db7b` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
 | [AR-139](issue-AR-139-restore-release-asset-budget.md) | `a32e4e6`, `24948a0`, `c741b24`, `92adf2f` | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-140](issue-AR-140-scale-routing-and-retrieval.md) | `a32e4e6`, `c741b24`, `0b9849c`, `0c0299a`, `eec5207`, `8236a16`, `1676f6a` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | `a32e4e6`, `c741b24`, `a1efe31`, `4620204` | None; compatibility and mechanical consolidation |
-| [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6`, `c741b24`, `0b9849c` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
+| [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6`, `c741b24`, `0b9849c`, `b95d78a` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-143](issue-AR-143-require-operator-presence-for-controls.md) | `24948a0`, `c741b24`, `0b9849c`, `4620204`, `900f8d3`, `f64ba1e`, `dfe6f46`, `30d5fc0`, `85428e6`, `cb06c73` | [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md) |
-| [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | `567bd23` | None; behavioral release-test coverage only |
+| [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | `567bd23`, `b95d78a` | None; behavioral release-test coverage only |
 | [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a`, `4620204` | None; release-test determinism and behavioral coverage |
-| [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
+| [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a`, `b95d78a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-147](issue-AR-147-parse-complete-windows-acl-descriptors.md) | `63cf796` | [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | `0932410` | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
 | [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
