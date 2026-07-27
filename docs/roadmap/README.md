@@ -196,7 +196,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-176` | [Align full-gate fixtures with hardened runtime contracts](issue-AR-176-align-full-gate-contract-fixtures.md) | in_progress | p0 | testing | pending authorization |
 | `AR-177` | [Make exhaustive Python CI manual](issue-AR-177-make-exhaustive-python-ci-manual.md) | in_progress | p0 | testing | pending authorization |
 | `AR-178` | [Evaluate complete one-shot applications after production launch](issue-AR-178-evaluate-one-shot-applications-post-production.md) | open | p2 | testing | [#153](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/153) |
-| `AR-179` | [Fail named regulated-assurance staffing gaps closed](issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | in_progress | p0 | routing | [#154](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/154) |
+| `AR-179` | [Fail named regulated-assurance staffing gaps closed](issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | done | p0 | routing | [#154](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/154) |
 
 ## Traceability
 

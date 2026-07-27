@@ -1,6 +1,6 @@
 ---
 title: "AR-179: Fail named regulated-assurance staffing gaps closed"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-07-27
@@ -33,11 +33,11 @@ deterministic verifier had no missing requirement from which to declare a gap.
 
 ## Current state
 
-The local compiler now derives bounded named-standard assurance requirements,
-binds them to independent review, and refuses to let generic review coverage
-satisfy them. Focused intent, staffing, inference, selection-safety, and dynamic-
-hiring tests pass. One fresh live confirmation remains after the clean
-checkpoint.
+The compiler derives bounded named-standard assurance requirements, binds them
+to independent review, and refuses generic review coverage. Focused intent,
+staffing, inference, selection-safety, and dynamic-hiring tests pass. A fresh
+post-checkpoint live route abstained with zero selected agents, exposed the
+uncovered unit, and retained valid provider/model receipts.
 
 ## Approach
 
@@ -60,5 +60,5 @@ regulated request can be accepted by an unqualified generic team.
   governed contract can.
 - [x] Ordinary non-assurance standards references do not create false gaps.
 - [x] Focused compiler, verifier, inference, safety, and hiring tests pass.
-- [ ] A fresh live route abstains or declares a gap unless an explicitly
+- [x] A fresh live route abstains or declares a gap unless an explicitly
   qualified governed worker exists.

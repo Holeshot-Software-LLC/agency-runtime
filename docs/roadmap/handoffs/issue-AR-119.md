@@ -104,13 +104,13 @@ the full acceptance history.
 - Exact-head Windows wheel/sdist artifacts pass strict verification and fresh
   Python 3.10 install/smoke. AR-179 binds named regulated standards to typed
   review; 121 focused intent/staffing/inference/safety/hiring tests pass.
+- AR-179's post-checkpoint live route abstained with zero selections and a
+  truthful uncovered-unit gap; two `gpt-5.6-luna` receipts were applied.
 
 ## exact-blocker
 
 - Current-head manual coverage plus clean Linux portable artifact/install
   evidence remain incomplete; exact-head Windows wheel/sdist evidence is green.
-- AR-179 needs one post-checkpoint live confirmation; the unsafe pre-fix
-  avionics route is preserved and no activation or execution is claimed.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, exact signed candidate verification, and
   an attended Windows Hello success-and-denial canary. The remote session cannot

@@ -3271,8 +3271,13 @@ accepted with generic onboarding, test-results, and code-review workers.
 AR-179 and ADR-0103 now preserve named high-assurance standards as typed
 independent-review capabilities. Generic review cannot cover them; an explicit
 governed contract can. The focused 57-test intent/staffing slice and 64-test
-inference/safety/hiring slice pass. A fresh live confirmation follows the clean
-checkpoint; no activation, delegation, or contractor execution is claimed.
+inference/safety/hiring slice pass. The post-checkpoint live route then
+abstained in 45.359 seconds with zero selected agents and
+`required_agents_missing`, `no_safe_sufficient_team`, and
+`recruiter_abstained`; its uncovered unit produced a truthful
+`hiring_store_unavailable` diagnostic. Both configured-provider calls were
+applied with requested/actual `gpt-5.6-luna` receipts. No activation,
+delegation, hire, or contractor execution is claimed.
 
 ### Still required before AR-119 can close
 

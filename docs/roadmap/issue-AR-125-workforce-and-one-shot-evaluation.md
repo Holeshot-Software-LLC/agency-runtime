@@ -36,8 +36,9 @@ Every-worker semantic cases and pairwise/lifecycle-team properties are green.
 Configured-inference and held-out matched evidence, paired Agency-on/off value,
 exact-current installed artifacts, and five live host canaries remain open.
 Complete one-shot applications moved to non-blocking post-production AR-178.
-AR-179 owns the live false-sufficient-team defect found for named regulated
-assurance work; its local repair awaits one fresh live confirmation.
+AR-179 repaired the live false-sufficient-team defect for named regulated
+assurance work and passed a fresh fail-closed confirmation. That bounded result
+does not complete the broader matched outcome or five-host evidence here.
 
 ## Approach
 
