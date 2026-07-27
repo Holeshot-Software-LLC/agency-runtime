@@ -69,7 +69,7 @@ or adding an index-install claim.
 - [ ] Codex, Claude Code, Hermes, and OpenClaw install, disable, enable, rollback,
       preflight, evidence, and finalization paths have been exercised for the v1
       matrix or clearly marked below that maturity.
-- [ ] Codex generated-bundle smoke proves the expected seven hook events,
+- [ ] Codex generated-bundle smoke proves the expected 8 hook events,
       commands, and timeout schema; native inventory proves plugin registration
       and enablement. Exact existing-install refresh through
       `agency install --agent codex --no-dashboard` proves its prepared binding,

@@ -44,6 +44,7 @@ from agency_runtime.core.installer import (
 )
 from agency_runtime.core.installer_contracts import (
     ADAPTER_LAUNCHER_MANIFEST,
+    CODEX_HOOK_EVENTS,
     OPENCLAW_REQUIRED_HOOKS,
     openclaw_version_supported,
 )
@@ -520,16 +521,7 @@ def test_generated_hook_timeouts_exceed_the_configured_sequential_judge_budget()
     assert codex_handler["async"] is False
     assert "timeoutSec" not in codex_handler
     assert hook_timeout > judge_budget
-    assert {
-        "SessionStart",
-        "UserPromptSubmit",
-        "PreToolUse",
-        "PostToolUse",
-        "SubagentStart",
-        "SubagentStop",
-        "PostCompact",
-        "Stop",
-    }.issubset(codex_hooks["hooks"])
+    assert tuple(codex_hooks["hooks"]) == CODEX_HOOK_EVENTS
     assert codex_hooks["hooks"]["PreToolUse"][0]["matcher"] == "spawn_agent"
 
     claude_files, _ = _bundle_files("claude", cfg)
@@ -952,7 +944,8 @@ def test_codex_inventory_surfaces_manual_hook_trust_boundary(tmp_path: Path) -> 
     assert record["enabled"] is True
     assert record["hook_trust_status"] == "unverified"
     assert "`/hooks`" in record["hook_trust_action"]
-    assert "seven Agency Runtime hook events" in record["hook_trust_action"]
+    assert f"all {len(CODEX_HOOK_EVENTS)} Agency Runtime hook events" in record["hook_trust_action"]
+    assert all(f"`{event}`" in record["hook_trust_action"] for event in CODEX_HOOK_EVENTS)
     assert record["hook_trust_surface"] == "codex-terminal-tui"
     assert record["hook_trust_command"] == "codex"
 

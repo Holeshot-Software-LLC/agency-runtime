@@ -37,6 +37,9 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex hook-trust guidance now derives the exact event count and names from the
+  generated eight-event inventory, including `PreToolUse`, instead of reporting
+  the prior seven-event contract during activation.
 - Persisted and externally supplied JSON now shares one bounded decoder with
   pre-allocation depth/node checks, typed ambiguity failures, and an exact
   generated-shim inventory. Child-routing writes prove the same contract used

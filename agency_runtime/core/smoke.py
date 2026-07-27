@@ -27,7 +27,10 @@ from agency_runtime.core.installer import (
     install_agent_adapter,
     toggle_agency,
 )
-from agency_runtime.core.installer_contracts import ADAPTER_LAUNCHER_MANIFEST
+from agency_runtime.core.installer_contracts import (
+    ADAPTER_LAUNCHER_MANIFEST,
+    CODEX_HOOK_EVENTS,
+)
 from agency_runtime.core.installer_payloads import bind_launcher_artifact_paths
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.private_paths import ensure_private_directory, private_temporary_directory
@@ -222,24 +225,12 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     }
 
 
-_CODEX_HOOK_EVENTS = (
-    "PostCompact",
-    "PostToolUse",
-    "PreToolUse",
-    "SessionStart",
-    "Stop",
-    "SubagentStart",
-    "SubagentStop",
-    "UserPromptSubmit",
-)
-
-
 def _validate_codex_hooks(hooks: Any) -> list[str]:
     """Validate the exact command-hook contract consumed by current Codex."""
     hook_map = hooks.get("hooks") if isinstance(hooks, dict) else None
-    if not isinstance(hook_map, dict) or set(hook_map) != set(_CODEX_HOOK_EVENTS):
+    if not isinstance(hook_map, dict) or tuple(hook_map) != CODEX_HOOK_EVENTS:
         raise RuntimeError("Codex bundle has an invalid hook event set")
-    for event in _CODEX_HOOK_EVENTS:
+    for event in CODEX_HOOK_EVENTS:
         registrations = hook_map[event]
         if (
             not isinstance(registrations, list)
@@ -279,7 +270,7 @@ def _validate_codex_hooks(hooks: Any) -> list[str]:
             raise RuntimeError(f"Codex {event} Windows hook must use the PowerShell call operator")
         if event == "PostToolUse" and registration.get("matcher") != "*":
             raise RuntimeError("Codex PostToolUse hook must match every tool")
-    return list(_CODEX_HOOK_EVENTS)
+    return list(CODEX_HOOK_EVENTS)
 
 
 def _installed_launcher_paths(plugin_root: Path) -> tuple[str, str]:

@@ -15,6 +15,7 @@ from typing import Any
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.configuration_persistence import resolve_config_path
 from agency_runtime.core.installer_contracts import (
+    CODEX_HOOK_EVENTS,
     HOOK_TIMEOUT_BUFFER_SECONDS,
     MAX_HOOK_TIMEOUT_SECONDS,
 )
@@ -262,43 +263,36 @@ def codex_hooks(
             "statusMessage": status_message,
         }
 
-    return {
-        "hooks": {
-            "SessionStart": [
-                {"hooks": [handler("SessionStart", "Loading Agency Runtime managers")]}
-            ],
-            "UserPromptSubmit": [
-                {"hooks": [handler("UserPromptSubmit", "Routing with Agency Runtime")]}
-            ],
-            "PreToolUse": [
-                {
-                    "matcher": "spawn_agent",
-                    "hooks": [
-                        handler(
-                            "PreToolUse",
-                            "Binding exact Agency specialist to native child",
-                        )
-                    ],
-                }
-            ],
-            "PostToolUse": [
-                {
-                    "matcher": "*",
-                    "hooks": [handler("PostToolUse", "Recording Agency Runtime evidence")],
-                }
-            ],
-            "SubagentStart": [
-                {"hooks": [handler("SubagentStart", "Binding Agency child identity")]}
-            ],
-            "SubagentStop": [
-                {"hooks": [handler("SubagentStop", "Recording Agency child lifecycle")]}
-            ],
-            "PostCompact": [
-                {"hooks": [handler("PostCompact", "Restoring Agency Runtime managers")]}
-            ],
-            "Stop": [{"hooks": [handler("Stop", "Checking Agency Runtime response contract")]}],
-        }
+    hooks = {
+        "SessionStart": [{"hooks": [handler("SessionStart", "Loading Agency Runtime managers")]}],
+        "UserPromptSubmit": [
+            {"hooks": [handler("UserPromptSubmit", "Routing with Agency Runtime")]}
+        ],
+        "PreToolUse": [
+            {
+                "matcher": "spawn_agent",
+                "hooks": [
+                    handler(
+                        "PreToolUse",
+                        "Binding exact Agency specialist to native child",
+                    )
+                ],
+            }
+        ],
+        "PostToolUse": [
+            {
+                "matcher": "*",
+                "hooks": [handler("PostToolUse", "Recording Agency Runtime evidence")],
+            }
+        ],
+        "SubagentStart": [{"hooks": [handler("SubagentStart", "Binding Agency child identity")]}],
+        "SubagentStop": [{"hooks": [handler("SubagentStop", "Recording Agency child lifecycle")]}],
+        "PostCompact": [{"hooks": [handler("PostCompact", "Restoring Agency Runtime managers")]}],
+        "Stop": [{"hooks": [handler("Stop", "Checking Agency Runtime response contract")]}],
     }
+    if tuple(hooks) != CODEX_HOOK_EVENTS:
+        raise RuntimeError("Codex hook payload drifted from the canonical trust inventory")
+    return {"hooks": hooks}
 
 
 def claude_hooks(

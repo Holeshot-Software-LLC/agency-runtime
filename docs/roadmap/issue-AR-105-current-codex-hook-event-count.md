@@ -9,8 +9,9 @@ related:
   - README.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
+  - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
 type: issue
 epic: documentation
 issue_id: AR-105
@@ -36,6 +37,10 @@ The generated Codex bundle and its smoke validator require `PostCompact`,
 `UserPromptSubmit`. Maintained operator guidance now reports those as seven
 Agency Runtime hook events. Historical canary records that faithfully observed
 an earlier three-hook installation remain unchanged.
+
+This record describes the seven-event contract at its implementation commit.
+AR-182 owns the later eight-event contract after `PreToolUse` was added for
+native-child specialist binding; historical evidence here remains unchanged.
 
 ## Approach
 

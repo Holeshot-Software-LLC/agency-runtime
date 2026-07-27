@@ -113,8 +113,9 @@ activation flow:
 
 1. Open a terminal and run `codex` to start the Codex terminal UI.
 2. Choose **Trust all and continue** when its startup hook review appears. If
-   it does not appear, run `/hooks` inside that terminal UI and trust all seven
-   Agency Runtime hook events.
+   it does not appear, run `/hooks` inside that terminal UI and trust all 8
+   Agency Runtime hook events: `SessionStart`, `UserPromptSubmit`, `PreToolUse`,
+   `PostToolUse`, `SubagentStart`, `SubagentStop`, `PostCompact`, and `Stop`.
 3. If this is an existing managed, registered, and enabled Codex installation,
    run `agency install --agent codex --no-dashboard` and complete the trusted
    Windows Hello prompt. This refresh path does not bootstrap a missing install.
