@@ -338,9 +338,9 @@ not stable internal identifiers.
 | [AR-153](issue-AR-153-complete-worker-detail-evidence.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-154](issue-AR-154-fail-malformed-initial-pages-closed.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-155](issue-AR-155-bound-dashboard-hiring-evidence.md) | `e62230c`, `6a3bdaa`, `90ce272` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
-| [AR-156](issue-AR-156-restore-cost-bounded-verification.md) | `babc45a`, `fbbc512`, `c5d5631`, `d2ab19b`, `7d11313`, `74468aa`, `49aafe1`, `900f8d3`, `58aee8b`, `62d90ca`, `11241e6` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
+| [AR-156](issue-AR-156-restore-cost-bounded-verification.md) | `babc45a`, `fbbc512`, `c5d5631`, `d2ab19b`, `7d11313`, `74468aa`, `49aafe1`, `900f8d3`, `58aee8b`, `62d90ca`, `11241e6`, `aad2901` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-157](issue-AR-157-quiet-public-http-disconnects.md) | `74468aa`, `12640d0`, `900f8d3` | [ADR-0017](../decisions/0017-sanitized-server-error-boundary.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
-| [AR-158](issue-AR-158-disambiguate-multi-surface-observation-tests.md) | pending | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
+| [AR-158](issue-AR-158-disambiguate-multi-surface-observation-tests.md) | `aad2901` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
