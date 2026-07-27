@@ -148,7 +148,8 @@ identity and the owner/legal compiler, runtime, SDK, and notice disposition.
   artifact verification, and authorized legal disposition for the exact MSVC,
   Windows SDK, static runtime, and upstream notices.
 - [ ] An attended Windows Hello success-and-denial canary passes from the exact
-  signed Windows release candidate.
+  signed Windows release candidate. The unsigned existing-Codex refresh is
+  local dogfood evidence, not this release gate.
 
 The general contract remains that deferred stdin/prompt input is prepared
 before verification. Secret payload binding exposes neither the value nor a
@@ -222,6 +223,21 @@ registration drift can exist without a version change.
 
 ## Remaining release and scope gates
 
+- On 2026-07-27, exact local candidate `6d55e29` was built from a clean detached
+  worktree into a fresh owner-private Python 3.13 environment. The 7,403,575-
+  byte `win_amd64` wheel (`7d071c8c...593f0`) and 17,993,098-byte sdist
+  (`3a81eddf...e316`) passed strict metadata and independent distribution
+  verification. A fresh wheel venv passed version and real Codex status smoke.
+  The first non-visible Windows verification attempt failed safely before
+  mutation. A second taskbar-visible attempt completed Windows Hello and the
+  exact transaction with exit zero. Status then proved new install ID
+  `7761d792-3dc3-4c92-8084-5cd524c63103`, bundle
+  `0c3696e1...084f3`, retained backup `20260727T160533.282423Z`, and native
+  plugin `0.1.0+codex.a106953cb0c7` installed and enabled with exact
+  `AVAILABLE`/`ON_INSTALL` policies.
+- That attended success proves existing-install publication and registration,
+  not activation. `loaded`, hook trust, and canary remain unverified until a
+  fresh Codex process passes the current-profile canary.
 - The admitted Codex transaction is deliberately existing-only. Missing-host,
   missing-marketplace, absent-plugin, disabled-plugin, or ambiguous-inventory
   states still fail before Windows Hello and require a separately reviewed fresh
@@ -240,9 +256,9 @@ registration drift can exist without a version change.
   pairs and an independent three-artifact merge verifier; hosted Windows/Linux
   producer and merge proof remains unavailable while Actions billing is
   disabled.
-- A real attended Windows Hello verification and successful rollback canary has
-  not run in this remote session. Availability and invalid-input smoke are not a
-  substitute.
+- A real attended Windows Hello success-and-denial roster-rollback canary has
+  not run. The existing-Codex refresh success above does not satisfy that
+  separate mutation or the signed release-candidate gate.
 - Linux, Windows ARM64, fresh Codex bootstrap, and every persistent mutation
   other than exact roster rollback and exact existing-Codex refresh remain
   deliberately unavailable.

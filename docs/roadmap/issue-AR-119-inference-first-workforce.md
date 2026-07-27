@@ -3295,6 +3295,32 @@ abstained in 45.359 seconds with zero selected agents and
 applied with requested/actual `gpt-5.6-luna` receipts. No activation,
 delegation, hire, or contractor execution is claimed.
 
+### Attended existing-Codex refresh checkpoint 2026-07-27
+
+ADR-0104 and commit pair `30d5fc0`/`6d55e29` add the exact positive
+existing-install Codex refresh without enabling generic or missing-host
+installation. The focused transaction/security/native slice passes 341 tests,
+the named production spine passes 522 with 5 platform skips in 75.89 seconds,
+all 105 dashboard UI tests pass, and every routing-evaluation gate passes.
+
+The exact committed Windows wheel (`7d071c8c...593f0`) and sdist
+(`3a81eddf...e316`) were built in a clean detached worktree with an owner-
+private Python 3.13 environment and passed strict metadata plus independent
+distribution verification. A fresh wheel venv saw the real existing Codex
+integration. One hidden attended attempt timed out before mutation and returned
+`partial=false`, `state_preserved=true`, and no recovery requirement. A visible
+retry completed Windows Hello and the prepared transaction with exit zero.
+Post-install status proves new install ID
+`7761d792-3dc3-4c92-8084-5cd524c63103`, bundle
+`0c3696e1...084f3`, retained backup `20260727T160533.282423Z`, and native
+version `0.1.0+codex.a106953cb0c7` installed/enabled under exact policy.
+
+This is installation and registration evidence only. The freshly registered
+plugin still reports `loaded=null`, unverified hook trust, and no canary until a
+new Codex process supplies behavioral evidence. Fresh missing-host bootstrap,
+signed delivery, the roster-rollback canary, four other host canaries, and the
+manual exact-head release gate remain open.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their

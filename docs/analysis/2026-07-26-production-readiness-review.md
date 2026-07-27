@@ -66,22 +66,25 @@ The repaired warning-strict corpus, performance arm, and dashboard UI gate are
 green. Exact release candidate `29da6eca` now has clean Windows and Linux
 producers, fresh wheel and source installs, and an independently verified
 three-artifact release set. The exhaustive coverage arm remains manual-only and
-was not rerun; it runs only when the owner explicitly requests it. A fresh
-normal-profile Codex reinstall still cannot pass honestly.
+was not rerun; it runs only when the owner explicitly requests it. A missing-
+host fresh Codex bootstrap still cannot pass honestly. The exact existing-
+install refresh now passes attended publication and registration, but
+activation remains unverified until a new Codex process passes the bound
+current-profile canary.
 
-The decisive remaining product blocker is no longer missing code that can be
-faked around: a generic fresh Codex installation correctly fails closed because
-the remote session cannot satisfy the production non-exporting Windows
-operator-presence gate. AR-161 also still requires owner publisher identity,
+The decisive remaining blocker is no longer the existing-install transaction:
+its non-exporting Windows Hello path has now passed. Generic fresh Codex
+bootstrap remains fail-closed. AR-161 also still requires owner publisher identity,
 authorized legal disposition, protected signing/timestamp authority, and an
 attended Windows Hello success-and-denial canary. Hosted, tracker,
 normal-profile trust, and benchmark-valid outcome evidence are separate open
 release gates. Production and a CEO demo that claims installed persistent
 control are therefore **NO-GO** until those real gates are supplied.
 
-The exact open gates are a prepared and presence-authorized Codex install,
-publisher/legal/signing authority, an attended Windows Hello success-and-denial
-canary, five real installed-host canaries, GitHub Actions billing plus final
+The exact open gates are current-profile activation of the refreshed Codex
+candidate, fresh-host bootstrap if claimed, publisher/legal/signing authority,
+an attended Windows Hello success-and-denial roster-rollback canary, four other
+real installed-host canaries, GitHub Actions billing plus final
 hosted evidence, a benchmark-valid AR-119 outcome corpus, and authorized branch
 protection/tracker parity. The owner-deferred exhaustive coverage arm is neither
 scheduled nor an automatic Actions expense.
@@ -93,6 +96,29 @@ Store-trust cache is contradicted by the new same-inode permission-transition
 reproduction and must not be implemented.
 
 ## Fresh artifact, Codex, routing, and UI checkpoint
+
+### Attended existing-Codex refresh addendum
+
+Exact local commit pair `30d5fc0`/`6d55e29` implements ADR-0104's existing-
+install-only prepared transaction. The bounded gate passes 341 focused tests,
+522 production-spine tests with 5 platform skips, 105 UI tests, Ruff, format,
+high-severity Bandit, documentation validation, and every routing-evaluation
+gate. No exhaustive corpus or hosted workflow ran.
+
+The clean detached builder emitted a 7,403,575-byte `win_amd64` wheel
+(`7d071c8c...593f0`) and 17,993,098-byte sdist (`3a81eddf...e316`); strict Twine
+and independent distribution verification passed. A fresh Python 3.13 wheel
+environment passed read-only real-host smoke. The first non-visible Windows
+verification attempt failed before mutation. A taskbar-visible retry completed
+Windows Hello and the exact refresh with exit zero. Read-only postconditions
+prove install ID `7761d792-3dc3-4c92-8084-5cd524c63103`, bundle
+`0c3696e1...084f3`, retained exact backup `20260727T160533.282423Z`, and native
+plugin `0.1.0+codex.a106953cb0c7` installed/enabled with exact policies.
+
+This supersedes the older existing-install failure below, but not its historical
+evidence. It is not fresh missing-host bootstrap, signed delivery, or activation
+proof. Loaded state, hook-trust evidence, and current-profile canary remain open
+until a fresh Codex process proves them behaviorally.
 
 The exact `29da6eca2b0dd73b37a91e6bfdb29881face5d56` source was exported into
 clean private Windows and WSL/Linux build roots because the primary checkout

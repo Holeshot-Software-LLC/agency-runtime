@@ -29,14 +29,15 @@ related:
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
+  - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 29da6eca2b0dd73b37a91e6bfdb29881face5d56
-minimum_ledger_commit: 29da6eca2b0dd73b37a91e6bfdb29881face5d56
+evidence_commit: 6d55e29e3c8ed6f370733fc15782051dd03e2f52
+minimum_ledger_commit: 6d55e29e3c8ed6f370733fc15782051dd03e2f52
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -49,9 +50,9 @@ the full acceptance history.
 
 ## checkpoint
 
-- Exact tested release candidate: `29da6eca2b0dd73b37a91e6bfdb29881face5d56`.
-- Branch `main` and `origin/main` both resolve to `880a5ce`. The authorized push
-  fast-forwarded 115 commits; automatic CI and CodeQL were rejected before any
+- Exact locally tested code/ledger pair: `30d5fc0`/`6d55e29`.
+- Branch `main` resolves to `6d55e29`; `origin/main` remains `880a5ce` because
+  no new push was authorized. Earlier automatic CI and CodeQL were rejected before any
   step or runner started by the account billing/spending gate. No manual or
   exhaustive workflow was dispatched.
 - The user-owned untracked
@@ -82,8 +83,13 @@ the full acceptance history.
   errors were empty. Route Lab truthfully stayed disabled without a verified
   enabled host. The test listener is stopped.
 - The named fast production spine passes 521 tests with 5 platform skips in
-  74.94 seconds; all 105 dashboard UI tests, Ruff, formatting, docs, and every
-  routing-evaluation gate pass at pushed head `880a5ce`.
+  74.94 seconds at pushed head `880a5ce`. The new exact candidate passes 522
+  with 5 skips in 75.89 seconds; all 105 dashboard UI tests, Ruff, formatting,
+  docs, focused high-severity Bandit, and every routing-evaluation gate pass.
+- ADR-0104's exact existing-install Codex refresh passes attended Windows Hello,
+  atomic publication, native remove/add, and postcondition proof. New install ID
+  is `7761d792-3dc3-4c92-8084-5cd524c63103`; bundle is `0c3696e1...084f3`;
+  native version is `0.1.0+codex.a106953cb0c7`; the exact prior backup remains.
 - AR-179 binds named standards to typed review. Focused tests and fresh live
   routing prove a DO-178C gap now abstains rather than forming a false team.
 - One-shot application evaluation is deferred to post-production AR-178 and is
@@ -91,18 +97,10 @@ the full acceptance history.
 
 ## exact-blocker
 
-- Generic `agency install` has no prepared, frozen, replay-safe transaction or
-  compensation contract. AR-143's only genuine positive mutation is exact
-  prepared roster rollback; every generic install correctly remains blocked.
-- Current Codex inventory is registered and enabled, but the managed bundle is
-  older than candidate `29da6eca`, launcher evidence has drifted, hook trust is
-  unverified, and loaded state is unknown. The exact current-profile canary
-  completed but produced no Agency header, specialist selection, routing,
-  receipt, or accepted finalization. No attestation was persisted.
-- Candidate reinstall dry-run planned a backup and bundle refresh. The supported
-  real install then returned operator-presence `unavailable` with exit 1 before
-  any persistent change was dispatched. Do not copy or rewrite plugin files
-  around this boundary.
+- Generic and missing-host installation remain unavailable, but exact existing-
+  install Codex refresh is now a positive prepared transaction. Registration is
+  proven; `loaded`, hook trust, and canary remain unverified until a fresh Codex
+  process passes the current-profile canary.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
@@ -126,16 +124,13 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Under AR-143, add a release-disabled prepared Codex-install coordinator that
-   freezes Store/config generations, exact target/bundle/executable identities,
-   expected deltas, and recovery consequences; revalidate before each owner
-   mutation and prove drift, replay, substitution, and partial-failure behavior.
-2. Add an enumerated `install.codex.v1` native protocol only after the prepared
-   transaction exists. Keep it unsigned and release-disabled pending AR-161.
-3. Add signed-delivery provenance and independent Windows default-policy
+1. Run the exact refreshed-candidate current-profile Codex canary from a fresh
+   process and preserve loaded/specialist/finalization evidence or the exact
+   failure without reinterpretation.
+2. Add signed-delivery provenance and independent Windows default-policy
    verification. Publisher/legal/signing inputs remain owner/external gates.
-4. With those gates satisfied, perform the attended normal-profile Codex install
-   and five-host canaries, then the benchmark-valid AR-119/125 outcome trials.
+3. Design fresh missing-host bootstrap separately if it is a claimed v1 surface.
+4. Complete the other host canaries and benchmark-valid AR-119/125 outcome trials.
 5. Run exhaustive coverage/compatibility only on explicit owner request.
 
 ## verification
@@ -144,7 +139,7 @@ the same persistent goal from the clean pair through normal compaction.
 python scripts/context_handoff_status.py --json --threshold 50
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 python scripts/verify_docs.py
-python -m scripts.verify_distribution <three-artifact-directory> --artifact-set release --expected-commit 29da6eca2b0dd73b37a91e6bfdb29881face5d56
+python -m scripts.verify_distribution <candidate-directory> --expected-commit 6d55e29e3c8ed6f370733fc15782051dd03e2f52
 git diff --check
 # Owner-requested manual integration only:
 python -m pytest tests -q -W error
