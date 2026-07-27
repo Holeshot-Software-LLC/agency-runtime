@@ -22,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 11241e61721abf4e7438d529e3c70323d9334b53
-minimum_ledger_commit: cc85d3050a5dd1a48cc257181ff4826035c3804c
+evidence_commit: aad2901879991862e199aacedf81a186700bd0d1
+minimum_ledger_commit: a34a9dc13ba7fc1ae79506e074624b0d7add27e5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -40,8 +40,8 @@ acceptance contract; this capsule records only the active checkpoint.
   publication, or release was authorized.
 - The user-owned untracked `docs/analysis/2026-07-25-deep-audit-findings.md`
   remains unchanged and excluded from every commit.
-- Telemetry reported 42.9 percent remaining. The clean `11241e6`/`cc85d30`
-  bound-sharding pair precedes this benchmark checkpoint.
+- Telemetry reported 19.1 percent remaining. The clean `aad2901`/`a34a9dc`
+  observation-evidence pair precedes this benchmark checkpoint.
 - Security, optimization, and UI-to-Store traceability findings AR-128 through
   AR-155 have governed local repairs or explicit remaining evidence gates.
 - AR-156 now has one valid four-shard baseline, one diagnostic-only v1 timing
@@ -86,9 +86,9 @@ acceptance contract; this capsule records only the active checkpoint.
 - Four behavior-preserving test setup reductions kept 77 passes and 5 skips
   while a matched local Windows slice fell from 84.38 to 48.06 seconds
   (43.04 percent). Full-corpus speed remains unclaimed.
-- Two v2 controls passed 4/4 in 690.599 and 710.037 seconds. A third rejected
-  3/4 after AR-158's MCP test selected a preceding Store slow-query observation;
-  the controller published no complete artifact and the fixed corpus must restart.
+- Pre-fix controls exposed AR-158 and were excluded. Replacement v2 controls
+  passed 4/4 in 639.984, 657.689, and 639.573 seconds; their median is 639.984.
+  The exact 276-file profile digest is `5415fc29`; weighted proof remains.
 - Fresh source status sees all five hosts and the configured provider. The
   globally installed `agency` CLI is stale: it omits ZCode from status help and
   rejects the current provider configuration. The Store has 0 specialist-load
@@ -122,8 +122,7 @@ acceptance contract; this capsule records only the active checkpoint.
 - Persistent fresh installation remains fail-closed behind AR-143. Normal
   Codex hook trust also requires user-owned terminal-TUI review; neither may be
   bypassed while the user is remote.
-- AR-156 still needs three clean v2 source-byte controls, generated versioned
-  Windows weights, matched exact-weight samples, and a one-shard control proving
+- AR-156 still needs matched exact-weight samples and a one-shard control proving
   at least 30 percent median wall-clock improvement. Canonical release gates
   remain separate requirements.
 - AR-119/AR-125 still lack a benchmark-valid outcome corpus and current-artifact
@@ -139,8 +138,7 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run three explicit source-byte v2 timing corpora from one clean evidence
-   commit and generate the versioned Windows profile only from all three.
+1. Commit the exact versioned Windows profile and its evidence record.
 2. Run matched strict exact-weight corpora plus a one-shard source-byte control;
    do not change the gate after observing.
 3. Recommend rebalancing only if exact file coverage, isolation, and release

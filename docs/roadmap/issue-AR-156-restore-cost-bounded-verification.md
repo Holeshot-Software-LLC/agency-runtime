@@ -14,6 +14,7 @@ related:
   - scripts/select_test_shard.py
   - scripts/pytest_file_timing.py
   - scripts/test_shard_profile.py
+  - scripts/test_shard_weights/windows-cpython313-v1.json
   - scripts/run_parallel_change_loop.py
   - scripts/parallel_change_loop_runtime.py
   - scripts/parallel_change_loop_storage.py
@@ -228,6 +229,22 @@ Store observation preceded the MCP observation and exposed AR-158's ambiguous
 first-record test selector. No complete artifact was published. Because the
 test fix changes the exact corpus content, the first two artifacts remain valid
 diagnostics but cannot be mixed into the replacement profile's three samples.
+
+The replacement v2 controls all passed 4/4 from clean ledger commit `a34a9dc`:
+`b32973e5f8cf0a9d018b8304e6059fc1` took 639.984 seconds,
+`c3b5e80765eab687f104306781a7c79e` took 657.689 seconds, and
+`aebb1f7dacf7eb250e3da45e050af9cd` took 639.573 seconds. Their
+controller-wall median is 639.984 seconds. Every artifact contains the exact
+276-file union, 7,804 collected tests, clean commit identity, and the same
+source-byte assignment.
+
+The generator accepted only those three artifacts and wrote the versioned
+Windows CPython 3.13 profile with SHA-256
+`5415fc292a6b542bfd5491f183f177f95f57997636eacaa868dca3536489b4f3`.
+Strict dry-run loads it as `duration-lpt-v1/exact` and assigns 68, 69, 70, and
+69 files. The planned median-duration totals differ by only 7.4801 ms across
+shards; that is schedule input evidence, not a wall-time speed claim. Matched
+strict-profile runs and the one-worker control remain required.
 
 Four test-only cost corrections retain the exact exercised contracts while
 removing unrelated setup: HTTP fixture shutdown polls at 10 ms, adapter parity
