@@ -670,8 +670,12 @@ def test_run_rejects_async_runner_and_closes_coroutine():
 
 
 def test_run_real_subprocess_success_and_inner_timeout(monkeypatch):
-    monkeypatch.setattr(subject, "prepare_process_argv", lambda argv: list(argv))
-    monkeypatch.setattr(subject, "freeze_process_argv", lambda argv: argv)
+    monkeypatch.setattr(
+        subject,
+        "prepare_process_argv",
+        lambda argv, **_kwargs: list(argv),
+    )
+    monkeypatch.setattr(subject, "freeze_process_argv", lambda argv, **_kwargs: argv)
     monkeypatch.setattr(subject, "revalidate_process_argv", lambda _argv: None)
 
     def success(_argv, *, stdout, stderr, **_kwargs):

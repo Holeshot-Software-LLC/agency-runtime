@@ -56,11 +56,16 @@ def _bind(
     *,
     operator_presence_family: str = "",
     operator_presence_dry_run_exempt: bool = False,
+    operator_presence_prepared_action: str = "",
 ) -> None:
     defaults: dict[str, object] = {"func": handlers[name]}
     if operator_presence_family:
         defaults["_operator_presence_family"] = operator_presence_family
         defaults["_operator_presence_dry_run_exempt"] = operator_presence_dry_run_exempt
+    if operator_presence_prepared_action:
+        if not operator_presence_family:
+            raise ValueError("prepared operator presence requires a mutation family")
+        defaults["_operator_presence_prepared_action"] = operator_presence_prepared_action
     parser.set_defaults(**defaults)
 
 
@@ -556,6 +561,7 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
         handlers,
         "cmd_roster_rollback",
         operator_presence_family="roster-governance",
+        operator_presence_prepared_action="roster.rollback.v1",
     )
 
     roster_upstream = roster_sub.add_parser(

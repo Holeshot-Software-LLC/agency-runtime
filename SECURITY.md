@@ -3,7 +3,7 @@ title: "Security Policy"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-20
+updated: 2026-07-27
 tags: [security, reporting, privacy]
 related:
   - README.md
@@ -12,6 +12,13 @@ related:
   - docs/RELEASE_CHECKLIST.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
+  - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
+  - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
+  - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
+  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
+  - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
+  - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
+  - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
 supersedes: []
 superseded_by: null
 ---
@@ -71,10 +78,34 @@ product contract:
   and SQLite sidecars remain owner-only, Windows DACL failure is fatal, and
   database symlink or reparse-point targets are rejected before open.
 - Persistent CLI mutations pass one allowlisted, typed, revision-checked
-  pre-dispatch operator-presence guard. This unreleased source has no production
-  OS-backed verifier, so positive mutations intentionally fail closed. Direct
-  credentials remain write-only; prefer environment-variable references and
-  hidden CLI input when configuration is enabled.
+  operator-presence boundary. The only positive implementation is exact roster
+  rollback on Windows 11 x64: one Store coordinator prepares the complete
+  authoritative transition, invokes an app-owned native Windows consent window,
+  then revalidates the same Store, database, revision, authority, and effective
+  workforce-contract identities inside the committing transaction. Its native
+  result is consumed synchronously and never returned as a bearer or receipt.
+  The rollback restores the target routing/workforce contract while preserving
+  current worker employment and standing. Every other persistent mutation and
+  unsupported platform intentionally fails closed. Direct credentials remain
+  write-only; prefer environment-variable references and hidden CLI input when
+  configuration is enabled.
+- The packaged Windows verifier is reviewed and byte-pinned but currently
+  unsigned. The source now derives a portable wheel that excludes only the PE
+  and a Windows x64 wheel that includes it; their producer pairs feed an
+  independent three-artifact unsigned review verifier. Hosted cross-OS proof remains
+  pending under AR-160 because repository Actions billing is disabled. AR-161
+  must map one
+  reproducible unsigned review digest to separately signed delivery bytes under
+  an owner-approved publisher identity, independently verify its certificate
+  chain and timestamp, and record an authorized legal disposition for the exact
+  MSVC, Windows SDK, `/MT` static runtime, and upstream notices. Local
+  C++/WinRT MIT and Microsoft STL Apache-2.0 WITH LLVM-exception/NOTICE text
+  preserves source provenance; it does not itself clear redistribution. Do not
+  treat this source state as production-ready until those gates and an attended
+  Windows Hello success-and-denial canary pass. The boundary also trusts the
+  local account and Python interpreter; it is not isolation against same-account
+  code replacement, monkeypatching/private reflection, debugger access, or
+  direct database writes.
 - Credentialed remote providers require HTTPS. Literal loopback HTTP is the
   only exception; URLs with embedded user information, queries, or fragments
   are rejected, and authenticated requests never follow redirects.
@@ -82,6 +113,10 @@ product contract:
   chosen host's authentication root. Prompts use standard input where the host
   contract permits it, are length-bounded and recursively redacted, and owned
   descendants are terminated on timeout or after a parent exits.
+- Native command discovery inertly excludes the complete containing repository,
+  including sibling `bin` directories from nested working directories. Final
+  explicit, resolver-returned, wrapper, and resolved-link artifacts are checked
+  against the same boundary before identity freezing and launch.
 - Metadata-only observability is the default. Opt-in content capture uses
   bounded defensive redaction, but no automatic redactor can guarantee removal
   of every secret or personal identifier.

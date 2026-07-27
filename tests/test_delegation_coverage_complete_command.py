@@ -69,7 +69,11 @@ def test_availability_rejects_executable_that_cannot_be_safely_launched(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     backend = CommandBackend(["tool"])
-    monkeypatch.setattr(CommandBackend, "executable_path", lambda _self: "/safe/tool")
+    monkeypatch.setattr(
+        CommandBackend,
+        "executable_path",
+        lambda _self, **_kwargs: "/safe/tool",
+    )
     monkeypatch.setattr(
         backend_command,
         "prepare_process_argv",
@@ -159,7 +163,7 @@ def test_execute_returns_unavailable_record_when_resolution_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     backend = CommandBackend(["missing"])
-    monkeypatch.setattr(CommandBackend, "executable_path", lambda _self: None)
+    monkeypatch.setattr(CommandBackend, "executable_path", lambda _self, **_kwargs: None)
 
     result = backend.execute(task="work", check=False)
 
@@ -172,7 +176,11 @@ def test_execute_isolates_delegate_temporary_files(
 ) -> None:
     backend = CommandBackend(["tool"])
     observed: dict[str, Path] = {}
-    monkeypatch.setattr(CommandBackend, "executable_path", lambda _self: "/safe/tool")
+    monkeypatch.setattr(
+        CommandBackend,
+        "executable_path",
+        lambda _self, **_kwargs: "/safe/tool",
+    )
 
     def run(*_args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
         environment = kwargs["env"]
@@ -267,7 +275,11 @@ def test_execute_normalizes_launch_races_and_permissions(
     message: str,
 ) -> None:
     backend = CommandBackend(["tool"])
-    monkeypatch.setattr(CommandBackend, "executable_path", lambda _self: "/safe/tool")
+    monkeypatch.setattr(
+        CommandBackend,
+        "executable_path",
+        lambda _self, **_kwargs: "/safe/tool",
+    )
     monkeypatch.setattr(
         backend_command,
         "_run_owned_process",
@@ -285,7 +297,11 @@ def test_execute_rejects_oversized_structured_success_before_parsing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     backend = CommandBackend(["tool"], output_format="json", max_output_chars=3)
-    monkeypatch.setattr(CommandBackend, "executable_path", lambda _self: "/safe/tool")
+    monkeypatch.setattr(
+        CommandBackend,
+        "executable_path",
+        lambda _self, **_kwargs: "/safe/tool",
+    )
     monkeypatch.setattr(
         backend_command,
         "_run_owned_process",

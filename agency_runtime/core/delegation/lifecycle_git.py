@@ -33,7 +33,11 @@ from agency_runtime.core.private_paths import (
     remove_private_directory,
     validate_private_directory,
 )
-from agency_runtime.core.process_argv import resolve_executable_path
+from agency_runtime.core.process_argv import (
+    repository_forbidden_roots,
+    resolve_executable_path,
+    sanitized_executable_search_path,
+)
 from agency_runtime.core.store.security import (
     assert_storage_parent_chain,
     is_link_or_reparse_point,
@@ -419,27 +423,28 @@ def _invoke_git(
 ) -> subprocess.CompletedProcess[str]:
     argv = _safe_git_argv(args)
     try:
+        forbidden_roots = repository_forbidden_roots(repo)
+        search_path = sanitized_executable_search_path(
+            os.environ.get("PATH", ""),
+            current_directory=repo,
+            forbidden_roots=forbidden_roots,
+        )
         argv[0] = resolve_executable_path(
             "git",
-            search_path=os.environ.get("PATH", ""),
+            search_path=search_path,
             current_directory=repo,
+            forbidden_roots=forbidden_roots,
         )
     except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
         return _git_refusal(f"Git operation refused: trusted executable is unavailable: {exc}")
     try:
-        Path(argv[0]).resolve(strict=True).relative_to(repo.resolve(strict=True))
-    except ValueError:
-        # relative_to raises ValueError when the executable is NOT inside the
-        # repo — that is the safe case, so continue. (This reads inverted: the
-        # except clause is the safe path, the else clause below is the refuse
-        # path. Do not "fix" by swapping them — see test that places a fake git
-        # inside the repo and asserts refusal.)
-        pass
-    except (OSError, RuntimeError) as exc:
+        executable = Path(argv[0]).resolve(strict=True)
+        inside_forbidden_root = any(
+            executable.is_relative_to(Path(root).resolve(strict=True)) for root in forbidden_roots
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
         return _git_refusal(f"Git operation refused: executable identity failed: {exc}")
-    else:
-        # The executable resolved INSIDE the repo: a hostile repository planted
-        # its own git binary. Refuse rather than execute it.
+    if inside_forbidden_root:
         return _git_refusal(
             "Git operation refused: executable resolved inside the target repository"
         )

@@ -3,12 +3,15 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-07-24
+updated: 2026-07-27
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
   - SECURITY.md
+  - THIRD_PARTY_NOTICES.md
   - docs/TROUBLESHOOTING.md
+  - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
+  - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
 supersedes: []
 superseded_by: null
 ---
@@ -335,16 +338,30 @@ agency install --all --dry-run
 agency doctor
 ```
 
-This unreleased source currently keeps every persistent setup and control
-mutation fail-closed because its production OS-backed operator-presence verifier
-has not been implemented. Dry runs, status, diagnostics, routing, and the
-read-only dashboard remain available; positive `configure`, `install`, service,
-host, agent, and retention mutations return a controlled unavailable result.
-Do not substitute a static confirmation, bearer token, environment variable, or
-model-callable credential for genuine operator presence. See
+This unreleased source keeps persistent setup and control mutations fail-closed
+except for one narrow implementation: exact `agency roster rollback` on Windows
+11 x64 can prepare the authoritative transition, invoke the packaged native
+Windows consent window, and revalidate before commit. Every other positive
+`configure`, `install`, service, host, agent, and retention mutation remains
+unavailable. Do not substitute a static confirmation, bearer token, environment
+variable, or model-callable credential for genuine operator presence. See
 [AR-143](docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md).
 
-After that release blocker is implemented, the installer will discover
+That native slice is not yet a production distribution claim. The source now
+derives a portable `py3-none-any` profile on non-Windows-x64 hosts and a
+`py3-none-win_amd64` profile on supported Windows x64. The portable wheel keeps
+the native source, provenance, and notices for review but excludes only the PE.
+Each producer emits one wheel/source pair; the merge gate requires identical
+source distributions and shared wheel payloads before independently verifying
+the assembled two-wheel-plus-sdist unsigned review set. Hosted cross-OS proof remains
+pending because repository Actions billing is disabled. The helper is also
+unsigned: ADR-0099 keeps deterministic review bytes separate from
+owner-authorized signed delivery. AR-160 and AR-161 remain release gates,
+including hosted proof, compiler/runtime/SDK legal review, and an attended
+Windows Hello canary. Install from this repository only as prerelease source;
+no signed public artifact exists.
+
+After the remaining gates are implemented, the installer will discover
 supported hosts and register only the ones it can identify. It does not restart
 a host automatically.
 
@@ -394,10 +411,11 @@ agency off --agent codex --dry-run --json
 ```
 
 The data contracts retain reversible host, global, and per-agent controls, but
-positive CLI mutations remain unavailable until AR-143 has a production
-operator-presence backend. The dashboard and every model-facing surface are
-read-only. `agents-orchestrator` and `chief-of-staff` remain the protected
-coordination pair.
+positive CLI mutations other than the exact prerelease Windows 11 x64 roster
+rollback remain unavailable until AR-143 is complete. The dashboard and every
+model-facing surface are read-only. The native rollback is not production-ready
+until AR-160 and AR-161 close. `agents-orchestrator` and `chief-of-staff` remain
+the protected coordination pair.
 
 ---
 
@@ -489,5 +507,8 @@ agency smoke --all --json
 
 ## License
 
-[MIT](LICENSE) — roster specialists sourced under MIT from the upstream
-specialist-pool project.
+[MIT](LICENSE). Roster specialists are sourced under MIT from the upstream
+specialist-pool project. Native Windows source provenance, C++/WinRT MIT text,
+Microsoft STL Apache-2.0 WITH LLVM-exception text and NOTICE, and the unresolved
+MSVC/Windows SDK/static-runtime legal gate are recorded in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

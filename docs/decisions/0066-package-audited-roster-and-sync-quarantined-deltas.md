@@ -3,12 +3,13 @@ title: "Package the audited upstream roster and synchronize quarantined deltas"
 status: accepted
 category: decisions
 created: 2026-07-18
-updated: 2026-07-19
+updated: 2026-07-27
 tags: [roster, upstream, audit, quarantine, supply-chain]
 related:
   - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
   - docs/roadmap/issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md
   - docs/roadmap/issue-AR-97-reconcile-required-inference-remediation.md
+  - docs/roadmap/issue-AR-163-reopen-stale-remediation-authority.md
   - docs/roadmap/issue-AR-83-manifest-roster-import.md
   - docs/roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md
   - docs/decisions/0013-approval-gated-roster-activation.md

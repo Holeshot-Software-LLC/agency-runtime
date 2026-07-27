@@ -9,7 +9,13 @@ description = "Portable Agency Runtime Control Plane — specialist routing, ros
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-license-files = ["LICENSE"]
+license-files = [
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "agency_runtime/native/windows/operator_presence/LICENSE.cppwinrt.txt",
+    "agency_runtime/native/windows/operator_presence/LICENSE.microsoft-stl.txt",
+    "agency_runtime/native/windows/operator_presence/NOTICE.microsoft-stl.txt",
+]
 authors = [{name = "Agency Runtime Contributors"}]
 keywords = ["agents", "delegation", "observability", "routing"]
 classifiers = [
@@ -85,6 +91,10 @@ agency_runtime = [
     "core/roster/data/*.sha256",
     "core/roster/data/*.txt",
     "core/roster/data/prompts/*.txt",
+    "native/windows/operator_presence/*.cpp",
+    "native/windows/operator_presence/*.exe",
+    "native/windows/operator_presence/*.json",
+    "native/windows/operator_presence/*.txt",
 ]
 
 [tool.pytest.ini_options]

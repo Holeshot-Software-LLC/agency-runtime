@@ -4,15 +4,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 from collections.abc import Callable, Collection, Container, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 from agency_runtime.core.agent_activation import agent_is_enabled, normalize_agent_slug
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import load_config
+from agency_runtime.core.config_binding import assert_store_config_binding
+from agency_runtime.core.operator_presence import OperatorPresenceError
 from agency_runtime.core.roster.bundled import (
     SOURCE_REPOSITORY,
     BundledRosterError,
@@ -43,21 +46,26 @@ from agency_runtime.core.roster.source_identity import (
 from agency_runtime.core.roster.source_safety import scan_source_text
 from agency_runtime.core.store.projections import project_snapshot_summary
 from agency_runtime.core.store.roster_authority import (
+    RevisionActivationAuthority,
     assert_active_revision_projection,
     assert_revision_activation_authority,
 )
 from agency_runtime.core.store.version_identity import normalize_version_identity
 from agency_runtime.core.store.workforce import synchronize_active_workforce_worker
 from agency_runtime.core.workforce.contract import (
+    MAX_CONTRACT_BYTES,
     parse_workforce_contract,
     project_workforce_contract,
 )
+from agency_runtime.core.workforce.identity import stable_worker_id
 
 _JSON_LIST_FIELDS = ("categories", "capabilities", "tool_affinity")
 _MAX_ACTIVE_ROSTER_LIMIT = MAX_ACTIVE_ROSTER_SIZE
 _MAX_ACTIVE_ROSTER_CURSOR_BYTES = MAX_ACTIVE_ROSTER_CURSOR_BYTES
 _MAX_ACTIVE_ROSTER_SLUG_LOOKUP = 16
 _SQLITE_PARAMETER_CHUNK = 900
+_MAX_ROLLBACK_PROJECTION_CHAIN = 1024
+_MAX_ROLLBACK_PROJECTION_BYTES = _MAX_ROLLBACK_PROJECTION_CHAIN * MAX_CONTRACT_BYTES
 _UI_CAPABILITY_COLUMNS = tuple(f"capability_{index}" for index in range(4))
 _UI_ROSTER_PROJECTION = ", ".join(
     (
@@ -90,6 +98,9 @@ _ACTIVE_WORKFORCE_CONTRACT = (
 )
 _ACTIVE_ROSTER_ROUTING_PROJECTION = (
     f"a.*, v.metadata AS revision_metadata, {_ACTIVE_WORKFORCE_CONTRACT}"
+)
+_REVISION_SELECT = (
+    "id, agent_slug, version, source_version, source_id, hash, content, metadata, created_at"
 )
 _LEGACY_BUNDLED_VERSION = "1.0.0"
 _LEGACY_BUNDLED_SOURCE = "bundled"
@@ -390,6 +401,118 @@ class _PreparedRosterAgent:
     workforce_employment: str
 
 
+class _RosterRollbackBinding(NamedTuple):
+    """Exact primitive rollback state retained only by the rollback coordinator.
+
+    A tuple is used deliberately: unlike a frozen dataclass, its fields cannot
+    be replaced with ``object.__setattr__`` after native verification returns.
+    It is preparation state, never an authorization receipt or bearer token.
+    """
+
+    config_path: str
+    database_path: str
+    database_device: int
+    database_inode: int
+    roster_generation: int
+    slug: str
+    current_version: str
+    current_hash: str
+    current_projection_digest: str
+    target_revision_id: str
+    target_version: str
+    target_hash: str
+    target_content_metadata_digest: str
+    activation_authority_kind: str
+    activation_authority_digest: str
+    workforce_identity_digest: str
+
+
+_ROSTER_ROLLBACK_STRING_FIELDS = frozenset(
+    {
+        "config_path",
+        "database_path",
+        "slug",
+        "current_version",
+        "current_hash",
+        "current_projection_digest",
+        "target_revision_id",
+        "target_version",
+        "target_hash",
+        "target_content_metadata_digest",
+        "activation_authority_kind",
+        "activation_authority_digest",
+        "workforce_identity_digest",
+    }
+)
+_ROSTER_ROLLBACK_INTEGER_FIELDS = frozenset(
+    {"database_device", "database_inode", "roster_generation"}
+)
+
+
+def _roster_rollback_binding_primitives(
+    binding: object,
+) -> tuple[str | int, ...]:
+    """Return exact built-in primitives or reject an injected binding value."""
+
+    if type(binding) is not _RosterRollbackBinding:
+        raise OperatorPresenceError("prepared roster rollback binding is invalid")
+    for field, value in zip(_RosterRollbackBinding._fields, binding, strict=True):
+        if field in _ROSTER_ROLLBACK_STRING_FIELDS:
+            if type(value) is not str:
+                raise OperatorPresenceError("prepared roster rollback binding is invalid")
+        elif field in _ROSTER_ROLLBACK_INTEGER_FIELDS:
+            if type(value) is not int:
+                raise OperatorPresenceError("prepared roster rollback binding is invalid")
+        else:  # pragma: no cover - the exhaustive field test guards this invariant
+            raise RuntimeError(f"unclassified roster rollback binding field: {field}")
+    return tuple(binding)
+
+
+def _verify_roster_rollback_operator_presence(binding: _RosterRollbackBinding) -> None:
+    """Invoke the fixed native verifier without accepting caller injection."""
+
+    from agency_runtime.core.windows_operator_presence import (
+        _verify_roster_rollback_binding,
+    )
+
+    _verify_roster_rollback_binding(binding)
+
+
+def _roster_rollback_audit_evidence(
+    binding: _RosterRollbackBinding,
+) -> dict[str, str]:
+    """Project non-authorizing success provenance without verifier result data."""
+
+    from agency_runtime.core.windows_operator_presence import (
+        _EXPECTED_EXECUTABLE_SHA256,
+        _OPERATOR_PRESENCE_MECHANISM,
+    )
+
+    _roster_rollback_binding_primitives(binding)
+    return {
+        "target_revision_id": binding.target_revision_id,
+        "activation_authority_kind": binding.activation_authority_kind,
+        "activation_authority_digest": binding.activation_authority_digest,
+        "workforce_identity_digest": binding.workforce_identity_digest,
+        "operator_presence_mechanism": _OPERATOR_PRESENCE_MECHANISM,
+        "operator_presence_helper_sha256": _EXPECTED_EXECUTABLE_SHA256,
+    }
+
+
+@dataclass(frozen=True, slots=True)
+class _RosterRollbackState:
+    generation: int
+    current: dict[str, Any]
+    current_revision: dict[str, Any]
+    current_projection_digest: str
+    target_revision: dict[str, Any]
+    target_metadata: dict[str, Any]
+    target_content_metadata_digest: str
+    activation_authority: RevisionActivationAuthority
+    workforce: dict[str, Any]
+    workforce_identity_digest: str
+
+
 def _prepared_roster_agent(
     agent: Mapping[str, Any],
     *,
@@ -554,6 +677,502 @@ def _stage_workforce_version(
         ),
     )
     return version_id
+
+
+def _canonical_projection_digest(label: str, value: object) -> str:
+    document = json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(label.encode("ascii") + b"\0" + document).hexdigest()
+
+
+def _canonical_lexical_path(value: object, *, label: str) -> str:
+    if not isinstance(value, (str, os.PathLike)):
+        raise RuntimeError(f"Store {label} identity is unavailable")
+    try:
+        return os.path.normcase(os.path.abspath(os.fspath(Path(value).expanduser())))
+    except (OSError, TypeError, ValueError) as exc:
+        raise RuntimeError(f"Store {label} identity is unavailable") from exc
+
+
+def _store_rollback_lexical_identities(store: Any) -> tuple[str, str]:
+    return (
+        _canonical_lexical_path(
+            getattr(store, "_configured_config_path", None),
+            label="configuration",
+        ),
+        _canonical_lexical_path(
+            getattr(store, "_frozen_db_path", None),
+            label="database",
+        ),
+    )
+
+
+def _database_identity_for_prepared_rollback(store: Any) -> tuple[int, int]:
+    """Patchable test seam over the canonical Store's trusted inode check."""
+
+    reader = getattr(store, "_database_identity", None)
+    if not callable(reader):
+        raise RuntimeError("Store database file identity is unavailable")
+    identity = reader()
+    if (
+        not isinstance(identity, tuple)
+        or len(identity) != 2
+        or any(isinstance(value, bool) or not isinstance(value, int) for value in identity)
+        or identity[0] < 0
+        or identity[1] <= 0
+    ):
+        raise RuntimeError("Store database file identity is unavailable")
+    return identity
+
+
+def _roster_generation_from_connection(conn: Any) -> int:
+    row = conn.execute(
+        "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+    ).fetchone()
+    if row is None or isinstance(row["value"], bool):
+        raise RuntimeError("roster generation counter is unavailable")
+    try:
+        generation = int(row["value"])
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise RuntimeError("roster generation counter is invalid") from exc
+    if generation < 0:
+        raise RuntimeError("roster generation counter is invalid")
+    return generation
+
+
+def _revision_from_connection(
+    conn: Any,
+    *,
+    slug: str,
+    version: str,
+) -> dict[str, Any] | None:
+    row = conn.execute(
+        f"SELECT {_REVISION_SELECT} FROM agent_versions "  # nosec B608
+        "WHERE agent_slug = ? AND version = ? LIMIT 1",
+        (slug, version),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def _rollback_workforce_contract_document(
+    *,
+    slug: str,
+    target_revision: Mapping[str, Any],
+    target_metadata: Mapping[str, Any],
+    workforce: Mapping[str, Any],
+) -> str:
+    origin = str(workforce.get("origin") or "")
+    employment_class = str(workforce.get("employment_class") or "")
+    contract = project_workforce_contract(
+        {
+            **target_metadata,
+            "slug": slug,
+            "version": str(target_revision.get("version") or ""),
+            "version_hash": str(target_revision.get("hash") or ""),
+            "origin": origin,
+            "employment": employment_class,
+            "enabled": True,
+        },
+        origin=origin,
+    )
+    return json.dumps(
+        contract.to_dict(),
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+
+
+def _validate_rollback_contract(
+    row: Mapping[str, Any],
+    *,
+    slug: str,
+    worker_id: str,
+    target_revision: Mapping[str, Any],
+    worker: Mapping[str, Any],
+    source: str,
+) -> None:
+    document = row.get("recruitment_contract")
+    expected_digest = row.get("recruitment_contract_hash")
+    if (
+        type(document) is not str
+        or not document
+        or len(document.encode("utf-8")) > MAX_CONTRACT_BYTES
+        or type(expected_digest) is not str
+        or re.fullmatch(r"[0-9a-f]{64}", expected_digest) is None
+        or hashlib.sha256(document.encode("utf-8")).hexdigest() != expected_digest
+    ):
+        raise ValueError(f"target workforce {source} contract is invalid: {slug}")
+    try:
+        value = safe_load_bounded_json(
+            document,
+            maximum_bytes=MAX_CONTRACT_BYTES,
+            maximum_depth=32,
+            maximum_nodes=10_000,
+        )
+        contract = parse_workforce_contract(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"target workforce {source} contract is invalid: {slug}") from exc
+    if (
+        contract.worker_id != worker_id
+        or contract.agent_id != slug
+        or contract.version != str(target_revision.get("version") or "")
+        or contract.version_hash.removeprefix("sha256:")
+        != str(target_revision.get("hash") or "").removeprefix("sha256:")
+        or contract.origin != str(worker.get("origin") or "")
+    ):
+        raise ValueError(f"target workforce {source} contract identity is invalid: {slug}")
+
+
+def _target_contract_projection_chain(
+    conn: Any,
+    *,
+    slug: str,
+    worker_id: str,
+    target_revision: Mapping[str, Any],
+    target_lineage: Mapping[str, Any] | None,
+    worker: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    target_version_id = str(target_revision.get("id") or "")
+    summary_row = conn.execute(
+        "SELECT COUNT(*) AS projection_count, "
+        "COALESCE(MAX(length(CAST(recruitment_contract AS BLOB))), 0) "
+        "AS max_contract_bytes, "
+        "COALESCE(SUM(length(CAST(recruitment_contract AS BLOB))), 0) "
+        "AS total_contract_bytes "
+        "FROM agent_recruitment_contract_projections "
+        "WHERE worker_id = ? AND agent_version_id = ?",
+        (worker_id, target_version_id),
+    ).fetchone()
+    if summary_row is None:
+        raise RuntimeError("target workforce contract projection summary is unavailable")
+    summary = dict(summary_row)
+    count = summary.get("projection_count")
+    maximum = summary.get("max_contract_bytes")
+    total = summary.get("total_contract_bytes")
+    if (
+        type(count) is not int
+        or type(maximum) is not int
+        or type(total) is not int
+        or count < 0
+        or count > _MAX_ROLLBACK_PROJECTION_CHAIN
+        or maximum < 0
+        or maximum > MAX_CONTRACT_BYTES
+        or total < 0
+        or total > _MAX_ROLLBACK_PROJECTION_BYTES
+    ):
+        raise ValueError(f"target workforce contract projection chain is too large: {slug}")
+    rows = conn.execute(
+        "SELECT * FROM agent_recruitment_contract_projections "
+        "WHERE worker_id = ? AND agent_version_id = ? ORDER BY projection_sequence",
+        (worker_id, target_version_id),
+    ).fetchall()
+    projections = [dict(row) for row in rows]
+    if len(projections) != count:
+        raise RuntimeError("target workforce contract projection chain changed while read")
+    if projections and target_lineage is None:
+        raise ValueError(f"target workforce contract projection chain is invalid: {slug}")
+    expected_parent = (
+        "" if target_lineage is None else str(target_lineage.get("recruitment_contract_hash") or "")
+    )
+    previous_sequence = 0
+    for projection in projections:
+        sequence = projection.get("projection_sequence")
+        if (
+            not 0 < len(str(projection.get("id") or "")) <= 256
+            or type(sequence) is not int
+            or sequence <= previous_sequence
+            or str(projection.get("worker_id") or "") != worker_id
+            or str(projection.get("agent_version_id") or "") != target_version_id
+            or str(projection.get("parent_contract_hash") or "") != expected_parent
+            or str(projection.get("projection_authority") or "") != "agency-runtime-package"
+            or not 0 < len(str(projection.get("created_at") or "")) <= 128
+        ):
+            raise ValueError(f"target workforce contract projection chain is invalid: {slug}")
+        _validate_rollback_contract(
+            projection,
+            slug=slug,
+            worker_id=worker_id,
+            target_revision=target_revision,
+            worker=worker,
+            source="projection",
+        )
+        previous_sequence = sequence
+        expected_parent = str(projection.get("recruitment_contract_hash") or "")
+    return projections
+
+
+def _workforce_rollback_identity(
+    conn: Any,
+    *,
+    slug: str,
+    current_revision: Mapping[str, Any],
+    target_revision: Mapping[str, Any],
+    target_metadata: Mapping[str, Any],
+) -> tuple[dict[str, Any], str]:
+    row = conn.execute(
+        "SELECT * FROM agent_workers WHERE agent_slug = ? LIMIT 1",
+        (slug,),
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"workforce identity is missing: {slug}")
+    worker = dict(row)
+    worker_id = str(worker.get("worker_id") or "")
+    if (
+        worker_id != stable_worker_id(slug)
+        or str(worker.get("agent_slug") or "") != slug
+        or str(worker.get("standing") or "") != "active"
+        or str(worker.get("origin") or "") not in {"upstream", "agency"}
+        or str(worker.get("employment_class") or "") not in {"contractor", "employee"}
+        or str(worker.get("current_agent_version_id") or "")
+        != str(current_revision.get("id") or "")
+        or str(worker.get("current_version") or "") != str(current_revision.get("version") or "")
+        or str(worker.get("current_hash") or "") != str(current_revision.get("hash") or "")
+    ):
+        raise ValueError(f"workforce identity does not match active revision: {slug}")
+    current_lineage_row = conn.execute(
+        "SELECT * FROM agent_version_lineage WHERE agent_version_id = ? LIMIT 1",
+        (str(current_revision.get("id") or ""),),
+    ).fetchone()
+    if current_lineage_row is None:
+        raise ValueError(f"current workforce lineage is missing: {slug}")
+    current_lineage = dict(current_lineage_row)
+    if str(current_lineage.get("worker_id") or "") != worker_id:
+        raise ValueError(f"current workforce lineage identity is invalid: {slug}")
+    target_lineage_row = conn.execute(
+        "SELECT * FROM agent_version_lineage WHERE agent_version_id = ? LIMIT 1",
+        (str(target_revision.get("id") or ""),),
+    ).fetchone()
+    target_lineage = None if target_lineage_row is None else dict(target_lineage_row)
+    if target_lineage is not None and str(target_lineage.get("worker_id") or "") != worker_id:
+        raise ValueError(f"target workforce lineage belongs to another worker: {slug}")
+    if target_lineage is None and (
+        str(worker.get("origin") or "") != "upstream"
+        or str(current_lineage.get("relation") or "") == "agency_amendment"
+    ):
+        raise ValueError(f"target workforce lineage is missing: {slug}")
+    if target_lineage is not None:
+        _validate_rollback_contract(
+            target_lineage,
+            slug=slug,
+            worker_id=worker_id,
+            target_revision=target_revision,
+            worker=worker,
+            source="lineage",
+        )
+    target_projections = _target_contract_projection_chain(
+        conn,
+        slug=slug,
+        worker_id=worker_id,
+        target_revision=target_revision,
+        target_lineage=target_lineage,
+        worker=worker,
+    )
+    digest = _canonical_projection_digest(
+        "agency.prepared-roster-rollback.workforce.v1",
+        {
+            "worker": worker,
+            "current_lineage": current_lineage,
+            "target_lineage": target_lineage,
+            "target_projections": target_projections,
+            "generated_target_contract": (
+                _rollback_workforce_contract_document(
+                    slug=slug,
+                    target_revision=target_revision,
+                    target_metadata=target_metadata,
+                    workforce=worker,
+                )
+                if target_lineage is None
+                else None
+            ),
+        },
+    )
+    return worker, digest
+
+
+def _read_prepared_rollback_state(
+    conn: Any,
+    *,
+    slug: str,
+    target_version: str,
+    expected_current_version: str,
+    expected_current_hash: str,
+) -> _RosterRollbackState:
+    generation = _roster_generation_from_connection(conn)
+    active_row = conn.execute(
+        "SELECT * FROM agent_active WHERE agent_slug = ? LIMIT 1",
+        (slug,),
+    ).fetchone()
+    if active_row is None:
+        raise ValueError(f"active agent not found: {slug}")
+    current = dict(active_row)
+    current_version = str(current.get("version") or "")
+    current_revision = _revision_from_connection(
+        conn,
+        slug=slug,
+        version=current_version,
+    )
+    if current_revision is None:
+        raise ValueError(f"active revision is missing: {slug}@{current_version}")
+    assert_active_revision_projection(current, current_revision)
+    if (
+        current_version != expected_current_version
+        or str(current.get("hash") or "") != expected_current_hash
+    ):
+        raise ValueError(f"active revision changed for {slug}; refresh and retry rollback")
+    target_revision = _revision_from_connection(
+        conn,
+        slug=slug,
+        version=target_version,
+    )
+    if target_revision is None:
+        raise ValueError(f"revision not found: {slug}@{target_version}")
+    target_content = str(target_revision.get("content") or "")
+    target_hash = str(target_revision.get("hash") or "")
+    if not target_content or not content_identity_matches(target_content, target_hash):
+        raise ValueError(f"revision integrity failed: {slug}@{target_version}")
+    target_metadata = decode_revision_metadata(target_revision.get("metadata"))
+    if target_metadata is None:
+        raise ValueError(f"revision {slug}@{target_version} predates rollback metadata")
+    workforce, workforce_digest = _workforce_rollback_identity(
+        conn,
+        slug=slug,
+        current_revision=current_revision,
+        target_revision=target_revision,
+        target_metadata=target_metadata,
+    )
+    authority = assert_revision_activation_authority(
+        conn,
+        slug=slug,
+        revision=target_revision,
+    )
+    if target_version == current_version and target_hash == expected_current_hash:
+        raise ValueError(f"rollback target is already active: {slug}@{target_version}")
+    return _RosterRollbackState(
+        generation=generation,
+        current=current,
+        current_revision=current_revision,
+        current_projection_digest=_canonical_projection_digest(
+            "agency.prepared-roster-rollback.current.v1",
+            {"active": current, "revision": current_revision},
+        ),
+        target_revision=target_revision,
+        target_metadata=target_metadata,
+        target_content_metadata_digest=_canonical_projection_digest(
+            "agency.prepared-roster-rollback.target-revision.v1",
+            target_revision,
+        ),
+        activation_authority=authority,
+        workforce=workforce,
+        workforce_identity_digest=workforce_digest,
+    )
+
+
+def _apply_agent_revision_rollback_from_connection(
+    store: Any,
+    conn: Any,
+    *,
+    slug: str,
+    current: Mapping[str, Any],
+    target_revision: Mapping[str, Any],
+    target_metadata: Mapping[str, Any],
+    workforce: Mapping[str, Any],
+    audit_evidence: Mapping[str, str],
+) -> dict[str, Any]:
+    """Apply one already-validated non-noop rollback without transaction control."""
+
+    current_version = str(current.get("version") or "")
+    current_hash = str(current.get("hash") or "")
+    target_version = str(target_revision.get("version") or "")
+    target_hash = str(target_revision.get("hash") or "")
+    activated_at = store._now()
+    conn.execute(
+        "INSERT OR REPLACE INTO agent_active "
+        "(id, agent_slug, name, division, description, source, source_id, "
+        "source_version, version, hash, categories, capabilities, tool_affinity, "
+        "prompt_path, activated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            store._uuid(),
+            slug,
+            target_metadata["name"],
+            target_metadata["division"],
+            target_metadata["description"],
+            target_metadata["source"],
+            str(target_revision.get("source_id") or ""),
+            str(target_revision.get("source_version") or target_metadata["source_version"]),
+            target_version,
+            target_hash,
+            json.dumps(target_metadata["categories"]),
+            json.dumps(target_metadata["capabilities"]),
+            json.dumps(target_metadata["tool_affinity"]),
+            target_metadata["prompt_path"],
+            activated_at,
+        ),
+    )
+    conn.execute("DELETE FROM agent_categories WHERE agent_slug = ?", (slug,))
+    conn.executemany(
+        "INSERT INTO agent_categories (id, agent_slug, category) VALUES (?, ?, ?)",
+        ((store._uuid(), slug, category) for category in target_metadata["categories"]),
+    )
+    origin = str(workforce.get("origin") or "")
+    employment_class = str(workforce.get("employment_class") or "")
+    synchronize_active_workforce_worker(
+        conn,
+        agent_slug=slug,
+        display_name=str(target_metadata["name"] or slug),
+        origin=origin,
+        employment_class=employment_class,
+        agent_version_id=str(target_revision.get("id") or ""),
+        version=target_version,
+        version_hash=target_hash,
+        recruitment_contract=_rollback_workforce_contract_document(
+            slug=slug,
+            target_revision=target_revision,
+            target_metadata=target_metadata,
+            workforce=workforce,
+        ),
+    )
+    conn.execute(
+        "INSERT INTO agent_import_events "
+        "(id, event_type, agent_slug, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+        (
+            store._uuid(),
+            "agent_revision_rolled_back",
+            slug,
+            json.dumps(
+                {
+                    **audit_evidence,
+                    "from_hash": current_hash,
+                    "from_version": current_version,
+                    "to_hash": target_hash,
+                    "to_version": target_version,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            activated_at,
+        ),
+    )
+    updated = conn.execute(
+        "UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'"
+    )
+    if updated.rowcount != 1:
+        raise RuntimeError("roster generation counter is unavailable")
+    row = conn.execute(
+        "SELECT * FROM agent_active WHERE agent_slug = ? LIMIT 1",
+        (slug,),
+    ).fetchone()
+    if row is None:  # pragma: no cover - guarded by the write above
+        raise RuntimeError("rolled-back active revision is unavailable")
+    result = dict(row)
+    for field in _JSON_LIST_FIELDS:
+        result[field] = _decode_json_list(result.get(field))
+    return result
 
 
 class RosterStoreMixin:
@@ -1532,6 +2151,156 @@ class RosterStoreMixin:
         finally:
             conn.close()
 
+    def _prepare_agent_revision_rollback(
+        self,
+        slug: str,
+        target_version: str,
+        *,
+        expected_current_version: str,
+        expected_current_hash: str,
+    ) -> _RosterRollbackBinding:
+        """Freeze every rollback authority and Store identity for the coordinator."""
+
+        normalized_slug = normalize_agent_slug(slug)
+        target = str(target_version or "").strip()
+        expected_version = str(expected_current_version or "").strip()
+        if not target or not expected_version:
+            raise ValueError("target and expected current versions are required")
+        expected_hash = normalize_version_identity(expected_current_hash)
+        assert_store_config_binding(self)
+        config_path, database_path = _store_rollback_lexical_identities(self)
+        database_identity = _database_identity_for_prepared_rollback(self)
+        conn = self._connect()
+        try:
+            if _database_identity_for_prepared_rollback(self) != database_identity:
+                raise PermissionError("Store database identity changed during rollback preparation")
+            conn.execute("BEGIN")
+            assert_store_config_binding(self)
+            if _store_rollback_lexical_identities(self) != (config_path, database_path):
+                raise RuntimeError("Store identity changed during rollback preparation")
+            if _database_identity_for_prepared_rollback(self) != database_identity:
+                raise PermissionError("Store database identity changed during rollback preparation")
+            state = _read_prepared_rollback_state(
+                conn,
+                slug=normalized_slug,
+                target_version=target,
+                expected_current_version=expected_version,
+                expected_current_hash=expected_hash,
+            )
+            conn.commit()
+            binding = _RosterRollbackBinding(
+                config_path=config_path,
+                database_path=database_path,
+                database_device=database_identity[0],
+                database_inode=database_identity[1],
+                roster_generation=state.generation,
+                slug=normalized_slug,
+                current_version=expected_version,
+                current_hash=expected_hash,
+                current_projection_digest=state.current_projection_digest,
+                target_revision_id=str(state.target_revision.get("id") or ""),
+                target_version=target,
+                target_hash=str(state.target_revision.get("hash") or ""),
+                target_content_metadata_digest=state.target_content_metadata_digest,
+                activation_authority_kind=state.activation_authority.kind,
+                activation_authority_digest=state.activation_authority.digest,
+                workforce_identity_digest=state.workforce_identity_digest,
+            )
+            _roster_rollback_binding_primitives(binding)
+            return binding
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def _commit_prepared_agent_revision_rollback(
+        self,
+        prepared: _RosterRollbackBinding,
+        *,
+        verified_primitives: tuple[str | int, ...],
+    ) -> dict[str, Any]:
+        """Revalidate and apply only the coordinator's exact verified binding."""
+
+        prepared_primitives = _roster_rollback_binding_primitives(prepared)
+        if (
+            type(verified_primitives) is not tuple
+            or any(type(value) not in {str, int} for value in verified_primitives)
+            or prepared_primitives != verified_primitives
+        ):
+            raise OperatorPresenceError(
+                "prepared roster rollback changed after operator verification; "
+                "no persistent change was made"
+            )
+        assert_store_config_binding(self)
+        config_path, database_path = _store_rollback_lexical_identities(self)
+        if config_path != prepared.config_path or database_path != prepared.database_path:
+            raise RuntimeError("prepared rollback Store identity changed; prepare again")
+        expected_database_identity = (prepared.database_device, prepared.database_inode)
+        if _database_identity_for_prepared_rollback(self) != expected_database_identity:
+            raise PermissionError("prepared rollback database identity changed; prepare again")
+        normalized_slug = normalize_agent_slug(prepared.slug)
+        if normalized_slug != prepared.slug:
+            raise ValueError("prepared rollback slug is not canonical")
+        conn = self._connect()
+        try:
+            if _database_identity_for_prepared_rollback(self) != expected_database_identity:
+                raise PermissionError("prepared rollback database identity changed; prepare again")
+            conn.execute("BEGIN IMMEDIATE")
+            assert_store_config_binding(self)
+            if _store_rollback_lexical_identities(self) != (config_path, database_path):
+                raise RuntimeError("prepared rollback Store identity changed; prepare again")
+            if _database_identity_for_prepared_rollback(self) != expected_database_identity:
+                raise PermissionError("prepared rollback database identity changed; prepare again")
+            state = _read_prepared_rollback_state(
+                conn,
+                slug=prepared.slug,
+                target_version=prepared.target_version,
+                expected_current_version=prepared.current_version,
+                expected_current_hash=prepared.current_hash,
+            )
+            observed = (
+                state.generation,
+                state.current_projection_digest,
+                str(state.target_revision.get("id") or ""),
+                str(state.target_revision.get("version") or ""),
+                str(state.target_revision.get("hash") or ""),
+                state.target_content_metadata_digest,
+                state.activation_authority.kind,
+                state.activation_authority.digest,
+                state.workforce_identity_digest,
+            )
+            frozen = (
+                prepared.roster_generation,
+                prepared.current_projection_digest,
+                prepared.target_revision_id,
+                prepared.target_version,
+                prepared.target_hash,
+                prepared.target_content_metadata_digest,
+                prepared.activation_authority_kind,
+                prepared.activation_authority_digest,
+                prepared.workforce_identity_digest,
+            )
+            if observed != frozen:
+                raise ValueError("prepared rollback state changed; prepare and verify again")
+            result = _apply_agent_revision_rollback_from_connection(
+                self,
+                conn,
+                slug=prepared.slug,
+                current=state.current,
+                target_revision=state.target_revision,
+                target_metadata=state.target_metadata,
+                workforce=state.workforce,
+                audit_evidence=_roster_rollback_audit_evidence(prepared),
+            )
+            conn.commit()
+            return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def rollback_agent_revision(
         self,
         slug: str,
@@ -1540,170 +2309,30 @@ class RosterStoreMixin:
         expected_current_version: str,
         expected_current_hash: str,
     ) -> dict[str, Any]:
-        """Restore one immutable revision under an exact current-revision CAS."""
+        """Natively verify and atomically restore one exact immutable revision.
 
-        normalized_slug = normalize_agent_slug(slug)
-        target = str(target_version or "").strip()
-        expected_version = str(expected_current_version or "").strip()
-        if not target or not expected_version:
-            raise ValueError("target and expected current versions are required")
-        expected_hash = normalize_version_identity(expected_current_hash)
-        conn = self._connect()
-        try:
-            conn.execute("BEGIN IMMEDIATE")
-            current = conn.execute(
-                "SELECT * FROM agent_active WHERE agent_slug = ? LIMIT 1",
-                (normalized_slug,),
-            ).fetchone()
-            if current is None:
-                raise ValueError(f"active agent not found: {normalized_slug}")
-            current_revision = conn.execute(
-                "SELECT id, agent_slug, version, source_version, source_id, hash, content, metadata "
-                "FROM agent_versions WHERE agent_slug = ? AND version = ? LIMIT 1",
-                (normalized_slug, str(current["version"] or "")),
-            ).fetchone()
-            if current_revision is None:
-                raise ValueError(
-                    f"active revision is missing: {normalized_slug}@{current['version']!s}"
-                )
-            assert_active_revision_projection(
-                dict(current),
-                dict(current_revision),
-            )
-            if (
-                str(current["version"] or "") != expected_version
-                or str(current["hash"] or "") != expected_hash
-            ):
-                raise ValueError(
-                    f"active revision changed for {normalized_slug}; refresh and retry rollback"
-                )
-            revision = conn.execute(
-                "SELECT id, agent_slug, version, source_version, source_id, hash, content, metadata "
-                "FROM agent_versions WHERE agent_slug = ? AND version = ? LIMIT 1",
-                (normalized_slug, target),
-            ).fetchone()
-            if revision is None:
-                raise ValueError(f"revision not found: {normalized_slug}@{target}")
-            revision_record = dict(revision)
-            content = str(revision_record["content"] or "")
-            revision_hash = str(revision_record["hash"] or "")
-            if not content or not content_identity_matches(content, revision_hash):
-                raise ValueError(f"revision integrity failed: {normalized_slug}@{target}")
-            assert_revision_activation_authority(
-                conn,
-                slug=normalized_slug,
-                revision=revision_record,
-            )
-            metadata = decode_revision_metadata(revision_record["metadata"])
-            if metadata is None:
-                raise ValueError(f"revision {normalized_slug}@{target} predates rollback metadata")
-            if target == expected_version and revision_hash == expected_hash:
-                conn.commit()
-                result = dict(current)
-                for field in _JSON_LIST_FIELDS:
-                    result[field] = _decode_json_list(result.get(field))
-                return result
+        This is the sole supported positive rollback coordinator.  It exposes
+        no preparation object, verifier dependency, receipt, boolean, or other
+        caller-supplied authorization value.
+        """
 
-            activated_at = self._now()
-            conn.execute(
-                "INSERT OR REPLACE INTO agent_active "
-                "(id, agent_slug, name, division, description, source, source_id, "
-                "source_version, version, hash, categories, capabilities, tool_affinity, "
-                "prompt_path, activated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    self._uuid(),
-                    normalized_slug,
-                    metadata["name"],
-                    metadata["division"],
-                    metadata["description"],
-                    metadata["source"],
-                    str(revision_record["source_id"] or ""),
-                    str(revision_record["source_version"] or metadata["source_version"]),
-                    target,
-                    revision_hash,
-                    json.dumps(metadata["categories"]),
-                    json.dumps(metadata["capabilities"]),
-                    json.dumps(metadata["tool_affinity"]),
-                    metadata["prompt_path"],
-                    activated_at,
-                ),
+        prepared = self._prepare_agent_revision_rollback(
+            slug,
+            target_version,
+            expected_current_version=expected_current_version,
+            expected_current_hash=expected_current_hash,
+        )
+        verified_primitives = _roster_rollback_binding_primitives(prepared)
+        _verify_roster_rollback_operator_presence(prepared)
+        if _roster_rollback_binding_primitives(prepared) != verified_primitives:
+            raise OperatorPresenceError(
+                "prepared roster rollback changed after operator verification; "
+                "no persistent change was made"
             )
-            conn.execute("DELETE FROM agent_categories WHERE agent_slug = ?", (normalized_slug,))
-            conn.executemany(
-                "INSERT INTO agent_categories (id, agent_slug, category) VALUES (?, ?, ?)",
-                ((self._uuid(), normalized_slug, category) for category in metadata["categories"]),
-            )
-            worker = conn.execute(
-                "SELECT origin, employment_class FROM agent_workers WHERE agent_slug = ?",
-                (normalized_slug,),
-            ).fetchone()
-            if worker is None:
-                raise ValueError(f"workforce identity is missing: {normalized_slug}")
-            rollback_contract = project_workforce_contract(
-                {
-                    **metadata,
-                    "slug": normalized_slug,
-                    "version": target,
-                    "version_hash": revision_hash,
-                    "origin": str(worker["origin"]),
-                    "employment": str(worker["employment_class"]),
-                    "enabled": True,
-                },
-                origin=str(worker["origin"]),
-            )
-            synchronize_active_workforce_worker(
-                conn,
-                agent_slug=normalized_slug,
-                display_name=str(metadata["name"] or normalized_slug),
-                origin=str(worker["origin"]),
-                employment_class=str(worker["employment_class"]),
-                agent_version_id=str(revision_record["id"]),
-                version=target,
-                version_hash=revision_hash,
-                recruitment_contract=json.dumps(
-                    rollback_contract.to_dict(),
-                    ensure_ascii=False,
-                    separators=(",", ":"),
-                    sort_keys=True,
-                ),
-            )
-            conn.execute(
-                "INSERT INTO agent_import_events "
-                "(id, event_type, agent_slug, detail, created_at) VALUES (?, ?, ?, ?, ?)",
-                (
-                    self._uuid(),
-                    "agent_revision_rolled_back",
-                    normalized_slug,
-                    json.dumps(
-                        {
-                            "from_hash": expected_hash,
-                            "from_version": expected_version,
-                            "to_hash": revision_hash,
-                            "to_version": target,
-                        },
-                        sort_keys=True,
-                        separators=(",", ":"),
-                    ),
-                    activated_at,
-                ),
-            )
-            conn.execute(
-                "UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'"
-            )
-            row = conn.execute(
-                "SELECT * FROM agent_active WHERE agent_slug = ?",
-                (normalized_slug,),
-            ).fetchone()
-            conn.commit()
-            result = dict(row)
-            for field in _JSON_LIST_FIELDS:
-                result[field] = _decode_json_list(result.get(field))
-            return result
-        except Exception:
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
+        return self._commit_prepared_agent_revision_rollback(
+            prepared,
+            verified_primitives=verified_primitives,
+        )
 
     def deactivate_agent(self, slug: str) -> None:
         conn = self._connect()

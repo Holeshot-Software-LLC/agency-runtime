@@ -453,6 +453,12 @@ test("app.js API requests keep credentials in-memory and fail closed on malforme
         json: async () => { throw new Error("not JSON"); },
       };
     }
+    if (path === "/hostile-request-id") {
+      return jsonResponse(503, {
+        error: "hostile correlation",
+        request_id: "<img src=x onerror=alert(1)>",
+      });
+    }
     return jsonResponse(200, { ok: true });
   });
   harness.api.state.token = "fragment-only-secret";
@@ -476,7 +482,14 @@ test("app.js API requests keep credentials in-memory and fail closed on malforme
     (error) => error.name === "APIError"
       && error.status === 503
       && error.retryAfter === "7"
-      && error.message === "HTTP 503",
+      && error.requestId === "00000000-0000-4000-8000-000000000001"
+      && error.message === "HTTP 503. Request ID 00000000-0000-4000-8000-000000000001.",
+  );
+  await assert.rejects(
+    harness.api.api("/hostile-request-id"),
+    (error) => error.requestId === "00000000-0000-4000-8000-000000000001"
+      && !error.message.includes("<img")
+      && /Request ID 00000000-0000-4000-8000-000000000001/.test(error.message),
   );
 });
 
@@ -546,7 +559,7 @@ test("app.js renders provider configuration without reflecting stored API keys",
 
   assert.equal(providers.value.includes("must-not-reach-the-dom"), false);
   assert.deepEqual(JSON.parse(providers.value), [{ name: "primary", weight: 2 }]);
-  assert.equal(harness.node("config-provider-secret-index").disabled, false);
+  assert.equal(harness.node("config-provider-secret-index").disabled, true);
   assert.equal(harness.node("config-provider-secret-index").value, "0");
   assert.equal(harness.node("config-override-count").textContent, "1 ENV OVERRIDE");
   assert.equal(harness.node("config-revision").textContent, "1234567890");
@@ -722,7 +735,10 @@ test("workforce model discovery handles defaults, empty catalogs, and failures",
     { name: "codex-subscription", type: "cli", transport: "codex" },
   ]);
   assert.equal(await failed.api.loadWorkforceModels(), false);
-  assert.equal(failed.node("workforce-model-status").textContent, "catalog unavailable");
+  assert.equal(
+    failed.node("workforce-model-status").textContent,
+    "catalog unavailable. Request ID 00000000-0000-4000-8000-000000000001.",
+  );
 
   const unknown = createAppHarness(() => { throw new Error("no fetch expected"); });
   unknown.node("config-providers").value = "not-json";
@@ -824,6 +840,8 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   assert.match(text, /python-application-engineer/);
   assert.match(text, /42% overlap/);
   assert.match(text, /Use the governed TypeScript contract/);
+  assert.match(text, /Owner-only governed specialist definition/);
+  assert.match(text, /separate from runtime observation capture/);
   assert.match(text, /known contractor installed/);
   assert.match(text, /1 of 7 version records \(bounded\)/);
   assert.match(text, /1 of 4 hiring records \(bounded\)/);
@@ -1319,7 +1337,10 @@ test("provider configuration defensive branches stay bounded", async () => {
   broken.node("provider-builder-type").value = "cli";
   broken.node("provider-builder-transport").value = "codex";
   assert.equal(await broken.api.loadProviderModels(), false);
-  assert.equal(broken.node("provider-builder-model-status").textContent, "Network request failed.");
+  assert.equal(
+    broken.node("provider-builder-model-status").textContent,
+    "Network request failed. Request ID 00000000-0000-4000-8000-000000000001.",
+  );
 
   const invalidProviders = createAppHarness(() => { throw new Error("no fetch"); });
   invalidProviders.node("provider-builder-name").value = "provider";
@@ -1416,7 +1437,7 @@ test("config snapshots keep effective privacy and retention summaries current", 
   assert.equal(harness.api.state.overview.retention_days, 45);
   assert.equal(harness.node("setting-capture").textContent, "Opt-in enabled");
   assert.equal(harness.node("setting-retention").textContent, "45 days");
-  assert.equal(harness.node("privacy-chip").textContent, "Redacted content");
+  assert.equal(harness.node("privacy-chip").textContent, "Redacted runtime content");
 
   harness.api.state.activeView = "settings";
   harness.api.state.config = { revision: "editor-old" };
@@ -1431,7 +1452,7 @@ test("config snapshots keep effective privacy and retention summaries current", 
   assert.equal(harness.api.state.overview.retention_days, 60);
   assert.equal(harness.node("setting-capture").textContent, "Disabled");
   assert.equal(harness.node("setting-retention").textContent, "60 days");
-  assert.equal(harness.node("privacy-chip").textContent, "Metadata only");
+  assert.equal(harness.node("privacy-chip").textContent, "Runtime metadata only");
 });
 
 test("app.js host and formatting helpers distinguish unknown, stale, and installed states", () => {
@@ -1719,6 +1740,7 @@ test("Route Lab renders authoritative host evidence and bounded eligibility reje
       execution_host: "codex",
       status: "native-installation-verified",
     },
+    request_id: "<img src=x onerror=alert(1)>",
     selected: [],
     signals: { selection: { status: "abstained" } },
   });
@@ -1726,6 +1748,7 @@ test("Route Lab renders authoritative host evidence and bounded eligibility reje
   assert.ok(emptyText.includes("0 eligible · 0 rejected"));
   assert.ok(emptyText.includes("native-installation-verified · 0 capabilities"));
   assert.ok(emptyText.includes("none: none"));
+  assert.equal(emptyText.some((value) => value.includes("<img")), false);
 });
 
 test("bucketActivity returns a bounded empty series for absent or malformed data", () => {
@@ -2564,7 +2587,7 @@ test("app.js initial refresh reuses the live fast path and preserves control-pla
   assert.equal(harness.api.state.pendingConfig.revision, "config-revision");
   assert.equal(harness.node("metric-runtime").textContent, "Online");
   assert.equal(harness.node("metric-roster").textContent, "1");
-  assert.equal(harness.node("privacy-chip").textContent, "Redacted content");
+  assert.equal(harness.node("privacy-chip").textContent, "Redacted runtime content");
   assert.match(harness.node("window-label").textContent, /24 min window/i);
 
   harness.api.switchView("settings");
@@ -2934,6 +2957,7 @@ test("app.js routing lab posts bounded tasks and reconciles live evidence", asyn
     calls.push({ path, options });
     if (path === "/api/route") {
       return jsonResponse(200, {
+        request_id: "00000000-0000-4000-8000-000000000010",
         selected: [{ slug: "security-reviewer" }],
         signals: { policy: { matched_actions: ["review"] } },
         status: "selected",
@@ -2977,6 +3001,10 @@ test("app.js routing lab posts bounded tasks and reconciles live evidence", asyn
   assert.ok(
     descendants(harness.node("route-result"))
       .some((node) => node.textContent === "security-reviewer"),
+  );
+  assert.ok(
+    descendants(harness.node("route-result"))
+      .some((node) => node.textContent === "00000000-0000-4000-8000-000000000010"),
   );
   assert.equal(harness.api.state.live.revision, "after-route");
   assert.equal(harness.node("route-button").disabled, false);
@@ -3078,6 +3106,10 @@ test("Route Lab and worker-detail failures remain visible and lifecycle bounded"
   await routeHarness.api.runRoute();
   assert.equal(routeHarness.node("route-status").textContent, "FAILED");
   assert.match(routeHarness.node("notice").textContent, /route transport unavailable/i);
+  assert.match(
+    routeHarness.node("notice").textContent,
+    /Request ID 00000000-0000-4000-8000-000000000001/,
+  );
   assert.equal(routeHarness.node("route-button").disabled, false);
   const noticeTimer = [...routeHarness.timers.tasks.values()]
     .find((task) => task.delay === 6000);
@@ -3249,6 +3281,10 @@ test("app.js treats 401 and 403 live responses as terminal", async (testContext)
       assert.match(harness.node("live-announcer").textContent, /access expired/i);
       assert.equal(harness.node("notice").hidden, false);
       assert.match(harness.node("notice").textContent, /token expired/i);
+      assert.match(
+        harness.node("notice").textContent,
+        /Request ID 00000000-0000-4000-8000-000000000001/,
+      );
 
       harness.api.scheduleLive(0);
       await harness.api.runLivePoll();
@@ -4857,6 +4893,7 @@ test("operational dashboard renders governed roster, quarantine, and inference e
     ],
     remediation_count: 2,
     remediation_history_count: 3,
+    remediation_stale_resolution_count: 1,
     remediation_unvalidated_resolution_count: 2,
     remediation_pending_has_more: true,
     remediation_history_has_more: true,
@@ -4894,12 +4931,17 @@ test("operational dashboard renders governed roster, quarantine, and inference e
   assert.match(harness.node("review-page-status").textContent, /1 of 3 resolved repairs/);
   assert.match(
     harness.node("review-page-status").textContent,
+    /1 stale signed resolution was reopened for review/,
+  );
+  assert.match(
+    harness.node("review-page-status").textContent,
     /2 unvalidated resolution records remain quarantined/,
   );
   assert.equal(
     harness.node("review-page-status").dataset.unvalidatedResolutionCount,
     "2",
   );
+  assert.equal(harness.node("review-page-status").dataset.staleResolutionCount, "1");
   assert.equal(harness.node("review-page-status").classList.contains("failed"), true);
   assert.equal(harness.node("review-pending-more").hidden, false);
   assert.equal(harness.node("review-history-more").hidden, false);
@@ -4978,6 +5020,7 @@ test("remediation queue controls page pending and history independently", async 
     calls.push(path);
     if (path.includes("history_cursor")) {
       return jsonResponse(200, {
+        remediation_revision: "remediation-revision-1",
         remediation_attempts: [],
         remediation_history: [{ event_id: "history-2", slug: "second-resolution" }],
         remediation_unvalidated_resolution_count: 0,
@@ -4988,6 +5031,7 @@ test("remediation queue controls page pending and history independently", async 
       });
     }
     return jsonResponse(200, {
+      remediation_revision: "remediation-revision-1",
       remediation_attempts: [{
         event_id: "pending-2",
         slug: "second-repair",
@@ -5002,6 +5046,7 @@ test("remediation queue controls page pending and history independently", async 
     });
   });
   harness.api.state.rosterReview = {
+    remediation_revision: "remediation-revision-1",
     candidates: [],
     remediation_attempts: [{
       event_id: "pending-1",
@@ -5087,11 +5132,13 @@ test("remediation queue controls page pending and history independently", async 
   assert.equal(await latePage, false);
 
   const malformed = createAppHarness(async () => jsonResponse(200, {
+    remediation_revision: "remediation-malformed",
     remediation_attempts: "invalid",
     remediation_unvalidated_resolution_count: "invalid",
     next_remediation_pending_cursor: null,
   }));
   malformed.api.state.rosterReview = {
+    remediation_revision: "remediation-malformed",
     remediation_attempts: "invalid",
     remediation_unvalidated_resolution_count: 4,
     next_remediation_pending_cursor: "pending-malformed",
@@ -5102,6 +5149,23 @@ test("remediation queue controls page pending and history independently", async 
     malformed.api.state.rosterReview.remediation_unvalidated_resolution_count,
     4,
   );
+
+  const changed = createAppHarness(async () => jsonResponse(200, {
+    remediation_revision: "remediation-new",
+    remediation_attempts: [{ event_id: "pending-new" }],
+    next_remediation_pending_cursor: "",
+  }));
+  changed.api.state.rosterReview = {
+    remediation_revision: "remediation-old",
+    remediation_attempts: [{ event_id: "pending-old" }],
+    next_remediation_pending_cursor: "pending-old",
+  };
+  assert.equal(await changed.api.loadMoreRemediation("pending"), false);
+  assert.deepEqual(
+    changed.api.state.rosterReview.remediation_attempts.map((item) => item.event_id),
+    ["pending-old"],
+  );
+  assert.match(changed.node("notice").textContent, /collection changed/);
 
   const optional = createAppHarness(() => {
     throw new Error("optional remediation controls do not fetch");
@@ -5126,6 +5190,7 @@ test("queued control refresh preserves the remediation extent already loaded by 
   const firstReviewPage = {
     candidates: [],
     collection_revision: "review-revision-1",
+    remediation_revision: "remediation-revision-1",
     limit: 1,
     next_cursor: null,
     next_remediation_history_cursor: "",
@@ -5144,6 +5209,7 @@ test("queued control refresh preserves the remediation extent already loaded by 
   const harness = createAppHarness(async (path) => {
     if (path.includes("pending_cursor")) {
       return jsonResponse(200, {
+        remediation_revision: "remediation-revision-1",
         remediation_attempts: [{ event_id: "pending-2", slug: "second-repair" }],
         remediation_history: [],
         remediation_history_has_more: false,
@@ -5174,6 +5240,102 @@ test("queued control refresh preserves the remediation extent already loaded by 
   );
   assert.equal(harness.api.state.rosterReview.next_remediation_pending_cursor, "");
   assert.equal(harness.api.state.rosterReview.remediation_pending_has_more, false);
+});
+
+test("automatic review refresh invalidates stale paged history when a repair reopens", async () => {
+  const firstReviewPage = {
+    candidates: [],
+    collection_revision: "review-revision-1",
+    remediation_revision: "remediation-revision-before-reopen",
+    limit: 1,
+    next_cursor: null,
+    next_remediation_history_cursor: "history-current",
+    next_remediation_pending_cursor: "",
+    remediation_attempts: [],
+    remediation_history: [{
+      event_id: "history-current",
+      queue_event_id: "queue-current",
+      slug: "current-resolution",
+    }],
+    remediation_history_count: 2,
+    remediation_history_has_more: true,
+    remediation_pending_has_more: false,
+    truncated: false,
+  };
+  const refreshedReviewPage = {
+    ...firstReviewPage,
+    remediation_revision: "remediation-revision-after-reopen",
+    next_remediation_history_cursor: "",
+    remediation_attempts: [{
+      event_id: "queue-reopened",
+      slug: "reopened-repair",
+      receipt: { attempted_rule_ids: [] },
+    }],
+    remediation_count: 1,
+    remediation_history: [firstReviewPage.remediation_history[0]],
+    remediation_history_count: 1,
+    remediation_history_has_more: false,
+  };
+  const snapshot = controlSnapshot({ governance: {
+    operations: { agents: [] },
+    reviews: refreshedReviewPage,
+    snapshots: [],
+  } });
+  const harness = createAppHarness(async (path) => {
+    if (path.includes("history_cursor")) {
+      return jsonResponse(200, {
+        remediation_revision: "remediation-revision-before-reopen",
+        remediation_attempts: [],
+        remediation_history: [{
+          event_id: "history-reopened",
+          queue_event_id: "queue-reopened",
+          slug: "reopened-repair",
+        }],
+        remediation_history_has_more: false,
+        remediation_pending_has_more: false,
+        next_remediation_history_cursor: "",
+        next_remediation_pending_cursor: "",
+      });
+    }
+    if (path === "/api/control") return jsonResponse(200, snapshot);
+    throw new Error(`unexpected remediation invalidation path ${path}`);
+  });
+  harness.api.state.rosterReview = structuredClone(firstReviewPage);
+
+  assert.equal(await harness.api.loadMoreRemediation("history"), true);
+  assert.deepEqual(
+    harness.api.state.rosterReview.remediation_history.map((item) => item.event_id),
+    ["history-current", "history-reopened"],
+  );
+  harness.api.applyGovernanceSnapshot({
+    operations: { agents: [] },
+    reviews: structuredClone(refreshedReviewPage),
+    snapshots: [],
+  });
+  harness.api.renderRoster();
+
+  assert.deepEqual(
+    harness.api.state.rosterReview.remediation_attempts.map((item) => item.event_id),
+    ["queue-reopened"],
+  );
+  assert.deepEqual(
+    harness.api.state.rosterReview.remediation_history.map((item) => item.event_id),
+    ["history-current"],
+  );
+  const rendered = descendants(harness.node("review-list"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(rendered, /reopened-repair remediation attempt/);
+  assert.doesNotMatch(rendered, /reopened-repair repair provenance/);
+
+  harness.api.state.rosterReview.remediation_history.push({
+    event_id: "history-corrupt-overlap",
+    queue_event_id: "queue-reopened",
+    slug: "reopened-repair",
+  });
+  harness.api.renderRoster();
+  assert.equal(harness.node("review-page-status").dataset.remediationOverlapCount, "1");
+  assert.match(harness.node("review-page-status").textContent, /conflicting history row was suppressed/);
 });
 
 test("operational roster filters are bounded, reversible, and lifecycle safe", async () => {
@@ -5281,6 +5443,7 @@ test("authenticated dashboard is a read-only monitoring surface with no mutation
     "#config-form input, #config-form select, #config-form textarea, #config-form button",
     configControls,
   );
+  harness.node("privacy-chip").textContent = "Metadata only";
   assert.equal(harness.api.bindEvents(), true);
   for (const name of [
     "trimRuntime", "saveConfig", "rosterAction", "toggleAgent", "toggleHost",
@@ -5300,6 +5463,10 @@ test("authenticated dashboard is a read-only monitoring surface with no mutation
   assert.equal(harness.node("workforce-action-form").hidden, true);
   assert.equal(harness.node("confirmation-modal").hidden, true);
   assert.equal(harness.node("config-change-count").textContent, "Read-only monitoring");
+  assert.equal(harness.node("privacy-chip").textContent, "Runtime metadata only");
+  harness.node("config-providers").value = JSON.stringify([{ name: "owner-provider" }]);
+  harness.api.syncProviderSecretOptions();
+  assert.equal(harness.node("config-provider-secret-index").disabled, true);
 
   harness.api.applyMasterState({
     schema_version: 1,

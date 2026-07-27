@@ -4,6 +4,7 @@ export function createActionController(core, config, renderer, live) {
 		byId,
 		api,
 		showNotice,
+		withRequestId,
 	} = core;
 
 	function maySurface(error, controller) {
@@ -68,7 +69,10 @@ export function createActionController(core, config, renderer, live) {
 			if (result.bypassed === true) {
 				live.applyMasterState(result.master);
 				byId("route-status").textContent = "BYPASSED";
-				showNotice(result.message || "Agency Runtime is off; routing was bypassed.", true);
+				showNotice(withRequestId(
+					result.message || "Agency Runtime is off; routing was bypassed.",
+					result.request_id,
+				), true);
 				return;
 			}
 			renderer.renderReceipt(result);

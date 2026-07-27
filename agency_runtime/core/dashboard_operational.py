@@ -596,6 +596,8 @@ def candidate_review_snapshot(
         "candidate_queue_count": candidate_queue_count,
         "remediation_count": remediation_count,
         "remediation_history_count": int(remediation["history_count"]),
+        "remediation_revision": str(remediation["remediation_revision"]),
+        "remediation_stale_resolution_count": int(remediation["stale_resolution_count"]),
         "remediation_unvalidated_resolution_count": int(
             remediation["unvalidated_resolution_count"]
         ),

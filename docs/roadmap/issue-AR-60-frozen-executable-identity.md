@@ -8,6 +8,7 @@ tags: [security, processes, executables, delegation, portability]
 related:
   - docs/decisions/0055-freeze-executable-identity-before-launch.md
   - docs/roadmap/issue-AR-65-reject-cross-account-executable-namespaces.md
+  - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
   - docs/decisions/0038-refuse-executable-git-configuration-during-delegation.md
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
@@ -20,7 +21,7 @@ issue_id: AR-60
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/61"
 depends_on: [AR-35]
-blocks: [AR-61, AR-65]
+blocks: [AR-61, AR-65, AR-164]
 ---
 
 # AR-60: Freeze executable identity from discovery through launch

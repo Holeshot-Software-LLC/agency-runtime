@@ -21,6 +21,11 @@ from agency_runtime.core.installer_contracts import (
     CommandRunner,
     NativeCommandResult,
 )
+from agency_runtime.core.process_argv import (
+    freeze_process_argv,
+    prepare_process_argv,
+    repository_forbidden_roots,
+)
 from agency_runtime.core.process_environment import least_privilege_subprocess_environment
 
 
@@ -171,13 +176,19 @@ def detect_installed_agents(
     ]
 
 
-def _command_environment(host: str, *, home_dir: str | Path | None = None) -> dict[str, str]:
+def _command_environment(
+    host: str,
+    *,
+    home_dir: str | Path | None = None,
+    forbidden_roots: Sequence[str | Path] = (),
+) -> dict[str, str]:
     if host not in HOSTS:
         raise ValueError(f"unsupported host environment: {host}")
     return least_privilege_subprocess_environment(
         host,
         home_dir=home_dir,
         current_directory=Path.cwd(),
+        forbidden_roots=forbidden_roots,
     )
 
 
@@ -226,13 +237,27 @@ def run_native(
     timeout: float = 30.0,
 ) -> NativeCommandResult:
     argv = tuple(str(part) for part in command)
-    env = _command_environment(host, home_dir=home_dir)
+    current_directory = Path.cwd()
+    forbidden_roots = repository_forbidden_roots(current_directory)
+    env = _command_environment(
+        host,
+        home_dir=home_dir,
+        forbidden_roots=forbidden_roots,
+    )
     try:
         if command_runner is None:
             from agency_runtime.core.delegation.backends import run_bounded_process
 
+            prepared_argv = freeze_process_argv(
+                prepare_process_argv(
+                    argv,
+                    current_directory=current_directory,
+                    forbidden_roots=forbidden_roots,
+                ),
+                forbidden_roots=forbidden_roots,
+            )
             bounded = run_bounded_process(
-                argv,
+                prepared_argv,
                 timeout=timeout,
                 env=env,
                 max_output_chars=MAX_NATIVE_OUTPUT_CHARS,

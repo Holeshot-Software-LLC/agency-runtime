@@ -25,6 +25,7 @@ _WINDOWS_REPARSE_POINT = 0x400
 _WINDOWS_NATIVE_SUFFIXES = {".exe"}
 _WINDOWS_DISCOVERY_SUFFIXES = {".bat", ".cmd", ".exe", ".ps1"}
 _MAX_PERSISTENT_ARTIFACT_BYTES = 512 * 1024 * 1024
+_REPOSITORY_MARKERS = (".git", ".hg", ".svn")
 
 
 @dataclass(frozen=True, slots=True)
@@ -295,6 +296,39 @@ def sanitized_executable_search_path(
     return separator.join(safe_entries)
 
 
+def repository_forbidden_roots(
+    current_directory: str | Path | None = None,
+) -> tuple[Path, ...]:
+    """Return an inert, canonical boundary for repository-adjacent execution.
+
+    No Git command, hook, configuration, or repository-owned executable is
+    consulted.  The exact working directory is always excluded, and every
+    ancestor carrying a recognized repository marker is excluded as a whole so
+    sibling ``bin`` directories cannot win executable discovery from a nested
+    working directory.
+    """
+
+    current = Path.cwd() if current_directory is None else Path(current_directory)
+    current = current.expanduser().resolve(strict=True)
+    roots = [current]
+    for candidate in (current, *current.parents):
+        marker_found = False
+        for marker_name in _REPOSITORY_MARKERS:
+            try:
+                (candidate / marker_name).lstat()
+            except (FileNotFoundError, NotADirectoryError):
+                continue
+            except OSError:
+                marker_found = True
+                break
+            else:
+                marker_found = True
+                break
+        if marker_found:
+            roots.append(candidate)
+    return tuple(dict.fromkeys(roots))
+
+
 def _call_resolver(
     resolver: BinaryResolver,
     executable: str,
@@ -354,6 +388,7 @@ def resolve_executable_path(
     platform_name: str | None = None,
     resolver: BinaryResolver | None = None,
     current_directory: str | Path | None = None,
+    forbidden_roots: Sequence[str | Path] = (),
 ) -> str:
     """Resolve a command without consulting relative or current-directory PATH entries."""
 
@@ -375,6 +410,7 @@ def resolve_executable_path(
             search_path,
             platform_name=platform,
             current_directory=current_directory,
+            forbidden_roots=forbidden_roots,
         )
         if resolver is not None:
             resolved = _call_resolver(
@@ -406,7 +442,14 @@ def resolve_executable_path(
     if not _is_absolute_path(resolved, platform_name=platform):
         raise OSError("executable resolver returned a non-absolute path")
     path_module = ntpath if platform == "nt" else posixpath
-    return path_module.normpath(resolved)
+    normalized = path_module.normpath(resolved)
+    _assert_artifact_outside_forbidden_roots(
+        normalized,
+        normalized,
+        platform_name=platform,
+        forbidden_roots=forbidden_roots,
+    )
+    return normalized
 
 
 def _canonical_regular_file(
@@ -686,7 +729,7 @@ def revalidate_persistent_artifacts(
 
 def _is_within(path: str, root: str | Path) -> bool:
     try:
-        Path(path).relative_to(Path(root).resolve(strict=True))
+        Path(path).resolve(strict=True).relative_to(Path(root).resolve(strict=True))
     except (OSError, RuntimeError, ValueError):
         return False
     return True
@@ -927,6 +970,9 @@ def isolated_python_argv(
 def _trusted_npm_companion(
     shim: Path,
     resolver: BinaryResolver,
+    *,
+    current_directory: str | Path | None = None,
+    forbidden_roots: Sequence[str | Path] = (),
 ) -> list[str] | None:
     """Resolve allowlisted npm CLIs without sending stdin through PowerShell."""
 
@@ -984,6 +1030,8 @@ def _trusted_npm_companion(
                 "node.exe",
                 platform_name="nt",
                 resolver=resolver,
+                current_directory=current_directory,
+                forbidden_roots=forbidden_roots,
             )
         except (FileNotFoundError, OSError, TypeError, ValueError):
             node = None
@@ -1016,6 +1064,8 @@ def prepare_process_argv(
     platform_name: str | None = None,
     resolver: BinaryResolver | None = None,
     system_resolver: BinaryResolver | None = None,
+    current_directory: str | Path | None = None,
+    forbidden_roots: Sequence[str | Path] = (),
 ) -> PreparedProcessArgv:
     """Resolve argv[0] and never send user arguments through cmd.exe."""
 
@@ -1030,6 +1080,8 @@ def prepare_process_argv(
         process_argv[0],
         platform_name=platform_name,
         resolver=resolver,
+        current_directory=current_directory,
+        forbidden_roots=forbidden_roots,
     )
     process_argv[0] = resolved
     if (platform_name or os.name) != "nt":
@@ -1044,7 +1096,12 @@ def prepare_process_argv(
         if native.is_file():
             values = [str(native), *process_argv[1:]]
             return PreparedProcessArgv(values, artifact_paths=(str(native),))
-        npm_companion = _trusted_npm_companion(shim, resolver or shutil.which)
+        npm_companion = _trusted_npm_companion(
+            shim,
+            resolver or shutil.which,
+            current_directory=current_directory,
+            forbidden_roots=forbidden_roots,
+        )
         if npm_companion is not None:
             values = [*npm_companion, *process_argv[1:]]
             return PreparedProcessArgv(values, artifact_paths=tuple(npm_companion))
@@ -1105,6 +1162,7 @@ __all__ = [
     "isolated_python_argv",
     "persistent_artifacts_from_manifest",
     "prepare_process_argv",
+    "repository_forbidden_roots",
     "resolve_executable_path",
     "revalidate_persistent_artifacts",
     "revalidate_process_argv",

@@ -30,6 +30,7 @@ from agency_runtime.core.private_paths import private_temporary_directory
 from agency_runtime.core.process_argv import (
     PreparedProcessArgv,
     freeze_process_argv,
+    repository_forbidden_roots,
     resolve_executable_path,
 )
 
@@ -163,6 +164,22 @@ def _resides_within(path: str, roots: Sequence[str | Path]) -> bool:
     return False
 
 
+def _launch_forbidden_roots(
+    workdir: str | Path | None,
+    *,
+    additional_roots: Sequence[str | Path] = (),
+) -> tuple[str | Path, ...]:
+    """Bind launch discovery to both caller and delegated repository ancestors."""
+
+    directories = [Path.cwd()]
+    if workdir is not None:
+        directories.append(Path(workdir))
+    roots: list[str | Path] = list(additional_roots)
+    for directory in directories:
+        roots.extend(repository_forbidden_roots(directory))
+    return tuple(dict.fromkeys(roots))
+
+
 @dataclass(slots=True)
 class CommandBackend:
     """Generic subprocess-backed delegation backend.
@@ -215,7 +232,12 @@ class CommandBackend:
             if "\x00" in value:
                 raise ValueError("command argv must not contain NUL bytes")
 
-    def executable_path(self) -> str | None:
+    def executable_path(
+        self,
+        *,
+        current_directory: str | Path | None = None,
+        forbidden_roots: Sequence[str | Path] = (),
+    ) -> str | None:
         """Resolve the configured executable without spawning a process."""
         if not self.command:
             return None
@@ -227,6 +249,8 @@ class CommandBackend:
             return resolve_executable_path(
                 self.command[0],
                 search_path=search_path,
+                current_directory=current_directory,
+                forbidden_roots=forbidden_roots,
             )
         except (OSError, TypeError, ValueError):
             return None
@@ -244,13 +268,21 @@ class CommandBackend:
                 "executable": None,
                 "reason": "no command configured",
             }
-        executable = self.executable_path()
-        reason = "" if executable else f"executable not found: {self.command[0]}"
+        launch_roots = _launch_forbidden_roots(None, additional_roots=forbidden_roots)
+        executable = self.executable_path(
+            current_directory=Path.cwd(),
+            forbidden_roots=launch_roots,
+        )
+        reason = (
+            ""
+            if executable
+            else f"executable not found outside target repository boundaries: {self.command[0]}"
+        )
         if executable:
             try:
                 prepared = prepare_process_argv([executable, *self.command[1:]])
                 if isinstance(prepared, PreparedProcessArgv):
-                    freeze_process_argv(prepared, forbidden_roots=forbidden_roots)
+                    freeze_process_argv(prepared, forbidden_roots=launch_roots)
                 elif not shutil.which(prepared[0]):
                     # Compatibility for an embedding that replaces the legacy
                     # preparation seam. Production preparation always freezes.
@@ -420,7 +452,7 @@ class CommandBackend:
         delegation_prompt = _specialist_prompt(task, recommended_agent)
         sensitive = _sensitive_variants((delegation_prompt, task))
         cwd = self._resolve_workdir(workdir)
-        forbidden_roots: tuple[str | Path, ...] = (cwd,) if cwd is not None else ()
+        forbidden_roots = _launch_forbidden_roots(cwd)
         if not self.command:
             result = self._result(
                 argv=[],
@@ -445,7 +477,10 @@ class CommandBackend:
         if input_text is not None and (not isinstance(input_text, str) or "\x00" in input_text):
             raise ValueError("built input must be text without NUL bytes")
 
-        executable = self.executable_path()
+        executable = self.executable_path(
+            current_directory=cwd or Path.cwd(),
+            forbidden_roots=forbidden_roots,
+        )
         if not executable:
             result = self._result(
                 argv=argv,
@@ -453,7 +488,10 @@ class CommandBackend:
                 workdir=cwd,
                 exit_code=127,
                 status="unavailable",
-                error=f"executable not found: {self.command[0] if self.command else '<unconfigured>'}",
+                error=(
+                    "executable not found outside delegated repository boundaries: "
+                    f"{self.command[0] if self.command else '<unconfigured>'}"
+                ),
                 sensitive=sensitive,
             )
             error = BackendUnavailableError(

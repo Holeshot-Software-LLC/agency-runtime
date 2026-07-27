@@ -432,10 +432,15 @@ def test_ustar_name_boundary_is_exact_and_idempotent(
     )
 
 
-def test_file_wrapper_replaces_both_staged_artifacts_without_temp_residue(
+@pytest.mark.parametrize(
+    "wheel_name",
+    ("package-1-py3-none-any.whl", "package-1-py3-none-win_amd64.whl"),
+)
+def test_file_wrapper_preserves_portable_and_windows_wheel_filenames(
     tmp_path: Path,
+    wheel_name: str,
 ) -> None:
-    wheel = tmp_path / "package-1-py3-none-any.whl"
+    wheel = tmp_path / wheel_name
     sdist = tmp_path / "package-1.tar.gz"
     wheel.write_bytes(_basic_wheel())
     sdist.write_bytes(_basic_sdist())

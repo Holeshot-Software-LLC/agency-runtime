@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.revisions import serialized_revision_metadata
 from agency_runtime.core.roster.source_identity import SourceIdentityError
 from agency_runtime.core.store import evidence as evidence_subject
@@ -371,6 +372,10 @@ def _roster_owner_with_rows(
     owner = roster_subject.RosterStoreMixin()
     connection = _ScriptedConnection(rows)
     owner._connect = lambda: connection  # type: ignore[attr-defined]
+    owner._configured_config_path = Path.cwd() / "config.yaml"  # type: ignore[attr-defined]
+    owner._frozen_db_path = Path.cwd() / "agency.db"  # type: ignore[attr-defined]
+    owner._database_identity = lambda: (1, 1)  # type: ignore[attr-defined]
+    monkeypatch.setattr(roster_subject, "assert_store_config_binding", lambda _owner: None)
     monkeypatch.setattr(
         roster_subject,
         "assert_active_revision_projection",
@@ -411,7 +416,7 @@ def test_rollback_rejects_missing_or_corrupt_revision_state(
     message: str,
 ) -> None:
     current, revision = _active_revision_rows()
-    responses = [_Result()]
+    responses = [_Result(), _Result({"value": 0})]
     if stage == "active":
         responses.append(_Result(None))
     else:
@@ -438,27 +443,23 @@ def test_rollback_rejects_missing_or_corrupt_revision_state(
     assert connection.closed is True
 
 
-def test_rollback_noop_returns_decoded_current_projection(
+def test_rollback_noop_is_rejected_before_native_verification(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    current, revision = _active_revision_rows()
-    owner, connection = _roster_owner_with_rows(
-        [
-            _Result(),
-            _Result(current),
-            _Result(revision),
-            _Result(revision),
-        ],
-        monkeypatch,
+    store = Store(tmp_path / "agency.db")
+    agent = bundled_roster()[0]
+    store.activate_agent(agent)
+    monkeypatch.setattr(
+        roster_subject,
+        "_verify_roster_rollback_operator_presence",
+        lambda _binding: pytest.fail("no-op reached native verification"),
     )
-    restored = owner.rollback_agent_revision(
-        "reviewer",
-        "v1",
-        expected_current_version="v1",
-        expected_current_hash=revision["hash"],
-    )
-    assert restored["categories"] == ["review"]
-    assert restored["capabilities"] == ["analysis"]
-    assert restored["tool_affinity"] == ["git"]
-    assert connection.committed is True
-    assert connection.closed is True
+
+    with pytest.raises(ValueError, match="already active"):
+        store.rollback_agent_revision(
+            agent["slug"],
+            agent["version"],
+            expected_current_version=agent["version"],
+            expected_current_hash=agent["hash"],
+        )

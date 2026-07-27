@@ -1,4 +1,4 @@
-import { HIRING_EVIDENCE_DOCUMENTS, isRecord } from "./dashboard-core.js";
+import { HIRING_EVIDENCE_DOCUMENTS, isRecord, safeRequestId } from "./dashboard-core.js";
 
 const EXECUTION_HOSTS = ["codex", "claude", "openclaw", "hermes", "zcode"];
 const ROUTE_LAB_HOST_INVENTORY_LIMIT = EXECUTION_HOSTS.length * 2;
@@ -233,7 +233,9 @@ export function createRenderer(core, config) {
 		setMetric("metric-store", formatBytes((data.db_size_bytes || 0) + (data.wal_size_bytes || 0)));
 		byId("setting-capture").textContent = data.capture_content ? "Opt-in enabled" : "Disabled";
 		byId("setting-retention").textContent = `${data.retention_days || 30} days`;
-		byId("privacy-chip").textContent = data.capture_content ? "Redacted content" : "Metadata only";
+		byId("privacy-chip").textContent = data.capture_content
+			? "Redacted runtime content"
+			: "Runtime metadata only";
 		const trimDays = byId("trim-days");
 		if (trimDays && trimDays.dataset.dirty !== "true") {
 			trimDays.value = data.retention_days || 30;
@@ -530,9 +532,20 @@ export function createRenderer(core, config) {
 		const remediationAttempts = Array.isArray(review.remediation_attempts)
 			? review.remediation_attempts
 			: [];
-		const remediationHistory = Array.isArray(review.remediation_history)
+		const rawRemediationHistory = Array.isArray(review.remediation_history)
 			? review.remediation_history
 			: [];
+		const pendingQueueEventIds = new Set(
+			remediationAttempts
+				.map((entry) => entry?.event_id)
+				.filter((eventId) => typeof eventId === "string" && eventId),
+		);
+		const remediationHistory = rawRemediationHistory.filter((entry) => (
+			typeof entry?.queue_event_id !== "string"
+			|| !entry.queue_event_id
+			|| !pendingQueueEventIds.has(entry.queue_event_id)
+		));
+		const remediationOverlapCount = rawRemediationHistory.length - remediationHistory.length;
 		const count = byId("review-count");
 		if (count) {
 			count.textContent = String(
@@ -672,14 +685,31 @@ export function createRenderer(core, config) {
 		)
 			? review.remediation_unvalidated_resolution_count
 			: 0;
+		const staleResolutionCount = Number.isInteger(
+			review.remediation_stale_resolution_count,
+		)
+			? review.remediation_stale_resolution_count
+			: 0;
 		const pageStatus = byId("review-page-status");
 		if (pageStatus) {
-			const anomalyStatus = unvalidatedResolutionCount > 0
+			const overlapStatus = remediationOverlapCount > 0
+				? ` ${remediationOverlapCount} conflicting history ${remediationOverlapCount === 1 ? "row was" : "rows were"} suppressed.`
+				: "";
+			const staleStatus = staleResolutionCount > 0
+				? ` ${staleResolutionCount} stale signed resolution ${staleResolutionCount === 1 ? "was" : "were"} reopened for review.`
+				: "";
+			const invalidStatus = unvalidatedResolutionCount > 0
 				? ` ${unvalidatedResolutionCount} unvalidated resolution ${unvalidatedResolutionCount === 1 ? "record remains" : "records remain"} quarantined.`
 				: "";
+			const anomalyStatus = `${overlapStatus}${staleStatus}${invalidStatus}`;
 			pageStatus.textContent = `Showing ${remediationAttempts.length} of ${pendingCount} pending repairs and ${remediationHistory.length} of ${historyCount} resolved repairs.${anomalyStatus}`;
-			pageStatus.classList.toggle("failed", unvalidatedResolutionCount > 0);
+			pageStatus.classList.toggle(
+				"failed",
+				unvalidatedResolutionCount + staleResolutionCount + remediationOverlapCount > 0,
+			);
+			pageStatus.dataset.remediationOverlapCount = String(remediationOverlapCount);
 			pageStatus.dataset.unvalidatedResolutionCount = String(unvalidatedResolutionCount);
+			pageStatus.dataset.staleResolutionCount = String(staleResolutionCount);
 		}
 		[
 			["pending", review.remediation_pending_has_more, review.next_remediation_pending_cursor],
@@ -859,6 +889,7 @@ export function createRenderer(core, config) {
 		const eligibility = receipt.eligibility || {};
 		const hostCapability = receipt.host_capability_receipt || {};
 		const routing = receipt.routing || {};
+		const requestId = safeRequestId(receipt.request_id);
 		const providerAttempts = Array.isArray(routing.provider_attempts)
 			? routing.provider_attempts
 				.slice(0, 8)
@@ -884,6 +915,7 @@ export function createRenderer(core, config) {
 			["Decision source", receipt.signals?.selection?.provider || receipt.provider || "deterministic"],
 			["Inference mode", routing.inference_mode || "not reported"],
 			["Provider calls", providerAttempts.length],
+			...(requestId ? [["Request ID", requestId]] : []),
 		];
 		blocks.forEach(([label, value]) => {
 			const block = div( "receipt-block");
@@ -1239,6 +1271,10 @@ export function createRenderer(core, config) {
 			promptDetails.append(
 				el("summary", "", "Compiled prompt preview"),
 				small( "", "Version " + String(prompt.version || "unknown") + " · " + String(prompt.hash || "no hash")),
+				small(
+					"",
+					"Owner-only governed specialist definition · separate from runtime observation capture",
+				),
 			);
 			const pre = el("pre");
 			pre.textContent = String(prompt.preview) + (prompt.truncated ? "\n… preview truncated" : "");

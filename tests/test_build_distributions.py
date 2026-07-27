@@ -18,6 +18,7 @@ import pytest
 from scripts import build_distributions as subject
 from scripts import canonicalize_distributions as canonicalizer
 from scripts import release_git
+from scripts.release_contract import WINDOWS_X64_WHEEL_PROFILE
 
 
 @pytest.fixture(autouse=True)
@@ -78,7 +79,8 @@ def _fake_successful_build(
     timestamp: int,
 ) -> None:
     assert timestamp >= 0
-    (output / "agency_runtime-0.1.0-py3-none-any.whl").write_bytes(b"wheel")
+    profile = subject.host_wheel_profile()
+    (output / f"agency_runtime-0.1.0-{profile.tag}.whl").write_bytes(b"wheel")
     (output / "agency_runtime-0.1.0.tar.gz").write_bytes(b"sdist")
 
 
@@ -473,6 +475,19 @@ def test_artifact_contract_requires_one_wheel_and_one_sdist(
         (tmp_path / name).write_bytes(b"artifact")
     with pytest.raises(RuntimeError, match="exactly one wheel"):
         subject._artifacts(tmp_path, expected_directory=identity)
+
+
+def test_artifact_contract_rejects_a_wheel_outside_the_host_profile(tmp_path: Path) -> None:
+    identity = subject._directory_identity(tmp_path)
+    (tmp_path / "agency_runtime-0.1.0-py3-none-any.whl").write_bytes(b"wheel")
+    (tmp_path / "agency_runtime-0.1.0.tar.gz").write_bytes(b"sdist")
+
+    with pytest.raises(RuntimeError, match="outside the host-derived profile"):
+        subject._artifacts(
+            tmp_path,
+            expected_directory=identity,
+            profile=WINDOWS_X64_WHEEL_PROFILE,
+        )
 
 
 def test_artifact_contract_rejects_hardlinks(tmp_path: Path) -> None:

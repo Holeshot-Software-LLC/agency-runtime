@@ -17,23 +17,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  analyze:
-    name: analyze / ${{ matrix.language }}
+  capability:
+    name: CodeQL capability preflight
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 5
     permissions:
       contents: read
-      packages: read # CodeQL may download packs through GitHub Packages.
-      security-events: write # The analyzer uploads SARIF to code scanning.
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [python, javascript-typescript]
+      security-events: read # The preflight reads code-scanning availability without mutation.
+    outputs:
+      available: ${{ steps.code-scanning-capability.outputs.available }}
+      http_status: ${{ steps.code-scanning-capability.outputs.http_status }}
+      reason: ${{ steps.code-scanning-capability.outputs.reason }}
+      repository_visibility: ${{ steps.code-scanning-capability.outputs.repository_visibility }}
     steps:
-      - name: Check out source
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
       - name: Detect native CodeQL capability
         id: code-scanning-capability
         env:
@@ -55,6 +51,7 @@ jobs:
               echo 'available=true' >> "${GITHUB_OUTPUT}"
               echo 'reason=repository_code_scanning_available' >> "${GITHUB_OUTPUT}"
               echo "http_status=${status}" >> "${GITHUB_OUTPUT}"
+              echo "repository_visibility=${REPOSITORY_VISIBILITY}" >> "${GITHUB_OUTPUT}"
               ;;
             403)
               if [[ "${REPOSITORY_VISIBILITY}" != 'private' && "${REPOSITORY_VISIBILITY}" != 'internal' ]]; then
@@ -97,25 +94,11 @@ jobs:
               exit 1
               ;;
           esac
-      - name: Initialize CodeQL
-        if: steps.code-scanning-capability.outputs.available == 'true'
-        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
-        with:
-          languages: ${{ matrix.language }}
-          queries: security-extended
-      - name: Analyze source
-        if: steps.code-scanning-capability.outputs.available == 'true'
-        uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
-        with:
-          category: /language:${{ matrix.language }}
-          output: ${{ runner.temp }}/codeql-results
-          upload: always
       - name: Record unavailable CodeQL capability
         if: steps.code-scanning-capability.outputs.available == 'false'
         env:
           CAPABILITY_HTTP_STATUS: ${{ steps.code-scanning-capability.outputs.http_status }}
           CAPABILITY_REASON: ${{ steps.code-scanning-capability.outputs.reason }}
-          CODEQL_LANGUAGE: ${{ matrix.language }}
           REPOSITORY_VISIBILITY: ${{ steps.code-scanning-capability.outputs.repository_visibility }}
         run: |
           python - <<'PY'
@@ -123,35 +106,120 @@ jobs:
           import os
           from pathlib import Path
 
-          evidence = {
-              "schema_version": 1,
-              "evidence_type": "codeql-capability",
-              "repository": os.environ["GITHUB_REPOSITORY"],
-              "ref": os.environ["GITHUB_REF"],
-              "sha": os.environ["GITHUB_SHA"],
-              "event": os.environ["GITHUB_EVENT_NAME"],
-              "language": os.environ["CODEQL_LANGUAGE"],
-              "repository_visibility": os.environ["REPOSITORY_VISIBILITY"],
-              "available": False,
-              "analysis_performed": False,
-              "reason": os.environ["CAPABILITY_REASON"],
-              "probe_http_status": int(os.environ["CAPABILITY_HTTP_STATUS"]),
-              "compensating_controls": [
-                  "bandit-source-analysis",
-                  "exact-installed-runtime-vulnerability-audit",
-                  "offline-workflow-security-audit",
-              ],
-          }
           output = Path(os.environ["RUNNER_TEMP"]) / "codeql-capability"
           output.mkdir(parents=True, exist_ok=True)
-          path = output / f"{os.environ['CODEQL_LANGUAGE']}.json"
-          path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          for language in ("python", "javascript-typescript"):
+              evidence = {
+                  "schema_version": 1,
+                  "evidence_type": "codeql-capability",
+                  "repository": os.environ["GITHUB_REPOSITORY"],
+                  "ref": os.environ["GITHUB_REF"],
+                  "sha": os.environ["GITHUB_SHA"],
+                  "event": os.environ["GITHUB_EVENT_NAME"],
+                  "language": language,
+                  "repository_visibility": os.environ["REPOSITORY_VISIBILITY"],
+                  "available": False,
+                  "analysis_performed": False,
+                  "reason": os.environ["CAPABILITY_REASON"],
+                  "probe_http_status": int(os.environ["CAPABILITY_HTTP_STATUS"]),
+                  "compensating_controls": [
+                      "bandit-source-analysis",
+                      "exact-installed-runtime-vulnerability-audit",
+                      "offline-workflow-security-audit",
+                  ],
+              }
+              path = output / f"{language}.json"
+              path.write_text(
+                  json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+              )
           PY
       - name: Retain CodeQL capability evidence
         if: steps.code-scanning-capability.outputs.available == 'false'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: codeql-${{ matrix.language }}-capability
-          path: ${{ runner.temp }}/codeql-capability/${{ matrix.language }}.json
+          name: codeql-capability
+          path: ${{ runner.temp }}/codeql-capability/*.json
           if-no-files-found: error
           retention-days: 7
+
+  analyze:
+    name: analyze / ${{ matrix.language }}
+    needs: capability
+    if: needs.capability.outputs.available == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read # CodeQL may download packs through GitHub Packages.
+      security-events: write # The analyzer uploads SARIF to code scanning.
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+      - name: Analyze source
+        uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        with:
+          category: /language:${{ matrix.language }}
+          output: ${{ runner.temp }}/codeql-results
+          upload: always
+
+  codeql:
+    name: CodeQL result
+    if: always()
+    needs: [capability, analyze]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - name: Require a coherent CodeQL outcome
+        env:
+          ANALYZE_RESULT: ${{ needs.analyze.result }}
+          CAPABILITY_AVAILABLE: ${{ needs.capability.outputs.available }}
+          CAPABILITY_RESULT: ${{ needs.capability.result }}
+        run: |
+          python - <<'PY'
+          import os
+
+          capability_result = os.environ.get("CAPABILITY_RESULT", "")
+          availability = os.environ.get("CAPABILITY_AVAILABLE", "")
+          analyze_result = os.environ.get("ANALYZE_RESULT", "")
+
+          if capability_result != "success":
+              raise SystemExit(
+                  "CodeQL capability preflight did not succeed: "
+                  f"{capability_result or 'missing'}"
+              )
+          if availability == "true":
+              if analyze_result != "success":
+                  raise SystemExit(
+                      "CodeQL was available but the exact language matrix did not succeed: "
+                      f"{analyze_result or 'missing'}"
+                  )
+              print("CodeQL analysis completed successfully for every configured language.")
+          elif availability == "false":
+              if analyze_result != "skipped":
+                  raise SystemExit(
+                      "CodeQL was unavailable but the analysis matrix had an inconsistent result: "
+                      f"{analyze_result or 'missing'}"
+                  )
+              print(
+                  "Native CodeQL analysis was not performed because repository Code Security "
+                  "is unavailable; governed capability evidence was retained."
+              )
+          else:
+              raise SystemExit(
+                  "CodeQL capability preflight produced an invalid availability value: "
+                  f"{availability or 'missing'}"
+              )
+          PY

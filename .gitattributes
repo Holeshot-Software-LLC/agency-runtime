@@ -7,6 +7,7 @@
 *.jpeg binary
 *.png binary
 *.webp binary
+agency_runtime/native/windows/operator_presence/operator_presence_verifier.exe binary
 
 # Preserve source-authentic upstream Markdown, including its trailing spaces.
 agency_runtime/core/evals/data/upstream_agents_orchestrator_ee5e758.txt whitespace=-trailing-space

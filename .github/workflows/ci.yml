@@ -50,7 +50,8 @@ jobs:
         run: git diff --check
       - name: Verify fast workflow contracts
         run: |
-          python -m pytest tests/test_ci_sharding.py tests/test_release_packaging.py -q -W error
+          python -m pytest tests/test_ci_sharding.py tests/test_ci_session_pair.py \
+            tests/test_release_packaging.py -q -W error
       - name: Run dashboard UI tests with coverage
         run: >-
           node --test --experimental-test-coverage
@@ -74,69 +75,54 @@ jobs:
           python scripts/verify_docs.py --require-tracker
 
   coverage:
-    name: coverage / shard ${{ matrix.label }} of 4
+    name: coverage / pair ${{ matrix.label }} of 2 / shards ${{ matrix.shard_a }}+${{ matrix.shard_b }}
     needs: quality-contracts
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # Two sequential preparation envelopes plus the bounded sessions and cleanup.
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {index: 0, label: 1}
-          - {index: 1, label: 2}
-          - {index: 2, label: 3}
-          - {index: 3, label: 4}
+          - {pair: 0, label: 1, shard_a: 0, shard_b: 1}
+          - {pair: 1, label: 2, shard_a: 2, shard_b: 3}
     steps:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Set up Python
+        id: coverage-python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install development dependencies
-        run: python -m pip install -e ".[dev]"
-      - name: Prepare private coverage runtime
         shell: bash
         env:
-          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
-          AGENCY_CI_RUN_ID: ${{ github.run_id }}
-          AGENCY_CI_SHARD: ${{ matrix.index }}
+          AGENCY_CI_PYTHON: ${{ steps.coverage-python.outputs.python-path }}
+        run: '"${AGENCY_CI_PYTHON}" -m pip install -e ".[dev]"'
+      - name: Run paired coverage sessions
+        shell: bash
+        env:
+          AGENCY_CI_PAIR: ${{ matrix.pair }}
+          AGENCY_CI_PYTHON: ${{ steps.coverage-python.outputs.python-path }}
+          AGENCY_CI_RUN_LABEL: ${{ github.run_id }}-${{ github.run_attempt }}-p${{ matrix.pair }}
+          AGENCY_CI_SHARD_A: ${{ matrix.shard_a }}
+          AGENCY_CI_SHARD_B: ${{ matrix.shard_b }}
         run: >-
-          python -m scripts.prepare_ci_runtime
-          --label "coverage-${AGENCY_CI_SHARD}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
-      - name: Run warning-strict coverage shard
-        shell: bash
-        env:
-          AGENCY_CI_SHARD: ${{ matrix.index }}
-        run: |
-          export HOME="${AGENCY_CI_HOME}"
-          export USERPROFILE="${AGENCY_CI_HOME}"
-          export TMPDIR="${AGENCY_CI_TEMP}"
-          unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
-          mapfile -t TEST_FILES < <(python -m scripts.select_test_shard \
-            --index "${AGENCY_CI_SHARD}" --count 4)
-          test "${#TEST_FILES[@]}" -gt 0
-          "${AGENCY_CI_PYTHON}" -m pytest "${TEST_FILES[@]}" -q -W error \
-            -p no:cacheprovider -m "not performance" \
-            --basetemp "${AGENCY_CI_TEMP}/pytest-coverage" \
-            --cov=agency_runtime \
-            --cov=scripts.build_distributions \
-            --cov=scripts.canonicalize_distributions \
-            --cov=scripts.prove_autocrlf_checkout \
-            --cov=scripts.release_contract \
-            --cov=scripts.release_git \
-            --cov=scripts.verify_distribution \
-            --cov-branch --cov-report=
-          mv .coverage ".coverage.${AGENCY_CI_SHARD}"
-      - name: Upload coverage shard
+          "${AGENCY_CI_PYTHON}" -m scripts.run_ci_session_pair coverage
+          --python "${AGENCY_CI_PYTHON}"
+          --shard-a "${AGENCY_CI_SHARD_A}"
+          --shard-b "${AGENCY_CI_SHARD_B}"
+          --run-label "${AGENCY_CI_RUN_LABEL}"
+          --output-root "${RUNNER_TEMP}/agency-coverage-pair-${AGENCY_CI_PAIR}"
+      - name: Upload coverage pair
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: coverage-shard-${{ matrix.index }}
-          path: .coverage.${{ matrix.index }}
+          name: coverage-pair-${{ matrix.pair }}
+          path: ${{ runner.temp }}/agency-coverage-pair-${{ matrix.pair }}/.coverage.*
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
@@ -160,7 +146,7 @@ jobs:
       - name: Download coverage shards
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          pattern: coverage-shard-*
+          pattern: coverage-pair-*
           path: ${{ runner.temp }}/coverage-shards
           merge-multiple: true
       - name: Require combined 97% line and branch coverage
@@ -206,55 +192,65 @@ jobs:
             --basetemp "${AGENCY_CI_TEMP}/pytest-performance"
 
   test:
-    name: tests / ${{ matrix.os }} / py${{ matrix.python }}
+    name: tests / ${{ matrix.label }} / py${{ matrix.python_a }}+py${{ matrix.python_b }}
     needs: quality-contracts
     if: github.event_name != 'pull_request' && needs.quality-contracts.result == 'success'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    # Two sequential preparation envelopes plus the 42m session bound and cleanup.
+    timeout-minutes: 70
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-24.04, python: "3.10"}
-          - {os: ubuntu-24.04, python: "3.11"}
-          - {os: ubuntu-24.04, python: "3.12"}
-          - {os: ubuntu-24.04, python: "3.14"}
-          - {os: windows-2022, python: "3.10"}
-          - {os: windows-2022, python: "3.14"}
+          - {os: ubuntu-24.04, platform: linux, label: ubuntu-310-311, python_a: "3.10", python_b: "3.11"}
+          - {os: ubuntu-24.04, platform: linux, label: ubuntu-312-314, python_a: "3.12", python_b: "3.14"}
+          - {os: windows-2022, platform: windows, label: windows-310-314, python_a: "3.10", python_b: "3.14"}
     steps:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - name: Set up Python
+      - name: Set up first Python
+        id: python-a
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.python_a }}
           cache: pip
           cache-dependency-path: pyproject.toml
-      - name: Install test dependencies
-        run: python -m pip install -e ".[dev]"
-      - name: Prepare private test runtime
+      - name: Set up second Python
+        id: python-b
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python_b }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install test dependencies for both interpreters
         shell: bash
         env:
-          AGENCY_CI_MATRIX_PYTHON: ${{ matrix.python }}
-          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
-          AGENCY_CI_RUN_ID: ${{ github.run_id }}
-        run: >-
-          python -m scripts.prepare_ci_runtime
-          --label "tests-py${AGENCY_CI_MATRIX_PYTHON}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
-      - name: Run tests
-        shell: bash
+          AGENCY_CI_PYTHON_A: ${{ steps.python-a.outputs.python-path }}
+          AGENCY_CI_PYTHON_B: ${{ steps.python-b.outputs.python-path }}
         run: |
-          export HOME="${AGENCY_CI_HOME}"
-          export USERPROFILE="${AGENCY_CI_HOME}"
-          export TMPDIR="${AGENCY_CI_TEMP}"
-          unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
-          "${AGENCY_CI_PYTHON}" -m pytest tests -q -W error -p no:cacheprovider \
-            -m "not performance" \
-            --basetemp "${AGENCY_CI_TEMP}/pytest"
-      - name: Check dependency consistency
-        run: python -m pip check
+          "${AGENCY_CI_PYTHON_A}" -m pip install -e ".[dev]"
+          "${AGENCY_CI_PYTHON_B}" -m pip install -e ".[dev]"
+      - name: Run paired compatibility sessions
+        shell: bash
+        env:
+          AGENCY_CI_PAIR_LABEL: ${{ matrix.label }}
+          AGENCY_CI_PLATFORM: ${{ matrix.platform }}
+          AGENCY_CI_PYTHON_A: ${{ steps.python-a.outputs.python-path }}
+          AGENCY_CI_PYTHON_B: ${{ steps.python-b.outputs.python-path }}
+          AGENCY_CI_RUN_LABEL: ${{ matrix.label }}-${{ github.run_id }}-${{ github.run_attempt }}
+          AGENCY_CI_VERSION_A: ${{ matrix.python_a }}
+          AGENCY_CI_VERSION_B: ${{ matrix.python_b }}
+        run: >-
+          "${AGENCY_CI_PYTHON_A}" -m scripts.run_ci_session_pair compatibility
+          --platform "${AGENCY_CI_PLATFORM}"
+          --python-a "${AGENCY_CI_PYTHON_A}"
+          --version-a "${AGENCY_CI_VERSION_A}"
+          --python-b "${AGENCY_CI_PYTHON_B}"
+          --version-b "${AGENCY_CI_VERSION_B}"
+          --run-label "${AGENCY_CI_RUN_LABEL}"
+          --output-root "${RUNNER_TEMP}/agency-compatibility-${AGENCY_CI_PAIR_LABEL}"
 
   windows-portability-contract:
     name: portability contract / windows / py${{ matrix.python }}
@@ -303,17 +299,18 @@ jobs:
             --basetemp "${AGENCY_CI_TEMP}/pytest-portability"
 
   artifacts:
-    name: build and verify distributions / ${{ matrix.os }}
+    name: build and verify unsigned review distributions / ${{ matrix.os }}
     needs: quality-contracts
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-24.04}
-          - {os: windows-2022}
+          - {os: ubuntu-24.04, artifact_set: portable}
+          - {os: windows-2022, artifact_set: windows-x64}
     env:
+      AGENCY_ARTIFACT_SET: ${{ matrix.artifact_set }}
       AGENCY_RELEASE_COMMIT: ${{ github.sha }}
     steps:
       - name: Check out source
@@ -331,6 +328,7 @@ jobs:
       - name: Smoke release modules without installing the project
         run: |
           python -m scripts.build_distributions --help
+          python -m scripts.build_windows_operator_presence --help
           python -m scripts.verify_distribution --help
       - name: Prepare private release runtime
         shell: bash
@@ -352,6 +350,10 @@ jobs:
         run: >-
           "${AGENCY_CI_PYTHON}" -m scripts.prove_autocrlf_checkout
           --expected-commit "${AGENCY_RELEASE_COMMIT}"
+      - name: Rebuild and byte-verify Windows operator-presence helper
+        if: runner.os == 'Windows'
+        shell: bash
+        run: '"${AGENCY_CI_PYTHON}" -m scripts.build_windows_operator_presence'
       - name: Build wheel and source distribution
         shell: bash
         run: >-
@@ -362,61 +364,10 @@ jobs:
         run: |
           "${AGENCY_CI_PYTHON}" -m twine check --strict "${AGENCY_CI_TEMP}"/dist/*
           "${AGENCY_CI_PYTHON}" -m scripts.verify_distribution "${AGENCY_CI_TEMP}/dist" \
-            --expected-commit "${AGENCY_RELEASE_COMMIT}"
-      - name: Upload platform distributions for byte-parity verification
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: python-distributions-${{ matrix.os }}
-          path: ${{ steps.release-output.outputs.path }}/*
-          if-no-files-found: error
-          retention-days: 7
-  artifact-parity:
-    name: artifact byte parity / windows and linux
-    needs: artifacts
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: Download Linux distributions
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: python-distributions-ubuntu-24.04
-          path: ${{ runner.temp }}/agency-dist-linux
-      - name: Download Windows distributions
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: python-distributions-windows-2022
-          path: ${{ runner.temp }}/agency-dist-windows
-      - name: Require one byte-identical cross-platform artifact pair
-        shell: bash
-        run: |
-          test "$(find "${RUNNER_TEMP}/agency-dist-linux" -maxdepth 1 -type f | wc -l)" -eq 2
-          test "$(find "${RUNNER_TEMP}/agency-dist-windows" -maxdepth 1 -type f | wc -l)" -eq 2
-          diff --brief --recursive \
-            "${RUNNER_TEMP}/agency-dist-linux" \
-            "${RUNNER_TEMP}/agency-dist-windows"
-      - name: Publish verified canonical distributions
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: python-distributions
-          path: ${{ runner.temp }}/agency-dist-linux/*
-          if-no-files-found: error
-          retention-days: 7
-
-  artifact-smoke:
-    name: artifact smoke / ${{ matrix.os }}
-    needs: [artifacts, artifact-parity]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, windows-2022]
-    steps:
-      - name: Check out release smoke procedure
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-      - name: Set up minimum supported Python
+            --expected-commit "${AGENCY_RELEASE_COMMIT}" \
+            --artifact-set "${AGENCY_ARTIFACT_SET}"
+      - name: Set up minimum supported Python for installed smoke
+        id: smoke-python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.10"
@@ -424,26 +375,15 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: "24"
-      - name: Download distributions
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: python-distributions
-          path: ${{ runner.temp }}/agency-dist
-      - name: Prepare private artifact runtime
-        shell: bash
-        env:
-          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
-          AGENCY_CI_RUN_ID: ${{ github.run_id }}
-        run: >-
-          python -m scripts.prepare_ci_runtime
-          --label "artifact-smoke-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
-      - name: Install and smoke-test the built wheel and source distribution
+      - name: Install and smoke-test the platform wheel and source distribution
         working-directory: ${{ runner.temp }}
         shell: bash
+        env:
+          AGENCY_CI_SMOKE_PYTHON: ${{ steps.smoke-python.outputs.python-path }}
         run: |
-          EXPECTED_VERSION="$(python "${GITHUB_WORKSPACE}/scripts/read_release_version.py" "${GITHUB_WORKSPACE}/agency_runtime/__init__.py")"
-          wheel_artifacts=(agency-dist/*.whl)
-          sdist_artifacts=(agency-dist/*.tar.gz)
+          EXPECTED_VERSION="$("${AGENCY_CI_PYTHON}" "${GITHUB_WORKSPACE}/scripts/read_release_version.py" "${GITHUB_WORKSPACE}/agency_runtime/__init__.py")"
+          wheel_artifacts=("${AGENCY_CI_TEMP}"/dist/*.whl)
+          sdist_artifacts=("${AGENCY_CI_TEMP}"/dist/*.tar.gz)
           if [ "${#wheel_artifacts[@]}" -ne 1 ] || [ ! -f "${wheel_artifacts[0]}" ]; then
             exit 1
           fi
@@ -451,8 +391,8 @@ jobs:
             exit 1
           fi
 
-          python -m venv --copies "${AGENCY_CI_TEMP}/wheel-smoke"
-          python -m venv --copies "${AGENCY_CI_TEMP}/sdist-smoke"
+          "${AGENCY_CI_SMOKE_PYTHON}" -m venv --copies "${AGENCY_CI_TEMP}/wheel-smoke"
+          "${AGENCY_CI_SMOKE_PYTHON}" -m venv --copies "${AGENCY_CI_TEMP}/sdist-smoke"
           if [ "${RUNNER_OS}" = "Windows" ]; then
             WHEEL_PYTHON="${AGENCY_CI_TEMP}/wheel-smoke/Scripts/python.exe"
             WHEEL_AGENCY="${AGENCY_CI_TEMP}/wheel-smoke/Scripts/agency.exe"
@@ -479,7 +419,9 @@ jobs:
             chmod 700 "${HOME}"
             "${python}" -m pip install --no-cache-dir --only-binary=:all: "${artifact}"
             "${python}" -I -c "from importlib.metadata import version; from importlib.resources import files; import agency_runtime; from agency_runtime.core.canary import run_canary; assert callable(run_canary); assert version('agency-runtime') == agency_runtime.__version__; assert files('agency_runtime.dashboard').joinpath('index.html').is_file(); assert files('agency_runtime.core').joinpath('canary.py').is_file(); assert files('agency_runtime.core.evals.data').joinpath('routing_v1.py').is_file()"
-            "${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py" --expected-version "${EXPECTED_VERSION}"
+            "${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py" \
+              --expected-version "${EXPECTED_VERSION}" \
+              --artifact-set "${AGENCY_ARTIFACT_SET}"
             "${python}" -I -c 'import subprocess, sys; result = subprocess.run([sys.argv[1], "--version"], capture_output=True, text=True, check=False); expected = f"agency {sys.argv[2]}\n"; assert (result.returncode, result.stdout, result.stderr) == (0, expected, ""), (result.returncode, result.stdout, result.stderr)' "${agency}" "${EXPECTED_VERSION}"
             "${agency}" --help
             "${agency}" host-canary --help
@@ -490,6 +432,74 @@ jobs:
 
           smoke_distribution wheel "${WHEEL_PYTHON}" "${WHEEL_AGENCY}" "${wheel_artifacts[0]}"
           smoke_distribution sdist "${SDIST_PYTHON}" "${SDIST_AGENCY}" "${sdist_artifacts[0]}"
+      - name: Upload platform unsigned review distributions for byte-parity verification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-distributions-unsigned-review-${{ matrix.os }}
+          path: ${{ steps.release-output.outputs.path }}/*
+          if-no-files-found: error
+          retention-days: 7
+  artifact-parity:
+    name: assemble platform-honest unsigned review artifacts
+    needs: artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      AGENCY_RELEASE_COMMIT: ${{ github.sha }}
+    steps:
+      - name: Check out reviewed release policy
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up release verifier Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+      - name: Install verifier dependencies
+        run: python -m pip install "build==1.5.0"
+      - name: Download Linux distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-distributions-unsigned-review-ubuntu-24.04
+          path: ${{ runner.temp }}/agency-dist-linux
+      - name: Download Windows distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-distributions-unsigned-review-windows-2022
+          path: ${{ runner.temp }}/agency-dist-windows
+      - name: Require one byte-identical sdist and assemble the unsigned review set
+        shell: bash
+        run: |
+          test "$(find "${RUNNER_TEMP}/agency-dist-linux" -maxdepth 1 -type f | wc -l)" -eq 2
+          test "$(find "${RUNNER_TEMP}/agency-dist-windows" -maxdepth 1 -type f | wc -l)" -eq 2
+          linux_wheels=("${RUNNER_TEMP}"/agency-dist-linux/*-py3-none-any.whl)
+          windows_wheels=("${RUNNER_TEMP}"/agency-dist-windows/*-py3-none-win_amd64.whl)
+          linux_sdists=("${RUNNER_TEMP}"/agency-dist-linux/*.tar.gz)
+          windows_sdists=("${RUNNER_TEMP}"/agency-dist-windows/*.tar.gz)
+          test "${#linux_wheels[@]}" -eq 1 && test -f "${linux_wheels[0]}"
+          test "${#windows_wheels[@]}" -eq 1 && test -f "${windows_wheels[0]}"
+          test "${#linux_sdists[@]}" -eq 1 && test -f "${linux_sdists[0]}"
+          test "${#windows_sdists[@]}" -eq 1 && test -f "${windows_sdists[0]}"
+          test "$(sha256sum "${linux_sdists[0]}" | cut -d ' ' -f 1)" = \
+            "$(sha256sum "${windows_sdists[0]}" | cut -d ' ' -f 1)"
+          cmp --silent "${linux_sdists[0]}" "${windows_sdists[0]}"
+          mkdir "${RUNNER_TEMP}/agency-dist-release"
+          cp --no-clobber "${linux_wheels[0]}" "${RUNNER_TEMP}/agency-dist-release/"
+          cp --no-clobber "${windows_wheels[0]}" "${RUNNER_TEMP}/agency-dist-release/"
+          cp --no-clobber "${linux_sdists[0]}" "${RUNNER_TEMP}/agency-dist-release/"
+          test "$(find "${RUNNER_TEMP}/agency-dist-release" -maxdepth 1 -type f | wc -l)" -eq 3
+      - name: Verify the combined three-artifact unsigned review contract
+        run: >-
+          python -m scripts.verify_distribution "${RUNNER_TEMP}/agency-dist-release"
+          --expected-commit "${AGENCY_RELEASE_COMMIT}"
+          --artifact-set release
+      - name: Upload verified canonical unsigned review distributions
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-distributions-unsigned-review
+          path: ${{ runner.temp }}/agency-dist-release/*
+          if-no-files-found: error
+          retention-days: 7
 
   security:
     name: deterministic source checks and dependency audit
@@ -527,7 +537,7 @@ jobs:
       - performance
       - test
       - windows-portability-contract
-      - artifact-smoke
+      - artifact-parity
       - security
     runs-on: ubuntu-24.04
     timeout-minutes: 2
@@ -560,7 +570,7 @@ jobs:
               "performance": "success",
               "test": expected_test_result,
               "windows-portability-contract": "success",
-              "artifact-smoke": "success",
+              "artifact-parity": "success",
               "security": "success",
           }
           actual = {

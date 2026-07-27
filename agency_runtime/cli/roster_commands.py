@@ -564,7 +564,7 @@ def cmd_roster_retire(args: argparse.Namespace) -> int:
 
 
 def cmd_roster_rollback(args: argparse.Namespace) -> int:
-    """Restore one exact immutable revision under operator-supplied CAS state."""
+    """Invoke the Store-owned native-presence rollback coordinator."""
 
     restored = _store().rollback_agent_revision(
         args.slug,

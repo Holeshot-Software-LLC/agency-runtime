@@ -3,13 +3,14 @@ title: "Freeze every launch-critical executable identity before process creation
 status: accepted
 category: decisions
 created: 2026-07-16
-updated: 2026-07-20
+updated: 2026-07-27
 tags: [security, processes, executables, delegation, portability]
 related:
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md
   - docs/roadmap/issue-AR-65-reject-cross-account-executable-namespaces.md
   - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
   - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
+  - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
   - docs/decisions/0038-refuse-executable-git-configuration-during-delegation.md
   - docs/decisions/0040-preserve-environment-owned-python-launchers.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
@@ -54,6 +55,10 @@ symlink to its real executable target so a mutable symlink is not left in the
 final argv. Persistent launchers use the separate manifest contract below to
 preserve environment-owned virtual-environment spelling. Resolve Git and
 operating-system utilities through the same trusted absolute-path boundary.
+Before any Git-assisted root discovery, derive repository ancestors only from
+inert filesystem markers. Exclude each complete ancestor boundary during both
+`PATH` search and final lexical/resolved candidate validation so a nested
+working directory cannot make a repository-owned sibling executable eligible.
 
 Represent prepared argv as a typed value that carries every launch-critical
 artifact. Canonicalize each artifact and freeze its path, device, inode,

@@ -39,6 +39,9 @@ from agency_runtime.core.process_argv import (
     resolve_executable_path,
     sanitized_executable_search_path,
 )
+from agency_runtime.core.process_argv import (
+    repository_forbidden_roots as _repository_forbidden_roots,
+)
 
 SUPPORTED_CLI_TRANSPORTS = frozenset({"codex", "claude"})
 _MAX_CLI_OUTPUT_CHARS = 64 * 1024
@@ -178,31 +181,6 @@ _MODEL_CATALOG_IN_FLIGHT: set[str] = set()
 
 ProcessRunner = Callable[..., BoundedProcessResult]
 BinaryResolver = Callable[..., str | None]
-_REPOSITORY_MARKERS = (".git", ".hg", ".svn")
-
-
-def _repository_forbidden_roots(current_directory: Path) -> tuple[Path, ...]:
-    """Discover workspace ancestors without importing or executing repository code."""
-
-    current = current_directory.resolve(strict=True)
-    roots = [current]
-    for candidate in (current, *current.parents):
-        marker_found = False
-        for marker_name in _REPOSITORY_MARKERS:
-            try:
-                (candidate / marker_name).lstat()
-            except (FileNotFoundError, NotADirectoryError):
-                continue
-            except OSError:
-                # An unreadable marker cannot be safely disproved.
-                marker_found = True
-                break
-            else:
-                marker_found = True
-                break
-        if marker_found:
-            roots.append(candidate)
-    return tuple(dict.fromkeys(roots))
 
 
 def _valid_timeout(value: float) -> bool:

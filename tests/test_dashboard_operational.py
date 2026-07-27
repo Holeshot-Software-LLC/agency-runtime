@@ -325,6 +325,9 @@ def test_candidate_review_exposes_bounded_remediation_attempt_without_raw_conten
     assert snapshot["queue_count"] == 1
     assert snapshot["candidate_queue_count"] == 0
     assert snapshot["remediation_count"] == 1
+    assert len(snapshot["remediation_revision"]) == 64
+    int(snapshot["remediation_revision"], 16)
+    assert snapshot["remediation_stale_resolution_count"] == 0
     assert snapshot["remediation_unvalidated_resolution_count"] == 0
     [attempt] = snapshot["remediation_attempts"]
     assert attempt["slug"] == "unsafe-agent"
@@ -354,6 +357,7 @@ def test_candidate_review_exposes_bounded_remediation_attempt_without_raw_conten
         conn.close()
     refreshed = candidate_review_snapshot(store)
     assert refreshed["remediation_count"] == 1
+    assert refreshed["remediation_stale_resolution_count"] == 0
     assert refreshed["remediation_unvalidated_resolution_count"] == 1
 
 

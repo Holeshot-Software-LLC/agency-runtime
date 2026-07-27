@@ -373,11 +373,209 @@ def _verify(
 ) -> list[str]:
     monkeypatch.setattr(subject, "REQUIRED_PACKAGE_FILES", set())
     monkeypatch.setattr(subject, "REQUIRED_SDIST_FILES", set())
+    monkeypatch.setattr(subject, "IMMUTABLE_THIRD_PARTY_FILE_SHA256", ())
     return subject.verify(
         dist,
         repository_root=repository,
         expected_commit=expected_commit or _head(repository),
     )
+
+
+def test_full_release_set_binds_portable_and_windows_profiles_to_one_sdist(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, payloads = _repository(tmp_path)
+    native_payloads = {
+        subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE: b"reviewed-pe",
+        "agency_runtime/native/windows/operator_presence/operator_presence_verifier.cpp": (
+            b"reviewed-source\n"
+        ),
+        "agency_runtime/native/windows/operator_presence/"
+        "operator_presence_verifier.provenance.json": b"{}\n",
+    }
+    for name, payload in native_payloads.items():
+        target = repository / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(payload)
+    _git(repository, "add", "--all")
+    _git(repository, "commit", "-m", "native fixture")
+    payloads.update(native_payloads)
+
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    portable_extra = dict(native_payloads)
+    portable_extra.pop(subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE)
+    _wheel(
+        dist / f"agency_runtime-{VERSION}-py3-none-any.whl",
+        payloads[PACKAGE_PATH],
+        extra=portable_extra,
+    )
+    _wheel(
+        dist / f"agency_runtime-{VERSION}-py3-none-win_amd64.whl",
+        payloads[PACKAGE_PATH],
+        extra=native_payloads,
+        wheel_payload=(
+            b"Wheel-Version: 1.0\nGenerator: release-test\n"
+            b"Root-Is-Purelib: false\nTag: py3-none-win_amd64\n"
+        ),
+    )
+    _sdist(dist / f"agency_runtime-{VERSION}.tar.gz", payloads)
+    monkeypatch.setattr(subject, "REQUIRED_PACKAGE_FILES", set())
+    monkeypatch.setattr(subject, "REQUIRED_SDIST_FILES", set())
+    monkeypatch.setattr(subject, "IMMUTABLE_THIRD_PARTY_FILE_SHA256", ())
+    monkeypatch.setattr(subject, "verify_payload_contract", lambda *_args: None)
+
+    assert (
+        subject.verify(
+            dist,
+            repository_root=repository,
+            expected_commit=_head(repository),
+            artifact_set=subject.ARTIFACT_SET_RELEASE,
+        )
+        == []
+    )
+
+
+def test_portable_profile_rejects_every_executable_member_case_insensitively() -> None:
+    assert subject._native_operator_presence_failures(
+        {"agency_runtime/native/OTHER.ExE": b"payload"},
+        artifact="portable wheel",
+        executable_forbidden=True,
+    ) == ["portable wheel must not contain executable payloads: agency_runtime/native/OTHER.ExE"]
+
+
+def _structural_pe(
+    *,
+    pe_offset: int = 128,
+    signature: bytes = b"PE\0\0",
+    machine: int = 0x8664,
+    section_count: int = 3,
+    optional_header_size: int = 240,
+    characteristics: int = 0x0022,
+    optional_magic: int = 0x020B,
+) -> bytes:
+    size = max(
+        512,
+        pe_offset + 24 + optional_header_size + (section_count * subject._PE_SECTION_HEADER_BYTES),
+    )
+    payload = bytearray(size)
+    payload[:2] = b"MZ"
+    struct.pack_into("<I", payload, 60, pe_offset)
+    if pe_offset <= len(payload) - 24:
+        payload[pe_offset : pe_offset + 4] = signature
+        struct.pack_into(
+            "<HHIIIHH",
+            payload,
+            pe_offset + 4,
+            machine,
+            section_count,
+            0,
+            0,
+            0,
+            optional_header_size,
+            characteristics,
+        )
+        if optional_header_size >= 2:
+            struct.pack_into("<H", payload, pe_offset + 24, optional_magic)
+    return bytes(payload)
+
+
+def test_portable_and_windows_profiles_reject_pe_payloads_under_data_names() -> None:
+    payload = _structural_pe()
+
+    assert subject._native_operator_presence_failures(
+        {"agency_runtime/native/windows/operator_presence/review-copy.txt": payload},
+        artifact="portable wheel",
+        executable_forbidden=True,
+    ) == [
+        "portable wheel must not contain PE payloads under non-executable names: "
+        "agency_runtime/native/windows/operator_presence/review-copy.txt"
+    ]
+    assert subject._native_operator_presence_failures(
+        {"agency_runtime/native/windows/operator_presence/review-copy.json": payload},
+        artifact="Windows wheel",
+    ) == [
+        "Windows wheel contains unexpected PE payloads: "
+        "agency_runtime/native/windows/operator_presence/review-copy.json"
+    ]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        b"MZ",
+        b"MZ" + bytes(62),
+        b"MZ" + bytes(58) + struct.pack("<I", subject.MAX_PE_HEADER_OFFSET + 1),
+        _structural_pe(pe_offset=32),
+        _structural_pe(signature=b"PX\0\0"),
+        _structural_pe(machine=0),
+        _structural_pe(section_count=0),
+        _structural_pe(optional_header_size=1),
+        _structural_pe(characteristics=0),
+        _structural_pe(optional_magic=0),
+    ],
+)
+def test_structural_pe_detection_rejects_mere_mz_and_malformed_headers(payload: bytes) -> None:
+    assert subject._is_structural_pe(payload) is False
+
+
+def test_structural_pe_detection_accepts_a_sane_bounded_image() -> None:
+    assert subject._is_structural_pe(_structural_pe()) is True
+
+
+def test_portable_profile_rejects_a_renamed_pe_with_a_large_dos_stub() -> None:
+    name = "agency_runtime/native/windows/operator_presence/large-stub.txt"
+    payload = _structural_pe(pe_offset=(1024 * 1024) + 128)
+
+    assert subject._is_structural_pe(payload) is True
+    assert subject._native_operator_presence_failures(
+        {name: payload},
+        artifact="portable wheel",
+        executable_forbidden=True,
+    ) == [f"portable wheel must not contain PE payloads under non-executable names: {name}"]
+
+
+def test_immutable_third_party_files_match_the_release_contract() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative, expected_digest in subject.IMMUTABLE_THIRD_PARTY_FILE_SHA256:
+        assert hashlib.sha256(root.joinpath(*relative.split("/")).read_bytes()).hexdigest() == (
+            expected_digest
+        )
+
+
+def test_immutable_third_party_hash_contract_rejects_missing_and_tampered_copies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    name = "agency_runtime/native/windows/operator_presence/LICENSE.example.txt"
+    payload = b"reviewed upstream text\n"
+    monkeypatch.setattr(
+        subject,
+        "IMMUTABLE_THIRD_PARTY_FILE_SHA256",
+        ((name, hashlib.sha256(payload).hexdigest()),),
+    )
+
+    assert (
+        subject._immutable_third_party_failures(
+            {name: payload},
+            artifact="committed project license contract",
+        )
+        == []
+    )
+    assert subject._immutable_third_party_failures(
+        {},
+        artifact="sdist",
+    ) == [f"sdist is missing immutable third-party file: {name}"]
+    assert subject._immutable_third_party_failures(
+        {name: b"tampered\n"},
+        artifact="sdist",
+    ) == [f"sdist immutable third-party file has the wrong SHA-256: {name}"]
+    metadata_prefix = f"{DIST_INFO}/licenses/"
+    assert subject._immutable_third_party_failures(
+        {f"{metadata_prefix}{name}": b"tampered\n"},
+        artifact="wheel license metadata",
+        path_prefix=metadata_prefix,
+    ) == [f"wheel license metadata immutable third-party file has the wrong SHA-256: {name}"]
 
 
 def test_clean_committed_archives_pass_and_bind_every_scoped_payload(
@@ -758,7 +956,7 @@ def test_wheel_license_and_singleton_core_headers_are_exact(
     wheel = dist / f"agency_runtime-{VERSION}-py3-none-any.whl"
 
     _wheel(wheel, payloads[PACKAGE_PATH], license_payload=b"attacker license\n")
-    assert "wheel license payload differs from committed HEAD" in _verify(
+    assert "wheel license payload differs from committed HEAD: LICENSE" in _verify(
         monkeypatch,
         dist,
         repository,
@@ -1658,6 +1856,7 @@ def test_committed_project_contract_validates_optional_dependency_shapes(
 ) -> None:
     package = {"agency_runtime/__init__.py": "v"}
     support = {"pyproject.toml": "p", "LICENSE": "l", "README.md": "r"}
+    monkeypatch.setattr(subject, "IMMUTABLE_THIRD_PARTY_FILE_SHA256", ())
 
     def complete_project(payload: bytes) -> bytes:
         return (

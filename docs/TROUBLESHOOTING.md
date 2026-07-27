@@ -3,7 +3,7 @@ title: "Troubleshooting Agency Runtime"
 status: active
 category: operations
 created: 2026-07-10
-updated: 2026-07-20
+updated: 2026-07-27
 tags: [operations, troubleshooting]
 related:
   - README.md
@@ -14,10 +14,15 @@ related:
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md
   - docs/roadmap/issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md
   - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
+  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
+  - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
+  - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
+  - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
+  - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
 supersedes: []
 superseded_by: null
 ---
@@ -136,13 +141,44 @@ agency off --agent <host> --dry-run --json
 The committed state is checked at every adapter boundary and preserves native
 registration. `status` reports native enablement, runtime soft control, and
 effective state separately; `unverified` is not the same as disabled. Positive
-CLI mutations currently return an operator-presence-unavailable result, and the
-dashboard is intentionally read-only.
+CLI mutations currently return an operator-presence-unavailable result except
+for exact roster rollback on Windows 11 x64, which enters its separate prepared
+Store coordinator and native consent boundary. The dashboard remains
+intentionally read-only.
 
 Use `agency off --agent <host> --native` only when you intend to change the
 host's plugin registry. Native control requires an inventory postcondition and
 may report `enablement_unverified` or a restart requirement instead of
 pretending success.
+
+## Roster rollback reports operator presence unavailable
+
+The only positive implementation is exact roster rollback on Windows 11 x64.
+Linux, Windows ARM64, older Windows builds, every adjacent mutation, and an
+install without the exact native payload fail closed. Do not copy the helper
+from another machine, download a replacement, rename an executable into the
+package, or bypass the coordinator. Those actions destroy the reviewed package
+identity without proving operator intent.
+
+The source tree includes a reviewed unsigned developer helper and now derives
+the wheel profile from the real build host. Portable wheels keep the native
+source, provenance, and notices but exclude the PE; supported Windows x64 emits
+`win_amd64` and includes it. Two producer wheel/source pairs feed a merge gate
+that assembles and verifies the three-artifact unsigned review set. AR-160 still needs
+hosted cross-OS proof, which is currently unavailable because repository
+Actions billing is disabled. AR-161 is blocked until the owner approves a
+publisher identity and authorized legal review resolves MSVC, Windows SDK,
+`/MT` static runtime, and notice terms; the signed bytes must then map back to
+the reviewed unsigned digest. Local notice files or a matching SHA-256 do not
+substitute for those gates.
+
+On a supported prerelease source checkout, denial or cancellation is an
+expected no-change result. A target, authority, workforce, database, package,
+or helper identity change after the prompt is a security conflict: refresh the
+roster state and start a new exact request rather than retrying an old approval.
+Availability or invalid-input smoke is not a successful canary. Production
+evidence requires an attended Windows Hello success-and-denial run from the
+exact signed `win_amd64` release candidate.
 
 ## A host toggle reports a generation conflict
 
@@ -679,12 +715,20 @@ status again before starting or restarting the service.
 
 A current native bundle is only proof against the Agency distribution that
 generated it; it does not prove that a same-version development checkout and an
-older installed wheel contain identical runtime code. After building or
-reviewing a replacement wheel, install that exact artifact into the interpreter
-recorded by `launcher_artifacts`, rerun `agency install --agent <host>`, and
-require a fresh live canary before claiming the host runtime is current. The
-canary must prove both the six-line header and correlated routing/finalization
-evidence; a zero host exit code alone is not sufficient.
+older installed wheel contain identical runtime code. The release contract also
+pairs a portable wheel with a distinct `win_amd64` wheel: compare the installed
+filename, platform tag, package version, and exact recorded hashes, not version
+alone. A Linux or portable install must not contain the Windows helper. A
+supported Windows x64 release install must contain only the signed helper mapped
+to the reviewed unsigned digest once AR-160's hosted cross-OS proof and AR-161's
+publisher, signature, timestamp, and legal-authorization gates are complete.
+
+After building or reviewing a replacement wheel, install that exact artifact
+into the interpreter recorded by `launcher_artifacts`, rerun
+`agency install --agent <host>`, and require a fresh live canary before claiming
+the host runtime is current. The canary must prove both the six-line header and
+correlated routing/finalization evidence; a zero host exit code alone is not
+sufficient.
 
 ## WSL or Linux validation is missing tooling
 

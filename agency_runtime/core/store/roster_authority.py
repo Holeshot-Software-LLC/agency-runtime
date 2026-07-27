@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
-from agency_runtime.core.roster.bundled import bundled_roster
+from agency_runtime.core.roster.bundled import bundled_manifest, bundled_roster
 from agency_runtime.core.roster.ingress import (
     MAX_SHORT_TEXT_BYTES,
     RosterSyncError,
@@ -28,6 +31,44 @@ _AUTHORITY_EVENT_LIMIT = 4
 _HEX_DIGEST = re.compile(r"[a-f0-9]{64}\Z")
 _REVISION_ID = re.compile(r"sha256:[a-f0-9]{64}\Z")
 _ACTIVE_LIST_FIELDS = ("categories", "capabilities", "tool_affinity")
+
+
+@dataclass(frozen=True, slots=True)
+class RevisionActivationAuthority:
+    """Canonical identity of every record authorizing one historical revision."""
+
+    kind: str
+    projection: tuple[tuple[str, str], ...]
+    digest: str
+
+
+def _canonical_digest(label: str, value: object) -> str:
+    document = json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(label.encode("ascii") + b"\0" + document).hexdigest()
+
+
+def _mapping_digest(label: str, value: Mapping[str, Any]) -> str:
+    return _canonical_digest(label, dict(value))
+
+
+def _authority_evidence(
+    kind: str,
+    values: Mapping[str, object],
+) -> RevisionActivationAuthority:
+    projection = tuple(sorted((str(key), str(value)) for key, value in values.items()))
+    if not kind or len(projection) != len(values):  # pragma: no cover - internal contract
+        raise RuntimeError("activation authority projection is invalid")
+    digest = _canonical_digest(
+        "agency.revision-activation-authority.v1",
+        {"kind": kind, "projection": projection},
+    )
+    return RevisionActivationAuthority(kind=kind, projection=projection, digest=digest)
 
 
 def _strict_text(
@@ -154,7 +195,7 @@ def _authority_events(
     candidate_id: str,
 ) -> tuple[Mapping[str, Any], Mapping[str, Any], str]:
     rows = conn.execute(
-        "SELECT rowid AS event_rowid, event_type, from_status, to_status, "
+        "SELECT id AS event_id, rowid AS event_rowid, event_type, from_status, to_status, "
         "reason, audit_id, created_at "
         "FROM agent_candidate_status_events "
         "WHERE candidate_id = ? AND event_type IN ('approved', 'activated') "
@@ -166,6 +207,10 @@ def _authority_events(
     normalized: list[dict[str, Any]] = []
     for row in rows:
         event = dict(row)
+        event["event_id"] = _strict_text(
+            event.get("event_id"),
+            label="candidate activation event id",
+        )
         event["event_type"] = _strict_text(
             event.get("event_type"),
             label="candidate activation event type",
@@ -227,7 +272,7 @@ def _assert_bound_audit(
     candidate_id: str,
     candidate_version: str,
     candidate_hash: str,
-) -> None:
+) -> Mapping[str, Any]:
     # Import lazily because roster.review imports Store during module initialization.
     from agency_runtime.core.roster.review import assert_bound_candidate_audit_from_connection
 
@@ -247,6 +292,7 @@ def _assert_bound_audit(
         raise ValueError("candidate activation audit binding is invalid") from exc
     if _timestamp(audit["created_at"]) > _timestamp(event["created_at"]):
         raise ValueError("candidate activation audit binding is invalid")
+    return audit
 
 
 def _event_order(event: Mapping[str, Any], *, rowid_field: str) -> tuple[datetime, int]:
@@ -288,7 +334,8 @@ def _snapshot_events(
     if invalid_json is not None:
         raise ValueError("snapshot activation authority contains invalid event detail")
     rows = conn.execute(
-        "SELECT event_sequence AS import_event_sequence, event_type, agent_slug, "
+        "SELECT id AS event_id, event_sequence AS import_event_sequence, "
+        "event_type, agent_slug, "
         "detail, created_at "
         "FROM agent_import_events "
         "WHERE event_type IN ('snapshot_approved', 'snapshot_activated') "
@@ -304,6 +351,10 @@ def _snapshot_events(
     normalized: list[dict[str, Any]] = []
     for row in rows:
         event = dict(row)
+        event["event_id"] = _strict_text(
+            event.get("event_id"),
+            label="snapshot activation event id",
+        )
         event["event_type"] = _strict_text(
             event.get("event_type"),
             label="snapshot activation event type",
@@ -369,7 +420,7 @@ def _assert_candidate_snapshot_authority(
     slug: str,
     revision: Mapping[str, Any],
     content: str,
-) -> None:
+) -> RevisionActivationAuthority:
     candidate_version = str(revision.get("version") or "")
     candidate_hash = str(revision.get("hash") or "")
     candidates = conn.execute(
@@ -385,14 +436,14 @@ def _assert_candidate_snapshot_authority(
         conn,
         candidate_id=candidate_id,
     )
-    _assert_bound_audit(
+    approved_audit = _assert_bound_audit(
         conn,
         event=approved_event,
         candidate_id=candidate_id,
         candidate_version=candidate_version,
         candidate_hash=candidate_hash,
     )
-    _assert_bound_audit(
+    activated_audit = _assert_bound_audit(
         conn,
         event=activated_event,
         candidate_id=candidate_id,
@@ -407,7 +458,7 @@ def _assert_candidate_snapshot_authority(
     )
 
     snapshot_row = conn.execute(
-        "SELECT approved, activated, manifest FROM agent_snapshots WHERE snapshot_id = ? LIMIT 1",
+        "SELECT * FROM agent_snapshots WHERE snapshot_id = ? LIMIT 1",
         (snapshot_id,),
     ).fetchone()
     if snapshot_row is None or snapshot_row["approved"] != 1 or snapshot_row["activated"] != 1:
@@ -462,6 +513,66 @@ def _assert_candidate_snapshot_authority(
     )
     if tuple(sorted(phase_timestamps)) != phase_timestamps:
         raise ValueError("candidate and snapshot activation event order is invalid")
+    candidate_row = conn.execute(
+        "SELECT * FROM agent_candidates WHERE id = ? LIMIT 1",
+        (candidate_id,),
+    ).fetchone()
+    if candidate_row is None:  # pragma: no cover - guarded by _assert_candidate_records
+        raise ValueError("snapshot candidate authority is missing")
+    manifest_json = str(snapshot_row["manifest"] or "")
+    return _authority_evidence(
+        "snapshot",
+        {
+            "candidate_id": candidate_id,
+            "candidate_record_digest": _mapping_digest(
+                "agency.activation-authority.candidate-record.v1",
+                dict(candidate_row),
+            ),
+            "candidate_manifest_digest": _mapping_digest(
+                "agency.activation-authority.candidate-manifest.v1",
+                candidate,
+            ),
+            "candidate_approved_audit_id": str(approved_audit["id"]),
+            "candidate_approved_audit_digest": _mapping_digest(
+                "agency.activation-authority.candidate-audit.v1",
+                approved_audit,
+            ),
+            "candidate_activated_audit_id": str(activated_audit["id"]),
+            "candidate_activated_audit_digest": _mapping_digest(
+                "agency.activation-authority.candidate-audit.v1",
+                activated_audit,
+            ),
+            "candidate_approved_event_id": str(approved_event["event_id"]),
+            "candidate_approved_event_digest": _mapping_digest(
+                "agency.activation-authority.candidate-event.v1",
+                approved_event,
+            ),
+            "candidate_activated_event_id": str(activated_event["event_id"]),
+            "candidate_activated_event_digest": _mapping_digest(
+                "agency.activation-authority.candidate-event.v1",
+                activated_event,
+            ),
+            "snapshot_id": snapshot_id,
+            "snapshot_manifest_digest": _canonical_digest(
+                "agency.activation-authority.snapshot-manifest.v1",
+                manifest_json,
+            ),
+            "snapshot_record_digest": _mapping_digest(
+                "agency.activation-authority.snapshot-record.v1",
+                dict(snapshot_row),
+            ),
+            "snapshot_approved_event_id": str(snapshot_approved["event_id"]),
+            "snapshot_approved_event_digest": _mapping_digest(
+                "agency.activation-authority.snapshot-event.v1",
+                snapshot_approved,
+            ),
+            "snapshot_activated_event_id": str(snapshot_activated["event_id"]),
+            "snapshot_activated_event_digest": _mapping_digest(
+                "agency.activation-authority.snapshot-event.v1",
+                snapshot_activated,
+            ),
+        },
+    )
 
 
 def assert_revision_activation_authority(
@@ -469,7 +580,7 @@ def assert_revision_activation_authority(
     *,
     slug: str,
     revision: Mapping[str, Any],
-) -> str:
+) -> RevisionActivationAuthority:
     """Require an exact current bundle or an activated approved snapshot candidate."""
 
     content = str(revision.get("content") or "")
@@ -483,17 +594,29 @@ def assert_revision_activation_authority(
     ):
         raise ValueError(f"revision activation authority is invalid: {slug}@{version}")
     if _matches_current_bundled_revision(slug=slug, revision=revision, content=content):
-        return "bundled"
-    _assert_candidate_snapshot_authority(
+        return _authority_evidence(
+            "bundled",
+            {
+                "manifest_digest": _canonical_digest(
+                    "agency.activation-authority.bundled-manifest.v1",
+                    bundled_manifest(),
+                ),
+                "revision_digest": _mapping_digest(
+                    "agency.activation-authority.bundled-revision.v1",
+                    revision,
+                ),
+            },
+        )
+    return _assert_candidate_snapshot_authority(
         conn,
         slug=slug,
         revision=revision,
         content=content,
     )
-    return "snapshot"
 
 
 __all__ = [
+    "RevisionActivationAuthority",
     "assert_active_revision_projection",
     "assert_revision_activation_authority",
 ]

@@ -135,7 +135,11 @@ export function createConfigController(core) {
 			const capture = byId("setting-capture");
 			if (capture) capture.textContent = enabled ? "Opt-in enabled" : "Disabled";
 			const privacy = byId("privacy-chip");
-			if (privacy) privacy.textContent = enabled ? "Redacted content" : "Metadata only";
+			if (privacy) {
+				privacy.textContent = enabled
+					? "Redacted runtime content"
+					: "Runtime metadata only";
+			}
 		}
 	}
 
@@ -206,7 +210,7 @@ export function createConfigController(core) {
 			syncWorkforceProviderOptions([]);
 			return;
 		}
-		select.disabled = false;
+		select.disabled = true;
 		providers.forEach((provider, index) => {
 			const option = el("option", "", provider?.name || `Provider ${index + 1}`);
 			option.value = String(index);

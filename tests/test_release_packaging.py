@@ -16,7 +16,9 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - exercised by the Python 3.10 matrix
     import tomli as tomllib
 
+from scripts import smoke_installed_distribution as installed_smoke
 from scripts.read_release_version import read_release_version
+from scripts.release_contract import DISTRIBUTION_LICENSE_FILES
 from scripts.verify_release_hygiene import SECRET_PATTERNS, generated_path_reason
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,7 +36,7 @@ QUALITY_GATE_NEEDS = (
     "performance",
     "test",
     "windows-portability-contract",
-    "artifact-smoke",
+    "artifact-parity",
     "security",
 )
 
@@ -71,6 +73,177 @@ def _run_quality_gate(
     )
 
 
+def _load_codeql_workflow() -> dict[object, object]:
+    return yaml.safe_load((ROOT / ".github" / "workflows" / "codeql.yml").read_text("utf-8"))
+
+
+def _embedded_python_script(run: str) -> str:
+    prefix = "python - <<'PY'\n"
+    suffix = "\nPY\n"
+    assert run.startswith(prefix)
+    assert run.endswith(suffix)
+    return run.removeprefix(prefix).removesuffix(suffix)
+
+
+def _run_codeql_result(
+    capability_result: str,
+    availability: str,
+    analyze_result: str,
+) -> subprocess.CompletedProcess[str]:
+    workflow = _load_codeql_workflow()
+    step = workflow["jobs"]["codeql"]["steps"][0]
+    env = os.environ.copy()
+    env.update(
+        ANALYZE_RESULT=analyze_result,
+        CAPABILITY_AVAILABLE=availability,
+        CAPABILITY_RESULT=capability_result,
+    )
+    return subprocess.run(
+        [sys.executable, "-c", _embedded_python_script(step["run"])],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _load_dependency_review_workflow() -> dict[object, object]:
+    return yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "dependency-review.yml").read_text("utf-8")
+    )
+
+
+def _dependency_review_step(name: str) -> dict[str, object]:
+    workflow = _load_dependency_review_workflow()
+    return next(
+        step for step in workflow["jobs"]["dependency-review"]["steps"] if step["name"] == name
+    )
+
+
+def _repository_identity_payload(
+    *,
+    full_name: str = "example/agency-runtime",
+    visibility: str = "private",
+    fork: bool = False,
+    pull: bool = True,
+) -> dict[str, object]:
+    return {
+        "fork": fork,
+        "full_name": full_name,
+        "permissions": {"pull": pull},
+        "private": visibility != "public",
+        "visibility": visibility,
+    }
+
+
+DEPENDENCY_REVIEW_UNAVAILABLE = {
+    "documentation_url": "https://docs.github.com/rest/dependency-graph/dependency-review#get-a-diff-of-the-dependencies-between-commits",
+    "message": "Forbidden",
+    "status": "403",
+}
+
+
+def _run_dependency_capability_classifier(
+    tmp_path: Path,
+    *,
+    repository_status: str = "200",
+    repository_payload: object | None = None,
+    repository_text: str | None = None,
+    comparison_status: str = "200",
+    comparison_payload: object | None = None,
+    comparison_text: str | None = None,
+    expected_visibility: str = "private",
+    expected_fork: str = "false",
+) -> tuple[subprocess.CompletedProcess[str], dict[str, str]]:
+    repository_response = tmp_path / "repository.json"
+    comparison_response = tmp_path / "comparison.json"
+    output = tmp_path / "github-output"
+    repository_response.write_text(
+        (
+            json.dumps(
+                _repository_identity_payload() if repository_payload is None else repository_payload
+            )
+            if repository_text is None
+            else repository_text
+        ),
+        encoding="utf-8",
+    )
+    comparison_response.write_text(
+        (
+            json.dumps([] if comparison_payload is None else comparison_payload)
+            if comparison_text is None
+            else comparison_text
+        ),
+        encoding="utf-8",
+    )
+    env = os.environ.copy()
+    env.update(
+        COMPARISON_HTTP_STATUS=comparison_status,
+        COMPARISON_RESPONSE=str(comparison_response),
+        EXPECTED_FORK=expected_fork,
+        EXPECTED_REPOSITORY="example/agency-runtime",
+        EXPECTED_VISIBILITY=expected_visibility,
+        GITHUB_OUTPUT=str(output),
+        REPOSITORY_HTTP_STATUS=repository_status,
+        REPOSITORY_RESPONSE=str(repository_response),
+    )
+    classifier = _dependency_review_step("Classify dependency review capability")
+    completed = subprocess.run(
+        [sys.executable, "-c", _embedded_python_script(classifier["run"])],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    outputs = {}
+    if output.is_file():
+        outputs = dict(
+            line.split("=", 1)
+            for line in output.read_text(encoding="utf-8").splitlines()
+            if "=" in line
+        )
+    return completed, outputs
+
+
+def _run_dependency_review_result(
+    availability: str,
+    *,
+    checkout: str = "success",
+    probe: str = "success",
+    capability: str = "success",
+    native: str | None = None,
+    fallback_python: str | None = None,
+    fallback_install: str | None = None,
+    fallback_audit: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    native = ("success" if availability == "true" else "skipped") if native is None else native
+    fallback_default = "skipped" if availability == "true" else "success"
+    env = os.environ.copy()
+    env.update(
+        CAPABILITY_AVAILABLE=availability,
+        CAPABILITY_OUTCOME=capability,
+        CHECKOUT_OUTCOME=checkout,
+        FALLBACK_AUDIT_OUTCOME=(fallback_default if fallback_audit is None else fallback_audit),
+        FALLBACK_INSTALL_OUTCOME=(
+            fallback_default if fallback_install is None else fallback_install
+        ),
+        FALLBACK_PYTHON_OUTCOME=(fallback_default if fallback_python is None else fallback_python),
+        NATIVE_REVIEW_OUTCOME=native,
+        PROBE_OUTCOME=probe,
+    )
+    aggregate = _dependency_review_step("Require a coherent dependency review outcome")
+    return subprocess.run(
+        [sys.executable, "-c", _embedded_python_script(aggregate["run"])],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
 def test_release_resources_are_addressable() -> None:
     package = files("agency_runtime")
     required = (
@@ -91,6 +264,12 @@ def test_release_resources_are_addressable() -> None:
         "dashboard/dashboard-render.js",
         "dashboard/index.html",
         "dashboard/package.json",
+        "native/windows/operator_presence/operator_presence_verifier.cpp",
+        "native/windows/operator_presence/operator_presence_verifier.exe",
+        "native/windows/operator_presence/operator_presence_verifier.provenance.json",
+        "native/windows/operator_presence/LICENSE.cppwinrt.txt",
+        "native/windows/operator_presence/LICENSE.microsoft-stl.txt",
+        "native/windows/operator_presence/NOTICE.microsoft-stl.txt",
     )
     for relative in required:
         assert package.joinpath(*relative.split("/")).is_file(), relative
@@ -118,6 +297,54 @@ def test_release_resources_are_addressable() -> None:
     assert dashboard_bytes < 257 * 1024, "dashboard assets exceeded the 257 KiB budget"
 
 
+@pytest.mark.parametrize(
+    ("artifact_set", "include_executable", "expected"),
+    [
+        ("portable", False, []),
+        ("windows-x64", True, ["operator_presence_verifier.exe"]),
+    ],
+)
+def test_installed_smoke_enforces_the_native_wheel_profile(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    artifact_set: str,
+    include_executable: bool,
+    expected: list[str],
+) -> None:
+    package = tmp_path / "agency_runtime"
+    native = package / "native" / "windows" / "operator_presence"
+    native.mkdir(parents=True)
+    (native / "operator_presence_verifier.cpp").write_text("source", encoding="utf-8")
+    (native / "operator_presence_verifier.provenance.json").write_text("{}", encoding="utf-8")
+    if include_executable:
+        (native / "operator_presence_verifier.exe").write_bytes(b"pe")
+    monkeypatch.setattr(installed_smoke, "files", lambda _package: package)
+
+    assert installed_smoke._native_asset_contract(artifact_set) == {
+        "artifact_set": artifact_set,
+        "executables": expected,
+    }
+
+
+def test_installed_portable_smoke_rejects_an_executable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = tmp_path / "agency_runtime"
+    native = package / "native" / "windows" / "operator_presence"
+    native.mkdir(parents=True)
+    for name in (
+        "operator_presence_verifier.cpp",
+        "operator_presence_verifier.provenance.json",
+    ):
+        (native / name).write_text("asset", encoding="utf-8")
+    (native / "unexpected.ExE").write_bytes(b"pe")
+    monkeypatch.setattr(installed_smoke, "files", lambda _package: package)
+
+    with pytest.raises(RuntimeError, match="executable profile is invalid"):
+        installed_smoke._native_asset_contract("portable")
+
+
 def test_release_metadata_is_single_source_and_cross_platform() -> None:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     package_init = (ROOT / "agency_runtime" / "__init__.py").read_text(encoding="utf-8")
@@ -138,6 +365,11 @@ def test_release_metadata_is_single_source_and_cross_platform() -> None:
         "Programming Language :: Python :: 3.14",
     ):
         assert classifier in pyproject
+
+    parsed = tomllib.loads(pyproject)
+    assert parsed["project"]["license-files"] == list(DISTRIBUTION_LICENSE_FILES)
+    for relative in DISTRIBUTION_LICENSE_FILES:
+        assert ROOT.joinpath(*relative.split("/")).is_file(), relative
 
 
 def test_release_build_tool_pin_is_non_yanked_and_matches_ci() -> None:
@@ -230,13 +462,21 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     verify = next(
         step for step in artifact_steps if step["name"] == "Verify metadata and artifact contents"
     )
+    native_rebuild = next(
+        step
+        for step in artifact_steps
+        if step["name"] == "Rebuild and byte-verify Windows operator-presence helper"
+    )
     assert artifact_job["env"]["AGENCY_RELEASE_COMMIT"] == "${{ github.sha }}"
+    assert artifact_job["env"]["AGENCY_ARTIFACT_SET"] == "${{ matrix.artifact_set }}"
     assert artifact_job["runs-on"] == "${{ matrix.os }}"
+    assert artifact_job["timeout-minutes"] == 35
     assert artifact_job["strategy"]["matrix"]["include"] == [
-        {"os": "ubuntu-24.04"},
-        {"os": "windows-2022"},
+        {"os": "ubuntu-24.04", "artifact_set": "portable"},
+        {"os": "windows-2022", "artifact_set": "windows-x64"},
     ]
-    assert artifact_steps.index(autocrlf) + 1 == artifact_steps.index(build)
+    assert artifact_steps.index(autocrlf) + 1 == artifact_steps.index(native_rebuild)
+    assert artifact_steps.index(native_rebuild) + 1 == artifact_steps.index(build)
     assert autocrlf == {
         "name": "Prove clean CRLF checkout uses canonical Git blobs",
         "shell": "bash",
@@ -254,6 +494,7 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     assert '--expected-commit "${AGENCY_RELEASE_COMMIT}"' in verify["run"]
     assert "-m scripts.verify_distribution" in verify["run"]
     assert '"${AGENCY_CI_TEMP}/dist"' in verify["run"]
+    assert '--artifact-set "${AGENCY_ARTIFACT_SET}"' in verify["run"]
     assert verify["shell"] == "bash"
     release_smoke = next(
         step
@@ -261,7 +502,16 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         if step["name"] == "Smoke release modules without installing the project"
     )
     assert "python -m scripts.build_distributions --help" in release_smoke["run"]
+    assert "python -m scripts.build_windows_operator_presence --help" in release_smoke["run"]
     assert "python -m scripts.verify_distribution --help" in release_smoke["run"]
+    assert native_rebuild == {
+        "name": "Rebuild and byte-verify Windows operator-presence helper",
+        "if": "runner.os == 'Windows'",
+        "shell": "bash",
+        "run": '"${AGENCY_CI_PYTHON}" -m scripts.build_windows_operator_presence',
+    }
+    assert artifact_steps.index(autocrlf) < artifact_steps.index(native_rebuild)
+    assert artifact_steps.index(native_rebuild) < artifact_steps.index(build)
     private_release = next(
         step for step in artifact_steps if step["name"] == "Prepare private release runtime"
     )
@@ -275,7 +525,45 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         step for step in artifact_steps if "upload-artifact@" in step.get("uses", "")
     ]
     assert len(artifact_uploads) == 1
-    assert artifact_uploads[0]["with"]["name"] == "python-distributions-${{ matrix.os }}"
+    assert artifact_uploads[0]["with"]["name"] == (
+        "python-distributions-unsigned-review-${{ matrix.os }}"
+    )
+    smoke_python = next(
+        step
+        for step in artifact_steps
+        if step["name"] == "Set up minimum supported Python for installed smoke"
+    )
+    assert smoke_python["id"] == "smoke-python"
+    assert smoke_python["with"]["python-version"] == "3.10"
+    node_step = next(step for step in artifact_steps if step["name"].startswith("Set up Node.js"))
+    assert node_step["with"]["node-version"] == "24"
+    installed_smoke = next(
+        step
+        for step in artifact_steps
+        if step["name"] == "Install and smoke-test the platform wheel and source distribution"
+    )
+    assert installed_smoke["working-directory"] == "${{ runner.temp }}"
+    assert installed_smoke["env"] == {
+        "AGENCY_CI_SMOKE_PYTHON": "${{ steps.smoke-python.outputs.python-path }}"
+    }
+    smoke_script = installed_smoke["run"]
+    for required in (
+        '"${AGENCY_CI_SMOKE_PYTHON}" -m venv --copies',
+        'export HOME="${AGENCY_CI_HOME}/${label}"',
+        '"${AGENCY_CI_TEMP}"/dist/*.whl',
+        '"${AGENCY_CI_TEMP}"/dist/*.tar.gz',
+        "--no-cache-dir --only-binary=:all:",
+        '--artifact-set "${AGENCY_ARTIFACT_SET}"',
+        'subprocess.run([sys.argv[1], "--version"]',
+        '"${agency}" smoke --all --json',
+        '"${agency}" config show',
+        '"${python}" -m pip check',
+        'smoke_distribution wheel "${WHEEL_PYTHON}"',
+        'smoke_distribution sdist "${SDIST_PYTHON}"',
+    ):
+        assert required in smoke_script
+    assert artifact_steps.index(verify) < artifact_steps.index(installed_smoke)
+    assert artifact_steps.index(installed_smoke) < artifact_steps.index(artifact_uploads[0])
 
     parity_job = workflow["jobs"]["artifact-parity"]
     assert parity_job["needs"] == "artifacts"
@@ -287,22 +575,22 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         step for step in parity_steps if step["name"] == "Download Windows distributions"
     )
     assert linux_download["with"] == {
-        "name": "python-distributions-ubuntu-24.04",
+        "name": "python-distributions-unsigned-review-ubuntu-24.04",
         "path": "${{ runner.temp }}/agency-dist-linux",
     }
     assert windows_download["with"] == {
-        "name": "python-distributions-windows-2022",
+        "name": "python-distributions-unsigned-review-windows-2022",
         "path": "${{ runner.temp }}/agency-dist-windows",
     }
     compare_index = next(
         index
         for index, step in enumerate(parity_steps)
-        if step["name"] == "Require one byte-identical cross-platform artifact pair"
+        if step["name"] == "Require one byte-identical sdist and assemble the unsigned review set"
     )
     publish_index = next(
         index
         for index, step in enumerate(parity_steps)
-        if step["name"] == "Publish verified canonical distributions"
+        if step["name"] == "Upload verified canonical unsigned review distributions"
     )
     assert publish_index > compare_index
     compare = parity_steps[compare_index]
@@ -312,18 +600,30 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
     for required in (
         'test "$(find "${RUNNER_TEMP}/agency-dist-linux" -maxdepth 1 -type f | wc -l)" -eq 2',
         'test "$(find "${RUNNER_TEMP}/agency-dist-windows" -maxdepth 1 -type f | wc -l)" -eq 2',
-        "diff --brief --recursive",
-        '"${RUNNER_TEMP}/agency-dist-linux"',
-        '"${RUNNER_TEMP}/agency-dist-windows"',
+        "*-py3-none-any.whl",
+        "*-py3-none-win_amd64.whl",
+        "sha256sum",
+        "cmp --silent",
+        "cp --no-clobber",
+        'test "$(find "${RUNNER_TEMP}/agency-dist-release" -maxdepth 1 -type f | wc -l)" -eq 3',
     ):
         assert required in compare["run"]
+    combined_verify = next(
+        step
+        for step in parity_steps
+        if step["name"] == "Verify the combined three-artifact unsigned review contract"
+    )
+    assert "--artifact-set release" in combined_verify["run"]
+    assert '--expected-commit "${AGENCY_RELEASE_COMMIT}"' in combined_verify["run"]
+    assert parity_steps.index(combined_verify) > compare_index
+    assert parity_steps.index(combined_verify) < publish_index
     publish = parity_steps[publish_index]
     assert publish["uses"] == ("actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a")
     assert "if" not in publish
     assert "continue-on-error" not in publish
     assert publish["with"] == {
-        "name": "python-distributions",
-        "path": "${{ runner.temp }}/agency-dist-linux/*",
+        "name": "python-distributions-unsigned-review",
+        "path": "${{ runner.temp }}/agency-dist-release/*",
         "if-no-files-found": "error",
         "retention-days": 7,
     }
@@ -332,58 +632,10 @@ def test_ci_smokes_wheel_and_sdist_in_separate_clean_environments() -> None:
         for candidate_job in workflow["jobs"].values()
         for step in candidate_job.get("steps", ())
         if "upload-artifact@" in step.get("uses", "")
-        and step.get("with", {}).get("name") == "python-distributions"
+        and step.get("with", {}).get("name") == "python-distributions-unsigned-review"
     ]
     assert canonical_uploads == [publish]
-
-    job = workflow["jobs"]["artifact-smoke"]
-    assert set(job["needs"]) == {"artifacts", "artifact-parity"}
-    assert set(job["strategy"]["matrix"]["os"]) == {"ubuntu-24.04", "windows-2022"}
-
-    steps = job["steps"]
-    canonical_download = next(step for step in steps if step["name"] == "Download distributions")
-    assert canonical_download["with"] == {
-        "name": "python-distributions",
-        "path": "${{ runner.temp }}/agency-dist",
-    }
-    node_step = next(step for step in steps if step["name"].startswith("Set up Node.js"))
-    assert node_step["with"]["node-version"] == "24"
-    private_runtime_step = next(
-        step for step in steps if step["name"] == "Prepare private artifact runtime"
-    )
-    assert "python -m scripts.prepare_ci_runtime" in private_runtime_step["run"]
-    assert private_runtime_step["shell"] == "bash"
-    assert private_runtime_step["env"] == {
-        "AGENCY_CI_RUN_ATTEMPT": "${{ github.run_attempt }}",
-        "AGENCY_CI_RUN_ID": "${{ github.run_id }}",
-    }
-    assert (
-        '--label "artifact-smoke-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"'
-        in private_runtime_step["run"]
-    )
-    assert "${{" not in private_runtime_step["run"]
-    smoke_step = next(step for step in steps if "source distribution" in step["name"])
-    assert smoke_step["working-directory"] == "${{ runner.temp }}"
-    script = smoke_step["run"]
-    for required in (
-        'EXPECTED_VERSION="$(python "${GITHUB_WORKSPACE}/scripts/read_release_version.py"',
-        'python -m venv --copies "${AGENCY_CI_TEMP}/wheel-smoke"',
-        'python -m venv --copies "${AGENCY_CI_TEMP}/sdist-smoke"',
-        'export HOME="${AGENCY_CI_HOME}/${label}"',
-        'export TMPDIR="${AGENCY_CI_TEMP}"',
-        "agency-dist/*.whl",
-        "agency-dist/*.tar.gz",
-        "--no-cache-dir --only-binary=:all:",
-        '"${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py" --expected-version "${EXPECTED_VERSION}"',
-        'subprocess.run([sys.argv[1], "--version"], capture_output=True, text=True, check=False)',
-        '(result.returncode, result.stdout, result.stderr) == (0, expected, "")',
-        '"${agency}" smoke --all --json',
-        '"${agency}" config show',
-        '"${python}" -m pip check',
-        'smoke_distribution wheel "${WHEEL_PYTHON}"',
-        'smoke_distribution sdist "${SDIST_PYTHON}"',
-    ):
-        assert required in script
+    assert "artifact-smoke" not in workflow["jobs"]
 
 
 def test_maintained_release_instructions_require_canonical_git_blob_builder() -> None:
@@ -399,9 +651,12 @@ def test_maintained_release_instructions_require_canonical_git_blob_builder() ->
     from scripts.verify_distribution import REQUIRED_SDIST_FILES
 
     assert "scripts/build_distributions.py" in REQUIRED_SDIST_FILES
+    assert "scripts/build_windows_operator_presence.py" in REQUIRED_SDIST_FILES
+    assert "scripts/platform_wheel.py" in REQUIRED_SDIST_FILES
     assert "scripts/prove_autocrlf_checkout.py" in REQUIRED_SDIST_FILES
     assert "scripts/release_contract.py" in REQUIRED_SDIST_FILES
     assert "scripts/release_git.py" in REQUIRED_SDIST_FILES
+    assert "setup.py" in REQUIRED_SDIST_FILES
     checklist = (ROOT / "docs/RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
     for module in RELEASE_COVERAGE_MODULES:
         assert f"--cov=scripts.{module}" in checklist
@@ -409,46 +664,52 @@ def test_maintained_release_instructions_require_canonical_git_blob_builder() ->
 
 def test_coverage_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
-    assert workflow["jobs"]["test"]["timeout-minutes"] == 45
+    assert workflow["jobs"]["coverage"]["timeout-minutes"] == 35
+    assert workflow["jobs"]["test"]["timeout-minutes"] == 70
+    coverage = next(
+        step
+        for step in workflow["jobs"]["coverage"]["steps"]
+        if step["name"] == "Run paired coverage sessions"
+    )
+    assert coverage["shell"] == "bash"
+    assert "scripts.run_ci_session_pair coverage" in coverage["run"]
+    assert coverage["env"] == {
+        "AGENCY_CI_PAIR": "${{ matrix.pair }}",
+        "AGENCY_CI_PYTHON": "${{ steps.coverage-python.outputs.python-path }}",
+        "AGENCY_CI_RUN_LABEL": (
+            "${{ github.run_id }}-${{ github.run_attempt }}-p${{ matrix.pair }}"
+        ),
+        "AGENCY_CI_SHARD_A": "${{ matrix.shard_a }}",
+        "AGENCY_CI_SHARD_B": "${{ matrix.shard_b }}",
+    }
 
-    for job_name, preparation_name in (
-        ("coverage", "Prepare private coverage runtime"),
-        ("test", "Prepare private test runtime"),
+    compatibility = next(
+        step
+        for step in workflow["jobs"]["test"]["steps"]
+        if step["name"] == "Run paired compatibility sessions"
+    )
+    assert compatibility["shell"] == "bash"
+    assert "scripts.run_ci_session_pair compatibility" in compatibility["run"]
+    assert compatibility["env"]["AGENCY_CI_PYTHON_A"] == (
+        "${{ steps.python-a.outputs.python-path }}"
+    )
+    assert compatibility["env"]["AGENCY_CI_PYTHON_B"] == (
+        "${{ steps.python-b.outputs.python-path }}"
+    )
+
+    runner = (ROOT / "scripts" / "run_ci_session_pair.py").read_text(encoding="utf-8")
+    for boundary in (
+        '"COVERAGE_FILE": str(coverage_file)',
+        '"HOME": home',
+        '"TEMP": temporary',
+        '"TMPDIR": temporary',
+        '"USERPROFILE": home',
+        "run_bounded_binary_process",
+        "ThreadPoolExecutor(max_workers=2",
     ):
-        steps = workflow["jobs"][job_name]["steps"]
-        preparation = next(step for step in steps if step["name"] == preparation_name)
-        execution = next(
-            step
-            for step in steps
-            if step["name"]
-            in {
-                "Run warning-strict coverage shard",
-                "Run tests",
-            }
-        )
-        assert "python -m scripts.prepare_ci_runtime" in preparation["run"]
-        assert preparation["shell"] == "bash"
-        assert preparation["env"]["AGENCY_CI_RUN_ID"] == "${{ github.run_id }}"
-        assert preparation["env"]["AGENCY_CI_RUN_ATTEMPT"] == "${{ github.run_attempt }}"
-        assert "${{" not in preparation["run"]
-        if job_name == "test":
-            assert preparation["env"]["AGENCY_CI_MATRIX_PYTHON"] == "${{ matrix.python }}"
-            assert '-m "not performance"' in execution["run"]
-            assert (
-                "tests-py${AGENCY_CI_MATRIX_PYTHON}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
-            ) in preparation["run"]
-        else:
-            assert "coverage-${AGENCY_CI_SHARD}-${AGENCY_CI_RUN_ID}" in preparation["run"]
-            for module in RELEASE_COVERAGE_MODULES:
-                assert f"--cov=scripts.{module}" in execution["run"]
-        for boundary in (
-            'export HOME="${AGENCY_CI_HOME}"',
-            'export USERPROFILE="${AGENCY_CI_HOME}"',
-            'export TMPDIR="${AGENCY_CI_TEMP}"',
-            "unset AGENCY_CONFIG_PATH AGENCY_DB_PATH",
-            '"${AGENCY_CI_PYTHON}" -m pytest',
-        ):
-            assert boundary in execution["run"]
+        assert boundary in runner
+    for module in RELEASE_COVERAGE_MODULES:
+        assert f'"scripts.{module}"' in runner
 
 
 def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces() -> None:
@@ -465,19 +726,15 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     ):
         assert jobs[job_name]["needs"] == "quality-contracts"
     assert jobs["coverage"]["strategy"]["matrix"]["include"] == [
-        {"index": 0, "label": 1},
-        {"index": 1, "label": 2},
-        {"index": 2, "label": 3},
-        {"index": 3, "label": 4},
+        {"pair": 0, "label": 1, "shard_a": 0, "shard_b": 1},
+        {"pair": 1, "label": 2, "shard_a": 2, "shard_b": 3},
     ]
     coverage_run = next(
-        step
-        for step in jobs["coverage"]["steps"]
-        if step["name"] == "Run warning-strict coverage shard"
+        step for step in jobs["coverage"]["steps"] if step["name"] == "Run paired coverage sessions"
     )["run"]
-    assert "scripts.select_test_shard" in coverage_run
-    assert "--cov-report=" in coverage_run
-    assert 'mv .coverage ".coverage.${AGENCY_CI_SHARD}"' in coverage_run
+    assert "scripts.run_ci_session_pair coverage" in coverage_run
+    assert '--shard-a "${AGENCY_CI_SHARD_A}"' in coverage_run
+    assert '--shard-b "${AGENCY_CI_SHARD_B}"' in coverage_run
     assert jobs["coverage-complete"]["needs"] == "coverage"
     combined_run = jobs["coverage-complete"]["steps"][-1]["run"]
     assert "coverage combine" in combined_run
@@ -505,18 +762,34 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         for step in jobs["quality-contracts"]["steps"]
         if step["name"] == "Verify fast workflow contracts"
     )["run"]
-    assert "test_ci_sharding.py tests/test_release_packaging.py" in quality_contracts
+    assert "test_ci_sharding.py tests/test_ci_session_pair.py" in quality_contracts
+    assert "tests/test_release_packaging.py" in quality_contracts
     assert (
         jobs["test"]["if"]
         == "github.event_name != 'pull_request' && needs.quality-contracts.result == 'success'"
     )
     assert jobs["test"]["strategy"]["matrix"]["include"] == [
-        {"os": "ubuntu-24.04", "python": "3.10"},
-        {"os": "ubuntu-24.04", "python": "3.11"},
-        {"os": "ubuntu-24.04", "python": "3.12"},
-        {"os": "ubuntu-24.04", "python": "3.14"},
-        {"os": "windows-2022", "python": "3.10"},
-        {"os": "windows-2022", "python": "3.14"},
+        {
+            "os": "ubuntu-24.04",
+            "platform": "linux",
+            "label": "ubuntu-310-311",
+            "python_a": "3.10",
+            "python_b": "3.11",
+        },
+        {
+            "os": "ubuntu-24.04",
+            "platform": "linux",
+            "label": "ubuntu-312-314",
+            "python_a": "3.12",
+            "python_b": "3.14",
+        },
+        {
+            "os": "windows-2022",
+            "platform": "windows",
+            "label": "windows-310-314",
+            "python_a": "3.10",
+            "python_b": "3.14",
+        },
     ]
     assert jobs["quality"]["if"] == "always()"
     assert set(jobs["quality"]["needs"]) == set(QUALITY_GATE_NEEDS)
@@ -625,43 +898,346 @@ def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
     )
 
 
-def test_dependency_review_has_an_enforced_private_repository_fallback() -> None:
-    workflow = yaml.safe_load(
-        (ROOT / ".github" / "workflows" / "dependency-review.yml").read_text("utf-8")
-    )
-    steps = workflow["jobs"]["dependency-review"]["steps"]
-    assert workflow["jobs"]["dependency-review"]["timeout-minutes"] == 20
+def test_dependency_review_preserves_one_stable_least_privilege_gate() -> None:
+    workflow = _load_dependency_review_workflow()
+    assert workflow[True] == {"pull_request": None}
+    assert workflow["permissions"] == {"contents": "read"}
+    assert workflow["concurrency"] == {
+        "group": "dependency-review-${{ github.workflow }}-${{ github.ref }}",
+        "cancel-in-progress": True,
+    }
+    assert set(workflow["jobs"]) == {"dependency-review"}
+    job = workflow["jobs"]["dependency-review"]
+    assert job["name"] == "dependency review"
+    assert job["runs-on"] == "ubuntu-24.04"
+    assert job["timeout-minutes"] == 20
 
-    probe = next(step for step in steps if step["name"] == "Detect dependency review capability")
-    assert "dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}" in probe["run"]
-    assert "403|404" in probe["run"]
-    assert "exit 1" in probe["run"]
+    checkout = _dependency_review_step("Check out source")
+    assert checkout["id"] == "checkout"
+    assert checkout["uses"] == ("actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0")
+    assert checkout["with"] == {"persist-credentials": False}
 
-    native = next(step for step in steps if step["name"] == "Reject vulnerable dependency changes")
+
+def test_dependency_review_probe_is_authenticated_bounded_and_fail_closed() -> None:
+    probe = _dependency_review_step("Probe repository identity and dependency review capability")
+    assert probe["id"] == "dependency-review-probe"
+    assert probe["env"] == {
+        "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "GH_TOKEN": "${{ github.token }}",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
+    }
+    run = probe["run"]
+    assert "set -euo pipefail" in run
+    assert run.count("mktemp ") == 2
+    assert run.count("--connect-timeout 10") == 2
+    assert run.count("--max-time 30") == 2
+    assert run.count("--max-filesize 1048576") == 2
+    assert run.count("--write-out '%{http_code}'") == 2
+    assert run.count("Authorization: Bearer ${GH_TOKEN}") == 2
+    assert '"${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}"' in run
+    assert "dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}" in run
+    assert run.count("if ! ") == 2
+    assert run.count("exit 1") == 2
+    assert "403|404" not in run
+    assert "set -x" not in run
+    assert "printf 'gh_token=" not in run.casefold()
+    assert [line.strip() for line in run.splitlines() if line.strip().startswith("printf")] == [
+        "printf 'repository_response=%s\\n' \"${repository_response}\"",
+        "printf 'repository_http_status=%s\\n' \"${repository_status}\"",
+        "printf 'comparison_response=%s\\n' \"${comparison_response}\"",
+        "printf 'comparison_http_status=%s\\n' \"${comparison_status}\"",
+    ]
+
+
+def test_dependency_review_paths_are_exactly_gated_and_aggregated() -> None:
+    classifier = _dependency_review_step("Classify dependency review capability")
+    assert classifier["id"] == "dependency-review-capability"
+    assert classifier["env"] == {
+        "COMPARISON_HTTP_STATUS": (
+            "${{ steps.dependency-review-probe.outputs.comparison_http_status }}"
+        ),
+        "COMPARISON_RESPONSE": ("${{ steps.dependency-review-probe.outputs.comparison_response }}"),
+        "EXPECTED_FORK": "${{ github.event.repository.fork }}",
+        "EXPECTED_REPOSITORY": "${{ github.repository }}",
+        "EXPECTED_VISIBILITY": "${{ github.event.repository.visibility }}",
+        "REPOSITORY_HTTP_STATUS": (
+            "${{ steps.dependency-review-probe.outputs.repository_http_status }}"
+        ),
+        "REPOSITORY_RESPONSE": ("${{ steps.dependency-review-probe.outputs.repository_response }}"),
+    }
+    classifier_run = classifier["run"]
+    for required in (
+        're.fullmatch(r"[1-5][0-9]{2}", value)',
+        "path.lstat()",
+        "path.is_symlink()",
+        "metadata.st_size <= maximum_bytes",
+        "repository_status != 200",
+        'repository.get("full_name") != expected_repository',
+        'repository["permissions"].get("pull") is not True',
+        "comparison_status == 403",
+        '"message": "Forbidden"',
+        '"status": "403"',
+        "comparison == expected_forbidden",
+        "dependency review capability response was ambiguous; refusing fallback",
+    ):
+        assert required in classifier_run
+    assert '"vulnerability audit is compensating evidence, not equivalent "' in classifier_run
+    assert '"dependency-change review."' in classifier_run
+    assert "403|404" not in classifier_run
+
+    native = _dependency_review_step("Reject vulnerable dependency changes")
+    assert native["id"] == "native-review"
     assert native["if"].endswith("available == 'true'")
-    assert native["with"]["fail-on-severity"] == "moderate"
-
-    install = next(
-        step for step in steps if step["name"] == "Install runtime and pinned fallback audit tool"
+    assert native["uses"] == (
+        "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
     )
-    assert install["if"].endswith("available == 'false'")
+    assert native["with"] == {
+        "fail-on-severity": "moderate",
+        "retry-on-snapshot-warnings": True,
+    }
+
+    setup = _dependency_review_step("Set up fallback Python")
+    install = _dependency_review_step("Install runtime and pinned fallback audit tool")
+    fallback = _dependency_review_step(
+        "Audit installed runtime dependencies as non-equivalent compensating evidence"
+    )
+    for step in (setup, install, fallback):
+        assert step["if"].endswith("available == 'false'")
+    assert setup["id"] == "fallback-python"
+    assert install["id"] == "fallback-install"
+    assert fallback["id"] == "installed-runtime-audit"
     assert "pip install ." in install["run"]
     assert "pip install --no-deps ." not in install["run"]
     assert 'pip install "pip-audit==2.10.1"' in install["run"]
     assert ".[security]" not in install["run"]
-
-    fallback = next(
-        step for step in steps if step["name"] == "Audit the exact installed runtime dependency"
-    )
-    assert fallback["if"].endswith("available == 'false'")
     assert fallback["run"] == "python scripts/audit_runtime_dependencies.py"
 
+    aggregate = _dependency_review_step("Require a coherent dependency review outcome")
+    assert aggregate["id"] == "dependency-review-result"
+    assert aggregate["if"] == "always()"
+    assert aggregate["env"] == {
+        "CAPABILITY_AVAILABLE": ("${{ steps.dependency-review-capability.outputs.available }}"),
+        "CAPABILITY_OUTCOME": "${{ steps.dependency-review-capability.outcome }}",
+        "CHECKOUT_OUTCOME": "${{ steps.checkout.outcome }}",
+        "FALLBACK_AUDIT_OUTCOME": "${{ steps.installed-runtime-audit.outcome }}",
+        "FALLBACK_INSTALL_OUTCOME": "${{ steps.fallback-install.outcome }}",
+        "FALLBACK_PYTHON_OUTCOME": "${{ steps.fallback-python.outcome }}",
+        "NATIVE_REVIEW_OUTCOME": "${{ steps.native-review.outcome }}",
+        "PROBE_OUTCOME": "${{ steps.dependency-review-probe.outcome }}",
+    }
 
-def test_codeql_gates_native_actions_and_records_unavailable_capability() -> None:
-    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "codeql.yml").read_text("utf-8"))
-    steps = workflow["jobs"]["analyze"]["steps"]
 
-    probe = next(step for step in steps if step["name"] == "Detect native CodeQL capability")
+@pytest.mark.parametrize(
+    ("comparison_status", "comparison_payload", "available", "reason"),
+    [
+        ("200", [], "true", "repository_dependency_review_available"),
+        (
+            "403",
+            DEPENDENCY_REVIEW_UNAVAILABLE,
+            "false",
+            "private_or_internal_repository_dependency_review_unavailable",
+        ),
+    ],
+)
+def test_dependency_review_classifier_accepts_only_proven_paths(
+    tmp_path: Path,
+    comparison_status: str,
+    comparison_payload: object,
+    available: str,
+    reason: str,
+) -> None:
+    completed, outputs = _run_dependency_capability_classifier(
+        tmp_path,
+        comparison_status=comparison_status,
+        comparison_payload=comparison_payload,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert outputs == {
+        "available": available,
+        "http_status": comparison_status,
+        "reason": reason,
+    }
+    if available == "false":
+        assert "not equivalent dependency-change review" in completed.stdout
+
+
+@pytest.mark.parametrize(
+    ("comparison_status", "comparison_payload"),
+    [
+        (
+            "403",
+            {**DEPENDENCY_REVIEW_UNAVAILABLE, "unexpected": "field"},
+        ),
+        (
+            "403",
+            {**DEPENDENCY_REVIEW_UNAVAILABLE, "documentation_url": "https://example.invalid"},
+        ),
+        ("403", {"message": "API rate limit exceeded", "status": "403"}),
+        ("404", {"message": "Not Found", "status": "404"}),
+        ("401", {"message": "Bad credentials", "status": "401"}),
+        ("500", {"message": "Server Error", "status": "500"}),
+    ],
+)
+def test_dependency_review_classifier_rejects_ambiguous_api_responses(
+    tmp_path: Path,
+    comparison_status: str,
+    comparison_payload: object,
+) -> None:
+    completed, outputs = _run_dependency_capability_classifier(
+        tmp_path,
+        comparison_status=comparison_status,
+        comparison_payload=comparison_payload,
+    )
+    assert completed.returncode != 0
+    assert outputs == {}
+    assert "ambiguous; refusing fallback" in completed.stderr
+
+
+@pytest.mark.parametrize(
+    ("repository_status", "repository_payload", "expected_visibility", "expected_fork"),
+    [
+        ("401", {"message": "Bad credentials"}, "private", "false"),
+        ("403", {"message": "Forbidden"}, "private", "false"),
+        ("404", {"message": "Not Found"}, "private", "false"),
+        ("200", _repository_identity_payload(full_name="other/repository"), "private", "false"),
+        ("200", _repository_identity_payload(pull=False), "private", "false"),
+        ("200", _repository_identity_payload(visibility="public"), "private", "false"),
+        ("200", _repository_identity_payload(fork=True), "private", "false"),
+        ("200", _repository_identity_payload(visibility="public"), "public", "false"),
+        ("200", _repository_identity_payload(fork=True), "private", "true"),
+    ],
+)
+def test_dependency_review_classifier_rejects_unproven_repository_identity_or_scope(
+    tmp_path: Path,
+    repository_status: str,
+    repository_payload: object,
+    expected_visibility: str,
+    expected_fork: str,
+) -> None:
+    completed, outputs = _run_dependency_capability_classifier(
+        tmp_path,
+        repository_status=repository_status,
+        repository_payload=repository_payload,
+        comparison_status="403",
+        comparison_payload=DEPENDENCY_REVIEW_UNAVAILABLE,
+        expected_visibility=expected_visibility,
+        expected_fork=expected_fork,
+    )
+    assert completed.returncode != 0
+    assert outputs == {}
+
+
+@pytest.mark.parametrize(
+    ("comparison_status", "comparison_text"),
+    [
+        ("403\nx", json.dumps(DEPENDENCY_REVIEW_UNAVAILABLE)),
+        ("200", ""),
+        ("200", "not-json"),
+        ("200", "oversized"),
+    ],
+)
+def test_dependency_review_classifier_rejects_malformed_or_unbounded_input(
+    tmp_path: Path,
+    comparison_status: str,
+    comparison_text: str,
+) -> None:
+    if comparison_text == "oversized":
+        comparison_text = "x" * (1024 * 1024 + 1)
+    completed, outputs = _run_dependency_capability_classifier(
+        tmp_path,
+        comparison_status=comparison_status,
+        comparison_text=comparison_text,
+    )
+    assert completed.returncode != 0
+    assert outputs == {}
+
+
+@pytest.mark.parametrize(
+    ("availability", "expected"),
+    [
+        ("true", "Native dependency-diff review completed successfully."),
+        (
+            "false",
+            "exact installed-runtime vulnerability evidence passed but is not equivalent",
+        ),
+    ],
+)
+def test_dependency_review_aggregate_accepts_only_coherent_outcomes(
+    availability: str,
+    expected: str,
+) -> None:
+    completed = _run_dependency_review_result(availability)
+    assert completed.returncode == 0, completed.stderr
+    assert expected in completed.stdout
+
+
+@pytest.mark.parametrize(
+    ("availability", "overrides"),
+    [
+        ("", {}),
+        ("unknown", {}),
+        ("true", {"checkout": "failure"}),
+        ("true", {"probe": "cancelled"}),
+        ("true", {"capability": "skipped"}),
+        ("true", {"native": "failure"}),
+        ("true", {"fallback_audit": "success"}),
+        ("false", {"fallback_python": "failure"}),
+        ("false", {"fallback_install": "cancelled"}),
+        ("false", {"fallback_audit": "skipped"}),
+        ("false", {"native": "success"}),
+    ],
+)
+def test_dependency_review_aggregate_rejects_failed_missing_or_incoherent_outcomes(
+    availability: str,
+    overrides: dict[str, str],
+) -> None:
+    completed = _run_dependency_review_result(availability, **overrides)
+    assert completed.returncode != 0
+    assert "dependency review" in completed.stderr.casefold()
+
+
+def test_codeql_preserves_events_and_exposes_one_stable_result() -> None:
+    workflow = _load_codeql_workflow()
+    assert workflow[True] == {
+        "push": {"branches": ["main"]},
+        "pull_request": {"branches": ["main"]},
+        "schedule": [{"cron": "23 7 * * 1"}],
+        "workflow_dispatch": None,
+    }
+    assert workflow["permissions"] == {"contents": "read"}
+    assert workflow["concurrency"] == {
+        "group": "codeql-${{ github.workflow }}-${{ github.ref }}",
+        "cancel-in-progress": True,
+    }
+    assert set(workflow["jobs"]) == {"capability", "analyze", "codeql"}
+
+    aggregate = workflow["jobs"]["codeql"]
+    assert aggregate["name"] == "CodeQL result"
+    assert aggregate["if"] == "always()"
+    assert aggregate["needs"] == ["capability", "analyze"]
+    assert aggregate["permissions"] == {"contents": "read"}
+
+
+def test_codeql_runs_one_fail_closed_least_privilege_capability_probe() -> None:
+    workflow = _load_codeql_workflow()
+    capability = workflow["jobs"]["capability"]
+    assert capability["permissions"] == {"contents": "read", "security-events": "read"}
+    assert capability["outputs"] == {
+        "available": "${{ steps.code-scanning-capability.outputs.available }}",
+        "http_status": "${{ steps.code-scanning-capability.outputs.http_status }}",
+        "reason": "${{ steps.code-scanning-capability.outputs.reason }}",
+        "repository_visibility": (
+            "${{ steps.code-scanning-capability.outputs.repository_visibility }}"
+        ),
+    }
+    all_steps = [step for job in workflow["jobs"].values() for step in job["steps"]]
+    probes = [step for step in all_steps if step["name"] == "Detect native CodeQL capability"]
+    assert len(probes) == 1
+    assert all(
+        not step.get("uses", "").startswith("actions/checkout@") for step in capability["steps"]
+    )
+
+    probe = probes[0]
     assert "code-scanning/alerts?per_page=1" in probe["run"]
     assert probe["env"]["REPOSITORY_VISIBILITY"] == "${{ github.event.repository.visibility }}"
     probe_script = probe["run"]
@@ -680,12 +1256,48 @@ def test_codeql_gates_native_actions_and_records_unavailable_capability() -> Non
         assert required in probe_script
     assert "403|404" not in probe_script
 
+
+def test_codeql_available_path_preserves_exact_language_analyses() -> None:
+    workflow = _load_codeql_workflow()
+    job = workflow["jobs"]["analyze"]
+    assert job["needs"] == "capability"
+    assert job["if"] == "needs.capability.outputs.available == 'true'"
+    assert job["strategy"] == {
+        "fail-fast": False,
+        "matrix": {"language": ["python", "javascript-typescript"]},
+    }
+    assert job["permissions"] == {
+        "contents": "read",
+        "packages": "read",
+        "security-events": "write",
+    }
+    steps = job["steps"]
+    checkout = next(step for step in steps if step["name"] == "Check out source")
     initialize = next(step for step in steps if step["name"] == "Initialize CodeQL")
     analyze = next(step for step in steps if step["name"] == "Analyze source")
-    assert initialize["if"].endswith("available == 'true'")
-    assert analyze["if"].endswith("available == 'true'")
+    assert checkout["uses"] == ("actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0")
+    assert checkout["with"] == {"persist-credentials": False}
+    assert initialize["uses"] == (
+        "github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9"
+    )
+    assert initialize["with"] == {
+        "languages": "${{ matrix.language }}",
+        "queries": "security-extended",
+    }
+    assert analyze["uses"] == (
+        "github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9"
+    )
+    assert analyze["with"]["category"] == "/language:${{ matrix.language }}"
     assert analyze["with"]["upload"] == "always"
     assert analyze["with"]["output"] == "${{ runner.temp }}/codeql-results"
+    assert all("if" not in step for step in steps)
+
+
+def test_codeql_unavailable_path_records_both_languages_without_analysis(
+    tmp_path: Path,
+) -> None:
+    workflow = _load_codeql_workflow()
+    steps = workflow["jobs"]["capability"]["steps"]
 
     evidence = next(
         step for step in steps if step["name"] == "Record unavailable CodeQL capability"
@@ -700,14 +1312,96 @@ def test_codeql_gates_native_actions_and_records_unavailable_capability() -> Non
         '"bandit-source-analysis"',
         '"exact-installed-runtime-vulnerability-audit"',
         '"offline-workflow-security-audit"',
+        'for language in ("python", "javascript-typescript")',
     ):
         assert required in evidence["run"]
 
+    env = os.environ.copy()
+    env.update(
+        CAPABILITY_HTTP_STATUS="403",
+        CAPABILITY_REASON="private_or_internal_repository_code_security_not_enabled",
+        GITHUB_EVENT_NAME="pull_request",
+        GITHUB_REF="refs/pull/1/merge",
+        GITHUB_REPOSITORY="example/agency-runtime",
+        GITHUB_SHA="a" * 40,
+        REPOSITORY_VISIBILITY="private",
+        RUNNER_TEMP=str(tmp_path),
+    )
+    completed = subprocess.run(
+        [sys.executable, "-c", _embedded_python_script(evidence["run"])],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    evidence_dir = tmp_path / "codeql-capability"
+    assert sorted(path.name for path in evidence_dir.iterdir()) == [
+        "javascript-typescript.json",
+        "python.json",
+    ]
+    for language in ("python", "javascript-typescript"):
+        payload = json.loads((evidence_dir / f"{language}.json").read_text("utf-8"))
+        assert payload["language"] == language
+        assert payload["available"] is False
+        assert payload["analysis_performed"] is False
+        assert payload["probe_http_status"] == 403
+
     retained = next(step for step in steps if step["name"] == "Retain CodeQL capability evidence")
     assert retained["if"].endswith("available == 'false'")
-    assert retained["with"]["path"].endswith("${{ matrix.language }}.json")
+    assert retained["with"]["name"] == "codeql-capability"
+    assert retained["with"]["path"] == "${{ runner.temp }}/codeql-capability/*.json"
     assert retained["with"]["if-no-files-found"] == "error"
     assert retained["with"]["retention-days"] == 7
+
+
+@pytest.mark.parametrize(
+    ("availability", "analyze_result", "expected"),
+    [
+        ("true", "success", "analysis completed successfully"),
+        ("false", "skipped", "analysis was not performed"),
+    ],
+)
+def test_codeql_aggregate_accepts_only_coherent_outcomes(
+    availability: str,
+    analyze_result: str,
+    expected: str,
+) -> None:
+    completed = _run_codeql_result("success", availability, analyze_result)
+    assert completed.returncode == 0, completed.stderr
+    assert expected in completed.stdout
+    if availability == "false":
+        assert "analysis completed" not in completed.stdout.casefold()
+
+
+@pytest.mark.parametrize(
+    ("capability_result", "availability", "analyze_result"),
+    [
+        ("failure", "false", "skipped"),
+        ("cancelled", "false", "skipped"),
+        ("skipped", "false", "skipped"),
+        ("", "false", "skipped"),
+        ("success", "", "skipped"),
+        ("success", "unknown", "skipped"),
+        ("success", "true", "skipped"),
+        ("success", "true", "failure"),
+        ("success", "true", "cancelled"),
+        ("success", "true", ""),
+        ("success", "false", "success"),
+        ("success", "false", "failure"),
+        ("success", "false", "cancelled"),
+        ("success", "false", ""),
+    ],
+)
+def test_codeql_aggregate_rejects_missing_failed_or_inconsistent_results(
+    capability_result: str,
+    availability: str,
+    analyze_result: str,
+) -> None:
+    completed = _run_codeql_result(capability_result, availability, analyze_result)
+    assert completed.returncode != 0
+    assert "CodeQL" in completed.stderr
 
 
 def test_release_hygiene_recognizes_common_secret_families() -> None:

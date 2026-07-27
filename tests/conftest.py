@@ -68,6 +68,7 @@ def _verify_operator_presence_below_shared_seam(monkeypatch: pytest.MonkeyPatch)
     """Keep tests non-interactive while exercising the real shared CLI boundary."""
 
     from agency_runtime.core import operator_presence
+    from agency_runtime.core.store import roster
 
     monkeypatch.setattr(
         operator_presence,
@@ -77,6 +78,11 @@ def _verify_operator_presence_below_shared_seam(monkeypatch: pytest.MonkeyPatch)
             mechanism="pytest-result-only-verifier",
             detail="verified",
         ),
+    )
+    monkeypatch.setattr(
+        roster,
+        "_verify_roster_rollback_operator_presence",
+        lambda _binding: None,
     )
 
 

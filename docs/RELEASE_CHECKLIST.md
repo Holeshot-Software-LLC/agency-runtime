@@ -3,12 +3,13 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-20
+updated: 2026-07-27
 tags: [release, verification]
 related:
   - CHANGELOG.md
   - CONTRIBUTING.md
   - SECURITY.md
+  - THIRD_PARTY_NOTICES.md
   - CODE_OF_CONDUCT.md
   - docs/THREAT_MODEL.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
@@ -25,8 +26,13 @@ related:
   - docs/decisions/0071-bound-native-delegation-correction.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
+  - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
+  - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md
   - docs/roadmap/issue-AR-17-production-hardening-portability.md
+  - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
+  - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
+  - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
 supersedes: []
 superseded_by: null
 ---
@@ -105,6 +111,11 @@ or adding an index-install claim.
       transferable capability additionally proves audience, expiry, and atomic
       replay rejection. Static confirmations, bearer tokens, environment
       credentials, and model-callable capabilities are not acceptable substitutes.
+- [ ] The exact Windows 11 x64 roster-rollback release candidate comes from the
+      platform-specific wheel, carries the approved signed helper, and passes an
+      attended Windows Hello success-and-denial canary. Source review,
+      availability, invalid-input smoke, and an unsigned helper do not satisfy
+      this gate.
 - [ ] Global and host status expose one committed generation across read-only
       CLI, dashboard, MCP, and generated host surfaces; the dormant Store
       mutation contract still proves stale-conflict, no-op, and single-increment
@@ -266,6 +277,23 @@ zizmor --pedantic --strict-collection --offline .
       or that exact runtime audit.
 - [ ] GitHub Actions use immutable SHAs, least-privilege permissions, and no
       persisted checkout credentials without an explicit need.
+- [ ] The deterministic unsigned native helper is rebuilt and independently
+      verified before signing; release provenance separately binds the signed
+      SHA-256, approved publisher certificate identity and chain, RFC 3161
+      timestamp, policy, and exact unsigned review digest.
+- [ ] Independent Windows Authenticode verification uses the default
+      authentication policy and rejects a missing signature, warning, wrong
+      publisher, invalid chain, altered bytes, absent/invalid timestamp, or
+      unresolved revocation state when policy requires it. Signing keys and
+      reusable credentials never enter the repository or ordinary CI artifacts.
+- [ ] `THIRD_PARTY_NOTICES.md` and the release artifacts include the exact local
+      C++/WinRT MIT and Microsoft STL Apache-2.0 WITH LLVM-exception/NOTICE
+      texts from their immutable official source revisions.
+- [ ] The owner and an authorized legal reviewer record the exact Visual Studio
+      edition/build-operator entitlement, MSVC and Windows SDK terms and redist
+      list, `/MT` static CRT/runtime disposition, upstream notices, publisher
+      identity, and final channel approval. Source-license provenance alone is
+      not legal clearance.
 
 ## 5. Documentation integrity
 
@@ -287,6 +315,16 @@ git diff --check
       and `AGENTS.md`.
 
 ## 6. Build and isolated install
+
+The builder derives its wheel profile from the actual host: supported Windows
+x64 emits one `win_amd64` wheel/source pair and other hosts emit one portable
+wheel/source pair whose wheel excludes only the PE. Running these commands on
+one host does not create the complete unsigned review set. The hosted merge gate must
+prove byte-identical producer source distributions and shared wheel payloads,
+assemble the two wheels plus one source distribution, and independently verify
+all three. Hosted cross-OS proof remains pending while repository Actions
+billing is disabled. AR-161 separately requires an approved signed delivery
+payload and legal disposition before publication.
 
 From a clean checkout:
 
@@ -317,10 +355,14 @@ python -m scripts.verify_distribution $env:AGENCY_DIST_DIR `
   --expected-commit $env:AGENCY_RELEASE_COMMIT
 ```
 
-The builder requires an absent destination, validates or creates its private
-parent, materializes the exact bounded release payload from reviewed Git blobs,
-and publishes the wheel/source pair only after a successful isolated build and
-pre-publication checkout revalidation. This avoids trusting physical worktree
+Each producer builder requires an absent destination, validates or creates its
+private parent, materializes the exact bounded release payload from reviewed Git
+blobs, and publishes one profile-specific wheel plus one governed source
+distribution only after a successful isolated build and pre-publication
+checkout revalidation. The merge gate, not either producer, assembles and
+uploads the verified unsigned review three-artifact set. AR-161's protected
+signing and delivery gate must produce the final release candidate separately.
+This avoids trusting physical worktree
 line endings or broadly inherited workspace ACLs while preserving the
 independently implemented and invoked Twine and distribution-verifier gates.
 Before publication, a bounded normalizer preserves every source-derived payload
@@ -338,9 +380,11 @@ the interpreter before launch; an ordinary repository-local Windows virtual
 environment or `dist` parent may be rejected when inherited ACLs permit another
 account to replace the launcher or a newly created child.
 
-- [ ] Wheel and source distribution contain every package module and asset; the
-      source distribution also contains governance docs, the threat model,
-      release scripts, tests, and self-contained examples.
+- [ ] The portable and `win_amd64` wheels contain the complete shared package
+      surface; only the Windows wheel contains the exact approved signed helper
+      and its native provenance/notices. The source distribution also contains
+      governance docs, the threat model, release scripts, tests, and
+      self-contained examples under one explicit no-universal-PE build policy.
 - [ ] Artifact verification is pinned to the commit captured before build and
       proves HEAD did not change; wheel and sdist filenames, metadata, roots,
       version, dependencies, license, and every MANIFEST-governed committed
@@ -355,10 +399,12 @@ account to replace the launcher or a newly created child.
       canonical builder and independent verifier.
 - [ ] The release input contains no executable Git entries; both the builder and
       independent verifier reject any release-scoped mode other than `100644`.
-- [ ] Hosted Ubuntu and Windows jobs each build and strictly verify the canonical
-      wheel/source pair, then a dependent parity gate proves both filenames and
-      artifact bytes are identical; only the reviewed Ubuntu pair proceeds as
-      the install or publication candidate.
+- [ ] Hosted Ubuntu and Windows producers each build and strictly verify one
+      host-derived wheel/source pair. A dependent merge gate proves the two
+      source distributions byte-identical and every shared wheel payload equal,
+      assembles the portable wheel, Windows wheel, and one source distribution,
+      and independently verifies that exact set. No partial set proceeds to
+      install or publication.
 - [ ] Archives contain only canonical portable regular-file payloads plus the
       explicit generated metadata allowlist, remain within member, size,
       aggregate, and compression-ratio limits, and pass strict singleton
@@ -366,7 +412,7 @@ account to replace the launcher or a newly created child.
       text uses canonical LF, `SOURCES.txt` has the backend's exact
       parent-directory/basename ordering and no-final-newline form, and
       core-metadata bodies decode as strict raw UTF-8.
-- [ ] The wheel has one contiguous ZIP layout with no prefix, gaps, orphan local
+- [ ] Each wheel has one contiguous ZIP layout with no prefix, gaps, orphan local
       records, comments, extras, directory entries, encryption, unsupported
       flags, data descriptors, compression, or trailing bytes; every stored
       member's physical size equals its payload size. The sdist has one bounded
@@ -425,11 +471,13 @@ account to replace the launcher or a newly created child.
       horizontal page overflow, and a clean console.
 - [ ] Every dashboard asset is present in wheel and source artifacts, passes the
       static CSP/security scan, and stays within the documented asset budget.
-- [ ] Fresh Python 3.10 environments on Windows install the built wheel and
-      source distribution separately, run `agency --help`, import package data,
-      and pass the full packaged smoke procedure for each artifact.
-- [ ] The same isolated wheel and source-distribution procedures pass on Ubuntu.
-- [ ] `python -m pip check` passes for both artifacts in both environments.
+- [ ] Fresh Python 3.10 environments on Windows install the `win_amd64` wheel,
+      portable wheel, and source distribution separately, run `agency --help`,
+      import package data, and pass the full packaged smoke procedure. Installer
+      selection prefers the native wheel only on supported Windows x64.
+- [ ] Ubuntu selects and installs the portable wheel, never receives the PE
+      helper, and passes the isolated wheel/source-distribution procedures.
+- [ ] `python -m pip check` passes for every applicable artifact/environment.
 - [ ] Rebuilding from the same source does not depend on untracked local files.
 
 ## 7. Publish and post-publish
@@ -440,8 +488,8 @@ outward-facing actions and require explicit authorization.
 - [ ] Obtain approval for the exact tag, artifacts, destination, and release
       notes.
 - [ ] Tag the reviewed commit; do not move an existing public tag.
-- [ ] Publish the wheel and source artifact produced by the verified workflow,
-      not a local rebuild.
+- [ ] Publish the complete paired-wheel and source artifact set produced by the
+      verified workflow, not a local rebuild or partial upload.
 - [ ] Verify hashes, metadata, install command, and CLI version from the public
       destination.
 - [ ] Create release notes from `CHANGELOG.md` and include known support limits.
@@ -459,19 +507,26 @@ release-hygiene, Bandit, dependency, and offline-workflow gates. The earlier
 failed evidence. AR-149 through AR-154 were found afterward, so affected gates
 and artifacts must be rerun from their implementation checkpoint.
 
-AR-143 is the decisive local production blocker. Every dashboard and
-model-facing mutation is read-only and every persistent CLI mutation fails
-closed, but no production Windows Hello or equivalent non-exporting
-operator-presence verifier exists. Current-source positive install, service
-registration, configuration, control, retention, and installed-host canaries
-therefore cannot be completed autonomously without weakening ADR-0096.
+AR-143 now has one narrow prerelease positive slice: exact roster rollback on
+Windows 11 x64. Every dashboard and model-facing mutation remains read-only,
+and all other persistent CLI mutations fail closed. The helper is reviewed and
+byte-pinned, and AR-160's local implementation now derives the paired portable/
+`win_amd64` artifact set and independently verifies its merged three-artifact
+contract. Hosted Windows/Linux producer and merge proof remains pending because
+repository Actions billing is disabled. The helper is unsigned, and no attended
+release-candidate Windows Hello canary has run. AR-161 is blocked on owner-
+approved publisher identity and authorized legal review of the exact MSVC,
+Windows SDK, `/MT` static runtime, notices, and delivery channel. Neither that
+external trust gate nor the hosted proof can be completed by repository source
+alone.
 
 Normal-profile Codex readiness still requires user-owned terminal-TUI `/hooks`
 review and a new session. AR-119 and AR-125 still require a benchmark-valid
 completed outcome corpus and current-artifact host/OS evidence; absent Claude
 Code, Hermes, OpenClaw, ZCode, and Linux canaries remain contract-only.
 
-AR-128 through AR-154 require authorized same-repository tracker synchronization.
+AR-128 through AR-161 items with pending mappings require authorized
+same-repository tracker synchronization.
 Hosted Windows/Linux matrices, push, PR, tag, publication, and release remain
 outward actions requiring explicit authorization. Historical PR #18 evidence
 does not establish the current commit.

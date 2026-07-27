@@ -41,6 +41,8 @@ _COMMAND_PATH_FIELDS = (
     "dashboard_command",
     "dashboard_service_action",
 )
+_PREPARED_PRESENCE_ACTION = "roster.rollback.v1"
+_PREPARED_PRESENCE_PATH = ("roster", "rollback")
 OPERATOR_PRESENCE_FAMILIES = frozenset(
     {
         "agent-governance",
@@ -131,9 +133,31 @@ def _command_path(namespace: argparse.Namespace) -> tuple[str, ...]:
     return tuple(parts)
 
 
+def _uses_prepared_operator_presence(namespace: argparse.Namespace) -> bool:
+    """Recognize the one parser leaf whose handler owns prepared verification.
+
+    The marker is an internal parser default, not an authorization value.  A
+    copied or malformed marker fails closed unless the parsed command path and
+    mutation family are the one reviewed prepared-mutation integration.
+    """
+
+    action = getattr(namespace, "_operator_presence_prepared_action", "")
+    if not action:
+        return False
+    if (
+        action != _PREPARED_PRESENCE_ACTION
+        or getattr(namespace, "_operator_presence_family", "") != "roster-governance"
+        or _command_path(namespace) != _PREPARED_PRESENCE_PATH
+    ):
+        raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
+    return True
+
+
 def request_for_namespace(namespace: argparse.Namespace) -> OperatorPresenceRequest | None:
     """Build a request for an explicitly annotated mutating parser leaf."""
 
+    if _uses_prepared_operator_presence(namespace):
+        return None
     family = getattr(namespace, "_operator_presence_family", "")
     if not family:
         return None

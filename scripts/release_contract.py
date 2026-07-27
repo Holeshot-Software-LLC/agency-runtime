@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import re
 import stat
+import struct
+import sys
+import sysconfig
 import unicodedata
 import zipfile
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Protocol
 
@@ -71,6 +75,132 @@ WINDOWS_RESERVED_BASENAMES = frozenset(
 )
 WINDOWS_INVALID_CHARS = frozenset('<>:"|?*')
 
+NATIVE_OPERATOR_PRESENCE_SOURCE = (
+    "agency_runtime/native/windows/operator_presence/operator_presence_verifier.cpp"
+)
+NATIVE_OPERATOR_PRESENCE_EXECUTABLE = (
+    "agency_runtime/native/windows/operator_presence/operator_presence_verifier.exe"
+)
+NATIVE_OPERATOR_PRESENCE_PROVENANCE = (
+    "agency_runtime/native/windows/operator_presence/operator_presence_verifier.provenance.json"
+)
+NATIVE_OPERATOR_PRESENCE_FILES = frozenset(
+    {
+        NATIVE_OPERATOR_PRESENCE_SOURCE,
+        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
+        NATIVE_OPERATOR_PRESENCE_PROVENANCE,
+    }
+)
+DISTRIBUTION_LICENSE_FILES = (
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "agency_runtime/native/windows/operator_presence/LICENSE.cppwinrt.txt",
+    "agency_runtime/native/windows/operator_presence/LICENSE.microsoft-stl.txt",
+    "agency_runtime/native/windows/operator_presence/NOTICE.microsoft-stl.txt",
+)
+IMMUTABLE_THIRD_PARTY_FILE_SHA256 = (
+    (
+        "agency_runtime/native/windows/operator_presence/LICENSE.cppwinrt.txt",
+        "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+    ),
+    (
+        "agency_runtime/native/windows/operator_presence/LICENSE.microsoft-stl.txt",
+        "7c68a47568bd633f7a71ee5e2038660a2cc62ce8a5405999e2b69fab3f37469c",
+    ),
+    (
+        "agency_runtime/native/windows/operator_presence/NOTICE.microsoft-stl.txt",
+        "4b8b8c5386b37247443a0591df1ae8deeb9be3cfe4a10e1c2e65d1486dac81cd",
+    ),
+)
+
+ARTIFACT_SET_PORTABLE = "portable"
+ARTIFACT_SET_WINDOWS_X64 = "windows-x64"
+ARTIFACT_SET_RELEASE = "release"
+ARTIFACT_SET_HOST = "host"
+ARTIFACT_SETS = frozenset(
+    {
+        ARTIFACT_SET_PORTABLE,
+        ARTIFACT_SET_WINDOWS_X64,
+        ARTIFACT_SET_RELEASE,
+    }
+)
+
+
+@dataclass(frozen=True, slots=True)
+class WheelProfile:
+    """One exact wheel filename, metadata, and native-payload contract."""
+
+    name: str
+    tag: str
+    root_is_purelib: bool
+    includes_native_executable: bool
+
+
+PORTABLE_WHEEL_PROFILE = WheelProfile(
+    name=ARTIFACT_SET_PORTABLE,
+    tag="py3-none-any",
+    root_is_purelib=True,
+    includes_native_executable=False,
+)
+WINDOWS_X64_WHEEL_PROFILE = WheelProfile(
+    name=ARTIFACT_SET_WINDOWS_X64,
+    tag="py3-none-win_amd64",
+    root_is_purelib=False,
+    includes_native_executable=True,
+)
+WHEEL_PROFILES = {
+    PORTABLE_WHEEL_PROFILE.name: PORTABLE_WHEEL_PROFILE,
+    WINDOWS_X64_WHEEL_PROFILE.name: WINDOWS_X64_WHEEL_PROFILE,
+}
+
+
+def host_wheel_profile(
+    *,
+    platform_name: str | None = None,
+    pointer_size: int | None = None,
+    platform_tag: str | None = None,
+) -> WheelProfile:
+    """Return the wheel profile fixed by this build interpreter and host."""
+
+    runtime_platform = sys.platform if platform_name is None else platform_name
+    runtime_pointer_size = struct.calcsize("P") if pointer_size is None else pointer_size
+    runtime_platform_tag = sysconfig.get_platform() if platform_tag is None else platform_tag
+    if (
+        runtime_platform == "win32"
+        and runtime_pointer_size == 8
+        and runtime_platform_tag.casefold().replace("_", "-") == "win-amd64"
+    ):
+        return WINDOWS_X64_WHEEL_PROFILE
+    return PORTABLE_WHEEL_PROFILE
+
+
+def wheel_profiles_for_artifact_set(artifact_set: str) -> tuple[WheelProfile, ...]:
+    """Return the exact ordered wheel profiles required by an artifact set."""
+
+    if artifact_set == ARTIFACT_SET_RELEASE:
+        return PORTABLE_WHEEL_PROFILE, WINDOWS_X64_WHEEL_PROFILE
+    try:
+        return (WHEEL_PROFILES[artifact_set],)
+    except KeyError as exc:
+        raise ValueError(f"unsupported distribution artifact set: {artifact_set}") from exc
+
+
+def wheel_filename(version: str, profile: WheelProfile) -> str:
+    """Return one exact normalized Agency Runtime wheel filename."""
+
+    return f"agency_runtime-{version}-{profile.tag}.whl"
+
+
+def distribution_artifact_names(version: str, artifact_set: str) -> tuple[str, ...]:
+    """Return the ordered exact filenames for one verified artifact set."""
+
+    wheels = tuple(
+        wheel_filename(version, profile)
+        for profile in wheel_profiles_for_artifact_set(artifact_set)
+    )
+    return (*wheels, f"agency_runtime-{version}.tar.gz")
+
+
 SDIST_ROOT_SOURCE_FILES = frozenset(
     {
         ".editorconfig",
@@ -85,6 +215,7 @@ SDIST_ROOT_SOURCE_FILES = frozenset(
         "SECURITY.md",
         "THIRD_PARTY_NOTICES.md",
         "pyproject.toml",
+        "setup.py",
     }
 )
 RELEASE_SOURCE_PATHS = tuple(

@@ -35,6 +35,7 @@ from agency_runtime.core.process_argv import (
     freeze_process_argv,
     isolated_python_argv,
     prepare_process_argv,
+    repository_forbidden_roots,
     revalidate_persistent_artifacts,
     revalidate_process_argv,
     snapshot_persistent_artifacts,
@@ -747,7 +748,16 @@ def _run(
     bounded_timeout = float(timeout)
     try:
         if command_runner is None:
-            prepared_argv = freeze_process_argv(prepare_process_argv(argv))
+            current_directory = Path.cwd()
+            forbidden_roots = repository_forbidden_roots(current_directory)
+            prepared_argv = freeze_process_argv(
+                prepare_process_argv(
+                    argv,
+                    current_directory=current_directory,
+                    forbidden_roots=forbidden_roots,
+                ),
+                forbidden_roots=forbidden_roots,
+            )
             with (
                 tempfile.TemporaryFile() as stdout_stream,
                 tempfile.TemporaryFile() as stderr_stream,

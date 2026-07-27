@@ -34,6 +34,7 @@ from agency_runtime.core.process_argv import (
     freeze_process_argv,
     persistent_artifacts_from_manifest,
     prepare_process_argv,
+    repository_forbidden_roots,
     revalidate_process_argv,
     snapshot_persistent_artifacts,
 )
@@ -176,23 +177,32 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
         )
 
     syntax_check = "skipped: node unavailable"
-    node = os.environ.get("AGENCY_CI_NODE") or shutil.which("node")
-    if node:
-        prepared = freeze_process_argv(prepare_process_argv([node, "--check", str(plugin_path)]))
-        try:
-            revalidate_process_argv(prepared)
-            check = subprocess.run(
-                prepared,
-                text=True,
-                capture_output=True,
-                timeout=15,
-            )
-        except OSError as exc:
-            syntax_check = f"skipped: node not runnable ({type(exc).__name__})"
-        else:
-            if check.returncode != 0:
-                raise RuntimeError((check.stderr or check.stdout or "node --check failed").strip())
-            syntax_check = "passed"
+    node = os.environ.get("AGENCY_CI_NODE") or "node"
+    current_directory = Path.cwd()
+    forbidden_roots = repository_forbidden_roots(current_directory)
+    try:
+        prepared = freeze_process_argv(
+            prepare_process_argv(
+                [node, "--check", str(plugin_path)],
+                resolver=shutil.which,
+                current_directory=current_directory,
+                forbidden_roots=forbidden_roots,
+            ),
+            forbidden_roots=forbidden_roots,
+        )
+        revalidate_process_argv(prepared)
+        check = subprocess.run(
+            prepared,
+            text=True,
+            capture_output=True,
+            timeout=15,
+        )
+    except OSError as exc:
+        syntax_check = f"skipped: node not runnable ({type(exc).__name__})"
+    else:
+        if check.returncode != 0:
+            raise RuntimeError((check.stderr or check.stdout or "node --check failed").strip())
+        syntax_check = "passed"
     return {
         "host": host,
         "plugin_path": str(plugin_path),

@@ -20,7 +20,7 @@ import zipfile
 import zlib
 from collections import Counter
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from email import policy
 from email.message import Message
@@ -33,7 +33,12 @@ from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name
 
 try:  # Support both ``python -m scripts...`` and direct script execution.
+    from scripts.build_windows_operator_presence import verify_payload_contract
     from scripts.release_contract import (
+        ARTIFACT_SET_HOST,
+        ARTIFACT_SET_PORTABLE,
+        ARTIFACT_SET_RELEASE,
+        ARTIFACT_SET_WINDOWS_X64,
         CANONICAL_LF_SDIST_GENERATED_FILES,
         CANONICAL_LF_WHEEL_GENERATED_FILES,
         CANONICAL_RECORD_MODE,
@@ -41,6 +46,7 @@ try:  # Support both ``python -m scripts...`` and direct script execution.
         CANONICAL_ZIP_METHOD,
         CANONICAL_ZIP_SYSTEM,
         CANONICAL_ZIP_VERSION,
+        IMMUTABLE_THIRD_PARTY_FILE_SHA256,
         MAX_ARCHIVE_COMPONENT_BYTES,
         MAX_ARCHIVE_MEMBER_BYTES,
         MAX_ARCHIVE_MEMBERS,
@@ -54,17 +60,32 @@ try:  # Support both ``python -m scripts...`` and direct script execution.
         MAX_TAR_CONTAINER_BYTES,
         MAX_TREE_MANIFEST_BYTES,
         MAX_ZIP_COMPRESSION_RATIO,
+        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
+        NATIVE_OPERATOR_PRESENCE_FILES,
+        PORTABLE_WHEEL_PROFILE,
         RELEASE_SOURCE_PATHS,
+        WheelProfile,
+        distribution_artifact_names,
+        host_wheel_profile,
         is_release_source,
         partition_release_payloads,
         reviewed_checkout,
         safe_release_name,
+        wheel_filename,
+        wheel_profiles_for_artifact_set,
     )
     from scripts.release_git import ReleaseGit, ReleaseGitError
 except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibility
     if exc.name != "scripts":
         raise
+    from build_windows_operator_presence import (  # type: ignore[no-redef]
+        verify_payload_contract,
+    )
     from release_contract import (  # type: ignore[no-redef]
+        ARTIFACT_SET_HOST,
+        ARTIFACT_SET_PORTABLE,
+        ARTIFACT_SET_RELEASE,
+        ARTIFACT_SET_WINDOWS_X64,
         CANONICAL_LF_SDIST_GENERATED_FILES,
         CANONICAL_LF_WHEEL_GENERATED_FILES,
         CANONICAL_RECORD_MODE,
@@ -72,6 +93,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibi
         CANONICAL_ZIP_METHOD,
         CANONICAL_ZIP_SYSTEM,
         CANONICAL_ZIP_VERSION,
+        IMMUTABLE_THIRD_PARTY_FILE_SHA256,
         MAX_ARCHIVE_COMPONENT_BYTES,
         MAX_ARCHIVE_MEMBER_BYTES,
         MAX_ARCHIVE_MEMBERS,
@@ -85,11 +107,19 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibi
         MAX_TAR_CONTAINER_BYTES,
         MAX_TREE_MANIFEST_BYTES,
         MAX_ZIP_COMPRESSION_RATIO,
+        NATIVE_OPERATOR_PRESENCE_EXECUTABLE,
+        NATIVE_OPERATOR_PRESENCE_FILES,
+        PORTABLE_WHEEL_PROFILE,
         RELEASE_SOURCE_PATHS,
+        WheelProfile,
+        distribution_artifact_names,
+        host_wheel_profile,
         is_release_source,
         partition_release_payloads,
         reviewed_checkout,
         safe_release_name,
+        wheel_filename,
+        wheel_profiles_for_artifact_set,
     )
     from release_git import ReleaseGit, ReleaseGitError  # type: ignore[no-redef]
 
@@ -112,6 +142,7 @@ REQUIRED_PACKAGE_FILES = {
     "agency_runtime/dashboard/app.js",
     "agency_runtime/dashboard/charts.js",
     "agency_runtime/dashboard/index.html",
+    *NATIVE_OPERATOR_PRESENCE_FILES,
 }
 REQUIRED_SDIST_FILES = {
     ".editorconfig",
@@ -129,10 +160,13 @@ REQUIRED_SDIST_FILES = {
     "docs/THREAT_MODEL.md",
     "examples/rosters/agents.json",
     "pyproject.toml",
+    "setup.py",
     "scripts/verify_distribution.py",
     "scripts/build_distributions.py",
+    "scripts/build_windows_operator_presence.py",
     "scripts/canonicalize_distributions.py",
     "scripts/prove_autocrlf_checkout.py",
+    "scripts/platform_wheel.py",
     "scripts/release_contract.py",
     "scripts/release_git.py",
     "tests/dashboard_ui.test.mjs",
@@ -176,6 +210,11 @@ MAX_PAX_HEADER_BYTES = 64 * 1_024
 EXPECTED_DISTRIBUTION_ARTIFACT_COUNT = 2
 READ_CHUNK_BYTES = 64 * 1024
 SDIST_GENERATED_METADATA_FILES = CANONICAL_LF_SDIST_GENERATED_FILES
+MAX_PE_HEADER_OFFSET = MAX_ARCHIVE_MEMBER_BYTES - 24
+MAX_PE_SECTIONS = 96
+_PE_OPTIONAL_HEADER_MIN_BYTES = {0x010B: 96, 0x020B: 112}
+_PE_EXECUTABLE_IMAGE = 0x0002
+_PE_SECTION_HEADER_BYTES = 40
 
 
 @dataclass(frozen=True, slots=True)
@@ -205,6 +244,7 @@ class _CommittedProjectContract:
     dependencies: tuple[str, ...]
     license_payload: bytes
     core_metadata: _CoreMetadataProjection
+    license_payloads: tuple[tuple[str, bytes], ...] = ()
 
 
 class _ArtifactSetError(ValueError):
@@ -361,12 +401,17 @@ def _bound_distribution_directory(
         os.close(descriptor)
 
 
-def _directory_names(path: Path, descriptor: int) -> list[str]:
+def _directory_names(
+    path: Path,
+    descriptor: int,
+    *,
+    max_entries: int = EXPECTED_DISTRIBUTION_ARTIFACT_COUNT,
+) -> list[str]:
     scan_target: Path | int = path if os.name == "nt" else descriptor
     names: list[str] = []
     with os.scandir(scan_target) as entries:
         for entry in entries:
-            if len(names) >= EXPECTED_DISTRIBUTION_ARTIFACT_COUNT:
+            if len(names) >= max_entries:
                 raise ValueError("distribution directory exceeds its physical entry limit")
             names.append(entry.name)
     if len(names) != len(set(names)):
@@ -385,37 +430,34 @@ def _capture_artifact_bindings(
     descriptor: int,
     *,
     version: str,
-) -> tuple[_ArtifactBinding, _ArtifactBinding]:
-    names = _directory_names(directory, descriptor)
-    expected_wheel = f"agency_runtime-{version}-py3-none-any.whl"
-    expected_sdist = f"agency_runtime-{version}.tar.gz"
-    expected_names = {expected_wheel, expected_sdist}
-    if set(names) != expected_names or len(names) != 2:
+    artifact_set: str = ARTIFACT_SET_PORTABLE,
+) -> tuple[_ArtifactBinding, ...]:
+    expected_names = distribution_artifact_names(version, artifact_set)
+    names = (
+        _directory_names(directory, descriptor)
+        if len(expected_names) == EXPECTED_DISTRIBUTION_ARTIFACT_COUNT
+        else _directory_names(directory, descriptor, max_entries=len(expected_names))
+    )
+    if set(names) != set(expected_names) or len(names) != len(expected_names):
         paths = [directory / name for name in names]
-        # A set/count mismatch necessarily violates at least one of the two
-        # exact filename contracts checked by this helper.
         raise _ArtifactSetError(
             _artifact_identity_failures(
                 [path for path in paths if path.name.endswith(".whl")],
                 [path for path in paths if path.name.endswith(".tar.gz")],
                 version=version,
+                artifact_set=artifact_set,
             )
         )
-    wheel = _ArtifactBinding(
-        expected_wheel,
-        _artifact_identity(
-            _child_lstat(directory, descriptor, expected_wheel),
-            name=expected_wheel,
-        ),
+    return tuple(
+        _ArtifactBinding(
+            name,
+            _artifact_identity(
+                _child_lstat(directory, descriptor, name),
+                name=name,
+            ),
+        )
+        for name in expected_names
     )
-    sdist = _ArtifactBinding(
-        expected_sdist,
-        _artifact_identity(
-            _child_lstat(directory, descriptor, expected_sdist),
-            name=expected_sdist,
-        ),
-    )
-    return wheel, sdist
 
 
 def _open_child_descriptor(directory: Path, descriptor: int, name: str) -> int:
@@ -471,9 +513,13 @@ def _bound_artifact(
 def _require_artifact_bindings(
     directory: Path,
     descriptor: int,
-    expected: tuple[_ArtifactBinding, _ArtifactBinding],
+    expected: tuple[_ArtifactBinding, ...],
 ) -> None:
-    names = _directory_names(directory, descriptor)
+    names = (
+        _directory_names(directory, descriptor)
+        if len(expected) <= EXPECTED_DISTRIBUTION_ARTIFACT_COUNT
+        else _directory_names(directory, descriptor, max_entries=len(expected))
+    )
     if names != sorted(binding.name for binding in expected):
         raise ValueError("distribution directory contents changed during verification")
     for binding in expected:
@@ -488,24 +534,27 @@ def _bound_distribution_artifacts(
     directory: Path,
     *,
     version: str,
-) -> Iterator[tuple[BinaryIO, BinaryIO]]:
+    artifact_set: str = ARTIFACT_SET_PORTABLE,
+) -> Iterator[tuple[BinaryIO, ...]]:
     with _bound_distribution_directory(directory) as (directory_descriptor, directory_identity):
-        wheel, sdist = _capture_artifact_bindings(
+        bindings = _capture_artifact_bindings(
             directory,
             directory_descriptor,
             version=version,
+            artifact_set=artifact_set,
         )
-        with (
-            _bound_artifact(directory, directory_descriptor, wheel) as wheel_stream,
-            _bound_artifact(directory, directory_descriptor, sdist) as sdist_stream,
-        ):
+        with ExitStack() as stack:
+            streams = tuple(
+                stack.enter_context(_bound_artifact(directory, directory_descriptor, binding))
+                for binding in bindings
+            )
             try:
-                yield wheel_stream, sdist_stream
+                yield streams
             finally:
                 _require_artifact_bindings(
                     directory,
                     directory_descriptor,
-                    (wheel, sdist),
+                    bindings,
                 )
                 _require_directory_identity(directory, directory_identity)
 
@@ -847,7 +896,13 @@ def _expected_core_metadata_projection(
         or not isinstance(classifiers, list)
         or any(not isinstance(value, str) or not value for value in classifiers)
         or len(classifiers) != len(set(classifiers))
-        or license_files != ["LICENSE"]
+        or not isinstance(license_files, list)
+        or not license_files
+        or any(
+            not isinstance(name, str) or not name or any(character in name for character in "*?[")
+            for name in license_files
+        )
+        or len(license_files) != len(set(license_files))
         or not isinstance(urls, dict)
         or any(
             not isinstance(name, str) or not name or not isinstance(value, str) or not value
@@ -873,7 +928,6 @@ def _expected_core_metadata_projection(
         ("license-expression", "MIT"),
         ("requires-python", ">=3.10"),
         ("description-content-type", "text/markdown"),
-        ("license-file", "LICENSE"),
         ("dynamic", "license-file"),
     ]
     if keywords:
@@ -882,6 +936,12 @@ def _expected_core_metadata_projection(
     headers.extend(("project-url", f"{name}, {value}") for name, value in urls.items())
     headers.extend(("requires-dist", value) for value in dependencies)
     headers.extend(("provides-extra", value) for value in extras)
+    try:
+        headers.extend(
+            ("license-file", safe_release_name(name).as_posix()) for name in license_files
+        )
+    except ValueError as exc:
+        raise ValueError("committed project license-file paths are unsafe") from exc
     return tuple(sorted(headers)), readme
 
 
@@ -899,10 +959,28 @@ def _committed_project_contract(
             git=git,
         )
         pyproject_blob = _committed_blob(root, support["pyproject.toml"], git=git)
-        license_blob = _committed_blob(root, support["LICENSE"], git=git)
         project = tomllib.loads(pyproject_blob.decode("utf-8"))["project"]
         if not isinstance(project, dict):
             raise TypeError
+        license_files = project.get("license-files")
+        if not isinstance(license_files, list) or any(
+            not isinstance(name, str) for name in license_files
+        ):
+            raise ValueError("committed project license-file contract is malformed")
+        license_payloads: list[tuple[str, bytes]] = []
+        for name in license_files:
+            object_id = package.get(name, support.get(name))
+            if object_id is None:
+                raise ValueError(f"committed project license-file is not release-scoped: {name}")
+            license_payloads.append((name, _committed_blob(root, object_id, git=git)))
+        license_by_name = dict(license_payloads)
+        license_blob = license_by_name["LICENSE"]
+        immutable_failures = _immutable_third_party_failures(
+            license_by_name,
+            artifact="committed project license contract",
+        )
+        if immutable_failures:
+            raise ValueError("; ".join(immutable_failures))
         dependencies = list(
             _normalized_dependencies(
                 project.get("dependencies"),
@@ -944,6 +1022,7 @@ def _committed_project_contract(
         dependencies=sorted_dependencies,
         license_payload=license_blob,
         core_metadata=core_metadata,
+        license_payloads=tuple(license_payloads),
     )
 
 
@@ -2043,18 +2122,147 @@ def _hash(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _immutable_third_party_failures(
+    payloads: dict[str, bytes],
+    *,
+    artifact: str,
+    path_prefix: str = "",
+) -> list[str]:
+    """Bind required upstream license and notice bytes independently of Git metadata."""
+
+    failures: list[str] = []
+    for source_name, expected_digest in IMMUTABLE_THIRD_PARTY_FILE_SHA256:
+        artifact_name = f"{path_prefix}{source_name}"
+        payload = payloads.get(artifact_name)
+        if payload is None:
+            failures.append(f"{artifact} is missing immutable third-party file: {source_name}")
+        elif _hash(payload) != expected_digest:
+            failures.append(
+                f"{artifact} immutable third-party file has the wrong SHA-256: {source_name}"
+            )
+    return failures
+
+
+def _is_structural_pe(payload: bytes) -> bool:
+    """Recognize one bounded loadable PE image without trusting its file suffix."""
+
+    if len(payload) < 64 or payload[:2] != b"MZ":
+        return False
+    pe_offset = struct.unpack_from("<I", payload, 60)[0]
+    if (
+        pe_offset < 64
+        or pe_offset > MAX_PE_HEADER_OFFSET
+        or pe_offset > len(payload) - 24
+        or payload[pe_offset : pe_offset + 4] != b"PE\0\0"
+    ):
+        return False
+    (
+        machine,
+        section_count,
+        _timestamp,
+        _symbol_table,
+        _symbol_count,
+        optional_header_size,
+        characteristics,
+    ) = struct.unpack_from("<HHIIIHH", payload, pe_offset + 4)
+    optional_offset = pe_offset + 24
+    if (
+        machine in {0, 0xFFFF}
+        or not 1 <= section_count <= MAX_PE_SECTIONS
+        or not characteristics & _PE_EXECUTABLE_IMAGE
+    ):
+        return False
+    if optional_header_size < 2 or optional_offset + optional_header_size > len(payload):
+        return False
+    optional_magic = struct.unpack_from("<H", payload, optional_offset)[0]
+    minimum_optional_size = _PE_OPTIONAL_HEADER_MIN_BYTES.get(optional_magic)
+    if minimum_optional_size is None or optional_header_size < minimum_optional_size:
+        return False
+    section_table_offset = optional_offset + optional_header_size
+    return section_table_offset + (section_count * _PE_SECTION_HEADER_BYTES) <= len(payload)
+
+
+def _pe_payload_names(payloads: dict[str, bytes]) -> list[str]:
+    """Return every structurally valid PE payload under its archive name."""
+
+    return sorted(name for name, payload in payloads.items() if _is_structural_pe(payload))
+
+
+def _native_operator_presence_failures(
+    payloads: dict[str, bytes],
+    *,
+    artifact: str,
+    executable_required: bool = False,
+    executable_forbidden: bool = False,
+) -> list[str]:
+    source_name = "agency_runtime/native/windows/operator_presence/operator_presence_verifier.cpp"
+    executable_name = (
+        "agency_runtime/native/windows/operator_presence/operator_presence_verifier.exe"
+    )
+    provenance_name = (
+        "agency_runtime/native/windows/operator_presence/operator_presence_verifier.provenance.json"
+    )
+    required = {source_name, executable_name, provenance_name}
+    observed_executables = sorted(name for name in payloads if name.casefold().endswith(".exe"))
+    observed_pe_payloads = _pe_payload_names(payloads)
+    if executable_forbidden:
+        failures: list[str] = []
+        if observed_executables:
+            failures.append(
+                f"{artifact} must not contain executable payloads: {', '.join(observed_executables)}"
+            )
+        disguised_pe_payloads = sorted(set(observed_pe_payloads) - set(observed_executables))
+        if disguised_pe_payloads:
+            failures.append(
+                f"{artifact} must not contain PE payloads under non-executable names: "
+                f"{', '.join(disguised_pe_payloads)}"
+            )
+        return failures
+    unexpected_pe_payloads = sorted(set(observed_pe_payloads) - {executable_name})
+    if unexpected_pe_payloads:
+        return [f"{artifact} contains unexpected PE payloads: {', '.join(unexpected_pe_payloads)}"]
+    missing = sorted(required - set(payloads))
+    if missing:
+        if executable_required:
+            return [
+                f"{artifact} Windows operator-presence asset contract is incomplete: "
+                f"{', '.join(missing)}"
+            ]
+        return []
+    unexpected_executables = sorted(set(observed_executables) - {executable_name})
+    if unexpected_executables:
+        return [
+            f"{artifact} contains unexpected executable payloads: "
+            f"{', '.join(unexpected_executables)}"
+        ]
+    try:
+        verify_payload_contract(
+            payloads[source_name],
+            payloads[executable_name],
+            payloads[provenance_name],
+        )
+    except RuntimeError as exc:
+        return [f"{artifact} Windows operator-presence asset contract failed: {exc}"]
+    return []
+
+
 def _missing_file_failures(
     wheel_names: set[str],
     sdist_names: set[str],
     required_package_files: set[str],
     required_sdist_files: set[str] | None = None,
+    *,
+    wheel_artifact: str = "wheel",
+    check_sdist: bool = True,
 ) -> list[str]:
     failures: list[str] = []
     sdist_required = REQUIRED_SDIST_FILES if required_sdist_files is None else required_sdist_files
     missing_wheel = sorted(required_package_files - wheel_names)
-    missing_sdist = sorted((sdist_required | required_package_files) - sdist_names)
+    missing_sdist = (
+        sorted((sdist_required | required_package_files) - sdist_names) if check_sdist else []
+    )
     if missing_wheel:
-        failures.append(f"wheel missing required files: {', '.join(missing_wheel)}")
+        failures.append(f"{wheel_artifact} missing required files: {', '.join(missing_wheel)}")
     if missing_sdist:
         failures.append(f"sdist missing required files: {', '.join(missing_sdist)}")
     return failures
@@ -2079,15 +2287,16 @@ def _wheel_payload_contract_failures(
     committed_package_files: set[str],
     *,
     version: str,
+    artifact: str = "wheel",
+    license_files: set[str] | None = None,
 ) -> list[str]:
     dist_info = f"agency_runtime-{version}.dist-info"
-    expected = committed_package_files | {
-        f"{dist_info}/{relative}" for relative in WHEEL_METADATA_FILES
-    }
+    metadata_files = WHEEL_METADATA_FILES if license_files is None else license_files
+    expected = committed_package_files | {f"{dist_info}/{relative}" for relative in metadata_files}
     unexpected = sorted(set(payloads) - expected)
     if not unexpected:
         return []
-    return [f"wheel contains unexpected payload: {', '.join(unexpected)}"]
+    return [f"{artifact} contains unexpected payload: {', '.join(unexpected)}"]
 
 
 def _sdist_payload_contract_failures(
@@ -2106,12 +2315,20 @@ def _artifact_identity_failures(
     sdists: list[Path],
     *,
     version: str,
+    artifact_set: str = ARTIFACT_SET_PORTABLE,
 ) -> list[str]:
     failures: list[str] = []
-    expected_wheel = f"agency_runtime-{version}-py3-none-any.whl"
+    expected_wheels = [
+        wheel_filename(version, profile)
+        for profile in wheel_profiles_for_artifact_set(artifact_set)
+    ]
     expected_sdist = f"agency_runtime-{version}.tar.gz"
-    if len(wheels) != 1 or wheels[0].name != expected_wheel:
-        failures.append(f"expected exact wheel filename: {expected_wheel}")
+    observed_wheels = sorted(path.name for path in wheels)
+    if observed_wheels != sorted(expected_wheels):
+        if len(expected_wheels) == 1:
+            failures.append(f"expected exact wheel filename: {expected_wheels[0]}")
+        else:
+            failures.append("expected exact wheel filenames: " + ", ".join(sorted(expected_wheels)))
     if len(sdists) != 1 or sdists[0].name != expected_sdist:
         failures.append(f"expected exact sdist filename: {expected_sdist}")
     return failures
@@ -2137,6 +2354,42 @@ def _payload_mismatch_failures(
         for name in sorted(shared)
         if _hash(wheel_payloads[name]) != _hash(sdist_payloads[name])
     ]
+
+
+def _wheel_profile_parity_failures(
+    portable_payloads: dict[str, bytes],
+    windows_payloads: dict[str, bytes],
+    *,
+    version: str,
+) -> list[str]:
+    """Require both release wheels to differ only where their profiles require."""
+
+    failures: list[str] = []
+    portable_names = set(portable_payloads)
+    windows_names = set(windows_payloads)
+    windows_only = windows_names - portable_names
+    portable_only = portable_names - windows_names
+    if portable_only:
+        failures.append(
+            "portable wheel contains profile-exclusive payloads: "
+            + ", ".join(sorted(portable_only))
+        )
+    if windows_only != {NATIVE_OPERATOR_PRESENCE_EXECUTABLE}:
+        failures.append(
+            "Windows wheel profile-exclusive payloads must contain only the reviewed PE: "
+            + ", ".join(sorted(windows_only))
+        )
+    dist_info = f"agency_runtime-{version}.dist-info"
+    permitted_metadata_differences = {
+        f"{dist_info}/RECORD",
+        f"{dist_info}/WHEEL",
+    }
+    failures.extend(
+        f"wheel profile shared payload mismatch: {name}"
+        for name in sorted((portable_names & windows_names) - permitted_metadata_differences)
+        if portable_payloads[name] != windows_payloads[name]
+    )
+    return failures
 
 
 def _console_scripts_payload_failures(payload: bytes, *, label: str) -> list[str]:
@@ -2302,7 +2555,12 @@ def _metadata_parity_failures(
     return failures
 
 
-def _wheel_control_failures(dist_info: str, wheel_payloads: dict[str, bytes]) -> list[str]:
+def _wheel_control_failures(
+    dist_info: str,
+    wheel_payloads: dict[str, bytes],
+    *,
+    profile: WheelProfile = PORTABLE_WHEEL_PROFILE,
+) -> list[str]:
     payload = wheel_payloads.get(f"{dist_info}/WHEEL")
     if payload is None:
         return []
@@ -2317,8 +2575,8 @@ def _wheel_control_failures(dist_info: str, wheel_payloads: dict[str, bytes]) ->
         failures.append("wheel control metadata contains unsupported headers or syntax")
     expected = {
         "wheel-version": "1.0",
-        "root-is-purelib": "true",
-        "tag": "py3-none-any",
+        "root-is-purelib": str(profile.root_is_purelib).lower(),
+        "tag": profile.tag,
     }
     for name, value in expected.items():
         if header_counts[name] != 1 or metadata.get(name) != value:
@@ -2551,10 +2809,13 @@ def _metadata_failures(
     expected_dependencies: tuple[str, ...],
     expected_license: bytes,
     expected_core_metadata: _CoreMetadataProjection,
+    profile: WheelProfile = PORTABLE_WHEEL_PROFILE,
+    artifact: str = "wheel",
+    expected_license_payloads: tuple[tuple[str, bytes], ...] = (),
 ) -> list[str]:
     failures = _project_metadata_failures(
         metadata,
-        label="wheel METADATA",
+        label=f"{artifact} METADATA",
         expected_version=expected_version,
         expected_dependencies=expected_dependencies,
         expected_core_metadata=expected_core_metadata,
@@ -2564,7 +2825,13 @@ def _metadata_failures(
     if metadata_name != f"{expected_dist_info}/METADATA":
         failures.append(f"unexpected wheel metadata path: {metadata_name}")
 
-    for required in sorted(WHEEL_METADATA_FILES - {"METADATA"}):
+    license_payloads = (
+        expected_license_payloads if expected_license_payloads else (("LICENSE", expected_license),)
+    )
+    wheel_metadata_files = WHEEL_METADATA_FILES | {
+        f"licenses/{name}" for name, _payload in license_payloads
+    }
+    for required in sorted(wheel_metadata_files - {"METADATA"}):
         name = f"{expected_dist_info}/{required}"
         if name not in wheel_names:
             failures.append(f"wheel missing metadata file: {name}")
@@ -2574,10 +2841,13 @@ def _metadata_failures(
         if payload is not None:
             failures.extend(_generated_lf_failures(f"wheel generated {relative}", payload))
 
-    license_payload = wheel_payloads.get(f"{expected_dist_info}/licenses/LICENSE")
-    if license_payload is not None and license_payload != expected_license:
-        failures.append("wheel license payload differs from committed HEAD")
-    failures.extend(_wheel_control_failures(expected_dist_info, wheel_payloads))
+    for source_name, expected_payload in license_payloads:
+        license_name = f"{expected_dist_info}/licenses/{source_name}"
+        license_payload = wheel_payloads.get(license_name)
+        if license_payload is not None and license_payload != expected_payload:
+            suffix = f": {source_name}" if expected_license_payloads else ""
+            failures.append(f"{artifact} license payload differs from committed HEAD{suffix}")
+    failures.extend(_wheel_control_failures(expected_dist_info, wheel_payloads, profile=profile))
     failures.extend(_console_script_failures(expected_dist_info, wheel_payloads))
     failures.extend(_top_level_package_failures(expected_dist_info, wheel_payloads))
     failures.extend(_record_failures(expected_dist_info, wheel_payloads))
@@ -2589,10 +2859,18 @@ def verify(
     *,
     repository_root: Path | None = None,
     expected_commit: str | None = None,
+    artifact_set: str = ARTIFACT_SET_PORTABLE,
 ) -> list[str]:
     failures: list[str] = []
     if expected_commit is None:
         return ["distribution verification requires an expected reviewed commit"]
+    resolved_artifact_set = (
+        host_wheel_profile().name if artifact_set == ARTIFACT_SET_HOST else artifact_set
+    )
+    try:
+        wheel_profiles = wheel_profiles_for_artifact_set(resolved_artifact_set)
+    except ValueError as exc:
+        return [str(exc)]
     root = (
         Path(__file__).resolve().parents[1]
         if repository_root is None
@@ -2623,16 +2901,26 @@ def verify(
         return [str(exc)]
 
     try:
-        with _bound_distribution_artifacts(dist_dir, version=version) as (
-            wheel_stream,
-            sdist_stream,
-        ):
-            wheel_names, wheel_payloads = _wheel_payload(
-                wheel_stream,
-                expected_timestamp=reviewed_timestamp,
-            )
+        with _bound_distribution_artifacts(
+            dist_dir,
+            version=version,
+            artifact_set=resolved_artifact_set,
+        ) as artifact_streams:
+            if len(artifact_streams) != len(wheel_profiles) + 1:
+                raise ValueError("distribution artifact binding count is invalid")
+            wheels: list[tuple[WheelProfile, set[str], dict[str, bytes]]] = []
+            for profile, wheel_stream in zip(
+                wheel_profiles,
+                artifact_streams[:-1],
+                strict=True,
+            ):
+                wheel_names, wheel_payloads = _wheel_payload(
+                    wheel_stream,
+                    expected_timestamp=reviewed_timestamp,
+                )
+                wheels.append((profile, wheel_names, wheel_payloads))
             sdist_names, sdist_payloads = _sdist_payload(
-                sdist_stream,
+                artifact_streams[-1],
                 expected_root=f"agency_runtime-{version}",
                 expected_timestamp=reviewed_timestamp,
             )
@@ -2641,48 +2929,36 @@ def verify(
     except (OSError, tarfile.TarError, zipfile.BadZipFile, ValueError) as exc:
         return [str(exc)]
 
-    try:
-        metadata_name, metadata_payload = _metadata(wheel_payloads)
-        metadata = BytesParser(policy=policy.default).parsebytes(metadata_payload)
-    except ValueError as exc:
-        return [str(exc)]
+    wheel_metadata: list[tuple[WheelProfile, str, Message]] = []
+    for profile, _wheel_names, wheel_payloads in wheels:
+        try:
+            metadata_name, metadata_payload = _metadata(wheel_payloads)
+            metadata = BytesParser(policy=policy.default).parsebytes(metadata_payload)
+        except ValueError as exc:
+            return [str(exc)]
+        wheel_metadata.append((profile, metadata_name, metadata))
 
     committed_package_files = set(committed_package)
     committed_support_files = set(committed_support)
     committed_sdist_files = committed_package_files | committed_support_files
-    required_package_files = REQUIRED_PACKAGE_FILES | committed_package_files
-    required_sdist_files = REQUIRED_SDIST_FILES | committed_sdist_files
+    required_sdist_files = REQUIRED_SDIST_FILES | REQUIRED_PACKAGE_FILES | committed_sdist_files
+    native_assets_required = required_sdist_files >= NATIVE_OPERATOR_PRESENCE_FILES
+    wheel_metadata_files = WHEEL_METADATA_FILES | {
+        f"licenses/{name}" for name, _payload in project_contract.license_payloads
+    }
     failures.extend(
-        _missing_file_failures(
-            set(wheel_payloads),
-            set(sdist_payloads),
-            required_package_files,
-            required_sdist_files,
-        )
-    )
-    failures.extend(
-        _wheel_payload_contract_failures(
-            wheel_payloads,
-            committed_package_files,
-            version=version,
+        _immutable_third_party_failures(
+            sdist_payloads,
+            artifact="sdist",
         )
     )
     failures.extend(_sdist_payload_contract_failures(sdist_payloads, committed_sdist_files))
-    for artifact, names in (("wheel", wheel_names), ("sdist", sdist_names)):
-        failures.extend(_junk_failures(artifact, names))
+    failures.extend(_junk_failures("sdist", sdist_names))
     failures.extend(
-        _payload_mismatch_failures(
-            required_package_files,
-            wheel_payloads,
+        _native_operator_presence_failures(
             sdist_payloads,
-        )
-    )
-    failures.extend(
-        _committed_payload_failures(
-            "wheel",
-            wheel_payloads,
-            committed_package,
-            object_algorithm,
+            artifact="sdist",
+            executable_required=native_assets_required,
         )
     )
     failures.extend(
@@ -2702,19 +2978,6 @@ def verify(
         )
     )
     failures.extend(
-        _metadata_failures(
-            metadata_name,
-            metadata,
-            set(wheel_payloads),
-            wheel_payloads,
-            expected_version=version,
-            expected_dependencies=expected_dependencies,
-            expected_license=project_contract.license_payload,
-            expected_core_metadata=project_contract.core_metadata,
-        )
-    )
-    failures.extend(_metadata_parity_failures(metadata, sdist_payloads))
-    failures.extend(
         _sdist_generated_metadata_failures(
             sdist_payloads,
             expected_version=version,
@@ -2722,6 +2985,99 @@ def verify(
             expected_core_metadata=project_contract.core_metadata,
         )
     )
+    for index, ((profile, wheel_names, wheel_payloads), metadata_item) in enumerate(
+        zip(wheels, wheel_metadata, strict=True)
+    ):
+        _metadata_profile, metadata_name, metadata = metadata_item
+        artifact = (
+            "wheel" if resolved_artifact_set != ARTIFACT_SET_RELEASE else f"{profile.name} wheel"
+        )
+        committed_profile = dict(committed_package)
+        required_package_files = REQUIRED_PACKAGE_FILES | committed_package_files
+        if not profile.includes_native_executable:
+            committed_profile.pop(NATIVE_OPERATOR_PRESENCE_EXECUTABLE, None)
+            required_package_files.discard(NATIVE_OPERATOR_PRESENCE_EXECUTABLE)
+        committed_profile_files = set(committed_profile)
+        failures.extend(
+            _immutable_third_party_failures(
+                wheel_payloads,
+                artifact=f"{artifact} package payload",
+            )
+        )
+        failures.extend(
+            _immutable_third_party_failures(
+                wheel_payloads,
+                artifact=f"{artifact} license metadata",
+                path_prefix=f"agency_runtime-{version}.dist-info/licenses/",
+            )
+        )
+        failures.extend(
+            _missing_file_failures(
+                set(wheel_payloads),
+                set(sdist_payloads),
+                required_package_files,
+                required_sdist_files,
+                wheel_artifact=artifact,
+                check_sdist=index == 0,
+            )
+        )
+        failures.extend(
+            _wheel_payload_contract_failures(
+                wheel_payloads,
+                committed_profile_files,
+                version=version,
+                artifact=artifact,
+                license_files=wheel_metadata_files,
+            )
+        )
+        failures.extend(_junk_failures(artifact, wheel_names))
+        failures.extend(
+            _payload_mismatch_failures(
+                required_package_files,
+                wheel_payloads,
+                sdist_payloads,
+            )
+        )
+        failures.extend(
+            _native_operator_presence_failures(
+                wheel_payloads,
+                artifact=artifact,
+                executable_required=(profile.includes_native_executable and native_assets_required),
+                executable_forbidden=not profile.includes_native_executable,
+            )
+        )
+        failures.extend(
+            _committed_payload_failures(
+                artifact,
+                wheel_payloads,
+                committed_profile,
+                object_algorithm,
+            )
+        )
+        failures.extend(
+            _metadata_failures(
+                metadata_name,
+                metadata,
+                set(wheel_payloads),
+                wheel_payloads,
+                expected_version=version,
+                expected_dependencies=expected_dependencies,
+                expected_license=project_contract.license_payload,
+                expected_core_metadata=project_contract.core_metadata,
+                profile=profile,
+                artifact=artifact,
+                expected_license_payloads=project_contract.license_payloads,
+            )
+        )
+        failures.extend(_metadata_parity_failures(metadata, sdist_payloads))
+    if resolved_artifact_set == ARTIFACT_SET_RELEASE:
+        failures.extend(
+            _wheel_profile_parity_failures(
+                wheels[0][2],
+                wheels[1][2],
+                version=version,
+            )
+        )
     try:
         _reviewed_checkout(root, reviewed_commit, git=git)
     except (OSError, RuntimeError, ValueError) as exc:
@@ -2737,15 +3093,30 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         help="Full immutable Git commit object ID captured before the build",
     )
+    parser.add_argument(
+        "--artifact-set",
+        choices=(
+            ARTIFACT_SET_HOST,
+            ARTIFACT_SET_PORTABLE,
+            ARTIFACT_SET_WINDOWS_X64,
+            ARTIFACT_SET_RELEASE,
+        ),
+        default=ARTIFACT_SET_HOST,
+        help="Exact artifact contract to verify (default: profile derived from this host)",
+    )
     args = parser.parse_args(argv)
     lexical_dist = Path(os.path.abspath(os.path.expanduser(os.fspath(args.dist_dir))))
-    failures = verify(lexical_dist, expected_commit=args.expected_commit)
+    failures = verify(
+        lexical_dist,
+        expected_commit=args.expected_commit,
+        artifact_set=args.artifact_set,
+    )
     if failures:
         print("Distribution verification failed:", file=sys.stderr)
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
         return 1
-    print("Distribution verification passed (wheel and sdist contents match release policy).")
+    print("Distribution verification passed (artifact contents match release policy).")
     return 0
 
 

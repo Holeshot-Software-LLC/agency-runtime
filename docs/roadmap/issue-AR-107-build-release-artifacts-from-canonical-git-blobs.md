@@ -3,7 +3,7 @@ title: "AR-107: Build release artifacts from canonical Git blobs"
 status: done
 category: roadmap
 created: 2026-07-19
-updated: 2026-07-20
+updated: 2026-07-27
 tags: [release, packaging, windows, portability, reproducibility]
 related:
   - .github/workflows/ci.yml
@@ -16,9 +16,11 @@ related:
   - docs/RELEASE_CHECKLIST.md
   - CONTRIBUTING.md
   - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
+  - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
+  - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -30,7 +32,7 @@ tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/109
 depends_on:
   - AR-108
   - AR-109
-blocks: []
+blocks: [AR-160]
 ---
 
 # AR-107: Build release artifacts from canonical Git blobs
@@ -105,3 +107,17 @@ PR #111 and PR #114 both passed the hosted artifact byte-parity gate and the
 command-scoped `core.autocrlf=true` canonical-blob proof. The exact merged
 commit was rebuilt and independently verified before installation; publication
 remains a separate authorization-gated action.
+
+## Post-completion platform split
+
+AR-107 completed the then-current contract for one portable wheel and source
+distribution. The later Windows x64 operator-presence helper makes that single
+`py3-none-any` payload model inapplicable to a production release. AR-160 and
+ADR-0098 extend, rather than erase, this evidence: canonical Git-blob inputs,
+deterministic containers, independent verification, and cross-host parity still
+apply per logical artifact, while the portable and `win_amd64` wheels are
+deliberately different. Each host producer still emits one canonical
+wheel/source pair; the merge gate proves byte-identical producer source
+distributions and shared wheel payloads before assembling the two wheels plus
+one source distribution. AR-107 remains done; AR-160 owns the new
+three-artifact release gate.

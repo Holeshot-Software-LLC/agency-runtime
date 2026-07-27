@@ -40,6 +40,8 @@ try:  # Support both ``python -m scripts...`` and direct script execution.
         MAX_RELEASE_TOTAL_BYTES,
         MAX_TREE_MANIFEST_BYTES,
         RELEASE_SOURCE_PATHS,
+        WheelProfile,
+        host_wheel_profile,
         is_release_source,
         partition_release_payloads,
         reviewed_checkout,
@@ -56,6 +58,8 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct-script compatibi
         MAX_RELEASE_TOTAL_BYTES,
         MAX_TREE_MANIFEST_BYTES,
         RELEASE_SOURCE_PATHS,
+        WheelProfile,
+        host_wheel_profile,
         is_release_source,
         partition_release_payloads,
         reviewed_checkout,
@@ -747,6 +751,7 @@ def _artifacts(
     directory: Path,
     *,
     expected_directory: DirectoryIdentity | None = None,
+    profile: WheelProfile | None = None,
 ) -> tuple[Path, Path, tuple[ArtifactIdentity, ...]]:
     if expected_directory is not None:
         _require_directory_identity(directory, expected_directory)
@@ -768,6 +773,11 @@ def _artifacts(
         raise RuntimeError(
             "distribution build must produce exactly one wheel and one source archive"
         )
+    if profile is not None and not wheels[0].name.endswith(f"-{profile.tag}.whl"):
+        raise RuntimeError(
+            "distribution build produced a wheel outside the host-derived profile: "
+            f"expected {profile.tag}, found {wheels[0].name}"
+        )
     return wheels[0], sdists[0], identities
 
 
@@ -776,10 +786,12 @@ def _require_artifact_identities(
     expected: tuple[ArtifactIdentity, ...],
     *,
     expected_directory: DirectoryIdentity,
+    profile: WheelProfile | None = None,
 ) -> None:
     _wheel, _sdist, observed = _artifacts(
         directory,
         expected_directory=expected_directory,
+        profile=profile,
     )
     if observed != tuple(sorted(expected, key=lambda item: item.name)):
         raise RuntimeError("distribution artifacts changed identity before publication")
@@ -875,6 +887,7 @@ def build_distributions(
         bootstrap_private_directory(requested_parent)
     output = _checked_destination(root, destination, git)
     timestamp = _commit_timestamp(git, expected_commit)
+    profile = host_wheel_profile()
 
     with (
         tempfile.TemporaryDirectory(
@@ -898,11 +911,13 @@ def build_distributions(
         wheel, sdist, _ = _artifacts(
             staged,
             expected_directory=staged_identity,
+            profile=profile,
         )
         canonicalize_distributions(wheel, sdist, timestamp=timestamp)
         wheel, sdist, artifact_identities = _artifacts(
             staged,
             expected_directory=staged_identity,
+            profile=profile,
         )
         reviewed_checkout(root, expected_commit, git=git)
         _require_directory_identity(staged, staged_identity)
@@ -910,6 +925,7 @@ def build_distributions(
             staged,
             artifact_identities,
             expected_directory=staged_identity,
+            profile=profile,
         )
         _publish_no_replace(staged, output)
         _require_directory_identity(output, staged_identity)
@@ -917,6 +933,7 @@ def build_distributions(
             output,
             artifact_identities,
             expected_directory=staged_identity,
+            profile=profile,
         )
 
     return output / wheel.name, output / sdist.name

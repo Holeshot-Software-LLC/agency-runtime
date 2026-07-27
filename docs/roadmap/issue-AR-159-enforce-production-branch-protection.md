@@ -7,6 +7,8 @@ updated: 2026-07-27
 tags: [release, security, github, governance, ci]
 related:
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
+  - docs/roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md
+  - docs/roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md
   - docs/RELEASE_CHECKLIST.md
@@ -18,7 +20,7 @@ epic: release
 issue_id: AR-159
 priority: p0
 tracker_url: null
-depends_on: [AR-156]
+depends_on: [AR-156, AR-162, AR-165]
 blocks: []
 ---
 

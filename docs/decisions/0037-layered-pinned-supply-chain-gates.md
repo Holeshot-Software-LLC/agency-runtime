@@ -19,6 +19,7 @@ related:
   - docs/roadmap/issue-AR-106-portable-windows-policy-and-posix-simulations.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
+  - docs/roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/worklog/README.md
 supersedes: []
@@ -54,10 +55,16 @@ Use a layered release gate with these properties:
 3. Run deterministic source hygiene and secret/path checks, Ruff, Bandit,
    runtime dependency auditing, offline workflow auditing, CodeQL for Python
    and JavaScript, and pull-request dependency review. Probe GitHub's
-   dependency-diff capability first: use native review when available and the
-   strict exact installed-runtime vulnerability audit when it is not, without
-   silently enabling a potentially billable repository security product. Probe
-   native CodeQL capability before registering its actions: initialize, analyze,
+   dependency-diff capability first: use native review when available. Accept
+   the unavailable path only when authenticated repository identity proves the
+   expected private or internal non-fork repository and read authority, and the
+   bounded comparison response is GitHub's exact documented HTTP 403 `Forbidden`
+   tuple. Authentication, rate-limit, malformed, not-found, scope-mismatch, and
+   all other ambiguous responses fail closed. On the recognized unavailable
+   boundary, run the strict exact installed-runtime vulnerability audit as
+   explicitly non-equivalent compensating evidence, without silently enabling a
+   potentially billable repository security product. Probe native CodeQL
+   capability before registering its actions: initialize, analyze,
    and upload only where repository visibility and GitHub Code Security licensing
    permit them. Accept the unavailable path only for a private or internal
    repository whose HTTP 403 body exactly identifies Code Security as not
@@ -80,8 +87,9 @@ Use a layered release gate with these properties:
 - CI configuration is itself audited and receives the same immutable-input
   discipline as product code.
 - Private repositories without licensed dependency review retain an enforced
-  vulnerability gate, while public or licensed repositories automatically use
-  GitHub's base-versus-head dependency review.
+  vulnerability gate that is explicitly not equivalent to dependency-diff
+  review, while public or licensed repositories automatically use GitHub's
+  base-versus-head dependency review. Ambiguous capability evidence fails.
 - Public or licensed repositories automatically receive native CodeQL analysis
   and upload. Private or internal repositories with a positively identified
   missing entitlement record the capability boundary without implying that

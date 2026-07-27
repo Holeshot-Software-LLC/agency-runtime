@@ -415,6 +415,46 @@ def test_metadata_contract_reports_path_and_missing_dist_info_members() -> None:
     assert any(failure.startswith("wheel missing metadata file:") for failure in failures)
 
 
+def test_metadata_contract_binds_multiple_pep639_license_payloads() -> None:
+    metadata_payload = _metadata(extra_headers=("License-File: THIRD_PARTY_NOTICES.md",))
+    metadata = BytesParser(policy=policy.default).parsebytes(metadata_payload)
+    expected_licenses = (
+        ("LICENSE", b"license"),
+        ("THIRD_PARTY_NOTICES.md", b"notices"),
+    )
+    payloads = {
+        f"{DIST_INFO}/METADATA": metadata_payload,
+        f"{DIST_INFO}/licenses/LICENSE": b"license",
+        f"{DIST_INFO}/licenses/THIRD_PARTY_NOTICES.md": b"notices",
+    }
+    failures = subject._metadata_failures(
+        f"{DIST_INFO}/METADATA",
+        metadata,
+        set(payloads),
+        payloads,
+        expected_version=VERSION,
+        expected_dependencies=("pyyaml<7,>=6.0",),
+        expected_license=b"license",
+        expected_core_metadata=subject._canonical_project_metadata_projection(metadata),
+        expected_license_payloads=expected_licenses,
+    )
+    assert not [failure for failure in failures if "license" in failure.casefold()]
+
+    payloads[f"{DIST_INFO}/licenses/THIRD_PARTY_NOTICES.md"] = b"tampered"
+    failures = subject._metadata_failures(
+        f"{DIST_INFO}/METADATA",
+        metadata,
+        set(payloads),
+        payloads,
+        expected_version=VERSION,
+        expected_dependencies=("pyyaml<7,>=6.0",),
+        expected_license=b"license",
+        expected_core_metadata=subject._canonical_project_metadata_projection(metadata),
+        expected_license_payloads=expected_licenses,
+    )
+    assert "wheel license payload differs from committed HEAD: THIRD_PARTY_NOTICES.md" in failures
+
+
 def _stub_verification_pipeline(
     monkeypatch: pytest.MonkeyPatch,
     *,

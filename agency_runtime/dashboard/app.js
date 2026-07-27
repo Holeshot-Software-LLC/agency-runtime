@@ -165,6 +165,8 @@ export function createDashboard(runtime = globalThis) {
 		if (confirmation) confirmation.hidden = true;
 		const configForm = byId("config-form");
 		if (configForm) configForm.setAttribute("aria-label", "Effective configuration (read-only)");
+		const privacy = byId("privacy-chip");
+		if (privacy?.textContent === "Metadata only") privacy.textContent = "Runtime metadata only";
 		document.querySelectorAll(
 			"#config-form input, #config-form select, #config-form textarea, #config-form button",
 		).forEach((control) => {

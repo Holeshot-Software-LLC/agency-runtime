@@ -519,7 +519,7 @@ def test_command_backend_returns_actual_spawned_process_id(
         lambda *_args, **_kwargs: None,
     )
     backend = GenericCLIBackend(
-        command=(sys.executable, "-c", "print('done')"),
+        command=(getattr(sys, "_base_executable", sys.executable), "-c", "print('done')"),
         timeout=10,
     )
 
@@ -804,12 +804,12 @@ def test_codex_exec_freezes_and_revalidates_executable_before_launch(
     monkeypatch.setattr(
         process_argv,
         "prepare_process_argv",
-        lambda argv: observed.append(("prepare", list(argv))) or prepared,
+        lambda argv, **_kwargs: observed.append(("prepare", list(argv))) or prepared,
     )
     monkeypatch.setattr(
         process_argv,
         "freeze_process_argv",
-        lambda argv: observed.append(("freeze", argv)) or frozen,
+        lambda argv, **_kwargs: observed.append(("freeze", argv)) or frozen,
     )
     monkeypatch.setattr(
         process_argv,
@@ -839,8 +839,16 @@ def test_codex_exec_does_not_launch_when_identity_revalidation_fails(
 
     launched = False
     frozen = ["C:/trusted/codex.exe", "exec", "task"]
-    monkeypatch.setattr(process_argv, "prepare_process_argv", lambda _argv: frozen)
-    monkeypatch.setattr(process_argv, "freeze_process_argv", lambda argv: argv)
+    monkeypatch.setattr(
+        process_argv,
+        "prepare_process_argv",
+        lambda _argv, **_kwargs: frozen,
+    )
+    monkeypatch.setattr(
+        process_argv,
+        "freeze_process_argv",
+        lambda argv, **_kwargs: argv,
+    )
     monkeypatch.setattr(
         process_argv,
         "revalidate_process_argv",

@@ -12,13 +12,28 @@ export function isRecord(value) {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+const REQUEST_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function safeRequestId(value) {
+	const requestId = typeof value === "string" ? value.trim() : "";
+	return REQUEST_ID_PATTERN.test(requestId) ? requestId : "";
+}
+
+export function withRequestId(message, requestId) {
+	const text = String(message || "Request failed.").trim();
+	const safeId = safeRequestId(requestId);
+	if (!safeId || text.includes(`Request ID ${safeId}`)) return text;
+	return `${text}${/[.!?]$/.test(text) ? "" : "."} Request ID ${safeId}.`;
+}
+
 export class APIError extends Error {
 	constructor(message, status, retryAfter = null, requestId = "") {
-		super(message);
+		const safeId = safeRequestId(requestId);
+		super(withRequestId(message, safeId));
 		this.name = "APIError";
 		this.status = status;
 		this.retryAfter = retryAfter;
-		this.requestId = requestId;
+		this.requestId = safeId;
 	}
 }
 
@@ -310,12 +325,10 @@ export function createCore(runtime = globalThis) {
 		}
 		let payload;
 		try { payload = await response.json(); } catch { payload = { error: `HTTP ${response.status}` }; }
-		const responseId = String(
-			payload?.request_id
-				|| response.headers.get("X-Agency-Request-ID")
-				|| response.headers.get("X-Request-ID")
-				|| requestId,
-		);
+		const responseId = safeRequestId(payload?.request_id)
+			|| safeRequestId(response.headers.get("X-Agency-Request-ID"))
+			|| safeRequestId(response.headers.get("X-Request-ID"))
+			|| requestId;
 		if (!response.ok) {
 			runtime.console?.error?.(
 				`Agency dashboard request ${responseId} failed with HTTP ${response.status}.`,
@@ -418,6 +431,7 @@ export function createCore(runtime = globalThis) {
 		el,
 		formatBytes,
 		formatTime,
+		withRequestId,
 		showNotice,
 		clearNotice,
 		requestConfirmation,

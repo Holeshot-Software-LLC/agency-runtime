@@ -73,6 +73,112 @@ def test_sanitized_path_excludes_nested_workspace_entries_across_windows_drives(
     assert sanitized == r"D:\Trusted\bin"
 
 
+def test_repository_boundary_excludes_sibling_bin_from_nested_workdir(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repo"
+    nested = repository / "src"
+    poisoned_bin = repository / "bin"
+    trusted_bin = tmp_path / "trusted-bin"
+    (repository / ".git").mkdir(parents=True)
+    nested.mkdir()
+    poisoned = _write_tool(poisoned_bin / _tool_name("codex"), b"repository poison")
+    trusted = _write_tool(trusted_bin / _tool_name("codex"), b"trusted")
+
+    forbidden_roots = process_argv.repository_forbidden_roots(nested)
+    search_path = os.pathsep.join((str(poisoned_bin), str(trusted_bin)))
+
+    assert nested.resolve() in forbidden_roots
+    assert repository.resolve() in forbidden_roots
+    assert sanitized_executable_search_path(
+        search_path,
+        current_directory=nested,
+        forbidden_roots=forbidden_roots,
+    ) == str(trusted_bin)
+    assert (
+        Path(
+            process_argv.resolve_executable_path(
+                poisoned.name,
+                search_path=search_path,
+                current_directory=nested,
+                forbidden_roots=forbidden_roots,
+            )
+        ).resolve()
+        == trusted.resolve()
+    )
+
+
+def test_repository_boundary_preserves_normal_nonrepository_path(
+    tmp_path: Path,
+) -> None:
+    working = tmp_path / "working"
+    trusted_bin = tmp_path / "trusted-bin"
+    working.mkdir()
+    trusted = _write_tool(trusted_bin / _tool_name("codex"))
+
+    forbidden_roots = process_argv.repository_forbidden_roots(working)
+
+    assert forbidden_roots == (working.resolve(),)
+    assert (
+        Path(
+            process_argv.resolve_executable_path(
+                trusted.name,
+                search_path=str(trusted_bin),
+                current_directory=working,
+                forbidden_roots=forbidden_roots,
+            )
+        ).resolve()
+        == trusted.resolve()
+    )
+
+
+def test_resolver_and_explicit_argv0_cannot_bypass_forbidden_root(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repo"
+    repository.mkdir()
+    poisoned = _write_tool(repository / _tool_name("codex"))
+
+    with pytest.raises(OSError, match="must not reside in the target repository"):
+        process_argv.resolve_executable_path(
+            str(poisoned),
+            forbidden_roots=(repository,),
+        )
+    with pytest.raises(OSError, match="must not reside in the target repository"):
+        process_argv.resolve_executable_path(
+            poisoned.name,
+            resolver=lambda _name: str(poisoned),
+            forbidden_roots=(repository,),
+        )
+
+
+def test_windows_forbidden_root_is_case_insensitive_for_wrappers() -> None:
+    with pytest.raises(OSError, match="must not reside in the target repository"):
+        process_argv.resolve_executable_path(
+            r"c:\REPO\bin\Codex.CMD",
+            platform_name="nt",
+            forbidden_roots=(r"C:\repo",),
+        )
+
+
+def test_symlinked_path_entry_cannot_alias_into_forbidden_root(tmp_path: Path) -> None:
+    repository = tmp_path / "repo"
+    poisoned_bin = repository / "bin"
+    poisoned = _write_tool(poisoned_bin / _tool_name("codex"))
+    alias = tmp_path / "apparently-trusted"
+    try:
+        alias.symlink_to(poisoned_bin, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"directory symlinks are unavailable: {exc}")
+
+    with pytest.raises(OSError, match="must not reside in the target repository"):
+        process_argv.resolve_executable_path(
+            poisoned.name,
+            search_path=str(alias),
+            forbidden_roots=(repository,),
+        )
+
+
 @pytest.mark.parametrize(
     "value",
     [".", "..", "./codex", "bin/codex", r".\codex", r"bin\codex", r"C:codex.exe"],
@@ -186,6 +292,36 @@ def test_git_ignores_fake_executable_in_target_repository(
     result = lifecycle_git.run_git(repo, ["status", "--porcelain"])
 
     assert result.returncode == 0
+    assert Path(observed["argv"][0]).resolve() == Path(real_git).resolve()
+    assert Path(observed["argv"][0]).resolve() != fake_git.resolve()
+
+
+def test_git_root_discovery_ignores_sibling_repo_bin_from_nested_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_git = shutil.which("git")
+    if real_git is None:
+        pytest.skip("Git is unavailable")
+    repository = tmp_path / "repo"
+    nested = repository / "src"
+    (repository / ".git").mkdir(parents=True)
+    nested.mkdir()
+    fake_git = _write_tool(repository / "bin" / Path(real_git).name, b"repository poison")
+    monkeypatch.setenv(
+        "PATH",
+        os.pathsep.join((str(fake_git.parent), str(Path(real_git).parent))),
+    )
+    observed: dict[str, Any] = {}
+
+    def run(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
+        observed["argv"] = argv
+        observed.update(kwargs)
+        return BoundedProcessResult(0, str(repository), "")
+
+    monkeypatch.setattr(lifecycle_git, "run_bounded_process", run)
+
+    assert lifecycle_git.git_root(nested) == repository.resolve()
     assert Path(observed["argv"][0]).resolve() == Path(real_git).resolve()
     assert Path(observed["argv"][0]).resolve() != fake_git.resolve()
 

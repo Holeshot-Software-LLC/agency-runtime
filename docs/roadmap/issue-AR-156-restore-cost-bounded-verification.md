@@ -12,6 +12,7 @@ related:
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - docs/decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md
   - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
+  - docs/roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md
   - .github/workflows/ci.yml
   - scripts/select_test_shard.py
   - scripts/pytest_file_timing.py
@@ -21,8 +22,10 @@ related:
   - scripts/parallel_change_loop_runtime.py
   - scripts/parallel_change_loop_storage.py
   - scripts/prepare_ci_runtime.py
+  - scripts/run_ci_session_pair.py
   - tests/conftest.py
   - tests/test_ci_sharding.py
+  - tests/test_ci_session_pair.py
   - tests/test_doctor.py
   - tests/test_parallel_change_loop.py
   - tests/test_test_shard_profile.py
@@ -75,6 +78,17 @@ same-revision quality. Preserve serial compatibility on Ubuntu/Python 3.10,
 non-performance union through four coverage shards and retain uninstrumented
 Python 3.13 performance.
 
+Consolidate hosted scheduling without consolidating Python sessions. Run the
+four Python 3.13 coverage shards as two concurrent pairs on two Ubuntu jobs,
+and run the six serial compatibility sessions as three OS-matched pairs on two
+Ubuntu jobs and one Windows job. Each member remains a separate exact-version
+Python process in its own owned process tree with distinct HOME, TEMP, pytest
+base, and coverage-data paths. A purpose-built cross-platform controller
+requires both results, fails closed on missing or truncated output, continues
+the peer after an ordinary test failure to preserve matrix `fail-fast: false`,
+and cancels and reaps both trees on controller failure, interruption, timeout,
+containment failure, invalid coverage, or truncated evidence.
+
 Add a cross-platform local runner that uses the same deterministic file
 partitioner and one stable, contract-attested, read-only Python runtime. Give
 each shard a separate HOME, TEMP, and pytest base directory; execute the exact
@@ -107,10 +121,15 @@ quantitative claims to use recorded controls rather than inferred speedups.
   `main` and manual runs require it to succeed.
 - No aggregate path accepts cancelled, failed, missing, or unexpectedly skipped
   production gates.
-- Six serial compatibility cells, four exact Python 3.13 coverage shards, and
-  all PR performance, portability, artifact, security, documentation, and UI
-  gates remain intact. The accepted serial-versus-sharded non-equivalence is
-  explicit in ADR-0097.
+- Six serial compatibility sessions across three OS-matched paired jobs, four
+  exact Python 3.13 coverage shards across two paired Ubuntu jobs, and all PR
+  performance, portability, artifact, security, documentation, and UI gates
+  remain intact. The accepted serial-versus-sharded non-equivalence is explicit
+  in ADR-0097.
+- Every paired member uses the exact setup-python interpreter, a separate
+  attested runtime, HOME, TEMP, pytest base, and COVERAGE_FILE. Output remains
+  bounded and labeled, truncation fails closed, compatibility keeps its
+  per-interpreter `pip check`, and cancellation leaves no child tree running.
 - Fast dependency, static, workflow, and UI checks cover the same PR merge
   revision as downstream jobs before expensive fanout. History-derived ledgers
   deliberately re-check out the complete durable head.
@@ -148,11 +167,64 @@ expensive CI root and performs `pip check`, Ruff, formatting, whitespace,
 workflow contracts, and dashboard UI coverage before fanout. It then checks out
 the complete durable head solely for documentation ledgers. The aggregate is
 event-aware and rejects failed, cancelled, missing, malformed, unexpectedly
-skipped, or unexpected dependency results. Six serial compatibility cells,
-four Python 3.13 coverage shards, performance, portability, artifacts, security,
-documentation, and dashboard gates remain. ADR-0097 records that sharded Python
-3.13 execution does not reproduce one serial process's ordering or session
-fixture lifetime.
+skipped, or unexpected dependency results. Six serial compatibility sessions
+scheduled across three OS-matched paired jobs, four Python 3.13 coverage shards
+scheduled across two paired Ubuntu jobs, performance, portability, artifacts,
+security, documentation, and dashboard gates remain. ADR-0097 records that
+sharded Python 3.13 execution does not reproduce one serial process's ordering
+or session fixture lifetime.
+
+The paired controller verifies each setup-python path and version before
+building an attested private runtime, supplies disjoint state paths, invokes
+pytest and `pip check` as contained subprocesses, preserves both peer results,
+and emits only fixed-size labeled head-and-tail evidence. An ordinary nonzero
+pytest or `pip check` result preserves the peer result; timeout, cancellation,
+containment failure, truncated evidence, or invalid/missing coverage actively
+cancels and reaps the peer. Interpreter probes, runtime preparation, and pytest
+children strip GitHub command-file and credential capabilities while retaining
+nonsecret revision, workspace, runner, and CI identity. Workflow contracts pin
+the exact pair union and reject dropping a shard, version, OS endpoint, or
+dependency check. This reduces these two surfaces from ten hosted jobs to five
+and removes five hosted job/checkout envelopes while reducing setup-python
+invocations from ten to eight. A near-50-percent runner-minute reduction is
+only a best-case projection: shared-runner contention and hosted startup
+behavior have not been measured, and GitHub's current billing/spending rejection
+prevents green hosted evidence. No savings claim is accepted until matched
+hosted runs exist.
+
+The exact topology change is ten jobs to five, a 50-percent job-count
+reduction. If the ten session durations are `t0..t9`, the execution-only raw
+runner-minute projection changes from their sum to the sum of the five paired
+maxima, before shared setup envelopes. Equal-duration sessions with no
+contention therefore project a 50-percent raw-minute reduction; asymmetric
+durations reduce it and contention can erase it. The focused runner, workflow,
+and release-contract package passes 82 warning-strict tests, including a live
+local timeout that cancels and reaps a peer plus its descendant. The controller
+module's focused branch-aware coverage is 80.93 percent. Ruff, format,
+documentation metadata across 419 files, and focused diff checks pass. The
+repository-wide documentation validator is not evidence for this slice yet:
+concurrent AR-160/AR-161 and ADR-0098/ADR-0099 registry work currently fails its
+unrelated parity checks.
+
+The current outer hosted timeouts remain an unresolved enforcement gap. Two
+sequential runtime preparations can consume 12 minutes: each member has two
+30-second interpreter probes around one five-minute preparation bound. Adding
+the 17-minute coverage phase yields a 29-minute controller bound; adding the
+42-minute compatibility phase and five-minute `pip check` yields 59 minutes.
+The workflow's current 20- and 45-minute job ceilings can therefore preempt the
+controller before it publishes bounded failure evidence. Recommended ceilings
+are 35 minutes for coverage and 70 minutes for compatibility, allowing cleanup
+plus checkout, setup, and dependency installation. These are fail-safe ceilings,
+not expected durations or savings evidence; they do not make the package
+release-ready until the workflow and hosted evidence agree.
+
+AR-162 applies the same cost-bounded principle to the independent CodeQL
+workflow: one fail-closed entitlement preflight now precedes matrix expansion,
+while both exact language analyses remain unchanged when available. A stable
+aggregate distinguishes completed analysis from governed unavailable evidence.
+Observed old unavailable runs consumed 0.24-0.34 raw runner-minutes; no savings
+or rounded billing claim is accepted until a matched hosted run measures the
+replacement.
 
 The exact sharding/workflow contract package passes 64 tests. Ruff and format
 checks pass, documentation validation covers 414 maintained Markdown files,

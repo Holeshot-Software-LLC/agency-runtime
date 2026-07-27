@@ -4,6 +4,7 @@ import {
 	HIRING_EVIDENCE_DOCUMENTS,
 	isRecord,
 	LIVE_INTERVAL_MS,
+	withRequestId,
 } from "./dashboard-core.js";
 
 export function createLiveController(core, config, renderer) {
@@ -385,7 +386,10 @@ export function createLiveController(core, config, renderer) {
 			setConnection(false, "Token expired");
 			setLiveStatus("Access expired · reopen from the CLI", "expired", { announce: true });
 			showNotice(
-				"The dashboard token expired. Run `agency dashboard service open` to reconnect.",
+				withRequestId(
+					"The dashboard token expired. Run `agency dashboard service open` to reconnect.",
+					error?.requestId,
+				),
 				true,
 			);
 			return;
@@ -401,7 +405,10 @@ export function createLiveController(core, config, renderer) {
 			{ announce: state.live.failures === 1 },
 		);
 		if (state.live.failures === 1) {
-			showNotice("Live updates paused while the dashboard reconnects.", true);
+			showNotice(withRequestId(
+				"Live updates paused while the dashboard reconnects.",
+				error?.requestId,
+			), true);
 		}
 		scheduleLive(retry);
 	}
@@ -640,6 +647,16 @@ export function createLiveController(core, config, renderer) {
 		));
 	}
 
+	function remediationProjectionIsStable(next, current) {
+		const nextRevision = typeof next?.remediation_revision === "string"
+			? next.remediation_revision.trim()
+			: "";
+		const currentRevision = typeof current?.remediation_revision === "string"
+			? current.remediation_revision.trim()
+			: "";
+		return Boolean(nextRevision && currentRevision && nextRevision === currentRevision);
+	}
+
 	function preserveRemediationExtent(next, current, kind) {
 		if (state.remediationExtent[kind] !== true) return;
 		const itemField = kind === "pending" ? "remediation_attempts" : "remediation_history";
@@ -651,7 +668,10 @@ export function createLiveController(core, config, renderer) {
 			: "remediation_history_has_more";
 		const firstPage = next[itemField];
 		const loaded = current?.[itemField];
-		if (!remediationRowsMatchPrefix(firstPage, loaded)) {
+		if (
+			!remediationProjectionIsStable(next, current)
+			|| !remediationRowsMatchPrefix(firstPage, loaded)
+		) {
 			state.remediationExtent[kind] = false;
 			return;
 		}
@@ -780,8 +800,17 @@ export function createLiveController(core, config, renderer) {
 				signal: request.controller.signal,
 			});
 			if (viewRequestIsCurrent("remediation", request)) {
+				const active = state.rosterReview || {};
+				if (
+					!remediationProjectionIsStable(payload, current)
+					|| !remediationProjectionIsStable(payload, active)
+				) {
+					throw new Error(
+						"The remediation collection changed while this page was loading; the current page was preserved.",
+					);
+				}
 				const itemField = kind === "pending" ? "remediation_attempts" : "remediation_history";
-				const existing = Array.isArray(current[itemField]) ? current[itemField] : [];
+				const existing = Array.isArray(active[itemField]) ? active[itemField] : [];
 				const incoming = Array.isArray(payload[itemField]) ? payload[itemField] : [];
 				const seen = new Set(existing.map((item) => item?.event_id).filter(Boolean));
 				const merged = [
@@ -789,14 +818,20 @@ export function createLiveController(core, config, renderer) {
 					...incoming.filter((item) => !item?.event_id || !seen.has(item.event_id)),
 				];
 				const next = {
-					...current,
+					...active,
 					[itemField]: merged,
 					[cursorField]: String(payload[cursorField] || ""),
+					remediation_revision: payload.remediation_revision,
 					remediation_unvalidated_resolution_count: Number.isInteger(
 						payload.remediation_unvalidated_resolution_count,
 					)
 						? payload.remediation_unvalidated_resolution_count
-						: current.remediation_unvalidated_resolution_count,
+						: active.remediation_unvalidated_resolution_count,
+					remediation_stale_resolution_count: Number.isInteger(
+						payload.remediation_stale_resolution_count,
+					)
+						? payload.remediation_stale_resolution_count
+						: active.remediation_stale_resolution_count,
 				};
 				if (kind === "pending") {
 					next.remediation_pending_has_more = payload.remediation_pending_has_more === true;

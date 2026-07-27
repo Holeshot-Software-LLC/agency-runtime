@@ -3,14 +3,17 @@ title: "Require genuine operator presence for persistent controls"
 status: accepted
 category: decisions
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [security, dashboard, browser, controls, user-presence]
 related:
+  - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md
   - docs/decisions/0090-model-facing-control-paths-are-read-only.md
   - docs/THREAT_MODEL.md
   - agency_runtime/server/dashboard.py
+  - agency_runtime/core/windows_operator_presence.py
+  - agency_runtime/core/store/roster.py
 supersedes:
   - docs/decisions/0090-model-facing-control-paths-are-read-only.md
 superseded_by: null
@@ -57,6 +60,24 @@ introduces a transferable capability, that capability must additionally bind
 an audience and expiry and be consumed with atomic replay protection.
 Monitoring, routing, and bounded diagnostics remain available.
 
+The first admitted implementation is intentionally narrower than the complete
+policy: exact roster rollback on Windows 11 x64. One Store coordinator captures
+an immutable primitive binding, invokes the packaged app-owned native consent
+window, compares the same binding after verification, and revalidates it under
+`BEGIN IMMEDIATE` before one commit. The binding covers Store and database
+identity, generation, current and target revision projections, full activation
+authority, and the effective workforce contract. The workforce identity binds
+the complete bounded parent-linked recruitment-contract projection chain or its
+explicit absence; rollback restores the target routing/workforce contract while
+preserving current employment and standing. There is no public prepared-commit
+API, injectable verifier, returned receipt, or caller-supplied authorization.
+
+Successful rollback records non-authorizing audit provenance for the target
+revision, activation authority, workforce identity, verifier mechanism, and
+pinned helper. It never records the nonce, stdout, native result, or a receipt.
+All other persistent mutations and unsupported platforms continue to fail
+closed under this decision.
+
 ## Consequences
 
 - Authenticated browser automation cannot become persistent operator authority.
@@ -66,6 +87,15 @@ Monitoring, routing, and bounded diagnostics remain available.
   not proof that an Agency command was intentionally invoked by a human.
 - Parsing CLI arguments before verification is not sufficient authority: the
   committing layer must bind and revalidate the resolved resource state.
+- One implemented operation does not authorize adjacent mutations. Positive
+  enablement is evaluated per exact operation and platform; absence remains a
+  deliberate fail-closed result.
+- The Windows helper is not release-ready merely because its source and binary
+  are pinned. Platform-honest packaging, signing/trust policy, license notices,
+  and an attended Windows Hello canary remain separate gates.
+- Same-account interpreter modification, private reflection, debugger access,
+  and raw database writes remain inside the trusted local-user boundary rather
+  than being solved by the coordinator.
 - ADR-0090's read-only model-facing rule remains, but its owner-dashboard
   mutation exception is superseded.
 

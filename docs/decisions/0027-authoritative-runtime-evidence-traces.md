@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-07-26
 tags: [evidence, tracing, delegation]
 related:
+  - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
   - docs/roadmap/issue-AR-45-bind-store-privacy-to-explicit-config.md
   - docs/roadmap/issue-AR-10-authoritative-runtime-evidence.md
   - docs/roadmap/issue-AR-12-installed-operations-dashboard.md

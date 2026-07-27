@@ -9,6 +9,7 @@ related:
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
+  - THIRD_PARTY_NOTICES.md
 supersedes: []
 superseded_by: null
 ---
@@ -85,6 +86,15 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Distribution builds now derive an immutable wheel profile from the actual
+  host: supported Windows x64 emits `py3-none-win_amd64` with the reviewed PE,
+  while other hosts emit `py3-none-any` and exclude only that executable. Both
+  profiles retain native source, provenance, and notices. Linux and Windows
+  producers each build one wheel/source pair; the merge gate requires
+  byte-identical source distributions and shared wheel payloads before an
+  independent verifier admits the assembled two-wheel-plus-sdist unsigned review set.
+  Hosted cross-OS proof remains pending because repository Actions billing is
+  disabled; no public artifact or publication is claimed.
 - Local change-loop manifests now expose bounded monotonic phase timings for
   planning, launch, process execution, timing-report reads, scratch cleanup, and
   publication, including per-shard process and timing-read durations. This makes
@@ -181,10 +191,10 @@ changes rather than duplicating every commit.
 
 - Dashboard, MCP, generated-host, and restricted-broker surfaces are now
   strictly read-only. Every former dashboard mutation rejects both bearer roles
-  before dispatch, and the browser ships no mutation client. Persistent CLI
-  mutations require a method/payload/generation-bound single-use OS-presence
-  proof; because no production verifier exists yet, positive mutations fail
-  closed instead of accepting static confirmation or model-callable authority.
+  before dispatch, and the browser ships no mutation client. Exact roster
+  rollback is the first separately prepared positive path on Windows 11 x64;
+  every other persistent mutation and unsupported platform still fails closed
+  instead of accepting static confirmation or model-callable authority.
 - The exact branch-aware Python release gate remains fixed at 97 percent and now
   measures 97.08 percent on the pre-final-trace checkpoint. The dashboard gate
   remains 95 percent lines, 90 percent branches, and 96 percent functions.
@@ -536,6 +546,48 @@ changes rather than duplicating every commit.
 
 ### Security
 
+- Exact roster rollback on Windows 11 x64 now has one non-exporting native
+  operator-presence path. The sole public Store coordinator captures immutable
+  config/database, generation, current/target revision, activation-authority,
+  and workforce/effective-contract identities; invokes the identity-pinned
+  app-owned Windows consent helper; then re-reads the same state under
+  `BEGIN IMMEDIATE` before one commit. Bundled and governed-snapshot authority
+  are bound in full. Recruitment-contract projections are bounded and validated
+  as one complete parent-linked production-authority chain or explicit absence,
+  while current worker employment and standing are preserved. Denial, malformed
+  native results, substitution, races, replay, and apply failure commit no
+  rollback effect. Successful audit evidence contains sanitized target,
+  authority, workforce, mechanism, and helper provenance, never a nonce,
+  stdout, native result, or receipt. This is a prerelease slice, not a general
+  production claim: platform-honest packaging, helper signing/trust and license
+  disposition, and an attended Windows Hello canary remain open release gates.
+  Platform-honest host profiles and the three-artifact merge contract are now
+  implemented locally under AR-160, with hosted proof pending. Exact immutable-
+  source C++/WinRT MIT and Microsoft STL Apache-2.0 WITH LLVM-exception/NOTICE
+  texts are self-contained in the package. They preserve provenance but do not
+  resolve the owner/legal MSVC, Windows SDK, `/MT` static-runtime, publisher,
+  signing, or delivery gate tracked by blocked AR-161.
+- Signed remediation history now remains current authority only while its
+  candidate, download, latest audit policy/basis, and exact active identity are
+  still eligible. Rejected or audit-stale candidates reopen the original queue
+  event without duplicate event churn; the dashboard reports stale signed
+  authority separately and invalidates previously paged history through an
+  exact remediation projection revision.
+- Executable discovery excludes the exact working directory and every inertly
+  discovered repository ancestor. Direct commands, delegation backends, the
+  first lifecycle Git call, native installation, dashboard service commands,
+  and smoke tools reject explicit, resolver-returned, wrapper, and link-aliased
+  executables inside that boundary before identity freezing and launch.
+- Dependency-review fallback now requires the exact authenticated private or
+  internal non-fork capability response. Authentication, rate-limit, missing-
+  resource, malformed, oversized, and ambiguous responses fail closed; the
+  installed-runtime audit is labeled as compensating vulnerability evidence,
+  not equivalent base-to-head dependency review.
+- Dashboard provider inspection can no longer re-enable a persistent control.
+  Validated request IDs now reach failure notices and Route Lab receipts, while
+  hostile identifiers remain inert and absent. Privacy copy explicitly scopes
+  itself to runtime observation capture and distinguishes the bounded owner-only
+  governed specialist-definition preview.
 - Managed persistent launchers are content-hashed and bound to lexical,
   resolved, metadata, ownership, and parent-namespace identities at install;
   inspection and lifecycle paths refuse drifted artifacts.

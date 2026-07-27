@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Mapping, Sequence
@@ -40,11 +41,13 @@ from agency_runtime.core.roster.remediation import (
     normalize_remediation_attempt,
 )
 from agency_runtime.core.roster.review import (
+    AUDIT_POLICY_HASH,
     assert_bound_candidate_audit_from_connection,
     assert_candidate_audits_current,
     audit_candidate_in_connection,
     candidate_record_from_connection,
     candidate_remediation_evidence_from_connection,
+    current_active_basis_hash_from_connection,
     record_candidate_status_event,
     refresh_candidate_audit_basis_in_connection,
 )
@@ -2853,10 +2856,57 @@ def _authorized_resolution_integrity_sql(
     )
 
 
+def _authorized_resolution_current_eligibility_sql(authority_alias: str) -> str:
+    if authority_alias != "authority":
+        raise ValueError("unsupported remediation authority SQL alias")
+    return (
+        "EXISTS (SELECT 1 "
+        "FROM agent_remediation_resolution_dependencies AS candidate_dependency "
+        "JOIN agent_candidates AS candidate "
+        "ON candidate.id = candidate_dependency.dependency_id "
+        "JOIN agent_downloads AS candidate_download "
+        "ON candidate_download.id = candidate.download_id "
+        "JOIN agent_remediation_resolution_dependencies AS audit_dependency "
+        "ON audit_dependency.resolution_event_id = candidate_dependency.resolution_event_id "
+        "AND audit_dependency.dependency_kind = 'candidate_audit' "
+        "JOIN agent_candidate_audits AS audit ON audit.id = audit_dependency.dependency_id "
+        f"WHERE candidate_dependency.resolution_event_id = {authority_alias}.resolution_event_id "
+        "AND candidate_dependency.dependency_kind = 'candidate' "
+        "AND audit.candidate_id = candidate.id "
+        "AND audit.candidate_version = candidate.version "
+        "AND audit.candidate_hash = candidate.hash "
+        "AND ((candidate.status IN ('pending','approved') "
+        "AND candidate_download.status = 'quarantined' "
+        "AND audit.policy_hash = ? AND audit.active_basis_hash = ? "
+        "AND audit.deterministic_status = 'passed' AND audit.verdict = 'passed' "
+        "AND audit.rowid = (SELECT latest.rowid FROM agent_candidate_audits AS latest "
+        "WHERE latest.candidate_id = candidate.id "
+        "ORDER BY latest.created_at DESC, latest.rowid DESC LIMIT 1)) "
+        "OR (candidate.status = 'activated' AND candidate_download.status = 'activated' "
+        "AND EXISTS (SELECT 1 FROM agent_active AS active "
+        "WHERE active.agent_slug = candidate.slug AND active.version = candidate.version "
+        "AND active.hash = candidate.hash))))"
+    )
+
+
+def _current_authorized_resolution_integrity_sql(
+    authority_alias: str,
+    resolution_alias: str,
+    queue_alias: str,
+) -> str:
+    integrity = _authorized_resolution_integrity_sql(
+        authority_alias,
+        resolution_alias,
+        queue_alias,
+    )
+    eligibility = _authorized_resolution_current_eligibility_sql(authority_alias)
+    return f"({integrity}) AND {eligibility}"
+
+
 def _authorized_resolution_exists_sql(queue_alias: str) -> str:
     if queue_alias not in {"queued", "queue_event"}:
         raise ValueError("unsupported remediation queue SQL alias")
-    integrity = _authorized_resolution_integrity_sql(
+    integrity = _current_authorized_resolution_integrity_sql(
         "authority",
         "resolution",
         queue_alias,
@@ -2880,12 +2930,13 @@ def _remediation_cursor_order(
     *,
     event_type: str,
     label: str,
+    current_authority_parameters: tuple[str, str] = (),
 ) -> int | None:
     if not cursor:
         return None
     cursor = _require_bounded_text(cursor, MAX_SHORT_TEXT_BYTES, label)
     if event_type == "manifest_entry_remediation_resolved":
-        integrity = _authorized_resolution_integrity_sql(
+        integrity = _current_authorized_resolution_integrity_sql(
             "authority",
             "resolution",
             "queue_event",
@@ -2903,7 +2954,7 @@ def _remediation_cursor_order(
             "AND resolution.event_sequence > queue_event.event_sequence "
             "AND resolution.agent_slug = queue_event.agent_slug "
             f"AND {integrity}",  # nosec B608
-            (cursor,),
+            (cursor, *current_authority_parameters),
         ).fetchone()
     else:
         row = conn.execute(
@@ -2933,6 +2984,10 @@ def _remediation_queue_snapshot(
         tuple[dict[str, Any], bool],
     ] = {}
     queue_cache: dict[str, dict[str, Any]] = {}
+    current_authority_parameters = (
+        AUDIT_POLICY_HASH,
+        current_active_basis_hash_from_connection(conn),
+    )
     pending_before = _remediation_cursor_order(
         conn,
         pending_cursor,
@@ -2944,10 +2999,13 @@ def _remediation_queue_snapshot(
         history_cursor,
         event_type="manifest_entry_remediation_resolved",
         label="history remediation cursor",
+        current_authority_parameters=current_authority_parameters,
     )
     pending_filter = "" if pending_before is None else "AND queued.event_sequence < ? "
-    pending_parameters: tuple[Any, ...] = (() if pending_before is None else (pending_before,)) + (
-        limit + 1,
+    pending_parameters: tuple[Any, ...] = (
+        current_authority_parameters
+        + (() if pending_before is None else (pending_before,))
+        + (limit + 1,)
     )
     pending_resolution_predicate = _authorized_resolution_exists_sql("queued")
     pending_rows = conn.execute(
@@ -2959,10 +3017,12 @@ def _remediation_queue_snapshot(
         pending_parameters,
     ).fetchall()
     history_filter = "" if history_before is None else "AND resolution.event_sequence < ? "
-    history_parameters: tuple[Any, ...] = (() if history_before is None else (history_before,)) + (
-        limit + 1,
+    history_parameters: tuple[Any, ...] = (
+        current_authority_parameters
+        + (() if history_before is None else (history_before,))
+        + (limit + 1,)
     )
-    history_integrity = _authorized_resolution_integrity_sql(
+    history_integrity = _current_authorized_resolution_integrity_sql(
         "authority",
         "resolution",
         "queue_event",
@@ -3038,14 +3098,57 @@ def _remediation_queue_snapshot(
                 )
             )
         )
-    pending_count = int(
-        conn.execute(
-            "SELECT COUNT(*) FROM agent_import_events AS queued "
-            "WHERE queued.event_type = 'manifest_entry_remediation_queued' "
-            f"AND NOT {pending_resolution_predicate}"  # nosec B608
-        ).fetchone()[0]
+    revision_digest = hashlib.sha256()
+
+    def extend_revision(*values: str | int) -> None:
+        for value in values:
+            encoded = str(value).encode("utf-8")
+            revision_digest.update(len(encoded).to_bytes(8, "big"))
+            revision_digest.update(encoded)
+
+    extend_revision("agency.remediation-queue.v1", *current_authority_parameters)
+    pending_count = 0
+    for row in conn.execute(
+        "SELECT queued.event_sequence AS event_order, queued.id "
+        "FROM agent_import_events AS queued "
+        "WHERE queued.event_type = 'manifest_entry_remediation_queued' "
+        f"AND NOT {pending_resolution_predicate} "
+        "ORDER BY queued.event_sequence DESC",  # nosec B608
+        current_authority_parameters,
+    ):
+        pending_count += 1
+        extend_revision("pending", int(row["event_order"]), str(row["id"]))
+    history_count = 0
+    for row in conn.execute(
+        "SELECT resolution.event_sequence AS event_order, resolution.id, "
+        "queue_event.id AS queue_event_id "
+        "FROM agent_remediation_resolution_authority AS authority "
+        "JOIN agent_import_events AS resolution "
+        "ON resolution.id = authority.resolution_event_id "
+        "JOIN agent_import_events AS queue_event "
+        "ON queue_event.id = authority.queue_event_id "
+        "WHERE resolution.event_type = 'manifest_entry_remediation_resolved' "
+        "AND queue_event.event_type = 'manifest_entry_remediation_queued' "
+        "AND resolution.event_sequence > queue_event.event_sequence "
+        "AND resolution.agent_slug = queue_event.agent_slug "
+        f"AND {history_integrity} "
+        "ORDER BY resolution.event_sequence DESC",  # nosec B608
+        current_authority_parameters,
+    ):
+        history_count += 1
+        extend_revision(
+            "history",
+            int(row["event_order"]),
+            str(row["id"]),
+            str(row["queue_event_id"]),
+        )
+    extend_revision("counts", pending_count, history_count)
+    cryptographic_history_integrity = _authorized_resolution_integrity_sql(
+        "authority",
+        "resolution",
+        "queue_event",
     )
-    history_count = int(
+    cryptographic_history_count = int(
         conn.execute(
             "SELECT COUNT(*) FROM agent_remediation_resolution_authority AS authority "
             "JOIN agent_import_events AS resolution "
@@ -3056,7 +3159,7 @@ def _remediation_queue_snapshot(
             "AND queue_event.event_type = 'manifest_entry_remediation_queued' "
             "AND resolution.event_sequence > queue_event.event_sequence "
             "AND resolution.agent_slug = queue_event.agent_slug "
-            f"AND {history_integrity}"  # nosec B608
+            f"AND {cryptographic_history_integrity}"  # nosec B608
         ).fetchone()[0]
     )
     raw_resolution_count = int(
@@ -3075,7 +3178,9 @@ def _remediation_queue_snapshot(
         ),
         "history": history_page,
         "history_count": history_count,
-        "unvalidated_resolution_count": max(0, raw_resolution_count - history_count),
+        "remediation_revision": revision_digest.hexdigest(),
+        "stale_resolution_count": max(0, cryptographic_history_count - history_count),
+        "unvalidated_resolution_count": max(0, raw_resolution_count - cryptographic_history_count),
         "history_has_more": len(history_rows) > limit,
         "next_history_cursor": (
             history_page[-1]["event_id"] if len(history_rows) > limit and history_page else ""
@@ -3222,7 +3327,11 @@ def _record_candidate_remediation_resolutions(
         "AND json_extract(queued.detail, '$.origin') = identity.origin "
         f"AND NOT {pending_resolution_predicate} "
         "ORDER BY queued.event_sequence LIMIT ?",
-        (MAX_REMEDIATION_RESOLUTIONS_PER_SYNC + 1,),
+        (
+            AUDIT_POLICY_HASH,
+            current_active_basis_hash_from_connection(conn),
+            MAX_REMEDIATION_RESOLUTIONS_PER_SYNC + 1,
+        ),
     ).fetchall()
     has_more = len(pending_rows) > MAX_REMEDIATION_RESOLUTIONS_PER_SYNC
     scan_cache: dict[tuple[str, str], dict[str, Any]] = {}

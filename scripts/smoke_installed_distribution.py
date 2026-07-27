@@ -48,6 +48,10 @@ _DASHBOARD_ASSETS = (
     "index.html",
     "package.json",
 )
+_NATIVE_OPERATOR_DIRECTORY = ("native", "windows", "operator_presence")
+_NATIVE_OPERATOR_SOURCE = "operator_presence_verifier.cpp"
+_NATIVE_OPERATOR_EXECUTABLE = "operator_presence_verifier.exe"
+_NATIVE_OPERATOR_PROVENANCE = "operator_presence_verifier.provenance.json"
 
 
 def _mcp_transcript(python: str, root: Path) -> dict[str, object]:
@@ -236,7 +240,27 @@ def _selection_safety() -> dict[str, object]:
     }
 
 
-def run() -> dict[str, object]:
+def _native_asset_contract(artifact_set: str) -> dict[str, object]:
+    native = files("agency_runtime")
+    for part in _NATIVE_OPERATOR_DIRECTORY:
+        native = native.joinpath(part)
+    names = {item.name for item in native.iterdir() if item.is_file()}
+    missing_shared = {_NATIVE_OPERATOR_SOURCE, _NATIVE_OPERATOR_PROVENANCE} - names
+    if missing_shared:
+        raise RuntimeError(
+            f"installed distribution is missing native audit assets: {sorted(missing_shared)}"
+        )
+    executables = sorted(name for name in names if name.casefold().endswith(".exe"))
+    expected_executables = [_NATIVE_OPERATOR_EXECUTABLE] if artifact_set == "windows-x64" else []
+    if executables != expected_executables:
+        raise RuntimeError(
+            "installed distribution executable profile is invalid: "
+            f"expected {expected_executables}, found {executables}"
+        )
+    return {"artifact_set": artifact_set, "executables": executables}
+
+
+def run(*, artifact_set: str | None = None) -> dict[str, object]:
     installed_version = version("agency-runtime")
     if installed_version != __version__:
         raise RuntimeError("package metadata and runtime versions disagree")
@@ -246,6 +270,7 @@ def run() -> dict[str, object]:
         raise RuntimeError(f"installed distribution is missing dashboard assets: {missing}")
     roster = _roster_integrity()
     selection = _selection_safety()
+    native = None if artifact_set is None else _native_asset_contract(artifact_set)
 
     with private_temporary_directory(prefix="distribution-smoke") as root:
         isolated_home = ensure_private_directory(root / "home")
@@ -272,6 +297,7 @@ def run() -> dict[str, object]:
         "config": "passed",
         "roster": roster,
         "selection": selection,
+        "native": native,
         "mcp": mcp,
         "dashboard": dashboard_result,
     }
@@ -280,8 +306,9 @@ def run() -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--expected-version")
+    parser.add_argument("--artifact-set", choices=("portable", "windows-x64"))
     args = parser.parse_args()
-    result = run()
+    result = run(artifact_set=args.artifact_set)
     if args.expected_version and result["version"] != args.expected_version:
         raise RuntimeError("installed version does not match the expected release version")
     print(json.dumps(result, sort_keys=True))

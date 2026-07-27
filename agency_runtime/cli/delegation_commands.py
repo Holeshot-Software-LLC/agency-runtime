@@ -7,6 +7,7 @@ import math
 import subprocess
 import sys
 import uuid
+from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.display import safe_display_token
@@ -147,10 +148,20 @@ def _run_command(
             from agency_runtime.core.process_argv import (
                 freeze_process_argv,
                 prepare_process_argv,
+                repository_forbidden_roots,
                 revalidate_process_argv,
             )
 
-            launch_command = freeze_process_argv(prepare_process_argv(command))
+            current_directory = Path.cwd()
+            forbidden_roots = repository_forbidden_roots(current_directory)
+            launch_command = freeze_process_argv(
+                prepare_process_argv(
+                    command,
+                    current_directory=current_directory,
+                    forbidden_roots=forbidden_roots,
+                ),
+                forbidden_roots=forbidden_roots,
+            )
             revalidate_process_argv(launch_command)
         proc = subprocess.run(launch_command, text=True, timeout=timeout)
     except FileNotFoundError:

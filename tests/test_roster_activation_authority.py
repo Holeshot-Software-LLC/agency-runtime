@@ -181,14 +181,14 @@ def test_exact_active_projection_and_bundle_authority() -> None:
     active, revision = _canonical_revision_projection()
 
     assert assert_active_revision_projection(active, revision)["name"] == active["name"]
-    assert (
-        assert_revision_activation_authority(
-            None,
-            slug=active["agent_slug"],
-            revision=revision,
-        )
-        == "bundled"
+    authority = assert_revision_activation_authority(
+        None,
+        slug=active["agent_slug"],
+        revision=revision,
     )
+    assert authority.kind == "bundled"
+    assert len(authority.digest) == 64
+    assert dict(authority.projection).keys() == {"manifest_digest", "revision_digest"}
 
 
 @pytest.mark.parametrize(
@@ -437,12 +437,13 @@ def test_candidate_authority_rejects_backdated_late_approval_row() -> None:
     conn.row_factory = sqlite3.Row
     conn.execute(
         "CREATE TABLE agent_candidate_status_events ("
-        "candidate_id TEXT, event_type TEXT, from_status TEXT, to_status TEXT, "
+        "id TEXT, candidate_id TEXT, event_type TEXT, from_status TEXT, to_status TEXT, "
         "reason TEXT, audit_id TEXT, created_at TEXT)"
     )
     audit_id = "audit-" + ("a" * 64)
     rows = [
         (
+            "event-activated",
             "candidate-1",
             "activated",
             "approved",
@@ -452,6 +453,7 @@ def test_candidate_authority_rejects_backdated_late_approval_row() -> None:
             "2026-01-02T00:00:00+00:00",
         ),
         (
+            "event-approved",
             "candidate-1",
             "approved",
             "pending",
@@ -463,8 +465,8 @@ def test_candidate_authority_rejects_backdated_late_approval_row() -> None:
     ]
     conn.executemany(
         "INSERT INTO agent_candidate_status_events "
-        "(candidate_id, event_type, from_status, to_status, reason, audit_id, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "(id, candidate_id, event_type, from_status, to_status, reason, audit_id, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         rows,
     )
     try:
@@ -482,7 +484,7 @@ def test_snapshot_authority_rejects_backdated_late_approval_row() -> None:
     conn.row_factory = sqlite3.Row
     conn.execute(
         "CREATE TABLE agent_import_events ("
-        "event_sequence INTEGER, event_type TEXT, agent_slug TEXT, detail TEXT, "
+        "id TEXT, event_sequence INTEGER, event_type TEXT, agent_slug TEXT, detail TEXT, "
         "created_at TEXT)"
     )
     audit_id = "audit-" + ("a" * 64)
@@ -494,11 +496,23 @@ def test_snapshot_authority_rejects_backdated_late_approval_row() -> None:
     )
     conn.executemany(
         "INSERT INTO agent_import_events "
-        "(event_sequence, event_type, agent_slug, detail, created_at) "
-        "VALUES (?, ?, '', ?, ?)",
+        "(id, event_sequence, event_type, agent_slug, detail, created_at) "
+        "VALUES (?, ?, ?, '', ?, ?)",
         [
-            (1, "snapshot_activated", detail, "2026-01-02T00:00:00+00:00"),
-            (2, "snapshot_approved", detail, "2026-01-01T00:00:00+00:00"),
+            (
+                "event-activated",
+                1,
+                "snapshot_activated",
+                detail,
+                "2026-01-02T00:00:00+00:00",
+            ),
+            (
+                "event-approved",
+                2,
+                "snapshot_approved",
+                detail,
+                "2026-01-01T00:00:00+00:00",
+            ),
         ],
     )
     try:

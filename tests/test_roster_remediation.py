@@ -7,6 +7,7 @@ import gc
 import hashlib
 import json
 import os
+import sqlite3
 import tracemalloc
 import unicodedata
 from pathlib import Path
@@ -22,7 +23,7 @@ from agency_runtime.core.roster import semantic_projection, source_safety
 from agency_runtime.core.roster import sync as sync_subject
 from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.ingress import download_from_source
-from agency_runtime.core.roster.review import audit_candidate_in_connection
+from agency_runtime.core.roster.review import audit_candidate_in_connection, reject_candidate
 from agency_runtime.core.roster.sync import (
     RosterSyncError,
     _preflight_candidate_versions,
@@ -1717,6 +1718,172 @@ def test_changed_source_resolves_queue_once_and_reingestion_is_idempotent(
                 "WHERE event_type = 'manifest_entry_remediation_resolved'"
             ).fetchone()[0]
             == 1
+        )
+    finally:
+        conn.close()
+
+
+def test_rejected_resolution_reopens_existing_queue_and_replay_stays_stale(
+    tmp_path: Path,
+) -> None:
+    store = _superseded_remediation_store(tmp_path)
+    resolved = remediation_queue_snapshot(store)
+    assert len(resolved["remediation_revision"]) == 64
+    int(resolved["remediation_revision"], 16)
+    conn = store._connect()
+    try:
+        candidate_id = str(conn.execute("SELECT id FROM agent_candidates").fetchone()["id"])
+        authority = dict(
+            conn.execute("SELECT * FROM agent_remediation_resolution_authority").fetchone()
+        )
+        dependencies = [
+            dict(row)
+            for row in conn.execute(
+                "SELECT * FROM agent_remediation_resolution_dependencies "
+                "ORDER BY dependency_kind, dependency_id"
+            ).fetchall()
+        ]
+        event_counts = dict(
+            conn.execute(
+                "SELECT "
+                "SUM(event_type = 'manifest_entry_remediation_queued') AS queued, "
+                "SUM(event_type = 'manifest_entry_remediation_resolved') AS resolved "
+                "FROM agent_import_events"
+            ).fetchone()
+        )
+    finally:
+        conn.close()
+
+    review_snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
+    reject_candidate(store, candidate_id, reason="red-team rejection regression")
+    reopened = remediation_queue_snapshot(store)
+    assert reopened["pending_count"] == 1
+    assert reopened["history_count"] == 0
+    assert reopened["stale_resolution_count"] == 1
+    assert reopened["unvalidated_resolution_count"] == 0
+    assert reopened["remediation_revision"] != resolved["remediation_revision"]
+    assert (
+        sum(
+            reopened[key]
+            for key in (
+                "history_count",
+                "stale_resolution_count",
+                "unvalidated_resolution_count",
+            )
+        )
+        == 1
+    )
+    with pytest.raises(RosterSyncError, match="not in an allowed state"):
+        approve_snapshot(store, review_snapshot["snapshot_id"])
+    with pytest.raises(RosterSyncError, match="approved before activation"):
+        activate_snapshot(store, review_snapshot["snapshot_id"])
+
+    authority_columns = tuple(authority)
+    dependency_columns = tuple(dependencies[0])
+    authority_placeholders = ",".join("?" for _ in authority_columns)
+    dependency_placeholders = ",".join("?" for _ in dependency_columns)
+    conn = store._connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute(
+            "DELETE FROM agent_remediation_resolution_authority WHERE resolution_event_id = ?",
+            (authority["resolution_event_id"],),
+        )
+        conn.execute(
+            f"INSERT INTO agent_remediation_resolution_authority "  # nosec B608
+            f"({','.join(authority_columns)}) VALUES ({authority_placeholders})",
+            tuple(authority[column] for column in authority_columns),
+        )
+        conn.executemany(
+            f"INSERT INTO agent_remediation_resolution_dependencies "  # nosec B608
+            f"({','.join(dependency_columns)}) VALUES ({dependency_placeholders})",
+            [tuple(row[column] for column in dependency_columns) for row in dependencies],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    replayed = remediation_queue_snapshot(store)
+    assert replayed["pending_count"] == 1
+    assert replayed["history_count"] == 0
+    assert replayed["stale_resolution_count"] == 1
+    assert replayed["remediation_revision"] == reopened["remediation_revision"]
+
+    conn = store._connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute(
+            "DELETE FROM agent_remediation_resolution_authority WHERE resolution_event_id = ?",
+            (authority["resolution_event_id"],),
+        )
+        forged = {**authority, "authority_hmac": "0" * 64}
+        with pytest.raises(
+            sqlite3.IntegrityError, match="invalid remediation resolution authority"
+        ):
+            conn.execute(
+                f"INSERT INTO agent_remediation_resolution_authority "  # nosec B608
+                f"({','.join(authority_columns)}) VALUES ({authority_placeholders})",
+                tuple(forged[column] for column in authority_columns),
+            )
+        conn.rollback()
+        assert (
+            dict(
+                conn.execute(
+                    "SELECT "
+                    "SUM(event_type = 'manifest_entry_remediation_queued') AS queued, "
+                    "SUM(event_type = 'manifest_entry_remediation_resolved') AS resolved "
+                    "FROM agent_import_events"
+                ).fetchone()
+            )
+            == event_counts
+        )
+    finally:
+        conn.close()
+
+
+def test_active_basis_drift_reopens_resolution_without_duplicate_queue_churn(
+    tmp_path: Path,
+) -> None:
+    store = _superseded_remediation_store(tmp_path)
+    resolved = remediation_queue_snapshot(store)
+    conn = store._connect()
+    try:
+        candidate_id = str(conn.execute("SELECT id FROM agent_candidates").fetchone()["id"])
+        counts_before = dict(
+            conn.execute(
+                "SELECT "
+                "SUM(event_type = 'manifest_entry_remediation_queued') AS queued, "
+                "SUM(event_type = 'manifest_entry_remediation_resolved') AS resolved "
+                "FROM agent_import_events"
+            ).fetchone()
+        )
+    finally:
+        conn.close()
+    review_snapshot = create_roster_diff(store, candidate_ids=[candidate_id])
+
+    store.activate_agent(bundled_roster()[0])
+    reopened = remediation_queue_snapshot(store)
+    assert reopened["pending_count"] == 1
+    assert reopened["history_count"] == 0
+    assert reopened["stale_resolution_count"] == 1
+    assert reopened["unvalidated_resolution_count"] == 0
+    assert reopened["remediation_revision"] != resolved["remediation_revision"]
+    with pytest.raises(RosterSyncError, match="current passing audit"):
+        approve_snapshot(store, review_snapshot["snapshot_id"])
+    with pytest.raises(RosterSyncError, match="approved before activation"):
+        activate_snapshot(store, review_snapshot["snapshot_id"])
+
+    conn = store._connect()
+    try:
+        assert (
+            dict(
+                conn.execute(
+                    "SELECT "
+                    "SUM(event_type = 'manifest_entry_remediation_queued') AS queued, "
+                    "SUM(event_type = 'manifest_entry_remediation_resolved') AS resolved "
+                    "FROM agent_import_events"
+                ).fetchone()
+            )
+            == counts_before
         )
     finally:
         conn.close()

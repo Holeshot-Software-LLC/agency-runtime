@@ -34,19 +34,6 @@ from agency_runtime.core import operator_presence
             ["roster", "retire", "worker", "--scan-id", "scan-1"],
             "roster-governance",
         ),
-        (
-            [
-                "roster",
-                "rollback",
-                "worker",
-                "v1",
-                "--expected-current-version",
-                "v2",
-                "--expected-current-hash",
-                "abc123",
-            ],
-            "roster-governance",
-        ),
         (["roster", "upstream", "import"], "roster-governance"),
         (["roster", "candidate", "audit", "candidate-1"], "roster-governance"),
         (
@@ -225,6 +212,32 @@ def test_read_only_leaves_do_not_request_operator_presence(argv: list[str]) -> N
     args = cli_main.build_parser().parse_args(argv)
 
     assert operator_presence.request_for_namespace(args) is None
+
+
+def test_roster_rollback_delegates_presence_to_exact_prepared_handler() -> None:
+    args = cli_main.build_parser().parse_args(
+        [
+            "roster",
+            "rollback",
+            "worker",
+            "sha256:" + "2" * 64,
+            "--expected-current-version",
+            "sha256:" + "1" * 64,
+            "--expected-current-hash",
+            "3" * 64,
+        ]
+    )
+
+    assert args._operator_presence_prepared_action == "roster.rollback.v1"
+    assert operator_presence.request_for_namespace(args) is None
+
+
+def test_prepared_presence_marker_rejects_every_other_command_path() -> None:
+    args = cli_main.build_parser().parse_args(["config", "reset"])
+    args._operator_presence_prepared_action = "roster.rollback.v1"
+
+    with pytest.raises(operator_presence.OperatorPresenceError, match="binding is invalid"):
+        operator_presence.request_for_namespace(args)
 
 
 @pytest.mark.parametrize(

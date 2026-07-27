@@ -266,6 +266,12 @@ def _active_basis(records: Sequence[Mapping[str, Any]]) -> str:
     )
 
 
+def current_active_basis_hash_from_connection(conn: Any) -> str:
+    """Return the exact active-roster basis used by candidate audit authority."""
+
+    return _active_basis(_active_records(conn))
+
+
 def _finding(
     source: Literal["deterministic", "conflict", "inference"],
     severity: str,
@@ -1601,6 +1607,7 @@ __all__ = [
     "candidate_comparison",
     "candidate_record_from_connection",
     "candidate_remediation_evidence_from_connection",
+    "current_active_basis_hash_from_connection",
     "latest_candidate_audit_from_connection",
     "list_candidate_audits",
     "record_candidate_status_event",
