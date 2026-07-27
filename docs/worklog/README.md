@@ -232,6 +232,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c844498` | 2026-07-27 | fix(release): normalize Windows executable source modes | [AR-167](../roadmap/issue-AR-167-normalize-windows-release-source-modes.md) | null |
 | `1ecc4e5` | 2026-07-27 | fix(release): seal Windows executable handles | [AR-167](../roadmap/issue-AR-167-normalize-windows-release-source-modes.md) | null |
 | `c067c6a` | 2026-07-27 | fix(release): canonicalize reviewed Windows PE mode | [AR-167](../roadmap/issue-AR-167-normalize-windows-release-source-modes.md) | null |
+| `1ad1cbc` | 2026-07-27 | fix(release): rebuild canonical sdist source manifest | [AR-168](../roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
