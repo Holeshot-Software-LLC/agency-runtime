@@ -254,6 +254,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9aa317c` | 2026-07-27 | fix(dashboard): collapse mobile header flex basis | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 | `630db7b` | 2026-07-27 | docs(production): record responsive dashboard live QA | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 | `c625bc7` | 2026-07-27 | perf(smoke): reuse one attested launcher | [AR-160](../roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md), [AR-181](../roadmap/issue-AR-181-bound-all-host-smoke-launcher-preparation.md) | [detail](2026-07-27-c625bc7-bound-all-host-smoke.md) |
+| `1676f6a` | 2026-07-27 | perf(testing): cache immutable workforce evidence | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-27-1676f6a-immutable-workforce-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
