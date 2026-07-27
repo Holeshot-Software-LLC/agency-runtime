@@ -31,8 +31,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 3e14f74041865bf93444d290197fb7062ea3ec31
-minimum_ledger_commit: 874fb2a03f57d62da46c55cdd3507e01a2b8c589
+evidence_commit: b520fa765ffdef93ad499a088f79d247ce910e75
+minimum_ledger_commit: e67e41a5fd90e4e12f6652bde264628ab97c083b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -45,7 +45,7 @@ the full acceptance history.
 
 ## checkpoint
 
-- Clean local recovery pair: substantive `3e14f74`, ledger `874fb2a`.
+- Clean local recovery pair: substantive `b520fa7`, ledger `e67e41a`.
 - Branch is `main`, locally ahead of `origin/main`. No push, PR, tag, release,
   publication, hosted dispatch, tracker mutation, or repository-setting change
   was authorized.
@@ -150,7 +150,7 @@ node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverag
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python scripts/verify_docs.py
-python -m scripts.verify_distribution <clean-artifact-directory> --artifact-set release --expected-commit 3e14f74041865bf93444d290197fb7062ea3ec31
+python -m scripts.verify_distribution <clean-artifact-directory> --artifact-set release --expected-commit b520fa765ffdef93ad499a088f79d247ce910e75
 git diff --check
 ~~~
 
