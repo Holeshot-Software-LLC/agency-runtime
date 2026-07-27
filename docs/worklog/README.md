@@ -221,6 +221,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `900f8d3` | 2026-07-26 | docs(security): correct presence and timing evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md), [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-07-26-900f8d3-presence-timing-evidence.md) |
 | `58aee8b` | 2026-07-26 | perf(testing): measure and trim the Windows tail | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-58aee8b-measured-windows-tail.md) |
 | `62d90ca` | 2026-07-26 | fix(testing): isolate timing plugin self-test | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-62d90ca-timing-plugin-self-test.md) |
+| `11241e6` | 2026-07-26 | perf(testing): bind measured Windows sharding | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-11241e6-bound-windows-sharding.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
