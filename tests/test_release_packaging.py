@@ -755,6 +755,7 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     assert jobs["quality"]["name"] == "automatic gates; integration suites are manual"
     assert jobs["artifacts"]["needs"] == "quality-contracts"
     assert "if" not in jobs["artifacts"]
+    assert jobs["windows-portability-contract"]["strategy"]["matrix"]["python"] == ["3.13"]
     assert jobs["coverage"]["strategy"]["matrix"]["include"] == [
         {"pair": 0, "label": 1, "shard_a": 0, "shard_b": 1},
         {"pair": 1, "label": 2, "shard_a": 2, "shard_b": 3},
