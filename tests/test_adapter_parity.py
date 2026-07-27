@@ -1017,6 +1017,7 @@ def test_openclaw_main_serialization_failure_keeps_pre_verify_fail_closed(
     assert "VERIFICATION UNAVAILABLE" in result["message"]
 
 
+@pytest.mark.runtime_configuration_identity
 def test_openclaw_main_binds_explicit_config_identity_with_spaces(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

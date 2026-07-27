@@ -583,12 +583,12 @@ def test_default_service_runner_revalidates_immediately_before_subprocess(
     monkeypatch.setattr(
         dashboard_service_core,
         "prepare_process_argv",
-        lambda _argv: events.append("prepare") or prepared,
+        lambda _argv, **_kwargs: events.append("prepare") or prepared,
     )
     monkeypatch.setattr(
         dashboard_service_core,
         "freeze_process_argv",
-        lambda argv: events.append("freeze") or argv,
+        lambda argv, **_kwargs: events.append("freeze") or argv,
     )
     monkeypatch.setattr(
         dashboard_service_core,
@@ -615,8 +615,16 @@ def test_default_service_runner_revalidation_failure_never_starts_child(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     prepared = ["resolved-manager"]
-    monkeypatch.setattr(dashboard_service_core, "prepare_process_argv", lambda _argv: prepared)
-    monkeypatch.setattr(dashboard_service_core, "freeze_process_argv", lambda argv: argv)
+    monkeypatch.setattr(
+        dashboard_service_core,
+        "prepare_process_argv",
+        lambda _argv, **_kwargs: prepared,
+    )
+    monkeypatch.setattr(
+        dashboard_service_core,
+        "freeze_process_argv",
+        lambda argv, **_kwargs: argv,
+    )
     monkeypatch.setattr(
         dashboard_service_core,
         "revalidate_process_argv",

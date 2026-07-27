@@ -42,6 +42,7 @@ related:
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
 supersedes: []
 superseded_by: null
@@ -140,6 +141,21 @@ four when available; main/manual primary CI remains sixteen runners. The next
 safe cost work is to measure AR-174 after billing repair, then consolidate the
 remaining Windows portability envelope only if exact interpreter and test
 coverage stay independently attested.
+
+### Full-gate reconciliation
+
+The first exact final warning-strict corpus did not pass: 8,010 tests passed,
+61 skipped, 1 expected failure, and 11 failed in 33 minutes 25 seconds. Ten
+failures were stale tests that no longer constructed the configuration,
+executable, filesystem-currentness, and append-only authority identities
+required by the hardened product. One Low diagnostic defect reported a missing
+Node executable as non-runnable. AR-176 preserves every production check,
+repairs those contracts, and distinguishes the diagnostic correctly.
+
+All 11 original node IDs then passed together. The twelve touched and
+neighboring files passed as one order-sensitive package with 670 passes and 1
+platform skip in 2 minutes 42 seconds. The full rerun remains required; the
+failed first run is retained rather than summarized as green.
 
 ## What was actually exercised
 

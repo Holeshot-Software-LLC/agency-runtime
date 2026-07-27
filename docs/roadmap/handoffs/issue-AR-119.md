@@ -24,6 +24,7 @@ related:
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
@@ -51,7 +52,7 @@ the full acceptance history.
 - The user-owned untracked
   `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged and was
   excluded from every commit.
-- AR-143, AR-156, and AR-160 through AR-175 have governed local implementations
+- AR-143, AR-156, and AR-160 through AR-176 have governed local implementations
   or explicit external gates. This checkpoint is not a production approval.
 
 ## completed-evidence
@@ -86,6 +87,10 @@ the full acceptance history.
   requires `agency.dashboard.control.v1`, retains last-good state on failure,
   and cannot fan out to legacy endpoints. Ten shipped assets total 257,620
   bytes, 5,547 bytes below the unchanged release ceiling.
+- AR-176: the first exact final corpus retained 8,010 passes, 61 skips, 1
+  expected failure, and 11 failures in 33:25. Ten stale full-gate fixtures and
+  one Low missing-Node diagnostic are repaired without weakening production;
+  the original 11 and a 670-test neighboring package are green.
 - CI retains every exact surface while pairing four coverage and six
   compatibility sessions and preflighting CodeQL once. Historical PR topology
   moves from 24 to 13 jobs and models 119.12 raw runner-minutes at approximately
@@ -111,7 +116,7 @@ the full acceptance history.
   review. Do not bypass it while the owner is remote.
 - AR-119/125 still require a benchmark-valid complete outcome corpus. Malformed,
   timed-out, no-response, and unknown upstream arms remain invalid, never losses.
-- Tracker creation/closure for AR-160 through AR-175 and other outward writes
+- Tracker creation/closure for AR-160 through AR-176 and other outward writes
   remain pending owner authorization.
 
 ## same-task-continuity

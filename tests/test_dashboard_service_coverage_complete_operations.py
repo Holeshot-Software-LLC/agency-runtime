@@ -355,6 +355,7 @@ def test_preflight_requires_reinstall_for_launcher_identity_drift(tmp_path, monk
     assert "reinstalling" in blocked["error"]
 
 
+@pytest.mark.runtime_configuration_identity
 def test_install_public_unsupported_and_lock_error(tmp_path, monkeypatch):
     assert (
         install.install_dashboard_service(home_dir=tmp_path, platform_name="darwin")["supported"]

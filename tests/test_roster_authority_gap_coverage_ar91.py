@@ -37,6 +37,7 @@ class _SequenceConnection:
 def _candidate_events(*, reason: str = "snapshot_id=snapshot") -> list[dict[str, Any]]:
     return [
         {
+            "event_id": "candidate-approved-event",
             "event_rowid": 1,
             "event_type": "approved",
             "from_status": "pending",
@@ -46,6 +47,7 @@ def _candidate_events(*, reason: str = "snapshot_id=snapshot") -> list[dict[str,
             "created_at": "2026-07-18T00:00:00+00:00",
         },
         {
+            "event_id": "candidate-activated-event",
             "event_rowid": 2,
             "event_type": "activated",
             "from_status": "approved",
@@ -60,6 +62,7 @@ def _candidate_events(*, reason: str = "snapshot_id=snapshot") -> list[dict[str,
 def _snapshot_event_rows() -> list[dict[str, Any]]:
     return [
         {
+            "event_id": "snapshot-approved-event",
             "import_event_sequence": 1,
             "event_type": "snapshot_approved",
             "agent_slug": "",
@@ -67,6 +70,7 @@ def _snapshot_event_rows() -> list[dict[str, Any]]:
             "created_at": "2026-07-18T00:00:01+00:00",
         },
         {
+            "event_id": "snapshot-activated-event",
             "import_event_sequence": 2,
             "event_type": "snapshot_activated",
             "agent_slug": "",

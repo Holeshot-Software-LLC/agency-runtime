@@ -6,6 +6,7 @@ created: 2026-07-16
 updated: 2026-07-27
 tags: [security, processes, executables, delegation, portability]
 related:
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md
   - docs/roadmap/issue-AR-65-reject-cross-account-executable-namespaces.md
   - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md

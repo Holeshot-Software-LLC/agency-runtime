@@ -6,6 +6,7 @@ created: 2026-07-11
 updated: 2026-07-16
 tags: [dashboard, operations, configuration, installer, security]
 related:
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md
   - docs/roadmap/issue-AR-14-live-signal-observatory.md
   - docs/roadmap/issue-AR-66-bind-systemd-unit-to-trusted-xdg-namespace.md

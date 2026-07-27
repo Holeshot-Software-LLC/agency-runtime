@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-07-26
 tags: [evidence, tracing, delegation]
 related:
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md

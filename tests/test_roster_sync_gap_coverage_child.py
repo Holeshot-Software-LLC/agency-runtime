@@ -23,6 +23,9 @@ class _Rows:
     def fetchall(self) -> list[Any]:
         return self.rows
 
+    def __iter__(self):
+        return iter(self.rows)
+
 
 class _QueueConnection:
     def __init__(self, *results: list[Any]) -> None:
@@ -1374,6 +1377,7 @@ def _history_row(event_id: str, queue_event_id: str | None) -> dict[str, Any]:
 def _patch_queue_snapshot_shell(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(subject, "_assert_remediation_authority_available", lambda _conn: None)
     monkeypatch.setattr(subject, "_remediation_cursor_order", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(subject, "current_active_basis_hash_from_connection", lambda _conn: "basis")
 
 
 def test_queue_snapshot_rejects_invalid_or_unknown_history_binding(
@@ -1416,7 +1420,19 @@ def test_queue_snapshot_reuses_queue_cache(
             [],
             rows,
             [{"id": "queue"}],
-            [(0,)],
+            [],
+            [
+                {
+                    "event_order": 3,
+                    "id": "resolution-1",
+                    "queue_event_id": "queue",
+                },
+                {
+                    "event_order": 3,
+                    "id": "resolution-2",
+                    "queue_event_id": "queue",
+                },
+            ],
             [(2,)],
             [(2,)],
         ),

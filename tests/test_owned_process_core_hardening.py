@@ -363,6 +363,8 @@ def test_forbidden_root_helpers_cover_native_relative_and_resolved_paths(
     tmp_path: Path,
 ) -> None:
     child = tmp_path / "child" / "tool"
+    child.parent.mkdir()
+    child.touch()
     assert process_argv._is_within(str(child), tmp_path) is True
 
     relative = process_argv._absolute_lexical_path(

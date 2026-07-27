@@ -22,6 +22,7 @@ related:
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
@@ -3232,9 +3233,16 @@ reduces an eligible documentation-only primary pull-request lane from 13 hosted
 runner allocations to 5 while retaining Linux and Windows artifacts plus
 parity. This is local structural proof, not measured hosted time or savings.
 
+The first exact final warning-strict run then passed 8,010 tests with 61 skips
+and 1 expected failure but exposed 11 stale full-gate contracts after 33:25.
+AR-176 repairs ten test-isolation/fixture defects without weakening production
+and one Low missing-Node diagnostic defect. All original failures pass together,
+and the combined neighboring package passes 670 tests with 1 platform skip.
+The full rerun remains an explicit gate, not an inferred pass.
+
 ### Still required before AR-119 can close
 
-- Preserve the local repairs across AR-128 through AR-175 while completing their
+- Preserve the local repairs across AR-128 through AR-176 while completing their
   remaining tracker, current-artifact, installed-host, attended-canary, signing,
   and hosted evidence. AR-143's exact Windows roster-rollback path is positive
   native proof only after the AR-161 signed-artifact and attended-canary gates;

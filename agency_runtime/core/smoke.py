@@ -197,6 +197,8 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
             capture_output=True,
             timeout=15,
         )
+    except FileNotFoundError:
+        pass
     except OSError as exc:
         syntax_check = f"skipped: node not runnable ({type(exc).__name__})"
     else:

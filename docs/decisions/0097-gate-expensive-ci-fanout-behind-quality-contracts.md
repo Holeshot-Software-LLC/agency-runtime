@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-07-27
 tags: [ci, testing, cost, github-actions, release]
 related:
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
   - docs/roadmap/issue-AR-117-parallelize-pr-verification.md

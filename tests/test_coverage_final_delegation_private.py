@@ -102,7 +102,7 @@ def test_command_availability_accepts_a_legacy_prepared_executable(
     monkeypatch.setattr(
         backend_command.CommandBackend,
         "executable_path",
-        lambda _self: "trusted-tool",
+        lambda _self, **_kwargs: "trusted-tool",
     )
     monkeypatch.setattr(backend_command, "prepare_process_argv", lambda argv: list(argv))
     monkeypatch.setattr(backend_command.shutil, "which", lambda _value: "trusted-tool")
