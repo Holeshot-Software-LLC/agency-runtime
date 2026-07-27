@@ -34,10 +34,12 @@ accessible name.
 
 ## Current state
 
-Server-side CAS protects mutation integrity, so no stale write was reproduced.
-The visible dashboard can still show a stale or internally mixed state, lose
-focus/details, double-render workforce panels, and provide only a short generic
-toast without a request identifier.
+The original coherence, stale-state, focus, duplicate-render, accessible-name,
+and request-correlation defects are repaired. Fresh installed-artifact review
+then exposed one responsive regression: the desktop heading flex basis became a
+280 px vertical basis after the mobile layout changed to a column. The source
+fix now resets that basis at the mobile breakpoint; final packaged-candidate QA
+remains before this item can close.
 
 ## Approach
 
@@ -70,4 +72,11 @@ control state before one render. Browser IDs are canonical UUIDv4 values and
 the server echoes the shared Agency request ID. The exact release-coverage
 suite passes all 84 tests at 97.13 percent lines, 91.28 percent branches, and
 96.32 percent functions; the server suite passes 134 with 3 skips. Fresh
-post-install desktop/mobile browser QA remains required.
+post-install desktop/mobile browser QA found the mobile heading-basis defect.
+Commit `9aa317c` adds the breakpoint override and a CSS contract regression. The
+current 106-test coverage gate passes at 98.74 percent lines, 90.70 percent
+branches, and 97.98 percent functions. A live 390 x 844 source recheck reduced
+the topbar from 521 px to 297 px, reduced the heading from 280 px to 56 px,
+moved controls from y=387 to y=173, retained a clean desktop layout, and emitted
+no browser warnings or errors. The next packaged candidate still needs the
+same bounded desktop/mobile recheck.

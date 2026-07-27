@@ -39,8 +39,8 @@ the full acceptance history.
 
 ## checkpoint
 
-- Exact locally tested code/ledger pair: `77ec4f6`/`af892ae`.
-- Branch `main` resolves to `af892ae`; `origin/main` remains `880a5ce` because
+- Exact locally tested code/ledger pair: `9aa317c`/`5681a3f`.
+- Branch `main` resolves to `5681a3f`; `origin/main` remains `880a5ce` because
   no new push was authorized. Earlier automatic CI and CodeQL were rejected before any
   step or runner started by the account billing/spending gate. No manual or
   exhaustive workflow was dispatched.
@@ -67,10 +67,11 @@ the full acceptance history.
 - The merged set contains exactly portable wheel `fc5e85a8...5618`, Windows
   wheel `eb8eb4b...f189`, and sdist `d95bb493...fea8`. Strict Twine and the
   independent `--artifact-set release` verifier pass.
-- The freshly installed Windows wheel dashboard authenticated and rendered all
-  seven sections, Refresh advanced sync time, and browser console warnings/
-  errors were empty. Route Lab truthfully stayed disabled without a verified
-  enabled host. The test listener is stopped.
+- The exact installed-wheel dashboard authenticated and rendered all seven
+  sections. A 390 px live pass exposed a vertical mobile heading basis; source
+  commit `9aa317c` fixes it with 106 green UI tests and clean desktop/mobile
+  browser rechecks. The exact next package still needs that visual rerun. Both
+  temporary listeners are stopped.
 - The named fast production spine passes 521 tests with 5 platform skips in
   74.94 seconds at pushed head `880a5ce`. The new exact candidate passes 522
   with 5 skips in 75.89 seconds; all 106 dashboard UI tests, Ruff, formatting,

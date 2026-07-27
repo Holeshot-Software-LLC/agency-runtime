@@ -37,6 +37,9 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- The mobile dashboard header now overrides its desktop flex basis after the
+  layout changes to a column, eliminating the large blank gap above live
+  controls without changing desktop layout or runtime authority.
 - Codex activation verification now proves one exact native child across JSONL
   tool identity, immutable hook provenance, activation consumption, lifecycle,
   model/delegation evidence, accepted finalization, response header, and current
