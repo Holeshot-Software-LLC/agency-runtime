@@ -3167,13 +3167,45 @@ checks are locally green. These are source controls, not a fresh current-source
 installation, hosted portability result, valid matched outcome corpus, or
 production-readiness claim.
 
+### Native and workflow trust checkpoint 2026-07-27
+
+Commit/ledger pair `f64ba1e`/`7b9e2d0` is the clean recovery boundary for the
+native and workflow trust package. AR-143 now has one genuine positive mutation:
+exact roster rollback on Windows 11 x64 prepares and binds the complete Store,
+revision, authority, and workforce transition; verifies an identity-pinned
+app-owned Windows consent helper; then revalidates under `BEGIN IMMEDIATE`
+before commit. Every other persistent mutation and unsupported platform remains
+fail closed. The helper is reproducibly built and platform-honestly packaged,
+but it is still an unsigned review artifact; publisher/legal/signing/timestamp
+authority and an attended success-and-denial Windows Hello canary remain AR-161
+release blockers.
+
+The same pair repairs repository-ancestor `PATH` poisoning (AR-164), stale
+signed remediation authority and paged-history truth (AR-163), ambiguous
+dependency-review fallback (AR-165), and dashboard read-only/correlation/privacy
+copy gaps (AR-166). It also pairs isolated CI sessions and collapses unavailable
+CodeQL fanout without removing exact coverage, compatibility, Windows, artifact,
+or language surfaces. A historical 119.12-runner-minute pull-request run now
+models at approximately 13.63 to 22.85 raw minutes and 13 rather than 24 jobs;
+that is a projection, not a saving claim, because GitHub Actions billing rejects
+new hosted jobs before execution.
+
+Current bounded evidence includes 1,102 combined security/release/integration
+tests with one platform skip, 166 remediation/dashboard projection tests, 115
+release/workflow contracts, 102 dashboard UI tests, 577-file Ruff lint/format,
+425-document verification, strict offline workflow security, and independent
+review with no remaining actionable severity finding in the integrated slice.
+Clean cross-OS artifacts, fresh installed-package dogfood, real-browser UI QA,
+the complete current-head corpus, and hosted measurements still follow this
+checkpoint and are not implied by it.
+
 ### Still required before AR-119 can close
 
-- Preserve the local repairs across AR-128 through AR-142 and AR-144 through
-  AR-155 while completing their remaining tracker, current-artifact,
-  installed-host, and hosted evidence. AR-143 remains the direct production
-  blocker until a genuine OS-backed operator-presence verifier exists; local
-  fail-closed behavior is not positive mutation proof.
+- Preserve the local repairs across AR-128 through AR-166 while completing their
+  remaining tracker, current-artifact, installed-host, attended-canary, signing,
+  and hosted evidence. AR-143's exact Windows roster-rollback path is positive
+  native proof only after the AR-161 signed-artifact and attended-canary gates;
+  it is not general persistent-control or cross-platform authority.
 - Complete a benchmark-valid run of the implemented matched held-out selection
   benchmark against the pinned source-visible upstream Agency Agents baseline.
   Two complete corpora have now established all 19 Agency arms safe and passing
@@ -3197,14 +3229,15 @@ production-readiness claim.
 
 ### Next bounded work package
 
-From this clean checkpoint, run the current-source routing contract evaluation,
-the exact aggregate coverage arm, the separate performance suite, and the full
-repository/release/security gates. Fix only reproduced general defects without
-changing thresholds or exclusions. Then build an isolated canonical artifact
-and exercise every mutation-free install, protocol, dashboard, and host
-contract that does not require genuine operator presence. Keep the 15000 ms
-cold and one-call fast matched controls fixed; malformed or timed-out upstream
-arms remain invalid, never losses.
+From `f64ba1e`/`7b9e2d0`, build and compare clean Windows and Linux artifacts,
+install each wheel/source profile into fresh isolated runtimes, reinstall the
+reviewed Codex integration, and dogfood routing, staffing, contractor, receipt,
+and dashboard behavior. Run real-browser desktop/mobile/accessibility checks,
+then the exact aggregate coverage, performance, routing, security, packaging,
+and release corpus. Fix only reproduced general defects without changing
+thresholds or exclusions. Keep the 15000 ms cold and one-call fast matched
+controls fixed; malformed or timed-out upstream arms remain invalid, never
+losses.
 
 ### Context checkpoint constraints
 
