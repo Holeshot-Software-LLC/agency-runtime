@@ -33,12 +33,14 @@ teams, improves matched outcomes, or runs portably through every supported host.
 ## Current state
 
 Every-worker semantic cases and pairwise/lifecycle-team properties are green.
-Configured-inference and held-out matched evidence, paired Agency-on/off value,
-exact-current installed artifacts, and five live host canaries remain open.
-Complete one-shot applications moved to non-blocking post-production AR-178.
-AR-179 repaired the live false-sufficient-team defect for named regulated
-assurance work and passed a fresh fail-closed confirmation. That bounded result
-does not complete the broader matched outcome or five-host evidence here.
+Exact candidate `29da6eca` now has clean Windows/Linux artifacts, fresh wheel
+and source installs, and a verified merged release set. Configured-inference
+and held-out matched evidence, paired Agency-on/off value, normal-profile
+installation, and five live host canaries remain open. Complete one-shot
+applications moved to non-blocking post-production AR-178. AR-179 repaired the
+live false-sufficient-team defect for named regulated assurance work and passed
+a fresh fail-closed confirmation. Those bounded results do not complete the
+broader matched outcome or five-host evidence here.
 
 ## Approach
 
@@ -63,6 +65,6 @@ All preceding AR-119 slices provide the behavior this evidence must grade.
 - [ ] Matched Agency-on/off trials prove accepted exact-version specialist
   participation and independently graded outcome lift for the same ask, host,
   model, configuration, and evaluator.
-- [ ] Exact-current Windows/Linux installed artifacts pass smoke, portability,
+- [x] Exact candidate Windows/Linux installed artifacts pass smoke, portability,
   and release verification.
 - [ ] Codex, Claude, Hermes, OpenClaw, and ZCode contracts and live canaries pass.

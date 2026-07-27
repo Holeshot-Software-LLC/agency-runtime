@@ -36,6 +36,8 @@ related:
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
+  - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
+  - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
   - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
@@ -60,12 +62,12 @@ exact browser response identity and read-only truth (AR-170), lifecycle-reason
 privacy (AR-171), effective-roster snapshot continuity (AR-172), Route Lab
 observation correlation (AR-173), a trusted documentation-only CI lane
 (AR-174), and removal of the unsupported non-atomic control fallback (AR-175).
-The repaired current-head warning-strict corpus, performance arm, and dashboard
-UI gate are green. Exact `19b20bed` Windows wheel/sdist artifacts and fresh
-Python 3.10 package installs are green, but the later AR-179 routing repair means
-final current-head artifacts must be rebuilt. Current-head Python coverage was
-stopped before completion; Linux portable artifacts and normal-profile Codex
-reinstall remain.
+The repaired warning-strict corpus, performance arm, and dashboard UI gate are
+green. Exact release candidate `29da6eca` now has clean Windows and Linux
+producers, fresh wheel and source installs, and an independently verified
+three-artifact release set. The exhaustive coverage arm remains manual-only and
+was not rerun; it runs only when the owner explicitly requests it. A fresh
+normal-profile Codex reinstall still cannot pass honestly.
 
 The decisive remaining product blocker is no longer missing code that can be
 faked around: a generic fresh Codex installation correctly fails closed because
@@ -77,11 +79,12 @@ normal-profile trust, and benchmark-valid outcome evidence are separate open
 release gates. Production and a CEO demo that claims installed persistent
 control are therefore **NO-GO** until those real gates are supplied.
 
-The exact open gates are the explicitly requested manual current-head coverage
-arm, final rebuilt Windows/Linux artifacts, and a fresh normal-profile Codex
-install; GitHub Actions billing plus hosted evidence; the attended
-Windows Hello/operator-presence canary and signing authority; a benchmark-valid
-AR-119 outcome corpus; and authorized branch-protection and tracker actions.
+The exact open gates are a prepared and presence-authorized Codex install,
+publisher/legal/signing authority, an attended Windows Hello success-and-denial
+canary, five real installed-host canaries, GitHub Actions billing plus final
+hosted evidence, a benchmark-valid AR-119 outcome corpus, and authorized branch
+protection/tracker parity. The owner-deferred exhaustive coverage arm is neither
+scheduled nor an automatic Actions expense.
 
 This is not a conclusion drawn from the earlier untracked
 `2026-07-25-deep-audit-findings.md` draft. That draft remains preserved as a
@@ -91,31 +94,41 @@ reproduction and must not be implemented.
 
 ## Fresh artifact, Codex, routing, and UI checkpoint
 
-The exact `19b20bed` source built a 7,283,064-byte `win_amd64` wheel
-(`e7617309...528b1`) and 17,747,318-byte sdist (`6d11952a...d5036`) in a trusted
-product-private root. Strict metadata, independent distribution verification,
-and separate fresh Python 3.10 wheel/sdist installs passed. Each package smoke
-verified the CLI, 10 dashboard assets, loopback health, 11 MCP tools, the
-263-worker approved roster, selection safety, dependencies, and the expected
-native presence executable. The builder correctly rejected the dirty checkout,
-system Temp ACL, and repository-venv ACL before using the trusted root.
+The exact `29da6eca2b0dd73b37a91e6bfdb29881face5d56` source was exported into
+clean private Windows and WSL/Linux build roots because the primary checkout
+contains an unrelated user-owned draft. The Windows producer emitted a
+7,287,879-byte `win_amd64` wheel (`eb8eb4b...f189`) and the Linux producer a
+7,121,615-byte portable wheel (`fc5e85a8...5618`). Both emitted the same
+17,778,043-byte sdist byte-for-byte (`d95bb493...fea8`). Strict Twine checks and
+the independent `release`-profile verifier passed the assembled set of exactly
+those three artifacts.
 
-The existing Codex integration is not fresh: discovery, registration, and
-enablement are proven, but `loaded=null`, hook trust is unverified, canary is
-absent, and maturity is `activation-required`. Its plugin/runtime closure is
-older than current source, while the July 22 global `agency` executable cannot
-parse current provider configuration. AR-143 deliberately has no positive
-installation path beyond prepared roster rollback, so neither remote nor
-attended fresh Codex installation can honestly succeed yet. AR-161 separately
-owns publisher, signing, legal, and attended signed-candidate delivery.
+Fresh Python 3.10 Windows wheel/sdist installs and Python 3.12 Linux wheel/sdist
+installs passed. They verified version `0.1.0`, the 10 shipped dashboard assets,
+loopback health, 11 MCP tools, the 263-worker roster, selection safety, package
+dependencies, CLI smoke, and the regulated DO-178C fail-closed behavior. The
+portable wheel contained no executable or PE payload. Linux lacked Node, so its
+OpenClaw generated-plugin syntax subcheck was skipped; the remaining Linux
+checks and the packaged Windows check passed. No hosted runner was used.
 
-A current-source authenticated foreground dashboard rendered all seven
-sections, completed an exact Route Lab request, advanced its last-sync time on
-Refresh, and emitted no browser warnings or errors. The UI accurately shows
-zero activation evidence and 29 historical/suggested delegations with unknown
-outcomes; it does not promote recommendations to execution. The source UI is
-CEO-demo quality, but the stale normal-profile installation prevents an honest
-installed-control demo.
+The normal-profile Codex integration is still not fresh: discovery,
+registration, and enablement are proven, but `loaded=null`, hook trust is
+unverified, canary is absent, and maturity is `activation-required`. Its
+plugin/runtime closure is older than the candidate. AR-143 deliberately has no
+positive generic installation path beyond prepared roster rollback. The
+generic install also lacks a frozen prepared transaction and compensation
+contract, so bypassing presence would still be unsafe. AR-161 separately owns
+publisher, signing, legal, signed-delivery verification, and the attended
+canary.
+
+An authenticated dashboard launched from the freshly installed Windows wheel
+rendered all seven sections, advanced its last-sync time on Refresh, and emitted
+no browser warnings or errors. It truthfully showed an isolated empty runtime,
+Codex executable discovery without registration proof, and no eligible Route
+Lab host; the explain action stayed disabled. This upgrades the UI result from
+a source preview to installed-artifact proof. The dashboard is CEO-demo quality
+as an observability/read-only surface, but the stale normal-profile integration
+still prevents an honest demo of persistent installed control.
 
 Bounded live routes used `codex-subscription` with requested/actual
 `gpt-5.6-luna`. They showed selection variance and one P0 defect: a DO-178C
@@ -215,10 +228,11 @@ deselected in 20.66 seconds, and the dashboard UI gate passed 105 tests at
 The failed first run remains part of the evidence history.
 
 The current-head Python coverage arm was stopped before completion and cannot
-support a green coverage claim. Coverage, rebuilt cross-platform artifacts, and
-fresh installation therefore remain local release gates. Exhaustive Python
-coverage and compatibility now run only by explicit manual dispatch so the
-32-minute corpus is not repeated automatically on every pull request or push.
+support a green coverage claim. Exact-candidate cross-platform artifacts and
+fresh isolated package installs are now green; normal-profile host installation
+is not. Exhaustive Python coverage and compatibility run only by explicit owner
+request so the 32-minute corpus is not repeated automatically on every pull
+request or push.
 
 ## What was actually exercised
 
@@ -501,12 +515,12 @@ installed, or hosted scope without promoting contract tests to live proof.
 
 | State | Tasks | Remaining proof |
 |---|---|---|
-| Locally repaired | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) through [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | Current-head coverage and artifact checks; install-dependent issues remain blocked from positive canary proof. |
+| Locally repaired | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) through [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | Install-dependent issues remain blocked from positive canary proof; exhaustive coverage is owner-requested only. |
 | Locally measured | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Local correctness/performance and the packaged-contractor batch are green; supported-runner evidence and further end-to-end profiling remain. |
 | Partially complete | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility and a dead island with 590 deletions/one replacement line are repaired; independently reviewed large-function/helper consolidation remains. |
-| Locally repaired | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md), [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md), [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Current-head Python coverage and rebuilt artifact checks. |
-| Final validation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md) through [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md), [AR-179](../roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | Warning-strict, performance, UI, `19b20bed` Windows package/install, and regulated-gap gates are green; manual current-head coverage, final Windows/Linux artifacts, and installed Codex remain. |
-| Product blocker | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | Implement and human-canary a real OS-backed, non-exporting, single-use presence verifier. |
+| Locally repaired | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md), [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md), [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Exact-candidate package checks are green; exhaustive coverage is owner-requested only. |
+| Final validation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md) through [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md), [AR-160](../roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md), [AR-179](../roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | Warning-strict, performance, UI, exact `29da6eca` Windows/Linux package/install, merged-set, and regulated-gap gates are green; normal-profile Codex remains. |
+| Product blocker | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | Prepare/freeze generic Codex install, add an enumerated native presence path, and human-canary the non-exporting verifier. |
 | Outcome evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | Benchmark-valid completed corpus and current-artifact host/OS outcomes; malformed/timed-out arms stay invalid. |
 | Administrative/host | AR-128 through AR-155 tracker rows, normal-profile Codex trust, hosted matrices, absent-host canaries | Explicit user/outward authorization and real installed environments. |
 

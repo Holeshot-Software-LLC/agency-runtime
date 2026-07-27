@@ -35,8 +35,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 99b51bdc24da0020b1154967f4e555d152703594
-minimum_ledger_commit: 6392eb313340b891a5f3d7488f4ca47c0a1c913a
+evidence_commit: 29da6eca2b0dd73b37a91e6bfdb29881face5d56
+minimum_ledger_commit: 29da6eca2b0dd73b37a91e6bfdb29881face5d56
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -49,84 +49,60 @@ the full acceptance history.
 
 ## checkpoint
 
-- Clean local recovery pair: substantive `99b51bd`, ledger `6392eb3`.
-- This pair seals `19b20bed` Windows package/install, Codex freshness,
-  authenticated dashboard, and post-fix regulated-gap evidence.
-- Branch is `main`, locally ahead of `origin/main`. No push, PR, tag, release,
-  publication, hosted dispatch, tracker mutation, or repository-setting change
-  was authorized.
+- Exact tested release candidate: `29da6eca2b0dd73b37a91e6bfdb29881face5d56`.
+- Branch is `main`, locally ahead of `origin/main`. This package performed no
+  push, PR, tag, release, publication, hosted dispatch, tracker mutation, or
+  repository-setting change.
 - The user-owned untracked
   `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged and was
   excluded from every commit.
-- AR-143, AR-156, and AR-160 through AR-176 have governed local implementations
-  or explicit external gates. This checkpoint is not a production approval.
+- Production remains **NO-GO**. The installed-artifact dashboard is a
+  conditional demo **GO** only as a truthful read-only/observability surface.
 
 ## completed-evidence
 
-- AR-143 exact roster rollback prepares the complete transition, invokes the
-  Windows 11 x64 app-owned consent helper, and revalidates inside
-  `BEGIN IMMEDIATE`; all other mutations/platforms remain blocked.
-- AR-160/161 implement portable and `win_amd64` wheels, one sdist, structural
-  PE rejection, exact hashes, and parity; current bytes remain unsigned review inputs.
-- AR-163: signed remediation history requires current candidate/download/audit/
-  active-basis eligibility. Stale authority reopens the original queue, counts
-  are disjoint, and UI pagination is bound to an exact remediation revision.
-- AR-164: inert repository-ancestor discovery excludes hostile sibling `PATH`
-  executables across direct CLI, delegation, first Git, installer, dashboard,
-  and smoke launch surfaces before identity freeze/revalidation.
-- AR-165/166: dependency-review fallback accepts only an exact authenticated
-  capability boundary; dashboard persistent controls stay read-only, safe
-  request IDs are operator-visible, and runtime-capture disclosure is precise.
-- AR-170 through AR-173 fail browser identity closed, complete worker evidence,
-  redact lifecycle reasons, bind roster revisions/snapshots, recapture Store
-  churn, and carry one Route Lab trace through observation correlation.
-- AR-174: trusted-base classification selects a five-runner primary lane only
-  for complete regular `docs/**/*.md` pull-request deltas. Linux and Windows
-  artifacts and artifact parity remain mandatory. The 13-to-5 allocation
-  change is structural local proof, not hosted savings evidence.
-- AR-175: the unsupported non-atomic control fallback is removed. The browser
-  requires `agency.dashboard.control.v1`, retains last-good state on failure,
-  and cannot fan out to legacy endpoints. Ten shipped assets total 257,620
-  bytes, 5,547 bytes below the unchanged release ceiling.
-- AR-176: the first exact final corpus retained 8,010 passes, 61 skips, 1
-  expected failure, and 11 failures in 33:25. Ten stale full-gate fixtures and
-  one Low missing-Node diagnostic are repaired without weakening production;
-  the original 11 and a 670-test neighboring package are green. The exact
-  second run passes 8,021 tests with 61 skips and 1 expected failure in 32:11.
-- Exhaustive CI is manual-only: four-shard coverage and six-version
-  compatibility run on `workflow_dispatch`. PR/push aggregates require both
-  skipped; a manual aggregate requires both successful. Fixed thresholds and
-  version coverage are unchanged.
-- Current bounded checks include the 8,021-test warning-strict pass; 3
-  performance tests with 8,080 deselected in 20.66 seconds; and 105 dashboard
-  UI tests at 98.72 line, 91.00 branch, and 97.97 function percent. The
-  current-head Python coverage attempt was stopped and is incomplete.
-- Exact `19b20bed` Windows wheel/sdist artifacts pass strict verification and
-  fresh Python 3.10 install/smoke. AR-179 binds named standards to typed
-  review; 121 focused intent/staffing/inference/safety/hiring tests pass.
-- AR-179's post-checkpoint live route abstained with zero selections and a
-  truthful uncovered-unit gap; two `gpt-5.6-luna` receipts were applied.
+- Deep security/optimization/traceability/UI review is complete. No Critical or
+  High finding remains open in the reviewed source; repaired lower findings
+  have cross-layer regressions. The older warning-strict corpus passed 8,021
+  tests with 61 skips and 1 expected failure in 32:11.
+- Exhaustive coverage and six-version compatibility are manual-only
+  `workflow_dispatch` work. They do not run on PR/push and will not be run
+  locally unless the owner explicitly asks. No hosted Actions ran here.
+- Exact candidate `29da6eca` clean Windows artifacts pass strict metadata,
+  independent verification, and fresh Python 3.10 wheel/sdist install smoke.
+- The clean Linux producer emits the portable wheel and a byte-identical sdist;
+  fresh Python 3.12 wheel/sdist installs pass. The portable wheel contains no
+  executable or PE. Linux Node absence skipped only the OpenClaw syntax subcheck.
+- The merged set contains exactly portable wheel `fc5e85a8...5618`, Windows
+  wheel `eb8eb4b...f189`, and sdist `d95bb493...fea8`. Strict Twine and the
+  independent `--artifact-set release` verifier pass.
+- The freshly installed Windows wheel dashboard authenticated and rendered all
+  seven sections, Refresh advanced sync time, and browser console warnings/
+  errors were empty. Route Lab truthfully stayed disabled without a verified
+  enabled host. The test listener is stopped.
+- AR-179 binds named standards to typed review. Focused tests and fresh live
+  routing prove a DO-178C gap now abstains rather than forming a false team.
+- One-shot application evaluation is deferred to post-production AR-178 and is
+  not an AR-119/125 release gate.
 
 ## exact-blocker
 
-- Current-head manual coverage and final rebuilt Windows/Linux artifact/install
-  evidence remain incomplete; `19b20bed` Windows package evidence is green.
+- Generic `agency install` has no prepared, frozen, replay-safe transaction or
+  compensation contract. AR-143's only genuine positive mutation is exact
+  prepared roster rollback; every generic install correctly remains blocked.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
-  protected signing/timestamp service, exact signed candidate verification, and
-  an attended Windows Hello success-and-denial canary. The remote session cannot
+  protected signing/timestamp service, signed-delivery verification, and an
+  attended Windows Hello success-and-denial canary. The remote session cannot
   supply human presence or invent publisher authority.
 - GitHub Actions billing/spending rejects new jobs before steps run. PR/main
-  speed, cross-OS artifact, CodeQL, dependency-review, and portability behavior
-  therefore lack current hosted measurement.
+  speed, CodeQL, dependency review, and hosted portability lack current proof.
 - `main` has neither authorized branch protection nor a repository ruleset.
-  Applying or requiring hosted contexts is an outward setting change owned by
-  AR-159.
+  Applying required contexts is an outward setting change owned by AR-159.
 - Normal-profile Codex hook trust requires the supported terminal-TUI user
-  review. Do not bypass it while the owner is remote.
+  review. Five installed-host canaries remain open. Do not bypass trust while
+  the owner is remote.
 - AR-119/125 still require a benchmark-valid complete outcome corpus. Malformed,
   timed-out, no-response, and unknown upstream arms remain invalid, never losses.
-- Complete one-shot applications are deferred to AR-178 as a non-blocking
-  post-production evaluation; they are not a production or release gate.
 - Tracker creation/closure for AR-160 through AR-176 and other outward writes
   remain pending owner authorization.
 
@@ -137,33 +113,28 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Complete the stopped current-head coverage arm once as an explicit manual
-   integration gate; do not repeat the green warning-strict corpus by default.
-2. Build from clean detached source on Windows and WSL/Linux; require one exact
-   three-artifact set and byte-identical sdists/shared wheel payloads.
-3. Install Windows wheel/sdist and Linux portable wheel/sdist into fresh Python
-   runtimes; run distribution, CLI, smoke, and no-PE/profile checks.
-4. Reinstall the reviewed Codex integration from the verified artifact and
-   dogfood routing, staffing, contractors, specialist/model receipts, MCP, and
-   host maturity without claiming manual subagents as Agency-selected.
-5. Run final installed dashboard desktop/mobile/accessibility/console QA and
-   update the production verdict. Keep external authorization, presence,
-   hosted, tracker, and benchmark-valid corpus gates explicit.
+1. Under AR-143, add a release-disabled prepared Codex-install coordinator that
+   freezes Store/config generations, exact target/bundle/executable identities,
+   expected deltas, and recovery consequences; revalidate before each owner
+   mutation and prove drift, replay, substitution, and partial-failure behavior.
+2. Add an enumerated `install.codex.v1` native protocol only after the prepared
+   transaction exists. Keep it unsigned and release-disabled pending AR-161.
+3. Add signed-delivery provenance and independent Windows default-policy
+   verification. Publisher/legal/signing inputs remain owner/external gates.
+4. With those gates satisfied, perform the attended normal-profile Codex install
+   and five-host canaries, then the benchmark-valid AR-119/125 outcome trials.
+5. Run exhaustive coverage/compatibility only on explicit owner request.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
-python -m scripts.run_parallel_change_loop
-python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
-ruff check agency_runtime tests scripts
-ruff format --check agency_runtime tests scripts
 python scripts/verify_docs.py
-# Explicit manual integration/release gates only:
-python -m pytest tests -q -W error
-python -m scripts.verify_distribution <clean-artifact-directory> --artifact-set release --expected-commit b520fa765ffdef93ad499a088f79d247ce910e75
+python -m scripts.verify_distribution <three-artifact-directory> --artifact-set release --expected-commit 29da6eca2b0dd73b37a91e6bfdb29881face5d56
 git diff --check
+# Owner-requested manual integration only:
+python -m pytest tests -q -W error
 ~~~
 
 ## constraints

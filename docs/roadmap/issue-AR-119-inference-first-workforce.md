@@ -3255,21 +3255,25 @@ tests at 98.72 percent line, 91.00 percent branch, and 97.97 percent function
 coverage.
 
 The current-head Python coverage attempt was stopped before completion and is
-not a passing result. Current-head coverage, rebuilt artifacts, and fresh
-installation remain required. The production verdict stays **NO-GO** because
-those local gates and the external billing/hosted, attended Windows Hello,
-operator-presence, benchmark-outcome, branch-protection, and tracker gates are
-still open.
+not a passing result. Exhaustive coverage and compatibility are now owner-
+requested manual integration work and were not rerun. The production verdict
+stays **NO-GO** because generic installation, signed/presence-authorized
+delivery, installed-host canaries, and the external hosted, benchmark-outcome,
+branch-protection, and tracker gates remain open.
 
 ### Fresh artifact and regulated-gap checkpoint 2026-07-27
 
-Exact `19b20bed` Windows wheel and sdist builds pass strict metadata,
-independent distribution verification, and fresh Python 3.10 install/smoke
-from a trusted product-private builder root. Because the following AR-179
-routing repair changes package code, final current-head artifacts still require
-a rebuild. Live routing reproduced one
-P0 false-sufficient-team defect: a DO-178C avionics-assurance request was
-accepted with generic onboarding, test-results, and code-review workers.
+Exact candidate `29da6eca` now has clean Windows and Linux producer pairs. The
+portable and `win_amd64` wheels plus their byte-identical sdist pass strict
+metadata and independent merged-set verification. Fresh Windows Python 3.10 and
+Linux Python 3.12 wheel/sdist installs pass the packaged smoke contract; the
+portable wheel contains no executable or PE payload. A freshly installed
+Windows-wheel dashboard then authenticated, rendered every section, refreshed,
+reported no browser warning/error, and truthfully disabled Route Lab without a
+verified enabled host. No hosted runner was used. Earlier live routing
+reproduced one P0 false-sufficient-team defect: a DO-178C avionics-assurance
+request was accepted with generic onboarding, test-results, and code-review
+workers.
 AR-179 and ADR-0103 now preserve named high-assurance standards as typed
 independent-review capabilities. Generic review cannot cover them; an explicit
 governed contract can. The focused 57-test intent/staffing slice and 64-test
@@ -3284,8 +3288,8 @@ delegation, hire, or contractor execution is claimed.
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
-  remaining tracker, current-artifact, installed-host, attended-canary, signing,
-  and hosted evidence. AR-143's exact Windows roster-rollback path is positive
+  remaining tracker, installed-host, attended-canary, signing, and hosted
+  evidence. AR-143's exact Windows roster-rollback path is positive
   native proof only after the AR-161 signed-artifact and attended-canary gates;
   it is not general persistent-control or cross-platform authority.
 - Complete a benchmark-valid run of the implemented matched held-out selection
@@ -3303,27 +3307,25 @@ delegation, hire, or contractor execution is claimed.
   duplicate/admission/promotion lifecycle, and CLI/dashboard operator flows.
 - Prove cold, warm, cache-invalidation, and large native-fan-out latency bounds.
 - Run paired Agency-on/off outcome trials with accepted activation evidence.
-- Complete the current-head manual integration coverage gate, packaging,
-  Windows, and Linux artifact matrix; then perform the deferred hosted checks
-  once at the end. Do not restore exhaustive Python coverage or compatibility
-  to automatic pull-request or push execution.
+- Keep exhaustive Python coverage and compatibility manual-only and run them
+  only when the owner explicitly asks. Perform the deferred hosted checks once
+  at the end; do not restore those corpora to automatic PR/push execution.
 - Create the final PR, merge it, reinstall the merged artifact, and run live
   canaries on Codex, Claude, Hermes, OpenClaw, and ZCode before closing issue
   #132.
 
 ### Next bounded work package
 
-From the next clean recovery pair, complete the stopped current-head coverage
-arm only as an explicit manual integration gate, then build and compare clean
-Windows and Linux artifacts. Install each wheel/source profile into fresh
-isolated runtimes, reinstall the reviewed Codex integration, and dogfood
-routing, staffing, contractor, receipt, and dashboard behavior. Run
-real-browser desktop/mobile/accessibility checks and the remaining routing,
-security, packaging, and release gates without repeating the already-green
-32-minute warning-strict corpus. Fix only reproduced general defects without
-changing thresholds or exclusions. Keep the 15000 ms cold and one-call fast
-matched controls fixed; malformed or timed-out upstream arms remain invalid,
-never losses.
+From the next clean recovery pair, implement a release-disabled prepared Codex
+install coordinator under AR-143. Freeze the exact Store/config generations,
+target tree, host executable, bundle/launcher inputs, expected deltas, and
+recovery consequences; revalidate before every owner mutation and prove drift,
+replay, substitution, and partial-failure behavior. Only then add an enumerated
+`install.codex.v1` native protocol. Keep it unsigned and unavailable for release
+until AR-161 provides publisher/legal/signing authority and an attended canary.
+Do not repeat the green 32-minute corpus or manual coverage without an explicit
+owner request. Keep the 15000 ms cold and one-call fast matched controls fixed;
+malformed or timed-out upstream arms remain invalid, never losses.
 
 ### Context checkpoint constraints
 
