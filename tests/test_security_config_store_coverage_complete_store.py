@@ -16,6 +16,8 @@ from agency_runtime.core.store.evidence import EvidenceStoreMixin
 from agency_runtime.core.store.sqlite import Store
 from tests.runtime_support import harden_private_test_file
 
+pytestmark = pytest.mark.runtime_configuration_identity
+
 
 def test_projection_fallbacks_redact_malformed_endpoints_and_classify_details(
     monkeypatch: pytest.MonkeyPatch,

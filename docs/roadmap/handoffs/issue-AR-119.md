@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 85549a4d8000aef708b7e1b90e3bcfb90a7d81b1
-minimum_ledger_commit: 0001bf77acfef4092e8ac21582375790f1b68061
+evidence_commit: dca7af569272f8caf15c4a6f8602061716677801
+minimum_ledger_commit: 84fadffa4f475a4b2dd6859b781ecc03253b56ef
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -42,8 +42,8 @@ acceptance contract; this capsule records only the active checkpoint.
   publication, or release was authorized.
 - The user-owned untracked `docs/analysis/2026-07-25-deep-audit-findings.md`
   remains unchanged and excluded from every commit.
-- Telemetry reported 62.0 percent remaining. The clean `85549a4`/`0001bf7`
-  measured-profile pair precedes the completed speed comparison.
+- Telemetry reported 32.7 percent remaining. The clean `dca7af5`/`84fadff`
+  quality-first fanout pair is the reusable hard checkpoint.
 - Security, optimization, and UI-to-Store traceability findings AR-128 through
   AR-155 have governed local repairs or explicit remaining evidence gates.
 - AR-156 now has three clean v2 source-byte controls, three matched strict
@@ -78,9 +78,10 @@ acceptance contract; this capsule records only the active checkpoint.
   product/test/harness digests, runtime identity, exact source-byte assignment,
   file/phase/shard aggregates, and post-run source revalidation. The focused
   contract package passes 52 tests and independent review approved clean runs.
-- Four behavior-preserving test setup reductions kept 77 passes and 5 skips
-  while a matched local Windows slice fell from 84.38 to 48.06 seconds
-  (43.04 percent). This bounded slice is separate from the full-corpus evidence.
+- Test-only setup reductions preserved their asserted contracts while matched
+  slices fell 43.04 percent and 28.5 percent. The latter reuses one private
+  offline config with unique lazy Store paths; manifest v3 now measures the
+  remaining plan, process, timing-read, cleanup, and publication phases.
 - Replacement controls have a 639.948-second frozen-manifest median. Three
   strict-profile runs have a 575.973-second median: a stable 9.997-percent gain
   that misses the unchanged 30-percent automatic-promotion gate. Source bytes
@@ -141,7 +142,7 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 1. Enforce source-byte default selection and record the completed speed evidence.
 2. Gate expensive Actions fan-out behind same-revision fast quality, retain the
    governed compatibility/coverage surfaces, and record hosted-enforcement risk.
-3. Remove measured per-test fixture and cleanup cost without weakening gates.
+3. Use manifest v3 to reduce measured cleanup and Store cost without weakening gates.
 4. Implement AR-143 through a prepare-verify-revalidate-commit seam, beginning
    with roster rollback, and keep every unmigrated positive mutation blocked.
 5. Run current-head canonical coverage, performance, docs, UI, security,

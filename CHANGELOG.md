@@ -36,6 +36,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Ordinary tests now reuse one private, immutable offline configuration while
+  retaining unique lazy Store and runtime-control paths per case. Configuration-
+  identity tests opt into the original per-test file contract, preserving the
+  security boundary while removing repeated temporary-directory and YAML writes.
 - The warning-strict local change loop now defaults to deterministic source-byte
   partitioning. A versioned Windows timing profile remains available through
   explicit `--partition auto`; strict reproduction also requires
@@ -81,6 +85,11 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Local change-loop manifests now expose bounded monotonic phase timings for
+  planning, launch, process execution, timing-report reads, scratch cleanup, and
+  publication, including per-shard process and timing-read durations. This makes
+  the remaining controller tail measurable without weakening identity-bound
+  cleanup.
 - The local parallel change loop can opt into bounded, run-bound per-file timing
   evidence. It publishes only after every shard passes and the exact sharded
   file union matches the serial plan, enabling measured Windows rebalancing

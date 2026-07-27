@@ -187,6 +187,47 @@ def _timing_report(
     )
 
 
+def _assert_phase_timing_contract(
+    manifest: dict[str, Any],
+    plan: subject.ParallelTestPlan,
+    results: tuple[subject.ShardResult, ...],
+) -> None:
+    assert manifest["schema"] == "agency.local-parallel-tests.latest.v3"
+    phase_timings = manifest["phase_timings"]
+    assert phase_timings == {
+        "clock": "monotonic",
+        "durations_ns": phase_timings["durations_ns"],
+        "process_scope": "executor-wall-including-launch-and-timing-read",
+        "publish_relevant_scope": "input-revalidation-and-timing-artifact",
+        "timing_read_aggregation": "sum-across-shards",
+    }
+    durations = phase_timings["durations_ns"]
+    assert set(durations) == {
+        "launch",
+        "plan",
+        "process",
+        "publish_relevant",
+        "scratch_cleanup",
+        "timing_read",
+    }
+    assert all(
+        type(value) is int and 0 <= value <= subject.MAX_PHASE_DURATION_NS
+        for value in durations.values()
+    )
+    assert durations["plan"] == plan.plan_duration_ns
+    assert durations["launch"] <= durations["process"]
+    assert durations["timing_read"] == sum(result.timing_read_duration_ns for result in results)
+    by_index = {result.index: result for result in results}
+    for item in manifest["shards"]:
+        result = by_index[item["index"]]
+        assert item["process_duration_ns"] == result.process_duration_ns
+        assert item["timing_read_duration_ns"] == result.timing_read_duration_ns
+        assert type(result.process_duration_ns) is int
+        assert 0 <= result.process_duration_ns <= durations["process"]
+        assert type(result.timing_read_duration_ns) is int
+        assert 0 <= result.timing_read_duration_ns <= subject.MAX_PHASE_DURATION_NS
+
+
 def test_plan_uses_one_runtime_exact_shards_and_least_privilege_environment(
     tmp_path: Path,
     self_host_runtime_home: Path,
@@ -382,7 +423,7 @@ def test_valid_timing_reports_publish_one_run_bound_consolidated_artifact(
     assert sum(item["total_ns"] for item in artifact["files"]) == len(plan.serial_files) * 6
     assert "OPENAI_API_KEY" not in plan.timing_artifact_path.read_text("utf-8")
     manifest = json.loads((plan.log_root / "latest-run.json").read_text("utf-8"))
-    assert manifest["schema"] == "agency.local-parallel-tests.latest.v2"
+    _assert_phase_timing_contract(manifest, plan, results)
     assert manifest["file_timings"] == {
         "artifact": plan.timing_artifact_path.name,
         "complete": True,
@@ -565,6 +606,21 @@ def test_execution_uses_balanced_capture_and_replaces_one_coherent_log_set(
     assert manifest["run_id"] == plan.use.run_id
     assert manifest["exit_code"] == 1
     assert manifest["elapsed_seconds"] >= 0
+    _assert_phase_timing_contract(manifest, plan, results)
+    assert manifest["phase_timings"]["durations_ns"]["timing_read"] == 0
+
+
+@pytest.mark.parametrize("value", [True, -1, subject.MAX_PHASE_DURATION_NS + 1])
+def test_phase_durations_reject_values_outside_the_manifest_contract(value: object) -> None:
+    with pytest.raises(RuntimeError, match="phase duration is outside"):
+        subject._bounded_phase_duration_ns(value, phase="contract-test")
+    assert (
+        subject._bounded_phase_duration_ns(
+            subject.MAX_PHASE_DURATION_NS,
+            phase="contract-test",
+        )
+        == subject.MAX_PHASE_DURATION_NS
+    )
 
 
 @pytest.mark.parametrize(

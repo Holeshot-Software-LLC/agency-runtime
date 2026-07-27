@@ -1788,6 +1788,7 @@ def test_install_cli_rejects_rollback_dry_run_and_unscoped_backup() -> None:
         cmd_install(Namespace(**base, rollback=False, dry_run=False, backup="retained"))
 
 
+@pytest.mark.runtime_configuration_identity
 def test_install_all_marker_only_host_reports_incomplete_nonzero(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -1832,6 +1833,7 @@ def test_install_all_marker_only_host_reports_incomplete_nonzero(
     assert report["hosts"][0]["complete"] is False
 
 
+@pytest.mark.runtime_configuration_identity
 def test_install_defaults_to_user_dashboard_service(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],

@@ -13,6 +13,8 @@ from agency_runtime.core import dashboard_runtime
 from agency_runtime.core.host_control import SUPPORTED_HOSTS
 from agency_runtime.core.windows_acl import RestrictedWindowsTokenError
 
+pytestmark = pytest.mark.runtime_configuration_identity
+
 
 def _master(enabled: bool = True, *, generation: int = 3) -> dict[str, Any]:
     return {

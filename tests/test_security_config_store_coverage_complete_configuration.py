@@ -30,6 +30,8 @@ from agency_runtime.core.configuration_contracts import (
 )
 from agency_runtime.core.windows_acl import WindowsTokenProbeError
 
+pytestmark = pytest.mark.runtime_configuration_identity
+
 
 @pytest.mark.parametrize(
     ("function", "args"),

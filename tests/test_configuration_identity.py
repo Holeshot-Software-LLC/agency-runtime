@@ -42,6 +42,8 @@ from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server.dashboard import run_dashboard
 from tests.runtime_support import trusted_test_interpreter
 
+pytestmark = pytest.mark.runtime_configuration_identity
+
 
 @pytest.fixture(autouse=True)
 def _isolated_config_environment(

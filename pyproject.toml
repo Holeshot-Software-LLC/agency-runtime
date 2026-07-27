@@ -92,6 +92,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 markers = [
     "performance: wall-clock performance gates that must run without coverage instrumentation",
+    "runtime_configuration_identity: preserve a per-test config file with no database environment override",
 ]
 
 [tool.ruff]

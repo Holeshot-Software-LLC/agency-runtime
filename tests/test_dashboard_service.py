@@ -29,6 +29,8 @@ from agency_runtime.core.dashboard_service import (
 )
 from agency_runtime.core.process_argv import agency_bootstrap_path
 
+pytestmark = pytest.mark.runtime_configuration_identity
+
 
 def _test_bootstrap_path(tmp_path: Path) -> Path:
     return tmp_path / "Private Runtime" / "_bootstrap.py"

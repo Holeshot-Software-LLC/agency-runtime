@@ -74,6 +74,7 @@ DEFAULT_TIMEOUT_SECONDS = 45 * 60
 MIN_TIMEOUT_SECONDS = 0.1
 MAX_TIMEOUT_SECONDS = 24 * 60 * 60
 MAX_WINDOWS_CRITICAL_PATH_CHARS = 240
+MAX_PHASE_DURATION_NS = 2**63 - 1
 PYTEST_FLAGS = (
     "-q",
     "-W",
@@ -170,6 +171,7 @@ class ParallelTestPlan:
     partition: PartitionWeights
     dry_run: bool
     measurement_context: dict[str, Any]
+    plan_duration_ns: int = field(compare=False, repr=False)
     timing_artifact_path: Path | None = None
     use: PlanUse = field(default_factory=PlanUse, compare=False, repr=False)
 
@@ -183,6 +185,17 @@ class ShardResult:
     cancelled: bool = False
     failure_category: str | None = None
     timing_report: dict[str, Any] | None = field(default=None, compare=False, repr=False)
+    process_duration_ns: int = field(default=0, compare=False)
+    timing_read_duration_ns: int = field(default=0, compare=False)
+
+
+@dataclass(frozen=True, slots=True)
+class _ExecutionOutcome:
+    exit_code: int
+    results: tuple[ShardResult, ...]
+    launch_duration_ns: int
+    process_duration_ns: int
+    timing_read_duration_ns: int
 
 
 class ParallelCleanupError(RuntimeError):
@@ -195,6 +208,20 @@ class ParallelCleanupError(RuntimeError):
 
 RuntimePreparer = Callable[..., dict[str, str]]
 BoundedRunner = Callable[..., BoundedBinaryProcessResult]
+
+
+def _bounded_phase_duration_ns(value: object, *, phase: str) -> int:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 0 <= value <= MAX_PHASE_DURATION_NS
+    ):
+        raise RuntimeError(f"parallel {phase} phase duration is outside the supported bound")
+    return value
+
+
+def _elapsed_phase_duration_ns(started_ns: int, *, phase: str) -> int:
+    return _bounded_phase_duration_ns(time.monotonic_ns() - started_ns, phase=phase)
 
 
 def _resolved_test_root(repo_root: Path, test_root: Path) -> tuple[Path, Path]:
@@ -310,6 +337,7 @@ def build_parallel_test_plan(
     partition_strategy: str = DEFAULT_PARTITION_STRATEGY,
     require_exact_shard_weights: bool = False,
 ) -> ParallelTestPlan:
+    plan_started_ns = time.monotonic_ns()
     repo, tests = _resolved_test_root(repo_root, test_root)
     relative_test_root = tests.relative_to(repo).as_posix()
     if not relative_test_root:
@@ -481,6 +509,7 @@ def build_parallel_test_plan(
         partition=partition,
         dry_run=dry_run,
         measurement_context=measurement_context,
+        plan_duration_ns=_elapsed_phase_duration_ns(plan_started_ns, phase="plan"),
         timing_artifact_path=(log_root / _TIMING_MANIFEST_NAME if collect_file_timings else None),
     )
 
@@ -764,6 +793,7 @@ def _run_shard(
     environment = dict(shard.environment)
     if shard.timing_path is not None:
         environment[RUN_ID_ENVIRONMENT_KEY] = run_id
+    process_started_ns = time.monotonic_ns()
     try:
         result = bounded_runner(
             shard.command,
@@ -778,6 +808,10 @@ def _run_shard(
     except KeyboardInterrupt:
         raise
     except Exception as exc:
+        process_duration_ns = _elapsed_phase_duration_ns(
+            process_started_ns,
+            phase=f"shard-{shard.index}-process",
+        )
         write_atomic_bounded_log(
             shard.log_path,
             _result_log_payload(
@@ -791,10 +825,22 @@ def _run_shard(
             maximum_log_bytes,
             marker=_TRUNCATION_MARKER,
         )
-        return ShardResult(shard.index, 1, shard.log_path, failure_category="runner")
+        return ShardResult(
+            shard.index,
+            1,
+            shard.log_path,
+            failure_category="runner",
+            process_duration_ns=process_duration_ns,
+        )
+    process_duration_ns = _elapsed_phase_duration_ns(
+        process_started_ns,
+        phase=f"shard-{shard.index}-process",
+    )
     category = _failure_category(result)
     timing_report: dict[str, Any] | None = None
+    timing_read_duration_ns = 0
     if shard.timing_path is not None:
+        timing_read_started_ns = time.monotonic_ns()
         try:
             timing_report = _load_timing_report(
                 shard,
@@ -804,6 +850,11 @@ def _run_shard(
         except (OSError, TypeError, ValueError):
             if result.returncode == 0 and category is None:
                 category = "timing"
+        finally:
+            timing_read_duration_ns = _elapsed_phase_duration_ns(
+                timing_read_started_ns,
+                phase=f"shard-{shard.index}-timing-read",
+            )
     write_atomic_bounded_log(
         shard.log_path,
         _result_log_payload(
@@ -825,6 +876,8 @@ def _run_shard(
         cancelled=result.cancelled,
         failure_category=category,
         timing_report=timing_report,
+        process_duration_ns=process_duration_ns,
+        timing_read_duration_ns=timing_read_duration_ns,
     )
 
 
@@ -940,13 +993,16 @@ def _execute_shards(
     bounded_runner: BoundedRunner,
     run_id: str,
     started_at_unix_ns: int,
-) -> tuple[int, tuple[ShardResult, ...]]:
+) -> _ExecutionOutcome:
     cancel_event = threading.Event()
     executor: ThreadPoolExecutor | None = None
     futures: list[Future[ShardResult]] = []
     results: list[ShardResult] = []
     interruption: KeyboardInterrupt | None = None
     primary_error: BaseException | None = None
+    launch_started_ns = time.monotonic_ns()
+    process_started_ns = launch_started_ns
+    launch_duration_ns: int | None = None
     try:
         executor = ThreadPoolExecutor(
             max_workers=len(plan.shards), thread_name_prefix="agency-pytest-shard"
@@ -963,6 +1019,7 @@ def _execute_shards(
             )
             for shard in plan.shards
         ]
+        launch_duration_ns = _elapsed_phase_duration_ns(launch_started_ns, phase="launch")
         results.extend(future.result() for future in as_completed(futures))
     except KeyboardInterrupt as exc:
         interruption = exc
@@ -974,6 +1031,8 @@ def _execute_shards(
         cancel_event.set()
         for future in futures:
             future.cancel()
+    if launch_duration_ns is None:
+        launch_duration_ns = _elapsed_phase_duration_ns(launch_started_ns, phase="launch")
     shutdown_error: BaseException | None = None
     if executor is not None:
         try:
@@ -985,6 +1044,7 @@ def _execute_shards(
                 future.cancel()
             with suppress(BaseException):
                 executor.shutdown(wait=True, cancel_futures=True)
+    process_duration_ns = _elapsed_phase_duration_ns(process_started_ns, phase="process")
     if shutdown_error is not None:
         if primary_error is not None:
             add_exception_note(
@@ -1002,9 +1062,21 @@ def _execute_shards(
     if primary_error is not None:
         raise primary_error
     if interruption is not None:
-        return 130, _completed_results(futures)
-    ordered = tuple(sorted(results, key=lambda item: item.index))
-    return (0 if all(_shard_succeeded(result) for result in ordered) else 1), ordered
+        ordered = _completed_results(futures)
+        exit_code = 130
+    else:
+        ordered = tuple(sorted(results, key=lambda item: item.index))
+        exit_code = 0 if all(_shard_succeeded(result) for result in ordered) else 1
+    return _ExecutionOutcome(
+        exit_code=exit_code,
+        results=ordered,
+        launch_duration_ns=launch_duration_ns,
+        process_duration_ns=process_duration_ns,
+        timing_read_duration_ns=_bounded_phase_duration_ns(
+            sum(result.timing_read_duration_ns for result in ordered),
+            phase="timing-read",
+        ),
+    )
 
 
 def _assert_plan_inputs_unchanged(plan: ParallelTestPlan) -> None:
@@ -1060,6 +1132,7 @@ def run_parallel_test_plan(
         raise ValueError("maximum_log_bytes is outside the supported bounded range")
     if plan.dry_run:
         raise ValueError("a dry-run plan cannot be executed")
+    _bounded_phase_duration_ns(plan.plan_duration_ns, phase="plan")
     for shard in plan.shards:
         _validated_timeout(shard.timeout_seconds)
     _assert_plan_inputs_unchanged(plan)
@@ -1094,7 +1167,7 @@ def run_parallel_test_plan(
                     for path in (shard.run_root, shard.private_home, shard.private_temp)
                 ),
             )
-            outcome: tuple[int, tuple[ShardResult, ...]] | None = None
+            outcome: _ExecutionOutcome | None = None
             primary_error: BaseException | None = None
             try:
                 outcome = _execute_shards(
@@ -1106,7 +1179,10 @@ def run_parallel_test_plan(
                 )
             except BaseException as exc:
                 primary_error = exc
+            scratch_cleanup_started_ns = time.monotonic_ns()
             try:
+                # This identity pins the whole tree. Child-level cleanup concurrency
+                # requires independently captured and verified child identities.
                 remove_private_directory(scratch_identity)
             except BaseException as cleanup_error:
                 if primary_error is not None:
@@ -1114,38 +1190,64 @@ def run_parallel_test_plan(
                         primary_error,
                         f"parallel scratch cleanup failed ({type(cleanup_error).__name__})",
                     )
-                elif outcome is not None and outcome[0] == 130:
+                elif outcome is not None and outcome.exit_code == 130:
                     primary_error = ParallelCleanupError("cancellation")
                 else:
                     primary_error = ParallelCleanupError("scratch")
+            finally:
+                scratch_cleanup_duration_ns = _elapsed_phase_duration_ns(
+                    scratch_cleanup_started_ns,
+                    phase="scratch-cleanup",
+                )
             if primary_error is not None:
                 raise primary_error
             if outcome is None:
                 raise RuntimeError("parallel execution completed without a shard outcome")
+            publish_relevant_started_ns = time.monotonic_ns()
             if plan.timing_artifact_path is not None:
                 _assert_plan_inputs_unchanged(plan)
             elapsed = time.monotonic() - started
-            timing_payload = _timing_artifact_payload(plan, outcome[1], run_id=run_id)
+            timing_payload = _timing_artifact_payload(plan, outcome.results, run_id=run_id)
             _publish_timing_artifact(plan, timing_payload)
+            publish_relevant_duration_ns = _elapsed_phase_duration_ns(
+                publish_relevant_started_ns,
+                phase="publish-relevant",
+            )
             manifest = {
                 "elapsed_seconds": round(elapsed, 6),
-                "exit_code": outcome[0],
+                "exit_code": outcome.exit_code,
                 "measurement_context": plan.measurement_context,
                 "partition": {
                     **_partition_evidence(plan),
                 },
+                "phase_timings": {
+                    "clock": "monotonic",
+                    "durations_ns": {
+                        "launch": outcome.launch_duration_ns,
+                        "plan": plan.plan_duration_ns,
+                        "process": outcome.process_duration_ns,
+                        "publish_relevant": publish_relevant_duration_ns,
+                        "scratch_cleanup": scratch_cleanup_duration_ns,
+                        "timing_read": outcome.timing_read_duration_ns,
+                    },
+                    "process_scope": "executor-wall-including-launch-and-timing-read",
+                    "publish_relevant_scope": "input-revalidation-and-timing-artifact",
+                    "timing_read_aggregation": "sum-across-shards",
+                },
                 "run_id": run_id,
-                "schema": "agency.local-parallel-tests.latest.v2",
+                "schema": "agency.local-parallel-tests.latest.v3",
                 "shards": [
                     {
                         "cancelled": result.cancelled,
                         "failure_category": result.failure_category,
                         "index": result.index,
                         "planned_weight": plan.shards[result.index].weight_total,
+                        "process_duration_ns": result.process_duration_ns,
                         "returncode": result.returncode,
+                        "timing_read_duration_ns": result.timing_read_duration_ns,
                         "timed_out": result.timed_out,
                     }
-                    for result in outcome[1]
+                    for result in outcome.results
                 ],
                 "started_at_unix_ns": started_at_unix_ns,
             }
@@ -1164,7 +1266,7 @@ def run_parallel_test_plan(
                 )
             except BaseException as exc:
                 raise ParallelCleanupError("manifest") from exc
-            return outcome
+            return outcome.exit_code, outcome.results
     finally:
         plan.use.finish(run_id=run_id, elapsed_seconds=time.monotonic() - started)
 

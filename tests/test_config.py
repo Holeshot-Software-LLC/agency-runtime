@@ -25,6 +25,8 @@ from agency_runtime.core.configuration_contracts import (
 )
 from tests.runtime_support import is_agency_product_environment_key
 
+pytestmark = pytest.mark.runtime_configuration_identity
+
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:

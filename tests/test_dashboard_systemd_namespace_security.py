@@ -18,6 +18,8 @@ from agency_runtime.core import dashboard_service_manifest as manifest
 from agency_runtime.core import dashboard_service_systemd as systemd
 from agency_runtime.core.configuration_contracts import ConfigurationError
 
+pytestmark = pytest.mark.runtime_configuration_identity
+
 
 def _linux_context(tmp_path: Path) -> core._Context:
     ctx = core._context(

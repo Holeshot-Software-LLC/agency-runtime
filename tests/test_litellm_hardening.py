@@ -973,6 +973,7 @@ def test_explicit_litellm_config_remains_immutable_after_bound_file_changes(
     assert adapter.config.observability.capture_content is False
 
 
+@pytest.mark.runtime_configuration_identity
 def test_implicit_litellm_fails_closed_on_store_target_drift_while_explicit_survives(
     tmp_path: Path,
 ) -> None:

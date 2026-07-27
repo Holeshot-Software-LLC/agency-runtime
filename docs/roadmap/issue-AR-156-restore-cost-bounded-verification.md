@@ -21,6 +21,7 @@ related:
   - scripts/parallel_change_loop_runtime.py
   - scripts/parallel_change_loop_storage.py
   - scripts/prepare_ci_runtime.py
+  - tests/conftest.py
   - tests/test_ci_sharding.py
   - tests/test_doctor.py
   - tests/test_parallel_change_loop.py
@@ -322,3 +323,14 @@ the local runner's speed-evidence gate. The timing profile remains opt-in
 because its separate promotion gate failed. Current-head canonical coverage,
 performance, artifact, and hosted evidence remain required before AR-156 can
 close.
+
+The default pytest fixture now writes the offline configuration once per worker
+process and assigns each ordinary test a unique lazy Store and runtime-control
+path. Configuration- and environment-identity suites explicitly retain the
+historical per-test configuration file with no database override. An
+uncontended interleaved 437-test comparison passed every repetition and reduced
+the median from 4.215 to 3.015 seconds, or 28.5 percent; broader functional
+sweeps executed more than 2,400 passing cases. The runner's v3 manifest also
+separates planning, launch, process wall time, timing reads, identity-bound
+scratch cleanup, and publication so the next optimization is based on exact
+phase evidence rather than residual wall-time inference.

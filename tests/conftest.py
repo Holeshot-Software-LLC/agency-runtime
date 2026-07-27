@@ -7,6 +7,7 @@ import shutil
 import tempfile
 from collections.abc import Iterator
 from contextlib import suppress
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,18 @@ _WINDOWS_ORIGINAL_TEMPDIR_ATTRIBUTE = "_agency_runtime_windows_original_tempdir"
 _WINDOWS_PYTEST_PATHLIB_MKDIR_ATTRIBUTE = "_agency_runtime_pytest_pathlib_mkdir"
 _WINDOWS_PYTEST_TMPDIR_MKDIR_ATTRIBUTE = "_agency_runtime_pytest_tmpdir_mkdir"
 _WINDOWS_OS_MKDIR_ATTRIBUTE = "_agency_runtime_os_mkdir"
+_RUNTIME_CONFIGURATION_IDENTITY_MARKER = "runtime_configuration_identity"
+_OFFLINE_CONFIGURATION = (
+    "providers: []\n"
+    "judge:\n"
+    '  model: ""\n'
+    '  base_url: ""\n'
+    '  api_key: ""\n'
+    '  api_key_env: ""\n'
+    "  ollama_mode: false\n"
+    "ollama:\n"
+    "  enabled: false\n"
+)
 
 
 class _OSFacade:
@@ -74,17 +87,57 @@ def os_facade() -> type[_OSFacade]:
     return _OSFacade
 
 
+def _test_runtime_root(session_root: Path, node_id: str) -> Path:
+    """Return a bounded unique path without creating one directory per test."""
+
+    digest = sha256(node_id.encode("utf-8")).hexdigest()
+    return session_root / "items" / digest
+
+
+def _write_offline_configuration(config_path: Path, store_path: Path) -> None:
+    """Write the quota-free test configuration at one already-private path."""
+
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        f'store:\n  db_path: "{store_path.as_posix()}"\n{_OFFLINE_CONFIGURATION}',
+        encoding="utf-8",
+    )
+
+
+@pytest.fixture(scope="session")
+def _runtime_isolation_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Allocate one private process root for lazy per-test isolation paths."""
+
+    return tmp_path_factory.mktemp("runtime-isolation")
+
+
+@pytest.fixture(scope="session")
+def _shared_offline_configuration(_runtime_isolation_root: Path) -> Path:
+    """Materialize the ordinary offline configuration once per pytest process."""
+
+    config_path = _runtime_isolation_root / "offline-config" / "agency.yaml"
+    # The ordinary fixture always supplies a unique AGENCY_DB_PATH. Point the
+    # file-level fallback at an existing directory so an unmarked test that
+    # removes the override cannot silently share mutable Store state.
+    _write_offline_configuration(
+        config_path,
+        config_path.parent,
+    )
+    return config_path
+
+
 @pytest.fixture(autouse=True)
 def _isolate_runtime_master_state(
+    request: pytest.FixtureRequest,
     monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
+    _runtime_isolation_root: Path,
 ) -> Iterator[None]:
     """Exercise the real fail-enabled reader against per-test durable state."""
 
     from agency_runtime.core import runtime_control
 
     original_path = runtime_control.runtime_control_path
-    runtime_root = tmp_path.parent / f".{tmp_path.name}-agency-runtime"
+    runtime_root = _test_runtime_root(_runtime_isolation_root, request.node.nodeid)
     isolated = runtime_root / "runtime-control" / "control.json"
 
     def isolated_control_path(
@@ -103,8 +156,8 @@ def _isolate_runtime_master_state(
 
 @pytest.fixture(autouse=True)
 def _isolate_runtime_configuration(
+    request: pytest.FixtureRequest,
     monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
 ) -> Iterator[None]:
     """Prevent ordinary tests from inheriting live operator inference settings.
 
@@ -112,29 +165,28 @@ def _isolate_runtime_configuration(
     monkeypatching the transport. The suite-wide baseline is deliberately
     offline so a local regression run cannot spend provider quota, depend on a
     workstation's OAuth state, or change behavior with the user's config.
+
+    Ordinary tests reuse one immutable config and receive only a unique lazy
+    database path. Tests that exercise configuration or environment identity
+    opt out with ``runtime_configuration_identity`` and retain the historical
+    per-test config file with no database environment override.
     """
 
     from agency_runtime.core.config import reset_config_cache
     from agency_runtime.core.workforce.cache import clear_workforce_caches
 
-    runtime_root = tmp_path.parent / f".{tmp_path.name}-agency-runtime"
-    config_path = runtime_root / "offline-runtime" / "agency.yaml"
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    store_path = (runtime_root / "offline-runtime" / "agency.db").as_posix()
-    config_path.write_text(
-        "store:\n"
-        f'  db_path: "{store_path}"\n'
-        "providers: []\n"
-        "judge:\n"
-        '  model: ""\n'
-        '  base_url: ""\n'
-        '  api_key: ""\n'
-        '  api_key_env: ""\n'
-        "  ollama_mode: false\n"
-        "ollama:\n"
-        "  enabled: false\n",
-        encoding="utf-8",
-    )
+    identity_test = request.node.get_closest_marker(_RUNTIME_CONFIGURATION_IDENTITY_MARKER)
+    if identity_test is not None:
+        tmp_path = request.getfixturevalue("tmp_path")
+        runtime_root = tmp_path.parent / f".{tmp_path.name}-agency-runtime"
+        config_path = runtime_root / "offline-runtime" / "agency.yaml"
+        store_path = runtime_root / "offline-runtime" / "agency.db"
+        _write_offline_configuration(config_path, store_path)
+    else:
+        isolation_root = request.getfixturevalue("_runtime_isolation_root")
+        config_path = request.getfixturevalue("_shared_offline_configuration")
+        runtime_root = _test_runtime_root(isolation_root, request.node.nodeid)
+        store_path = runtime_root / "offline-runtime" / "agency.db"
     for name in (
         "AGENCY_JUDGE_API_KEY",
         "AGENCY_JUDGE_BASE_URL",
@@ -145,7 +197,10 @@ def _isolate_runtime_configuration(
     ):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(config_path))
-    monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
+    if identity_test is not None:
+        monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
+    else:
+        monkeypatch.setenv("AGENCY_DB_PATH", str(store_path))
     reset_config_cache()
     clear_workforce_caches()
     yield

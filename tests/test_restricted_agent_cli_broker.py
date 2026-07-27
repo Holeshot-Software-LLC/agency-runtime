@@ -33,6 +33,8 @@ from agency_runtime.core.store.roster import RosterStoreMixin
 from agency_runtime.core.windows_acl import RestrictedWindowsTokenError
 from agency_runtime.server import dashboard as dashboard_server
 
+pytestmark = pytest.mark.runtime_configuration_identity
+
 
 def _absolute_config_path(name: str = "agency.yaml") -> str:
     return str((Path.cwd() / name).resolve())

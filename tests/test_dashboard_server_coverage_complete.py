@@ -909,6 +909,7 @@ def test_dashboard_server_rejects_non_loopback_host(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.runtime_configuration_identity
 def test_run_dashboard_service_lifecycle_and_browser_mode(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -376,6 +376,7 @@ def _install_args(**changes):
     return SimpleNamespace(**values)
 
 
+@pytest.mark.runtime_configuration_identity
 def test_cmd_install_all_modes(monkeypatch, capsys):
     import agency_runtime.core.dashboard_service as dashboard_service
     import agency_runtime.core.installer as installer
