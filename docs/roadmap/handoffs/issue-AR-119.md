@@ -30,8 +30,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: f64ba1e54b76cf4c05a7a6a290028f316467bd07
-minimum_ledger_commit: 7b9e2d0027fc8348ee0da441e5939b382ba79832
+evidence_commit: 3e14f74041865bf93444d290197fb7062ea3ec31
+minimum_ledger_commit: 874fb2a03f57d62da46c55cdd3507e01a2b8c589
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -44,8 +44,7 @@ the full acceptance history.
 
 ## checkpoint
 
-- Recovery base pair before this bounded package: substantive `f64ba1e`, ledger
-  `7b9e2d0`. The current layered package is being sealed as the next pair.
+- Clean local recovery pair: substantive `3e14f74`, ledger `874fb2a`.
 - Branch is `main`, locally ahead of `origin/main`. No push, PR, tag, release,
   publication, hosted dispatch, tracker mutation, or repository-setting change
   was authorized.
@@ -146,7 +145,7 @@ node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverag
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python scripts/verify_docs.py
-python -m scripts.verify_distribution <clean-artifact-directory> --artifact-set release --expected-commit f64ba1e54b76cf4c05a7a6a290028f316467bd07
+python -m scripts.verify_distribution <clean-artifact-directory> --artifact-set release --expected-commit 3e14f74041865bf93444d290197fb7062ea3ec31
 git diff --check
 ~~~
 
