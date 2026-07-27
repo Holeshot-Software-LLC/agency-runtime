@@ -37,6 +37,7 @@ class InstallDependencies:
     readiness_probe: Callable[[], bool] | None = None
     canary_runner: Callable[..., dict[str, Any]] | None = None
     host_inspector: Callable[[str], dict[str, Any]] | None = None
+    prepared_codex_installer: Callable[[AgencyConfig], dict[str, Any]] | None = None
 
 
 DEFAULT_DEPENDENCIES = InstallDependencies()
@@ -601,12 +602,84 @@ def _materialize_install_controls(store: object, hosts: list[str]) -> None:
         ensure_host(host, source="install")
 
 
+def _run_prepared_codex_refresh(
+    *,
+    json_mode: bool,
+    dependencies: InstallDependencies,
+) -> int:
+    """Run the exact Codex-only prepared refresh without touching other state."""
+
+    from agency_runtime.core.prepared_codex_install import refresh_existing_codex_adapter
+
+    installer = dependencies.prepared_codex_installer or refresh_existing_codex_adapter
+    cfg: AgencyConfig | None = None
+    try:
+        cfg = dependencies.load_config()
+        host_result = installer(cfg)
+    except Exception as exc:
+        host_result = {
+            "ok": False,
+            "complete": False,
+            "host": "codex",
+            "status": "failed_before_commit",
+            "maturity": "activation-required",
+            "partial": False,
+            "manual_recovery_required": False,
+            "state_preserved": True,
+            "transaction_complete": False,
+            "activation_complete": False,
+            "activation_required": True,
+            "error": (f"{type(exc).__name__}: " + safe_display_token(str(exc), limit=500)),
+            "loaded": None,
+            "canary": None,
+            "hook_trust_status": "unverified",
+        }
+    dashboard_result = _dashboard_opt_out_result()
+    complete = bool(host_result.get("ok") and host_result.get("complete"))
+    report = {
+        "ok": complete,
+        "complete": complete,
+        "transaction_complete": complete,
+        "activation_complete": bool(host_result.get("activation_complete", False)),
+        "activation_required": bool(host_result.get("activation_required", True)),
+        "profile": cfg.profile if cfg is not None else None,
+        "roster_added": 0,
+        "roster_upgraded": 0,
+        "contractors_installed": 0,
+        "contractors_existing": 0,
+        "roster_action": "unchanged_prepared_codex_refresh",
+        "hosts": [host_result],
+        "dashboard": dashboard_result,
+    }
+    if json_mode:
+        dependencies.emit_json(report)
+    else:
+        if complete:
+            print("✅ Codex adapter refresh transaction completed")
+        else:
+            print("❌ Codex adapter refresh did not complete")
+        _print_install_result("codex", host_result)
+        if complete:
+            print("   Activation: unverified; restart Codex and run the live host canary.")
+    return 0 if complete else 1
+
+
 def cmd_install(
     args: argparse.Namespace,
     *,
     dependencies: InstallDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
     """Install, preview, or roll back host-native Agency Runtime bundles."""
+    rollback_mode, dry_run, backup = _validate_install_mode(args)
+    json_mode = bool(getattr(args, "json", False))
+    from agency_runtime.core.prepared_codex_install import is_exact_prepared_codex_install
+
+    if is_exact_prepared_codex_install(args):
+        return _run_prepared_codex_refresh(
+            json_mode=json_mode,
+            dependencies=dependencies,
+        )
+    cfg = dependencies.load_config()
     from agency_runtime.core.canary import run_canary
     from agency_runtime.core.dashboard_service import (
         install_dashboard_service,
@@ -621,9 +694,6 @@ def cmd_install(
         seed_starter_roster,
     )
 
-    rollback_mode, dry_run, backup = _validate_install_mode(args)
-    cfg = dependencies.load_config()
-    json_mode = bool(getattr(args, "json", False))
     if rollback_mode:
         return _run_rollback(
             args,
@@ -814,6 +884,28 @@ def _print_install_result(host: str, result: dict[str, Any]) -> None:
         print(f"   Failed step: {result['failed_step']}")
     if result.get("backup_path"):
         print(f"   Backup retained: {result['backup_path']}")
+    if result.get("status"):
+        print(f"   Status: {result['status']}")
+    _print_install_recovery(result)
+
+
+def _print_install_recovery(result: Mapping[str, Any]) -> None:
+    """Render recovery state without inferring it from a generic failure."""
+
+    compensation = result.get("compensation")
+    if isinstance(compensation, Mapping):
+        if compensation.get("manual_recovery_required"):
+            print("   Manual recovery: required")
+        if compensation.get("error"):
+            print(f"   Recovery error: {compensation['error']}")
+        if compensation.get("displaced_path"):
+            print(f"   Displaced target: {compensation['displaced_path']}")
+        if compensation.get("stage_path"):
+            print(f"   Retained stage: {compensation['stage_path']}")
+    elif result.get("manual_recovery_required"):
+        print("   Manual recovery: required")
+    elif result.get("state_preserved"):
+        print("   State: no incomplete mutation was retained")
 
 
 def _resolve_control_agents(args: argparse.Namespace, action: str) -> tuple[list[str], bool]:

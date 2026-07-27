@@ -1,10 +1,10 @@
 """Windows-native, result-only operator verification for prepared mutations.
 
 The packaged helper owns the trusted Windows Hello prompt.  This module binds
-one prepared roster rollback to an exact byte protocol, launches only the
-reviewed package artifact through the atomically contained process runner, and
-consumes the nonce-bound result synchronously.  It never returns a receipt or
-other transferable authorization value.
+each supported prepared action to its own exact byte protocol, launches only
+the reviewed package artifact through the atomically contained process runner,
+and consumes the nonce-bound result synchronously.  It never returns a receipt
+or other transferable authorization value.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import struct
 import sys
 from dataclasses import dataclass
 from importlib import resources
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING, Any
 
 from agency_runtime.core.operator_presence import OperatorPresenceError
@@ -35,10 +35,15 @@ from agency_runtime.core.process_argv import (
 )
 
 if TYPE_CHECKING:
+    from agency_runtime.core.prepared_codex_install import _CodexInstallBinding
     from agency_runtime.core.store.roster import _RosterRollbackBinding
 
 _PROTOCOL_HEADER = b"AGENCY-OPERATOR-PRESENCE/1\n"
 _ACTION = "roster.rollback.v1"
+_CODEX_INSTALL_ACTION = "install.codex.v1"
+_CODEX_INSTALL_HOST = "codex"
+_CODEX_INSTALL_PLUGIN = "agency-preflight@agency-runtime"
+_CODEX_INSTALL_RECOVERY = "restore-prior-managed-bundle-and-registration"
 _RESOURCE_PARTS = ("native", "windows", "operator_presence")
 _EXECUTABLE_NAME = "operator_presence_verifier.exe"
 _SOURCE_NAME = "operator_presence_verifier.cpp"
@@ -49,14 +54,17 @@ _MAX_PROTOCOL_BYTES = 2 * 1024
 _MAX_RESULT_BYTES = 512
 _PROCESS_TIMEOUT_SECONDS = 120.0
 _OPERATOR_PRESENCE_MECHANISM = "windows-user-consent-verifier/v1"
-_EXPECTED_SOURCE_SIZE = 26_482
-_EXPECTED_SOURCE_SHA256 = "8fb94318fcd8dd9c6c624bdd6faa841e5298bed449958dd42b2c22910deed085"
-_EXPECTED_EXECUTABLE_SIZE = 165_888
-_EXPECTED_EXECUTABLE_SHA256 = "f525c64775ac49fbb0be7ffcf9b8c5d013ec85ac5756ab6f69be6afe5c9d55fd"
+_EXPECTED_SOURCE_SIZE = 41_551
+_EXPECTED_SOURCE_SHA256 = "b949a0f80fc8e062fb07bb8fd99dab0373bbd6af6b8a058fa2f951d25ac6ebbc"
+_EXPECTED_EXECUTABLE_SIZE = 187_392
+_EXPECTED_EXECUTABLE_SHA256 = "8838ed8a3353052b7ad781a9765884fea00c4cf5a7d184152c0da22ad413d15a"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _VERSION = re.compile(r"sha256:[0-9a-f]{64}\Z")
 _SLUG = re.compile(r"[a-z0-9][a-z0-9._-]{1,127}\Z")
 _AUTHORITIES = frozenset({"bundled", "snapshot"})
+_PLUGIN_VERSION = re.compile(r"[0-9A-Za-z](?:[0-9A-Za-z.+-]{0,126}[0-9A-Za-z])?\Z")
+_MAX_TARGET_PATH_CHARACTERS = 512
+_MAX_ROSTER_GENERATION = 9_223_372_036_854_775_807
 _PREPARED_BINDING_FIELDS = (
     "config_path",
     "database_path",
@@ -406,6 +414,173 @@ def _result_authorizes(result: BoundedBinaryProcessResult, *, nonce: str) -> boo
         and not result.cancelled
         and result.failure_category is None
     )
+
+
+def _canonical_codex_target_path(value: str) -> bool:
+    if (
+        not 4 <= len(value) <= _MAX_TARGET_PATH_CHARACTERS
+        or any(not 0x20 <= ord(character) <= 0x7E for character in value)
+        or not "A" <= value[0] <= "Z"
+        or value[1:3] != ":\\"
+        or value.endswith("\\")
+        or any(character in '<>:"|?*/' for character in value[3:])
+    ):
+        return False
+    candidate = PureWindowsPath(value)
+    if not candidate.is_absolute() or str(candidate) != value:
+        return False
+    return all(
+        part not in {".", ".."} and not part.endswith((" ", ".")) for part in candidate.parts[1:]
+    )
+
+
+def _codex_prepared_text(prepared: _CodexInstallBinding, field: str) -> str:
+    value = getattr(prepared, field, None)
+    if not isinstance(value, str):
+        raise OperatorPresenceError("prepared Codex install binding is invalid")
+    return value
+
+
+def _complete_codex_install_binding(
+    prepared: _CodexInstallBinding,
+) -> tuple[str | int, ...]:
+    from agency_runtime.core.prepared_codex_install import (
+        PreparedCodexInstallError,
+        _codex_install_binding_primitives,
+    )
+
+    try:
+        return _codex_install_binding_primitives(prepared)
+    except (AttributeError, PreparedCodexInstallError, TypeError, ValueError) as exc:
+        raise OperatorPresenceError("prepared Codex install binding is invalid") from exc
+
+
+def _codex_install_request_payload(prepared: _CodexInstallBinding, nonce: str) -> bytes:
+    target_path = _codex_prepared_text(prepared, "target_path")
+    current_plugin_version = _codex_prepared_text(prepared, "current_plugin_version")
+    candidate_plugin_version = _codex_prepared_text(prepared, "candidate_plugin_version")
+    current_bundle_sha256 = _codex_prepared_text(prepared, "current_bundle_sha256")
+    candidate_plan_sha256 = _codex_prepared_text(prepared, "candidate_plan_sha256")
+    codex_executable_sha256 = _codex_prepared_text(prepared, "codex_executable_sha256")
+    config_revision = _codex_prepared_text(prepared, "config_revision")
+    binding_sha256 = _codex_prepared_text(prepared, "binding_sha256")
+    roster_generation = getattr(prepared, "roster_generation", None)
+    if (
+        not _canonical_codex_target_path(target_path)
+        or _PLUGIN_VERSION.fullmatch(current_plugin_version) is None
+        or _PLUGIN_VERSION.fullmatch(candidate_plugin_version) is None
+        or _SHA256.fullmatch(current_bundle_sha256) is None
+        or _SHA256.fullmatch(candidate_plan_sha256) is None
+        or _SHA256.fullmatch(codex_executable_sha256) is None
+        or _VERSION.fullmatch(config_revision) is None
+        or isinstance(roster_generation, bool)
+        or not isinstance(roster_generation, int)
+        or not 0 <= roster_generation <= _MAX_ROSTER_GENERATION
+        or _SHA256.fullmatch(binding_sha256) is None
+        or _SHA256.fullmatch(nonce) is None
+    ):
+        raise OperatorPresenceError("prepared Codex install binding is invalid")
+    payload = (
+        "AGENCY-OPERATOR-PRESENCE/1\n"
+        f"action={_CODEX_INSTALL_ACTION}\n"
+        f"host={_CODEX_INSTALL_HOST}\n"
+        f"plugin={_CODEX_INSTALL_PLUGIN}\n"
+        f"target-path={target_path}\n"
+        f"current-plugin-version={current_plugin_version}\n"
+        f"candidate-plugin-version={candidate_plugin_version}\n"
+        f"current-bundle-sha256={current_bundle_sha256}\n"
+        f"candidate-plan-sha256={candidate_plan_sha256}\n"
+        f"codex-executable-sha256={codex_executable_sha256}\n"
+        f"config-revision={config_revision}\n"
+        f"roster-generation={roster_generation}\n"
+        "will-backup=yes\n"
+        "will-reregister=yes\n"
+        f"recovery={_CODEX_INSTALL_RECOVERY}\n"
+        f"binding-sha256={binding_sha256}\n"
+        f"nonce={nonce}\n"
+    ).encode("ascii")
+    if len(payload) > _MAX_PROTOCOL_BYTES:
+        raise OperatorPresenceError("prepared Codex install binding exceeds its size limit")
+    return payload
+
+
+def _codex_install_verified_stdout(*, binding_sha256: str, nonce: str) -> bytes:
+    return (
+        _PROTOCOL_HEADER
+        + b"mode=verification\n"
+        + f"action={_CODEX_INSTALL_ACTION}\n".encode("ascii")
+        + b"result=verified\n"
+        + f"binding-sha256={binding_sha256}\n".encode("ascii")
+        + f"nonce={nonce}\n".encode("ascii")
+    )
+
+
+def _codex_install_result_authorizes(
+    result: BoundedBinaryProcessResult,
+    *,
+    binding_sha256: str,
+    nonce: str,
+) -> bool:
+    return (
+        result.returncode == 0
+        and result.stdout
+        == _codex_install_verified_stdout(binding_sha256=binding_sha256, nonce=nonce)
+        and result.stderr == b""
+        and not result.timed_out
+        and not result.stdout_truncated
+        and not result.stderr_truncated
+        and not result.cancelled
+        and result.failure_category is None
+    )
+
+
+def _verify_codex_install_binding(prepared: _CodexInstallBinding) -> None:
+    """Consume one exact native result for a prepared Codex reinstall."""
+
+    from agency_runtime.core.prepared_codex_install import _CodexInstallBinding as PreparedType
+
+    if type(prepared) is not PreparedType:
+        raise OperatorPresenceError("prepared Codex install binding is invalid")
+    prepared_binding = _complete_codex_install_binding(prepared)
+    _assert_supported_host()
+    nonce_bytes = _random_nonce_bytes()
+    if not isinstance(nonce_bytes, bytes) or len(nonce_bytes) != 32:
+        raise OperatorPresenceError("native operator verification nonce generation failed")
+    nonce = nonce_bytes.hex()
+    payload = _codex_install_request_payload(prepared, nonce)
+    verifier = _load_reviewed_verifier()
+    try:
+        result = run_bounded_binary_process(
+            verifier.argv,
+            timeout=_PROCESS_TIMEOUT_SECONDS,
+            cwd=verifier.working_directory,
+            env={},
+            input_bytes=payload,
+            max_input_bytes=_MAX_PROTOCOL_BYTES,
+            max_stdout_bytes=_MAX_RESULT_BYTES,
+            max_stderr_bytes=_MAX_RESULT_BYTES,
+            retain_output_tail=False,
+        )
+    except (OSError, RuntimeError, TypeError, ValueError) as exc:
+        raise OperatorPresenceError(
+            "native Codex install verification could not be completed; "
+            "no persistent change was made"
+        ) from exc
+    binding_sha256 = _codex_prepared_text(prepared, "binding_sha256")
+    if not _codex_install_result_authorizes(
+        result,
+        binding_sha256=binding_sha256,
+        nonce=nonce,
+    ):
+        raise OperatorPresenceError(
+            "native operator presence was not verified for the prepared Codex install; "
+            "no persistent change was made"
+        )
+    if _complete_codex_install_binding(prepared) != prepared_binding:
+        raise OperatorPresenceError(
+            "prepared Codex install changed during operator verification; "
+            "no persistent change was made"
+        )
 
 
 def _verify_roster_rollback_binding(prepared: _RosterRollbackBinding) -> None:

@@ -498,6 +498,76 @@ def test_codex_registration_requires_explicit_enabled_inventory_proof(
 
 
 @pytest.mark.parametrize(
+    ("responses", "expected_steps", "failed_step"),
+    [
+        (
+            [_result(returncode=1, stderr="inventory unavailable")],
+            ["inventory_before"],
+            "inventory_before",
+        ),
+        (
+            [_result(stdout="{not-json")],
+            ["inventory_before"],
+            "inventory_before_unproven",
+        ),
+        (
+            [_json_result("unexpected scalar")],
+            ["inventory_before"],
+            "inventory_before_unproven",
+        ),
+        (
+            [_json_result([]), _result(returncode=1, stderr="marketplace unavailable")],
+            ["inventory_before", "marketplace_inventory"],
+            "marketplace_inventory",
+        ),
+        (
+            [_json_result([]), _result(stdout="{not-json")],
+            ["inventory_before", "marketplace_inventory"],
+            "marketplace_inventory_unproven",
+        ),
+        (
+            [_json_result([]), _json_result(None)],
+            ["inventory_before", "marketplace_inventory"],
+            "marketplace_inventory_unproven",
+        ),
+    ],
+    ids=(
+        "plugin-command-failure",
+        "plugin-malformed-json",
+        "plugin-scalar-json",
+        "marketplace-command-failure",
+        "marketplace-malformed-json",
+        "marketplace-null-json",
+    ),
+)
+def test_codex_preinstall_inventory_failure_stops_before_mutation(
+    responses: list[dict[str, Any]],
+    expected_steps: list[str],
+    failed_step: str,
+) -> None:
+    runner = _SequenceRunner(responses)
+
+    steps, proven, actual_failed_step = native_registration_steps(
+        "codex",
+        _TARGET,
+        home_dir=Path("isolated-home"),
+        command_runner=runner,
+        force_refresh=True,
+    )
+
+    assert proven is False
+    assert actual_failed_step == failed_step
+    assert [step["name"] for step in steps] == expected_steps
+    assert not any(
+        command[:4] == ["codex", "plugin", "marketplace", "add"]
+        or command[:3] == ["codex", "plugin", "remove"]
+        or command[:3] == ["codex", "plugin", "add"]
+        for command in runner.commands
+    )
+    assert runner.exhausted
+
+
+@pytest.mark.parametrize(
     ("host", "responses", "failed_step"),
     [
         (

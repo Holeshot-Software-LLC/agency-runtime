@@ -461,18 +461,41 @@ def _register_openclaw(
     return result if result[1] else _rollback_openclaw_policy(session, str(result[2]))
 
 
-def _marketplace_state(session: _RegistrationSession) -> tuple[bool, bool]:
+def _marketplace_state(
+    session: _RegistrationSession,
+) -> tuple[bool, bool, str | None]:
+    """Read pre-mutation marketplace state without inferring Codex absence.
+
+    Codex registration mutates persistent native state when either inventory
+    reports an item absent.  A failed or malformed inventory therefore cannot
+    be treated as an empty result: doing so would turn unknown state into
+    authority to add a marketplace or plugin.  Claude retains its established
+    compatibility behavior until its native protocol is reviewed separately.
+    """
+
     inventory = session.run(
         "inventory_before",
         [session.binary, "plugin", "list", "--json"],
     )
-    plugin_present = inventory.ok and _plugin_record(_json_output(inventory)) is not None
+    inventory_payload = _json_output(inventory) if inventory.ok else None
+    if session.host == "codex":
+        if not inventory.ok:
+            return False, False, "inventory_before"
+        if not isinstance(inventory_payload, (dict, list)):
+            return False, False, "inventory_before_unproven"
+    plugin_present = inventory.ok and _plugin_record(inventory_payload) is not None
     marketplace = session.run(
         "marketplace_inventory",
         [session.binary, "plugin", "marketplace", "list", "--json"],
     )
-    market_present = marketplace.ok and _marketplace_registered(_json_output(marketplace))
-    return plugin_present, market_present
+    marketplace_payload = _json_output(marketplace) if marketplace.ok else None
+    if session.host == "codex":
+        if not marketplace.ok:
+            return plugin_present, False, "marketplace_inventory"
+        if not isinstance(marketplace_payload, (dict, list)):
+            return plugin_present, False, "marketplace_inventory_unproven"
+    market_present = marketplace.ok and _marketplace_registered(marketplace_payload)
+    return plugin_present, market_present, None
 
 
 def _ensure_marketplace(
@@ -600,7 +623,9 @@ def _register_marketplace_host(
     session: _RegistrationSession,
     force_refresh: bool,
 ) -> _RegistrationResult:
-    plugin_present, market_present = _marketplace_state(session)
+    plugin_present, market_present, failed_step = _marketplace_state(session)
+    if failed_step:
+        return session.result(False, failed_step)
     if failed_step := _ensure_marketplace(
         session,
         market_present=market_present,

@@ -27,9 +27,15 @@ constexpr DWORD kMaximumRequestBytes = 2'048;
 constexpr int kVerifyButtonId = IDOK;
 constexpr int kCancelButtonId = IDCANCEL;
 constexpr wchar_t kWindowClass[] = L"AgencyRuntimeOperatorPresenceVerifier";
-constexpr wchar_t kWindowTitle[] = L"Agency Runtime - verify roster rollback";
+constexpr wchar_t kRollbackWindowTitle[] = L"Agency Runtime - verify roster rollback";
+constexpr wchar_t kCodexInstallWindowTitle[] = L"Agency Runtime - verify Codex plugin reinstall";
 constexpr std::string_view kProtocol = "AGENCY-OPERATOR-PRESENCE/1";
-constexpr std::string_view kAction = "roster.rollback.v1";
+constexpr std::string_view kRollbackAction = "roster.rollback.v1";
+constexpr std::string_view kCodexInstallAction = "install.codex.v1";
+constexpr std::string_view kCodexHost = "codex";
+constexpr std::string_view kCodexPlugin = "agency-preflight@agency-runtime";
+constexpr std::string_view kCodexRecovery =
+    "restore-prior-managed-bundle-and-registration";
 
 struct RollbackRequest {
     std::string slug;
@@ -39,6 +45,31 @@ struct RollbackRequest {
     std::string target_hash;
     std::string authority;
     std::string nonce;
+};
+
+struct CodexInstallRequest {
+    std::string target_path;
+    std::string current_plugin_version;
+    std::string candidate_plugin_version;
+    std::string current_bundle_sha256;
+    std::string candidate_plan_sha256;
+    std::string codex_executable_sha256;
+    std::string config_revision;
+    std::string roster_generation;
+    std::string binding_sha256;
+    std::string nonce;
+};
+
+enum class RequestAction {
+    invalid,
+    roster_rollback,
+    codex_install,
+};
+
+struct VerificationRequest {
+    RequestAction action = RequestAction::invalid;
+    RollbackRequest roster_rollback;
+    CodexInstallRequest codex_install;
 };
 
 struct WindowState {
@@ -121,6 +152,28 @@ int emit_verification(
     }
 }
 
+int emit_verification(
+    CodexInstallRequest const& request,
+    std::string_view result,
+    int exit_code) noexcept {
+    try {
+        std::string payload{
+            "AGENCY-OPERATOR-PRESENCE/1\n"
+            "mode=verification\n"
+            "action=install.codex.v1\n"
+            "result="};
+        payload.append(result);
+        payload.append("\nbinding-sha256=");
+        payload.append(request.binding_sha256);
+        payload.append("\nnonce=");
+        payload.append(request.nonce);
+        payload.push_back('\n');
+        return emit_bytes(payload, exit_code);
+    } catch (...) {
+        return 125;
+    }
+}
+
 enum class InvocationMode {
     verification,
     availability,
@@ -179,6 +232,67 @@ bool is_revision(std::string_view value) noexcept {
         is_lower_hex(value.substr(7), 64);
 }
 
+bool is_plugin_version(std::string_view value) noexcept {
+    if (value.empty() || value.size() > 128) {
+        return false;
+    }
+    auto const alphanumeric = [](char character) noexcept {
+        return (character >= 'a' && character <= 'z') ||
+            (character >= 'A' && character <= 'Z') ||
+            (character >= '0' && character <= '9');
+    };
+    if (!alphanumeric(value.front()) || !alphanumeric(value.back())) {
+        return false;
+    }
+    for (char const character : value) {
+        if (!alphanumeric(character) && character != '.' && character != '+' &&
+            character != '-') {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool is_roster_generation(std::string_view value) noexcept {
+    if (value.empty() || value.size() > 19 ||
+        (value.size() > 1 && value.front() == '0')) {
+        return false;
+    }
+    for (char const character : value) {
+        if (character < '0' || character > '9') {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool is_windows_target_path(std::string_view value) noexcept {
+    if (value.size() < 4 || value.size() > 512 || value[0] < 'A' || value[0] > 'Z' ||
+        value[1] != ':' || value[2] != '\\' || value.back() == '\\') {
+        return false;
+    }
+    std::size_t component_start = 3;
+    for (std::size_t index = 3; index <= value.size(); ++index) {
+        if (index < value.size()) {
+            char const character = value[index];
+            if (character == '/' || character == ':' || character == '<' || character == '>' ||
+                character == '"' || character == '|' || character == '?' || character == '*') {
+                return false;
+            }
+            if (character != '\\') {
+                continue;
+            }
+        }
+        std::string_view const component = value.substr(component_start, index - component_start);
+        if (component.empty() || component == "." || component == ".." ||
+            component.back() == ' ' || component.back() == '.') {
+            return false;
+        }
+        component_start = index + 1;
+    }
+    return true;
+}
+
 bool read_stdin(std::string& payload) noexcept {
     HANDLE const input = GetStdHandle(STD_INPUT_HANDLE);
     if (input == nullptr || input == INVALID_HANDLE_VALUE) {
@@ -219,9 +333,10 @@ bool read_stdin(std::string& payload) noexcept {
     return true;
 }
 
+template <std::size_t LineCount>
 bool split_exact_lines(
     std::string const& payload,
-    std::array<std::string_view, 9>& lines) noexcept {
+    std::array<std::string_view, LineCount>& lines) noexcept {
     if (payload.empty() || payload.back() != '\n') {
         return false;
     }
@@ -253,11 +368,7 @@ bool field(
     return !value.empty();
 }
 
-bool parse_request(RollbackRequest& request) noexcept {
-    std::string payload;
-    if (!read_stdin(payload)) {
-        return false;
-    }
+bool parse_rollback_request(std::string const& payload, RollbackRequest& request) noexcept {
     std::array<std::string_view, 9> lines{};
     if (!split_exact_lines(payload, lines) || lines[0] != kProtocol) {
         return false;
@@ -270,7 +381,7 @@ bool parse_request(RollbackRequest& request) noexcept {
     std::string_view target_hash;
     std::string_view authority;
     std::string_view nonce;
-    if (!field(lines[1], "action=", action) || action != kAction ||
+    if (!field(lines[1], "action=", action) || action != kRollbackAction ||
         !field(lines[2], "slug=", slug) || !is_slug(slug) ||
         !field(lines[3], "current-version=", current_version) ||
         !is_revision(current_version) ||
@@ -299,6 +410,90 @@ bool parse_request(RollbackRequest& request) noexcept {
     return true;
 }
 
+bool parse_codex_install_request(
+    std::string const& payload,
+    CodexInstallRequest& request) noexcept {
+    std::array<std::string_view, 17> lines{};
+    if (!split_exact_lines(payload, lines) || lines[0] != kProtocol) {
+        return false;
+    }
+    std::string_view action;
+    std::string_view host;
+    std::string_view plugin;
+    std::string_view target_path;
+    std::string_view current_plugin_version;
+    std::string_view candidate_plugin_version;
+    std::string_view current_bundle_sha256;
+    std::string_view candidate_plan_sha256;
+    std::string_view codex_executable_sha256;
+    std::string_view config_revision;
+    std::string_view roster_generation;
+    std::string_view will_backup;
+    std::string_view will_reregister;
+    std::string_view recovery;
+    std::string_view binding_sha256;
+    std::string_view nonce;
+    if (!field(lines[1], "action=", action) || action != kCodexInstallAction ||
+        !field(lines[2], "host=", host) || host != kCodexHost ||
+        !field(lines[3], "plugin=", plugin) || plugin != kCodexPlugin ||
+        !field(lines[4], "target-path=", target_path) ||
+        !is_windows_target_path(target_path) ||
+        !field(lines[5], "current-plugin-version=", current_plugin_version) ||
+        !is_plugin_version(current_plugin_version) ||
+        !field(lines[6], "candidate-plugin-version=", candidate_plugin_version) ||
+        !is_plugin_version(candidate_plugin_version) ||
+        !field(lines[7], "current-bundle-sha256=", current_bundle_sha256) ||
+        !is_lower_hex(current_bundle_sha256, 64) ||
+        !field(lines[8], "candidate-plan-sha256=", candidate_plan_sha256) ||
+        !is_lower_hex(candidate_plan_sha256, 64) ||
+        !field(lines[9], "codex-executable-sha256=", codex_executable_sha256) ||
+        !is_lower_hex(codex_executable_sha256, 64) ||
+        !field(lines[10], "config-revision=", config_revision) ||
+        !is_revision(config_revision) ||
+        !field(lines[11], "roster-generation=", roster_generation) ||
+        !is_roster_generation(roster_generation) ||
+        !field(lines[12], "will-backup=", will_backup) || will_backup != "yes" ||
+        !field(lines[13], "will-reregister=", will_reregister) ||
+        will_reregister != "yes" ||
+        !field(lines[14], "recovery=", recovery) || recovery != kCodexRecovery ||
+        !field(lines[15], "binding-sha256=", binding_sha256) ||
+        !is_lower_hex(binding_sha256, 64) ||
+        !field(lines[16], "nonce=", nonce) || !is_lower_hex(nonce, 64)) {
+        return false;
+    }
+    try {
+        request.target_path.assign(target_path);
+        request.current_plugin_version.assign(current_plugin_version);
+        request.candidate_plugin_version.assign(candidate_plugin_version);
+        request.current_bundle_sha256.assign(current_bundle_sha256);
+        request.candidate_plan_sha256.assign(candidate_plan_sha256);
+        request.codex_executable_sha256.assign(codex_executable_sha256);
+        request.config_revision.assign(config_revision);
+        request.roster_generation.assign(roster_generation);
+        request.binding_sha256.assign(binding_sha256);
+        request.nonce.assign(nonce);
+    } catch (...) {
+        return false;
+    }
+    return true;
+}
+
+bool parse_request(VerificationRequest& request) noexcept {
+    std::string payload;
+    if (!read_stdin(payload)) {
+        return false;
+    }
+    if (parse_rollback_request(payload, request.roster_rollback)) {
+        request.action = RequestAction::roster_rollback;
+        return true;
+    }
+    if (parse_codex_install_request(payload, request.codex_install)) {
+        request.action = RequestAction::codex_install;
+        return true;
+    }
+    return false;
+}
+
 std::wstring widen_ascii(std::string_view value) {
     return std::wstring(value.begin(), value.end());
 }
@@ -325,6 +520,36 @@ std::wstring verification_message(RollbackRequest const& request) {
         L"contract while preserving current worker lifecycle (employment and standing). "
         L"Agency Runtime will re-check the displayed activation authority and every identity, "
         L"append rollback audit history, and advance roster generation before committing.");
+    return message;
+}
+
+std::wstring verification_message(CodexInstallRequest const& request) {
+    std::wstring message{
+        L"Agency Runtime Codex plugin reinstall\n\n"
+        L"Target host: Codex\nPlugin: agency-preflight@agency-runtime\nManaged marketplace: "};
+    message.append(widen_ascii(request.target_path));
+    message.append(L"\nCurrent plugin: ");
+    message.append(widen_ascii(request.current_plugin_version));
+    message.append(L"\nCandidate plugin: ");
+    message.append(widen_ascii(request.candidate_plugin_version));
+    message.append(L"\nCandidate transaction plan SHA-256: ");
+    message.append(widen_ascii(request.candidate_plan_sha256));
+    message.append(L"\nCodex executable SHA-256: ");
+    message.append(widen_ascii(request.codex_executable_sha256));
+    message.append(L"\nConfiguration revision: ");
+    message.append(widen_ascii(request.config_revision));
+    message.append(L"\nRoster generation: ");
+    message.append(widen_ascii(request.roster_generation));
+    message.append(
+        L"\n\nThe transaction plan digest binds the generated component bytes plus the "
+        L"immutable launcher-publication plan. The published bundle is re-attested before "
+        L"installation. Consequence: create an owner-private backup, replace only the managed Agency "
+        L"Runtime Codex marketplace bundle, and remove then re-add only the Agency plugin "
+        L"registration. The roster, runtime controls, dashboard, Codex authentication, and "
+        L"all other plugins remain unchanged. On failure Agency Runtime restores the prior "
+        L"managed bundle and prior Agency plugin registration or reports incomplete recovery. "
+        L"This does not grant hook trust, prove the plugin loaded, prove a canary, or establish "
+        L"production publisher trust.");
     return message;
 }
 
@@ -483,7 +708,7 @@ HWND create_verification_window(
     HWND const window = CreateWindowExW(
         WS_EX_CONTROLPARENT | WS_EX_DLGMODALFRAME,
         kWindowClass,
-        kWindowTitle,
+        kRollbackWindowTitle,
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -574,6 +799,137 @@ HWND create_verification_window(
     return window;
 }
 
+HWND create_verification_window(
+    HINSTANCE instance,
+    CodexInstallRequest const& request,
+    WindowState& state) noexcept {
+    WNDCLASSEXW window_class{};
+    window_class.cbSize = sizeof(window_class);
+    window_class.lpfnWndProc = window_procedure;
+    window_class.hInstance = instance;
+    window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+    window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+    window_class.lpszClassName = kWindowClass;
+    if (RegisterClassExW(&window_class) == 0 &&
+        GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
+        return nullptr;
+    }
+    HWND const window = CreateWindowExW(
+        WS_EX_CONTROLPARENT | WS_EX_DLGMODALFRAME,
+        kWindowClass,
+        kCodexInstallWindowTitle,
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        1020,
+        750,
+        nullptr,
+        nullptr,
+        instance,
+        &state);
+    if (window == nullptr) {
+        return nullptr;
+    }
+    try {
+        std::wstring const target =
+            L"Managed marketplace: " + widen_ascii(request.target_path);
+        std::wstring const current_version =
+            L"Current Agency plugin: " + widen_ascii(request.current_plugin_version);
+        std::wstring const current_hash =
+            L"Current bundle SHA-256: " + widen_ascii(request.current_bundle_sha256);
+        std::wstring const candidate_version =
+            L"Candidate Agency plugin: " + widen_ascii(request.candidate_plugin_version);
+        std::wstring const candidate_hash =
+            L"Candidate transaction plan SHA-256: " + widen_ascii(request.candidate_plan_sha256);
+        std::wstring const executable_hash =
+            L"Codex executable SHA-256: " + widen_ascii(request.codex_executable_sha256);
+        std::wstring const config_revision =
+            L"Configuration revision: " + widen_ascii(request.config_revision);
+        std::wstring const roster_generation =
+            L"Roster generation: " + widen_ascii(request.roster_generation);
+        bool const controls_created =
+            create_static(
+                window,
+                L"Verify Codex plugin reinstall",
+                24,
+                18,
+                950,
+                24) != nullptr &&
+            create_static(
+                window,
+                L"Review the exact transition below. Selecting Verify reinstall opens "
+                L"Windows Hello.",
+                24,
+                48,
+                950,
+                34) != nullptr &&
+            create_static(window, target, 24, 88, 950, 36) != nullptr &&
+            create_static(window, current_version, 24, 130, 950, 22) != nullptr &&
+            create_static(window, current_hash, 24, 158, 950, 22) != nullptr &&
+            create_static(window, candidate_version, 24, 194, 950, 22) != nullptr &&
+            create_static(window, candidate_hash, 24, 222, 950, 22) != nullptr &&
+            create_static(window, executable_hash, 24, 258, 950, 22) != nullptr &&
+            create_static(window, config_revision, 24, 286, 950, 22) != nullptr &&
+            create_static(window, roster_generation, 24, 314, 950, 22) != nullptr &&
+            create_static(
+                window,
+                L"Plan digest: binds generated component bytes plus the immutable launcher-"
+                L"publication plan; the published bundle is re-attested before installation.",
+                24,
+                352,
+                950,
+                44) != nullptr &&
+            create_static(
+                window,
+                L"Changes: create an owner-private backup; replace only the managed Agency "
+                L"Runtime Codex marketplace bundle; remove and re-add only "
+                L"agency-preflight@agency-runtime. The roster, runtime controls, dashboard, "
+                L"Codex authentication, and every other plugin remain unchanged.",
+                24,
+                402,
+                950,
+                78) != nullptr &&
+            create_static(
+                window,
+                L"Recovery: restore the prior managed bundle and prior Agency plugin "
+                L"registration. If exact restoration cannot be proven, stop and report "
+                L"incomplete recovery. This does not grant hook trust, prove loading or a "
+                L"canary, or establish production publisher trust.",
+                24,
+                490,
+                950,
+                78) != nullptr &&
+            create_static(
+                window,
+                L"Cancel leaves the current Codex installation unchanged.",
+                24,
+                578,
+                950,
+                22) != nullptr &&
+            create_button(
+                window,
+                L"&Verify reinstall",
+                kVerifyButtonId,
+                658,
+                620,
+                150,
+                true) != nullptr &&
+            create_button(window, L"&Cancel", kCancelButtonId, 824, 620, 150, false) != nullptr;
+        if (!controls_created) {
+            DestroyWindow(window);
+            return nullptr;
+        }
+    } catch (...) {
+        DestroyWindow(window);
+        return nullptr;
+    }
+    ShowWindow(window, SW_SHOWNORMAL);
+    UpdateWindow(window);
+    SendMessageW(window, DM_SETDEFID, kVerifyButtonId, 0);
+    SetFocus(GetDlgItem(window, kVerifyButtonId));
+    return window;
+}
+
 bool pump_until_decision(HWND window, WindowState const& state) noexcept {
     MSG message{};
     while (!state.verify_requested && !state.cancel_requested) {
@@ -637,8 +993,9 @@ int availability_result(UserConsentVerifierAvailability value) noexcept {
     }
 }
 
+template <typename TRequest>
 int verification_result(
-    RollbackRequest const& request,
+    TRequest const& request,
     UserConsentVerificationResult value) noexcept {
     switch (value) {
     case UserConsentVerificationResult::Verified:
@@ -677,7 +1034,8 @@ int run_availability() noexcept {
     }
 }
 
-int run_verification(HINSTANCE instance, RollbackRequest const& request) noexcept {
+template <typename TRequest>
+int run_verification(HINSTANCE instance, TRequest const& request) noexcept {
     MutexAcquisition mutex = acquire_user_session_mutex();
     if (mutex.result == MutexResult::already_running) {
         return emit_verification(request, "already-running", 66);
@@ -761,9 +1119,15 @@ int WINAPI wWinMain(
     if (mode == InvocationMode::availability) {
         return run_availability();
     }
-    RollbackRequest request;
+    VerificationRequest request;
     if (!parse_request(request)) {
         return emit_invalid_input();
     }
-    return run_verification(instance, request);
+    if (request.action == RequestAction::roster_rollback) {
+        return run_verification(instance, request.roster_rollback);
+    }
+    if (request.action == RequestAction::codex_install) {
+        return run_verification(instance, request.codex_install);
+    }
+    return emit_invalid_input();
 }

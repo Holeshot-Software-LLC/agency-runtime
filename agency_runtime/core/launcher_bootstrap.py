@@ -64,6 +64,18 @@ class _ManifestEntry:
     size: int
 
 
+@dataclass(frozen=True, slots=True)
+class PrivateRuntimePlan:
+    """Pure content-addressed plan for one private launcher projection."""
+
+    source_path: str
+    runtime_root: str
+    bootstrap_path: str
+    manifest_sha256: str
+    bootstrap_sha256: str
+    bootstrap_size: int
+
+
 def persistent_python_executable(
     requested: str | Path | None = None,
 ) -> str:
@@ -651,6 +663,40 @@ def prepare_private_package_runtime(source_path: str | Path) -> str:
     return stage_private_package_runtime(source_path)
 
 
+def plan_private_package_runtime(source_path: str | Path) -> PrivateRuntimePlan:
+    """Compute the exact immutable runtime destination without publishing it.
+
+    Prepared host transactions use this read-only projection so operator
+    verification can bind the candidate runtime before any launcher directory
+    is created.  Publication must later return the exact planned bootstrap and
+    content identity.
+    """
+
+    files = _collect_runtime_files(source_path)
+    manifest = _runtime_manifest(files)
+    manifest_sha256 = hashlib.sha256(manifest).hexdigest()
+    bootstrap = next(
+        (item for item in files if item.relative_path == f"{_AGENCY_PACKAGE}/_bootstrap.py"),
+        None,
+    )
+    if bootstrap is None:  # pragma: no cover - package collector invariant
+        raise PermissionError("private runtime projection has no Agency bootstrap")
+    runtime_root = private_runtime_directory("launchers") / (
+        f"{_RUNTIME_DIRECTORY_PREFIX}{manifest_sha256}"
+    )
+    bootstrap_path = (
+        runtime_root / "site-packages" / Path(*PurePosixPath(bootstrap.relative_path).parts)
+    )
+    return PrivateRuntimePlan(
+        source_path=str(Path(source_path).resolve()),
+        runtime_root=str(runtime_root),
+        bootstrap_path=str(bootstrap_path),
+        manifest_sha256=manifest_sha256,
+        bootstrap_sha256=bootstrap.sha256,
+        bootstrap_size=len(bootstrap.payload),
+    )
+
+
 def verify_private_package_runtime(source_path: str | Path) -> str:
     """Attest an existing published projection without creating or repairing it."""
 
@@ -661,6 +707,8 @@ def verify_private_package_runtime(source_path: str | Path) -> str:
 
 
 __all__ = [
+    "PrivateRuntimePlan",
+    "plan_private_package_runtime",
     "prepare_private_package_runtime",
     "stage_private_package_runtime",
     "verify_private_package_runtime",

@@ -49,13 +49,42 @@ def _valid_request() -> bytes:
     )
 
 
+def _valid_codex_request() -> bytes:
+    return (
+        b"AGENCY-OPERATOR-PRESENCE/1\n"
+        b"action=install.codex.v1\n"
+        b"host=codex\n"
+        b"plugin=agency-preflight@agency-runtime\n"
+        b"target-path=C:\\Users\\owner\\.agency-runtime\\marketplaces\\codex\n"
+        b"current-plugin-version=0.1.0+codex.current123\n"
+        b"candidate-plugin-version=0.1.0+codex.candidate456\n"
+        + b"current-bundle-sha256="
+        + b"1" * 64
+        + b"\ncandidate-plan-sha256="
+        + b"2" * 64
+        + b"\ncodex-executable-sha256="
+        + b"3" * 64
+        + b"\nconfig-revision=sha256:"
+        + b"4" * 64
+        + b"\nroster-generation=5\n"
+        + b"will-backup=yes\n"
+        + b"will-reregister=yes\n"
+        + b"recovery=restore-prior-managed-bundle-and-registration\n"
+        + b"binding-sha256="
+        + b"6" * 64
+        + b"\nnonce="
+        + b"7" * 64
+        + b"\n"
+    )
+
+
 def test_reviewed_native_payload_and_provenance_are_exact() -> None:
     source, executable, provenance = _payloads()
     observed = builder.verify_payload_contract(source, executable, provenance)
 
-    assert len(source) == builder.REVIEWED_SOURCE_SIZE == 26_482
+    assert len(source) == builder.REVIEWED_SOURCE_SIZE == 41_551
     assert hashlib.sha256(source).hexdigest() == builder.REVIEWED_SOURCE_SHA256
-    assert len(executable) == builder.REVIEWED_EXECUTABLE_SIZE == 165_888
+    assert len(executable) == builder.REVIEWED_EXECUTABLE_SIZE == 187_392
     assert hashlib.sha256(executable).hexdigest() == builder.REVIEWED_EXECUTABLE_SHA256
     assert observed["distribution_classification"] == (
         "reviewed_unsigned_windows_executable_package_data"
@@ -78,13 +107,14 @@ def test_reviewed_native_payload_and_provenance_are_exact() -> None:
     )
 
 
-def test_native_source_exposes_only_the_fixed_rollback_consent_contract() -> None:
+def test_native_source_exposes_only_the_two_fixed_consent_contracts() -> None:
     source = SOURCE.read_text(encoding="utf-8")
 
     for required in (
         "IUserConsentVerifierInterop",
         "RequestVerificationForWindowAsync",
-        'constexpr std::string_view kAction = "roster.rollback.v1"',
+        'constexpr std::string_view kRollbackAction = "roster.rollback.v1"',
+        'constexpr std::string_view kCodexInstallAction = "install.codex.v1"',
         'field(lines[2], "slug="',
         'field(lines[3], "current-version="',
         'field(lines[4], "current-hash="',
@@ -92,7 +122,23 @@ def test_native_source_exposes_only_the_fixed_rollback_consent_contract() -> Non
         'field(lines[6], "target-hash="',
         'field(lines[7], "authority="',
         'field(lines[8], "nonce="',
+        'field(lines[2], "host="',
+        'field(lines[3], "plugin="',
+        'field(lines[4], "target-path="',
+        'field(lines[5], "current-plugin-version="',
+        'field(lines[6], "candidate-plugin-version="',
+        'field(lines[7], "current-bundle-sha256="',
+        'field(lines[8], "candidate-plan-sha256="',
+        'field(lines[9], "codex-executable-sha256="',
+        'field(lines[10], "config-revision="',
+        'field(lines[11], "roster-generation="',
+        'field(lines[12], "will-backup="',
+        'field(lines[13], "will-reregister="',
+        'field(lines[14], "recovery="',
+        'field(lines[15], "binding-sha256="',
+        'field(lines[16], "nonce="',
         'L"&Verify"',
+        'L"&Verify reinstall"',
         'L"&Cancel"',
         "IsDialogMessageW",
         "VK_ESCAPE",
@@ -110,8 +156,18 @@ def test_native_source_exposes_only_the_fixed_rollback_consent_contract() -> Non
         "employment and standing",
         "append rollback audit history",
         "advance roster generation",
+        "replace only the managed Agency",
+        "every other plugin remain unchanged",
+        "transaction plan",
+        "component bytes",
+        "launcher-publication plan",
+        "re-attested before installation",
+        "does not grant hook trust",
+        "production publisher trust",
     ):
         assert required in source
+    assert "candidate_plugin_version == current_plugin_version" not in source
+    assert "candidate_plan_sha256 == current_bundle_sha256" not in source
     assert "read_prompt" not in source
     assert "operation.Cancel" not in source
     assert "operation.Close" not in source
@@ -137,6 +193,23 @@ def test_native_source_exposes_only_the_fixed_rollback_consent_contract() -> Non
         _valid_request().replace(b"slug=security", b"slug=security\xe2\x80\xae"),
         _valid_request() + b"extra=true\n",
         _valid_request().replace(b"nonce=" + b"5" * 64, b"nonce=" + b"G" * 64),
+        _valid_codex_request().replace(b"host=codex", b"host=claude"),
+        _valid_codex_request().replace(
+            b"plugin=agency-preflight@agency-runtime",
+            b"plugin=other@agency-runtime",
+        ),
+        _valid_codex_request().replace(b"target-path=C:\\", b"target-path=c:\\"),
+        _valid_codex_request().replace(
+            b"candidate-plugin-version=0.1.0+codex.candidate456",
+            b"candidate-plugin-version=bad version",
+        ),
+        _valid_codex_request().replace(
+            b"candidate-plan-sha256=" + b"2" * 64,
+            b"candidate-plan-sha256=" + b"A" * 64,
+        ),
+        _valid_codex_request().replace(b"will-backup=yes", b"will-backup=no"),
+        _valid_codex_request().replace(b"binding-sha256=" + b"6" * 64, b"binding-sha256=x"),
+        _valid_codex_request() + b"extra=true\n",
     ),
 )
 @pytest.mark.skipif(os.name != "nt", reason="reviewed helper is a Windows x64 executable")

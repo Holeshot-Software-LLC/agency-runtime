@@ -165,6 +165,7 @@ Status meanings:
 | [ADR-0101](0101-run-exhaustive-python-verification-on-demand.md) | Run exhaustive Python verification on demand | Accepted |
 | [ADR-0102](0102-defer-one-shot-application-evaluation.md) | Defer complete-application evaluation without weakening live release evidence | Accepted |
 | [ADR-0103](0103-bind-named-regulated-assurance-to-typed-staffing.md) | Bind named regulated assurance to typed staffing requirements | Accepted |
+| [ADR-0104](0104-refresh-existing-codex-through-an-exact-attended-transaction.md) | Refresh existing Codex through an exact attended transaction | Accepted |
 
 ## Documentation governance
 

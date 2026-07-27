@@ -1281,6 +1281,32 @@ def test_native_failure_returns_partial_nonzero_evidence(tmp_path: Path) -> None
     assert Path(result["target"], INSTALL_MANIFEST).exists()
 
 
+def test_codex_malformed_preinstall_inventory_never_dispatches_native_mutation(
+    tmp_path: Path,
+) -> None:
+    commands: list[list[str]] = []
+
+    def runner(command: list[str], **_kwargs: Any) -> dict[str, Any]:
+        commands.append(command)
+        assert command == ["codex", "plugin", "list", "--json"]
+        return {"returncode": 0, "stdout": "{not-json"}
+
+    result = install_agent_adapter(
+        "codex",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("codex"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["exit_code"] == 1
+    assert result["partial"] is True
+    assert result["failed_step"] == "inventory_before_unproven"
+    assert [step["name"] for step in result["native_steps"]] == ["inventory_before"]
+    assert commands == [["codex", "plugin", "list", "--json"]]
+    assert Path(result["target"], INSTALL_MANIFEST).is_file()
+
+
 def test_openclaw_refuses_install_that_would_silently_restart_live_gateway(
     tmp_path: Path,
 ) -> None:

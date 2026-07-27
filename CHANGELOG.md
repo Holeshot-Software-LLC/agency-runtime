@@ -213,6 +213,13 @@ changes rather than duplicating every commit.
   `agency install --agent codex --verify-activation` proves routing,
   finalization, and the response header in the normal profile without using
   Codex's hook-trust bypass.
+- Exact `agency install --agent codex --no-dashboard` is now a prepared,
+  Windows-Hello-authorized refresh for an existing managed, registered, and
+  enabled Codex marketplace. It freezes the candidate and current authority,
+  re-prepares under a private lock, atomically publishes the tree, refreshes
+  native registration, proves exact postconditions, and compensates bounded
+  failures. Missing-host bootstrap and activation proof remain separate and
+  fail closed.
 - Release artifacts are now built from the canonical bounded regular-file payload
   in the reviewed Git commit instead of physical worktree bytes. This keeps clean
   Windows checkouts with line-ending filters from producing noncanonical wheels

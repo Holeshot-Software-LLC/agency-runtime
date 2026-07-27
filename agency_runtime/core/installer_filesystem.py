@@ -6,7 +6,7 @@ import json
 import os
 import re
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -26,6 +26,23 @@ from agency_runtime.core.private_paths import (
 from agency_runtime.core.process_argv import PersistentArtifactIdentity
 
 _MAX_INSTALL_MANIFEST_BYTES = 64 * 1024
+
+
+class AtomicInstallTreeError(RuntimeError):
+    """An atomic install failed and retained state that needs inspection."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        backup_path: Path | None,
+        stage_path: Path | None,
+        recovery_errors: Sequence[str],
+    ) -> None:
+        super().__init__(message)
+        self.backup_path = backup_path
+        self.stage_path = stage_path
+        self.recovery_errors = tuple(recovery_errors)
 
 
 def _facade():
@@ -71,16 +88,20 @@ def atomic_install_tree(
     dry_run: bool,
     home_dir: str | Path | None,
     launcher_artifacts: Sequence[PersistentArtifactIdentity] = (),
+    force_replace: bool = False,
+    target_precondition: Callable[[Path], None] | None = None,
 ) -> dict[str, Any]:
     owned_files = sorted(files)
     backup_path: Path | None = None
-    unchanged = target.exists() and _managed_bundle_matches(target, host, files)
+    content_current = target.exists() and _managed_bundle_matches(target, host, files)
+    unchanged = content_current and not force_replace
     plan = {
         "target": str(target),
         "owned_files": [*owned_files, INSTALL_MANIFEST],
         "bundle_digest": _bundle_digest(files),
         "unchanged": unchanged,
         "would_backup": target.exists() and not unchanged,
+        "force_replace": force_replace,
     }
     if dry_run or unchanged:
         return plan
@@ -98,10 +119,13 @@ def atomic_install_tree(
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text(content, encoding="utf-8", newline="\n")
 
-        if target.exists():
-            backup_path = _runtime_home(home_dir=home_dir) / "backups" / host / stamp
-            backup_path.parent.mkdir(parents=True, exist_ok=True)
-            os.replace(target, backup_path)
+        target_present = target.exists()
+        if target_present:
+            backup_root = ensure_private_directory(
+                _runtime_home(home_dir=home_dir) / "backups" / host,
+                product_owned=True,
+            )
+            backup_path = backup_root / stamp
 
         manifest = {
             "schema_version": 2,
@@ -119,12 +143,36 @@ def atomic_install_tree(
         (stage / INSTALL_MANIFEST).write_text(
             json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n"
         )
+        if target_precondition is not None:
+            target_precondition(target)
+        if target_present:
+            os.replace(target, backup_path)
         os.replace(stage, target)
-    except Exception:
+    except Exception as exc:
+        recovery_errors: list[str] = []
         if backup_path is not None and backup_path.exists() and not target.exists():
-            os.replace(backup_path, target)
+            try:
+                os.replace(backup_path, target)
+            except Exception as recovery_exc:
+                recovery_errors.append(
+                    f"target restoration failed: {type(recovery_exc).__name__}: {recovery_exc}"
+                )
         if stage.exists():
-            remove_private_directory(stage_identity)
+            try:
+                remove_private_directory(stage_identity)
+            except Exception as cleanup_exc:
+                recovery_errors.append(
+                    f"stage cleanup failed: {type(cleanup_exc).__name__}: {cleanup_exc}"
+                )
+        retained_backup = backup_path if backup_path is not None and backup_path.exists() else None
+        retained_stage = stage if stage.exists() else None
+        if retained_backup is not None or retained_stage is not None or recovery_errors:
+            raise AtomicInstallTreeError(
+                "atomic install recovery is incomplete",
+                backup_path=retained_backup,
+                stage_path=retained_stage,
+                recovery_errors=recovery_errors,
+            ) from exc
         raise
 
     return {**plan, "backup_path": str(backup_path) if backup_path else None}

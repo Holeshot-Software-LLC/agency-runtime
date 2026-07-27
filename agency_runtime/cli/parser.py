@@ -139,6 +139,7 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         "cmd_install",
         operator_presence_family="installation",
         operator_presence_dry_run_exempt=True,
+        operator_presence_prepared_action="install.codex.v1",
     )
 
 

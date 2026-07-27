@@ -273,7 +273,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "a56b16f98cc31767cbd938e3a2ae4df015c77d3572d42933af1c26a7e5c22dfa"
+EXPECTED_MANIFEST_SHA256 = "f01791140ae5ffefe1903325106ce1175dc2926be13a2aacd93f340e6b481c33"
 
 
 def _handler(name: str):
@@ -459,6 +459,7 @@ def test_every_command_parser_retains_its_facade_handler_binding() -> None:
                 "json": False,
                 "_operator_presence_family": "installation",
                 "_operator_presence_dry_run_exempt": True,
+                "_operator_presence_prepared_action": "install.codex.v1",
                 "func": "cmd_install",
             },
         ),

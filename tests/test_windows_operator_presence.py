@@ -13,6 +13,7 @@ from agency_runtime.cli import main as cli_main
 from agency_runtime.cli import roster_commands
 from agency_runtime.core import windows_operator_presence as subject
 from agency_runtime.core.operator_presence import OperatorPresenceError
+from agency_runtime.core.prepared_codex_install import _CodexInstallBinding, _make_binding
 from agency_runtime.core.process_argv import PreparedProcessArgv
 from agency_runtime.core.store.roster import _RosterRollbackBinding
 
@@ -42,6 +43,43 @@ def _prepared(**changes: Any) -> _RosterRollbackBinding:
     return _RosterRollbackBinding(**values)
 
 
+def _codex_prepared(**changes: Any) -> _CodexInstallBinding:
+    values: dict[str, Any] = {
+        "action": "install.codex.v1",
+        "host": "codex",
+        "config_path": r"C:\Users\owner\.agency-runtime\agency.yaml",
+        "config_revision": "sha256:" + "4" * 64,
+        "database_path": r"C:\Users\owner\.agency-runtime\agency.db",
+        "database_device": 7,
+        "database_inode": 11,
+        "roster_generation": 5,
+        "host_control_generation": 2,
+        "runtime_control_generation": 3,
+        "target_path": r"C:\Users\owner\.agency-runtime\marketplaces\codex",
+        "target_parent_device": 13,
+        "target_parent_inode": 17,
+        "current_install_id": "install-current",
+        "current_plugin_version": "0.1.0+codex.current123",
+        "candidate_plugin_version": "0.1.0+codex.candidate456",
+        "current_bundle_sha256": "1" * 64,
+        "current_tree_sha256": "8" * 64,
+        "candidate_plan_sha256": "2" * 64,
+        "launcher_plan_sha256": "9" * 64,
+        "codex_executable_path": r"C:\Program Files\Codex\codex.exe",
+        "codex_executable_sha256": "3" * 64,
+        "codex_executable_identity_sha256": "a" * 64,
+        "codex_environment_sha256": "b" * 64,
+        "codex_version": "26.727.0",
+        "marketplace_state_sha256": "c" * 64,
+        "plugin_state_sha256": "d" * 64,
+    }
+    prepared = _make_binding(**values)
+    return prepared._replace(**changes)
+
+
+_CODEX_BINDING_SHA256 = _codex_prepared().binding_sha256
+
+
 def test_native_binding_covers_every_prepared_store_field() -> None:
     assert _RosterRollbackBinding._fields == subject._PREPARED_BINDING_FIELDS
 
@@ -50,6 +88,24 @@ def _result(**changes: Any) -> subject.BoundedBinaryProcessResult:
     values: dict[str, Any] = {
         "returncode": 0,
         "stdout": subject._verified_stdout(_NONCE.hex()),
+        "stderr": b"",
+        "timed_out": False,
+        "stdout_truncated": False,
+        "stderr_truncated": False,
+        "cancelled": False,
+        "failure_category": None,
+    }
+    values.update(changes)
+    return subject.BoundedBinaryProcessResult(**values)
+
+
+def _codex_result(**changes: Any) -> subject.BoundedBinaryProcessResult:
+    values: dict[str, Any] = {
+        "returncode": 0,
+        "stdout": subject._codex_install_verified_stdout(
+            binding_sha256=_CODEX_BINDING_SHA256,
+            nonce=_NONCE.hex(),
+        ),
         "stderr": b"",
         "timed_out": False,
         "stdout_truncated": False,
@@ -117,6 +173,138 @@ def test_native_verification_sends_exact_record_and_consumes_no_receipt(
     assert observed["max_stderr_bytes"] == subject._MAX_RESULT_BYTES
 
 
+def test_codex_install_verification_sends_exact_record_and_consumes_no_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepared = _codex_prepared()
+    observed = _enable_test_verifier(monkeypatch, _codex_result())
+
+    assert subject._verify_codex_install_binding(prepared) is None
+
+    assert observed["input_bytes"] == (
+        b"AGENCY-OPERATOR-PRESENCE/1\n"
+        b"action=install.codex.v1\n"
+        b"host=codex\n"
+        b"plugin=agency-preflight@agency-runtime\n"
+        b"target-path=C:\\Users\\owner\\.agency-runtime\\marketplaces\\codex\n"
+        b"current-plugin-version=0.1.0+codex.current123\n"
+        b"candidate-plugin-version=0.1.0+codex.candidate456\n"
+        + b"current-bundle-sha256="
+        + b"1" * 64
+        + b"\ncandidate-plan-sha256="
+        + b"2" * 64
+        + b"\ncodex-executable-sha256="
+        + b"3" * 64
+        + b"\nconfig-revision=sha256:"
+        + b"4" * 64
+        + b"\nroster-generation=5\n"
+        + b"will-backup=yes\n"
+        + b"will-reregister=yes\n"
+        + b"recovery=restore-prior-managed-bundle-and-registration\n"
+        + b"binding-sha256="
+        + prepared.binding_sha256.encode("ascii")
+        + b"\nnonce="
+        + b"ab" * 32
+        + b"\n"
+    )
+    assert observed["env"] == {}
+    assert observed["cwd"] == r"C:\trusted"
+    assert observed["retain_output_tail"] is False
+    assert observed["max_input_bytes"] == subject._MAX_PROTOCOL_BYTES
+    assert observed["max_stdout_bytes"] == subject._MAX_RESULT_BYTES
+    assert observed["max_stderr_bytes"] == subject._MAX_RESULT_BYTES
+
+
+def test_codex_repair_allows_same_version_and_cross_domain_digest_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    values = _codex_prepared()._asdict()
+    values.pop("binding_sha256")
+    prepared = _make_binding(
+        **{
+            **values,
+            "candidate_plugin_version": "0.1.0+codex.current123",
+            "candidate_plan_sha256": "1" * 64,
+        }
+    )
+    observed = _enable_test_verifier(
+        monkeypatch,
+        _result(
+            stdout=subject._codex_install_verified_stdout(
+                binding_sha256=prepared.binding_sha256,
+                nonce=_NONCE.hex(),
+            )
+        ),
+    )
+
+    assert subject._verify_codex_install_binding(prepared) is None
+
+    assert b"current-plugin-version=0.1.0+codex.current123\n" in observed["input_bytes"]
+    assert b"candidate-plugin-version=0.1.0+codex.current123\n" in observed["input_bytes"]
+    assert b"current-bundle-sha256=" + b"1" * 64 + b"\n" in observed["input_bytes"]
+    assert b"candidate-plan-sha256=" + b"1" * 64 + b"\n" in observed["input_bytes"]
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {
+            "stdout": subject._codex_install_verified_stdout(
+                binding_sha256="7" * 64,
+                nonce=_NONCE.hex(),
+            )
+        },
+        {
+            "stdout": subject._codex_install_verified_stdout(
+                binding_sha256=_CODEX_BINDING_SHA256,
+                nonce="cd" * 32,
+            )
+        },
+        {
+            "stdout": subject._codex_install_verified_stdout(
+                binding_sha256=_CODEX_BINDING_SHA256,
+                nonce=_NONCE.hex(),
+            ).replace(b"install.codex.v1", b"roster.rollback.v1")
+        },
+        {
+            "stdout": subject._codex_install_verified_stdout(
+                binding_sha256=_CODEX_BINDING_SHA256,
+                nonce=_NONCE.hex(),
+            )
+            + b"extra"
+        },
+        {"stderr": b"diagnostic"},
+        {"returncode": 1},
+        {"timed_out": True},
+        {"stdout_truncated": True},
+        {"stderr_truncated": True},
+        {"cancelled": True},
+        {"failure_category": "containment"},
+    ],
+    ids=(
+        "wrong-binding",
+        "wrong-nonce",
+        "wrong-action",
+        "extra-stdout",
+        "stderr",
+        "nonzero",
+        "timeout",
+        "stdout-truncated",
+        "stderr-truncated",
+        "cancelled",
+        "containment-failure",
+    ),
+)
+def test_codex_install_malformed_or_failed_result_is_denied(
+    monkeypatch: pytest.MonkeyPatch,
+    changes: dict[str, Any],
+) -> None:
+    _enable_test_verifier(monkeypatch, _codex_result(**changes))
+
+    with pytest.raises(OperatorPresenceError, match="was not verified"):
+        subject._verify_codex_install_binding(_codex_prepared())
+
+
 _DENIED_RESULTS = (
     "device-not-present",
     "not-configured",
@@ -128,6 +316,28 @@ _DENIED_RESULTS = (
     "already-running",
     "error",
 )
+
+
+@pytest.mark.parametrize("status", _DENIED_RESULTS)
+def test_every_nonverified_codex_install_status_is_denied(
+    monkeypatch: pytest.MonkeyPatch,
+    status: str,
+) -> None:
+    stdout = (
+        subject._PROTOCOL_HEADER
+        + b"mode=verification\n"
+        + b"action=install.codex.v1\n"
+        + f"result={status}\n".encode("ascii")
+        + b"binding-sha256="
+        + _CODEX_BINDING_SHA256.encode("ascii")
+        + b"\nnonce="
+        + _NONCE.hex().encode("ascii")
+        + b"\n"
+    )
+    _enable_test_verifier(monkeypatch, _codex_result(returncode=20, stdout=stdout))
+
+    with pytest.raises(OperatorPresenceError, match="was not verified"):
+        subject._verify_codex_install_binding(_codex_prepared())
 
 
 @pytest.mark.parametrize("status", _DENIED_RESULTS)
@@ -234,6 +444,19 @@ def test_invalid_prepared_type_never_reaches_host_or_process(
         subject._verify_roster_rollback_binding(object())  # type: ignore[arg-type]
 
 
+def test_invalid_codex_prepared_type_never_reaches_host_or_process(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        subject,
+        "_assert_supported_host",
+        lambda: pytest.fail("invalid prepared value reached host verification"),
+    )
+
+    with pytest.raises(OperatorPresenceError, match="binding is invalid"):
+        subject._verify_codex_install_binding(object())  # type: ignore[arg-type]
+
+
 @pytest.mark.parametrize(
     ("platform_name", "architecture", "pointer_size", "build", "message"),
     [
@@ -291,6 +514,40 @@ def test_invalid_prepared_protocol_fields_are_rejected(
 
     with pytest.raises(OperatorPresenceError, match="binding is invalid"):
         subject._verify_roster_rollback_binding(_prepared(**{field: value}))
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("target_path", r"relative\\marketplaces\\codex"),
+        ("target_path", r"c:\Users\owner\.agency-runtime\marketplaces\codex"),
+        ("target_path", "C:\\Users\\owner\\..\\codex"),
+        ("current_plugin_version", "bad version"),
+        ("candidate_plugin_version", "bad version"),
+        ("current_bundle_sha256", "A" * 64),
+        ("candidate_plan_sha256", "A" * 64),
+        ("codex_executable_sha256", "3" * 63),
+        ("config_revision", "4" * 64),
+        ("roster_generation", -1),
+        ("roster_generation", True),
+        ("binding_sha256", "6" * 63),
+    ],
+)
+def test_invalid_codex_install_protocol_fields_are_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    value: Any,
+) -> None:
+    monkeypatch.setattr(subject, "_assert_supported_host", lambda: None)
+    monkeypatch.setattr(subject, "_random_nonce_bytes", lambda: _NONCE)
+    monkeypatch.setattr(
+        subject,
+        "_load_reviewed_verifier",
+        lambda: pytest.fail("invalid prepared value loaded the verifier"),
+    )
+
+    with pytest.raises(OperatorPresenceError, match="binding is invalid"):
+        subject._verify_codex_install_binding(_codex_prepared(**{field: value}))
 
 
 def _provenance_record(*, source_size: int = 10, executable_size: int = 20) -> dict[str, Any]:

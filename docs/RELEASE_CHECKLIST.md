@@ -71,8 +71,12 @@ or adding an index-install claim.
       matrix or clearly marked below that maturity.
 - [ ] Codex generated-bundle smoke proves the expected seven hook events,
       commands, and timeout schema; native inventory proves plugin registration
-      and enablement. Installation reports `activation_required` until an
-      operator reviews and trusts the hooks through `/hooks` and
+      and enablement. Exact existing-install refresh through
+      `agency install --agent codex --no-dashboard` proves its prepared binding,
+      attended Windows Hello result, atomic publication, native remove/add,
+      exact postconditions, and compensation behavior. It is not evidence of a
+      missing-host bootstrap. Installation reports `activation_required` until
+      an operator reviews and trusts the hooks through `/hooks` and
       `agency install --agent codex --verify-activation` records a successful
       current-profile canary. That verification omits the hook-trust bypass and
       must prove routing, specialist evidence, finalization, and the response

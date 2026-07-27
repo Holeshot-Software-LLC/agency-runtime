@@ -41,8 +41,10 @@ _COMMAND_PATH_FIELDS = (
     "dashboard_command",
     "dashboard_service_action",
 )
-_PREPARED_PRESENCE_ACTION = "roster.rollback.v1"
-_PREPARED_PRESENCE_PATH = ("roster", "rollback")
+_ROSTER_ROLLBACK_ACTION = "roster.rollback.v1"
+_ROSTER_ROLLBACK_PATH = ("roster", "rollback")
+_CODEX_INSTALL_ACTION = "install.codex.v1"
+_CODEX_INSTALL_PATH = ("install",)
 OPERATOR_PRESENCE_FAMILIES = frozenset(
     {
         "agent-governance",
@@ -144,13 +146,24 @@ def _uses_prepared_operator_presence(namespace: argparse.Namespace) -> bool:
     action = getattr(namespace, "_operator_presence_prepared_action", "")
     if not action:
         return False
-    if (
-        action != _PREPARED_PRESENCE_ACTION
-        or getattr(namespace, "_operator_presence_family", "") != "roster-governance"
-        or _command_path(namespace) != _PREPARED_PRESENCE_PATH
-    ):
-        raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
-    return True
+    family = getattr(namespace, "_operator_presence_family", "")
+    path = _command_path(namespace)
+    if action == _ROSTER_ROLLBACK_ACTION:
+        if family != "roster-governance" or path != _ROSTER_ROLLBACK_PATH:
+            raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
+        return True
+    if action == _CODEX_INSTALL_ACTION:
+        if family != "installation" or path != _CODEX_INSTALL_PATH:
+            raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
+        from agency_runtime.core.prepared_codex_install import (
+            is_exact_prepared_codex_install,
+        )
+
+        # The marker is attached to the install parser, but only this exact
+        # reviewed shape delegates verification to the prepared coordinator.
+        # Every other install mode retains the generic fail-closed boundary.
+        return is_exact_prepared_codex_install(namespace)
+    raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
 
 
 def request_for_namespace(namespace: argparse.Namespace) -> OperatorPresenceRequest | None:

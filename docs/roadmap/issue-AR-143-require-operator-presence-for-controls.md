@@ -10,6 +10,7 @@ related:
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
+  - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
@@ -57,9 +58,24 @@ One narrower positive slice now exists: on Windows 11 x64 only, exact
 `agency roster rollback` is owned by one Store coordinator that prepares the
 authoritative rollback, invokes a packaged native Windows consent verifier, and
 revalidates the same captured state inside the committing transaction. This is
-the first implemented path, not completion of AR-143. Every other persistent
-mutation, Windows on another architecture, and every non-Windows platform
-remain unavailable rather than falling back to a weaker presence signal.
+the first implemented path, not completion of AR-143.
+
+A second exact positive slice now refreshes an existing Codex integration on
+Windows 11 x64. It requires the Agency marketplace and Agency plugin to already
+be installed, registered, and enabled; it does not bootstrap a missing host,
+marketplace, or plugin. The coordinator prepares the exact configuration,
+database, runtime-control, managed-target, Codex executable, candidate launcher,
+and native inventory state before a non-exporting Windows Hello verification.
+It then locks, prepares the entire transaction again, publishes the managed tree
+atomically with an exact backup, removes and re-adds only the Agency plugin, and
+accepts only exact filesystem, launcher, marketplace, plugin, and policy
+postconditions. Bounded compensation restores the exact prior tree and native
+state or reports manual recovery required. Registration remains runtime-
+unverified until Codex restarts or opens a new task and passes a bound canary.
+
+Every other persistent mutation, fresh Codex bootstrap, Windows on another
+architecture, and every non-Windows positive mutation remain unavailable rather
+than falling back to a weaker presence signal.
 
 ## Approach
 
@@ -81,6 +97,14 @@ secret-dependent digest that becomes an offline guessing oracle; the prompt
 shows secret presence and effect, never the secret value.
 If a future design introduces a transferable capability, it must additionally
 be short-lived, audience-bound, single-use, and atomically replay-protected.
+
+For existing Codex refresh, the prepared authority covers the exact config, DB
+and generations, runtime control, managed target and parent, current install and
+tree, candidate component bytes and launcher-publication plan, Codex executable
+and environment, and exact Agency marketplace/plugin inventory. The native
+prompt shows the current-to-candidate transaction and recovery consequence.
+After Windows Hello, the coordinator acquires its install lock and prepares all
+of that state again before atomic publication or native registration mutation.
 
 ## Dependencies
 
@@ -106,6 +130,18 @@ identity and the owner/legal compiler, runtime, SDK, and notice disposition.
   guessing oracle. Roster rollback has no such input.
 - [x] The native result is consumed in the same call stack and never becomes a
   transferable authorization capability.
+- [x] Exact existing Codex refresh prepares config, database, control, target,
+  executable, candidate plan, and native inventory before verification.
+- [x] That Codex path uses the non-exporting Windows Hello verifier, then locks
+  and prepares the complete transaction again before mutation.
+- [x] Codex refresh atomically publishes the managed tree with an exact backup,
+  removes and re-adds only the Agency plugin, and requires exact postconditions.
+- [x] Post-publication failure uses bounded identity-checked compensation and
+  never claims complete restoration without the exact prior tree and inventory.
+- [x] The positive Codex path refuses fresh missing-host, missing-marketplace,
+  absent-plugin, disabled-plugin, and ambiguous-inventory bootstrap shapes.
+- [ ] A restarted or new Codex task passes a capability- and installation-bound
+  canary for the exact refreshed candidate; registration alone is not loading.
 - [ ] AR-160 proves the paired portable and `win_amd64` artifact set without a
   Windows PE payload in the unrestricted wheel.
 - [ ] AR-161 records owner-authorized publisher identity, independent signed-
@@ -170,14 +206,30 @@ parents, explicit projection absence, append-after-prepare, lifecycle overlays,
 denial, cancellation, malformed native results, post-verification substitution,
 replay, same-Store ordering, and atomic rollback after injected failure.
 
+The existing-Codex refresh coordinator separately captures one immutable
+binding over configuration, database and control generations, the complete
+managed target, candidate transaction plan, exact Codex executable/environment,
+and exact marketplace/plugin inventory. The dedicated native prompt uses the
+same pinned non-exporting Windows verifier. Under the install lock, the
+coordinator prepares that full binding again, publishes a content-addressed
+private launcher and atomically swaps the managed tree, proves the native
+remove/add transition, and validates exact filesystem, launcher, inventory,
+version, enabled, source, install-policy, and authorization-policy
+postconditions. Failure compensation is compare-and-swap bounded to the frozen
+candidate and backup and claims success only after exact prior target and native
+state equality. Same-version repair is intentionally valid because bundle and
+registration drift can exist without a version change.
+
 ## Remaining release and scope gates
 
-- On 2026-07-27, exact candidate `29da6eca` planned a Codex backup and stale-
-  bundle refresh, but the supported real install returned operator-presence
-  `unavailable` before dispatch. The pre-existing registered/enabled plugin had
-  launcher drift and unverified hook trust; a current-profile canary completed
-  with no Agency header, specialist, correlated route, receipt, or accepted
-  finalization. This is the intended fail-closed result, not installation proof.
+- The admitted Codex transaction is deliberately existing-only. Missing-host,
+  missing-marketplace, absent-plugin, disabled-plugin, or ambiguous-inventory
+  states still fail before Windows Hello and require a separately reviewed fresh
+  bootstrap design.
+- Filesystem publication and native registration do not prove activation. Codex
+  must restart or open a new task, and that task must pass the capability- and
+  installation-bound canary before loaded, hook-trusted, or production-ready
+  claims are allowed.
 
 - The helper is a reviewed but unsigned Windows executable. AR-161 and
   ADR-0099 keep reproducible unsigned review bytes separate from signed
@@ -191,12 +243,15 @@ replay, same-Store ordering, and atomic rollback after injected failure.
 - A real attended Windows Hello verification and successful rollback canary has
   not run in this remote session. Availability and invalid-input smoke are not a
   substitute.
-- Linux, Windows ARM64, and every persistent mutation other than exact roster
-  rollback remain deliberately unavailable.
+- Linux, Windows ARM64, fresh Codex bootstrap, and every persistent mutation
+  other than exact roster rollback and exact existing-Codex refresh remain
+  deliberately unavailable.
 - The trusted operating-system account and Python interpreter remain inside the
   trust boundary. Same-account code replacement, monkeypatching/private
   reflection, debugger access, or raw SQLite writes are not defeated by a
   Python coordinator and require stronger process/package policy.
 
-AR-143 therefore remains open. This evidence supports one reviewed positive
-slice; it does not support a generic production-ready claim.
+AR-143 therefore remains open. This evidence supports two reviewed positive
+slices; it does not support fresh Codex bootstrap or a generic production-ready
+claim. The helper is still unsigned, signing and legal disposition remain
+blocked, and activation still requires restart/new-task canary evidence.

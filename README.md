@@ -339,9 +339,12 @@ agency doctor
 ```
 
 This unreleased source keeps persistent setup and control mutations fail-closed
-except for one narrow implementation: exact `agency roster rollback` on Windows
-11 x64 can prepare the authoritative transition, invoke the packaged native
-Windows consent window, and revalidate before commit. Every other positive
+except for two narrow Windows 11 x64 implementations. Exact
+`agency roster rollback` prepares and revalidates one authoritative Store
+transition. Exact `agency install --agent codex --no-dashboard` refreshes an
+already managed, registered, and enabled Codex marketplace; it does not create
+a missing installation. Both invoke the packaged native Windows consent window
+and consume its result only in the preparing call stack. Every other positive
 `configure`, `install`, service, host, agent, and retention mutation remains
 unavailable. Do not substitute a static confirmation, bearer token, environment
 variable, or model-callable credential for genuine operator presence. See
@@ -361,14 +364,28 @@ including hosted proof, compiler/runtime/SDK legal review, and an attended
 Windows Hello canary. Install from this repository only as prerelease source;
 no signed public artifact exists.
 
-After the remaining gates are implemented, the installer will discover
-supported hosts and register only the ones it can identify. It does not restart
-a host automatically.
+The Codex refresh path freezes the configuration, database and generation
+identities, current target tree, candidate transaction plan, launcher, Codex
+executable and environment, and exact native inventory before asking for
+Windows Hello. Under one private install lock it re-prepares, atomically swaps
+the marketplace tree, removes and re-adds the native plugin, and proves the
+published tree and inventory. A bounded compensation path restores the prior
+tree and registration when a post-publication check fails. A process crash can
+still require recovery from the retained backup, so this is not yet the general
+fresh-host installer contract.
 
 **Codex** will also require you to approve command hooks: Agency installs the plugin,
 reports `activation_required`, and gives the exact next step. Run `codex`,
 choose **Trust all and continue** at the startup hook review (or `/hooks` inside
-the terminal UI and trust the Agency events), then:
+the terminal UI and trust the Agency events). To refresh an existing managed
+Codex adapter from this source, run:
+
+```bash
+agency install --agent codex --no-dashboard
+```
+
+That transaction deliberately does not claim activation. Restart Codex or open
+a new task so the new plugin can load, then run:
 
 ```bash
 agency install --agent codex --verify-activation
