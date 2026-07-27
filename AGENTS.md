@@ -155,10 +155,10 @@ automatic CI. Run focused tests for every changed behavior as well. Do not run
 the complete warning-strict corpus, the four-shard 97-percent Python coverage
 gate, or the six-interpreter compatibility matrix as a routine handoff check.
 Those exhaustive integration gates run only through an explicitly requested
-`workflow_dispatch`. A production or release `GO` requires a successful manual
-run whose recorded `head_sha` is the exact current candidate; any later change,
-or a missing, skipped, failed, cancelled, or stale run, is a `NO-GO`. Dispatching
-that workflow is an outward-facing action and still requires authorization.
+`workflow_dispatch`. They are optional diagnostics, not issue-completion, demo,
+production, or release requirements. Their absence must be stated when relevant
+but does not itself force `NO-GO`. Dispatching that workflow is an outward-facing
+action and still requires authorization.
 
 After approved tracker creation, also run
 `python scripts/verify_docs.py --require-tracker` and
@@ -173,10 +173,31 @@ remains strict.
 
 For packaging or release-facing changes, also follow
 [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md). The checklist, not an
-ordinary handoff, owns the manual exhaustive-integration requirement. A
-deterministic host contract is not a live runtime canary: keep discovery,
-registration, enablement, loading, and canary claims separate in documentation
-and release evidence.
+ordinary handoff, owns artifact and live-evidence requirements. A deterministic
+host contract is not a live runtime canary: keep discovery, registration,
+enablement, loading, and canary claims separate in documentation and release
+evidence.
+
+## Bounded delivery and hard demo checkpoints
+
+Every delivery package starts with one observable outcome and moves through
+`scoped`, `implementing`, `focused_review`, `fast_verification`, `demo_ready`,
+`live_demo`, and `done`. `blocked` and `waiting_for_operator` are explicit exits.
+
+- Freeze the package around its visible outcome. Fix findings that invalidate
+  that outcome; record unrelated findings for later rather than expanding the
+  package.
+- Use at most two independent review passes by default. Add another only for
+  unresolved Critical/High evidence or an explicit owner request.
+- Run focused checks and the named fast spine before the demo. A slow or
+  exhaustive command runs only when the owner explicitly requests it.
+- Reach the live-demo checkpoint before broad cleanup, secondary optimization,
+  or optional certification work.
+- Human trust, credentials, signing, publication, or external decisions enter
+  `waiting_for_operator`, are reported once, and are not retried in an
+  unattended loop.
+- Close the package after its scoped live evidence passes. Give every verdict an
+  exact scope, evidence, and known limitations.
 
 ## Repository boundary
 

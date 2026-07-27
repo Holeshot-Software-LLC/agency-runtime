@@ -12,7 +12,9 @@ related:
   - docs/THREAT_MODEL.md
   - docs/roadmap/README.md
   - docs/decisions/README.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/RELEASE_CHECKLIST.md
+  - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
 supersedes: []
 superseded_by: null
 ---
@@ -114,11 +116,17 @@ Pull-request and push automation intentionally does not run the complete
 warning-strict Python corpus, four-shard 97-percent coverage gate, or full
 Ubuntu/Windows six-interpreter compatibility matrix. Those are exhaustive
 integration gates and run only when an authorized maintainer explicitly starts
-the CI workflow with `workflow_dispatch`. Automatic success is a change gate,
-not production or release evidence. A production or release `GO` requires the
-manual run to succeed at the exact current candidate `head_sha`; any subsequent
-commit invalidates it. Missing, skipped, failed, cancelled, or stale exhaustive
-evidence is a `NO-GO`.
+the CI workflow with `workflow_dispatch`. They are optional diagnostics rather
+than issue-completion, demo, production, or release requirements. Record whether
+they ran when relevant, but do not treat missing manual evidence as an automatic
+`NO-GO`.
+
+Each contribution package should define one observable outcome, run focused
+tests plus the named fast spine, and reach an installed or live demo checkpoint
+before unrelated cleanup expands scope. Two independent review passes are the
+default maximum unless unresolved Critical/High evidence or a maintainer request
+justifies more. Human-owned steps are recorded as `waiting_for_operator` and are
+not retried in an unattended loop.
 
 When tracker access is authorized and the local records should be in parity:
 
@@ -127,9 +135,8 @@ python scripts/verify_docs.py --require-tracker
 python scripts/verify_tracker.py
 ```
 
-For packaging or release-facing changes also run the checks below and follow
-the manual exact-candidate integration requirements in
-[the release checklist](docs/RELEASE_CHECKLIST.md):
+For packaging or release-facing changes also run the applicable checks below
+and follow [the release checklist](docs/RELEASE_CHECKLIST.md):
 
 ```bash
 python scripts/verify_release_hygiene.py

@@ -1,11 +1,13 @@
 ---
 title: "Run exhaustive Python verification on demand"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-27
 updated: 2026-07-27
 tags: [ci, github-actions, cost, testing, coverage, release]
 related:
+  - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
@@ -16,7 +18,7 @@ related:
   - tests/test_ci_session_pair.py
   - tests/test_release_packaging.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
 id: ADR-0101
 type: decision
 deciders: [maintainers]

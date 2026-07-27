@@ -22,13 +22,14 @@ related:
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
+  - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 828f747b1fafef513e5891de6b956aa4802c83f0
-minimum_ledger_commit: 8fe24e1e021b0dcecf8ad1dfab1521639a2768b9
+evidence_commit: bc6589b06c7fe10d70eee6e07e14629ebc276303
+minimum_ledger_commit: c48f2bfd5335486381b41a6c23b13c481bf53882
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -41,8 +42,8 @@ the full acceptance history.
 
 ## checkpoint
 
-- Exact recovery pairs: capsule refresh `6bbf29b`/`602a817`; AR-184 `828f747`/`8fe24e1`.
-- Branch `main` resolves to `602a817`; `origin/main` remains `880a5ce` because
+- Exact recovery pairs: AR-185 `bc6589b`/`c48f2bf`; capsule refresh `6bbf29b`/`602a817`.
+- Branch `main` resolves to `c48f2bf`; `origin/main` remains `880a5ce` because
   no new push was authorized. No manual/exhaustive workflow was dispatched.
 - User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
   and excluded from every commit.
@@ -111,6 +112,9 @@ the full acceptance history.
   migrate/repair Store mode through spawned hooks, and suppresses roster
   reconciliation and gap hiring. Its focused package passed 324 tests with 6
   platform skips; 35 dedicated regressions pass in under two seconds.
+- AR-186 replaces open-ended review/certification with one visible outcome,
+  two bounded review passes, fast verification, and an early live-demo
+  checkpoint. Exhaustive CI is optional; human steps wait without retry loops.
 
 ## exact-blocker
 
@@ -144,10 +148,8 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Commit AR-185 and its ledger after fast focused and documentation checks.
-2. Replace the open-ended review/certification loop with one visible-outcome,
-   fast-test, hard-demo-checkpoint policy; commit its own governed record.
-3. Build and install one exact artifact, start a fresh Codex task, run one live
+1. Commit AR-186 and its ledger after documentation validation.
+2. Build and install one exact artifact, start a fresh Codex task, run one live
    canary, and inspect the correlated UI evidence. Backlog non-demo findings.
 
 ## verification

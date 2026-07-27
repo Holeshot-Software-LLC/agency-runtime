@@ -9,6 +9,8 @@ related:
   - docs/roadmap/issue-AR-115-live-routing-trust.md
   - docs/roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md
   - docs/roadmap/issue-AR-118-reconcile-native-child-activation-evidence.md
+  - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/RELEASE_CHECKLIST.md
 supersedes: []
 superseded_by: null
@@ -69,16 +71,14 @@ live native result.
 
 ## Completion rule
 
-Automatic pull-request and push success is a change gate, not production or
-release evidence. After the final candidate commit exists, an authorized
-maintainer explicitly starts the CI workflow with `workflow_dispatch` at a ref
-whose recorded `head_sha` is that exact commit. The manual run must pass the
-complete warning-strict Python corpus, four-shard 97-percent coverage gate, and
-Ubuntu/Windows six-interpreter compatibility matrix. A later commit, or a
-missing, skipped, failed, cancelled, or stale manual run, leaves the candidate
-`NO-GO`.
+Complete one bounded visible outcome at a time. Focused tests and the named fast
+production spine must pass before an exact artifact is installed and exercised
+through its live host/UI demo checkpoint. Findings unrelated to that outcome are
+tracked separately instead of reopening the package.
 
-Do not close P0 issues or describe the north star as complete until that manual
-exact-candidate evidence and every other applicable row are green with dated
-receipts, and the installed identity matches the tested source. Reinstall the
-exact candidate artifact and run one final fresh-task smoke before closure.
+The exhaustive warning-strict, coverage, and compatibility workflow is an
+optional owner-requested diagnostic, not a completion requirement. Do not close
+a P0 issue or describe its scoped outcome as complete until every applicable
+fast, artifact, security, and live-evidence row is green with dated receipts and
+the installed identity matches the tested source. Human-owned approval steps
+enter `waiting_for_operator` and are not retried unattended.
