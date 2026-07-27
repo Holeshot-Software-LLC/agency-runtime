@@ -77,6 +77,7 @@ SOURCE_WHEEL_MODES = {
 }
 SOURCE_TAR_FILE_MODES = {0o644, 0o666}
 SOURCE_TAR_DIRECTORY_MODES = {0o755, 0o777}
+_SDIST_SOURCES_MANIFEST = "agency_runtime.egg-info/SOURCES.txt"
 _ZERO_BLOCK = b"\0" * tarfile.BLOCKSIZE
 _PAX_RECORD = re.compile(rb"(0|[1-9][0-9]*) ([^=\n]+)=([^\n]*)\n")
 
@@ -102,6 +103,40 @@ def _source_tar_file_mode_allowed(name: str, mode: int) -> bool:
     # writes them into the raw sdist. Accept only the one governed native path
     # and only the exact observed writable projection; canonical output is 0644.
     return mode == 0o777 and relative == NATIVE_OPERATOR_PRESENCE_EXECUTABLE
+
+
+def _sources_manifest_order_key(name: str) -> tuple[str, str]:
+    parent, separator, basename = name.rpartition("/")
+    return (parent if separator else "", basename)
+
+
+def _canonical_sdist_sources_payload(entries: list[_TarEntry]) -> bytes:
+    files = {
+        PurePosixPath(*PurePosixPath(entry.name).parts[1:]).as_posix()
+        for entry in entries
+        if not entry.is_directory
+    }
+    files.difference_update({"PKG-INFO", "setup.cfg"})
+    return "\n".join(sorted(files, key=_sources_manifest_order_key)).encode("utf-8")
+
+
+def _normalize_sdist_entries(entries: list[_TarEntry]) -> list[_TarEntry]:
+    sources_payload = _canonical_sdist_sources_payload(entries)
+    normalized: list[_TarEntry] = []
+    for entry in entries:
+        parts = PurePosixPath(entry.name).parts
+        relative = PurePosixPath(*parts[1:]).as_posix()
+        if not entry.is_directory and relative == _SDIST_SOURCES_MANIFEST:
+            normalized.append(_TarEntry(entry.name, sources_payload))
+        elif (
+            not entry.is_directory
+            and relative in CANONICAL_LF_SDIST_GENERATED_FILES
+            and entry.payload is not None
+        ):
+            normalized.append(_TarEntry(entry.name, _canonical_lf_text(entry.payload)))
+        else:
+            normalized.append(entry)
+    return normalized
 
 
 def _canonical_zip_timestamp(timestamp: int) -> tuple[int, int, int, int, int, int]:
@@ -1143,19 +1178,7 @@ def _source_tar_entries(payload: bytes) -> list[_TarEntry]:
     }
     if len(roots) != 1 or directories != required_directories:
         raise ValueError("sdist source directory topology is noncanonical")
-    normalized: list[_TarEntry] = []
-    for entry in entries:
-        parts = PurePosixPath(entry.name).parts
-        relative = PurePosixPath(*parts[1:]).as_posix()
-        if (
-            not entry.is_directory
-            and relative in CANONICAL_LF_SDIST_GENERATED_FILES
-            and entry.payload is not None
-        ):
-            normalized.append(_TarEntry(entry.name, _canonical_lf_text(entry.payload)))
-        else:
-            normalized.append(entry)
-    return normalized
+    return _normalize_sdist_entries(entries)
 
 
 def _tar_octal(value: int, width: int) -> bytes:

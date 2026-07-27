@@ -324,6 +324,32 @@ def test_generated_metadata_eol_variants_converge_without_mutating_source_payloa
     assert not sdist_payloads["package-1/agency_runtime.egg-info/SOURCES.txt"].endswith(b"\n")
 
 
+def test_sdist_sources_manifest_is_rebuilt_from_actual_members() -> None:
+    source = _source_sdist(
+        {
+            "package-1": None,
+            "package-1/package": None,
+            "package-1/package/module.py": b"module",
+            "package-1/agency_runtime.egg-info": None,
+            "package-1/agency_runtime.egg-info/SOURCES.txt": (
+                b"package/module.py\npackage/module.py\nmissing.py\n"
+            ),
+            "package-1/PKG-INFO": b"metadata",
+            "package-1/setup.cfg": b"generated",
+        }
+    )
+
+    canonical = subject.canonicalize_sdist_bytes(
+        source,
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+    with tarfile.open(fileobj=io.BytesIO(canonical), mode="r:gz") as archive:
+        payload = archive.extractfile("package-1/agency_runtime.egg-info/SOURCES.txt").read()
+
+    assert payload == b"agency_runtime.egg-info/SOURCES.txt\npackage/module.py"
+
+
 def test_wheel_generated_metadata_contract_rejects_multiple_record_roots() -> None:
     assert subject._canonical_wheel_entries([("package/module.py", b"source")]) == [
         ("package/module.py", b"source")
