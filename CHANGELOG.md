@@ -37,6 +37,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Canonical release builds now accept the exact non-executable `0600` source-
+  wheel mode emitted by owner-private POSIX producers under `umask 077`, then
+  normalize it to deterministic `0644`; other unreviewed modes still fail
+  closed.
 - Codex hook-trust guidance now derives the exact event count and names from the
   generated eight-event inventory, including `PreToolUse`, instead of reporting
   the prior seven-event contract during activation.

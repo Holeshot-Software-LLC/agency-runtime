@@ -8,6 +8,7 @@ tags: [release, packaging, reproducibility, metadata]
 related:
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
+  - docs/roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - scripts/canonicalize_distributions.py
   - scripts/verify_distribution.py
@@ -19,7 +20,7 @@ epic: release
 issue_id: AR-168
 priority: p0
 tracker_url: null
-depends_on: [AR-107]
+depends_on: [AR-107, AR-183]
 blocks: [AR-160]
 ---
 

@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
   - docs/roadmap/issue-AR-169-exclude-native-pe-from-portable-wheel.md
   - docs/roadmap/issue-AR-181-bound-all-host-smoke-launcher-preparation.md
+  - docs/roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/RELEASE_CHECKLIST.md
@@ -25,7 +26,7 @@ epic: release
 issue_id: AR-160
 priority: p0
 tracker_url: null
-depends_on: [AR-107, AR-167, AR-168, AR-169, AR-181]
+depends_on: [AR-107, AR-167, AR-168, AR-169, AR-181, AR-183]
 blocks: [AR-143, AR-161]
 ---
 

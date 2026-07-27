@@ -39,6 +39,10 @@ def _source_wheel(
     *,
     system: int = 3,
     timestamp: int = TIMESTAMP,
+    ordinary_mode: int | None = None,
+    ordinary_type: int = stat.S_IFREG,
+    ordinary_low_bits: int = 0,
+    record_mode: int = 0o664,
 ) -> bytes:
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
@@ -49,10 +53,16 @@ def _source_wheel(
             item.extract_version = subject.CANONICAL_ZIP_VERSION
             item.compress_type = zipfile.ZIP_DEFLATED
             if name.endswith(".dist-info/RECORD"):
-                mode = stat.S_IFREG | 0o664
+                mode = stat.S_IFREG | record_mode
+                low_bits = 0
             else:
-                mode = stat.S_IFREG | (0o666 if system == 0 else 0o644)
-            item.external_attr = mode << 16
+                mode = ordinary_type | (
+                    ordinary_mode
+                    if ordinary_mode is not None
+                    else (0o666 if system == 0 else 0o644)
+                )
+                low_bits = ordinary_low_bits
+            item.external_attr = (mode << 16) | low_bits
             archive.writestr(item, payload)
     return output.getvalue()
 
@@ -162,6 +172,123 @@ def test_wheel_normalization_is_platform_independent_and_idempotent(system: int)
         )
         for mode in (0o644, 0o664)
     }
+
+
+def test_wheel_normalization_accepts_owner_private_posix_source_modes() -> None:
+    source = _source_wheel(
+        {
+            "package/private.py": b"private",
+            "package-1.dist-info/RECORD": b"record",
+        },
+        ordinary_mode=0o600,
+    )
+
+    canonical = subject.canonicalize_wheel_bytes(source, timestamp=TIMESTAMP)
+
+    with zipfile.ZipFile(io.BytesIO(canonical)) as archive:
+        modes = {
+            item.filename: stat.S_IMODE(item.external_attr >> 16) for item in archive.infolist()
+        }
+    assert modes == {
+        "package-1.dist-info/RECORD": 0o664,
+        "package/private.py": 0o644,
+    }
+    assert subject.canonicalize_wheel_bytes(canonical, timestamp=TIMESTAMP) == canonical
+
+
+def test_owner_private_and_public_posix_source_modes_converge_exactly() -> None:
+    entries = {
+        "package/private.py": b"private",
+        "package-1.dist-info/RECORD": b"record",
+    }
+
+    private = subject.canonicalize_wheel_bytes(
+        _source_wheel(entries, ordinary_mode=0o600),
+        timestamp=TIMESTAMP,
+    )
+    public = subject.canonicalize_wheel_bytes(
+        _source_wheel(entries, ordinary_mode=0o644),
+        timestamp=TIMESTAMP,
+    )
+
+    assert private == public
+
+
+def test_windows_private_source_mode_remains_rejected() -> None:
+    source = _source_wheel(
+        {
+            "package/private.py": b"private",
+            "package-1.dist-info/RECORD": b"record",
+        },
+        system=0,
+        ordinary_mode=0o600,
+    )
+
+    with pytest.raises(ValueError, match="finite build allowlist"):
+        subject.canonicalize_wheel_bytes(source, timestamp=TIMESTAMP)
+
+
+@pytest.mark.parametrize("record_mode", [0o600, 0o644])
+def test_unreviewed_record_modes_remain_rejected(record_mode: int) -> None:
+    source = _source_wheel(
+        {
+            "package/private.py": b"private",
+            "package-1.dist-info/RECORD": b"record",
+        },
+        record_mode=record_mode,
+    )
+
+    with pytest.raises(ValueError, match="finite build allowlist"):
+        subject.canonicalize_wheel_bytes(source, timestamp=TIMESTAMP)
+
+
+@pytest.mark.parametrize(
+    ("ordinary_type", "ordinary_mode", "ordinary_low_bits"),
+    [
+        (stat.S_IFREG, 0o400, 0),
+        (stat.S_IFREG, 0o640, 0),
+        (stat.S_IFREG, 0o700, 0),
+        (stat.S_IFREG, 0o4700, 0),
+        (stat.S_IFREG, 0o755, 0),
+        (stat.S_IFREG, 0o777, 0),
+        (stat.S_IFLNK, 0o600, 0),
+        (stat.S_IFDIR, 0o600, 0),
+        (stat.S_IFREG, 0o600, 1),
+    ],
+)
+def test_wheel_normalization_rejects_unreviewed_posix_source_modes(
+    ordinary_type: int,
+    ordinary_mode: int,
+    ordinary_low_bits: int,
+) -> None:
+    source = _source_wheel(
+        {
+            "package/private.py": b"private",
+            "package-1.dist-info/RECORD": b"record",
+        },
+        ordinary_mode=ordinary_mode,
+        ordinary_type=ordinary_type,
+        ordinary_low_bits=ordinary_low_bits,
+    )
+
+    with pytest.raises(ValueError, match="finite build allowlist"):
+        subject.canonicalize_wheel_bytes(source, timestamp=TIMESTAMP)
+
+
+def test_zip_info_validation_rejects_special_posix_source_mode() -> None:
+    raw = _source_wheel(
+        {
+            "package/private.py": b"private",
+            "package-1.dist-info/RECORD": b"record",
+        },
+        ordinary_mode=0o600,
+    )
+    infos, _directory_offset, _eocd, _members = _wheel_views(raw)
+    special = copy.copy(next(item for item in infos if item.filename == "package/private.py"))
+    special.external_attr = (stat.S_IFLNK | 0o600) << 16
+
+    with pytest.raises(ValueError, match="finite build allowlist"):
+        subject._validate_source_zip_info(special, timestamp=_zip_time())
 
 
 @pytest.mark.parametrize("windows", [False, True], ids=("linux", "windows"))

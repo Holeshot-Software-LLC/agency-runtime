@@ -65,14 +65,18 @@ MAX_ARTIFACT_BYTES = MAX_ARTIFACT_PHYSICAL_BYTES
 READ_CHUNK_BYTES = 64 * 1024
 
 SOURCE_ZIP_METHOD = zipfile.ZIP_DEFLATED
-SOURCE_WHEEL_MODES = {
+SOURCE_WHEEL_MODE_ALLOWLISTS = {
     0: {
-        "ordinary": stat.S_IFREG | 0o666,
-        "record": stat.S_IFREG | 0o664,
+        "ordinary": frozenset({stat.S_IFREG | 0o666}),
+        "record": frozenset({stat.S_IFREG | 0o664}),
     },
     3: {
-        "ordinary": stat.S_IFREG | 0o644,
-        "record": stat.S_IFREG | 0o664,
+        # A private POSIX producer may run with umask 077. ``wheel`` 0.47.0
+        # preserves 0600 on generated/copy-created members while retaining
+        # 0644 on mode-preserving members. Both inputs are non-executable
+        # regular files and canonical output is still exactly 0644.
+        "ordinary": frozenset({stat.S_IFREG | 0o600, stat.S_IFREG | 0o644}),
+        "record": frozenset({stat.S_IFREG | 0o664}),
     },
 }
 SOURCE_TAR_FILE_MODES = {0o644, 0o666}
@@ -406,14 +410,14 @@ def _preflight_source_zip_records(
         expected_flags = 0x800 if not name.isascii() else 0
         system, version = made_by >> 8, made_by & 0xFF
         mode_key = "record" if name.endswith(".dist-info/RECORD") else "ordinary"
-        expected_mode = SOURCE_WHEEL_MODES.get(system, {}).get(mode_key)
+        allowed_modes = SOURCE_WHEEL_MODE_ALLOWLISTS.get(system, {}).get(mode_key)
         normalized = safe_release_name(name).as_posix()
         alias = _portable_alias(normalized)
         if (
             version != CANONICAL_ZIP_VERSION
             or flags != expected_flags
-            or expected_mode is None
-            or external_attr != expected_mode << 16
+            or allowed_modes is None
+            or external_attr not in {mode << 16 for mode in allowed_modes}
             or (method == CANONICAL_ZIP_METHOD and system != CANONICAL_ZIP_SYSTEM)
             or (method == CANONICAL_ZIP_METHOD and compressed_size != file_size)
         ):
@@ -467,9 +471,9 @@ def _validate_source_zip_info(
         raise ValueError(f"wheel contains a noncanonical file name: {item.filename}")
     is_record = item.filename.endswith(".dist-info/RECORD")
     mode_key = "record" if is_record else "ordinary"
-    expected_mode = SOURCE_WHEEL_MODES.get(item.create_system, {}).get(mode_key)
+    allowed_modes = SOURCE_WHEEL_MODE_ALLOWLISTS.get(item.create_system, {}).get(mode_key)
     if (
-        expected_mode is None
+        allowed_modes is None
         or item.create_version != CANONICAL_ZIP_VERSION
         or item.extract_version != CANONICAL_ZIP_VERSION
         or item.reserved != 0
@@ -477,7 +481,7 @@ def _validate_source_zip_info(
         or item.date_time != timestamp
         or item.volume != 0
         or item.internal_attr != 0
-        or item.external_attr != expected_mode << 16
+        or item.external_attr not in {mode << 16 for mode in allowed_modes}
         or item.extra
         or item.comment
         or (
