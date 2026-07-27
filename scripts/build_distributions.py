@@ -121,13 +121,24 @@ class ArtifactIdentity:
     sha256: str
 
 
-def _metadata_identity(metadata: os.stat_result) -> tuple[int, ...]:
+def _metadata_identity(
+    metadata: os.stat_result,
+    *,
+    platform_name: str | None = None,
+) -> tuple[int, ...]:
     """Return the stable fields used to seal a file path to an open handle."""
 
+    effective_platform = os.name if platform_name is None else platform_name
+    mode = int(metadata.st_mode)
+    if effective_platform == "nt":
+        # CPython derives execute bits from an .exe path suffix for lstat(), but
+        # fstat() has no path and reports the same open file without those bits.
+        # Preserve the file type and writable/read-only bits in the identity.
+        mode &= ~0o111
     return (
         int(metadata.st_dev),
         int(metadata.st_ino),
-        int(metadata.st_mode),
+        mode,
         int(metadata.st_size),
         int(metadata.st_mtime_ns),
         0 if os.name == "nt" else int(metadata.st_ctime_ns),

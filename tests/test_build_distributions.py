@@ -1456,6 +1456,28 @@ def _artifact_metadata(metadata, **changes):
     return SimpleNamespace(**values)
 
 
+def test_windows_metadata_identity_normalizes_only_synthetic_execute_bits(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "reviewed.exe"
+    target.write_bytes(b"reviewed")
+    metadata = os.lstat(target)
+    base_mode = metadata.st_mode & ~0o777
+    path_projection = _artifact_metadata(metadata, st_mode=base_mode | 0o777)
+    handle_projection = _artifact_metadata(metadata, st_mode=base_mode | 0o666)
+    read_only_projection = _artifact_metadata(metadata, st_mode=base_mode | 0o444)
+
+    assert subject._metadata_identity(path_projection, platform_name="nt") == (
+        subject._metadata_identity(handle_projection, platform_name="nt")
+    )
+    assert subject._metadata_identity(path_projection, platform_name="nt") != (
+        subject._metadata_identity(read_only_projection, platform_name="nt")
+    )
+    assert subject._metadata_identity(path_projection, platform_name="posix") != (
+        subject._metadata_identity(handle_projection, platform_name="posix")
+    )
+
+
 def test_artifact_identity_requires_stable_inode_and_open_identity(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

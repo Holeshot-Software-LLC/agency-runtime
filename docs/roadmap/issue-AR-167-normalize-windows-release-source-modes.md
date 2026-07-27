@@ -30,26 +30,31 @@ The canonical distribution builder requires every reviewed Git source entry to
 be a non-executable `100644` blob and then verifies the materialized source tree
 before invoking the build backend. On Windows, CPython reports a file ending in
 `.exe` as mode `0777` even after `chmod(0644)` because Windows has no POSIX
-execute bit. The verifier expected every writable Windows file to report mode
-`0666`, so a clean build of the reviewed operator-presence executable failed
-before artifact creation despite the authenticated Git entry being `100644`.
+execute bit. An open handle to those same bytes reports `0666` because `fstat`
+has no path suffix from which to derive execute bits. The verifier expected
+every writable Windows file and its open handle to report one identical mode,
+so a clean build of the reviewed operator-presence executable failed before
+artifact creation despite the authenticated Git entry being `100644`.
 
 ## Current state
 
 The failure was reproduced from a detached clean checkout of the audited commit
 while preparing fresh Windows release artifacts. The Git manifest reports the
-helper as `100644`; the same file's Windows `os.lstat` projection is `0777`.
-This is a release-blocking portability defect in the physical-tree check, not a
-change to the reviewed Git-mode contract.
+helper as `100644`; the same file's Windows `os.lstat` projection is `0777`,
+while `os.fstat` on its identity-matched handle is `0666`. This is a release-
+blocking portability defect in the physical-tree check, not a change to the
+reviewed Git-mode contract.
 
 ## Approach
 
 Keep the authenticated Git manifest requirement unchanged. Normalize only the
 mode that CPython can faithfully report after canonical materialization: POSIX
 files remain exactly `0644`; ordinary writable Windows files remain `0666`; and
-Windows `.exe` paths must report exactly `0777`. Continue rejecting every other
-mode, link, reparse point, multi-link file, unstable identity, size change, and
-blob-hash mismatch.
+Windows `.exe` paths must report exactly `0777`. Normalize only the synthetic
+execute bits when comparing that path metadata to descriptor metadata, retaining
+the file type and writable/read-only bits. Continue rejecting every other mode,
+link, reparse point, multi-link file, unstable identity, size change, and blob-
+hash mismatch.
 
 ## Dependencies
 
@@ -65,7 +70,7 @@ write authorization.
 - [x] The physical-tree verifier accounts only for CPython's Windows `.exe`
   mode projection and preserves exact checks for all other platforms and files.
 - [x] Unit tests cover lowercase and uppercase `.exe`, ordinary Windows files,
-  and POSIX behavior.
+  POSIX behavior, path-to-handle identity, and read-only mode changes.
 - [ ] A detached clean Windows build of the exact reviewed commit emits and
   independently verifies its Windows wheel and source distribution.
 - [ ] Proportionate formatting, tests, documentation validation, and clean-tree
