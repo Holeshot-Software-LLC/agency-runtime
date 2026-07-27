@@ -243,6 +243,21 @@ def test_windows_runtime_geometry_rejects_critical_paths_beyond_safe_budget() ->
         )
 
 
+def test_execution_rejects_same_size_source_change_after_plan(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
+    plan = _plan(tmp_path, self_host_runtime_home, shard_count=1)
+    target = plan.repo_root / plan.serial_files[0]
+    original = target.read_text("utf-8")
+    target.write_text("#" + original[1:], encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="source or timing harness changed"):
+        subject.run_parallel_test_plan(plan)
+
+    assert plan.use.state == "ready"
+
+
 def test_dry_run_is_deterministic_resource_free_and_concurrent_safe(
     tmp_path: Path,
     self_host_runtime_home: Path,
@@ -267,7 +282,10 @@ def test_dry_run_is_deterministic_resource_free_and_concurrent_safe(
         previews = tuple(executor.map(build, range(4)))
 
     assert previews.count(previews[0]) == 4
-    assert previews[0]["schema_version"] == "agency.local-parallel-tests.v4"
+    assert previews[0]["schema_version"] == "agency.local-parallel-tests.v5"
+    assert previews[0]["partition"]["algorithm"] == "source-bytes-lpt-v1"
+    assert previews[0]["partition"]["status"] == "missing"
+    assert len(previews[0]["partition"]["shards"]) == 4
     assert not Path(previews[0]["scratch_root"]).exists()
     assert not (tmp_path / "runtimes").exists()
 
@@ -355,17 +373,48 @@ def test_valid_timing_reports_publish_one_run_bound_consolidated_artifact(
     assert artifact["schema"] == subject.RUN_TIMING_SCHEMA
     assert artifact["run_id"] == plan.use.run_id
     assert artifact["test_file_count"] == len(plan.serial_files)
+    assert artifact["measurement_context"] == plan.measurement_context
+    assert artifact["partition"] == subject.plan_preview(plan)["partition"]
     assert {item["path"] for item in artifact["files"]} == {
         path.as_posix() for path in plan.serial_files
     }
     assert sum(item["total_ns"] for item in artifact["files"]) == len(plan.serial_files) * 6
     assert "OPENAI_API_KEY" not in plan.timing_artifact_path.read_text("utf-8")
     manifest = json.loads((plan.log_root / "latest-run.json").read_text("utf-8"))
+    assert manifest["schema"] == "agency.local-parallel-tests.latest.v2"
     assert manifest["file_timings"] == {
         "artifact": plan.timing_artifact_path.name,
         "complete": True,
         "schema": subject.RUN_TIMING_SCHEMA,
     }
+
+
+def test_timing_evidence_rejects_source_drift_during_execution(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
+    plan = _plan(
+        tmp_path,
+        self_host_runtime_home,
+        shard_count=1,
+        collect_file_timings=True,
+    )
+
+    def run(command: tuple[str, ...], **kwargs: Any) -> subject.BoundedBinaryProcessResult:
+        shard = next(item for item in plan.shards if item.command == tuple(command))
+        assert shard.timing_path is not None
+        shard.timing_path.write_bytes(
+            _timing_report(shard, run_id=kwargs["env"][subject.RUN_ID_ENVIRONMENT_KEY])
+        )
+        target = plan.repo_root / plan.serial_files[0]
+        target.write_text(target.read_text("utf-8") + "# drift\n", encoding="utf-8")
+        return subject.BoundedBinaryProcessResult(0, b"", b"")
+
+    with pytest.raises(RuntimeError, match="source or timing harness changed"):
+        subject.run_parallel_test_plan(plan, bounded_runner=run)
+
+    assert plan.timing_artifact_path is not None
+    assert not plan.timing_artifact_path.exists()
 
 
 def test_missing_or_non_equivalent_timing_report_cannot_turn_a_pass_green(
@@ -839,6 +888,8 @@ def test_help_supports_direct_and_module_invocation() -> None:
     assert direct.returncode == module.returncode == 0
     assert "--output-dir" not in direct.stdout
     assert "--collect-file-timings" in direct.stdout
+    assert "--partition" in direct.stdout
+    assert "--require-exact-shard-weights" in direct.stdout
 
 
 def test_dependency_discovery_recovers_loaded_pytest_from_private_venv(

@@ -767,8 +767,15 @@ def test_openclaw_bridge_routes_user_prompts_and_bounds_revision_attempts(
     from agency_runtime.core.store.sqlite import Store
 
     store = Store(tmp_path / "bridge.db")
-    for agent in STARTER_ROSTER:
-        store._activate_prevalidated_agent(dict(agent))
+    starter_by_slug = {str(agent["slug"]): agent for agent in STARTER_ROSTER}
+    for slug in (
+        "agents-orchestrator",
+        "chief-of-staff",
+        "code-reviewer",
+        "codebase-onboarding-engineer",
+        "technical-writer",
+    ):
+        store._activate_prevalidated_agent(dict(starter_by_slug[slug]))
 
     routed = handle(
         {

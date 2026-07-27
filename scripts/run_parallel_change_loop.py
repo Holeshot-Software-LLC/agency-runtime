@@ -58,7 +58,12 @@ from scripts.pytest_file_timing import (
     SHARD_OPTION,
     SHARD_TIMING_SCHEMA,
 )
-from scripts.select_test_shard import select_test_files
+from scripts.select_test_shard import discover_test_files, partition_test_files
+from scripts.test_shard_profile import (
+    PartitionWeights,
+    build_measurement_context,
+    load_partition_weights,
+)
 
 DEFAULT_SHARD_COUNT = 4
 DEFAULT_MAX_LOG_BYTES = 4 * 1024 * 1024
@@ -145,6 +150,7 @@ class TestShardPlan:
     base_temp: Path
     log_path: Path
     timeout_seconds: float
+    weight_total: int
     timing_path: Path | None = None
 
 
@@ -160,7 +166,9 @@ class ParallelTestPlan:
     execution_lock_path: Path
     runtime_key: str
     runtime_receipt: bytes
+    partition: PartitionWeights
     dry_run: bool
+    measurement_context: dict[str, Any]
     timing_artifact_path: Path | None = None
     use: PlanUse = field(default_factory=PlanUse, compare=False, repr=False)
 
@@ -205,14 +213,12 @@ def equivalent_test_file_shards(
     test_root: Path,
     *,
     shard_count: int = DEFAULT_SHARD_COUNT,
+    weights: Mapping[Path, int] | None = None,
 ) -> tuple[tuple[Path, ...], tuple[tuple[Path, ...], ...]]:
     if isinstance(shard_count, bool) or not isinstance(shard_count, int) or shard_count < 1:
         raise ValueError("shard_count must be positive")
-    serial = select_test_files(test_root, shard_index=0, shard_count=1)
-    shards = tuple(
-        select_test_files(test_root, shard_index=index, shard_count=shard_count)
-        for index in range(shard_count)
-    )
+    serial = discover_test_files(test_root)
+    shards = partition_test_files(serial, shard_count=shard_count, weights=weights)
     if any(not shard for shard in shards):
         raise ValueError("shard_count cannot exceed the pytest file count")
     flattened = tuple(path for shard in shards for path in shard)
@@ -300,12 +306,43 @@ def build_parallel_test_plan(
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     dry_run: bool = False,
     collect_file_timings: bool = False,
+    partition_strategy: str = "auto",
+    require_exact_shard_weights: bool = False,
 ) -> ParallelTestPlan:
     repo, tests = _resolved_test_root(repo_root, test_root)
-    serial, selected_shards = equivalent_test_file_shards(tests, shard_count=shard_count)
+    relative_test_root = tests.relative_to(repo).as_posix()
+    if not relative_test_root:
+        relative_test_root = "."
     timeout = _validated_timeout(timeout_seconds)
     environment = dict(os.environ if ambient_environment is None else ambient_environment)
     contract = build_runtime_contract(repo, label, environment)
+    serial = discover_test_files(tests)
+    partition = load_partition_weights(
+        repo,
+        serial,
+        worker_count=shard_count,
+        pytest_flags=PYTEST_FLAGS,
+        runtime_key=contract.key,
+        test_root=relative_test_root,
+        strategy=partition_strategy,
+        require_exact=require_exact_shard_weights,
+    )
+    selected_shards = partition_test_files(
+        serial,
+        shard_count=shard_count,
+        weights=partition.weights,
+    )
+    flattened = tuple(path for shard in selected_shards for path in shard)
+    if len(flattened) != len(set(flattened)) or set(flattened) != set(serial):
+        raise RuntimeError("serial and sharded pytest file collections differ")
+    measurement_context = build_measurement_context(
+        repo,
+        serial,
+        worker_count=shard_count,
+        pytest_flags=PYTEST_FLAGS,
+        runtime_key=contract.key,
+        test_root=relative_test_root,
+    )
     preparer = runtime_preparer or prepare_ci_runtime
     receipt = runtime_receipt_payload(contract)
     projected_runtime, projected_root, projected_python = _projected_runtime(
@@ -425,6 +462,7 @@ def build_parallel_test_plan(
                 base_temp=base_temp,
                 log_path=log_root / f"pytest-shard-{index:02d}.latest.log",
                 timeout_seconds=timeout,
+                weight_total=sum(partition.weights[path] for path in selected),
                 timing_path=timing_path,
             )
         )
@@ -439,19 +477,47 @@ def build_parallel_test_plan(
         execution_lock_path=execution_lock_path,
         runtime_key=contract.key,
         runtime_receipt=receipt,
+        partition=partition,
         dry_run=dry_run,
+        measurement_context=measurement_context,
         timing_artifact_path=(log_root / _TIMING_MANIFEST_NAME if collect_file_timings else None),
     )
 
 
+def _partition_evidence(plan: ParallelTestPlan) -> dict[str, Any]:
+    digest = hashlib.sha256()
+    shards = []
+    for shard in sorted(plan.shards, key=lambda item: item.index):
+        digest.update(shard.index.to_bytes(4, "big"))
+        paths = [path.as_posix() for path in shard.test_files]
+        for path in paths:
+            encoded = path.encode("utf-8")
+            digest.update(len(encoded).to_bytes(8, "big"))
+            digest.update(encoded)
+        shards.append(
+            {
+                "index": shard.index,
+                "test_files": paths,
+                "weight_total": shard.weight_total,
+            }
+        )
+    return {
+        **plan.partition.preview(),
+        "assignment_sha256": digest.hexdigest(),
+        "shards": shards,
+    }
+
+
 def plan_preview(plan: ParallelTestPlan) -> dict[str, Any]:
     preview: dict[str, Any] = {
-        "schema_version": "agency.local-parallel-tests.v4",
+        "schema_version": "agency.local-parallel-tests.v5",
         "collection": {
             "equivalent": True,
             "serial_file_count": len(plan.serial_files),
             "sharded_file_count": sum(len(shard.test_files) for shard in plan.shards),
         },
+        "partition": _partition_evidence(plan),
+        "measurement_context": plan.measurement_context,
         "repo_root": plan.repo_root.as_posix(),
         "runtime_key": plan.runtime_key,
         "stable_runtime_root": plan.stable_runtime_root.as_posix(),
@@ -472,6 +538,7 @@ def plan_preview(plan: ParallelTestPlan) -> dict[str, Any]:
                 "basetemp": shard.base_temp.as_posix(),
                 "log": shard.log_path.as_posix(),
                 "timeout_seconds": shard.timeout_seconds,
+                "weight_total": shard.weight_total,
             }
             for shard in plan.shards
         ],
@@ -480,6 +547,7 @@ def plan_preview(plan: ParallelTestPlan) -> dict[str, Any]:
         preview["file_timings"] = {
             "artifact": plan.timing_artifact_path.as_posix(),
             "enabled": True,
+            "measurement_context": plan.measurement_context,
             "plugin": "scripts.pytest_file_timing",
             "run_id_binding": "execution-generated",
         }
@@ -827,6 +895,8 @@ def _timing_artifact_payload(
     payload = {
         "collected_item_count": collected_item_count,
         "files": sorted(files, key=lambda item: item["path"]),
+        "measurement_context": plan.measurement_context,
+        "partition": _partition_evidence(plan),
         "phase_report_count": phase_report_count,
         "run_id": run_id,
         "schema": RUN_TIMING_SCHEMA,
@@ -936,6 +1006,45 @@ def _execute_shards(
     return (0 if all(_shard_succeeded(result) for result in ordered) else 1), ordered
 
 
+def _assert_plan_inputs_unchanged(plan: ParallelTestPlan) -> None:
+    current = discover_test_files(plan.test_root)
+    current_relative = tuple(path.relative_to(plan.repo_root) for path in current)
+    if current_relative != plan.serial_files:
+        raise RuntimeError("pytest file inventory changed after plan construction")
+    current_context = build_measurement_context(
+        plan.repo_root,
+        current,
+        worker_count=len(plan.shards),
+        pytest_flags=PYTEST_FLAGS,
+        runtime_key=plan.runtime_key,
+        test_root=plan.test_root.relative_to(plan.repo_root).as_posix() or ".",
+    )
+    if current_context != plan.measurement_context:
+        raise RuntimeError("pytest source or timing harness changed after plan construction")
+    if plan.partition.algorithm == "source-bytes-lpt-v1":
+        current_weights = {path: max(1, path.stat().st_size) for path in current}
+        if current_weights != plan.partition.weights:
+            raise RuntimeError("pytest source-byte weights changed after plan construction")
+        return
+    if plan.partition.algorithm != "duration-lpt-v1":
+        raise RuntimeError("pytest partition algorithm is unsupported")
+    current_partition = load_partition_weights(
+        plan.repo_root,
+        current,
+        worker_count=len(plan.shards),
+        pytest_flags=PYTEST_FLAGS,
+        runtime_key=plan.runtime_key,
+        test_root=plan.test_root.relative_to(plan.repo_root).as_posix() or ".",
+        require_exact=plan.partition.status == "exact",
+    )
+    if (
+        current_partition.profile_digest != plan.partition.profile_digest
+        or current_partition.status != plan.partition.status
+        or current_partition.weights != plan.partition.weights
+    ):
+        raise RuntimeError("pytest timing weights changed after plan construction")
+
+
 def run_parallel_test_plan(
     plan: ParallelTestPlan,
     *,
@@ -952,6 +1061,7 @@ def run_parallel_test_plan(
         raise ValueError("a dry-run plan cannot be executed")
     for shard in plan.shards:
         _validated_timeout(shard.timeout_seconds)
+    _assert_plan_inputs_unchanged(plan)
     plan.use.begin()
     run_id = secrets.token_hex(16)
     started_at_unix_ns = time.time_ns()
@@ -1011,19 +1121,26 @@ def run_parallel_test_plan(
                 raise primary_error
             if outcome is None:
                 raise RuntimeError("parallel execution completed without a shard outcome")
+            if plan.timing_artifact_path is not None:
+                _assert_plan_inputs_unchanged(plan)
             elapsed = time.monotonic() - started
             timing_payload = _timing_artifact_payload(plan, outcome[1], run_id=run_id)
             _publish_timing_artifact(plan, timing_payload)
             manifest = {
                 "elapsed_seconds": round(elapsed, 6),
                 "exit_code": outcome[0],
+                "measurement_context": plan.measurement_context,
+                "partition": {
+                    **_partition_evidence(plan),
+                },
                 "run_id": run_id,
-                "schema": "agency.local-parallel-tests.latest.v1",
+                "schema": "agency.local-parallel-tests.latest.v2",
                 "shards": [
                     {
                         "cancelled": result.cancelled,
                         "failure_category": result.failure_category,
                         "index": result.index,
+                        "planned_weight": plan.shards[result.index].weight_total,
                         "returncode": result.returncode,
                         "timed_out": result.timed_out,
                     }
@@ -1061,6 +1178,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--max-log-bytes", type=int, default=DEFAULT_MAX_LOG_BYTES)
     parser.add_argument("--collect-file-timings", action="store_true")
+    parser.add_argument(
+        "--partition",
+        choices=("auto", "source-bytes"),
+        default="auto",
+    )
+    parser.add_argument("--require-exact-shard-weights", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
 
@@ -1077,11 +1200,16 @@ def main(argv: list[str] | None = None) -> int:
             timeout_seconds=args.timeout_seconds,
             dry_run=args.dry_run,
             collect_file_timings=args.collect_file_timings,
+            partition_strategy=args.partition,
+            require_exact_shard_weights=args.require_exact_shard_weights,
         )
         if args.dry_run:
             print(json.dumps(plan_preview(plan), indent=2, sort_keys=True))
             return 0
-        print(f"running {len(plan.shards)} isolated pytest shards")
+        print(
+            f"running {len(plan.shards)} isolated pytest shards "
+            f"partition={plan.partition.algorithm} status={plan.partition.status}"
+        )
         exit_code, results = run_parallel_test_plan(plan, maximum_log_bytes=args.max_log_bytes)
         for result in results:
             if not _shard_succeeded(result):

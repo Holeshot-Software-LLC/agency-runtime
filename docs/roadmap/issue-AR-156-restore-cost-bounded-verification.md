@@ -12,6 +12,7 @@ related:
   - .github/workflows/ci.yml
   - scripts/select_test_shard.py
   - scripts/pytest_file_timing.py
+  - scripts/test_shard_profile.py
   - scripts/run_parallel_change_loop.py
   - scripts/parallel_change_loop_runtime.py
   - scripts/parallel_change_loop_storage.py
@@ -19,6 +20,7 @@ related:
   - tests/test_ci_sharding.py
   - tests/test_doctor.py
   - tests/test_parallel_change_loop.py
+  - tests/test_test_shard_profile.py
   - tests/test_release_packaging.py
   - tests/test_smoke_isolation.py
 supersedes: []
@@ -77,6 +79,15 @@ coverage arm, and uninstrumented performance arm as separate canonical release
 gates; the parallel runner is the developer change loop, not a weaker release
 substitute.
 
+Derive Windows duration weights only from three odd, all-green samples that use
+the explicit source-byte partition control. Bind every sample to one clean Git
+commit, the exact test and product source, the complete timing harness, runtime
+family, worker count, and independently recomputed partition. Exact profiles
+must fail closed in strict benchmark mode. During ordinary development, a
+profile with unchanged tests, harness, and runtime may remain visibly
+`compatible` across product-source edits so the change loop does not discard
+its acceleration precisely when it is needed.
+
 ## Dependencies
 
 AR-117 and the North Star own the existing hosted cadence. ADR-0030 requires
@@ -100,6 +111,13 @@ state; real runs publish one run-bound bounded log set and manifest.
 - Opt-in file timing publishes only after every shard is green, binds every
   bounded report to the exact run/shard/exit state, and proves its file union is
   identical to the serial plan before any weight is trusted.
+- Versioned timing weights require three distinct, clean, same-commit v2
+  artifacts using the independently reproduced source-byte control partition;
+  malformed counts, phases, assignments, paths, links, or provenance fail
+  closed.
+- Automatic loading distinguishes exact, compatible product-drift, stale,
+  missing, invalid, disabled, and unsupported profiles. Strict benchmark mode
+  accepts exact evidence only.
 - Three comparable warm local runs demonstrate at least 30 percent median
   wall-clock improvement before the parallel runner is recommended as the
   default change loop.
@@ -185,6 +203,29 @@ uses a nested monkeypatch scope that restores the live state before pytest emits
 its own report; the exact test passes alone and all 27 runner tests pass while
 being measured by the plugin. The failed attempt is not speed evidence.
 
+Instrumented run `4b5f0f74d963ca4f6582d526fc7a2f7b` then passed all four
+shards in 781.945 seconds. Its shard pytest times were 446.48, 393.71, 715.03,
+and 435.29 seconds. The artifact identified the dominant Windows files, but its
+v1 contract did not bind the product source, clean evidence commit, timing
+harness, or exact source-byte assignment. It is retained as diagnostic input
+and is not eligible to generate the production profile.
+
+The v2 timing contract now binds all of those inputs, validates every file,
+phase, shard, aggregate, and run identity, rejects linked evidence, and
+independently reproduces the control assignment before computing medians. It
+also revalidates source immediately after shard execution before publishing.
+The profile/runner/sharding contract package passes 52 warning-strict tests;
+Ruff, format, and diff checks pass. Independent review approved the producer to
+loader chain for the three clean source-byte control runs.
+
+Four test-only cost corrections retain the exact exercised contracts while
+removing unrelated setup: HTTP fixture shutdown polls at 10 ms, adapter parity
+activates only the five asserted agents, preflight concurrency no longer seeds
+an unused roster, and delegation tests activate only their asserted agent.
+The matched package remained 77 passed with 5 skips and fell from 84.38 to
+48.06 seconds, a 36.32-second (43.04 percent) local Windows improvement. This
+is a bounded same-machine test-maintenance result, not a full-corpus claim.
+
 The same slice removes accidental test cost without deleting behavior: generic
 doctor tests use one active agent and deterministic host/network boundaries;
 two equivalent all-host smoke assertions share one real integration run; and
@@ -199,7 +240,8 @@ therefore keeps the 60-second child bound, rejects critical runtime paths above
 240 characters, allocates nested self-hosts below a short private root, and
 proves the real runner and worker PIDs are reaped during crash recovery. The
 focused package passes 20 tests in 16.11 seconds; both private-runtime self-host
-tests pass in 7.96 seconds even with a deliberately long outer temp path. Two
-more green comparable warm runs and a matched one-shard control still remain before
-the local runner acceptance can close. The canonical serial, coverage, and
-performance gates remain required.
+tests pass in 7.96 seconds even with a deliberately long outer temp path.
+Because v2 changes the governed evidence contract and adds one profile test
+file, three new clean source-byte control samples, matched exact-weight samples,
+and a one-shard control remain before the local runner acceptance can close.
+The canonical serial, coverage, and performance gates remain required.

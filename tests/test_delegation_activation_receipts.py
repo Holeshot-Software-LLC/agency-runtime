@@ -22,7 +22,7 @@ from agency_runtime.core.header.contract import (
     validate_completion_policy,
 )
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
-from agency_runtime.core.installer import seed_starter_roster
+from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.preflight import PreflightResult, run_preflight
 from agency_runtime.core.store import schema as store_schema
 from agency_runtime.core.store.schema import (
@@ -470,7 +470,6 @@ def test_isolated_turn_rejects_every_tokenless_slug_and_not_ready_load(tmp_path:
     assert "one-use activation_token" in rejected["error"]
 
     not_ready = Store(tmp_path / "not-ready.db")
-    seed_starter_roster(not_ready)
     not_ready.create_run(
         trace_id="trace",
         session_id="session",
@@ -1105,7 +1104,9 @@ def test_oversized_prompt_is_rejected_for_isolated_and_direct_delivery(
     host: str,
 ) -> None:
     store = Store(tmp_path / f"oversized-{host}.db")
-    seed_starter_roster(store)
+    store._activate_prevalidated_agent(
+        dict(next(agent for agent in STARTER_ROSTER if agent["slug"] == "code-reviewer"))
+    )
     content = "x" * 7_001
     content_hash = sha256(content.encode()).hexdigest()
     active_version = _active_version(store, "code-reviewer")

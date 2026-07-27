@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 900f8d330edbc90c0758b3557d780637ad83aec1
-minimum_ledger_commit: ee36bb904f605b28e4730ca81e5e75138eecb965
+evidence_commit: 62d90ca68c07514bbb39fd78df3142061a8495b8
+minimum_ledger_commit: 5ba8b13b7cacd416517dc062b6b549619ff72ba9
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -39,22 +39,19 @@ acceptance contract; this capsule records only the active checkpoint.
   publication, or release was authorized.
 - The user-owned untracked `docs/analysis/2026-07-25-deep-audit-findings.md`
   remains unchanged and excluded from every commit.
-- Telemetry reported 18.1 percent remaining. The clean `900f8d3`/`ee36bb9`
-  evidence-correction pair precedes this required hard checkpoint.
+- Telemetry reported 62.7 percent remaining. The clean `62d90ca`/`5ba8b13`
+  timing-self-test pair precedes this benchmark checkpoint.
 - Security, optimization, and UI-to-Store traceability findings AR-128 through
   AR-155 have governed local repairs or explicit remaining evidence gates.
-- AR-156 now has one valid four-shard baseline and reviewed opt-in file timing.
-  It does not yet have a matched speed claim.
+- AR-156 now has one valid four-shard baseline, one diagnostic-only v1 timing
+  run, and a reviewed v2 evidence/profile chain. It does not yet have the three
+  clean v2 controls or a matched full-corpus speed claim.
 
 ## completed-evidence
 
-- Three ordinary integrated Python runs culminated in 7,522 passed, 61 skipped,
-  and 1 expected failure in 42m43s. A later pre-final-trace run passed 7,604
-  with 61 skips and 1 expected failure in 34m20s. Neither is current-head final
-  evidence after the latest runner changes.
-- The exact pre-final-trace coverage arm passed 97.08 percent against the
-  unchanged 97 percent floor; the separate three-test performance arm passed.
-  Both require current-head confirmation.
+- Pre-final integrated runs reached 7,604 passed, 61 skipped, and 1 expected
+  failure in 34m20s; coverage passed 97.08 percent and performance passed.
+  None is current-head final evidence after the runner changes.
 - Dashboard trace repairs AR-149 through AR-155 are committed. Source UI tests
   pass 101 cases at 98.61 percent lines, 91.06 percent branches, and 97.90
   percent functions. Packaged assets are 258,787 bytes against the unchanged
@@ -77,12 +74,17 @@ acceptance contract; this capsule records only the active checkpoint.
 - Baseline `411b67385c033451c78f632ecc5fc867` passed 4/4 in 676.505 seconds.
   Shards took 619.89, 446.28, 578.23, and 508.32 seconds, proving byte weights
   do not balance Windows runtime. This is one green run, not a speed claim.
-- Opt-in timing now validates exact run/shard/exit/file-union evidence and
-  publishes only for all-green runs. Focused runner/sharding/doctor/smoke is 46
-  passes in 43.87 seconds; release packaging is 57 passes; style checks pass.
-- Instrumented run `14c20d874fb2e4287e47f999654af4af` rejected 3/4 after a
-  self-test disturbed live plugin state; no complete artifact was published.
-  The scoped-state repair passes all 27 runner tests under live measurement.
+- Instrumented run `4b5f0f74d963ca4f6582d526fc7a2f7b` passed 4/4 in
+  781.945 seconds, with shard pytest times of 446.48, 393.71, 715.03, and
+  435.29 seconds. Its v1 artifact exposed the heavy files but lacked complete
+  source, commit, harness, and partition provenance, so it is diagnostic only.
+- The v2 producer, validator, generator, and loader bind a clean Git commit,
+  product/test/harness digests, runtime identity, exact source-byte assignment,
+  file/phase/shard aggregates, and post-run source revalidation. The focused
+  contract package passes 52 tests and independent review approved clean runs.
+- Four behavior-preserving test setup reductions kept 77 passes and 5 skips
+  while a matched local Windows slice fell from 84.38 to 48.06 seconds
+  (43.04 percent). Full-corpus speed remains unclaimed.
 - Doctor/smoke tests retain full all-host and one real poisoned-profile Hermes
   boundary while removing real-home probes, full-roster seeds, and one duplicate run.
 - Fresh source status sees all five hosts and the configured provider. The
@@ -118,10 +120,10 @@ acceptance contract; this capsule records only the active checkpoint.
 - Persistent fresh installation remains fail-closed behind AR-143. Normal
   Codex hook trust also requires user-owned terminal-TUI review; neither may be
   bypassed while the user is remote.
-- AR-156 still needs one valid timing artifact, versioned Windows weights,
-  matched warm four-shard samples, and a one-shard control proving at least 30
-  percent median wall-clock improvement. Canonical release gates remain
-  separate requirements.
+- AR-156 still needs three clean v2 source-byte controls, generated versioned
+  Windows weights, matched exact-weight samples, and a one-shard control proving
+  at least 30 percent median wall-clock improvement. Canonical release gates
+  remain separate requirements.
 - AR-119/AR-125 still lack a benchmark-valid outcome corpus and current-artifact
   host/OS evidence. Malformed, timed-out, or unknown upstream arms remain
   invalid, never losses.
@@ -135,12 +137,12 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run one instrumented all-green corpus and generate versioned Windows weights
-   only from its exact file-union evidence.
-2. Run two more comparable warm corpora plus a matched one-shard control; do not
-   change the gate after observing.
-3. Rebalance only if exact file coverage,
-   isolation, and release gates remain unchanged.
+1. Run three explicit source-byte v2 timing corpora from one clean evidence
+   commit and generate the versioned Windows profile only from all three.
+2. Run matched strict exact-weight corpora plus a one-shard source-byte control;
+   do not change the gate after observing.
+3. Recommend rebalancing only if exact file coverage, isolation, and release
+   gates remain unchanged and the median improvement reaches 30 percent.
 4. Run current-head canonical serial, four-way exact coverage, performance,
    docs, UI, security, artifact, and isolated-install gates.
 5. Implement AR-143 through a prepare-verify-revalidate-commit seam, beginning

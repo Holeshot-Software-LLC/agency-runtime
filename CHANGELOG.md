@@ -79,6 +79,11 @@ changes rather than duplicating every commit.
   evidence. It publishes only after every shard passes and the exact sharded
   file union matches the serial plan, enabling measured Windows rebalancing
   without weakening the default test gate.
+- Windows timing evidence now binds a clean Git commit, product and test source,
+  the complete runner harness, runtime identity, and an independently reproduced
+  source-byte control partition. Versioned duration profiles fail closed in
+  strict benchmark mode while remaining visibly compatible across ordinary
+  product-source edits when tests and harness semantics are unchanged.
 - Codex subscription providers can now choose a validated reasoning effort in
   both the CLI and dashboard. Account model discovery reports supported levels,
   and the isolated inference process receives the selected override without

@@ -11,6 +11,7 @@ import logging
 import os
 import socket
 import threading
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -83,7 +84,11 @@ def http_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         auth_token="test-token",
     )
     actual_port = server.server_address[1]
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(
+        target=server.serve_forever,
+        kwargs={"poll_interval": 0.01},
+        daemon=True,
+    )
     thread.start()
     try:
         yield {
@@ -182,7 +187,11 @@ def test_http_fails_closed_after_config_derived_store_target_drift(
         port=0,
         auth_token="test-token",
     )
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(
+        target=server.serve_forever,
+        kwargs={"poll_interval": 0.01},
+        daemon=True,
+    )
     thread.start()
     base = f"http://127.0.0.1:{server.server_address[1]}"
 
@@ -753,7 +762,11 @@ def test_server_enforces_configured_body_limit(tmp_path: Path) -> None:
         auth_token="test-token",
         max_body_size=1024,
     )
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(
+        target=server.serve_forever,
+        kwargs={"poll_interval": 0.01},
+        daemon=True,
+    )
     thread.start()
     request = urllib.request.Request(
         f"http://127.0.0.1:{server.server_address[1]}/search",
@@ -844,7 +857,11 @@ def test_server_rejects_excess_connections_and_releases_worker_slot(
         request_timeout=2,
         max_concurrent_requests=1,
     )
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(
+        target=server.serve_forever,
+        kwargs={"poll_interval": 0.01},
+        daemon=True,
+    )
     thread.start()
     first = socket.create_connection(("127.0.0.1", int(server.server_address[1])), timeout=2)
     try:
@@ -892,7 +909,11 @@ def test_partial_request_body_times_out_without_pinning_worker(tmp_path: Path) -
         auth_token="test-token",
         request_timeout=0.05,
     )
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(
+        target=server.serve_forever,
+        kwargs={"poll_interval": 0.01},
+        daemon=True,
+    )
     thread.start()
     client = socket.create_connection(
         ("127.0.0.1", int(server.server_address[1])),
@@ -1085,11 +1106,18 @@ def test_http_response_exposes_safe_request_id_and_content_free_observation(
         assert response.code == 404
 
     assert request_id.startswith("arq-")
-    observation = next(
-        record.getMessage()
-        for record in caplog.records
-        if record.getMessage().startswith("agency_observation ")
-    )
+    deadline = time.monotonic() + 1
+    observations: list[str] = []
+    while time.monotonic() < deadline and not observations:
+        observations = [
+            record.getMessage()
+            for record in caplog.records
+            if record.getMessage().startswith("agency_observation ")
+        ]
+        if not observations:
+            time.sleep(0.01)
+    assert observations
+    observation = observations[0]
     assert secret_path not in observation
     payload = json.loads(observation.split(" ", 1)[1])
     assert payload["request_id"] == request_id

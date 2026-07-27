@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 SHARD_TIMING_SCHEMA = "agency.pytest-file-timings.shard.v1"
-RUN_TIMING_SCHEMA = "agency.pytest-file-timings.run.v1"
+RUN_TIMING_SCHEMA = "agency.pytest-file-timings.run.v2"
 RUN_ID_ENVIRONMENT_KEY = "AGENCY_PYTEST_FILE_TIMING_RUN_ID"
 REPORT_OPTION = "--agency-file-timing-report"
 SHARD_OPTION = "--agency-file-timing-shard"

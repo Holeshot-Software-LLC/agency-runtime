@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.select_test_shard import main, select_test_files
+from scripts.select_test_shard import (
+    discover_test_files,
+    main,
+    partition_test_files,
+    select_test_files,
+)
 
 
 def test_test_file_shards_are_deterministic_complete_and_disjoint(tmp_path: Path) -> None:
@@ -37,3 +42,33 @@ def test_test_file_shards_reject_empty_roots_and_print_cli_paths(tmp_path, capsy
     target.write_text("pass\n", encoding="utf-8")
     assert main(["--root", str(root), "--index", "0", "--count", "1"]) == 0
     assert capsys.readouterr().out.strip().replace("\\", "/") == target.as_posix()
+
+
+def test_lpt_partitions_resolve_ties_and_cover_every_supported_shard_count(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "tests"
+    root.mkdir()
+    for name in ("a", "b", "c", "d"):
+        (root / f"test_{name}.py").write_text("pass\n", encoding="utf-8")
+    files = discover_test_files(root)
+    weights = dict.fromkeys(files, 10)
+
+    assert partition_test_files(files, shard_count=2, weights=weights) == (
+        (files[0], files[2]),
+        (files[1], files[3]),
+    )
+    for shard_count in range(1, len(files) + 1):
+        shards = partition_test_files(files, shard_count=shard_count, weights=weights)
+        flattened = tuple(path for shard in shards for path in shard)
+        assert len(flattened) == len(set(flattened))
+        assert set(flattened) == set(files)
+
+
+def test_repository_shard_union_is_exact_and_disjoint() -> None:
+    root = Path(__file__).resolve().parent
+    shards = [select_test_files(root, shard_index=index, shard_count=4) for index in range(4)]
+    flattened = [path for shard in shards for path in shard]
+
+    assert len(flattened) == len(set(flattened))
+    assert set(flattened) == set(root.rglob("test_*.py"))

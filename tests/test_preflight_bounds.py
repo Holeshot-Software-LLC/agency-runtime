@@ -674,11 +674,9 @@ def test_concurrent_duplicate_preflights_share_one_owner_and_one_outcome(
     monkeypatch: pytest.MonkeyPatch,
     owner_fails: bool,
 ) -> None:
-    from agency_runtime.core.installer import seed_starter_roster
     from agency_runtime.core.selector.delegation_detection import detect_work_units
 
     store = Store(tmp_path / "agency.db")
-    seed_starter_roster(store)
     message = "Audit the runtime lifecycle."
     reservation = store.reserve_session_turn(
         session_id="session",
