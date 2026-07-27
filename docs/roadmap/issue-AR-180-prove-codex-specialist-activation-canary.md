@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
+  - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - agency_runtime/core/canary.py
@@ -26,7 +27,7 @@ epic: host-integrations
 issue_id: AR-180
 priority: p0
 tracker_url: null
-depends_on: [AR-143, AR-182]
+depends_on: [AR-143, AR-182, AR-185]
 blocks: [AR-119]
 ---
 

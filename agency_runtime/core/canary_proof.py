@@ -265,10 +265,15 @@ def prepare_live_invocation(
     master_enabled: bool = True,
     mode: str = "agency",
     profile_scope: str = "isolated-profile",
+    require_existing_store: bool = False,
 ) -> LivePreparation:
     facade = _facade()
     try:
-        store = facade.Store(path)
+        store = (
+            facade.Store(path, require_existing_current=True)
+            if require_existing_store
+            else facade.Store(path)
+        )
         before = store.recent_runtime_activity(limit=200)
     except Exception:
         return LivePreparation(
@@ -292,6 +297,7 @@ def prepare_live_invocation(
                 native=native,
                 master_enabled=master_enabled,
                 profile_scope=profile_scope,
+                require_existing_store=require_existing_store,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)

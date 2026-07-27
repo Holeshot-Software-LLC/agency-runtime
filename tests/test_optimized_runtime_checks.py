@@ -10,11 +10,13 @@ import pytest
 from agency_runtime.core import canary
 
 
-def _assessment() -> canary._ReadinessAssessment:
+def _assessment(
+    profile_scope: str = "isolated-profile",
+) -> canary._ReadinessAssessment:
     return canary._ReadinessAssessment(
         native={},
         control={"enabled": True},
-        profile_scope="isolated-profile",
+        profile_scope=profile_scope,
         platform={"system": "test", "release": "test", "machine": "test"},
         unmet=(),
     )
@@ -25,8 +27,10 @@ def _run_with(
     tmp_path: Path,
     preparation: canary._LivePreparation,
     outcome: canary._InvocationOutcome | None = None,
+    *,
+    profile_scope: str = "isolated-profile",
 ) -> dict[str, object]:
-    assessment = _assessment()
+    assessment = _assessment(profile_scope)
     monkeypatch.setattr(canary, "_assess_readiness", lambda *_args, **_kwargs: assessment)
     monkeypatch.setattr(canary, "_prepare_live_invocation", lambda *_args, **_kwargs: preparation)
     if outcome is not None:
@@ -38,8 +42,13 @@ def _run_with(
     return canary.run_canary(
         "codex",
         execute=True,
-        confirm="RUN LIVE codex CANARY",
+        confirm=(
+            "RUN LIVE codex CURRENT-PROFILE CANARY"
+            if profile_scope == "current-profile"
+            else "RUN LIVE codex CANARY"
+        ),
         db_path=tmp_path / "agency.db",
+        profile_scope=profile_scope,
     )
 
 
@@ -100,7 +109,7 @@ def test_canary_rejects_incomplete_outcome_without_assert(
     ]
 
 
-def test_canary_rejects_missing_attestation_store_without_assert(
+def test_current_profile_canary_rejects_missing_attestation_store_without_assert(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -126,10 +135,13 @@ def test_canary_rejects_missing_attestation_store_without_assert(
             expected_query_hash="hash",
         ),
         canary._InvocationOutcome(result={}, evidence={}),
+        profile_scope="current-profile",
     )
 
     assert report["attestation_persisted"] is False
-    assert report["unmet_prerequisites"] == ["canary attestation store is unavailable"]
+    assert report["unmet_prerequisites"] == [
+        "prior current-profile attestation could not be invalidated before verification"
+    ]
 
 
 @pytest.mark.parametrize(

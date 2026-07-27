@@ -313,6 +313,13 @@ def _ensure_preflight_catalog(
 ) -> Any:
     """Refresh the atomic roster snapshot after any required bootstrap mutation."""
 
+    from agency_runtime.core.codex_activation_verification import (
+        is_restricted_codex_activation_canary_environment,
+    )
+
+    if is_restricted_codex_activation_canary_environment(os.environ):
+        return routing_snapshot
+
     if not routing_snapshot.catalog:
         seed_starter_roster(store)
         return capture_routing_snapshot(store, config)

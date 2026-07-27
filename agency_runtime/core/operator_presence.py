@@ -19,6 +19,10 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
+from agency_runtime.core.codex_activation_verification import (
+    CODEX_ACTIVATION_VERIFICATION_ACTION,
+)
+
 _OPERATION_DOMAIN = b"agency.operator-presence.v1\x00"
 _MAX_OPERATION_BYTES = 128 * 1024
 _MAX_COLLECTION_ITEMS = 512
@@ -152,17 +156,25 @@ def _uses_prepared_operator_presence(namespace: argparse.Namespace) -> bool:
         if family != "roster-governance" or path != _ROSTER_ROLLBACK_PATH:
             raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
         return True
-    if action == _CODEX_INSTALL_ACTION:
+    if action in {_CODEX_INSTALL_ACTION, CODEX_ACTIVATION_VERIFICATION_ACTION}:
         if family != "installation" or path != _CODEX_INSTALL_PATH:
             raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
+        from agency_runtime.core.codex_activation_verification import (
+            is_exact_codex_activation_verification,
+        )
         from agency_runtime.core.prepared_codex_install import (
             is_exact_prepared_codex_install,
         )
 
         # The marker is attached to the install parser, but only this exact
-        # reviewed shape delegates verification to the prepared coordinator.
-        # Every other install mode retains the generic fail-closed boundary.
-        return is_exact_prepared_codex_install(namespace)
+        # prepared mutation or the exact verification-only shape delegates its
+        # own authority boundary. Every other install mode retains the generic
+        # fail-closed boundary.
+        if action == _CODEX_INSTALL_ACTION:
+            return is_exact_prepared_codex_install(namespace)
+        if not is_exact_codex_activation_verification(namespace):
+            raise OperatorPresenceError("Codex activation-verification parser binding is invalid")
+        return True
     raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
 
 

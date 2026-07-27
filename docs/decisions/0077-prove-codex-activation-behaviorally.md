@@ -7,6 +7,7 @@ updated: 2026-07-21
 tags: [codex, installation, hooks, trust, canary, security]
 related:
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
+  - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
   - README.md

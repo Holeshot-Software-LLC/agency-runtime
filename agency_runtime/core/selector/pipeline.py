@@ -1103,6 +1103,13 @@ def _run_gap_hiring(
     active_snapshot: WorkforceIndexSnapshot,
     active_catalog: list[dict[str, Any]],
 ) -> tuple[Any, WorkforceIndexSnapshot, list[dict[str, Any]], list[dict[str, Any]]]:
+    from agency_runtime.core.codex_activation_verification import (
+        is_restricted_codex_activation_canary_environment,
+    )
+
+    if is_restricted_codex_activation_canary_environment():
+        return outcome, active_snapshot, active_catalog, []
+
     from agency_runtime.core.roster.workforce import workforce_index_snapshot
     from agency_runtime.core.workforce.hiring import (
         hire_contractor_for_gap,

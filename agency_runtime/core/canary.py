@@ -195,6 +195,7 @@ def _backend(
     environ: Mapping[str, str] | None = None,
     master_enabled: bool = True,
     profile_scope: str = "isolated-profile",
+    require_existing_store: bool = False,
 ):
     return _backends.backend(
         host,
@@ -206,6 +207,7 @@ def _backend(
         environ=environ,
         master_enabled=master_enabled,
         profile_scope=profile_scope,
+        require_existing_store=require_existing_store,
     )
 
 
@@ -479,10 +481,15 @@ def run_canary(
     timeout: float = 120,
     mode: str = "agency",
     profile_scope: str = "isolated-profile",
+    require_existing_store: bool = False,
     inspector: Callable[[str], dict[str, Any]] = _default_inspector,
     backend_factory: Callable[..., Any] = _backend,
 ) -> dict[str, Any]:
-    """Build a nonmutating readiness report or run an exact-confirmed canary."""
+    """Build read-only readiness or run an exact-confirmed evidence canary."""
+    if type(require_existing_store) is not bool:
+        raise TypeError("require_existing_store must be a boolean")
+    if require_existing_store and (host != "codex" or profile_scope != "current-profile"):
+        raise ValueError("existing-store canaries support Codex current-profile only")
     _validate_canary_request(host, mode=mode, profile_scope=profile_scope)
     timeout = _validated_timeout(timeout)
     path = Path(db_path).expanduser() if db_path else _default_db_path()
@@ -509,6 +516,7 @@ def run_canary(
         master_enabled=mode == "agency",
         mode=mode,
         profile_scope=assessment.profile_scope,
+        require_existing_store=require_existing_store,
     )
     if preparation.error:
         report["unmet_prerequisites"].append(preparation.error)

@@ -32,6 +32,22 @@ _NATIVE_HOOK_EVENTS = (
 )
 
 
+class _VerifyCodexActivationAction(argparse.Action):
+    """Bind the exact verification-only authority marker at parse time."""
+
+    def __init__(self, option_strings, dest, **kwargs):
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None) -> None:
+        del parser, values, option_string
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_ACTIVATION_VERIFICATION_ACTION,
+        )
+
+        setattr(namespace, self.dest, True)
+        namespace._operator_presence_prepared_action = CODEX_ACTIVATION_VERIFICATION_ACTION
+
+
 def _positive_int(value: str) -> int:
     try:
         parsed = int(value)
@@ -113,8 +129,12 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
     )
     install_action.add_argument(
         "--verify-activation",
-        action="store_true",
-        help="After installation, verify Codex in the normal user profile without bypassing hook trust",
+        action=_VerifyCodexActivationAction,
+        default=False,
+        help=(
+            "Verify an already installed Codex adapter in the normal user profile "
+            "without reinstalling it or bypassing hook trust"
+        ),
     )
     install.add_argument(
         "--backup",

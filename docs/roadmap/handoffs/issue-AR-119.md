@@ -21,7 +21,7 @@ related:
   - docs/roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
-  - docs/analysis/2026-07-26-production-readiness-review.md
+  - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
 supersedes: []
 superseded_by: null
 type: handoff
@@ -41,15 +41,14 @@ the full acceptance history.
 
 ## checkpoint
 
-- Exact recovery pairs: AR-184 `828f747`/`8fe24e1`; AR-183 `d07f4d8`/`cec7d0b`.
-- Branch `main` resolves to `8fe24e1`; `origin/main` remains `880a5ce` because
+- Exact recovery pairs: capsule refresh `6bbf29b`/`602a817`; AR-184 `828f747`/`8fe24e1`.
+- Branch `main` resolves to `602a817`; `origin/main` remains `880a5ce` because
   no new push was authorized. No manual/exhaustive workflow was dispatched.
 - User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
   and excluded from every commit.
-- Production remains **NO-GO**. The dashboard is conditionally demo-ready as a
-  truthful read-only observability surface; final artifacts, attended Codex
-  activation, signing, external host/outcome evidence, and manual release proof
-  remain open.
+- The source candidate is not yet live-demo proven. AR-185 must be checkpointed,
+  then one exact artifact must be built, installed, and exercised through a
+  fresh Codex task; signing and external platform evidence remain separate.
 
 ## completed-evidence
 
@@ -107,8 +106,11 @@ the full acceptance history.
 - AR-184 accepts only exact ordinary `0600` and directory `0700`, canonicalizes
   to `0644`/`0755`, and rejects every other permission/type. Canonicalizer 105
   and release-package 411 tests pass; two reviews found no Critical/High/Medium.
-- Exact `8fe24e1` Windows and restrictive-umask Linux producer reruns are in
-  progress in separate owner-private roots; no hosted runner is involved.
+- AR-185 now routes the exact verification-only command before generic install,
+  binds success to a temporally fresh exact attestation, propagates no-create/
+  migrate/repair Store mode through spawned hooks, and suppresses roster
+  reconciliation and gap hiring. Its focused package passed 324 tests with 6
+  platform skips; 35 dedicated regressions pass in under two seconds.
 
 ## exact-blocker
 
@@ -124,9 +126,8 @@ the full acceptance history.
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
   supply human presence or invent publisher authority.
-- GitHub Actions billing/spending rejects new jobs before steps run. Automatic
-  CI excludes the exhaustive suites by design; current manual release, CodeQL,
-  dependency-review, and hosted portability evidence remains absent.
+- Automatic CI excludes exhaustive suites by design. They are optional,
+  operator-requested diagnostics rather than a local completion requirement.
 - `main` has neither authorized branch protection nor a repository ruleset.
   Applying required contexts is an outward setting change owned by AR-159.
 - Five installed-host canaries remain open, including the Codex recheck after
@@ -143,17 +144,11 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Finish exact `8fe24e1` Windows/Linux producers, compare sdists byte-for-byte,
-   and independently verify the merged three-artifact set.
-2. Reconcile locally complete AR records and refresh the production report from
-   exact evidence; commit the substantive checkpoint and ledger.
-3. Rebuild one final exact-head artifact set, install the wheel into the global
-   uv tool, and run bounded installed smoke/status checks.
-4. When the operator is present, complete Windows Hello refresh, approve the
-   exact hooks in terminal TUI, start a new Codex task, and run one canary.
-5. Keep signing/legal, other host canaries, benchmark outcome trials, tracker/
-   branch settings, and manual hosted release proof visible. Run exhaustive
-   integration only on explicit owner request.
+1. Commit AR-185 and its ledger after fast focused and documentation checks.
+2. Replace the open-ended review/certification loop with one visible-outcome,
+   fast-test, hard-demo-checkpoint policy; commit its own governed record.
+3. Build and install one exact artifact, start a fresh Codex task, run one live
+   canary, and inspect the correlated UI evidence. Backlog non-demo findings.
 
 ## verification
 
@@ -163,7 +158,7 @@ node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverag
 python scripts/verify_docs.py
 python -m scripts.verify_distribution <candidate-directory> --expected-commit <final-head>
 git diff --check
-# Owner-requested manual integration only:
+# Optional only when the owner explicitly requests exhaustive diagnostics:
 python -m pytest tests -q -W error
 ~~~
 

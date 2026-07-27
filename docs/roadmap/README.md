@@ -202,6 +202,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-182` | [Bind Codex hook trust guidance to the generated inventory](issue-AR-182-bind-codex-hook-trust-inventory.md) | done | p1 | host-integrations | pending authorization |
 | `AR-183` | [Normalize owner-private POSIX wheel modes](issue-AR-183-normalize-private-posix-wheel-modes.md) | in_progress | p0 | release | pending authorization |
 | `AR-184` | [Normalize owner-private POSIX sdist modes](issue-AR-184-normalize-private-posix-sdist-modes.md) | in_progress | p0 | release | pending authorization |
+| `AR-185` | [Bind Codex activation verification to a fresh exact proof](issue-AR-185-bind-codex-activation-verification.md) | in_progress | p0 | security | pending authorization |
 
 ## Traceability
 
@@ -393,6 +394,7 @@ not stable internal identifiers.
 | [AR-182](issue-AR-182-bind-codex-hook-trust-inventory.md) | `4e39d4c`; tracker creation pending authorization | None; exact generated inventory ownership only |
 | [AR-183](issue-AR-183-normalize-private-posix-wheel-modes.md) | `d07f4d8`; restrictive-umask Linux and merged-set proof pending; tracker creation pending authorization | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-184](issue-AR-184-normalize-private-posix-sdist-modes.md) | `828f747`; restrictive-umask Linux and merged-set proof pending; tracker creation pending authorization | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-185](issue-AR-185-bind-codex-activation-verification.md) | implementation commit pending; tracker creation pending authorization | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md), [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

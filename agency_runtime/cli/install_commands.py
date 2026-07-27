@@ -8,6 +8,7 @@ import math
 import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,7 @@ from agency_runtime.core.configuration import resolve_config_path
 from agency_runtime.core.dashboard_service_core import dashboard_service_environment_overrides
 from agency_runtime.core.display import safe_display_token
 from agency_runtime.core.installer_contracts import (
+    CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
     CODEX_HOOK_TRUST_ACTION,
     CODEX_HOOK_TRUST_COMMAND,
     CODEX_HOOK_TRUST_SURFACE,
@@ -133,14 +135,32 @@ def _validate_install_mode(args: argparse.Namespace) -> tuple[bool, bool, str | 
     verify_activation = bool(getattr(args, "verify_activation", False))
     if rollback_mode and dry_run:
         raise ValueError("install --rollback and --dry-run are mutually exclusive")
-    if backup and not rollback_mode:
+    if backup is not None and not rollback_mode:
         raise ValueError("install --backup requires --rollback")
-    if verify_activation and not (getattr(args, "agent", None) == "codex" or args.all):
-        raise ValueError("install --verify-activation requires --agent codex or --all")
     if verify_activation:
+        if rollback_mode or dry_run or backup is not None:
+            raise ValueError(
+                "install --verify-activation cannot be combined with install or rollback modes"
+            )
+        if (
+            getattr(args, "agent", None) != "codex"
+            or bool(getattr(args, "all", False))
+            or getattr(args, "profile", None) is not None
+            or bool(getattr(args, "no_dashboard", False))
+        ):
+            raise ValueError(
+                "install --verify-activation requires the exact --agent codex verification-only "
+                "shape"
+            )
         activation_timeout = float(getattr(args, "activation_timeout", 180.0))
         if not math.isfinite(activation_timeout) or not 0 < activation_timeout <= 600:
             raise ValueError("install --activation-timeout must be greater than 0 and at most 600")
+        from agency_runtime.core.codex_activation_verification import (
+            is_exact_codex_activation_verification,
+        )
+
+        if not is_exact_codex_activation_verification(args):
+            raise ValueError("install --verify-activation shape is invalid")
     return rollback_mode, dry_run, backup
 
 
@@ -680,6 +700,420 @@ def _run_prepared_codex_refresh(
     return 0 if complete else 1
 
 
+_ACTIVATION_IDENTITY_FIELDS = (
+    "host_version",
+    "install_id",
+    "bundle_digest",
+    "managed_plugin_version",
+)
+_ACTIVATION_ATTESTATION_FIELDS = (
+    "host",
+    "proof_contract",
+    "proof_digest",
+    "profile_scope",
+    "platform_system",
+    "platform_release",
+    "platform_machine",
+    "host_version",
+    "plugin_version",
+    "install_id",
+    "bundle_digest",
+    "trace_id",
+    "passed_at",
+)
+
+
+def _bounded_utf8_text(value: object, *, limit: int) -> str | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        size = len(value.encode("utf-8"))
+    except UnicodeError:
+        return None
+    return value if size <= limit else None
+
+
+def _codex_activation_identity(value: object) -> dict[str, str] | None:
+    """Return a bounded identity only for an exact active managed Codex install."""
+
+    if not isinstance(value, Mapping) or value.get("host") != "codex":
+        return None
+    for field in (
+        "current_native_root",
+        "enabled",
+        "executable_discovered",
+        "launcher_artifacts_current",
+        "marketplace_registered",
+        "registered",
+        "staged",
+    ):
+        if value.get(field) is not True:
+            return None
+    identity: dict[str, str] = {}
+    for field in _ACTIVATION_IDENTITY_FIELDS:
+        item = _bounded_utf8_text(value.get(field), limit=512)
+        if item is None:
+            return None
+        identity[field] = item
+    return identity
+
+
+def _bounded_unmet_prerequisites(value: object) -> list[str]:
+    if value == []:
+        return []
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        return ["fresh current-profile verification returned an invalid result"]
+    return ["fresh current-profile canary reported unmet prerequisites"]
+
+
+def _activation_verification_now() -> datetime:
+    """Return an aware wall-clock sample for fresh-proof binding."""
+
+    return datetime.now(timezone.utc)
+
+
+def _parse_activation_timestamp(value: object) -> datetime | None:
+    bounded = _bounded_utf8_text(value, limit=64)
+    if bounded is None:
+        return None
+    try:
+        parsed = datetime.fromisoformat(bounded)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def _fresh_activation_attestation(
+    value: object,
+    *,
+    expected_identity: Mapping[str, str],
+    not_before: datetime,
+    not_after: datetime,
+    prior_attestation: object,
+) -> dict[str, str] | None:
+    """Bind success to this invocation's exact current-profile attestation."""
+
+    if not isinstance(value, Mapping):
+        return None
+    if (
+        value.get("schema_version") != "agency.host_canary.v1"
+        or value.get("host") != "codex"
+        or value.get("mode") != "agency"
+        or value.get("profile_scope") != "current-profile"
+        or value.get("live_attempted") is not True
+        or value.get("canary_passed") is not True
+        or value.get("attestation_persisted") is not True
+        or value.get("unmet_prerequisites") != []
+    ):
+        return None
+    candidate = value.get("attestation")
+    if not isinstance(candidate, Mapping):
+        return None
+    sampled_at = value.get("sampled_at")
+    sampled_timestamp = _parse_activation_timestamp(sampled_at)
+    if (
+        sampled_timestamp is None
+        or sampled_timestamp < not_before.astimezone(timezone.utc)
+        or sampled_timestamp > not_after.astimezone(timezone.utc)
+    ):
+        return None
+    attestation: dict[str, str] = {}
+    for field in _ACTIVATION_ATTESTATION_FIELDS:
+        item = _bounded_utf8_text(candidate.get(field), limit=512)
+        if item is None:
+            return None
+        attestation[field] = item
+    if (
+        attestation["host"] != "codex"
+        or attestation["proof_contract"] != CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
+        or len(attestation["proof_digest"]) != 64
+        or any(character not in "0123456789abcdef" for character in attestation["proof_digest"])
+        or attestation["profile_scope"] != "current-profile"
+        or attestation["host_version"] != expected_identity["host_version"]
+        or attestation["plugin_version"] != expected_identity["managed_plugin_version"]
+        or attestation["install_id"] != expected_identity["install_id"]
+        or attestation["bundle_digest"] != expected_identity["bundle_digest"]
+        or attestation["passed_at"] != sampled_at
+    ):
+        return None
+    if isinstance(prior_attestation, Mapping) and any(
+        isinstance(prior_attestation.get(field), str)
+        and prior_attestation.get(field) == attestation[field]
+        for field in ("proof_digest", "trace_id")
+    ):
+        return None
+    return attestation
+
+
+def _final_activation_matches(
+    value: object,
+    *,
+    expected_identity: Mapping[str, str],
+    fresh_attestation: Mapping[str, str],
+) -> bool:
+    """Require the final inventory to expose this invocation's exact proof."""
+
+    identity = _codex_activation_identity(value)
+    if identity != dict(expected_identity) or not isinstance(value, Mapping):
+        return False
+    final_attestation = value.get("canary_attestation")
+    return bool(
+        value.get("canary") is True
+        and value.get("canary_attestation_status") == "verified"
+        and value.get("hook_trust_status") == "trusted"
+        and isinstance(final_attestation, Mapping)
+        and all(
+            final_attestation.get(field) == fresh_attestation[field]
+            for field in _ACTIVATION_ATTESTATION_FIELDS
+        )
+    )
+
+
+def _activation_verification_projection(value: object) -> dict[str, Any]:
+    """Expose only bounded, non-content canary outcome fields."""
+
+    if not isinstance(value, Mapping):
+        return {
+            "schema_version": None,
+            "host": "codex",
+            "mode": "agency",
+            "profile_scope": "current-profile",
+            "live_attempted": False,
+            "canary_passed": False,
+            "attestation_persisted": False,
+            "unmet_prerequisites": [
+                "fresh current-profile verification returned an invalid result"
+            ],
+        }
+    return {
+        "schema_version": (
+            "agency.host_canary.v1"
+            if value.get("schema_version") == "agency.host_canary.v1"
+            else None
+        ),
+        "host": "codex" if value.get("host") == "codex" else None,
+        "mode": "agency" if value.get("mode") == "agency" else None,
+        "profile_scope": (
+            "current-profile" if value.get("profile_scope") == "current-profile" else None
+        ),
+        "live_attempted": value.get("live_attempted") is True,
+        "canary_passed": value.get("canary_passed") is True,
+        "attestation_persisted": value.get("attestation_persisted") is True,
+        "unmet_prerequisites": _bounded_unmet_prerequisites(value.get("unmet_prerequisites")),
+    }
+
+
+def _activation_verification_result(
+    *,
+    complete: bool,
+    verification: Mapping[str, Any],
+    identity: Mapping[str, str] | None,
+    reason: str | None,
+    fresh_attestation: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Return one truthful, bounded verification-only host result."""
+
+    activation: dict[str, Any]
+    if complete:
+        activation = {
+            "state": "ready",
+            "complete": True,
+            "trust_bypass_used": False,
+            "profile_scope": "current-profile",
+            "verification": dict(verification),
+        }
+    else:
+        activation = _codex_activation_required()
+        activation.update(state="verification_failed", verification=dict(verification))
+    if fresh_attestation is not None:
+        activation["fresh_attestation"] = dict(fresh_attestation)
+    result: dict[str, Any] = {
+        "ok": complete,
+        "complete": complete,
+        "host": "codex",
+        "status": "runtime_verified" if complete else "activation_verification_failed",
+        "maturity": "runtime-verified" if complete else "activation-required",
+        "verification_only": True,
+        "installation_attempted": False,
+        "installation_changed": False,
+        "hook_trust_action": None if complete else activation["action"],
+        "activation": activation,
+    }
+    if identity is not None:
+        result["installation_identity"] = dict(identity)
+    if reason:
+        result["error"] = reason
+    return result
+
+
+def _render_activation_verification(host_result: Mapping[str, Any]) -> None:
+    """Render activation-only truth without implying an installation attempt."""
+
+    if host_result.get("complete") is True:
+        print("✅ Codex current-profile activation verified")
+        return
+    print("❌ Codex current-profile activation was not verified")
+    error = host_result.get("error")
+    if error:
+        print(f"   {safe_display_token(str(error), limit=500)}")
+    activation = host_result.get("activation")
+    if not isinstance(activation, Mapping):
+        return
+    verification = activation.get("verification")
+    if isinstance(verification, Mapping):
+        unmet = verification.get("unmet_prerequisites")
+        if isinstance(unmet, list):
+            for item in unmet[:8]:
+                print(f"   Unmet: {safe_display_token(str(item), limit=500)}")
+    action = activation.get("action")
+    if action:
+        print(f"   Action: {safe_display_token(str(action), limit=1000)}")
+
+
+def _run_codex_activation_verification(
+    *,
+    json_mode: bool,
+    timeout: float,
+    dependencies: InstallDependencies,
+) -> int:
+    """Verify an existing Codex adapter without entering generic install work."""
+
+    from agency_runtime.core.canary import run_canary
+    from agency_runtime.core.installer import inspect_host_installation
+
+    inspector = dependencies.host_inspector or inspect_host_installation
+    canary_runner = dependencies.canary_runner or run_canary
+    try:
+        initial = inspector("codex")
+    except Exception:
+        initial = None
+    identity = _codex_activation_identity(initial)
+    if identity is None:
+        host_result = _activation_verification_result(
+            complete=False,
+            verification=_activation_verification_projection(None),
+            identity=None,
+            reason=(
+                "an existing, current, registered, enabled Codex installation could not be "
+                "proven; no activation canary was attempted"
+            ),
+        )
+    else:
+        prior_attestation = (
+            initial.get("canary_attestation") if isinstance(initial, Mapping) else None
+        )
+        verification_started_at = _activation_verification_now()
+        try:
+            candidate = canary_runner(
+                "codex",
+                execute=True,
+                confirm="RUN LIVE codex CURRENT-PROFILE CANARY",
+                timeout=timeout,
+                mode="agency",
+                profile_scope="current-profile",
+                require_existing_store=True,
+            )
+        except Exception:
+            candidate = None
+        verification_completed_at = _activation_verification_now()
+        try:
+            final = inspector("codex")
+        except Exception:
+            final = None
+        fresh_attestation = _fresh_activation_attestation(
+            candidate,
+            expected_identity=identity,
+            not_before=verification_started_at,
+            not_after=verification_completed_at,
+            prior_attestation=prior_attestation,
+        )
+        complete = bool(
+            fresh_attestation is not None
+            and _final_activation_matches(
+                final,
+                expected_identity=identity,
+                fresh_attestation=fresh_attestation,
+            )
+        )
+        reason = None
+        if fresh_attestation is None:
+            reason = "the fresh current-profile canary did not produce a complete bound attestation"
+        elif not complete:
+            reason = "final Codex inspection did not expose the fresh bound attestation"
+        host_result = _activation_verification_result(
+            complete=complete,
+            verification=_activation_verification_projection(candidate),
+            identity=identity,
+            reason=reason,
+            fresh_attestation=fresh_attestation,
+        )
+
+    complete = host_result.get("complete") is True
+    report = {
+        "ok": complete,
+        "complete": complete,
+        "verification_only": True,
+        "installation_attempted": False,
+        "profile_scope": "current-profile",
+        "allowed_effects": [
+            "one bounded Codex canary invocation",
+            "nonce-correlated runtime evidence",
+            "activation-attestation replacement",
+        ],
+        "untouched": [
+            "configuration",
+            "runtime and host controls",
+            "roster and workforce governance",
+            "dashboard service",
+            "Codex adapter and trust store",
+        ],
+        "roster_added": 0,
+        "roster_upgraded": 0,
+        "contractors_installed": 0,
+        "contractors_existing": 0,
+        "roster_action": "unchanged_activation_verification",
+        "hosts": [host_result],
+        "dashboard": {
+            "ok": None,
+            "exit_code": None,
+            "attempted": False,
+            "status": "not_applicable_activation_verification",
+            "changed": False,
+        },
+    }
+    if json_mode:
+        dependencies.emit_json(report)
+    else:
+        _render_activation_verification(host_result)
+    return 0 if complete else 1
+
+
+def _run_exact_install_special_mode(
+    args: argparse.Namespace,
+    *,
+    json_mode: bool,
+    dependencies: InstallDependencies,
+) -> int | None:
+    """Dispatch the two exact install-parser modes before generic install work."""
+
+    if bool(getattr(args, "verify_activation", False)):
+        return _run_codex_activation_verification(
+            json_mode=json_mode,
+            timeout=float(getattr(args, "activation_timeout", 180.0)),
+            dependencies=dependencies,
+        )
+    from agency_runtime.core.prepared_codex_install import is_exact_prepared_codex_install
+
+    if is_exact_prepared_codex_install(args):
+        return _run_prepared_codex_refresh(
+            json_mode=json_mode,
+            dependencies=dependencies,
+        )
+    return None
+
+
 def cmd_install(
     args: argparse.Namespace,
     *,
@@ -688,13 +1122,13 @@ def cmd_install(
     """Install, preview, or roll back host-native Agency Runtime bundles."""
     rollback_mode, dry_run, backup = _validate_install_mode(args)
     json_mode = bool(getattr(args, "json", False))
-    from agency_runtime.core.prepared_codex_install import is_exact_prepared_codex_install
-
-    if is_exact_prepared_codex_install(args):
-        return _run_prepared_codex_refresh(
-            json_mode=json_mode,
-            dependencies=dependencies,
-        )
+    special_result = _run_exact_install_special_mode(
+        args,
+        json_mode=json_mode,
+        dependencies=dependencies,
+    )
+    if special_result is not None:
+        return special_result
     cfg = dependencies.load_config()
     from agency_runtime.core.canary import run_canary
     from agency_runtime.core.dashboard_service import (

@@ -8,6 +8,7 @@ a shell, transcript parsing, or host-private Python APIs.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from contextlib import suppress
@@ -2269,9 +2270,16 @@ def _run_hook_stdio(
             or _agency_owned_native_child_pre_tool_use(payload, host)
         )
         active_store = store
-        if active_store is None and (db_path or config_path):
-            active_store = (
-                Store(db_path, config_path=config_path) if config_path else Store(db_path)
+        from agency_runtime.core.codex_activation_verification import (
+            is_restricted_codex_activation_canary_environment,
+        )
+
+        require_existing_store = is_restricted_codex_activation_canary_environment(os.environ)
+        if active_store is None and (db_path or config_path or require_existing_store):
+            active_store = Store(
+                db_path,
+                config_path=config_path,
+                require_existing_current=require_existing_store,
             )
         result = HookBridge(host, store=active_store, _master=master).handle(payload)
         if not isinstance(result, dict):

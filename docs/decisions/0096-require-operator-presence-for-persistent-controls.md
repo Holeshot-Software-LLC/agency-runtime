@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-128-seal-model-facing-control-authority.md
+  - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/decisions/0090-model-facing-control-paths-are-read-only.md
   - docs/THREAT_MODEL.md
   - agency_runtime/server/dashboard.py

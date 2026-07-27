@@ -586,6 +586,8 @@ class Store(
 ):
     """SQLite-backed canonical store for Agency Runtime."""
 
+    _repair_storage_on_connect = True
+
     def _capture_content_enabled(self) -> bool:
         """Resolve the patchable content-capture compatibility seam."""
 
@@ -610,7 +612,10 @@ class Store(
         db_path: str | Path | None = None,
         *,
         config_path: str | Path | None = None,
+        require_existing_current: bool = False,
     ):
+        if type(require_existing_current) is not bool:
+            raise TypeError("require_existing_current must be a boolean")
         # Freeze and validate one configuration identity before creating a
         # directory, database, journal, or schema. Live settings may reload
         # from this same path, but a later file or environment change to the
@@ -629,6 +634,28 @@ class Store(
         self.db_path = Path(os.path.abspath(selected_db_path))
         self._frozen_db_path = self.db_path
         self._permission_fingerprints: dict[Path, tuple[int, int]] = {}
+        self._repair_storage_on_connect = not require_existing_current
+        if require_existing_current:
+            if os.path.normcase(str(self.db_path)) != os.path.normcase(
+                str(self._configured_store_path)
+            ):
+                raise ValueError(
+                    "existing-current Store must use the exact configured database path"
+                )
+            self._harden_storage_parent = False
+            _assert_storage_parent_chain(self.db_path.parent, allow_missing=False)
+            if not _storage_parent_is_trusted(self.db_path.parent):
+                raise PermissionError(
+                    "Agency Runtime storage parent permits cross-account path substitution"
+                )
+            schema_current, journal_ready = self._current_schema_state()
+            if not schema_current or not journal_ready:
+                raise RuntimeError(
+                    "Agency Runtime activation verification requires an existing current WAL Store"
+                )
+            self._journal_ready = True
+            self._foreign_keys_ready = True
+            return
         self._prepare_storage_parent()
         with storage_initialization_lock(self.db_path):
             created_paths: list[CreatedStoragePath] = []
@@ -1014,6 +1041,8 @@ class Store(
     def _repair_storage_permissions(self) -> None:
         """Keep owned storage files and, when applicable, its directory private."""
 
+        if not self._repair_storage_on_connect:
+            return
         targets = [(path, False) for path in _sqlite_storage_paths(self.db_path)]
         if self._harden_storage_parent:
             targets.insert(0, (self.db_path.parent, True))
@@ -1028,10 +1057,16 @@ class Store(
         self._assert_storage_paths_safe()
         self._assert_storage_files_trusted()
         expected_identity = self._database_identity()
+        connect_target = str(self.db_path)
+        connect_kwargs: dict[str, Any] = {}
+        if not self._repair_storage_on_connect:
+            connect_target = f"{self.db_path.as_uri()}?mode=rw"
+            connect_kwargs["uri"] = True
         conn = sqlite3.connect(
-            str(self.db_path),
+            connect_target,
             timeout=5.0,
             factory=ObservedSQLiteConnection,
+            **connect_kwargs,
         )
         try:
             self._require_database_identity(expected_identity)
@@ -1094,7 +1129,8 @@ class Store(
             if self._foreign_keys_ready:
                 conn.execute("PRAGMA foreign_keys=ON")
             conn.row_factory = sqlite3.Row
-            self._repair_storage_permissions()
+            if self._repair_storage_on_connect:
+                self._repair_storage_permissions()
             return conn
         except BaseException:
             conn.close()

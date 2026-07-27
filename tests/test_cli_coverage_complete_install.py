@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from agency_runtime.cli import install_commands as subject
+from agency_runtime.cli import main as cli_main
 
 
 def args(**changes):
@@ -72,18 +73,33 @@ def dependencies(**changes):
 
 @pytest.mark.parametrize("timeout", [0, 601, float("nan")])
 def test_verify_activation_rejects_invalid_timeout_before_install(timeout):
+    parsed = cli_main.build_parser().parse_args(
+        [
+            "install",
+            "--agent",
+            "codex",
+            "--verify-activation",
+            "--activation-timeout",
+            str(timeout),
+        ]
+    )
     with pytest.raises(ValueError, match="activation-timeout"):
-        subject._validate_install_mode(
-            args(agent="codex", verify_activation=True, activation_timeout=timeout)
-        )
+        subject._validate_install_mode(parsed)
 
 
-def test_verify_activation_requires_codex_target_and_accepts_all():
-    with pytest.raises(ValueError, match="requires --agent codex or --all"):
-        subject._validate_install_mode(args(agent="claude", verify_activation=True))
-    assert subject._validate_install_mode(
-        args(all=True, verify_activation=True, activation_timeout=1)
-    ) == (False, False, None)
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["install", "--agent", "claude", "--verify-activation"],
+        ["install", "--all", "--verify-activation"],
+        ["install", "--agent", "codex", "--verify-activation", "--profile", "standard"],
+        ["install", "--agent", "codex", "--verify-activation", "--no-dashboard"],
+    ],
+)
+def test_verify_activation_requires_the_exact_codex_only_shape(argv):
+    parsed = cli_main.build_parser().parse_args(argv)
+    with pytest.raises(ValueError, match="exact --agent codex verification-only shape"):
+        subject._validate_install_mode(parsed)
 
 
 @pytest.mark.parametrize(

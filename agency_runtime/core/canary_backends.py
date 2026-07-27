@@ -441,6 +441,7 @@ class SafeCodexCanaryBackend:
     source_env: Mapping[str, str]
     master_enabled: bool = True
     profile_scope: str = "isolated-profile"
+    require_existing_store: bool = False
     exec_options: tuple[str, ...] | None = None
 
     def _install_plugin(
@@ -553,6 +554,12 @@ class SafeCodexCanaryBackend:
             env["AGENCY_DB_PATH"] = str(self.db_path.resolve())
             env["AGENCY_CANARY_MODE"] = "1"
             env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if self.master_enabled else "0"
+            if self.require_existing_store:
+                from agency_runtime.core.codex_activation_verification import (
+                    CODEX_ACTIVATION_EXISTING_STORE_ENV,
+                )
+
+                env[CODEX_ACTIVATION_EXISTING_STORE_ENV] = "1"
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
                 return _timeout_record("codex", profile_scope=self.profile_scope)
@@ -725,6 +732,7 @@ def backend(
     environ: Mapping[str, str] | None,
     master_enabled: bool = True,
     profile_scope: str = "isolated-profile",
+    require_existing_store: bool = False,
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -739,6 +747,10 @@ def backend(
         raise ValueError(f"unsupported canary profile scope: {profile_scope}")
     if profile_scope == "current-profile" and host != "codex":
         raise ValueError("current-profile canaries support Codex only")
+    if type(require_existing_store) is not bool:
+        raise TypeError("require_existing_store must be a boolean")
+    if require_existing_store and (host != "codex" or profile_scope != "current-profile"):
+        raise ValueError("existing-store canaries support Codex current-profile only")
     process_runner = runner or run_bounded_process
     source_env = facade.os.environ if environ is None else environ
     home = facade._source_home(source_env)
@@ -754,6 +766,7 @@ def backend(
             source_env=source_env,
             master_enabled=master_enabled,
             profile_scope=profile_scope,
+            require_existing_store=require_existing_store,
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()
