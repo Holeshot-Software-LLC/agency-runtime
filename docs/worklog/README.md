@@ -265,6 +265,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bc6589b` | 2026-07-27 | fix(codex): bind activation verification to fresh proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [detail](2026-07-27-bc6589b-bind-codex-activation-verification.md) |
 | `110dfd1` | 2026-07-27 | docs(governance): bound delivery to live demo checkpoints | [AR-186](../roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md) | [detail](2026-07-27-110dfd1-bound-delivery-demo-checkpoints.md) |
 | `63a1f5f` | 2026-07-27 | fix(installer): isolate native host lifecycle cwd | [AR-187](../roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md) | [detail](2026-07-27-63a1f5f-isolate-native-host-lifecycle-cwd.md) |
+| `640b6c5` | 2026-07-27 | docs(checkpoint): record exact Codex operator gate | [AR-187](../roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
