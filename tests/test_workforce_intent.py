@@ -12,7 +12,10 @@ from agency_runtime.core.workforce.intent import (
     enrich_intent_plan,
 )
 from agency_runtime.core.workforce.lifecycle_roles import role_anchors
-from agency_runtime.core.workforce.plan_policy import plan_policy_violations
+from agency_runtime.core.workforce.plan_policy import (
+    plan_policy_violations,
+    regulated_assurance_requirements,
+)
 from agency_runtime.core.workforce.staffing_verifier import StaffingContext
 
 
@@ -451,6 +454,67 @@ def test_code_intent_is_enriched_with_ordered_assurance_without_losing_capabilit
         "unit-test-results",
         "unit-security-review",
     )
+    assert plan_policy_violations(request, plan) == ()
+
+
+def test_named_regulated_standard_is_bound_to_independent_review() -> None:
+    request = (
+        "Assess flight-control software for DO-178C compliance and provide an independent "
+        "assurance review."
+    )
+    value = {
+        "request_summary": request,
+        "units": [
+            {
+                "unit_id": "unit-analysis",
+                "outcome": "Analyze the supplied flight-control software evidence",
+                "artifact_kind": "analysis",
+                "domains": ["software-engineering"],
+                "stacks": [],
+                "capability_ids": ["analysis"],
+                "novel_capability": "",
+                "depends_on": [],
+            },
+            {
+                "unit_id": "unit-independent-review",
+                "outcome": "Independently review the analysis",
+                "artifact_kind": "review-report",
+                "domains": ["software-engineering"],
+                "stacks": [],
+                "capability_ids": ["review"],
+                "novel_capability": "",
+                "depends_on": ["unit-analysis"],
+            },
+        ],
+    }
+    primary = _compile(value, request=request)
+
+    assert regulated_assurance_requirements(request) == ("regulated-assurance-do-178c",)
+    assert plan_policy_violations(request, primary) == (
+        "plan_missing_regulated_assurance_requirement",
+    )
+
+    plan = enrich_intent_plan(primary, request=request, context=_context())
+    review = next(unit for unit in plan.units if unit.unit_id == "unit-independent-review")
+
+    assert "regulated-assurance-do-178c" in review.required_capabilities
+    assert "regulated-assurance" in review.risks
+    assert plan_policy_violations(request, plan) == ()
+
+
+def test_ordinary_standard_format_reference_does_not_create_regulated_gap() -> None:
+    request = "Analyze timestamp strings formatted according to ISO 8601."
+    plan = _compile(
+        _intent(
+            artifact="analysis",
+            domains=["software-engineering"],
+            stacks=[],
+            capabilities=["analysis"],
+        ),
+        request=request,
+    )
+
+    assert regulated_assurance_requirements(request) == ()
     assert plan_policy_violations(request, plan) == ()
 
 

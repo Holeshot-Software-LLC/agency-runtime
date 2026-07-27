@@ -897,6 +897,65 @@ def test_explicit_recruiter_abstention_is_preserved() -> None:
     assert {"no_safe_sufficient_team", "recruiter_abstained"} <= _codes(decision)
 
 
+def test_named_regulated_assurance_requires_explicit_contract_coverage() -> None:
+    generic = _contract(
+        "code-reviewer",
+        outcomes=("Independent source review",),
+        artifact="review-report",
+        lifecycle="review",
+        authority="review",
+    )
+    plan = _plan(
+        _unit(
+            "unit-regulated-review",
+            artifact="review-report",
+            lifecycle="review",
+            capabilities=("review", "regulated-assurance-do-178c"),
+            authority="review",
+        )
+    )
+    generic_proposal = build_deterministic_proposal(
+        plan,
+        (generic,),
+        {"unit-regulated-review": (("code-reviewer", 0.99),)},
+        context=_context(),
+    )
+
+    generic_decision = verify_staffing(
+        plan,
+        generic_proposal,
+        (generic,),
+        context=_context(),
+    )
+
+    assert generic_decision.status == "abstained"
+    assert {"no_safe_sufficient_team", "recruiter_abstained"} <= _codes(generic_decision)
+
+    qualified = replace(
+        generic,
+        worker_id="worker:do-178c-assurance-reviewer",
+        agent_id="do-178c-assurance-reviewer",
+        display_name="DO-178C Assurance Reviewer",
+        capability_ids=("review", "regulated-assurance-do-178c"),
+    )
+    qualified_proposal = build_deterministic_proposal(
+        plan,
+        (qualified,),
+        {"unit-regulated-review": (("do-178c-assurance-reviewer", 0.99),)},
+        context=_context(),
+    )
+
+    qualified_decision = verify_staffing(
+        plan,
+        qualified_proposal,
+        (qualified,),
+        context=_context(),
+    )
+
+    assert qualified_decision.accepted
+    assert qualified_decision.units[0].selected == ("do-178c-assurance-reviewer",)
+
+
 def test_deterministic_proposal_builder_preserves_disabled_winner_visibility() -> None:
     roster = (
         _contract("disabled-analyst", outcomes=("Technical analysis",), enabled=False),

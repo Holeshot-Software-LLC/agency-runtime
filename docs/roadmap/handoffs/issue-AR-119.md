@@ -27,6 +27,8 @@ related:
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
+  - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
+  - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
@@ -61,14 +63,11 @@ the full acceptance history.
 
 ## completed-evidence
 
-- AR-143: exact roster rollback is the first positive persistent mutation. It
-  prepares complete config/database, generation, current/target revision,
-  activation-authority, and workforce/effective-contract identity; invokes the
-  fixed Windows 11 x64 app-owned consent helper; then revalidates inside
-  `BEGIN IMMEDIATE` before commit. All other mutations/platforms remain blocked.
-- AR-160/161: portable and `win_amd64` wheel profiles, one sdist, structural PE
-  rejection, exact native/source/provenance/license hashes, and three-artifact
-  parity are implemented. Current bytes are explicitly unsigned review inputs.
+- AR-143 exact roster rollback prepares the complete transition, invokes the
+  Windows 11 x64 app-owned consent helper, and revalidates inside
+  `BEGIN IMMEDIATE`; all other mutations/platforms remain blocked.
+- AR-160/161 implement portable and `win_amd64` wheels, one sdist, structural
+  PE rejection, exact hashes, and parity; current bytes remain unsigned review inputs.
 - AR-163: signed remediation history requires current candidate/download/audit/
   active-basis eligibility. Stale authority reopens the original queue, counts
   are disjoint, and UI pagination is bound to an exact remediation revision.
@@ -78,11 +77,9 @@ the full acceptance history.
 - AR-165/166: dependency-review fallback accepts only an exact authenticated
   capability boundary; dashboard persistent controls stay read-only, safe
   request IDs are operator-visible, and runtime-capture disclosure is precise.
-- AR-170 through AR-173: browser headers and response identity fail closed;
-  worker evidence is complete; lifecycle reasons expose presence only; roster
-  pages bind Store and configuration revisions; public pages use one bounded
-  SQL snapshot; control recaptures Store-generation churn; Route Lab carries
-  one exact trace through observation correlation.
+- AR-170 through AR-173 fail browser identity closed, complete worker evidence,
+  redact lifecycle reasons, bind roster revisions/snapshots, recapture Store
+  churn, and carry one Route Lab trace through observation correlation.
 - AR-174: trusted-base classification selects a five-runner primary lane only
   for complete regular `docs/**/*.md` pull-request deltas. Linux and Windows
   artifacts and artifact parity remain mandatory. The 13-to-5 allocation
@@ -104,11 +101,16 @@ the full acceptance history.
   performance tests with 8,080 deselected in 20.66 seconds; and 105 dashboard
   UI tests at 98.72 line, 91.00 branch, and 97.97 function percent. The
   current-head Python coverage attempt was stopped and is incomplete.
+- Exact-head Windows wheel/sdist artifacts pass strict verification and fresh
+  Python 3.10 install/smoke. AR-179 binds named regulated standards to typed
+  review; 121 focused intent/staffing/inference/safety/hiring tests pass.
 
 ## exact-blocker
 
-- Current-head Python coverage, rebuilt Windows/Linux artifacts, and fresh
-  wheel/sdist installation evidence remain incomplete.
+- Current-head manual coverage plus clean Linux portable artifact/install
+  evidence remain incomplete; exact-head Windows wheel/sdist evidence is green.
+- AR-179 needs one post-checkpoint live confirmation; the unsafe pre-fix
+  avionics route is preserved and no activation or execution is claimed.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, exact signed candidate verification, and
   an attended Windows Hello success-and-denial canary. The remote session cannot

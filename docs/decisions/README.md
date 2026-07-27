@@ -164,6 +164,7 @@ Status meanings:
 | [ADR-0100](0100-short-circuit-trusted-docs-only-pull-requests.md) | Short-circuit trusted documentation-only pull requests | Accepted |
 | [ADR-0101](0101-run-exhaustive-python-verification-on-demand.md) | Run exhaustive Python verification on demand | Accepted |
 | [ADR-0102](0102-defer-one-shot-application-evaluation.md) | Defer complete-application evaluation without weakening live release evidence | Accepted |
+| [ADR-0103](0103-bind-named-regulated-assurance-to-typed-staffing.md) | Bind named regulated assurance to typed staffing requirements | Accepted |
 
 ## Documentation governance
 

@@ -15,9 +15,11 @@ related:
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
+  - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
+  - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
@@ -34,7 +36,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118]
+depends_on: [AR-115, AR-116, AR-118, AR-179]
 blocks: [AR-178]
 ---
 
@@ -3258,6 +3260,19 @@ installation remain required. The production verdict stays **NO-GO** because
 those local gates and the external billing/hosted, attended Windows Hello,
 operator-presence, benchmark-outcome, branch-protection, and tracker gates are
 still open.
+
+### Fresh artifact and regulated-gap checkpoint 2026-07-27
+
+Exact-head Windows wheel and sdist builds now pass strict metadata,
+independent distribution verification, and fresh Python 3.10 install/smoke
+from a trusted product-private builder root. Live routing then reproduced one
+P0 false-sufficient-team defect: a DO-178C avionics-assurance request was
+accepted with generic onboarding, test-results, and code-review workers.
+AR-179 and ADR-0103 now preserve named high-assurance standards as typed
+independent-review capabilities. Generic review cannot cover them; an explicit
+governed contract can. The focused 57-test intent/staffing slice and 64-test
+inference/safety/hiring slice pass. A fresh live confirmation follows the clean
+checkpoint; no activation, delegation, or contractor execution is claimed.
 
 ### Still required before AR-119 can close
 

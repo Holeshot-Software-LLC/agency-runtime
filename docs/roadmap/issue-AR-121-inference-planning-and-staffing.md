@@ -3,11 +3,13 @@ title: "AR-121: Implement inference-first planning and deterministic staffing"
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-07-27
 tags: [planning, recruitment, selection, inference]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
+  - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
+  - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -16,7 +18,7 @@ issue_id: AR-121
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/134
 depends_on: [AR-120]
-blocks: [AR-122, AR-124, AR-125]
+blocks: [AR-122, AR-124, AR-125, AR-179]
 ---
 
 # AR-121: Implement inference-first planning and deterministic staffing

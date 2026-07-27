@@ -73,6 +73,81 @@ _SECURITY = frozenset(
     }
 )
 _RELEASE = frozenset({"deploy", "deployment", "install", "installer", "release", "ship"})
+_ASSURANCE_TERMS = frozenset(
+    {
+        "assurance",
+        "audit",
+        "compliance",
+        "compliant",
+        "conformance",
+        "conformant",
+        "certification",
+        "certified",
+        "certify",
+    }
+)
+_HIGH_ASSURANCE_CONTEXT = frozenset(
+    {
+        "airborne",
+        "airworthiness",
+        "aerospace",
+        "automotive",
+        "aviation",
+        "avionics",
+        "flight",
+        "medical",
+        "nuclear",
+        "rail",
+        "regulated",
+        "regulatory",
+        "safety",
+    }
+)
+_INTRINSICALLY_REGULATED_PREFIXES = frozenset({"arp", "cfr", "do", "rtca"})
+_KNOWN_HIGH_ASSURANCE_STANDARDS = frozenset(
+    {
+        ("iec", "61508"),
+        ("iec", "62304"),
+        ("iso", "26262"),
+        ("nist", "800-53"),
+        ("soc", "2"),
+    }
+)
+_NAMED_STANDARD = re.compile(
+    r"\b(?P<prefix>do|iso|iec|nist|rtca|mil|en|soc|cfr)\s*(?:-|\s)\s*"
+    r"(?P<identifier>\d{1,6}[a-z]?(?:[-./:]\d+[a-z]?)*)\b"
+    r"|\b(?P<arp_prefix>arp)\s*-?\s*(?P<arp_identifier>\d{3,6}[a-z]?)\b",
+    re.IGNORECASE,
+)
+
+
+def regulated_assurance_requirements(request: str) -> tuple[str, ...]:
+    """Return canonical named-standard requirements for high-assurance work."""
+
+    actionable = _NEGATED_SCOPE.sub(" ", request).casefold()
+    tokens = frozenset(_TOKENS.findall(actionable))
+    if not tokens & _ASSURANCE_TERMS:
+        return ()
+    standards: list[tuple[str, str]] = []
+    for match in _NAMED_STANDARD.finditer(actionable):
+        prefix = (match.group("prefix") or match.group("arp_prefix")).casefold()
+        identifier = (match.group("identifier") or match.group("arp_identifier")).casefold()
+        standards.append((prefix, identifier))
+    if not standards:
+        return ()
+    high_assurance = bool(tokens & _HIGH_ASSURANCE_CONTEXT) or any(
+        prefix in _INTRINSICALLY_REGULATED_PREFIXES
+        or (prefix, identifier) in _KNOWN_HIGH_ASSURANCE_STANDARDS
+        for prefix, identifier in standards
+    )
+    if not high_assurance:
+        return ()
+    return tuple(
+        dict.fromkeys(
+            "regulated-assurance-" + re.sub(r"[^a-z0-9]+", "-", f"{prefix}-{identifier}").strip("-")
+            for prefix, identifier in standards
+        )
+    )
 
 
 def _ancestors(plan: WorkUnitPlan, unit_id: str) -> frozenset[str]:
@@ -258,9 +333,23 @@ def plan_policy_violations(request: str, plan: WorkUnitPlan) -> tuple[str, ...]:
         inventory
     ):
         codes.append("plan_missing_codebase_discovery")
+    assurance_requirements = regulated_assurance_requirements(request)
+    if assurance_requirements:
+        if not inventory.reviews:
+            codes.append("plan_missing_regulated_assurance_review")
+        else:
+            review_capabilities = {
+                capability
+                for unit in inventory.reviews
+                for capability in unit.required_capabilities
+            }
+            if any(
+                requirement not in review_capabilities for requirement in assurance_requirements
+            ):
+                codes.append("plan_missing_regulated_assurance_requirement")
     if any(item.mutation_scope == "external_write" for item in plan.units):
         codes.append("plan_external_write_requires_separate_authorization")
     return tuple(dict.fromkeys(codes))
 
 
-__all__ = ["plan_policy_violations"]
+__all__ = ["plan_policy_violations", "regulated_assurance_requirements"]

@@ -788,6 +788,61 @@ def _bind_local_assurance(units: Sequence[WorkUnit]) -> list[WorkUnit]:
     return result
 
 
+def _bind_regulated_assurance(
+    units: Sequence[WorkUnit],
+    *,
+    request: str,
+) -> list[WorkUnit]:
+    """Preserve named high-assurance requirements on independent review."""
+
+    from agency_runtime.core.workforce.plan_policy import regulated_assurance_requirements
+
+    requirements = regulated_assurance_requirements(request)
+    if not requirements:
+        return list(units)
+    review_indices = [
+        index
+        for index, unit in enumerate(units)
+        if unit.artifact_kind == "review-report"
+        and unit.lifecycle_phase == "review"
+        and unit.authority == "review"
+        and unit.mutation_scope == "read_only"
+    ]
+    if not review_indices:
+        return list(units)
+    present = {
+        capability for index in review_indices for capability in units[index].required_capabilities
+    }
+    missing = tuple(item for item in requirements if item not in present)
+    if not missing:
+        return list(units)
+    target_index = next(
+        (
+            index
+            for index in review_indices
+            if "security" not in units[index].domains
+            and set(units[index].domains) & {"quality-assurance", "software-engineering"}
+        ),
+        review_indices[0],
+    )
+    result = list(units)
+    target = result[target_index]
+    result[target_index] = replace(
+        target,
+        required_capabilities=tuple(dict.fromkeys((*target.required_capabilities, *missing))),
+        risks=tuple(dict.fromkeys((*target.risks, "regulated-assurance"))),
+        acceptance_evidence=tuple(
+            dict.fromkeys(
+                (
+                    *target.acceptance_evidence,
+                    "Qualified independent evidence addresses each named assurance standard.",
+                )
+            )
+        ),
+    )
+    return result
+
+
 def enrich_intent_plan(
     primary: WorkUnitPlan,
     *,
@@ -800,7 +855,10 @@ def enrich_intent_plan(
 
     fallback, _reasons = deterministic_work_plan(request, context=context)
     if fallback is None:
-        bound = _bind_local_assurance(primary.units)
+        bound = _bind_regulated_assurance(
+            _bind_local_assurance(primary.units),
+            request=request,
+        )
         ordered = _topological_units(bound)
         return parse_work_unit_plan(
             {
@@ -866,7 +924,7 @@ def enrich_intent_plan(
                 )
         rewritten.append(rewritten_unit)
 
-    bound = _bind_local_assurance(rewritten)
+    bound = _bind_regulated_assurance(_bind_local_assurance(rewritten), request=request)
     ordered = _topological_units(sorted(bound, key=lambda unit: original_order[unit.unit_id]))
     return parse_work_unit_plan(
         {

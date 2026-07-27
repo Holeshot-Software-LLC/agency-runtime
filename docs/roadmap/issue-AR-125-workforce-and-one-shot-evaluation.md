@@ -3,7 +3,7 @@ title: "AR-125: Prove workforce selection, host portability, and Agency-on/off v
 status: open
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-07-27
 tags: [evaluation, testing, portability, routing]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -11,6 +11,7 @@ related:
   - docs/decisions/0082-schedule-assurance-by-artifact-lifecycle.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
+  - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -18,7 +19,7 @@ epic: testing
 issue_id: AR-125
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/138
-depends_on: [AR-120, AR-121, AR-122, AR-123, AR-124]
+depends_on: [AR-120, AR-121, AR-122, AR-123, AR-124, AR-179]
 blocks: []
 ---
 
@@ -35,6 +36,8 @@ Every-worker semantic cases and pairwise/lifecycle-team properties are green.
 Configured-inference and held-out matched evidence, paired Agency-on/off value,
 exact-current installed artifacts, and five live host canaries remain open.
 Complete one-shot applications moved to non-blocking post-production AR-178.
+AR-179 owns the live false-sufficient-team defect found for named regulated
+assurance work; its local repair awaits one fresh live confirmation.
 
 ## Approach
 

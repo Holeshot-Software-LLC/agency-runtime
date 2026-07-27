@@ -37,6 +37,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Named high-assurance standards now remain typed independent-review staffing
+  requirements. Generic reviewers cannot satisfy a regulated certification
+  claim; the runtime instead selects an explicitly qualified governed contract
+  or exposes a staffing gap. Ordinary non-assurance format references remain
+  unaffected.
 - Ordinary tests now reuse one private, immutable offline configuration while
   retaining unique lazy Store and runtime-control paths per case. Configuration-
   identity tests opt into the original per-test file contract, preserving the
