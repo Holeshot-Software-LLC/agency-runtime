@@ -50,8 +50,8 @@ the full acceptance history.
 ## checkpoint
 
 - Clean local recovery pair: substantive `99b51bd`, ledger `6392eb3`.
-- This pair seals exact-head Windows package/install, Codex freshness,
-  authenticated dashboard, and post-fix regulated-gap live evidence.
+- This pair seals `19b20bed` Windows package/install, Codex freshness,
+  authenticated dashboard, and post-fix regulated-gap evidence.
 - Branch is `main`, locally ahead of `origin/main`. No push, PR, tag, release,
   publication, hosted dispatch, tracker mutation, or repository-setting change
   was authorized.
@@ -101,16 +101,16 @@ the full acceptance history.
   performance tests with 8,080 deselected in 20.66 seconds; and 105 dashboard
   UI tests at 98.72 line, 91.00 branch, and 97.97 function percent. The
   current-head Python coverage attempt was stopped and is incomplete.
-- Exact-head Windows wheel/sdist artifacts pass strict verification and fresh
-  Python 3.10 install/smoke. AR-179 binds named regulated standards to typed
+- Exact `19b20bed` Windows wheel/sdist artifacts pass strict verification and
+  fresh Python 3.10 install/smoke. AR-179 binds named standards to typed
   review; 121 focused intent/staffing/inference/safety/hiring tests pass.
 - AR-179's post-checkpoint live route abstained with zero selections and a
   truthful uncovered-unit gap; two `gpt-5.6-luna` receipts were applied.
 
 ## exact-blocker
 
-- Current-head manual coverage plus clean Linux portable artifact/install
-  evidence remain incomplete; exact-head Windows wheel/sdist evidence is green.
+- Current-head manual coverage and final rebuilt Windows/Linux artifact/install
+  evidence remain incomplete; `19b20bed` Windows package evidence is green.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, exact signed candidate verification, and
   an attended Windows Hello success-and-denial canary. The remote session cannot

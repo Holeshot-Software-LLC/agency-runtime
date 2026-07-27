@@ -27,12 +27,12 @@ related_issues:
 
 ## Purpose
 
-Replace source-only readiness claims with exact-head package, installed-package,
+Replace source-only readiness claims with exact `19b20bed` package/install,
 Codex freshness, live routing, and current authenticated dashboard evidence.
 
 ## Approach
 
-Build and verify exact-head Windows artifacts in a trusted product-private root;
+Build and verify exact `19b20bed` Windows artifacts in a trusted private root;
 install wheel and sdist into separate fresh Python runtimes; audit each Codex
 integration layer independently; exercise the dashboard and bounded live routes;
 then preserve both the pre-fix defect and post-fix fail-closed confirmation.
@@ -54,6 +54,8 @@ Codex runtime. No recommendation is promoted to activation or execution.
 
 - Strict Windows wheel/sdist build, independent distribution verification, and
   separate fresh Python 3.10 package smokes passed.
+- The later AR-179 code repair deliberately leaves a final current-head rebuild
+  open; the earlier bytes are not promoted to current-release evidence.
 - All dashboard sections, refresh, authenticated Route Lab, and browser console
   smoke passed with zero console warnings/errors.
 - Post-fix regulated-assurance route abstained with zero selections and exact

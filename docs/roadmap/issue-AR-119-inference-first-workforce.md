@@ -3263,9 +3263,11 @@ still open.
 
 ### Fresh artifact and regulated-gap checkpoint 2026-07-27
 
-Exact-head Windows wheel and sdist builds now pass strict metadata,
+Exact `19b20bed` Windows wheel and sdist builds pass strict metadata,
 independent distribution verification, and fresh Python 3.10 install/smoke
-from a trusted product-private builder root. Live routing then reproduced one
+from a trusted product-private builder root. Because the following AR-179
+routing repair changes package code, final current-head artifacts still require
+a rebuild. Live routing reproduced one
 P0 false-sufficient-team defect: a DO-178C avionics-assurance request was
 accepted with generic onboarding, test-results, and code-review workers.
 AR-179 and ADR-0103 now preserve named high-assurance standards as typed
