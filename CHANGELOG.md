@@ -37,6 +37,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Native host lifecycle commands now run from an owner-private working
+  directory while retaining every real ambient repository boundary. Running
+  `agency install` from a broad directory such as the user's home no longer
+  misclassifies a legitimate user-installed host CLI as repository content,
+  and repository sibling-executable poisoning remains rejected.
 - Canonical release builds now accept the exact owner-private `0600` regular-
   file and `0700` directory modes emitted in POSIX source distributions under
   `umask 077`, then normalize them to deterministic `0644` and `0755`; other

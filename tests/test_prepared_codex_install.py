@@ -99,6 +99,7 @@ def _prepared(
         python_identity=SimpleNamespace(),
         codex_argv=SimpleNamespace(),
         codex_environment={},
+        codex_working_directory=str(tmp_path),
         native_state=native,
         runtime_control=SimpleNamespace(),
     )
@@ -555,6 +556,63 @@ def test_prepared_codex_process_uses_frozen_executable_directory(
     assert calls[0]["arguments"] == argv.values
     assert calls[0]["cwd"] == str(executable_directory)
     assert calls[0]["env"] == {"CODEX_HOME": str(tmp_path / "profile")}
+
+
+def test_prepared_codex_launcher_uses_private_runtime_not_broad_caller_home(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    caller_home = tmp_path / "home"
+    executable = caller_home / "user-bin" / "codex.exe"
+    working_directory = caller_home / ".agency-runtime"
+    executable.parent.mkdir(parents=True)
+    executable.touch()
+    working_directory.mkdir()
+    observed: dict[str, object] = {}
+
+    class FrozenArgv:
+        persistent_artifact_identities = ()
+
+        def freeze_persistent(self, **kwargs: object) -> None:
+            observed["freeze"] = kwargs
+
+        def with_arguments(self, arguments: list[str]) -> list[str]:
+            return [str(executable), *arguments]
+
+    def prepare(command: list[str], **kwargs: object) -> FrozenArgv:
+        observed["command"] = command
+        observed["prepare"] = kwargs
+        return FrozenArgv()
+
+    def environment(_host: str, **kwargs: object) -> dict[str, str]:
+        observed["environment"] = kwargs
+        return {"PATH": str(executable.parent)}
+
+    monkeypatch.chdir(caller_home)
+    monkeypatch.setattr(
+        prepared_install,
+        "runtime_home",
+        lambda **_kwargs: working_directory,
+    )
+    monkeypatch.setattr(prepared_install, "validate_private_directory", lambda _path: None)
+    monkeypatch.setattr(prepared_install, "prepare_process_argv", prepare)
+    monkeypatch.setattr(prepared_install, "_command_environment", environment)
+    monkeypatch.setattr(
+        prepared_install,
+        "_run_prepared",
+        lambda *_args, **_kwargs: NativeCommandResult((), 0, "codex 1.2.3", ""),
+    )
+
+    _argv, _environment, version, launch = prepared_install._prepared_codex_argv(
+        home_dir=caller_home
+    )
+
+    assert version == "codex 1.2.3"
+    assert launch == str(working_directory)
+    assert observed["command"] == ["codex"]
+    assert observed["prepare"]["current_directory"] == working_directory
+    assert caller_home not in observed["prepare"]["forbidden_roots"]
+    assert observed["environment"]["current_directory"] == working_directory
 
 
 def test_forced_replacement_retains_backup_and_creates_new_install_lineage(

@@ -161,6 +161,29 @@ def test_windows_forbidden_root_is_case_insensitive_for_wrappers() -> None:
         )
 
 
+def test_repository_marker_roots_can_exclude_ambient_directory_only_when_marked(
+    tmp_path: Path,
+) -> None:
+    ordinary = tmp_path / "ordinary"
+    ordinary.mkdir()
+    assert (
+        process_argv.repository_forbidden_roots(
+            ordinary,
+            include_current=False,
+        )
+        == ()
+    )
+
+    repository = tmp_path / "repository"
+    nested = repository / "src"
+    nested.mkdir(parents=True)
+    (repository / ".git").mkdir()
+    assert process_argv.repository_forbidden_roots(
+        nested,
+        include_current=False,
+    ) == (repository.resolve(),)
+
+
 def test_symlinked_path_entry_cannot_alias_into_forbidden_root(tmp_path: Path) -> None:
     repository = tmp_path / "repo"
     poisoned_bin = repository / "bin"

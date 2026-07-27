@@ -21,6 +21,7 @@ from agency_runtime.core.installer_contracts import (
     CommandRunner,
     NativeCommandResult,
 )
+from agency_runtime.core.private_paths import private_temporary_directory
 from agency_runtime.core.process_argv import (
     freeze_process_argv,
     prepare_process_argv,
@@ -180,6 +181,7 @@ def _command_environment(
     host: str,
     *,
     home_dir: str | Path | None = None,
+    current_directory: str | Path | None = None,
     forbidden_roots: Sequence[str | Path] = (),
 ) -> dict[str, str]:
     if host not in HOSTS:
@@ -187,7 +189,7 @@ def _command_environment(
     return least_privilege_subprocess_environment(
         host,
         home_dir=home_dir,
-        current_directory=Path.cwd(),
+        current_directory=Path.cwd() if current_directory is None else current_directory,
         forbidden_roots=forbidden_roots,
     )
 
@@ -237,31 +239,49 @@ def run_native(
     timeout: float = 30.0,
 ) -> NativeCommandResult:
     argv = tuple(str(part) for part in command)
-    current_directory = Path.cwd()
-    forbidden_roots = repository_forbidden_roots(current_directory)
-    env = _command_environment(
-        host,
-        home_dir=home_dir,
-        forbidden_roots=forbidden_roots,
+    ambient_directory = Path.cwd()
+    ambient_repository_roots = repository_forbidden_roots(
+        ambient_directory,
+        include_current=False,
     )
     try:
         if command_runner is None:
             from agency_runtime.core.delegation.backends import run_bounded_process
 
-            prepared_argv = freeze_process_argv(
-                prepare_process_argv(
-                    argv,
-                    current_directory=current_directory,
+            # Host lifecycle commands are not repository operations. Launch them
+            # from an owner-private ephemeral directory so a broad caller such as
+            # the user's home is never mistaken for the target repository and so
+            # the child cannot consult a repository-controlled working directory.
+            with private_temporary_directory(prefix=f"native-{host}") as launch_directory:
+                forbidden_roots = tuple(
+                    dict.fromkeys(
+                        (
+                            *repository_forbidden_roots(launch_directory),
+                            *ambient_repository_roots,
+                        )
+                    )
+                )
+                env = _command_environment(
+                    host,
+                    home_dir=home_dir,
+                    current_directory=launch_directory,
                     forbidden_roots=forbidden_roots,
-                ),
-                forbidden_roots=forbidden_roots,
-            )
-            bounded = run_bounded_process(
-                prepared_argv,
-                timeout=timeout,
-                env=env,
-                max_output_chars=MAX_NATIVE_OUTPUT_CHARS,
-            )
+                )
+                prepared_argv = freeze_process_argv(
+                    prepare_process_argv(
+                        argv,
+                        current_directory=launch_directory,
+                        forbidden_roots=forbidden_roots,
+                    ),
+                    forbidden_roots=forbidden_roots,
+                )
+                bounded = run_bounded_process(
+                    prepared_argv,
+                    timeout=timeout,
+                    cwd=str(launch_directory),
+                    env=env,
+                    max_output_chars=MAX_NATIVE_OUTPUT_CHARS,
+                )
             stderr = bounded.stderr
             if bounded.timed_out:
                 stderr = "\n".join(
@@ -290,6 +310,13 @@ def run_native(
                 bounded.stderr_truncated,
             )
         else:
+            current_directory = ambient_directory
+            forbidden_roots = repository_forbidden_roots(current_directory)
+            env = _command_environment(
+                host,
+                home_dir=home_dir,
+                forbidden_roots=forbidden_roots,
+            )
             try:
                 raw = command_runner(list(argv), env=env, timeout=timeout)
             except TypeError:

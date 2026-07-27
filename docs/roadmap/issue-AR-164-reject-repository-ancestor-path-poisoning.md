@@ -7,6 +7,7 @@ updated: 2026-07-27
 tags: [security, processes, executables, delegation, git]
 related:
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md
+  - docs/roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md
   - docs/decisions/0055-freeze-executable-identity-before-launch.md
   - docs/THREAT_MODEL.md
   - SECURITY.md
@@ -42,6 +43,12 @@ configuration. Discovery and final artifact validation use that same forbidden
 root set. Explicit argv paths, one-argument resolver results, Windows
 case/PATHEXT wrapper variants, and link aliases into a repository fail closed;
 ordinary absolute `PATH` entries outside a repository remain eligible.
+
+AR-187 now separates repository-independent host lifecycle CWD isolation from
+this marker-derived repository boundary. Native commands retain every actual
+repository ancestor while using a private launch directory, so a broad
+non-repository caller such as the user's home does not become a false recursive
+repository root.
 
 The contract is applied to direct Codex execution, generic command delegation,
 the first lifecycle Git call, native installation, dashboard service-manager

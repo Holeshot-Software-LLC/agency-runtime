@@ -12,9 +12,11 @@ related:
   - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
   - docs/roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md
   - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
+  - docs/roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md
   - docs/decisions/0038-refuse-executable-git-configuration-during-delegation.md
   - docs/decisions/0040-preserve-environment-owned-python-launchers.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
+  - docs/decisions/0106-isolate-native-host-lifecycle-working-directories.md
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md
   - docs/worklog/README.md

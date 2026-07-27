@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -295,6 +296,114 @@ def test_native_subprocess_truncation_is_reported(
     result = native.run_native(["codex", "plugin", "list"], host="codex")
     assert result.ok is True
     assert result.stderr == ""
+
+
+def test_native_host_lifecycle_uses_private_cwd_outside_broad_caller_home(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.core.delegation import backends
+
+    caller_home = tmp_path / "home"
+    caller_home.mkdir()
+    user_host_cli = caller_home / "user-bin" / "codex.exe"
+    user_host_cli.parent.mkdir()
+    user_host_cli.touch()
+    launch_directory = tmp_path / "private-native-launch"
+    launch_directory.mkdir()
+    observed: dict[str, Any] = {}
+
+    @contextmanager
+    def private_launch(*, prefix: str):
+        observed["prefix"] = prefix
+        yield launch_directory
+
+    def prepare(command: list[str] | tuple[str, ...], **kwargs: Any) -> list[str]:
+        observed["prepare_command"] = list(command)
+        observed["prepare_current_directory"] = kwargs["current_directory"]
+        observed["prepare_forbidden_roots"] = kwargs["forbidden_roots"]
+        return [str(user_host_cli), *list(command)[1:]]
+
+    def run(command: list[str], **kwargs: Any) -> SimpleNamespace:
+        observed["run_command"] = list(command)
+        observed["run_kwargs"] = kwargs
+        return SimpleNamespace(
+            returncode=0,
+            stdout="{}",
+            stderr="",
+            timed_out=False,
+            stdout_truncated=False,
+            stderr_truncated=False,
+        )
+
+    monkeypatch.chdir(caller_home)
+    monkeypatch.setenv(
+        "PATH",
+        str(user_host_cli.parent) + os.pathsep + os.environ.get("PATH", ""),
+    )
+    monkeypatch.setattr(native, "private_temporary_directory", private_launch)
+    monkeypatch.setattr(native, "prepare_process_argv", prepare)
+    monkeypatch.setattr(native, "freeze_process_argv", lambda command, **_kwargs: command)
+    monkeypatch.setattr(backends, "run_bounded_process", run)
+
+    result = native.run_native([str(user_host_cli), "plugin", "list"], host="codex")
+
+    assert result.ok is True
+    assert observed["prefix"] == "native-codex"
+    assert observed["prepare_current_directory"] == launch_directory
+    assert caller_home not in observed["prepare_forbidden_roots"]
+    assert str(user_host_cli.parent.resolve()) in observed["run_kwargs"]["env"]["PATH"].split(
+        os.pathsep
+    )
+    assert observed["run_kwargs"]["cwd"] == str(launch_directory)
+
+
+def test_native_host_lifecycle_retains_ambient_repository_poison_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.core.delegation import backends
+
+    repository = tmp_path / "repository"
+    working_tree = repository / "src"
+    poisoned_bin = repository / "bin"
+    safe_bin = tmp_path / "safe-bin"
+    launch_directory = tmp_path / "private-native-launch"
+    for directory in (working_tree, poisoned_bin, safe_bin, launch_directory):
+        directory.mkdir(parents=True)
+    (repository / ".git").mkdir()
+    monkeypatch.chdir(working_tree)
+    monkeypatch.setenv("PATH", str(poisoned_bin) + os.pathsep + str(safe_bin))
+    observed: dict[str, Any] = {}
+
+    @contextmanager
+    def private_launch(*, prefix: str):
+        del prefix
+        yield launch_directory
+
+    def prepare(command: list[str] | tuple[str, ...], **kwargs: Any) -> list[str]:
+        observed["forbidden_roots"] = kwargs["forbidden_roots"]
+        return [str(safe_bin / "codex.exe"), *list(command)[1:]]
+
+    def run(_command: list[str], **kwargs: Any) -> SimpleNamespace:
+        observed["environment"] = kwargs["env"]
+        return SimpleNamespace(
+            returncode=0,
+            stdout="{}",
+            stderr="",
+            timed_out=False,
+            stdout_truncated=False,
+            stderr_truncated=False,
+        )
+
+    monkeypatch.setattr(native, "private_temporary_directory", private_launch)
+    monkeypatch.setattr(native, "prepare_process_argv", prepare)
+    monkeypatch.setattr(native, "freeze_process_argv", lambda command, **_kwargs: command)
+    monkeypatch.setattr(backends, "run_bounded_process", run)
+
+    assert native.run_native(["codex", "plugin", "list"], host="codex").ok is True
+    assert repository.resolve() in observed["forbidden_roots"]
+    assert observed["environment"]["PATH"].split(os.pathsep) == [str(safe_bin.resolve())]
 
 
 def test_bool_field_and_payload_config_direct_branches() -> None:

@@ -50,7 +50,6 @@ from agency_runtime.core.installer_inventory import (
 from agency_runtime.core.installer_native import (
     _command_environment,
     plugin_target,
-    resolve_binary,
     runtime_home,
 )
 from agency_runtime.core.installer_payloads import (
@@ -184,6 +183,7 @@ class _PreparedCodexInstall:
     python_identity: PersistentArtifactIdentity
     codex_argv: PreparedProcessArgv
     codex_environment: Mapping[str, str]
+    codex_working_directory: str
     native_state: _CodexNativeState
 
 
@@ -526,25 +526,37 @@ def _persistent_identity_digest(identity: PersistentArtifactIdentity) -> str:
 def _prepared_codex_argv(
     *,
     home_dir: str | Path | None,
-) -> tuple[PreparedProcessArgv, dict[str, str], str]:
-    executable = resolve_binary(_HOST)
-    if not executable or not Path(executable).is_absolute():
-        raise PreparedCodexInstallError("Codex executable is unavailable")
-    forbidden = repository_forbidden_roots(Path.cwd())
+) -> tuple[PreparedProcessArgv, dict[str, str], str, str]:
+    working_directory = runtime_home(home_dir=home_dir)
+    validate_private_directory(working_directory)
+    ambient_repository_roots = repository_forbidden_roots(
+        Path.cwd(),
+        include_current=False,
+    )
+    forbidden = tuple(
+        dict.fromkeys(
+            (
+                *repository_forbidden_roots(working_directory),
+                *ambient_repository_roots,
+            )
+        )
+    )
     argv = prepare_process_argv(
-        [str(executable)],
-        current_directory=Path.cwd(),
+        [_HOST],
+        current_directory=working_directory,
         forbidden_roots=forbidden,
     )
     argv.freeze_persistent(platform_name=os.name, forbidden_roots=forbidden)
     environment = _command_environment(
         _HOST,
         home_dir=home_dir,
+        current_directory=working_directory,
         forbidden_roots=forbidden,
     )
     version_result = _run_prepared(
         argv.with_arguments(["--version"]),
         environment=environment,
+        working_directory=working_directory,
         timeout=10,
     )
     version = (version_result.stdout or version_result.stderr).strip()
@@ -552,24 +564,29 @@ def _prepared_codex_argv(
         raise PreparedCodexInstallError("Codex executable version could not be proven")
     if any(ord(character) < 32 and character not in "\t" for character in version):
         raise PreparedCodexInstallError("Codex executable version is invalid")
-    return argv, environment, version
+    return argv, environment, version, str(working_directory)
 
 
 def _run_prepared(
     argv: PreparedProcessArgv,
     *,
     environment: Mapping[str, str],
+    working_directory: str | Path | None = None,
     timeout: float = 30,
 ) -> NativeCommandResult:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
     argv.revalidate()
-    working_directory = Path(argv[0]).parent
-    _directory_identity(working_directory, label="Codex executable directory")
+    if working_directory is None:
+        launch_directory = Path(argv[0]).parent
+        _directory_identity(launch_directory, label="Codex executable directory")
+    else:
+        launch_directory = Path(working_directory)
+        validate_private_directory(launch_directory)
     bounded = run_bounded_process(
         argv,
         timeout=timeout,
-        cwd=str(working_directory),
+        cwd=str(launch_directory),
         env=dict(environment),
         max_output_chars=MAX_NATIVE_OUTPUT_CHARS,
     )
@@ -609,16 +626,19 @@ def _strict_native_state(
     argv: PreparedProcessArgv,
     *,
     environment: Mapping[str, str],
+    working_directory: str | Path | None = None,
     target: Path,
     steps: list[dict[str, Any]] | None = None,
 ) -> _CodexNativeState:
     inventory_result = _run_prepared(
         argv.with_arguments(["plugin", "list", "--json"]),
         environment=environment,
+        working_directory=working_directory,
     )
     marketplace_result = _run_prepared(
         argv.with_arguments(["plugin", "marketplace", "list", "--json"]),
         environment=environment,
+        working_directory=working_directory,
     )
     if steps is not None:
         steps.extend(
@@ -800,10 +820,11 @@ def _prepare(
         files,
         launcher_plan_sha256=launcher_digest,
     )
-    argv, environment, codex_version = _prepared_codex_argv(home_dir=home_dir)
+    argv, environment, codex_version, working_directory = _prepared_codex_argv(home_dir=home_dir)
     native = _strict_native_state(
         argv,
         environment=environment,
+        working_directory=working_directory,
         target=target,
     )
     if not native.plugin_present or native.plugin_enabled is not True:
@@ -855,6 +876,7 @@ def _prepare(
         python_identity=python_identity,
         codex_argv=argv,
         codex_environment=dict(environment),
+        codex_working_directory=working_directory,
         native_state=native,
     )
 
@@ -1002,6 +1024,7 @@ def _native_command(
     result = _run_prepared(
         prepared.codex_argv.with_arguments(arguments),
         environment=prepared.codex_environment,
+        working_directory=prepared.codex_working_directory,
         timeout=timeout,
     )
     steps.append({"name": name, **result.to_dict()})
@@ -1187,6 +1210,7 @@ def _native_state_or_none(
         return _strict_native_state(
             prepared.codex_argv,
             environment=prepared.codex_environment,
+            working_directory=prepared.codex_working_directory,
             target=prepared.target,
             steps=steps,
         )
@@ -1581,6 +1605,7 @@ def refresh_existing_codex_adapter(
             native_after_swap = _strict_native_state(
                 prepared.codex_argv,
                 environment=prepared.codex_environment,
+                working_directory=prepared.codex_working_directory,
                 target=prepared.target,
                 steps=steps,
             )
@@ -1599,6 +1624,7 @@ def refresh_existing_codex_adapter(
             absent = _strict_native_state(
                 prepared.codex_argv,
                 environment=prepared.codex_environment,
+                working_directory=prepared.codex_working_directory,
                 target=prepared.target,
                 steps=steps,
             )
@@ -1619,6 +1645,7 @@ def refresh_existing_codex_adapter(
             final = _strict_native_state(
                 prepared.codex_argv,
                 environment=prepared.codex_environment,
+                working_directory=prepared.codex_working_directory,
                 target=prepared.target,
                 steps=steps,
             )

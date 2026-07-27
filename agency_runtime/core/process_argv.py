@@ -298,19 +298,22 @@ def sanitized_executable_search_path(
 
 def repository_forbidden_roots(
     current_directory: str | Path | None = None,
+    *,
+    include_current: bool = True,
 ) -> tuple[Path, ...]:
     """Return an inert, canonical boundary for repository-adjacent execution.
 
     No Git command, hook, configuration, or repository-owned executable is
-    consulted.  The exact working directory is always excluded, and every
-    ancestor carrying a recognized repository marker is excluded as a whole so
-    sibling ``bin`` directories cannot win executable discovery from a nested
-    working directory.
+    consulted.  Every ancestor carrying a recognized repository marker is
+    excluded as a whole so sibling ``bin`` directories cannot win executable
+    discovery from a nested working directory.  The exact supplied directory
+    is also excluded by default; repository-independent host lifecycle callers
+    may omit that broad tree while retaining every marker-derived boundary.
     """
 
     current = Path.cwd() if current_directory is None else Path(current_directory)
     current = current.expanduser().resolve(strict=True)
-    roots = [current]
+    roots = [current] if include_current else []
     for candidate in (current, *current.parents):
         marker_found = False
         for marker_name in _REPOSITORY_MARKERS:
