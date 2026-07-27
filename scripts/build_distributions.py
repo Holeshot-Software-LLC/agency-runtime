@@ -403,6 +403,24 @@ def materialize_reviewed_sources(
     return entries
 
 
+def _expected_materialized_file_mode(
+    path: Path,
+    *,
+    platform_name: str | None = None,
+) -> int:
+    """Return the mode CPython can faithfully report for canonical source bytes."""
+
+    effective_platform = os.name if platform_name is None else platform_name
+    if effective_platform != "nt":
+        return 0o644
+    # Windows has no POSIX execute bit. CPython projects .exe files as executable
+    # even after chmod(0o644), while ordinary writable files are reported as 0666.
+    # The authenticated Git manifest separately requires every source blob to be
+    # mode 100644, so accepting this projection does not accept an executable Git
+    # tree entry.
+    return 0o777 if path.suffix.casefold() == ".exe" else 0o666
+
+
 def _validate_materialized_entry_contract(
     entry: ReleaseEntry,
     *,
@@ -445,7 +463,7 @@ def _verify_materialized_entry(source: Path, entry: ReleaseEntry) -> None:
             "materialized release source must be a single-link regular file: "
             f"{entry.path.as_posix()}"
         )
-    expected_mode = 0o666 if os.name == "nt" else 0o644
+    expected_mode = _expected_materialized_file_mode(target)
     if stat.S_IMODE(before_path.st_mode) != expected_mode:
         raise RuntimeError(
             f"materialized release source has a noncanonical mode: {entry.path.as_posix()}"

@@ -1304,6 +1304,22 @@ def test_materialized_source_readback_rejects_unsafe_file_contracts(
         subject._verify_materialized_entry(source, entry)
 
 
+def test_materialized_source_mode_matches_windows_executable_projection() -> None:
+    assert (
+        subject._expected_materialized_file_mode(Path("reviewed.exe"), platform_name="nt") == 0o777
+    )
+    assert (
+        subject._expected_materialized_file_mode(Path("REVIEWED.EXE"), platform_name="nt") == 0o777
+    )
+    assert (
+        subject._expected_materialized_file_mode(Path("reviewed.py"), platform_name="nt") == 0o666
+    )
+    assert (
+        subject._expected_materialized_file_mode(Path("reviewed.exe"), platform_name="posix")
+        == 0o644
+    )
+
+
 def test_materialized_source_readback_bounds_growth_and_path_disappearance(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

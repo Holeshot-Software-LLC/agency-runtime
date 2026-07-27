@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
+  - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/RELEASE_CHECKLIST.md
@@ -21,7 +22,7 @@ epic: release
 issue_id: AR-160
 priority: p0
 tracker_url: null
-depends_on: [AR-107]
+depends_on: [AR-107, AR-167]
 blocks: [AR-143, AR-161]
 ---
 

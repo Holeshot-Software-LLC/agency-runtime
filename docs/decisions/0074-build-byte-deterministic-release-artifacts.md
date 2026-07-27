@@ -7,6 +7,7 @@ updated: 2026-07-20
 tags: [release, packaging, reproducibility, git, archives, portability]
 related:
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
+  - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - scripts/build_distributions.py
   - scripts/canonicalize_distributions.py
