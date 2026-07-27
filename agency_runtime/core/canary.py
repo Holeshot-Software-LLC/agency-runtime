@@ -26,6 +26,7 @@ from agency_runtime.core import canary_backends as _backends
 from agency_runtime.core import canary_proof as _proof
 from agency_runtime.core.bounded_io import (
     FileSizeLimitError,  # noqa: F401 - historical facade attribute
+    atomic_write_text,
     read_bounded_regular_file,  # noqa: F401 - monkeypatch compatibility
 )
 from agency_runtime.core.bounded_json import safe_load_bounded_json
@@ -40,13 +41,21 @@ from agency_runtime.core.store.sqlite import (
 )
 
 CANARY_PROMPT = (
-    "Review this proposed Python change: in a text-normalization helper, replace "
-    "'return value' with 'return value.strip()'. In one concise sentence, identify "
-    "the main behavioral risk while following the installed Agency Runtime routing "
-    "and required response format. Do not modify files, use tools, call external "
-    "services, or expose secrets."
+    "Treat this as exactly one indivisible code-review work unit and do not split it: "
+    "identify the primary behavioral regression risk of replacing return value with "
+    "return value.strip() in a Python text-normalization helper."
 )
 CANARY_EXPECTED_SPECIALIST = "code-reviewer"
+CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
+    "This is a bounded Agency Runtime activation canary. If the current task contains "
+    "[AGENCY EXACT SPECIALIST ACTIVATION v1], you are the sole delegated child: perform "
+    "the requested review directly, use no tools, and return one concise sentence. "
+    "Otherwise you are the parent: follow the injected [AGENCY DELEGATION PLAN], require "
+    "exactly one row, call spawn_agent exactly once with that row's exact native_task_name "
+    "and exact goal, and use wait_agent only as needed until that sole child completes. "
+    "Use no other tools. Return the child's conclusion with the required Agency header. "
+    "Do not modify files, call external services, or expose secrets."
+)
 NATIVE_ONLY_CANARY_PROMPT = (
     "Agency Runtime native-only installation canary. Reply with a concise plain "
     "confirmation. Do not emit an Agency header, modify files, call external "
@@ -77,6 +86,10 @@ CODEX_CURRENT_PROFILE_EXEC_OPTIONS = (
     "apps._default.enabled=false",
     "-c",
     "mcp_servers={}",
+    "-c",
+    "agents.enabled=true",
+    "-c",
+    f"developer_instructions={json.dumps(CODEX_CANARY_DEVELOPER_INSTRUCTIONS)}",
     "--skip-git-repo-check",
     "-",
 )
@@ -309,7 +322,7 @@ def _complete_successful_canary(
     ):
         report["attestation_persisted"] = False
         return
-    if mode == "native-only":
+    if mode == "native-only" or host != "codex" or assessment.profile_scope != "current-profile":
         report["attestation_persisted"] = False
         report["canary_passed"] = True
         return
@@ -345,14 +358,36 @@ def _terminate_failed_canary_runs(
 ) -> None:
     """Close only active runs bound to this exact failed canary request."""
 
-    if (
-        preparation.store is None
-        or preparation.expected_query_hash is None
-        or not isinstance(evidence, Mapping)
-    ):
+    if preparation.store is None or preparation.expected_query_hash is None:
+        return
+    exact_closer = getattr(preparation.store, "fail_canary_runs_for_request", None)
+    if callable(exact_closer):
+        try:
+            closed = list(
+                exact_closer(
+                    host=host,
+                    request_fingerprint=preparation.expected_query_hash,
+                )
+            )
+        except Exception:
+            report["unmet_prerequisites"].append(
+                "failed canary runs could not be terminated by exact request identity"
+            )
+            return
+        report["failed_run_cleanup"] = {
+            "candidate_count": len(closed),
+            "closed_count": len(closed),
+            "closed_run_ids": closed,
+            "scope": "exact_request_fingerprint",
+        }
+        return
+    if not isinstance(evidence, Mapping):
         return
     new_ids = evidence.get("new_ids")
     run_ids = new_ids.get("runs", []) if isinstance(new_ids, Mapping) else []
+    run = evidence.get("run")
+    if isinstance(run, Mapping) and run.get("id"):
+        run_ids = list(dict.fromkeys([*run_ids, str(run["id"])]))
     closed: list[str] = []
     errors = 0
     for run_id in run_ids:
@@ -395,6 +430,46 @@ def _report_failed_canary_invocation(
     report["unmet_prerequisites"].append(error)
 
 
+def _invalidate_prior_current_profile_attestation(
+    report: dict[str, Any],
+    *,
+    host: str,
+    profile_scope: str,
+    store: Any,
+) -> bool:
+    """Make an explicitly requested current-profile recheck fail closed."""
+
+    if profile_scope != "current-profile":
+        return True
+    invalidator = getattr(store, "clear_host_canary_attestation", None)
+    if not callable(invalidator):
+        report["unmet_prerequisites"].append(
+            "prior current-profile attestation could not be invalidated before verification"
+        )
+        return False
+    try:
+        report["prior_attestation_invalidated"] = bool(invalidator(host))
+    except Exception:
+        report["unmet_prerequisites"].append(
+            "prior current-profile attestation could not be invalidated before verification"
+        )
+        return False
+    return True
+
+
+def _validate_canary_request(host: str, *, mode: str, profile_scope: str) -> None:
+    """Reject unsupported canary combinations before any host or Store access."""
+
+    if host not in SUPPORTED_HOSTS:
+        raise ValueError(f"unsupported host: {host}")
+    if mode not in CANARY_MODES:
+        raise ValueError(f"unsupported canary mode: {mode}")
+    if profile_scope not in CANARY_PROFILE_SCOPES:
+        raise ValueError(f"unsupported canary profile scope: {profile_scope}")
+    if profile_scope == "current-profile" and (host != "codex" or mode != "agency"):
+        raise ValueError("current-profile canaries support Codex Agency mode only")
+
+
 def run_canary(
     host: str,
     *,
@@ -408,14 +483,7 @@ def run_canary(
     backend_factory: Callable[..., Any] = _backend,
 ) -> dict[str, Any]:
     """Build a nonmutating readiness report or run an exact-confirmed canary."""
-    if host not in SUPPORTED_HOSTS:
-        raise ValueError(f"unsupported host: {host}")
-    if mode not in CANARY_MODES:
-        raise ValueError(f"unsupported canary mode: {mode}")
-    if profile_scope not in CANARY_PROFILE_SCOPES:
-        raise ValueError(f"unsupported canary profile scope: {profile_scope}")
-    if profile_scope == "current-profile" and (host != "codex" or mode != "agency"):
-        raise ValueError("current-profile canaries support Codex Agency mode only")
+    _validate_canary_request(host, mode=mode, profile_scope=profile_scope)
     timeout = _validated_timeout(timeout)
     path = Path(db_path).expanduser() if db_path else _default_db_path()
     assessment = _assess_readiness(host, path, inspector, profile_scope=profile_scope)
@@ -450,6 +518,13 @@ def run_canary(
             "safe canary preparation returned incomplete invocation state"
         )
         return report
+    if not _invalidate_prior_current_profile_attestation(
+        report,
+        host=host,
+        profile_scope=assessment.profile_scope,
+        store=preparation.store,
+    ):
+        return report
     report["live_attempted"] = True
     outcome = _invoke_and_collect_evidence(
         preparation,
@@ -457,6 +532,7 @@ def run_canary(
         path=path,
         prompt=preparation.prompt,
         expected_query_hash=preparation.expected_query_hash,
+        mode=mode,
     )
     if outcome.error:
         _report_failed_canary_invocation(
@@ -556,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.output:
-        Path(args.output).expanduser().write_text(rendered, encoding="utf-8")
+        atomic_write_text(Path(args.output), rendered)
     sys.stdout.write(rendered)
     return 0 if (report["canary_passed"] if args.execute else report["ready"]) else 1
 

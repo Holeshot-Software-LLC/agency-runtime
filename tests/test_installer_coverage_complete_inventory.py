@@ -232,6 +232,8 @@ def test_native_version_and_host_version_validation_is_conservative() -> None:
 
 def _attestation(**overrides: Any) -> dict[str, Any]:
     value: dict[str, Any] = {
+        "proof_contract": "agency.codex-activation-canary.v1",
+        "proof_digest": "a" * 64,
         "profile_scope": "current-profile",
         "platform_system": platform.system(),
         "platform_release": platform.release(),

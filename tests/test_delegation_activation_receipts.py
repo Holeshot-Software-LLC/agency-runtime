@@ -1369,7 +1369,8 @@ def _read_activation_receipt(path: Path) -> dict[str, object]:
     try:
         row = conn.execute(
             "SELECT id, token_hash, grant_id, grant_payload, grant_issued_unix, "
-            "grant_expires_unix, child_host, session_id, trace_id, work_unit_id, "
+            "grant_expires_unix, child_host, grant_origin, tool_use_id, session_id, "
+            "trace_id, work_unit_id, "
             "specialist_slug, specialist_version, specialist_prompt_hash, worker_kind, "
             "worker_id, native_run_id, created_at, consumed_at, delegation_event_id "
             "FROM delegation_activation_receipts"
@@ -1406,7 +1407,14 @@ def test_store_upgrade_defers_public_grant_index_until_legacy_columns_exist(
         conn.close()
 
     migrated = _read_activation_receipt(path)
-    assert {"grant_id", "grant_payload", "grant_issued_unix", "grant_expires_unix"} <= columns
+    assert {
+        "grant_id",
+        "grant_payload",
+        "grant_issued_unix",
+        "grant_expires_unix",
+        "grant_origin",
+        "tool_use_id",
+    } <= columns
     assert "idx_activation_grants_public_id" in indexes
     assert version == SCHEMA_VERSION
     assert receipt_count == 1
@@ -1417,6 +1425,8 @@ def test_store_upgrade_defers_public_grant_index_until_legacy_columns_exist(
         "grant_issued_unix": 0,
         "grant_expires_unix": 0,
         "child_host": "",
+        "grant_origin": "manual_api",
+        "tool_use_id": "",
     }
     assert upgraded._current_schema_state() == (True, True)
     assert reopened._current_schema_state() == (True, True)

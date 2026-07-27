@@ -17,6 +17,7 @@ from typing import Any
 from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.installer_contracts import (
+    CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
     CODEX_HOOK_TRUST_ACTION,
     CODEX_HOOK_TRUST_COMMAND,
     CODEX_HOOK_TRUST_SURFACE,
@@ -153,7 +154,8 @@ def _read_canary_attestation(host: str) -> dict[str, Any] | None:
             if table is None:
                 return None
             row = conn.execute(
-                "SELECT host, profile_scope, platform_system, platform_release, platform_machine, "
+                "SELECT host, proof_contract, proof_digest, profile_scope, "
+                "platform_system, platform_release, platform_machine, "
                 "host_version, plugin_version, install_id, bundle_digest, "
                 "passed_at, trace_id "
                 "FROM host_canary_attestations WHERE host = ?",
@@ -439,6 +441,13 @@ def _canary_attestation_state(
         "platform_machine": platform.machine(),
     }
     stale: list[str] = []
+    if attestation.get("proof_contract") != CODEX_ACTIVATION_CANARY_PROOF_CONTRACT:
+        stale.append("proof_contract")
+    proof_digest = str(attestation.get("proof_digest") or "")
+    if len(proof_digest) != 64 or any(
+        character not in "0123456789abcdef" for character in proof_digest
+    ):
+        stale.append("proof_digest")
     if attestation.get("profile_scope") != "current-profile":
         stale.append("profile_scope")
     for platform_field, expected in expected_platform.items():
@@ -899,8 +908,8 @@ def _failed_inspection(host: str, exc: Exception) -> dict[str, Any]:
         "enabled": None,
         "loaded": None,
         "canary": None,
-        "canary_attestation_status": "absent",
-        "canary_stale_reasons": [],
+        "canary_attestation_status": "inspection-unavailable",
+        "canary_stale_reasons": ["host_inspection"],
         "canary_attestation": None,
         "host_version": None,
         "managed_plugin_version": None,
@@ -912,7 +921,7 @@ def _failed_inspection(host: str, exc: Exception) -> dict[str, Any]:
         "hook_trust_action": None,
         "hook_trust_surface": None,
         "hook_trust_command": None,
-        "maturity": "host-registration-unverified",
+        "maturity": "inspection-error",
         "native_lifecycle": HOSTS[host]["native_lifecycle"],
         "evidence": [f"inspection:error:{type(exc).__name__}"],
         "inventory_error": _bounded_exception(exc),

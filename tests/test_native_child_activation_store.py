@@ -99,6 +99,30 @@ def _consume(
     )
 
 
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"grant_origin": True}, "must be a string"),
+        ({"grant_origin": "unknown"}, "supported activation authority"),
+        ({"grant_origin": "native_hook"}, "requires the exact tool_use_id"),
+        ({"tool_use_id": "spawn-call"}, "reserved for native_hook activation"),
+        (
+            {"grant_origin": "native_hook", "tool_use_id": "x" * 513},
+            "512-byte UTF-8 limit",
+        ),
+    ],
+)
+def test_activation_grant_provenance_is_fail_closed(
+    tmp_path: Path,
+    changes: dict[str, object],
+    message: str,
+) -> None:
+    store, slug, unit = _isolated_turn(tmp_path / "invalid-provenance.db")
+
+    with pytest.raises(ValueError, match=message):
+        _prepare(store, slug, unit, **changes)
+
+
 def test_public_grant_and_consumption_are_exact_separate_and_evidence_gated(
     tmp_path: Path,
 ) -> None:
@@ -176,6 +200,8 @@ def test_public_grant_and_consumption_are_exact_separate_and_evidence_gated(
     )
     assert str(prepared["activation_token"]) not in grant_row["grant_payload"]
     assert "token_hash" not in grant.as_dict()
+    assert grant_row["grant_origin"] == "manual_api"
+    assert grant_row["tool_use_id"] == ""
     assert consumption_count == loaded_count == 0
     assert event is None or event["activation_receipt_id"] is None
 

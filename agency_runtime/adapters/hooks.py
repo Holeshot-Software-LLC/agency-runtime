@@ -731,6 +731,7 @@ class HookBridge:
         tool_use_id: str,
         native_label: str,
         host: str,
+        native_goal_hash: str = "",
     ) -> NativeChildAssignment | None:
         """Resolve one exact selected reference from one persisted plan snapshot."""
 
@@ -779,7 +780,14 @@ class HookBridge:
                 expected_label = (
                     codex_task_name_for_work_unit(work_unit_id) if host == "codex" else work_unit_id
                 )
-                if expected_label == native_label:
+                label_matches = bool(native_label) and expected_label == native_label
+                goal_matches = (
+                    host == "codex"
+                    and not native_label
+                    and bool(native_goal_hash)
+                    and goal_hash == native_goal_hash
+                )
+                if label_matches or goal_matches:
                     candidates.append(
                         (
                             work_unit_id,
@@ -832,6 +840,7 @@ class HookBridge:
         """Resolve one exact persisted row without callback-order correlation."""
 
         tool_name = _optional_string(payload, "tool_name")
+        native_goal_hash = ""
         if self.host in {"claude", "zcode"}:
             if tool_name != _CLAUDE_AGENT_TOOL_NAME:
                 return None
@@ -839,8 +848,17 @@ class HookBridge:
         else:
             if tool_name not in _CODEX_SPAWN_TOOL_NAMES:
                 return None
-            native_label = _first_string(_dict_or_empty(tool_input), "task_name")
-        if not native_label:
+            args = _dict_or_empty(tool_input)
+            native_label = _first_string(args, "task_name")
+            message = _first_string(args, "message")
+            delivery = parse_native_child_prompt_delivery(message)
+            original_message = delivery.original_task if delivery is not None else message
+            native_goal_hash = (
+                work_unit_goal_hash(original_message)
+                if not native_label and original_message
+                else ""
+            )
+        if not native_label and not (self.host == "codex" and native_goal_hash):
             return None
         correlation = self._correlation(payload, tool_input)
         if not correlation.tool_use_id:
@@ -863,6 +881,7 @@ class HookBridge:
             trace_id=resolved_trace,
             tool_use_id=correlation.tool_use_id,
             native_label=native_label,
+            native_goal_hash=native_goal_hash if self.host == "codex" else "",
             host=self.host,
         )
 
@@ -944,6 +963,8 @@ class HookBridge:
                 specialist_slug=delivery.specialist_slug,
                 specialist_version=delivery.specialist_version,
                 specialist_prompt_hash=delivery.specialist_prompt_hash,
+                grant_origin="native_hook",
+                tool_use_id=delivery.tool_use_id,
             )
         except Exception:
             verified = False
@@ -1073,6 +1094,8 @@ class HookBridge:
                 specialist_slug=assignment.specialist_slug,
                 work_unit_id=assignment.work_unit_id,
                 worker_kind="generic-worker",
+                grant_origin="native_hook",
+                tool_use_id=assignment.tool_use_id,
                 **activation_contract,
             )
             if (

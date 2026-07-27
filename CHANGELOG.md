@@ -37,6 +37,18 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex activation verification now proves one exact native child across JSONL
+  tool identity, immutable hook provenance, activation consumption, lifecycle,
+  model/delegation evidence, accepted finalization, response header, and current
+  install identity. Ambiguous native delegation remains under Codex scheduler
+  control, failed rechecks cannot reuse an older attestation, and isolated or
+  tokenless diagnostics cannot promote readiness.
+- Expired dashboard host inspection no longer retains verified canary or
+  maturity claims. The read-only Codex card distinguishes current, historical,
+  absent, and unavailable activation proof and exposes no execution action.
+- Canary and install JSON reports now replace their output atomically instead of
+  exposing partial evidence files after interruption.
+
 - Named high-assurance standards now remain typed independent-review staffing
   requirements. Generic reviewers cannot satisfy a regulated certification
   claim; the runtime instead selects an explicitly qualified governed contract

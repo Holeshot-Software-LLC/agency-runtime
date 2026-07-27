@@ -236,6 +236,8 @@ def test_store_evidence_and_roster_persistence_error_and_update_paths(tmp_path: 
     with pytest.raises(ValueError, match="complete host canary"):
         store.record_host_canary_attestation(
             host="",
+            proof_contract="agency.codex-activation-canary.v1",
+            proof_digest="a" * 64,
             profile_scope="current-profile",
             platform_system="Windows",
             platform_release="11",
@@ -249,7 +251,24 @@ def test_store_evidence_and_roster_persistence_error_and_update_paths(tmp_path: 
     with pytest.raises(ValueError, match="profile_scope"):
         store.record_host_canary_attestation(
             host="codex",
+            proof_contract="agency.codex-activation-canary.v1",
+            proof_digest="a" * 64,
             profile_scope="invalid",
+            platform_system="Windows",
+            platform_release="11",
+            platform_machine="x86_64",
+            host_version="1",
+            plugin_version="1",
+            install_id="install",
+            bundle_digest="digest",
+            trace_id="trace",
+        )
+    with pytest.raises(ValueError, match="Codex current-profile"):
+        store.record_host_canary_attestation(
+            host="codex",
+            proof_contract="agency.codex-activation-canary.v1",
+            proof_digest="a" * 64,
+            profile_scope="isolated-profile",
             platform_system="Windows",
             platform_release="11",
             platform_machine="x86_64",
@@ -323,6 +342,8 @@ def test_canary_attestation_postcondition_fails_closed() -> None:
     with pytest.raises(RuntimeError, match="postcondition"):
         store.record_host_canary_attestation(
             host="codex",
+            proof_contract="agency.codex-activation-canary.v1",
+            proof_digest="a" * 64,
             profile_scope="current-profile",
             platform_system="Windows",
             platform_release="11",

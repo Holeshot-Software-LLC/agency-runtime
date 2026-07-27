@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import stat
+import tempfile
 from pathlib import Path
 
 
@@ -132,10 +133,40 @@ def read_bounded_regular_file(
     return payload
 
 
+def atomic_write_text(path: Path, content: str) -> None:
+    """Durably replace a text artifact without exposing a partial final file."""
+
+    target = path.expanduser()
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+        dir=target.parent,
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
+            descriptor = -1
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, target)
+        if os.name != "nt":
+            directory = os.open(target.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        temporary.unlink(missing_ok=True)
+
+
 __all__ = [
     "BoundedFileError",
     "FileSizeLimitError",
     "UnsafeFileError",
+    "atomic_write_text",
     "read_bounded_regular_file",
     "restrict_posix_path_permissions",
 ]

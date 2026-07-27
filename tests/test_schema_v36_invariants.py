@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import platform
 import sqlite3
 from pathlib import Path
 
@@ -54,7 +55,7 @@ def _insert_consumption(
     return "receipt-v36", "consumption-v36"
 
 
-def test_schema_v37_accepts_zcode_and_guards_append_only_consumption(
+def test_schema_v38_accepts_zcode_and_guards_append_only_consumption(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "v36.db")
@@ -82,10 +83,37 @@ def test_schema_v37_accepts_zcode_and_guards_append_only_consumption(
     finally:
         connection.close()
     assert remaining == 0
-    assert version == SCHEMA_VERSION == 37
+    assert version == SCHEMA_VERSION == 38
 
 
-def test_schema_v37_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
+@pytest.mark.parametrize(
+    ("grant_origin", "tool_use_id"),
+    [("manual_api", "spawn-call"), ("native_hook", "")],
+)
+def test_schema_v38_rejects_invalid_activation_grant_provenance(
+    tmp_path: Path,
+    grant_origin: str,
+    tool_use_id: str,
+) -> None:
+    store = Store(tmp_path / "invalid-provenance.db")
+    connection = store._connect()
+    try:
+        with pytest.raises(sqlite3.IntegrityError, match="provenance is invalid"):
+            connection.execute(
+                "INSERT INTO delegation_activation_receipts "
+                "(id, token_hash, grant_origin, tool_use_id, session_id, trace_id, "
+                "work_unit_id, specialist_slug, specialist_version, "
+                "specialist_prompt_hash, worker_kind, created_at) VALUES "
+                "('invalid-provenance', 'token', ?, ?, 'session', 'trace', 'unit', "
+                "'code-reviewer', 'v1', 'prompt-hash', 'generic-worker', 'now')",
+                (grant_origin, tool_use_id),
+            )
+    finally:
+        connection.rollback()
+        connection.close()
+
+
+def test_schema_v38_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "upgrade.db"
@@ -136,10 +164,10 @@ def test_schema_v37_upgrade_preserves_v35_activation_evidence_and_is_idempotent(
         finally:
             connection.close()
         assert tuple(row) == ("claude", "code-reviewer")
-        assert version == SCHEMA_VERSION == 37
+        assert version == SCHEMA_VERSION == 38
 
 
-def test_schema_v37_upgrade_adds_native_child_scope_authority_idempotently(
+def test_schema_v38_upgrade_adds_native_child_scope_authority_idempotently(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "v36-to-v37.db"
@@ -170,7 +198,65 @@ def test_schema_v37_upgrade_adds_native_child_scope_authority_idempotently(
             connection.close()
         assert {"token_hash", "parent_trace_id", "consumed_unix"}.issubset(columns)
         assert trigger is not None
-        assert version == SCHEMA_VERSION == 37
+        assert version == SCHEMA_VERSION == 38
+
+
+def test_schema_v38_upgrades_v37_attestation_and_hook_provenance_columns(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "v37-to-v38.db"
+    store = Store(path)
+    store.record_host_canary_attestation(
+        host="codex",
+        proof_contract="agency.codex-activation-canary.v1",
+        proof_digest="a" * 64,
+        profile_scope="current-profile",
+        platform_system=platform.system(),
+        platform_release=platform.release(),
+        platform_machine=platform.machine(),
+        host_version="codex 0.145.0",
+        plugin_version="0.1.0",
+        install_id="install-v37",
+        bundle_digest="b" * 64,
+        trace_id="trace-v37",
+        passed_at="2026-07-27T00:00:00+00:00",
+    )
+    connection = store._connect()
+    try:
+        for name in DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES:
+            connection.execute(f"DROP TRIGGER IF EXISTS {name}")  # nosec B608
+        connection.execute("ALTER TABLE delegation_activation_receipts DROP COLUMN tool_use_id")
+        connection.execute("ALTER TABLE delegation_activation_receipts DROP COLUMN grant_origin")
+        connection.execute("ALTER TABLE host_canary_attestations DROP COLUMN proof_digest")
+        connection.execute("ALTER TABLE host_canary_attestations DROP COLUMN proof_contract")
+        connection.execute("UPDATE schema_version SET version = 37")
+        connection.commit()
+    finally:
+        connection.close()
+
+    for _attempt in range(2):
+        reopened = Store(path)
+        assert reopened._current_schema_state() == (True, True)
+        connection = reopened._connect()
+        try:
+            version = connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+            grant_columns = {
+                str(row["name"])
+                for row in connection.execute("PRAGMA table_info(delegation_activation_receipts)")
+            }
+            attestation_columns = {
+                str(row["name"])
+                for row in connection.execute("PRAGMA table_info(host_canary_attestations)")
+            }
+        finally:
+            connection.close()
+        attestation = reopened.get_host_canary_attestation("codex")
+        assert {"grant_origin", "tool_use_id"}.issubset(grant_columns)
+        assert {"proof_contract", "proof_digest"}.issubset(attestation_columns)
+        assert attestation is not None
+        assert attestation["proof_contract"] == ""
+        assert attestation["proof_digest"] == ""
+        assert version == SCHEMA_VERSION == 38
 
 
 @pytest.mark.parametrize(
@@ -180,10 +266,19 @@ def test_schema_v37_upgrade_adds_native_child_scope_authority_idempotently(
         "DROP INDEX idx_worker_runs_native_scope",
         "DROP TRIGGER agency_agent_sources_boolean_insert_guard",
         "DROP TRIGGER agency_native_child_parent_scope_consume_once",
+        "ALTER TABLE host_canary_attestations DROP COLUMN proof_digest",
+        "DROP INDEX idx_routing_query_hash",
     ],
-    ids=["consumption-guard", "native-run-unique-index", "boolean-guard", "child-scope-guard"],
+    ids=[
+        "consumption-guard",
+        "native-run-unique-index",
+        "boolean-guard",
+        "child-scope-guard",
+        "attestation-proof-column",
+        "canary-query-index",
+    ],
 )
-def test_schema_v37_currentness_rejects_missing_critical_objects(
+def test_schema_v38_currentness_rejects_missing_critical_objects(
     tmp_path: Path,
     statement: str,
 ) -> None:
@@ -198,7 +293,7 @@ def test_schema_v37_currentness_rejects_missing_critical_objects(
     assert store._current_schema_state() == (False, True)
 
 
-def test_schema_v37_currentness_rejects_same_name_noop_trigger(
+def test_schema_v38_currentness_rejects_same_name_noop_trigger(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "altered-trigger.db")
@@ -218,7 +313,7 @@ def test_schema_v37_currentness_rejects_same_name_noop_trigger(
     assert repaired._current_schema_state() == (True, True)
 
 
-def test_schema_v37_currentness_rejects_weakened_consumption_table(
+def test_schema_v38_currentness_rejects_weakened_consumption_table(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "weakened-consumption.db")
@@ -258,7 +353,7 @@ def test_schema_v37_currentness_rejects_weakened_consumption_table(
         Store(store.db_path)
 
 
-def test_schema_v37_currentness_rejects_same_name_noop_workforce_guard(
+def test_schema_v38_currentness_rejects_same_name_noop_workforce_guard(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "altered-workforce-trigger.db")
@@ -278,7 +373,7 @@ def test_schema_v37_currentness_rejects_same_name_noop_workforce_guard(
     assert repaired._current_schema_state() == (True, True)
 
 
-def test_schema_v37_currentness_preserves_quoted_remediation_literals(
+def test_schema_v38_currentness_preserves_quoted_remediation_literals(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "altered-remediation-literal.db")
@@ -306,7 +401,7 @@ def test_schema_v37_currentness_preserves_quoted_remediation_literals(
     assert repaired._current_schema_state() == (True, True)
 
 
-def test_schema_v37_currentness_accepts_keyword_case_and_whitespace_only(
+def test_schema_v38_currentness_accepts_keyword_case_and_whitespace_only(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "formatted-workforce-trigger.db")
@@ -328,7 +423,7 @@ def test_schema_v37_currentness_accepts_keyword_case_and_whitespace_only(
     assert store._current_schema_state() == (True, True)
 
 
-def test_schema_v37_currentness_rejects_weakened_native_child_scope_checks(
+def test_schema_v38_currentness_rejects_weakened_native_child_scope_checks(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "weakened-child-scope.db")

@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.bounded_io import atomic_write_text
 from agency_runtime.core.config import AgencyConfig, load_config
 from agency_runtime.core.configuration import resolve_config_path
 from agency_runtime.core.dashboard_service_core import dashboard_service_environment_overrides
@@ -451,13 +452,24 @@ def _codex_activation_state(
     verification: dict[str, Any] | None = None
     if verify:
         try:
-            verification = canary_runner(
+            candidate = canary_runner(
                 "codex",
                 execute=True,
                 confirm="RUN LIVE codex CURRENT-PROFILE CANARY",
                 timeout=timeout,
                 mode="agency",
                 profile_scope="current-profile",
+            )
+            verification = (
+                dict(candidate)
+                if isinstance(candidate, Mapping)
+                else {
+                    "canary_passed": False,
+                    "profile_scope": "current-profile",
+                    "unmet_prerequisites": [
+                        "current-profile verification returned an invalid result"
+                    ],
+                }
             )
         except Exception:
             verification = {
@@ -470,8 +482,12 @@ def _codex_activation_state(
     except Exception:
         inspected = {}
     attestation = inspected.get("canary_attestation")
+    latest_verification_passed = not verify or bool(
+        isinstance(verification, Mapping) and verification.get("canary_passed") is True
+    )
     ready = bool(
-        inspected.get("canary") is True
+        latest_verification_passed
+        and inspected.get("canary") is True
         and inspected.get("canary_attestation_status") == "verified"
         and isinstance(attestation, Mapping)
         and attestation.get("profile_scope") == "current-profile"
@@ -1480,9 +1496,9 @@ def cmd_host_canary(
         profile_scope=str(getattr(args, "profile_scope", "isolated-profile")),
     )
     if args.output:
-        Path(args.output).expanduser().write_text(
+        atomic_write_text(
+            Path(args.output),
             json.dumps(report, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
         )
     dependencies.emit_json(report)
     return 0 if (report["canary_passed"] if args.execute else report["ready"]) else 1

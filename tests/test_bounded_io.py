@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from agency_runtime.core.bounded_io import read_bounded_regular_file
+from agency_runtime.core.bounded_io import atomic_write_text, read_bounded_regular_file
 
 
 def test_bounded_file_reads_regular_content(tmp_path: Path) -> None:
@@ -65,3 +65,28 @@ def test_bounded_file_closes_descriptor_when_identity_changes(
 
     with pytest.raises(OSError, match="changed during open"):
         read_bounded_regular_file(target, limit=1, label="state")
+
+
+def test_atomic_text_output_replaces_complete_artifact(tmp_path: Path) -> None:
+    target = tmp_path / "report.json"
+    target.write_text("old", encoding="utf-8")
+
+    atomic_write_text(target, "new\n")
+
+    assert target.read_text(encoding="utf-8") == "new\n"
+    assert list(tmp_path.glob(".report.json.*.tmp")) == []
+
+
+def test_atomic_text_output_preserves_old_artifact_when_replace_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "report.json"
+    target.write_text("old", encoding="utf-8")
+
+    monkeypatch.setattr(os, "replace", lambda *_args: (_ for _ in ()).throw(OSError("busy")))
+    with pytest.raises(OSError, match="busy"):
+        atomic_write_text(target, "new")
+
+    assert target.read_text(encoding="utf-8") == "old"
+    assert list(tmp_path.glob(".report.json.*.tmp")) == []

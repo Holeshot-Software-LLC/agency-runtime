@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 37
+SCHEMA_VERSION = 38
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
 NATIVE_WORKER_SCOPE_INDEX_SQL = (
@@ -902,6 +902,9 @@ CREATE TABLE IF NOT EXISTS delegation_activation_receipts (
     grant_issued_unix INTEGER NOT NULL DEFAULT 0,
     grant_expires_unix INTEGER NOT NULL DEFAULT 0,
     child_host TEXT NOT NULL DEFAULT '',
+    grant_origin TEXT NOT NULL DEFAULT 'manual_api'
+        CHECK (grant_origin IN ('manual_api', 'native_hook')),
+    tool_use_id TEXT NOT NULL DEFAULT '',
     session_id TEXT NOT NULL,
     trace_id TEXT NOT NULL,
     work_unit_id TEXT NOT NULL,
@@ -1376,6 +1379,8 @@ CREATE TABLE IF NOT EXISTS host_controls (
 -- Last successful content-free live canary for each host contract.
 CREATE TABLE IF NOT EXISTS host_canary_attestations (
     host TEXT PRIMARY KEY,
+    proof_contract TEXT NOT NULL,
+    proof_digest TEXT NOT NULL,
     profile_scope TEXT NOT NULL,
     platform_system TEXT NOT NULL,
     platform_release TEXT NOT NULL,
@@ -1492,6 +1497,7 @@ CREATE INDEX IF NOT EXISTS idx_finalization_recent ON finalization_events(create
 CREATE INDEX IF NOT EXISTS idx_routing_trace_created ON routing_decisions(trace_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_routing_session_created ON routing_decisions(session_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_routing_recent ON routing_decisions(created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_routing_query_hash ON routing_decisions(query_hash, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_trace_tombstones_retired ON trace_tombstones(retired_at);
 CREATE INDEX IF NOT EXISTS idx_child_routing_cache_expiry ON child_routing_cache(expires_at);
 CREATE INDEX IF NOT EXISTS idx_child_routing_leases_parent
@@ -4104,6 +4110,12 @@ def migrate_delegation_activation_unit_identity(conn: sqlite3.Connection) -> Non
         ("grant_issued_unix", "INTEGER NOT NULL DEFAULT 0"),
         ("grant_expires_unix", "INTEGER NOT NULL DEFAULT 0"),
         ("child_host", "TEXT NOT NULL DEFAULT ''"),
+        (
+            "grant_origin",
+            "TEXT NOT NULL DEFAULT 'manual_api' "
+            "CHECK (grant_origin IN ('manual_api', 'native_hook'))",
+        ),
+        ("tool_use_id", "TEXT NOT NULL DEFAULT ''"),
     ):
         ensure_column(conn, "delegation_activation_receipts", column, definition)
 
@@ -4157,6 +4169,9 @@ def migrate_delegation_activation_unit_identity(conn: sqlite3.Connection) -> Non
             grant_issued_unix INTEGER NOT NULL DEFAULT 0,
             grant_expires_unix INTEGER NOT NULL DEFAULT 0,
             child_host TEXT NOT NULL DEFAULT '',
+            grant_origin TEXT NOT NULL DEFAULT 'manual_api'
+                CHECK (grant_origin IN ('manual_api', 'native_hook')),
+            tool_use_id TEXT NOT NULL DEFAULT '',
             session_id TEXT NOT NULL,
             trace_id TEXT NOT NULL,
             work_unit_id TEXT NOT NULL,
@@ -4183,7 +4198,8 @@ def migrate_delegation_activation_unit_identity(conn: sqlite3.Connection) -> Non
     )
     columns = (
         "id, token_hash, grant_id, grant_payload, grant_issued_unix, "
-        "grant_expires_unix, child_host, session_id, trace_id, work_unit_id, "
+        "grant_expires_unix, child_host, grant_origin, tool_use_id, session_id, "
+        "trace_id, work_unit_id, "
         "specialist_slug, specialist_version, specialist_prompt_hash, worker_kind, "
         "worker_id, native_run_id, created_at, consumed_at, delegation_event_id"
     )
@@ -4282,10 +4298,30 @@ _VALID_ACTIVATION_RECEIPT_SQL = (
 
 def _delegation_activation_invariant_trigger_sql() -> dict[str, str]:
     statements = {
+        "agency_activation_grant_provenance_insert_guard": (
+            "CREATE TRIGGER agency_activation_grant_provenance_insert_guard "
+            "BEFORE INSERT ON delegation_activation_receipts WHEN NOT ("
+            "typeof(NEW.grant_origin) = 'text' AND typeof(NEW.tool_use_id) = 'text' "
+            "AND ((NEW.grant_origin = 'manual_api' AND NEW.tool_use_id = '') "
+            "OR (NEW.grant_origin = 'native_hook' "
+            "AND length(CAST(NEW.tool_use_id AS BLOB)) BETWEEN 1 AND 512))) BEGIN "
+            "SELECT RAISE(ABORT, 'activation grant provenance is invalid'); END"
+        ),
+        "agency_activation_grant_provenance_update_guard": (
+            "CREATE TRIGGER agency_activation_grant_provenance_update_guard "
+            "BEFORE UPDATE OF grant_origin, tool_use_id ON delegation_activation_receipts "
+            "WHEN NOT (typeof(NEW.grant_origin) = 'text' "
+            "AND typeof(NEW.tool_use_id) = 'text' "
+            "AND ((NEW.grant_origin = 'manual_api' AND NEW.tool_use_id = '') "
+            "OR (NEW.grant_origin = 'native_hook' "
+            "AND length(CAST(NEW.tool_use_id AS BLOB)) BETWEEN 1 AND 512))) BEGIN "
+            "SELECT RAISE(ABORT, 'activation grant provenance is invalid'); END"
+        ),
         "agency_activation_grant_public_immutable": (
             "CREATE TRIGGER agency_activation_grant_public_immutable "
             "BEFORE UPDATE OF token_hash, grant_id, grant_payload, grant_issued_unix, "
-            "grant_expires_unix, child_host ON delegation_activation_receipts "
+            "grant_expires_unix, child_host, grant_origin, tool_use_id "
+            "ON delegation_activation_receipts "
             "WHEN OLD.grant_id <> '' BEGIN "
             "SELECT RAISE(ABORT, 'public activation grant is immutable'); END"
         ),
@@ -4602,6 +4638,18 @@ def migrate_schema(
     ensure_column(
         conn,
         "host_canary_attestations",
+        "proof_contract",
+        "TEXT NOT NULL DEFAULT ''",
+    )
+    ensure_column(
+        conn,
+        "host_canary_attestations",
+        "proof_digest",
+        "TEXT NOT NULL DEFAULT ''",
+    )
+    ensure_column(
+        conn,
+        "host_canary_attestations",
         "host_version",
         "TEXT NOT NULL DEFAULT ''",
     )
@@ -4815,6 +4863,18 @@ def migrate_schema(
     )
     ensure_column(
         conn,
+        "delegation_activation_receipts",
+        "grant_origin",
+        "TEXT NOT NULL DEFAULT 'manual_api' CHECK (grant_origin IN ('manual_api', 'native_hook'))",
+    )
+    ensure_column(
+        conn,
+        "delegation_activation_receipts",
+        "tool_use_id",
+        "TEXT NOT NULL DEFAULT ''",
+    )
+    ensure_column(
+        conn,
         "model_receipts",
         "recorded_at",
         "TEXT NOT NULL DEFAULT ''",
@@ -4922,6 +4982,10 @@ def migrate_schema(
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_receipts_session_recorded "
         "ON model_receipts(session_id, recorded_at DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_routing_query_hash "
+        "ON routing_decisions(query_hash, created_at DESC)"
     )
     conn.execute("DROP INDEX IF EXISTS idx_receipts_recent")
     conn.execute("CREATE INDEX idx_receipts_recent ON model_receipts(recorded_at DESC, id DESC)")

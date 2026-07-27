@@ -14,7 +14,10 @@ related:
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/canary_proof.py
+  - agency_runtime/core/store/evidence.py
+  - agency_runtime/dashboard/dashboard-render.js
   - tests/test_host_canary.py
+  - tests/test_codex_activation_canary.py
 supersedes: []
 superseded_by: null
 type: issue
@@ -39,18 +42,28 @@ to satisfy its own specialist-activation gate.
 
 ## Current state
 
-After the attended existing-install refresh and renewed exact hook trust, a
-current-profile canary produced a valid Agency header, one correlated route,
-four planned delegations, the expected specialist selection, and one
-finalization. It correctly failed because no specialist was loaded and the
-terminal turn was not accepted. A bounded diagnostic that explicitly allowed
-required native delegation planned five units but timed out after 240 seconds;
-it produced no child activation or finalization. The failed run was closed and
-no canary attestation was persisted.
+The local candidate now emits exactly one bounded work unit, uses the Codex
+native `spawn_agent`/`wait_agent` surface, and proves the complete hook-to-Store
+chain from prompt delivery through accepted parent finalization. Strict proof
+binds the JSONL tool call, immutable `native_hook` receipt provenance, one-use
+activation consumption, child lifecycle, delegation, model receipt, exact
+header, current install identity, and the dedicated
+`agency.codex-activation-canary.v1` contract. Schema v38 migrates legacy rows to
+manual provenance and rejects impossible origin/tool-ID pairs.
 
-This proves the refreshed hooks execute. It does not prove native child launch,
-specialist prompt delivery, activation receipt consumption, or an accepted
-terminal turn. Tracker creation is pending authorization.
+The hook remains advisory to Codex scheduling: it injects or rejects only a
+positively identified Agency-owned planned call. Ambiguous and unmatched native
+calls return no hook decision. A current-profile recheck clears the older
+success immediately before invocation, so a failure or timeout cannot leave a
+stale readiness claim. Isolated and tokenless diagnostics never persist this
+attestation. The dashboard now labels the record as the last successful proof,
+neutralizes it when host inspection expires, and exposes no canary action.
+
+Focused proof, provenance, migration, output-durability, dashboard API, and all
+106 dashboard UI tests pass locally. The next gate is one freshly installed,
+bounded current-profile invocation without hook-trust bypass. Until that real
+run passes, no specialist activation or current attestation is claimed.
+Tracker creation remains pending authorization.
 
 ## Approach
 
@@ -73,7 +86,7 @@ probe instead of weakening the evidence gate.
 
 ## Acceptance
 
-- [ ] The canary request deterministically produces exactly one bounded work unit
+- [x] The canary request deterministically produces exactly one bounded work unit
   and one expected specialist without semantic-plan fanout.
 - [ ] Current-profile Codex exposes and invokes the supported native child tool
   without hook-trust bypass, shell access, file writes, or external services.
@@ -83,7 +96,7 @@ probe instead of weakening the evidence gate.
   one-use activation grant is consumed exactly once.
 - [ ] Child completion and parent finalization are accepted, the Agency header
   is valid, and the installation-bound current-profile attestation persists.
-- [ ] Missing tools, extra delegation, timeout, drift, replay, or incomplete
+- [x] Missing tools, extra delegation, timeout, drift, replay, or incomplete
   evidence fails and closes only the exact canary run.
-- [ ] Focused tests cover positive, unavailable-tool, timeout, and correlation-
+- [x] Focused tests cover positive, unavailable-tool, timeout, and correlation-
   failure paths before another live attempt.

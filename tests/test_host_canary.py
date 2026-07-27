@@ -276,7 +276,7 @@ def test_post_invocation_evidence_failure_preserves_attempt_truth(
     assert report["live_attempted"] is True
     assert report["canary_passed"] is False
     assert report["unmet_prerequisites"] == [
-        "runtime evidence could not be read after host invocation"
+        "exact activation evidence could not be read after host invocation"
     ]
     assert "private post-invocation detail" not in json.dumps(report)
 
@@ -314,12 +314,11 @@ def test_proof_failures_are_complete_ordered_and_safely_rendered(
         "host invocation did not complete successfully",
         "canary profile plugin registration and enablement were not proven",
         "final response header was not proven",
-        "expected canary specialist was not selected",
-        "correlated routing and an authoritative accepted terminal turn were not proven",
+        "exact Codex activation evidence was not proven (route_not_found)",
     ]
 
 
-def test_attestation_failure_cannot_turn_valid_evidence_into_a_pass(
+def test_tokenless_evidence_cannot_reach_attestation_persistence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -369,11 +368,12 @@ def test_attestation_failure_cannot_turn_valid_evidence_into_a_pass(
     )
 
     assert report["invocation"]["header_valid"] is True
-    assert report["evidence"]["correlated_trace_ids"] == ["attestation-write-failure"]
+    assert report["evidence"]["proven"] is False
+    assert report["evidence"]["reason"] == "route_not_found"
     assert report["attestation_persisted"] is False
     assert report["canary_passed"] is False
     assert report["unmet_prerequisites"] == [
-        "successful canary evidence could not be durably attested"
+        "exact Codex activation evidence was not proven (route_not_found)"
     ]
     assert "private persistence detail" not in json.dumps(report)
 
@@ -448,24 +448,10 @@ def test_live_canary_passes_only_with_correlated_runtime_evidence(
     assert report["evidence"]["expected_specialist_selected"] is True
     assert report["evidence"]["expected_specialist_loaded"] is True
     assert report["canary_passed"] is True
-    assert report["attestation_persisted"] is True
+    assert report["attestation_persisted"] is False
     assert "stdout" not in report["invocation"]
     attestation = Store(path).get_host_canary_attestation("claude")
-    assert attestation is not None
-    assert set(attestation) == {
-        "host",
-        "profile_scope",
-        "platform_system",
-        "platform_release",
-        "platform_machine",
-        "host_version",
-        "plugin_version",
-        "install_id",
-        "bundle_digest",
-        "passed_at",
-        "trace_id",
-    }
-    assert attestation["profile_scope"] == "isolated-profile"
+    assert attestation is None
 
 
 def test_successful_process_without_evidence_cannot_pass(
@@ -553,13 +539,12 @@ def test_valid_header_with_continue_event_and_active_run_cannot_pass(
     )
 
     assert report["invocation"]["header_valid"] is True
-    assert report["evidence"]["correlated_trace_ids"] == ["correction-only-turn"]
-    assert report["evidence"]["accepted_trace_ids"] == []
-    assert report["evidence"]["completed_run_trace_ids"] == []
+    assert report["evidence"]["proven"] is False
+    assert report["evidence"]["reason"] == "route_not_found"
     assert report["canary_passed"] is False
     assert report["attestation_persisted"] is False
     assert report["unmet_prerequisites"] == [
-        "correlated routing and an authoritative accepted terminal turn were not proven"
+        "exact Codex activation evidence was not proven (route_not_found)"
     ]
     assert Store(path).get_run("correction-only-turn")["status"] == "canary_failed"
     assert report["failed_run_cleanup"]["closed_count"] == 1
@@ -609,7 +594,7 @@ def test_failed_canary_cleanup_is_request_scoped_without_routing_evidence(
 
     store = Store(path)
     assert report["canary_passed"] is False
-    assert report["failed_run_cleanup"]["candidate_count"] == 2
+    assert report["failed_run_cleanup"]["candidate_count"] == 1
     assert report["failed_run_cleanup"]["closed_count"] == 1
     assert store.get_run("timed-out-canary")["status"] == "canary_failed"
     assert store.get_run("concurrent-unrelated-turn")["status"] == "active"
@@ -669,7 +654,7 @@ def test_claude_real_shape_canary_passes_without_synthesizing_a_receipt(
     assert Store(path).get_host_canary_attestation("claude")["trace_id"] == "claude-turn-42"
 
 
-def test_codex_canary_attests_isolated_profile_without_claiming_real_profile(
+def test_codex_tokenless_isolated_profile_cannot_attest_activation(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "agency.db"
@@ -724,10 +709,11 @@ def test_codex_canary_attests_isolated_profile_without_claiming_real_profile(
     assert report["real_profile_native"]["registered"] is False
     assert report["real_profile_native"]["enabled"] is False
     assert report["invocation"]["profile_scope"] == "isolated-profile"
-    assert report["canary_passed"] is True
+    assert report["canary_passed"] is False
+    assert report["evidence"]["proven"] is False
+    assert report["evidence"]["reason"] == "route_not_found"
     attestation = Store(path).get_host_canary_attestation("codex")
-    assert attestation is not None
-    assert attestation["profile_scope"] == "isolated-profile"
+    assert attestation is None
 
 
 def test_unsupported_host_canary_fails_closed_before_backend_execution(
@@ -1184,6 +1170,8 @@ def test_inspection_uses_only_current_matching_canary_attestation(
     ) -> None:
         store.record_host_canary_attestation(
             host="codex",
+            proof_contract="agency.codex-activation-canary.v1",
+            proof_digest="a" * 64,
             profile_scope=profile_scope,
             platform_system=platform.system(),
             platform_release=platform.release(),

@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.installer_contracts import (
+    CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
+)
 from agency_runtime.core.private_paths import private_temporary_directory
 
 
@@ -316,6 +320,7 @@ def invoke_and_collect_evidence(
     path: Path,
     prompt: str,
     expected_query_hash: str,
+    mode: str = "agency",
 ) -> InvocationOutcome:
     if preparation.backend is None or preparation.store is None or preparation.before is None:
         return InvocationOutcome(
@@ -336,15 +341,28 @@ def invoke_and_collect_evidence(
                 raise RuntimeError("canary backend returned an invalid result")
     except Exception:
         invocation_error = "safe host invocation failed before evidence could be evaluated"
+    facade = _facade()
+    if mode == "agency" and host == "codex":
+        try:
+            exact = preparation.store.get_canary_activation_snapshot(
+                host=host,
+                query_hash=expected_query_hash,
+            )
+        except Exception:
+            return InvocationOutcome(
+                result=result,
+                evidence=None,
+                error="exact activation evidence could not be read after host invocation",
+            )
+        return InvocationOutcome(result=result, evidence=exact, error=invocation_error)
     try:
         after = preparation.store.recent_runtime_activity(limit=200)
     except Exception:
         return InvocationOutcome(
-            result=None,
+            result=result,
             evidence=None,
             error="runtime evidence could not be read after host invocation",
         )
-    facade = _facade()
     return InvocationOutcome(
         result=result,
         evidence=facade._evidence_summary(
@@ -354,6 +372,295 @@ def invoke_and_collect_evidence(
         ),
         error=invocation_error,
     )
+
+
+def _single_mapping(evidence: Mapping[str, Any], field: str) -> Mapping[str, Any] | None:
+    values = evidence.get(field)
+    if not isinstance(values, list) or len(values) != 1 or not isinstance(values[0], Mapping):
+        return None
+    return values[0]
+
+
+def _codex_collaboration_chain(
+    result: Mapping[str, Any],
+) -> tuple[Mapping[str, Any] | None, str, tuple[str, ...]]:
+    """Resolve one completed spawn/wait pair and its authoritative receiver UUID."""
+
+    collaboration = result.get("collaboration")
+    calls = collaboration.get("calls") if isinstance(collaboration, Mapping) else None
+    if isinstance(collaboration, Mapping) and (
+        collaboration.get("unexpected_item_count", 0) != 0
+        or collaboration.get("unexpected_item_types", []) not in ([], ())
+    ):
+        return None, "", ("Codex used a non-allowlisted tool during the activation canary",)
+    if not isinstance(calls, list) or len(calls) != 2:
+        return None, "", ("Codex did not prove exactly one completed spawn and one completed wait",)
+    spawn_rows = [
+        row for row in calls if isinstance(row, Mapping) and row.get("tool") == "spawn_agent"
+    ]
+    wait_rows = [row for row in calls if isinstance(row, Mapping) and row.get("tool") == "wait"]
+    if (
+        len(spawn_rows) != 1
+        or len(wait_rows) != 1
+        or spawn_rows[0].get("status") != "completed"
+        or wait_rows[0].get("status") != "completed"
+        or spawn_rows[0].get("event_type") != "item.completed"
+        or wait_rows[0].get("event_type") != "item.completed"
+    ):
+        return None, "", ("Codex did not prove exactly one completed spawn and one completed wait",)
+    spawn = spawn_rows[0]
+    wait = wait_rows[0]
+    sender_id = str(spawn.get("sender_thread_id") or "")
+    if not sender_id or wait.get("sender_thread_id") != sender_id:
+        return None, "", ("Codex spawn and wait did not share one parent thread",)
+    receivers = spawn.get("receiver_thread_ids")
+    if (
+        not isinstance(receivers, list)
+        or len(receivers) != 1
+        or wait.get("receiver_thread_ids") != receivers
+    ):
+        return None, "", ("Codex spawn and wait did not identify the same sole child",)
+    receiver_id = str(receivers[0])
+    wait_states = wait.get("agents_states")
+    spawn_states = spawn.get("agents_states")
+    if (
+        not isinstance(spawn_states, Mapping)
+        or set(spawn_states) != {receiver_id}
+        or not isinstance(wait_states, Mapping)
+        or set(wait_states) != {receiver_id}
+        or wait_states.get(receiver_id) != "completed"
+    ):
+        return spawn, receiver_id, ("the sole Codex child did not reach the completed state",)
+    return spawn, receiver_id, ()
+
+
+def _codex_receipt_link_failures(
+    *,
+    evidence: Mapping[str, Any],
+    run: Mapping[str, Any],
+    plan: Mapping[str, Any],
+    delegation: Mapping[str, Any],
+    grant: Mapping[str, Any],
+    consumption: Mapping[str, Any],
+    worker: Mapping[str, Any],
+    specialist_load: Mapping[str, Any],
+    finalization: Mapping[str, Any],
+    receiver_id: str,
+    consumed_identity: tuple[str, str],
+    response_hash: str,
+) -> tuple[str, ...]:
+    """Validate reciprocal Store links after the JSONL receiver alias is known."""
+
+    failures: list[str] = []
+    session_id = str(evidence.get("session_id") or "")
+    trace_id = str(evidence.get("trace_id") or "")
+    work_unit_id = str(plan.get("work_unit_id") or "")
+    specialist_slug = str(plan.get("recommended_agent") or "")
+    specialist_version = str(grant.get("specialist_version") or "")
+    specialist_prompt_hash = str(grant.get("specialist_prompt_hash") or "")
+    receiver_identity = (receiver_id, f"codex-agent:{receiver_id}")
+    if (
+        worker.get("worker_id") != receiver_identity[0]
+        or worker.get("native_run_id") != receiver_identity[1]
+        or worker.get("backend") != "spawn_agent"
+        or worker.get("host") != "codex"
+        or not worker.get("started_at")
+        or not worker.get("ended_at")
+    ):
+        failures.append("SubagentStart and SubagentStop did not prove the Codex child lifecycle")
+    shared_identity = {
+        "session_id": session_id,
+        "trace_id": trace_id,
+        "work_unit_id": work_unit_id,
+        "specialist_slug": specialist_slug,
+        "specialist_version": specialist_version,
+        "specialist_prompt_hash": specialist_prompt_hash,
+    }
+    if any(grant.get(field) != expected for field, expected in shared_identity.items()):
+        failures.append("activation grant did not match the exact planned specialist unit")
+    if any(consumption.get(field) != expected for field, expected in shared_identity.items()):
+        failures.append("activation consumption did not match the exact planned specialist unit")
+    if (
+        not grant.get("consumed_at")
+        or consumption.get("grant_id") != grant.get("grant_id")
+        or consumption.get("legacy_activation_receipt_id") != grant.get("id")
+    ):
+        failures.append("the one-use activation grant was not consumed exactly once")
+    if specialist_load.get("agent_slug") != specialist_slug or specialist_load.get(
+        "activation_receipt_id"
+    ) != grant.get("id"):
+        failures.append("specialist load was not backed by the consumed activation grant")
+    if (
+        delegation.get("host") != "codex"
+        or delegation.get("backend") != "spawn_agent"
+        or delegation.get("work_unit_id") != work_unit_id
+        or delegation.get("recommended_agent") != specialist_slug
+        or delegation.get("status") not in {"delegated", "completed"}
+        or delegation.get("activation_receipt_id") != grant.get("id")
+        or delegation.get("retrieved_specialist_slug") != specialist_slug
+        or delegation.get("retrieved_specialist_version") != specialist_version
+        or delegation.get("retrieved_specialist_prompt_hash") != specialist_prompt_hash
+        or (
+            delegation.get("executed_worker_id"),
+            delegation.get("native_run_id"),
+        )
+        != consumed_identity
+    ):
+        failures.append("delegation was not reciprocally linked to the activation consumption")
+    if worker.get("delegation_event_id") not in {None, "", delegation.get("id")}:
+        failures.append("Codex lifecycle was attached to a different delegation")
+    if (
+        run.get("status") != "completed"
+        or not run.get("ended_at")
+        or run.get("terminal_finalization_id") != finalization.get("id")
+        or finalization.get("action") != "accept"
+        or finalization.get("terminal_status") != "completed"
+        or finalization.get("response_hash") != response_hash
+    ):
+        failures.append(
+            "the returned response was not the exact authoritative accepted finalization"
+        )
+    return tuple(failures)
+
+
+def codex_activation_failures(
+    *,
+    result: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    response_hash: str,
+) -> tuple[str, ...]:
+    """Require one complete Codex activation graph, including the JSONL UUID alias."""
+
+    failures: list[str] = []
+    if evidence.get("schema") != "agency.canary-activation-evidence.v1":
+        return ("exact Codex activation evidence contract was not available",)
+    if evidence.get("proven") is not True:
+        reason = str(evidence.get("reason") or "not_proven")
+        return (f"exact Codex activation evidence was not proven ({reason})",)
+    cardinalities = evidence.get("cardinalities")
+    expected_cardinalities = {
+        "routes": 1,
+        "runs": 1,
+        "traces": 1,
+        "unit_agent_plan": 1,
+        "delegations": 1,
+        "activation_grants": 1,
+        "activation_consumptions": 1,
+        "worker_runs": 1,
+        "specialist_loads": 1,
+        "finalizations": 1,
+    }
+    if not isinstance(cardinalities, Mapping) or any(
+        cardinalities.get(field) != count for field, count in expected_cardinalities.items()
+    ):
+        failures.append("Codex canary topology was not exactly one complete activation chain")
+
+    run = evidence.get("run") if isinstance(evidence.get("run"), Mapping) else None
+    route = evidence.get("route") if isinstance(evidence.get("route"), Mapping) else None
+    plan = _single_mapping(evidence, "unit_agent_plan")
+    delegation = _single_mapping(evidence, "delegations")
+    grant = _single_mapping(evidence, "activation_grants")
+    consumption = _single_mapping(evidence, "activation_consumptions")
+    worker = _single_mapping(evidence, "worker_runs")
+    specialist_load = _single_mapping(evidence, "specialist_loads")
+    finalization = _single_mapping(evidence, "finalizations")
+    if any(
+        item is None
+        for item in (
+            run,
+            route,
+            plan,
+            delegation,
+            grant,
+            consumption,
+            worker,
+            specialist_load,
+            finalization,
+        )
+    ):
+        failures.append("Codex canary evidence graph was incomplete")
+        return tuple(failures)
+
+    session_id = str(evidence.get("session_id") or "")
+    trace_id = str(evidence.get("trace_id") or "")
+    work_unit_id = str(plan.get("work_unit_id") or "")
+    specialist_slug = str(plan.get("recommended_agent") or "")
+    specialist_version = str(grant.get("specialist_version") or "")
+    specialist_prompt_hash = str(grant.get("specialist_prompt_hash") or "")
+    goal_hash = str(plan.get("goal_hash") or "")
+    selected = {
+        str(value)
+        for field in ("selected_ids", "companion_ids")
+        for value in (route.get(field) if isinstance(route.get(field), list) else [])
+    }
+    if (
+        specialist_slug != "code-reviewer"
+        or selected != {"code-reviewer"}
+        or route.get("query_hash") != evidence.get("query_hash")
+    ):
+        failures.append("the sole routed canary unit was not the expected code-reviewer")
+
+    spawn, receiver_id, collaboration_failures = _codex_collaboration_chain(result)
+    failures.extend(collaboration_failures)
+    if spawn is None or not receiver_id:
+        return tuple(failures)
+    delivery = spawn.get("prompt_delivery")
+    if not isinstance(delivery, Mapping) or any(
+        delivery.get(field) != expected
+        for field, expected in {
+            "host": "codex",
+            "parent_session_id": session_id,
+            "parent_trace_id": trace_id,
+            "work_unit_id": work_unit_id,
+            "specialist_slug": specialist_slug,
+            "specialist_version": specialist_version,
+            "specialist_prompt_hash": specialist_prompt_hash,
+            "goal_hash": goal_hash,
+        }.items()
+    ):
+        failures.append("Codex JSONL did not carry the exact hook-injected child assignment")
+    elif grant.get("grant_origin") != "native_hook" or grant.get("tool_use_id") != delivery.get(
+        "tool_use_id"
+    ):
+        failures.append(
+            "activation grant was not issued by the native hook for the exact Codex tool call"
+        )
+
+    expected_task_name = ""
+    if work_unit_id:
+        from agency_runtime.core.delegation.native_labels import (
+            codex_task_name_for_work_unit,
+        )
+
+        expected_task_name = codex_task_name_for_work_unit(work_unit_id)
+    synthetic_identity = (
+        f"task:{expected_task_name}",
+        f"codex-task:{expected_task_name}",
+    )
+    receiver_identity = (receiver_id, f"codex-agent:{receiver_id}")
+    consumed_identity = (
+        str(consumption.get("worker_id") or ""),
+        str(consumption.get("native_run_id") or ""),
+    )
+    if consumed_identity not in {synthetic_identity, receiver_identity}:
+        failures.append("activation consumption did not match the Codex child alias contract")
+    failures.extend(
+        _codex_receipt_link_failures(
+            evidence=evidence,
+            run=run,
+            plan=plan,
+            delegation=delegation,
+            grant=grant,
+            consumption=consumption,
+            worker=worker,
+            specialist_load=specialist_load,
+            finalization=finalization,
+            receiver_id=receiver_id,
+            consumed_identity=consumed_identity,
+            response_hash=response_hash,
+        )
+    )
+    return tuple(dict.fromkeys(failures))
 
 
 def profile_is_proven(
@@ -395,6 +702,7 @@ def proof_failures(
     evidence: Mapping[str, Any],
     mode: str = "agency",
     response_nonempty: bool = True,
+    activation_failures: tuple[str, ...] | None = None,
 ) -> tuple[str, ...]:
     failures: list[str] = []
     if not process_ok:
@@ -411,18 +719,21 @@ def proof_failures(
     else:
         if not header_valid:
             failures.append("final response header was not proven")
-        if not evidence["expected_specialist_selected"]:
-            failures.append("expected canary specialist was not selected")
-        elif not evidence["expected_specialist_loaded"]:
-            failures.append("expected canary specialist activation was not proven")
-        if not evidence["accepted_trace_ids"]:
-            failures.append(
-                "correlated routing and an authoritative accepted terminal turn were not proven"
-            )
-        elif evidence["receipt_required"] and not evidence["receipt_proven"]:
-            failures.append(
-                "the host exposes response telemetry but a correlated receipt was not proven"
-            )
+        if activation_failures is not None:
+            failures.extend(activation_failures)
+        else:
+            if not evidence["expected_specialist_selected"]:
+                failures.append("expected canary specialist was not selected")
+            elif not evidence["expected_specialist_loaded"]:
+                failures.append("expected canary specialist activation was not proven")
+            if not evidence["accepted_trace_ids"]:
+                failures.append(
+                    "correlated routing and an authoritative accepted terminal turn were not proven"
+                )
+            elif evidence["receipt_required"] and not evidence["receipt_proven"]:
+                failures.append(
+                    "the host exposes response telemetry but a correlated receipt was not proven"
+                )
     return tuple(failures)
 
 
@@ -445,7 +756,17 @@ def evaluate_proof(
     isolated_plugin = (
         result.get("isolated_plugin") if isinstance(result.get("isolated_plugin"), dict) else None
     )
-    plugin_invoked = bool(evidence["correlated_trace_ids"])
+    plugin_invoked = bool(evidence.get("correlated_trace_ids"))
+    activation_failures: tuple[str, ...] | None = None
+    if mode == "agency" and host == "codex":
+        activation_failures = codex_activation_failures(
+            result=result,
+            evidence=evidence,
+            response_hash=hashlib.sha256(
+                response.encode("utf-8", errors="surrogatepass")
+            ).hexdigest(),
+        )
+        plugin_invoked = evidence.get("proven") is True
     if mode == "native-only":
         profile_proven = bool(
             result_scope == "isolated-profile"
@@ -468,11 +789,15 @@ def evaluate_proof(
             isolated_plugin,
             plugin_invoked=plugin_invoked,
         )
-        evidence_passed = bool(
-            evidence["accepted_trace_ids"]
-            and evidence["expected_specialist_selected"]
-            and evidence["expected_specialist_loaded"]
-            and (not evidence["receipt_required"] or evidence["receipt_proven"])
+        evidence_passed = (
+            not activation_failures
+            if activation_failures is not None
+            else bool(
+                evidence["accepted_trace_ids"]
+                and evidence["expected_specialist_selected"]
+                and evidence["expected_specialist_loaded"]
+                and (not evidence["receipt_required"] or evidence["receipt_proven"])
+            )
         )
         header_passed = header_valid
     return CanaryProof(
@@ -491,6 +816,7 @@ def evaluate_proof(
                 isolated_plugin,
                 plugin_invoked=plugin_invoked,
             ),
+            "collaboration": result.get("collaboration"),
         },
         result_scope=result_scope,
         passed=bool(
@@ -507,6 +833,7 @@ def evaluate_proof(
             evidence=evidence,
             mode=mode,
             response_nonempty=response_nonempty,
+            activation_failures=activation_failures,
         ),
     )
 
@@ -519,7 +846,8 @@ def attestation_payload(
     assessment: ReadinessAssessment,
     passed_at: str,
 ) -> dict[str, Any]:
-    return {
+    trace_id = str(evidence.get("trace_id") or evidence["accepted_trace_ids"][0])
+    attestation_identity = {
         "host": host,
         "profile_scope": proof.result_scope,
         "platform_system": assessment.platform["system"],
@@ -529,8 +857,28 @@ def attestation_payload(
         "plugin_version": _facade().PLUGIN_VERSION,
         "install_id": str(assessment.native["install_id"]),
         "bundle_digest": str(assessment.native["bundle_digest"]),
-        "trace_id": evidence["accepted_trace_ids"][0],
+        "trace_id": trace_id,
         "passed_at": passed_at,
+    }
+    proof_material = {
+        "contract": CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
+        "attestation": attestation_identity,
+        "invocation": proof.invocation,
+        "evidence": evidence,
+    }
+    proof_digest = hashlib.sha256(
+        json.dumps(
+            proof_material,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        **attestation_identity,
+        "proof_contract": CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
+        "proof_digest": proof_digest,
     }
 
 

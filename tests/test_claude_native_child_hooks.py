@@ -130,6 +130,8 @@ class _PlanStore:
                 and row["trace_id"] == kwargs["trace_id"]
                 and row["work_unit_id"] == kwargs["work_unit_id"]
                 and row["specialist_slug"] == kwargs["specialist_slug"]
+                and row["grant_origin"] == kwargs["grant_origin"]
+                and row["tool_use_id"] == kwargs["tool_use_id"]
                 and not any(
                     consumed["activation_token"] == row["activation_token"]
                     for consumed in self.consumed
@@ -252,6 +254,8 @@ def test_pre_tool_use_preserves_native_scheduling_and_injects_exact_prompt() -> 
     assert delivery.work_unit_id == "unit-code"
     assert delivery.specialist_slug == "code-reviewer"
     assert delivery.prompt_body == store.prompts["code-reviewer"]
+    assert store.prepared[0]["grant_origin"] == "native_hook"
+    assert store.prepared[0]["tool_use_id"] == "toolu-code"
     assert store.snapshot_reads == [("claude-session", "trace")]
 
 
@@ -550,6 +554,80 @@ def test_codex_v2_task_path_is_authoritative_native_child_identity() -> None:
     [consumed] = store.consumed
     assert consumed["worker_id"] == "task:/root/unit_code"
     assert consumed["native_run_id"] == "codex-task:/root/unit_code"
+
+
+def test_codex_v1_spawn_resolves_unique_plan_row_from_exact_message_goal() -> None:
+    store = _PlanStore()
+    adapter = _RecordingAdapter()
+    bridge = HookBridge("codex", store=store, adapter=adapter)  # type: ignore[arg-type]
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "codex-session",
+        "turn_id": "trace",
+        "tool_name": "spawn_agent",
+        "tool_use_id": "call-code-v1",
+        "tool_input": {
+            "message": "Review the implementation.",
+            "agent_type": "worker",
+        },
+    }
+
+    output = bridge.handle(payload)["hookSpecificOutput"]
+    assert output["permissionDecision"] == "allow"
+    delivery = parse_native_child_prompt_delivery(output["updatedInput"]["message"])
+    assert delivery is not None
+    assert delivery.work_unit_id == "unit-code"
+    assert delivery.specialist_slug == "code-reviewer"
+
+    assert (
+        bridge.handle(
+            {
+                **payload,
+                "hook_event_name": "PostToolUse",
+                "tool_input": output["updatedInput"],
+                "tool_response": {"agent_id": "agent-v1", "status": "accepted"},
+            }
+        )
+        == {}
+    )
+    [consumed] = store.consumed
+    assert consumed["work_unit_id"] == "unit-code"
+    assert consumed["worker_id"] == "agent-v1"
+
+
+def test_codex_v1_spawn_leaves_ambiguous_goal_hash_to_native_scheduler() -> None:
+    store = _PlanStore()
+    store.goals["unit-security"] = store.goals["unit-code"]
+    result = HookBridge("codex", store=store).handle(  # type: ignore[arg-type]
+        {
+            "hook_event_name": "PreToolUse",
+            "session_id": "codex-session",
+            "turn_id": "trace",
+            "tool_name": "spawn_agent",
+            "tool_use_id": "call-ambiguous-v1",
+            "tool_input": {"message": "Review the implementation."},
+        }
+    )
+
+    assert result == {}
+    assert store.prepared == []
+
+
+def test_codex_v1_spawn_leaves_unmatched_goal_to_native_scheduler() -> None:
+    store = _PlanStore()
+    result = HookBridge("codex", store=store).handle(  # type: ignore[arg-type]
+        {
+            "hook_event_name": "PreToolUse",
+            "session_id": "codex-session",
+            "turn_id": "trace",
+            "tool_name": "spawn_agent",
+            "tool_use_id": "call-unmatched-v1",
+            "tool_input": {"message": "Perform unrelated work."},
+        }
+    )
+
+    assert result == {}
+    assert store.prepared == []
 
 
 def test_planned_child_is_blocked_when_exact_prompt_cannot_be_verified() -> None:

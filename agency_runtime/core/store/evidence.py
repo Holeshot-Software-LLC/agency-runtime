@@ -6,6 +6,7 @@ import json
 from hashlib import sha256
 from typing import Any
 
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.delegation_status import (
     DELEGATION_STATUS_PRIORITY as _DELEGATION_STATUS_PRIORITY,
@@ -43,12 +44,14 @@ from agency_runtime.core.delegation_status import (
 from agency_runtime.core.delegation_status import (
     normalize_delegation_status as _normalize_delegation_status,
 )
+from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.receipts.ingress import (
     ReceiptProvenance as _ReceiptProvenance,
 )
 from agency_runtime.core.receipts.ingress import (
     normalize_receipt_ingress as _normalize_receipt_ingress,
 )
+from agency_runtime.core.roster.revisions import content_digest_identity
 from agency_runtime.core.store.delegation_activation import (
     attach_consumed_activation_to_delegation,
 )
@@ -69,10 +72,196 @@ from agency_runtime.core.store.receipt_authority import MODEL_RECEIPT_AUTHORITY_
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 
 MAX_HOST_CONTROL_GENERATION = (2**63) - 1
+_CANARY_ACTIVATION_SNAPSHOT_SCHEMA = "agency.canary-activation-evidence.v1"
+_CANARY_ACTIVATION_MAX_ROWS = 256
 
 
 class HostControlConflictError(RuntimeError):
     """A host-control compare-and-swap observed a newer generation."""
+
+
+def _decode_canary_json(
+    value: object,
+    *,
+    expected_type: type[list[Any]] | type[dict[str, Any]],
+    maximum_depth: int = 8,
+) -> list[Any] | dict[str, Any] | None:
+    """Decode one bounded evidence projection without accepting scalar JSON."""
+
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = safe_load_bounded_json(
+            value,
+            maximum_bytes=1024 * 1024,
+            maximum_depth=maximum_depth,
+            maximum_nodes=10_000,
+        )
+    except (TypeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, expected_type) else None
+
+
+def _project_canary_strings(
+    value: object,
+    *,
+    maximum_items: int = 64,
+    maximum_chars: int = 512,
+) -> list[str] | None:
+    """Return a bounded string-list projection suitable for public evidence."""
+
+    parsed = _decode_canary_json(value, expected_type=list)
+    if not isinstance(parsed, list) or len(parsed) > maximum_items:
+        return None
+    result: list[str] = []
+    for raw in parsed:
+        if not isinstance(raw, str):
+            return None
+        item = raw.strip()
+        if (
+            not item
+            or len(item) > maximum_chars
+            or any(ord(character) < 32 or ord(character) == 127 for character in item)
+        ):
+            return None
+        result.append(item)
+    return result
+
+
+def _project_canary_work_units(value: object) -> dict[str, Any] | None:
+    """Project only the content-free work-unit summary persisted for routing."""
+
+    parsed = _decode_canary_json(value, expected_type=dict)
+    if not isinstance(parsed, dict):
+        return None
+    delegate = parsed.get("delegate")
+    count = parsed.get("count")
+    confidence = parsed.get("confidence")
+    source = parsed.get("source")
+    if (
+        not isinstance(delegate, bool)
+        or isinstance(count, bool)
+        or not isinstance(count, int)
+        or not 0 <= count <= 16
+        or not isinstance(confidence, str)
+        or len(confidence) > 32
+        or not isinstance(source, str)
+        or len(source) > 64
+    ):
+        return None
+    return {
+        "delegate": delegate,
+        "count": count,
+        "confidence": confidence,
+        "source": source,
+    }
+
+
+def _empty_canary_activation_snapshot(
+    *,
+    host: str,
+    query_hash: str,
+    route_count: int,
+    reason: str,
+) -> dict[str, Any]:
+    """Return the stable fail-closed shape for an unresolved exact route."""
+
+    return {
+        "schema": _CANARY_ACTIVATION_SNAPSHOT_SCHEMA,
+        "proven": False,
+        "status": "not_proven",
+        "reason": reason,
+        "host": host,
+        "query_hash": query_hash,
+        "session_id": "",
+        "trace_id": "",
+        "cardinalities": {
+            "routes": route_count,
+            "runs": 0,
+            "traces": 0,
+            "unit_agent_plan": 0,
+            "delegations": 0,
+            "activation_grants": 0,
+            "activation_consumptions": 0,
+            "worker_runs": 0,
+            "specialist_loads": 0,
+            "finalizations": 0,
+        },
+        "run": None,
+        "route": None,
+        "unit_agent_plan": [],
+        "delegations": [],
+        "activation_grants": [],
+        "activation_consumptions": [],
+        "worker_runs": [],
+        "specialist_loads": [],
+        "finalizations": [],
+    }
+
+
+def _canary_scope_consistent(
+    *,
+    session_id: str,
+    trace_id: str,
+    host: str,
+    delegations: list[dict[str, Any]],
+    activation_grants: list[dict[str, Any]],
+    activation_consumptions: list[dict[str, Any]],
+    worker_runs: list[dict[str, Any]],
+    specialist_loads: list[dict[str, Any]],
+    finalizations: list[dict[str, Any]],
+) -> bool:
+    correlated = (
+        delegations,
+        activation_grants,
+        activation_consumptions,
+        worker_runs,
+        specialist_loads,
+    )
+    hosted = (
+        delegations,
+        activation_grants,
+        activation_consumptions,
+        worker_runs,
+        finalizations,
+    )
+    return all(
+        str(item.get("session_id") or "") == session_id
+        and str(item.get("trace_id") or "") == trace_id
+        for collection in correlated
+        for item in collection
+    ) and all(
+        str(item.get("host") or item.get("child_host") or "") == host
+        for collection in hosted
+        for item in collection
+    )
+
+
+def _canary_resolution_reason(
+    *,
+    route_projection_valid: bool,
+    ready_recipe: bool,
+    recipe_valid: bool,
+    recipe_matches: bool,
+    scope_consistent: bool,
+    finalization_projection_valid: bool,
+    run_state_consistent: bool,
+) -> str | None:
+    if not route_projection_valid:
+        return "route_projection_invalid"
+    if not ready_recipe:
+        return "preflight_not_ready"
+    if not recipe_valid:
+        return "preflight_recipe_invalid"
+    if not recipe_matches:
+        return "preflight_recipe_mismatch"
+    if not scope_consistent:
+        return "evidence_scope_mismatch"
+    if not finalization_projection_valid:
+        return "finalization_projection_invalid"
+    if not run_state_consistent:
+        return "run_state_inconsistent"
+    return None
 
 
 _EXECUTED_DELEGATION_STATUSES = frozenset({"started", "running", "delegated", "completed"})
@@ -493,7 +682,8 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         conn = self._connect()
         try:
             row = conn.execute(
-                "SELECT host, profile_scope, platform_system, platform_release, platform_machine, "
+                "SELECT host, proof_contract, proof_digest, profile_scope, "
+                "platform_system, platform_release, platform_machine, "
                 "host_version, plugin_version, install_id, bundle_digest, "
                 "passed_at, trace_id "
                 "FROM host_canary_attestations WHERE host = ?",
@@ -507,6 +697,8 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         self,
         *,
         host: str,
+        proof_contract: str,
+        proof_digest: str,
         profile_scope: str,
         platform_system: str,
         platform_release: str,
@@ -520,8 +712,21 @@ class EvidenceStoreMixin(PreflightStoreMixin):
     ) -> dict[str, Any]:
         """Persist one bounded successful canary without prompts or output."""
         validated_trace = validate_correlation_id(trace_id, field="trace_id")
+        from agency_runtime.core.installer_contracts import (
+            CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
+        )
+
+        normalized_digest = str(proof_digest or "").strip()
+        if (
+            str(proof_contract or "").strip() != CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
+            or len(normalized_digest) != 64
+            or any(character not in "0123456789abcdef" for character in normalized_digest)
+        ):
+            raise ValueError("current host canary proof contract and digest are required")
         values = {
             "host": str(host or "").strip().lower()[:64],
+            "proof_contract": CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
+            "proof_digest": normalized_digest,
             "profile_scope": str(profile_scope or "").strip().lower()[:64],
             "platform_system": str(platform_system or "").strip()[:64],
             "platform_release": str(platform_release or "").strip()[:128],
@@ -537,14 +742,21 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             raise ValueError("complete host canary attestation fields are required")
         if values["profile_scope"] not in {"current-profile", "isolated-profile"}:
             raise ValueError("profile_scope must be current-profile or isolated-profile")
+        if values["host"] != "codex" or values["profile_scope"] != "current-profile":
+            raise ValueError(
+                "durable activation attestation requires a Codex current-profile canary"
+            )
         conn = self._connect()
         try:
             conn.execute(
                 "INSERT INTO host_canary_attestations "
-                "(host, profile_scope, platform_system, platform_release, platform_machine, "
+                "(host, proof_contract, proof_digest, profile_scope, platform_system, "
+                "platform_release, platform_machine, "
                 "host_version, plugin_version, install_id, bundle_digest, "
-                "passed_at, trace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "passed_at, trace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(host) DO UPDATE SET "
+                "proof_contract = excluded.proof_contract, "
+                "proof_digest = excluded.proof_digest, "
                 "profile_scope = excluded.profile_scope, "
                 "platform_system = excluded.platform_system, "
                 "platform_release = excluded.platform_release, "
@@ -556,6 +768,8 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 "passed_at = excluded.passed_at, trace_id = excluded.trace_id",
                 (
                     values["host"],
+                    values["proof_contract"],
+                    values["proof_digest"],
                     values["profile_scope"],
                     values["platform_system"],
                     values["platform_release"],
@@ -572,7 +786,9 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         finally:
             conn.close()
         attestation = self.get_host_canary_attestation(values["host"])
-        if attestation is None:
+        if attestation is None or any(
+            attestation.get(field) != expected for field, expected in values.items()
+        ):
             raise RuntimeError("canary attestation postcondition failed")
         return attestation
 
@@ -866,6 +1082,64 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             )
             conn.commit()
             return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def fail_canary_runs_for_request(
+        self,
+        *,
+        host: str,
+        request_fingerprint: str,
+    ) -> list[str]:
+        """Close every still-open run bound to one exact nonce-derived request."""
+
+        normalized_host = str(host or "").strip().casefold()
+        fingerprint = str(request_fingerprint or "").strip()
+        if not normalized_host or len(normalized_host) > 64:
+            raise ValueError("canary host is invalid")
+        if len(fingerprint) != 64 or any(
+            character not in "0123456789abcdef" for character in fingerprint
+        ):
+            raise ValueError("canary request fingerprint must be a lowercase SHA-256 digest")
+        closed_at = self._now()
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            rows = conn.execute(
+                "SELECT id, trace_id, session_id FROM runs WHERE host = ? "
+                "AND status IN ('active', 'evidence_only') "
+                "AND terminal_finalization_id IS NULL "
+                "AND (preflight_request_fingerprint = ? OR EXISTS ("
+                "SELECT 1 FROM routing_decisions AS routing "
+                "WHERE routing.trace_id = runs.trace_id AND routing.query_hash = ?"
+                ")) ORDER BY started_at, rowid LIMIT 257",
+                (normalized_host, fingerprint, fingerprint),
+            ).fetchall()
+            if len(rows) > 256:
+                raise RuntimeError("canary request matched an unsafe number of active runs")
+            closed: list[str] = []
+            for row in rows:
+                updated = conn.execute(
+                    "UPDATE runs SET ended_at = COALESCE(ended_at, ?), "
+                    "status = 'canary_failed', "
+                    f"last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
+                    "WHERE id = ? AND terminal_finalization_id IS NULL "
+                    "AND status IN ('active', 'evidence_only')",
+                    (closed_at, str(row["id"])),
+                )
+                if updated.rowcount != 1:
+                    raise RuntimeError("canary run cleanup compare-and-swap failed")
+                conn.execute(
+                    "UPDATE specialists_loaded SET expired_at = ? "
+                    "WHERE session_id = ? AND trace_id = ? AND expired_at IS NULL",
+                    (closed_at, str(row["session_id"] or ""), str(row["trace_id"] or "")),
+                )
+                closed.append(str(row["id"]))
+            conn.commit()
+            return closed
         except Exception:
             conn.rollback()
             raise
@@ -1198,6 +1472,354 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 (session_id,),
             ).fetchall()
             return [dict(row) for row in rows]
+        finally:
+            conn.close()
+
+    def get_canary_activation_snapshot(
+        self,
+        *,
+        host: str,
+        query_hash: str,
+    ) -> dict[str, Any]:
+        """Read one exact, content-free canary evidence graph in one transaction.
+
+        ``proven`` means only that one route and its parent run were resolved and
+        their ready preflight recipe passed correlation checks.  Callers must
+        still evaluate the returned activation/delegation topology; this method
+        never turns the presence of a route into an activation-success claim.
+        """
+
+        normalized_host = str(host or "").strip().casefold()
+        if normalized_host not in EXECUTION_HOSTS:
+            raise ValueError("host must identify a supported execution host")
+        supplied_hash = str(query_hash or "").strip()
+        normalized_hash = content_digest_identity(supplied_hash)
+        if normalized_hash is None or normalized_hash != supplied_hash:
+            raise ValueError("query_hash must be a lowercase SHA-256 digest")
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            route_count_row = conn.execute(
+                "SELECT COUNT(*) AS count FROM routing_decisions AS route "
+                "JOIN runs AS run ON run.trace_id = route.trace_id "
+                "AND run.session_id = route.session_id "
+                "WHERE route.query_hash = ? AND run.host = ? "
+                "AND run.preflight_request_fingerprint = route.query_hash",
+                (normalized_hash, normalized_host),
+            ).fetchone()
+            route_count = int(route_count_row["count"] if route_count_row is not None else 0)
+            if route_count != 1:
+                snapshot = _empty_canary_activation_snapshot(
+                    host=normalized_host,
+                    query_hash=normalized_hash,
+                    route_count=route_count,
+                    reason="route_not_found" if route_count == 0 else "route_ambiguous",
+                )
+                conn.commit()
+                return snapshot
+
+            row = conn.execute(
+                "SELECT route.id AS route_id, route.trace_id AS route_trace_id, "
+                "route.session_id AS route_session_id, route.query_hash AS route_query_hash, "
+                "route.context_fingerprint AS route_context_fingerprint, "
+                "route.status AS route_status, route.source AS route_source, "
+                "route.selected_ids AS route_selected_ids, "
+                "route.semantic_ids AS route_semantic_ids, "
+                "route.companion_ids AS route_companion_ids, "
+                "route.confidence AS route_confidence, "
+                "route.latency_ms AS route_latency_ms, route.provider AS route_provider, "
+                "route.work_units AS route_work_units, route.created_at AS route_created_at, "
+                "run.id AS run_id, run.trace_id AS run_trace_id, "
+                "run.session_id AS run_session_id, run.host AS run_host, "
+                "run.started_at AS run_started_at, "
+                "run.last_activity_at AS run_last_activity_at, "
+                "run.evidence_revision AS run_evidence_revision, "
+                "run.turn_sequence AS run_turn_sequence, run.ended_at AS run_ended_at, "
+                "run.status AS run_status, "
+                "run.terminal_finalization_id AS run_terminal_finalization_id, "
+                "run.preflight_state AS run_preflight_state, "
+                "run.preflight_request_fingerprint AS run_request_fingerprint, "
+                "run.preflight_request_kind AS run_request_kind, "
+                "run.preflight_result AS run_preflight_result "
+                "FROM routing_decisions AS route JOIN runs AS run "
+                "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
+                "WHERE route.query_hash = ? AND run.host = ? "
+                "AND run.preflight_request_fingerprint = route.query_hash",
+                (normalized_hash, normalized_host),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError("exact canary route disappeared inside its read transaction")
+
+            normalized_session = validate_correlation_id(
+                str(row["run_session_id"] or ""),
+                field="session_id",
+            )
+            normalized_trace = validate_correlation_id(
+                str(row["run_trace_id"] or ""),
+                field="trace_id",
+            )
+            run = {
+                "id": str(row["run_id"] or ""),
+                "trace_id": normalized_trace,
+                "session_id": normalized_session,
+                "host": str(row["run_host"] or ""),
+                "started_at": str(row["run_started_at"] or ""),
+                "last_activity_at": str(row["run_last_activity_at"] or ""),
+                "evidence_revision": int(row["run_evidence_revision"] or 0),
+                "turn_sequence": int(row["run_turn_sequence"] or 0),
+                "ended_at": row["run_ended_at"],
+                "status": str(row["run_status"] or ""),
+                "terminal_finalization_id": row["run_terminal_finalization_id"],
+                "preflight_state": str(row["run_preflight_state"] or ""),
+                "request_fingerprint": str(row["run_request_fingerprint"] or ""),
+                "request_kind": str(row["run_request_kind"] or ""),
+            }
+
+            selected_ids = _project_canary_strings(
+                row["route_selected_ids"],
+                maximum_chars=256,
+            )
+            semantic_ids = _project_canary_strings(
+                row["route_semantic_ids"],
+                maximum_chars=256,
+            )
+            companion_ids = _project_canary_strings(
+                row["route_companion_ids"],
+                maximum_chars=256,
+            )
+            work_units = _project_canary_work_units(row["route_work_units"])
+            context_fingerprint = str(row["route_context_fingerprint"] or "")
+            route_projection_valid = (
+                selected_ids is not None
+                and semantic_ids is not None
+                and companion_ids is not None
+                and work_units is not None
+                and content_digest_identity(context_fingerprint) == context_fingerprint
+            )
+            route = {
+                "id": str(row["route_id"] or ""),
+                "trace_id": str(row["route_trace_id"] or ""),
+                "session_id": str(row["route_session_id"] or ""),
+                "query_hash": str(row["route_query_hash"] or ""),
+                "context_fingerprint": context_fingerprint,
+                "status": str(row["route_status"] or ""),
+                "source": str(row["route_source"] or ""),
+                "selected_ids": selected_ids or [],
+                "semantic_ids": semantic_ids or [],
+                "companion_ids": companion_ids or [],
+                "confidence": row["route_confidence"],
+                "latency_ms": row["route_latency_ms"],
+                "provider": str(row["route_provider"] or ""),
+                "work_units": work_units or {},
+                "created_at": str(row["route_created_at"] or ""),
+            }
+
+            counts = conn.execute(
+                "SELECT "
+                "(SELECT COUNT(*) FROM delegation_events WHERE trace_id = ?) "
+                "AS delegations, "
+                "(SELECT COUNT(*) FROM delegation_activation_receipts WHERE trace_id = ?) "
+                "AS activation_grants, "
+                "(SELECT COUNT(*) FROM delegation_activation_consumptions WHERE trace_id = ?) "
+                "AS activation_consumptions, "
+                "(SELECT COUNT(*) FROM worker_runs WHERE trace_id = ?) AS worker_runs, "
+                "(SELECT COUNT(*) FROM specialists_loaded WHERE trace_id = ?) "
+                "AS specialist_loads, "
+                "(SELECT COUNT(*) FROM finalization_events WHERE trace_id = ?) "
+                "AS finalizations",
+                (normalized_trace,) * 6,
+            ).fetchone()
+            cardinalities = {
+                "routes": 1,
+                "runs": 1,
+                "traces": 1,
+                "unit_agent_plan": 0,
+                "delegations": int(counts["delegations"]),
+                "activation_grants": int(counts["activation_grants"]),
+                "activation_consumptions": int(counts["activation_consumptions"]),
+                "worker_runs": int(counts["worker_runs"]),
+                "specialist_loads": int(counts["specialist_loads"]),
+                "finalizations": int(counts["finalizations"]),
+            }
+            snapshot = _empty_canary_activation_snapshot(
+                host=normalized_host,
+                query_hash=normalized_hash,
+                route_count=1,
+                reason="exact_route_resolved",
+            )
+            snapshot.update(
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                cardinalities=cardinalities,
+                run=run,
+                route=route,
+            )
+            if any(
+                cardinalities[name] > _CANARY_ACTIVATION_MAX_ROWS
+                for name in (
+                    "delegations",
+                    "activation_grants",
+                    "activation_consumptions",
+                    "worker_runs",
+                    "specialist_loads",
+                    "finalizations",
+                )
+            ):
+                snapshot["reason"] = "evidence_cardinality_exceeded"
+                conn.commit()
+                return snapshot
+
+            delegations = [
+                dict(item)
+                for item in conn.execute(
+                    "SELECT id, trace_id, session_id, host, work_unit_id, "
+                    "recommended_agent, status, backend, executed_worker_kind, "
+                    "executed_worker_id, native_run_id, retrieved_specialist_slug, "
+                    "retrieved_specialist_version, retrieved_specialist_prompt_hash, "
+                    "activation_receipt_id, started_at, completed_at "
+                    "FROM delegation_events WHERE trace_id = ? ORDER BY started_at, rowid",
+                    (normalized_trace,),
+                ).fetchall()
+            ]
+            activation_grants = [
+                dict(item)
+                for item in conn.execute(
+                    "SELECT id, grant_id, grant_issued_unix, grant_expires_unix, "
+                    "child_host, grant_origin, tool_use_id, session_id, trace_id, "
+                    "work_unit_id, specialist_slug, "
+                    "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
+                    "native_run_id, created_at, consumed_at, delegation_event_id "
+                    "FROM delegation_activation_receipts WHERE trace_id = ? "
+                    "ORDER BY created_at, rowid",
+                    (normalized_trace,),
+                ).fetchall()
+            ]
+            activation_consumptions = [
+                dict(item)
+                for item in conn.execute(
+                    "SELECT id, grant_id, legacy_activation_receipt_id, session_id, "
+                    "trace_id, work_unit_id, child_host, specialist_slug, "
+                    "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
+                    "native_run_id, consumed_at, consumed_unix "
+                    "FROM delegation_activation_consumptions WHERE trace_id = ? "
+                    "ORDER BY consumed_at, rowid",
+                    (normalized_trace,),
+                ).fetchall()
+            ]
+            worker_runs = [
+                dict(item)
+                for item in conn.execute(
+                    "SELECT id, delegation_event_id, backend, session_id, trace_id, "
+                    "work_unit_id, host, worker_id, native_run_id, exit_code, "
+                    "started_at, ended_at FROM worker_runs WHERE trace_id = ? "
+                    "ORDER BY started_at, rowid",
+                    (normalized_trace,),
+                ).fetchall()
+            ]
+            specialist_loads = [
+                dict(item)
+                for item in conn.execute(
+                    "SELECT id, session_id, trace_id, agent_slug, loaded_at, expired_at, "
+                    "activation_receipt_id FROM specialists_loaded WHERE trace_id = ? "
+                    "ORDER BY loaded_at, rowid",
+                    (normalized_trace,),
+                ).fetchall()
+            ]
+            finalizations: list[dict[str, Any]] = []
+            finalization_projection_valid = True
+            for item in conn.execute(
+                "SELECT id, trace_id, host, action, missing, response_hash, "
+                "policy_response_hash, terminal_status, created_at "
+                "FROM finalization_events WHERE trace_id = ? ORDER BY created_at, rowid",
+                (normalized_trace,),
+            ).fetchall():
+                projected = dict(item)
+                raw_missing = projected.pop("missing", None)
+                missing = (
+                    _project_canary_strings(raw_missing, maximum_items=64) if raw_missing else []
+                )
+                if missing is None:
+                    finalization_projection_valid = False
+                    missing = []
+                projected["missing"] = missing
+                finalizations.append(projected)
+
+            ready_recipe = run["preflight_state"] == "ready"
+            try:
+                recipe = (
+                    _decode_preflight_recipe(
+                        row["run_preflight_result"],
+                        session_id=normalized_session,
+                        trace_id=normalized_trace,
+                    )
+                    if ready_recipe
+                    else None
+                )
+            except Exception:
+                recipe = None
+            unit_agent_plan = (
+                [dict(item) for item in recipe.get("unit_agent_plan", [])]
+                if isinstance(recipe, dict)
+                else []
+            )
+            cardinalities["unit_agent_plan"] = len(unit_agent_plan)
+            snapshot.update(
+                unit_agent_plan=unit_agent_plan,
+                delegations=delegations,
+                activation_grants=activation_grants,
+                activation_consumptions=activation_consumptions,
+                worker_runs=worker_runs,
+                specialist_loads=specialist_loads,
+                finalizations=finalizations,
+            )
+
+            scope_consistent = _canary_scope_consistent(
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                host=normalized_host,
+                delegations=delegations,
+                activation_grants=activation_grants,
+                activation_consumptions=activation_consumptions,
+                worker_runs=worker_runs,
+                specialist_loads=specialist_loads,
+                finalizations=finalizations,
+            )
+            recipe_routing = recipe.get("routing") if isinstance(recipe, dict) else None
+            recipe_matches = (
+                isinstance(recipe, dict)
+                and recipe.get("session_id") == normalized_session
+                and recipe.get("trace_id") == normalized_trace
+                and recipe.get("host") == normalized_host
+                and isinstance(recipe_routing, dict)
+                and recipe_routing.get("trace_id") == normalized_trace
+                and recipe_routing.get("query_hash") == normalized_hash
+                and recipe_routing.get("selected_ids") == route["selected_ids"]
+                and recipe_routing.get("work_units") == route["work_units"]
+            )
+            run_state_consistent = not (
+                run["status"] in {"active", "evidence_only"}
+                and (bool(run["ended_at"]) or bool(run["terminal_finalization_id"]))
+            )
+            reason = _canary_resolution_reason(
+                route_projection_valid=route_projection_valid,
+                ready_recipe=ready_recipe,
+                recipe_valid=recipe is not None,
+                recipe_matches=recipe_matches,
+                scope_consistent=scope_consistent,
+                finalization_projection_valid=finalization_projection_valid,
+                run_state_consistent=run_state_consistent,
+            )
+            if reason is None:
+                snapshot["proven"] = True
+                snapshot["status"] = "resolved"
+                reason = "exact_route_resolved"
+            snapshot["reason"] = reason
+            conn.commit()
+            return snapshot
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
 

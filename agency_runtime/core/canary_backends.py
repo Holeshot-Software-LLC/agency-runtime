@@ -202,6 +202,153 @@ def codex_output(stdout: str) -> str | None:
     return messages[-1] if completed and messages else None
 
 
+def _codex_collaboration_call_projection(
+    event: dict[str, Any],
+    item: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate and project one content-free collaboration event."""
+
+    from agency_runtime.core.native_child_prompt_delivery import (
+        parse_native_child_prompt_delivery,
+    )
+    from agency_runtime.core.unit_assignment import work_unit_goal_hash
+
+    item_id = str(item.get("id") or "").strip()
+    tool = str(item.get("tool") or "").strip()
+    if not item_id or len(item_id) > 256 or tool not in {"spawn_agent", "wait"}:
+        raise ValueError("invalid Codex collaboration event identity")
+    receivers = item.get("receiver_thread_ids")
+    if not isinstance(receivers, list) or any(
+        not isinstance(value, str) or not value or len(value) > 256 for value in receivers
+    ):
+        raise ValueError("invalid Codex collaboration receiver identity")
+    states = item.get("agents_states")
+    if not isinstance(states, dict) or any(
+        not isinstance(key, str) or not key or len(key) > 256 or not isinstance(value, dict)
+        for key, value in states.items()
+    ):
+        raise ValueError("invalid Codex collaboration state projection")
+    projected_states = {key: str(value.get("status") or "") for key, value in states.items()}
+    if set(projected_states) != set(receivers):
+        raise ValueError("Codex collaboration states do not match receiver identities")
+    valid_states = {
+        "pending_init",
+        "running",
+        "interrupted",
+        "completed",
+        "errored",
+        "shutdown",
+        "not_found",
+    }
+    if any(status not in valid_states for status in projected_states.values()):
+        raise ValueError("invalid Codex collaboration agent state")
+    prompt = item.get("prompt")
+    if prompt is not None and not isinstance(prompt, str):
+        raise ValueError("invalid Codex collaboration prompt")
+    sender_thread_id = str(item.get("sender_thread_id") or "").strip()
+    if not sender_thread_id or len(sender_thread_id) > 256:
+        raise ValueError("invalid Codex collaboration sender identity")
+    delivery = parse_native_child_prompt_delivery(prompt) if prompt else None
+    prompt_projection = (
+        {
+            "host": delivery.host,
+            "parent_session_id": delivery.parent_session_id,
+            "parent_trace_id": delivery.parent_trace_id,
+            "tool_use_id": delivery.tool_use_id,
+            "work_unit_id": delivery.work_unit_id,
+            "specialist_slug": delivery.specialist_slug,
+            "specialist_version": delivery.specialist_version,
+            "specialist_prompt_hash": delivery.specialist_prompt_hash,
+            "goal_hash": work_unit_goal_hash(delivery.original_task),
+        }
+        if delivery is not None
+        else None
+    )
+    return {
+        "id": item_id,
+        "event_type": str(event["type"]),
+        "tool": tool,
+        "sender_thread_id": sender_thread_id,
+        "receiver_thread_ids": list(receivers),
+        "agents_states": projected_states,
+        "status": str(item.get("status") or ""),
+        "prompt_delivery": prompt_projection,
+    }
+
+
+def _merge_codex_collaboration_call(
+    prior: dict[str, Any] | None,
+    projection: dict[str, Any],
+) -> dict[str, Any]:
+    """Allow only monotonic started-to-completed collaboration evolution."""
+
+    if prior is None:
+        return projection
+    if any(prior[field] != projection[field] for field in ("tool", "sender_thread_id")):
+        raise ValueError("conflicting Codex collaboration event")
+    prior_receivers = prior["receiver_thread_ids"]
+    receivers = projection["receiver_thread_ids"]
+    if prior_receivers and receivers and prior_receivers != receivers:
+        raise ValueError("conflicting Codex collaboration receiver identity")
+    prior_delivery = prior.get("prompt_delivery")
+    projected_delivery = projection.get("prompt_delivery")
+    if (
+        prior_delivery is not None
+        and projected_delivery is not None
+        and prior_delivery != projected_delivery
+    ):
+        raise ValueError("conflicting Codex collaboration prompt identity")
+    if not receivers:
+        projection["receiver_thread_ids"] = prior_receivers
+        projection["agents_states"] = prior["agents_states"]
+    if projected_delivery is None:
+        projection["prompt_delivery"] = prior_delivery
+    return projection
+
+
+def codex_collaboration_evidence(stdout: str) -> dict[str, Any] | None:
+    """Project bounded content-free native-child evidence from Codex JSONL."""
+
+    calls: dict[str, dict[str, Any]] = {}
+    unexpected_items: dict[str, str] = {}
+    try:
+        for line in stdout.splitlines():
+            if not line.strip():
+                continue
+            event = _facade()._load_canary_json(line, maximum_bytes=256_000)
+            if not isinstance(event, dict) or event.get("type") not in {
+                "item.started",
+                "item.completed",
+            }:
+                continue
+            item = event.get("item")
+            if not isinstance(item, dict):
+                continue
+            item_type = str(item.get("type") or "").strip()
+            if item_type != "collab_tool_call":
+                if item_type not in {"agent_message", "reasoning"}:
+                    item_id = str(item.get("id") or "").strip()
+                    unexpected_items[item_id or f"anonymous-{len(unexpected_items)}"] = (
+                        item_type or "unknown"
+                    )
+                continue
+            projection = _codex_collaboration_call_projection(event, item)
+            item_id = str(projection["id"])
+            prior = calls.get(item_id)
+            if event.get("type") == "item.completed" or prior is None:
+                calls[item_id] = _merge_codex_collaboration_call(prior, projection)
+    except (TypeError, ValueError):
+        return None
+    ordered = sorted(calls.values(), key=lambda row: row["id"])
+    return {
+        "calls": ordered,
+        "spawn_count": sum(row["tool"] == "spawn_agent" for row in ordered),
+        "wait_count": sum(row["tool"] == "wait" for row in ordered),
+        "unexpected_item_types": sorted(set(unexpected_items.values())),
+        "unexpected_item_count": len(unexpected_items),
+    }
+
+
 def codex_canary_record(
     result: Any,
     *,
@@ -209,11 +356,12 @@ def codex_canary_record(
 ) -> dict[str, Any]:
     facade = _facade()
     completed = facade._process_succeeded(result)
+    timed_out = bool(result.timed_out)
     record: dict[str, Any] = {
         "backend": "codex",
         "profile_scope": profile_scope,
-        "status": "completed" if completed else "failed",
-        "exit_code": result.returncode,
+        "status": "completed" if completed else "timed_out" if timed_out else "failed",
+        "exit_code": 124 if timed_out else result.returncode,
         "stdout_truncated": result.stdout_truncated,
         "stderr_truncated": result.stderr_truncated,
     }
@@ -222,8 +370,13 @@ def codex_canary_record(
             "registered": True,
             "enabled": True,
         }
-    if completed and (output := facade._codex_output(result.stdout)) is not None:
-        record["output"] = output
+    collaboration = codex_collaboration_evidence(result.stdout)
+    if (
+        completed
+        and (output := facade._codex_output(result.stdout)) is not None
+        and collaboration is not None
+    ):
+        record.update(output=output, collaboration=collaboration)
     elif completed:
         record.update(status="failed", exit_code=1)
     return record
@@ -623,6 +776,7 @@ __all__ = [
     "claude_canary_record",
     "claude_plugin_dir",
     "codex_canary_record",
+    "codex_collaboration_evidence",
     "codex_isolated_plugin_enabled",
     "codex_marketplace",
     "codex_output",

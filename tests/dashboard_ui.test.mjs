@@ -1639,6 +1639,79 @@ test("host views disclose empty inventories and unknown runtime controls truthfu
   assert.ok(labels.includes("Run /hooks, then verify activation."));
 });
 
+test("host cards render activation proof truthfully without adding canary controls", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("render-only test does not fetch");
+  });
+  const digest = "a".repeat(64);
+  const attestation = {
+    passed_at: "2026-07-27T12:34:56Z",
+    profile_scope: "current-profile",
+    proof_contract: "agency.codex-activation-canary.v1",
+    proof_digest: digest,
+    trace_id: "trace-safe",
+  };
+
+  harness.api.state.hosts = [{
+    canary_attestation: attestation,
+    canary_attestation_status: "verified",
+    host: "codex",
+    inspection_status: "complete",
+    maturity: "runtime-verified",
+  }];
+  harness.api.renderHosts();
+  let labels = descendants(harness.node("host-grid")).map((node) => node.textContent);
+  assert.ok(labels.includes("Last successful activation proof"));
+  assert.ok(labels.includes(`Proof fingerprint · ${digest}`));
+  assert.ok(labels.includes("Contract · agency.codex-activation-canary.v1"));
+  assert.ok(labels.includes("Profile · current-profile"));
+  assert.ok(labels.includes("Trace · trace-safe"));
+  assert.deepEqual(
+    descendants(harness.node("host-grid")).filter((node) => node.type === "button"),
+    [],
+  );
+
+  harness.api.state.hosts = [{
+    canary_attestation: attestation,
+    canary_attestation_status: "stale",
+    canary_stale_reasons: ["bundle_digest"],
+    host: "codex",
+    inspection_status: "complete",
+    maturity: "activation-required",
+  }];
+  harness.api.renderHosts();
+  labels = descendants(harness.node("host-grid")).map((node) => node.textContent);
+  assert.ok(labels.includes("Historical activation proof"));
+  assert.ok(labels.some((label) => /bundle_digest/.test(label)));
+  assert.equal(labels.includes("Last successful activation proof"), false);
+
+  harness.api.state.hosts = [{
+    canary_attestation_status: "absent",
+    host: "codex",
+    inspection_status: "complete",
+  }];
+  harness.api.renderHosts();
+  labels = descendants(harness.node("host-grid")).map((node) => node.textContent);
+  assert.ok(labels.includes("No current-profile Codex activation proof is attested."));
+
+  const hostile = "<img src=x onerror=globalThis.compromised=true>";
+  harness.api.state.hosts = [{
+    canary_attestation: { ...attestation, proof_digest: hostile },
+    canary_attestation_status: "inspection-unavailable",
+    host: "codex",
+    inspection_status: "stale",
+    maturity: "inspection-stale",
+  }];
+  harness.api.renderHosts();
+  labels = descendants(harness.node("host-grid")).map((node) => node.textContent);
+  assert.ok(labels.includes("Activation proof unavailable"));
+  assert.ok(labels.includes("Historical proof metadata (not current)"));
+  assert.equal(labels.includes("Last successful activation proof"), false);
+  assert.ok(labels.some((label) => label.includes(hostile)));
+  assert.ok(descendants(harness.node("host-grid")).every((node) => node.innerHTML === undefined));
+  assert.equal(harness.context.compromised, undefined);
+});
+
 test("Route Lab offers only unambiguous bounded execution hosts and preserves explicit choice", () => {
   const missing = createAppHarness(() => {
     throw new Error("missing optional Route Lab controls do not fetch");

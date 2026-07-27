@@ -282,6 +282,8 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
             "created_at",
             "consumed_at",
             "delegation_event_id",
+            "grant_origin",
+            "tool_use_id",
         },
         "delegation_events": {
             "executed_worker_kind",
@@ -295,6 +297,7 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         "specialists_loaded": {"activation_receipt_id"},
         "finalization_events": {"policy_response_hash"},
         "host_controls": {"generation"},
+        "host_canary_attestations": {"proof_contract", "proof_digest"},
         "native_child_parent_scopes": {
             "id",
             "token_hash",
@@ -350,6 +353,10 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
         "idx_finalization_trace_policy_response": (
             "finalization_events",
             ("trace_id", "action", "policy_response_hash"),
+        ),
+        "idx_routing_query_hash": (
+            "routing_decisions",
+            ("query_hash", "created_at"),
         ),
         "idx_worker_runs_native_scope": (
             "worker_runs",

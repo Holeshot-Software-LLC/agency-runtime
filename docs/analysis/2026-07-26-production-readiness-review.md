@@ -97,6 +97,35 @@ reproduction and must not be implemented.
 
 ## Fresh artifact, Codex, routing, and UI checkpoint
 
+### Exact Codex activation-proof candidate
+
+AR-180 now has a locally green, one-unit activation probe rather than the prior
+multi-unit diagnostic. The strict verifier correlates the Codex collaboration
+JSONL with immutable native-hook provenance, exact tool-use identity, child
+lifecycle, one-use activation consumption, delegation, model receipt, accepted
+finalization, required response header, and current installation identity. It
+persists only a current-profile Codex proof under
+`agency.codex-activation-canary.v1`; isolated or tokenless diagnostics cannot
+promote readiness. A requested current-profile recheck invalidates the earlier
+success at the immediate pre-invocation boundary so failure and timeout remain
+fail-closed.
+
+The native hook does not replace Codex scheduling. It acts only on canonical
+Agency-owned planned task names or already injected deliveries; ambiguous or
+unmatched V1 calls return no hook decision. Schema v38 adds immutable
+`manual_api`/`native_hook` provenance and exact tool-use identity, migrates v37
+attestations fail-closed, and indexes exact canary routing lookup. Atomic CLI
+evidence output prevents interrupted writes from publishing a partial report.
+
+The dashboard now treats expired host inspection as unavailable instead of
+simultaneously stale and runtime-verified. Its read-only Codex card distinguishes
+last-successful, historical, absent, and inspection-unavailable proof, displays
+the complete content-free fingerprint safely, and adds no execution control.
+Focused canary/output, schema/provenance, and dashboard server checks pass; all
+106 UI tests pass. This is still source-level evidence. One freshly installed
+current-profile live run remains required before AR-180 or production readiness
+can be promoted.
+
 ### Attended existing-Codex refresh addendum
 
 Exact local commit pair `30d5fc0`/`6d55e29` implements ADR-0104's existing-

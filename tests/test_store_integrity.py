@@ -72,7 +72,14 @@ def test_concurrent_legacy_store_migration_is_serialized_and_idempotent(
         version = migrated.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
     finally:
         migrated.close()
-    assert {"profile_scope", "host_version", "install_id", "bundle_digest"} <= columns
+    assert {
+        "profile_scope",
+        "proof_contract",
+        "proof_digest",
+        "host_version",
+        "install_id",
+        "bundle_digest",
+    } <= columns
     assert version == sqlite_store._SCHEMA_VERSION
 
 

@@ -3564,6 +3564,53 @@ def test_dashboard_host_api_preserves_unknown_boolean_states(
     assert payload["hosts"][0]["enabled"] is None
 
 
+def test_dashboard_host_api_preserves_content_free_activation_proof(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "missing.yaml"))
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "dashboard.db"))
+    store = Store(tmp_path / "dashboard.db")
+    token = "token"
+    attestation = {
+        "proof_contract": "agency.codex-activation-canary.v1",
+        "proof_digest": "a" * 64,
+        "profile_scope": "current-profile",
+        "passed_at": "2026-07-27T12:34:56Z",
+        "trace_id": "trace-activation",
+    }
+    server = DashboardHTTPServer(
+        store,
+        auth_token=token,
+        port=0,
+        host_inspector=lambda: [
+            {
+                "host": "codex",
+                "registered": True,
+                "enabled": True,
+                "canary": True,
+                "canary_attestation_status": "verified",
+                "canary_attestation": attestation,
+            }
+        ],
+        runtime_control_home=tmp_path,
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    wrapped = {"base": f"http://127.0.0.1:{server.server_address[1]}", "token": token}
+    try:
+        status, payload, _headers = _json_response(wrapped, "/api/hosts", token=token)
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    assert status == 200
+    host = payload["hosts"][0]
+    assert host["canary"] is True
+    assert host["canary_attestation_status"] == "verified"
+    assert host["canary_attestation"] == attestation
+
+
 def test_dashboard_host_api_isolates_unrecognized_host_label(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -3990,6 +4037,11 @@ def test_expired_host_evidence_is_not_actionable_while_refresh_is_pending():
         assert stale["inspection_status"] == "stale"
         assert stale["registered"] is None
         assert stale["enabled"] is None
+        assert stale["loaded"] is None
+        assert stale["canary"] is None
+        assert stale["canary_attestation_status"] == "inspection-unavailable"
+        assert stale["canary_stale_reasons"] == ["host_inspection"]
+        assert stale["maturity"] == "inspection-stale"
     finally:
         release.set()
         executor.shutdown(wait=True)

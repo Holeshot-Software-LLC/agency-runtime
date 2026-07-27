@@ -557,6 +557,55 @@ def test_codex_activation_ignores_failed_registration_and_records_failed_proof()
     assert pending["activation"]["state"] == "verification_failed"
 
 
+def test_fresh_activation_failure_cannot_reuse_an_older_verified_attestation():
+    result = {"host": "codex", "ok": True, "registered": True}
+    subject._codex_activation_state(
+        result,
+        verify=True,
+        timeout=1,
+        inspector=lambda _host: {
+            "canary": True,
+            "canary_attestation_status": "verified",
+            "canary_attestation": {"profile_scope": "current-profile"},
+            "hook_trust_status": "trusted",
+        },
+        canary_runner=lambda *_args, **_kwargs: {
+            "canary_passed": False,
+            "profile_scope": "current-profile",
+            "unmet_prerequisites": ["fresh activation proof failed"],
+        },
+    )
+
+    assert result["complete"] is False
+    assert result["maturity"] == "activation-required"
+    assert result["activation"]["state"] == "verification_failed"
+    assert result["activation"]["verification"]["canary_passed"] is False
+
+
+@pytest.mark.parametrize("invalid_result", [None, "not-a-report"])
+def test_invalid_fresh_activation_result_cannot_reuse_an_older_verified_attestation(
+    invalid_result: object,
+):
+    result = {"host": "codex", "ok": True, "registered": True}
+    subject._codex_activation_state(
+        result,
+        verify=True,
+        timeout=1,
+        inspector=lambda _host: {
+            "canary": True,
+            "canary_attestation_status": "verified",
+            "canary_attestation": {"profile_scope": "current-profile"},
+            "hook_trust_status": "trusted",
+        },
+        canary_runner=lambda *_args, **_kwargs: invalid_result,
+    )
+
+    assert result["complete"] is False
+    assert result["maturity"] == "activation-required"
+    assert result["activation"]["state"] == "verification_failed"
+    assert result["activation"]["verification"]["canary_passed"] is False
+
+
 def test_codex_activation_accepts_existing_current_profile_attestation_without_new_call():
     result = {"host": "codex", "ok": True, "registered": True}
     subject._codex_activation_state(

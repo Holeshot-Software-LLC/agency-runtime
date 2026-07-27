@@ -381,6 +381,55 @@ export function createRenderer(core, config) {
 			if (host.hook_trust_action) {
 				card.append(paragraph( "host-action", host.hook_trust_action));
 			}
+			if (String(host.host || "").toLowerCase() === "codex") {
+				const proof = div( "activation-proof");
+				const inspection = String(host.inspection_status || "unknown").toLowerCase();
+				const status = String(host.canary_attestation_status || "absent").toLowerCase();
+				const attestation = host.canary_attestation && typeof host.canary_attestation === "object"
+					? host.canary_attestation
+					: null;
+				const appendFacts = () => {
+					if (!attestation) return;
+					proof.append(
+						small( "", `Contract · ${attestation.proof_contract || "unavailable"}`),
+						small( "", `Proof fingerprint · ${attestation.proof_digest || "unavailable"}`),
+						small( "", `Profile · ${attestation.profile_scope || "unavailable"}`),
+						small( "", `Passed · ${formatTime(attestation.passed_at)}`),
+						small( "", `Trace · ${attestation.trace_id || "unavailable"}`),
+					);
+				};
+				if (inspection !== "complete") {
+					proof.append(
+						strong( "", "Activation proof unavailable"),
+						small( "", `Host inspection is ${inspection}; no current activation claim is shown.`),
+					);
+					if (attestation) {
+						proof.append(small( "activation-proof-history", "Historical proof metadata (not current)"));
+						appendFacts();
+					}
+				} else if (status === "verified") {
+					proof.append(
+						strong( "", "Last successful activation proof"),
+						small( "", "Current for the recorded host and install identity; model and delegation settings are not bound."),
+					);
+					appendFacts();
+				} else if (status === "stale") {
+					const reasons = Array.isArray(host.canary_stale_reasons)
+						? host.canary_stale_reasons.filter((reason) => typeof reason === "string" && reason)
+						: [];
+					proof.append(
+						strong( "", "Historical activation proof"),
+						small( "", `Not current${reasons.length ? ` · ${reasons.join(", ")}` : ""}.`),
+					);
+					appendFacts();
+				} else {
+					proof.append(
+						strong( "", "Activation proof"),
+						small( "", "No current-profile Codex activation proof is attested."),
+					);
+				}
+				card.append(proof);
+			}
 			card.append(small( "read-only-note", "Monitoring only; host controls are unavailable here."));
 			grid.append(card);
 		});

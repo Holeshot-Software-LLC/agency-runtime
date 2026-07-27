@@ -543,7 +543,12 @@ def _unknown_host(host: str, *, status: str, error: str | None = None) -> dict[s
         "enabled": None,
         "loaded": None,
         "canary": None,
+        "canary_attestation_status": "inspection-unavailable",
+        "canary_stale_reasons": ["host_inspection"],
+        "canary_attestation": None,
         "marketplace_registered": None,
+        "hook_trust_status": None,
+        "hook_trust_action": None,
         "maturity": "inspection-pending" if status == "timed_out" else "inspection-error",
         "evidence": [],
         "inspection_status": status,
@@ -675,6 +680,21 @@ class _HostInspectionCoordinator:
                     item["inspection_status"] = "stale"
                     item["registered"] = None
                     item["enabled"] = None
+                    item["loaded"] = None
+                    item["canary"] = None
+                    item["canary_attestation_status"] = "inspection-unavailable"
+                    reasons = item.get("canary_stale_reasons")
+                    stale_reasons = (
+                        [reason for reason in reasons if isinstance(reason, str) and reason]
+                        if isinstance(reasons, list)
+                        else []
+                    )
+                    if "host_inspection" not in stale_reasons:
+                        stale_reasons.append("host_inspection")
+                    item["canary_stale_reasons"] = stale_reasons
+                    item["hook_trust_status"] = None
+                    item["hook_trust_action"] = None
+                    item["maturity"] = "inspection-stale"
                 rendered.append(item)
         return rendered
 

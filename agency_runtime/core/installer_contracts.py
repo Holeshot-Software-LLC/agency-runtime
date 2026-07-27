@@ -12,6 +12,7 @@ MARKETPLACE_ID = "agency-runtime"
 INSTALL_MANIFEST = ".agency-runtime-install.json"
 ADAPTER_LAUNCHER_MANIFEST = ".agency-runtime-launcher.json"
 PLUGIN_VERSION = "0.1.0"
+CODEX_ACTIVATION_CANARY_PROOF_CONTRACT = "agency.codex-activation-canary.v1"
 MINIMUM_OPENCLAW_VERSION = "2026.7.1"
 OPENCLAW_REQUIRED_HOOKS = frozenset(
     {

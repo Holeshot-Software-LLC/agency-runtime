@@ -85,7 +85,7 @@ the full acceptance history.
   enabled host. The test listener is stopped.
 - The named fast production spine passes 521 tests with 5 platform skips in
   74.94 seconds at pushed head `880a5ce`. The new exact candidate passes 522
-  with 5 skips in 75.89 seconds; all 105 dashboard UI tests, Ruff, formatting,
+  with 5 skips in 75.89 seconds; all 106 dashboard UI tests, Ruff, formatting,
   docs, focused high-severity Bandit, and every routing-evaluation gate pass.
 - ADR-0104's exact existing-install Codex refresh passes attended Windows Hello,
   atomic publication, native remove/add, and postcondition proof. New install ID
@@ -95,14 +95,23 @@ the full acceptance history.
   routing prove a DO-178C gap now abstains rather than forming a false team.
 - One-shot application evaluation is deferred to post-production AR-178 and is
   not an AR-119/125 release gate.
+- AR-180's local candidate now deterministically plans one child and proves the
+  exact Codex JSONL tool call, native-hook grant provenance, child lifecycle,
+  single consumption, model receipt, delegation, accepted finalization, header,
+  and install-bound attestation. Ambiguous/unmatched native calls remain Codex
+  scheduler decisions. Focused suites pass 33 canary/output tests, 11 schema/
+  provenance migrations, dashboard API checks, and all 106 UI tests.
+- Expired dashboard host inspection now neutralizes canary and maturity claims;
+  the Codex card labels verified evidence as the last successful activation
+  proof and renders its full content-free fingerprint without an execute button.
 
 ## exact-blocker
 
 - Generic and missing-host installation remain unavailable, but exact existing-
-  install Codex refresh is now a positive prepared transaction. Renewed trust
-  proves hooks, header, routing, expected selection, delegation planning, and
-  Stop finalization. AR-180 remains open because no isolated child activation or
-  accepted terminal turn was proven; no canary attestation exists.
+  install Codex refresh is now a positive prepared transaction. AR-180's strict
+  implementation is locally green; it remains open until the refreshed current
+  candidate completes one real child activation and persists its installation-
+  bound proof. No preexisting attestation may satisfy that recheck.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
@@ -126,8 +135,9 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Under AR-180, define a one-unit bounded activation probe and prove the Codex
-   non-interactive native-child surface before another live attempt.
+1. Commit the AR-180 candidate and ledger, refresh it into this Codex install,
+   then run exactly one bounded current-profile activation canary without a
+   hook-trust bypass. Preserve and diagnose the exact evidence if it fails.
 2. Add signed-delivery provenance and independent Windows default-policy
    verification. Publisher/legal/signing inputs remain owner/external gates.
 3. Design fresh missing-host bootstrap separately if it is a claimed v1 surface.

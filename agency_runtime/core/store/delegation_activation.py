@@ -53,6 +53,7 @@ _STORE_UNIX_SQL = "CAST(STRFTIME('%s', 'NOW') AS INTEGER)"
 _DEFAULT_ACTIVATION_TTL_SECONDS = 10 * 60
 _DEFAULT_EVIDENCE_CONTRACT_ID = "agency-native-child-v1"
 _DEFAULT_EVIDENCE_REQUIREMENTS = ("delegation-execution", "specialist-load")
+_ACTIVATION_GRANT_ORIGINS = frozenset({"manual_api", "native_hook"})
 
 
 def _identity(value: object, *, maximum: int, field: str, required: bool = False) -> str:
@@ -82,6 +83,29 @@ def _activation_ttl(value: object) -> int:
             f"ttl_seconds must be between 1 and {MAX_NATIVE_CHILD_ACTIVATION_TTL_SECONDS}"
         )
     return value
+
+
+def _activation_grant_provenance(
+    grant_origin: object,
+    tool_use_id: object,
+) -> tuple[str, str]:
+    """Validate the immutable authority and native tool-call correlation."""
+
+    if not isinstance(grant_origin, str):
+        raise ValueError("grant_origin must be a string")
+    origin = grant_origin.strip()
+    if origin not in _ACTIVATION_GRANT_ORIGINS:
+        raise ValueError("grant_origin must identify a supported activation authority")
+    tool_use = validate_correlation_id(
+        tool_use_id,
+        field="tool_use_id",
+        required=False,
+    )
+    if origin == "native_hook" and not tool_use:
+        raise ValueError("native_hook activation requires the exact tool_use_id")
+    if origin != "native_hook" and tool_use:
+        raise ValueError("tool_use_id is reserved for native_hook activation")
+    return origin, tool_use
 
 
 def _contract_items(value: object, *, field: str) -> tuple[str, ...]:
@@ -390,6 +414,8 @@ class DelegationActivationStoreMixin:
         work_unit_id: str,
         worker_kind: str = "generic-worker",
         worker_id: str = "",
+        grant_origin: str = "manual_api",
+        tool_use_id: str = "",
         ttl_seconds: int = _DEFAULT_ACTIVATION_TTL_SECONDS,
         mutation_mode: str = "read_only",
         mutation_path_prefixes: Sequence[str] = (),
@@ -416,6 +442,7 @@ class DelegationActivationStoreMixin:
         if kind != "generic-worker":
             raise ValueError("delegated specialist retrieval uses generic-worker attribution")
         worker = _identity(worker_id, maximum=MAX_DELEGATION_WORKER_ID_CHARS, field="worker_id")
+        origin, tool_use = _activation_grant_provenance(grant_origin, tool_use_id)
         ttl = _activation_ttl(ttl_seconds)
         mutation_scope = build_native_child_mutation_scope(
             mode=mutation_mode,
@@ -550,11 +577,12 @@ class DelegationActivationStoreMixin:
             conn.execute(
                 "INSERT INTO delegation_activation_receipts "
                 "(id, token_hash, grant_id, grant_payload, grant_issued_unix, "
-                "grant_expires_unix, child_host, session_id, trace_id, work_unit_id, "
+                "grant_expires_unix, child_host, grant_origin, tool_use_id, "
+                "session_id, trace_id, work_unit_id, "
                 "specialist_slug, specialist_version, specialist_prompt_hash, "
                 "worker_kind, worker_id, native_run_id, created_at, consumed_at, "
                 "delegation_event_id) "
-                f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', "  # nosec B608
+                f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', "  # nosec B608
                 f"{STORE_CLOCK_SQL}, NULL, NULL)",  # nosec B608
                 (
                     receipt_id,
@@ -564,6 +592,8 @@ class DelegationActivationStoreMixin:
                     grant.issued_at,
                     grant.expires_at,
                     grant.host,
+                    origin,
+                    tool_use,
                     normalized_session,
                     normalized_trace,
                     unit,
@@ -588,6 +618,8 @@ class DelegationActivationStoreMixin:
                 "prompt_hash": reference["hash"],
                 "worker_kind": kind,
                 "worker_id": worker,
+                "grant_origin": origin,
+                "tool_use_id": tool_use,
                 "worker_binding": worker_binding.as_dict(),
             }
         except Exception:
@@ -607,6 +639,8 @@ class DelegationActivationStoreMixin:
         specialist_slug: str,
         specialist_version: str,
         specialist_prompt_hash: str,
+        grant_origin: str = "manual_api",
+        tool_use_id: str = "",
     ) -> bool:
         """Authenticate one current unconsumed grant without consuming it."""
 
@@ -631,6 +665,7 @@ class DelegationActivationStoreMixin:
         prompt_hash = str(specialist_prompt_hash or "").strip()
         if content_digest_identity(prompt_hash) is None:
             raise ValueError("specialist_prompt_hash is invalid")
+        origin, tool_use = _activation_grant_provenance(grant_origin, tool_use_id)
         token_hash = sha256(token.encode("utf-8", errors="surrogatepass")).hexdigest()
 
         conn = self._connect()
@@ -644,7 +679,8 @@ class DelegationActivationStoreMixin:
                 "WHERE receipt.session_id = ? AND receipt.trace_id = ? "
                 "AND receipt.work_unit_id = ? AND receipt.specialist_slug = ? "
                 "AND receipt.specialist_version = ? AND receipt.specialist_prompt_hash = ? "
-                "AND receipt.child_host = ? AND receipt.consumed_at IS NULL "
+                "AND receipt.child_host = ? AND receipt.grant_origin = ? "
+                "AND receipt.tool_use_id = ? AND receipt.consumed_at IS NULL "
                 "ORDER BY receipt.rowid LIMIT 2",
                 (
                     normalized_session,
@@ -654,6 +690,8 @@ class DelegationActivationStoreMixin:
                     version,
                     prompt_hash,
                     normalized_host,
+                    origin,
+                    tool_use,
                 ),
             ).fetchall()
             if len(rows) != 1:
