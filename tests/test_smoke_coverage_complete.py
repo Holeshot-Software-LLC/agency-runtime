@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -480,3 +481,42 @@ def test_run_smoke_uses_active_roster_and_records_plugin_failure(
     roster = next(item for item in report["checks"] if item["name"] == "routing_roster_available")
     assert roster["detail"] == {"agent_count": 1, "source": "active"}
     assert report["failed_count"] == 1
+
+
+def test_run_smoke_reuses_one_attested_launcher_across_hosts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    launcher = ("C:/private/python.exe", "C:/private/agency_runtime/_bootstrap.py")
+    prepare_calls: list[None] = []
+    bindings: list[tuple[str, str]] = []
+    observed_hosts: list[str] = []
+
+    monkeypatch.setattr(smoke, "HOSTS", {"codex": object(), "hermes": object()})
+    monkeypatch.setattr(
+        smoke,
+        "run_delegation_eval",
+        lambda: {"passed": True, "passed_count": 3, "failed_count": 0},
+    )
+
+    def prepare() -> tuple[str, str]:
+        prepare_calls.append(None)
+        return launcher
+
+    def bind(paths: tuple[str, str]):
+        bindings.append(paths)
+        return nullcontext()
+
+    monkeypatch.setattr(smoke, "_prepare_smoke_launcher_paths", prepare)
+    monkeypatch.setattr(smoke, "bind_launcher_artifact_paths", bind)
+    monkeypatch.setattr(
+        smoke,
+        "_smoke_generated_plugin",
+        lambda host, _home: observed_hosts.append(host) or {"host": host},
+    )
+
+    report = smoke.run_smoke(all_hosts=True)
+
+    assert report["passed"] is True
+    assert prepare_calls == [None]
+    assert bindings == [launcher, launcher]
+    assert observed_hosts == ["codex", "hermes"]

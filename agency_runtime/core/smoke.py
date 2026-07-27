@@ -28,6 +28,7 @@ from agency_runtime.core.installer import (
     toggle_agency,
 )
 from agency_runtime.core.installer_contracts import ADAPTER_LAUNCHER_MANIFEST
+from agency_runtime.core.installer_payloads import bind_launcher_artifact_paths
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.private_paths import ensure_private_directory, private_temporary_directory
 from agency_runtime.core.process_argv import (
@@ -95,6 +96,14 @@ def _check(name: str, fn: Any) -> dict[str, Any]:
 
 class _SkipHost(Exception):
     """Signal that a host cannot be exercised on this machine (skip, not fail)."""
+
+
+def _prepare_smoke_launcher_paths() -> tuple[str, str]:
+    """Prepare one shared launcher after installer test bindings are active."""
+
+    from agency_runtime.core.installer_orchestration import _prepare_adapter_launcher_paths
+
+    return _prepare_adapter_launcher_paths()
 
 
 def _prepare_fake_host_home(home: Path, host: str) -> None:
@@ -527,6 +536,30 @@ def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
     # never failed.
     hosts = sorted(HOSTS) if all_hosts else detect_installed_agents()
     checks: list[dict[str, Any]] = []
+    prepared_launcher: tuple[str, str] | None = None
+    launcher_error: Exception | None = None
+    launcher_prepared = False
+
+    def _smoke_host(host: str, tmp_home: Path) -> dict[str, Any]:
+        nonlocal prepared_launcher, launcher_error, launcher_prepared
+        if len(hosts) < 2:
+            return _smoke_generated_plugin(host, tmp_home)
+        if not launcher_prepared:
+            launcher_prepared = True
+            try:
+                prepared_launcher = _prepare_smoke_launcher_paths()
+            except Exception as exc:  # surfaced through the typed smoke result
+                launcher_error = exc
+        if launcher_error is not None:
+            raise RuntimeError(
+                "shared smoke launcher preparation failed: "
+                f"{type(launcher_error).__name__}: {launcher_error}"
+            ) from launcher_error
+        if prepared_launcher is None:  # pragma: no cover - guarded state invariant
+            raise RuntimeError("shared smoke launcher preparation returned no identity")
+        with bind_launcher_artifact_paths(prepared_launcher):
+            return _smoke_generated_plugin(host, tmp_home)
+
     from agency_runtime.core.config import (
         AgencyConfig,
         StoreConfig,
@@ -592,7 +625,7 @@ def run_smoke(*, all_hosts: bool = False) -> dict[str, Any]:
                     checks.extend(
                         _check(
                             f"plugin_{host}",
-                            lambda host=host: _smoke_generated_plugin(host, tmp_home),
+                            lambda host=host: _smoke_host(host, tmp_home),
                         )
                         for host in hosts
                     )

@@ -198,6 +198,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-178` | [Evaluate complete one-shot applications after production launch](issue-AR-178-evaluate-one-shot-applications-post-production.md) | open | p2 | testing | [#153](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/153) |
 | `AR-179` | [Fail named regulated-assurance staffing gaps closed](issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | done | p0 | routing | [#154](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/154) |
 | `AR-180` | [Prove Codex specialist activation in the live canary](issue-AR-180-prove-codex-specialist-activation-canary.md) | open | p0 | host-integrations | Pending authorization |
+| `AR-181` | [Bound all-host smoke launcher preparation](issue-AR-181-bound-all-host-smoke-launcher-preparation.md) | in_progress | p1 | testing | pending authorization |
 
 ## Traceability
 
@@ -385,6 +386,7 @@ not stable internal identifiers.
 | [AR-178](issue-AR-178-evaluate-one-shot-applications-post-production.md) | `6cb8406`; deferred post-production evaluation | [ADR-0102](../decisions/0102-defer-one-shot-application-evaluation.md) |
 | [AR-179](issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | `c2ebfc6`, `99b51bd` | [ADR-0103](../decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md) |
 | [AR-180](issue-AR-180-prove-codex-specialist-activation-canary.md) | `cb06c73`, `77ec4f6`, `54d82a9`; exact-bundle hook trust and live proof pending | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md) |
+| [AR-181](issue-AR-181-bound-all-host-smoke-launcher-preparation.md) | implementation in progress; tracker creation pending authorization | None; bounded smoke optimization preserves existing launcher trust contracts |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

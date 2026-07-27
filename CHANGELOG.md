@@ -37,6 +37,9 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Multi-host smoke now prepares one attested private launcher closure and reuses
+  it across isolated host checks instead of re-hashing the same installed
+  runtime once per host.
 - The mobile dashboard header now overrides its desktop flex basis after the
   layout changes to a column, eliminating the large blank gap above live
   controls without changing desktop layout or runtime authority.
