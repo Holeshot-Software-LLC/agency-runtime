@@ -237,6 +237,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3e14f74` | 2026-07-27 | fix(production): close final traceability and CI gaps | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-27-3e14f74-final-traceability-ci.md) |
 | `637900d` | 2026-07-27 | docs(checkpoint): seal final layered review package | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `b520fa7` | 2026-07-27 | fix(testing): align hardened full-gate contracts | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [detail](2026-07-27-b520fa7-full-gate-contracts.md) |
+| `e0dca70` | 2026-07-27 | docs(checkpoint): seal full-gate contract repair | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
