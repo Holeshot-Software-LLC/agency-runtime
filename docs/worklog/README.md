@@ -243,6 +243,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c2ebfc6` | 2026-07-27 | fix(routing): fail regulated assurance gaps closed | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-121](../roadmap/issue-AR-121-inference-planning-and-staffing.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md), [AR-179](../roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | [detail](2026-07-27-c2ebfc6-regulated-assurance-gaps.md) |
 | `99b51bd` | 2026-07-27 | docs(production): record fresh artifact and live evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md), [AR-179](../roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | [detail](2026-07-27-99b51bd-fresh-live-evidence.md) |
 | `4dd1aa0` | 2026-07-27 | docs(checkpoint): seal fresh live readiness evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `52150e3` | 2026-07-27 | docs(production): bind artifact evidence to revision | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
