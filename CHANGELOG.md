@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-07-21
+updated: 2026-07-27
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -36,6 +36,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- The warning-strict local change loop now defaults to deterministic source-byte
+  partitioning. A versioned Windows timing profile remains available through
+  explicit `--partition auto`; strict reproduction also requires
+  `--require-exact-shard-weights`, so an under-threshold profile cannot become
+  the silent default.
 - Pull requests no longer repeat the unchanged seven-cell Python compatibility
   matrix already enforced on `main` and manual dispatch. The aggregate quality
   gate now requires an intentional PR skip, requires matrix success on governed

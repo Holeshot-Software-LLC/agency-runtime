@@ -3,7 +3,7 @@ title: "AR-156: Restore cost-bounded verification feedback"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [testing, ci, performance, cost, developer-experience]
 related:
   - docs/roadmap/issue-AR-117-parallelize-pr-verification.md
@@ -117,12 +117,15 @@ state; real runs publish one run-bound bounded log set and manifest.
   artifacts using the independently reproduced source-byte control partition;
   malformed counts, phases, assignments, paths, links, or provenance fail
   closed.
-- Automatic loading distinguishes exact, compatible product-drift, stale,
-  missing, invalid, disabled, and unsupported profiles. Strict benchmark mode
-  accepts exact evidence only.
-- Three comparable warm local runs demonstrate at least 30 percent median
-  wall-clock improvement before the parallel runner is recommended as the
-  default change loop.
+- Opt-in timing-profile loading distinguishes exact, compatible product-drift,
+  stale, missing, invalid, disabled, and unsupported profiles. The public
+  loader, plan API, and CLI default to source-byte weights; strict benchmark
+  mode requires explicit `auto` selection and accepts exact evidence only.
+- Three comparable warm four-worker runs plus one same-commit one-worker
+  control demonstrate at least 30 percent median wall-clock improvement before
+  the parallel runner is recommended as the default change loop. Automatic
+  timing-profile promotion separately requires 30 percent median improvement
+  over the four-worker source-byte control.
 - After GitHub billing or spending state is repaired, one PR run and one
   `main` or manual run provide hosted URLs and exact job evidence.
 
@@ -244,7 +247,30 @@ Windows CPython 3.13 profile with SHA-256
 Strict dry-run loads it as `duration-lpt-v1/exact` and assigns 68, 69, 70, and
 69 files. The planned median-duration totals differ by only 7.4801 ms across
 shards; that is schedule input evidence, not a wall-time speed claim. Matched
-strict-profile runs and the one-worker control remain required.
+strict-profile runs and the one-worker control are now complete.
+
+Three strict-profile runs passed the same 7,804-item, 276-file corpus at frozen
+manifest wall times of 576.350, 575.973, and 575.949 seconds; their median is
+575.973 seconds. Compared with the 639.948-second four-worker source-byte
+median, duration weighting saved 63.975 seconds, or 9.997 percent. That misses
+the unchanged 30-percent automatic-promotion gate. The profile remains valid
+explicit opt-in evidence, while the public loader, plan API, and CLI default to
+`source-bytes`; strict reproduction explicitly combines `--partition auto`
+with `--require-exact-shard-weights`.
+
+The same clean checkpoint passed one instrumented one-worker source-byte
+control, run `6089116690329584d1763e19869c65a8`, in 2,253.785 seconds. The
+four-worker strict-profile median therefore reduced developer wall time by
+74.444 percent, a measured 3.913x speedup, while preserving the exact file union
+and warning-strict corpus. This clears the parallel-runner threshold without
+promoting the under-threshold timing profile by default.
+
+Artifact analysis shows the exact assignment is already within about nine
+seconds of its measured four-way phase-work floor. The next material local
+speed work must reduce total fixture, Store, and cleanup cost rather than
+reshuffle files: per-test offline-config writes, repeated validated SQLite
+connections inside composite operations, and the 22-25 second synchronous
+scratch-publication tail are the leading measured candidates.
 
 Four test-only cost corrections retain the exact exercised contracts while
 removing unrelated setup: HTTP fixture shutdown polls at 10 ms, adapter parity
@@ -269,7 +295,8 @@ therefore keeps the 60-second child bound, rejects critical runtime paths above
 proves the real runner and worker PIDs are reaped during crash recovery. The
 focused package passes 20 tests in 16.11 seconds; both private-runtime self-host
 tests pass in 7.96 seconds even with a deliberately long outer temp path.
-Because v2 changes the governed evidence contract and adds one profile test
-file, three new clean source-byte control samples, matched exact-weight samples,
-and a one-shard control remain before the local runner acceptance can close.
-The canonical serial, coverage, and performance gates remain required.
+The v2 controls, matched exact-weight samples, and one-shard control now close
+the local runner's speed-evidence gate. The timing profile remains opt-in
+because its separate promotion gate failed. Current-head canonical coverage,
+performance, artifact, and hosted evidence remain required before AR-156 can
+close.

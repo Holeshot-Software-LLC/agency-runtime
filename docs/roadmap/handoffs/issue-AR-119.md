@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [handoff, routing, workforce, evaluation, recovery, production-readiness]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -22,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: aad2901879991862e199aacedf81a186700bd0d1
-minimum_ledger_commit: a34a9dc13ba7fc1ae79506e074624b0d7add27e5
+evidence_commit: 85549a4d8000aef708b7e1b90e3bcfb90a7d81b1
+minimum_ledger_commit: 0001bf77acfef4092e8ac21582375790f1b68061
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -40,13 +40,13 @@ acceptance contract; this capsule records only the active checkpoint.
   publication, or release was authorized.
 - The user-owned untracked `docs/analysis/2026-07-25-deep-audit-findings.md`
   remains unchanged and excluded from every commit.
-- Telemetry reported 19.1 percent remaining. The clean `aad2901`/`a34a9dc`
-  observation-evidence pair precedes this benchmark checkpoint.
+- Telemetry reported 62.0 percent remaining. The clean `85549a4`/`0001bf7`
+  measured-profile pair precedes the completed speed comparison.
 - Security, optimization, and UI-to-Store traceability findings AR-128 through
   AR-155 have governed local repairs or explicit remaining evidence gates.
-- AR-156 now has one valid four-shard baseline, one diagnostic-only v1 timing
-  run, and a reviewed v2 evidence/profile chain. It does not yet have the three
-  clean v2 controls or a matched full-corpus speed claim.
+- AR-156 now has three clean v2 source-byte controls, three matched strict
+  timing-profile runs, and one same-commit one-worker control. Parallelism
+  clears its gate; automatic timing-profile promotion does not.
 
 ## completed-evidence
 
@@ -65,30 +65,28 @@ acceptance contract; this capsule records only the active checkpoint.
   `main` or manual dispatch. Historical comparison avoids 95.79 raw
   runner-minutes and 24m29s elapsed per PR update; current hosted jobs are
   blocked before steps by GitHub billing/spending state.
-- AR-156 uses the governed four-way 275-file partition, one contract-attested
+- AR-156 uses the governed four-way 276-file partition, one contract-attested
   private runtime, per-shard HOME/TEMP/basetemp, least-privilege environments,
   contained cancellation, bounded head-and-tail logs, and one run manifest.
   Unknown runtime collisions fail closed; attested stale runtimes self-heal.
-- Five rejected runs found and repaired receipt, long-path, disconnect,
-  fixture-root, and timing self-measurement defects; none is benchmark evidence.
-  Same-runtime short/long path A/B was 2.47 seconds versus a 180-second timeout.
-- Baseline `411b67385c033451c78f632ecc5fc867` passed 4/4 in 676.505 seconds.
-  Shards took 619.89, 446.28, 578.23, and 508.32 seconds, proving byte weights
-  do not balance Windows runtime. This is one green run, not a speed claim.
-- Instrumented run `4b5f0f74d963ca4f6582d526fc7a2f7b` passed 4/4 in
-  781.945 seconds, with shard pytest times of 446.48, 393.71, 715.03, and
-  435.29 seconds. Its v1 artifact exposed the heavy files but lacked complete
-  source, commit, harness, and partition provenance, so it is diagnostic only.
+- Rejected runs found and repaired receipt, long-path, disconnect, fixture,
+  timing-self-measurement, and multi-surface observation defects. None was
+  admitted as benchmark evidence.
 - The v2 producer, validator, generator, and loader bind a clean Git commit,
   product/test/harness digests, runtime identity, exact source-byte assignment,
   file/phase/shard aggregates, and post-run source revalidation. The focused
   contract package passes 52 tests and independent review approved clean runs.
 - Four behavior-preserving test setup reductions kept 77 passes and 5 skips
   while a matched local Windows slice fell from 84.38 to 48.06 seconds
-  (43.04 percent). Full-corpus speed remains unclaimed.
-- Pre-fix controls exposed AR-158 and were excluded. Replacement v2 controls
-  passed 4/4 in 639.984, 657.689, and 639.573 seconds; their median is 639.984.
-  The exact 276-file profile digest is `5415fc29`; weighted proof remains.
+  (43.04 percent). This bounded slice is separate from the full-corpus evidence.
+- Replacement controls have a 639.948-second frozen-manifest median. Three
+  strict-profile runs have a 575.973-second median: a stable 9.997-percent gain
+  that misses the unchanged 30-percent automatic-promotion gate. Source bytes
+  are the public default; `--partition auto` is explicit opt-in.
+- One worker passed the same corpus in 2,253.785 seconds. Four workers reduce
+  wall time by 74.444 percent (3.913x), clearing the local parallel-loop gate.
+  Rebalancing is near its phase-work floor; fixture, Store, and cleanup cost are
+  the next measured targets.
 - Fresh source status sees all five hosts and the configured provider. The
   globally installed `agency` CLI is stale: it omits ZCode from status help and
   rejects the current provider configuration. The Store has 0 specialist-load
@@ -122,9 +120,9 @@ acceptance contract; this capsule records only the active checkpoint.
 - Persistent fresh installation remains fail-closed behind AR-143. Normal
   Codex hook trust also requires user-owned terminal-TUI review; neither may be
   bypassed while the user is remote.
-- AR-156 still needs matched exact-weight samples and a one-shard control proving
-  at least 30 percent median wall-clock improvement. Canonical release gates
-  remain separate requirements.
+- AR-156 still needs current-head canonical and hosted evidence. GitHub billing
+  blocks hosted jobs, and `main` currently has neither branch protection nor a
+  repository ruleset; changing hosted enforcement requires authorization.
 - AR-119/AR-125 still lack a benchmark-valid outcome corpus and current-artifact
   host/OS evidence. Malformed, timed-out, or unknown upstream arms remain
   invalid, never losses.
@@ -138,16 +136,15 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Commit the exact versioned Windows profile and its evidence record.
-2. Run matched strict exact-weight corpora plus a one-shard source-byte control;
-   do not change the gate after observing.
-3. Recommend rebalancing only if exact file coverage, isolation, and release
-   gates remain unchanged and the median improvement reaches 30 percent.
-4. Run current-head canonical serial, four-way exact coverage, performance,
-   docs, UI, security, artifact, and isolated-install gates.
-5. Implement AR-143 through a prepare-verify-revalidate-commit seam, beginning
+1. Enforce source-byte default selection and record the completed speed evidence.
+2. Gate expensive Actions fan-out behind same-revision fast quality, retain the
+   governed compatibility/coverage surfaces, and record hosted-enforcement risk.
+3. Remove measured per-test fixture and cleanup cost without weakening gates.
+4. Implement AR-143 through a prepare-verify-revalidate-commit seam, beginning
    with roster rollback, and keep every unmigrated positive mutation blocked.
-6. Reinstall the reviewed artifact in isolation, dogfood routing/roster/hiring,
+5. Run current-head canonical coverage, performance, docs, UI, security,
+   artifact, and isolated-install gates.
+6. Reinstall the reviewed artifact, dogfood routing/roster/hiring,
    and report Agency activation only from exact receipts.
 
 ## verification
@@ -156,6 +153,7 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 python scripts/context_handoff_status.py --json --threshold 50
 python -m scripts.run_parallel_change_loop --dry-run
 python -m scripts.run_parallel_change_loop
+python -m scripts.run_parallel_change_loop --partition auto --require-exact-shard-weights --dry-run
 python -m pytest tests -q -W error
 python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs

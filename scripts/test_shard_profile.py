@@ -30,6 +30,7 @@ from scripts.select_test_shard import discover_test_files, partition_test_files
 
 PROFILE_SCHEMA = "agency.pytest-shard-weights.v1"
 PROFILE_RELATIVE_PATH = Path("scripts/test_shard_weights/windows-cpython313-v1.json")
+DEFAULT_PARTITION_STRATEGY = "source-bytes"
 CORPUS_ID = "warning-strict-not-performance-v1"
 METRIC_ID = "setup-call-teardown-ns"
 AGGREGATION_ID = "median"
@@ -589,7 +590,7 @@ def load_partition_weights(
     pytest_flags: Sequence[str],
     runtime_key: str,
     test_root: str = "tests",
-    strategy: str = "auto",
+    strategy: str = DEFAULT_PARTITION_STRATEGY,
     require_exact: bool = False,
     platform_name: str | None = None,
     architecture: str | None = None,

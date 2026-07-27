@@ -284,7 +284,8 @@ def test_dry_run_is_deterministic_resource_free_and_concurrent_safe(
     assert previews.count(previews[0]) == 4
     assert previews[0]["schema_version"] == "agency.local-parallel-tests.v5"
     assert previews[0]["partition"]["algorithm"] == "source-bytes-lpt-v1"
-    assert previews[0]["partition"]["status"] == "missing"
+    assert previews[0]["partition"]["status"] == "disabled"
+    assert previews[0]["partition"]["reason"] == "explicit-source-bytes"
     assert len(previews[0]["partition"]["shards"]) == 4
     assert not Path(previews[0]["scratch_root"]).exists()
     assert not (tmp_path / "runtimes").exists()
@@ -890,6 +891,45 @@ def test_help_supports_direct_and_module_invocation() -> None:
     assert "--collect-file-timings" in direct.stdout
     assert "--partition" in direct.stdout
     assert "--require-exact-shard-weights" in direct.stdout
+    assert subject._parser().parse_args([]).partition == "source-bytes"
+
+
+def test_timing_profile_selection_requires_explicit_auto(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
+    repository = _repository(tmp_path)
+
+    default = subject.build_parallel_test_plan(
+        repo_root=repository,
+        runtime_home=self_host_runtime_home,
+        ambient_environment=_ambient(),
+        dry_run=True,
+    )
+    explicit = subject.build_parallel_test_plan(
+        repo_root=repository,
+        runtime_home=self_host_runtime_home,
+        ambient_environment=_ambient(),
+        dry_run=True,
+        partition_strategy="auto",
+    )
+
+    assert (default.partition.status, default.partition.reason) == (
+        "disabled",
+        "explicit-source-bytes",
+    )
+    assert (explicit.partition.status, explicit.partition.reason) == (
+        "missing",
+        "profile-missing",
+    )
+    with pytest.raises(ValueError, match="automatic"):
+        subject.build_parallel_test_plan(
+            repo_root=repository,
+            runtime_home=self_host_runtime_home,
+            ambient_environment=_ambient(),
+            dry_run=True,
+            require_exact_shard_weights=True,
+        )
 
 
 def test_dependency_discovery_recovers_loaded_pytest_from_private_venv(

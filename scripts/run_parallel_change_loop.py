@@ -60,6 +60,7 @@ from scripts.pytest_file_timing import (
 )
 from scripts.select_test_shard import discover_test_files, partition_test_files
 from scripts.test_shard_profile import (
+    DEFAULT_PARTITION_STRATEGY,
     PartitionWeights,
     build_measurement_context,
     load_partition_weights,
@@ -306,7 +307,7 @@ def build_parallel_test_plan(
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     dry_run: bool = False,
     collect_file_timings: bool = False,
-    partition_strategy: str = "auto",
+    partition_strategy: str = DEFAULT_PARTITION_STRATEGY,
     require_exact_shard_weights: bool = False,
 ) -> ParallelTestPlan:
     repo, tests = _resolved_test_root(repo_root, test_root)
@@ -1181,7 +1182,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--partition",
         choices=("auto", "source-bytes"),
-        default="auto",
+        default=DEFAULT_PARTITION_STRATEGY,
+        help="partition strategy; timing profiles require explicit 'auto'",
     )
     parser.add_argument("--require-exact-shard-weights", action="store_true")
     parser.add_argument("--dry-run", action="store_true")

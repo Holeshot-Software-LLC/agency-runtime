@@ -11,6 +11,7 @@ import pytest
 from scripts.pytest_file_timing import RUN_TIMING_SCHEMA
 from scripts.select_test_shard import discover_test_files, partition_test_files
 from scripts.test_shard_profile import (
+    DEFAULT_PARTITION_STRATEGY,
     PROFILE_RELATIVE_PATH,
     build_measurement_context,
     build_weight_profile,
@@ -179,9 +180,33 @@ def _load(repository: Path, files: tuple[Path, ...], **overrides: object):
         "worker_count": 4,
         "pytest_flags": _FLAGS,
         "runtime_key": _RUNTIME_KEY,
+        "strategy": "auto",
     }
     arguments.update(overrides)
     return load_partition_weights(repository, files, **arguments)  # type: ignore[arg-type]
+
+
+def test_public_loader_defaults_to_source_bytes_even_with_an_exact_profile(
+    tmp_path: Path,
+) -> None:
+    repository, files = _repository(tmp_path)
+    _install_profile(repository, files)
+
+    selected = load_partition_weights(
+        repository,
+        files,
+        worker_count=4,
+        pytest_flags=_FLAGS,
+        runtime_key=_RUNTIME_KEY,
+    )
+
+    assert DEFAULT_PARTITION_STRATEGY == "source-bytes"
+    assert (selected.algorithm, selected.status, selected.reason, selected.requested) == (
+        "source-bytes-lpt-v1",
+        "disabled",
+        "explicit-source-bytes",
+        "source-bytes",
+    )
 
 
 def test_exact_profile_is_deterministic_and_drives_duration_lpt(tmp_path: Path) -> None:
