@@ -33,6 +33,34 @@ export function createActionController(core, config, renderer, live) {
 		return true;
 	}
 
+	function validateWorkerDetailResponse(payload, requestedSlug) {
+		const detail = payload?.detail;
+		const worker = detail?.worker;
+		const expected = String(requestedSlug || "").trim().toLowerCase();
+		if (
+			typeof detail !== "object"
+			|| detail === null
+			|| Array.isArray(detail)
+			|| typeof worker !== "object"
+			|| worker === null
+			|| Array.isArray(worker)
+			|| !expected
+			|| worker.agent_slug !== expected
+			|| typeof worker.worker_id !== "string"
+			|| !worker.worker_id.trim()
+			|| !Number.isSafeInteger(worker.revision)
+			|| worker.revision < 0
+		) {
+			throw new Error("Worker detail response did not match the requested governed worker.");
+		}
+		if (!["events", "hiring_cases", "lineage", "outcomes"].every(
+			(field) => Array.isArray(detail[field]),
+		)) {
+			throw new Error("Worker detail response has an invalid evidence collection.");
+		}
+		return detail;
+	}
+
 	async function runRoute() {
 		if (serviceControlBlocked()) return;
 		if (state.master?.enabled === false) {
@@ -101,7 +129,7 @@ export function createActionController(core, config, renderer, live) {
 				{ signal: request.controller.signal },
 			);
 			if (!live.viewRequestIsCurrent("workerDetail", request)) return;
-			state.selectedWorkerDetail = payload.detail || null;
+			state.selectedWorkerDetail = validateWorkerDetailResponse(payload, slug);
 			renderer.renderWorkerDetail();
 		} catch (error) {
 			if (
@@ -117,5 +145,6 @@ export function createActionController(core, config, renderer, live) {
 		runRoute,
 		serviceControlBlocked,
 		selectWorker,
+		validateWorkerDetailResponse,
 	};
 }

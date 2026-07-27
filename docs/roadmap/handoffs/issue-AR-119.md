@@ -18,6 +18,12 @@ related:
   - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
   - docs/roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
+  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
+  - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
+  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
+  - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
+  - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
+  - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
@@ -38,14 +44,15 @@ the full acceptance history.
 
 ## checkpoint
 
-- Clean local recovery pair: substantive `f64ba1e`, ledger `7b9e2d0`.
+- Recovery base pair before this bounded package: substantive `f64ba1e`, ledger
+  `7b9e2d0`. The current layered package is being sealed as the next pair.
 - Branch is `main`, locally ahead of `origin/main`. No push, PR, tag, release,
   publication, hosted dispatch, tracker mutation, or repository-setting change
   was authorized.
 - The user-owned untracked
   `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged and was
   excluded from every commit.
-- AR-143, AR-156, and AR-160 through AR-166 have governed local implementations
+- AR-143, AR-156, and AR-160 through AR-175 have governed local implementations
   or explicit external gates. This checkpoint is not a production approval.
 
 ## completed-evidence
@@ -67,14 +74,27 @@ the full acceptance history.
 - AR-165/166: dependency-review fallback accepts only an exact authenticated
   capability boundary; dashboard persistent controls stay read-only, safe
   request IDs are operator-visible, and runtime-capture disclosure is precise.
+- AR-170 through AR-173: browser headers and response identity fail closed;
+  worker evidence is complete; lifecycle reasons expose presence only; roster
+  pages bind Store and configuration revisions; public pages use one bounded
+  SQL snapshot; control recaptures Store-generation churn; Route Lab carries
+  one exact trace through observation correlation.
+- AR-174: trusted-base classification selects a five-runner primary lane only
+  for complete regular `docs/**/*.md` pull-request deltas. Linux and Windows
+  artifacts and artifact parity remain mandatory. The 13-to-5 allocation
+  change is structural local proof, not hosted savings evidence.
+- AR-175: the unsupported non-atomic control fallback is removed. The browser
+  requires `agency.dashboard.control.v1`, retains last-good state on failure,
+  and cannot fan out to legacy endpoints. Ten shipped assets total 257,620
+  bytes, 5,547 bytes below the unchanged release ceiling.
 - CI retains every exact surface while pairing four coverage and six
   compatibility sessions and preflighting CodeQL once. Historical PR topology
   moves from 24 to 13 jobs and models 119.12 raw runner-minutes at approximately
   13.63 to 22.85. This is unmeasured projection, not a savings claim.
-- Current bounded checks: 1,102 integration tests passed with one platform skip;
-  166 remediation/dashboard projection tests; 115 release/workflow contracts;
-  102 UI tests; 577-file Ruff; 425-document verification; strict offline
-  workflow security; independent integrated review with no actionable finding.
+- Current bounded checks: 385 integrated dashboard/workforce/roster/CI/release
+  tests passed with 4 platform skips; 105 UI tests; 435-document verification;
+  focused Ruff; strict offline workflow security; Bandit on modified Python;
+  independent final-delta review with no remaining actionable finding.
 
 ## exact-blocker
 
@@ -92,7 +112,7 @@ the full acceptance history.
   review. Do not bypass it while the owner is remote.
 - AR-119/125 still require a benchmark-valid complete outcome corpus. Malformed,
   timed-out, no-response, and unknown upstream arms remain invalid, never losses.
-- Tracker creation/closure for AR-160 through AR-166 and other outward writes
+- Tracker creation/closure for AR-160 through AR-175 and other outward writes
   remain pending owner authorization.
 
 ## same-task-continuity
@@ -102,18 +122,18 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Build from clean detached source on Windows and WSL/Linux; require one exact
+1. Run the current-head warning-strict repository suite once, then exact
+   coverage, performance, routing, security, docs, UI, and packaging gates.
+2. Build from clean detached source on Windows and WSL/Linux; require one exact
    three-artifact set and byte-identical sdists/shared wheel payloads.
-2. Install Windows wheel/sdist and Linux portable wheel/sdist into fresh Python
-   3.10 environments; run distribution, CLI, smoke, and no-PE/profile checks.
-3. Reinstall the reviewed Codex integration from the verified artifact and
+3. Install Windows wheel/sdist and Linux portable wheel/sdist into fresh Python
+   runtimes; run distribution, CLI, smoke, and no-PE/profile checks.
+4. Reinstall the reviewed Codex integration from the verified artifact and
    dogfood routing, staffing, contractors, specialist/model receipts, MCP, and
    host maturity without claiming manual subagents as Agency-selected.
-4. Run installed dashboard desktop/mobile/accessibility/console/navigation QA.
-5. Run current-head parallel warning-strict, exact coverage, performance,
-   security, docs, UI, packaging, dependency, and routing evaluation gates.
-6. Update the production-readiness report and classify only genuine external
-   authorization/presence/hosted gates as blockers.
+5. Run final installed dashboard desktop/mobile/accessibility/console QA and
+   update the production verdict. Keep external authorization, presence,
+   hosted, tracker, and benchmark-valid corpus gates explicit.
 
 ## verification
 

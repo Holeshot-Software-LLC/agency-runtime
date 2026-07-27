@@ -6,6 +6,7 @@ created: 2026-07-15
 updated: 2026-07-17
 tags: [agents, roster, configuration, routing, operations]
 related:
+  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
   - docs/roadmap/issue-AR-28-reversible-agent-activation-controls.md
   - docs/roadmap/issue-AR-75-broker-restricted-windows-agent-controls.md
   - docs/decisions/0006-config-first-redacted-configuration.md

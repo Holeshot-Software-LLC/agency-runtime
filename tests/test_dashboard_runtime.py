@@ -317,6 +317,7 @@ def test_reachability_rejects_oversized_health_responses(
     assert dashboard_service_reachable(descriptor=descriptor, timeout=0.25) is False
 
 
+@pytest.mark.runtime_configuration_identity
 def test_service_mode_publishes_descriptor_without_printing_token(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

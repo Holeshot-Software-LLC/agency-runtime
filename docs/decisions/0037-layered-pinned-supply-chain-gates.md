@@ -6,6 +6,8 @@ created: 2026-07-12
 updated: 2026-07-27
 tags: [security, supply-chain, ci, release]
 related:
+  - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
+  - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
   - docs/roadmap/issue-AR-63-replace-yanked-release-build-dependency.md
   - docs/roadmap/issue-AR-43-isolate-installed-python-module-resolution.md
   - docs/decisions/0050-isolate-installed-python-module-resolution.md

@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-07-16
 tags: [storage, audit, retention]
 related:
+  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
   - docs/roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md
   - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
   - docs/roadmap/issue-AR-62-identity-stable-sqlite-sidecar-trust-races.md

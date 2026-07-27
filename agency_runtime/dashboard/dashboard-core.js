@@ -155,6 +155,7 @@ export function createCore(runtime = globalThis) {
 		history,
 		sessionStorage,
 		crypto,
+		Headers,
 		HTMLElement,
 		HTMLInputElement,
 		AbortController,
@@ -299,12 +300,11 @@ export function createCore(runtime = globalThis) {
 		) {
 			throw new Error("Secure browser request IDs are unavailable.");
 		}
-		const headers = {
-			Authorization: `Bearer ${state.token}`,
-			"X-Agency-Request-ID": requestId,
-			...(options.headers || {}),
-		};
-		if (options.body !== undefined) headers["Content-Type"] = "application/json";
+		const headers = new Headers(options.headers);
+		headers.set("Authorization", `Bearer ${state.token}`);
+		headers.set("X-Agency-Request-ID", requestId);
+		headers.delete("X-Request-ID");
+		if (options.body !== undefined) headers.set("Content-Type", "application/json");
 		let response;
 		try {
 			response = await fetch(path, {
@@ -325,10 +325,24 @@ export function createCore(runtime = globalThis) {
 		}
 		let payload;
 		try { payload = await response.json(); } catch { payload = { error: `HTTP ${response.status}` }; }
-		const responseId = safeRequestId(payload?.request_id)
-			|| safeRequestId(response.headers.get("X-Agency-Request-ID"))
-			|| safeRequestId(response.headers.get("X-Request-ID"))
-			|| requestId;
+		const ids = [
+			...(isRecord(payload) && Object.hasOwn(payload, "request_id")
+				? [payload.request_id] : []),
+			response.headers.get("X-Agency-Request-ID"),
+			response.headers.get("X-Request-ID"),
+		].filter((value) => value != null);
+		if (ids.some((value) => value !== requestId)) {
+			runtime.console?.error?.(
+				`Agency dashboard request ${requestId} rejected a mismatched response correlation.`,
+			);
+			throw new APIError(
+				"Dashboard response correlation did not match the request.",
+				response.status,
+				response.headers.get("Retry-After"),
+				requestId,
+			);
+		}
+		const responseId = requestId;
 		if (!response.ok) {
 			runtime.console?.error?.(
 				`Agency dashboard request ${responseId} failed with HTTP ${response.status}.`,
@@ -345,13 +359,24 @@ export function createCore(runtime = globalThis) {
 
 	function installToken() {
 		const hash = new URLSearchParams(window.location.hash.slice(1));
+		const hasToken = hash.has("token");
 		const incoming = hash.get("token");
 		if (incoming) sessionStorage.setItem("agency-dashboard-token", incoming);
 		state.token = incoming || sessionStorage.getItem("agency-dashboard-token") || "";
-		if (window.location.hash) history.replaceState(null, "", window.location.pathname);
+		if (hasToken) {
+			history.replaceState(
+				null,
+				"",
+				`${window.location.pathname}${window.location.search || ""}`,
+			);
+		}
 		if (!state.token) {
 			throw new Error("This dashboard URL has no active access token. Run `agency dashboard service open` or restart `agency dashboard`.");
 		}
+	}
+
+	function hasTokenFragment() {
+		return new URLSearchParams(window.location.hash.slice(1)).has("token");
 	}
 
 	function listen(target, name, listener, options) {
@@ -443,6 +468,7 @@ export function createCore(runtime = globalThis) {
 		hostLocation,
 		api,
 		installToken,
+		hasTokenFragment,
 		listen,
 		disposeListeners,
 		disposeCore,

@@ -462,25 +462,25 @@ def test_http_roster_contract_is_bounded_and_reports_truncation() -> None:
         def get_disabled_agent_slugs(self) -> frozenset[str]:
             return frozenset()
 
-        def count_enabled_roster(self, *, disabled_agents: object) -> int:
-            del disabled_agents
-            return 3
-
-        def get_enabled_roster(
+        def get_enabled_roster_page_snapshot(
             self,
             *,
             limit: int,
             after: str | None,
             disabled_agents: object,
-        ) -> list[dict[str, Any]]:
+        ) -> dict[str, Any]:
             del disabled_agents
             observed["limit"] = limit
             observed["after"] = after
-            return [
-                {"agent_slug": "alpha"},
-                {"agent_slug": "bravo"},
-                {"agent_slug": "charlie"},
-            ][:limit]
+            return {
+                "generation": 7,
+                "total_count": 3,
+                "rows": [
+                    {"agent_slug": "alpha"},
+                    {"agent_slug": "bravo"},
+                    {"agent_slug": "charlie"},
+                ][: limit + 1],
+            }
 
     handler = SimpleNamespace(
         path="/roster?limit=2",
@@ -490,7 +490,7 @@ def test_http_roster_contract_is_bounded_and_reports_truncation() -> None:
 
     http_server.AgencyHTTPHandler._handle_roster(handler)  # type: ignore[arg-type]
 
-    assert observed["limit"] == 3
+    assert observed["limit"] == 2
     assert observed["after"] is None
     assert observed["payload"] == {
         "agents": [{"agent_slug": "alpha"}, {"agent_slug": "bravo"}],

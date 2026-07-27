@@ -1817,17 +1817,19 @@ class WorkforceStoreMixin:
                     item["evidence"] = _decoded(item["evidence"])
                     events.append(item)
             else:
-                events = [
-                    dict(row)
-                    for row in conn.execute(
-                        "SELECT id, event_sequence, worker_id, event_type, from_class, "
-                        "to_class, from_standing, to_standing, version, "
-                        "merged_into_worker_id, hiring_case_id, actor, surface, session_id, "
-                        "trace_id, reason, created_at FROM agent_worker_events "
-                        "WHERE worker_id = ? ORDER BY event_sequence DESC LIMIT ?",
-                        (worker_id, evidence_limit),
-                    ).fetchall()
-                ]
+                events = []
+                for row in conn.execute(
+                    "SELECT id, event_sequence, worker_id, event_type, from_class, "
+                    "to_class, from_standing, to_standing, version, "
+                    "merged_into_worker_id, hiring_case_id, actor, surface, session_id, "
+                    "trace_id, reason, created_at FROM agent_worker_events "
+                    "WHERE worker_id = ? ORDER BY event_sequence DESC LIMIT ?",
+                    (worker_id, evidence_limit),
+                ).fetchall():
+                    item = dict(row)
+                    reason = str(item.pop("reason") or "")
+                    item["reason_present"] = bool(reason)
+                    events.append(item)
             outcomes_total_count = int(
                 conn.execute(
                     "SELECT COUNT(*) AS count FROM agent_performance_events WHERE worker_id = ?",

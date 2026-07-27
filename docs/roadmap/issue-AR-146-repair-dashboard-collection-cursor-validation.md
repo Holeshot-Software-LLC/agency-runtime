@@ -3,7 +3,7 @@ title: "AR-146: Repair dashboard collection cursor validation"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [dashboard, pagination, traceability, correctness]
 related:
   - docs/roadmap/issue-AR-137-complete-dashboard-collections.md
@@ -18,7 +18,7 @@ priority: p0
 tracker_url: null
 depends_on:
   - AR-137
-blocks: []
+blocks: [AR-172]
 ---
 
 # AR-146: Repair dashboard collection cursor validation

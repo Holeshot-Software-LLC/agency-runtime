@@ -11,7 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from agency_runtime.core.agent_activation import agent_is_enabled, normalize_agent_slug
+from agency_runtime.core.agent_activation import (
+    PROTECTED_AGENT_SLUGS,
+    agent_is_enabled,
+    normalize_agent_slug,
+)
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import load_config
 from agency_runtime.core.config_binding import assert_store_config_binding
@@ -1760,6 +1764,62 @@ class RosterStoreMixin:
             projection="agent_slug, name, division",
             decode_rows=lambda rows: [dict(row) for row in rows],
         )
+
+    def get_enabled_roster_page_snapshot(
+        self,
+        *,
+        limit: int,
+        after: str | None = None,
+        disabled_agents: Container[str] = (),
+    ) -> dict[str, Any]:
+        """Read one bounded enabled-roster page and total from one snapshot."""
+
+        validated_limit, validated_after = _validate_roster_page(limit, after)
+        if validated_limit is None:
+            raise ValueError("limit is required for enabled roster page snapshots")
+        disabled_values = tuple(sorted(set(disabled_agents).difference(PROTECTED_AGENT_SLUGS)))
+        disabled_document = json.dumps(disabled_values, separators=(",", ":"))
+        enabled_predicate = "a.agent_slug NOT IN (SELECT value FROM json_each(?))"
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            counter = conn.execute(
+                "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+            ).fetchone()
+            if counter is None or isinstance(counter["value"], bool):
+                raise RuntimeError("roster generation counter is unavailable")
+            total = int(
+                conn.execute(
+                    f"SELECT COUNT(*) AS count FROM {_ACTIVE_ROSTER_JOIN} "  # nosec B608
+                    f"WHERE {enabled_predicate}",  # nosec B608
+                    (disabled_document,),
+                ).fetchone()["count"]
+            )
+            cursor_predicate = "" if validated_after is None else "a.agent_slug > ? AND "
+            parameters: tuple[Any, ...] = (
+                (disabled_document, validated_limit + 1)
+                if validated_after is None
+                else (validated_after, disabled_document, validated_limit + 1)
+            )
+            rows = conn.execute(
+                f"SELECT {_ACTIVE_ROSTER_ROUTING_PROJECTION} "  # nosec B608
+                f"FROM {_ACTIVE_ROSTER_JOIN} "  # nosec B608
+                f"WHERE {cursor_predicate}{enabled_predicate} "  # nosec B608
+                "ORDER BY a.agent_slug LIMIT ?",
+                parameters,
+            ).fetchall()
+            result = {
+                "generation": int(counter["value"]),
+                "total_count": total,
+                "rows": _decoded_roster_rows(rows),
+            }
+            conn.commit()
+            return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def _get_active_roster_page_snapshot(
         self,

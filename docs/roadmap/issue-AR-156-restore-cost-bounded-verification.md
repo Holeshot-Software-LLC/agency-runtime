@@ -39,7 +39,7 @@ issue_id: AR-156
 priority: p1
 tracker_url: null
 depends_on: [AR-117, AR-158]
-blocks: [AR-159]
+blocks: [AR-159, AR-174]
 ---
 
 # AR-156: Restore cost-bounded verification feedback

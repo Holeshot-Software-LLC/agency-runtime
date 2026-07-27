@@ -70,8 +70,10 @@ function controlSnapshot({
   governance = { snapshots: [] },
   restartRequired = false,
 } = {}) {
+  const normalizedConfig = { revision: "test-config-revision", ...config };
   const normalizedRoster = {
     agents: [],
+    config_revision: normalizedConfig.revision,
     next_cursor: null,
     roster_revision: "test-roster-revision",
     truncated: false,
@@ -94,7 +96,7 @@ function controlSnapshot({
   };
   return {
     schema_version: "agency.dashboard.control.v1",
-    config,
+    config: normalizedConfig,
     control_revision: "test-control-revision",
     governance: normalizedGovernance,
     hosts,
@@ -103,9 +105,13 @@ function controlSnapshot({
   };
 }
 
-function emptyRosterPage(revision = "test-roster-revision") {
+function emptyRosterPage(
+  revision = "test-roster-revision",
+  configRevision = "test-config-revision",
+) {
   return {
     agents: [],
+    config_revision: configRevision,
     next_cursor: null,
     roster_revision: revision,
     truncated: false,
@@ -392,6 +398,7 @@ function createAppHarness(fetchImpl) {
     AbortController,
     AgencyCharts,
     DOMException,
+    Headers,
     HTMLElement,
     HTMLInputElement,
     URLSearchParams,
@@ -441,6 +448,20 @@ test("app.js accepts a token fragment that arrives after initial page load", () 
   assert.equal(harness.historyCalls.length, 1);
 });
 
+test("app.js preserves non-token fragments for native in-page navigation", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("in-page navigation must not fetch");
+  });
+  harness.sessionValues.set("agency-dashboard-token", "session-token");
+  harness.context.window.location.hash = "#main-content";
+
+  harness.api.installToken();
+
+  assert.equal(harness.api.state.token, "session-token");
+  assert.equal(harness.api.hasTokenFragment(), false);
+  assert.equal(harness.historyCalls.length, 0);
+});
+
 test("app.js API requests keep credentials in-memory and fail closed on malformed errors", async () => {
   const calls = [];
   const harness = createAppHarness(async (path, options) => {
@@ -459,23 +480,93 @@ test("app.js API requests keep credentials in-memory and fail closed on malforme
         request_id: "<img src=x onerror=alert(1)>",
       });
     }
+    if (path === "/wrong-response-body-id") {
+      return jsonResponse(200, {
+        ok: true,
+        request_id: "00000000-0000-4000-8000-000000000002",
+      });
+    }
+    if (path === "/wrong-response-header-id") {
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name) => (name === "X-Agency-Request-ID"
+            ? "00000000-0000-4000-8000-000000000003"
+            : null),
+        },
+        json: async () => ({ ok: true }),
+      };
+    }
+    if (path === "/malformed-response-body-id") {
+      return jsonResponse(200, {
+        ok: true,
+        request_id: " 00000000-0000-4000-8000-000000000001 ",
+      });
+    }
+    if (path === "/nonstring-response-body-id") {
+      return jsonResponse(200, { ok: true, request_id: 17 });
+    }
+    if (path === "/malformed-response-header-id") {
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name) => (name === "X-Agency-Request-ID" ? "not-a-request-id" : null),
+        },
+        json: async () => ({ ok: true }),
+      };
+    }
+    if (path === "/malformed-legacy-response-header-id") {
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name) => (name === "X-Request-ID" ? " request-id " : null),
+        },
+        json: async () => ({ ok: true }),
+      };
+    }
     return jsonResponse(200, { ok: true });
   });
   harness.api.state.token = "fragment-only-secret";
 
   assert.equal((await harness.api.api("/ok", {
     body: "{}",
-    headers: { "X-Agency-Request-ID": "00000000-0000-4000-8000-000000000002" },
+    headers: {
+      authorization: "Bearer attacker-token",
+      "Content-Type": "text/plain",
+      "x-AGENCY-request-ID": "00000000-0000-4000-8000-000000000002",
+      "x-request-ID": "00000000-0000-4000-8000-000000000005",
+      "X-Preserved": "yes",
+    },
     method: "POST",
   })).ok, true);
-  assert.equal(calls[0].options.headers.Authorization, "Bearer fragment-only-secret");
-  assert.equal(calls[0].options.headers["Content-Type"], "application/json");
+  assert.equal(calls[0].options.headers.get("Authorization"), "Bearer fragment-only-secret");
+  assert.equal(calls[0].options.headers.get("Content-Type"), "application/json");
   assert.equal(
-    calls[0].options.headers["X-Agency-Request-ID"],
-    "00000000-0000-4000-8000-000000000002",
+    calls[0].options.headers.get("X-Agency-Request-ID"),
+    "00000000-0000-4000-8000-000000000001",
   );
+  assert.equal(calls[0].options.headers.get("X-Preserved"), "yes");
+  assert.equal(calls[0].options.headers.get("X-Request-ID"), null);
   assert.equal(calls[0].options.cache, "no-store");
   assert.equal(calls[0].options.credentials, "omit");
+
+  const headersCompatible = new Headers({
+    AUTHORIZATION: "Bearer second-attacker",
+    "X-Agency-Request-ID": "00000000-0000-4000-8000-000000000004",
+    "x-ReQuEsT-iD": "00000000-0000-4000-8000-000000000005",
+    "X-Headers-Compatible": "retained",
+  });
+  await harness.api.api("/ok", { headers: headersCompatible });
+  assert.equal(calls[1].options.headers.get("Authorization"), "Bearer fragment-only-secret");
+  assert.equal(
+    calls[1].options.headers.get("X-Agency-Request-ID"),
+    "00000000-0000-4000-8000-000000000001",
+  );
+  assert.equal(calls[1].options.headers.get("X-Headers-Compatible"), "retained");
+  assert.equal(calls[1].options.headers.get("X-Request-ID"), null);
 
   await assert.rejects(
     harness.api.api("/malformed"),
@@ -491,6 +582,34 @@ test("app.js API requests keep credentials in-memory and fail closed on malforme
       && !error.message.includes("<img")
       && /Request ID 00000000-0000-4000-8000-000000000001/.test(error.message),
   );
+
+  const mismatchLogs = [];
+  harness.context.console = { error: (message) => mismatchLogs.push(String(message)) };
+  const invalidCorrelationPaths = [
+    "/wrong-response-body-id",
+    "/wrong-response-header-id",
+    "/malformed-response-body-id",
+    "/nonstring-response-body-id",
+    "/malformed-response-header-id",
+    "/malformed-legacy-response-header-id",
+  ];
+  for (const path of invalidCorrelationPaths) {
+    await assert.rejects(
+      harness.api.api(path),
+      (error) => error.name === "APIError"
+        && error.status === 200
+        && error.requestId === "00000000-0000-4000-8000-000000000001"
+        && /response correlation did not match/i.test(error.message)
+        && !/00000000000[234]|not-a-request-id|request-id/i.test(
+          error.message.replace("Request ID", ""),
+        ),
+    );
+  }
+  assert.equal(mismatchLogs.length, invalidCorrelationPaths.length);
+  assert.ok(mismatchLogs.every((message) => (
+    message.includes("00000000-0000-4000-8000-000000000001")
+      && !/00000000000[234]/.test(message)
+  )));
 });
 
 test("app.js typed confirmations trap focus and reject incorrect phrases", async () => {
@@ -794,7 +913,8 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
     events: Array.from({ length: 7 }, (_, index) => ({
       created_at: `2026-07-22T12:00:${String(59 - index).padStart(2, "0")}Z`,
       event_type: index ? "reviewed" : "generated",
-      reason: index ? `lifecycle evidence ${index}` : "known contractor installed",
+      reason_hash: "f".repeat(64),
+      reason_present: true,
     })),
     outcomes: Array.from({ length: 7 }, (_, index) => ({
       created_at: `2026-07-22T13:00:0${index}Z`,
@@ -842,7 +962,8 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   assert.match(text, /Use the governed TypeScript contract/);
   assert.match(text, /Owner-only governed specialist definition/);
   assert.match(text, /separate from runtime observation capture/);
-  assert.match(text, /known contractor installed/);
+  assert.match(text, /Reason recorded/);
+  assert.doesNotMatch(text, /SHA-256|ffffffffffff|known contractor installed|lifecycle evidence/);
   assert.match(text, /1 of 7 version records \(bounded\)/);
   assert.match(text, /1 of 4 hiring records \(bounded\)/);
   assert.match(text, /Loaded version lineage evidence/);
@@ -893,6 +1014,10 @@ test("workforce cards use one delegated click listener across repeated live rend
           state: "employee",
           worker_id: "worker-one-id",
         },
+        events: [],
+        hiring_cases: [],
+        lineage: [],
+        outcomes: [],
       },
     });
   });
@@ -2349,6 +2474,16 @@ test("app UI honors reduced motion, canonical CSS, and live toggle semantics", (
   assert.equal((APP_CSS_SOURCE.match(/^:root\s*{/gm) || []).length, 1);
   assert.equal((APP_CSS_SOURCE.match(/@media\s*\(max-width:\s*980px\)/g) || []).length, 1);
   assert.equal((APP_CSS_SOURCE.match(/@media\s*\(max-width:\s*620px\)/g) || []).length, 1);
+  assert.match(APP_CSS_SOURCE, /\[hidden\]\s*{[^}]*display:\s*none\s*!important;?[^}]*}/);
+  assert.match(
+    APP_CSS_SOURCE,
+    /\.topbar-heading\s*{[^}]*flex:\s*1\s+1\s+280px;?[^}]*}/,
+  );
+  assert.match(
+    APP_CSS_SOURCE,
+    /\.topbar-heading h1\s*{[^}]*overflow-wrap:\s*anywhere;?[^}]*white-space:\s*normal;?/,
+  );
+  assert.doesNotMatch(APP_CSS_SOURCE, /\.topbar-heading h1\s*{[^}]*text-overflow:\s*ellipsis/);
   assert.match(APP_CSS_SOURCE, /\.button:disabled\s*{[^}]*cursor:\s*not-allowed;/);
   assert.match(
     APP_CSS_SOURCE,
@@ -2632,6 +2767,29 @@ test("app.js control-plane refresh is single-flight and updates only current res
   assert.equal(calls.length, 1);
 });
 
+test("control refresh fails closed on missing or wrong-version contracts", async () => {
+  for (const mode of ["missing", "wrong-schema"]) {
+    const calls = [];
+    const harness = createAppHarness(async (path) => {
+      calls.push(path);
+      assert.equal(path, "/api/control");
+      return mode === "missing"
+        ? jsonResponse(404, { error: "control endpoint unavailable" })
+        : jsonResponse(200, { schema_version: "agency.dashboard.control.v2" });
+    });
+    harness.api.state.roster = [{ agent_slug: "last-good-agent" }];
+    harness.api.state.control.revision = "last-good-control";
+
+    await harness.api.refreshControlPlane();
+
+    assert.deepEqual(calls, ["/api/control"], mode);
+    assert.equal(harness.api.state.roster[0].agent_slug, "last-good-agent", mode);
+    assert.equal(harness.api.state.control.revision, "last-good-control", mode);
+    assert.equal(harness.api.state.control.stale, true, mode);
+    assert.match(harness.node("notice").textContent, /retained the last good state/i);
+  }
+});
+
 test("store identity drift stays visible and disables routing, roster, and host controls", async () => {
   const calls = [];
   const harness = createAppHarness(async (path) => {
@@ -2759,14 +2917,9 @@ test("store binding renders bounded fallbacks when paths or controls are unavail
 test("late control and full-refresh responses cannot cross restart generations", async () => {
   let staleControl;
   staleControl = createAppHarness(async (path) => {
-    if (path === "/api/config") return jsonResponse(200, { effective: {} });
-    if (path === "/api/snapshots") staleControl.api.state.lifecycle.suspended = true;
-    const payloads = new Map([
-      ["/api/hosts", { hosts: [] }],
-      ["/api/roster?limit=100", emptyRosterPage("stale-control-roster")],
-      ["/api/snapshots", emptyGovernancePage("stale-control-snapshots")],
-    ]);
-    return jsonResponse(200, payloads.get(path));
+    assert.equal(path, "/api/control");
+    staleControl.api.state.lifecycle.suspended = true;
+    return jsonResponse(200, controlSnapshot());
   });
   await staleControl.api.refreshControlPlane();
   assert.equal(staleControl.api.state.hosts.length, 0);
@@ -2774,20 +2927,11 @@ test("late control and full-refresh responses cannot cross restart generations",
 
   let staleRestart;
   staleRestart = createAppHarness(async (path) => {
-    if (path === "/api/config") {
-      return jsonResponse(200, {
-        effective: {},
-        service_binding: {
-          store_path: "active.db",
-          desired_store_path: "next.db",
-          store_restart_required: true,
-        },
-      });
-    }
     if (path === "/api/live?limit=100") {
       staleRestart.api.state.full.generation += 1;
       return jsonResponse(200, { revision: "obsolete-restart", schema_version: 1 });
     }
+    if (path === "/api/control") return jsonResponse(200, controlSnapshot());
     throw new Error(`unexpected restart path ${path}`);
   });
   assert.equal(await staleRestart.api.refreshAll(), false);
@@ -2795,15 +2939,11 @@ test("late control and full-refresh responses cannot cross restart generations",
 
   let staleFull;
   staleFull = createAppHarness(async (path) => {
-    if (path === "/api/snapshots") staleFull.api.state.full.generation += 1;
-    const payloads = new Map([
-      ["/api/config", { effective: {} }],
-      ["/api/live?limit=100", { revision: "obsolete-full", schema_version: 1 }],
-      ["/api/hosts", { hosts: [] }],
-      ["/api/roster?limit=100", emptyRosterPage("stale-full-roster")],
-      ["/api/snapshots", emptyGovernancePage("stale-full-snapshots")],
-    ]);
-    return jsonResponse(200, payloads.get(path));
+    if (path === "/api/control") {
+      staleFull.api.state.full.generation += 1;
+      return jsonResponse(200, controlSnapshot());
+    }
+    return jsonResponse(200, { revision: "obsolete-full", schema_version: 1 });
   });
   assert.equal(await staleFull.api.refreshAll(), false);
   assert.equal(staleFull.api.state.live.revision, "");
@@ -2812,6 +2952,7 @@ test("late control and full-refresh responses cannot cross restart generations",
 test("view-scoped intent wins deferred races with control and full refreshes", async () => {
   const newerOperations = {
     agents: [{ agent_slug: "newer-agent", capabilities: [], enabled: true }],
+    config_revision: "test-config-revision",
     count: 1,
     enabled_count: 1,
     matched_count: 1,
@@ -2822,6 +2963,7 @@ test("view-scoped intent wins deferred races with control and full refreshes", a
   };
   const staleOperations = {
     agents: [{ agent_slug: "stale-agent", capabilities: [], enabled: true }],
+    config_revision: "stale-control",
     count: 1,
     enabled_count: 1,
     matched_count: 1,
@@ -2932,6 +3074,7 @@ test("a newer view request aborts every globally invalidated scope and clears re
 
   rosterPending.resolve(jsonResponse(200, {
     agents: [{ agent_slug: "newer-agent", capabilities: [], enabled: true }],
+    config_revision: "test-config-revision",
     next_cursor: null,
     roster_revision: "newer-roster-revision",
     truncated: false,
@@ -2957,7 +3100,7 @@ test("app.js routing lab posts bounded tasks and reconciles live evidence", asyn
     calls.push({ path, options });
     if (path === "/api/route") {
       return jsonResponse(200, {
-        request_id: "00000000-0000-4000-8000-000000000010",
+        request_id: options.headers.get("X-Agency-Request-ID"),
         selected: [{ slug: "security-reviewer" }],
         signals: { policy: { matched_actions: ["review"] } },
         status: "selected",
@@ -3004,7 +3147,7 @@ test("app.js routing lab posts bounded tasks and reconciles live evidence", asyn
   );
   assert.ok(
     descendants(harness.node("route-result"))
-      .some((node) => node.textContent === "00000000-0000-4000-8000-000000000010"),
+      .some((node) => node.textContent === calls[0].options.headers.get("X-Agency-Request-ID")),
   );
   assert.equal(harness.api.state.live.revision, "after-route");
   assert.equal(harness.node("route-button").disabled, false);
@@ -3029,8 +3172,6 @@ test("app.js binds lifecycle controls for live pause, page cleanup, and late fra
   assert.equal(harness.windowListeners.get("pagehide").length, 1);
   assert.equal(harness.windowListeners.get("pageshow").length, 1);
 
-  assert.equal(harness.node("trim-days").listeners.has("input"), false);
-  assert.equal(harness.node("trim-days").disabled, true);
   harness.node("live-toggle").listeners.get("click")[0]();
   assert.equal(harness.api.state.live.enabled, false);
   assert.equal(harness.node("live-status").dataset.state, "paused");
@@ -3094,6 +3235,12 @@ test("app.js executes bound navigation, provider, workforce, hash, and startup c
 });
 
 test("Route Lab and worker-detail failures remain visible and lifecycle bounded", async () => {
+  const emptyWorkerEvidence = {
+    events: [],
+    hiring_cases: [],
+    lineage: [],
+    outcomes: [],
+  };
   const routeHarness = createAppHarness(async () => {
     throw new Error("route transport unavailable");
   });
@@ -3119,13 +3266,72 @@ test("Route Lab and worker-detail failures remain visible and lifecycle bounded"
 
   const workerHarness = createAppHarness(async (path) => {
     if (path.includes("worker=worker-one")) {
-      return jsonResponse(200, { detail: { agent_slug: "worker-one" } });
+      return jsonResponse(200, {
+        detail: {
+          worker: { agent_slug: "worker-one", revision: 1, worker_id: "worker-one-id" },
+          ...emptyWorkerEvidence,
+        },
+      });
     }
     throw new Error("worker detail unavailable");
   });
   await workerHarness.api.selectWorker("");
   await workerHarness.api.selectWorker("worker-one");
-  assert.equal(workerHarness.api.state.selectedWorkerDetail.agent_slug, "worker-one");
+  assert.equal(workerHarness.api.state.selectedWorkerDetail.worker.agent_slug, "worker-one");
+  assert.throws(
+    () => workerHarness.api.validateWorkerDetailResponse({
+      detail: {
+        worker: { agent_slug: "worker-two", revision: 1, worker_id: "worker-two-id" },
+        ...emptyWorkerEvidence,
+      },
+    }, "worker-one"),
+    /did not match the requested governed worker/i,
+  );
+  for (const agentSlug of ["WORKER-ONE", " worker-one ", 7]) {
+    assert.throws(
+      () => workerHarness.api.validateWorkerDetailResponse({
+        detail: {
+          worker: { agent_slug: agentSlug, revision: 1, worker_id: "worker-one-id" },
+          ...emptyWorkerEvidence,
+        },
+      }, "worker-one"),
+      /did not match the requested governed worker/i,
+    );
+  }
+  assert.throws(
+    () => workerHarness.api.validateWorkerDetailResponse({
+      detail: {
+        worker: {
+          agent_slug: "worker-one",
+          revision: Number.MAX_SAFE_INTEGER + 1,
+          worker_id: "worker-one-id",
+        },
+        ...emptyWorkerEvidence,
+      },
+    }, "worker-one"),
+    /did not match the requested governed worker/i,
+  );
+  assert.throws(
+    () => workerHarness.api.validateWorkerDetailResponse({
+      detail: {
+        worker: { agent_slug: "worker-one", revision: 1, worker_id: "worker-one-id" },
+        events: [],
+        hiring_cases: [],
+        lineage: [],
+      },
+    }, "worker-one"),
+    /invalid evidence collection/i,
+  );
+  assert.throws(
+    () => workerHarness.api.validateWorkerDetailResponse({
+      detail: {
+        worker: { agent_slug: "worker-one", revision: 1, worker_id: "worker-one-id" },
+        ...emptyWorkerEvidence,
+        outcomes: {},
+      },
+    }, "worker-one"),
+    /invalid evidence collection/i,
+  );
   await workerHarness.api.selectWorker("worker-two");
   assert.match(workerHarness.node("notice").textContent, /worker detail unavailable/i);
 });
@@ -3342,9 +3548,12 @@ test("app.js reconnects from stored credentials and surfaces missing tokens", as
       schema_version: 1,
     }],
     ["/api/hosts", { hosts: [] }],
-    ["/api/roster?limit=100", emptyRosterPage("connected-roster")],
+    ["/api/roster?limit=100", emptyRosterPage("connected-roster", "config")],
     ["/api/snapshots", emptyGovernancePage("connected-snapshots")],
     ["/api/config", { effective: {}, revision: "config" }],
+    ["/api/control", controlSnapshot({
+      config: { effective: {}, revision: "config" },
+    })],
   ]);
   const connected = createAppHarness(async (path) => jsonResponse(200, payloads.get(path)));
   connected.sessionValues.set("agency-dashboard-token", "stored-token");
@@ -3889,6 +4098,9 @@ test("app.js rejects sparse collection payloads while paused and preserves last-
   emptyConfigPayloads.set("/api/config", {});
   emptyConfigPayloads.set("/api/roster?limit=100", emptyRosterPage("empty-config-roster"));
   emptyConfigPayloads.set("/api/snapshots", emptyGovernancePage("empty-config-snapshots"));
+  emptyConfigPayloads.set("/api/control", controlSnapshot({
+    config: { effective: {}, revision: "empty-config" },
+  }));
   const emptyConfig = createAppHarness(async (path) => (
     jsonResponse(200, emptyConfigPayloads.get(path))
   ));
@@ -4037,6 +4249,38 @@ test("paged roster metadata drives global counts and accessible truncation discl
   const harness = createAppHarness(() => {
     throw new Error("paged roster projection does not fetch");
   });
+  assert.equal(
+    harness.api.validateExactRosterLookup({
+      agents: [{ agent_slug: "security-reviewer" }],
+      filter_slug: "security-reviewer",
+    }, "security-reviewer").filter_slug,
+    "security-reviewer",
+  );
+  assert.throws(
+    () => harness.api.validateExactRosterLookup({
+      agents: [{ agent_slug: "wrong-agent" }],
+      filter_slug: "security-reviewer",
+    }, "security-reviewer"),
+    /did not match the requested agent/i,
+  );
+  for (const filterSlug of ["SECURITY-REVIEWER", " security-reviewer ", 7]) {
+    assert.throws(
+      () => harness.api.validateExactRosterLookup({
+        agents: [{ agent_slug: "security-reviewer" }],
+        filter_slug: filterSlug,
+      }, "security-reviewer"),
+      /did not match the requested agent/i,
+    );
+  }
+  for (const agentSlug of ["SECURITY-REVIEWER", " security-reviewer ", 7]) {
+    assert.throws(
+      () => harness.api.validateExactRosterLookup({
+        agents: [{ agent_slug: agentSlug }],
+        filter_slug: "security-reviewer",
+      }, "security-reviewer"),
+      /did not match the requested agent/i,
+    );
+  }
   harness.api.applyRosterPage({
     agents: [
       { agent_slug: "first", capabilities: [] },
@@ -4299,6 +4543,51 @@ test("collection completion fails closed on missing initial cursor or revision",
   assert.deepEqual(lastGood.api.state.hiring, [{ id: "last-good-case" }]);
 });
 
+test("roster paging rejects activation-policy changes under a stable Store generation", async () => {
+  const first = controlSnapshot({
+    config: { revision: "config-revision-a" },
+    roster: {
+      agents: [{ agent_slug: "alpha-reviewer" }],
+      config_revision: "config-revision-a",
+      next_cursor: "alpha-reviewer",
+      roster_revision: "stable-roster-generation",
+      truncated: true,
+    },
+  });
+  const harness = createAppHarness(async (path) => {
+    if (path === "/api/control") return jsonResponse(200, first);
+    if (path === "/api/roster?limit=200&after=alpha-reviewer") {
+      return jsonResponse(200, {
+        agents: [{ agent_slug: "beta-reviewer" }],
+        config_revision: "config-revision-b",
+        next_cursor: null,
+        roster_revision: "stable-roster-generation",
+        truncated: false,
+      });
+    }
+    throw new Error(`unexpected activation-continuity path ${path}`);
+  });
+
+  await assert.rejects(
+    harness.api.fetchControlSnapshot(),
+    /changed while it was being paged/i,
+  );
+
+  const mismatchedInitial = createAppHarness(async (path) => {
+    if (path === "/api/control") {
+      return jsonResponse(200, controlSnapshot({
+        config: { revision: "config-revision-a" },
+        roster: { config_revision: "config-revision-b" },
+      }));
+    }
+    throw new Error(`unexpected control-continuity path ${path}`);
+  });
+  await assert.rejects(
+    mismatchedInitial.api.fetchControlSnapshot(),
+    /did not match the control snapshot/i,
+  );
+});
+
 test("roster search markup permits the normalization performed before lookup", () => {
   const searchInput = INDEX_SOURCE.match(/<input id="roster-search-slug"[^>]*>/)?.[0] || "";
   assert.doesNotMatch(searchInput, /\s(?:pattern|minlength)=/);
@@ -4363,12 +4652,14 @@ test("a stale roster search cannot roll back a newer successful search", async (
       return Promise.resolve(jsonResponse(200, {
         ...emptyRosterPage("filter-a-revision"),
         agents: [{ agent_slug: "filter-a", capabilities: [], enabled: true }],
+        filter_slug: "filter-a",
       }));
     }
     if (path === "/api/agents/lookup?slug=filter-b") {
       return Promise.resolve(jsonResponse(200, {
         ...emptyRosterPage("filter-b-revision"),
         agents: [{ agent_slug: "filter-b", capabilities: [], enabled: true }],
+        filter_slug: "filter-b",
       }));
     }
     throw new Error(`unexpected roster-filter race path ${path}`);
@@ -4421,6 +4712,7 @@ test("a failed current roster search restores committed data instead of a pendin
       return Promise.resolve(jsonResponse(200, {
         ...emptyRosterPage("filter-a-revision"),
         agents: [{ agent_slug: "filter-a", capabilities: [], enabled: true }],
+        filter_slug: "filter-a",
       }));
     }
     if (path === "/api/agents/lookup?slug=filter-b") {
@@ -4479,6 +4771,7 @@ test("operational roster intent supersedes a pending exact search in either resp
         return Promise.resolve(jsonResponse(200, {
           ...emptyRosterPage("filter-a-revision"),
           agents: [{ agent_slug: "filter-a", capabilities: [], enabled: true }],
+          filter_slug: "filter-a",
         }));
       }
       if (path === "/api/roster/operations?limit=100") return operationalPage.promise;
@@ -4506,6 +4799,7 @@ test("operational roster intent supersedes a pending exact search in either resp
       assert.equal(await staleA, false, responseOrder);
       operationalPage.resolve(jsonResponse(200, {
         agents: [{ agent_slug: "operational-b", capabilities: [], enabled: true }],
+        config_revision: "test-config-revision",
         next_cursor: null,
         roster_revision: "operational-b-revision",
         truncated: false,
@@ -4514,6 +4808,7 @@ test("operational roster intent supersedes a pending exact search in either resp
     } else {
       operationalPage.resolve(jsonResponse(200, {
         agents: [{ agent_slug: "operational-b", capabilities: [], enabled: true }],
+        config_revision: "test-config-revision",
         next_cursor: null,
         roster_revision: "operational-b-revision",
         truncated: false,
@@ -4551,6 +4846,7 @@ test("a failed operational roster intent restores the committed exact roster", a
       return Promise.resolve(jsonResponse(200, {
         ...emptyRosterPage("filter-a-revision"),
         agents: [{ agent_slug: "filter-a", capabilities: [], enabled: true }],
+        filter_slug: "filter-a",
       }));
     }
     if (path === "/api/roster/operations?limit=100") return operationalPage.promise;
@@ -5342,6 +5638,7 @@ test("operational roster filters are bounded, reversible, and lifecycle safe", a
   const calls = [];
   const response = {
     agents: [], count: 0, matched_count: 0, total_count: 0, enabled_count: 0,
+    config_revision: "test-config-revision",
     next_cursor: null, roster_revision: "filtered-roster-revision",
     truncated: false, facets: {},
   };
@@ -5434,6 +5731,11 @@ test("authenticated dashboard is a read-only monitoring surface with no mutation
   for (const callback of ["toggleAgent", "toggleHost", "rosterAction", "hiringApprove"]) {
     assert.doesNotMatch(RENDER_SOURCE, new RegExp(`callbacks\\.${callback}`));
   }
+  for (const id of ["trim-button", "trim-confirm", "trim-days"]) {
+    assert.doesNotMatch(INDEX_SOURCE, new RegExp(`id="${id}"`));
+  }
+  assert.match(INDEX_SOURCE, /Attended maintenance/);
+  assert.match(INDEX_SOURCE, /dashboard cannot delete runtime evidence/);
 
   const harness = createAppHarness(() => {
     throw new Error("read-only surface must not request mutations");
@@ -5450,7 +5752,7 @@ test("authenticated dashboard is a read-only monitoring surface with no mutation
     "toggleMaster", "workforceAction", "hiringApprove",
   ]) assert.equal(harness.api[name], undefined);
   for (const id of [
-    "trim-button", "provider-builder-save", "provider-builder-remove",
+    "provider-builder-save", "provider-builder-remove",
     "config-reset-button", "config-save-button", "workforce-action-submit",
   ]) {
     assert.equal(harness.node(id).disabled, true);
@@ -5464,6 +5766,14 @@ test("authenticated dashboard is a read-only monitoring surface with no mutation
   assert.equal(harness.node("confirmation-modal").hidden, true);
   assert.equal(harness.node("config-change-count").textContent, "Read-only monitoring");
   assert.equal(harness.node("privacy-chip").textContent, "Runtime metadata only");
+  harness.api.renderConfig({
+    effective: {},
+    environment_overrides: [],
+    path: "C:/Users/test/.agency-runtime/agency.yaml",
+    revision: "config-revision-after-refresh",
+  });
+  assert.equal(harness.node("config-change-count").textContent, "Read-only monitoring");
+  assert.equal(harness.node("config-save-button").disabled, true);
   harness.node("config-providers").value = JSON.stringify([{ name: "owner-provider" }]);
   harness.api.syncProviderSecretOptions();
   assert.equal(harness.node("config-provider-secret-index").disabled, true);

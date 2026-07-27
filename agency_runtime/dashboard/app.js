@@ -105,6 +105,7 @@ export function createDashboard(runtime = globalThis) {
 	}
 
 	function configureReadOnlySurface() {
+		state.surfaceReadOnly = true;
 		const manualProviderModel = byId("provider-builder-model");
 		if (manualProviderModel && !manualProviderModel.getAttribute("aria-label")) {
 			manualProviderModel.setAttribute(
@@ -136,7 +137,6 @@ export function createDashboard(runtime = globalThis) {
 			}
 		}
 		const hiddenMutationControls = [
-			"trim-button",
 			"provider-builder-save",
 			"provider-builder-remove",
 			"config-reset-button",
@@ -149,10 +149,6 @@ export function createDashboard(runtime = globalThis) {
 			control.disabled = true;
 			control.hidden = true;
 			control.setAttribute("aria-hidden", "true");
-		});
-		["trim-days", "trim-confirm"].forEach((id) => {
-			const control = byId(id);
-			if (control) control.disabled = true;
 		});
 		const master = byId("master-toggle");
 		if (master) {
@@ -265,7 +261,9 @@ export function createDashboard(runtime = globalThis) {
 		listen(window, "pageshow", handlePageShow);
 		// Some launchers attach the fragment after DOMContentLoaded. Reconnect
 		// without retaining the token in browser history or a stale async render.
-		listen(window, "hashchange", () => { void connectFromLocation(); });
+		listen(window, "hashchange", () => {
+			if (core.hasTokenFragment()) void connectFromLocation();
+		});
 		renderer.switchView(document.querySelector(".nav-item.active")?.dataset.view || "overview");
 		return true;
 	}

@@ -29,6 +29,7 @@ from agency_runtime.core.dashboard_runtime import (
     remove_dashboard_runtime,
     write_dashboard_runtime,
 )
+from agency_runtime.core.observability import correlation_observation_digest
 from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.ingress import MAX_LIST_ITEMS
 from agency_runtime.core.roster.sync import quarantine_candidate
@@ -738,7 +739,7 @@ def test_dashboard_static_shell_is_local_and_hardened(dashboard_server):
     assert b"total_count" in script
     assert b"next_cursor" in script
     assert b"/api/agents/lookup?slug=" in script
-    assert b"/api/config" in script
+    assert b"/api/config" not in script
     for mutation_path in _READ_ONLY_DASHBOARD_MUTATIONS.keys() - {"/api/config"}:
         assert mutation_path.encode() not in script
     assert b"APPLY LOCAL-ONLY PROFILE" not in script
@@ -1224,7 +1225,15 @@ def test_dashboard_workforce_toggle_records_operator_reason(dashboard_server) ->
     assert detail["detail"]["worker"]["state"] == "disabled"
     event = detail["detail"]["events"][0]
     assert event["event_type"] == "disable"
-    assert event["reason"] == "temporarily excluded after an unsafe near-neighbor result"
+    assert "reason" not in event
+    assert event["reason_present"] is True
+    assert "reason_hash" not in event
+    serialized = json.dumps(detail)
+    assert "temporarily excluded" not in serialized
+    assert (
+        hashlib.sha256(b"temporarily excluded after an unsafe near-neighbor result").hexdigest()
+        not in serialized
+    )
 
 
 @pytest.mark.parametrize("total_count", [263, 1001])
@@ -1431,6 +1440,63 @@ def test_dashboard_correlates_requests_with_content_free_observations(
     assert len(generated) == 36
     _wait_for_dashboard_observation(caplog, generated)
     assert invalid not in "\n".join(record.getMessage() for record in caplog.records)
+
+
+def test_dashboard_route_lab_binds_generated_trace_to_request_observation(
+    dashboard_server,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    captured: dict[str, str] = {}
+
+    def explain_with_trace(
+        session_id,
+        task,
+        _catalog,
+        *,
+        trace_id,
+        **_kwargs,
+    ):
+        captured["trace_id"] = trace_id
+        return {
+            "schema_version": "agency.selection_explain.v1",
+            "session_id": session_id,
+            "task": task,
+            "routing": {
+                "eligibility_rejections": [],
+                "selected_ids": [],
+                "trace_id": trace_id,
+            },
+            "selected": [],
+            "considered_candidates": [],
+            "rejected_candidates": [],
+            "signals": {"work_units": {"units": []}},
+            "status": "empty",
+        }
+
+    monkeypatch.setattr(dashboard_module, "explain_route", explain_with_trace)
+    monkeypatch.setattr(
+        dashboard_module,
+        "delegation_plan_projection",
+        lambda *_args, **_kwargs: {"units": []},
+    )
+    request_id = str(uuid4())
+    status, payload, headers = _json_response(
+        dashboard_server,
+        "/api/route",
+        method="POST",
+        body={"task": "Trace this routing decision", "host": "codex"},
+        token=dashboard_server["token"],
+        request_id=request_id,
+    )
+
+    assert status == 200
+    assert headers["X-Agency-Request-ID"] == request_id
+    assert payload["routing"]["trace_id"] == captured["trace_id"]
+    observation = _wait_for_dashboard_observation(caplog, request_id)
+    assert observation["operation"] == "route"
+    assert observation["correlation_digest"] == correlation_observation_digest(captured["trace_id"])
 
 
 def test_dashboard_keep_alive_requests_use_independent_request_ids(
@@ -2048,6 +2114,8 @@ def test_dashboard_rejects_unbounded_numeric_content_length_without_conversion(
 
 
 def test_dashboard_roster_cursor_pages_are_stable_and_complete(dashboard_server):
+    from agency_runtime.core.configuration import apply_config_operations, read_config_state
+
     for slug in ("alpha-reviewer", "zulu-reviewer"):
         dashboard_server["store"]._activate_prevalidated_agent(
             {
@@ -2074,6 +2142,15 @@ def test_dashboard_roster_cursor_pages_are_stable_and_complete(dashboard_server)
     assert first["truncated"] is True
     assert first["next_cursor"] == "security-reviewer"
 
+    config_path = Path(dashboard_server["store"].config_path)
+    config_before = read_config_state(config_path)
+    assert first["config_revision"] == config_before.revision
+    config_after = apply_config_operations(
+        [{"op": "set", "path": "agents.disabled", "value": ["alpha-reviewer"]}],
+        expected_revision=config_before.revision,
+        path=config_path,
+    ).state
+
     status, second, _headers = _json_response(
         dashboard_server,
         f"/api/roster?limit=2&after={first['next_cursor']}",
@@ -2085,6 +2162,9 @@ def test_dashboard_roster_cursor_pages_are_stable_and_complete(dashboard_server)
     assert second["total_count"] == 3
     assert second["truncated"] is False
     assert second["next_cursor"] is None
+    assert second["roster_revision"] == first["roster_revision"]
+    assert second["config_revision"] == config_after.revision
+    assert second["config_revision"] != first["config_revision"]
 
 
 def test_dashboard_operational_roster_review_and_inference_apis_are_bounded(

@@ -3,7 +3,7 @@ title: "AR-142: Instrument runtime boundaries and hiring outcomes"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [observability, http, mcp, hooks, sqlite, hiring]
 related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
@@ -18,7 +18,7 @@ issue_id: AR-142
 priority: p1
 tracker_url: null
 depends_on: []
-blocks: []
+blocks: [AR-173]
 ---
 
 # AR-142: Instrument runtime boundaries and hiring outcomes

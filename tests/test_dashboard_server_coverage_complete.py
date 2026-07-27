@@ -550,7 +550,7 @@ def test_dashboard_control_contract_covers_restart_and_truncated_generation(
     monkeypatch.setattr(
         dashboard,
         "roster_operational_page",
-        lambda _store, **_kwargs: {"agents": [], "count": 0},
+        lambda _store, **_kwargs: {"agents": [], "count": 0, "roster_generation": 7},
     )
     monkeypatch.setattr(
         dashboard,
@@ -587,6 +587,42 @@ def test_dashboard_control_contract_covers_restart_and_truncated_generation(
         if key not in {"sampled_at", "control_revision"}
     }
     assert response["control_revision"] == dashboard._dashboard_revision(core)
+
+
+def test_control_roster_capture_recaptures_and_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class InterleavedStore:
+        def __init__(self, generations: list[int]) -> None:
+            self.generations = iter(generations)
+            self.calls = 0
+
+        def get_active_roster_ui_page_snapshot(self, **_kwargs: Any) -> dict[str, Any]:
+            self.calls += 1
+            return {"generation": next(self.generations)}
+
+    matching = InterleavedStore([3, 4])
+    operation_generations = iter([4, 4])
+    monkeypatch.setattr(
+        dashboard,
+        "roster_operational_page",
+        lambda _store, **_kwargs: {"roster_generation": next(operation_generations)},
+    )
+    roster, operations = dashboard._capture_consistent_control_roster(
+        matching,
+        disabled_agents=frozenset(),
+    )
+    assert matching.calls == 2
+    assert roster["generation"] == operations["roster_generation"] == 4
+
+    changing = InterleavedStore([10, 11, 12])
+    operation_generations = iter([11, 12, 13])
+    with pytest.raises(RuntimeError, match="changed during bounded capture"):
+        dashboard._capture_consistent_control_roster(
+            changing,
+            disabled_agents=frozenset(),
+        )
+    assert changing.calls == dashboard._CONTROL_SNAPSHOT_CAPTURE_ATTEMPTS
 
 
 def test_dashboard_post_runtime_control_failure_is_redacted(

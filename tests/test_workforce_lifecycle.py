@@ -752,7 +752,7 @@ def test_worker_dashboard_history_projection_omits_documents_and_keeps_proof_sca
             "(id, event_sequence, worker_id, event_type, from_class, to_class, "
             "from_standing, to_standing, version, actor, surface, reason, evidence, "
             "created_at) VALUES (?, ?, ?, 'audit', 'contractor', 'contractor', "
-            "'active', 'active', ?, 'test', 'test', 'large private audit evidence', ?, "
+            "'active', 'active', ?, 'test', 'test', 'operator-note-sentinel-private', ?, "
             "'2026-07-26T00:00:02+00:00')",
             (
                 str(uuid.uuid4()),
@@ -795,8 +795,12 @@ def test_worker_dashboard_history_projection_omits_documents_and_keeps_proof_sca
     )
 
     assert full["events"][0]["evidence"]["payload"].startswith("private-event-sentinel-")
+    assert full["events"][0]["reason"] == "operator-note-sentinel-private"
     assert full["outcomes"][0]["evidence_refs"] == outcome["evidence_refs"]
     assert all("evidence" not in item for item in summary["events"])
+    assert all("reason" not in item for item in summary["events"])
+    assert summary["events"][0]["reason_present"] is True
+    assert all("reason_hash" not in item for item in summary["events"])
     assert all("evidence_refs" not in item for item in summary["outcomes"])
     assert summary["outcomes"][0]["_promotion_evidence_qualified"] is True
     assert summary["events_total_count"] == full["events_total_count"]
@@ -808,6 +812,10 @@ def test_worker_dashboard_history_projection_omits_documents_and_keeps_proof_sca
     )["verified_work_units"] == ["summary-unit"]
     serialized_summary = json.dumps(summary, separators=(",", ":")).encode("utf-8")
     assert b"private-event-sentinel" not in serialized_summary
+    assert b"operator-note-sentinel-private" not in serialized_summary
+    assert hashlib.sha256(b"operator-note-sentinel-private").hexdigest().encode() not in (
+        serialized_summary
+    )
     assert b"private-outcome-sentinel" not in serialized_summary
     with pytest.raises(TypeError, match="include_history_documents"):
         store.get_workforce_worker_detail(

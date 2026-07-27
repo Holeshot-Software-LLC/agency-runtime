@@ -23,6 +23,7 @@ from threading import RLock, Thread, current_thread, main_thread
 from time import monotonic
 from typing import Any
 from urllib.parse import parse_qs, urlparse
+from uuid import uuid4
 
 from agency_runtime.core.agent_activation import (
     normalize_agent_slug,
@@ -71,6 +72,7 @@ from agency_runtime.core.host_capabilities import (
 from agency_runtime.core.host_control import HostControlConflictError
 from agency_runtime.core.observability import (
     RuntimeBoundary,
+    correlate_current_observation,
     current_observation_context,
     mark_current_observation,
     new_request_id,
@@ -155,6 +157,7 @@ _ROUTE_LAB_HOST_INVENTORY_LIMIT = len(EXECUTION_HOSTS) * 2
 _ROUTE_LAB_REJECTION_LIMIT = 50
 _ROUTE_LAB_REJECTION_TEXT_BYTES = 256
 _DASHBOARD_COLLECTION_PAGE_MAX = 200
+_CONTROL_SNAPSHOT_CAPTURE_ATTEMPTS = 3
 MAX_WORKFORCE_DETAIL_RESPONSE_BYTES = 2 * 1024 * 1024
 _COLLECTION_CURSOR_RE = re.compile(r"[A-Za-z0-9_-]{1,1024}\Z")
 
@@ -232,6 +235,29 @@ def _config_payload(
 
 def _roster_revision(generation: int) -> str:
     return hashlib.sha256(f"agency.roster.v1:{generation}".encode()).hexdigest()
+
+
+def _capture_consistent_control_roster(
+    store: Store,
+    *,
+    disabled_agents: frozenset[str],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Recapture until both dashboard roster projections share one generation."""
+
+    for _attempt in range(_CONTROL_SNAPSHOT_CAPTURE_ATTEMPTS):
+        roster = store.get_active_roster_ui_page_snapshot(
+            limit=_DASHBOARD_COLLECTION_PAGE_MAX,
+            disabled_agents=disabled_agents,
+        )
+        operations = roster_operational_page(store, disabled_agents=disabled_agents)
+        generation = roster.get("generation")
+        if (
+            isinstance(generation, int)
+            and not isinstance(generation, bool)
+            and operations.get("roster_generation") == generation
+        ):
+            return roster, operations
+    raise RuntimeError("dashboard control roster changed during bounded capture")
 
 
 def _routing_catalog_revision(catalog: list[dict[str, Any]]) -> str:
@@ -1804,8 +1830,8 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 if isinstance(effective, dict)
                 else frozenset()
             )
-            roster_snapshot = self.store.get_active_roster_ui_page_snapshot(
-                limit=_DASHBOARD_COLLECTION_PAGE_MAX,
+            roster_snapshot, operations = _capture_consistent_control_roster(
+                self.store,
                 disabled_agents=disabled,
             )
             roster_rows = roster_snapshot["rows"]
@@ -1828,14 +1854,11 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "next_cursor": roster_agents[-1]["agent_slug"]
                 if len(roster_rows) > len(roster_agents) and roster_agents
                 else None,
+                "config_revision": state.revision,
                 "roster_revision": _roster_revision(int(roster_snapshot["generation"])),
                 "ordering": "agent_slug:asc",
                 "cursor_semantics": "live-keyset-after-exclusive",
             }
-            operations = roster_operational_page(
-                self.store,
-                disabled_agents=disabled,
-            )
             snapshot_page = _roster_snapshot_contract(
                 self.store.roster_snapshot_page(limit=_DASHBOARD_COLLECTION_PAGE_MAX),
                 limit=_DASHBOARD_COLLECTION_PAGE_MAX,
@@ -2496,6 +2519,8 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             requested_host=requested_host,
             global_enabled=True,
         )
+        trace_id = str(uuid4())
+        correlate_current_observation(trace_id)
         receipt = explain_route(
             session_id,
             task,
@@ -2507,6 +2532,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
             platform=str(capability_receipt["platform"]),
             available_tools=tuple(capability_receipt["capabilities"]),
             capability_receipt=capability_receipt,
+            trace_id=trace_id,
         )
         eligibility = _route_lab_eligibility_projection(
             receipt,

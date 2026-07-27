@@ -474,6 +474,7 @@ export function createLiveController(core, config, renderer) {
 	function validateCollectionPage(page, {
 		itemField,
 		revisionField,
+		continuityField = "",
 		cursorContract,
 		cursorFields,
 		cursorKind,
@@ -490,6 +491,10 @@ export function createLiveController(core, config, renderer) {
 		if (typeof page[revisionField] !== "string" || !page[revisionField].trim()) {
 			throw new Error(`The ${itemField} collection omitted its paging revision.`);
 		}
+		if (continuityField && (
+			typeof page[continuityField] !== "string"
+			|| !page[continuityField].trim()
+		)) throw new Error(`The ${itemField} collection omitted its continuity revision.`);
 		if (page.truncated) {
 			if (!collectionCursorIsValid(
 				page.next_cursor,
@@ -517,6 +522,8 @@ export function createLiveController(core, config, renderer) {
 			cursorContract = "slug",
 			cursorFields = 2,
 			cursorKind = "",
+			continuityField = "",
+			expectedContinuity,
 		},
 	) {
 		const pageContract = {
@@ -525,10 +532,16 @@ export function createLiveController(core, config, renderer) {
 			cursorContract,
 			cursorFields,
 			cursorKind,
+			continuityField,
 		};
 		validateCollectionPage(initial, pageContract);
+		if (
+			expectedContinuity !== undefined
+			&& initial[continuityField] !== expectedContinuity
+		) throw new Error(`The ${itemField} collection did not match the control snapshot.`);
 		const rows = [...initial[itemField]];
 		const revision = initial[revisionField];
+		const continuity = initial[continuityField];
 		let cursor = initial.truncated ? initial.next_cursor : "";
 		const seenCursors = new Set();
 		let pageCount = 1;
@@ -546,6 +559,9 @@ export function createLiveController(core, config, renderer) {
 			if (page[revisionField] !== revision) {
 				throw new Error(`The ${itemField} collection changed while it was being paged.`);
 			}
+			if (continuityField && page[continuityField] !== continuity) {
+				throw new Error(`The ${itemField} collection changed while it was being paged.`);
+			}
 			rows.push(...page[itemField]);
 			cursor = page.truncated ? page.next_cursor : "";
 			pageCount += 1;
@@ -561,11 +577,18 @@ export function createLiveController(core, config, renderer) {
 		};
 	}
 
-	async function completeRosterPage(initial, signal, basePath = "/api/roster?limit=200") {
+	async function completeRosterPage(
+		initial,
+		signal,
+		basePath = "/api/roster?limit=200",
+		expectedConfigRevision,
+	) {
 		return completeCollection(initial, {
 			basePath,
 			itemField: "agents",
 			revisionField: "roster_revision",
+			continuityField: "config_revision",
+			expectedContinuity: expectedConfigRevision,
 			signal,
 		});
 	}
@@ -715,12 +738,14 @@ export function createLiveController(core, config, renderer) {
 		return `/api/roster/operations?${query.toString()}`;
 	}
 
-	async function fetchOperationalRoster(filters, signal) {
+	async function fetchOperationalRoster(filters, signal, expectedConfigRevision) {
 		const first = await api(operationalRosterPath(filters), { signal });
 		return completeCollection(first, {
 			basePath: operationalRosterPath(filters),
 			itemField: "agents",
 			revisionField: "roster_revision",
+			continuityField: "config_revision",
+			expectedContinuity: expectedConfigRevision,
 			signal,
 		});
 	}
@@ -863,6 +888,21 @@ export function createLiveController(core, config, renderer) {
 			: "/api/roster?limit=100";
 	}
 
+	function validateExactRosterLookup(payload, requestedSlug) {
+		const expected = normalizeRosterFilter(requestedSlug);
+		const agents = payload?.agents;
+		if (
+			!expected
+			|| payload?.filter_slug !== expected
+			|| !Array.isArray(agents)
+			|| agents.length > 1
+			|| agents.some((agent) => agent?.agent_slug !== expected)
+		) {
+			throw new Error("Exact roster lookup response did not match the requested agent.");
+		}
+		return payload;
+	}
+
 	function normalizeRosterFilter(value) {
 		const slug = String(value || "").trim().toLowerCase();
 		if (slug && !AGENT_SLUG_PATTERN.test(slug)) {
@@ -914,70 +954,47 @@ export function createLiveController(core, config, renderer) {
 		return applyRosterFilter("");
 	}
 
-	async function legacyControlSnapshot(signal) {
-		const configSnapshot = await api("/api/config", { signal });
-		if (configSnapshot?.service_binding?.store_restart_required === true) {
-			return {
-				schema_version: "agency.dashboard.control.legacy",
-				config: configSnapshot,
-				service_binding: configSnapshot.service_binding,
-				restart_required: true,
-				control_revision: "legacy-unversioned",
-			};
-		}
-		const [hosts, rosterFirst, governance] = await Promise.all([
-			api("/api/hosts", { signal }),
-			api(rosterRequestPath(), { signal }),
-			api("/api/snapshots", { signal }),
-		]);
-		const roster = await completeRosterPage(rosterFirst, signal);
-		return {
-			schema_version: "agency.dashboard.control.legacy",
-			config: configSnapshot,
-			hosts: hosts.hosts || [],
-			master: hosts.master,
-			roster,
-			governance: await completeGovernanceSnapshot(governance, signal),
-			service_binding: configSnapshot.service_binding,
-			restart_required: false,
-			control_revision: "legacy-unversioned",
-		};
-	}
-
 	async function fetchControlSnapshot(signal) {
-		let snapshot;
-		try {
-			snapshot = await api("/api/control", { signal });
-		} catch (error) {
-			if (error?.name === "AbortError") throw error;
-			if (!(error instanceof APIError) || ![0, 404].includes(error.status)) throw error;
-			return legacyControlSnapshot(signal);
-		}
+		const snapshot = await api("/api/control", { signal });
 		if (snapshot?.schema_version !== "agency.dashboard.control.v1") {
-			if (
-				signal?.aborted
-				|| lifecycleInactive()
-			) throw new runtime.DOMException("Aborted", "AbortError");
-			return legacyControlSnapshot(signal);
+			if (signal?.aborted || lifecycleInactive()) {
+				throw new runtime.DOMException("Aborted", "AbortError");
+			}
+			throw new Error("Dashboard control response has an unsupported schema.");
 		}
 		if (!snapshot.restart_required) {
-			snapshot.roster = await completeRosterPage(snapshot.roster, signal);
+			snapshot.roster = await completeRosterPage(
+				snapshot.roster,
+				signal,
+				"/api/roster?limit=200",
+				snapshot.config.revision,
+			);
 			snapshot.governance = await completeGovernanceSnapshot(
 				snapshot.governance,
 				signal,
 			);
 			if (state.rosterFilter) {
-				const filteredRoster = await api(rosterRequestPath(), { signal });
+				const requestedSlug = state.rosterFilter;
+				const requestedPath = rosterRequestPath();
+				const filteredRoster = validateExactRosterLookup(
+					await api(requestedPath, { signal }),
+					requestedSlug,
+				);
 				snapshot.roster = await completeRosterPage(
 					filteredRoster,
 					signal,
-					rosterRequestPath(),
+					requestedPath,
+					snapshot.config.revision,
 				);
 			}
 			if (Object.keys(state.rosterFilters || {}).length) {
 				snapshot.governance = {
 					...(snapshot.governance || {}),
-					operations: await fetchOperationalRoster(state.rosterFilters, signal),
+					operations: await fetchOperationalRoster(
+						state.rosterFilters,
+						signal,
+						snapshot.config.revision,
+					),
 				};
 			}
 		}
@@ -985,7 +1002,7 @@ export function createLiveController(core, config, renderer) {
 	}
 
 	function setControlFresh(snapshot) {
-		state.control.revision = String(snapshot.control_revision || "legacy-unversioned");
+		state.control.revision = String(snapshot.control_revision || "unknown");
 		state.control.sampledAt = snapshot.sampled_at || new Date().toISOString();
 		state.control.stale = false;
 		state.control.errorRequestId = "";
@@ -1353,6 +1370,7 @@ export function createLiveController(core, config, renderer) {
 		applyControlSnapshot,
 		markControlStale,
 		applyRosterPage,
+		validateExactRosterLookup,
 		applyGovernanceSnapshot,
 		operationalFilterValues,
 		operationalRosterPath,

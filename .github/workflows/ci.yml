@@ -23,10 +23,14 @@ jobs:
     name: static quality, documentation, and dashboard UI
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    outputs:
+      code_required: ${{ steps.change-scope.outputs.code_required }}
+      scope_reason: ${{ steps.change-scope.outputs.scope_reason }}
     steps:
       - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
@@ -34,25 +38,163 @@ jobs:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: pyproject.toml
+      - name: Classify the complete event delta
+        id: change-scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" != "pull_request" ]]; then
+            {
+              echo "code_required=true"
+              echo "scope_reason=event_requires_full_verification"
+            } >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          classifier_path="scripts/classify_ci_change.py"
+          classifier_entry="$(git ls-tree "${BASE_SHA}" -- "${classifier_path}")"
+          read -r classifier_mode classifier_type classifier_object classifier_name \
+            <<< "${classifier_entry//$'\t'/ }"
+          if [[
+            "${classifier_mode:-}" != "100644" ||
+            "${classifier_type:-}" != "blob" ||
+            ! "${classifier_object:-}" =~ ^[0-9a-f]{40}$ ||
+            "${classifier_name:-}" != "${classifier_path}"
+          ]]; then
+            {
+              echo "code_required=true"
+              echo "scope_reason=trusted_classifier_unavailable"
+            } >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          trusted_classifier="$(
+            mktemp "${RUNNER_TEMP}/agency-ci-scope.XXXXXXXX.py"
+          )"
+          trap 'rm -f -- "${trusted_classifier}"' EXIT
+          git cat-file blob "${classifier_object}" > "${trusted_classifier}"
+          chmod 600 "${trusted_classifier}"
+          python -I "${trusted_classifier}" \
+            --root "${GITHUB_WORKSPACE}" \
+            --event "${EVENT_NAME}" \
+            --base-sha "${BASE_SHA}" \
+            --head-sha "${HEAD_SHA}"
       - name: Set up Node.js
+        if: steps.change-scope.outputs.code_required == 'true'
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: "24"
       - name: Install development dependencies
+        if: steps.change-scope.outputs.code_required == 'true'
         run: python -m pip install -e ".[dev]"
+      - name: Install documentation dependencies
+        if: steps.change-scope.outputs.code_required == 'false'
+        run: python -m pip install .
       - name: Check dependency consistency
+        if: steps.change-scope.outputs.code_required == 'true'
         run: python -m pip check
       - name: Check Python code quality
+        if: steps.change-scope.outputs.code_required == 'true'
         run: |
           ruff check agency_runtime tests scripts
           ruff format --check agency_runtime tests scripts
       - name: Check patch whitespace
-        run: git diff --check
-      - name: Verify fast workflow contracts
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          python -m pytest tests/test_ci_sharding.py tests/test_ci_session_pair.py \
-            tests/test_release_packaging.py -q -W error
+          set -euo pipefail
+          whitespace_path="scripts/check_ci_whitespace.py"
+          trusted_ref=""
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            trusted_ref="${BASE_SHA}"
+          elif [[
+            "${EVENT_NAME}" == "push" &&
+            "${BEFORE_SHA}" =~ ^[0-9a-f]{40}$ &&
+            "${BEFORE_SHA}" != "0000000000000000000000000000000000000000"
+          ]]; then
+            trusted_ref="${BEFORE_SHA}"
+          fi
+
+          if [[ -n "${trusted_ref}" ]]; then
+            whitespace_entry="$(git ls-tree "${trusted_ref}" -- "${whitespace_path}")"
+            read -r whitespace_mode whitespace_type whitespace_object whitespace_name \
+              <<< "${whitespace_entry//$'\t'/ }"
+          fi
+          if [[
+            "${whitespace_mode:-}" == "100644" &&
+            "${whitespace_type:-}" == "blob" &&
+            "${whitespace_object:-}" =~ ^[0-9a-f]{40}$ &&
+            "${whitespace_name:-}" == "${whitespace_path}"
+          ]]; then
+            trusted_whitespace="$(
+              mktemp "${RUNNER_TEMP}/agency-ci-whitespace.XXXXXXXX.py"
+            )"
+            trap 'rm -f -- "${trusted_whitespace}"' EXIT
+            git cat-file blob "${whitespace_object}" > "${trusted_whitespace}"
+            chmod 600 "${trusted_whitespace}"
+            python -I "${trusted_whitespace}" \
+              --root "${GITHUB_WORKSPACE}" \
+              --event "${EVENT_NAME}" \
+              --base-sha "${BASE_SHA}" \
+              --before-sha "${BEFORE_SHA}" \
+              --head-sha "${HEAD_SHA}"
+            exit 0
+          fi
+
+          if [[ ! "${HEAD_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::CI head SHA is malformed."
+            exit 1
+          fi
+          git cat-file -e "${HEAD_SHA}^{commit}"
+          case "${EVENT_NAME}" in
+            pull_request)
+              if [[ ! "${BASE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "::error::CI base SHA is malformed."
+                exit 1
+              fi
+              git cat-file -e "${BASE_SHA}^{commit}"
+              comparison="${BASE_SHA}...${HEAD_SHA}"
+              ;;
+            push)
+              if [[ "${BEFORE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+                comparison="4b825dc642cb6eb9a060e54bf8d69288fbee4904..${HEAD_SHA}"
+              elif [[ "${BEFORE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+                git cat-file -e "${BEFORE_SHA}^{commit}"
+                comparison="${BEFORE_SHA}..${HEAD_SHA}"
+              else
+                echo "::error::CI before SHA is malformed."
+                exit 1
+              fi
+              ;;
+            workflow_dispatch)
+              comparison="4b825dc642cb6eb9a060e54bf8d69288fbee4904..${HEAD_SHA}"
+              ;;
+            *)
+              echo "::error::Unsupported CI event."
+              exit 1
+              ;;
+          esac
+          if ! git diff --check "${comparison}" -- >/dev/null 2>&1; then
+            echo "::error::Committed whitespace check failed."
+            exit 1
+          fi
+      - name: Check tracked release inputs
+        run: python scripts/verify_release_hygiene.py
+      - name: Verify fast workflow contracts
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: |
+          python -m pytest tests/test_ci_change_scope.py tests/test_ci_sharding.py \
+            tests/test_ci_session_pair.py tests/test_release_packaging.py -q -W error
       - name: Run dashboard UI tests with coverage
+        if: steps.change-scope.outputs.code_required == 'true'
         run: >-
           node --test --experimental-test-coverage
           --test-coverage-lines=95 --test-coverage-branches=90
@@ -77,6 +219,9 @@ jobs:
   coverage:
     name: coverage / pair ${{ matrix.label }} of 2 / shards ${{ matrix.shard_a }}+${{ matrix.shard_b }}
     needs: quality-contracts
+    if: >-
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
     runs-on: ubuntu-24.04
     # Two sequential preparation envelopes plus the bounded sessions and cleanup.
     timeout-minutes: 35
@@ -157,6 +302,9 @@ jobs:
   performance:
     name: uninstrumented wall-clock performance
     needs: quality-contracts
+    if: >-
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -194,7 +342,10 @@ jobs:
   test:
     name: tests / ${{ matrix.label }} / py${{ matrix.python_a }}+py${{ matrix.python_b }}
     needs: quality-contracts
-    if: github.event_name != 'pull_request' && needs.quality-contracts.result == 'success'
+    if: >-
+      github.event_name != 'pull_request' &&
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
     runs-on: ${{ matrix.os }}
     # Two sequential preparation envelopes plus the 42m session bound and cleanup.
     timeout-minutes: 70
@@ -255,6 +406,9 @@ jobs:
   windows-portability-contract:
     name: portability contract / windows / py${{ matrix.python }}
     needs: quality-contracts
+    if: >-
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
     runs-on: windows-2022
     timeout-minutes: 20
     strategy:
@@ -504,6 +658,9 @@ jobs:
   security:
     name: deterministic source checks and dependency audit
     needs: quality-contracts
+    if: >-
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -544,6 +701,7 @@ jobs:
     steps:
       - name: Require every applicable production gate
         env:
+          CODE_REQUIRED: ${{ needs.quality-contracts.outputs.code_required }}
           EVENT_NAME: ${{ github.event_name }}
           NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
@@ -551,28 +709,43 @@ jobs:
           import json
           import os
 
+          code_required_text = os.environ.get("CODE_REQUIRED", "")
           event_name = os.environ.get("EVENT_NAME", "")
           needs = json.loads(os.environ["NEEDS_JSON"])
           if not isinstance(needs, dict):
               raise SystemExit("production gate results must be a JSON object")
 
-          expected_test_result = {
-              "pull_request": "skipped",
-              "push": "success",
-              "workflow_dispatch": "success",
-          }.get(event_name)
-          if expected_test_result is None:
+          if code_required_text not in {"true", "false"}:
+              raise SystemExit("change scope did not produce a governed boolean")
+          code_required = code_required_text == "true"
+          if event_name not in {"pull_request", "push", "workflow_dispatch"}:
               raise SystemExit(f"unsupported workflow event: {event_name!r}")
+          if not code_required and event_name != "pull_request":
+              raise SystemExit("only pull requests may use the documentation-only lane")
 
-          expected = {
-              "quality-contracts": "success",
-              "coverage-complete": "success",
-              "performance": "success",
-              "test": expected_test_result,
-              "windows-portability-contract": "success",
-              "artifact-parity": "success",
-              "security": "success",
-          }
+          if code_required:
+              expected_test_result = (
+                  "skipped" if event_name == "pull_request" else "success"
+              )
+              expected = {
+                  "quality-contracts": "success",
+                  "coverage-complete": "success",
+                  "performance": "success",
+                  "test": expected_test_result,
+                  "windows-portability-contract": "success",
+                  "artifact-parity": "success",
+                  "security": "success",
+              }
+          else:
+              expected = {
+                  "quality-contracts": "success",
+                  "coverage-complete": "skipped",
+                  "performance": "skipped",
+                  "test": "skipped",
+                  "windows-portability-contract": "skipped",
+                  "artifact-parity": "success",
+                  "security": "skipped",
+              }
           actual = {
               name: detail.get("result") if isinstance(detail, dict) else None
               for name, detail in needs.items()

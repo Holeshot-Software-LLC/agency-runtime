@@ -3,7 +3,7 @@ title: "AR-149: Issue a fresh dashboard request ID per HTTP request"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [dashboard, observability, http, traceability]
 related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
@@ -17,7 +17,7 @@ issue_id: AR-149
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: []
+blocks: [AR-173]
 ---
 
 # AR-149: Issue a fresh dashboard request ID per HTTP request

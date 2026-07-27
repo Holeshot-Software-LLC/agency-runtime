@@ -6,6 +6,9 @@ created: 2026-07-10
 updated: 2026-07-18
 tags: [dashboard, security, privacy, retention]
 related:
+  - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
+  - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
+  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
   - docs/roadmap/issue-AR-54-make-dashboard-runtime-publication-swap-safe.md
   - docs/roadmap/issue-AR-42-make-database-metrics-sidecar-race-safe.md

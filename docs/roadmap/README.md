@@ -187,6 +187,12 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-167` | [Normalize Windows release-source modes](issue-AR-167-normalize-windows-release-source-modes.md) | in_progress | p0 | release | pending authorization |
 | `AR-168` | [Rebuild the canonical sdist source manifest](issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | in_progress | p0 | release | pending authorization |
 | `AR-169` | [Exclude the native PE from portable wheels](issue-AR-169-exclude-native-pe-from-portable-wheel.md) | in_progress | p0 | release | pending authorization |
+| `AR-170` | [Fail dashboard response correlation closed](issue-AR-170-fail-dashboard-response-correlation-closed.md) | in_progress | p1 | dashboard | pending authorization |
+| `AR-171` | [Redact dashboard lifecycle reasons](issue-AR-171-redact-dashboard-lifecycle-reasons.md) | in_progress | p1 | dashboard | pending authorization |
+| `AR-172` | [Make roster pages snapshot-consistent](issue-AR-172-make-roster-pages-snapshot-consistent.md) | in_progress | p1 | operations | pending authorization |
+| `AR-173` | [Correlate Route Lab observations](issue-AR-173-correlate-route-lab-observations.md) | in_progress | p1 | observability | pending authorization |
+| `AR-174` | [Short-circuit documentation-only CI](issue-AR-174-short-circuit-docs-only-ci.md) | in_progress | p1 | testing | pending authorization |
+| `AR-175` | [Retire the non-atomic dashboard control fallback](issue-AR-175-retire-dashboard-control-fallback.md) | in_progress | p1 | dashboard | pending authorization |
 
 ## Traceability
 
@@ -363,6 +369,12 @@ not stable internal identifiers.
 | [AR-167](issue-AR-167-normalize-windows-release-source-modes.md) | `c844498`, `1ecc4e5`, `c067c6a`; tracker creation pending | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-168](issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | `1ad1cbc`; tracker creation pending | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-169](issue-AR-169-exclude-native-pe-from-portable-wheel.md) | `2f80118`; tracker creation pending | [ADR-0098](../decisions/0098-pair-portable-and-win-amd64-wheels.md) |
+| [AR-170](issue-AR-170-fail-dashboard-response-correlation-closed.md) | implementation pending local commit; tracker creation pending authorization | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md), [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md) |
+| [AR-171](issue-AR-171-redact-dashboard-lifecycle-reasons.md) | implementation pending local commit; tracker creation pending authorization | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
+| [AR-172](issue-AR-172-make-roster-pages-snapshot-consistent.md) | implementation pending local commit; tracker creation pending authorization | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md), [ADR-0046](../decisions/0046-config-backed-agent-activation-policy.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
+| [AR-173](issue-AR-173-correlate-route-lab-observations.md) | implementation pending local commit; tracker creation pending authorization | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
+| [AR-174](issue-AR-174-short-circuit-docs-only-ci.md) | implementation pending local commit; hosted measurement and tracker creation pending authorization | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md), [ADR-0100](../decisions/0100-short-circuit-trusted-docs-only-pull-requests.md) |
+| [AR-175](issue-AR-175-retire-dashboard-control-fallback.md) | implementation pending local commit; tracker creation pending authorization | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

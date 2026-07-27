@@ -3,7 +3,7 @@ title: "AR-153: Complete and bound worker-detail evidence"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [dashboard, workforce, sqlite, traceability]
 related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
@@ -18,7 +18,7 @@ issue_id: AR-153
 priority: p1
 tracker_url: null
 depends_on: []
-blocks: []
+blocks: [AR-170, AR-171]
 ---
 
 # AR-153: Complete and bound worker-detail evidence

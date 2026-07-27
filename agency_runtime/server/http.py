@@ -611,14 +611,15 @@ class AgencyHTTPHandler(BaseHTTPRequestHandler):
             self._json_error(HTTPStatus.BAD_REQUEST, str(exc))
             return
         disabled = self.store.get_disabled_agent_slugs()
-        page = self.store.get_enabled_roster(
-            limit=limit + 1,
+        snapshot = self.store.get_enabled_roster_page_snapshot(
+            limit=limit,
             after=after,
             disabled_agents=disabled,
         )
+        page = snapshot["rows"]
         truncated = len(page) > limit
         roster = page[:limit]
-        total_count = self.store.count_enabled_roster(disabled_agents=disabled)
+        total_count = int(snapshot["total_count"])
         self._json_ok(
             {
                 "agents": roster,

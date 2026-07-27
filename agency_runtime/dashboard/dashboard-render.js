@@ -236,11 +236,6 @@ export function createRenderer(core, config) {
 		byId("privacy-chip").textContent = data.capture_content
 			? "Redacted runtime content"
 			: "Runtime metadata only";
-		const trimDays = byId("trim-days");
-		if (trimDays && trimDays.dataset.dirty !== "true") {
-			trimDays.value = data.retention_days || 30;
-		}
-
 		const tbody = byId("overview-delegations");
 		tbody.replaceChildren();
 		const previousOverviewKeys = state.evidenceKeys.get("overview") || new Set();
@@ -1103,11 +1098,15 @@ export function createRenderer(core, config) {
 		history.append(el("summary", "", "Recent lifecycle and outcome evidence"));
 		const list = div( "workforce-history-list");
 		const rows = [
-			...(Array.isArray(detail.events) ? detail.events : []).map((item) => ({
-				kind: item.event_type || "lifecycle",
-				result: item.reason || (String(item.from_standing || "—") + " → " + String(item.to_standing || "—")),
-				at: item.created_at,
-			})),
+			...(Array.isArray(detail.events) ? detail.events : []).map((item) => {
+				return {
+					kind: item.event_type || "lifecycle",
+					result: item.reason_present === true
+						? "Reason recorded"
+						: (String(item.from_standing || "—") + " → " + String(item.to_standing || "—")),
+					at: item.created_at,
+				};
+			}),
 			...(Array.isArray(detail.outcomes) ? detail.outcomes : []).map((item) => ({
 				kind: item.event_type || "outcome",
 				result: item.outcome || "recorded",
@@ -1196,12 +1195,12 @@ export function createRenderer(core, config) {
 		const root = byId("workforce-detail");
 		const form = byId("workforce-action-form");
 		const detail = state.selectedWorkerDetail;
-		if (!root || !form) return;
+		if (!root) return;
 		root.replaceChildren();
 		if (!detail?.worker) {
 			root.className = "empty-state";
 			root.textContent = "Select a worker to inspect scope, lineage, hiring evidence, assignments, and outcomes.";
-			form.hidden = true;
+			if (form) form.hidden = true;
 			byId("workforce-detail-state").textContent = "SELECT";
 			return;
 		}
@@ -1308,7 +1307,7 @@ export function createRenderer(core, config) {
 		appendWorkerLineage(root, detail);
 		appendWorkerHiringCases(root, detail);
 		appendWorkerHistory(root, detail);
-		form.hidden = true;
+		if (form) form.hidden = true;
 	}
 
 	function renderWorkforce() {

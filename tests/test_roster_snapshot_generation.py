@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -109,6 +110,96 @@ def test_roster_snapshots_share_generation_counts_and_projection_boundaries(
     }
     assert ui["rows"][0]["capabilities"] == ["review", "testing"]
     assert entry["rows"][0]["agent_slug"] == "alpha-reviewer"
+
+
+def test_enabled_roster_snapshot_filters_and_limits_inside_sql(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    for slug in ("alpha-reviewer", "beta-reviewer", "delta-reviewer", "gamma-reviewer"):
+        store._activate_prevalidated_agent(_agent(slug))
+
+    statements: list[tuple[str, tuple[Any, ...]]] = []
+    original_connect = store._connect
+
+    class RecordingConnection:
+        def __init__(self, connection: Any) -> None:
+            self._connection = connection
+
+        def execute(self, statement: str, parameters: Any = ()) -> Any:
+            statements.append((statement, tuple(parameters)))
+            return self._connection.execute(statement, parameters)
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self._connection, name)
+
+    monkeypatch.setattr(store, "_connect", lambda: RecordingConnection(original_connect()))
+
+    snapshot = store.get_enabled_roster_page_snapshot(
+        limit=1,
+        after="alpha-reviewer",
+        disabled_agents=frozenset({"beta-reviewer"}),
+    )
+
+    assert snapshot["generation"] == 4
+    assert snapshot["total_count"] == 3
+    assert [row["agent_slug"] for row in snapshot["rows"]] == [
+        "delta-reviewer",
+        "gamma-reviewer",
+    ]
+    page_statement, page_parameters = next(
+        item
+        for item in statements
+        if "workforce_recruitment_contract" in item[0] and "ORDER BY a.agent_slug" in item[0]
+    )
+    assert "json_each(?)" in page_statement
+    assert "LIMIT ?" in page_statement
+    assert page_parameters[-1] == 2
+
+
+def test_enabled_roster_snapshot_is_generation_consistent_during_activation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db_path = tmp_path / "agency.db"
+    reader = Store(db_path)
+    writer = Store(db_path)
+    reader._activate_prevalidated_agent(_agent("alpha-reviewer"))
+    reader._activate_prevalidated_agent(_agent("beta-reviewer"))
+    original_connect = reader._connect
+    activation_fired = False
+
+    class InterleavingConnection:
+        def __init__(self, connection: Any) -> None:
+            self._connection = connection
+
+        def execute(self, statement: str, parameters: Any = ()) -> Any:
+            nonlocal activation_fired
+            cursor = self._connection.execute(statement, parameters)
+            if (
+                "store_counters WHERE name = 'roster-generation'" in statement
+                and not activation_fired
+            ):
+                activation_fired = True
+                writer._activate_prevalidated_agent(_agent("gamma-reviewer"))
+            return cursor
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self._connection, name)
+
+    monkeypatch.setattr(reader, "_connect", lambda: InterleavingConnection(original_connect()))
+
+    snapshot = reader.get_enabled_roster_page_snapshot(limit=2)
+
+    assert activation_fired is True
+    assert snapshot["generation"] == 2
+    assert snapshot["total_count"] == 2
+    assert [row["agent_slug"] for row in snapshot["rows"]] == [
+        "alpha-reviewer",
+        "beta-reviewer",
+    ]
+    assert writer.get_roster_generation() == 3
 
 
 def test_ui_snapshot_bounds_max_capabilities_and_tolerates_legacy_json(

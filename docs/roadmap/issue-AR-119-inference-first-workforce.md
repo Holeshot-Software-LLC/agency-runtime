@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -16,6 +16,12 @@ related:
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
+  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
+  - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
+  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
+  - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
+  - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
+  - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
@@ -3199,9 +3205,36 @@ Clean cross-OS artifacts, fresh installed-package dogfood, real-browser UI QA,
 the complete current-head corpus, and hosted measurements still follow this
 checkpoint and are not implied by it.
 
+### Final UI-to-Store and CI-budget checkpoint 2026-07-27
+
+The current hard-checkpoint package completes the requested final layered pass
+through AR-170 through AR-175. Browser request identity and protected headers,
+worker and roster response identity, mandatory worker evidence, safe JavaScript
+revisions, effective-roster Store/configuration continuity, atomic public roster
+pages, control-envelope Store continuity, Route Lab observation correlation,
+and reduced lifecycle-reason privacy now fail closed with focused regressions.
+The unsupported multi-endpoint dashboard control fallback is removed.
+
+The final security-delta reviewer classified zero Critical, High, or Medium
+findings and six Low findings, all repaired, with no remaining actionable
+finding in that reviewed delta. The broader traceability review separately
+prioritized the response cross-binding and snapshot-currentness defects as
+Medium because they crossed authoritative UI, HTTP, service, Store, and SQL
+boundaries. Both classifications and the repairs are retained; neither is a
+claim that the external release gates have passed.
+
+Focused evidence is 105 browser interaction tests, 121 release-packaging
+contracts, 176 dashboard/workforce/roster tests with 3 platform skips, 19
+fail-closed CI-scope tests, Ruff, Bandit on modified Python, strict offline
+workflow security, and clean diff checks. The ten shipped dashboard assets are
+257,620 bytes, 5,547 bytes below the unchanged ceiling. AR-174 structurally
+reduces an eligible documentation-only primary pull-request lane from 13 hosted
+runner allocations to 5 while retaining Linux and Windows artifacts plus
+parity. This is local structural proof, not measured hosted time or savings.
+
 ### Still required before AR-119 can close
 
-- Preserve the local repairs across AR-128 through AR-166 while completing their
+- Preserve the local repairs across AR-128 through AR-175 while completing their
   remaining tracker, current-artifact, installed-host, attended-canary, signing,
   and hosted evidence. AR-143's exact Windows roster-rollback path is positive
   native proof only after the AR-161 signed-artifact and attended-canary gates;
@@ -3229,7 +3262,7 @@ checkpoint and are not implied by it.
 
 ### Next bounded work package
 
-From `f64ba1e`/`7b9e2d0`, build and compare clean Windows and Linux artifacts,
+From the next clean recovery pair, build and compare clean Windows and Linux artifacts,
 install each wheel/source profile into fresh isolated runtimes, reinstall the
 reviewed Codex integration, and dogfood routing, staffing, contractor, receipt,
 and dashboard behavior. Run real-browser desktop/mobile/accessibility checks,

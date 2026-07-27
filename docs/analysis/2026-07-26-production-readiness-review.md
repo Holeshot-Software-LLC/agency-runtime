@@ -3,7 +3,7 @@ title: "Production-readiness review 2026-07-26"
 status: active
 category: analysis
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [production-readiness, security, optimization, traceability, ui, dogfood]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -36,6 +36,13 @@ related:
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
+  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
+  - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
+  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
+  - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
+  - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
+  - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
+  - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
 supersedes: []
 superseded_by: null
 ---
@@ -45,22 +52,94 @@ superseded_by: null
 ## Executive verdict
 
 Agency Runtime is **not production-ready yet**, but the reason is now narrow and
-explicit. The initial dogfood and independent layer traces reproduced ten
-P0/high-integrity defects; every one has a local fail-closed repair and focused
-evidence. A final independent pass then found seven UI-to-Store defects under
-AR-149 through AR-155; commit `6a3bdaa` repairs them and its focused validation
-is green, while final current-head aggregate and artifact checks remain.
-The decisive remaining product blocker is AR-143: there is no production
-OS-backed, non-exporting operator-presence verifier, so positive persistent
-setup and control mutations intentionally remain unavailable. Hosted, tracker,
+explicit. The deep audit repaired the earlier authority, subprocess, Store,
+schema, host, packaging, and dashboard defects through AR-169. The final
+UI-to-SQL pass then found and locally repaired six additional bounded areas:
+exact browser response identity and read-only truth (AR-170), lifecycle-reason
+privacy (AR-171), effective-roster snapshot continuity (AR-172), Route Lab
+observation correlation (AR-173), a trusted documentation-only CI lane
+(AR-174), and removal of the unsupported non-atomic control fallback (AR-175).
+Final current-head aggregate and rebuilt-artifact checks remain.
+
+The decisive remaining product blocker is no longer missing code that can be
+faked around: a generic fresh Codex installation correctly fails closed because
+the remote session cannot satisfy the production non-exporting Windows
+operator-presence gate. AR-161 also still requires owner publisher identity,
+authorized legal disposition, protected signing/timestamp authority, and an
+attended Windows Hello success-and-denial canary. Hosted, tracker,
 normal-profile trust, and benchmark-valid outcome evidence are separate open
-release gates.
+release gates. Production and a CEO demo that claims installed persistent
+control are therefore **NO-GO** until those real gates are supplied.
 
 This is not a conclusion drawn from the earlier untracked
 `2026-07-25-deep-audit-findings.md` draft. That draft remains preserved as a
 working artifact and is not authoritative. In particular, its proposed positive
 Store-trust cache is contradicted by the new same-inode permission-transition
 reproduction and must not be implemented.
+
+## Final layer-review addendum
+
+This section is the current task-ready projection; older sections below retain
+the evidence history that led here.
+
+| Severity | Current final-pass findings | Disposition |
+|---|---|---|
+| Critical | None confirmed. | No open Critical defect. |
+| High | None confirmed in the final integrated delta. Earlier High authority, environment, Store-trust, child-correlation, operator-presence, and Windows ACL findings remain repaired or explicitly fail closed under AR-128/129/130/136/143/147. | Independent current-delta review required exact regression evidence before accepting each repair. |
+| Medium | Exact worker/roster responses could cross-bind stale or wrong evidence; effective roster pages could mix configuration revisions; public roster count/page and control UI/operational projections could mix Store generations. | AR-170/172 validate canonical identity and complete evidence shape, bind both revisions, apply SQL bounds inside one read transaction, and recapture or fail closed on control-generation churn. |
+| Low | Raw lifecycle reasons and then an unsalted derivative hash escaped the metadata projection; token cleanup broke the skip link; hidden/read-only UI truth could drift; Route Lab observations lacked the route trace; browser request headers/response IDs and committed-whitespace diagnostics were not exact enough. | AR-170/171/173 remove content and derivative disclosure, make the UI/read boundary exact, correlate the trace, and keep hostile identifiers/log text inert. |
+
+The final security-only delta reviewer classified zero Critical, High, or
+Medium findings and six Low findings, all repaired. The end-to-end traceability
+review independently rated response cross-binding and cross-snapshot
+currentness as Medium because they crossed authoritative browser, HTTP,
+service, Store, and SQL boundaries. The table preserves that higher
+system-level prioritization; neither review has a remaining actionable finding
+inside this final delta.
+
+The requested deeper areas are no longer unreviewed placeholders. Schema v37
+migrations were traced through transaction start, internal-only identifiers,
+invariant rebuild, version publication, and rollback. Quarantined-remediation
+HMAC v2 binds queue, resolution, bounded detail, dependency receipt/count, and
+validation time with immutable authority tables and insertion/query
+re-verification. Windows launcher/ACL call discipline was rechecked; the
+previous nested-ACE defect remains covered, and no new bypass was reproduced.
+No unsafe deserialization, string-built SQL, or HMAC authority escape was found.
+
+### Current UI trace
+
+The browser specialist audited 131 source-defined interactive/form elements,
+all seven views, all six evidence tabs, every event listener, and every
+reachable fetch. The live current-source sweep exercised navigation,
+pause/resume, refresh, roster search/filter, keyboard flow, desktop layout, and
+the read-only Settings surface with no duplicate IDs, broken `aria-controls`,
+enabled mutation controls, or application console errors. The automated suite
+passes 105 interactions after strict response and revision validation. The
+fixed raw asset ceiling remains a release gate; it is being met by deleting
+dead/duplicated payload, not by raising the threshold. The final ten-asset
+bundle is 257,620 bytes, 5,547 bytes below the unchanged strict ceiling; the
+obsolete control fallback accounts for 1,436 removed bytes.
+
+### GitHub Actions budget
+
+Historical evidence, not a model, attributes 96.27 of 119.12 raw runner-minutes
+(80.8 percent) on the audited 24-job pull request to the compatibility matrix.
+The current general PR topology is already 13 jobs because compatibility is
+deferred and coverage/compatibility sessions are paired. AR-174 now proves a
+trusted five-runner primary topology for regular `docs/**/*.md`-only pull
+requests: quality/docs, Linux artifact, Windows artifact, artifact parity, and
+aggregate. Eight allocations are avoided structurally (61.5 percent), while
+sdist-changing artifact parity remains mandatory. This is not a hosted savings
+claim: GitHub currently rejects jobs before runner allocation because of the
+account billing/spending state, so no post-change runner time exists.
+
+Cross-run artifact reuse remains deferred because no governed cache authority
+yet proves producer revision, platform, expiration, and invalidation. Separate
+dependency review still uses one runner; CodeQL uses two when unavailable or
+four when available; main/manual primary CI remains sixteen runners. The next
+safe cost work is to measure AR-174 after billing repair, then consolidate the
+remaining Windows portability envelope only if exact interpreter and test
+coverage stay independently attested.
 
 ## What was actually exercised
 

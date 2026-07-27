@@ -3,7 +3,7 @@ title: "AR-138: Make dashboard refresh coherent, accessible, and observable"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [dashboard, ui, accessibility, concurrency, observability]
 related:
   - agency_runtime/dashboard
@@ -20,6 +20,7 @@ tracker_url: null
 depends_on: []
 blocks:
   - AR-144
+  - AR-170
 ---
 
 # AR-138: Make dashboard refresh coherent, accessible, and observable

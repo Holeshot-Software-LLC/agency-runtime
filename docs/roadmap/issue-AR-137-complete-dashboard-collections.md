@@ -3,7 +3,7 @@ title: "AR-137: Make dashboard collections complete and paginated"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [dashboard, workforce, pagination, ui, truth]
 related:
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
@@ -21,6 +21,7 @@ depends_on: []
 blocks:
   - AR-146
   - AR-155
+  - AR-172
 ---
 
 # AR-137: Make dashboard collections complete and paginated

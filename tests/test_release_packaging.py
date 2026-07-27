@@ -59,10 +59,17 @@ def _quality_gate_results(test_result: str | None) -> dict[str, object]:
 
 
 def _run_quality_gate(
-    event_name: str, needs: dict[str, object]
+    event_name: str,
+    needs: dict[str, object],
+    *,
+    code_required: str = "true",
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env.update(EVENT_NAME=event_name, NEEDS_JSON=json.dumps(needs))
+    env.update(
+        CODE_REQUIRED=code_required,
+        EVENT_NAME=event_name,
+        NEEDS_JSON=json.dumps(needs),
+    )
     return subprocess.run(
         [sys.executable, "-c", _quality_gate_script()],
         cwd=ROOT,
@@ -719,12 +726,16 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     for job_name in (
         "coverage",
         "performance",
-        "test",
         "windows-portability-contract",
-        "artifacts",
         "security",
     ):
         assert jobs[job_name]["needs"] == "quality-contracts"
+        assert jobs[job_name]["if"] == (
+            "needs.quality-contracts.result == 'success' && "
+            "needs.quality-contracts.outputs.code_required == 'true'"
+        )
+    assert jobs["artifacts"]["needs"] == "quality-contracts"
+    assert "if" not in jobs["artifacts"]
     assert jobs["coverage"]["strategy"]["matrix"]["include"] == [
         {"pair": 0, "label": 1, "shard_a": 0, "shard_b": 1},
         {"pair": 1, "label": 2, "shard_a": 2, "shard_b": 3},
@@ -743,30 +754,92 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     assert "-m performance" in performance_run
     quality_steps = {step["name"]: step for step in jobs["quality-contracts"]["steps"]}
     assert {
+        "Classify the complete event delta",
         "Check dependency consistency",
         "Check patch whitespace",
+        "Check tracked release inputs",
+        "Check out canonical documentation history",
+        "Install documentation dependencies",
         "Verify fast workflow contracts",
         "Run dashboard UI tests with coverage",
-        "Check out canonical documentation history",
         "Verify documentation ledgers",
     } <= set(quality_steps)
+    assert jobs["quality-contracts"]["outputs"] == {
+        "code_required": "${{ steps.change-scope.outputs.code_required }}",
+        "scope_reason": "${{ steps.change-scope.outputs.scope_reason }}",
+    }
+    classifier = quality_steps["Classify the complete event delta"]
+    assert classifier["id"] == "change-scope"
+    assert classifier["env"] == {
+        "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "EVENT_NAME": "${{ github.event_name }}",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha || github.sha }}",
+    }
+    assert "scripts/classify_ci_change.py" in classifier["run"]
+    assert classifier["shell"] == "bash"
+    for required in (
+        'git ls-tree "${BASE_SHA}" -- "${classifier_path}"',
+        'mktemp "${RUNNER_TEMP}/agency-ci-scope.',
+        'git cat-file blob "${classifier_object}" > "${trusted_classifier}"',
+        'python -I "${trusted_classifier}"',
+        '--root "${GITHUB_WORKSPACE}"',
+        "scope_reason=trusted_classifier_unavailable",
+    ):
+        assert required in classifier["run"]
+    assert "python scripts/classify_ci_change.py" not in classifier["run"]
+    assert quality_steps["Install development dependencies"]["if"].endswith(
+        "code_required == 'true'"
+    )
+    assert quality_steps["Install documentation dependencies"] == {
+        "name": "Install documentation dependencies",
+        "if": "steps.change-scope.outputs.code_required == 'false'",
+        "run": "python -m pip install .",
+    }
+    assert "if" not in quality_steps["Check patch whitespace"]
+    assert "if" not in quality_steps["Check tracked release inputs"]
+    assert "if" not in quality_steps["Verify documentation ledgers"]
+    whitespace = quality_steps["Check patch whitespace"]
+    assert whitespace["shell"] == "bash"
+    assert whitespace["env"] == {
+        "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "BEFORE_SHA": "${{ github.event.before }}",
+        "EVENT_NAME": "${{ github.event_name }}",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha || github.sha }}",
+    }
+    for required in (
+        'git ls-tree "${trusted_ref}" -- "${whitespace_path}"',
+        'mktemp "${RUNNER_TEMP}/agency-ci-whitespace.',
+        'git cat-file blob "${whitespace_object}" > "${trusted_whitespace}"',
+        'python -I "${trusted_whitespace}"',
+        '--base-sha "${BASE_SHA}"',
+        '--before-sha "${BEFORE_SHA}"',
+        'git diff --check "${comparison}" --',
+    ):
+        assert required in whitespace["run"]
+    assert 'git diff --check "${comparison}" -- >/dev/null 2>&1' in whitespace["run"]
+    assert 'echo "::error::Committed whitespace check failed."' in whitespace["run"]
+    assert "python scripts/check_ci_whitespace.py" not in whitespace["run"]
     assert quality_steps["Check dependency consistency"]["run"] == "python -m pip check"
     quality_step_order = [step["name"] for step in jobs["quality-contracts"]["steps"]]
     assert quality_step_order.index("Install development dependencies") < quality_step_order.index(
         "Check dependency consistency"
     )
     quality_checkout = jobs["quality-contracts"]["steps"][0]
-    assert quality_checkout["with"] == {"persist-credentials": False}
+    assert quality_checkout["with"] == {
+        "fetch-depth": 0,
+        "persist-credentials": False,
+    }
     quality_contracts = next(
         step
         for step in jobs["quality-contracts"]["steps"]
         if step["name"] == "Verify fast workflow contracts"
     )["run"]
-    assert "test_ci_sharding.py tests/test_ci_session_pair.py" in quality_contracts
-    assert "tests/test_release_packaging.py" in quality_contracts
+    assert "tests/test_ci_change_scope.py tests/test_ci_sharding.py" in quality_contracts
+    assert "tests/test_ci_session_pair.py tests/test_release_packaging.py" in quality_contracts
     assert (
-        jobs["test"]["if"]
-        == "github.event_name != 'pull_request' && needs.quality-contracts.result == 'success'"
+        jobs["test"]["if"] == "github.event_name != 'pull_request' && "
+        "needs.quality-contracts.result == 'success' && "
+        "needs.quality-contracts.outputs.code_required == 'true'"
     )
     assert jobs["test"]["strategy"]["matrix"]["include"] == [
         {
@@ -796,9 +869,66 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     aggregate_step = jobs["quality"]["steps"][0]
     assert aggregate_step["name"] == "Require every applicable production gate"
     assert aggregate_step["env"] == {
+        "CODE_REQUIRED": "${{ needs.quality-contracts.outputs.code_required }}",
         "EVENT_NAME": "${{ github.event_name }}",
         "NEEDS_JSON": "${{ toJSON(needs) }}",
     }
+
+
+def test_code_checks_keep_default_merge_revision_before_exact_head_ledgers() -> None:
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+    jobs = workflow["jobs"]
+    steps = jobs["quality-contracts"]["steps"]
+    source_checkout = steps[0]
+    history_checkout = next(
+        step for step in steps if step["name"] == "Check out canonical documentation history"
+    )
+    history_index = steps.index(history_checkout)
+
+    assert source_checkout["name"] == "Check out source"
+    assert source_checkout["with"] == {
+        "fetch-depth": 0,
+        "persist-credentials": False,
+    }
+    assert history_checkout["with"]["ref"] == (
+        "${{ github.event.pull_request.head.sha || github.sha }}"
+    )
+    for name in (
+        "Classify the complete event delta",
+        "Check Python code quality",
+        "Check patch whitespace",
+        "Check tracked release inputs",
+        "Verify fast workflow contracts",
+        "Run dashboard UI tests with coverage",
+    ):
+        assert steps.index(next(step for step in steps if step["name"] == name)) < history_index
+
+    for job_name in (
+        "coverage",
+        "performance",
+        "windows-portability-contract",
+        "artifacts",
+        "security",
+    ):
+        checkout = next(
+            step for step in jobs[job_name]["steps"] if step["name"] == "Check out source"
+        )
+        assert checkout["with"] == {"persist-credentials": False}
+
+
+def test_docs_only_lane_keeps_same_revision_sdist_producers() -> None:
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+    jobs = workflow["jobs"]
+    manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
+
+    assert "recursive-include docs *.md" in manifest
+    assert jobs["artifacts"]["needs"] == "quality-contracts"
+    assert "if" not in jobs["artifacts"]
+    assert jobs["artifact-parity"]["needs"] == "artifacts"
+    artifact_checkout = next(
+        step for step in jobs["artifacts"]["steps"] if step["name"] == "Check out source"
+    )
+    assert artifact_checkout["with"] == {"persist-credentials": False}
 
 
 @pytest.mark.parametrize(
@@ -875,10 +1005,50 @@ def test_quality_aggregate_rejects_unknown_events_and_unexpected_jobs() -> None:
     assert '"unexpected_jobs"' in unexpected_job.stderr
 
 
+def test_quality_aggregate_accepts_only_coherent_docs_only_pull_request_results() -> None:
+    needs = _quality_gate_results("skipped")
+    for name in QUALITY_GATE_NEEDS:
+        if name != "quality-contracts":
+            needs[name] = {"result": "skipped"}
+    needs["artifact-parity"] = {"result": "success"}
+
+    completed = _run_quality_gate(
+        "pull_request",
+        needs,
+        code_required="false",
+    )
+    assert completed.returncode == 0, completed.stderr
+
+    wrong_event = _run_quality_gate("push", needs, code_required="false")
+    assert wrong_event.returncode != 0
+    assert "only pull requests" in wrong_event.stderr
+
+    needs["security"] = {"result": "success"}
+    incoherent = _run_quality_gate(
+        "pull_request",
+        needs,
+        code_required="false",
+    )
+    assert incoherent.returncode != 0
+    assert '"security"' in incoherent.stderr
+
+
+@pytest.mark.parametrize("code_required", ["", "unknown", "TRUE"])
+def test_quality_aggregate_rejects_invalid_change_scope(code_required: str) -> None:
+    completed = _run_quality_gate(
+        "pull_request",
+        _quality_gate_results("skipped"),
+        code_required=code_required,
+    )
+    assert completed.returncode != 0
+    assert "governed boolean" in completed.stderr
+
+
 def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
     steps = workflow["jobs"]["quality-contracts"]["steps"]
 
+    source_checkout = next(step for step in steps if step["name"] == "Check out source")
     checkout = next(
         step for step in steps if step["name"] == "Check out canonical documentation history"
     )
@@ -893,6 +1063,11 @@ def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
     assert 'test "$(git rev-parse HEAD)" = "${EXPECTED_HISTORY_HEAD}"' in ledger["run"]
     assert "update_worklog.py --check" in ledger["run"]
     assert "verify_docs.py --require-tracker" in ledger["run"]
+    assert source_checkout["with"] == {
+        "fetch-depth": 0,
+        "persist-credentials": False,
+    }
+    assert "ref" not in source_checkout["with"]
     assert steps.index(checkout) > steps.index(
         next(step for step in steps if step["name"] == "Run dashboard UI tests with coverage")
     )
