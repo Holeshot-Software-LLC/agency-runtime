@@ -17,19 +17,19 @@ related:
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
-  - docs/roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md
-  - docs/roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
+  - docs/roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md
+  - docs/decisions/0106-isolate-native-host-lifecycle-working-directories.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: bc6589b06c7fe10d70eee6e07e14629ebc276303
-minimum_ledger_commit: c48f2bfd5335486381b41a6c23b13c481bf53882
+evidence_commit: 63a1f5f2b0c5258744e3face3b33ac8750e3a633
+minimum_ledger_commit: f3e8961e9029a89b956c03b18343f2d042cd24c6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -42,14 +42,15 @@ the full acceptance history.
 
 ## checkpoint
 
-- Exact recovery pairs: AR-185 `bc6589b`/`c48f2bf`; capsule refresh `6bbf29b`/`602a817`.
-- Branch `main` resolves to `c48f2bf`; `origin/main` remains `880a5ce` because
-  no new push was authorized. No manual/exhaustive workflow was dispatched.
+- Exact recovery pairs: AR-185 `bc6589b`/`c48f2bf`; AR-187
+  `63a1f5f`/`f3e8961`.
+- Branch `main` resolves to `f3e8961`; `origin/main` remains `880a5ce` because
+  no push was authorized. No manual/exhaustive workflow was dispatched.
 - User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
   and excluded from every commit.
-- The source candidate is not yet live-demo proven. AR-185 must be checkpointed,
-  then one exact artifact must be built, installed, and exercised through a
-  fresh Codex task; signing and external platform evidence remain separate.
+- The exact candidate wheel is installed. Adapter refresh reached genuine
+  operator presence and stopped before commit because no local approval was
+  supplied; state is preserved and no retry ran.
 
 ## completed-evidence
 
@@ -86,27 +87,14 @@ the full acceptance history.
 - Expired dashboard host inspection now neutralizes canary and maturity claims;
   the Codex card labels verified evidence as the last successful activation
   proof and renders its full content-free fingerprint without an execute button.
-- Exact `cec7d0b` Windows production passed canonical build, strict Twine,
-  independent verification, fresh Python 3.10 wheel/sdist installs, packaged
-  smoke, `pip check`, and both bounded 8/8 all-host smokes. Wheel SHA-256 is
-  `038f9c6f...ba404`; sdist SHA-256 is `3525ace3...cbfd`.
-- Running the source installer from the permissive workspace correctly failed
-  before mutation. The same exact installed wheel from a private environment
-  passed Windows operator presence and refreshed Codex in 182.5 seconds. The
-  previous bundle remains at backup `20260727T183215.488516Z`; the new plugin is
-  `0.1.0+codex.92db70112a1a`, bundle `e0c19b9d...ea387`, install ID
-  `fe76121b-9911-497d-b853-685d39b0e830`.
-- Exactly one current-profile canary then completed in 36.9 seconds and failed
-  truthfully with `route_not_found`: zero route, header, collaboration calls,
-  activations, delegations, finalizations, runs, or traces. Evidence SHA-256 is
-  `b5bb99e1...4750`; no attestation persisted and no retry ran.
-- Exact `cec7d0b` WSL under `umask 077` advanced past AR-183's wheel repair,
-  then failed closed before publication on private sdist modes. Raw evidence
-  counted 559 wheel files at `0600`, 1,353 sdist files at `0600`, 40 directories
-  at `0700`, and only the expected public metadata exceptions.
-- AR-184 accepts only exact ordinary `0600` and directory `0700`, canonicalizes
-  to `0644`/`0755`, and rejects every other permission/type. Canonicalizer 105
-  and release-package 411 tests pass; two reviews found no Critical/High/Medium.
+- AR-187 isolates native lifecycle commands from the ambient CWD without
+  relaxing repository-ancestor exclusion. Its 98 focused tests pass with one
+  platform skip. Exact `f3e8961` canonical wheel/source verification and strict
+  Twine pass; wheel SHA-256 is `395488c8...041fa`, sdist SHA-256 is
+  `5993c6a6...e329b`, and the installed uv receipt points to that exact wheel.
+- The attended exact refresh advanced past the live-found false repository
+  boundary, then waited 132.4 seconds for native operator presence. No local
+  approval arrived; it failed before commit with state preserved and no retry.
 - AR-185 now routes the exact verification-only command before generic install,
   binds success to a temporally fresh exact attestation, propagates no-create/
   migrate/repair Store mode through spawned hooks, and suppresses roster
@@ -118,11 +106,11 @@ the full acceptance history.
 
 ## exact-blocker
 
-- Generic/missing-host installation remains unavailable, but exact existing-
-  install Codex refresh is a positive prepared transaction. The global CLI and
-  installed plugin are now older than the candidate. Final refresh requires
-  Windows Hello; renewed terminal-TUI hook approval must occur after that exact
-  refresh, followed by one new-task current-profile canary.
+- Generic/missing-host installation remains unavailable. The exact candidate
+  CLI is installed, while the existing plugin remains stale because the
+  prepared refresh is `waiting_for_operator`. One local Windows Hello approval
+  must commit that exact refresh; then renew terminal-TUI hook approval and run
+  one new-task current-profile canary.
   Codex has no supported trust-state read API, so this remains a bounded
   inference from the evidence, not a claimed diagnosis. No preexisting
   attestation may satisfy the next recheck.
@@ -148,9 +136,10 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Commit AR-186 and its ledger after documentation validation.
-2. Build and install one exact artifact, start a fresh Codex task, run one live
-   canary, and inspect the correlated UI evidence. Backlog non-demo findings.
+1. With the operator physically present, run one exact prepared Codex refresh
+   and approve its single Windows Hello prompt; do not retry unattended.
+2. Renew terminal-TUI hook trust, open one new Codex task, run one activation
+   verification, and inspect the correlated read-only UI evidence.
 
 ## verification
 

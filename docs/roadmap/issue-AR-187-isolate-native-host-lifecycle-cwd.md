@@ -108,3 +108,15 @@ trust mutation. The named production spine passes 522 tests with 5 expected
 platform skips in 60.55 seconds; all 106 dashboard tests and the complete
 routing/delegation evaluation gate also pass. No exhaustive or hosted workflow
 ran.
+
+Exact checkpoint `f3e8961e9029a89b956c03b18343f2d042cd24c6` produced a
+strictly verified Windows wheel (SHA-256
+`395488c8a96266927b7be2601c1aab92d9aba50ddc34f995052f5f98d83041fa`)
+and source archive (SHA-256
+`5993c6a60dff34b9dc60b86b86921caf5451f9cf7dd51a81f7ee88c0d49e329b`).
+The uv tool receipt proves that exact wheel is installed and effective
+delegation remains `prefer`. One attended refresh advanced past the original
+executable-boundary failure and waited at native operator presence; without a
+local approval it failed before commit after 132.4 seconds with state preserved
+and no retry. AR-187 is therefore code-complete but remains operationally
+`waiting_for_operator` for the acceptance item above.
