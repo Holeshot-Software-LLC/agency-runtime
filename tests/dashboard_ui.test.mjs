@@ -2554,6 +2554,10 @@ test("app UI honors reduced motion, canonical CSS, and live toggle semantics", (
   );
   assert.match(
     APP_CSS_SOURCE,
+    /@media\s*\(max-width:\s*720px\)[\s\S]*?\.topbar\s*{[^}]*flex-direction:\s*column;?[^}]*justify-content:\s*flex-start;?[^}]*}[\s\S]*?\.topbar-heading\s*{[^}]*flex:\s*0\s+0\s+auto;?[^}]*width:\s*100%;?[^}]*}/,
+  );
+  assert.match(
+    APP_CSS_SOURCE,
     /\.topbar-heading h1\s*{[^}]*overflow-wrap:\s*anywhere;?[^}]*white-space:\s*normal;?/,
   );
   assert.doesNotMatch(APP_CSS_SOURCE, /\.topbar-heading h1\s*{[^}]*text-overflow:\s*ellipsis/);
