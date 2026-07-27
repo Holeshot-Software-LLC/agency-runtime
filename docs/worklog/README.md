@@ -234,6 +234,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c067c6a` | 2026-07-27 | fix(release): canonicalize reviewed Windows PE mode | [AR-167](../roadmap/issue-AR-167-normalize-windows-release-source-modes.md) | null |
 | `1ad1cbc` | 2026-07-27 | fix(release): rebuild canonical sdist source manifest | [AR-168](../roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | null |
 | `2f80118` | 2026-07-27 | fix(release): exclude native PE from portable wheel | [AR-169](../roadmap/issue-AR-169-exclude-native-pe-from-portable-wheel.md) | null |
+| `3e14f74` | 2026-07-27 | fix(production): close final traceability and CI gaps | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-07-27-3e14f74-final-traceability-ci.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
