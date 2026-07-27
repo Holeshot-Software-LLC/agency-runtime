@@ -256,6 +256,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c625bc7` | 2026-07-27 | perf(smoke): reuse one attested launcher | [AR-160](../roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md), [AR-181](../roadmap/issue-AR-181-bound-all-host-smoke-launcher-preparation.md) | [detail](2026-07-27-c625bc7-bound-all-host-smoke.md) |
 | `1676f6a` | 2026-07-27 | perf(testing): cache immutable workforce evidence | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-27-1676f6a-immutable-workforce-evidence.md) |
 | `b95d78a` | 2026-07-27 | docs(roadmap): close locally accepted audit items | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md), [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md), [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md), [AR-137](../roadmap/issue-AR-137-complete-dashboard-collections.md), [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md) | [detail](2026-07-27-b95d78a-close-local-audit-items.md) |
+| `283e3f9` | 2026-07-27 | docs(checkpoint): seal final-candidate preparation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
