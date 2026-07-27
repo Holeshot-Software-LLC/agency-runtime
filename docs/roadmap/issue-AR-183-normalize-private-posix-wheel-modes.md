@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
   - docs/roadmap/issue-AR-169-exclude-native-pe-from-portable-wheel.md
+  - docs/roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md
   - scripts/canonicalize_distributions.py
   - tests/test_canonicalize_distributions.py
 supersedes: []
@@ -19,7 +20,7 @@ epic: release
 issue_id: AR-183
 priority: p0
 tracker_url: null
-depends_on: []
+depends_on: [AR-184]
 blocks:
   - AR-160
   - AR-168
@@ -45,6 +46,10 @@ ordinary `0644` member, and the governed `0664` RECORD. A control build from a
 `0644` checkout still emitted 267 ordinary `0600` members under `umask 077`,
 binding the defect to the build tool's private-output behavior rather than Git
 source modes.
+
+After this wheel repair advanced the exact `cec7d0b` producer, the same
+restrictive build exposed owner-private source-distribution modes. AR-184 owns
+that distinct tar-container boundary.
 
 ## Approach
 

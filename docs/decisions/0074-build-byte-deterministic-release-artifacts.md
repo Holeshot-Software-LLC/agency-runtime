@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md
   - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
   - docs/roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md
+  - docs/roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - scripts/build_distributions.py
   - scripts/canonicalize_distributions.py
@@ -60,6 +61,9 @@ import the Git transport, builder, writer, or verifier.
 
 Treat the backend output as bounded source material, not as the release
 container. Accept only a finite reviewed Windows/Linux source-header policy.
+Owner-private POSIX source files at exact `0600` and source directories at
+exact `0700` normalize to canonical `0644` and `0755`; permission-subset or
+mask-based acceptance is forbidden, and every other unreviewed mode fails.
 Preserve every source-derived payload byte, canonicalize LF only for the shared
 finite generated-metadata allowlist, and rebuild wheel `RECORD` from the
 normalized payload set. Emit the canonical wheel with an owned ZIP32 writer

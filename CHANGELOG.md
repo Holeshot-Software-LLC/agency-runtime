@@ -37,6 +37,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Canonical release builds now accept the exact owner-private `0600` regular-
+  file and `0700` directory modes emitted in POSIX source distributions under
+  `umask 077`, then normalize them to deterministic `0644` and `0755`; other
+  unreviewed sdist modes still fail closed.
 - Canonical release builds now accept the exact non-executable `0600` source-
   wheel mode emitted by owner-private POSIX producers under `umask 077`, then
   normalize it to deterministic `0644`; other unreviewed modes still fail

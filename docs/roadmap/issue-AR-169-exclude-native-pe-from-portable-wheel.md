@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md
+  - docs/roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - scripts/platform_wheel.py
   - scripts/verify_distribution.py
@@ -20,7 +21,7 @@ epic: release
 issue_id: AR-169
 priority: p0
 tracker_url: null
-depends_on: [AR-107, AR-183]
+depends_on: [AR-107, AR-183, AR-184]
 blocks: [AR-160]
 ---
 

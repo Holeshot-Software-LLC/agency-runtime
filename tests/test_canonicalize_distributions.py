@@ -349,6 +349,89 @@ def test_windows_and_linux_sources_produce_identical_canonical_bytes() -> None:
     assert windows_sdist == linux_sdist
 
 
+def test_private_posix_sdist_modes_converge_with_public_modes() -> None:
+    entries: dict[str, bytes | None] = {
+        "package-1": None,
+        "package-1/package": None,
+        "package-1/package/module.py": b"payload",
+    }
+    private_source = _source_sdist(
+        entries,
+        file_modes={
+            "package-1": 0o700,
+            "package-1/package": 0o700,
+            "package-1/package/module.py": 0o600,
+        },
+    )
+    public_source = _source_sdist(entries)
+
+    private_canonical = subject.canonicalize_sdist_bytes(
+        private_source,
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+    public_canonical = subject.canonicalize_sdist_bytes(
+        public_source,
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+
+    assert private_canonical == public_canonical
+    with tarfile.open(fileobj=io.BytesIO(private_canonical), mode="r:gz") as archive:
+        assert archive.getmember("package-1").mode == 0o755
+        assert archive.getmember("package-1/package").mode == 0o755
+        assert archive.getmember("package-1/package/module.py").mode == 0o644
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [0o000, 0o600, 0o644, 0o711, 0o750, 0o770, 0o775, 0o1700, 0o2700, 0o4700],
+)
+def test_sdist_rejects_unreviewed_directory_modes(mode: int) -> None:
+    entries: dict[str, bytes | None] = {
+        "package-1": None,
+        "package-1/package": None,
+        "package-1/package/module.py": b"payload",
+    }
+    with pytest.raises(ValueError, match="directory header"):
+        subject.canonicalize_sdist_bytes(
+            _source_sdist(entries, file_modes={"package-1": mode}),
+            timestamp=TIMESTAMP,
+            expected_filename="package-1.tar.gz",
+        )
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [0o000, 0o400, 0o640, 0o700, 0o755, 0o1600, 0o2600, 0o4600, 0o4700, 0o777],
+)
+def test_sdist_rejects_unreviewed_regular_file_modes(mode: int) -> None:
+    entries: dict[str, bytes | None] = {
+        "package-1": None,
+        "package-1/package": None,
+        "package-1/package/module.py": b"payload",
+    }
+    with pytest.raises(ValueError, match="file header"):
+        subject.canonicalize_sdist_bytes(
+            _source_sdist(entries, file_modes={"package-1/package/module.py": mode}),
+            timestamp=TIMESTAMP,
+            expected_filename="package-1.tar.gz",
+        )
+
+
+def test_sdist_source_mode_allowlists_are_exact_across_all_permission_bits() -> None:
+    ordinary = "package-1/package/module.py"
+    executable = f"package-1/{subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE}"
+    for mode in range(0o10000):
+        assert subject._source_tar_file_mode_allowed(ordinary, mode) is (
+            mode in {0o600, 0o644, 0o666}
+        )
+        assert subject._source_tar_file_mode_allowed(executable, mode) is (
+            mode in {0o600, 0o644, 0o666, 0o777}
+        )
+        assert (mode in subject.SOURCE_TAR_DIRECTORY_MODES) is (mode in {0o700, 0o755, 0o777})
+
+
 def test_sdist_normalizes_only_governed_windows_executable_mode() -> None:
     executable = f"package-1/{subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE}"
     parts = Path(executable).as_posix().split("/")
@@ -1647,6 +1730,16 @@ def test_tar_member_reader_and_high_level_semantic_guards(
     with pytest.raises(ValueError, match="unsupported member"):
         source_entries(_FakeTarArchive([unsupported]))
 
+    for member_type in (
+        tarfile.LNKTYPE,
+        tarfile.CHRTYPE,
+        tarfile.BLKTYPE,
+        tarfile.FIFOTYPE,
+    ):
+        unsupported = _fake_tar_item("source/special", member_type=member_type)
+        with pytest.raises(ValueError, match="unsupported member"):
+            source_entries(_FakeTarArchive([unsupported]))
+
     unsupported_pax = _fake_tar_item("source/file")
     unsupported_pax.pax_headers = {"comment": "x"}
     with pytest.raises(ValueError, match="unsupported PAX state"):
@@ -1661,11 +1754,16 @@ def test_tar_member_reader_and_high_level_semantic_guards(
     with pytest.raises(ValueError, match="duplicate member"):
         source_entries(_FakeTarArchive(duplicate))
 
-    directory = _fake_tar_item("source", member_type=tarfile.DIRTYPE, mode=0o700)
+    directory = _fake_tar_item("source", member_type=tarfile.DIRTYPE, mode=0o750)
     with pytest.raises(ValueError, match="directory header"):
         source_entries(_FakeTarArchive([directory]))
 
-    file_mode = _fake_tar_item("source/file", mode=0o600)
+    directory = _fake_tar_item("source", member_type=tarfile.DIRTYPE, mode=0o700)
+    directory.size = 1
+    with pytest.raises(ValueError, match="directory header"):
+        source_entries(_FakeTarArchive([directory]))
+
+    file_mode = _fake_tar_item("source/file", mode=0o640)
     with pytest.raises(ValueError, match="file header"):
         source_entries(_FakeTarArchive([file_mode]))
 
