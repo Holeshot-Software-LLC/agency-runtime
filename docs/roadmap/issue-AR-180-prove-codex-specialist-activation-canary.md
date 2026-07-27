@@ -60,10 +60,22 @@ attestation. The dashboard now labels the record as the last successful proof,
 neutralizes it when host inspection expires, and exposes no canary action.
 
 Focused proof, provenance, migration, output-durability, dashboard API, and all
-106 dashboard UI tests pass locally. The next gate is one freshly installed,
-bounded current-profile invocation without hook-trust bypass. Until that real
-run passes, no specialist activation or current attestation is claimed.
-Tracker creation remains pending authorization.
+106 dashboard UI tests pass locally. Exact checkpoint `af892ae` was built from
+a clean private worktree into a 7,465,173-byte Windows wheel and 18,136,468-byte
+sdist; independent Windows artifact verification and a fresh Python 3.13 wheel
+install passed. The attended existing-install refresh then verified Windows
+operator presence, backed up the previous tree, and registered enabled plugin
+`0.1.0+codex.92db70112a1a`, bundle `e0c19b9d...ea387`, install ID
+`fe76121b-9911-497d-b853-685d39b0e830`.
+
+The single new current-profile canary completed in 36.9 seconds with exit zero
+but produced no hook route, Agency header, collaboration call, activation,
+delegation, finalization, or trace. It failed `route_not_found`; exact-request
+cleanup found no run to close, and no attestation persisted. The user approved
+hooks before this bundle refresh. The outcome is consistent with the exact new
+bundle requiring renewed terminal-TUI hook approval, but Codex exposes no
+supported trust-state read API, so that cause is not claimed as proven. No
+retry ran. Tracker creation remains pending authorization.
 
 ## Approach
 

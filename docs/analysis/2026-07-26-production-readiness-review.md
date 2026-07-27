@@ -126,6 +126,23 @@ Focused canary/output, schema/provenance, and dashboard server checks pass; all
 current-profile live run remains required before AR-180 or production readiness
 can be promoted.
 
+Exact checkpoint `af892ae` subsequently produced a canonical Windows wheel and
+sdist in a clean owner-private worktree; independent Windows artifact
+verification and a fresh Python 3.13 wheel install passed. Invoking the source
+installer directly from the permissive workspace failed before mutation on the
+executable-namespace guard, while the installed private wheel passed Windows
+operator presence and atomically refreshed the existing Codex registration.
+The resulting enabled plugin is `0.1.0+codex.92db70112a1a`, bundle
+`e0c19b9d...ea387`, install ID `fe76121b-9911-497d-b853-685d39b0e830`.
+
+The one permitted current-profile live canary completed in 36.9 seconds but
+failed `route_not_found` with zero hooks, header, collaboration calls,
+activation, delegation, finalization, run, or trace evidence. No attestation
+persisted and no retry ran. Because hook approval preceded the exact bundle
+refresh, renewed terminal-TUI approval is the next human gate; the host exposes
+no supported trust-state read API, so this is a constrained inference rather
+than a proven root cause. AR-180 and production remain **NO-GO**.
+
 ### Attended existing-Codex refresh addendum
 
 Exact local commit pair `30d5fc0`/`6d55e29` implements ADR-0104's existing-

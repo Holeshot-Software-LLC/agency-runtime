@@ -15,18 +15,6 @@ related:
   - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
-  - docs/roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md
-  - docs/roadmap/issue-AR-163-reopen-stale-remediation-authority.md
-  - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
-  - docs/roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md
-  - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
-  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
-  - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
-  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
-  - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
-  - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
-  - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
-  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
@@ -37,8 +25,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 6d55e29e3c8ed6f370733fc15782051dd03e2f52
-minimum_ledger_commit: 6d55e29e3c8ed6f370733fc15782051dd03e2f52
+evidence_commit: 77ec4f62e001aae07f8a52437749d695397437bb
+minimum_ledger_commit: af892aec694b8ca912fa78c1d55bc33c15a443cf
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -51,8 +39,8 @@ the full acceptance history.
 
 ## checkpoint
 
-- Exact locally tested code/ledger pair: `30d5fc0`/`6d55e29`.
-- Branch `main` resolves to `6d55e29`; `origin/main` remains `880a5ce` because
+- Exact locally tested code/ledger pair: `77ec4f6`/`af892ae`.
+- Branch `main` resolves to `af892ae`; `origin/main` remains `880a5ce` because
   no new push was authorized. Earlier automatic CI and CodeQL were rejected before any
   step or runner started by the account billing/spending gate. No manual or
   exhaustive workflow was dispatched.
@@ -104,14 +92,31 @@ the full acceptance history.
 - Expired dashboard host inspection now neutralizes canary and maturity claims;
   the Codex card labels verified evidence as the last successful activation
   proof and renders its full content-free fingerprint without an execute button.
+- Canonical private Windows build for exact head `af892ae` produced wheel
+  `4cf51159...a53a8` (7,465,173 bytes) and sdist `daabe206...297c`
+  (18,136,468 bytes). Independent Windows artifact verification and a fresh
+  Python 3.13 wheel install passed.
+- Running the source installer from the permissive workspace correctly failed
+  before mutation. The same exact installed wheel from a private environment
+  passed Windows operator presence and refreshed Codex in 182.5 seconds. The
+  previous bundle remains at backup `20260727T183215.488516Z`; the new plugin is
+  `0.1.0+codex.92db70112a1a`, bundle `e0c19b9d...ea387`, install ID
+  `fe76121b-9911-497d-b853-685d39b0e830`.
+- Exactly one current-profile canary then completed in 36.9 seconds and failed
+  truthfully with `route_not_found`: zero route, header, collaboration calls,
+  activations, delegations, finalizations, runs, or traces. Evidence SHA-256 is
+  `b5bb99e1...4750`; no attestation persisted and no retry ran.
 
 ## exact-blocker
 
 - Generic and missing-host installation remain unavailable, but exact existing-
-  install Codex refresh is now a positive prepared transaction. AR-180's strict
-  implementation is locally green; it remains open until the refreshed current
-  candidate completes one real child activation and persists its installation-
-  bound proof. No preexisting attestation may satisfy that recheck.
+  install Codex refresh is now a positive prepared transaction. The exact new
+  AR-180 bundle is registered and enabled, but its only current-profile canary
+  produced no hook event. Hook approval happened before the refresh; renewed
+  terminal-TUI approval for this exact bundle is the next human security gate.
+  Codex has no supported trust-state read API, so this remains a bounded
+  inference from the evidence, not a claimed diagnosis. No preexisting
+  attestation may satisfy the next recheck.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
@@ -120,9 +125,8 @@ the full acceptance history.
   speed, CodeQL, dependency review, and hosted portability lack current proof.
 - `main` has neither authorized branch protection nor a repository ruleset.
   Applying required contexts is an outward setting change owned by AR-159.
-- Normal-profile Codex hook trust requires the supported terminal-TUI user
-  review, but trust alone cannot repair the stale launcher; the prepared install
-  path must land first. Five installed-host canaries remain open.
+- Five installed-host canaries remain open, including the Codex recheck after
+  exact-bundle terminal-TUI trust.
 - AR-119/125 still require a benchmark-valid complete outcome corpus. Malformed,
   timed-out, no-response, and unknown upstream arms remain invalid, never losses.
 - Tracker creation/closure for AR-160 through AR-176 and other outward writes
@@ -135,9 +139,10 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Commit the AR-180 candidate and ledger, refresh it into this Codex install,
-   then run exactly one bounded current-profile activation canary without a
-   hook-trust bypass. Preserve and diagnose the exact evidence if it fails.
+1. When the operator is present, approve the exact refreshed Agency hook set in
+   the Codex terminal TUI. Then run one bounded current-profile canary without a
+   hook-trust bypass and preserve its exact evidence. Do not retry before that
+   state change.
 2. Add signed-delivery provenance and independent Windows default-policy
    verification. Publisher/legal/signing inputs remain owner/external gates.
 3. Design fresh missing-host bootstrap separately if it is a claimed v1 surface.
@@ -150,7 +155,7 @@ the same persistent goal from the clean pair through normal compaction.
 python scripts/context_handoff_status.py --json --threshold 50
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 python scripts/verify_docs.py
-python -m scripts.verify_distribution <candidate-directory> --expected-commit 6d55e29e3c8ed6f370733fc15782051dd03e2f52
+python -m scripts.verify_distribution <candidate-directory> --expected-commit af892aec694b8ca912fa78c1d55bc33c15a443cf
 git diff --check
 # Owner-requested manual integration only:
 python -m pytest tests -q -W error
