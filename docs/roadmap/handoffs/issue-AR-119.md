@@ -25,8 +25,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 77ec4f62e001aae07f8a52437749d695397437bb
-minimum_ledger_commit: af892aec694b8ca912fa78c1d55bc33c15a443cf
+evidence_commit: b95d78a4a280cc3986c08f6cf4b72fcac025917b
+minimum_ledger_commit: 15dbe0fb336453d7634be3f4356b5e39740a9367
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -39,16 +39,18 @@ the full acceptance history.
 
 ## checkpoint
 
-- Exact locally tested code/ledger pair: `9aa317c`/`5681a3f`.
-- Branch `main` resolves to `5681a3f`; `origin/main` remains `880a5ce` because
+- Exact current recovery pair: `b95d78a`/`15dbe0f`; latest code pairs are
+  `c625bc7`/`09ee942` and `1676f6a`/`c3251cd`.
+- Branch `main` resolves to `15dbe0f`; `origin/main` remains `880a5ce` because
   no new push was authorized. Earlier automatic CI and CodeQL were rejected before any
   step or runner started by the account billing/spending gate. No manual or
   exhaustive workflow was dispatched.
 - The user-owned untracked
   `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged and was
   excluded from every commit.
-- Production remains **NO-GO**. The installed-artifact dashboard is a
-  conditional demo **GO** only as a truthful read-only/observability surface.
+- Production remains **NO-GO**. The earlier installed-artifact dashboard is a
+  conditional demo **GO** only as a truthful read-only/observability surface;
+  the final exact artifact and installed QA are still pending.
 
 ## completed-evidence
 
@@ -59,14 +61,6 @@ the full acceptance history.
 - Exhaustive coverage and six-version compatibility are manual-only
   `workflow_dispatch` work. They do not run on PR/push and will not be run
   locally unless the owner explicitly asks. No hosted Actions ran here.
-- Exact candidate `29da6eca` clean Windows artifacts pass strict metadata,
-  independent verification, and fresh Python 3.10 wheel/sdist install smoke.
-- The clean Linux producer emits the portable wheel and a byte-identical sdist;
-  fresh Python 3.12 wheel/sdist installs pass. The portable wheel contains no
-  executable or PE. Linux Node absence skipped only the OpenClaw syntax subcheck.
-- The merged set contains exactly portable wheel `fc5e85a8...5618`, Windows
-  wheel `eb8eb4b...f189`, and sdist `d95bb493...fea8`. Strict Twine and the
-  independent `--artifact-set release` verifier pass.
 - The exact installed-wheel dashboard authenticated and rendered all seven
   sections. A 390 px live pass exposed a vertical mobile heading basis; source
   commit `9aa317c` fixes it with 106 green UI tests and clean desktop/mobile
@@ -93,10 +87,10 @@ the full acceptance history.
 - Expired dashboard host inspection now neutralizes canary and maturity claims;
   the Codex card labels verified evidence as the last successful activation
   proof and renders its full content-free fingerprint without an execute button.
-- Canonical private Windows build for exact head `af892ae` produced wheel
-  `4cf51159...a53a8` (7,465,173 bytes) and sdist `daabe206...297c`
-  (18,136,468 bytes). Independent Windows artifact verification and a fresh
-  Python 3.13 wheel install passed.
+- Canonical private Windows build for exact head `44f930b` produced wheel
+  `56f50f34...59fc` (7,465,241 bytes) and sdist `43d75901...34d5`
+  (18,146,708 bytes). Strict Twine, independent Windows verification, a fresh
+  Python 3.13 wheel install, and packaged smoke passed.
 - Running the source installer from the permissive workspace correctly failed
   before mutation. The same exact installed wheel from a private environment
   passed Windows operator presence and refreshed Codex in 182.5 seconds. The
@@ -107,6 +101,14 @@ the full acceptance history.
   truthfully with `route_not_found`: zero route, header, collaboration calls,
   activations, delegations, finalizations, runs, or traces. Evidence SHA-256 is
   `b5bb99e1...4750`; no attestation persisted and no retry ran.
+- The installed all-host smoke then localized a repeated 821-file launcher
+  preparation and exceeded 122.4 seconds. `c625bc7` prepares one attested
+  closure per invocation; source smoke passes 8/0/0 in 43.9 seconds. Exact final
+  wheel recheck remains open.
+- `1676f6a` reduced the measured workforce/MCP hotspots from 5.45/4.08 seconds
+  to 2.66/0.81 seconds; 98 touched tests pass with one platform skip. Seven
+  already accepted AR items now truthfully report `done`; tracker writes remain
+  pending authorization.
 
 ## exact-blocker
 
@@ -114,7 +116,8 @@ the full acceptance history.
   install Codex refresh is now a positive prepared transaction. The exact new
   AR-180 bundle is registered and enabled, but its only current-profile canary
   produced no hook event. Hook approval happened before the refresh; renewed
-  terminal-TUI approval for this exact bundle is the next human security gate.
+  terminal-TUI approval must occur only after the final exact refresh; approving
+  the now-stale `92db...` bundle would not prove the final candidate.
   Codex has no supported trust-state read API, so this remains a bounded
   inference from the evidence, not a claimed diagnosis. No preexisting
   attestation may satisfy the next recheck.
@@ -141,13 +144,15 @@ the same persistent goal from the clean pair through normal compaction.
 ## next-bounded-work-package
 
 1. When the operator is present, approve the exact refreshed Agency hook set in
-   the Codex terminal TUI. Then run one bounded current-profile canary without a
-   hook-trust bypass and preserve its exact evidence. Do not retry before that
-   state change.
-2. Add signed-delivery provenance and independent Windows default-policy
-   verification. Publisher/legal/signing inputs remain owner/external gates.
-3. Design fresh missing-host bootstrap separately if it is a claimed v1 surface.
-4. Complete the other host canaries and benchmark-valid AR-119/125 outcome trials.
+   the Codex terminal TUI only after the final artifact refresh. Then run one
+   bounded current-profile canary without a hook-trust bypass and preserve its
+   exact evidence. Do not retry before both state changes.
+2. Complete AR-141's bounded security/protocol helper consolidation, then run
+   the named fast gates and build/verify/fresh-install one exact final artifact.
+3. Repeat installed all-host smoke and desktop/mobile dashboard QA from that
+   artifact; record the exact evidence before another refresh.
+4. Keep signed delivery, missing-host bootstrap, other host canaries, and
+   benchmark-valid AR-119/125 outcome trials visible as external/live gates.
 5. Run exhaustive coverage/compatibility only on explicit owner request.
 
 ## verification
@@ -156,7 +161,7 @@ the same persistent goal from the clean pair through normal compaction.
 python scripts/context_handoff_status.py --json --threshold 50
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 python scripts/verify_docs.py
-python -m scripts.verify_distribution <candidate-directory> --expected-commit af892aec694b8ca912fa78c1d55bc33c15a443cf
+python -m scripts.verify_distribution <candidate-directory> --expected-commit <final-head>
 git diff --check
 # Owner-requested manual integration only:
 python -m pytest tests -q -W error

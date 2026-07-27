@@ -3326,6 +3326,33 @@ owns the now-reproduced activation-canary gap. No attestation was persisted.
 Fresh missing-host bootstrap, signed delivery, the roster-rollback canary, four
 other host canaries, and the manual exact-head release gate remain open.
 
+### Bounded final-candidate preparation checkpoint 2026-07-27
+
+Commit pair `c625bc7`/`09ee942` removes five repeated 821-file private-runtime
+hash passes from `agency smoke --all`: source smoke now passes all eight checks
+with no failures or skips in 43.9 seconds instead of exceeding a 122.4-second
+outer ceiling. Commit pair `1676f6a`/`c3251cd` adds a bounded immutable
+workforce-contract serialization cache and removes unrelated test setup. The
+reproduced workforce and MCP hotspots fell from 5.45 and 4.08 seconds to 2.66
+and 0.81 seconds; all 98 touched tests passed with one platform skip. Neither
+change weakens a launch attestation, preflight, assertion, coverage floor, or
+automatic/manual workflow boundary.
+
+Commit pair `b95d78a`/`15dbe0f` reconciles seven already accepted audit items to
+the roadmap's canonical `done` status while leaving tracker creation visibly
+pending authorization. Exact head `15dbe0f` has not yet been rebuilt or
+installed; the last exact `44f930b` Windows wheel/sdist passed strict metadata,
+independent verification, fresh Python 3.13 install, and packaged smoke before
+the smoke optimization was committed. The current source/mobile UI and all 106
+UI tests are green, but final installed desktop/mobile QA remains required.
+
+AR-141's bounded consolidation audit found four security- or protocol-sensitive
+remaining families: link/same-object path primitives, persisted/external JSON
+loading, cross-layer digest ownership, and native-child/workforce authority
+projection. Broad line-count-only decomposition is explicitly excluded from
+the production push; only those evidence-backed boundaries are candidates for
+the next package.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -3357,16 +3384,16 @@ other host canaries, and the manual exact-head release gate remain open.
 
 ### Next bounded work package
 
-From the next clean recovery pair, implement a release-disabled prepared Codex
-install coordinator under AR-143. Freeze the exact Store/config generations,
-target tree, host executable, bundle/launcher inputs, expected deltas, and
-recovery consequences; revalidate before every owner mutation and prove drift,
-replay, substitution, and partial-failure behavior. Only then add an enumerated
-`install.codex.v1` native protocol. Keep it unsigned and unavailable for release
-until AR-161 provides publisher/legal/signing authority and an attended canary.
-Do not repeat the green 32-minute corpus or manual coverage without an explicit
-owner request. Keep the 15000 ms cold and one-call fast matched controls fixed;
-malformed or timed-out upstream arms remain invalid, never losses.
+Complete only AR-141's security- and protocol-sensitive consolidation where
+focused tests can prove unchanged authority, then freeze one final candidate.
+Run the named fast production spine, UI coverage, docs/static/routing gates,
+build one exact private Windows wheel/sdist, verify and install it in a fresh
+environment, repeat packaged and all-host smoke, and perform installed
+desktop/mobile dashboard QA. Do not run the complete corpus, coverage shards,
+compatibility matrix, hosted workflow, or another live Codex canary without the
+required explicit request or exact post-refresh hook-trust state change. Keep
+the 15000 ms cold and one-call fast matched controls fixed; malformed or timed-
+out upstream arms remain invalid, never losses.
 
 ### Context checkpoint constraints
 
