@@ -65,6 +65,7 @@ def _source_sdist(
     fractional_pax: bool = False,
     rounded_fractional_mtime: bool = False,
     filename: str = "package-1.tar",
+    file_modes: dict[str, int] | None = None,
 ) -> bytes:
     tar_payload = io.BytesIO()
     with tarfile.open(fileobj=tar_payload, mode="w:", format=tarfile.PAX_FORMAT) as archive:
@@ -72,9 +73,10 @@ def _source_sdist(
             directory = payload is None
             item = tarfile.TarInfo(f"{name}/" if directory else name)
             item.type = tarfile.DIRTYPE if directory else tarfile.REGTYPE
-            item.mode = (
+            default_mode = (
                 (0o777 if windows else 0o755) if directory else (0o666 if windows else 0o644)
             )
+            item.mode = (file_modes or {}).get(name, default_mode)
             item.uid = 0 if windows else 1000
             item.gid = 0 if windows else 1000
             item.uname = "" if windows else "builder"
@@ -218,6 +220,45 @@ def test_windows_and_linux_sources_produce_identical_canonical_bytes() -> None:
 
     assert windows_wheel == linux_wheel
     assert windows_sdist == linux_sdist
+
+
+def test_sdist_normalizes_only_governed_windows_executable_mode() -> None:
+    executable = f"package-1/{subject.NATIVE_OPERATOR_PRESENCE_EXECUTABLE}"
+    parts = Path(executable).as_posix().split("/")
+    entries: dict[str, bytes | None] = {
+        "/".join(parts[:index]): None for index in range(1, len(parts))
+    }
+    entries[executable] = b"reviewed-pe"
+
+    windows_source = _source_sdist(entries, windows=True, file_modes={executable: 0o777})
+    linux_source = _source_sdist(entries, file_modes={executable: 0o644})
+    windows_canonical = subject.canonicalize_sdist_bytes(
+        windows_source,
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+    linux_canonical = subject.canonicalize_sdist_bytes(
+        linux_source,
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+
+    assert windows_canonical == linux_canonical
+    with tarfile.open(fileobj=io.BytesIO(windows_canonical), mode="r:gz") as archive:
+        assert archive.getmember(executable).mode == 0o644
+
+    arbitrary = "package-1/package/unreviewed.exe"
+    bad_entries = {
+        "package-1": None,
+        "package-1/package": None,
+        arbitrary: b"unreviewed",
+    }
+    with pytest.raises(ValueError, match="file header"):
+        subject.canonicalize_sdist_bytes(
+            _source_sdist(bad_entries, windows=True, file_modes={arbitrary: 0o777}),
+            timestamp=TIMESTAMP,
+            expected_filename="package-1.tar.gz",
+        )
 
 
 def test_generated_metadata_eol_variants_converge_without_mutating_source_payloads() -> None:

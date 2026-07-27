@@ -43,7 +43,10 @@ while preparing fresh Windows release artifacts. The Git manifest reports the
 helper as `100644`; the same file's Windows `os.lstat` projection is `0777`,
 while `os.fstat` on its identity-matched handle is `0666`. This is a release-
 blocking portability defect in the physical-tree check, not a change to the
-reviewed Git-mode contract.
+reviewed Git-mode contract. After path-to-handle verification passed, the same
+projection appeared as a `0777` raw source-tar header written by setuptools;
+the finite source-archive allowlist correctly stopped the build before
+normalization.
 
 ## Approach
 
@@ -55,6 +58,12 @@ execute bits when comparing that path metadata to descriptor metadata, retaining
 the file type and writable/read-only bits. Continue rejecting every other mode,
 link, reparse point, multi-link file, unstable identity, size change, and blob-
 hash mismatch.
+
+Permit the raw source tar's exact `0777` projection only when its root-relative
+path equals the governed operator-presence executable. Normalize the resulting
+canonical tar entry back to `0644`. Do not admit executable mode on any other
+archive member or widen the wheel-header allowlist, whose Windows record already
+uses its supported `0666` projection.
 
 ## Dependencies
 
@@ -71,6 +80,8 @@ write authorization.
   mode projection and preserves exact checks for all other platforms and files.
 - [x] Unit tests cover lowercase and uppercase `.exe`, ordinary Windows files,
   POSIX behavior, path-to-handle identity, and read-only mode changes.
+- [x] Source-tar normalization accepts `0777` only for the governed executable,
+  converges with the POSIX `0644` source archive, and rejects arbitrary paths.
 - [ ] A detached clean Windows build of the exact reviewed commit emits and
   independently verifies its Windows wheel and source distribution.
 - [ ] Proportionate formatting, tests, documentation validation, and clean-tree
