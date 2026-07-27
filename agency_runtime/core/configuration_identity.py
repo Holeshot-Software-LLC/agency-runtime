@@ -16,6 +16,10 @@ from typing import Any
 from agency_runtime.core.bounded_io import BoundedFileError, read_bounded_regular_file
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.configuration_contracts import ConfigurationError
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute_path
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _is_link_or_reparse,
+)
 from agency_runtime.core.process_argv import (
     PersistentArtifactIdentity,
     persistent_artifacts_from_manifest,
@@ -77,13 +81,7 @@ def _path(value: str | Path, *, label: str) -> Path:
     # disappear before the bounded reader or atomic writer could reject it.
     # ``abspath`` gives us a stable, normalized absolute spelling without
     # following the final file or any parent directory.
-    return Path(os.path.abspath(Path(text).expanduser()))
-
-
-def _is_link_or_reparse(metadata: os.stat_result) -> bool:
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse)
+    return _absolute_path(Path(text))
 
 
 def _assert_config_identity_link_safe(path: Path) -> None:

@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
+
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute
 
 _AuthorityProbe = Callable[[Path], bool]
 _AUTHORITIES: dict[Path, _AuthorityProbe] = {}
 _LOCK = threading.RLock()
 _RESOLUTION = threading.local()
-
-
-def _absolute(path: Path) -> Path:
-    return Path(os.path.abspath(path.expanduser()))
 
 
 def register_private_path_authority(root: Path, probe: _AuthorityProbe) -> None:

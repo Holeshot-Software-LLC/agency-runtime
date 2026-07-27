@@ -53,6 +53,7 @@ from agency_runtime.core.store.roster_authority import (
     RevisionActivationAuthority,
     assert_active_revision_projection,
     assert_revision_activation_authority,
+    roster_projection_digest,
 )
 from agency_runtime.core.store.version_identity import normalize_version_identity
 from agency_runtime.core.store.workforce import synchronize_active_workforce_worker
@@ -684,14 +685,7 @@ def _stage_workforce_version(
 
 
 def _canonical_projection_digest(label: str, value: object) -> str:
-    document = json.dumps(
-        value,
-        allow_nan=False,
-        ensure_ascii=False,
-        separators=(",", ":"),
-        sort_keys=True,
-    ).encode("utf-8")
-    return hashlib.sha256(label.encode("ascii") + b"\0" + document).hexdigest()
+    return roster_projection_digest(label, value)
 
 
 def _canonical_lexical_path(value: object, *, label: str) -> str:

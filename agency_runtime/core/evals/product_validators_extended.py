@@ -30,6 +30,8 @@ import json
 import pathlib
 import sys
 
+MAX_RESPONSE_BYTES = 1_048_576
+
 root = pathlib.Path(sys.argv[1])
 data = pathlib.Path(sys.argv[2])
 spec = importlib.util.spec_from_file_location("candidate_server", root / "server.py")
@@ -61,9 +63,28 @@ def call(method, path, body=None, content_type="application/json"):
         "wsgi.multiprocess": False,
         "wsgi.run_once": False,
     }
-    raw = b"".join(app(environ, start_response))
+    response = app(environ, start_response)
+    chunks = []
+    response_size = 0
+    try:
+        for chunk in response:
+            if not isinstance(chunk, bytes):
+                raise TypeError("WSGI response chunks must be bytes")
+            response_size += len(chunk)
+            if response_size > MAX_RESPONSE_BYTES:
+                raise ValueError("WSGI response exceeds the probe limit")
+            chunks.append(chunk)
+    except Exception:
+        chunks = []
+    finally:
+        close = getattr(response, "close", None)
+        if callable(close):
+            close()
+    raw = b"".join(chunks)
     code = int(status[0].split()[0])
     try:
+        # JSON_LOAD_OWNERSHIP: this dependency-isolated generated probe cannot
+        # import Agency helpers; the candidate response is byte-capped above.
         value = json.loads(raw.decode("utf-8"))
     except Exception:
         value = None

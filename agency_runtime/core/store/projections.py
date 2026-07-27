@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections.abc import Mapping
 from pathlib import Path
@@ -16,6 +17,9 @@ DELEGATION_DETAIL_LIMIT = 2_000
 DIAGNOSTIC_REASON_LIMIT = 160
 API_BASE_LIMIT = 512
 SNAPSHOT_MANIFEST_LIMIT = 32 * 1024 * 1024
+RUN_METADATA_LIMIT = 16 * 1024
+RUN_METADATA_MAX_DEPTH = 2
+RUN_METADATA_MAX_NODES = 64
 
 _SAFE_RUN_METADATA_FIELDS = frozenset(
     {
@@ -204,11 +208,33 @@ def project_run_metadata(metadata: dict[str, Any] | None) -> str | None:
         value = metadata[key]
         if (
             isinstance(value, bool)
-            or (isinstance(value, (int, float)) and not isinstance(value, bool))
+            or (isinstance(value, int) and not isinstance(value, bool))
+            or (isinstance(value, float) and math.isfinite(value))
             or (isinstance(value, str) and _SAFE_METADATA_LABEL.fullmatch(value))
         ):
             projected[key] = value
-    return json.dumps(projected, sort_keys=True, separators=(",", ":")) if projected else None
+    return (
+        json.dumps(projected, allow_nan=False, sort_keys=True, separators=(",", ":"))
+        if projected
+        else None
+    )
+
+
+def decode_run_metadata(value: object) -> dict[str, Any]:
+    """Decode one persisted content-free run projection within its fixed budget."""
+
+    if not isinstance(value, (str, bytes)) or not value:
+        return {}
+    try:
+        parsed = safe_load_bounded_json(
+            value,
+            maximum_bytes=RUN_METADATA_LIMIT,
+            maximum_depth=RUN_METADATA_MAX_DEPTH,
+            maximum_nodes=RUN_METADATA_MAX_NODES,
+        )
+    except (TypeError, ValueError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
 
 
 def project_snapshot_summary(value: object) -> dict[str, bool | int]:

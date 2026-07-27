@@ -24,6 +24,7 @@ from agency_runtime.core.delegation.lifecycle_types import (
     WorkUnit,
 )
 from agency_runtime.core.exception_notes import add_exception_note
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute
 from agency_runtime.core.private_paths import (
     PrivateDirectoryIdentity,
     allocate_host_private_directory,
@@ -119,10 +120,6 @@ class _AllocatedRunRoot:
     private_identity: PrivateDirectoryIdentity | None = None
     repo_scoped: bool = False
     warning: str = ""
-
-
-def _absolute(path: Path) -> Path:
-    return Path(os.path.abspath(path.expanduser()))
 
 
 def _capture_directory_identity(path: Path) -> WorktreePathIdentity:

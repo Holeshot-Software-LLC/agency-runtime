@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+import agency_runtime.adapters.hooks as hooks
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core.delegation.native_labels import codex_task_name_for_work_unit
 from agency_runtime.core.native_child_prompt_delivery import (
@@ -268,6 +269,19 @@ def test_pre_tool_use_fails_closed_for_unplanned_or_ambiguous_work() -> None:
     ambiguous_store = _PlanStore(open_traces=("trace-a", "trace-b"))
     assert HookBridge("claude", store=ambiguous_store).handle(ambiguous) == {}  # type: ignore[arg-type]
     assert ambiguous_store.snapshot_reads == []
+
+
+def test_pre_tool_use_rejects_oversized_delivery_before_minting_grant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _PlanStore()
+    monkeypatch.setattr(hooks, "MAX_HOOK_OUTPUT_BYTES", 1)
+
+    result = HookBridge("claude", store=store).handle(_agent_payload())  # type: ignore[arg-type]
+
+    assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert "hook limit" in result["hookSpecificOutput"]["permissionDecisionReason"]
+    assert store.prepared == []
 
 
 def test_pre_tool_use_is_idempotent_for_an_exact_existing_delivery() -> None:
@@ -759,6 +773,39 @@ def test_codex_subagent_lifecycle_injects_exact_identity_and_child_owned_fallbac
         == {}
     )
     assert store.stopped == store.started
+
+
+def test_zcode_does_not_invent_undocumented_child_lifecycle_identity() -> None:
+    class LifecycleStore(_PlanStore):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started: list[dict[str, str]] = []
+            self.stopped: list[dict[str, str]] = []
+
+        def record_native_child_started(self, **kwargs: str) -> None:
+            self.started.append(kwargs)
+
+        def record_native_child_stopped(self, **kwargs: str) -> None:
+            self.stopped.append(kwargs)
+
+    store = LifecycleStore()
+    payload = {
+        "hook_event_name": "SubagentStart",
+        "session_id": "zcode-session",
+        "agent_id": "agent-42",
+        "agent_type": "general-purpose",
+    }
+
+    assert HookBridge("zcode", store=store).handle(payload) == {}  # type: ignore[arg-type]
+    assert store.parent_scopes == []
+    assert (
+        HookBridge("zcode", store=store).handle(  # type: ignore[arg-type]
+            {**payload, "hook_event_name": "SubagentStop"}
+        )
+        == {}
+    )
+    assert store.started == []
+    assert store.stopped == []
 
 
 def test_post_tool_use_reconciles_exact_plan_lineage_and_host_model() -> None:

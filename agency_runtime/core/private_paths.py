@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import cast
 
 from agency_runtime.core.exception_notes import add_exception_note
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute
 from agency_runtime.core.path_authority import (
     discard_private_path_authority,
     register_private_path_authority,
@@ -476,10 +477,6 @@ def reattest_codex_host_private_path(
         parent_guard.close()
         return False
     return _install_codex_reattested_identity(target, identity)
-
-
-def _absolute(path: Path) -> Path:
-    return Path(os.path.abspath(path.expanduser()))
 
 
 def _validate_component(value: str, *, label: str) -> str:

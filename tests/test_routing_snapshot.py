@@ -29,6 +29,7 @@ from agency_runtime.core.config import (
 from agency_runtime.core.delegation.operational import empty_delegation_plan_projection
 from agency_runtime.core.routing_snapshot import (
     RoutingSnapshot,
+    bind_workforce_snapshot,
     capture_operational_routing_snapshot,
     capture_routing_snapshot,
     catalog_for_routing,
@@ -151,6 +152,82 @@ def test_operational_snapshot_recaptures_after_generation_change(
 
     assert result is refreshed
     assert captures == [None, initial.config]
+
+
+def test_workforce_binding_uses_frozen_config_and_one_generation_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import routing_snapshot as subject
+    from agency_runtime.core.roster import workforce as workforce_module
+
+    initial = RoutingSnapshot(_config(disabled=("code-reviewer",)), _catalog(), 7)
+    refreshed = RoutingSnapshot(initial.config, _catalog(), 8)
+    observed_disabled: list[frozenset[str]] = []
+    workforce_generations = iter((6, 8))
+
+    def workforce(_store: object, *, disabled_agents: frozenset[str]) -> SimpleNamespace:
+        observed_disabled.append(disabled_agents)
+        return SimpleNamespace(generation=next(workforce_generations))
+
+    captures: list[AgencyConfig] = []
+    monkeypatch.setattr(workforce_module, "workforce_index_snapshot", workforce)
+    monkeypatch.setattr(
+        subject,
+        "capture_routing_snapshot",
+        lambda _store, config: captures.append(config) or refreshed,
+    )
+
+    routing, bound = bind_workforce_snapshot(object(), initial)
+
+    assert routing is refreshed
+    assert bound.generation == 8
+    assert captures == [initial.config]
+    assert observed_disabled == [
+        frozenset({"code-reviewer"}),
+        frozenset({"code-reviewer"}),
+    ]
+
+
+def test_workforce_binding_fails_closed_after_second_generation_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import routing_snapshot as subject
+    from agency_runtime.core.roster import workforce as workforce_module
+
+    initial = RoutingSnapshot(_config(), _catalog(), 7)
+    recaptures: list[AgencyConfig] = []
+    monkeypatch.setattr(
+        workforce_module,
+        "workforce_index_snapshot",
+        lambda *_args, **_kwargs: SimpleNamespace(generation=99),
+    )
+    monkeypatch.setattr(
+        subject,
+        "capture_routing_snapshot",
+        lambda _store, config: (
+            recaptures.append(config) or RoutingSnapshot(config, _catalog(), 8 + len(recaptures))
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="roster changed"):
+        bind_workforce_snapshot(object(), initial)
+
+    assert recaptures == [initial.config, initial.config]
+
+
+def test_workforce_binding_generation_zero_never_queries_store(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.roster import workforce as workforce_module
+
+    snapshot = RoutingSnapshot(_config(), _catalog(), 0)
+    monkeypatch.setattr(
+        workforce_module,
+        "workforce_index_snapshot",
+        lambda *_args, **_kwargs: pytest.fail("generation zero queried workforce"),
+    )
+
+    assert bind_workforce_snapshot(object(), snapshot) == (snapshot, None)
 
 
 def test_public_runtime_route_passes_one_snapshot_to_selector(

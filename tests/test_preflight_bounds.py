@@ -539,7 +539,7 @@ def test_duplicate_ready_preflight_replays_without_selector_or_evidence_writes(
 
 @pytest.mark.skipif(
     sys.platform == "linux",
-    reason="ADR-0087: the _coherent_workforce_snapshot stub returns an empty "
+    reason="ADR-0087: the bind_workforce_snapshot stub returns an empty "
     "workforce; on Linux this triggers abstention before the CAS-loss assertion. "
     "Passes on Windows. Needs a Linux-specific stub or workforce seeding.",
 )

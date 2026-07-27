@@ -314,8 +314,11 @@ def _project_specialist_refs(
 
 
 def _projection_digest(value: object) -> str:
-    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-    return sha256(encoded.encode("utf-8")).hexdigest()
+    # Keep this import local: importing the selector package while Store mixins
+    # initialize creates a cli_transport -> Store -> selector cycle.
+    from agency_runtime.core.selector.receipt_projection import routing_projection_digest
+
+    return routing_projection_digest(value)
 
 
 def _project_continuation_guard(value: object) -> dict[str, Any] | None:

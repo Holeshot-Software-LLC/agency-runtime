@@ -511,18 +511,21 @@ delta 0.0 and the selected-result hash is unchanged.
 
 - `route_and_build_context` and `header.finalize` now have explicit deprecated
   compatibility wrappers with a declared no-removal-before-0.3.0 contract.
-- Canonical identity, bounded-value, filesystem-trust, and executable helpers
-  replace the reviewed duplicate implementations, with compatibility tests for
-  `slug` versus `agent_slug` precedence.
+- Canonical identity, bounded-value, filesystem-trust, executable, persisted-
+  JSON, projection-digest, workforce-generation, and native-child lifecycle
+  helpers replace the reviewed duplicate implementations. Bounded JSON rejects
+  over-wide documents before materialization and an AST-backed exact inventory
+  owns the dependency-isolated generated-parser exceptions.
 - A repository-wide static reachability audit proved seven private inference
   helpers and their closed dependency chain unreachable from production,
   exports, dynamic dispatch, and string entrypoints. Removing that island
   deletes 590 production lines while adding one replacement line; the ported public-plan suite passes 52 tests
   with one skip and one expected failure.
-- Route, preflight, hook, and schema functions remain large enough to conceal
-  authority and transaction boundaries.
-- Decomposition is useful only after P0 behavior is locked by regression tests;
-  no large mechanical rewrite should share a commit with a security fix.
+- Route, preflight, hook, and schema transaction bodies were reviewed at their
+  authority boundaries. Pure identity, parsing, digest, snapshot, and lifecycle
+  ownership was extracted; cohesive transactions remain intact because a
+  line-count-only split would add mutable handoff state without a production
+  safety benefit.
 
 [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) owns measured
 performance. [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md)
@@ -613,7 +616,7 @@ installed, or hosted scope without promoting contract tests to live proof.
 |---|---|---|
 | Locally repaired | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) through [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | Install-dependent issues remain blocked from positive canary proof; exhaustive coverage is owner-requested only. |
 | Locally measured | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Local correctness/performance and the packaged-contractor batch are green; supported-runner evidence and further end-to-end profiling remain. |
-| Partially complete | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility and a dead island with 590 deletions/one replacement line are repaired; independently reviewed large-function/helper consolidation remains. |
+| Locally repaired | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility, the 590-line dead island, and production-sensitive helper/authority consolidation are complete; three post-diff reviews report zero Critical, High, or Medium findings and the named fast gates pass. |
 | Locally repaired | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md), [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md), [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Exact-candidate package checks are green; exhaustive coverage is owner-requested only. |
 | Final validation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md) through [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md), [AR-160](../roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md), [AR-179](../roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md) | Warning-strict, performance, UI, exact `29da6eca` Windows/Linux package/install, merged-set, and regulated-gap gates are green; normal-profile Codex remains. |
 | Product blocker | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | Prepare/freeze generic Codex install, add an enumerated native presence path, and human-canary the non-exporting verifier. |

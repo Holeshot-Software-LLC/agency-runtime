@@ -17,6 +17,9 @@ from typing import Any
 
 from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _link_like,
+)
 from agency_runtime.core.store.security import storage_parent_is_trusted
 from agency_runtime.core.windows_acl import current_process_token_is_restricted
 
@@ -120,12 +123,6 @@ def _unprotect_token(value: str) -> str:
 def codex_dashboard_broker_path(*, home_dir: str | Path | None = None) -> Path:
     home = Path(home_dir).expanduser() if home_dir is not None else Path.home()
     return Path(os.path.abspath(home / ".codex" / "agency-runtime" / "dashboard-broker.json"))
-
-
-def _link_like(metadata: os.stat_result) -> bool:
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse_flag)
 
 
 def _real_directory(path: Path) -> bool:

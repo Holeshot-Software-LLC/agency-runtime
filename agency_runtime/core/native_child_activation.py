@@ -17,6 +17,12 @@ from dataclasses import dataclass
 from typing import Any, Final, cast
 
 from agency_runtime.core.agent_activation import normalize_agent_slug
+from agency_runtime.core.bounded_json import (
+    BoundedJSONError,
+    DuplicateJSONKeyError,
+    NonFiniteJSONNumberError,
+    safe_load_bounded_json,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.resident_managers import is_resident_manager_slug
 from agency_runtime.core.roster.revisions import content_digest_identity
@@ -31,6 +37,8 @@ SUPPORTED_NATIVE_CHILD_ACTIVATION_VERSIONS: Final[tuple[int, ...]] = (
 NATIVE_CHILD_ACTIVATION_GRANT_ID_PREFIX: Final[str] = "ncg-"
 NATIVE_CHILD_ACTIVATION_RECEIPT_ID_PREFIX: Final[str] = "ncr-"
 NATIVE_CHILD_ACTIVATION_ID_HEX_CHARS: Final[int] = 32
+NATIVE_CHILD_ACTIVATION_TOKEN_BYTES: Final[int] = 32
+NATIVE_CHILD_ACTIVATION_TOKEN_CHARS: Final[int] = 43
 MAX_NATIVE_CHILD_ACTIVATION_BYTES: Final[int] = 8_192
 MAX_NATIVE_CHILD_ACTIVATION_TTL_SECONDS: Final[int] = 3_600
 MAX_NATIVE_CHILD_TIMESTAMP: Final[int] = 2**63 - 1
@@ -986,19 +994,6 @@ def serialize_native_child_activation_receipt(
     return _canonical_json(receipt.as_dict(), label="native-child activation receipt")
 
 
-def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError("native-child activation JSON contains duplicate fields")
-        result[key] = value
-    return result
-
-
-def _reject_json_constant(_value: str) -> None:
-    raise ValueError("native-child activation JSON contains a non-finite number")
-
-
 def _parse_canonical_json(payload: object) -> Mapping[str, Any]:
     if not isinstance(payload, str):
         raise ValueError("native-child activation JSON must be a string")
@@ -1012,12 +1007,19 @@ def _parse_canonical_json(payload: object) -> Mapping[str, Any]:
             f"{MAX_NATIVE_CHILD_ACTIVATION_BYTES}-byte limit"
         )
     try:
-        raw = json.loads(
+        raw = safe_load_bounded_json(
             payload,
-            object_pairs_hook=_unique_json_object,
-            parse_constant=_reject_json_constant,
+            maximum_bytes=MAX_NATIVE_CHILD_ACTIVATION_BYTES,
+            maximum_depth=8,
+            maximum_nodes=256,
         )
-    except (json.JSONDecodeError, TypeError) as exc:
+    except DuplicateJSONKeyError as exc:
+        raise ValueError("native-child activation JSON contains duplicate fields") from exc
+    except NonFiniteJSONNumberError as exc:
+        raise ValueError("native-child activation JSON contains a non-finite number") from exc
+    except BoundedJSONError as exc:
+        raise ValueError("native-child activation JSON is invalid") from exc
+    except TypeError as exc:
         raise ValueError("native-child activation JSON is invalid") from exc
     if not isinstance(raw, Mapping):
         raise ValueError("native-child activation JSON must contain an object")
@@ -1059,6 +1061,8 @@ __all__ = [
     "NATIVE_CHILD_ACTIVATION_ID_HEX_CHARS",
     "NATIVE_CHILD_ACTIVATION_LEGACY_VERSION",
     "NATIVE_CHILD_ACTIVATION_RECEIPT_ID_PREFIX",
+    "NATIVE_CHILD_ACTIVATION_TOKEN_BYTES",
+    "NATIVE_CHILD_ACTIVATION_TOKEN_CHARS",
     "NATIVE_CHILD_ACTIVATION_VERSION",
     "NATIVE_CHILD_MUTATION_MODES",
     "NATIVE_CHILD_WORKER_BINDING_MODES",

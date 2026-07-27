@@ -31,6 +31,8 @@ from agency_runtime.core.bounded_io import (
     read_bounded_regular_file,
 )
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
+from agency_runtime.core.filesystem_trust import absolute_path as _lexical_absolute_path
+from agency_runtime.core.filesystem_trust import same_file_identity as _same_file
 from agency_runtime.core.store.security import (
     assert_storage_parent_chain,
     create_private_storage_parent,
@@ -165,7 +167,7 @@ def _absolute_path(path: str | Path) -> Path:
         or any(ord(character) < 32 or ord(character) == 127 for character in text)
     ):
         raise RuntimeControlValidationError("runtime control path is invalid")
-    return Path(os.path.abspath(Path(text).expanduser()))
+    return _lexical_absolute_path(Path(text))
 
 
 def runtime_control_path(*, home_dir: str | Path | None = None) -> Path:
@@ -209,17 +211,6 @@ def _metadata_identity(metadata: os.stat_result) -> tuple[int, ...]:
         int(metadata.st_size),
         int(getattr(metadata, "st_mtime_ns", int(metadata.st_mtime * 1_000_000_000))),
         int(getattr(metadata, "st_ctime_ns", int(metadata.st_ctime * 1_000_000_000))),
-    )
-
-
-def _same_file(left: os.stat_result, right: os.stat_result) -> bool:
-    left_inode = int(getattr(left, "st_ino", 0) or 0)
-    right_inode = int(getattr(right, "st_ino", 0) or 0)
-    return bool(
-        left_inode
-        and right_inode
-        and int(left.st_dev) == int(right.st_dev)
-        and left_inode == right_inode
     )
 
 

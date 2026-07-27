@@ -735,8 +735,13 @@ def _outbound_binding_matches_policy_text(
     if not outbound_payload:
         return True
     try:
-        payload = json.loads(outbound_payload)
-    except (TypeError, ValueError, json.JSONDecodeError):
+        payload = safe_load_bounded_json(
+            outbound_payload,
+            maximum_bytes=MAX_INPUT_BYTES,
+            maximum_depth=8,
+            maximum_nodes=10_000,
+        )
+    except (TypeError, ValueError):
         return False
     if not isinstance(payload, dict):
         return False

@@ -101,14 +101,14 @@ the full acceptance history.
   truthfully with `route_not_found`: zero route, header, collaboration calls,
   activations, delegations, finalizations, runs, or traces. Evidence SHA-256 is
   `b5bb99e1...4750`; no attestation persisted and no retry ran.
-- The installed all-host smoke then localized a repeated 821-file launcher
-  preparation and exceeded 122.4 seconds. `c625bc7` prepares one attested
-  closure per invocation; source smoke passes 8/0/0 in 43.9 seconds. Exact final
-  wheel recheck remains open.
-- `1676f6a` reduced the measured workforce/MCP hotspots from 5.45/4.08 seconds
-  to 2.66/0.81 seconds; 98 touched tests pass with one platform skip. Seven
-  already accepted AR items now truthfully report `done`; tracker writes remain
-  pending authorization.
+- AR-141 now consolidates bounded JSON, filesystem trust, projection digests,
+  workforce generation, and native-child identity without changing host-owned
+  delegation. Three post-diff reviews report zero Critical/High/Medium issues.
+- Focused authority/path suites pass; the named Python spine passes 522/5, all
+  106 dashboard tests pass, and every routing/delegation/performance gate passes.
+- `c625bc7` source all-host smoke passes 8/0/0 in 43.9 seconds and `1676f6a`
+  reduced workforce/MCP hotspots to 2.66/0.81 seconds. The exact final wheel,
+  installed smoke, dashboard QA, and Codex trust/canary recheck remain open.
 
 ## exact-blocker
 
@@ -147,10 +147,10 @@ the same persistent goal from the clean pair through normal compaction.
    the Codex terminal TUI only after the final artifact refresh. Then run one
    bounded current-profile canary without a hook-trust bypass and preserve its
    exact evidence. Do not retry before both state changes.
-2. Complete AR-141's bounded security/protocol helper consolidation, then run
-   the named fast gates and build/verify/fresh-install one exact final artifact.
+2. Commit the green AR-141 package and ledger, then build, verify, and install
+   one exact artifact from that clean candidate head.
 3. Repeat installed all-host smoke and desktop/mobile dashboard QA from that
-   artifact; record the exact evidence before another refresh.
+   artifact; record exact evidence before any later refresh.
 4. Keep signed delivery, missing-host bootstrap, other host canaries, and
    benchmark-valid AR-119/125 outcome trials visible as external/live gates.
 5. Run exhaustive coverage/compatibility only on explicit owner request.

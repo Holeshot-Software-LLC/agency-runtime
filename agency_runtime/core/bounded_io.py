@@ -7,6 +7,11 @@ import stat
 import tempfile
 from pathlib import Path
 
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _is_link_or_reparse,
+)
+from agency_runtime.core.filesystem_trust import same_file_identity as _same_identity
+
 
 class BoundedFileError(OSError):
     """A security-sensitive local file could not be read safely."""
@@ -18,29 +23,6 @@ class FileSizeLimitError(BoundedFileError):
 
 class UnsafeFileError(BoundedFileError):
     """A local path is linked, special, or changed during open."""
-
-
-def _is_link_or_reparse(metadata: os.stat_result) -> bool:
-    # Reconstructed ``os.stat_result`` instances (and some alternative Python
-    # runtimes) expose the Windows extension field as ``None`` rather than
-    # omitting it. Treat that the same as no file attributes so the stable
-    # identity check can reject the changed file.
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse_flag)
-
-
-def _same_identity(left: os.stat_result, right: os.stat_result) -> bool:
-    """Return whether two POSIX metadata snapshots name one provable object."""
-
-    left_inode = int(getattr(left, "st_ino", 0) or 0)
-    right_inode = int(getattr(right, "st_ino", 0) or 0)
-    return bool(
-        left_inode
-        and right_inode
-        and int(left.st_dev) == int(right.st_dev)
-        and left_inode == right_inode
-    )
 
 
 def restrict_posix_path_permissions(path: Path, *, directory: bool) -> None:

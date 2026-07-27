@@ -28,6 +28,10 @@ from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import AgencyConfig, load_config
 from agency_runtime.core.configuration import restrict_private_file
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute_path
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse,
+)
 from agency_runtime.core.installer_contracts import (
     ADAPTER_LAUNCHER_MANIFEST,
     INSTALL_MANIFEST,
@@ -88,7 +92,6 @@ _LOCK_TIMEOUT_SECONDS = 30.0
 _VERSION = re.compile(r"[0-9A-Za-z][0-9A-Za-z.+-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _CONFIG_REVISION = re.compile(r"sha256:[0-9a-f]{64}\Z")
-_WINDOWS_REPARSE_POINT = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
 
 
 class PreparedCodexInstallError(RuntimeError):
@@ -294,14 +297,17 @@ def _path_key(value: str | Path) -> str:
     raw = os.fspath(value)
     if raw.startswith("\\\\?\\"):
         raw = raw[4:]
-    return os.path.normcase(os.path.abspath(raw))
+    candidate = Path(raw)
+    if not candidate.is_absolute():
+        return ""
+    return os.path.normcase(str(_absolute_path(candidate)))
 
 
 def _codex_target_path(*, home_dir: str | Path | None) -> Path:
     home = Path.home() if home_dir is None else Path(home_dir).expanduser()
     if not home.is_absolute():
         raise PreparedCodexInstallError("prepared Codex home boundary must be absolute")
-    lexical = Path(os.path.abspath(home / ".agency-runtime" / "marketplaces" / _HOST))
+    lexical = _absolute_path(home / ".agency-runtime" / "marketplaces" / _HOST)
     try:
         resolved = lexical.resolve(strict=True)
     except (OSError, RuntimeError) as exc:
@@ -322,12 +328,7 @@ def _codex_target_path(*, home_dir: str | Path | None) -> Path:
 
 def _directory_identity(path: Path, *, label: str) -> tuple[int, int]:
     metadata = os.lstat(path)
-    attributes = int(getattr(metadata, "st_file_attributes", 0))
-    if (
-        not stat.S_ISDIR(metadata.st_mode)
-        or stat.S_ISLNK(metadata.st_mode)
-        or attributes & _WINDOWS_REPARSE_POINT
-    ):
+    if not stat.S_ISDIR(metadata.st_mode) or _metadata_is_link_or_reparse(metadata):
         raise PreparedCodexInstallError(f"{label} must be a real directory")
     return int(metadata.st_dev), int(metadata.st_ino)
 
@@ -351,8 +352,7 @@ def _managed_tree_digest(target: Path) -> str:
         if index >= _MAX_TREE_FILES:
             raise PreparedCodexInstallError("managed Codex tree exceeds its file-count limit")
         metadata = os.lstat(path)
-        attributes = int(getattr(metadata, "st_file_attributes", 0))
-        if stat.S_ISLNK(metadata.st_mode) or attributes & _WINDOWS_REPARSE_POINT:
+        if _metadata_is_link_or_reparse(metadata):
             raise PreparedCodexInstallError("managed Codex tree contains a linked path")
         if stat.S_ISDIR(metadata.st_mode):
             paths.append((path, metadata, True))
@@ -435,8 +435,7 @@ def _target_snapshot(target: Path) -> _ManagedTargetSnapshot:
     actual_directories: set[str] = set()
     for path in target.rglob("*"):
         metadata = os.lstat(path)
-        attributes = int(getattr(metadata, "st_file_attributes", 0))
-        if stat.S_ISLNK(metadata.st_mode) or attributes & _WINDOWS_REPARSE_POINT:
+        if _metadata_is_link_or_reparse(metadata):
             raise PreparedCodexInstallError("managed Codex tree contains a linked path")
         relative = path.relative_to(target).as_posix()
         if stat.S_ISDIR(metadata.st_mode):
@@ -929,8 +928,7 @@ def _open_lock(path: Path):
         handle_stat = os.fstat(descriptor)
         if (
             not stat.S_ISREG(path_stat.st_mode)
-            or stat.S_ISLNK(path_stat.st_mode)
-            or int(getattr(path_stat, "st_file_attributes", 0)) & _WINDOWS_REPARSE_POINT
+            or _metadata_is_link_or_reparse(path_stat)
             or (int(path_stat.st_dev), int(path_stat.st_ino))
             != (int(handle_stat.st_dev), int(handle_stat.st_ino))
         ):

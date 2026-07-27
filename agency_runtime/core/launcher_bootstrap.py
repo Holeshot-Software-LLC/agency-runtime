@@ -23,6 +23,9 @@ from pathlib import Path, PurePosixPath
 from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.configuration import restrict_private_directory, restrict_private_file
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _is_link_or_reparse,
+)
 from agency_runtime.core.private_paths import (
     PrivateDirectoryIdentity,
     allocate_private_directory,
@@ -47,7 +50,6 @@ _MAX_RUNTIME_FILE_BYTES = 64 * 1024 * 1024
 _MAX_RUNTIME_BYTES = 512 * 1024 * 1024
 _MAX_MANIFEST_BYTES = 8 * 1024 * 1024
 _REQUIREMENT_NAME = re.compile(r"^\s*([A-Za-z0-9]+(?:[-_.][A-Za-z0-9]+)*)")
-_WINDOWS_REPARSE_POINT = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,13 +119,6 @@ def persistent_python_executable(
 
 def _canonical_distribution_name(value: str) -> str:
     return re.sub(r"[-_.]+", "-", str(value).strip()).casefold()
-
-
-def _is_link_or_reparse(metadata_value: os.stat_result) -> bool:
-    return bool(
-        stat.S_ISLNK(metadata_value.st_mode)
-        or int(getattr(metadata_value, "st_file_attributes", 0) or 0) & _WINDOWS_REPARSE_POINT
-    )
 
 
 def _safe_relative_path(value: str) -> str:

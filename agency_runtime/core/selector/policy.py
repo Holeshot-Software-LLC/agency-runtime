@@ -21,6 +21,10 @@ from agency_runtime.core.bounded_io import (
 from agency_runtime.core.bounded_yaml import safe_load_bounded
 from agency_runtime.core.configuration_contracts import ConfigurationError
 from agency_runtime.core.configuration_persistence import assert_config_namespace
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute_path
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse,
+)
 from agency_runtime.core.selector.intent_text import affirmative_intent
 from agency_runtime.core.windows_acl import (
     current_process_user_sid,
@@ -105,12 +109,6 @@ def _metadata_identity(
         int(getattr(metadata, "st_nlink", 0) or 0),
         int(getattr(metadata, "st_uid", -1)),
     )
-
-
-def _metadata_is_link_or_reparse(metadata: Any) -> bool:
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse_flag)
 
 
 def _assert_trusted_policy_metadata(
@@ -377,7 +375,7 @@ def _load_policy_locked(policy_path: Path | None = None) -> dict[str, Any]:
     global _POLICY_REQUEST_KEY, _POLICY_CHECKED_AT
 
     requested = policy_path or _resolve_policy_path()
-    path = Path(os.path.abspath(requested.expanduser()))
+    path = _absolute_path(requested)
     identity = _policy_file_identity(path)
     request_key = str(path)
     now = time.monotonic()

@@ -11,6 +11,7 @@ from contextlib import closing
 from hashlib import sha256
 from typing import Any
 
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 
@@ -19,6 +20,21 @@ _ZERO_TTL_COALESCING_GRACE_SECONDS = 1.0
 _MAX_PARENT_SCOPE_TOKEN_CHARS = 256
 _MAX_PARENT_SCOPE_TTL_SECONDS = 600
 _STORE_UNIX_SQL = "CAST(STRFTIME('%s', 'NOW') AS INTEGER)"
+
+
+def _decode_cache_decision(value: object) -> dict[str, Any] | None:
+    if not isinstance(value, (str, bytes)) or not value:
+        return None
+    try:
+        parsed = safe_load_bounded_json(
+            value,
+            maximum_bytes=_MAX_CACHE_DOCUMENT_BYTES,
+            maximum_depth=32,
+            maximum_nodes=50_000,
+        )
+    except (TypeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
 
 
 def _cache_key(value: object) -> str:
@@ -339,13 +355,11 @@ class ChildRoutingStoreMixin:
                 (key,),
             ).fetchone()
             if cached is not None:
-                try:
-                    decision = json.loads(str(cached[0]))
-                except (TypeError, ValueError):
+                decision = _decode_cache_decision(cached[0])
+                if decision is None:
                     conn.execute("DELETE FROM child_routing_cache WHERE cache_key = ?", (key,))
                 else:
-                    if isinstance(decision, dict):
-                        return {"status": "cached", "decision": decision}
+                    return {"status": "cached", "decision": decision}
             existing = conn.execute(
                 "SELECT 1 FROM child_routing_leases WHERE cache_key = ?",
                 (key,),
@@ -392,11 +406,7 @@ class ChildRoutingStoreMixin:
             ).fetchone()
         if row is None:
             return None
-        try:
-            value = json.loads(str(row[0]))
-        except (TypeError, ValueError):
-            return None
-        return value if isinstance(value, dict) else None
+        return _decode_cache_decision(row[0])
 
     def renew_child_routing(
         self,
@@ -428,9 +438,19 @@ class ChildRoutingStoreMixin:
     ) -> bool:
         key = _cache_key(cache_key)
         token = validate_correlation_id(owner_token, field="owner_token")
-        document = json.dumps(decision, sort_keys=True, separators=(",", ":"))
+        try:
+            document = json.dumps(
+                decision,
+                allow_nan=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("child routing decision is invalid") from exc
         if len(document.encode("utf-8")) > _MAX_CACHE_DOCUMENT_BYTES:
             raise ValueError("child routing decision exceeds the cache limit")
+        if _decode_cache_decision(document) is None:
+            raise ValueError("child routing decision exceeds the structural limits")
         with closing(self._connect()) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
             lease = conn.execute(

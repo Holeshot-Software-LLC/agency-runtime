@@ -29,6 +29,7 @@ from agency_runtime.core.agent_activation import (
     normalize_agent_slug,
     updated_disabled_agents,
 )
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.cli_transport import discover_cli_models
 from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration import (
@@ -65,6 +66,7 @@ from agency_runtime.core.delegation.operational import (
     delegation_plan_projection,
     empty_delegation_plan_projection,
 )
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute_path
 from agency_runtime.core.host_capabilities import (
     EXECUTION_HOSTS,
     project_host_capability_receipt,
@@ -292,7 +294,7 @@ def _bounded_policy_response(payload: dict[str, Any]) -> dict[str, Any]:
 def _absolute_runtime_path(value: object) -> Path:
     if not isinstance(value, (str, os.PathLike)):
         raise ConfigurationError("effective store path is invalid")
-    return Path(os.path.abspath(Path(value).expanduser()))
+    return _absolute_path(Path(value))
 
 
 def _store_service_binding(store: Store, state: ConfigState) -> dict[str, Any]:
@@ -1005,8 +1007,13 @@ def _decode_collection_cursor(raw: str, *, kind: str, fields: int) -> tuple[str,
             altchars=b"-_",
             validate=True,
         )
-        payload = json.loads(decoded.decode("utf-8"))
-    except (UnicodeDecodeError, binascii.Error, json.JSONDecodeError) as exc:
+        payload = safe_load_bounded_json(
+            decoded,
+            maximum_bytes=768,
+            maximum_depth=2,
+            maximum_nodes=16,
+        )
+    except (binascii.Error, TypeError, ValueError) as exc:
         raise ValueError("collection cursor is invalid") from exc
     if (
         not isinstance(payload, list)

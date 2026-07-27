@@ -865,6 +865,22 @@ def test_child_store_rejects_invalid_keys_limits_and_documents(tmp_path) -> None
             decision={"large": "x" * 300_000},
             ttl_seconds=1,
         )
+    for invalid, message in (
+        ({"score": float("nan")}, "invalid"),
+        (
+            {"nested": [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]},
+            "structural",
+        ),
+        ({"items": [0] * 50_001}, "structural"),
+    ):
+        with pytest.raises(ValueError, match=message):
+            store.complete_child_routing(
+                cache_key=valid,
+                owner_token=owner["owner_token"],
+                decision=invalid,
+                ttl_seconds=1,
+            )
+        assert store.read_child_routing_cache(valid) is None
     assert not store.complete_child_routing(
         cache_key=valid,
         owner_token="wrong-token",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -20,6 +21,14 @@ from agency_runtime.core.installer_contracts import INSTALL_MANIFEST, NativeComm
 
 def _digest(character: str) -> str:
     return character * 64
+
+
+def test_path_key_never_expands_noncanonical_inventory_text(tmp_path: Path) -> None:
+    target = tmp_path / "marketplace"
+
+    assert prepared_install._path_key(target) == os.path.normcase(str(target.resolve()))
+    assert prepared_install._path_key("~/marketplace") == ""
+    assert prepared_install._path_key("relative/marketplace") == ""
 
 
 def _binding(

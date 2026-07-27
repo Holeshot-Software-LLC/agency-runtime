@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from collections.abc import Container
 from contextlib import closing
 from dataclasses import dataclass, replace
 from typing import Any
 
 from agency_runtime.core.agent_activation import agent_is_enabled
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.workforce.contract import (
     WorkforceContract,
     parse_workforce_contract,
@@ -40,7 +40,12 @@ def _stored_contract(document: object, expected_hash: object) -> WorkforceContra
     if digest != str(expected_hash or ""):
         raise RuntimeError("stored workforce recruitment contract hash is invalid")
     try:
-        value = json.loads(text)
+        value = safe_load_bounded_json(
+            text,
+            maximum_bytes=256 * 1024,
+            maximum_depth=16,
+            maximum_nodes=10_000,
+        )
     except (TypeError, ValueError) as exc:
         raise RuntimeError("stored workforce recruitment contract is invalid") from exc
     try:

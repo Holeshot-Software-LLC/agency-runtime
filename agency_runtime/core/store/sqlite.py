@@ -37,6 +37,7 @@ from agency_runtime.core.store.projections import (
     RUN_CONTENT_LIMIT,
     bounded_text,
     capture_content_enabled,
+    decode_run_metadata,
     project_delegation_detail,
     project_run_metadata,
     redact_sensitive_text,
@@ -160,14 +161,7 @@ def _project_run_metadata(metadata: dict[str, Any] | None) -> str | None:
 
 
 def _bounded_run_metadata(value: object) -> dict[str, Any]:
-    raw = str(value or "")
-    if not raw or len(raw.encode("utf-8", errors="replace")) > 16_384:
-        return {}
-    try:
-        parsed = json.loads(raw)
-    except (TypeError, ValueError):
-        return {}
-    return parsed if isinstance(parsed, dict) else {}
+    return decode_run_metadata(value)
 
 
 def _merge_projected_run_metadata(

@@ -369,9 +369,17 @@ def _routing_effect_codes(
     return codes
 
 
-def _receipt_digest(value: object) -> str:
+def routing_projection_digest(value: object) -> str:
+    """Return the canonical digest shared by routing and Store projections."""
+
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _receipt_digest(value: object) -> str:
+    """Preserve the private selector digest seam for internal callers."""
+
+    return routing_projection_digest(value)
 
 
 def project_durable_routing_receipt(routing: Mapping[str, Any]) -> dict[str, Any]:
@@ -496,4 +504,5 @@ __all__ = [
     "bounded_receipt_text",
     "normalize_durable_routing_receipt",
     "project_durable_routing_receipt",
+    "routing_projection_digest",
 ]

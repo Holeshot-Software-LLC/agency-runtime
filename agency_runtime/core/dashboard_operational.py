@@ -16,6 +16,7 @@ from functools import lru_cache
 from typing import Any
 
 from agency_runtime.core.agent_activation import normalize_agent_slug
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import AgencyConfig, ProviderEntry, _is_loopback_http_url
 from agency_runtime.core.roster.bundled import bundled_manifest
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
@@ -152,7 +153,15 @@ def _decoded_active_rows(store: Store) -> tuple[int, list[dict[str, Any]]]:
     for raw in rows:
         row = dict(raw)
         for field in ("categories", "capabilities", "tool_affinity"):
-            value = json.loads(str(row.get(field) or "[]"))
+            try:
+                value = safe_load_bounded_json(
+                    str(row.get(field) or "[]"),
+                    maximum_bytes=256 * 1024,
+                    maximum_depth=2,
+                    maximum_nodes=4_096,
+                )
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError(f"active roster {field} metadata is invalid") from exc
             if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
                 raise RuntimeError(f"active roster {field} metadata is invalid")
             row[field] = value

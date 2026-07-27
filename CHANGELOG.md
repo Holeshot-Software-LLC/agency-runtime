@@ -37,6 +37,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Persisted and externally supplied JSON now shares one bounded decoder with
+  pre-allocation depth/node checks, typed ambiguity failures, and an exact
+  generated-shim inventory. Child-routing writes prove the same contract used
+  on reads. Canonical filesystem, projection-digest, workforce-generation, and
+  native-child identity helpers replace duplicated security-sensitive logic
+  without changing host-owned delegation or serialized receipt bytes.
 - Workforce fingerprints now reuse a bounded cache of immutable canonical
   contract bytes. Focused tests also reuse one immutable roster projection and
   construct the exact ready MCP turn they exercise instead of performing an

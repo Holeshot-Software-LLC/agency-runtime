@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import BinaryIO
 
 from agency_runtime.core.exception_notes import add_exception_note
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute
 from agency_runtime.core.store.security import (
     assert_storage_parent_chain,
     is_link_or_reparse_point,
@@ -49,10 +50,6 @@ class _LockIdentity:
     path: Path
     device: int
     inode: int
-
-
-def _absolute(path: Path) -> Path:
-    return Path(os.path.abspath(path.expanduser()))
 
 
 def initialization_lock_path(db_path: Path) -> Path:

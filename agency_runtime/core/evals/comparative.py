@@ -8,7 +8,6 @@ claim.
 
 from __future__ import annotations
 
-import json
 import math
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
@@ -17,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 
 COMPARATIVE_SCHEMA_VERSION = 1
 MAX_COMPARATIVE_FILE_BYTES = 4 * 1024 * 1024
@@ -227,8 +227,13 @@ def load_comparative_jsonl(path: Path) -> list[ComparativeObservation]:
         if len(observations) >= MAX_COMPARATIVE_OBSERVATIONS:
             raise ValueError("comparative evidence exceeds the observation limit")
         try:
-            raw = json.loads(line)
-        except json.JSONDecodeError as exc:
+            raw = safe_load_bounded_json(
+                line,
+                maximum_bytes=MAX_COMPARATIVE_FILE_BYTES,
+                maximum_depth=8,
+                maximum_nodes=256,
+            )
+        except (TypeError, ValueError) as exc:
             raise ValueError(f"comparative evidence line {line_number} is invalid JSON") from exc
         if not isinstance(raw, dict):
             raise ValueError(f"comparative evidence line {line_number} must be an object")

@@ -26,6 +26,7 @@ from agency_runtime.core.delegation_status import (
 )
 from agency_runtime.core.native_child_activation import (
     MAX_NATIVE_CHILD_ACTIVATION_TTL_SECONDS,
+    NATIVE_CHILD_ACTIVATION_TOKEN_BYTES,
     NativeChildActivationGrant,
     build_native_child_activation_grant,
     build_native_child_activation_receipt,
@@ -571,7 +572,7 @@ class DelegationActivationStoreMixin:
                 expires_at=issued_at + ttl,
             )
             grant_payload = serialize_native_child_activation_grant(grant)
-            token = secrets.token_urlsafe(32)
+            token = secrets.token_urlsafe(NATIVE_CHILD_ACTIVATION_TOKEN_BYTES)
             token_hash = sha256(token.encode("ascii")).hexdigest()
             receipt_id = self._uuid()
             conn.execute(

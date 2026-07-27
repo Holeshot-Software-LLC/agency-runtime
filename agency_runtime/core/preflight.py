@@ -40,6 +40,7 @@ from agency_runtime.core.preflight_recipe import (
 )
 from agency_runtime.core.resident_managers import is_resident_manager_slug
 from agency_runtime.core.routing_snapshot import (
+    bind_workforce_snapshot,
     capture_routing_snapshot,
     catalog_for_routing,
 )
@@ -319,27 +320,6 @@ def _ensure_preflight_catalog(
     if ensure_no_match_fallback_roster(store) or contractors_installed:
         return capture_routing_snapshot(store, config)
     return routing_snapshot
-
-
-def _coherent_workforce_snapshot(
-    store: Store,
-    config: AgencyConfig,
-    routing_snapshot: Any,
-) -> tuple[Any, Any]:
-    """Capture matching catalog and workforce generations with one bounded retry."""
-
-    from agency_runtime.core.roster.workforce import workforce_index_snapshot
-
-    snapshot = routing_snapshot
-    for _attempt in range(2):
-        workforce = workforce_index_snapshot(
-            store,
-            disabled_agents=frozenset(config.agents.disabled),
-        )
-        if workforce.generation == snapshot.roster_generation:
-            return snapshot, workforce
-        snapshot = capture_routing_snapshot(store, config)
-    raise RuntimeError("roster changed while capturing the workforce routing snapshot")
 
 
 def _planned_parent_unit_routing(
@@ -1554,11 +1534,7 @@ def run_preflight(
             ensure_no_match_fallback_roster=ensure_no_match_fallback_roster,
             reconcile_packaged_contractors=reconcile_packaged_contractors,
         )
-        routing_snapshot, workforce_snapshot = _coherent_workforce_snapshot(
-            store,
-            cfg,
-            routing_snapshot,
-        )
+        routing_snapshot, workforce_snapshot = bind_workforce_snapshot(store, routing_snapshot)
         catalog = routing_snapshot.catalog
 
         # PERF-01: build the routing request ONCE per fresh turn and reuse its

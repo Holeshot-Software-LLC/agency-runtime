@@ -38,6 +38,23 @@ def metadata_is_link_or_reparse_point(metadata: os.stat_result) -> bool:
     return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse)
 
 
+def same_file_identity(
+    left: os.stat_result,
+    right: os.stat_result,
+    *,
+    require_nonzero_inode: bool = True,
+) -> bool:
+    """Compare device/inode identity, requiring a stable inode by default."""
+
+    left_inode = int(getattr(left, "st_ino", 0) or 0)
+    right_inode = int(getattr(right, "st_ino", 0) or 0)
+    return bool(
+        (not require_nonzero_inode or (left_inode and right_inode))
+        and int(left.st_dev) == int(right.st_dev)
+        and left_inode == right_inode
+    )
+
+
 def posix_directory_has_default_acl(path: Path) -> bool:
     """Fail closed when a Linux default ACL could grant descendant access."""
 
@@ -112,4 +129,5 @@ __all__ = [
     "metadata_is_link_or_reparse_point",
     "posix_directory_chain_is_trusted",
     "posix_directory_has_default_acl",
+    "same_file_identity",
 ]

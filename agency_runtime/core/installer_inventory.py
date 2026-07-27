@@ -16,6 +16,9 @@ from typing import Any
 
 from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _is_link_or_reparse,
+)
 from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
     CODEX_HOOK_TRUST_ACTION,
@@ -44,7 +47,6 @@ _RUNTIME_TIMEOUT_SECONDS = 20
 _MAX_INSTALL_MANIFEST_BYTES = 64 * 1024
 _MAX_MANAGED_BUNDLE_BYTES = 8 * 1024 * 1024
 _MAX_MANAGED_FILES = 512
-_FILE_ATTRIBUTE_REPARSE_POINT = 0x400
 
 
 @dataclass
@@ -192,11 +194,6 @@ def _stat_fingerprint(metadata: os.stat_result) -> tuple[int, int, int, int]:
         int(metadata.st_size),
         int(metadata.st_mtime_ns),
     )
-
-
-def _is_link_or_reparse(metadata: os.stat_result) -> bool:
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & _FILE_ATTRIBUTE_REPARSE_POINT)
 
 
 def _checked_parent_directories(root: Path, path: Path) -> list[tuple[Path, tuple[int, ...]]]:

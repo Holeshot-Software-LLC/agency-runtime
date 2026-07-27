@@ -42,7 +42,9 @@ class RevisionActivationAuthority:
     digest: str
 
 
-def _canonical_digest(label: str, value: object) -> str:
+def roster_projection_digest(label: str, value: object) -> str:
+    """Return a domain-separated digest for one canonical roster projection."""
+
     document = json.dumps(
         value,
         allow_nan=False,
@@ -51,6 +53,12 @@ def _canonical_digest(label: str, value: object) -> str:
         sort_keys=True,
     ).encode("utf-8")
     return hashlib.sha256(label.encode("ascii") + b"\0" + document).hexdigest()
+
+
+def _canonical_digest(label: str, value: object) -> str:
+    """Preserve the private roster-authority digest seam for internal callers."""
+
+    return roster_projection_digest(label, value)
 
 
 def _mapping_digest(label: str, value: Mapping[str, Any]) -> str:

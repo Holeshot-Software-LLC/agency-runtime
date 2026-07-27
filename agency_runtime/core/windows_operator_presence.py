@@ -10,7 +10,6 @@ or other transferable authorization value.
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 import platform
 import re
@@ -22,6 +21,7 @@ from importlib import resources
 from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING, Any
 
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.operator_presence import OperatorPresenceError
 from agency_runtime.core.owned_process import (
     BoundedBinaryProcessResult,
@@ -187,17 +187,14 @@ def _artifact_identity(
 def _decode_provenance(payload: bytes) -> tuple[tuple[int, str], tuple[int, str]]:
     """Decode the exact reviewed-artifact subset of the bounded provenance record."""
 
-    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-        value: dict[str, Any] = {}
-        for key, item in pairs:
-            if key in value:
-                raise ValueError("duplicate provenance field")
-            value[key] = item
-        return value
-
     try:
-        value = json.loads(payload.decode("utf-8"), object_pairs_hook=unique_object)
-    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        value = safe_load_bounded_json(
+            payload,
+            maximum_bytes=_MAX_PROVENANCE_BYTES,
+            maximum_depth=8,
+            maximum_nodes=256,
+        )
+    except (TypeError, ValueError) as exc:
         raise OperatorPresenceError("native operator verifier provenance is invalid") from exc
     if not isinstance(value, dict):
         raise OperatorPresenceError("native operator verifier provenance is invalid")

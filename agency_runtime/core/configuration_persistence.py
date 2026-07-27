@@ -249,11 +249,7 @@ def is_link_or_reparse_point(path: Path) -> bool:
         metadata = os.lstat(path)
     except FileNotFoundError:
         return False
-    if stat.S_ISLNK(metadata.st_mode):
-        return True
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return bool(attributes & reparse_flag)
+    return _metadata_is_link_or_reparse(metadata)
 
 
 def restrict_permissions(

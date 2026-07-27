@@ -31,6 +31,11 @@ from agency_runtime.core.configuration import (
     ConfigurationError,
     restrict_private_file,
 )
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute_path
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _link_like,
+)
+from agency_runtime.core.filesystem_trust import same_file_identity as _same_file
 from agency_runtime.core.http_safety import open_no_redirect
 
 DESCRIPTOR_SCHEMA_VERSION = 1
@@ -70,27 +75,10 @@ _LOCK_TIMEOUT_SECONDS = 5.0
 _MAX_LOCK_TIMEOUT_SECONDS = 300.0
 
 
-def _link_like(metadata: os.stat_result) -> bool:
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse_flag)
-
-
-def _same_file(left: os.stat_result, right: os.stat_result) -> bool:
-    left_inode = int(getattr(left, "st_ino", 0) or 0)
-    right_inode = int(getattr(right, "st_ino", 0) or 0)
-    return bool(
-        left_inode
-        and right_inode
-        and int(left.st_dev) == int(right.st_dev)
-        and left_inode == right_inode
-    )
-
-
 def _absolute_target(path: str | Path) -> Path:
     """Freeze one path spelling without dereferencing a link component."""
 
-    return Path(os.path.abspath(Path(path).expanduser()))
+    return _absolute_path(Path(path))
 
 
 def _directory_candidates(path: Path) -> tuple[Path, ...]:

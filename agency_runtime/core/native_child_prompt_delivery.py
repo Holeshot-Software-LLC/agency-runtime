@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from agency_runtime.core.agent_activation import normalize_agent_slug
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.roster.revisions import content_digest_identity, content_identity_matches
 from agency_runtime.core.store.version_identity import normalize_version_identity
@@ -86,8 +87,13 @@ def _decoded_metadata(value: str) -> dict[str, Any] | None:
         payload = base64.b64decode(value + padding, altchars=b"-_", validate=True)
         if not payload or len(payload) > MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES:
             return None
-        result = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError, json.JSONDecodeError):
+        result = safe_load_bounded_json(
+            payload,
+            maximum_bytes=MAX_NATIVE_CHILD_DELIVERY_METADATA_BYTES,
+            maximum_depth=4,
+            maximum_nodes=64,
+        )
+    except (TypeError, ValueError):
         return None
     if not isinstance(result, dict) or frozenset(result) != _FIELDS:
         return None

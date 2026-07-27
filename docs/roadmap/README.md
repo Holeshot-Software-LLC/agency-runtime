@@ -158,7 +158,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-138` | [Make dashboard refresh coherent, accessible, and observable](issue-AR-138-coherent-observable-dashboard-ui.md) | open | p1 | dashboard | pending authorization |
 | `AR-139` | [Restore the installed release asset budget](issue-AR-139-restore-release-asset-budget.md) | open | p0 | release | pending authorization |
 | `AR-140` | [Scale routing, retrieval, and CLI startup](issue-AR-140-scale-routing-and-retrieval.md) | open | p1 | performance | pending authorization |
-| `AR-141` | [Restore compatibility and consolidate runtime duplication](issue-AR-141-restore-compatibility-consolidate-runtime.md) | open | p1 | maintenance | pending authorization |
+| `AR-141` | [Restore compatibility and consolidate runtime duplication](issue-AR-141-restore-compatibility-consolidate-runtime.md) | done | p1 | maintenance | pending authorization |
 | `AR-142` | [Instrument runtime boundaries and hiring outcomes](issue-AR-142-instrument-runtime-boundaries.md) | done | p1 | observability | pending authorization |
 | `AR-143` | [Require genuine operator presence for persistent controls](issue-AR-143-require-operator-presence-for-controls.md) | open | p0 | security | pending authorization |
 | `AR-144` | [Restore dashboard UI release coverage gate](issue-AR-144-restore-dashboard-ui-release-coverage.md) | done | p0 | dashboard | pending authorization |

@@ -9,8 +9,12 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any
 
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.roster.revisions import serialized_revision_metadata
-from agency_runtime.core.workforce.contract import WorkforceContract, project_workforce_contract
+from agency_runtime.core.workforce.contract import (
+    WorkforceContract,
+    project_workforce_contract,
+)
 from agency_runtime.core.workforce.hiring_contract import (
     CONTRACTOR_PROMPT_TEMPLATE_HASH,
     CONTRACTOR_PROMPT_TEMPLATE_VERSION,
@@ -254,23 +258,41 @@ def packaged_hiring_case_is_auditable(row: Mapping[str, Any]) -> bool:
     try:
         package = known_contractor_package(str(row["proposed_slug"]))
         expected = packaged_hiring_evidence(package)
-        contract = json.loads(str(row["contract_evidence"]))
-        critic = json.loads(str(row["critic_evidence"]))
-        model = json.loads(str(row["model_evidence"]))
-    except (KeyError, TypeError, ValueError):
-        return False
-    return bool(
-        str(row.get("case_type") if hasattr(row, "get") else row["case_type"]) == "hire"
-        and row["target_worker_id"] is None
-        and contract
-        == json.loads(
+        contract = safe_load_bounded_json(
+            str(row["contract_evidence"]),
+            maximum_bytes=256 * 1024,
+            maximum_depth=16,
+            maximum_nodes=10_000,
+        )
+        critic = safe_load_bounded_json(
+            str(row["critic_evidence"]),
+            maximum_bytes=256 * 1024,
+            maximum_depth=16,
+            maximum_nodes=10_000,
+        )
+        model = safe_load_bounded_json(
+            str(row["model_evidence"]),
+            maximum_bytes=256 * 1024,
+            maximum_depth=16,
+            maximum_nodes=10_000,
+        )
+        expected_contract = safe_load_bounded_json(
             json.dumps(
                 package.workforce_contract.to_dict(),
                 ensure_ascii=False,
                 separators=(",", ":"),
                 sort_keys=True,
-            )
+            ),
+            maximum_bytes=256 * 1024,
+            maximum_depth=16,
+            maximum_nodes=10_000,
         )
+    except (KeyError, TypeError, ValueError):
+        return False
+    return bool(
+        str(row.get("case_type") if hasattr(row, "get") else row["case_type"]) == "hire"
+        and row["target_worker_id"] is None
+        and contract == expected_contract
         and critic == expected["critic_evidence"]
         and model == expected["model_evidence"]
         and str(row["risk_tier"]) == "standard"

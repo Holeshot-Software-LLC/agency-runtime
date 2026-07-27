@@ -9,6 +9,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Final
 
+from agency_runtime.core.bounded_json import (
+    BoundedJSONError,
+    DuplicateJSONKeyError,
+    NonFiniteJSONNumberError,
+    safe_load_bounded_json,
+)
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.resident_managers import (
     RESIDENT_MANAGER_KERNEL_HASH,
@@ -448,19 +454,6 @@ def serialize_resident_manager_binding(
     return serialized
 
 
-def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError("resident-manager binding JSON contains duplicate fields")
-        result[key] = value
-    return result
-
-
-def _reject_json_constant(_value: str) -> None:
-    raise ValueError("resident-manager binding JSON contains a non-finite number")
-
-
 def deserialize_resident_manager_binding(
     payload: object,
     *,
@@ -480,12 +473,19 @@ def deserialize_resident_manager_binding(
             f"{MAX_RESIDENT_MANAGER_BINDING_BYTES}-byte limit"
         )
     try:
-        raw = json.loads(
+        raw = safe_load_bounded_json(
             payload,
-            object_pairs_hook=_unique_json_object,
-            parse_constant=_reject_json_constant,
+            maximum_bytes=MAX_RESIDENT_MANAGER_BINDING_BYTES,
+            maximum_depth=4,
+            maximum_nodes=64,
         )
-    except (json.JSONDecodeError, TypeError) as exc:
+    except DuplicateJSONKeyError as exc:
+        raise ValueError("resident-manager binding JSON contains duplicate fields") from exc
+    except NonFiniteJSONNumberError as exc:
+        raise ValueError("resident-manager binding JSON contains a non-finite number") from exc
+    except BoundedJSONError as exc:
+        raise ValueError("resident-manager binding JSON is invalid") from exc
+    except TypeError as exc:
         raise ValueError("resident-manager binding JSON is invalid") from exc
     binding = validate_resident_manager_binding(raw, session_id=session_id)
     if serialize_resident_manager_binding(binding, session_id=session_id) != payload:

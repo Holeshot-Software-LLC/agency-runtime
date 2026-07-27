@@ -12,6 +12,14 @@ class BoundedJSONError(ValueError):
     """JSON input is malformed, ambiguous, or exceeds a safety limit."""
 
 
+class DuplicateJSONKeyError(BoundedJSONError):
+    """JSON contains an ambiguous duplicate object key."""
+
+
+class NonFiniteJSONNumberError(BoundedJSONError):
+    """JSON contains a non-standard NaN or infinity value."""
+
+
 def _decode_bounded(value: str | bytes, *, maximum_bytes: int) -> str:
     if isinstance(value, bytes):
         if len(value) > maximum_bytes:
@@ -33,10 +41,26 @@ def _decode_bounded(value: str | bytes, *, maximum_bytes: int) -> str:
     return value
 
 
-def _preflight_depth(text: str, *, maximum_depth: int) -> None:
+def _preflight_structure(
+    text: str,
+    *,
+    maximum_depth: int,
+    maximum_nodes: int,
+) -> None:
+    """Reject deep or over-wide documents before ``json.loads`` allocates them."""
+
     depth = 0
+    nodes = 1 if text.strip() else 0
     in_string = False
     escaped = False
+    containers: list[list[object]] = []
+
+    def add_node() -> None:
+        nonlocal nodes
+        nodes += 1
+        if nodes > maximum_nodes:
+            raise BoundedJSONError("JSON exceeds the structural-node limit")
+
     for character in text:
         if in_string:
             if escaped:
@@ -46,14 +70,29 @@ def _preflight_depth(text: str, *, maximum_depth: int) -> None:
             elif character == '"':
                 in_string = False
             continue
+
+        if (
+            containers
+            and containers[-1][0] == "["
+            and containers[-1][1] is False
+            and not character.isspace()
+            and character != "]"
+        ):
+            add_node()
+            containers[-1][1] = True
         if character == '"':
             in_string = True
         elif character in "[{":
             depth += 1
             if depth > maximum_depth:
                 raise BoundedJSONError("JSON exceeds the nesting-depth limit")
+            containers.append([character, False])
+        elif character == ":" or (character == "," and containers and containers[-1][0] == "["):
+            add_node()
         elif character in "]}":
             depth = max(0, depth - 1)
+            if containers:
+                containers.pop()
 
 
 def _validate(value: Any, *, maximum_depth: int, maximum_nodes: int) -> None:
@@ -71,7 +110,7 @@ def _validate(value: Any, *, maximum_depth: int, maximum_nodes: int) -> None:
         elif isinstance(current, list):
             pending.extend((nested, depth + 1) for nested in current)
         elif isinstance(current, float) and not math.isfinite(current):
-            raise BoundedJSONError("JSON contains a non-finite number")
+            raise NonFiniteJSONNumberError("JSON contains a non-finite number")
         elif current is not None and not isinstance(current, (str, bool, int, float)):
             raise BoundedJSONError(f"JSON contains unsupported value type {type(current).__name__}")
 
@@ -103,18 +142,22 @@ def safe_load_bounded_json(
     ):
         raise ValueError("maximum_nodes must be an integer from 1 through 1000000")
     text = _decode_bounded(value, maximum_bytes=maximum_bytes)
-    _preflight_depth(text, maximum_depth=maximum_depth)
+    _preflight_structure(
+        text,
+        maximum_depth=maximum_depth,
+        maximum_nodes=maximum_nodes,
+    )
 
     def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
         result: dict[str, Any] = {}
         for key, nested in pairs:
             if key in result:
-                raise BoundedJSONError("JSON contains a duplicate object key")
+                raise DuplicateJSONKeyError("JSON contains a duplicate object key")
             result[key] = nested
         return result
 
     def reject_non_finite(_value: str) -> None:
-        raise BoundedJSONError("JSON contains a non-finite number")
+        raise NonFiniteJSONNumberError("JSON contains a non-finite number")
 
     try:
         loaded = json.loads(
@@ -130,4 +173,9 @@ def safe_load_bounded_json(
     return loaded
 
 
-__all__ = ["BoundedJSONError", "safe_load_bounded_json"]
+__all__ = [
+    "BoundedJSONError",
+    "DuplicateJSONKeyError",
+    "NonFiniteJSONNumberError",
+    "safe_load_bounded_json",
+]

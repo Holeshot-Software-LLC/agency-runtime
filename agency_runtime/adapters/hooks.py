@@ -26,6 +26,7 @@ from agency_runtime.core.header.finalize import (
     TERMINAL_OUTCOME_MESSAGES,
 )
 from agency_runtime.core.native_child_activation import (
+    NATIVE_CHILD_ACTIVATION_TOKEN_CHARS,
     NativeChildRunIdentity,
     build_native_child_run_identity,
 )
@@ -135,7 +136,7 @@ _CODEX_SPAWN_TOOL_NAMES = frozenset(
 )
 _CLAUDE_AGENT_TOOL_NAME = "Agent"
 _CLAUDE_CHILD_IDENTITY_MARKER = "[AGENCY NATIVE CHILD IDENTITY v1]"
-_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN = "x" * 43
+_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN = "x" * NATIVE_CHILD_ACTIVATION_TOKEN_CHARS
 _PLANNED_NATIVE_WORK_UNIT_PATTERN = re.compile(r"^unit-[0-9a-f]{10}$")
 
 
@@ -343,6 +344,24 @@ def _zcode_native_child_identity(agent_id: object) -> NativeChildRunIdentity:
     )
 
 
+def _native_child_identity(host: str, agent_id: object) -> NativeChildRunIdentity:
+    """Own the host-to-lineage mapping used by every native-child boundary."""
+
+    if host == "claude":
+        return _claude_native_child_identity(agent_id)
+    if host == "zcode":
+        return _zcode_native_child_identity(agent_id)
+    if host == "codex":
+        return _codex_native_child_identity(agent_id)
+    raise ValueError("unsupported native-child host")
+
+
+def _native_child_backend(host: str) -> str:
+    """Return the canonical native delegation backend for one hook host."""
+
+    return "spawn_agent" if host == "codex" else "delegate_task"
+
+
 def _pre_tool_use_denial(reason: object, *, host: str = "") -> dict[str, Any]:
     """Block a planned child that cannot receive its exact specialist."""
 
@@ -361,21 +380,19 @@ def _pre_tool_use_denial(reason: object, *, host: str = "") -> dict[str, Any]:
 def _native_child_tool_identity(
     host: str,
     tool_response: Any,
+    *,
+    fallback_agent_id: object = "",
 ) -> tuple[Any, NativeChildRunIdentity | None]:
     """Project only host-returned child identity into activation evidence."""
 
     if not isinstance(tool_response, dict):
         return tool_response, None
-    agent_id = _first_string(tool_response, "agent_id", "agentId")
+    agent_id = (
+        _first_string(tool_response, "agent_id", "agentId") or str(fallback_agent_id or "").strip()
+    )
     if agent_id:
         try:
-            identity = (
-                _claude_native_child_identity(agent_id)
-                if host == "claude"
-                else _zcode_native_child_identity(agent_id)
-                if host == "zcode"
-                else _codex_native_child_identity(agent_id)
-            )
+            identity = _native_child_identity(host, agent_id)
         except ValueError:
             return tool_response, None
         return (
@@ -407,6 +424,49 @@ def _native_child_tool_identity(
         },
         identity,
     )
+
+
+def _native_child_pre_tool_output(
+    *,
+    args: dict[str, Any],
+    task_field: str,
+    task: str,
+    prompt_body: str,
+    host: str,
+    assignment: NativeChildAssignment,
+    activation_token: str,
+) -> dict[str, Any]:
+    """Render and size-check one pure hook response before Store mutation."""
+
+    delivered_task = render_native_child_prompt_delivery(
+        task,
+        prompt_body,
+        host=host,
+        parent_session_id=assignment.session_id,
+        parent_trace_id=assignment.trace_id,
+        tool_use_id=assignment.tool_use_id,
+        work_unit_id=assignment.work_unit_id,
+        specialist_slug=assignment.specialist_slug,
+        specialist_version=assignment.specialist_version,
+        specialist_prompt_hash=assignment.specialist_prompt_hash,
+        activation_token=activation_token,
+    )
+    result = {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow",
+            "updatedInput": {**args, task_field: delivered_task},
+        }
+    }
+    encoded = json.dumps(
+        result,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    if len(encoded) >= MAX_HOOK_OUTPUT_BYTES:
+        raise ValueError("native-child delivery exceeds the host hook limit")
+    return result
 
 
 def _native_work_unit_label(host: str, tool_name: str, args: dict[str, Any]) -> str:
@@ -665,6 +725,38 @@ class HookBridge:
             return None
         return receipt if isinstance(receipt, dict) else None
 
+    def _record_native_child_lifecycle(
+        self,
+        payload: dict[str, Any],
+        *,
+        event: str,
+    ) -> tuple[str, str, str, NativeChildRunIdentity] | None:
+        """Validate and record one host-owned native-child lifecycle edge."""
+
+        if event not in {"started", "stopped"}:
+            raise ValueError("native-child lifecycle event is invalid")
+        session_id, trace_id, work_unit_id = self._native_child_parent_scope(payload)
+        _required_string(payload, "agent_type")
+        try:
+            identity = _native_child_identity(
+                self.host,
+                _required_string(payload, "agent_id"),
+            )
+        except ValueError:
+            return None
+        recorder = getattr(self.store, f"record_native_child_{event}", None)
+        if callable(recorder) and trace_id:
+            recorder(
+                host=self.host,
+                backend=_native_child_backend(self.host),
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+            )
+        return session_id, trace_id, work_unit_id, identity
+
     def _resolve_codex_task_name(
         self,
         *,
@@ -907,25 +999,12 @@ class HookBridge:
         payload: dict[str, Any],
         tool_response: Any,
     ) -> tuple[Any, NativeChildRunIdentity | None]:
-        """Project only host-returned child identity into canonical evidence."""
+        """Compatibility wrapper around the canonical child identity projector."""
 
-        if not isinstance(tool_response, dict):
-            return tool_response, None
-        agent_id = _first_string(tool_response, "agent_id", "agentId")
-        agent_id = agent_id or _optional_string(payload, "agent_id")
-        if not agent_id:
-            return tool_response, None
-        try:
-            identity = _claude_native_child_identity(agent_id)
-        except ValueError:
-            return tool_response, None
-        return (
-            {
-                **tool_response,
-                "agent_id": identity.worker_id,
-                "native_run_id": identity.native_run_id,
-            },
-            identity,
+        return _native_child_tool_identity(
+            "claude",
+            tool_response,
+            fallback_agent_id=_optional_string(payload, "agent_id"),
         )
 
     def _verify_existing_native_child_delivery(
@@ -1051,37 +1130,17 @@ class HookBridge:
                 "prompt version; the planned native child was not launched.",
                 host=self.host,
             )
-        projected_task = render_native_child_prompt_delivery(
-            task,
-            prompt["prompt_body"],
-            host=self.host,
-            parent_session_id=assignment.session_id,
-            parent_trace_id=assignment.trace_id,
-            tool_use_id=assignment.tool_use_id,
-            work_unit_id=assignment.work_unit_id,
-            specialist_slug=assignment.specialist_slug,
-            specialist_version=assignment.specialist_version,
-            specialist_prompt_hash=assignment.specialist_prompt_hash,
-            activation_token=_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN,
-        )
-        projected = {
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "allow",
-                "updatedInput": {**args, task_field: projected_task},
-            }
-        }
-        if (
-            len(
-                json.dumps(
-                    projected,
-                    allow_nan=False,
-                    ensure_ascii=False,
-                    separators=(",", ":"),
-                ).encode("utf-8")
+        try:
+            _native_child_pre_tool_output(
+                args=args,
+                task_field=task_field,
+                task=task,
+                prompt_body=prompt["prompt_body"],
+                host=self.host,
+                assignment=assignment,
+                activation_token=_NATIVE_CHILD_DELIVERY_PLACEHOLDER_TOKEN,
             )
-            >= MAX_HOOK_OUTPUT_BYTES
-        ):
+        except ValueError:
             return _pre_tool_use_denial(
                 "Agency's exact child context exceeds the host hook limit; split the "
                 "work unit or use a smaller audited specialist prompt.",
@@ -1104,17 +1163,13 @@ class HookBridge:
             ):
                 raise ValueError("prepared activation identity does not match the plan")
             activation_token = str(activation.get("activation_token") or "")
-            delivered_task = render_native_child_prompt_delivery(
-                task,
-                prompt["prompt_body"],
+            result = _native_child_pre_tool_output(
+                args=args,
+                task_field=task_field,
+                task=task,
+                prompt_body=prompt["prompt_body"],
                 host=self.host,
-                parent_session_id=assignment.session_id,
-                parent_trace_id=assignment.trace_id,
-                tool_use_id=assignment.tool_use_id,
-                work_unit_id=assignment.work_unit_id,
-                specialist_slug=assignment.specialist_slug,
-                specialist_version=assignment.specialist_version,
-                specialist_prompt_hash=assignment.specialist_prompt_hash,
+                assignment=assignment,
                 activation_token=activation_token,
             )
         except (RuntimeError, ValueError):
@@ -1123,47 +1178,15 @@ class HookBridge:
                 "the planned native child was not launched.",
                 host=self.host,
             )
-        updated_input = {
-            **args,
-            task_field: delivered_task,
-        }
-        result = {
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "allow",
-                "updatedInput": updated_input,
-            }
-        }
-        encoded = json.dumps(
-            result,
-            allow_nan=False,
-            ensure_ascii=False,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        if len(encoded) >= MAX_HOOK_OUTPUT_BYTES:
-            raise RuntimeError("native-child delivery size changed after grant preparation")
         return result
 
     def _handle_claude_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Give this child its own identity without assigning any specialist."""
 
-        session_id, trace_id, work_unit_id = self._native_child_parent_scope(payload)
-        _required_string(payload, "agent_type")
-        try:
-            identity = _claude_native_child_identity(_required_string(payload, "agent_id"))
-        except ValueError:
+        lifecycle = self._record_native_child_lifecycle(payload, event="started")
+        if lifecycle is None:
             return {}
-        recorder = getattr(self.store, "record_native_child_started", None)
-        if callable(recorder) and trace_id:
-            recorder(
-                host="claude",
-                backend="delegate_task",
-                session_id=session_id,
-                trace_id=trace_id,
-                work_unit_id=work_unit_id,
-                worker_id=identity.worker_id,
-                native_run_id=identity.native_run_id,
-            )
+        session_id, trace_id, work_unit_id, identity = lifecycle
         parent_scope = self._issue_native_child_parent_scope(
             session_id=session_id,
             trace_id=trace_id,
@@ -1210,45 +1233,16 @@ class HookBridge:
     def _handle_claude_subagent_stop(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Validate lifecycle identity without inventing an undocumented parent join."""
 
-        session_id, trace_id, work_unit_id = self._native_child_parent_scope(payload)
-        _required_string(payload, "agent_type")
-        try:
-            identity = _claude_native_child_identity(_required_string(payload, "agent_id"))
-        except ValueError:
-            return {}
-        recorder = getattr(self.store, "record_native_child_stopped", None)
-        if callable(recorder) and trace_id:
-            recorder(
-                host="claude",
-                backend="delegate_task",
-                session_id=session_id,
-                trace_id=trace_id,
-                work_unit_id=work_unit_id,
-                worker_id=identity.worker_id,
-                native_run_id=identity.native_run_id,
-            )
+        self._record_native_child_lifecycle(payload, event="stopped")
         return {}
 
     def _handle_codex_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Inject only exact native identity plus child-owned fallback routing."""
 
-        session_id, trace_id, work_unit_id = self._native_child_parent_scope(payload)
-        _required_string(payload, "agent_type")
-        try:
-            identity = _codex_native_child_identity(_required_string(payload, "agent_id"))
-        except ValueError:
+        lifecycle = self._record_native_child_lifecycle(payload, event="started")
+        if lifecycle is None:
             return {}
-        recorder = getattr(self.store, "record_native_child_started", None)
-        if callable(recorder) and trace_id:
-            recorder(
-                host="codex",
-                backend="spawn_agent",
-                session_id=session_id,
-                trace_id=trace_id,
-                work_unit_id=work_unit_id,
-                worker_id=identity.worker_id,
-                native_run_id=identity.native_run_id,
-            )
+        session_id, trace_id, work_unit_id, identity = lifecycle
         parent_scope = self._issue_native_child_parent_scope(
             session_id=session_id,
             trace_id=trace_id,
@@ -1300,23 +1294,7 @@ class HookBridge:
     def _handle_codex_subagent_stop(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Record an exact Codex lifecycle stop without guessing task correlation."""
 
-        session_id, trace_id, work_unit_id = self._native_child_parent_scope(payload)
-        _required_string(payload, "agent_type")
-        try:
-            identity = _codex_native_child_identity(_required_string(payload, "agent_id"))
-        except ValueError:
-            return {}
-        recorder = getattr(self.store, "record_native_child_stopped", None)
-        if callable(recorder) and trace_id:
-            recorder(
-                host="codex",
-                backend="spawn_agent",
-                session_id=session_id,
-                trace_id=trace_id,
-                work_unit_id=work_unit_id,
-                worker_id=identity.worker_id,
-                native_run_id=identity.native_run_id,
-            )
+        self._record_native_child_lifecycle(payload, event="stopped")
         return {}
 
     def _consume_native_child_prompt_delivery(
@@ -1598,6 +1576,10 @@ class HookBridge:
             return self._handle_native_child_pre_tool_use(payload)
 
         if event == "SubagentStart":
+            if self.host == "zcode":
+                # ZCode exposes planned Agent-tool boundaries but no documented
+                # child lifecycle identifier that can authorize a parent join.
+                return {}
             return (
                 self._handle_claude_subagent_start(payload)
                 if self.host == "claude"
@@ -1605,6 +1587,8 @@ class HookBridge:
             )
 
         if event == "SubagentStop":
+            if self.host == "zcode":
+                return {}
             return (
                 self._handle_claude_subagent_stop(payload)
                 if self.host == "claude"

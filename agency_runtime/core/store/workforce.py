@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from agency_runtime.core.agent_activation import agent_is_enabled, normalize_agent_slug
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.roster.revisions import serialized_revision_metadata
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
@@ -143,7 +144,12 @@ def _hiring_case_key(
 
 def _decoded(document: object) -> dict[str, Any]:
     try:
-        value = json.loads(str(document or "{}"))
+        value = safe_load_bounded_json(
+            str(document or "{}"),
+            maximum_bytes=MAX_WORKFORCE_DOCUMENT_BYTES,
+            maximum_depth=16,
+            maximum_nodes=10_000,
+        )
     except (TypeError, ValueError) as exc:
         raise RuntimeError("stored workforce evidence is invalid") from exc
     if not isinstance(value, dict):
@@ -989,7 +995,14 @@ class WorkforceStoreMixin:
                         f"{row['agent_slug']}"
                     )
                 try:
-                    current = parse_workforce_contract(json.loads(current_document))
+                    current = parse_workforce_contract(
+                        safe_load_bounded_json(
+                            current_document,
+                            maximum_bytes=MAX_WORKFORCE_DOCUMENT_BYTES,
+                            maximum_depth=16,
+                            maximum_nodes=10_000,
+                        )
+                    )
                 except (TypeError, ValueError) as exc:
                     raise RuntimeError(
                         f"stored workforce recruitment contract is invalid: {row['agent_slug']}"

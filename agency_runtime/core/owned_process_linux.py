@@ -348,6 +348,8 @@ def decode_target():
     try:
         encoded = TARGET_PAYLOAD[0].encode("ascii", "strict")
         payload = base64.b64decode(encoded, altchars=b"-_", validate=True)
+        # JSON_LOAD_OWNERSHIP: the parent generated this private supervisor
+        # envelope from its own argv list; byte and item caps are enforced here.
         value = json.loads(payload)
     except (UnicodeError, ValueError):
         fail("invalid-target-envelope")

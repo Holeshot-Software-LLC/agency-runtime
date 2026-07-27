@@ -23,10 +23,10 @@ block roster load.
 
 from __future__ import annotations
 
-import json
 from functools import lru_cache
 from typing import Any
 
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.roster.bundled import BundledRosterError, _resource
 
 _OVERLAY_RELATIVE_PATH = "scope_qualifiers.json"
@@ -91,8 +91,13 @@ def enrichment_overlay() -> dict[str, dict[str, list[str]]]:
     except BundledRosterError:
         return {}
     try:
-        parsed = json.loads(data.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        parsed = safe_load_bounded_json(
+            data,
+            maximum_bytes=_OVERLAY_BYTE_LIMIT,
+            maximum_depth=8,
+            maximum_nodes=50_000,
+        )
+    except (TypeError, ValueError) as exc:
         raise BundledRosterError("enrichment overlay is not valid JSON") from exc
     if not isinstance(parsed, dict):
         raise BundledRosterError("enrichment overlay must be a slug-keyed object")

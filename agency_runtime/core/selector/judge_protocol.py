@@ -374,6 +374,8 @@ def encoded_model_payload(
     model: str,
     use_completion_tokens: bool,
 ) -> bytes:
+    # JSON_LOAD_OWNERSHIP: build_judge_payload generated this internal document
+    # immediately before model/provider fields are normalized for transport.
     body_json = json.loads(body)
     body_json["model"] = model
     if use_completion_tokens and model.lower().startswith("gpt-5"):

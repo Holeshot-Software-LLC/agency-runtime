@@ -73,7 +73,7 @@ def test_link_like_accepts_reconstructed_none_attributes_and_detects_reparse():
     assert subject._link_like(regular) is False
     reparse = SimpleNamespace(
         st_mode=stat.S_IFREG,
-        st_file_attributes=subject._WINDOWS_REPARSE_POINT,
+        st_file_attributes=int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)),
     )
     assert subject._link_like(reparse) is True
     symbolic = SimpleNamespace(st_mode=stat.S_IFLNK, st_file_attributes=0)
@@ -84,6 +84,11 @@ def test_same_file_compares_identity_and_mode():
     first = SimpleNamespace(st_dev=1, st_ino=2, st_mode=3)
     assert subject._same_file(first, SimpleNamespace(st_dev=1, st_ino=2, st_mode=3))
     assert not subject._same_file(first, SimpleNamespace(st_dev=1, st_ino=9, st_mode=3))
+    assert not subject._same_file(first, SimpleNamespace(st_dev=1, st_ino=2, st_mode=4))
+    assert subject._same_file(
+        SimpleNamespace(st_dev=1, st_ino=0, st_mode=3),
+        SimpleNamespace(st_dev=1, st_ino=0, st_mode=3),
+    )
 
 
 def test_bounded_file_normal_oversize_special_and_changed(tmp_path, monkeypatch):

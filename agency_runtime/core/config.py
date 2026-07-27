@@ -36,6 +36,10 @@ from agency_runtime.core.configuration_persistence import (
     assert_config_namespace,
     resolve_config_path,
 )
+from agency_runtime.core.filesystem_trust import absolute_path as _absolute_path
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse,
+)
 from agency_runtime.core.policy.profiles import PROFILES
 
 # ── Config path resolution ────────────────────────────────────
@@ -74,15 +78,13 @@ def _resolve_config_relative_path(value: str, config_path: Path) -> str:
     # ``Path.resolve`` follows the final component and could turn a configured
     # symlink into an apparently safe regular target before Store/policy checks
     # see it.  Normalize dot segments without dereferencing any component.
-    normalized = Path(os.path.abspath(candidate))
+    normalized = _absolute_path(candidate)
     for component in (*reversed(normalized.parents), normalized):
         try:
             metadata = os.lstat(component)
         except FileNotFoundError:
             continue
-        attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-        reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-        if stat.S_ISLNK(metadata.st_mode) or attributes & reparse_flag:
+        if _metadata_is_link_or_reparse(metadata):
             raise ValueError(
                 "configured runtime paths must not traverse a symlink or reparse point"
             )
@@ -846,20 +848,14 @@ def _config_file_signature(path: Path) -> tuple[object, ...]:
     """Return a cheap identity that changes after an external config write."""
 
     path = resolve_config_path(path, use_environment=False)
-    normalized = os.path.abspath(os.fspath(path))
+    normalized = str(_absolute_path(path))
     try:
         metadata = path.lstat()
     except FileNotFoundError:
         return (normalized, "missing")
     except OSError as exc:
         return (normalized, "unavailable", type(exc).__name__, exc.errno)
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    if (
-        stat.S_ISLNK(metadata.st_mode)
-        or attributes & reparse_flag
-        or not stat.S_ISREG(metadata.st_mode)
-    ):
+    if _metadata_is_link_or_reparse(metadata) or not stat.S_ISREG(metadata.st_mode):
         raise ValueError("configuration file must be a regular non-link file")
     return (
         normalized,
@@ -894,7 +890,7 @@ def _config_cache_signature(path: Path, cfg: AgencyConfig | None) -> tuple[objec
 def _config_cache_key(path: Path) -> str:
     """Return one platform-canonical key without dereferencing the identity."""
 
-    return os.path.normcase(os.path.abspath(os.fspath(path)))
+    return os.path.normcase(str(_absolute_path(path)))
 
 
 def _cache_config(

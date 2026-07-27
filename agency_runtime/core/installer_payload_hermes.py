@@ -123,6 +123,8 @@ def _invoke(action, payload=None):
     if completed.returncode != 0 or len(completed.stdout) > _MAX_OUTPUT_BYTES:
         raise RuntimeError("Agency Runtime Hermes bridge unavailable")
     try:
+        # JSON_LOAD_OWNERSHIP: this dependency-isolated generated plugin cannot
+        # import Agency helpers; stdout is byte-capped and validated below.
         response = json.loads(completed.stdout.decode("utf-8"))
     except (UnicodeError, ValueError, RecursionError) as exc:
         raise RuntimeError("Agency Runtime Hermes bridge returned invalid JSON") from exc

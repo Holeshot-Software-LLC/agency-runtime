@@ -27,12 +27,15 @@ from agency_runtime.core.dashboard_service_core import (
     SERVICE_ID,
     _Context,
 )
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _link_like,
+)
+from agency_runtime.core.filesystem_trust import same_file_identity
 
 _SERVICE_LOCK_TIMEOUT_SECONDS = 5.0
 _MAX_LOCK_TIMEOUT_SECONDS = 300.0
 _MAX_MANIFEST_BYTES = 64 * 1024
 _MAX_SERVICE_FILE_BYTES = 256 * 1024
-_WINDOWS_REPARSE_POINT = 0x400
 _IS_WINDOWS = os.name == "nt"
 
 
@@ -77,15 +80,9 @@ def _path_present(path: Path) -> bool:
     return True
 
 
-def _link_like(file_stat: os.stat_result) -> bool:
-    attributes = int(getattr(file_stat, "st_file_attributes", 0) or 0)
-    return stat.S_ISLNK(file_stat.st_mode) or bool(attributes & _WINDOWS_REPARSE_POINT)
-
-
 def _same_file(left: os.stat_result, right: os.stat_result) -> bool:
-    return bool(
-        left.st_dev == right.st_dev
-        and left.st_ino == right.st_ino
+    return (
+        same_file_identity(left, right, require_nonzero_inode=False)
         and left.st_mode == right.st_mode
     )
 

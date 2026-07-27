@@ -64,6 +64,7 @@ from agency_runtime.core.store.projections import (
     RUN_CONTENT_LIMIT as _RUN_CONTENT_LIMIT,
 )
 from agency_runtime.core.store.projections import (
+    decode_run_metadata,
     project_delegation_detail,
     project_run_metadata,
     redact_sensitive_text,
@@ -302,13 +303,7 @@ def _matches_consumed_activation_lineage(
 def _bounded_metadata(value: object) -> dict[str, Any]:
     """Decode only the small content-free run metadata projection."""
 
-    if not value:
-        return {}
-    try:
-        parsed = json.loads(str(value))
-    except (TypeError, ValueError):
-        return {}
-    return parsed if isinstance(parsed, dict) else {}
+    return decode_run_metadata(value)
 
 
 def _projection_digest(value: object) -> str:

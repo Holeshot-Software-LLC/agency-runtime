@@ -613,11 +613,11 @@ def _patch_preflight_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda *_args, **_kwargs: specialist_context.LoadedSpecialistContext("", (), ()),
     )
 
-    # The coherent-snapshot path reads the live workforce via store._connect,
+    # The shared workforce-snapshot path reads the live workforce via store._connect,
     # which the _AttemptStore double does not implement. This test exercises
     # CAS-loss fail-closed behavior, not workforce projection, so return a
     # generation-aligned empty snapshot directly.
-    def _coherent(_store, _config, routing_snapshot, **_kwargs):
+    def _coherent(_store, routing_snapshot, **_kwargs):
         workforce = WorkforceIndexSnapshot(
             generation=routing_snapshot.roster_generation,
             worker_count=0,
@@ -628,7 +628,7 @@ def _patch_preflight_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
         )
         return routing_snapshot, workforce
 
-    monkeypatch.setattr(preflight, "_coherent_workforce_snapshot", _coherent)
+    monkeypatch.setattr(preflight, "bind_workforce_snapshot", _coherent)
 
 
 def test_run_preflight_requires_attempt_identity(monkeypatch: pytest.MonkeyPatch) -> None:

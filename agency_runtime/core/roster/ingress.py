@@ -20,6 +20,9 @@ from urllib.parse import unquote, urlsplit, urlunsplit
 
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.bounded_yaml import BoundedYAMLError, safe_load_bounded
+from agency_runtime.core.filesystem_trust import (
+    metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse,
+)
 from agency_runtime.core.http_safety import open_no_redirect
 from agency_runtime.core.roster.remediation import (
     RemediationAttemptReceipt,
@@ -1081,12 +1084,6 @@ def _read_http_source(url: str) -> str:
             f"unable to read HTTP roster source {label}: {type(exc).__name__}"
         ) from None
     return _decode_source(b"".join(chunks), label)
-
-
-def _metadata_is_link_or_reparse(metadata: os.stat_result) -> bool:
-    attributes = int(getattr(metadata, "st_file_attributes", 0) or 0)
-    reparse_flag = int(getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
-    return stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse_flag)
 
 
 def _stable_identity(metadata: os.stat_result) -> tuple[int, int, int, int]:
