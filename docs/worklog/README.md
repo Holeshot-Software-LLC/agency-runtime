@@ -226,6 +226,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `85549a4` | 2026-07-26 | perf(testing): add measured Windows shard profile | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-85549a4-measured-windows-profile.md) |
 | `10eb595` | 2026-07-27 | perf(testing): enforce measured shard defaults | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | null |
 | `dca7af5` | 2026-07-27 | ci: gate expensive fanout behind quality | [AR-117](../roadmap/issue-AR-117-parallelize-pr-verification.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md), [AR-159](../roadmap/issue-AR-159-enforce-production-branch-protection.md) | null |
+| `e3284bf` | 2026-07-27 | perf(testing): expose and reduce fixture cost | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-27-e3284bf-fixture-cost-observability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
