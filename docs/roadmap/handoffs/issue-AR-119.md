@@ -71,15 +71,18 @@ acceptance contract; this capsule records only the active checkpoint.
   private runtime, per-shard HOME/TEMP/basetemp, least-privilege environments,
   contained cancellation, bounded head-and-tail logs, and one run manifest.
   Unknown runtime collisions fail closed; attested stale runtimes self-heal.
-- Four rejected runs found and repaired receipt, long-path, disconnect, and
-  fixture-root defects; none is benchmark evidence. Same-runtime short/long
-  path A/B was 2.47 seconds versus a 180-second timeout.
+- Five rejected runs found and repaired receipt, long-path, disconnect,
+  fixture-root, and timing self-measurement defects; none is benchmark evidence.
+  Same-runtime short/long path A/B was 2.47 seconds versus a 180-second timeout.
 - Baseline `411b67385c033451c78f632ecc5fc867` passed 4/4 in 676.505 seconds.
   Shards took 619.89, 446.28, 578.23, and 508.32 seconds, proving byte weights
   do not balance Windows runtime. This is one green run, not a speed claim.
 - Opt-in timing now validates exact run/shard/exit/file-union evidence and
   publishes only for all-green runs. Focused runner/sharding/doctor/smoke is 46
   passes in 43.87 seconds; release packaging is 57 passes; style checks pass.
+- Instrumented run `14c20d874fb2e4287e47f999654af4af` rejected 3/4 after a
+  self-test disturbed live plugin state; no complete artifact was published.
+  The scoped-state repair passes all 27 runner tests under live measurement.
 - Doctor/smoke tests retain full all-host and one real poisoned-profile Hermes
   boundary while removing real-home probes, full-roster seeds, and one duplicate run.
 - Fresh source status sees all five hosts and the configured provider. The
@@ -115,10 +118,10 @@ acceptance contract; this capsule records only the active checkpoint.
 - Persistent fresh installation remains fail-closed behind AR-143. Normal
   Codex hook trust also requires user-owned terminal-TUI review; neither may be
   bypassed while the user is remote.
-- AR-156 still needs two more green comparable warm four-shard timings plus a
-  matched one-shard control proving at least 30 percent median wall-clock
-  improvement. The canonical current-head serial, coverage, performance, docs,
-  UI, artifact, and installed smoke gates remain separate requirements.
+- AR-156 still needs one valid timing artifact, versioned Windows weights,
+  matched warm four-shard samples, and a one-shard control proving at least 30
+  percent median wall-clock improvement. Canonical release gates remain
+  separate requirements.
 - AR-119/AR-125 still lack a benchmark-valid outcome corpus and current-artifact
   host/OS evidence. Malformed, timed-out, or unknown upstream arms remain
   invalid, never losses.

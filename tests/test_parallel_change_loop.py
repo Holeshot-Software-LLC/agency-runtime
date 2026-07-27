@@ -679,15 +679,18 @@ def test_real_private_venv_executes_pytest_without_secret_or_global_plugins(
 
 def test_timing_plugin_rejects_repeated_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     sentinel = object()
-    monkeypatch.setattr(timing_subject, "_state", sentinel)
 
     class Config:
         @staticmethod
         def getoption(option: str) -> object:
             return "report.json" if option == timing_subject.REPORT_OPTION else 0
 
-    with pytest.raises(RuntimeError, match="already configured"):
-        timing_subject.pytest_configure(Config())
+    # Restore the module global before pytest emits this test's call-phase
+    # report. The timing plugin itself can be active while this regression runs.
+    with monkeypatch.context() as isolated:
+        isolated.setattr(timing_subject, "_state", sentinel)
+        with pytest.raises(RuntimeError, match="already configured"):
+            timing_subject.pytest_configure(Config())
 
 
 def test_fixed_runtime_self_heals_when_node_identity_changes(

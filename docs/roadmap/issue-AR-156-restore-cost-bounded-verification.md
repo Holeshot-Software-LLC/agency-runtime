@@ -176,6 +176,15 @@ unchanged. Independent review findings were repaired before checkpoint; the
 combined runner/sharding/doctor/smoke slice passes 46 tests in 43.87 seconds,
 the release-packaging suite passes 57, and Ruff/format/diff checks pass.
 
+The first instrumented attempt, `14c20d874fb2e4287e47f999654af4af`, is also
+rejected: it completed 3 of 4 shards in 634.140 seconds after the regression
+that verifies repeated plugin configuration temporarily replaced the live
+timing state until pytest fixture teardown. The controller correctly recorded
+`complete: false` and published no authoritative timing artifact. The test now
+uses a nested monkeypatch scope that restores the live state before pytest emits
+its own report; the exact test passes alone and all 27 runner tests pass while
+being measured by the plugin. The failed attempt is not speed evidence.
+
 The same slice removes accidental test cost without deleting behavior: generic
 doctor tests use one active agent and deterministic host/network boundaries;
 two equivalent all-host smoke assertions share one real integration run; and
