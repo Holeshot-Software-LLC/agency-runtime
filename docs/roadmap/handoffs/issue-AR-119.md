@@ -50,9 +50,10 @@ the full acceptance history.
 ## checkpoint
 
 - Exact tested release candidate: `29da6eca2b0dd73b37a91e6bfdb29881face5d56`.
-- Branch is `main`, locally ahead of `origin/main`. This package performed no
-  push, PR, tag, release, publication, hosted dispatch, tracker mutation, or
-  repository-setting change.
+- Branch `main` and `origin/main` both resolve to `880a5ce`. The authorized push
+  fast-forwarded 115 commits; automatic CI and CodeQL were rejected before any
+  step or runner started by the account billing/spending gate. No manual or
+  exhaustive workflow was dispatched.
 - The user-owned untracked
   `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged and was
   excluded from every commit.
@@ -80,6 +81,9 @@ the full acceptance history.
   seven sections, Refresh advanced sync time, and browser console warnings/
   errors were empty. Route Lab truthfully stayed disabled without a verified
   enabled host. The test listener is stopped.
+- The named fast production spine passes 521 tests with 5 platform skips in
+  74.94 seconds; all 105 dashboard UI tests, Ruff, formatting, docs, and every
+  routing-evaluation gate pass at pushed head `880a5ce`.
 - AR-179 binds named standards to typed review. Focused tests and fresh live
   routing prove a DO-178C gap now abstains rather than forming a false team.
 - One-shot application evaluation is deferred to post-production AR-178 and is
@@ -90,6 +94,15 @@ the full acceptance history.
 - Generic `agency install` has no prepared, frozen, replay-safe transaction or
   compensation contract. AR-143's only genuine positive mutation is exact
   prepared roster rollback; every generic install correctly remains blocked.
+- Current Codex inventory is registered and enabled, but the managed bundle is
+  older than candidate `29da6eca`, launcher evidence has drifted, hook trust is
+  unverified, and loaded state is unknown. The exact current-profile canary
+  completed but produced no Agency header, specialist selection, routing,
+  receipt, or accepted finalization. No attestation was persisted.
+- Candidate reinstall dry-run planned a backup and bundle refresh. The supported
+  real install then returned operator-presence `unavailable` with exit 1 before
+  any persistent change was dispatched. Do not copy or rewrite plugin files
+  around this boundary.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
@@ -99,8 +112,8 @@ the full acceptance history.
 - `main` has neither authorized branch protection nor a repository ruleset.
   Applying required contexts is an outward setting change owned by AR-159.
 - Normal-profile Codex hook trust requires the supported terminal-TUI user
-  review. Five installed-host canaries remain open. Do not bypass trust while
-  the owner is remote.
+  review, but trust alone cannot repair the stale launcher; the prepared install
+  path must land first. Five installed-host canaries remain open.
 - AR-119/125 still require a benchmark-valid complete outcome corpus. Malformed,
   timed-out, no-response, and unknown upstream arms remain invalid, never losses.
 - Tracker creation/closure for AR-160 through AR-176 and other outward writes

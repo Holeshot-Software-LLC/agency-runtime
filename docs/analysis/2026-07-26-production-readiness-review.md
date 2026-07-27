@@ -121,6 +121,16 @@ contract, so bypassing presence would still be unsafe. AR-161 separately owns
 publisher, signing, legal, signed-delivery verification, and the attended
 canary.
 
+Fresh post-push evidence makes that boundary exact. The named fast production
+spine passes 521 tests with 5 platform skips, all 105 UI tests pass, and every
+routing-evaluation gate passes at `880a5ce`. The normal-profile Codex canary
+itself fails: the invocation completes with no Agency header, specialist,
+correlated route, receipt, or accepted finalization. Inventory reports an older
+managed bundle, launcher drift, unverified hook trust, and unknown loaded state.
+The candidate dry-run plans a backup and bundle refresh, but the real supported
+install fails before dispatch because generic operator presence is unavailable.
+No direct file rewrite or native-registry bypass is acceptable.
+
 An authenticated dashboard launched from the freshly installed Windows wheel
 rendered all seven sections, advanced its last-sync time on Refresh, and emitted
 no browser warnings or errors. It truthfully showed an isolated empty runtime,

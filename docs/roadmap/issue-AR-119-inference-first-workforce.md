@@ -3274,6 +3274,16 @@ verified enabled host. No hosted runner was used. Earlier live routing
 reproduced one P0 false-sufficient-team defect: a DO-178C avionics-assurance
 request was accepted with generic onboarding, test-results, and code-review
 workers.
+
+After the authorized push to `origin/main` at `880a5ce`, the named fast
+production spine passed 521 tests with 5 platform skips in 74.94 seconds, the
+105-test UI suite passed, and every routing-evaluation gate passed. Automatic
+CI and CodeQL were rejected before runner allocation by the account billing
+gate; exhaustive integration was not dispatched. Current Codex inventory is
+registered and enabled but has launcher drift and unverified hook trust. A
+current-profile canary completed without an Agency header, specialist,
+correlated route, receipt, or accepted finalization. Candidate reinstall then
+failed closed on operator-presence unavailability before any persistent change.
 AR-179 and ADR-0103 now preserve named high-assurance standards as typed
 independent-review capabilities. Generic review cannot cover them; an explicit
 governed contract can. The focused 57-test intent/staffing slice and 64-test

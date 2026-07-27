@@ -172,6 +172,13 @@ replay, same-Store ordering, and atomic rollback after injected failure.
 
 ## Remaining release and scope gates
 
+- On 2026-07-27, exact candidate `29da6eca` planned a Codex backup and stale-
+  bundle refresh, but the supported real install returned operator-presence
+  `unavailable` before dispatch. The pre-existing registered/enabled plugin had
+  launcher drift and unverified hook trust; a current-profile canary completed
+  with no Agency header, specialist, correlated route, receipt, or accepted
+  finalization. This is the intended fail-closed result, not installation proof.
+
 - The helper is a reviewed but unsigned Windows executable. AR-161 and
   ADR-0099 keep reproducible unsigned review bytes separate from signed
   delivery bytes. No approved publisher identity, signature, or legal
