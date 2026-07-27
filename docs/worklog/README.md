@@ -257,6 +257,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1676f6a` | 2026-07-27 | perf(testing): cache immutable workforce evidence | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-27-1676f6a-immutable-workforce-evidence.md) |
 | `b95d78a` | 2026-07-27 | docs(roadmap): close locally accepted audit items | [AR-133](../roadmap/issue-AR-133-atomic-finalization-evidence.md), [AR-134](../roadmap/issue-AR-134-enforce-sqlite-currentness-invariants.md), [AR-136](../roadmap/issue-AR-136-persist-native-child-correlation.md), [AR-137](../roadmap/issue-AR-137-complete-dashboard-collections.md), [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md) | [detail](2026-07-27-b95d78a-close-local-audit-items.md) |
 | `283e3f9` | 2026-07-27 | docs(checkpoint): seal final-candidate preparation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `bba2b43` | 2026-07-27 | refactor(security): consolidate runtime authority helpers | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | [detail](2026-07-27-bba2b43-runtime-authority-helpers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

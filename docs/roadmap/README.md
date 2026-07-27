@@ -346,7 +346,7 @@ not stable internal identifiers.
 | [AR-138](issue-AR-138-coherent-observable-dashboard-ui.md) | `a32e4e6`, `c741b24`, `9aa317c`, `630db7b` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
 | [AR-139](issue-AR-139-restore-release-asset-budget.md) | `a32e4e6`, `24948a0`, `c741b24`, `92adf2f` | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-140](issue-AR-140-scale-routing-and-retrieval.md) | `a32e4e6`, `c741b24`, `0b9849c`, `0c0299a`, `eec5207`, `8236a16`, `1676f6a` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
-| [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | `a32e4e6`, `c741b24`, `a1efe31`, `4620204` | None; compatibility and mechanical consolidation |
+| [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | `a32e4e6`, `c741b24`, `a1efe31`, `4620204`, `bba2b43` | None; compatibility and mechanical consolidation |
 | [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6`, `c741b24`, `0b9849c`, `b95d78a` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-143](issue-AR-143-require-operator-presence-for-controls.md) | `24948a0`, `c741b24`, `0b9849c`, `4620204`, `900f8d3`, `f64ba1e`, `dfe6f46`, `30d5fc0`, `85428e6`, `cb06c73` | [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md) |
 | [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | `567bd23`, `b95d78a` | None; behavioral release-test coverage only |
