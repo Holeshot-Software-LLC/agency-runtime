@@ -1,9 +1,9 @@
 ---
 title: "AR-133: Make finalization evidence atomic, complete, and bounded"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [evidence, sqlite, http, mcp, transactions]
 related:
   - docs/THREAT_MODEL.md
@@ -70,3 +70,5 @@ strict strings with canonical bounds, caller-supplied host/model attribution
 is absent, and HTTP/MCP return typed sanitized failures. The focused atomic
 batch suite passed 21 tests with 2 skips; the integrated
 transaction/observability/MCP/HTTP slice passed 147 tests with 8 skips.
+All acceptance criteria are satisfied locally; tracker creation and
+synchronization remain pending explicit outward-write authorization.

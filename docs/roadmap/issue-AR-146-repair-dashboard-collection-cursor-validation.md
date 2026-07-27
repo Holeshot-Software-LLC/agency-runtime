@@ -1,6 +1,6 @@
 ---
 title: "AR-146: Repair dashboard collection cursor validation"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-07-27

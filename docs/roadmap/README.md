@@ -150,20 +150,20 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-130` | [Revalidate Store trust at authoritative boundaries](issue-AR-130-revalidate-store-trust.md) | open | p0 | security | pending authorization |
 | `AR-131` | [Complete MCP and CLI host contracts](issue-AR-131-complete-mcp-cli-host-contracts.md) | open | p0 | host-integrations | pending authorization |
 | `AR-132` | [Hire deterministic safe staffing gaps](issue-AR-132-hire-deterministic-safe-gaps.md) | open | p0 | routing | pending authorization |
-| `AR-133` | [Make finalization evidence atomic, complete, and bounded](issue-AR-133-atomic-finalization-evidence.md) | open | p0 | observability | pending authorization |
-| `AR-134` | [Enforce SQLite currentness and retention invariants](issue-AR-134-enforce-sqlite-currentness-invariants.md) | open | p0 | operations | pending authorization |
+| `AR-133` | [Make finalization evidence atomic, complete, and bounded](issue-AR-133-atomic-finalization-evidence.md) | done | p0 | observability | pending authorization |
+| `AR-134` | [Enforce SQLite currentness and retention invariants](issue-AR-134-enforce-sqlite-currentness-invariants.md) | done | p0 | operations | pending authorization |
 | `AR-135` | [Complete ZCode native integration end to end](issue-AR-135-complete-zcode-integration.md) | open | p0 | host-integrations | pending authorization |
-| `AR-136` | [Persist native-child correlation and fail planned work closed](issue-AR-136-persist-native-child-correlation.md) | open | p0 | routing | pending authorization |
-| `AR-137` | [Make dashboard collections complete and paginated](issue-AR-137-complete-dashboard-collections.md) | open | p0 | dashboard | pending authorization |
+| `AR-136` | [Persist native-child correlation and fail planned work closed](issue-AR-136-persist-native-child-correlation.md) | done | p0 | routing | pending authorization |
+| `AR-137` | [Make dashboard collections complete and paginated](issue-AR-137-complete-dashboard-collections.md) | done | p0 | dashboard | pending authorization |
 | `AR-138` | [Make dashboard refresh coherent, accessible, and observable](issue-AR-138-coherent-observable-dashboard-ui.md) | open | p1 | dashboard | pending authorization |
 | `AR-139` | [Restore the installed release asset budget](issue-AR-139-restore-release-asset-budget.md) | open | p0 | release | pending authorization |
 | `AR-140` | [Scale routing, retrieval, and CLI startup](issue-AR-140-scale-routing-and-retrieval.md) | open | p1 | performance | pending authorization |
 | `AR-141` | [Restore compatibility and consolidate runtime duplication](issue-AR-141-restore-compatibility-consolidate-runtime.md) | open | p1 | maintenance | pending authorization |
-| `AR-142` | [Instrument runtime boundaries and hiring outcomes](issue-AR-142-instrument-runtime-boundaries.md) | open | p1 | observability | pending authorization |
+| `AR-142` | [Instrument runtime boundaries and hiring outcomes](issue-AR-142-instrument-runtime-boundaries.md) | done | p1 | observability | pending authorization |
 | `AR-143` | [Require genuine operator presence for persistent controls](issue-AR-143-require-operator-presence-for-controls.md) | open | p0 | security | pending authorization |
-| `AR-144` | [Restore dashboard UI release coverage gate](issue-AR-144-restore-dashboard-ui-release-coverage.md) | open | p0 | dashboard | pending authorization |
+| `AR-144` | [Restore dashboard UI release coverage gate](issue-AR-144-restore-dashboard-ui-release-coverage.md) | done | p0 | dashboard | pending authorization |
 | `AR-145` | [Restore the Python release coverage gate](issue-AR-145-restore-python-release-coverage.md) | open | p0 | testing | pending authorization |
-| `AR-146` | [Repair dashboard collection cursor validation](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | open | p0 | dashboard | pending authorization |
+| `AR-146` | [Repair dashboard collection cursor validation](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | done | p0 | dashboard | pending authorization |
 | `AR-147` | [Parse complete Windows ACL descriptors](issue-AR-147-parse-complete-windows-acl-descriptors.md) | open | p0 | security | pending authorization |
 | `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | open | p1 | security | pending authorization |
 | `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | open | p0 | observability | pending authorization |

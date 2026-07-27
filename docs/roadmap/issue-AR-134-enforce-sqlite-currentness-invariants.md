@@ -1,9 +1,9 @@
 ---
 title: "AR-134: Enforce SQLite currentness and retention invariants"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [sqlite, schema, migrations, integrity, retention]
 related:
   - agency_runtime/core/store/schema.py
@@ -78,3 +78,5 @@ literal and quoted-identifier bytes. Exact legacy v35 consumption DDL upgrades;
 unknown or tampered shapes fail closed. The expanded focused package passes 58
 tests and the broader Store/schema/roster/workforce package passes 434 with 2
 skips.
+All acceptance criteria are satisfied locally; tracker creation and
+synchronization remain pending explicit outward-write authorization.

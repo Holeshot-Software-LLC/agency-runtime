@@ -1,9 +1,9 @@
 ---
 title: "AR-136: Persist native-child correlation and fail planned work closed"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [routing, delegation, hooks, evidence, security]
 related:
   - docs/THREAT_MODEL.md
@@ -77,3 +77,5 @@ planned work cannot pass through on Store or correlation failure. Separate
 parent and child hook subprocess regressions prove one exact consumption,
 replay denial, forged-delivery rejection, and generic-unplanned pass-through.
 The integrated native-hook/ZCode slice passed 167 tests.
+All acceptance criteria are satisfied locally; tracker creation and
+synchronization remain pending explicit outward-write authorization.

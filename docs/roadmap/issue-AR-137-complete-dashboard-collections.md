@@ -1,6 +1,6 @@
 ---
 title: "AR-137: Make dashboard collections complete and paginated"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-07-27

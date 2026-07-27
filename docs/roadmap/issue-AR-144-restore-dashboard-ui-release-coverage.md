@@ -1,9 +1,9 @@
 ---
 title: "AR-144: Restore dashboard UI release coverage gate"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [dashboard, ui, testing, coverage, release]
 related:
   - tests/dashboard_ui.test.mjs

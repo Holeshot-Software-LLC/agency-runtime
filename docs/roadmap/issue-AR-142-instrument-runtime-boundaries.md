@@ -1,6 +1,6 @@
 ---
 title: "AR-142: Instrument runtime boundaries and hiring outcomes"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-07-27
@@ -69,3 +69,5 @@ dashboard, and receipt tests pass. Troubleshooting documentation states that
 envelopes are ephemeral standard logs unless an operator configures an
 external finite-retention sink; durable Store evidence retains its configured
 finite policy.
+All acceptance criteria are satisfied locally; tracker creation and
+synchronization remain pending explicit outward-write authorization.
