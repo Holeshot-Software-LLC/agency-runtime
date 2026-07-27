@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
+  - docs/roadmap/issue-AR-169-exclude-native-pe-from-portable-wheel.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md

@@ -98,6 +98,24 @@ def test_portable_build_excludes_only_the_exact_reviewed_pe(
     ]
 
 
+def test_portable_build_excludes_pe_from_namespace_data_package(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "agency_runtime" / "native" / "windows" / "operator_presence"
+    executable = source / "operator_presence_verifier.exe"
+    cpp = source / "operator_presence_verifier.cpp"
+    files = [str(executable), str(cpp)]
+    monkeypatch.setattr(build_py, "find_data_files", lambda *_args: files)
+    monkeypatch.setattr(subject, "current_wheel_profile", lambda: PORTABLE_WHEEL_PROFILE)
+    command = subject.PlatformBuildPy(Distribution())
+
+    assert command.find_data_files(
+        "agency_runtime.native.windows.operator_presence",
+        str(source),
+    ) == [str(cpp)]
+
+
 def test_windows_build_retains_the_reviewed_pe(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -139,3 +157,6 @@ def test_setup_py_registers_commands_without_duplicating_project_metadata() -> N
     assert "setup(cmdclass=COMMAND_CLASSES)" in setup_source
     assert "name=" not in setup_source
     assert "version=" not in setup_source
+
+    pyproject = Path(__file__).resolve().parents[1].joinpath("pyproject.toml").read_text("utf-8")
+    assert "namespaces = false" in pyproject

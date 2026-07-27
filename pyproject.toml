@@ -73,6 +73,7 @@ version = {attr = "agency_runtime.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["agency_runtime*"]
+namespaces = false
 
 [tool.setuptools.package-data]
 agency_runtime = [

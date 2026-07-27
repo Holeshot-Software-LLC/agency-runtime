@@ -22,8 +22,17 @@ except ModuleNotFoundError as exc:  # pragma: no cover - direct setup.py compati
         host_wheel_profile,
     )
 
-_PACKAGE_PREFIX = "agency_runtime/"
-_EXECUTABLE_PACKAGE_PATH = NATIVE_OPERATOR_PRESENCE_EXECUTABLE.removeprefix(_PACKAGE_PREFIX)
+
+def _normalized_absolute_path(value: str) -> str:
+    return os.path.normcase(os.path.normpath(os.path.abspath(value)))
+
+
+def _executable_path_for_package(package: str, src_dir: str) -> str | None:
+    package_prefix = f"{package.replace('.', '/')}/"
+    if not NATIVE_OPERATOR_PRESENCE_EXECUTABLE.startswith(package_prefix):
+        return None
+    relative = NATIVE_OPERATOR_PRESENCE_EXECUTABLE.removeprefix(package_prefix)
+    return _normalized_absolute_path(os.path.join(src_dir, *relative.split("/")))
 
 
 def current_wheel_profile() -> WheelProfile:
@@ -37,12 +46,12 @@ class PlatformBuildPy(build_py):
 
     def find_data_files(self, package: str, src_dir: str) -> list[str]:
         files = list(super().find_data_files(package, src_dir))
-        if package != "agency_runtime" or current_wheel_profile().includes_native_executable:
+        if current_wheel_profile().includes_native_executable:
             return files
-        executable = os.path.normcase(
-            os.path.normpath(os.path.join(src_dir, *_EXECUTABLE_PACKAGE_PATH.split("/")))
-        )
-        return [name for name in files if os.path.normcase(os.path.normpath(name)) != executable]
+        executable = _executable_path_for_package(package, src_dir)
+        if executable is None:
+            return files
+        return [name for name in files if _normalized_absolute_path(name) != executable]
 
 
 class PlatformBdistWheel(bdist_wheel):
