@@ -3,13 +3,14 @@ title: "AR-117: Parallelize PR verification without weakening coverage"
 status: done
 category: roadmap
 created: 2026-07-21
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [testing, ci, coverage, performance]
 related:
   - .github/workflows/ci.yml
   - scripts/select_test_shard.py
   - tests/test_ci_sharding.py
   - docs/worklog/README.md
+  - docs/decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -46,6 +47,13 @@ its own parallel job. Keep the complete compatibility and artifact matrices.
 The seven-cell full compatibility matrix runs on `main` and by manual dispatch
 instead of repeating for every PR edit; strict docs and tracker validation runs
 in the fast PR lane.
+
+ADR-0097 later refined this delivered topology after measured cost review. Fast
+same-revision quality now gates expensive fanout, documentation history is
+checked after a deliberate durable-head checkout, and the redundant Ubuntu
+24.04/Python 3.13 serial cell is replaced by the exact four-shard coverage
+union. Six serial compatibility cells retain supported-version and Windows
+endpoint ordering evidence.
 
 ## Dependencies
 

@@ -13,9 +13,11 @@ related:
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
   - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
+  - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
+  - docs/decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md
   - docs/analysis/2026-07-26-production-readiness-review.md
 supersedes: []
 superseded_by: null
@@ -61,10 +63,10 @@ acceptance contract; this capsule records only the active checkpoint.
   Windows warm install median fell from 160.340 ms to 28.712 ms; the stable
   snapshot median fell from 539.410 ms to 408.184 ms. This is local evidence,
   not a cross-platform claim.
-- Pull requests again defer the unchanged seven-cell compatibility matrix to
-  `main` or manual dispatch. Historical comparison avoids 95.79 raw
-  runner-minutes and 24m29s elapsed per PR update; current hosted jobs are
-  blocked before steps by GitHub billing/spending state.
+- Pull requests defer compatibility to `main` or manual dispatch. Same-revision
+  fast quality now gates expensive fanout; six serial cells plus four exact
+  Python 3.13 coverage shards retain the governed surfaces. Historical PR
+  comparison avoids 95.79 raw runner-minutes; hosted jobs remain billing-blocked.
 - AR-156 uses the governed four-way 276-file partition, one contract-attested
   private runtime, per-shard HOME/TEMP/basetemp, least-privilege environments,
   contained cancellation, bounded head-and-tail logs, and one run manifest.

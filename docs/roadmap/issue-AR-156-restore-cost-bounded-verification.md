@@ -10,6 +10,8 @@ related:
   - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
   - docs/NORTH_STAR_ACCEPTANCE.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
+  - docs/decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md
+  - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
   - .github/workflows/ci.yml
   - scripts/select_test_shard.py
   - scripts/pytest_file_timing.py
@@ -33,7 +35,7 @@ issue_id: AR-156
 priority: p1
 tracker_url: null
 depends_on: [AR-117, AR-158]
-blocks: []
+blocks: [AR-159]
 ---
 
 # AR-156: Restore cost-bounded verification feedback
@@ -66,8 +68,11 @@ or a green hosted gate.
 Restore the documented pull-request cadence and make the aggregate quality job
 event-aware: pull requests must observe the compatibility job as intentionally
 skipped, while `main` and manual runs must observe it as successful. Every other
-required dependency remains success-only. Preserve the complete seven-cell
-matrix unchanged on its governed events.
+required dependency remains success-only. Gate expensive roots behind fast
+same-revision quality. Preserve serial compatibility on Ubuntu/Python 3.10,
+3.11, 3.12, and 3.14 and Windows 3.10 and 3.14; preserve the exact Python 3.13
+non-performance union through four coverage shards and retain uninstrumented
+Python 3.13 performance.
 
 Add a cross-platform local runner that uses the same deterministic file
 partitioner and one stable, contract-attested, read-only Python runtime. Give
@@ -101,8 +106,13 @@ quantitative claims to use recorded controls rather than inferred speedups.
   `main` and manual runs require it to succeed.
 - No aggregate path accepts cancelled, failed, missing, or unexpectedly skipped
   production gates.
-- The seven compatibility cells and all PR coverage, performance, portability,
-  artifact, security, documentation, and UI gates remain intact.
+- Six serial compatibility cells, four exact Python 3.13 coverage shards, and
+  all PR performance, portability, artifact, security, documentation, and UI
+  gates remain intact. The accepted serial-versus-sharded non-equivalence is
+  explicit in ADR-0097.
+- Fast dependency, static, workflow, and UI checks cover the same PR merge
+  revision as downstream jobs before expensive fanout. History-derived ledgers
+  deliberately re-check out the complete durable head.
 - Workflow contract tests pin the exact event/result policy and reject a future
   unconditional compatibility regression.
 - The local runner proves serial/sharded test collection equivalence, uses one
@@ -131,13 +141,21 @@ state; real runs publish one run-bound bounded log set and manifest.
 
 ## Implementation evidence
 
-The workflow again skips only the unchanged seven-cell compatibility matrix on
-pull requests and requires it to succeed on `push` and manual dispatch. The
-aggregate quality job is event-aware and rejects failed, cancelled, missing,
-malformed, unexpectedly skipped, or unexpected job results. Every PR coverage,
-performance, portability, artifact, security, documentation, and dashboard
-gate remains required. The release/workflow contract suite passes 57 tests and
-the pinned offline workflow security audit reports no findings.
+The workflow skips the compatibility matrix on pull requests and requires it to
+succeed on `push` and manual dispatch. Fast same-revision quality gates every
+expensive CI root and performs `pip check`, Ruff, formatting, whitespace,
+workflow contracts, and dashboard UI coverage before fanout. It then checks out
+the complete durable head solely for documentation ledgers. The aggregate is
+event-aware and rejects failed, cancelled, missing, malformed, unexpectedly
+skipped, or unexpected dependency results. Six serial compatibility cells,
+four Python 3.13 coverage shards, performance, portability, artifacts, security,
+documentation, and dashboard gates remain. ADR-0097 records that sharded Python
+3.13 execution does not reproduce one serial process's ordering or session
+fixture lifetime.
+
+The exact sharding/workflow contract package passes 64 tests. Ruff and format
+checks pass, documentation validation covers 414 maintained Markdown files,
+and pinned `zizmor 1.26.1` reports no workflow finding in strict offline mode.
 
 Comparable successful hosted history shows the governed PR cadence completing
 in 4m50s and consuming 23.33 raw runner-minutes. The later unconditional matrix
@@ -146,7 +164,11 @@ used 96.27. Restoring the documented cadence therefore avoids 95.79 raw
 runner-minutes (80.4 percent) and 24m29s elapsed (83.5 percent) per PR update in
 that comparison. These are recorded historical runs, not a claim that current
 hosted gates are green: current jobs are rejected before steps by the external
-GitHub billing/spending state. The local parallel change loop now uses the
+GitHub billing/spending state. Removing the redundant Ubuntu/Python 3.13 serial
+cell is estimated from comparable history to avoid another 7.30-10.90 raw
+runner-minutes on `main` or manual runs; quality-first short-circuit savings vary
+with the failure and are not counted as guaranteed savings. The local parallel
+change loop now uses the
 governed four-way file partition, one immutable-contract private runtime,
 per-shard state roots, least-privilege environments, explicit process-tree
 cancellation, fixed bounded head-and-tail logs, and a run-bound manifest. It

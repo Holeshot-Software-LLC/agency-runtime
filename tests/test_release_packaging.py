@@ -451,12 +451,19 @@ def test_coverage_and_matrix_jobs_use_private_runtime_state_boundaries() -> None
             assert boundary in execution["run"]
 
 
-def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> None:
+def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
     jobs = workflow["jobs"]
     assert "needs" not in jobs["quality-contracts"]
-    assert "needs" not in jobs["coverage"]
-    assert "needs" not in jobs["performance"]
+    for job_name in (
+        "coverage",
+        "performance",
+        "test",
+        "windows-portability-contract",
+        "artifacts",
+        "security",
+    ):
+        assert jobs[job_name]["needs"] == "quality-contracts"
     assert jobs["coverage"]["strategy"]["matrix"]["include"] == [
         {"index": 0, "label": 1},
         {"index": 1, "label": 2},
@@ -477,27 +484,36 @@ def test_quality_coverage_and_performance_jobs_are_parallel_and_enforced() -> No
     assert "coverage report --fail-under=97" in combined_run
     performance_run = jobs["performance"]["steps"][-1]["run"]
     assert "-m performance" in performance_run
-    quality_steps = {step["name"] for step in jobs["quality-contracts"]["steps"]}
-    assert "Verify fast workflow and documentation contracts" in quality_steps
-    assert "Run dashboard UI tests with coverage" in quality_steps
-    quality_checkout = jobs["quality-contracts"]["steps"][0]
-    assert quality_checkout["with"]["fetch-depth"] == 0
-    assert (
-        quality_checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha || github.sha }}"
+    quality_steps = {step["name"]: step for step in jobs["quality-contracts"]["steps"]}
+    assert {
+        "Check dependency consistency",
+        "Check patch whitespace",
+        "Verify fast workflow contracts",
+        "Run dashboard UI tests with coverage",
+        "Check out canonical documentation history",
+        "Verify documentation ledgers",
+    } <= set(quality_steps)
+    assert quality_steps["Check dependency consistency"]["run"] == "python -m pip check"
+    quality_step_order = [step["name"] for step in jobs["quality-contracts"]["steps"]]
+    assert quality_step_order.index("Install development dependencies") < quality_step_order.index(
+        "Check dependency consistency"
     )
+    quality_checkout = jobs["quality-contracts"]["steps"][0]
+    assert quality_checkout["with"] == {"persist-credentials": False}
     quality_contracts = next(
         step
         for step in jobs["quality-contracts"]["steps"]
-        if step["name"] == "Verify fast workflow and documentation contracts"
+        if step["name"] == "Verify fast workflow contracts"
     )["run"]
-    assert "update_worklog.py --check" in quality_contracts
-    assert "verify_docs.py --require-tracker" in quality_contracts
-    assert jobs["test"]["if"] == "github.event_name != 'pull_request'"
+    assert "test_ci_sharding.py tests/test_release_packaging.py" in quality_contracts
+    assert (
+        jobs["test"]["if"]
+        == "github.event_name != 'pull_request' && needs.quality-contracts.result == 'success'"
+    )
     assert jobs["test"]["strategy"]["matrix"]["include"] == [
         {"os": "ubuntu-24.04", "python": "3.10"},
         {"os": "ubuntu-24.04", "python": "3.11"},
         {"os": "ubuntu-24.04", "python": "3.12"},
-        {"os": "ubuntu-24.04", "python": "3.13"},
         {"os": "ubuntu-24.04", "python": "3.14"},
         {"os": "windows-2022", "python": "3.10"},
         {"os": "windows-2022", "python": "3.14"},
@@ -588,15 +604,12 @@ def test_quality_aggregate_rejects_unknown_events_and_unexpected_jobs() -> None:
 
 def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
-    steps = workflow["jobs"]["test"]["steps"]
+    steps = workflow["jobs"]["quality-contracts"]["steps"]
 
     checkout = next(
         step for step in steps if step["name"] == "Check out canonical documentation history"
     )
     ledger = next(step for step in steps if step["name"] == "Verify documentation ledgers")
-    condition = "matrix.os == 'ubuntu-24.04' && matrix.python == '3.14'"
-
-    assert checkout["if"] == ledger["if"] == condition
     assert checkout["with"] == {
         "fetch-depth": 0,
         "persist-credentials": False,
@@ -605,8 +618,10 @@ def test_history_derived_ledgers_use_the_complete_durable_head() -> None:
     assert ledger["env"]["EXPECTED_HISTORY_HEAD"] == checkout["with"]["ref"]
     assert 'test "$(git rev-parse --is-shallow-repository)" = "false"' in ledger["run"]
     assert 'test "$(git rev-parse HEAD)" = "${EXPECTED_HISTORY_HEAD}"' in ledger["run"]
+    assert "update_worklog.py --check" in ledger["run"]
+    assert "verify_docs.py --require-tracker" in ledger["run"]
     assert steps.index(checkout) > steps.index(
-        next(step for step in steps if step["name"] == "Check patch whitespace")
+        next(step for step in steps if step["name"] == "Run dashboard UI tests with coverage")
     )
 
 

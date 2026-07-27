@@ -41,11 +41,12 @@ changes rather than duplicating every commit.
   explicit `--partition auto`; strict reproduction also requires
   `--require-exact-shard-weights`, so an under-threshold profile cannot become
   the silent default.
-- Pull requests no longer repeat the unchanged seven-cell Python compatibility
-  matrix already enforced on `main` and manual dispatch. The aggregate quality
-  gate now requires an intentional PR skip, requires matrix success on governed
-  events, and rejects every missing, cancelled, failed, malformed, or otherwise
-  unexpected dependency result.
+- Pull requests no longer repeat the Python compatibility matrix enforced on
+  `main` and manual dispatch. Fast dependency, static, workflow, and UI checks
+  now gate expensive CI fanout on the same merge revision. Six serial
+  compatibility cells remain alongside four exact Python 3.13 coverage shards;
+  the aggregate requires the event-appropriate matrix result and rejects every
+  missing, cancelled, failed, malformed, or unexpected dependency result.
 - `python -m agency_runtime.cli --version` now uses the same deferred-import
   entrypoint as the packaged console command. Stable routing startup also uses
   a bounded exact fallback-roster lookup and reuses its coherent snapshot when

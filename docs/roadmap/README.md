@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-07-26
+updated: 2026-07-27
 tags: [planning, tracker]
 related: []
 supersedes: []
@@ -176,6 +176,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-156` | [Restore cost-bounded verification feedback](issue-AR-156-restore-cost-bounded-verification.md) | open | p1 | testing | pending authorization |
 | `AR-157` | [Treat public HTTP client disconnects as transport completion](issue-AR-157-quiet-public-http-disconnects.md) | open | p1 | observability | pending authorization |
 | `AR-158` | [Disambiguate multi-surface observation test evidence](issue-AR-158-disambiguate-multi-surface-observation-tests.md) | open | p1 | observability | pending authorization |
+| `AR-159` | [Enforce production branch protection](issue-AR-159-enforce-production-branch-protection.md) | open | p0 | release | pending authorization |
 
 ## Traceability
 
@@ -338,9 +339,10 @@ not stable internal identifiers.
 | [AR-153](issue-AR-153-complete-worker-detail-evidence.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-154](issue-AR-154-fail-malformed-initial-pages-closed.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-155](issue-AR-155-bound-dashboard-hiring-evidence.md) | `e62230c`, `6a3bdaa`, `90ce272` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
-| [AR-156](issue-AR-156-restore-cost-bounded-verification.md) | `babc45a`, `fbbc512`, `c5d5631`, `d2ab19b`, `7d11313`, `74468aa`, `49aafe1`, `900f8d3`, `58aee8b`, `62d90ca`, `11241e6`, `aad2901`, `85549a4`, `10eb595` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
+| [AR-156](issue-AR-156-restore-cost-bounded-verification.md) | `babc45a`, `fbbc512`, `c5d5631`, `d2ab19b`, `7d11313`, `74468aa`, `49aafe1`, `900f8d3`, `58aee8b`, `62d90ca`, `11241e6`, `aad2901`, `85549a4`, `10eb595` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-157](issue-AR-157-quiet-public-http-disconnects.md) | `74468aa`, `12640d0`, `900f8d3` | [ADR-0017](../decisions/0017-sanitized-server-error-boundary.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |
 | [AR-158](issue-AR-158-disambiguate-multi-surface-observation-tests.md) | `aad2901` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
+| [AR-159](issue-AR-159-enforce-production-branch-protection.md) | None; hosted enforcement pending authorization | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
