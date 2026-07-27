@@ -263,6 +263,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `828f747` | 2026-07-27 | fix(release): normalize private POSIX sdist modes | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [detail](2026-07-27-828f747-private-posix-sdist-modes.md) |
 | `6bbf29b` | 2026-07-27 | docs(checkpoint): refresh AR-119 recovery capsule | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `bc6589b` | 2026-07-27 | fix(codex): bind activation verification to fresh proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [detail](2026-07-27-bc6589b-bind-codex-activation-verification.md) |
+| `110dfd1` | 2026-07-27 | docs(governance): bound delivery to live demo checkpoints | [AR-186](../roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md) | [detail](2026-07-27-110dfd1-bound-delivery-demo-checkpoints.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
