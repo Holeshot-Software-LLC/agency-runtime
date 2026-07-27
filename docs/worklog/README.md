@@ -246,6 +246,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `52150e3` | 2026-07-27 | docs(production): bind artifact evidence to revision | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `e0bbe70` | 2026-07-27 | docs(production): record cross-platform candidate evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md), [AR-160](../roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md) | [detail](2026-07-27-e0bbe70-cross-platform-candidate-evidence.md) |
 | `dfe6f46` | 2026-07-27 | docs(production): record failed Codex activation proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | [detail](2026-07-27-dfe6f46-failed-codex-activation-proof.md) |
+| `30d5fc0` | 2026-07-27 | feat(install): add attended Codex refresh transaction | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | [detail](2026-07-27-30d5fc0-attended-codex-refresh.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

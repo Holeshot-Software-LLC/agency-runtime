@@ -346,7 +346,7 @@ not stable internal identifiers.
 | [AR-140](issue-AR-140-scale-routing-and-retrieval.md) | `a32e4e6`, `c741b24`, `0b9849c`, `0c0299a`, `eec5207`, `8236a16` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | `a32e4e6`, `c741b24`, `a1efe31`, `4620204` | None; compatibility and mechanical consolidation |
 | [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6`, `c741b24`, `0b9849c` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
-| [AR-143](issue-AR-143-require-operator-presence-for-controls.md) | `24948a0`, `c741b24`, `0b9849c`, `4620204`, `900f8d3`, `f64ba1e`, `dfe6f46` | [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md) |
+| [AR-143](issue-AR-143-require-operator-presence-for-controls.md) | `24948a0`, `c741b24`, `0b9849c`, `4620204`, `900f8d3`, `f64ba1e`, `dfe6f46`, `30d5fc0` | [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md) |
 | [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | `567bd23` | None; behavioral release-test coverage only |
 | [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a`, `4620204` | None; release-test determinism and behavioral coverage |
 | [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
