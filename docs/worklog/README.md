@@ -259,6 +259,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `283e3f9` | 2026-07-27 | docs(checkpoint): seal final-candidate preparation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `bba2b43` | 2026-07-27 | refactor(security): consolidate runtime authority helpers | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | [detail](2026-07-27-bba2b43-runtime-authority-helpers.md) |
 | `4e39d4c` | 2026-07-27 | fix(codex): bind hook trust inventory | [AR-182](../roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md) | [detail](2026-07-27-4e39d4c-codex-hook-trust-inventory.md) |
+| `d07f4d8` | 2026-07-27 | fix(release): normalize private POSIX wheel modes | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [detail](2026-07-27-d07f4d8-private-posix-wheel-modes.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
