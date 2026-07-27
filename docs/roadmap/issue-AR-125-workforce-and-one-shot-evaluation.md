@@ -1,14 +1,16 @@
 ---
-title: "AR-125: Prove workforce selection and one-shot application outcomes"
+title: "AR-125: Prove workforce selection, host portability, and Agency-on/off value"
 status: open
 category: roadmap
 created: 2026-07-21
 updated: 2026-07-21
-tags: [evaluation, testing, portability, applications]
+tags: [evaluation, testing, portability, routing]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
   - docs/decisions/0082-schedule-assurance-by-artifact-lifecycle.md
+  - docs/decisions/0102-defer-one-shot-application-evaluation.md
+  - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -20,25 +22,27 @@ depends_on: [AR-120, AR-121, AR-122, AR-123, AR-124]
 blocks: []
 ---
 
-# AR-125: Prove workforce selection and one-shot application outcomes
+# AR-125: Prove workforce selection, host portability, and Agency-on/off value
 
 ## Problem
 
 Selection activity and unit tests do not prove that Agency assembles correct
-teams or helps each host deliver complete, portable, production-quality apps.
+teams, improves matched outcomes, or runs portably through every supported host.
 
 ## Current state
 
-Routing corpora, coverage gates, host canaries, and artifact smoke tests exist,
-but they do not yet cover every workforce contract or representative complete
-applications with independent integration and release verification.
+Every-worker semantic cases and pairwise/lifecycle-team properties are green.
+Configured-inference and held-out matched evidence, paired Agency-on/off value,
+exact-current installed artifacts, and five live host canaries remain open.
+Complete one-shot applications moved to non-blocking post-production AR-178.
 
 ## Approach
 
-Add independent per-worker semantic cases, pairwise composition properties,
-meaningful lifecycle teams, configured-inference corpora, six product-level
-applications, installed artifacts, five-host contracts (Codex, Claude, Hermes,
-OpenClaw, and ZCode), and Agency-on/off trials.
+Complete independent per-worker semantic cases, pairwise composition properties,
+meaningful lifecycle teams, configured-inference and held-out matched-selection
+corpora, paired Agency-on/off trials, installed artifacts, and five-host
+contracts for Codex, Claude, Hermes, OpenClaw, and ZCode. Keep complete-
+application evaluation in AR-178 without weakening matched controls.
 
 ## Dependencies
 
@@ -46,8 +50,15 @@ All preceding AR-119 slices provide the behavior this evidence must grade.
 
 ## Acceptance
 
-- [ ] Every worker passes positive, hard-negative, qualifier, shadow, and eligibility cases.
-- [ ] Pairwise invariants and curated lifecycle teams pass.
-- [ ] All representative one-shot applications pass outcome-based grading.
-- [ ] Windows/Linux artifacts and all five host contracts, including ZCode,
-  pass before release.
+- [x] Every worker passes positive, hard-negative, qualifier, shadow, and
+  eligibility cases.
+- [x] Pairwise invariants and curated lifecycle teams pass.
+- [ ] Configured-inference and held-out matched-selection corpora produce
+  complete comparable evidence with zero forbidden, ineligible, or conflict
+  regressions; malformed or timed-out arms remain validity failures.
+- [ ] Matched Agency-on/off trials prove accepted exact-version specialist
+  participation and independently graded outcome lift for the same ask, host,
+  model, configuration, and evaluator.
+- [ ] Exact-current Windows/Linux installed artifacts pass smoke, portability,
+  and release verification.
+- [ ] Codex, Claude, Hermes, OpenClaw, and ZCode contracts and live canaries pass.

@@ -14,7 +14,10 @@ related:
   - docs/decisions/0085-continue-in-task-after-context-checkpoints.md
   - docs/decisions/0086-use-checkpoint-only-context-telemetry.md
   - docs/decisions/0088-deterministic-typed-recall-offline-floor.md
+  - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/roadmap/handoffs/issue-AR-119.md
+  - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
+  - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
   - docs/roadmap/issue-AR-126-bounded-idempotent-context-handoffs.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
@@ -32,7 +35,7 @@ issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 depends_on: [AR-115, AR-116, AR-118]
-blocks: []
+blocks: [AR-178]
 ---
 
 # AR-119: Implement inference-first real-time workforce and contractor lifecycle
@@ -44,8 +47,8 @@ intent and every native work unit is performed with the best compatible
 specialist rather than an untyped generic worker. Recruitment metadata, typed
 planning, exact-version activation, native delegation, contractor hiring,
 latency, and outcome evidence are not yet one coherent system. Complete
-one-shot applications are an important downstream stress test, but they are not
-the primary definition of Agency success.
+one-shot applications are tracked by AR-178 as a deferred post-production
+evaluation; they do not block AR-119, AR-125, production GO, or release.
 
 ## Current state
 
@@ -124,8 +127,8 @@ bypasses workforce governance.
 Prove value with paired Agency-on and Agency-off trials using the same ask,
 host, model, configuration, and evaluator. An Agency-on trial without accepted
 specialist activation evidence is invalid participation evidence, regardless of
-the delivered artifact. Product-level one-shot trials remain downstream tests
-of whether better participation translates into complete applications.
+the delivered artifact. AR-178 retains product-level one-shot trials as
+non-blocking post-production research into complete application delivery.
 
 Pin the source-visible upstream Agency Agents revision and run a held-out
 matched comparison corpus. Inference is a defining mechanism, but release

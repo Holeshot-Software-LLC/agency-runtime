@@ -7,7 +7,10 @@ updated: 2026-07-24
 tags: [roadmap, acceptance, evidence, AR-119]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
+  - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
+  - docs/decisions/0102-defer-one-shot-application-evaluation.md
 supersedes: []
 superseded_by: null
 type: roadmap
@@ -128,7 +131,7 @@ child-routing follow-up.
   all carry correlation (b75df20 closes the Codex/Claude UserPromptSubmit
   parent-correlation gap).
 
-## AR-125: Workforce selection and one-shot application evaluation
+## AR-125: Workforce selection, host portability, and Agency-on/off value
 
 - [x] **Every worker passes positive, hard-negative, qualifier, shadow, and
       eligibility cases.**
@@ -142,12 +145,16 @@ child-routing follow-up.
   Composition, coverage, and team-formation invariants verified via
   `verify_staffing`. Curated lifecycle teams in `test_workforce_dynamic_
   hiring.py`.
-- [ ] **All representative one-shot applications pass outcome-based grading.**
-  BLOCKED on a configured provider: one-shot app evaluation requires live
-  inference runs with independent grading. The deterministic validators
-  (`agency_runtime/core/evals/product_*`) and the eval harness
-  (`agency eval routing`) run clean, but the graded one-shot trials need a
-  live provider, which is not configured in the current environment.
-- [ ] **Windows/Linux artifacts and all four host contracts pass before release.**
-  Artifact smoke passes on both OS in CI. Four-host + ZCode canaries are a
-  release-gate follow-up requiring live host sessions (WP8).
+- [ ] **Configured-inference and held-out matched-selection corpora are complete.**
+  Every arm must be comparable; malformed or timed-out arms remain validity
+  failures rather than upstream losses.
+- [ ] **Matched Agency-on/off trials prove accepted participation and outcome lift.**
+  The same ask, host, model, configuration, and evaluator must be used, and the
+  Agency-on arm requires exact-version activation receipts.
+- [ ] **Windows/Linux artifacts and all five host contracts pass before release.**
+  Exact-current artifact smoke and Codex, Claude, Hermes, OpenClaw, and ZCode
+  live canaries remain release-gate follow-ups.
+
+Complete one-shot application grading is deferred to non-blocking AR-178. The
+existing validators remain available, but that study is not AR-119 or AR-125
+closure evidence.

@@ -8,8 +8,10 @@ tags: [roadmap, evaluation, live-gates, canary, AR-119, AR-125]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
+  - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
   - docs/roadmap/AR-119-acceptance-evidence.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
+  - docs/decisions/0102-defer-one-shot-application-evaluation.md
 supersedes: []
 superseded_by: null
 type: roadmap
@@ -115,26 +117,7 @@ recorded as validity failures, not losses.
   claude, hermes, openclaw, and zcode. Each must report `passed: true` (zcode
   appears as `skip` on runners where it isn't installed — that is correct).
 
-## Gate 3 — one-shot application evaluations (#138 / AR-125)
-
-Build and grade the representative one-shot applications with independent
-outcome grading:
-
-- Python CLI or service
-- TypeScript/Node application
-- Python API + TypeScript dashboard
-- cross-platform installer/configuration flow
-- authenticated data-backed application
-- application with observability and failure recovery
-
-Grade actual outcomes (installation, startup, configuration, core workflows,
-error handling/recovery, security boundaries, tests, observability,
-documentation accuracy, portability, independent review/release verification).
-An application is not complete merely because every selected worker ran. The
-deterministic validators are `agency_runtime/core/evals/product_*`; the grading
-must be independent and blind to Agency-on/off mode.
-
-## Gate 4 — Agency-on/off paired graded-outcome corpus (#132 / AR-119)
+## Gate 3 — Agency-on/off paired graded-outcome corpus (#132 / #138)
 
 The north-star proof. Run the held-out comparison corpus through both arms under
 matched roster, host/model, workspace, and grading:
@@ -159,7 +142,7 @@ returned 17/19. No corpus has yet produced 19 benchmark-valid upstream arms.
 Obtain one complete corpus with 19 valid comparable upstream arms before any
 defect claim.
 
-## Gate 5 — reinstall verification (#132)
+## Gate 4 — reinstall verification (#132 / #138)
 
 Reinstall the merged artifact on Windows and Linux and run the artifact smoke
 (`agency smoke --all --json`). Verify exact-version specialist activation in the
@@ -169,9 +152,13 @@ evidence.
 
 ## Closure
 
-- **#138 / AR-125** may close after Gate 3 (one-shot evaluations) passes.
-- **#132 / AR-119** (the umbrella) closes **last**, only after Gates 1–5 all
+- **#138 / AR-125** may close after its selection, matched-outcome, five-host,
+  and exact-current artifact evidence in Gates 1–4 passes.
+- **#132 / AR-119** (the umbrella) closes **last**, only after Gates 1–4 all
   have current evidence, the final PR is green + merged, and the installed
   artifact is verified. Closure needs explicit authorization. Until then both
   stay OPEN; `verify_tracker.py --allow-open-complete` may be used for a
   read-only parity audit in the meantime.
+
+Complete one-shot applications are deferred to #153 / AR-178 as a non-blocking
+post-production evaluation. They are not a prerequisite for either closure.

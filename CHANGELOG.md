@@ -189,6 +189,11 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Complete one-shot application generation is now a P2 post-production
+  evaluation rather than an AR-119/AR-125 production or release gate. Core
+  readiness still requires matched specialist-selection and Agency-on/off
+  evidence, exact activation receipts, current installed artifacts, and live
+  canaries for all five hosts.
 - Dashboard, MCP, generated-host, and restricted-broker surfaces are now
   strictly read-only. Every former dashboard mutation rejects both bearer roles
   before dispatch, and the browser ships no mutation client. Exact roster

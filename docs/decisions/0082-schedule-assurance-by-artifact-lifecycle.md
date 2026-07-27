@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-124-lifecycle-assurance-and-native-delegation.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
+  - docs/decisions/0102-defer-one-shot-application-evaluation.md
 supersedes: []
 superseded_by: null
 id: ADR-0082

@@ -8,6 +8,8 @@ tags: [handoff, routing, workforce, evaluation, recovery, production-readiness]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
+  - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
+  - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
@@ -121,6 +123,8 @@ the full acceptance history.
   review. Do not bypass it while the owner is remote.
 - AR-119/125 still require a benchmark-valid complete outcome corpus. Malformed,
   timed-out, no-response, and unknown upstream arms remain invalid, never losses.
+- Complete one-shot applications are deferred to AR-178 as a non-blocking
+  post-production evaluation; they are not a production or release gate.
 - Tracker creation/closure for AR-160 through AR-176 and other outward writes
   remain pending owner authorization.
 
