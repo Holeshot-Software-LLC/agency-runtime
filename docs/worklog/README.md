@@ -218,6 +218,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `74468aa` | 2026-07-26 | docs(roadmap): record parallel evidence and HTTP gap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md), [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-07-26-74468aa-parallel-evidence-http-gap.md) |
 | `12640d0` | 2026-07-26 | fix(http): stop after client disconnects | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-07-26-12640d0-http-client-disconnects.md) |
 | `49aafe1` | 2026-07-26 | test(change-loop): use bounded runtime homes | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-07-26-49aafe1-bounded-test-runtime-homes.md) |
+| `900f8d3` | 2026-07-26 | docs(security): correct presence and timing evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md), [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md), [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-07-26-900f8d3-presence-timing-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
