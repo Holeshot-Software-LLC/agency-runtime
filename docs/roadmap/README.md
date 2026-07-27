@@ -342,7 +342,7 @@ not stable internal identifiers.
 | [AR-135](issue-AR-135-complete-zcode-integration.md) | `a32e4e6`, `24948a0`, `c741b24`, `0b9849c`, `ad0a1ba` | [ADR-0024](../decisions/0024-native-host-packages-and-minimal-bridges.md), [ADR-0028](../decisions/0028-host-support-maturity-and-reversible-install.md), [ADR-0070](../decisions/0070-run-child-specific-agency-activation.md) |
 | [AR-136](issue-AR-136-persist-native-child-correlation.md) | `a32e4e6`, `24948a0`, `c741b24` | [ADR-0094](../decisions/0094-durable-native-child-correlation.md) |
 | [AR-137](issue-AR-137-complete-dashboard-collections.md) | `a32e4e6`, `c741b24`, `0b9849c` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
-| [AR-138](issue-AR-138-coherent-observable-dashboard-ui.md) | `a32e4e6`, `c741b24` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
+| [AR-138](issue-AR-138-coherent-observable-dashboard-ui.md) | `a32e4e6`, `c741b24`, `9aa317c` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
 | [AR-139](issue-AR-139-restore-release-asset-budget.md) | `a32e4e6`, `24948a0`, `c741b24`, `92adf2f` | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-140](issue-AR-140-scale-routing-and-retrieval.md) | `a32e4e6`, `c741b24`, `0b9849c`, `0c0299a`, `eec5207`, `8236a16` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | `a32e4e6`, `c741b24`, `a1efe31`, `4620204` | None; compatibility and mechanical consolidation |
