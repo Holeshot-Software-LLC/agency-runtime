@@ -338,12 +338,18 @@ def bounded_head_tail(payload: bytes, maximum_bytes: int, marker: bytes) -> byte
     return payload[:head_bytes] + marker + payload[-tail_bytes:]
 
 
-def clear_reserved_latest_logs(root: Path, *, manifest_name: str) -> None:
+def clear_reserved_latest_logs(
+    root: Path,
+    *,
+    manifest_name: str,
+    additional_names: Iterable[str] = (),
+) -> None:
     """Remove only fixed Agency-reserved latest outputs from an owned log root."""
 
     private_root = validate_private_directory(root)
+    reserved_names = {manifest_name, *additional_names}
     for candidate in private_root.iterdir():
-        if candidate.name != manifest_name and not _LATEST_LOG_NAME.fullmatch(candidate.name):
+        if candidate.name not in reserved_names and not _LATEST_LOG_NAME.fullmatch(candidate.name):
             continue
         metadata = os.lstat(candidate)
         if (

@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 49aafe1a148d5b34faebe894e71ccaa74351350d
-minimum_ledger_commit: c89c36528afec88202b4df771a63dfc9f8b8faf5
+evidence_commit: 900f8d330edbc90c0758b3557d780637ad83aec1
+minimum_ledger_commit: ee36bb904f605b28e4730ca81e5e75138eecb965
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -39,14 +39,12 @@ acceptance contract; this capsule records only the active checkpoint.
   publication, or release was authorized.
 - The user-owned untracked `docs/analysis/2026-07-25-deep-audit-findings.md`
   remains unchanged and excluded from every commit.
-- Telemetry reported 85.8 percent remaining after normal compaction. The clean
-  `49aafe1`/`c89c365` bounded-test-home repair-and-ledger pair precedes this
-  checkpoint.
+- Telemetry reported 18.1 percent remaining. The clean `900f8d3`/`ee36bb9`
+  evidence-correction pair precedes this required hard checkpoint.
 - Security, optimization, and UI-to-Store traceability findings AR-128 through
   AR-155 have governed local repairs or explicit remaining evidence gates.
-- AR-156's self-host path cause is repaired and focused evidence is green.
-  Complete timing has started, but every sample so far is explicitly invalid;
-  no local speed claim has been made.
+- AR-156 now has one valid four-shard baseline and reviewed opt-in file timing.
+  It does not yet have a matched speed claim.
 
 ## completed-evidence
 
@@ -69,24 +67,21 @@ acceptance contract; this capsule records only the active checkpoint.
   `main` or manual dispatch. Historical comparison avoids 95.79 raw
   runner-minutes and 24m29s elapsed per PR update; current hosted jobs are
   blocked before steps by GitHub billing/spending state.
-- AR-156 uses the governed four-way 274-file partition, one contract-attested
+- AR-156 uses the governed four-way 275-file partition, one contract-attested
   private runtime, per-shard HOME/TEMP/basetemp, least-privilege environments,
   contained cancellation, bounded head-and-tail logs, and one run manifest.
   Unknown runtime collisions fail closed; attested stale runtimes self-heal.
-- Runtime-contract v2 restores nested pytest only from exact owner-trusted
-  receipts. Four complete attempts remain rejected: 3/4 in 847.171 seconds,
-  3/4 in 752.807 seconds, 2/4 in 793.328 seconds, and 3/4 in 694.726 seconds.
-  They found one receipt defect, one Windows path hang, one overloaded
-  loopback deadline, and one long test-fixture root; none is speed evidence.
-- A same-runtime A/B passed under a short root in 2.47 seconds and timed out
-  under the long root at 180 seconds with no output. The runner now rejects
-  critical Windows paths above 240 characters and keeps nested homes short.
-  Focused evidence is 20 passes in 16.11 seconds and both real private-runtime
-  self-hosts pass in 7.96 seconds with a long outer pytest path. Crash recovery
-  verifies both the real runner and child PIDs are gone before reuse.
-- Commit `49aafe1` keeps valid runner-test homes below the Windows path ceiling.
-  The runner package passes 19 tests in 16.08 seconds normally and 19 in 16.45
-  seconds from a deliberately 195-character outer pytest root.
+- Four rejected runs found and repaired receipt, long-path, disconnect, and
+  fixture-root defects; none is benchmark evidence. Same-runtime short/long
+  path A/B was 2.47 seconds versus a 180-second timeout.
+- Baseline `411b67385c033451c78f632ecc5fc867` passed 4/4 in 676.505 seconds.
+  Shards took 619.89, 446.28, 578.23, and 508.32 seconds, proving byte weights
+  do not balance Windows runtime. This is one green run, not a speed claim.
+- Opt-in timing now validates exact run/shard/exit/file-union evidence and
+  publishes only for all-green runs. Focused runner/sharding/doctor/smoke is 46
+  passes in 43.87 seconds; release packaging is 57 passes; style checks pass.
+- Doctor/smoke tests retain full all-host and one real poisoned-profile Hermes
+  boundary while removing real-home probes, full-roster seeds, and one duplicate run.
 - Fresh source status sees all five hosts and the configured provider. The
   globally installed `agency` CLI is stale: it omits ZCode from status help and
   rejects the current provider configuration. The Store has 0 specialist-load
@@ -120,7 +115,7 @@ acceptance contract; this capsule records only the active checkpoint.
 - Persistent fresh installation remains fail-closed behind AR-143. Normal
   Codex hook trust also requires user-owned terminal-TUI review; neither may be
   bypassed while the user is remote.
-- AR-156 still needs three green comparable warm four-shard timings plus a
+- AR-156 still needs two more green comparable warm four-shard timings plus a
   matched one-shard control proving at least 30 percent median wall-clock
   improvement. The canonical current-head serial, coverage, performance, docs,
   UI, artifact, and installed smoke gates remain separate requirements.
@@ -137,11 +132,11 @@ clean checkpoint, continue the same persistent goal through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run an unchanged full parallel corpus; preserve its run-bound logs and reject
-   any non-green sample rather than changing the gate after observing it.
-2. Run three green comparable warm parallel corpora plus a matched one-shard
-   control; do not change the gate after observing.
-3. Use the recorded duration output to rebalance only if exact file coverage,
+1. Run one instrumented all-green corpus and generate versioned Windows weights
+   only from its exact file-union evidence.
+2. Run two more comparable warm corpora plus a matched one-shard control; do not
+   change the gate after observing.
+3. Rebalance only if exact file coverage,
    isolation, and release gates remain unchanged.
 4. Run current-head canonical serial, four-way exact coverage, performance,
    docs, UI, security, artifact, and isolated-install gates.

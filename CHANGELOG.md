@@ -75,6 +75,10 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- The local parallel change loop can opt into bounded, run-bound per-file timing
+  evidence. It publishes only after every shard passes and the exact sharded
+  file union matches the serial plan, enabling measured Windows rebalancing
+  without weakening the default test gate.
 - Codex subscription providers can now choose a validated reasoning effort in
   both the CLI and dashboard. Account model discovery reports supported levels,
   and the isolated inference process receives the selected override without

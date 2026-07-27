@@ -16,12 +16,14 @@ from collections.abc import Callable, Mapping
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from contextlib import suppress
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from agency_runtime.core.bounded_io import read_bounded_regular_file
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.exception_notes import add_exception_note
 from agency_runtime.core.owned_process import (
     BoundedBinaryProcessResult,
@@ -47,6 +49,15 @@ from scripts.parallel_change_loop_storage import (
     write_atomic_bounded_log,
 )
 from scripts.prepare_ci_runtime import ci_runtime_root_path, prepare_ci_runtime
+from scripts.pytest_file_timing import (
+    MAX_RUN_TIMING_BYTES,
+    MAX_SHARD_TIMING_BYTES,
+    REPORT_OPTION,
+    RUN_ID_ENVIRONMENT_KEY,
+    RUN_TIMING_SCHEMA,
+    SHARD_OPTION,
+    SHARD_TIMING_SCHEMA,
+)
 from scripts.select_test_shard import select_test_files
 
 DEFAULT_SHARD_COUNT = 4
@@ -72,6 +83,7 @@ _LOG_ROOT_NAME = ".agency-local-change-loop-logs-v1"
 _LOG_ROOT_RECEIPT_NAME = ".agency-owned-root"
 _LOG_ROOT_RECEIPT = b"agency-runtime-local-change-loop-logs:v1\n"
 _LOG_MANIFEST_NAME = "latest-run.json"
+_TIMING_MANIFEST_NAME = "pytest-file-timings.latest.json"
 _SCRATCH_ROOT_NAME = ".agency-local-change-loop-scratch-v1"
 _LOCK_WAIT_SECONDS = 30.0
 _STATUS_LOG_BYTES = 512
@@ -133,6 +145,7 @@ class TestShardPlan:
     base_temp: Path
     log_path: Path
     timeout_seconds: float
+    timing_path: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,6 +161,7 @@ class ParallelTestPlan:
     runtime_key: str
     runtime_receipt: bytes
     dry_run: bool
+    timing_artifact_path: Path | None = None
     use: PlanUse = field(default_factory=PlanUse, compare=False, repr=False)
 
 
@@ -159,6 +173,7 @@ class ShardResult:
     timed_out: bool = False
     cancelled: bool = False
     failure_category: str | None = None
+    timing_report: dict[str, Any] | None = field(default=None, compare=False, repr=False)
 
 
 class ParallelCleanupError(RuntimeError):
@@ -284,6 +299,7 @@ def build_parallel_test_plan(
     ambient_environment: Mapping[str, str] | None = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     dry_run: bool = False,
+    collect_file_timings: bool = False,
 ) -> ParallelTestPlan:
     repo, tests = _resolved_test_root(repo_root, test_root)
     serial, selected_shards = equivalent_test_file_shards(tests, shard_count=shard_count)
@@ -354,11 +370,25 @@ def build_parallel_test_plan(
         private_home = shard_root / "home"
         private_temp = shard_root / "tmp"
         base_temp = private_temp / "pytest-change-loop"
+        timing_path = shard_root / "pytest-file-timings.json" if collect_file_timings else None
         relative_files = tuple(path.relative_to(repo) for path in selected)
+        timing_arguments = (
+            ()
+            if timing_path is None
+            else (
+                "-p",
+                "scripts.pytest_file_timing",
+                REPORT_OPTION,
+                str(timing_path),
+                SHARD_OPTION,
+                str(index),
+            )
+        )
         command = (
             str(python),
             "-m",
             "pytest",
+            *timing_arguments,
             *(path.as_posix() for path in relative_files),
             *PYTEST_FLAGS,
             "--basetemp",
@@ -395,6 +425,7 @@ def build_parallel_test_plan(
                 base_temp=base_temp,
                 log_path=log_root / f"pytest-shard-{index:02d}.latest.log",
                 timeout_seconds=timeout,
+                timing_path=timing_path,
             )
         )
     return ParallelTestPlan(
@@ -409,11 +440,12 @@ def build_parallel_test_plan(
         runtime_key=contract.key,
         runtime_receipt=receipt,
         dry_run=dry_run,
+        timing_artifact_path=(log_root / _TIMING_MANIFEST_NAME if collect_file_timings else None),
     )
 
 
 def plan_preview(plan: ParallelTestPlan) -> dict[str, Any]:
-    return {
+    preview: dict[str, Any] = {
         "schema_version": "agency.local-parallel-tests.v4",
         "collection": {
             "equivalent": True,
@@ -444,6 +476,14 @@ def plan_preview(plan: ParallelTestPlan) -> dict[str, Any]:
             for shard in plan.shards
         ],
     }
+    if plan.timing_artifact_path is not None:
+        preview["file_timings"] = {
+            "artifact": plan.timing_artifact_path.as_posix(),
+            "enabled": True,
+            "plugin": "scripts.pytest_file_timing",
+            "run_id_binding": "execution-generated",
+        }
+    return preview
 
 
 def _capture_budgets(maximum_bytes: int) -> tuple[int, int]:
@@ -477,6 +517,7 @@ def _result_log_payload(
     result: BoundedBinaryProcessResult | None,
     maximum_bytes: int,
     error_name: str | None = None,
+    failure_category_override: str | None = None,
 ) -> bytes:
     stdout_budget, stderr_budget = _capture_budgets(maximum_bytes)
     command = json.dumps(list(shard.command), ensure_ascii=True, separators=(",", ":")).encode()
@@ -484,7 +525,9 @@ def _result_log_payload(
         "cancelled": bool(result.cancelled) if result is not None else False,
         "command_items": len(shard.command),
         "command_sha256": hashlib.sha256(command).hexdigest(),
-        "failure_category": "runner" if result is None else _failure_category(result),
+        "failure_category": (
+            "runner" if result is None else failure_category_override or _failure_category(result)
+        ),
         "returncode": int(result.returncode) if result is not None else 1,
         "run_id": run_id,
         "runner_error": None if error_name is None else error_name[:80],
@@ -513,6 +556,133 @@ def _result_log_payload(
     return status_payload + b"[stdout]\n" + stdout + b"\n[stderr]\n" + stderr + b"\n"
 
 
+def _bounded_nonnegative_integer(value: object, *, maximum: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= maximum:
+        raise ValueError("file timing report contains an invalid bounded integer")
+    return value
+
+
+def _canonical_timing_path(value: object) -> str:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise ValueError("file timing report path is not canonical")
+    path = PurePosixPath(value)
+    if (
+        path.is_absolute()
+        or path.as_posix() != value
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
+        raise ValueError("file timing report path is not canonical")
+    return value
+
+
+def _validated_phase_map(value: object, *, maximum: int) -> dict[str, int]:
+    phases = {"call", "setup", "teardown"}
+    if not isinstance(value, dict) or set(value) != phases:
+        raise ValueError("file timing phase map has an invalid shape")
+    return {
+        phase: _bounded_nonnegative_integer(value[phase], maximum=maximum)
+        for phase in sorted(phases)
+    }
+
+
+def _load_timing_report(
+    shard: TestShardPlan,
+    *,
+    run_id: str,
+    exit_status: int,
+) -> dict[str, Any]:
+    if shard.timing_path is None:
+        raise ValueError("file timing was not requested for this shard")
+    raw = read_bounded_regular_file(
+        shard.timing_path,
+        limit=MAX_SHARD_TIMING_BYTES,
+        label="pytest file timing report",
+    )
+    if not exact_private_file_is_valid(shard.timing_path, raw):
+        raise ValueError("pytest file timing report is not owner-trusted")
+    payload = safe_load_bounded_json(
+        raw,
+        maximum_bytes=MAX_SHARD_TIMING_BYTES,
+        maximum_depth=5,
+        maximum_nodes=100_000,
+    )
+    expected_keys = {
+        "collected_item_count",
+        "errors",
+        "exit_status",
+        "files",
+        "phase_report_count",
+        "run_id",
+        "schema",
+        "shard",
+    }
+    if not isinstance(payload, dict) or set(payload) != expected_keys:
+        raise ValueError("pytest file timing report has an invalid shape")
+    if (
+        payload["schema"] != SHARD_TIMING_SCHEMA
+        or payload["run_id"] != run_id
+        or payload["errors"] != []
+        or _bounded_nonnegative_integer(payload["shard"], maximum=4096) != shard.index
+        or _bounded_nonnegative_integer(payload["exit_status"], maximum=255) != exit_status
+    ):
+        raise ValueError("pytest file timing report identity is invalid")
+    files = payload["files"]
+    if not isinstance(files, list) or len(files) != len(shard.test_files):
+        raise ValueError("pytest file timing file count is invalid")
+    expected_paths = {path.as_posix() for path in shard.test_files}
+    observed_paths: set[str] = set()
+    collected_items = 0
+    phase_reports = 0
+    validated_files: list[dict[str, Any]] = []
+    for item in files:
+        if not isinstance(item, dict) or set(item) != {
+            "collected_items",
+            "duration_ns",
+            "path",
+            "report_counts",
+            "total_ns",
+        }:
+            raise ValueError("pytest file timing entry has an invalid shape")
+        path = _canonical_timing_path(item["path"])
+        if path in observed_paths:
+            raise ValueError("pytest file timing report contains a duplicate path")
+        observed_paths.add(path)
+        item_count = _bounded_nonnegative_integer(item["collected_items"], maximum=2**31 - 1)
+        durations = _validated_phase_map(item["duration_ns"], maximum=2**63 - 1)
+        counts = _validated_phase_map(item["report_counts"], maximum=2**31 - 1)
+        total = _bounded_nonnegative_integer(item["total_ns"], maximum=2**63 - 1)
+        if total != sum(durations.values()):
+            raise ValueError("pytest file timing total does not match its phases")
+        collected_items += item_count
+        phase_reports += sum(counts.values())
+        validated_files.append(
+            {
+                "collected_items": item_count,
+                "duration_ns": durations,
+                "path": path,
+                "report_counts": counts,
+                "total_ns": total,
+            }
+        )
+    if observed_paths != expected_paths:
+        raise ValueError("pytest file timing paths differ from the planned shard")
+    if collected_items != _bounded_nonnegative_integer(
+        payload["collected_item_count"], maximum=2**31 - 1
+    ) or phase_reports != _bounded_nonnegative_integer(
+        payload["phase_report_count"], maximum=2**31 - 1
+    ):
+        raise ValueError("pytest file timing aggregate counts are inconsistent")
+    return {
+        "collected_item_count": collected_items,
+        "exit_status": exit_status,
+        "files": sorted(validated_files, key=lambda item: item["path"]),
+        "phase_report_count": phase_reports,
+        "run_id": run_id,
+        "schema": SHARD_TIMING_SCHEMA,
+        "shard": shard.index,
+    }
+
+
 def _run_shard(
     shard: TestShardPlan,
     cancel_event: threading.Event,
@@ -522,12 +692,15 @@ def _run_shard(
     started_at_unix_ns: int,
 ) -> ShardResult:
     stdout_budget, stderr_budget = _capture_budgets(maximum_log_bytes)
+    environment = dict(shard.environment)
+    if shard.timing_path is not None:
+        environment[RUN_ID_ENVIRONMENT_KEY] = run_id
     try:
         result = bounded_runner(
             shard.command,
             timeout=shard.timeout_seconds,
             cwd=str(shard.working_directory),
-            env=dict(shard.environment),
+            env=environment,
             max_stdout_bytes=stdout_budget,
             max_stderr_bytes=stderr_budget,
             retain_output_tail=True,
@@ -551,6 +724,17 @@ def _run_shard(
         )
         return ShardResult(shard.index, 1, shard.log_path, failure_category="runner")
     category = _failure_category(result)
+    timing_report: dict[str, Any] | None = None
+    if shard.timing_path is not None:
+        try:
+            timing_report = _load_timing_report(
+                shard,
+                run_id=run_id,
+                exit_status=result.returncode,
+            )
+        except (OSError, TypeError, ValueError):
+            if result.returncode == 0 and category is None:
+                category = "timing"
     write_atomic_bounded_log(
         shard.log_path,
         _result_log_payload(
@@ -559,6 +743,7 @@ def _run_shard(
             started_at_unix_ns=started_at_unix_ns,
             result=result,
             maximum_bytes=maximum_log_bytes,
+            failure_category_override=category,
         ),
         maximum_log_bytes,
         marker=_TRUNCATION_MARKER,
@@ -570,6 +755,7 @@ def _run_shard(
         timed_out=result.timed_out,
         cancelled=result.cancelled,
         failure_category=category,
+        timing_report=timing_report,
     )
 
 
@@ -592,6 +778,88 @@ def _shard_succeeded(result: ShardResult) -> bool:
         and not result.cancelled
         and result.failure_category is None
     )
+
+
+def _timing_artifact_payload(
+    plan: ParallelTestPlan,
+    results: tuple[ShardResult, ...],
+    *,
+    run_id: str,
+) -> bytes | None:
+    if plan.timing_artifact_path is None:
+        return None
+    if (
+        len(results) != len(plan.shards)
+        or any(not _shard_succeeded(result) for result in results)
+        or any(result.timing_report is None for result in results)
+    ):
+        return None
+    expected_paths = {path.as_posix() for path in plan.serial_files}
+    observed_paths: set[str] = set()
+    files: list[dict[str, Any]] = []
+    shards: list[dict[str, int]] = []
+    collected_item_count = 0
+    phase_report_count = 0
+    for result in sorted(results, key=lambda item: item.index):
+        report = result.timing_report
+        if report is None or report["run_id"] != run_id or report["shard"] != result.index:
+            raise RuntimeError("pytest file timing report identity changed before consolidation")
+        collected = int(report["collected_item_count"])
+        phases = int(report["phase_report_count"])
+        collected_item_count += collected
+        phase_report_count += phases
+        shards.append(
+            {
+                "collected_item_count": collected,
+                "exit_status": int(report["exit_status"]),
+                "index": result.index,
+                "phase_report_count": phases,
+            }
+        )
+        for item in report["files"]:
+            path = str(item["path"])
+            if path in observed_paths:
+                raise RuntimeError("pytest file timing paths overlap between shards")
+            observed_paths.add(path)
+            files.append({**item, "shard": result.index})
+    if observed_paths != expected_paths:
+        raise RuntimeError("pytest file timing union differs from the serial file plan")
+    payload = {
+        "collected_item_count": collected_item_count,
+        "files": sorted(files, key=lambda item: item["path"]),
+        "phase_report_count": phase_report_count,
+        "run_id": run_id,
+        "schema": RUN_TIMING_SCHEMA,
+        "shard_count": len(plan.shards),
+        "shards": shards,
+        "test_file_count": len(plan.serial_files),
+    }
+    encoded = (
+        json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True).encode(
+            "ascii"
+        )
+        + b"\n"
+    )
+    if len(encoded) > MAX_RUN_TIMING_BYTES:
+        raise RuntimeError("consolidated pytest file timing artifact exceeded its byte bound")
+    return encoded
+
+
+def _publish_timing_artifact(plan: ParallelTestPlan, payload: bytes | None) -> None:
+    if payload is None:
+        return
+    timing_artifact_path = plan.timing_artifact_path
+    if timing_artifact_path is None:
+        raise RuntimeError("pytest file timing artifact path is unavailable")
+    try:
+        write_atomic_bounded_log(
+            timing_artifact_path,
+            payload,
+            MAX_RUN_TIMING_BYTES,
+            marker=_TRUNCATION_MARKER,
+        )
+    except BaseException as exc:
+        raise ParallelCleanupError("timing-manifest") from exc
 
 
 def _execute_shards(
@@ -702,7 +970,11 @@ def run_parallel_test_plan(
                 _LOG_ROOT_RECEIPT,
             ):
                 raise RuntimeError("parallel test runtime ownership changed")
-            clear_reserved_latest_logs(plan.log_root, manifest_name=_LOG_MANIFEST_NAME)
+            clear_reserved_latest_logs(
+                plan.log_root,
+                manifest_name=_LOG_MANIFEST_NAME,
+                additional_names=(_TIMING_MANIFEST_NAME,),
+            )
             scratch_identity = reset_private_scratch(
                 plan.scratch_root,
                 child_directories=(
@@ -740,6 +1012,8 @@ def run_parallel_test_plan(
             if outcome is None:
                 raise RuntimeError("parallel execution completed without a shard outcome")
             elapsed = time.monotonic() - started
+            timing_payload = _timing_artifact_payload(plan, outcome[1], run_id=run_id)
+            _publish_timing_artifact(plan, timing_payload)
             manifest = {
                 "elapsed_seconds": round(elapsed, 6),
                 "exit_code": outcome[0],
@@ -757,6 +1031,12 @@ def run_parallel_test_plan(
                 ],
                 "started_at_unix_ns": started_at_unix_ns,
             }
+            if plan.timing_artifact_path is not None:
+                manifest["file_timings"] = {
+                    "artifact": plan.timing_artifact_path.name,
+                    "complete": timing_payload is not None,
+                    "schema": RUN_TIMING_SCHEMA,
+                }
             try:
                 write_atomic_bounded_log(
                     plan.log_root / _LOG_MANIFEST_NAME,
@@ -780,6 +1060,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--runtime-home", type=Path)
     parser.add_argument("--timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--max-log-bytes", type=int, default=DEFAULT_MAX_LOG_BYTES)
+    parser.add_argument("--collect-file-timings", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
 
@@ -795,6 +1076,7 @@ def main(argv: list[str] | None = None) -> int:
             runtime_home=args.runtime_home,
             timeout_seconds=args.timeout_seconds,
             dry_run=args.dry_run,
+            collect_file_timings=args.collect_file_timings,
         )
         if args.dry_run:
             print(json.dumps(plan_preview(plan), indent=2, sort_keys=True))

@@ -36,9 +36,21 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     for key in list(os.environ):
         if is_agency_product_environment_key(key) or key == "LITELLM_API_KEY":
             monkeypatch.delenv(key, raising=False)
+    monkeypatch.setattr(doctor_module, "inspect_host_installations", lambda **_kwargs: [])
+    monkeypatch.setattr(
+        doctor_module,
+        "_http_check",
+        lambda *_args, **_kwargs: (False, "offline test boundary"),
+    )
     reset_config_cache()
     yield
     reset_config_cache()
+
+
+def _activate_one_agent(store: Store) -> None:
+    """Satisfy doctor's non-empty count contract without seeding the full roster."""
+
+    store._activate_prevalidated_agent(dict(STARTER_ROSTER[0]))
 
 
 def test_doctor_returns_report():
@@ -53,8 +65,7 @@ def test_doctor_returns_report():
             ),
         )
         store = Store(cfg.store.resolved_path())
-        for agent in STARTER_ROSTER:
-            store._activate_prevalidated_agent(dict(agent))
+        _activate_one_agent(store)
 
         report = run_doctor(cfg)
 
@@ -184,8 +195,7 @@ def test_doctor_json_serializable():
             judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
         )
         store = Store(cfg.store.resolved_path())
-        for agent in STARTER_ROSTER:
-            store._activate_prevalidated_agent(dict(agent))
+        _activate_one_agent(store)
 
         report = run_doctor(cfg)
         data = report.to_dict()
@@ -203,8 +213,7 @@ def test_doctor_distinguishes_host_discovery_from_native_registration(monkeypatc
             judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
         )
         store = Store(cfg.store.resolved_path())
-        for agent in STARTER_ROSTER:
-            store._activate_prevalidated_agent(dict(agent))
+        _activate_one_agent(store)
 
         monkeypatch.setattr(
             "agency_runtime.core.doctor.inspect_host_installations",
@@ -234,8 +243,7 @@ def test_doctor_accepts_yolo_profile():
             profile="yolo",
         )
         store = Store(cfg.store.resolved_path())
-        for agent in STARTER_ROSTER:
-            store._activate_prevalidated_agent(dict(agent))
+        _activate_one_agent(store)
 
         report = run_doctor(cfg)
         profile_check = next(c for c in report.checks if c.name == "config_profile")
@@ -270,35 +278,10 @@ def test_provider_validation_is_parallel_and_preserves_order(monkeypatch):
     assert [result.name for result in results] == [f"provider-{index}" for index in range(8)]
 
 
-def test_smoke_all_exercises_generated_host_plugins(monkeypatch, private_installer_launcher):
-    """Smoke --all validates every generated host plugin without touching real HOME."""
-    with tempfile.TemporaryDirectory() as tmp:
-        cfg = AgencyConfig(
-            store=StoreConfig(db_path=f"{tmp}/test.db"),
-            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
-        )
-        store = Store(cfg.store.resolved_path())
-        for agent in STARTER_ROSTER:
-            store._activate_prevalidated_agent(dict(agent))
-        monkeypatch.setenv("AGENCY_DB_PATH", str(cfg.store.resolved_path()))
-
-        from agency_runtime.core.smoke import run_smoke
-
-        report = run_smoke(all_hosts=True)
-
-        assert report["passed"] is True, [
-            check for check in report["checks"] if check["status"] != "pass"
-        ]
-        check_names = {check["name"] for check in report["checks"]}
-        assert {"plugin_hermes", "plugin_openclaw", "plugin_codex", "plugin_claude"} <= check_names
-
-
-def test_smoke_all_passes_with_empty_active_roster(
-    monkeypatch, tmp_path, private_installer_launcher
+def test_smoke_all_exercises_generated_host_plugins_with_fresh_roster(
+    private_installer_launcher,
 ):
-    """Fresh installs can smoke-test before syncing external roster sources."""
-    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "empty.db"))
-
+    """Smoke --all validates every plugin from its own isolated fresh Store."""
     from agency_runtime.core.smoke import run_smoke
 
     report = run_smoke(all_hosts=True)
@@ -306,6 +289,8 @@ def test_smoke_all_passes_with_empty_active_roster(
     assert report["passed"] is True, [
         check for check in report["checks"] if check["status"] != "pass"
     ]
+    check_names = {check["name"] for check in report["checks"]}
+    assert {"plugin_hermes", "plugin_openclaw", "plugin_codex", "plugin_claude"} <= check_names
     roster_check = next(
         check for check in report["checks"] if check["name"] == "routing_roster_available"
     )

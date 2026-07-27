@@ -11,13 +11,16 @@ related:
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - .github/workflows/ci.yml
   - scripts/select_test_shard.py
+  - scripts/pytest_file_timing.py
   - scripts/run_parallel_change_loop.py
   - scripts/parallel_change_loop_runtime.py
   - scripts/parallel_change_loop_storage.py
   - scripts/prepare_ci_runtime.py
   - tests/test_ci_sharding.py
+  - tests/test_doctor.py
   - tests/test_parallel_change_loop.py
   - tests/test_release_packaging.py
+  - tests/test_smoke_isolation.py
 supersedes: []
 superseded_by: null
 type: issue
@@ -93,7 +96,10 @@ quantitative claims to use recorded controls rather than inferred speedups.
   shared attested runtime with a private HOME, TEMP, and base directory per
   shard, aggregates failures, contains cancellation, and cleans up safely.
 - Dry-run creates no runtime, lock, venv, Node mirror, receipt, log, or scratch
-  state; real runs publish one run-bound bounded log set and manifest.
+state; real runs publish one run-bound bounded log set and manifest.
+- Opt-in file timing publishes only after every shard is green, binds every
+  bounded report to the exact run/shard/exit state, and proves its file union is
+  identical to the serial plan before any weight is trusted.
 - Three comparable warm local runs demonstrate at least 30 percent median
   wall-clock improvement before the parallel runner is recommended as the
   default change loop.
@@ -131,7 +137,7 @@ diff checks are green. An independent reviewer passed 211 tests with 15 skips,
 the targeted resource-free dry-run regression, an isolated real private-venv
 smoke, root-exited descendant cancellation, and a live facade probe that
 returned exit 130 with cancellation classified and the child reaped. Fresh-home
-direct and module previews were byte-identical, covered all 274 files exactly,
+direct and module previews were byte-identical, covered all 275 files exactly,
 and left the projected runtime, requested runtime home, and global lock parent
 unchanged.
 
@@ -155,6 +161,27 @@ used by the production self-host while retaining a dedicated over-budget
 negative case. The package passes 19 tests in 16.08 seconds normally and 19 in
 16.45 seconds from a 195-character outer pytest root.
 
+Run `411b67385c033451c78f632ecc5fc867` is the first valid current-head baseline:
+all four shards passed in 676.505 seconds. Pytest shard times were 619.89,
+446.28, 578.23, and 508.32 seconds for the exact 275-file union. This is one
+correctness baseline, not yet the three-run speed sample. Its 173.61-second
+fastest-to-slowest spread also proves source-byte size is a poor Windows weight.
+
+The opt-in `--collect-file-timings` path records bounded setup/call/teardown
+nanoseconds for each exact repo-relative file. It maps reports through collected
+node IDs so pytest `rootpath` cannot retarget relative arguments, rejects
+missing/forged/non-equivalent reports, and publishes no complete artifact for a
+failed, timed-out, cancelled, or containment-failed shard. Default execution is
+unchanged. Independent review findings were repaired before checkpoint; the
+combined runner/sharding/doctor/smoke slice passes 46 tests in 43.87 seconds,
+the release-packaging suite passes 57, and Ruff/format/diff checks pass.
+
+The same slice removes accidental test cost without deleting behavior: generic
+doctor tests use one active agent and deterministic host/network boundaries;
+two equivalent all-host smoke assertions share one real integration run; and
+the poisoned-profile isolation test retains one real Hermes hook while stubbing
+unrelated hosts. Dedicated suites continue to own inventory and provider probes.
+
 Commit `d2ab19b` binds the dependency bridge to owner-trusted runtime receipts
 and records bounded slow-test telemetry. A controlled same-runtime A/B then
 isolated Windows path geometry: a short root passed in 2.47 seconds, while the
@@ -163,7 +190,7 @@ therefore keeps the 60-second child bound, rejects critical runtime paths above
 240 characters, allocates nested self-hosts below a short private root, and
 proves the real runner and worker PIDs are reaped during crash recovery. The
 focused package passes 20 tests in 16.11 seconds; both private-runtime self-host
-tests pass in 7.96 seconds even with a deliberately long outer temp path. Three
-green comparable warm runs and a matched one-shard control still remain before
+tests pass in 7.96 seconds even with a deliberately long outer temp path. Two
+more green comparable warm runs and a matched one-shard control still remain before
 the local runner acceptance can close. The canonical serial, coverage, and
 performance gates remain required.

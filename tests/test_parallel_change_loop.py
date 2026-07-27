@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -18,6 +19,7 @@ import pytest
 
 from agency_runtime.core.private_paths import ensure_private_directory, remove_private_directory
 from scripts import parallel_change_loop_runtime as runtime_subject
+from scripts import pytest_file_timing as timing_subject
 from scripts import run_parallel_change_loop as subject
 from scripts.parallel_change_loop_storage import capture_private_directory_identity
 from tests.runtime_support import trusted_base_test_interpreter, wait_for_process_exit
@@ -136,6 +138,7 @@ def _plan(
     *,
     shard_count: int = 4,
     timeout: float = 17,
+    collect_file_timings: bool = False,
 ) -> subject.ParallelTestPlan:
     repository = _repository(tmp_path, file_count=max(8, shard_count))
     return subject.build_parallel_test_plan(
@@ -145,6 +148,42 @@ def _plan(
         runtime_preparer=_runtime_preparer(runtime_home / "runtimes"),
         ambient_environment=_ambient(),
         timeout_seconds=timeout,
+        collect_file_timings=collect_file_timings,
+    )
+
+
+def _timing_report(
+    shard: subject.TestShardPlan,
+    *,
+    run_id: str,
+    exit_status: int = 0,
+) -> bytes:
+    files = [
+        {
+            "collected_items": 1,
+            "duration_ns": {"call": 2, "setup": 1, "teardown": 3},
+            "path": path.as_posix(),
+            "report_counts": {"call": 1, "setup": 1, "teardown": 1},
+            "total_ns": 6,
+        }
+        for path in shard.test_files
+    ]
+    return (
+        json.dumps(
+            {
+                "collected_item_count": len(files),
+                "errors": [],
+                "exit_status": exit_status,
+                "files": files,
+                "phase_report_count": len(files) * 3,
+                "run_id": run_id,
+                "schema": subject.SHARD_TIMING_SCHEMA,
+                "shard": shard.index,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+        + b"\n"
     )
 
 
@@ -231,6 +270,206 @@ def test_dry_run_is_deterministic_resource_free_and_concurrent_safe(
     assert previews[0]["schema_version"] == "agency.local-parallel-tests.v4"
     assert not Path(previews[0]["scratch_root"]).exists()
     assert not (tmp_path / "runtimes").exists()
+
+
+def test_timing_opt_in_is_explicit_deterministic_and_resource_free(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
+    repository = _repository(tmp_path)
+
+    def preparer(*_args: object, **_kwargs: object) -> dict[str, str]:
+        raise AssertionError("timed dry-run must not prepare a runtime")
+
+    plain = subject.build_parallel_test_plan(
+        repo_root=repository,
+        runtime_home=self_host_runtime_home,
+        runtime_preparer=preparer,
+        ambient_environment=_ambient(),
+        dry_run=True,
+    )
+    timed = subject.build_parallel_test_plan(
+        repo_root=repository,
+        runtime_home=self_host_runtime_home,
+        runtime_preparer=preparer,
+        ambient_environment=_ambient(),
+        dry_run=True,
+        collect_file_timings=True,
+    )
+
+    plain_preview = subject.plan_preview(plain)
+    timed_preview = subject.plan_preview(timed)
+    assert "file_timings" not in plain_preview
+    assert "file_timings" in timed_preview
+    assert timed_preview == subject.plan_preview(
+        subject.build_parallel_test_plan(
+            repo_root=repository,
+            runtime_home=self_host_runtime_home,
+            runtime_preparer=preparer,
+            ambient_environment=_ambient(),
+            dry_run=True,
+            collect_file_timings=True,
+        )
+    )
+    for plain_shard, timed_shard in zip(plain.shards, timed.shards, strict=True):
+        assert "scripts.pytest_file_timing" not in plain_shard.command
+        assert subject.REPORT_OPTION not in plain_shard.command
+        assert plain_shard.timing_path is None
+        assert "scripts.pytest_file_timing" in timed_shard.command
+        assert subject.REPORT_OPTION in timed_shard.command
+        assert timed_shard.timing_path is not None
+        assert str(timed_shard.timing_path) in timed_shard.command
+        assert not timed_shard.timing_path.exists()
+        assert subject.RUN_ID_ENVIRONMENT_KEY not in timed_shard.environment
+    assert not timed.scratch_root.exists()
+
+
+def test_valid_timing_reports_publish_one_run_bound_consolidated_artifact(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
+    plan = _plan(
+        tmp_path,
+        self_host_runtime_home,
+        shard_count=2,
+        collect_file_timings=True,
+    )
+
+    def run(command: tuple[str, ...], **kwargs: Any) -> subject.BoundedBinaryProcessResult:
+        shard = next(item for item in plan.shards if item.command == tuple(command))
+        assert shard.timing_path is not None
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        run_id = environment[subject.RUN_ID_ENVIRONMENT_KEY]
+        assert set(environment).isdisjoint({"OPENAI_API_KEY", "GITHUB_TOKEN"})
+        shard.timing_path.write_bytes(_timing_report(shard, run_id=run_id))
+        return subject.BoundedBinaryProcessResult(0, b"", b"")
+
+    exit_code, results = subject.run_parallel_test_plan(plan, bounded_runner=run)
+
+    assert exit_code == 0
+    assert all(result.failure_category is None for result in results)
+    assert all(result.timing_report is not None for result in results)
+    assert plan.timing_artifact_path is not None
+    artifact = json.loads(plan.timing_artifact_path.read_text("utf-8"))
+    assert artifact["schema"] == subject.RUN_TIMING_SCHEMA
+    assert artifact["run_id"] == plan.use.run_id
+    assert artifact["test_file_count"] == len(plan.serial_files)
+    assert {item["path"] for item in artifact["files"]} == {
+        path.as_posix() for path in plan.serial_files
+    }
+    assert sum(item["total_ns"] for item in artifact["files"]) == len(plan.serial_files) * 6
+    assert "OPENAI_API_KEY" not in plan.timing_artifact_path.read_text("utf-8")
+    manifest = json.loads((plan.log_root / "latest-run.json").read_text("utf-8"))
+    assert manifest["file_timings"] == {
+        "artifact": plan.timing_artifact_path.name,
+        "complete": True,
+        "schema": subject.RUN_TIMING_SCHEMA,
+    }
+
+
+def test_missing_or_non_equivalent_timing_report_cannot_turn_a_pass_green(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+) -> None:
+    for mode in ("missing", "wrong-path"):
+        plan = _plan(
+            tmp_path / mode,
+            self_host_runtime_home,
+            shard_count=1,
+            collect_file_timings=True,
+        )
+
+        def run(
+            command: tuple[str, ...],
+            *,
+            behavior: str = mode,
+            active_plan: subject.ParallelTestPlan = plan,
+            **kwargs: Any,
+        ) -> subject.BoundedBinaryProcessResult:
+            del command
+            if behavior == "wrong-path":
+                shard = active_plan.shards[0]
+                assert shard.timing_path is not None
+                payload = json.loads(
+                    _timing_report(
+                        shard,
+                        run_id=kwargs["env"][subject.RUN_ID_ENVIRONMENT_KEY],
+                    )
+                )
+                payload["files"][0]["path"] = "tests/not-planned.py"
+                shard.timing_path.write_text(
+                    json.dumps(payload, separators=(",", ":"), sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+            return subject.BoundedBinaryProcessResult(0, b"", b"")
+
+        exit_code, results = subject.run_parallel_test_plan(plan, bounded_runner=run)
+
+        assert exit_code == 1
+        assert results[0].returncode == 0
+        assert results[0].failure_category == "timing"
+        assert results[0].timing_report is None
+        assert plan.timing_artifact_path is not None
+        assert not plan.timing_artifact_path.exists()
+        status = json.loads(results[0].log_path.read_text("utf-8").splitlines()[0])
+        assert status["failure_category"] == "timing"
+        manifest = json.loads((plan.log_root / "latest-run.json").read_text("utf-8"))
+        assert manifest["file_timings"]["complete"] is False
+
+
+@pytest.mark.parametrize(
+    ("returncode", "timed_out", "cancelled", "failure_category"),
+    [
+        (1, False, False, None),
+        (0, True, False, "timeout"),
+        (0, False, True, "cancelled"),
+        (0, False, False, "containment"),
+    ],
+)
+def test_red_shard_timing_is_never_published_as_complete(
+    tmp_path: Path,
+    self_host_runtime_home: Path,
+    returncode: int,
+    timed_out: bool,
+    cancelled: bool,
+    failure_category: str | None,
+) -> None:
+    plan = _plan(
+        tmp_path,
+        self_host_runtime_home,
+        shard_count=1,
+        collect_file_timings=True,
+    )
+
+    def run(command: tuple[str, ...], **kwargs: Any) -> subject.BoundedBinaryProcessResult:
+        del command
+        shard = plan.shards[0]
+        assert shard.timing_path is not None
+        shard.timing_path.write_bytes(
+            _timing_report(
+                shard,
+                run_id=kwargs["env"][subject.RUN_ID_ENVIRONMENT_KEY],
+                exit_status=returncode,
+            )
+        )
+        return subject.BoundedBinaryProcessResult(
+            returncode,
+            b"",
+            b"",
+            timed_out=timed_out,
+            cancelled=cancelled,
+            failure_category=failure_category,
+        )
+
+    exit_code, results = subject.run_parallel_test_plan(plan, bounded_runner=run)
+
+    assert exit_code == 1
+    assert results[0].timing_report is not None
+    assert plan.timing_artifact_path is not None
+    assert not plan.timing_artifact_path.exists()
+    manifest = json.loads((plan.log_root / "latest-run.json").read_text("utf-8"))
+    assert manifest["file_timings"]["complete"] is False
 
 
 def test_execution_uses_balanced_capture_and_replaces_one_coherent_log_set(
@@ -398,14 +637,26 @@ def test_real_private_venv_executes_pytest_without_secret_or_global_plugins(
             "    assert 'OPENAI_API_KEY' not in os.environ\n"
         ),
     )
+    (tmp_path / "pyproject.toml").write_text(
+        "[tool.pytest.ini_options]\naddopts = []\n",
+        encoding="utf-8",
+    )
     ambient = dict(os.environ)
     ambient["OPENAI_API_KEY"] = "do-not-leak"
+    plugin_package = repository / "scripts"
+    plugin_package.mkdir()
+    (plugin_package / "__init__.py").touch()
+    shutil.copyfile(
+        Path(subject.__file__).with_name("pytest_file_timing.py"),
+        plugin_package / "pytest_file_timing.py",
+    )
     plan = subject.build_parallel_test_plan(
         repo_root=repository,
         shard_count=1,
         runtime_home=self_host_runtime_home,
         ambient_environment=ambient,
         timeout_seconds=_SELF_HOST_CHILD_TIMEOUT_SECONDS,
+        collect_file_timings=True,
     )
 
     exit_code, results = subject.run_parallel_test_plan(plan)
@@ -414,6 +665,29 @@ def test_real_private_venv_executes_pytest_without_secret_or_global_plugins(
     assert not plan.scratch_root.exists()
     configuration = plan.stable_runtime_root / "venv" / "pyvenv.cfg"
     assert "include-system-site-packages = false" in configuration.read_text("utf-8").lower()
+    assert plan.timing_artifact_path is not None
+    artifact = json.loads(plan.timing_artifact_path.read_text("utf-8"))
+    assert artifact["run_id"] == plan.use.run_id
+    assert artifact["test_file_count"] == 1
+    assert artifact["files"][0]["path"] == "tests/test_0.py"
+    assert artifact["files"][0]["report_counts"] == {
+        "call": 1,
+        "setup": 1,
+        "teardown": 1,
+    }
+
+
+def test_timing_plugin_rejects_repeated_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
+    sentinel = object()
+    monkeypatch.setattr(timing_subject, "_state", sentinel)
+
+    class Config:
+        @staticmethod
+        def getoption(option: str) -> object:
+            return "report.json" if option == timing_subject.REPORT_OPTION else 0
+
+    with pytest.raises(RuntimeError, match="already configured"):
+        timing_subject.pytest_configure(Config())
 
 
 def test_fixed_runtime_self_heals_when_node_identity_changes(
@@ -561,6 +835,7 @@ def test_help_supports_direct_and_module_invocation() -> None:
     )
     assert direct.returncode == module.returncode == 0
     assert "--output-dir" not in direct.stdout
+    assert "--collect-file-timings" in direct.stdout
 
 
 def test_dependency_discovery_recovers_loaded_pytest_from_private_venv(
