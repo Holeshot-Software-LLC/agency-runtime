@@ -260,6 +260,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bba2b43` | 2026-07-27 | refactor(security): consolidate runtime authority helpers | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | [detail](2026-07-27-bba2b43-runtime-authority-helpers.md) |
 | `4e39d4c` | 2026-07-27 | fix(codex): bind hook trust inventory | [AR-182](../roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md) | [detail](2026-07-27-4e39d4c-codex-hook-trust-inventory.md) |
 | `d07f4d8` | 2026-07-27 | fix(release): normalize private POSIX wheel modes | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [detail](2026-07-27-d07f4d8-private-posix-wheel-modes.md) |
+| `828f747` | 2026-07-27 | fix(release): normalize private POSIX sdist modes | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [detail](2026-07-27-828f747-private-posix-sdist-modes.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
