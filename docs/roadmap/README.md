@@ -358,7 +358,7 @@ not stable internal identifiers.
 | [AR-164](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | `f64ba1e`; tracker creation pending | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-165](issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | `f64ba1e`; hosted validation and tracker creation pending | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-166](issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | `f64ba1e`; tracker creation pending | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md) |
-| [AR-167](issue-AR-167-normalize-windows-release-source-modes.md) | `c844498`; tracker creation pending | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-167](issue-AR-167-normalize-windows-release-source-modes.md) | `c844498`, `1ecc4e5`; tracker creation pending | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 
