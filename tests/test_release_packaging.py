@@ -51,9 +51,21 @@ def _quality_gate_script() -> str:
     return run.removeprefix(prefix).removesuffix(suffix)
 
 
-def _quality_gate_results(test_result: str | None) -> dict[str, object]:
+def _quality_gate_results(
+    test_result: str | None,
+    *,
+    coverage_result: str | None = "success",
+) -> dict[str, object]:
     return {
-        name: {"result": test_result if name == "test" else "success"}
+        name: {
+            "result": (
+                test_result
+                if name == "test"
+                else coverage_result
+                if name == "coverage-complete"
+                else "success"
+            )
+        }
         for name in QUALITY_GATE_NEEDS
     }
 
@@ -664,9 +676,6 @@ def test_maintained_release_instructions_require_canonical_git_blob_builder() ->
     assert "scripts/release_contract.py" in REQUIRED_SDIST_FILES
     assert "scripts/release_git.py" in REQUIRED_SDIST_FILES
     assert "setup.py" in REQUIRED_SDIST_FILES
-    checklist = (ROOT / "docs/RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
-    for module in RELEASE_COVERAGE_MODULES:
-        assert f"--cov=scripts.{module}" in checklist
 
 
 def test_coverage_and_matrix_jobs_use_private_runtime_state_boundaries() -> None:
@@ -724,7 +733,6 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     jobs = workflow["jobs"]
     assert "needs" not in jobs["quality-contracts"]
     for job_name in (
-        "coverage",
         "performance",
         "windows-portability-contract",
         "security",
@@ -734,6 +742,17 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
             "needs.quality-contracts.result == 'success' && "
             "needs.quality-contracts.outputs.code_required == 'true'"
         )
+    manual_integration_condition = (
+        "github.event_name == 'workflow_dispatch' && "
+        "needs.quality-contracts.result == 'success' && "
+        "needs.quality-contracts.outputs.code_required == 'true'"
+    )
+    assert jobs["coverage"]["if"] == manual_integration_condition
+    assert jobs["test"]["if"] == manual_integration_condition
+    assert jobs["coverage"]["name"].startswith("integration coverage / ")
+    assert jobs["coverage-complete"]["name"] == "integration coverage / combined"
+    assert jobs["test"]["name"].startswith("integration / full compatibility / ")
+    assert jobs["quality"]["name"] == "automatic gates; integration suites are manual"
     assert jobs["artifacts"]["needs"] == "quality-contracts"
     assert "if" not in jobs["artifacts"]
     assert jobs["coverage"]["strategy"]["matrix"]["include"] == [
@@ -760,6 +779,7 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
         "Check tracked release inputs",
         "Check out canonical documentation history",
         "Install documentation dependencies",
+        "Run fast Python production spine",
         "Verify fast workflow contracts",
         "Run dashboard UI tests with coverage",
         "Verify documentation ledgers",
@@ -836,11 +856,28 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     )["run"]
     assert "tests/test_ci_change_scope.py tests/test_ci_sharding.py" in quality_contracts
     assert "tests/test_ci_session_pair.py tests/test_release_packaging.py" in quality_contracts
-    assert (
-        jobs["test"]["if"] == "github.event_name != 'pull_request' && "
-        "needs.quality-contracts.result == 'success' && "
-        "needs.quality-contracts.outputs.code_required == 'true'"
-    )
+    production_spine = quality_steps["Run fast Python production spine"]
+    assert production_spine["if"] == "steps.change-scope.outputs.code_required == 'true'"
+    assert re.findall(r"tests/test_[a-z0-9_]+\.py", production_spine["run"]) == [
+        "tests/test_senior_audit_hardening.py",
+        "tests/test_configuration_namespace_security.py",
+        "tests/test_executable_namespace_security.py",
+        "tests/test_dashboard_auth_boundary_regression.py",
+        "tests/test_dashboard_transaction_refactors.py",
+        "tests/test_routing_correctness.py",
+        "tests/test_workforce_hiring_contract.py",
+        "tests/test_workforce_selection_safety.py",
+        "tests/test_workforce_dynamic_hiring.py",
+        "tests/test_delegation_p1_correctness.py",
+        "tests/test_store_turn_atomicity.py",
+        "tests/test_roster_snapshot_generation.py",
+        "tests/test_mcp_protocol_hardening.py",
+        "tests/test_cli_parser_contract.py",
+        "tests/test_native_installer.py",
+        "tests/test_host_boundary_hardening.py",
+        "tests/test_cli_operator_presence.py",
+        "tests/test_security_turn_boundaries.py",
+    ]
     assert jobs["test"]["strategy"]["matrix"]["include"] == [
         {
             "os": "ubuntu-24.04",
@@ -932,48 +969,68 @@ def test_docs_only_lane_keeps_same_revision_sdist_producers() -> None:
 
 
 @pytest.mark.parametrize(
-    ("event_name", "test_result"),
+    ("event_name", "test_result", "coverage_result"),
     [
-        ("pull_request", "skipped"),
-        ("push", "success"),
-        ("workflow_dispatch", "success"),
+        ("pull_request", "skipped", "skipped"),
+        ("push", "skipped", "skipped"),
+        ("workflow_dispatch", "success", "success"),
     ],
 )
-def test_quality_aggregate_accepts_only_the_event_appropriate_matrix_result(
-    event_name: str, test_result: str
+def test_quality_aggregate_accepts_only_event_appropriate_integration_results(
+    event_name: str,
+    test_result: str,
+    coverage_result: str,
 ) -> None:
-    completed = _run_quality_gate(event_name, _quality_gate_results(test_result))
+    completed = _run_quality_gate(
+        event_name,
+        _quality_gate_results(test_result, coverage_result=coverage_result),
+    )
 
     assert completed.returncode == 0, completed.stderr
 
 
 @pytest.mark.parametrize(
-    ("event_name", "test_result"),
+    ("event_name", "job_name", "result"),
     [
-        ("pull_request", "success"),
-        ("pull_request", "failure"),
-        ("pull_request", "cancelled"),
-        ("push", "skipped"),
-        ("push", "cancelled"),
-        ("workflow_dispatch", "skipped"),
-        ("workflow_dispatch", "failure"),
+        ("pull_request", "coverage-complete", "success"),
+        ("pull_request", "test", "success"),
+        ("push", "coverage-complete", "success"),
+        ("push", "test", "success"),
+        ("workflow_dispatch", "coverage-complete", "skipped"),
+        ("workflow_dispatch", "coverage-complete", "failure"),
+        ("workflow_dispatch", "coverage-complete", "cancelled"),
+        ("workflow_dispatch", "test", "skipped"),
+        ("workflow_dispatch", "test", "failure"),
+        ("workflow_dispatch", "test", "cancelled"),
     ],
 )
-def test_quality_aggregate_rejects_the_wrong_matrix_result(
-    event_name: str, test_result: str
+def test_quality_aggregate_rejects_wrong_integration_results(
+    event_name: str,
+    job_name: str,
+    result: str,
 ) -> None:
-    completed = _run_quality_gate(event_name, _quality_gate_results(test_result))
+    manual = event_name == "workflow_dispatch"
+    needs = _quality_gate_results(
+        "success" if manual else "skipped",
+        coverage_result="success" if manual else "skipped",
+    )
+    needs[job_name] = {"result": result}
+
+    completed = _run_quality_gate(event_name, needs)
 
     assert completed.returncode != 0
-    assert '"test"' in completed.stderr
+    assert f'"{job_name}"' in completed.stderr
 
 
-@pytest.mark.parametrize("job_name", [name for name in QUALITY_GATE_NEEDS if name != "test"])
+@pytest.mark.parametrize(
+    "job_name",
+    [name for name in QUALITY_GATE_NEEDS if name not in {"coverage-complete", "test"}],
+)
 @pytest.mark.parametrize("result", ["failure", "cancelled", "skipped", None])
 def test_quality_aggregate_requires_every_other_gate_to_succeed(
     job_name: str, result: str | None
 ) -> None:
-    needs = _quality_gate_results("skipped")
+    needs = _quality_gate_results("skipped", coverage_result="skipped")
     needs[job_name] = {"result": result}
 
     completed = _run_quality_gate("pull_request", needs)
@@ -984,7 +1041,7 @@ def test_quality_aggregate_requires_every_other_gate_to_succeed(
 
 @pytest.mark.parametrize("missing_job", QUALITY_GATE_NEEDS)
 def test_quality_aggregate_rejects_missing_gate_results(missing_job: str) -> None:
-    needs = _quality_gate_results("skipped")
+    needs = _quality_gate_results("skipped", coverage_result="skipped")
     del needs[missing_job]
 
     completed = _run_quality_gate("pull_request", needs)
@@ -994,11 +1051,14 @@ def test_quality_aggregate_rejects_missing_gate_results(missing_job: str) -> Non
 
 
 def test_quality_aggregate_rejects_unknown_events_and_unexpected_jobs() -> None:
-    unknown_event = _run_quality_gate("schedule", _quality_gate_results("success"))
+    unknown_event = _run_quality_gate(
+        "schedule",
+        _quality_gate_results("skipped", coverage_result="skipped"),
+    )
     assert unknown_event.returncode != 0
     assert "unsupported workflow event" in unknown_event.stderr
 
-    needs = _quality_gate_results("skipped")
+    needs = _quality_gate_results("skipped", coverage_result="skipped")
     needs["unexpected"] = {"result": "success"}
     unexpected_job = _run_quality_gate("pull_request", needs)
     assert unexpected_job.returncode != 0

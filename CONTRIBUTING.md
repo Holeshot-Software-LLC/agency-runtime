@@ -3,7 +3,7 @@ title: "Contributing to Agency Runtime"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-20
+updated: 2026-07-27
 tags: [contributing, development]
 related:
   - AGENTS.md
@@ -37,9 +37,12 @@ python -m venv .venv
 # POSIX:      . .venv/bin/activate
 python -m pip install -e ".[dev,release,security]"
 ruff check agency_runtime tests scripts
-python -m pytest tests -q -W error
 node --test tests/dashboard_ui.test.mjs
 ```
+
+Run the named fast Python production spine in the Validation section before a
+handoff. The exhaustive integration suites are deliberately not part of routine
+local setup.
 
 Tests that generate host files must use an explicit temporary home and database.
 Do not point a test at the real `HOME`, `USERPROFILE`, `CODEX_HOME`,
@@ -72,18 +75,50 @@ this repository without sibling-repository links or machine-specific paths.
 
 ## Validation
 
-Run the checks applicable to the change, and run the complete gate before
-handoff:
+Run focused tests for every changed behavior and the automatic-equivalent gate
+before handoff. Its named fast Python production spine is:
 
 ```bash
 python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check
 python scripts/verify_docs.py
-python -m pytest tests -q
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
+python -m pytest \
+  tests/test_senior_audit_hardening.py \
+  tests/test_configuration_namespace_security.py \
+  tests/test_executable_namespace_security.py \
+  tests/test_dashboard_auth_boundary_regression.py \
+  tests/test_dashboard_transaction_refactors.py \
+  tests/test_routing_correctness.py \
+  tests/test_workforce_hiring_contract.py \
+  tests/test_workforce_selection_safety.py \
+  tests/test_workforce_dynamic_hiring.py \
+  tests/test_delegation_p1_correctness.py \
+  tests/test_store_turn_atomicity.py \
+  tests/test_roster_snapshot_generation.py \
+  tests/test_mcp_protocol_hardening.py \
+  tests/test_cli_parser_contract.py \
+  tests/test_native_installer.py \
+  tests/test_host_boundary_hardening.py \
+  tests/test_cli_operator_presence.py \
+  tests/test_security_turn_boundaries.py \
+  -q -W error
+node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details
 git diff --check
 ```
+
+Pull-request and push automation intentionally does not run the complete
+warning-strict Python corpus, four-shard 97-percent coverage gate, or full
+Ubuntu/Windows six-interpreter compatibility matrix. Those are exhaustive
+integration gates and run only when an authorized maintainer explicitly starts
+the CI workflow with `workflow_dispatch`. Automatic success is a change gate,
+not production or release evidence. A production or release `GO` requires the
+manual run to succeed at the exact current candidate `head_sha`; any subsequent
+commit invalidates it. Missing, skipped, failed, cancelled, or stale exhaustive
+evidence is a `NO-GO`.
 
 When tracker access is authorized and the local records should be in parity:
 
@@ -92,7 +127,9 @@ python scripts/verify_docs.py --require-tracker
 python scripts/verify_tracker.py
 ```
 
-For packaging or release-facing changes also run:
+For packaging or release-facing changes also run the checks below and follow
+the manual exact-candidate integration requirements in
+[the release checklist](docs/RELEASE_CHECKLIST.md):
 
 ```bash
 python scripts/verify_release_hygiene.py

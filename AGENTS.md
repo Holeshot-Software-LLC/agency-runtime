@@ -3,7 +3,7 @@ title: "Repository Agent Instructions"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-23
+updated: 2026-07-27
 tags:
   - governance
   - documentation
@@ -125,11 +125,40 @@ python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest tests/ -q -W error
+python -m pytest \
+  tests/test_senior_audit_hardening.py \
+  tests/test_configuration_namespace_security.py \
+  tests/test_executable_namespace_security.py \
+  tests/test_dashboard_auth_boundary_regression.py \
+  tests/test_dashboard_transaction_refactors.py \
+  tests/test_routing_correctness.py \
+  tests/test_workforce_hiring_contract.py \
+  tests/test_workforce_selection_safety.py \
+  tests/test_workforce_dynamic_hiring.py \
+  tests/test_delegation_p1_correctness.py \
+  tests/test_store_turn_atomicity.py \
+  tests/test_roster_snapshot_generation.py \
+  tests/test_mcp_protocol_hardening.py \
+  tests/test_cli_parser_contract.py \
+  tests/test_native_installer.py \
+  tests/test_host_boundary_hardening.py \
+  tests/test_cli_operator_presence.py \
+  tests/test_security_turn_boundaries.py \
+  -q -W error
 node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details
 git diff --check
 ```
+
+The Python command above is the named fast Python production spine used by
+automatic CI. Run focused tests for every changed behavior as well. Do not run
+the complete warning-strict corpus, the four-shard 97-percent Python coverage
+gate, or the six-interpreter compatibility matrix as a routine handoff check.
+Those exhaustive integration gates run only through an explicitly requested
+`workflow_dispatch`. A production or release `GO` requires a successful manual
+run whose recorded `head_sha` is the exact current candidate; any later change,
+or a missing, skipped, failed, cancelled, or stale run, is a `NO-GO`. Dispatching
+that workflow is an outward-facing action and still requires authorization.
 
 After approved tracker creation, also run
 `python scripts/verify_docs.py --require-tracker` and
@@ -143,9 +172,11 @@ prints every authorization-pending closure as a warning. Release validation
 remains strict.
 
 For packaging or release-facing changes, also follow
-[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md). A deterministic host
-contract is not a live runtime canary: keep discovery, registration, enablement,
-loading, and canary claims separate in documentation and release evidence.
+[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md). The checklist, not an
+ordinary handoff, owns the manual exhaustive-integration requirement. A
+deterministic host contract is not a live runtime canary: keep discovery,
+registration, enablement, loading, and canary claims separate in documentation
+and release evidence.
 
 ## Repository boundary
 

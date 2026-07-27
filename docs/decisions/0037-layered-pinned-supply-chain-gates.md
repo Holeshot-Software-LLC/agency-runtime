@@ -6,6 +6,8 @@ created: 2026-07-12
 updated: 2026-07-27
 tags: [security, supply-chain, ci, release]
 related:
+  - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
+  - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
   - docs/roadmap/issue-AR-63-replace-yanked-release-build-dependency.md

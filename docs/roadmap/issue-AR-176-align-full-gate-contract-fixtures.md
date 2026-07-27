@@ -64,6 +64,13 @@ The OpenClaw smoke path retains `skipped: node unavailable` for
 `node not runnable`. Executable freezing and immediate revalidation are
 unchanged.
 
+The repaired current-head warning-strict corpus now passes all 8,021 tests,
+with 61 platform skips and 1 expected failure. The separate uninstrumented
+performance arm passes all 3 performance tests, and the dashboard UI gate
+passes all 105 tests above every fixed coverage floor. The current-head Python
+coverage arm was stopped before completion and is not evidence of a passing
+coverage gate.
+
 ## Approach
 
 Preserve the hardened production contracts and repair each stale test at its
@@ -75,6 +82,13 @@ authority rows so a test reaches the semantic rejection it claims to cover.
 Keep the exact failed full run as evidence. Run all original node IDs together,
 then one combined order-sensitive package of touched and neighboring files
 before paying for the full corpus again.
+
+Treat exhaustive Python verification as an integration gate rather than a
+per-change default. The four-shard coverage corpus and six-version
+compatibility corpus run only on explicit `workflow_dispatch`; pull-request and
+push aggregates require those jobs to be skipped, while a manual aggregate
+requires both to succeed. This scheduling change does not weaken the fixed
+coverage floor or turn an incomplete run into green evidence.
 
 ## Dependencies
 
@@ -98,7 +112,7 @@ Tracker creation remains pending explicit outward-write authorization.
 - [x] All 11 original failures pass together.
 - [x] Touched and neighboring files pass as one order-sensitive package: 670
   passed, 1 platform skip.
-- [ ] The exact full warning-strict corpus passes from the implementation
+- [x] The exact full warning-strict corpus passes from the implementation
   checkpoint.
 - [ ] The final repository release gate passes at the implementation commit.
 
@@ -107,5 +121,14 @@ Tracker creation remains pending explicit outward-write authorization.
 The exact failed command recorded 8,010 passed, 61 skipped, 1 expected failure,
 and 11 failed in 33:25. After repair, the 11 original node IDs pass together in
 1.53 seconds and the combined 12-file regression package passes 670 tests with
-1 platform skip in 2:42. Ruff, format, and diff checks pass. A full rerun is
-required before this issue can be locally complete.
+1 platform skip in 2:42. The exact second full run passes 8,021 tests with 61
+skips and 1 expected failure in 32:11. The uninstrumented performance arm
+passes 3 tests with 8,080 deselected in 20.66 seconds. The dashboard UI gate
+passes 105 tests at 98.72 percent line, 91.00 percent branch, and 97.97 percent
+function coverage. Ruff, format, and diff checks pass.
+
+The current-head Python coverage attempt was stopped and is incomplete, so the
+final repository release gate remains open alongside rebuilt artifacts and
+fresh-install evidence. Exhaustive coverage and compatibility are now labeled
+integration work and are scheduled only by explicit manual dispatch; automatic
+pull-request and push aggregates fail closed unless those jobs are skipped.

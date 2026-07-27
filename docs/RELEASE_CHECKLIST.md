@@ -137,18 +137,24 @@ machine-specific credential paths.
 
 ## 3. Correctness and performance
 
+Routine pull-request and push CI runs the named fast Python production spine
+plus the automatic quality, UI, performance, portability, security, and
+artifact gates. It deliberately does not run the complete warning-strict Python
+corpus, four-shard Python coverage, or six-interpreter compatibility matrix.
+Automatic success is therefore a change gate, not production or release
+approval.
+
+For a production or release candidate, an authorized maintainer must explicitly
+start `.github/workflows/ci.yml` with `workflow_dispatch` at a ref whose head is
+the exact candidate commit. Record the run URL, event, and `head_sha`. The run
+must retain that exact identity and pass `integration coverage / combined` at
+the fixed 97-percent line-and-branch floor plus every `integration / full
+compatibility` cell. Do not substitute a local monolithic run, a pull-request or
+push run, an older manual run, or artifact evidence from another commit.
+
 ```bash
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest tests -q -W error -p no:cacheprovider -m "not performance" \
-  --cov=agency_runtime \
-  --cov=scripts.build_distributions \
-  --cov=scripts.canonicalize_distributions \
-  --cov=scripts.prove_autocrlf_checkout \
-  --cov=scripts.release_contract \
-  --cov=scripts.release_git \
-  --cov=scripts.verify_distribution \
-  --cov-branch --cov-report=term-missing --cov-fail-under=97
 python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 agency eval delegation --json
@@ -163,10 +169,16 @@ separately; this command does not create live-host evidence:
 agency eval compare --input path/to/paired-observations.jsonl
 ```
 
-- [ ] The complete suite passes on Ubuntu CI for Python 3.10 through 3.14 and on
-      Windows CI at the 3.10 and 3.14 support endpoints; focused native Windows
-      canonical-archive golden and atomic-process coverage also passes on Python
-      3.11, 3.12, and 3.13.
+- [ ] One explicitly requested `workflow_dispatch` run records the exact current
+      candidate `head_sha`; its complete warning-strict corpus and 97-percent
+      Python coverage gate pass in all four shards.
+- [ ] The same exact-candidate manual run passes the full compatibility suite on
+      Ubuntu for Python 3.10 through 3.14 and on Windows at the 3.10 and 3.14
+      support endpoints; focused native Windows canonical-archive golden and
+      atomic-process coverage also passes on Python 3.11, 3.12, and 3.13.
+- [ ] No commit follows the recorded manual run. Missing, skipped, failed,
+      cancelled, or stale exhaustive integration evidence is a production and
+      release `NO-GO`.
 - [ ] The versioned routing report passes every checked-in threshold.
 - [ ] Turn-classification tests cover all six exact kinds—`acknowledgement`,
       `conversation`, `control`, `continuation`, `new_intent`, and `revision`—
@@ -213,8 +225,9 @@ agency eval compare --input path/to/paired-observations.jsonl
       directional eligibility is not published as a superiority conclusion.
 - [ ] Measured runtime code reaches the configured coverage thresholds
       (95% lines / 90% branches / 96% functions for dashboard UI; 97% aggregate
-      line-and-branch coverage for Python); any unreachable platform-only exclusion is narrow, documented,
-      and reviewed rather than hidden through a broad omit rule.
+      line-and-branch coverage for Python in the exact-candidate manual
+      `workflow_dispatch`); any unreachable platform-only exclusion is narrow,
+      documented, and reviewed rather than hidden through a broad omit rule.
 
 ## 4. Security and privacy
 
@@ -498,14 +511,15 @@ outward-facing actions and require explicit authorization.
 
 ## Current blockers
 
-The 2026-07-26 pre-final-trace checkpoint passed the ordinary warning-strict
-suite (7,604 passed, 61 skipped, 1 expected failure), the exact Python coverage
-arm (97.08 percent with the fixed 97 percent floor), the separate three-test
-performance arm, dashboard coverage, routing, delegation, full-roster,
-release-hygiene, Bandit, dependency, and offline-workflow gates. The earlier
-2.166 ms cache arm and one non-reproduced lifecycle failure remain preserved as
-failed evidence. AR-149 through AR-154 were found afterward, so affected gates
-and artifacts must be rerun from their implementation checkpoint.
+The 2026-07-26 pre-final-trace checkpoint passed the then-current ordinary
+warning-strict suite (7,604 passed, 61 skipped, 1 expected failure), Python
+coverage at 97.08 percent, the separate three-test performance arm, dashboard
+coverage, routing, delegation, full-roster, release-hygiene, Bandit, dependency,
+and offline-workflow gates. That historical run does not identify the current
+candidate and cannot satisfy the exact-candidate manual integration gate. The
+earlier 2.166 ms cache arm and one non-reproduced lifecycle failure remain
+preserved as failed evidence. Until an explicit `workflow_dispatch` passes at
+the current exact candidate, the production and release verdict is `NO-GO`.
 
 AR-143 now has one narrow prerelease positive slice: exact roster rollback on
 Windows 11 x64. Every dashboard and model-facing mutation remains read-only,

@@ -46,6 +46,8 @@ the full acceptance history.
 ## checkpoint
 
 - Clean local recovery pair: substantive `b520fa7`, ledger `e67e41a`.
+- No newer commit identity is asserted here; the current evidence below must be
+  sealed by the next real recovery pair.
 - Branch is `main`, locally ahead of `origin/main`. No push, PR, tag, release,
   publication, hosted dispatch, tracker mutation, or repository-setting change
   was authorized.
@@ -90,18 +92,21 @@ the full acceptance history.
 - AR-176: the first exact final corpus retained 8,010 passes, 61 skips, 1
   expected failure, and 11 failures in 33:25. Ten stale full-gate fixtures and
   one Low missing-Node diagnostic are repaired without weakening production;
-  the original 11 and a 670-test neighboring package are green.
-- CI retains every exact surface while pairing four coverage and six
-  compatibility sessions and preflighting CodeQL once. Historical PR topology
-  moves from 24 to 13 jobs and models 119.12 raw runner-minutes at approximately
-  13.63 to 22.85. This is unmeasured projection, not a savings claim.
-- Current bounded checks: 385 integrated dashboard/workforce/roster/CI/release
-  tests passed with 4 platform skips; 105 UI tests; 435-document verification;
-  focused Ruff; strict offline workflow security; Bandit on modified Python;
-  independent final-delta review with no remaining actionable finding.
+  the original 11 and a 670-test neighboring package are green. The exact
+  second run passes 8,021 tests with 61 skips and 1 expected failure in 32:11.
+- Exhaustive CI is manual-only: four-shard coverage and six-version
+  compatibility run on `workflow_dispatch`. PR/push aggregates require both
+  skipped; a manual aggregate requires both successful. Fixed thresholds and
+  version coverage are unchanged.
+- Current bounded checks include the 8,021-test warning-strict pass; 3
+  performance tests with 8,080 deselected in 20.66 seconds; and 105 dashboard
+  UI tests at 98.72 line, 91.00 branch, and 97.97 function percent. The
+  current-head Python coverage attempt was stopped and is incomplete.
 
 ## exact-blocker
 
+- Current-head Python coverage, rebuilt Windows/Linux artifacts, and fresh
+  wheel/sdist installation evidence remain incomplete.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, exact signed candidate verification, and
   an attended Windows Hello success-and-denial canary. The remote session cannot
@@ -126,8 +131,8 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Run the current-head warning-strict repository suite once, then exact
-   coverage, performance, routing, security, docs, UI, and packaging gates.
+1. Complete the stopped current-head coverage arm once as an explicit manual
+   integration gate; do not repeat the green warning-strict corpus by default.
 2. Build from clean detached source on Windows and WSL/Linux; require one exact
    three-artifact set and byte-identical sdists/shared wheel payloads.
 3. Install Windows wheel/sdist and Linux portable wheel/sdist into fresh Python
@@ -144,12 +149,13 @@ the same persistent goal from the clean pair through normal compaction.
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
 python -m scripts.run_parallel_change_loop
-python -m pytest tests -q -W error
 python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python scripts/verify_docs.py
+# Explicit manual integration/release gates only:
+python -m pytest tests -q -W error
 python -m scripts.verify_distribution <clean-artifact-directory> --artifact-set release --expected-commit b520fa765ffdef93ad499a088f79d247ce910e75
 git diff --check
 ~~~

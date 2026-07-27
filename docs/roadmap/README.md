@@ -194,6 +194,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-174` | [Short-circuit documentation-only CI](issue-AR-174-short-circuit-docs-only-ci.md) | in_progress | p1 | testing | pending authorization |
 | `AR-175` | [Retire the non-atomic dashboard control fallback](issue-AR-175-retire-dashboard-control-fallback.md) | in_progress | p1 | dashboard | pending authorization |
 | `AR-176` | [Align full-gate fixtures with hardened runtime contracts](issue-AR-176-align-full-gate-contract-fixtures.md) | in_progress | p0 | testing | pending authorization |
+| `AR-177` | [Make exhaustive Python CI manual](issue-AR-177-make-exhaustive-python-ci-manual.md) | in_progress | p0 | testing | pending authorization |
 
 ## Traceability
 
@@ -377,6 +378,7 @@ not stable internal identifiers.
 | [AR-174](issue-AR-174-short-circuit-docs-only-ci.md) | `3e14f74`; hosted measurement and tracker creation pending authorization | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md), [ADR-0100](../decisions/0100-short-circuit-trusted-docs-only-pull-requests.md) |
 | [AR-175](issue-AR-175-retire-dashboard-control-fallback.md) | `3e14f74`; tracker creation pending authorization | [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-176](issue-AR-176-align-full-gate-contract-fixtures.md) | `b520fa7`; tracker creation pending authorization | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0031](../decisions/0031-optional-user-dashboard-service-and-shared-configuration.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md), [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
+| [AR-177](issue-AR-177-make-exhaustive-python-ci-manual.md) | implementation pending local commit; hosted measurement and tracker creation pending authorization | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md), [ADR-0100](../decisions/0100-short-circuit-trusted-docs-only-pull-requests.md), [ADR-0101](../decisions/0101-run-exhaustive-python-verification-on-demand.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

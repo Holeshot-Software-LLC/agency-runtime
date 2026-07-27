@@ -60,7 +60,9 @@ exact browser response identity and read-only truth (AR-170), lifecycle-reason
 privacy (AR-171), effective-roster snapshot continuity (AR-172), Route Lab
 observation correlation (AR-173), a trusted documentation-only CI lane
 (AR-174), and removal of the unsupported non-atomic control fallback (AR-175).
-Final current-head aggregate and rebuilt-artifact checks remain.
+The repaired current-head warning-strict corpus, performance arm, and dashboard
+UI gate are green. Current-head Python coverage was stopped before completion;
+rebuilt artifacts and fresh-install checks also remain.
 
 The decisive remaining product blocker is no longer missing code that can be
 faked around: a generic fresh Codex installation correctly fails closed because
@@ -71,6 +73,11 @@ attended Windows Hello success-and-denial canary. Hosted, tracker,
 normal-profile trust, and benchmark-valid outcome evidence are separate open
 release gates. Production and a CEO demo that claims installed persistent
 control are therefore **NO-GO** until those real gates are supplied.
+
+The exact open gates are current-head Python coverage, rebuilt artifacts and a
+fresh install; GitHub Actions billing plus hosted evidence; the attended
+Windows Hello/operator-presence canary and signing authority; a benchmark-valid
+AR-119 outcome corpus; and authorized branch-protection and tracker actions.
 
 This is not a conclusion drawn from the earlier untracked
 `2026-07-25-deep-audit-findings.md` draft. That draft remains preserved as a
@@ -115,8 +122,9 @@ reachable fetch. The live current-source sweep exercised navigation,
 pause/resume, refresh, roster search/filter, keyboard flow, desktop layout, and
 the read-only Settings surface with no duplicate IDs, broken `aria-controls`,
 enabled mutation controls, or application console errors. The automated suite
-passes 105 interactions after strict response and revision validation. The
-fixed raw asset ceiling remains a release gate; it is being met by deleting
+passes 105 interactions after strict response and revision validation, with
+98.72 percent line, 91.00 percent branch, and 97.97 percent function coverage.
+The fixed raw asset ceiling remains a release gate; it is being met by deleting
 dead/duplicated payload, not by raising the threshold. The final ten-asset
 bundle is 257,620 bytes, 5,547 bytes below the unchanged strict ceiling; the
 obsolete control fallback accounts for 1,436 removed bytes.
@@ -125,22 +133,23 @@ obsolete control fallback accounts for 1,436 removed bytes.
 
 Historical evidence, not a model, attributes 96.27 of 119.12 raw runner-minutes
 (80.8 percent) on the audited 24-job pull request to the compatibility matrix.
-The current general PR topology is already 13 jobs because compatibility is
-deferred and coverage/compatibility sessions are paired. AR-174 now proves a
-trusted five-runner primary topology for regular `docs/**/*.md`-only pull
+The exhaustive four-shard coverage corpus and six-version compatibility corpus
+are now explicitly labeled integration work and run only on
+`workflow_dispatch`. Pull requests and pushes require both results to be
+skipped; a manual aggregate requires both to succeed. AR-174 separately proves
+a trusted five-runner primary topology for regular `docs/**/*.md`-only pull
 requests: quality/docs, Linux artifact, Windows artifact, artifact parity, and
-aggregate. Eight allocations are avoided structurally (61.5 percent), while
-sdist-changing artifact parity remains mandatory. This is not a hosted savings
-claim: GitHub currently rejects jobs before runner allocation because of the
-account billing/spending state, so no post-change runner time exists.
+aggregate. Artifact parity remains mandatory because documentation ships in
+the sdist. This is not a hosted savings claim: GitHub currently rejects jobs
+before runner allocation because of the account billing/spending state, so no
+post-change runner time exists.
 
 Cross-run artifact reuse remains deferred because no governed cache authority
 yet proves producer revision, platform, expiration, and invalidation. Separate
 dependency review still uses one runner; CodeQL uses two when unavailable or
-four when available; main/manual primary CI remains sixteen runners. The next
-safe cost work is to measure AR-174 after billing repair, then consolidate the
-remaining Windows portability envelope only if exact interpreter and test
-coverage stay independently attested.
+four when available. The next safe cost work is to measure the automatic and
+manual topologies after billing repair; the fixed integration thresholds and
+supported-version contracts remain unchanged.
 
 ### Full-gate reconciliation
 
@@ -154,8 +163,18 @@ repairs those contracts, and distinguishes the diagnostic correctly.
 
 All 11 original node IDs then passed together. The twelve touched and
 neighboring files passed as one order-sensitive package with 670 passes and 1
-platform skip in 2 minutes 42 seconds. The full rerun remains required; the
-failed first run is retained rather than summarized as green.
+platform skip in 2 minutes 42 seconds. The exact second current-head run then
+passed 8,021 tests with 61 skips and 1 expected failure in 32 minutes 11
+seconds. The separate uninstrumented performance arm passed 3 tests with 8,080
+deselected in 20.66 seconds, and the dashboard UI gate passed 105 tests at
+98.72 percent line, 91.00 percent branch, and 97.97 percent function coverage.
+The failed first run remains part of the evidence history.
+
+The current-head Python coverage arm was stopped before completion and cannot
+support a green coverage claim. Coverage, rebuilt cross-platform artifacts, and
+fresh installation therefore remain local release gates. Exhaustive Python
+coverage and compatibility now run only by explicit manual dispatch so the
+32-minute corpus is not repeated automatically on every pull request or push.
 
 ## What was actually exercised
 
@@ -298,8 +317,9 @@ dashboard package adds 87 statements. A later pre-final-trace checkpoint passed
 the ordinary warning-strict suite with 7,604 tests, 61 skips, and 1 expected
 failure, then passed the exact coverage arm at 97.08 percent against the
 unchanged 97 percent floor and the separate three-test performance arm. That
-evidence predates later dashboard and performance commits, so the final
-current-head aggregate remains required; no threshold or exclusion changed.
+evidence predates later dashboard and performance commits. The final
+current-head warning-strict and performance arms now pass, but the current-head
+coverage attempt is incomplete; no threshold or exclusion changed.
 
 The production verdict remains negative for one decisive reason: there is no
 production OS-backed, non-exporting operator-presence verifier. Dashboard and
@@ -397,10 +417,11 @@ percent floor. AR-144 adds behavioral callback coverage; the exact command now
 passes all 84 tests at 97.13 percent lines, 91.28 percent branches, and 96.32
 percent functions without changing thresholds or production code. The later
 AR-149 through AR-155 and AR-139 source passes all 101 dashboard tests at 98.61
-percent lines, 91.06 percent branches, and 97.90 percent functions, again
-without changing the coverage floors. This is source-level evidence, not a
-fresh installed-browser claim; post-install desktop/mobile and accessibility
-QA remains an AR-138 exit gate.
+percent lines, 91.06 percent branches, and 97.90 percent functions. The current
+105-test dashboard gate passes at 98.72 percent lines, 91.00 percent branches,
+and 97.97 percent functions, again without changing the coverage floors. This
+is source-level evidence, not a fresh installed-browser claim; post-install
+desktop/mobile and accessibility QA remains an AR-138 exit gate.
 
 The collection trace found a separate production defect: a literal
 backslash-Z regex suffix rejected every opaque cursor generated by the
@@ -436,11 +457,11 @@ installed, or hosted scope without promoting contract tests to live proof.
 
 | State | Tasks | Remaining proof |
 |---|---|---|
-| Locally repaired | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) through [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | Final current-commit aggregate/artifact checks; install-dependent issues remain blocked from positive canary proof. |
+| Locally repaired | [AR-128](../roadmap/issue-AR-128-seal-model-facing-control-authority.md) through [AR-139](../roadmap/issue-AR-139-restore-release-asset-budget.md) | Current-head coverage and artifact checks; install-dependent issues remain blocked from positive canary proof. |
 | Locally measured | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | Local correctness/performance and the packaged-contractor batch are green; supported-runner evidence and further end-to-end profiling remain. |
 | Partially complete | [AR-141](../roadmap/issue-AR-141-restore-compatibility-consolidate-runtime.md) | Compatibility and a dead island with 590 deletions/one replacement line are repaired; independently reviewed large-function/helper consolidation remains. |
-| Locally repaired | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md), [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md), [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Final current-commit aggregate and artifact checks. |
-| Final validation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md) through [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | AR-149 through AR-155 are committed and focused-green; exact current-head Python coverage/performance/full-suite plus browser/artifact QA remain. |
+| Locally repaired | [AR-142](../roadmap/issue-AR-142-instrument-runtime-boundaries.md), [AR-144](../roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md), [AR-146](../roadmap/issue-AR-146-repair-dashboard-collection-cursor-validation.md), [AR-147](../roadmap/issue-AR-147-parse-complete-windows-acl-descriptors.md), [AR-148](../roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md) | Current-head Python coverage and rebuilt artifact checks. |
+| Final validation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md), [AR-149](../roadmap/issue-AR-149-fresh-dashboard-request-ids.md) through [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | Warning-strict, performance, and dashboard UI gates are current-head green; Python coverage stopped incomplete, and artifact/fresh-browser QA remain. |
 | Product blocker | [AR-143](../roadmap/issue-AR-143-require-operator-presence-for-controls.md) | Implement and human-canary a real OS-backed, non-exporting, single-use presence verifier. |
 | Outcome evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | Benchmark-valid completed corpus and current-artifact host/OS outcomes; malformed/timed-out arms stay invalid. |
 | Administrative/host | AR-128 through AR-155 tracker rows, normal-profile Codex trust, hosted matrices, absent-host canaries | Explicit user/outward authorization and real installed environments. |

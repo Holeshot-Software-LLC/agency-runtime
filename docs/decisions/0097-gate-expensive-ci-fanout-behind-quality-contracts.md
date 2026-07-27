@@ -6,6 +6,8 @@ created: 2026-07-27
 updated: 2026-07-27
 tags: [ci, testing, cost, github-actions, release]
 related:
+  - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
+  - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
@@ -60,9 +62,12 @@ metadata, policy availability, worklog, tracker, and history validation.
 Make `quality-contracts` a prerequisite of the expensive coverage, performance,
 compatibility, Windows portability, artifact, and security roots. Keep the
 aggregate job under `if: always()` so a failed prerequisite and every propagated
-skip are observed as failure rather than disappearing. Pull requests require
-the compatibility job to be intentionally skipped; `main` and manual runs
-require it to succeed after quality passes.
+skip are observed as failure rather than disappearing. At the time of this
+decision, pull requests required the compatibility job to be intentionally
+skipped while `main` and manual runs required it to succeed after quality
+passed. ADR-0101 subsequently narrows both exhaustive coverage and
+compatibility to explicit manual dispatch. The prerequisite, containment,
+pairing, and fail-closed aggregate contracts here remain in force.
 
 Remove the Ubuntu 24.04/Python 3.13 serial compatibility cell because the exact
 non-performance file union already runs in four Python 3.13 coverage shards.

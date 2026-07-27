@@ -6,6 +6,8 @@ created: 2026-07-26
 updated: 2026-07-27
 tags: [testing, ci, performance, cost, developer-experience]
 related:
+  - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
+  - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/roadmap/issue-AR-117-parallelize-pr-verification.md
   - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
   - docs/NORTH_STAR_ACCEPTANCE.md
@@ -69,6 +71,14 @@ or a green hosted gate.
 
 ## Approach
 
+ADR-0101 and AR-177 supersede this item's event schedule: pull requests and
+ordinary pushes now require both exhaustive coverage and compatibility to be
+intentionally skipped, while an explicit manual dispatch requires both to
+succeed. Automatic code events retain a 521-test production/security spine,
+dashboard coverage, performance, portability, artifact, and security gates.
+The pairing and containment work below remains the implementation used by the
+manual integration graph.
+
 Restore the documented pull-request cadence and make the aggregate quality job
 event-aware: pull requests must observe the compatibility job as intentionally
 skipped, while `main` and manual runs must observe it as successful. Every other
@@ -117,15 +127,17 @@ quantitative claims to use recorded controls rather than inferred speedups.
 
 ## Acceptance
 
-- Pull requests require the compatibility job to be intentionally skipped;
-  `main` and manual runs require it to succeed.
+- Pull requests and ordinary pushes require exhaustive coverage and
+  compatibility to be intentionally skipped; manual dispatch requires both to
+  succeed.
 - No aggregate path accepts cancelled, failed, missing, or unexpectedly skipped
   production gates.
-- Six serial compatibility sessions across three OS-matched paired jobs, four
-  exact Python 3.13 coverage shards across two paired Ubuntu jobs, and all PR
-  performance, portability, artifact, security, documentation, and UI gates
-  remain intact. The accepted serial-versus-sharded non-equivalence is explicit
-  in ADR-0097.
+- On manual dispatch, six serial compatibility sessions across three OS-matched
+  paired jobs and four exact Python 3.13 coverage shards across two paired
+  Ubuntu jobs remain intact. Automatic code events retain performance,
+  portability, artifact, security, documentation, UI, and the fast Python
+  production-spine gates. The accepted serial-versus-sharded non-equivalence
+  is explicit in ADR-0097.
 - Every paired member uses the exact setup-python interpreter, a separate
   attested runtime, HOME, TEMP, pytest base, and COVERAGE_FILE. Output remains
   bounded and labeled, truncation fails closed, compatibility keeps its

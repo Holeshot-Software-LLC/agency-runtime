@@ -162,6 +162,7 @@ Status meanings:
 | [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Accepted |
 | [ADR-0099](0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) | Separate reproducible unsigned builds from signed delivery | Accepted |
 | [ADR-0100](0100-short-circuit-trusted-docs-only-pull-requests.md) | Short-circuit trusted documentation-only pull requests | Accepted |
+| [ADR-0101](0101-run-exhaustive-python-verification-on-demand.md) | Run exhaustive Python verification on demand | Accepted |
 
 ## Documentation governance
 

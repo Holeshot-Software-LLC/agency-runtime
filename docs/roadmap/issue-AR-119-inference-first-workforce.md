@@ -3162,7 +3162,8 @@ that failed history and passed the ordinary warning-strict suite with 7,604
 tests, 61 skips, and 1 expected failure; its exact coverage arm passed at 97.08
 percent against the unchanged 97 percent floor, and its separate three-test
 performance arm passed. Later implementation commits mean a final current-head
-aggregate rerun is still required.
+aggregate rerun was required at that checkpoint. The later final validation
+section records the current result without rewriting this historical evidence.
 
 The final deep-review slice confirmed and repaired a high-severity nested
 Windows conditional-ACE trust bypass, three medium SQLite currentness defects,
@@ -3231,14 +3232,29 @@ workflow security, and clean diff checks. The ten shipped dashboard assets are
 257,620 bytes, 5,547 bytes below the unchanged ceiling. AR-174 structurally
 reduces an eligible documentation-only primary pull-request lane from 13 hosted
 runner allocations to 5 while retaining Linux and Windows artifacts plus
-parity. This is local structural proof, not measured hosted time or savings.
+parity. The exhaustive four-shard coverage corpus and six-version compatibility
+corpus are now explicit `workflow_dispatch` integration gates: pull requests
+and pushes require both jobs to be skipped, while a manual aggregate requires
+both to succeed. This is local structural proof, not measured hosted time or
+savings.
 
 The first exact final warning-strict run then passed 8,010 tests with 61 skips
 and 1 expected failure but exposed 11 stale full-gate contracts after 33:25.
 AR-176 repairs ten test-isolation/fixture defects without weakening production
 and one Low missing-Node diagnostic defect. All original failures pass together,
-and the combined neighboring package passes 670 tests with 1 platform skip.
-The full rerun remains an explicit gate, not an inferred pass.
+and the combined neighboring package passes 670 tests with 1 platform skip. The
+exact second current-head run passes 8,021 tests with 61 skips and 1 expected
+failure in 32:11. The separate uninstrumented performance arm passes 3 tests
+with 8,080 deselected in 20.66 seconds. The dashboard UI gate passes all 105
+tests at 98.72 percent line, 91.00 percent branch, and 97.97 percent function
+coverage.
+
+The current-head Python coverage attempt was stopped before completion and is
+not a passing result. Current-head coverage, rebuilt artifacts, and fresh
+installation remain required. The production verdict stays **NO-GO** because
+those local gates and the external billing/hosted, attended Windows Hello,
+operator-presence, benchmark-outcome, branch-protection, and tracker gates are
+still open.
 
 ### Still required before AR-119 can close
 
@@ -3262,23 +3278,27 @@ The full rerun remains an explicit gate, not an inferred pass.
   duplicate/admission/promotion lifecycle, and CLI/dashboard operator flows.
 - Prove cold, warm, cache-invalidation, and large native-fan-out latency bounds.
 - Run paired Agency-on/off outcome trials with accepted activation evidence.
-- Run the full local quality, coverage, documentation, packaging, Windows, and
-  Linux matrix; then perform the deferred hosted checks once at the end.
+- Complete the current-head manual integration coverage gate, packaging,
+  Windows, and Linux artifact matrix; then perform the deferred hosted checks
+  once at the end. Do not restore exhaustive Python coverage or compatibility
+  to automatic pull-request or push execution.
 - Create the final PR, merge it, reinstall the merged artifact, and run live
   canaries on Codex, Claude, Hermes, OpenClaw, and ZCode before closing issue
   #132.
 
 ### Next bounded work package
 
-From the next clean recovery pair, build and compare clean Windows and Linux artifacts,
-install each wheel/source profile into fresh isolated runtimes, reinstall the
-reviewed Codex integration, and dogfood routing, staffing, contractor, receipt,
-and dashboard behavior. Run real-browser desktop/mobile/accessibility checks,
-then the exact aggregate coverage, performance, routing, security, packaging,
-and release corpus. Fix only reproduced general defects without changing
-thresholds or exclusions. Keep the 15000 ms cold and one-call fast matched
-controls fixed; malformed or timed-out upstream arms remain invalid, never
-losses.
+From the next clean recovery pair, complete the stopped current-head coverage
+arm only as an explicit manual integration gate, then build and compare clean
+Windows and Linux artifacts. Install each wheel/source profile into fresh
+isolated runtimes, reinstall the reviewed Codex integration, and dogfood
+routing, staffing, contractor, receipt, and dashboard behavior. Run
+real-browser desktop/mobile/accessibility checks and the remaining routing,
+security, packaging, and release gates without repeating the already-green
+32-minute warning-strict corpus. Fix only reproduced general defects without
+changing thresholds or exclusions. Keep the 15000 ms cold and one-call fast
+matched controls fixed; malformed or timed-out upstream arms remain invalid,
+never losses.
 
 ### Context checkpoint constraints
 

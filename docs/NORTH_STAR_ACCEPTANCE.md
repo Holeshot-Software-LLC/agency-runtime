@@ -3,7 +3,7 @@ title: "Agency Runtime North-Star Acceptance"
 status: active
 category: testing
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-07-27
 tags: [acceptance, installation, routing, delegation, portability]
 related:
   - docs/roadmap/issue-AR-115-live-routing-trust.md
@@ -69,8 +69,16 @@ live native result.
 
 ## Completion rule
 
-Do not merge the release candidate, close its P0 issues, or describe the north
-star as complete until every applicable row is green with a dated evidence
-receipt and the installed identity matches the tested source. Merge then runs
-the deferred full compatibility matrix; reinstall the merged artifact and run
-one final fresh-task smoke before closure.
+Automatic pull-request and push success is a change gate, not production or
+release evidence. After the final candidate commit exists, an authorized
+maintainer explicitly starts the CI workflow with `workflow_dispatch` at a ref
+whose recorded `head_sha` is that exact commit. The manual run must pass the
+complete warning-strict Python corpus, four-shard 97-percent coverage gate, and
+Ubuntu/Windows six-interpreter compatibility matrix. A later commit, or a
+missing, skipped, failed, cancelled, or stale manual run, leaves the candidate
+`NO-GO`.
+
+Do not close P0 issues or describe the north star as complete until that manual
+exact-candidate evidence and every other applicable row are green with dated
+receipts, and the installed identity matches the tested source. Reinstall the
+exact candidate artifact and run one final fresh-task smoke before closure.

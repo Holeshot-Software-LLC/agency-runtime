@@ -6,6 +6,8 @@ created: 2026-07-27
 updated: 2026-07-27
 tags: [ci, github-actions, performance, cost, documentation, security]
 related:
+  - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
+  - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md
   - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
@@ -102,6 +104,9 @@ Local structure proves five primary runner allocations instead of thirteen for
 an eligible documentation pull request: quality/docs, Linux artifact, Windows
 artifact, artifact parity, and aggregate. That avoids eight allocations, a
 61.5 percent structural reduction. It is not a measured speed or billing claim.
+After AR-177, an automatic code pull request uses ten primary allocations and
+an explicit full-verification dispatch uses sixteen; the five-allocation
+documentation lane is unchanged.
 Eighteen scope/whitespace tests, fifty workflow/aggregate tests, and forty-three
 combined scope/sharding/session tests pass. Current hosted jobs fail before
 runner allocation because of the external Actions billing state, so hosted
