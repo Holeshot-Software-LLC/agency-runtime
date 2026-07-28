@@ -1,6 +1,6 @@
 ---
 title: "AR-198: Install the applicable suite by default"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-28
 updated: 2026-07-28
@@ -32,9 +32,10 @@ integration work from running.
 
 ## Current state
 
-ADR-0111 defines the superseding full-suite contract. Implementation and
-verification are in progress. Tracker creation is pending explicit
-authorization.
+ADR-0111 defines the superseding full-suite contract. Implementation, focused
+verification, the named fast spine, dashboard UI suite, routing evaluation, and
+write-free live dry run are complete. Tracker creation remains pending explicit
+authorization; no outward write was made.
 
 ## Approach
 
@@ -59,6 +60,9 @@ selection, opt-outs, transaction isolation, and aggregate result semantics.
 - [x] JSON reports selected hosts and whether the overall result is partial.
 - [x] Focused installer, parser, authority-boundary, packaging, and docs checks
   pass (358 installer/authority tests, 324 packaging tests, docs validation).
-- [ ] The named fast production spine and dashboard UI suite pass.
+- [x] The named fast production spine passes (646 passed, 6 skipped) and the
+  dashboard UI suite passes (109 passed).
 - [x] A write-free full-suite dry run demonstrates Windows discovery of Codex
   and ZCode plus a ready dashboard plan with `ok=true` and `complete=true`.
+- [x] Routing evaluation version 1.3.0 passes every routing, policy,
+  delegation, performance, retrieval-scale, and CLI-startup gate.

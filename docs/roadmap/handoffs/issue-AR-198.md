@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-198
 branch: main
-evidence_commit: 76dea219742cc1f846ee212b35d968c634edb148
-minimum_ledger_commit: 76dea219742cc1f846ee212b35d968c634edb148
+evidence_commit: f5ca172eb1195358188e7594ef13a8bedc7f986c
+minimum_ledger_commit: cd0a88af64ffb4eb796469353691a3e84496067e
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -41,14 +41,17 @@ tracker_url: null
   passed at the hard checkpoint.
 - A write-free `agency install --dry-run --json` detected Codex and ZCode,
   produced a ready dashboard plan, and returned `ok=true`, `complete=true`.
+- The named fast production spine passed 646 tests with 6 skipped. The dashboard
+  UI suite passed all 109 tests when run outside the restricted token sandbox;
+  the sandboxed attempt failed at Node worker spawn with `EPERM` before tests.
+- Routing evaluation schema/version 1.3.0 passed every configured gate.
 - Release verification retains a generic ban on executable and disguised PE
   payloads after retiring the one packaged native executable.
 - No live install, service mutation, tracker write, or hosted workflow ran.
 
 ## exact-blocker
 
-The named fast spine and dashboard UI suite must pass before the package is
-done. The same-repository tracker item
+The local implementation package is complete. The same-repository tracker item
 cannot be created without outward-write authorization.
 
 ## same-task-continuity
@@ -58,13 +61,10 @@ substantive commit, and the required worklog ledger commit.
 
 ## next-bounded-work-package
 
-1. Remove all current release and documentation claims for Agency-owned
-   Windows Hello while preserving faithful historical records.
-2. Run focused installer, authority-boundary, packaging, and documentation
-   checks.
-3. Run the named fast production spine and a write-free default-install dry run.
-4. Record exact evidence in AR-197, AR-198, and this capsule; commit the result
-   and its worklog ledger locally.
+1. After explicit authorization, create and map the same-repository AR-197 and
+   AR-198 tracker items without changing the completed local evidence.
+2. Run a separately scoped Codex-native refresh/trust and activation canary for
+   AR-197; keep the dashboard excluded from that host-only proof.
 
 ## verification
 
