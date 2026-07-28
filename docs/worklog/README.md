@@ -271,6 +271,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9c7a3d3` | 2026-07-27 | fix(canary): isolate activation from planner fanout | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
 | `8f4c3b7` | 2026-07-27 | docs(production): record current Codex hook trust proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | null |
 | `8fdc186` | 2026-07-27 | fix(canary): persist Codex activation proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [detail](2026-07-27-8fdc186-persist-codex-activation-proof.md) |
+| `55a03e1` | 2026-07-27 | docs(production): record packaged Codex canary candidate | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [detail](2026-07-27-55a03e1-packaged-codex-canary-candidate.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
