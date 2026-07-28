@@ -1010,3 +1010,4 @@ def test_codex_process_timeout_remains_a_timeout() -> None:
     record = codex_canary_record(_process_result("", timed_out=True))
     assert record["status"] == "timed_out"
     assert record["exit_code"] == 124
+    assert record["failure_reason"] == "codex_exec_timed_out"

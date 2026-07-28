@@ -6,6 +6,8 @@ created: 2026-07-11
 updated: 2026-07-16
 tags: [dashboard, operations, configuration, installer, security]
 related:
+  - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
+  - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-13-optional-dashboard-service-configuration.md

@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-07-27
 tags: [security, codex, installation, canary, operator-presence]
 related:
+  - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/issue-AR-193-preserve-authoritative-windows-master-reads.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
@@ -26,7 +27,7 @@ epic: security
 issue_id: AR-185
 priority: p0
 tracker_url: null
-depends_on: [AR-193]
+depends_on: [AR-193, AR-195]
 blocks:
   - AR-119
   - AR-180

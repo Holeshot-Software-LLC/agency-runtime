@@ -6,6 +6,8 @@ created: 2026-07-15
 updated: 2026-07-16
 tags: [dashboard, security, filesystem, posix, race-condition]
 related:
+  - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
+  - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
   - docs/roadmap/issue-AR-54-make-dashboard-runtime-publication-swap-safe.md
   - docs/roadmap/issue-AR-66-bind-systemd-unit-to-trusted-xdg-namespace.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md

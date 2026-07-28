@@ -37,6 +37,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex activation verification now separates its nonce-bound parent
+  delegation request from the canonical direct child review goal. Deterministic
+  routing and replay persist the child goal, the general PreToolUse exact-goal
+  guard remains unchanged, the parent is told not to retry a rejected spawn or
+  wait for a child that did not start, and a proven `codex exec` timeout
+  survives the sanitized install projection as a fixed reason code.
 - Windows master-control reads now try the strict owner-private identity before
   considering reduced-token dashboard recovery. A normal UAC-filtered owner
   shell therefore preserves the real control generation even when the

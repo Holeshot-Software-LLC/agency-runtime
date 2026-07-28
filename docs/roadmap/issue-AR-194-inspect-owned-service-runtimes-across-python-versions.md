@@ -6,6 +6,8 @@ created: 2026-07-28
 updated: 2026-07-28
 tags: [dashboard, services, python, upgrade, portability]
 related:
+  - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
+  - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
   - docs/decisions/0040-preserve-environment-owned-python-launchers.md
   - docs/decisions/0050-isolate-installed-python-module-resolution.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
@@ -21,7 +23,7 @@ epic: operations
 issue_id: AR-194
 priority: p1
 tracker_url: null
-depends_on: []
+depends_on: [AR-196]
 blocks: []
 ---
 

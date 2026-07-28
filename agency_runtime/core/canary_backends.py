@@ -877,7 +877,9 @@ def codex_canary_record(
             "registered": True,
             "enabled": True,
         }
-    if failure_reason := _codex_failure_reason(getattr(result, "stderr", "")):
+    if timed_out:
+        record["failure_reason"] = "codex_exec_timed_out"
+    elif failure_reason := _codex_failure_reason(getattr(result, "stderr", "")):
         record["failure_reason"] = failure_reason
     collaboration = codex_collaboration_evidence(
         result.stdout,

@@ -14,11 +14,14 @@ from agency_runtime.core.codex_activation_verification import (
     is_restricted_codex_activation_canary_environment,
 )
 
+CODEX_ACTIVATION_CANARY_WORK_UNIT = (
+    "Identify the primary behavioral regression risk of replacing return value with "
+    "return value.strip() in a Python text-normalization helper."
+)
 CODEX_ACTIVATION_CANARY_PROMPT = (
     "Treat this as exactly one indivisible code-review work unit. "
     "Delegate that complete work unit to exactly one sub-agent; do not subdivide it further: "
-    "identify the primary behavioral regression risk of replacing return value with "
-    "return value.strip() in a Python text-normalization helper."
+    f"{CODEX_ACTIVATION_CANARY_WORK_UNIT}"
 )
 CODEX_ACTIVATION_CANARY_SPECIALIST = "code-reviewer"
 CODEX_ACTIVATION_CANARY_ROUTE_SOURCE = "codex_activation_canary_contract"
@@ -50,6 +53,7 @@ __all__ = [
     "CODEX_ACTIVATION_CANARY_PROMPT",
     "CODEX_ACTIVATION_CANARY_ROUTE_SOURCE",
     "CODEX_ACTIVATION_CANARY_SPECIALIST",
+    "CODEX_ACTIVATION_CANARY_WORK_UNIT",
     "CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE",
     "is_exact_codex_activation_canary_task",
 ]

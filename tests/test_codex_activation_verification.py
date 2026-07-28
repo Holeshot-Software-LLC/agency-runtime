@@ -520,6 +520,24 @@ def test_activation_projection_preserves_only_sanitized_hook_trust_evidence() ->
     assert "secret" not in repr(projected)
 
 
+def test_activation_projection_preserves_timeout_code_but_not_private_reason_text() -> None:
+    candidate = copy.deepcopy(_fresh_report())
+    candidate["invocation"] = {
+        "failure_reason": "codex_exec_timed_out",
+        "private_provider_payload": "private-provider-secret",
+    }
+
+    projected = install_commands._activation_verification_projection(candidate)
+
+    assert projected["invocation"] == {"failure_reason": "codex_exec_timed_out"}
+    assert "private-provider-secret" not in repr(projected)
+
+    candidate["invocation"] = {"failure_reason": "private-provider-secret"}
+    projected = install_commands._activation_verification_projection(candidate)
+    assert "invocation" not in projected
+    assert "private-provider-secret" not in repr(projected)
+
+
 def test_activation_projection_rejects_malformed_invocation_fields() -> None:
     candidate = copy.deepcopy(_fresh_report())
     candidate["invocation"] = {

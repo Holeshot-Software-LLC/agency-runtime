@@ -6,6 +6,8 @@ created: 2026-07-26
 updated: 2026-07-27
 tags: [security, dashboard, browser, cli, controls, user-presence]
 related:
+  - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
+  - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
   - docs/THREAT_MODEL.md
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
@@ -34,7 +36,7 @@ issue_id: AR-143
 priority: p0
 tracker_url: null
 depends_on: [AR-128, AR-160, AR-161]
-blocks: [AR-180]
+blocks: [AR-180, AR-196]
 ---
 
 # AR-143: Require genuine operator presence for persistent controls

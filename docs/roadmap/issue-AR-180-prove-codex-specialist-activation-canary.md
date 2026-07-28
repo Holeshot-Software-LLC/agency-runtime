@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-07-28
 tags: [codex, canary, activation, delegation, production-readiness]
 related:
+  - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
@@ -29,7 +30,7 @@ epic: host-integrations
 issue_id: AR-180
 priority: p0
 tracker_url: null
-depends_on: [AR-143, AR-182, AR-185, AR-191, AR-192]
+depends_on: [AR-143, AR-182, AR-185, AR-191, AR-192, AR-195]
 blocks: [AR-119]
 ---
 

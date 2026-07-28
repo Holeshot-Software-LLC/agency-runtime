@@ -26,7 +26,7 @@ issue_id: AR-161
 priority: p0
 tracker_url: null
 depends_on: [AR-160]
-blocks: [AR-143]
+blocks: [AR-143, AR-196]
 ---
 
 # AR-161: Sign and license Windows operator-presence delivery

@@ -21,6 +21,7 @@ CANARY_INVOCATION_FAILURE_REASONS = frozenset(
         "codex_output_projection_unavailable",
         "codex_collaboration_projection_unavailable",
         "codex_hook_trust_not_ready",
+        "codex_exec_timed_out",
     }
 )
 

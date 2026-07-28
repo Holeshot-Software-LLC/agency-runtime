@@ -6,6 +6,8 @@ created: 2026-07-26
 updated: 2026-07-28
 tags: [security, dashboard, browser, controls, user-presence]
 related:
+  - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
+  - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md

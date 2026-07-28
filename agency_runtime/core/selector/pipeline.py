@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any
 from agency_runtime.core.activation_canary_contract import (
     CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
     CODEX_ACTIVATION_CANARY_SPECIALIST,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT,
     CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
     is_exact_codex_activation_canary_task,
 )
@@ -981,7 +982,7 @@ def _activation_canary_routing(request: _RouteRequest) -> dict[str, Any] | None:
             "count": 1,
             "confidence": "high" if accepted else "none",
             "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
-            "units": [request.user_message],
+            "units": [CODEX_ACTIVATION_CANARY_WORK_UNIT],
             "delegate": accepted,
         },
         "unit_assignment_agents": assignment_agents,

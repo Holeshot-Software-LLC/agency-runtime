@@ -53,7 +53,9 @@ CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "for the whole unit: follow the injected [AGENCY DELEGATION PLAN], require exactly one "
     "row, call spawn_agent exactly once with fork_turns set to none, that row's exact "
     "native_task_name, and exact goal, and then call wait_agent exactly once with a 60000 ms "
-    "timeout for that sole child. "
+    "timeout for that sole child. Never retry spawn_agent or wait_agent. If spawn_agent "
+    "fails, do not call wait_agent; report the failure. If wait_agent fails or times out, "
+    "report that result without retrying either call. "
     "Use no other tools. Return the child's conclusion with the required Agency header. "
     "Do not modify files, call external services, or expose secrets."
 )

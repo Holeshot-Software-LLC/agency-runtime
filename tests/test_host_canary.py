@@ -324,6 +324,7 @@ def test_proof_failures_are_complete_ordered_and_safely_rendered(
                 "exit_code": 124,
                 "stdout_truncated": True,
                 "stderr_truncated": True,
+                "failure_reason": "codex_exec_timed_out",
                 "output": "not a valid header",
             }
 
@@ -339,6 +340,7 @@ def test_proof_failures_are_complete_ordered_and_safely_rendered(
     assert report["invocation"]["timed_out"] is True
     assert report["invocation"]["stdout_truncated"] is True
     assert report["invocation"]["stderr_truncated"] is True
+    assert report["invocation"]["failure_reason"] == "codex_exec_timed_out"
     assert report["unmet_prerequisites"] == [
         "host invocation did not complete successfully",
         "canary profile plugin registration and enablement were not proven",

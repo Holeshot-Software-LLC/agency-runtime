@@ -212,6 +212,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-192` | [Fail fast on Codex hook trust drift](issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | in_progress | p0 | host-integrations | pending authorization |
 | `AR-193` | [Preserve authoritative Windows master reads for UAC-filtered owners](issue-AR-193-preserve-authoritative-windows-master-reads.md) | in_progress | p0 | security | pending authorization |
 | `AR-194` | [Inspect owned service runtimes across Python versions](issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | in_progress | p1 | operations | pending authorization |
+| `AR-195` | [Separate Codex canary parent and child goals](issue-AR-195-separate-codex-canary-parent-and-child-goals.md) | in_progress | p0 | host-integrations | pending authorization |
+| `AR-196` | [Authorize prepared dashboard-service install and repair](issue-AR-196-authorize-prepared-dashboard-service-repair.md) | in_progress | p0 | security | pending authorization |
 
 ## Traceability
 
@@ -413,6 +415,8 @@ not stable internal identifiers.
 | [AR-192](issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | `d6611ca`; bounded source verification passed; exact installed trust and live canary pending; tracker creation pending authorization | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
 | [AR-193](issue-AR-193-preserve-authoritative-windows-master-reads.md) | `9e86898`; source generation-28 direct read passed; exact installed master-read and live-canary proof pending; tracker creation pending authorization | [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
 | [AR-194](issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | `9e86898`; focused cross-interpreter inspection and target-Python binding passed; attended service repair pending; tracker creation pending authorization | [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md), [ADR-0050](../decisions/0050-isolate-installed-python-module-resolution.md) |
+| [AR-195](issue-AR-195-separate-codex-canary-parent-and-child-goals.md) | current implementation pending; exact installed canary at `10ce6e0` failed closed on parent/child goal mismatch; tracker creation pending authorization | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
+| [AR-196](issue-AR-196-authorize-prepared-dashboard-service-repair.md) | current implementation pending; exact installed service repair at `10ce6e0` failed closed before dispatch; tracker creation pending authorization | [ADR-0109](../decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

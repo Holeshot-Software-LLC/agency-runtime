@@ -6,6 +6,7 @@ created: 2026-07-20
 updated: 2026-07-28
 tags: [codex, installation, hooks, trust, canary, security]
 related:
+  - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md

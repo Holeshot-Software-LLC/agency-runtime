@@ -170,6 +170,7 @@ Status meanings:
 | [ADR-0105](0105-bound-delivery-to-live-demo-checkpoints.md) | Bound delivery to live demo checkpoints | Accepted |
 | [ADR-0106](0106-isolate-native-host-lifecycle-working-directories.md) | Isolate native host lifecycle working directories | Accepted |
 | [ADR-0107](0107-resolve-updates-immutably-and-keep-application-attended.md) | Resolve updates immutably and keep application attended | Accepted |
+| [ADR-0109](0109-prepare-dashboard-service-repair-before-operator-presence.md) | Prepare dashboard-service repair before operator presence | Accepted |
 
 ## Documentation governance
 
