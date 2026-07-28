@@ -41,8 +41,8 @@ from agency_runtime.core.store.sqlite import (
 )
 
 CANARY_PROMPT = (
-    "Use exactly one sub-agent for this whole, indivisible code-review work unit. "
-    "Do not perform the review in the parent and do not split it across multiple agents: "
+    "Treat this as exactly one indivisible code-review work unit. "
+    "Delegate that complete work unit to exactly one sub-agent; do not subdivide it further: "
     "identify the primary behavioral regression risk of replacing return value with "
     "return value.strip() in a Python text-normalization helper."
 )

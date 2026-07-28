@@ -195,9 +195,10 @@ def test_agency_canary_prompt_does_not_trigger_unrelated_business_policy() -> No
 def test_agency_canary_explicitly_requests_one_whole_unit_subagent() -> None:
     prompt = canary.CANARY_PROMPT.lower()
 
+    assert prompt.startswith("treat this as exactly one indivisible code-review work unit")
     assert "exactly one sub-agent" in prompt
-    assert "do not perform the review in the parent" in prompt
-    assert "do not split it across multiple agents" in prompt
+    assert "delegate that complete work unit" in prompt
+    assert "do not subdivide it further" in prompt
     assert "user explicitly requested exactly one sub-agent" in (
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     )

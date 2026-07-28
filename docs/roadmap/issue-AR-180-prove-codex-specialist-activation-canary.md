@@ -88,6 +88,17 @@ parent execution and multi-child fanout. Tracker creation remains pending
 authorization. The bounded warning-strict canary and activation package passes
 108 tests; targeted Ruff, documentation validation, and diff checks also pass.
 
+Exact checkpoint `c71ce0a` then built and independently verified as a Windows
+wheel/source pair, passed a fresh-wheel installed smoke, refreshed Codex through
+an attended transaction, and received renewed eight-hook trust. Its 60-second
+current-profile attempt reached routing but the revised prose caused the live
+inference planner to create two units (`codebase-onboarding-engineer` and
+`code-reviewer`). The proof contract correctly refused that topology. The next
+candidate preserves the previously proven indivisible-unit opening and adds one
+narrow directive to delegate that complete unit to exactly one sub-agent without
+subdivision; it removes the extra parent-execution sentence that was interpreted
+as a second planning concern.
+
 ## Approach
 
 Define a deterministic, time-bounded Codex activation probe whose requested
