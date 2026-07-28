@@ -24,6 +24,9 @@ from typing import Any
 
 from agency_runtime.core import canary_backends as _backends
 from agency_runtime.core import canary_proof as _proof
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_PROMPT,
+)
 from agency_runtime.core.bounded_io import (
     FileSizeLimitError,  # noqa: F401 - historical facade attribute
     atomic_write_text,
@@ -40,12 +43,7 @@ from agency_runtime.core.store.sqlite import (
     _default_db_path,
 )
 
-CANARY_PROMPT = (
-    "Treat this as exactly one indivisible code-review work unit. "
-    "Delegate that complete work unit to exactly one sub-agent; do not subdivide it further: "
-    "identify the primary behavioral regression risk of replacing return value with "
-    "return value.strip() in a Python text-normalization helper."
-)
+CANARY_PROMPT = CODEX_ACTIVATION_CANARY_PROMPT
 CANARY_EXPECTED_SPECIALIST = "code-reviewer"
 CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "This is a bounded Agency Runtime activation canary. If the current task contains "
@@ -54,7 +52,7 @@ CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "Otherwise you are the parent, and the user explicitly requested exactly one sub-agent "
     "for the whole unit: follow the injected [AGENCY DELEGATION PLAN], require exactly one "
     "row, call spawn_agent exactly once with that row's exact native_task_name and exact "
-    "goal, and use wait_agent only as needed until that sole child completes. "
+    "goal, and then call wait_agent exactly once with a 60000 ms timeout for that sole child. "
     "Use no other tools. Return the child's conclusion with the required Agency header. "
     "Do not modify files, call external services, or expose secrets."
 )

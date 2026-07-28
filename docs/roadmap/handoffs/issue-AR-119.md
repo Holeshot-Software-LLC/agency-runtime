@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 63a1f5f2b0c5258744e3face3b33ac8750e3a633
-minimum_ledger_commit: f3e8961e9029a89b956c03b18343f2d042cd24c6
+evidence_commit: 5d390424eeb68fe94b3cf713c85a886fa196eefc
+minimum_ledger_commit: 5a26dbe19ebb967f38440552b28b11635a4c5598
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -42,15 +42,17 @@ the full acceptance history.
 
 ## checkpoint
 
-- Exact recovery pairs: AR-185 `bc6589b`/`c48f2bf`; AR-187
-  `63a1f5f`/`f3e8961`.
-- Branch `main` resolves to `f3e8961`; `origin/main` remains `880a5ce` because
-  no push was authorized. No manual/exhaustive workflow was dispatched.
+- Latest clean recovery pair is AR-180 `5d39042`/`5a26dbe`; the deterministic
+  activation-route implementation is the next bounded substantive checkpoint.
+- Branch `main` resolves to `5a26dbe`; `origin/main` remains `bef478a`. The user
+  authorized pushing the verified result. No manual/exhaustive workflow was
+  dispatched.
 - User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
   and excluded from every commit.
-- The exact candidate wheel is installed. Adapter refresh reached genuine
-  operator presence and stopped before commit because no local approval was
-  supplied; state is preserved and no retry ran.
+- Exact checkpoint `c71ce0a` is installed as plugin
+  `0.1.0+codex.4bced9ea8e5a`; its attended refresh and all eight hook approvals
+  succeeded. Its live canary reached Agency but planner fanout produced two
+  units, so activation correctly remained unverified.
 
 ## completed-evidence
 
@@ -78,12 +80,14 @@ the full acceptance history.
   did not fabricate activation, delegation, or a contractor hire.
 - One-shot application evaluation is deferred to post-production AR-178 and is
   not an AR-119/125 release gate.
-- AR-180's local candidate now deterministically plans one child and proves the
-  exact Codex JSONL tool call, native-hook grant provenance, child lifecycle,
-  single consumption, model receipt, delegation, accepted finalization, header,
-  and install-bound attestation. Ambiguous/unmatched native calls remain Codex
-  scheduler decisions. Focused suites pass 33 canary/output tests, 11 schema/
-  provenance migrations, dashboard API checks, and all 106 UI tests.
+- AR-180 now isolates the exact activation measurement from semantic-planner
+  variance with a closed native-verified, nonce-bound one-unit fixture. It
+  remains read-only, no-tool, uncached, and fails closed on roster or authority
+  drift; ordinary requests remain inference-governed. The route passes durable
+  preflight replay and preserves distinct Store provenance. The existing
+  hook/proof chain still validates exact JSONL spawn/wait topology, native-hook
+  grants, single consumption, child lifecycle, model receipt, finalization,
+  header, and install-bound attestation.
 - Expired dashboard host inspection now neutralizes canary and maturity claims;
   the Codex card labels verified evidence as the last successful activation
   proof and renders its full content-free fingerprint without an execute button.
@@ -92,9 +96,10 @@ the full acceptance history.
   platform skip. Exact `f3e8961` canonical wheel/source verification and strict
   Twine pass; wheel SHA-256 is `395488c8...041fa`, sdist SHA-256 is
   `5993c6a6...e329b`, and the installed uv receipt points to that exact wheel.
-- The attended exact refresh advanced past the live-found false repository
-  boundary, then waited 132.4 seconds for native operator presence. No local
-  approval arrived; it failed before commit with state preserved and no retry.
+- Two subsequent attended exact refreshes passed Windows owner presence and the
+  user approved each generated eight-hook inventory in the terminal TUI. Their
+  fresh failures were parent-only execution and then two-unit planner fanout,
+  not trust-store bypass or stale evidence reuse.
 - AR-185 now routes the exact verification-only command before generic install,
   binds success to a temporally fresh exact attestation, propagates no-create/
   migrate/repair Store mode through spawned hooks, and suppresses roster
@@ -106,14 +111,10 @@ the full acceptance history.
 
 ## exact-blocker
 
-- Generic/missing-host installation remains unavailable. The exact candidate
-  CLI is installed, while the existing plugin remains stale because the
-  prepared refresh is `waiting_for_operator`. One local Windows Hello approval
-  must commit that exact refresh; then renew terminal-TUI hook approval and run
-  one new-task current-profile canary.
-  Codex has no supported trust-state read API, so this remains a bounded
-  inference from the evidence, not a claimed diagnosis. No preexisting
-  attestation may satisfy the next recheck.
+- The deterministic activation-route candidate still needs a clean commit,
+  exact artifact build/install, one attended Codex refresh, renewed terminal-TUI
+  hook approval, and one fresh bounded current-profile canary. No preexisting
+  attestation may satisfy that recheck.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
   attended Windows Hello success-and-denial canary. The remote session cannot
@@ -122,8 +123,8 @@ the full acceptance history.
   operator-requested diagnostics rather than a local completion requirement.
 - `main` has neither authorized branch protection nor a repository ruleset.
   Applying required contexts is an outward setting change owned by AR-159.
-- Five installed-host canaries remain open, including the Codex recheck after
-  exact-bundle terminal-TUI trust.
+- Installed-host canaries other than the bounded Codex recheck remain separate
+  release evidence and are not inferred from deterministic host discovery.
 - AR-119/125 still require a benchmark-valid complete outcome corpus. Malformed,
   timed-out, no-response, and unknown upstream arms remain invalid, never losses.
 - Tracker creation/closure for authorization-pending AR items and other writes
@@ -136,16 +137,17 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. With the operator physically present, run one exact prepared Codex refresh
-   and approve its single Windows Hello prompt; do not retry unattended.
-2. Renew terminal-TUI hook trust, open one new Codex task, run one activation
-   verification, and inspect the correlated read-only UI evidence.
+1. Commit and ledger the deterministic activation route after focused checks;
+   build and install that exact clean checkpoint.
+2. Run one attended Codex refresh, renew the generated hook inventory trust,
+   then run one bounded current-profile activation verification and inspect its
+   correlated read-only evidence.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
-node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
+python -m pytest tests/test_activation_canary_contract.py tests/test_codex_activation_canary.py tests/test_codex_activation_verification.py -q -W error
 python scripts/verify_docs.py
 python -m scripts.verify_distribution <candidate-directory> --expected-commit <final-head>
 git diff --check

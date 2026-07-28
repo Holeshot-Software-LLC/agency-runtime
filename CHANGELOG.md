@@ -37,10 +37,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
-- The Codex current-profile activation canary now explicitly requests one
-  sub-agent for the entire indivisible review unit. This satisfies Codex's
-  native delegation policy without permitting fanout, preventing a valid
-  Agency route and header from stalling at a parent-only suggested delegation.
+- The Codex current-profile activation canary now recognizes only its exact
+  native-verified, nonce-bound diagnostic task and projects one read-only,
+  no-tool `code-reviewer` unit without invoking the variable workforce planner.
+  The fixture is not cached, cannot hire or mutate the roster, fails closed on
+  specialist-contract drift, and leaves every ordinary Agency request on the
+  normal inference-governed routing path.
 - Native host lifecycle commands now run from an owner-private working
   directory while retaining every real ambient repository boundary. Running
   `agency install` from a broad directory such as the user's home no longer

@@ -599,6 +599,33 @@ def _verified_work_units(recipe_routing: dict[str, Any], user_message: str) -> d
             "source": "parent_unit_reuse",
             "units": [normalized],
         }
+    elif expected.get("source") == "activation-canary-contract":
+        from agency_runtime.core.activation_canary_contract import (
+            CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+            is_exact_codex_activation_canary_task,
+        )
+
+        execution_context = project_host_capability_receipt(recipe_routing.get("execution_context"))
+        if (
+            recipe_routing.get("source") != CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+            or execution_context is None
+            or not is_exact_codex_activation_canary_task(
+                user_message,
+                host=execution_context.get("execution_host"),
+                capability_status=execution_context.get("status"),
+            )
+        ):
+            raise RuntimeError("activation canary work-unit replay is not exact and authorized")
+        normalized = " ".join(str(user_message or "").split())
+        if not normalized:
+            raise RuntimeError("activation canary replay has no current work-unit goal")
+        detected = {
+            "delegate": True,
+            "count": 1,
+            "confidence": "high",
+            "source": "activation-canary-contract",
+            "units": [normalized],
+        }
     elif expected.get("source") == "isolated_plan_policy":
         detected = {
             **detect_work_units(user_message),

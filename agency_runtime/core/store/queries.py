@@ -427,6 +427,8 @@ def project_routing_decision(
         source = "session"
     elif safe_decision.get("source") == "policy_fallback":
         source = "policy_fallback"
+    elif safe_decision.get("source") == "codex_activation_canary_contract":
+        source = "codex_activation_canary_contract"
     else:
         source = "computed"
     return safe_decision, safe_work_units, source

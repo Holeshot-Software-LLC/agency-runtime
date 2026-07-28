@@ -35,19 +35,17 @@ blocks: [AR-119]
 
 ## Problem
 
-The current-profile Codex canary requires the expected `code-reviewer` to have
-activation evidence, but its prompt forbids all tool use. Codex uses isolated
-specialist delivery: selection creates a native delegation plan, while prompt
-retrieval and activation occur only at a real native child boundary. The
-canary can therefore prove hooks, routing, and finalization without being able
-to satisfy its own specialist-activation gate.
+The current-profile Codex canary requires exactly one `code-reviewer` child
+activation. Prompt wording alone cannot guarantee that topology: one attended
+probe stayed in the parent and another semantic-planner pass split the tiny
+diagnostic into two units. Both behaviors are valid for ordinary scheduling but
+make activation verification depend on planner variance instead of the
+installed hook and native-child lifecycle it is intended to measure.
 
 ## Current state
 
-The local candidate now emits exactly one bounded work unit, uses the Codex
-native `spawn_agent`/`wait_agent` surface, and proves the complete hook-to-Store
-chain from prompt delivery through accepted parent finalization. Strict proof
-binds the JSONL tool call, immutable `native_hook` receipt provenance, one-use
+The proof contract and hook-to-Store chain are complete. Strict proof binds the
+Codex JSONL tool call, immutable `native_hook` receipt provenance, one-use
 activation consumption, child lifecycle, delegation, model receipt, exact
 header, current install identity, and the dedicated
 `agency.codex-activation-canary.v1` contract. Schema v38 migrates legacy rows to
@@ -82,11 +80,7 @@ the exact activation graph.
 The exact receipt exposed a canary-contract mismatch rather than another trust
 failure: the canary user prompt said not to split the unit but did not explicitly
 request a sub-agent. Current Codex delegation policy therefore kept the work in
-the parent despite the injected one-row Agency plan. The candidate now asks for
-exactly one sub-agent to execute the entire indivisible unit and forbids both
-parent execution and multi-child fanout. Tracker creation remains pending
-authorization. The bounded warning-strict canary and activation package passes
-108 tests; targeted Ruff, documentation validation, and diff checks also pass.
+the parent despite the injected one-row Agency plan.
 
 Exact checkpoint `c71ce0a` then built and independently verified as a Windows
 wheel/source pair, passed a fresh-wheel installed smoke, refreshed Codex through
@@ -99,10 +93,26 @@ narrow directive to delegate that complete unit to exactly one sub-agent without
 subdivision; it removes the extra parent-execution sentence that was interpreted
 as a second planning concern.
 
+A routing-only probe of that next wording at checkpoint `5a26dbe` still produced
+two units. The candidate therefore stops treating prose as a topology control.
+Only the exact existing-Store canary environment, a native-contract-verified
+Codex receipt, and the canonical prompt plus a 32-character lowercase-hex nonce
+admit a deterministic fixture. It selects the already-active `code-reviewer`,
+requires review-only authority, a review task type, direct-safe context, and no
+tools, and produces one selected-only read-only assignment. It does not invoke
+the semantic planner, provider, gap hiring, roster mutation, cache, or session
+reuse. Ordinary requests remain inference-governed. The route survives durable
+preflight replay and records distinct fixture provenance for debugging. Focused
+warning-strict canary and activation tests pass; an exact artifact refresh and
+live current-profile proof are the remaining gates. Tracker creation remains
+pending authorization.
+
 ## Approach
 
 Define a deterministic, time-bounded Codex activation probe whose requested
-work has one safe isolated unit and one eligible specialist. Prove first that
+work has one safe isolated unit and one eligible specialist. Recognize only the
+closed diagnostic form described above and bypass variable planning without
+granting authority or changing ordinary routing. Prove first that
 the non-interactive Codex surface exposes the required native delegation tool.
 The user-level probe must explicitly request exactly one sub-agent for the
 whole unit so the canary remains compatible with Codex's native delegation

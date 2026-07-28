@@ -26,6 +26,12 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+    CODEX_ACTIVATION_CANARY_SPECIALIST,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+    is_exact_codex_activation_canary_task,
+)
 from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.bounded_values import bounded_unique_strings
 from agency_runtime.core.config import AgencyConfig
@@ -77,7 +83,10 @@ from agency_runtime.core.turn_intent import (
     authoritative_turn_classification,
     classify_turn_intent,
 )
-from agency_runtime.core.unit_assignment import MAX_WORK_UNIT_PREVIEW_CHARS
+from agency_runtime.core.unit_assignment import (
+    MAX_WORK_UNIT_PREVIEW_CHARS,
+    project_unit_assignment_agents,
+)
 
 logger = logging.getLogger("agency_runtime.selector.pipeline")
 
@@ -882,6 +891,107 @@ def _attach_workforce_signals(
     return routing
 
 
+def _activation_canary_routing(request: _RouteRequest) -> dict[str, Any] | None:
+    """Build the exact evidence-only route for the installed Codex canary.
+
+    This path deliberately bypasses semantic planning variance, gap hiring, and
+    provider receipts.  It grants no new capability: the request must already
+    be a native-contract-verified Codex event, use the existing-current Store
+    canary environment, carry the exact nonce-bound diagnostic task, and expose
+    the expected no-tool specialist in the eligibility-filtered catalog.
+    """
+
+    if request.workforce_snapshot is None or not is_exact_codex_activation_canary_task(
+        request.user_message,
+        host=request.host,
+        capability_status=request.capability_status,
+    ):
+        return None
+
+    specialist = CODEX_ACTIVATION_CANARY_SPECIALIST
+    candidate = next(
+        (item for item in request.catalog if agent_identity(item) == specialist),
+        None,
+    )
+    error = ""
+    assignment_agents: list[dict[str, Any]] = []
+    if specialist not in request.active_ids or candidate is None:
+        error = "activation canary specialist is not eligible in the current roster"
+    elif str(candidate.get("authority") or "").strip().casefold() != "review":
+        error = "activation canary specialist lacks review-only authority"
+    elif "review" not in {
+        str(item).strip().casefold()
+        for item in (
+            candidate.get("task_types")
+            if isinstance(candidate.get("task_types"), (list, tuple))
+            else ()
+        )
+    }:
+        error = "activation canary specialist lacks the reviewed task type"
+    elif str(candidate.get("context_mode") or "").strip().casefold() != "direct_safe":
+        error = "activation canary specialist lacks the direct-safe context contract"
+    elif bool(candidate.get("required_tools")):
+        error = "activation canary specialist requires tools outside the no-tool contract"
+    else:
+        try:
+            projected = project_unit_assignment_agents(
+                [
+                    {
+                        "slug": specialist,
+                        "name": candidate.get("name"),
+                        "description": candidate.get("description"),
+                        "capabilities": candidate.get("capabilities"),
+                        "tags": [
+                            *(candidate.get("tags") or []),
+                            *(candidate.get("categories") or []),
+                        ],
+                        "required_tools": [],
+                        "evidence_requirements": candidate.get("evidence_requirements"),
+                    }
+                ],
+                strict=True,
+            )
+        except (RuntimeError, ValueError):
+            projected = None
+        if projected is None or len(projected) != 1:
+            error = "activation canary specialist metadata is not safely projectable"
+        else:
+            assignment_agents = projected
+
+    accepted = not error
+    return {
+        "selected_ids": [specialist] if accepted else [],
+        "semantic_ids": [specialist] if accepted else [],
+        "confidence": 1.0 if accepted else 0.0,
+        "margin": 1.0 if accepted else 0.0,
+        "latency_ms": 0,
+        "status": "accepted" if accepted else "abstained",
+        "source": CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+        "error": error,
+        "candidate_count": 1 if candidate is not None else 0,
+        "top_score": 1.0 if accepted else 0.0,
+        "inference_configured": inference_is_configured(request.config),
+        "inference_required": False,
+        "inference_attempted": False,
+        "inference_mode": "activation_canary_contract",
+        "provider_attempts": [],
+        "inference_failures": [],
+        "workforce_cache_hits": [],
+        "work_units": {
+            "count": 1,
+            "confidence": "high" if accepted else "none",
+            "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+            "units": [request.user_message],
+            "delegate": accepted,
+        },
+        "unit_assignment_agents": assignment_agents,
+        "disabled_candidate_shadows": [],
+        "unavailable_candidate_shadows": [],
+        "fallback_applied": False,
+        "fallback_considered": not accepted,
+    }
+
+
 def _apply_compatible_selection(
     routing: dict[str, Any],
     catalog: list[dict[str, Any]],
@@ -1291,6 +1401,20 @@ def route(
         )
         return _finalize_classified_request(
             routing,
+            request,
+            classification,
+            store=store,
+            trace_id=trace_id,
+        )
+    activation_canary = _activation_canary_routing(request)
+    if activation_canary is not None:
+        activation_canary = _attach_workforce_signals(
+            activation_canary,
+            request,
+            _route_signals(request),
+        )
+        return _finalize_classified_request(
+            activation_canary,
             request,
             classification,
             store=store,

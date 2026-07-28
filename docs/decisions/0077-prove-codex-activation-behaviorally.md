@@ -3,10 +3,11 @@ title: "Prove Codex hook activation behaviorally without bypassing trust"
 status: accepted
 category: decisions
 created: 2026-07-20
-updated: 2026-07-21
+updated: 2026-07-27
 tags: [codex, installation, hooks, trust, canary, security]
 related:
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
+  - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
@@ -49,6 +50,17 @@ read-only, ephemeral Codex execution in the normal user profile. It retains the
 canary's tool, app, web, output, timeout, and evidence limits but deliberately
 omits `--dangerously-bypass-hook-trust`.
 
+The verifier measures the installed hook and one native child lifecycle; it is
+not a workforce-planner quality evaluation. Its exact current-profile child is
+therefore recognized only by the two restricted canary environment markers, a
+native-contract-verified Codex receipt, and the complete canonical prompt plus
+one 32-character lowercase hexadecimal nonce. That closed form projects one
+read-only, no-tool `code-reviewer` assignment without provider inference,
+caching, session reuse, roster mutation, or gap hiring. The specialist must
+already be active and retain its reviewed authority, review task type, and
+direct-safe context contract. Any neighboring request or contract drift fails
+closed or remains on ordinary inference-governed routing.
+
 Only a successful current-profile invocation with a valid Agency header and
 correlated routing and finalization evidence creates the durable attestation
 that promotes installation, status, doctor, and dashboard maturity to
@@ -65,6 +77,8 @@ installed bundle, install identifier, and plugin version.
   an independently established current-profile attestation.
 - Verification performs one explicit Codex model invocation and can consume the
   user's configured provider quota.
+- Activation evidence is deterministic with respect to one diagnostic unit and
+  does not measure or imply semantic workforce-planner quality.
 
 ## Alternatives
 

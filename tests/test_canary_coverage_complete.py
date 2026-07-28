@@ -202,6 +202,7 @@ def test_agency_canary_explicitly_requests_one_whole_unit_subagent() -> None:
     assert "user explicitly requested exactly one sub-agent" in (
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     )
+    assert "wait_agent exactly once" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
 
 
 def test_canary_output_and_records_cover_empty_and_failed_results() -> None:
