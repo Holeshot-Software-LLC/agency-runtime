@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
+  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
@@ -25,6 +26,7 @@ related:
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
   - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
+  - docs/decisions/0108-retire-only-owned-host-integrations.md
 supersedes: []
 superseded_by: null
 ---
@@ -39,6 +41,7 @@ agency config show
 agency config path
 agency db stats --json
 agency install --all --dry-run --json
+agency uninstall --all --dry-run --json
 ```
 
 Do not interpret a generated file as a loaded integration. The host inventory
@@ -120,6 +123,110 @@ agency install --agent <host> --rollback
 
 Rollback can restore files even when a native refresh is unavailable. In that
 case it reports native state as unverified and requires a host restart/check.
+
+## Uninstall is blocked, partial, or says the plan changed
+
+Host uninstall is intentionally a two-step owner-terminal operation. Generate a
+fresh write-free plan, review every selected host and native command, then pass
+the exact digest back with the same selector:
+
+```bash
+agency uninstall --all --dry-run --json
+agency uninstall --all --confirm-plan <plan_digest> --json
+
+# One host instead of every Agency-evidenced host:
+agency uninstall --agent <host> --dry-run --json
+agency uninstall --agent <host> --confirm-plan <plan_digest> --json
+```
+
+`confirmation_required` means the plan was absent or changed. Do not reuse an
+older digest; rerun the dry run. The digest binds the selector, canonical hosts,
+managed target, install identity, nested filesystem/runtime/prepared-launcher/
+profile/native-state binding, planned status, and native command sequence. The
+launcher binding includes every executable or wrapper artifact that can
+participate in the actual process chain, not only the first command path. Native
+plugin and marketplace provenance accept only documented path aliases; relative,
+invalid, or conflicting aliases block even if one field is correct.
+Applying a mutating plan then opens the exact native Windows action
+`uninstall.host-integrations.v1`. Its confirmation binds one
+operation UUID, the canonical host transitions, the outer plan and per-host
+binding hashes, each exact retained destination, and the fixed
+`runtime-data-and-marketplaces.v1` preservation and
+`retained-owned-bundles.v1` recovery policies. Denial, malformed native output,
+or any changed value fails before host mutation; do not substitute a static
+phrase or another installation-family approval.
+
+`another host integration transaction is active` means a generic mutating
+install, rollback, native enable/disable toggle, prepared Codex
+refresh, or host uninstall holds the shared owner-private
+`host-integrations.lock`. Do not delete or replace the lock file. Let that
+attended transaction finish, inspect its result, and generate a fresh dry run;
+a timed-out contender receives no authority to resume or interfere with the
+active transaction.
+
+`blocked` means ownership or native state could not be proven. Common causes are
+an unexpected or missing file in the managed tree, a link/reparse point, a
+plugin record bound to a different source, an unavailable host CLI, incomplete
+ZCode handler state, an ambiguous or mismatched marketplace source, or a
+live/unknown OpenClaw gateway. A marketplace mismatch blocks the selected
+integration but does not authorize deletion of that user configuration. The
+command does not delete or move the tree in these cases. Stop OpenClaw through
+its native procedure before generating a new plan; do not manually delete an
+unexpected entry merely to make ownership validation pass.
+
+A Codex or Claude marketplace registration without a managed bundle or
+installed Agency plugin is `marketplace-only` residue. `--all` deliberately
+ignores it, and uninstall does not delete it. Marketplace entries are retained
+as user configuration because the current install manifest cannot prove Agency
+created an entry exclusively. Inspect or remove such configuration with the
+host's own attended tooling only if you independently intend that change.
+
+`partial_failure` means at least one native or filesystem step changed state but
+the host-specific detachment or retention postcondition was not proven.
+Preserve `native_steps`, `failed_step`, `retained_path`, `journal_path`, and the
+operation/plan identifiers. The owner-private journal under
+`~/.agency-runtime/operations/`
+contains bounded status metadata, not native output or configuration content.
+Intent is created only after Windows authority succeeds and locked revalidation
+passes, but before the first mutation; operator denial therefore has no journal.
+A journal or host failure stops later selected hosts and reports each one as
+`not_attempted`; it does not authorize an automatic resume. Correct the reported
+problem and start again with a fresh dry run. A successfully retired bundle
+remains at the exact bound destination
+`~/.agency-runtime/backups/<host>/uninstall-<operation_uuid>` and may be restored
+with the reported recovery command. It includes both `--agent <host>` and the
+exact `--backup <retained_path>`; the explicit backup is authoritative, so do
+not omit it when more than one retained bundle exists. On Windows, copy the
+reported PowerShell command exactly. It uses `&`, single-quotes every argument,
+and doubles an embedded quote so `&`, spaces, and other path metacharacters stay
+literal; do not strip those quotes or convert it to `cmd.exe` syntax.
+On Windows, retirement renames the already-validated directory handle and then
+proves that destination still names the same object. A handle-bound retirement
+error reports the retained path when recovery material moved; do not manually
+move, delete, or replace either path before inspecting that result.
+
+Hermes does not expose the same unregister semantics as the other plugin hosts.
+After a successful uninstall its exact Agency inventory row may remain with
+`enabled=false`; that disabled residue is the required detachment postcondition.
+An enabled, ambiguous, duplicated, or malformed Hermes row remains a failure.
+
+ZCode removes only exact Agency handlers while preserving unrelated entries. It
+performs two unchanged-byte checks and an atomic replacement while Agency's
+lifecycle lock is held, but that lock cannot coordinate an unrelated ZCode
+process running as the same account. Such a process can still write between the
+final read and replacement. Avoid concurrent ZCode configuration changes during
+uninstall, inspect the postcondition, and do not describe this residual window
+as compare-and-swap.
+
+Uninstall has no purge mode. It preserves the Agency package, Agency Runtime
+configuration, Store, roster, evidence, every backup, unrelated host
+configuration, Codex/Claude marketplace registrations, and the dashboard
+service. Exact native plugin registration or Agency-owned ZCode handlers are
+the configuration this operation intentionally changes. Use the separate
+`agency dashboard service uninstall` lifecycle only when you also intend to
+remove that service registration. The dashboard can copy only the write-free
+preview command; no dashboard button or HTTP endpoint can apply host uninstall.
+Restart affected hosts before judging already-loaded sessions.
 
 ## OpenClaw refuses installation
 

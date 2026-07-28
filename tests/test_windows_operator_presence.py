@@ -14,6 +14,12 @@ from agency_runtime.cli import roster_commands
 from agency_runtime.core import windows_operator_presence as subject
 from agency_runtime.core.operator_presence import OperatorPresenceError
 from agency_runtime.core.prepared_codex_install import _CodexInstallBinding, _make_binding
+from agency_runtime.core.prepared_host_uninstall import (
+    _HostUninstallBinding,
+)
+from agency_runtime.core.prepared_host_uninstall import (
+    _make_binding as _make_host_uninstall_binding,
+)
 from agency_runtime.core.process_argv import PreparedProcessArgv
 from agency_runtime.core.store.roster import _RosterRollbackBinding
 
@@ -77,7 +83,39 @@ def _codex_prepared(**changes: Any) -> _CodexInstallBinding:
     return prepared._replace(**changes)
 
 
+def _host_uninstall_prepared(**changes: Any) -> _HostUninstallBinding:
+    prepared = _make_host_uninstall_binding(
+        operation_id="12345678-1234-4abc-8def-1234567890ab",
+        selected_by="all",
+        targets=("hermes", "codex", "zcode"),
+        plans=(
+            {
+                "host": "hermes",
+                "target": r"C:\Users\owner\.hermes\plugins\agency-preflight",
+                "binding_digest": "1" * 64,
+                "native_command_plan": [{"name": "disable"}],
+            },
+            {
+                "host": "codex",
+                "target": r"C:\Users\owner\.agency-runtime\marketplaces\codex",
+                "binding_digest": "2" * 64,
+                "native_command_plan": [{"name": "unregister"}],
+            },
+            {
+                "host": "zcode",
+                "target": r"C:\Users\owner\.zcode\plugins\agency-preflight",
+                "binding_digest": "3" * 64,
+                "native_command_plan": [{"name": "remove-handlers"}],
+            },
+        ),
+        plan_sha256="5" * 64,
+        home_dir=Path(r"C:\Users\owner"),
+    )
+    return prepared._replace(**changes)
+
+
 _CODEX_BINDING_SHA256 = _codex_prepared().binding_sha256
+_HOST_UNINSTALL_BINDING_SHA256 = _host_uninstall_prepared().binding_sha256
 
 
 def test_native_binding_covers_every_prepared_store_field() -> None:
@@ -104,6 +142,24 @@ def _codex_result(**changes: Any) -> subject.BoundedBinaryProcessResult:
         "returncode": 0,
         "stdout": subject._codex_install_verified_stdout(
             binding_sha256=_CODEX_BINDING_SHA256,
+            nonce=_NONCE.hex(),
+        ),
+        "stderr": b"",
+        "timed_out": False,
+        "stdout_truncated": False,
+        "stderr_truncated": False,
+        "cancelled": False,
+        "failure_category": None,
+    }
+    values.update(changes)
+    return subject.BoundedBinaryProcessResult(**values)
+
+
+def _host_uninstall_result(**changes: Any) -> subject.BoundedBinaryProcessResult:
+    values: dict[str, Any] = {
+        "returncode": 0,
+        "stdout": subject._host_uninstall_verified_stdout(
+            binding_sha256=_HOST_UNINSTALL_BINDING_SHA256,
             nonce=_NONCE.hex(),
         ),
         "stderr": b"",
@@ -215,6 +271,43 @@ def test_codex_install_verification_sends_exact_record_and_consumes_no_receipt(
     assert observed["max_stderr_bytes"] == subject._MAX_RESULT_BYTES
 
 
+def test_host_uninstall_verification_sends_exact_record_and_consumes_no_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepared = _host_uninstall_prepared()
+    observed = _enable_test_verifier(monkeypatch, _host_uninstall_result())
+
+    assert subject._verify_host_uninstall_binding(prepared) is None
+
+    assert observed["input_bytes"] == (
+        b"AGENCY-OPERATOR-PRESENCE/1\n"
+        b"action=uninstall.host-integrations.v1\n"
+        b"operation-id=12345678-1234-4abc-8def-1234567890ab\n"
+        b"selection=all\n"
+        b"targets=hermes,codex,zcode\n"
+        b"transitions=hermes:disable+retain,codex:unregister+retain,"
+        b"zcode:remove-handlers+retain\n"
+        b"host-count=3\n"
+        + b"confirmed-plan-sha256="
+        + b"5" * 64
+        + b"\nhost-bindings-sha256="
+        + prepared.host_bindings_sha256.encode("ascii")
+        + b"\npreservation-policy=runtime-data-and-marketplaces.v1\n"
+        + b"recovery-policy=retained-owned-bundles.v1\n"
+        + b"binding-sha256="
+        + prepared.binding_sha256.encode("ascii")
+        + b"\nnonce="
+        + b"ab" * 32
+        + b"\n"
+    )
+    assert observed["env"] == {}
+    assert observed["cwd"] == r"C:\trusted"
+    assert observed["retain_output_tail"] is False
+    assert observed["max_input_bytes"] == subject._MAX_PROTOCOL_BYTES
+    assert observed["max_stdout_bytes"] == subject._MAX_RESULT_BYTES
+    assert observed["max_stderr_bytes"] == subject._MAX_RESULT_BYTES
+
+
 def test_codex_repair_allows_same_version_and_cross_domain_digest_value(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -305,6 +398,66 @@ def test_codex_install_malformed_or_failed_result_is_denied(
         subject._verify_codex_install_binding(_codex_prepared())
 
 
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {
+            "stdout": subject._host_uninstall_verified_stdout(
+                binding_sha256="7" * 64,
+                nonce=_NONCE.hex(),
+            )
+        },
+        {
+            "stdout": subject._host_uninstall_verified_stdout(
+                binding_sha256=_HOST_UNINSTALL_BINDING_SHA256,
+                nonce="cd" * 32,
+            )
+        },
+        {
+            "stdout": subject._host_uninstall_verified_stdout(
+                binding_sha256=_HOST_UNINSTALL_BINDING_SHA256,
+                nonce=_NONCE.hex(),
+            ).replace(b"uninstall.host-integrations.v1", b"install.codex.v1")
+        },
+        {
+            "stdout": subject._host_uninstall_verified_stdout(
+                binding_sha256=_HOST_UNINSTALL_BINDING_SHA256,
+                nonce=_NONCE.hex(),
+            )
+            + b"extra"
+        },
+        {"stderr": b"diagnostic"},
+        {"returncode": 1},
+        {"timed_out": True},
+        {"stdout_truncated": True},
+        {"stderr_truncated": True},
+        {"cancelled": True},
+        {"failure_category": "containment"},
+    ],
+    ids=(
+        "wrong-binding",
+        "wrong-nonce",
+        "wrong-action",
+        "extra-stdout",
+        "stderr",
+        "nonzero",
+        "timeout",
+        "stdout-truncated",
+        "stderr-truncated",
+        "cancelled",
+        "containment-failure",
+    ),
+)
+def test_host_uninstall_malformed_or_failed_result_is_denied(
+    monkeypatch: pytest.MonkeyPatch,
+    changes: dict[str, Any],
+) -> None:
+    _enable_test_verifier(monkeypatch, _host_uninstall_result(**changes))
+
+    with pytest.raises(OperatorPresenceError, match="was not verified"):
+        subject._verify_host_uninstall_binding(_host_uninstall_prepared())
+
+
 _DENIED_RESULTS = (
     "device-not-present",
     "not-configured",
@@ -338,6 +491,28 @@ def test_every_nonverified_codex_install_status_is_denied(
 
     with pytest.raises(OperatorPresenceError, match="was not verified"):
         subject._verify_codex_install_binding(_codex_prepared())
+
+
+@pytest.mark.parametrize("status", _DENIED_RESULTS)
+def test_every_nonverified_host_uninstall_status_is_denied(
+    monkeypatch: pytest.MonkeyPatch,
+    status: str,
+) -> None:
+    stdout = (
+        subject._PROTOCOL_HEADER
+        + b"mode=verification\n"
+        + b"action=uninstall.host-integrations.v1\n"
+        + f"result={status}\n".encode("ascii")
+        + b"binding-sha256="
+        + _HOST_UNINSTALL_BINDING_SHA256.encode("ascii")
+        + b"\nnonce="
+        + _NONCE.hex().encode("ascii")
+        + b"\n"
+    )
+    _enable_test_verifier(monkeypatch, _host_uninstall_result(returncode=20, stdout=stdout))
+
+    with pytest.raises(OperatorPresenceError, match="was not verified"):
+        subject._verify_host_uninstall_binding(_host_uninstall_prepared())
 
 
 @pytest.mark.parametrize("status", _DENIED_RESULTS)
@@ -457,6 +632,19 @@ def test_invalid_codex_prepared_type_never_reaches_host_or_process(
         subject._verify_codex_install_binding(object())  # type: ignore[arg-type]
 
 
+def test_invalid_host_uninstall_prepared_type_never_reaches_host_or_process(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        subject,
+        "_assert_supported_host",
+        lambda: pytest.fail("invalid prepared value reached host verification"),
+    )
+
+    with pytest.raises(OperatorPresenceError, match="binding is invalid"):
+        subject._verify_host_uninstall_binding(object())  # type: ignore[arg-type]
+
+
 @pytest.mark.parametrize(
     ("platform_name", "architecture", "pointer_size", "build", "message"),
     [
@@ -548,6 +736,34 @@ def test_invalid_codex_install_protocol_fields_are_rejected(
 
     with pytest.raises(OperatorPresenceError, match="binding is invalid"):
         subject._verify_codex_install_binding(_codex_prepared(**{field: value}))
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("operation_id", "12345678-1234-4ABC-8def-1234567890ab"),
+        ("selection", "codex"),
+        ("targets_csv", "codex,hermes,zcode"),
+        (
+            "transitions_csv",
+            "hermes:unregister+retain,codex:unregister+retain,zcode:remove-handlers+retain",
+        ),
+        ("host_count", True),
+        ("confirmed_plan_sha256", "A" * 64),
+        ("host_bindings_sha256", "2" * 63),
+        ("preservation_policy", "delete-runtime-data.v1"),
+        ("recovery_policy", "delete-bundles.v1"),
+        ("binding_sha256", "6" * 63),
+    ],
+)
+def test_invalid_host_uninstall_protocol_fields_are_rejected(
+    field: str,
+    value: Any,
+) -> None:
+    prepared = _host_uninstall_prepared(**{field: value})
+
+    with pytest.raises(OperatorPresenceError, match="binding is invalid"):
+        subject._host_uninstall_request_payload(prepared, _NONCE.hex())
 
 
 def _provenance_record(*, source_size: int = 10, executable_size: int = 20) -> dict[str, Any]:

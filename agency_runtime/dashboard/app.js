@@ -176,6 +176,22 @@ export function createDashboard(runtime = globalThis) {
 		return true;
 	}
 
+	async function copyAttendedCommand(commandValue, successMessage) {
+		const command = String(commandValue || "").trim();
+		if (!command) return false;
+		try {
+			if (typeof window.navigator?.clipboard?.writeText !== "function") {
+				throw new Error("clipboard unavailable");
+			}
+			await window.navigator.clipboard.writeText(command);
+			core.showNotice(successMessage);
+			return true;
+		} catch {
+			core.showNotice("Copy was unavailable. Select the displayed command manually.", true);
+			return false;
+		}
+	}
+
 	function bindEvents() {
 		if (state.lifecycle.bound || state.lifecycle.destroyed) return false;
 		state.lifecycle.bound = true;
@@ -194,18 +210,16 @@ export function createDashboard(runtime = globalThis) {
 			void live.refreshUpdateStatus();
 		});
 		live.ensureUpdateSurface();
-		listen(byId("update-copy-button"), "click", async () => {
-			const command = String(byId("update-command")?.textContent || "").trim();
-			if (!command) return;
-			try {
-				if (typeof window.navigator?.clipboard?.writeText !== "function") {
-					throw new Error("clipboard unavailable");
-				}
-				await window.navigator.clipboard.writeText(command);
-				core.showNotice("Upgrade command copied. Review it in an owner-controlled terminal.");
-			} catch {
-				core.showNotice("Copy was unavailable. Select the displayed command manually.", true);
-			}
+		listen(byId("update-copy-button"), "click", () => copyAttendedCommand(
+			byId("update-command")?.textContent,
+			"Upgrade command copied. Review it in an owner-controlled terminal.",
+		));
+		listen(byId("host-grid"), "click", (event) => {
+			if (event.target?.id !== "uninstall-copy-button") return false;
+			return copyAttendedCommand(
+				event.target.dataset.command,
+				"Uninstall preview copied. Run it in an owner-controlled terminal.",
+			);
 		});
 		listen(byId("route-button"), "click", actions.runRoute);
 		listen(byId("route-host"), "change", renderer.renderRouteHosts);

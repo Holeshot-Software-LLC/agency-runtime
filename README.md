@@ -10,6 +10,8 @@ related:
   - SECURITY.md
   - THIRD_PARTY_NOTICES.md
   - docs/TROUBLESHOOTING.md
+  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
+  - docs/decisions/0108-retire-only-owned-host-integrations.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
 supersedes: []
@@ -366,15 +368,18 @@ itself, or bypass Windows operator presence. See
 [ADR-0107](docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md).
 
 This unreleased source keeps persistent setup and control mutations fail-closed
-except for two narrow Windows 11 x64 implementations. Exact
+unless one bounded entry point satisfies its native operator-presence and
+operation-specific preconditions. Exact
 `agency roster rollback` prepares and revalidates one authoritative Store
 transition. Exact `agency install --agent codex --no-dashboard` refreshes an
 already managed, registered, and enabled Codex marketplace; it does not create
-a missing installation. Both invoke the packaged native Windows consent window
-and consume its result only in the preparing call stack. Every other positive
-`configure`, `install`, service, host, agent, and retention mutation remains
-unavailable. Do not substitute a static confirmation, bearer token, environment
-variable, or model-callable credential for genuine operator presence. See
+a missing installation. The ownership-bound host uninstall described below is
+a separate attended mutation. These paths invoke the packaged native Windows
+consent window and consume its result only in the initiating call stack. Every
+other positive `configure`, `install`, service, host, agent, and retention
+mutation remains unavailable. Do not substitute a static confirmation, bearer
+token, environment variable, or model-callable credential for genuine operator
+presence. See
 [AR-143](docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md).
 
 That native slice is not yet a production distribution claim. The source now
@@ -394,11 +399,11 @@ no signed public artifact exists.
 The Codex refresh path freezes the configuration, database and generation
 identities, current target tree, candidate transaction plan, launcher, Codex
 executable and environment, and exact native inventory before asking for
-Windows Hello. Under one private install lock it re-prepares, atomically swaps
-the marketplace tree, removes and re-adds the native plugin, and proves the
-published tree and inventory. A bounded compensation path restores the prior
-tree and registration when a post-publication check fails. A process crash can
-still require recovery from the retained backup, so this is not yet the general
+Windows Hello. Under the shared private host-integrations lock it re-prepares,
+atomically swaps the marketplace tree, removes and re-adds the native plugin,
+and proves the published tree and inventory. A bounded compensation path
+restores the prior tree and registration when a post-publication check fails. A
+process crash can still require recovery from the retained backup, so this is not yet the general
 fresh-host installer contract.
 
 **Codex** will also require you to approve command hooks: Agency installs the plugin,
@@ -429,6 +434,62 @@ When positive installation is enabled, the dashboard installs by default as a
 per-user service (no admin access). `agency install --all --no-dashboard` omits
 it. Managed files and backups live under `~/.agency-runtime/`.
 
+Remove only Agency's native host integrations with a reviewed two-step plan:
+
+```bash
+agency uninstall --all --dry-run --json
+agency uninstall --all --confirm-plan <plan_digest> --json
+
+# Or scope both calls to one host:
+agency uninstall --agent codex --dry-run --json
+agency uninstall --agent codex --confirm-plan <plan_digest> --json
+```
+
+Application recomputes the exact plan, so a changed selector, host, managed tree
+or parent, install identity, prepared launcher or any executable/wrapper
+artifact in its process chain, host profile environment, native plugin or
+marketplace source, gateway/ZCode state, or command plan invalidates the digest.
+Native provenance accepts only documented path aliases; an invalid, relative,
+or conflicting alias blocks even if another alias points at the
+managed target. A mutating plan then opens the native Windows confirmation action
+`uninstall.host-integrations.v1`. That prompt is bound to one operation UUID,
+the canonical hosts and transitions, outer plan and per-host binding hashes,
+the exact retained destinations, and fixed preservation/recovery policies; it
+is not a generic installation approval.
+
+Generic mutating install, rollback, native enable/disable toggle,
+prepared Codex refresh, and host uninstall share one owner-private
+`host-integrations.lock`. After Windows authority, uninstall acquires that lock,
+revalidates its full binding, and records intent before the first host mutation;
+denial writes no journal and every later host skipped after a failure is reported
+as `not_attempted`. Only a strict ownership-proven adapter tree is moved after
+native detachment is proven, to the exact destination
+`~/.agency-runtime/backups/<host>/uninstall-<operation_uuid>`. Windows follows
+the validated directory through an open handle during rename, so a pathname
+swap cannot redirect retirement. Restore that exact bundle with the result's
+`agency install --rollback --agent <host> --backup <retained_path>` command.
+On Windows, copy the reported command exactly: it starts with PowerShell's `&`
+and single-quotes every argument so path metacharacters remain literal.
+There is no purge option: the Python package, Agency Runtime configuration,
+Store, roster, evidence, existing backups, and dashboard service are preserved.
+Exact plugin registration or Agency-owned
+ZCode handlers necessarily change; unrelated host configuration is preserved.
+This command does not call the dashboard-service uninstaller. Codex and Claude
+marketplace registrations are also retained as user configuration unless a
+future install ledger proves Agency created an exact entry exclusively;
+marketplace-only residue does not select a host under `--all`, while an
+ambiguous or mismatched marketplace blocks an otherwise selected integration
+without being removed. The dashboard may copy the write-free preview command,
+but it has no uninstall mutation endpoint. Hermes may retain its exact Agency
+inventory row in a proven disabled state; that is its detachment contract, not a
+claim that the row was deleted. ZCode performs two unchanged-byte checks before
+atomic replacement under the Agency lock, but an external same-account ZCode
+writer can still race between the final read and replacement; this is not
+claimed as filesystem compare-and-swap. Restart affected hosts before treating
+Agency as unloaded from already-running sessions. See
+[AR-189](docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) and
+[ADR-0108](docs/decisions/0108-retire-only-owned-host-integrations.md).
+
 ---
 
 ## 🛠 Everyday commands
@@ -456,9 +517,10 @@ agency off --agent codex --dry-run --json
 
 The data contracts retain reversible host, global, and per-agent controls, but
 positive CLI mutations other than the exact prerelease Windows 11 x64 roster
-rollback remain unavailable until AR-143 is complete. The dashboard and every
-model-facing surface are read-only. The native rollback is not production-ready
-until AR-160 and AR-161 close. `agents-orchestrator` and `chief-of-staff` remain
+rollback, existing-Codex refresh, and ownership-bound host uninstall remain
+unavailable until AR-143 is complete. The dashboard and every model-facing
+surface are read-only. The native rollback is not production-ready until AR-160
+and AR-161 close. `agents-orchestrator` and `chief-of-staff` remain
 the protected coordination pair.
 
 ---

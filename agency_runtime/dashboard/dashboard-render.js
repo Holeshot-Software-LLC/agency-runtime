@@ -440,6 +440,24 @@ export function createRenderer(core, config) {
 				"No supported agent hosts were found. Install or register a host, then refresh.",
 			));
 		}
+		const uninstall = el("article", "host-card empty-grid");
+		uninstall.append(
+			strong("", "Attended uninstall"),
+			small(
+				"",
+				"Preview every host with Agency integration evidence in a terminal. The preview changes nothing and returns the exact digest required to apply it.",
+			),
+		);
+		const command = el("code", "", "agency uninstall --all --dry-run");
+		command.id = "uninstall-preview-command";
+		const actions = div("card-actions");
+		const copy = el("button", "button ghost", "Copy uninstall preview");
+		copy.id = "uninstall-copy-button";
+		copy.type = "button";
+		copy.dataset.command = command.textContent;
+		actions.append(copy);
+		uninstall.append(command, actions);
+		grid.append(uninstall);
 	}
 
 	function renderRouteHosts() {

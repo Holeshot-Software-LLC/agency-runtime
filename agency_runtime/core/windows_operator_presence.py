@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.operator_presence import OperatorPresenceError
@@ -36,6 +37,7 @@ from agency_runtime.core.process_argv import (
 
 if TYPE_CHECKING:
     from agency_runtime.core.prepared_codex_install import _CodexInstallBinding
+    from agency_runtime.core.prepared_host_uninstall import _HostUninstallBinding
     from agency_runtime.core.store.roster import _RosterRollbackBinding
 
 _PROTOCOL_HEADER = b"AGENCY-OPERATOR-PRESENCE/1\n"
@@ -44,6 +46,17 @@ _CODEX_INSTALL_ACTION = "install.codex.v1"
 _CODEX_INSTALL_HOST = "codex"
 _CODEX_INSTALL_PLUGIN = "agency-preflight@agency-runtime"
 _CODEX_INSTALL_RECOVERY = "restore-prior-managed-bundle-and-registration"
+_HOST_UNINSTALL_ACTION = "uninstall.host-integrations.v1"
+_HOST_UNINSTALL_HOSTS = ("hermes", "openclaw", "codex", "claude", "zcode")
+_HOST_UNINSTALL_PRESERVATION_POLICY = "runtime-data-and-marketplaces.v1"
+_HOST_UNINSTALL_RECOVERY_POLICY = "retained-owned-bundles.v1"
+_HOST_UNINSTALL_TRANSITIONS = {
+    "hermes": frozenset({"disable+retain", "retain-only"}),
+    "openclaw": frozenset({"unregister+retain", "retain-only"}),
+    "codex": frozenset({"unregister+retain", "retain-only"}),
+    "claude": frozenset({"unregister+retain", "retain-only"}),
+    "zcode": frozenset({"remove-handlers+retain", "retain-only"}),
+}
 _RESOURCE_PARTS = ("native", "windows", "operator_presence")
 _EXECUTABLE_NAME = "operator_presence_verifier.exe"
 _SOURCE_NAME = "operator_presence_verifier.cpp"
@@ -54,10 +67,10 @@ _MAX_PROTOCOL_BYTES = 2 * 1024
 _MAX_RESULT_BYTES = 512
 _PROCESS_TIMEOUT_SECONDS = 120.0
 _OPERATOR_PRESENCE_MECHANISM = "windows-user-consent-verifier/v1"
-_EXPECTED_SOURCE_SIZE = 41_551
-_EXPECTED_SOURCE_SHA256 = "b949a0f80fc8e062fb07bb8fd99dab0373bbd6af6b8a058fa2f951d25ac6ebbc"
-_EXPECTED_EXECUTABLE_SIZE = 187_392
-_EXPECTED_EXECUTABLE_SHA256 = "8838ed8a3353052b7ad781a9765884fea00c4cf5a7d184152c0da22ad413d15a"
+_EXPECTED_SOURCE_SIZE = 56_962
+_EXPECTED_SOURCE_SHA256 = "3bc0da5cc30f112fee7ce7de6c33de4792f229351cb11505b25667e3b5bfadd3"
+_EXPECTED_EXECUTABLE_SIZE = 207_872
+_EXPECTED_EXECUTABLE_SHA256 = "c9cd382dd27b5df1ed36f20a921a5ff19dc067333e3ee92f3ee7c60c232c64e8"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _VERSION = re.compile(r"sha256:[0-9a-f]{64}\Z")
 _SLUG = re.compile(r"[a-z0-9][a-z0-9._-]{1,127}\Z")
@@ -529,6 +542,173 @@ def _codex_install_result_authorizes(
         and not result.cancelled
         and result.failure_category is None
     )
+
+
+def _host_uninstall_prepared_text(prepared: _HostUninstallBinding, field: str) -> str:
+    value = getattr(prepared, field, None)
+    if not isinstance(value, str):
+        raise OperatorPresenceError("prepared host uninstall binding is invalid")
+    return value
+
+
+def _complete_host_uninstall_binding(
+    prepared: _HostUninstallBinding,
+) -> tuple[str | int, ...]:
+    from agency_runtime.core.prepared_host_uninstall import (
+        PreparedHostUninstallError,
+        _host_uninstall_binding_primitives,
+    )
+
+    try:
+        return _host_uninstall_binding_primitives(prepared)
+    except (AttributeError, PreparedHostUninstallError, TypeError, ValueError) as exc:
+        raise OperatorPresenceError("prepared host uninstall binding is invalid") from exc
+
+
+def _host_uninstall_request_payload(prepared: _HostUninstallBinding, nonce: str) -> bytes:
+    action = _host_uninstall_prepared_text(prepared, "action")
+    operation_id = _host_uninstall_prepared_text(prepared, "operation_id")
+    selection = _host_uninstall_prepared_text(prepared, "selection")
+    targets_csv = _host_uninstall_prepared_text(prepared, "targets_csv")
+    transitions_csv = _host_uninstall_prepared_text(prepared, "transitions_csv")
+    confirmed_plan_sha256 = _host_uninstall_prepared_text(prepared, "confirmed_plan_sha256")
+    host_bindings_sha256 = _host_uninstall_prepared_text(prepared, "host_bindings_sha256")
+    preservation_policy = _host_uninstall_prepared_text(prepared, "preservation_policy")
+    recovery_policy = _host_uninstall_prepared_text(prepared, "recovery_policy")
+    binding_sha256 = _host_uninstall_prepared_text(prepared, "binding_sha256")
+    host_count = getattr(prepared, "host_count", None)
+    target_values = targets_csv.split(",") if targets_csv else []
+    canonical_targets = [host for host in _HOST_UNINSTALL_HOSTS if host in target_values]
+    transition_values = transitions_csv.split(",") if transitions_csv else []
+    transitions_valid = len(transition_values) == len(target_values) and all(
+        entry.startswith(f"{target}:")
+        and entry.removeprefix(f"{target}:") in _HOST_UNINSTALL_TRANSITIONS.get(target, frozenset())
+        for target, entry in zip(target_values, transition_values, strict=True)
+    )
+    try:
+        canonical_operation_id = str(UUID(operation_id))
+    except (AttributeError, TypeError, ValueError):
+        canonical_operation_id = ""
+    if (
+        action != _HOST_UNINSTALL_ACTION
+        or canonical_operation_id != operation_id
+        or selection not in {"agent", "all"}
+        or not target_values
+        or target_values != canonical_targets
+        or len(set(target_values)) != len(target_values)
+        or not transitions_valid
+        or isinstance(host_count, bool)
+        or not isinstance(host_count, int)
+        or not 1 <= host_count <= len(_HOST_UNINSTALL_HOSTS)
+        or host_count != len(target_values)
+        or (selection == "agent" and host_count != 1)
+        or _SHA256.fullmatch(confirmed_plan_sha256) is None
+        or _SHA256.fullmatch(host_bindings_sha256) is None
+        or preservation_policy != _HOST_UNINSTALL_PRESERVATION_POLICY
+        or recovery_policy != _HOST_UNINSTALL_RECOVERY_POLICY
+        or _SHA256.fullmatch(binding_sha256) is None
+        or _SHA256.fullmatch(nonce) is None
+    ):
+        raise OperatorPresenceError("prepared host uninstall binding is invalid")
+    payload = (
+        "AGENCY-OPERATOR-PRESENCE/1\n"
+        f"action={_HOST_UNINSTALL_ACTION}\n"
+        f"operation-id={operation_id}\n"
+        f"selection={selection}\n"
+        f"targets={targets_csv}\n"
+        f"transitions={transitions_csv}\n"
+        f"host-count={host_count}\n"
+        f"confirmed-plan-sha256={confirmed_plan_sha256}\n"
+        f"host-bindings-sha256={host_bindings_sha256}\n"
+        f"preservation-policy={_HOST_UNINSTALL_PRESERVATION_POLICY}\n"
+        f"recovery-policy={_HOST_UNINSTALL_RECOVERY_POLICY}\n"
+        f"binding-sha256={binding_sha256}\n"
+        f"nonce={nonce}\n"
+    ).encode("ascii")
+    if len(payload) > _MAX_PROTOCOL_BYTES:
+        raise OperatorPresenceError("prepared host uninstall binding exceeds its size limit")
+    return payload
+
+
+def _host_uninstall_verified_stdout(*, binding_sha256: str, nonce: str) -> bytes:
+    return (
+        _PROTOCOL_HEADER
+        + b"mode=verification\n"
+        + f"action={_HOST_UNINSTALL_ACTION}\n".encode("ascii")
+        + b"result=verified\n"
+        + f"binding-sha256={binding_sha256}\n".encode("ascii")
+        + f"nonce={nonce}\n".encode("ascii")
+    )
+
+
+def _host_uninstall_result_authorizes(
+    result: BoundedBinaryProcessResult,
+    *,
+    binding_sha256: str,
+    nonce: str,
+) -> bool:
+    return (
+        result.returncode == 0
+        and result.stdout
+        == _host_uninstall_verified_stdout(binding_sha256=binding_sha256, nonce=nonce)
+        and result.stderr == b""
+        and not result.timed_out
+        and not result.stdout_truncated
+        and not result.stderr_truncated
+        and not result.cancelled
+        and result.failure_category is None
+    )
+
+
+def _verify_host_uninstall_binding(prepared: _HostUninstallBinding) -> None:
+    """Consume one exact native result for a prepared host-integration uninstall."""
+
+    from agency_runtime.core.prepared_host_uninstall import (
+        _HostUninstallBinding as PreparedType,
+    )
+
+    if type(prepared) is not PreparedType:
+        raise OperatorPresenceError("prepared host uninstall binding is invalid")
+    prepared_binding = _complete_host_uninstall_binding(prepared)
+    _assert_supported_host()
+    nonce_bytes = _random_nonce_bytes()
+    if not isinstance(nonce_bytes, bytes) or len(nonce_bytes) != 32:
+        raise OperatorPresenceError("native operator verification nonce generation failed")
+    nonce = nonce_bytes.hex()
+    payload = _host_uninstall_request_payload(prepared, nonce)
+    verifier = _load_reviewed_verifier()
+    try:
+        result = run_bounded_binary_process(
+            verifier.argv,
+            timeout=_PROCESS_TIMEOUT_SECONDS,
+            cwd=verifier.working_directory,
+            env={},
+            input_bytes=payload,
+            max_input_bytes=_MAX_PROTOCOL_BYTES,
+            max_stdout_bytes=_MAX_RESULT_BYTES,
+            max_stderr_bytes=_MAX_RESULT_BYTES,
+            retain_output_tail=False,
+        )
+    except (OSError, RuntimeError, TypeError, ValueError) as exc:
+        raise OperatorPresenceError(
+            "native host uninstall verification could not be completed; "
+            "no persistent change was made"
+        ) from exc
+    binding_sha256 = _host_uninstall_prepared_text(prepared, "binding_sha256")
+    if not _host_uninstall_result_authorizes(
+        result,
+        binding_sha256=binding_sha256,
+        nonce=nonce,
+    ):
+        raise OperatorPresenceError(
+            "native operator presence was not verified for the prepared host uninstall; "
+            "no persistent change was made"
+        )
+    if _complete_host_uninstall_binding(prepared) != prepared_binding:
+        raise OperatorPresenceError(
+            "prepared host uninstall changed during operator verification; "
+            "no persistent change was made"
+        )
 
 
 def _verify_codex_install_binding(prepared: _CodexInstallBinding) -> None:

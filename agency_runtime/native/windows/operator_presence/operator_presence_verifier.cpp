@@ -29,9 +29,15 @@ constexpr int kCancelButtonId = IDCANCEL;
 constexpr wchar_t kWindowClass[] = L"AgencyRuntimeOperatorPresenceVerifier";
 constexpr wchar_t kRollbackWindowTitle[] = L"Agency Runtime - verify roster rollback";
 constexpr wchar_t kCodexInstallWindowTitle[] = L"Agency Runtime - verify Codex plugin reinstall";
+constexpr wchar_t kHostUninstallWindowTitle[] =
+    L"Agency Runtime - verify host integration uninstall";
 constexpr std::string_view kProtocol = "AGENCY-OPERATOR-PRESENCE/1";
 constexpr std::string_view kRollbackAction = "roster.rollback.v1";
 constexpr std::string_view kCodexInstallAction = "install.codex.v1";
+constexpr std::string_view kHostUninstallAction = "uninstall.host-integrations.v1";
+constexpr std::string_view kHostUninstallPreservationPolicy =
+    "runtime-data-and-marketplaces.v1";
+constexpr std::string_view kHostUninstallRecoveryPolicy = "retained-owned-bundles.v1";
 constexpr std::string_view kCodexHost = "codex";
 constexpr std::string_view kCodexPlugin = "agency-preflight@agency-runtime";
 constexpr std::string_view kCodexRecovery =
@@ -60,16 +66,30 @@ struct CodexInstallRequest {
     std::string nonce;
 };
 
+struct HostUninstallRequest {
+    std::string operation_id;
+    std::string selection;
+    std::string targets_csv;
+    std::string transitions_csv;
+    std::string host_count;
+    std::string confirmed_plan_sha256;
+    std::string host_bindings_sha256;
+    std::string binding_sha256;
+    std::string nonce;
+};
+
 enum class RequestAction {
     invalid,
     roster_rollback,
     codex_install,
+    host_uninstall,
 };
 
 struct VerificationRequest {
     RequestAction action = RequestAction::invalid;
     RollbackRequest roster_rollback;
     CodexInstallRequest codex_install;
+    HostUninstallRequest host_uninstall;
 };
 
 struct WindowState {
@@ -174,6 +194,28 @@ int emit_verification(
     }
 }
 
+int emit_verification(
+    HostUninstallRequest const& request,
+    std::string_view result,
+    int exit_code) noexcept {
+    try {
+        std::string payload{
+            "AGENCY-OPERATOR-PRESENCE/1\n"
+            "mode=verification\n"
+            "action=uninstall.host-integrations.v1\n"
+            "result="};
+        payload.append(result);
+        payload.append("\nbinding-sha256=");
+        payload.append(request.binding_sha256);
+        payload.append("\nnonce=");
+        payload.append(request.nonce);
+        payload.push_back('\n');
+        return emit_bytes(payload, exit_code);
+    } catch (...) {
+        return 125;
+    }
+}
+
 enum class InvocationMode {
     verification,
     availability,
@@ -264,6 +306,126 @@ bool is_roster_generation(std::string_view value) noexcept {
         }
     }
     return true;
+}
+
+constexpr std::array<std::string_view, 5> kCanonicalHosts{
+    "hermes",
+    "openclaw",
+    "codex",
+    "claude",
+    "zcode",
+};
+
+bool canonical_host_subset(std::string_view value, std::size_t& count) noexcept {
+    if (value.empty()) {
+        return false;
+    }
+    std::size_t start = 0;
+    std::size_t minimum_index = 0;
+    count = 0;
+    while (start < value.size()) {
+        std::size_t const separator = value.find(',', start);
+        std::size_t const end = separator == std::string_view::npos
+            ? value.size()
+            : separator;
+        std::string_view const host = value.substr(start, end - start);
+        bool matched = false;
+        for (std::size_t index = minimum_index; index < kCanonicalHosts.size(); ++index) {
+            if (host == kCanonicalHosts[index]) {
+                minimum_index = index + 1;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            return false;
+        }
+        ++count;
+        if (separator == std::string_view::npos) {
+            break;
+        }
+        start = separator + 1;
+        if (start == value.size()) {
+            return false;
+        }
+    }
+    return count >= 1 && count <= kCanonicalHosts.size();
+}
+
+bool is_host_selection(std::string_view selection, std::size_t host_count) noexcept {
+    return selection == "all" || (selection == "agent" && host_count == 1);
+}
+
+bool is_canonical_uuid(std::string_view value) noexcept {
+    if (value.size() != 36 || value[8] != '-' || value[13] != '-' ||
+        value[18] != '-' || value[23] != '-') {
+        return false;
+    }
+    for (std::size_t index = 0; index < value.size(); ++index) {
+        if (index == 8 || index == 13 || index == 18 || index == 23) {
+            continue;
+        }
+        char const character = value[index];
+        if (!((character >= '0' && character <= '9') ||
+              (character >= 'a' && character <= 'f'))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool is_host_transition(
+    std::string_view host,
+    std::string_view transition) noexcept {
+    if (transition == "retain-only") {
+        return true;
+    }
+    if (host == "hermes") {
+        return transition == "disable+retain";
+    }
+    if (host == "openclaw" || host == "codex" || host == "claude") {
+        return transition == "unregister+retain";
+    }
+    return host == "zcode" && transition == "remove-handlers+retain";
+}
+
+bool canonical_host_transitions(
+    std::string_view targets,
+    std::string_view transitions) noexcept {
+    std::size_t target_start = 0;
+    std::size_t transition_start = 0;
+    for (;;) {
+        std::size_t const target_separator = targets.find(',', target_start);
+        std::size_t const transition_separator = transitions.find(',', transition_start);
+        std::size_t const target_end = target_separator == std::string_view::npos
+            ? targets.size()
+            : target_separator;
+        std::size_t const transition_end = transition_separator == std::string_view::npos
+            ? transitions.size()
+            : transition_separator;
+        std::string_view const target =
+            targets.substr(target_start, target_end - target_start);
+        std::string_view const entry =
+            transitions.substr(transition_start, transition_end - transition_start);
+        std::size_t const colon = entry.find(':');
+        if (target.empty() || colon == std::string_view::npos ||
+            entry.substr(0, colon) != target ||
+            !is_host_transition(target, entry.substr(colon + 1))) {
+            return false;
+        }
+        if ((target_separator == std::string_view::npos) !=
+            (transition_separator == std::string_view::npos)) {
+            return false;
+        }
+        if (target_separator == std::string_view::npos) {
+            return true;
+        }
+        target_start = target_separator + 1;
+        transition_start = transition_separator + 1;
+        if (target_start == targets.size() || transition_start == transitions.size()) {
+            return false;
+        }
+    }
 }
 
 bool is_windows_target_path(std::string_view value) noexcept {
@@ -478,6 +640,66 @@ bool parse_codex_install_request(
     return true;
 }
 
+bool parse_host_uninstall_request(
+    std::string const& payload,
+    HostUninstallRequest& request) noexcept {
+    std::array<std::string_view, 13> lines{};
+    if (!split_exact_lines(payload, lines) || lines[0] != kProtocol) {
+        return false;
+    }
+    std::string_view action;
+    std::string_view operation_id;
+    std::string_view selection;
+    std::string_view targets_csv;
+    std::string_view transitions_csv;
+    std::string_view host_count;
+    std::string_view confirmed_plan_sha256;
+    std::string_view host_bindings_sha256;
+    std::string_view preservation_policy;
+    std::string_view recovery_policy;
+    std::string_view binding_sha256;
+    std::string_view nonce;
+    std::size_t canonical_count = 0;
+    if (!field(lines[1], "action=", action) || action != kHostUninstallAction ||
+        !field(lines[2], "operation-id=", operation_id) ||
+        !is_canonical_uuid(operation_id) ||
+        !field(lines[3], "selection=", selection) ||
+        !field(lines[4], "targets=", targets_csv) ||
+        !canonical_host_subset(targets_csv, canonical_count) ||
+        !is_host_selection(selection, canonical_count) ||
+        !field(lines[5], "transitions=", transitions_csv) ||
+        !canonical_host_transitions(targets_csv, transitions_csv) ||
+        !field(lines[6], "host-count=", host_count) || host_count.size() != 1 ||
+        host_count.front() != static_cast<char>('0' + canonical_count) ||
+        !field(lines[7], "confirmed-plan-sha256=", confirmed_plan_sha256) ||
+        !is_lower_hex(confirmed_plan_sha256, 64) ||
+        !field(lines[8], "host-bindings-sha256=", host_bindings_sha256) ||
+        !is_lower_hex(host_bindings_sha256, 64) ||
+        !field(lines[9], "preservation-policy=", preservation_policy) ||
+        preservation_policy != kHostUninstallPreservationPolicy ||
+        !field(lines[10], "recovery-policy=", recovery_policy) ||
+        recovery_policy != kHostUninstallRecoveryPolicy ||
+        !field(lines[11], "binding-sha256=", binding_sha256) ||
+        !is_lower_hex(binding_sha256, 64) ||
+        !field(lines[12], "nonce=", nonce) || !is_lower_hex(nonce, 64)) {
+        return false;
+    }
+    try {
+        request.operation_id.assign(operation_id);
+        request.selection.assign(selection);
+        request.targets_csv.assign(targets_csv);
+        request.transitions_csv.assign(transitions_csv);
+        request.host_count.assign(host_count);
+        request.confirmed_plan_sha256.assign(confirmed_plan_sha256);
+        request.host_bindings_sha256.assign(host_bindings_sha256);
+        request.binding_sha256.assign(binding_sha256);
+        request.nonce.assign(nonce);
+    } catch (...) {
+        return false;
+    }
+    return true;
+}
+
 bool parse_request(VerificationRequest& request) noexcept {
     std::string payload;
     if (!read_stdin(payload)) {
@@ -489,6 +711,10 @@ bool parse_request(VerificationRequest& request) noexcept {
     }
     if (parse_codex_install_request(payload, request.codex_install)) {
         request.action = RequestAction::codex_install;
+        return true;
+    }
+    if (parse_host_uninstall_request(payload, request.host_uninstall)) {
+        request.action = RequestAction::host_uninstall;
         return true;
     }
     return false;
@@ -550,6 +776,37 @@ std::wstring verification_message(CodexInstallRequest const& request) {
         L"managed bundle and prior Agency plugin registration or reports incomplete recovery. "
         L"This does not grant hook trust, prove the plugin loaded, prove a canary, or establish "
         L"production publisher trust.");
+    return message;
+}
+
+std::wstring verification_message(HostUninstallRequest const& request) {
+    std::wstring message{
+        L"Agency Runtime host integration uninstall\n\n"
+        L"Operation: "};
+    message.append(widen_ascii(request.operation_id));
+    message.append(L"\nSelection: ");
+    message.append(widen_ascii(request.selection));
+    message.append(L"\nOrdered targets: ");
+    message.append(widen_ascii(request.targets_csv));
+    message.append(L"\nBound transitions: ");
+    message.append(widen_ascii(request.transitions_csv));
+    message.append(L"\nHost count: ");
+    message.append(widen_ascii(request.host_count));
+    message.append(L"\nConfirmed plan SHA-256: ");
+    message.append(widen_ascii(request.confirmed_plan_sha256));
+    message.append(L"\nHost bindings SHA-256: ");
+    message.append(widen_ascii(request.host_bindings_sha256));
+    message.append(
+        L"\n\nConsequence: detach only ownership-proven Agency Runtime host integrations "
+        L"according to the displayed transitions and retain every exact owned bundle in "
+        L"an owner-private backup. "
+        L"Agency Runtime configuration, Store and evidence, roster, dashboard service, "
+        L"other plugins, and Codex or Claude marketplace registrations remain unchanged. "
+        L"Hosts are committed in the displayed order. On the first failure, no later host "
+        L"is attempted; earlier completed transitions remain committed and are reported "
+        L"with their recovery paths. "
+        L"The affected harnesses must be restarted before absence can be observed. "
+        L"Cancel leaves every host integration unchanged.");
     return message;
 }
 
@@ -930,6 +1187,137 @@ HWND create_verification_window(
     return window;
 }
 
+HWND create_verification_window(
+    HINSTANCE instance,
+    HostUninstallRequest const& request,
+    WindowState& state) noexcept {
+    WNDCLASSEXW window_class{};
+    window_class.cbSize = sizeof(window_class);
+    window_class.lpfnWndProc = window_procedure;
+    window_class.hInstance = instance;
+    window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+    window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+    window_class.lpszClassName = kWindowClass;
+    if (RegisterClassExW(&window_class) == 0 &&
+        GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
+        return nullptr;
+    }
+    HWND const window = CreateWindowExW(
+        WS_EX_CONTROLPARENT | WS_EX_DLGMODALFRAME,
+        kWindowClass,
+        kHostUninstallWindowTitle,
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        1020,
+        760,
+        nullptr,
+        nullptr,
+        instance,
+        &state);
+    if (window == nullptr) {
+        return nullptr;
+    }
+    try {
+        std::wstring const operation = L"Operation: " + widen_ascii(request.operation_id);
+        std::wstring const selection = L"Selection: " + widen_ascii(request.selection);
+        std::wstring const targets = L"Ordered targets: " + widen_ascii(request.targets_csv);
+        std::wstring const transitions =
+            L"Bound transitions: " + widen_ascii(request.transitions_csv);
+        std::wstring const host_count = L"Host count: " + widen_ascii(request.host_count);
+        std::wstring const confirmed_plan_sha256 =
+            L"Confirmed plan SHA-256: " + widen_ascii(request.confirmed_plan_sha256);
+        std::wstring const host_bindings_sha256 =
+            L"Host bindings SHA-256: " + widen_ascii(request.host_bindings_sha256);
+        bool const controls_created =
+            create_static(
+                window,
+                L"Verify host integration uninstall",
+                24,
+                18,
+                950,
+                24) != nullptr &&
+            create_static(
+                window,
+                L"Review the exact bound transition below. Selecting Verify uninstall "
+                L"opens Windows Hello.",
+                24,
+                48,
+                950,
+                34) != nullptr &&
+            create_static(window, operation, 24, 88, 950, 22) != nullptr &&
+            create_static(window, selection, 24, 116, 950, 22) != nullptr &&
+            create_static(window, targets, 24, 144, 950, 32) != nullptr &&
+            create_static(window, transitions, 24, 180, 950, 50) != nullptr &&
+            create_static(window, host_count, 24, 234, 950, 22) != nullptr &&
+            create_static(window, confirmed_plan_sha256, 24, 262, 950, 22) != nullptr &&
+            create_static(window, host_bindings_sha256, 24, 290, 950, 22) != nullptr &&
+            create_static(
+                window,
+                L"Changes: detach only ownership-proven Agency Runtime integrations according "
+                L"to the displayed transitions. Every exact owned bundle is moved into an "
+                L"owner-private backup instead of being deleted.",
+                24,
+                326,
+                950,
+                68) != nullptr &&
+            create_static(
+                window,
+                L"Preserved: Agency Runtime configuration, Store and evidence, roster, "
+                L"backups, dashboard service, other plugins, and Codex or Claude marketplace "
+                L"registrations remain unchanged.",
+                24,
+                404,
+                950,
+                68) != nullptr &&
+            create_static(
+                window,
+                L"Ordered failure behavior: hosts commit in the displayed order. On the first "
+                L"failure, no later host is attempted; earlier completed transitions remain "
+                L"committed and are reported with their recovery paths.",
+                24,
+                482,
+                950,
+                68) != nullptr &&
+            create_static(
+                window,
+                L"After commit, restart the affected harnesses before checking that the "
+                L"Agency integration is absent.",
+                24,
+                560,
+                950,
+                44) != nullptr &&
+            create_static(
+                window,
+                L"Cancel leaves every host integration unchanged.",
+                24,
+                612,
+                950,
+                22) != nullptr &&
+            create_button(
+                window,
+                L"&Verify uninstall",
+                kVerifyButtonId,
+                658,
+                650,
+                150,
+                true) != nullptr &&
+            create_button(window, L"&Cancel", kCancelButtonId, 824, 650, 150, false) != nullptr;
+        if (!controls_created) {
+            DestroyWindow(window);
+            return nullptr;
+        }
+    } catch (...) {
+        DestroyWindow(window);
+        return nullptr;
+    }
+    ShowWindow(window, SW_SHOWNORMAL);
+    UpdateWindow(window);
+    SendMessageW(window, DM_SETDEFID, kVerifyButtonId, 0);
+    SetFocus(GetDlgItem(window, kVerifyButtonId));
+    return window;
+}
+
 bool pump_until_decision(HWND window, WindowState const& state) noexcept {
     MSG message{};
     while (!state.verify_requested && !state.cancel_requested) {
@@ -1128,6 +1516,9 @@ int WINAPI wWinMain(
     }
     if (request.action == RequestAction::codex_install) {
         return run_verification(instance, request.codex_install);
+    }
+    if (request.action == RequestAction::host_uninstall) {
+        return run_verification(instance, request.host_uninstall);
     }
     return emit_invalid_input();
 }

@@ -49,6 +49,8 @@ _ROSTER_ROLLBACK_ACTION = "roster.rollback.v1"
 _ROSTER_ROLLBACK_PATH = ("roster", "rollback")
 _CODEX_INSTALL_ACTION = "install.codex.v1"
 _CODEX_INSTALL_PATH = ("install",)
+_HOST_UNINSTALL_ACTION = "uninstall.host-integrations.v1"
+_HOST_UNINSTALL_PATH = ("uninstall",)
 OPERATOR_PRESENCE_FAMILIES = frozenset(
     {
         "agent-governance",
@@ -175,6 +177,16 @@ def _uses_prepared_operator_presence(namespace: argparse.Namespace) -> bool:
         if not is_exact_codex_activation_verification(namespace):
             raise OperatorPresenceError("Codex activation-verification parser binding is invalid")
         return True
+    if action == _HOST_UNINSTALL_ACTION:
+        if family != "installation" or path != _HOST_UNINSTALL_PATH:
+            raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
+        from agency_runtime.core.prepared_host_uninstall import (
+            is_exact_prepared_host_uninstall,
+        )
+
+        if not is_exact_prepared_host_uninstall(namespace):
+            raise OperatorPresenceError("host uninstall parser binding is invalid")
+        return not bool(getattr(namespace, "dry_run", False))
     raise OperatorPresenceError("prepared operator-presence parser binding is invalid")
 
 

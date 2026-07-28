@@ -9,6 +9,7 @@ from agency_runtime import __version__
 from agency_runtime.core.evals.product_scenarios import PRODUCT_SCENARIOS_BY_ID
 from agency_runtime.core.evals.upstream_selection import CASES as UPSTREAM_SELECTION_CASES
 from agency_runtime.core.evals.workforce_selection import CASES
+from agency_runtime.core.installer_contracts import HOSTS
 from agency_runtime.core.policy.profiles import PROFILES
 from agency_runtime.core.runtime_control_command import parse_runtime_control_command
 
@@ -242,6 +243,55 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         operator_presence_family="installation",
         operator_presence_dry_run_exempt=True,
         operator_presence_prepared_action="install.codex.v1",
+    )
+
+
+def _plan_digest(value: str) -> str:
+    normalized = value.strip().lower()
+    if len(normalized) != 64 or any(
+        character not in "0123456789abcdef" for character in normalized
+    ):
+        raise argparse.ArgumentTypeError("must be one 64-character lowercase plan digest")
+    return normalized
+
+
+def _register_uninstall(sub: Subparsers, handlers: Handlers) -> None:
+    uninstall = sub.add_parser(
+        "uninstall",
+        help="Remove exact owned Agency integrations from selected agent hosts",
+    )
+    target = uninstall.add_mutually_exclusive_group(required=True)
+    target.add_argument(
+        "--all",
+        action="store_true",
+        help="Find every host with Agency integration evidence",
+    )
+    target.add_argument(
+        "--agent",
+        choices=list(HOSTS),
+        default=None,
+        help="Remove Agency from one specific agent host",
+    )
+    mode = uninstall.add_mutually_exclusive_group(required=True)
+    mode.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print a write-free exact plan and confirmation digest",
+    )
+    mode.add_argument(
+        "--confirm-plan",
+        type=_plan_digest,
+        default=None,
+        help="Apply only the exact digest emitted by a preceding dry run",
+    )
+    uninstall.add_argument("--json", action="store_true", help="Print machine-readable results")
+    _bind(
+        uninstall,
+        handlers,
+        "cmd_uninstall",
+        operator_presence_family="installation",
+        operator_presence_dry_run_exempt=True,
+        operator_presence_prepared_action="uninstall.host-integrations.v1",
     )
 
 
@@ -1462,6 +1512,7 @@ def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     _register_updates(sub, handlers)
     _register_install(sub, handlers)
+    _register_uninstall(sub, handlers)
     _register_host_control(sub, handlers)
     _register_configuration(sub, handlers)
     _register_roster(sub, handlers)

@@ -143,6 +143,8 @@ python -m pytest \
   tests/test_cli_upgrade.py \
   tests/test_update_service.py \
   tests/test_native_installer.py \
+  tests/test_host_uninstall.py \
+  tests/test_cli_uninstall.py \
   tests/test_host_boundary_hardening.py \
   tests/test_cli_operator_presence.py \
   tests/test_security_turn_boundaries.py \

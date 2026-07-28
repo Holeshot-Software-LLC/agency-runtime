@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-07-16
 tags: [installer, operations, usability]
 related:
+  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-51-honor-all-host-cli-control-contract.md
   - docs/roadmap/issue-AR-04-runtime-controls.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md

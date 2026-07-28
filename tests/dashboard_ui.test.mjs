@@ -1643,6 +1643,30 @@ test("host views disclose empty inventories and unknown runtime controls truthfu
   assert.ok(labels.includes("Run /hooks, then verify activation."));
 });
 
+test("host view copies only the write-free attended uninstall preview", async () => {
+  const copied = [];
+  const harness = createAppHarness(() => {
+    throw new Error("copy-only test does not fetch");
+  });
+  harness.context.window.navigator = {
+    clipboard: { writeText: async (value) => copied.push(value) },
+  };
+  harness.api.state.hosts = [{ host: "codex", maturity: "runtime-verified" }];
+  harness.api.renderHosts();
+  harness.api.bindEvents();
+
+  const command = descendants(harness.node("host-grid"))
+    .find((node) => node.id === "uninstall-preview-command");
+  const button = descendants(harness.node("host-grid"))
+    .find((node) => node.id === "uninstall-copy-button");
+  assert.equal(command.textContent, "agency uninstall --all --dry-run");
+  assert.equal(button.textContent, "Copy uninstall preview");
+  await harness.node("host-grid").listeners.get("click")[0]({ target: button });
+
+  assert.deepEqual(copied, ["agency uninstall --all --dry-run"]);
+  assert.match(harness.node("notice").textContent, /owner-controlled terminal/i);
+});
+
 test("host cards render activation proof truthfully without adding canary controls", () => {
   const harness = createAppHarness(() => {
     throw new Error("render-only test does not fetch");
@@ -1671,8 +1695,10 @@ test("host cards render activation proof truthfully without adding canary contro
   assert.ok(labels.includes("Profile · current-profile"));
   assert.ok(labels.includes("Trace · trace-safe"));
   assert.deepEqual(
-    descendants(harness.node("host-grid")).filter((node) => node.type === "button"),
-    [],
+    descendants(harness.node("host-grid"))
+      .filter((node) => node.type === "button")
+      .map((node) => node.id),
+    ["uninstall-copy-button"],
   );
 
   harness.api.state.hosts = [{
@@ -2841,7 +2867,7 @@ test("app.js control-plane refresh is single-flight and updates only current res
     harness.timers.tasks.get(harness.api.state.control.timer).delay,
     15000,
   );
-  assert.equal(harness.node("host-grid").children.length, 1);
+  assert.equal(harness.node("host-grid").children.length, 2);
 
   harness.api.state.control.inFlight = true;
   await harness.api.refreshControlPlane();
@@ -2930,7 +2956,7 @@ test("store identity drift stays visible and disables routing, roster, and host 
   harness.api.renderHosts();
   const hostButtons = descendants(harness.node("host-grid"))
     .filter((node) => node.type === "button");
-  assert.deepEqual(hostButtons, []);
+  assert.deepEqual(hostButtons.map((node) => node.id), ["uninstall-copy-button"]);
 
   harness.api.state.roster = [{
     agent_slug: "reviewer",
@@ -3997,7 +4023,7 @@ test("app.js renders sparse and changing runtime evidence defensively", () => {
   ];
   harness.api.renderHosts();
   const buttons = descendants(harness.node("host-grid")).filter((node) => node.type === "button");
-  assert.deepEqual(buttons, []);
+  assert.deepEqual(buttons.map((node) => node.id), ["uninstall-copy-button"]);
 
   harness.api.state.activity = {
     finalizations: [{ action: "", missing: [], trace_id: "new" }],

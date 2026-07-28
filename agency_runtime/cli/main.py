@@ -177,6 +177,12 @@ def cmd_install(args: argparse.Namespace) -> int:
     return _install.cmd_install(args, dependencies=_install_dependencies())
 
 
+def cmd_uninstall(args: argparse.Namespace) -> int:
+    from .uninstall_commands import cmd_uninstall as command
+
+    return command(args)
+
+
 def _cmd_host_control(args: argparse.Namespace, *, enabled: bool) -> int:
     return _install._cmd_host_control(
         args,
@@ -428,6 +434,7 @@ _COMMAND_NAMES = (
     "cmd_hiring_show",
     "cmd_host_canary",
     "cmd_install",
+    "cmd_uninstall",
     "cmd_mcp",
     "cmd_off",
     "cmd_on",

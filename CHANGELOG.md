@@ -149,6 +149,26 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- `agency uninstall` now plans and applies ownership-bound removal for one host
+  or every Agency-evidenced supported host. A write-free dry run emits an exact
+  plan digest covering a nested filesystem, runtime, executable, profile, and
+  native-state binding. Applying enters the dedicated native Windows action
+  `uninstall.host-integrations.v1`, whose aggregate authority binds the operation
+  UUID, selector, canonical host transitions, outer plan and per-host hashes,
+  exact retained destinations, and fixed preservation/recovery policies.
+  Prepared Codex refresh and uninstall share one owner-private lifecycle lock
+  and revalidate under it. After proven native detachment, the exact owned tree
+  moves to `backups/<host>/uninstall-<operation_uuid>`; Windows performs the
+  final validation and rename through the opened directory handle to prevent a
+  pathname swap. It has no purge or dashboard mutation endpoint and preserves
+  the package, Agency Runtime configuration, Store, roster, evidence, backups,
+  dashboard service, unrelated host configuration, and Codex/Claude marketplace
+  registrations. Marketplace-only residue cannot select a host under `--all`
+  without a future ledger proving exclusive creation ownership. The dashboard
+  can copy only the fixed write-free preview command for an owner-controlled
+  terminal. Mutating all-host runs checkpoint bounded content-free outcomes in
+  an owner-private operation journal and stop later hosts if that journal cannot
+  advance.
 - `agency -V` now provides a fast package probe, while `agency version` reports
   exact source/VCS identity. `agency upgrade` can resolve the latest stable
   release, `main`, one canonical release version, or one bounded ref to a full immutable

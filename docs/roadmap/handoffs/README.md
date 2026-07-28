@@ -3,7 +3,7 @@ title: "Active recovery capsules"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-07-23
+updated: 2026-07-28
 tags: [handoff, context, codex, governance, recovery]
 related:
   - AGENTS.md
@@ -73,3 +73,4 @@ behavior.
 ## Active capsules
 
 - [AR-119 inference-first workforce](issue-AR-119.md)
+- [AR-189 ownership-bound host uninstall](issue-AR-189.md)

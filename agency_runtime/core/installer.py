@@ -48,7 +48,9 @@ from agency_runtime.core import (
 from agency_runtime.core import (
     installer_registration as _registration,
 )
+from agency_runtime.core import installer_uninstall as _uninstall
 from agency_runtime.core import installer_zcode as _zcode
+from agency_runtime.core import prepared_host_uninstall as _prepared_uninstall
 from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.config import AgencyConfig, load_config
 from agency_runtime.core.installer_contracts import (
@@ -126,6 +128,7 @@ _bundle_files = _payloads.bundle_files
 _safe_relative = _filesystem.safe_relative
 _atomic_install_tree = _filesystem.atomic_install_tree
 _validate_owned_backup = _filesystem.validate_owned_backup
+_validate_owned_install_tree = _filesystem.validate_owned_install_tree
 _zcode_config_path = _zcode.zcode_config_path
 _inspect_zcode_registration = _zcode.inspect_zcode_registration
 _register_zcode_config = _zcode.register_zcode_config
@@ -139,6 +142,9 @@ plan_agent_adapter = _registration.plan_agent_adapter
 install_agent_adapter = _orchestration.install_agent_adapter
 rollback_agent_adapter = _orchestration.rollback_agent_adapter
 toggle_agency = _orchestration.toggle_agency
+plan_agent_uninstall = _uninstall.plan_agent_uninstall
+apply_prepared_host_uninstall = _prepared_uninstall.apply_prepared_host_uninstall
+uninstall_plan_digest = _prepared_uninstall.uninstall_plan_digest
 
 
 def reconcile_starter_roster(store: Store) -> BundledRosterReconciliation:

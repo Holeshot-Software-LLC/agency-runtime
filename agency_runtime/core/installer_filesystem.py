@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import stat
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timezone
@@ -24,6 +25,7 @@ from agency_runtime.core.private_paths import (
     remove_private_directory,
 )
 from agency_runtime.core.process_argv import PersistentArtifactIdentity
+from agency_runtime.core.store.security import metadata_is_link_or_reparse_point
 
 _MAX_INSTALL_MANIFEST_BYTES = 64 * 1024
 
@@ -239,3 +241,129 @@ def validate_owned_backup(
     if not isinstance(owned_files, list) or not all(isinstance(item, str) for item in owned_files):
         return False, "Backup ownership manifest has an invalid owned_files list", None
     return True, None, plugin_version
+
+
+def _strict_install_manifest(
+    path: Path,
+    *,
+    host: str,
+    target: Path,
+) -> tuple[dict[str, Any] | None, str | None]:
+    valid, error, _version = validate_owned_backup(path, host=host, target=target)
+    if not valid:
+        return None, error
+    try:
+        manifest = safe_load_bounded_json(
+            read_bounded_regular_file(
+                path / INSTALL_MANIFEST,
+                limit=_MAX_INSTALL_MANIFEST_BYTES,
+                label="install ownership manifest",
+            )
+        )
+    except (BoundedJSONError, OSError, UnicodeError, json.JSONDecodeError) as exc:
+        return None, f"Install ownership manifest is unreadable: {type(exc).__name__}"
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != 2:
+        return None, "Install ownership manifest is not an uninstallable schema"
+    install_id = manifest.get("install_id")
+    try:
+        canonical_install_id = str(uuid.UUID(str(install_id)))
+    except (AttributeError, ValueError):
+        return None, "Install ownership manifest has an invalid install_id"
+    if install_id != canonical_install_id:
+        return None, "Install ownership manifest has a noncanonical install_id"
+    return dict(manifest), None
+
+
+def _expected_install_entries(
+    manifest: Mapping[str, Any],
+) -> tuple[set[str] | None, set[str] | None, str | None]:
+    owned = manifest.get("owned_files")
+    if (
+        not isinstance(owned, list)
+        or not owned
+        or len(owned) > 512
+        or not all(isinstance(item, str) for item in owned)
+        or len(set(owned)) != len(owned)
+    ):
+        return None, None, "Install ownership manifest has an invalid owned_files set"
+    try:
+        expected_files = {_safe_relative(item).as_posix() for item in owned}
+    except (TypeError, ValueError):
+        return None, None, "Install ownership manifest contains an unsafe owned file"
+    comparison = [item.casefold() if os.name == "nt" else item for item in expected_files]
+    if len(set(comparison)) != len(comparison) or any(
+        not item
+        or any(ord(character) < 32 for character in item)
+        or (os.name == "nt" and ":" in item)
+        for item in expected_files
+    ):
+        return None, None, "Install ownership manifest contains an ambiguous owned file"
+    if INSTALL_MANIFEST in expected_files:
+        return None, None, "Install ownership manifest lists itself as an owned file"
+    expected_files.add(INSTALL_MANIFEST)
+    expected_directories: set[str] = set()
+    for relative in expected_files:
+        parent = Path(relative).parent
+        while parent != Path("."):
+            expected_directories.add(parent.as_posix())
+            parent = parent.parent
+    return expected_files, expected_directories, None
+
+
+def _observed_install_entries(
+    path: Path,
+) -> tuple[set[str] | None, set[str] | None, str | None]:
+    actual_files: set[str] = set()
+    actual_directories: set[str] = set()
+    stack: list[tuple[Path, Path]] = [(path, Path())]
+    entries = 0
+    try:
+        while stack:
+            directory, relative_root = stack.pop()
+            with os.scandir(directory) as children:
+                for child in children:
+                    entries += 1
+                    if entries > 1024:
+                        return None, None, "Install tree exceeds the bounded entry count"
+                    metadata = child.stat(follow_symlinks=False)
+                    if metadata_is_link_or_reparse_point(metadata):
+                        return None, None, "Install tree contains a link or reparse point"
+                    relative = relative_root / child.name
+                    normalized = relative.as_posix()
+                    if stat.S_ISDIR(metadata.st_mode):
+                        actual_directories.add(normalized)
+                        stack.append((Path(child.path), relative))
+                    elif stat.S_ISREG(metadata.st_mode):
+                        actual_files.add(normalized)
+                    else:
+                        return None, None, "Install tree contains a non-regular entry"
+    except OSError as exc:
+        return None, None, f"Install tree could not be inspected: {type(exc).__name__}"
+    return actual_files, actual_directories, None
+
+
+def validate_owned_install_tree(
+    path: Path,
+    *,
+    host: str,
+    target: Path,
+) -> tuple[bool, str | None, dict[str, Any] | None]:
+    """Validate one exact current install without requiring the current version.
+
+    Uninstall may remove an older legitimate Agency bundle, but it must never
+    move a tree containing unlisted user files or links.  Schema 2 provides the
+    unique install identity required for that destructive boundary.
+    """
+
+    manifest, error = _strict_install_manifest(path, host=host, target=target)
+    if manifest is None:
+        return False, error, None
+    expected_files, expected_directories, error = _expected_install_entries(manifest)
+    if expected_files is None or expected_directories is None:
+        return False, error, None
+    actual_files, actual_directories, error = _observed_install_entries(path)
+    if actual_files is None or actual_directories is None:
+        return False, error, None
+    if actual_files != expected_files or actual_directories != expected_directories:
+        return False, "Install tree contains missing or unexpected entries", None
+    return True, None, manifest

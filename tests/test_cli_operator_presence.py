@@ -232,6 +232,32 @@ def test_roster_rollback_delegates_presence_to_exact_prepared_handler() -> None:
     assert operator_presence.request_for_namespace(args) is None
 
 
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["uninstall", "--agent", "codex", "--dry-run"],
+        ["uninstall", "--all", "--dry-run"],
+        ["uninstall", "--agent", "codex", "--confirm-plan", "a" * 64],
+        ["uninstall", "--all", "--confirm-plan", "b" * 64],
+    ],
+)
+def test_host_uninstall_delegates_only_its_exact_shape(argv: list[str]) -> None:
+    args = cli_main.build_parser().parse_args(argv)
+
+    assert args._operator_presence_prepared_action == "uninstall.host-integrations.v1"
+    assert operator_presence.request_for_namespace(args) is None
+
+
+def test_malformed_host_uninstall_prepared_marker_fails_closed() -> None:
+    args = cli_main.build_parser().parse_args(
+        ["uninstall", "--agent", "codex", "--confirm-plan", "a" * 64]
+    )
+    args.confirm_plan = "not-a-digest"
+
+    with pytest.raises(operator_presence.OperatorPresenceError, match="binding is invalid"):
+        operator_presence.request_for_namespace(args)
+
+
 def test_prepared_presence_marker_rejects_every_other_command_path() -> None:
     args = cli_main.build_parser().parse_args(["config", "reset"])
     args._operator_presence_prepared_action = "roster.rollback.v1"

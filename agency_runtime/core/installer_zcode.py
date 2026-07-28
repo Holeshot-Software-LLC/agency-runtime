@@ -465,6 +465,189 @@ def register_zcode_config(
         )
 
 
+def _quarantine_exact_state(path: Path, expected: bytes | None) -> Path | None:
+    """Move one unchanged owned state file aside before irreversible cleanup."""
+
+    if expected is None:
+        return None
+    observed = _read_optional(path, limit=_MAX_STATE_BYTES, label="ZCode registration state")
+    if observed != expected:
+        raise ZCodeRegistrationError(
+            "ZCode registration state changed concurrently; refusing to remove it"
+        )
+    quarantine = path.parent / f".{path.name}.uninstall-{uuid.uuid4().hex}.tmp"
+    os.replace(path, quarantine)
+    moved = _read_optional(
+        quarantine,
+        limit=_MAX_STATE_BYTES,
+        label="quarantined ZCode registration state",
+    )
+    if moved != expected:
+        if not path.exists():
+            os.replace(quarantine, path)
+        raise ZCodeRegistrationError("ZCode registration state identity changed during removal")
+    return quarantine
+
+
+def _uninstall_handlers(
+    target: Path,
+    state: Mapping[str, Any],
+    *,
+    config_path: Path,
+) -> dict[str, dict[str, Any]] | None:
+    handlers = _state_handlers(state)
+    if handlers is not None:
+        if (
+            Path(str(state["config_path"])).resolve() != config_path
+            or Path(str(state["target"])).resolve() != target.resolve()
+        ):
+            raise ZCodeRegistrationError("ZCode registration state path identity changed")
+        return handlers
+    if (target / ZCODE_FRAGMENT).is_file():
+        return _handlers_from_hooks(load_zcode_fragment(target))
+    return None
+
+
+def _config_without_handlers(
+    config: Mapping[str, Any],
+    handlers: Mapping[str, dict[str, Any]],
+) -> dict[str, Any]:
+    hooks, events = _config_parts(config)
+    for event in ZCODE_EVENTS:
+        registrations = list(events.get(event, []))
+        expected = handlers[event]
+        if registrations.count(expected) != 1:
+            raise ZCodeRegistrationError(f"Agency-owned ZCode {event} handler changed concurrently")
+        registrations.remove(expected)
+        if registrations:
+            events[event] = registrations
+        else:
+            events.pop(event, None)
+    hooks["events"] = events
+    return {**config, "hooks": hooks}
+
+
+def _commit_zcode_unregistration(
+    *,
+    config_path: Path,
+    state_path: Path,
+    merged: Mapping[str, Any],
+    config_raw: bytes | None,
+    state_raw: bytes | None,
+) -> None:
+    written = _atomic_json_replace(
+        config_path,
+        merged,
+        expected=config_raw,
+        product_owned_parent=False,
+        label="ZCode config",
+    )
+    quarantine: Path | None = None
+    try:
+        quarantine = _quarantine_exact_state(state_path, state_raw)
+        if quarantine is not None:
+            quarantine.unlink()
+    except Exception:
+        if quarantine is not None and quarantine.exists() and not state_path.exists():
+            os.replace(quarantine, state_path)
+        _restore_config(config_path, current=written, prior=config_raw)
+        raise
+
+
+def unregister_zcode_config(
+    target: Path,
+    *,
+    home_dir: str | Path | None,
+    dry_run: bool = False,
+) -> tuple[list[dict[str, Any]], bool, str | None]:
+    """Remove only exact Agency handlers while preserving unrelated ZCode config."""
+
+    config_path = zcode_config_path(home_dir=home_dir)
+    state_path = zcode_registration_state_path(home_dir=home_dir)
+    config_raw = _read_optional(config_path, limit=_MAX_CONFIG_BYTES, label="ZCode config")
+    state_raw = _read_optional(
+        state_path,
+        limit=_MAX_STATE_BYTES,
+        label="ZCode registration state",
+    )
+    try:
+        config = _load_object(config_raw, label="ZCode config")
+        state = _load_object(state_raw, label="ZCode registration state")
+        handlers = _uninstall_handlers(target, state, config_path=config_path)
+        if handlers is None:
+            return (
+                [
+                    {
+                        "name": "config_remove",
+                        "ok": True,
+                        "changed": False,
+                        "config_path": str(config_path),
+                    }
+                ],
+                True,
+                None,
+            )
+
+        facts = _registration_facts(config, handlers)
+        if facts["drifted"] or (facts["owned_handler_count"] and not facts["registered"]):
+            raise ZCodeRegistrationError(
+                "Agency-owned ZCode handlers drifted since the last transaction"
+            )
+        if not facts["registered"]:
+            raise ZCodeRegistrationError("Agency-owned ZCode handlers are incomplete")
+        if dry_run:
+            return (
+                [
+                    {
+                        "name": "config_remove",
+                        "ok": True,
+                        "dry_run": True,
+                        "changed": True,
+                        "config_path": str(config_path),
+                        "owned_handler_count": facts["owned_handler_count"],
+                    }
+                ],
+                True,
+                None,
+            )
+
+        merged = _config_without_handlers(config, handlers)
+        _commit_zcode_unregistration(
+            config_path=config_path,
+            state_path=state_path,
+            merged=merged,
+            config_raw=config_raw,
+            state_raw=state_raw,
+        )
+
+        observed = _registration_facts(merged, handlers)
+        proven = not observed["registered"] and observed["owned_handler_count"] == 0
+        steps = [
+            {
+                "name": "config_remove",
+                "ok": proven,
+                "changed": True,
+                "config_path": str(config_path),
+                "owned_handler_count": observed["owned_handler_count"],
+                "preserved_global_hooks_enabled": observed["global_hooks_enabled"],
+            }
+        ]
+        return steps, proven, None if proven else "config_inventory"
+    except Exception as exc:
+        return (
+            [
+                {
+                    "name": "config_remove",
+                    "ok": False,
+                    "config_path": str(config_path),
+                    "error": f"{type(exc).__name__}: {exc}"[:500],
+                }
+            ],
+            False,
+            "config_drift" if isinstance(exc, ZCodeRegistrationError) else "config_remove",
+        )
+
+
 def toggle_zcode_registration(
     target: Path,
     enabled: bool,

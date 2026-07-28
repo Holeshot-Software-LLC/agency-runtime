@@ -78,13 +78,37 @@ def _valid_codex_request() -> bytes:
     )
 
 
+def _valid_host_uninstall_request() -> bytes:
+    return (
+        b"AGENCY-OPERATOR-PRESENCE/1\n"
+        b"action=uninstall.host-integrations.v1\n"
+        b"operation-id=12345678-1234-4abc-8def-1234567890ab\n"
+        b"selection=all\n"
+        b"targets=hermes,codex,zcode\n"
+        b"transitions=hermes:disable+retain,codex:unregister+retain,"
+        b"zcode:remove-handlers+retain\n"
+        b"host-count=3\n"
+        + b"confirmed-plan-sha256="
+        + b"1" * 64
+        + b"\nhost-bindings-sha256="
+        + b"2" * 64
+        + b"\npreservation-policy=runtime-data-and-marketplaces.v1\n"
+        + b"recovery-policy=retained-owned-bundles.v1\n"
+        + b"binding-sha256="
+        + b"6" * 64
+        + b"\nnonce="
+        + b"7" * 64
+        + b"\n"
+    )
+
+
 def test_reviewed_native_payload_and_provenance_are_exact() -> None:
     source, executable, provenance = _payloads()
     observed = builder.verify_payload_contract(source, executable, provenance)
 
-    assert len(source) == builder.REVIEWED_SOURCE_SIZE == 41_551
+    assert len(source) == builder.REVIEWED_SOURCE_SIZE == 56_962
     assert hashlib.sha256(source).hexdigest() == builder.REVIEWED_SOURCE_SHA256
-    assert len(executable) == builder.REVIEWED_EXECUTABLE_SIZE == 187_392
+    assert len(executable) == builder.REVIEWED_EXECUTABLE_SIZE == 207_872
     assert hashlib.sha256(executable).hexdigest() == builder.REVIEWED_EXECUTABLE_SHA256
     assert observed["distribution_classification"] == (
         "reviewed_unsigned_windows_executable_package_data"
@@ -107,7 +131,7 @@ def test_reviewed_native_payload_and_provenance_are_exact() -> None:
     )
 
 
-def test_native_source_exposes_only_the_two_fixed_consent_contracts() -> None:
+def test_native_source_exposes_only_the_three_fixed_consent_contracts() -> None:
     source = SOURCE.read_text(encoding="utf-8")
 
     for required in (
@@ -115,6 +139,7 @@ def test_native_source_exposes_only_the_two_fixed_consent_contracts() -> None:
         "RequestVerificationForWindowAsync",
         'constexpr std::string_view kRollbackAction = "roster.rollback.v1"',
         'constexpr std::string_view kCodexInstallAction = "install.codex.v1"',
+        'constexpr std::string_view kHostUninstallAction = "uninstall.host-integrations.v1"',
         'field(lines[2], "slug="',
         'field(lines[3], "current-version="',
         'field(lines[4], "current-hash="',
@@ -137,8 +162,20 @@ def test_native_source_exposes_only_the_two_fixed_consent_contracts() -> None:
         'field(lines[14], "recovery="',
         'field(lines[15], "binding-sha256="',
         'field(lines[16], "nonce="',
+        'field(lines[2], "operation-id="',
+        'field(lines[3], "selection="',
+        'field(lines[4], "targets="',
+        'field(lines[5], "transitions="',
+        'field(lines[6], "host-count="',
+        'field(lines[7], "confirmed-plan-sha256="',
+        'field(lines[8], "host-bindings-sha256="',
+        'field(lines[9], "preservation-policy="',
+        'field(lines[10], "recovery-policy="',
+        'field(lines[11], "binding-sha256="',
+        'field(lines[12], "nonce="',
         'L"&Verify"',
         'L"&Verify reinstall"',
+        'L"&Verify uninstall"',
         'L"&Cancel"',
         "IsDialogMessageW",
         "VK_ESCAPE",
@@ -164,6 +201,10 @@ def test_native_source_exposes_only_the_two_fixed_consent_contracts() -> None:
         "re-attested before installation",
         "does not grant hook trust",
         "production publisher trust",
+        "runtime-data-and-marketplaces.v1",
+        "retained-owned-bundles.v1",
+        "no later host is attempted",
+        "restart the affected harnesses",
     ):
         assert required in source
     assert "candidate_plugin_version == current_plugin_version" not in source
@@ -210,6 +251,33 @@ def test_native_source_exposes_only_the_two_fixed_consent_contracts() -> None:
         _valid_codex_request().replace(b"will-backup=yes", b"will-backup=no"),
         _valid_codex_request().replace(b"binding-sha256=" + b"6" * 64, b"binding-sha256=x"),
         _valid_codex_request() + b"extra=true\n",
+        _valid_host_uninstall_request().replace(
+            b"operation-id=12345678-1234-4abc-8def-1234567890ab",
+            b"operation-id=12345678-1234-4ABC-8def-1234567890ab",
+        ),
+        _valid_host_uninstall_request().replace(b"selection=all", b"selection=codex"),
+        _valid_host_uninstall_request().replace(
+            b"targets=hermes,codex,zcode",
+            b"targets=codex,hermes,zcode",
+        ),
+        _valid_host_uninstall_request().replace(
+            b"hermes:disable+retain",
+            b"hermes:unregister+retain",
+        ),
+        _valid_host_uninstall_request().replace(b"host-count=3", b"host-count=2"),
+        _valid_host_uninstall_request().replace(
+            b"confirmed-plan-sha256=" + b"1" * 64,
+            b"confirmed-plan-sha256=" + b"A" * 64,
+        ),
+        _valid_host_uninstall_request().replace(
+            b"preservation-policy=runtime-data-and-marketplaces.v1",
+            b"preservation-policy=delete-runtime-data.v1",
+        ),
+        _valid_host_uninstall_request().replace(
+            b"recovery-policy=retained-owned-bundles.v1",
+            b"recovery-policy=delete-owned-bundles.v1",
+        ),
+        _valid_host_uninstall_request() + b"extra=true\n",
     ),
 )
 @pytest.mark.skipif(os.name != "nt", reason="reviewed helper is a Windows x64 executable")

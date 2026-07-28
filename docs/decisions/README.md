@@ -57,6 +57,7 @@ Status meanings:
 | [ADR-0028](0028-host-support-maturity-and-reversible-install.md) | Separate host contract coverage from live support maturity | Accepted |
 | [ADR-0049](0049-openclaw-final-only-full-payload-delivery.md) | Require final-only full-payload delivery on OpenClaw | Accepted |
 | [ADR-0050](0050-isolate-installed-python-module-resolution.md) | Isolate installed Python module resolution from host workspaces | Accepted |
+| [ADR-0108](0108-retire-only-owned-host-integrations.md) | Retire only ownership-proven host integrations | Accepted |
 
 ## Routing, policy, and providers
 

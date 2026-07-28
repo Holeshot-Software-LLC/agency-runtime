@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-07-16
 tags: [hosts, installation, operations]
 related:
+  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-03-supported-host-integrations.md
   - docs/roadmap/issue-AR-04-runtime-controls.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md

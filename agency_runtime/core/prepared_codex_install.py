@@ -19,7 +19,7 @@ import sqlite3
 import stat
 import time
 from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -27,7 +27,6 @@ from typing import Any, NamedTuple
 from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import AgencyConfig, load_config
-from agency_runtime.core.configuration import restrict_private_file
 from agency_runtime.core.filesystem_trust import absolute_path as _absolute_path
 from agency_runtime.core.filesystem_trust import (
     metadata_is_link_or_reparse_point as _metadata_is_link_or_reparse,
@@ -940,77 +939,18 @@ def _is_noop(prepared: _PreparedCodexInstall) -> bool:
     )
 
 
-def _open_lock(path: Path):
-    flags = os.O_RDWR | os.O_CREAT | int(getattr(os, "O_BINARY", 0))
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
-    descriptor = os.open(path, flags, 0o600)
-    try:
-        path_stat = os.lstat(path)
-        handle_stat = os.fstat(descriptor)
-        if (
-            not stat.S_ISREG(path_stat.st_mode)
-            or _metadata_is_link_or_reparse(path_stat)
-            or (int(path_stat.st_dev), int(path_stat.st_ino))
-            != (int(handle_stat.st_dev), int(handle_stat.st_ino))
-        ):
-            raise OSError("Codex install lock must be a regular file")
-        return os.fdopen(descriptor, "r+b")
-    except Exception:
-        os.close(descriptor)
-        raise
-
-
 @contextmanager
 def _install_lock(*, home_dir: str | Path | None) -> Iterator[None]:
-    parent = ensure_private_directory(
-        runtime_home(home_dir=home_dir) / "locks",
-        product_owned=True,
+    from agency_runtime.core.host_lifecycle_lock import (
+        HostLifecycleLockError,
+        host_integrations_lock,
     )
-    lock_path = parent / "codex-install.lock"
-    handle = _open_lock(lock_path)
-    locked = False
+
     try:
-        restrict_private_file(lock_path)
-        if os.fstat(handle.fileno()).st_size == 0:
-            handle.write(b"\0")
-            handle.flush()
-            os.fsync(handle.fileno())
-        deadline = time.monotonic() + _LOCK_TIMEOUT_SECONDS
-        while True:
-            try:
-                handle.seek(0)
-                if os.name == "nt":
-                    import msvcrt
-
-                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
-                else:
-                    import fcntl
-
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                locked = True
-                break
-            except OSError as exc:
-                if time.monotonic() >= deadline:
-                    raise PreparedCodexInstallError(
-                        "another Codex install transaction is active"
-                    ) from exc
-                time.sleep(0.025)
-        yield
-    finally:
-        if locked:
-            with suppress(OSError, ValueError):
-                handle.seek(0)
-                if os.name == "nt":
-                    import msvcrt
-
-                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-                else:
-                    import fcntl
-
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        with suppress(OSError, ValueError):
-            handle.close()
+        with host_integrations_lock(home_dir=home_dir):
+            yield
+    except HostLifecycleLockError as exc:
+        raise PreparedCodexInstallError("another Codex install transaction is active") from exc
 
 
 def _native_command(

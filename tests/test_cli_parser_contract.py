@@ -51,6 +51,7 @@ HANDLER_NAMES = (
     "cmd_hiring_list",
     "cmd_hiring_show",
     "cmd_install",
+    "cmd_uninstall",
     "cmd_mcp",
     "cmd_off",
     "cmd_on",
@@ -174,6 +175,7 @@ EXPECTED_PATHS = (
     "agency source list",
     "agency status",
     "agency sync",
+    "agency uninstall",
     "agency upgrade",
     "agency version",
     "agency workforce",
@@ -236,6 +238,7 @@ EXPECTED_BINDINGS = {
     "agency hiring list": "cmd_hiring_list",
     "agency hiring show": "cmd_hiring_show",
     "agency install": "cmd_install",
+    "agency uninstall": "cmd_uninstall",
     "agency mcp": "cmd_mcp",
     "agency off": "cmd_off",
     "agency on": "cmd_on",
@@ -279,7 +282,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "dfdc0df86ed6ba066d7e30175e830aea1aa68b3c147add446367d0b10fe02179"
+EXPECTED_MANIFEST_SHA256 = "5cfe39e4e2fe82eba4840cc76d1a6bbc79f530db7ba485b393065b9229cfe3b6"
 
 
 def _handler(name: str):

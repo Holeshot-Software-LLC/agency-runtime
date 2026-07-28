@@ -496,7 +496,7 @@ def _registration_success_result(result: dict[str, Any], host: str) -> dict[str,
     return result
 
 
-def install_agent_adapter(
+def _install_agent_adapter_unlocked(
     host: str,
     cfg: AgencyConfig | None = None,
     *,
@@ -631,6 +631,44 @@ def install_agent_adapter(
     if not native_ok:
         return _registration_failure_result(result, host, steps, failed_step)
     return _registration_success_result(result, host)
+
+
+def install_agent_adapter(
+    host: str,
+    cfg: AgencyConfig | None = None,
+    *,
+    home_dir: str | Path | None = None,
+    dry_run: bool = False,
+    binary_resolver: BinaryResolver | None = None,
+    command_runner: CommandRunner | None = None,
+) -> dict[str, Any]:
+    """Plan freely, but serialize every generic host-install mutation."""
+
+    arguments = {
+        "home_dir": home_dir,
+        "dry_run": dry_run,
+        "binary_resolver": binary_resolver,
+        "command_runner": command_runner,
+    }
+    if dry_run or host not in HOSTS:
+        return _install_agent_adapter_unlocked(host, cfg, **arguments)
+    from agency_runtime.core.host_lifecycle_lock import (
+        HostLifecycleLockError,
+        host_integrations_lock,
+    )
+
+    try:
+        with host_integrations_lock(home_dir=home_dir):
+            return _install_agent_adapter_unlocked(host, cfg, **arguments)
+    except HostLifecycleLockError:
+        return {
+            "ok": False,
+            "exit_code": 1,
+            "host": host,
+            "partial": False,
+            "failed_step": "lifecycle_lock",
+            "error": "another host integration transaction is active",
+        }
 
 
 def _resolve_rollback_backup(
@@ -848,7 +886,7 @@ def _refresh_rollback_registration(
     return result
 
 
-def rollback_agent_adapter(
+def _rollback_agent_adapter_unlocked(
     host: str,
     *,
     home_dir: str | Path | None = None,
@@ -909,6 +947,42 @@ def rollback_agent_adapter(
         home_dir=home_dir,
         command_runner=command_runner,
     )
+
+
+def rollback_agent_adapter(
+    host: str,
+    *,
+    home_dir: str | Path | None = None,
+    backup_path: str | Path | None = None,
+    binary_resolver: BinaryResolver | None = None,
+    command_runner: CommandRunner | None = None,
+) -> dict[str, Any]:
+    """Serialize rollback with install, toggle, and prepared uninstall."""
+
+    if host not in HOSTS:
+        return _unknown_host_result(host)
+    from agency_runtime.core.host_lifecycle_lock import (
+        HostLifecycleLockError,
+        host_integrations_lock,
+    )
+
+    try:
+        with host_integrations_lock(home_dir=home_dir):
+            return _rollback_agent_adapter_unlocked(
+                host,
+                home_dir=home_dir,
+                backup_path=backup_path,
+                binary_resolver=binary_resolver,
+                command_runner=command_runner,
+            )
+    except HostLifecycleLockError:
+        return {
+            "ok": False,
+            "exit_code": 1,
+            "host": host,
+            "failed_step": "lifecycle_lock",
+            "error": "another host integration transaction is active",
+        }
 
 
 def _toggle_command(host: str, enabled: bool) -> list[str]:
@@ -1018,7 +1092,7 @@ def _toggle_error(
     )[:500]
 
 
-def toggle_agency(
+def _toggle_agency_unlocked(
     host: str,
     enabled: bool,
     *,
@@ -1104,3 +1178,42 @@ def toggle_agency(
             environment=_command_environment(host, home_dir=home_dir),
         )
     return response
+
+
+def toggle_agency(
+    host: str,
+    enabled: bool,
+    *,
+    home_dir: str | Path | None = None,
+    binary_resolver: BinaryResolver | None = None,
+    command_runner: CommandRunner | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """Plan freely, but serialize every native enablement mutation."""
+
+    arguments = {
+        "home_dir": home_dir,
+        "binary_resolver": binary_resolver,
+        "command_runner": command_runner,
+        "dry_run": dry_run,
+    }
+    if dry_run or host not in HOSTS:
+        return _toggle_agency_unlocked(host, enabled, **arguments)
+    from agency_runtime.core.host_lifecycle_lock import (
+        HostLifecycleLockError,
+        host_integrations_lock,
+    )
+
+    try:
+        with host_integrations_lock(home_dir=home_dir):
+            return _toggle_agency_unlocked(host, enabled, **arguments)
+    except HostLifecycleLockError:
+        return {
+            "ok": False,
+            "exit_code": 1,
+            "host": host,
+            "enabled": None,
+            "action": "blocked",
+            "failed_step": "lifecycle_lock",
+            "error": "another host integration transaction is active",
+        }
