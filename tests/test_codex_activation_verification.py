@@ -22,6 +22,7 @@ from agency_runtime.core.codex_activation_verification import (
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
+    CODEX_HOOK_EVENTS,
 )
 from agency_runtime.core.selector import pipeline
 from agency_runtime.core.store.sqlite import Store
@@ -474,6 +475,65 @@ def test_activation_result_projection_does_not_retain_unknown_content() -> None:
 
     assert "private_provider_payload" not in projected
     assert "secret" not in repr(projected)
+
+
+def test_activation_projection_preserves_only_sanitized_hook_trust_evidence() -> None:
+    candidate = copy.deepcopy(_fresh_report())
+    events = tuple(event[0].lower() + event[1:] for event in CODEX_HOOK_EVENTS)
+    hook_trust = {
+        "status": "modified",
+        "expected_count": 8,
+        "observed_count": 8,
+        "trusted_count": 0,
+        "managed_count": 0,
+        "modified_count": 8,
+        "untrusted_count": 0,
+        "disabled_count": 0,
+        "missing_count": 0,
+        "unexpected_count": 0,
+        "duplicate_count": 0,
+        "warning_count": 0,
+        "error_count": 0,
+        "events": {
+            event: {
+                "enabled": True,
+                "trustStatus": "modified",
+                "currentHash": "sha256:" + "a" * 64,
+            }
+            for event in events
+        },
+    }
+    candidate["invocation"] = {
+        "failure_reason": "codex_hook_trust_not_ready",
+        "model_invocation_attempted": False,
+        "hook_trust": hook_trust,
+        "private_provider_payload": "secret",
+    }
+
+    projected = install_commands._activation_verification_projection(candidate)
+
+    assert projected["invocation"] == {
+        "failure_reason": "codex_hook_trust_not_ready",
+        "model_invocation_attempted": False,
+        "hook_trust": hook_trust,
+    }
+    assert "secret" not in repr(projected)
+
+
+def test_activation_projection_rejects_malformed_invocation_fields() -> None:
+    candidate = copy.deepcopy(_fresh_report())
+    candidate["invocation"] = {
+        "failure_reason": [],
+        "model_invocation_attempted": "false",
+        "hook_trust": {"status": "trusted", "command": "SECRET_COMMAND"},
+    }
+
+    projected = install_commands._activation_verification_projection(candidate)
+
+    assert projected["invocation"]["hook_trust"]["status"] == "error"
+    assert "failure_reason" not in projected["invocation"]
+    assert "model_invocation_attempted" not in projected["invocation"]
+    assert "SECRET" not in repr(projected)
 
 
 def test_activation_projection_never_retains_malformed_known_field_content() -> None:

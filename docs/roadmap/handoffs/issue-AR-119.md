@@ -17,6 +17,7 @@ related:
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-179-fail-named-regulated-assurance-gaps-closed.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
+  - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
@@ -24,14 +25,16 @@ related:
   - docs/roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md
   - docs/decisions/0106-isolate-native-host-lifecycle-working-directories.md
   - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
+  - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
   - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
+  - docs/worklog/2026-07-28-380f899-bind-codex-v2-native-evidence.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 8c7d8df44aa35d4bb7ab7698abaf0f7b2a93e47b
-minimum_ledger_commit: 50d0b2e249fa38d42109670804d30e7e4119041f
+evidence_commit: 380f8992fb1d728026be82673bb966a43c148b97
+minimum_ledger_commit: 9a5b37c6862461b445b7380e451ee9578438fb7b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -44,16 +47,20 @@ the full acceptance history.
 
 ## checkpoint
 
-- Latest clean recovery pair is AR-190 `8c7d8df`/`50d0b2e`; branch `main`,
-  `origin/main`, and the installed package all resolve to that checkpoint.
-- The AR-191 recovery candidate repairs the exact Codex V2 hook identity,
-  child-turn correlation, and truthful canary projection exposed by one bounded
-  live run. Focused live-shape regressions and targeted lint/format pass.
+- Latest clean pushed recovery pair is AR-191 `380f899`/`9a5b37c`; branch
+  `main` and `origin/main` resolve to that checkpoint, and the package plus
+  Codex bundle were refreshed from it.
+- The in-progress AR-192 package adds a bounded read-only Codex `hooks/list`
+  preflight before model-backed current-profile activation verification.
+  Seventy focused tests and two independent reviews close its scoped source
+  findings; the named production spine and all routine gates pass.
 - User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
   and excluded from every commit.
-- Installed plugin `0.1.0+codex.4b511d9c4535`, bundle `c792b4bc...1cff1ae`,
-  install ID `5e9f9145-1dfc-494a-8580-f9211eef8ec7`, has all eight hooks
-  enabled and trusted. No manual/exhaustive workflow or hosted Action ran.
+- Installed plugin `0.1.0+codex.9e970ea1b470`, bundle
+  `355bdf7f...b517cb12`, install ID
+  `f2aad1f0-03bb-4afd-8cc9-6e94dd8eff08`, has all eight hooks enabled but
+  authoritatively classified `modified`. No exhaustive workflow or hosted
+  Action ran.
 
 ## completed-evidence
 
@@ -73,43 +80,32 @@ the full acceptance history.
   and six-version compatibility now run only on explicit `workflow_dispatch`.
 - One-shot application evaluation is deferred to post-production AR-178 and is
   not an AR-119/125 release gate.
-- AR-180 now isolates the exact activation measurement from semantic-planner
-  variance with a closed native-verified, nonce-bound one-unit fixture. It
-  remains read-only, no-tool, uncached, and fails closed on roster or authority
-  drift; ordinary requests remain inference-governed. The route passes durable
-  preflight replay and preserves distinct Store provenance. The existing
-  hook/proof chain still validates exact JSONL spawn/wait topology, native-hook
-  grants, single consumption, child lifecycle, model receipt, finalization,
-  header, and install-bound attestation.
-- AR-185 now routes the exact verification-only command before generic install,
-  binds success to a temporally fresh exact attestation, propagates no-create/
-  migrate/repair Store mode through spawned hooks, and suppresses roster
-  reconciliation and gap hiring. Its focused package passed 324 tests with 6
-  platform skips; 35 dedicated regressions pass in under two seconds.
-- The trusted 12:27 local canary routed exactly one `code-reviewer` unit and
-  Codex spawned one intended child. Store evidence had zero activation grants,
-  consumptions, specialist loads, or completed delegations; the child received
-  only generic identity context and spawned one unintended grandchild. Stop
-  correctly continued and the verifier failed the canary.
-- Codex 0.145 source and the parent rollout prove MultiAgentV2 wraps
-  `spawn_agent` in namespace `collaboration`, then flattens the command-hook name
-  to `collaborationspawn_agent`. Agency matched only `spawn_agent`, so
-  `PreToolUse` never selected. Three independent read-only audits converged on
-  this boundary; the lease/Store state model was not the cause.
-- AR-191 now shares one exact anchored V1/V2 matcher, preserves full rewritten
-  tool input including `fork_turns`, rejects lookalikes, validates child event
-  trace IDs against the active parent session, keeps actual process exit codes,
-  types projection failures, and binds the public current-profile canary to the
-  existing Store. Every installed Codex spawn spelling requires an atomically
-  unclaimed native-child start; raw JSON identity provenance is preserved, a
-  returned child identity must match exactly, replays are token/tool-use bound,
-  V2 task paths must be rooted, and nested denials are observed truthfully. The
-  final independent security re-review reports no AR-191/live-canary blocker.
+- AR-180/185 isolate one nonce-bound `code-reviewer` activation measurement,
+  require the existing Store, suppress roster reconciliation and hiring, and
+  bind success to fresh routing, child lifecycle, finalization, header, model,
+  and install evidence. Ordinary requests remain inference-governed.
+- AR-191's exact V1/V2 matcher, lifecycle claim, parent-trace recovery, replay
+  binding, rooted result path, and truthful projection passed the named fast
+  spine plus focused adversarial review before pair `380f899`/`9a5b37c` was
+  pushed and installed.
+- Two post-install current-profile attempts created zero Agency Store rows and
+  no activation attestation. Fresh `hooks/list` calls for both relevant working
+  directories returned the same eight enabled, `modified` Agency hooks. Stored
+  trust hashes belonged to the pre-refresh definitions, proving a stale TUI
+  approval rather than a lease, Store, or working-directory failure.
+- Codex's hash invalidation is the intended security behavior. Agency's missing
+  authoritative preflight caused the avoidable model-backed delay; AR-192 owns
+  that fail-fast repair and does not write trust state or use the bypass.
+- AR-192 passes 70 focused tests, the 536-test named production spine with 5
+  platform skips, 109 dashboard tests, documentation checks, lint/format, and
+  the routing evaluation. Independent security and cross-layer reviews report
+  no remaining scoped Critical, High, or Medium blocker.
 
 ## exact-blocker
 
-- AR-191 still needs a clean substantive/ledger pair, exact installed refresh,
-  changed-hook trust, and one fresh current-profile canary. No preexisting or
+- AR-192 still needs a clean substantive/ledger pair, push, and exact install.
+  Then one fresh TUI must approve the settled definitions; `hooks/list` must
+  report 8/8 trusted before one bounded current-profile canary. No stale or
   isolated attestation may satisfy that recheck.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
@@ -134,18 +130,20 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Close the independent-review findings, commit the AR-191 recovery pair, push
-   `main`, and install that exact package plus refreshed Codex bundle.
-2. Renew changed-hook trust once, then run one bounded current-profile activation
-   verification and record the exact evidence-based demo verdict.
+1. Commit the verified AR-192 substantive/ledger recovery pair.
+2. Push and install that exact checkpoint, close pre-install Codex TUIs, approve
+   once from a fresh TUI, and require an authoritative 8/8 trusted inspection.
+3. Run one bounded current-profile activation verification and report the exact
+   scoped demo verdict. Do not dispatch exhaustive or hosted diagnostics.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
-python -m pytest tests/test_codex_activation_canary.py tests/test_codex_activation_verification.py tests/test_host_hooks.py -q -W error
+python -m pytest tests/test_codex_hook_trust.py tests/test_codex_activation_canary.py tests/test_host_canary.py -q -W error
 python scripts/verify_docs.py
-python -m scripts.verify_distribution <candidate-directory> --expected-commit <final-head>
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
 git diff --check
 # Optional only when the owner explicitly requests exhaustive diagnostics:
 python -m pytest tests -q -W error

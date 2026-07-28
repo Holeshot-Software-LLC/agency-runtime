@@ -423,22 +423,28 @@ restores the prior tree and registration when a post-publication check fails. A
 process crash can still require recovery from the retained backup, so this is not yet the general
 fresh-host installer contract.
 
-**Codex** will also require you to approve command hooks: Agency installs the plugin,
-reports `activation_required`, and gives the exact next step. Run `codex`,
-choose **Trust all and continue** at the startup hook review (or `/hooks` inside
-the terminal UI and trust the Agency events). To refresh an existing managed
-Codex adapter from this source, run:
+**Codex** will also require you to approve command hooks. Agency installs the
+plugin, reports `activation_required`, and gives the exact next step. To refresh
+an existing managed Codex adapter from this source, first run:
 
 ```bash
 agency install --agent codex --no-dashboard
 ```
 
-That transaction deliberately does not claim activation. Restart Codex or open
-a new task so the new plugin can load, then run:
+That transaction deliberately does not claim activation. Close every Codex
+terminal TUI opened before the install or refresh, then run `codex` in a fresh
+terminal. Choose **Trust all and continue** when the startup review lists all
+eight Agency events, or run `/hooks` inside that fresh terminal TUI. Start a new
+session so the settled plugin can load, then run:
 
 ```bash
 agency install --agent codex --verify-activation
 ```
+
+Verification first asks Codex for the read-only hook inventory. It starts the
+bounded model-backed canary only when the exact eight Agency hooks are enabled
+and trusted; missing, changed, or unsettled trust fails quickly without using
+provider quota.
 
 The intended post-gate install and rollback commands include ZCode:
 

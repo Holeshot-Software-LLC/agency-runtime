@@ -235,6 +235,7 @@ def _backend(
     profile_scope: str = "isolated-profile",
     require_existing_store: bool = False,
     require_exact_activation_rollout: bool = False,
+    hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None,
 ):
     return _backends.backend(
         host,
@@ -248,6 +249,7 @@ def _backend(
         profile_scope=profile_scope,
         require_existing_store=require_existing_store,
         require_exact_activation_rollout=require_exact_activation_rollout,
+        hook_trust_inspector=hook_trust_inspector,
     )
 
 

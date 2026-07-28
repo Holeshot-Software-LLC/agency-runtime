@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
+  - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
   - docs/THREAT_MODEL.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/cli/install_commands.py
@@ -80,6 +81,17 @@ the exact persisted tool-input task name before the unique lifecycle receiver is
 bound. Both reversible `unit_<digest>` and generated `agency_<digest>` labels
 remain supported.
 
+The exact implementation and ledger pair `380f899`/`9a5b37c` is pushed on
+`main` and was installed as Codex plugin
+`0.1.0+codex.9e970ea1b470`. The next two bounded current-profile attempts
+created no Agency Store rows or activation attestation because Codex did not
+run the current hooks. Authoritative app-server inspection reported all eight
+expected hooks enabled but `modified` in both the repository and private
+canary working directories; a pre-refresh Codex TUI had approved the prior
+definitions. AR-192 now owns fail-fast trust inspection. This leaves AR-191's
+code repair complete while its live activation acceptance remains open behind
+one fresh approval and canary.
+
 ## Approach
 
 Keep the compatibility surface explicit and shared between installation and
@@ -91,8 +103,9 @@ native scheduler.
 
 ## Dependencies
 
-AR-180 owns the live activation proof and AR-185 owns exact current-profile
-verification. Tracker creation remains pending explicit authorization for the
+AR-180 owns the live activation proof, AR-185 owns exact current-profile
+verification, and AR-192 owns the trust preflight exposed by the post-install
+attempts. Tracker creation remains pending explicit authorization for the
 outward-facing write.
 
 ## Acceptance

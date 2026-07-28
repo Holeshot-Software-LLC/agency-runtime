@@ -19,6 +19,7 @@ from agency_runtime.core.delegation.native_labels import codex_task_name_for_wor
 from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import response_hash
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
+from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
 from agency_runtime.core.native_child_prompt_delivery import (
     parse_native_child_prompt_delivery,
     render_native_child_prompt_delivery,
@@ -50,6 +51,33 @@ def _ready_host(_host: str) -> dict[str, object]:
         "host_version": "codex 0.145.0",
         "install_id": "codex-install-1",
         "bundle_digest": "a" * 64,
+    }
+
+
+def _modified_hook_trust_report() -> dict[str, object]:
+    events = tuple(event[0].lower() + event[1:] for event in CODEX_HOOK_EVENTS)
+    return {
+        "status": "modified",
+        "expected_count": len(events),
+        "observed_count": len(events),
+        "trusted_count": 0,
+        "managed_count": 0,
+        "modified_count": len(events),
+        "untrusted_count": 0,
+        "disabled_count": 0,
+        "missing_count": 0,
+        "unexpected_count": 0,
+        "duplicate_count": 0,
+        "warning_count": 0,
+        "error_count": 0,
+        "events": {
+            event: {
+                "enabled": True,
+                "trustStatus": "modified",
+                "currentHash": "sha256:" + "a" * 64,
+            }
+            for event in events
+        },
     }
 
 
@@ -940,6 +968,42 @@ def test_failed_current_profile_reverification_invalidates_prior_attestation(
     assert report["canary_passed"] is False
     assert report["prior_attestation_invalidated"] is True
     assert configured_store.get_host_canary_attestation("codex") is None
+
+
+def test_current_profile_hook_trust_failure_is_reported_precisely(
+    configured_store: Store,
+) -> None:
+    class Backend:
+        def execute(self, **_kwargs: object) -> dict[str, object]:
+            return {
+                "backend": "codex",
+                "profile_scope": "current-profile",
+                "status": "failed",
+                "exit_code": 1,
+                "stdout_truncated": False,
+                "stderr_truncated": False,
+                "failure_reason": "codex_hook_trust_not_ready",
+                "hook_trust": _modified_hook_trust_report(),
+                "model_invocation_attempted": False,
+            }
+
+    report = canary.run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CURRENT-PROFILE CANARY",
+        db_path=configured_store.db_path,
+        inspector=_ready_host,
+        backend_factory=lambda *_args, **_kwargs: Backend(),
+        profile_scope="current-profile",
+    )
+
+    assert report["canary_passed"] is False
+    assert report["invocation"]["failure_reason"] == "codex_hook_trust_not_ready"
+    assert report["invocation"]["hook_trust"]["status"] == "modified"
+    assert report["invocation"]["model_invocation_attempted"] is False
+    assert report["unmet_prerequisites"][0] == (
+        "Codex does not report the settled Agency hook inventory as enabled and trusted"
+    )
 
 
 def test_codex_process_timeout_remains_a_timeout() -> None:

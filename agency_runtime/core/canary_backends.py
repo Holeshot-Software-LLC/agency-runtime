@@ -15,6 +15,7 @@ from agency_runtime.core.private_paths import private_temporary_directory
 _CODEX_ROLLOUT_MAX_BYTES = 1024 * 1024
 _CODEX_ROLLOUT_MAX_LINES = 5_000
 _CODEX_ROLLOUT_CLOCK_SKEW_SECONDS = 2.0
+_CODEX_HOOK_TRUST_PREFLIGHT_TIMEOUT_SECONDS = 10.0
 _CODEX_THREAD_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\Z")
 _CODEX_ROLLOUT_RESPONSE_TYPES = frozenset(
     {"agent_message", "function_call", "function_call_output", "message", "reasoning"}
@@ -960,6 +961,7 @@ class SafeCodexCanaryBackend:
     require_existing_store: bool = False
     exec_options: tuple[str, ...] | None = None
     require_exact_activation_rollout: bool = False
+    hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None
 
     def _exec_options(self) -> tuple[str, ...]:
         if self.exec_options is not None:
@@ -976,6 +978,83 @@ class SafeCodexCanaryBackend:
             if self.profile_scope == "current-profile"
             else facade.CODEX_NATIVE_ONLY_CANARY_EXEC_OPTIONS
         )
+
+    def _verify_current_profile_hook_trust(
+        self,
+        *,
+        workdir: str,
+        env: Mapping[str, str],
+        deadline: float,
+    ) -> dict[str, Any] | None:
+        """Fail before a model call unless Codex trusts the exact Agency hooks."""
+
+        if self.profile_scope != "current-profile" or not self.require_exact_activation_rollout:
+            return None
+        facade = _facade()
+        timeout = facade._remaining_canary_timeout(
+            deadline,
+            maximum=_CODEX_HOOK_TRUST_PREFLIGHT_TIMEOUT_SECONDS,
+        )
+        from agency_runtime.core.codex_hook_trust import (
+            sanitize_codex_hook_trust_report,
+        )
+
+        if timeout <= 0:
+            trust = sanitize_codex_hook_trust_report(None)
+        else:
+            inspector = self.hook_trust_inspector
+            if inspector is None:
+                from agency_runtime.core.codex_hook_trust import inspect_codex_hook_trust
+
+                inspector = inspect_codex_hook_trust
+            try:
+                candidate = inspector(
+                    Path(workdir),
+                    executable=self.executable,
+                    timeout=timeout,
+                    environ=env,
+                )
+                trust = sanitize_codex_hook_trust_report(candidate)
+            except Exception:
+                trust = sanitize_codex_hook_trust_report(None)
+        from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
+
+        expected_count = len(CODEX_HOOK_EVENTS)
+        trust_ready = (
+            trust.get("status") == "trusted"
+            and trust.get("expected_count") == expected_count
+            and trust.get("observed_count") == expected_count
+            and trust.get("trusted_count") == expected_count
+            and isinstance(trust.get("events"), Mapping)
+            and len(trust["events"]) == expected_count
+            and all(
+                trust.get(field) == 0
+                for field in (
+                    "managed_count",
+                    "modified_count",
+                    "untrusted_count",
+                    "disabled_count",
+                    "missing_count",
+                    "unexpected_count",
+                    "duplicate_count",
+                    "warning_count",
+                    "error_count",
+                )
+            )
+        )
+        if trust_ready:
+            return None
+        return {
+            "backend": "codex",
+            "profile_scope": self.profile_scope,
+            "status": "failed",
+            "exit_code": 1,
+            "stdout_truncated": False,
+            "stderr_truncated": False,
+            "failure_reason": "codex_hook_trust_not_ready",
+            "hook_trust": trust,
+            "model_invocation_attempted": False,
+        }
 
     def _install_plugin(
         self,
@@ -1093,6 +1172,13 @@ class SafeCodexCanaryBackend:
                 )
 
                 env[CODEX_ACTIVATION_EXISTING_STORE_ENV] = "1"
+            trust_failure = self._verify_current_profile_hook_trust(
+                workdir=workdir,
+                env=env,
+                deadline=deadline,
+            )
+            if trust_failure is not None:
+                return trust_failure
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
                 return _timeout_record("codex", profile_scope=self.profile_scope)
@@ -1294,6 +1380,7 @@ def backend(
     profile_scope: str = "isolated-profile",
     require_existing_store: bool = False,
     require_exact_activation_rollout: bool = False,
+    hook_trust_inspector: Callable[..., Mapping[str, Any]] | None = None,
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -1333,6 +1420,7 @@ def backend(
             profile_scope=profile_scope,
             require_existing_store=require_existing_store,
             require_exact_activation_rollout=require_exact_activation_rollout,
+            hook_trust_inspector=hook_trust_inspector,
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()

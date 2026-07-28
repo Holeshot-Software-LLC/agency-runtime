@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
+  - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - docs/decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md
   - agency_runtime/core/canary.py
@@ -28,7 +29,7 @@ epic: host-integrations
 issue_id: AR-180
 priority: p0
 tracker_url: null
-depends_on: [AR-143, AR-182, AR-185, AR-191]
+depends_on: [AR-143, AR-182, AR-185, AR-191, AR-192]
 blocks: [AR-119]
 ---
 
@@ -178,6 +179,18 @@ boundary: MultiAgentV2's `collaboration.spawn_agent` reaches command hooks as
 projection corrections. Its live-envelope regressions pass; a fresh install
 and one bounded current-profile canary remain before activation can be claimed.
 
+AR-191 then landed as exact pushed pair `380f899`/`9a5b37c` and was installed
+as Codex plugin `0.1.0+codex.9e970ea1b470`. Two bounded current-profile attempts
+produced no Agency Store rows and no activation attestation. A fresh read-only
+Codex app-server `hooks/list` inspection in both the repository and private
+canary working directories reported the exact eight Agency hooks enabled but
+with `trustStatus=modified`. The trusted hashes belonged to definitions held
+by a Codex TUI opened before the refresh, so working-directory trust was not the
+cause. Codex correctly declined to execute changed commands. AR-192 owns the
+Agency-side defect: verification must detect that settled trust state before a
+model call. One fresh-TUI approval, an authoritative 8/8 trusted inspection,
+and one bounded live canary remain before activation can be claimed.
+
 ## Approach
 
 Define a deterministic, time-bounded Codex activation probe whose requested
@@ -198,9 +211,10 @@ hook-trust bypass disabled.
 ## Dependencies
 
 ADR-0077 owns behavioral activation proof. ADR-0104 supplies the exact installed
-candidate. The host must expose a non-interactive native-child surface that the
-canary can invoke safely; if it does not, activation needs a different attended
-probe instead of weakening the evidence gate.
+candidate, and AR-192 requires settled hook trust before provider-backed work.
+The host must expose a non-interactive native-child surface that the canary can
+invoke safely; if it does not, activation needs a different attended probe
+instead of weakening the evidence gate.
 
 ## Acceptance
 

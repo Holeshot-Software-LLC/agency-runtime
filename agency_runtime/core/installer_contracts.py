@@ -52,11 +52,12 @@ CODEX_HOOK_TRUST_SURFACE = "codex-terminal-tui"
 CODEX_HOOK_TRUST_COMMAND = "codex"
 _CODEX_HOOK_TRUST_INVENTORY = ", ".join(f"`{event}`" for event in CODEX_HOOK_EVENTS)
 CODEX_HOOK_TRUST_ACTION = (
-    "Open a terminal and run `codex`. In the Codex terminal TUI, choose "
+    "Close any Codex terminal TUI opened before this install or upgrade, then open "
+    "a fresh terminal and run `codex`. In that fresh Codex terminal TUI, choose "
     f"`Trust all and continue` when the startup review lists all {len(CODEX_HOOK_EVENTS)} "
     f"Agency Runtime hook events ({_CODEX_HOOK_TRUST_INVENTORY}); if it does not "
     "appear, run `/hooks` inside that "
-    "terminal TUI. Codex Desktop's `/hooks` screen manages connector setup and "
+    "fresh terminal TUI. Codex Desktop's `/hooks` screen manages connector setup and "
     "is not the local command-hook trust screen. Then start a new session and "
     "run `agency install --agent codex --verify-activation`."
 )

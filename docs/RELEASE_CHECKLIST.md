@@ -37,6 +37,7 @@ related:
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
   - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
+  - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
 supersedes: []
 superseded_by: null
 ---
@@ -85,10 +86,14 @@ or adding an index-install claim.
       missing-host bootstrap. Installation reports `activation_required` until
       an operator reviews and trusts the hooks through `/hooks` and
       `agency install --agent codex --verify-activation` records a successful
-      current-profile canary. That verification omits the hook-trust bypass and
-      must prove routing, specialist evidence, finalization, and the response
-      header. Isolated canary bypasses remain package-only evidence and never
-      establish normal-profile readiness.
+      current-profile canary. Close terminal TUIs opened before the candidate
+      refresh and approve from one fresh TUI. Before provider-backed work, the
+      verifier must obtain a bounded read-only `hooks/list` result for the exact
+      canary directory and prove the canonical eight Agency hooks occur exactly
+      once, enabled and trusted. That verification omits the hook-trust bypass
+      and must prove routing, specialist evidence, finalization, and the
+      response header. Isolated canary bypasses remain package-only evidence
+      and never establish normal-profile readiness.
 - [ ] Windows npm command shims and POSIX executable launch are both verified.
 - [ ] Ubuntu/WSL live evidence comes from a Linux environment with the project
       and test tooling installed; Windows-only evidence is not relabeled Linux.

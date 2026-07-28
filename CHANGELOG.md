@@ -37,6 +37,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex current-profile activation verification now inspects the read-only
+  app-server hook inventory before invoking a model. It requires the canonical
+  eight Agency events exactly once, enabled and trusted, and returns sanitized
+  fail-closed evidence without provider use when trust is missing, changed, or
+  unsettled. Installer guidance now requires closing pre-refresh terminal TUIs
+  before approving the settled hook definitions in a fresh TUI.
 - Attended upgrade plans now require a bounded isolated `pip --version` probe
   to succeed from the exact trusted interpreter environment. Exact Agency
   Runtime uv-tool environments instead receive a safely

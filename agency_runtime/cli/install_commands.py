@@ -887,7 +887,7 @@ def _activation_verification_projection(value: object) -> dict[str, Any]:
                 "fresh current-profile verification returned an invalid result"
             ],
         }
-    return {
+    projected = {
         "schema_version": (
             "agency.host_canary.v1"
             if value.get("schema_version") == "agency.host_canary.v1"
@@ -903,6 +903,28 @@ def _activation_verification_projection(value: object) -> dict[str, Any]:
         "attestation_persisted": value.get("attestation_persisted") is True,
         "unmet_prerequisites": _bounded_unmet_prerequisites(value.get("unmet_prerequisites")),
     }
+    invocation = value.get("invocation")
+    if isinstance(invocation, Mapping):
+        from agency_runtime.core.canary_proof import CANARY_INVOCATION_FAILURE_REASONS
+        from agency_runtime.core.codex_hook_trust import (
+            sanitize_codex_hook_trust_report,
+        )
+
+        invocation_projection: dict[str, Any] = {}
+        failure_reason = invocation.get("failure_reason")
+        if isinstance(failure_reason, str) and failure_reason in CANARY_INVOCATION_FAILURE_REASONS:
+            invocation_projection["failure_reason"] = failure_reason
+        if type(invocation.get("model_invocation_attempted")) is bool:
+            invocation_projection["model_invocation_attempted"] = invocation[
+                "model_invocation_attempted"
+            ]
+        if isinstance(invocation.get("hook_trust"), Mapping):
+            invocation_projection["hook_trust"] = sanitize_codex_hook_trust_report(
+                invocation["hook_trust"]
+            )
+        if invocation_projection:
+            projected["invocation"] = invocation_projection
+    return projected
 
 
 def _activation_verification_result(

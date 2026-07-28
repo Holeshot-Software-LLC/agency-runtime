@@ -14,12 +14,13 @@ from agency_runtime.core.installer_contracts import (
 )
 from agency_runtime.core.private_paths import private_temporary_directory
 
-_INVOCATION_FAILURE_REASONS = frozenset(
+CANARY_INVOCATION_FAILURE_REASONS = frozenset(
     {
         "native_collaboration_full_history_parent_unavailable",
         "codex_result_projection_unavailable",
         "codex_output_projection_unavailable",
         "codex_collaboration_projection_unavailable",
+        "codex_hook_trust_not_ready",
     }
 )
 
@@ -836,9 +837,33 @@ def evaluate_proof(
         ),
         "collaboration": result.get("collaboration"),
     }
+    if isinstance(result.get("hook_trust"), Mapping):
+        from agency_runtime.core.codex_hook_trust import (
+            sanitize_codex_hook_trust_report,
+        )
+
+        invocation["hook_trust"] = sanitize_codex_hook_trust_report(result["hook_trust"])
+    if type(result.get("model_invocation_attempted")) is bool:
+        invocation["model_invocation_attempted"] = result["model_invocation_attempted"]
     failure_reason = result.get("failure_reason")
-    if failure_reason in _INVOCATION_FAILURE_REASONS:
+    if isinstance(failure_reason, str) and failure_reason in CANARY_INVOCATION_FAILURE_REASONS:
         invocation["failure_reason"] = failure_reason
+    failures = list(
+        facade._proof_failures(
+            process_ok=process_ok,
+            profile_proven=profile_proven,
+            header_valid=header_valid,
+            evidence=evidence,
+            mode=mode,
+            response_nonempty=response_nonempty,
+            activation_failures=activation_failures,
+        )
+    )
+    if failure_reason == "codex_hook_trust_not_ready":
+        failures.insert(
+            0,
+            "Codex does not report the settled Agency hook inventory as enabled and trusted",
+        )
     return CanaryProof(
         invocation=invocation,
         result_scope=result_scope,
@@ -849,15 +874,7 @@ def evaluate_proof(
             and evidence_passed
             and profile_proven
         ),
-        failures=facade._proof_failures(
-            process_ok=process_ok,
-            profile_proven=profile_proven,
-            header_valid=header_valid,
-            evidence=evidence,
-            mode=mode,
-            response_nonempty=response_nonempty,
-            activation_failures=activation_failures,
-        ),
+        failures=tuple(dict.fromkeys(failures)),
     )
 
 

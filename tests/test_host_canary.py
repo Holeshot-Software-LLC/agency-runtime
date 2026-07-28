@@ -28,6 +28,7 @@ from agency_runtime.core.installer import (
     inspect_host_installations,
     install_agent_adapter,
 )
+from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -58,6 +59,33 @@ def _valid_header() -> str:
         "How it shaped outcome: proved the final response contract\n\n"
         "Canary complete."
     )
+
+
+def _hook_trust_report(status: str = "trusted") -> dict[str, object]:
+    events = tuple(event[0].lower() + event[1:] for event in CODEX_HOOK_EVENTS)
+    return {
+        "status": status,
+        "expected_count": len(events),
+        "observed_count": len(events),
+        "trusted_count": len(events) if status == "trusted" else 0,
+        "managed_count": 0,
+        "modified_count": len(events) if status == "modified" else 0,
+        "untrusted_count": len(events) if status == "untrusted" else 0,
+        "disabled_count": 0,
+        "missing_count": 0,
+        "unexpected_count": 0,
+        "duplicate_count": 0,
+        "warning_count": 0,
+        "error_count": 0,
+        "events": {
+            event: {
+                "enabled": True,
+                "trustStatus": status,
+                "currentHash": "sha256:" + "a" * 64,
+            }
+            for event in events
+        },
+    }
 
 
 def _start_canary_turn(
@@ -345,6 +373,33 @@ def test_canary_report_preserves_allowlisted_projection_failure_reason(
 
     assert report["invocation"]["exit_code"] == 0
     assert report["invocation"]["failure_reason"] == ("codex_result_projection_unavailable")
+
+
+def test_canary_report_omits_unhashable_projection_metadata(tmp_path: Path) -> None:
+    path = tmp_path / "agency.db"
+    Store(path)
+
+    class MalformedProjectionBackend:
+        def execute(self, **_kwargs):
+            return {
+                "backend": "codex",
+                "status": "failed",
+                "exit_code": 1,
+                "failure_reason": [],
+                "model_invocation_attempted": "false",
+            }
+
+    report = run_canary(
+        "codex",
+        execute=True,
+        confirm="RUN LIVE codex CANARY",
+        db_path=path,
+        inspector=_ready_host,
+        backend_factory=lambda *_args, **_kwargs: MalformedProjectionBackend(),
+    )
+
+    assert "failure_reason" not in report["invocation"]
+    assert "model_invocation_attempted" not in report["invocation"]
 
 
 def test_tokenless_evidence_cannot_reach_attestation_persistence(
@@ -1080,6 +1135,7 @@ def test_current_profile_codex_canary_uses_real_profile_without_trust_bypass(
         environ={"CODEX_HOME": str(real_home), "HOME": str(tmp_path), "PATH": "C:/tools"},
         profile_scope="current-profile",
         require_exact_activation_rollout=True,
+        hook_trust_inspector=lambda *_args, **_kwargs: _hook_trust_report(),
     )
     workdir = tmp_path / "empty-workdir"
     workdir.mkdir()
@@ -1093,6 +1149,62 @@ def test_current_profile_codex_canary_uses_real_profile_without_trust_bypass(
     assert "--dangerously-bypass-hook-trust" not in calls[0]["argv"]
     assert calls[0]["env"]["CODEX_HOME"] == str(real_home)
     assert calls[0]["env"]["AGENCY_CANARY_MODE"] == "1"
+
+
+def test_current_profile_codex_canary_fails_before_model_when_hook_trust_is_stale(
+    tmp_path: Path,
+) -> None:
+    marketplace = tmp_path / "marketplace"
+    (marketplace / ".agents" / "plugins").mkdir(parents=True)
+    (marketplace / ".agents" / "plugins" / "marketplace.json").write_text(
+        "{}",
+        encoding="utf-8",
+    )
+    real_home = tmp_path / "codex-home"
+    real_home.mkdir()
+    db_path = tmp_path / "agency.db"
+    Store(db_path)
+    model_calls: list[dict] = []
+    trust_calls: list[dict] = []
+
+    def inspect(cwd: Path, **kwargs):
+        trust_calls.append({"cwd": cwd, **kwargs})
+        return _hook_trust_report("modified")
+
+    backend = _backend(
+        "codex",
+        db_path=db_path,
+        timeout=10,
+        native={"managed_target": str(marketplace)},
+        resolver=lambda _name: "C:/tools/codex.exe",
+        runner=lambda *_args, **kwargs: model_calls.append(kwargs),
+        environ={"CODEX_HOME": str(real_home), "HOME": str(tmp_path), "PATH": "C:/tools"},
+        profile_scope="current-profile",
+        require_exact_activation_rollout=True,
+        hook_trust_inspector=inspect,
+    )
+    workdir = tmp_path / "empty-workdir"
+    workdir.mkdir()
+
+    result = backend.execute(task="current profile canary", workdir=str(workdir))
+
+    assert result == {
+        "backend": "codex",
+        "profile_scope": "current-profile",
+        "status": "failed",
+        "exit_code": 1,
+        "stdout_truncated": False,
+        "stderr_truncated": False,
+        "failure_reason": "codex_hook_trust_not_ready",
+        "hook_trust": _hook_trust_report("modified"),
+        "model_invocation_attempted": False,
+    }
+    assert model_calls == []
+    assert len(trust_calls) == 1
+    assert trust_calls[0]["cwd"] == workdir
+    assert trust_calls[0]["executable"] == "C:/tools/codex.exe"
+    assert trust_calls[0]["timeout"] <= 10
+    assert trust_calls[0]["environ"]["CODEX_HOME"] == str(real_home)
 
 
 def test_current_profile_codex_canary_timeout_and_backend_scope_validation(

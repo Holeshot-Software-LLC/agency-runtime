@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
+  - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
@@ -269,15 +270,18 @@ This means the plugin files are installed and registered, but Agency has not
 proved that your normal Codex profile will run the hooks. Complete the secure
 activation flow:
 
-1. Open a terminal and run `codex` to start the Codex terminal UI.
-2. Choose **Trust all and continue** when its startup hook review appears. If
-   it does not appear, run `/hooks` inside that terminal UI and trust all 8
-   Agency Runtime hook events: `SessionStart`, `UserPromptSubmit`, `PreToolUse`,
-   `PostToolUse`, `SubagentStart`, `SubagentStop`, `PostCompact`, and `Stop`.
-3. If this is an existing managed, registered, and enabled Codex installation,
+1. If this is an existing managed, registered, and enabled Codex installation,
    run `agency install --agent codex --no-dashboard` and complete the trusted
    Windows Hello prompt. This refresh path does not bootstrap a missing install.
-4. Restart Codex or open a new task so the refreshed plugin can load.
+2. Close every Codex terminal TUI opened before that install or refresh. An old
+   TUI can approve the prior hook snapshot after the new plugin is published,
+   leaving every settled hook correctly classified as `modified`.
+3. Open a fresh terminal and run `codex` to start the terminal UI.
+4. Choose **Trust all and continue** when its startup hook review appears. If
+   it does not appear, run `/hooks` inside that fresh terminal UI and trust all
+   8 Agency Runtime hook events: `SessionStart`, `UserPromptSubmit`,
+   `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `PostCompact`,
+   and `Stop`.
 5. Run `agency install --agent codex --verify-activation`.
 
 Codex Desktop's `/hooks` screen can show connector setup such as Zoom or
@@ -286,11 +290,15 @@ Agency does not reproduce Codex's private trust hashes or edit them directly;
 Codex currently exposes no supported non-interactive trust-grant API.
 
 The refresh transaction reports installation completion separately from
-activation completion. The verification command uses the normal Codex profile and does not pass
-`--dangerously-bypass-hook-trust`. If approval is missing, changed, or rejected,
-installation remains incomplete and prints the same resumable steps. An
-isolated-profile canary is useful for package testing but cannot establish your
-normal-profile readiness.
+activation completion. The verification command uses the normal Codex profile
+and does not pass `--dangerously-bypass-hook-trust`. It first performs a
+read-only, bounded `hooks/list` inspection in the canary working directory and
+requires the exact eight Agency hooks to be enabled and trusted. A
+`codex_hook_trust_not_ready` result does not start the model-backed canary; close
+stale TUIs, approve from one fresh terminal TUI, and retry. If approval is
+missing, changed, or rejected, installation remains incomplete and prints the
+same resumable steps. An isolated-profile canary is useful for package testing
+but cannot establish normal-profile readiness.
 
 ## `agency off` did not unregister the plugin
 

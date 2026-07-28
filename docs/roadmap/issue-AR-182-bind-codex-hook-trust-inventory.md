@@ -3,7 +3,7 @@ title: "AR-182: Bind Codex hook trust guidance to the generated inventory"
 status: done
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-07-28
 tags: [codex, hooks, installation, documentation, correctness]
 related:
   - agency_runtime/core/installer_contracts.py
@@ -13,6 +13,7 @@ related:
   - docs/TROUBLESHOOTING.md
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/issue-AR-105-current-codex-hook-event-count.md
+  - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
 supersedes:
   - docs/roadmap/issue-AR-105-current-codex-hook-event-count.md
 superseded_by: null
@@ -24,6 +25,7 @@ tracker_url: null
 depends_on: []
 blocks:
   - AR-180
+  - AR-192
 ---
 
 # AR-182: Bind Codex hook trust guidance to the generated inventory
@@ -53,7 +55,8 @@ of the earlier seven-event contract while making AR-182 the current owner.
 
 ## Dependencies
 
-AR-180 owns the exact installed-bundle activation canary. AR-105 records the
+AR-180 owns the exact installed-bundle activation canary. AR-192 consumes this
+canonical inventory for its read-only trust preflight. AR-105 records the
 historical correction from three to seven events.
 
 ## Acceptance

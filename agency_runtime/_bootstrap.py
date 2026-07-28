@@ -19,6 +19,7 @@ _ALLOWED_MODULES = frozenset(
         "agency_runtime.adapters.hooks",
         "agency_runtime.adapters.openclaw.node_bridge",
         "agency_runtime.cli",
+        "agency_runtime.core.codex_hook_trust",
         "agency_runtime.server.dashboard_service",
         "agency_runtime.server.mcp",
     }
