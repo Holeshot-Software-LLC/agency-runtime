@@ -142,10 +142,18 @@ proof is an explicit activation-only backend mode: deferred product trials keep
 their custom ephemeral response contract, while native-only canaries remain
 ephemeral with delegation disabled and matching no-tool developer instructions.
 The current focused package passes 156 warning-strict tests, plus lint, format,
-and whitespace checks. Installed checkpoint `194d697` does not contain this
-correction. No activation or production `GO` is claimed until an exact refreshed
-candidate receives attended hook trust and passes one fresh current-profile
-canary.
+and whitespace checks. Exact ledger candidate `1a58e5e` then produced a
+7,528,969-byte Windows wheel with SHA-256 `e6a94cd9...e43bf5` and an
+18,402,728-byte source archive with SHA-256 `7d7d003e...a2209`. Strict Twine and
+independent exact-commit verification passed. A fresh Python 3.13 wheel install
+passed dependency checks, all eight packaged smoke checks in 43.6 seconds, the
+installed activation/native-only option assertions, and every offline routing
+gate in 15.1 seconds. The first build attempt correctly rejected the mutable
+workspace virtual-environment ACL; the accepted build used an owner-private
+release interpreter. Installed checkpoint `194d697` remains untouched and does
+not contain this correction. No activation or production `GO` is claimed until
+exact candidate `1a58e5e` receives attended refresh and hook trust, then passes
+one fresh current-profile canary.
 
 ## Approach
 

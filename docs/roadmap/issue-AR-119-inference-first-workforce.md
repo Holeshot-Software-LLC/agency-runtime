@@ -3372,8 +3372,12 @@ activation: deferred product trials retain their custom ephemeral response
 contract, and native-only canaries are ephemeral, delegation-disabled, and
 no-tool. The current focused package passes 156 warning-strict tests with lint
 and formatting clean. Installed checkpoint `194d697` predates the correction;
-attended refresh, renewed hook trust, and one fresh bounded live canary remain.
-No hosted or exhaustive workflow was run or is required for this checkpoint.
+exact ledger candidate `1a58e5e` now has a strict-Twine and independently
+verified Windows wheel/source pair. A fresh Python 3.13 wheel install passed
+dependency checks, all eight packaged smoke checks, the installed option split,
+and every offline routing gate. The current install remains untouched; attended
+refresh, renewed hook trust, and one fresh bounded live canary remain. No hosted
+or exhaustive workflow was run or is required for this checkpoint.
 
 ### Still required before AR-119 can close
 

@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: main
-evidence_commit: 8f4c3b7542e22c12c7ae804d588ebcfc83fe1ef8
-minimum_ledger_commit: 2ecff13e71af5e0c01454454c663970c318868e7
+evidence_commit: 8fdc186fdc86958d89ff6bc2e585d58fadc71737
+minimum_ledger_commit: 1a58e5e307237e1549c96c03f1200b4531c57cd5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -42,9 +42,9 @@ the full acceptance history.
 
 ## checkpoint
 
-- Latest clean recovery pair is AR-180 `8f4c3b7`/`2ecff13`; the persisted Codex
-  collaboration correction is the next bounded substantive checkpoint.
-- Branch `main` resolves to `2ecff13`; `origin/main` remains `194d697`. The user
+- Latest clean recovery pair is AR-180 `8fdc186`/`1a58e5e`; its exact Windows
+  wheel/source pair and fresh installed-package checks are verified.
+- Branch `main` resolves to `1a58e5e`; `origin/main` remains `194d697`. The user
   authorized pushing the verified result. No manual/exhaustive workflow was
   dispatched.
 - User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
@@ -97,13 +97,15 @@ the full acceptance history.
   with `--ephemeral` could not recover its parent history and failed after about
   73.5 seconds, while the non-ephemeral form completed in about 13.5 seconds and
   persisted one spawn, one wait, one child edge, and child completion.
-- The source candidate now makes exact rollout reconciliation an explicit
+- The `1a58e5e` candidate makes exact rollout reconciliation an explicit
   activation-only contract. It removes `--ephemeral`, forces V2, uses
   `fork_turns="none"`, and validates owner-private bounded parent/child rollouts
   without retaining prompt or reasoning content. Deferred product trials keep
-  their custom ephemeral response contract. Native-only canaries are separately
-  ephemeral, delegation-disabled, and no-tool. The current focused package
-  passes 156 warning-strict tests with lint and formatting clean.
+  their custom response contract; native-only remains ephemeral and no-tool.
+  Its 7,528,969-byte wheel (`e6a94cd9...e43bf5`) and 18,402,728-byte sdist
+  (`7d7d003e...a2209`) pass strict Twine and independent exact-commit
+  verification. Fresh Python 3.13 install, dependency checks, all 8 packaged
+  smoke checks, the installed option split, and every offline routing gate pass.
 - AR-185 now routes the exact verification-only command before generic install,
   binds success to a temporally fresh exact attestation, propagates no-create/
   migrate/repair Store mode through spawned hooks, and suppresses roster
@@ -117,8 +119,8 @@ the full acceptance history.
 
 - The installed `194d697` candidate has current eight-hook trust and a successful
   zero-token no-bypass routing probe, but it predates the persisted-parent fix.
-  The corrected source must be checkpointed, packaged, installed, and trusted
-  after the operator returns, then pass one fresh bounded current-profile
+  Exact packaged candidate `1a58e5e` is ready; after the operator returns it
+  needs one attended refresh, changed-hook trust, and fresh current-profile
   canary. No preexisting attestation may satisfy that recheck.
 - AR-161 needs owner publisher identity, authorized legal/license disposition,
   protected signing/timestamp service, signed-delivery verification, and an
@@ -142,12 +144,10 @@ the same persistent goal from the clean pair through normal compaction.
 
 ## next-bounded-work-package
 
-1. Finish the corrected source checkpoint and bounded local verification without
-   changing the installed launcher or trust state while the operator is remote.
-2. After the operator returns, build and verify the exact candidate, perform one
-   attended existing-install refresh, trust the changed eight-hook inventory,
-   and run one bounded current-profile activation verification.
-3. If it passes, record the exact attestation and demo verdict. If it fails,
+1. After the operator returns, install exact candidate `1a58e5e` through one
+   attended refresh, then trust the changed eight-hook inventory and run one
+   bounded current-profile activation verification.
+2. If it passes, record the exact attestation and demo verdict. If it fails,
    preserve the failure and fix only the smallest evidenced defect before one
    more bounded attempt.
 
