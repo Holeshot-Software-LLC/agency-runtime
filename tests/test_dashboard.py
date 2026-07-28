@@ -3843,10 +3843,10 @@ def test_dashboard_master_control_uses_strict_service_boundary(
         "updated_at": "2026-07-18T00:00:00Z",
         "source": "dashboard",
     }
-    calls: list[Path] = []
+    calls: list[tuple[Path, bool]] = []
 
-    def strict_reader(*, path: Path) -> dict[str, object]:
-        calls.append(path)
+    def strict_reader(*, path: Path, use_cache: bool = True) -> dict[str, object]:
+        calls.append((path, use_cache))
         return expected
 
     monkeypatch.setattr(dashboard_module, "read_runtime_control", strict_reader)
@@ -3854,7 +3854,39 @@ def test_dashboard_master_control_uses_strict_service_boundary(
     handler.server = SimpleNamespace(runtime_control_path=target)
 
     assert handler._master_control() == expected
-    assert calls == [target]
+    assert calls == [(target, True)]
+
+
+def test_dashboard_runtime_endpoint_reads_master_uncached(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.runtime_control import runtime_control_path
+
+    expected = {
+        "schema_version": 1,
+        "enabled": True,
+        "generation": 8,
+        "updated_at": "2026-07-28T00:00:00Z",
+        "source": "dashboard",
+    }
+    calls: list[tuple[Path, bool]] = []
+
+    def strict_reader(*, path: Path, use_cache: bool = True) -> dict[str, object]:
+        calls.append((path, use_cache))
+        return expected
+
+    monkeypatch.setattr(dashboard_module, "read_runtime_control", strict_reader)
+
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/runtime",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    assert payload == {"master": expected}
+    assert calls == [(runtime_control_path(home_dir=dashboard_server["home"]), False)]
 
 
 @pytest.mark.parametrize("enabled", [None, 0, 1, "false", [], {}])
@@ -4247,7 +4279,8 @@ def test_dashboard_runtime_control_error_does_not_leak_detail_to_client(
 
     exc_type = getattr(runtime_control, exc_cls)
 
-    def raising_reader(*, path):
+    def raising_reader(*, path, use_cache=True):
+        assert use_cache is False
         raise exc_type(
             "control path /home/secret/.agency-runtime/control.json failed "
             "owner-private trust verification: insecure DACL SDDL"

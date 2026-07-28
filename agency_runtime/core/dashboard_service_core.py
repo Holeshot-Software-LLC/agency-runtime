@@ -25,6 +25,7 @@ from typing import Any
 
 from agency_runtime.core.configuration_persistence import resolve_config_path
 from agency_runtime.core.launcher_bootstrap import (
+    current_python_cache_tag,
     persistent_python_executable,
     prepare_private_package_runtime,
     verify_private_package_runtime,
@@ -38,6 +39,7 @@ from agency_runtime.core.process_argv import (
     repository_forbidden_roots,
     revalidate_persistent_artifacts,
     revalidate_process_argv,
+    snapshot_persistent_artifact,
     snapshot_persistent_artifacts,
 )
 from agency_runtime.core.windows_acl import current_process_user_sid
@@ -52,6 +54,9 @@ WINDOWS_TASK_XML_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/t
 
 _MAX_COMMAND_TIMEOUT_SECONDS = 300.0
 _MAX_MANAGER_OUTPUT_BYTES = 1024 * 1024
+_MAX_PYTHON_CACHE_TAG_BYTES = 128
+_PYTHON_CACHE_TAG_PROBE_TIMEOUT_SECONDS = 5.0
+_PYTHON_CACHE_TAG_PROBE_SOURCE = "import sys;sys.stdout.write(sys.implementation.cache_tag or '')"
 _DASHBOARD_RUNTIME_CLEAR_TIMEOUT_SECONDS = 8.0
 _DASHBOARD_RUNTIME_CLEAR_POLL_SECONDS = 0.1
 _IS_WINDOWS = os.name == "nt"
@@ -451,6 +456,48 @@ def _native_launcher_platform(ctx: _Context) -> str | None:
     return None
 
 
+def _probe_python_cache_tag(
+    identity: PersistentArtifactIdentity,
+    *,
+    platform_name: str,
+) -> str:
+    """Bind one already-trusted Python executable to this runtime generation."""
+
+    expected = current_python_cache_tag()
+    argv = (
+        identity.lexical_path,
+        "-I",
+        "-S",
+        "-c",
+        _PYTHON_CACHE_TAG_PROBE_SOURCE,
+    )
+    with tempfile.TemporaryFile() as stdout_stream:
+        revalidate_persistent_artifacts((identity,), platform_name=platform_name)
+        try:
+            completed = subprocess.run(
+                argv,
+                stdin=subprocess.DEVNULL,
+                stdout=stdout_stream,
+                stderr=subprocess.DEVNULL,
+                timeout=_PYTHON_CACHE_TAG_PROBE_TIMEOUT_SECONDS,
+                check=False,
+                shell=False,
+            )
+        except subprocess.TimeoutExpired:
+            raise OSError("selected dashboard Python cache-tag probe timed out") from None
+        finally:
+            revalidate_persistent_artifacts((identity,), platform_name=platform_name)
+        if _coerce_returncode(completed.returncode) != 0:
+            raise OSError("selected dashboard Python cache-tag probe failed")
+        stdout_stream.seek(0)
+        payload = stdout_stream.read(_MAX_PYTHON_CACHE_TAG_BYTES + 1)
+    if payload != expected.encode("ascii"):
+        raise OSError(
+            "selected dashboard Python cache tag does not match the Agency Runtime interpreter"
+        )
+    return expected
+
+
 def _validate_dashboard_launcher(ctx: _Context) -> _Context:
     """Freeze both persistent launcher artifacts on the native target host."""
 
@@ -462,16 +509,33 @@ def _validate_dashboard_launcher(ctx: _Context) -> _Context:
         return replace(ctx, launcher_artifacts=())
     if len(ctx.worker_argv) < 4:
         raise OSError("dashboard worker argv does not identify its isolated bootstrap")
-    paths = (
-        ctx.worker_argv[0],
-        prepare_private_package_runtime(ctx.worker_argv[3]),
-    )
-    identities = snapshot_persistent_artifacts(
-        paths,
+    python_identity = snapshot_persistent_artifacts(
+        (ctx.worker_argv[0],),
+        platform_name=native_platform,
+    )[0]
+    _probe_python_cache_tag(python_identity, platform_name=native_platform)
+    private_bootstrap = prepare_private_package_runtime(ctx.worker_argv[3])
+    bootstrap_identity = snapshot_persistent_artifact(
+        private_bootstrap,
         platform_name=native_platform,
     )
-    worker_argv = (*ctx.worker_argv[:3], paths[1], *ctx.worker_argv[4:])
-    return replace(ctx, worker_argv=worker_argv, launcher_artifacts=identities)
+    identities = (python_identity, bootstrap_identity)
+    revalidate_persistent_artifacts(
+        identities,
+        platform_name=native_platform,
+    )
+    worker_argv = (
+        python_identity.lexical_path,
+        *ctx.worker_argv[1:3],
+        bootstrap_identity.lexical_path,
+        *ctx.worker_argv[4:],
+    )
+    return replace(
+        ctx,
+        python_executable=Path(python_identity.lexical_path),
+        worker_argv=worker_argv,
+        launcher_artifacts=identities,
+    )
 
 
 def _validate_installed_dashboard_launcher(

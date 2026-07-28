@@ -50,6 +50,7 @@ _MAX_RUNTIME_FILE_BYTES = 64 * 1024 * 1024
 _MAX_RUNTIME_BYTES = 512 * 1024 * 1024
 _MAX_MANIFEST_BYTES = 8 * 1024 * 1024
 _REQUIREMENT_NAME = re.compile(r"^\s*([A-Za-z0-9]+(?:[-_.][A-Za-z0-9]+)*)")
+_PYTHON_CACHE_TAG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -310,7 +311,7 @@ def _runtime_manifest(files: tuple[_RuntimeFile, ...]) -> bytes:
     value = {
         "schema": _RUNTIME_SCHEMA,
         "schema_version": _RUNTIME_SCHEMA_VERSION,
-        "python_cache_tag": str(getattr(sys.implementation, "cache_tag", "") or ""),
+        "python_cache_tag": current_python_cache_tag(),
         "files": [
             {
                 "path": item.relative_path,
@@ -331,10 +332,20 @@ def _runtime_manifest(files: tuple[_RuntimeFile, ...]) -> bytes:
     )
 
 
+def current_python_cache_tag() -> str:
+    """Return the validated cache tag for the running interpreter."""
+
+    value = str(getattr(sys.implementation, "cache_tag", "") or "")
+    if _PYTHON_CACHE_TAG.fullmatch(value) is None:
+        raise OSError("current Python interpreter has an invalid cache tag")
+    return value
+
+
 def _manifest_entries(
     payload: bytes,
     *,
     expected_digest: str,
+    expected_python_cache_tag: str | None,
 ) -> tuple[_ManifestEntry, ...]:
     if not re.fullmatch(r"[0-9a-f]{64}", expected_digest):
         raise PermissionError("private runtime directory has an invalid digest name")
@@ -346,11 +357,14 @@ def _manifest_entries(
         maximum_depth=8,
         maximum_nodes=100_000,
     )
+    python_cache_tag = value.get("python_cache_tag") if isinstance(value, dict) else None
     if (
         not isinstance(value, dict)
         or value.get("schema") != _RUNTIME_SCHEMA
         or value.get("schema_version") != _RUNTIME_SCHEMA_VERSION
-        or value.get("python_cache_tag") != str(getattr(sys.implementation, "cache_tag", "") or "")
+        or not isinstance(python_cache_tag, str)
+        or _PYTHON_CACHE_TAG.fullmatch(python_cache_tag) is None
+        or (expected_python_cache_tag is not None and python_cache_tag != expected_python_cache_tag)
         or not isinstance(value.get("files"), list)
     ):
         raise PermissionError("private runtime manifest contract is invalid")
@@ -422,6 +436,7 @@ def _attested_runtime_manifest(
     runtime_root: Path,
     *,
     expected_digest: str,
+    expected_python_cache_tag: str | None,
 ) -> tuple[_ManifestEntry, ...]:
     """Read one immutable manifest through its owner-private namespace."""
 
@@ -439,7 +454,11 @@ def _attested_runtime_manifest(
         or hashlib.sha256(manifest_payload).hexdigest() != identity.sha256
     ):
         raise PermissionError("private runtime manifest changed during attestation")
-    return _manifest_entries(manifest_payload, expected_digest=expected_digest)
+    return _manifest_entries(
+        manifest_payload,
+        expected_digest=expected_digest,
+        expected_python_cache_tag=expected_python_cache_tag,
+    )
 
 
 def _enumerated_projection_files(site_packages: Path) -> frozenset[str]:
@@ -478,7 +497,11 @@ def _verify_private_runtime_full(
         limit=_MAX_MANIFEST_BYTES,
         label="private runtime manifest",
     )
-    entries = _manifest_entries(manifest_payload, expected_digest=expected_digest)
+    entries = _manifest_entries(
+        manifest_payload,
+        expected_digest=expected_digest,
+        expected_python_cache_tag=current_python_cache_tag(),
+    )
 
     expected_paths: set[str] = set()
     bootstrap_path: Path | None = None
@@ -496,7 +519,11 @@ def _verify_private_runtime_full(
     return str(bootstrap_path)
 
 
-def _verify_private_runtime_fast(runtime_root: Path) -> str:
+def _verify_private_runtime_fast(
+    runtime_root: Path,
+    *,
+    expected_python_cache_tag: str | None,
+) -> str:
     """Attest a published projection without requiring mutation authority.
 
     The manifest and bootstrap snapshots each validate their complete
@@ -510,6 +537,7 @@ def _verify_private_runtime_fast(runtime_root: Path) -> str:
     entries = _attested_runtime_manifest(
         runtime_root,
         expected_digest=expected_digest,
+        expected_python_cache_tag=expected_python_cache_tag,
     )
     bootstrap_entry = next(
         entry for entry in entries if entry.relative_path == f"{_AGENCY_PACKAGE}/_bootstrap.py"
@@ -592,7 +620,10 @@ def stage_private_package_runtime(source_path: str | Path) -> str:
     launchers = private_runtime_directory("launchers")
     target = launchers / f"{_RUNTIME_DIRECTORY_PREFIX}{digest}"
     if target.exists():
-        return _verify_private_runtime_fast(target)
+        return _verify_private_runtime_fast(
+            target,
+            expected_python_cache_tag=current_python_cache_tag(),
+        )
 
     staging = allocate_private_directory(launchers, prefix=".runtime-stage")
     cleanup_identity = staging
@@ -626,7 +657,10 @@ def stage_private_package_runtime(source_path: str | Path) -> str:
         except OSError:
             if not target.exists():
                 raise
-            return _verify_private_runtime_fast(target)
+            return _verify_private_runtime_fast(
+                target,
+                expected_python_cache_tag=current_python_cache_tag(),
+            )
 
         cleanup_identity = PrivateDirectoryIdentity(
             path=target,
@@ -637,7 +671,10 @@ def stage_private_package_runtime(source_path: str | Path) -> str:
             authority=staging.authority,
         )
         try:
-            result = _verify_private_runtime_fast(target)
+            result = _verify_private_runtime_fast(
+                target,
+                expected_python_cache_tag=current_python_cache_tag(),
+            )
         except BaseException:
             remove_private_directory(cleanup_identity)
             cleanup_required = False
@@ -651,10 +688,13 @@ def stage_private_package_runtime(source_path: str | Path) -> str:
 
 
 def prepare_private_package_runtime(source_path: str | Path) -> str:
-    """Return an attested private bootstrap, reusing a prior projection."""
+    """Return a bootstrap attested for execution by the current interpreter."""
 
     if runtime_root := _projection_root(source_path):
-        return _verify_private_runtime_fast(runtime_root)
+        return _verify_private_runtime_fast(
+            runtime_root,
+            expected_python_cache_tag=current_python_cache_tag(),
+        )
     return stage_private_package_runtime(source_path)
 
 
@@ -693,16 +733,26 @@ def plan_private_package_runtime(source_path: str | Path) -> PrivateRuntimePlan:
 
 
 def verify_private_package_runtime(source_path: str | Path) -> str:
-    """Attest an existing published projection without creating or repairing it."""
+    """Attest an existing projection for inspection without mutating it.
+
+    The manifest cache tag must remain a bounded canonical token, but it may
+    belong to another interpreter. Call ``prepare_private_package_runtime``
+    before any execution; that boundary additionally requires the current
+    interpreter's exact cache tag.
+    """
 
     runtime_root = _projection_root(source_path)
     if runtime_root is None:
         raise PermissionError("launcher is not an Agency Runtime private projection")
-    return _verify_private_runtime_fast(runtime_root)
+    return _verify_private_runtime_fast(
+        runtime_root,
+        expected_python_cache_tag=None,
+    )
 
 
 __all__ = [
     "PrivateRuntimePlan",
+    "current_python_cache_tag",
     "plan_private_package_runtime",
     "prepare_private_package_runtime",
     "stage_private_package_runtime",

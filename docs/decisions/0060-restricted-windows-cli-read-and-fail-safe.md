@@ -7,6 +7,7 @@ updated: 2026-07-17
 tags: [operations, cli, windows, security, delegation]
 related:
   - docs/roadmap/issue-AR-76-restricted-windows-cli-read-and-fail-safe.md
+  - docs/roadmap/issue-AR-193-preserve-authoritative-windows-master-reads.md
   - docs/decisions/0059-broker-restricted-windows-agent-controls.md
   - docs/THREAT_MODEL.md
   - docs/TROUBLESHOOTING.md

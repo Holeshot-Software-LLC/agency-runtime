@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import os
 import subprocess
 from dataclasses import replace
 from types import SimpleNamespace
@@ -12,6 +13,7 @@ import pytest
 from agency_runtime.core import dashboard_runtime
 from agency_runtime.core import dashboard_service_core as subject
 from agency_runtime.core.process_argv import agency_bootstrap_path
+from tests.runtime_support import trusted_base_test_interpreter
 
 
 def test_command_result_terminal_safety_and_public_shape():
@@ -426,25 +428,227 @@ def test_dashboard_launcher_projects_complete_private_runtime_then_rechecks(
     )
     assert ctx is not None
     monkeypatch.setattr(subject, "_native_launcher_platform", lambda _ctx: "nt")
-    identity = SimpleNamespace()
+    python_identity = SimpleNamespace(lexical_path=ctx.worker_argv[0])
     private = str(tmp_path / "private-bootstrap.py")
+    bootstrap_identity = SimpleNamespace(lexical_path=private)
     monkeypatch.setattr(
         subject,
         "prepare_private_package_runtime",
         lambda path: private if path == ctx.worker_argv[3] else "",
     )
+    monkeypatch.setattr(
+        subject,
+        "_probe_python_cache_tag",
+        lambda identity, **_kwargs: (
+            "cpython-test"
+            if identity is python_identity
+            else pytest.fail("unexpected Python identity")
+        ),
+    )
 
     def snapshot(paths, *, platform_name):
         assert platform_name == "nt"
-        assert paths == (ctx.worker_argv[0], private)
-        return (identity,)
+        assert paths == (ctx.worker_argv[0],)
+        return (python_identity,)
 
     monkeypatch.setattr(subject, "snapshot_persistent_artifacts", snapshot)
+    monkeypatch.setattr(
+        subject,
+        "snapshot_persistent_artifact",
+        lambda path, **_kwargs: (
+            bootstrap_identity if path == private else pytest.fail("unexpected bootstrap path")
+        ),
+    )
+    revalidated: list[tuple[object, ...]] = []
+    monkeypatch.setattr(
+        subject,
+        "revalidate_persistent_artifacts",
+        lambda identities, **_kwargs: revalidated.append(tuple(identities)),
+    )
 
     validated = subject._validate_dashboard_launcher(ctx)
 
     assert validated.worker_argv[3] == private
-    assert validated.launcher_artifacts == (identity,)
+    assert validated.launcher_artifacts == (python_identity, bootstrap_identity)
+    assert revalidated == [(python_identity, bootstrap_identity)]
+
+
+def test_dashboard_launcher_rejects_wrong_python_before_projecting_runtime(
+    tmp_path,
+    monkeypatch,
+):
+    explicit = r"C:\Python312\python.exe"
+    ctx = subject._context(
+        home_dir=tmp_path,
+        platform_name="windows",
+        config_path=tmp_path / "agency.yaml",
+        python_executable=explicit,
+    )
+    assert ctx is not None
+    identity = SimpleNamespace(lexical_path=explicit)
+    monkeypatch.setattr(subject, "_native_launcher_platform", lambda _ctx: "nt")
+    monkeypatch.setattr(
+        subject,
+        "snapshot_persistent_artifacts",
+        lambda paths, **_kwargs: (identity,) if paths == (explicit,) else (),
+    )
+    monkeypatch.setattr(
+        subject,
+        "_probe_python_cache_tag",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            OSError(
+                "selected dashboard Python cache tag does not match the Agency Runtime interpreter"
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        subject,
+        "prepare_private_package_runtime",
+        lambda _path: pytest.fail("wrong-interpreter validation created a runtime projection"),
+    )
+
+    with pytest.raises(OSError, match="does not match"):
+        subject._validate_dashboard_launcher(ctx)
+
+
+def test_python_cache_tag_probe_accepts_only_exact_current_interpreter(
+    monkeypatch,
+):
+    identity = SimpleNamespace(lexical_path=r"C:\Python313\python.exe")
+    revalidated: list[tuple[object, ...]] = []
+    monkeypatch.setattr(subject, "current_python_cache_tag", lambda: "cpython-313")
+    monkeypatch.setattr(
+        subject,
+        "revalidate_persistent_artifacts",
+        lambda identities, **_kwargs: revalidated.append(tuple(identities)),
+    )
+
+    def run(argv, **kwargs):
+        assert argv == (
+            identity.lexical_path,
+            "-I",
+            "-S",
+            "-c",
+            subject._PYTHON_CACHE_TAG_PROBE_SOURCE,
+        )
+        assert kwargs["timeout"] == subject._PYTHON_CACHE_TAG_PROBE_TIMEOUT_SECONDS
+        assert kwargs["check"] is False
+        assert kwargs["shell"] is False
+        assert kwargs["stdin"] is subprocess.DEVNULL
+        assert kwargs["stderr"] is subprocess.DEVNULL
+        kwargs["stdout"].write(b"cpython-313")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(subject.subprocess, "run", run)
+
+    assert subject._probe_python_cache_tag(identity, platform_name="nt") == "cpython-313"
+    assert revalidated == [(identity,), (identity,)]
+
+
+def test_python_cache_tag_probe_accepts_the_real_current_interpreter():
+    identity = subject.snapshot_persistent_artifact(
+        trusted_base_test_interpreter(),
+        platform_name=os.name,
+        require_executable=True,
+    )
+
+    assert subject._probe_python_cache_tag(identity, platform_name=os.name) == (
+        subject.current_python_cache_tag()
+    )
+
+
+def test_python_cache_tag_probe_rejects_an_explicit_foreign_interpreter(
+    monkeypatch,
+):
+    identity = SimpleNamespace(lexical_path=r"C:\Python312\python.exe")
+    monkeypatch.setattr(subject, "current_python_cache_tag", lambda: "cpython-313")
+    monkeypatch.setattr(subject, "revalidate_persistent_artifacts", lambda *_args, **_kwargs: None)
+
+    def run(_argv, **kwargs):
+        kwargs["stdout"].write(b"cpython-312")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(subject.subprocess, "run", run)
+
+    with pytest.raises(OSError, match="does not match"):
+        subject._probe_python_cache_tag(identity, platform_name="nt")
+
+
+@pytest.mark.parametrize(
+    ("payload", "returncode", "message"),
+    [
+        (b"cpython-313\n", 0, "does not match"),
+        (b"x" * 129, 0, "does not match"),
+        (b"cpython-313", 7, "probe failed"),
+    ],
+)
+def test_python_cache_tag_probe_rejects_malformed_oversized_and_nonzero_output(
+    monkeypatch,
+    payload,
+    returncode,
+    message,
+):
+    identity = SimpleNamespace(lexical_path=r"C:\Python313\python.exe")
+    monkeypatch.setattr(subject, "current_python_cache_tag", lambda: "cpython-313")
+    monkeypatch.setattr(subject, "revalidate_persistent_artifacts", lambda *_args, **_kwargs: None)
+
+    def run(_argv, **kwargs):
+        kwargs["stdout"].write(payload)
+        return SimpleNamespace(returncode=returncode)
+
+    monkeypatch.setattr(subject.subprocess, "run", run)
+
+    with pytest.raises(OSError, match=message):
+        subject._probe_python_cache_tag(identity, platform_name="nt")
+
+
+def test_python_cache_tag_probe_rejects_timeout_after_final_identity_check(
+    monkeypatch,
+):
+    identity = SimpleNamespace(lexical_path=r"C:\Python313\python.exe")
+    revalidated: list[tuple[object, ...]] = []
+    monkeypatch.setattr(subject, "current_python_cache_tag", lambda: "cpython-313")
+    monkeypatch.setattr(
+        subject,
+        "revalidate_persistent_artifacts",
+        lambda identities, **_kwargs: revalidated.append(tuple(identities)),
+    )
+    monkeypatch.setattr(
+        subject.subprocess,
+        "run",
+        lambda argv, **kwargs: (_ for _ in ()).throw(
+            subprocess.TimeoutExpired(argv, kwargs["timeout"])
+        ),
+    )
+
+    with pytest.raises(OSError, match="timed out"):
+        subject._probe_python_cache_tag(identity, platform_name="nt")
+    assert revalidated == [(identity,), (identity,)]
+
+
+def test_python_cache_tag_probe_rejects_post_probe_executable_drift(
+    monkeypatch,
+):
+    identity = SimpleNamespace(lexical_path=r"C:\Python313\python.exe")
+    revalidation_count = 0
+    monkeypatch.setattr(subject, "current_python_cache_tag", lambda: "cpython-313")
+
+    def revalidate(_identities, **_kwargs):
+        nonlocal revalidation_count
+        revalidation_count += 1
+        if revalidation_count == 2:
+            raise OSError("persistent executable artifact drifted")
+
+    def run(_argv, **kwargs):
+        kwargs["stdout"].write(b"cpython-313")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(subject, "revalidate_persistent_artifacts", revalidate)
+    monkeypatch.setattr(subject.subprocess, "run", run)
+
+    with pytest.raises(OSError, match="artifact drifted"):
+        subject._probe_python_cache_tag(identity, platform_name="nt")
+    assert revalidation_count == 2
 
 
 def test_installed_dashboard_launcher_is_read_only_and_exact(

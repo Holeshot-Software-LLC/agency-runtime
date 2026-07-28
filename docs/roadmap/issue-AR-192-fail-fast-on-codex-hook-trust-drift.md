@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
   - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
+  - docs/roadmap/issue-AR-193-preserve-authoritative-windows-master-reads.md
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
   - README.md
   - CHANGELOG.md
@@ -27,7 +28,7 @@ epic: host-integrations
 issue_id: AR-192
 priority: p0
 tracker_url: null
-depends_on: [AR-182]
+depends_on: [AR-182, AR-193]
 blocks: [AR-180]
 ---
 

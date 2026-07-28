@@ -575,6 +575,14 @@ audit, or sync command deliberately before treating either view as live proof.
 
 ## Dashboard service does not install or start
 
+After changing Agency's Python environment, `agency dashboard service status
+--json` may report a valid older immutable worker as inactive and
+`repair_recommended`. Read-only inspection verifies that worker against its own
+recorded interpreter and package hashes; it does not run the worker through the
+new CLI's Python. Use an attended `agency dashboard service install` to replace
+the registered worker. Do not rewrite the manifest, scheduled task, or Python
+path by hand.
+
 Preview the exact current-user plan:
 
 ```bash

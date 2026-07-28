@@ -1244,7 +1244,7 @@ def test_materializer_handles_absent_corrupt_and_failed_postcondition(
         control.ensure_runtime_control_materialized(path=target, source="test", now=now)
 
 
-def test_effective_reader_prefers_restricted_canonical_boundary(
+def test_effective_reader_uses_restricted_boundary_after_strict_security_denial(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1252,11 +1252,17 @@ def test_effective_reader_prefers_restricted_canonical_boundary(
     target.write_text("{}", encoding="utf-8")
     expected = _valid_document()
     monkeypatch.setattr(control, "_restricted_windows_control_target", lambda _path: True)
-    monkeypatch.setattr(control, "_read_restricted_windows_control", lambda _path: expected)
     monkeypatch.setattr(
         control,
-        "read_runtime_control",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("strict reader touched")),
+        "_read_restricted_windows_control",
+        lambda _path, **_kwargs: expected,
+    )
+    monkeypatch.setattr(
+        control,
+        "read_runtime_control_snapshot",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            control.RuntimeControlSecurityError("strict ACL inspection was denied")
+        ),
     )
 
     assert control.read_effective_runtime_control(path=target) == expected
@@ -1286,15 +1292,27 @@ def test_authoritative_default_reader_brokers_a_validated_master_document(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     expected = _valid_document(enabled=False, generation=9, source="dashboard")
+    target = control.runtime_control_path()
     calls: list[str] = []
+    strict_calls: list[dict[str, Any]] = []
+    reduced_calls: list[tuple[Path, bool]] = []
+
+    def strict(**kwargs: Any) -> control.RuntimeControlSnapshot:
+        strict_calls.append(kwargs)
+        raise control.RuntimeControlSecurityError("strict ACL inspection was denied")
+
+    def reduced(path: Path, *, use_cache: bool = True) -> dict[str, Any]:
+        reduced_calls.append((path, use_cache))
+        raise control.RuntimeControlSecurityError("restricted reader cannot prove the ACL")
+
     monkeypatch.setattr(
         control,
-        "read_effective_runtime_control",
-        lambda **_kwargs: (_ for _ in ()).throw(
-            control.RuntimeControlSecurityError("restricted reader cannot prove the ACL")
-        ),
+        "read_runtime_control_snapshot",
+        strict,
     )
+    monkeypatch.setattr(control, "_read_restricted_windows_control", reduced)
     monkeypatch.setattr(control, "_restricted_windows_control_target", lambda _path: True)
+    monkeypatch.setattr(control.os, "lstat", lambda _path: SimpleNamespace())
 
     def broker(path: str, *, timeout: float) -> dict[str, Any]:
         calls.append(f"{path}:{timeout}")
@@ -1308,6 +1326,92 @@ def test_authoritative_default_reader_brokers_a_validated_master_document(
     assert control.read_authoritative_runtime_control() == (expected, "dashboard")
     assert control.master_enabled() is False
     assert calls == ["/api/runtime:0.25", "/api/runtime:0.25"]
+    assert strict_calls == [
+        {"path": target, "use_cache": True},
+        {"path": target, "use_cache": True},
+    ]
+    assert reduced_calls == [(target, True), (target, True)]
+
+
+def test_authoritative_reader_prefers_strict_path_for_uac_filtered_token_shape(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = _valid_document(enabled=False, generation=28, source="strict")
+    snapshot = control.RuntimeControlSnapshot(**expected, materialized=True)
+    strict_calls: list[dict[str, Any]] = []
+    restricted_checks: list[Path] = []
+
+    def strict(**kwargs: Any) -> control.RuntimeControlSnapshot:
+        strict_calls.append(kwargs)
+        return snapshot
+
+    monkeypatch.setattr(control, "read_runtime_control_snapshot", strict)
+    monkeypatch.setattr(
+        control,
+        "_restricted_windows_control_target",
+        lambda target: restricted_checks.append(target) or True,
+    )
+    monkeypatch.setattr(
+        control,
+        "_read_restricted_windows_control",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("strictly readable state entered the reduced reader")
+        ),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("strictly readable state was brokered")
+        ),
+    )
+
+    assert control.read_authoritative_runtime_control(use_cache=False) == (expected, "direct")
+    assert control.read_enforcement_runtime_control(use_cache=False) == (expected, "direct")
+    assert control.master_enabled() is False
+    assert strict_calls == [
+        {"path": control.runtime_control_path(), "use_cache": False},
+        {"path": control.runtime_control_path(), "use_cache": False},
+        {"path": control.runtime_control_path(), "use_cache": True},
+    ]
+    assert restricted_checks == []
+
+
+def test_authoritative_reader_uses_reduced_path_only_after_strict_security_denial(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = _valid_document(enabled=True, generation=12, source="restricted")
+    target = control.runtime_control_path()
+    strict_calls: list[dict[str, Any]] = []
+    reduced_calls: list[tuple[Path, bool]] = []
+    restricted_checks: list[Path] = []
+
+    def strict(**kwargs: Any) -> control.RuntimeControlSnapshot:
+        strict_calls.append(kwargs)
+        raise control.RuntimeControlSecurityError("strict ACL inspection was denied")
+
+    def reduced(path: Path, *, use_cache: bool = True) -> dict[str, Any]:
+        reduced_calls.append((path, use_cache))
+        return expected
+
+    monkeypatch.setattr(control, "read_runtime_control_snapshot", strict)
+    monkeypatch.setattr(
+        control,
+        "_restricted_windows_control_target",
+        lambda candidate: restricted_checks.append(candidate) or True,
+    )
+    monkeypatch.setattr(control, "_read_restricted_windows_control", reduced)
+    monkeypatch.setattr(control.os, "lstat", lambda _path: SimpleNamespace())
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_runtime.dashboard_api_request",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("a successful reduced read was brokered")
+        ),
+    )
+
+    assert control.read_authoritative_runtime_control(use_cache=False) == (expected, "direct")
+    assert strict_calls == [{"path": target, "use_cache": False}]
+    assert restricted_checks == [target]
+    assert reduced_calls == [(target, False)]
 
 
 def test_authoritative_reader_forwards_uncached_direct_read(
@@ -1598,6 +1702,33 @@ def test_restricted_windows_reader_proves_identity_and_non_forgeability(
     )
     with pytest.raises(control.RuntimeControlSecurityError, match="could not be proven"):
         control._read_restricted_windows_control(target)
+
+
+def test_restricted_windows_uncached_reader_skips_cache_lookup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    home = tmp_path / "home"
+    target = _control_path(home)
+    target.parent.mkdir(parents=True)
+    expected = _valid_document(enabled=True, generation=13, source="uncached")
+    _write_document(target, expected)
+    monkeypatch.setattr(control.Path, "home", lambda: home)
+    monkeypatch.setattr(control, "_restricted_windows_control_target", lambda _path: True)
+    monkeypatch.setattr(
+        control,
+        "current_process_has_control_forgery_access",
+        lambda *_args, **_kwargs: False,
+    )
+    monkeypatch.setattr(
+        control,
+        "_cache_get",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("uncached restricted read consulted the cache")
+        ),
+    )
+
+    assert control._read_restricted_windows_control(target, use_cache=False) == expected
 
 
 def test_runtime_control_public_validator_and_restricted_target_probe(

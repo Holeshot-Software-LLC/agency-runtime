@@ -57,6 +57,10 @@ def _private_dashboard_bootstrap(
         "agency_runtime.core.dashboard_service_core.verify_private_package_runtime",
         lambda path: str(target) if Path(path) == target else str(path),
     )
+    monkeypatch.setattr(
+        "agency_runtime.core.dashboard_service_core._probe_python_cache_tag",
+        lambda _identity, **_kwargs: "cpython-test",
+    )
 
 
 @pytest.mark.parametrize("platform_name", ["linux", "windows"])

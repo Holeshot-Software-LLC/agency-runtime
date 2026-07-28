@@ -210,6 +210,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-190` | [Make attended upgrade plans runnable in uv tools](issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | in_progress | p0 | release | pending authorization |
 | `AR-191` | [Support the Codex V2 native-spawn hook identity](issue-AR-191-support-codex-v2-hook-identity.md) | in_progress | p0 | host-integrations | pending authorization |
 | `AR-192` | [Fail fast on Codex hook trust drift](issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | in_progress | p0 | host-integrations | pending authorization |
+| `AR-193` | [Preserve authoritative Windows master reads for UAC-filtered owners](issue-AR-193-preserve-authoritative-windows-master-reads.md) | in_progress | p0 | security | pending authorization |
+| `AR-194` | [Inspect owned service runtimes across Python versions](issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | in_progress | p1 | operations | pending authorization |
 
 ## Traceability
 
@@ -409,6 +411,8 @@ not stable internal identifiers.
 | [AR-190](issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | `8c7d8df`; exact committed install and Codex refresh pending; [active recovery capsule](handoffs/issue-AR-190.md) | [ADR-0107](../decisions/0107-resolve-updates-immutably-and-keep-application-attended.md) |
 | [AR-191](issue-AR-191-support-codex-v2-hook-identity.md) | `380f899`; fresh installed canary and tracker creation pending authorization | None; exact compatibility repair preserves the existing advisory native-child contract |
 | [AR-192](issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | `d6611ca`; bounded source verification passed; exact installed trust and live canary pending; tracker creation pending authorization | [ADR-0077](../decisions/0077-prove-codex-activation-behaviorally.md) |
+| [AR-193](issue-AR-193-preserve-authoritative-windows-master-reads.md) | exact installed master-read and live-canary proof pending; tracker creation pending authorization | [ADR-0058](../decisions/0058-broker-restricted-windows-host-controls.md), [ADR-0060](../decisions/0060-restricted-windows-cli-read-and-fail-safe.md) |
+| [AR-194](issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | focused implementation and attended service repair pending; tracker creation pending authorization | [ADR-0040](../decisions/0040-preserve-environment-owned-python-launchers.md), [ADR-0050](../decisions/0050-isolate-installed-python-module-resolution.md) |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

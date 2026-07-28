@@ -37,6 +37,16 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Windows master-control reads now try the strict owner-private identity before
+  considering reduced-token dashboard recovery. A normal UAC-filtered owner
+  shell therefore preserves the real control generation even when the
+  dashboard is unavailable, while genuine strict-read failures retain the
+  stable-identity and negative-mutation checks. Explicit live verification and
+  the dashboard broker endpoint also bypass process-local control caches.
+- Read-only dashboard-service inspection now validates an existing owned
+  immutable package runtime against its recorded Python cache tag instead of
+  the inspecting CLI's interpreter. Runtime creation, reuse for execution, and
+  bootstrap preparation remain bound to the current interpreter tag.
 - Codex current-profile activation verification now inspects the read-only
   app-server hook inventory before invoking a model. It requires the canonical
   eight Agency events exactly once, enabled and trusted, and returns sanitized

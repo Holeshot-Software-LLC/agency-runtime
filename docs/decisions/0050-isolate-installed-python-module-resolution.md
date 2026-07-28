@@ -7,6 +7,7 @@ updated: 2026-07-15
 tags: [python, supply-chain, host-integration, services, security]
 related:
   - docs/roadmap/issue-AR-43-isolate-installed-python-module-resolution.md
+  - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
   - docs/decisions/0024-native-host-packages-and-minimal-bridges.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0040-preserve-environment-owned-python-launchers.md

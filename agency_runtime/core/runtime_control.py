@@ -574,7 +574,11 @@ def _restricted_windows_control_target(target: Path) -> bool:
         return False
 
 
-def _read_restricted_windows_control(target: Path) -> dict[str, Any]:
+def _read_restricted_windows_control(
+    target: Path,
+    *,
+    use_cache: bool = True,
+) -> dict[str, Any]:
     """Read canonical state from a sandbox that cannot request ``READ_CONTROL``.
 
     Windows application sandboxes can retain read access to a user-owned file
@@ -637,12 +641,13 @@ def _read_restricted_windows_control(target: Path) -> dict[str, Any]:
         raise RuntimeControlSecurityError(
             "restricted runtime control path is mutable or could not be proven read-only"
         )
-    cached = _cache_get(target, before, directory_snapshot)
-    if cached is not None:
-        _validate_directory_snapshot(directory_snapshot)
-        current = os.lstat(target)
-        if _metadata_identity(current) == _metadata_identity(before):
-            return cached
+    if use_cache:
+        cached = _cache_get(target, before, directory_snapshot)
+        if cached is not None:
+            _validate_directory_snapshot(directory_snapshot)
+            current = os.lstat(target)
+            if _metadata_identity(current) == _metadata_identity(before):
+                return cached
     try:
         raw = read_bounded_regular_file(
             target,
@@ -675,20 +680,21 @@ def read_effective_runtime_control_snapshot(
     """Read effective state and its materialization through the trusted boundary."""
 
     target = _target_path(path=path, home_dir=home_dir)
-    if _restricted_windows_control_target(target):
-        try:
-            os.lstat(target)
-        except FileNotFoundError:
-            return _control_snapshot(_default_document(), materialized=False)
-        except OSError as exc:
-            raise RuntimeControlSecurityError(
-                "runtime control file could not be inspected"
-            ) from exc
-        return _control_snapshot(
-            _read_restricted_windows_control(target),
-            materialized=True,
-        )
-    return read_runtime_control_snapshot(path=target, use_cache=use_cache)
+    try:
+        return read_runtime_control_snapshot(path=target, use_cache=use_cache)
+    except RuntimeControlSecurityError:
+        if not _restricted_windows_control_target(target):
+            raise
+    try:
+        os.lstat(target)
+    except FileNotFoundError:
+        return _control_snapshot(_default_document(), materialized=False)
+    except OSError as exc:
+        raise RuntimeControlSecurityError("runtime control file could not be inspected") from exc
+    return _control_snapshot(
+        _read_restricted_windows_control(target, use_cache=use_cache),
+        materialized=True,
+    )
 
 
 def read_effective_runtime_control(

@@ -7,6 +7,7 @@ updated: 2026-07-26
 tags: [operations, cli, dashboard, windows, security]
 related:
   - docs/roadmap/issue-AR-74-broker-restricted-windows-host-controls.md
+  - docs/roadmap/issue-AR-193-preserve-authoritative-windows-master-reads.md
   - docs/roadmap/issue-AR-75-broker-restricted-windows-agent-controls.md
   - docs/roadmap/issue-AR-77-validate-brokered-control-transition-receipts.md
   - docs/decisions/0031-optional-user-dashboard-service-and-shared-configuration.md

@@ -80,6 +80,20 @@ def _private_staging(
         )
 
 
+def _retag_private_runtime(bootstrap: Path, cache_tag: object) -> Path:
+    runtime_root = bootstrap.parents[2]
+    manifest_path = runtime_root / "runtime-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["python_cache_tag"] = cache_tag
+    payload = (
+        json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+    ).encode("utf-8")
+    manifest_path.write_bytes(payload)
+    renamed = runtime_root.with_name(f"runtime-sha256-{hashlib.sha256(payload).hexdigest()}")
+    runtime_root.rename(renamed)
+    return renamed / "site-packages" / "agency_runtime" / "_bootstrap.py"
+
+
 def test_private_runtime_is_complete_hash_named_and_idempotent(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -128,15 +142,23 @@ def test_private_runtime_fast_reuse_rejects_bootstrap_and_manifest_tampering(
 
     original = staged.read_bytes()
     staged.write_text("tampered", encoding="utf-8")
-    with pytest.raises(PermissionError, match="bootstrap does not match its manifest"):
-        launcher_bootstrap.prepare_private_package_runtime(staged)
+    for operation in (
+        launcher_bootstrap.prepare_private_package_runtime,
+        launcher_bootstrap.verify_private_package_runtime,
+    ):
+        with pytest.raises(PermissionError, match="bootstrap does not match its manifest"):
+            operation(staged)
     staged.write_bytes(original)
 
     manifest = staged.parents[2] / "runtime-manifest.json"
     original_manifest = manifest.read_bytes()
     manifest.write_bytes(original_manifest + b" ")
-    with pytest.raises(PermissionError, match="manifest artifact does not match"):
-        launcher_bootstrap.prepare_private_package_runtime(staged)
+    for operation in (
+        launcher_bootstrap.prepare_private_package_runtime,
+        launcher_bootstrap.verify_private_package_runtime,
+    ):
+        with pytest.raises(PermissionError, match="manifest artifact does not match"):
+            operation(staged)
 
 
 def test_private_runtime_fast_reuse_needs_no_mutation_authority(
@@ -163,6 +185,113 @@ def test_private_runtime_fast_reuse_needs_no_mutation_authority(
     assert snapshots == [staged.parents[2] / "runtime-manifest.json", staged]
 
 
+def test_private_runtime_read_only_inspection_accepts_a_foreign_cache_tag(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "private"
+    _private_staging(monkeypatch, root)
+    staged = Path(launcher_bootstrap.stage_private_package_runtime(Path(agency_bootstrap_path())))
+    foreign = _retag_private_runtime(staged, "cpython-999")
+
+    assert Path(launcher_bootstrap.verify_private_package_runtime(foreign)) == foreign
+    with pytest.raises(PermissionError, match="manifest contract is invalid"):
+        launcher_bootstrap.prepare_private_package_runtime(foreign)
+
+
+@pytest.mark.parametrize(
+    "cache_tag",
+    [None, True, "", "cpython/313", "cpython 313", "cpython-313\n", "x" * 129],
+)
+def test_private_runtime_read_only_inspection_rejects_malformed_cache_tags(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cache_tag: object,
+) -> None:
+    root = tmp_path / "private"
+    _private_staging(monkeypatch, root)
+    staged = Path(launcher_bootstrap.stage_private_package_runtime(Path(agency_bootstrap_path())))
+    malformed = _retag_private_runtime(staged, cache_tag)
+
+    with pytest.raises(PermissionError, match="manifest contract is invalid"):
+        launcher_bootstrap.verify_private_package_runtime(malformed)
+
+
+def test_dashboard_status_inspects_an_owned_runtime_from_another_interpreter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import dashboard_service_core, dashboard_service_inspection
+    from agency_runtime.core.dashboard_service import inspect_dashboard_service
+
+    root = tmp_path / "private"
+    _private_staging(monkeypatch, root)
+    staged = Path(launcher_bootstrap.stage_private_package_runtime(Path(agency_bootstrap_path())))
+    foreign = _retag_private_runtime(staged, "cpython-999")
+    home = tmp_path / "home"
+    config = home / ".agency-runtime" / "agency.yaml"
+    python = tmp_path / "python.exe"
+    python.write_bytes(b"foreign interpreter fixture\n")
+    ctx = dashboard_service_core._context(
+        home_dir=home,
+        platform_name="windows",
+        config_path=config,
+        python_executable=python,
+    )
+    assert ctx is not None
+    worker = [*ctx.worker_argv]
+    worker[3] = str(foreign)
+    ctx.manifest_path.parent.mkdir(parents=True)
+    ctx.manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": dashboard_service_core.MANIFEST_SCHEMA_VERSION,
+                "owner": dashboard_service_core.OWNER_ID,
+                "service": dashboard_service_core.SERVICE_ID,
+                "platform": ctx.platform,
+                "manager": ctx.manager,
+                "registration": ctx.registration,
+                "worker_argv": worker,
+            }
+        ),
+        encoding="utf-8",
+    )
+    observed_paths: list[tuple[str, ...]] = []
+    monkeypatch.setattr(dashboard_service_core, "_native_launcher_platform", lambda _ctx: "nt")
+    monkeypatch.setattr(
+        dashboard_service_core,
+        "snapshot_persistent_artifacts",
+        lambda paths, **_kwargs: observed_paths.append(tuple(paths)) or (),
+    )
+    monkeypatch.setattr(
+        dashboard_service_inspection,
+        "current_process_token_is_restricted",
+        lambda **_kwargs: False,
+    )
+    manager_commands: list[list[str]] = []
+
+    def manager(argv: list[str], **_kwargs: object) -> dict[str, object]:
+        manager_commands.append(argv)
+        return {"returncode": 0, "stdout": "ABSENT"}
+
+    result = inspect_dashboard_service(
+        home_dir=home,
+        command_runner=manager,
+        _ctx=ctx,
+        _config=object(),
+    )
+
+    assert result["ok"] is True
+    assert result["manifest_owned"] is True
+    assert result["installed"] is False
+    assert result["stale_manifest"] is True
+    assert result["repair_recommended"] is True
+    assert "error" not in result
+    assert observed_paths == [(worker[0], str(foreign))]
+    assert len(manager_commands) == 1
+    assert manager_commands[0][0] == "powershell.exe"
+
+
 def test_private_runtime_fast_reuse_rejects_malformed_hash_named_manifest(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -182,8 +311,12 @@ def test_private_runtime_fast_reuse_rejects_malformed_hash_named_manifest(
     runtime_root.rename(renamed)
     malformed_bootstrap = renamed / "site-packages" / "agency_runtime" / "_bootstrap.py"
 
-    with pytest.raises(PermissionError, match="manifest contract is invalid"):
-        launcher_bootstrap.prepare_private_package_runtime(malformed_bootstrap)
+    for operation in (
+        launcher_bootstrap.prepare_private_package_runtime,
+        launcher_bootstrap.verify_private_package_runtime,
+    ):
+        with pytest.raises(PermissionError, match="manifest contract is invalid"):
+            operation(malformed_bootstrap)
 
 
 def test_private_runtime_full_publication_rejects_unmanifested_files_and_cleans_up(
@@ -257,7 +390,9 @@ def test_private_runtime_removes_a_published_projection_when_fast_attestation_fa
     monkeypatch.setattr(
         launcher_bootstrap,
         "_verify_private_runtime_fast",
-        lambda _path: (_ for _ in ()).throw(PermissionError("publication attestation failed")),
+        lambda _path, **_kwargs: (_ for _ in ()).throw(
+            PermissionError("publication attestation failed")
+        ),
     )
 
     with pytest.raises(PermissionError, match="publication attestation failed"):

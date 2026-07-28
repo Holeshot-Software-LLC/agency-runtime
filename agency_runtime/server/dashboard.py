@@ -1308,7 +1308,7 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         self._cached_dashboard_request_identity = result
         return result
 
-    def _master_control(self) -> dict[str, Any]:
+    def _master_control(self, *, use_cache: bool = True) -> dict[str, Any]:
         """Read master state through the authenticated writer's strict boundary.
 
         The effective-state adapter is for untrusted consumer sandboxes and
@@ -1318,7 +1318,10 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
         owner-private and identity validation performed by the strict reader.
         """
 
-        return read_runtime_control(path=self.runtime_control_path)
+        return read_runtime_control(
+            path=self.runtime_control_path,
+            use_cache=use_cache,
+        )
 
     def handle_one_request(self) -> None:
         """Start fresh request state and suppress expected response-I/O disconnects."""
@@ -1409,7 +1412,9 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 "/api/inference": self._handle_inference,
                 "/api/workforce": self._handle_workforce,
                 "/api/hiring": self._handle_hiring,
-                "/api/runtime": lambda: self._json_ok({"master": self._master_control()}),
+                "/api/runtime": lambda: self._json_ok(
+                    {"master": self._master_control(use_cache=False)}
+                ),
                 "/api/config": self._handle_config,
                 "/api/providers/models": self._handle_provider_models,
                 "/api/health": lambda: self._json_ok({"status": "ok"}),
