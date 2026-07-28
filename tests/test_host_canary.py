@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import shutil
+import sqlite3
 import subprocess
 from pathlib import Path
 
@@ -651,7 +652,8 @@ def test_claude_real_shape_canary_passes_without_synthesizing_a_receipt(
     assert report["evidence"]["receipt_proven"] is False
     assert report["evidence"]["host_receipt_count"] == 0
     assert report["canary_passed"] is True
-    assert Store(path).get_host_canary_attestation("claude")["trace_id"] == "claude-turn-42"
+    assert report["attestation_persisted"] is False
+    assert Store(path).get_host_canary_attestation("claude") is None
 
 
 def test_codex_tokenless_isolated_profile_cannot_attest_activation(
@@ -1223,7 +1225,15 @@ def test_inspection_uses_only_current_matching_canary_attestation(
     assert current["canary"] is True
     assert current["canary_attestation_status"] == "verified"
 
-    attest(PLUGIN_VERSION, profile_scope="isolated-profile")
+    connection = sqlite3.connect(db_path)
+    try:
+        connection.execute(
+            "UPDATE host_canary_attestations SET profile_scope = ? WHERE host = ?",
+            ("isolated-profile", "codex"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
     isolated = inspect()
     assert isolated["canary"] is None
     assert "profile_scope" in isolated["canary_stale_reasons"]

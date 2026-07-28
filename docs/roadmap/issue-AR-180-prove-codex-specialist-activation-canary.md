@@ -70,20 +70,32 @@ operator presence, backed up the previous tree, and registered enabled plugin
 `0.1.0+codex.92db70112a1a`, bundle `e0c19b9d...ea387`, install ID
 `fe76121b-9911-497d-b853-685d39b0e830`.
 
-The single new current-profile canary completed in 36.9 seconds with exit zero
-but produced no hook route, Agency header, collaboration call, activation,
-delegation, finalization, or trace. It failed `route_not_found`; exact-request
-cleanup found no run to close, and no attestation persisted. The user approved
-hooks before this bundle refresh. The outcome is consistent with the exact new
-bundle requiring renewed terminal-TUI hook approval, but Codex exposes no
-supported trust-state read API, so that cause is not claimed as proven. No
-retry ran. Tracker creation remains pending authorization.
+The attended refresh to plugin `0.1.0+codex.34b430f3606d`, bundle
+`829cb612...6300f8f9`, install ID
+`60b089c2-7a55-47af-97ba-5daabb835421` passed Windows owner presence, and the
+user then approved all eight hooks in the Codex terminal TUI. A direct bounded
+current-profile canary proved hook routing, one deterministic `code-reviewer`
+unit, a valid Agency header, and finalization. It nevertheless produced zero
+native collaboration calls, leaving the delegation at `suggested` and failing
+the exact activation graph.
+
+The exact receipt exposed a canary-contract mismatch rather than another trust
+failure: the canary user prompt said not to split the unit but did not explicitly
+request a sub-agent. Current Codex delegation policy therefore kept the work in
+the parent despite the injected one-row Agency plan. The candidate now asks for
+exactly one sub-agent to execute the entire indivisible unit and forbids both
+parent execution and multi-child fanout. Tracker creation remains pending
+authorization. The bounded warning-strict canary and activation package passes
+108 tests; targeted Ruff, documentation validation, and diff checks also pass.
 
 ## Approach
 
 Define a deterministic, time-bounded Codex activation probe whose requested
 work has one safe isolated unit and one eligible specialist. Prove first that
 the non-interactive Codex surface exposes the required native delegation tool.
+The user-level probe must explicitly request exactly one sub-agent for the
+whole unit so the canary remains compatible with Codex's native delegation
+policy; indivisibility constrains fanout rather than prohibiting delegation.
 Then require exactly one child launch, exact work-unit correlation, pre-LLM
 specialist delivery, one-use activation consumption, child completion, parent
 finalization, and a valid response header. Reject absent tools, topology drift,

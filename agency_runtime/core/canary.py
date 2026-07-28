@@ -41,7 +41,8 @@ from agency_runtime.core.store.sqlite import (
 )
 
 CANARY_PROMPT = (
-    "Treat this as exactly one indivisible code-review work unit and do not split it: "
+    "Use exactly one sub-agent for this whole, indivisible code-review work unit. "
+    "Do not perform the review in the parent and do not split it across multiple agents: "
     "identify the primary behavioral regression risk of replacing return value with "
     "return value.strip() in a Python text-normalization helper."
 )
@@ -50,9 +51,10 @@ CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "This is a bounded Agency Runtime activation canary. If the current task contains "
     "[AGENCY EXACT SPECIALIST ACTIVATION v1], you are the sole delegated child: perform "
     "the requested review directly, use no tools, and return one concise sentence. "
-    "Otherwise you are the parent: follow the injected [AGENCY DELEGATION PLAN], require "
-    "exactly one row, call spawn_agent exactly once with that row's exact native_task_name "
-    "and exact goal, and use wait_agent only as needed until that sole child completes. "
+    "Otherwise you are the parent, and the user explicitly requested exactly one sub-agent "
+    "for the whole unit: follow the injected [AGENCY DELEGATION PLAN], require exactly one "
+    "row, call spawn_agent exactly once with that row's exact native_task_name and exact "
+    "goal, and use wait_agent only as needed until that sole child completes. "
     "Use no other tools. Return the child's conclusion with the required Agency header. "
     "Do not modify files, call external services, or expose secrets."
 )

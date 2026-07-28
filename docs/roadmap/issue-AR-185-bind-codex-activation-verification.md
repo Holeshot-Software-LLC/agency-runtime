@@ -49,10 +49,13 @@ an older attestation instead of proving the current invocation.
 
 ## Current state
 
-The root cause was reproduced through the real parser, presence boundary, and
-handler trace. The installed Codex adapter remains truthfully
-`activation-required`; no current-profile canary has yet established that the
-enabled hooks execute the exact installed bundle in a normal Codex session.
+The parser, presence boundary, and exact verification branch are working. The
+attended refresh and terminal-TUI approval established that the installed hooks
+route, inject a valid header, and finalize in a normal Codex invocation. The
+installed adapter remains truthfully `activation-required` because the probe's
+user prompt did not explicitly request native delegation: Codex executed in the
+parent, so the fresh report correctly lacked the required child activation
+chain. AR-180 owns the prompt correction and final exact live proof.
 
 ## Approach
 

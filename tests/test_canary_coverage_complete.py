@@ -192,6 +192,17 @@ def test_agency_canary_prompt_does_not_trigger_unrelated_business_policy() -> No
     assert "business-strategist" not in companions
 
 
+def test_agency_canary_explicitly_requests_one_whole_unit_subagent() -> None:
+    prompt = canary.CANARY_PROMPT.lower()
+
+    assert "exactly one sub-agent" in prompt
+    assert "do not perform the review in the parent" in prompt
+    assert "do not split it across multiple agents" in prompt
+    assert "user explicitly requested exactly one sub-agent" in (
+        canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    )
+
+
 def test_canary_output_and_records_cover_empty_and_failed_results() -> None:
     assert canary._codex_output("\n\n") is None
     assert canary._codex_output("{invalid") is None
